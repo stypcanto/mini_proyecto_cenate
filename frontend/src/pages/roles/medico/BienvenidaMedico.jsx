@@ -19,7 +19,11 @@ import {
   Folder,
   ChevronDown,
   BarChart3,
-  FileText
+  FileText,
+  Home,
+  User,
+  Inbox,
+  TrendingUp as AnalyticsIcon
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useAuth } from '../../../context/AuthContext';
@@ -65,17 +69,26 @@ export default function BienvenidaMedico() {
 
   const acciones = [
     {
+      titulo: 'Bienvenida',
+      icono: Home,
+      ruta: '/roles/medico/bienvenida',
+      stat: null
+    },
+    {
       titulo: 'Pacientes',
+      icono: Users,
       ruta: '/roles/medico/pacientes',
       stat: stats.pacientesAsignados
     },
     {
       titulo: 'Disponibilidad',
+      icono: Calendar,
       ruta: '/roles/medico/disponibilidad',
       stat: null
     },
     {
       titulo: 'Mi Información',
+      icono: User,
       ruta: '/user/security',
       stat: null
     }
@@ -178,7 +191,7 @@ export default function BienvenidaMedico() {
               onClick={() => navigate(accion.ruta)}
               className="w-full px-4 py-3 flex items-center gap-4 hover:bg-blue-50 transition-colors group text-left rounded-lg border border-gray-200 hover:border-blue-300"
             >
-              <Folder className="w-5 h-5 text-gray-400 group-hover:text-blue-600 transition flex-shrink-0" />
+              <accion.icono className="w-5 h-5 text-gray-400 group-hover:text-blue-600 transition flex-shrink-0" />
               <span className="text-base font-semibold text-gray-800 group-hover:text-blue-600 transition flex-1">
                 {accion.titulo}
               </span>
@@ -204,7 +217,7 @@ export default function BienvenidaMedico() {
             onClick={() => navigate('/teleecg/recibidas')}
             className="w-full px-4 py-3 flex items-center gap-4 hover:bg-purple-50 transition-colors group text-left rounded-lg border border-gray-200 hover:border-purple-300"
           >
-            <Folder className="w-5 h-5 text-gray-400 group-hover:text-purple-600 transition flex-shrink-0" />
+            <Inbox className="w-5 h-5 text-gray-400 group-hover:text-purple-600 transition flex-shrink-0" />
             <span className="text-base font-semibold text-gray-800 group-hover:text-purple-600 transition">
               TeleECG Recibidas
             </span>
@@ -214,7 +227,7 @@ export default function BienvenidaMedico() {
             onClick={() => navigate('/teleecg/estadisticas')}
             className="w-full px-4 py-3 flex items-center gap-4 hover:bg-purple-50 transition-colors group text-left rounded-lg border border-gray-200 hover:border-purple-300"
           >
-            <Folder className="w-5 h-5 text-gray-400 group-hover:text-purple-600 transition flex-shrink-0" />
+            <BarChart3 className="w-5 h-5 text-gray-400 group-hover:text-purple-600 transition flex-shrink-0" />
             <span className="text-base font-semibold text-gray-800 group-hover:text-purple-600 transition">
               Estadísticas
             </span>
