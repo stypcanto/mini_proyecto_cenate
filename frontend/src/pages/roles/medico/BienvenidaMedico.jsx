@@ -1,8 +1,10 @@
 /**
- * 👨‍⚕️ BienvenidaMedico.jsx - Página de Bienvenida Personalizada para Médicos
+ * 👨‍⚕️ BienvenidaMedico.jsx - Dashboard Médico v2.0
  *
- * Panel de bienvenida con estadísticas, acciones rápidas e información
- * relevante para el trabajo diario del médico en CENATE
+ * 3 Preguntas clave:
+ * 1. ¿Qué tengo que hacer HOY? → Pacientes Asignados
+ * 2. ¿Qué pacientes necesitan atención urgente? → Semáforo de Pendientes
+ * 3. ¿Cómo va mi desempeño? → Coordinador de Especialidades
  */
 
 import React, { useState, useEffect } from 'react';
@@ -23,7 +25,10 @@ import {
   Home,
   User,
   Inbox,
-  TrendingUp as AnalyticsIcon
+  Activity,
+  CheckCircle2,
+  AlertTriangle,
+  Zap
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useAuth } from '../../../context/AuthContext';
@@ -34,6 +39,7 @@ export default function BienvenidaMedico() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
+  const [pacientes, setPacientes] = useState([]);
   const [stats, setStats] = useState({
     pacientesAsignados: 0,
     pacientesCitados: 0,
@@ -42,229 +48,142 @@ export default function BienvenidaMedico() {
   });
 
   useEffect(() => {
-    cargarEstadisticas();
+    cargarDatos();
   }, []);
 
-  const cargarEstadisticas = async () => {
+  const cargarDatos = async () => {
     try {
       setLoading(true);
-      const pacientes = await gestionPacientesService.obtenerPacientesMedico();
+      const data = await gestionPacientesService.obtenerPacientesMedico();
 
-      if (pacientes && Array.isArray(pacientes)) {
+      if (data && Array.isArray(data)) {
+        setPacientes(data);
         const estadisticas = {
-          pacientesAsignados: pacientes.length,
-          pacientesCitados: pacientes.filter(p => p.condicion === 'Citado').length,
-          pacientesAtendidos: pacientes.filter(p => p.condicion === 'Atendido').length,
-          pacientesPendientes: pacientes.filter(p => p.condicion === 'Pendiente').length
+          pacientesAsignados: data.length,
+          pacientesCitados: data.filter(p => p.condicion === 'Citado').length,
+          pacientesAtendidos: data.filter(p => p.condicion === 'Atendido').length,
+          pacientesPendientes: data.filter(p => p.condicion === 'Pendiente').length
         };
         setStats(estadisticas);
       }
     } catch (error) {
-      console.error('Error cargando estadísticas:', error);
-      toast.error('Error al cargar estadísticas');
+      console.error('Error cargando datos:', error);
+      toast.error('Error al cargar datos');
     } finally {
       setLoading(false);
     }
   };
 
-  const acciones = [
-    {
-      titulo: 'Bienvenida',
-      icono: Home,
-      ruta: '/roles/medico/bienvenida',
-      stat: null
-    },
-    {
-      titulo: 'Pacientes',
-      icono: Users,
-      ruta: '/roles/medico/pacientes',
-      stat: stats.pacientesAsignados
-    },
-    {
-      titulo: 'Disponibilidad',
-      icono: Calendar,
-      ruta: '/roles/medico/disponibilidad',
-      stat: null
-    },
-    {
-      titulo: 'Mi Información',
-      icono: User,
-      ruta: '/user/security',
-      stat: null
-    }
-  ];
-
-  const indicadores = [
-    {
-      label: 'Pacientes Asignados',
-      valor: stats.pacientesAsignados,
-      icono: Users,
-      color: 'text-blue-600',
-      bgColor: 'bg-blue-50'
-    },
-    {
-      label: 'Citados',
-      valor: stats.pacientesCitados,
-      icono: Calendar,
-      color: 'text-green-600',
-      bgColor: 'bg-green-50'
-    },
-    {
-      label: 'Atendidos',
-      valor: stats.pacientesAtendidos,
-      icono: Heart,
-      color: 'text-red-600',
-      bgColor: 'bg-red-50'
-    },
-    {
-      label: 'Pendientes',
-      valor: stats.pacientesPendientes,
-      icono: Clock,
-      color: 'text-orange-600',
-      bgColor: 'bg-orange-50'
-    }
-  ];
+  // Semáforo de urgencia para pacientes pendientes
+  const pacientesPendientes = pacientes.filter(p => p.condicion === 'Pendiente');
+  const semaforoUrgencia = {
+    rojo: pacientesPendientes.slice(0, Math.ceil(pacientesPendientes.length / 3)),
+    amarillo: pacientesPendientes.slice(Math.ceil(pacientesPendientes.length / 3), Math.ceil(2 * pacientesPendientes.length / 3)),
+    verde: pacientesPendientes.slice(Math.ceil(2 * pacientesPendientes.length / 3))
+  };
 
   return (
-    <div className="space-y-8 pb-12">
-      {/* Banner de Bienvenida */}
-      <div className="bg-gradient-to-r from-emerald-600 via-teal-600 to-blue-600 rounded-3xl p-8 shadow-2xl overflow-hidden">
-        <div className="flex items-center gap-6">
-          {/* Avatar */}
-          <div className="w-24 h-24 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center flex-shrink-0 border-2 border-white/30 shadow-lg">
-            <Stethoscope className="w-12 h-12 text-white" />
-          </div>
-
-          {/* Contenido */}
-          <div className="flex-1 text-white">
-            <h1 className="text-4xl font-bold mb-2">
-              Bienvenido(a), Dr(a). {user?.nombreCompleto?.split(' ')[0] || user?.username || 'Médico'}
-            </h1>
-            <p className="text-white/90 text-lg leading-relaxed mb-4">
-              Panel de telemedicina CENATE - Centro Nacional de Telemedicina para atención a {stats.pacientesAsignados} pacientes.
-            </p>
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-2 bg-white/20 rounded-lg px-4 py-2">
-                <TrendingUp className="w-5 h-5" />
-                <span className="font-semibold">Performance: Excelente</span>
-              </div>
-              <div className="flex items-center gap-2 bg-white/20 rounded-lg px-4 py-2">
-                <Clock className="w-5 h-5" />
-                <span className="font-semibold">Disponible</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Indicadores de Estadísticas */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        {indicadores.map((ind, idx) => (
-          <div
-            key={idx}
-            className={`${ind.bgColor} rounded-2xl p-6 shadow-lg border border-gray-100 hover:shadow-xl transition`}
-          >
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="text-sm font-semibold text-gray-700">{ind.label}</h3>
-              <div className={`p-2 rounded-lg bg-white`}>
-                <ind.icono className={`w-5 h-5 ${ind.color}`} />
-              </div>
-            </div>
-            <p className="text-3xl font-bold text-gray-900">
-              {loading ? '...' : ind.valor}
-            </p>
-          </div>
-        ))}
-      </div>
-
-      {/* Panel Médico - Desglosable Expandido */}
-      <div className="bg-white rounded-xl shadow-md overflow-hidden">
-        <div className="px-6 py-4 flex items-center gap-3 hover:bg-gray-50 transition cursor-pointer bg-blue-50 border-l-4 border-blue-600">
-          <ChevronDown className="w-6 h-6 text-blue-600" />
-          <h2 className="text-lg font-bold text-blue-900">Panel Médico</h2>
-        </div>
-
-        <div className="space-y-2 p-4">
-          {acciones.map((accion, idx) => (
-            <button
-              key={idx}
-              onClick={() => navigate(accion.ruta)}
-              className="w-full px-4 py-3 flex items-center gap-4 hover:bg-blue-50 transition-colors group text-left rounded-lg border border-gray-200 hover:border-blue-300"
-            >
-              <accion.icono className="w-5 h-5 text-gray-400 group-hover:text-blue-600 transition flex-shrink-0" />
-              <span className="text-base font-semibold text-gray-800 group-hover:text-blue-600 transition flex-1">
-                {accion.titulo}
-              </span>
-              {accion.stat !== null && (
-                <span className="text-sm font-bold text-white bg-blue-600 px-3 py-1 rounded-full">
-                  {accion.stat}
-                </span>
-              )}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* TeleECG - Desglosable Expandido */}
-      <div className="bg-white rounded-xl shadow-md overflow-hidden">
-        <div className="px-6 py-4 flex items-center gap-3 hover:bg-gray-50 transition cursor-pointer bg-purple-50 border-l-4 border-purple-600">
-          <ChevronDown className="w-6 h-6 text-purple-600" />
-          <h2 className="text-lg font-bold text-purple-900">TeleECG</h2>
-        </div>
-
-        <div className="space-y-2 p-4">
-          <button
-            onClick={() => navigate('/teleecg/recibidas')}
-            className="w-full px-4 py-3 flex items-center gap-4 hover:bg-purple-50 transition-colors group text-left rounded-lg border border-gray-200 hover:border-purple-300"
-          >
-            <Inbox className="w-5 h-5 text-gray-400 group-hover:text-purple-600 transition flex-shrink-0" />
-            <span className="text-base font-semibold text-gray-800 group-hover:text-purple-600 transition">
-              TeleECG Recibidas
-            </span>
-          </button>
-
-          <button
-            onClick={() => navigate('/teleecg/estadisticas')}
-            className="w-full px-4 py-3 flex items-center gap-4 hover:bg-purple-50 transition-colors group text-left rounded-lg border border-gray-200 hover:border-purple-300"
-          >
-            <BarChart3 className="w-5 h-5 text-gray-400 group-hover:text-purple-600 transition flex-shrink-0" />
-            <span className="text-base font-semibold text-gray-800 group-hover:text-purple-600 transition">
-              Estadísticas
-            </span>
-          </button>
-        </div>
-      </div>
-
-      {/* Sección de Recomendaciones */}
-      <div className="bg-gradient-to-r from-blue-50 to-emerald-50 rounded-2xl p-6 shadow-lg border border-blue-100">
-        <div className="flex gap-4">
-          <div className="p-3 rounded-lg bg-blue-100 flex-shrink-0">
-            <AlertCircle className="w-6 h-6 text-blue-600" />
-          </div>
-          <div>
-            <h3 className="font-bold text-gray-900 mb-2">💡 Recomendaciones del Día</h3>
-            <ul className="space-y-2 text-sm text-gray-700">
-              <li>✓ Revisa tus {stats.pacientesPendientes} pacientes pendientes de atención</li>
-              <li>✓ Confirma tu disponibilidad para la próxima semana</li>
-              <li>✓ Actualiza tu información de contacto si es necesario</li>
-              <li>✓ Consulta el estado de tus pacientes citados</li>
-            </ul>
-          </div>
-        </div>
-      </div>
-
-      {/* Información del Sistema */}
-      <div className="flex items-center justify-between py-4 border-t border-gray-200 text-sm text-gray-600">
-        <p>
-          CENATE – Centro Nacional de Telemedicina | Plataforma de Telemedicina 2025 © EsSalud
+    <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white pb-8">
+      {/* SIMPLE WELCOME */}
+      <div className="px-4 md:px-6 py-4 text-center">
+        <h1 className="text-3xl md:text-4xl font-bold text-slate-900 mb-1">
+          ¡Bienvenido, {user?.nombreCompleto || 'Médico'}!
+        </h1>
+        <p className="text-base text-slate-600 mb-0.5">
+          Centro Nacional de Telemedicina - CENATE
         </p>
-        <button
-          onClick={() => navigate('/user/security')}
-          className="text-emerald-600 hover:text-emerald-700 font-medium flex items-center gap-2 transition-colors"
-        >
-          <Settings className="w-4 h-4" />
-          Seguridad
-        </button>
+        <p className="text-xs text-slate-500">
+          {new Date().toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+        </p>
+      </div>
+
+      {/* MAIN CONTENT */}
+      <div className="w-full mx-auto px-4 md:px-6">
+        {/* SECCIÓN PRINCIPAL: Panel Médico */}
+        <div className="mb-6">
+          <div className="bg-gradient-to-r from-blue-700 via-blue-600 to-cyan-600 rounded-2xl p-6 text-white shadow-lg overflow-hidden relative">
+            <div className="absolute top-2 right-3 text-5xl opacity-15">🏥</div>
+            <h2 className="text-2xl md:text-3xl font-bold mb-2 tracking-tight">Panel Médico - Tu Espacio de Trabajo</h2>
+            <p className="text-blue-100 text-sm mb-4 leading-snug">
+              Accede a tus pacientes, gestiona tu disponibilidad y consulta tus reportes de desempeño en telemedicina CENATE.
+            </p>
+            <div className="inline-flex items-center gap-2 bg-white/20 backdrop-blur-sm rounded-full px-3 py-1.5 border border-white/30">
+              <span className="text-xs font-semibold">🏥 {user?.username?.toUpperCase() || 'MEDICO'}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* SECCIÓN: Acciones Rápidas */}
+        <div className="mb-6">
+          <h3 className="text-xl font-bold text-slate-900 mb-4 flex items-center gap-2">
+            <span>⚡</span> Acciones Rápidas
+          </h3>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-5">
+            {/* Card 1: Mis Pacientes */}
+            <button
+              onClick={() => navigate('/roles/medico/pacientes')}
+              className="bg-white rounded-lg p-4 shadow-sm border border-slate-200 hover:shadow-md hover:border-slate-300 transition text-left group"
+            >
+              <div className="w-10 h-10 rounded-lg bg-purple-100 flex items-center justify-center mb-3 group-hover:bg-purple-200 transition">
+                <Users className="w-5 h-5 text-purple-600" />
+              </div>
+              <h4 className="text-base font-bold text-slate-900 mb-1">Mis Pacientes</h4>
+              <p className="text-xs text-slate-600 mb-2">
+                Visualiza y gestiona tu cartera de {stats.pacientesAsignados} {stats.pacientesAsignados === 1 ? 'paciente' : 'pacientes'}
+              </p>
+              <p className="text-xs text-slate-500">
+                {stats.pacientesCitados} citados • {stats.pacientesAtendidos} atendidos
+              </p>
+            </button>
+
+            {/* Card 2: Atenciones Clínicas */}
+            <button
+              onClick={() => navigate('/roles/medico/disponibilidad')}
+              className="bg-white rounded-lg p-4 shadow-sm border border-slate-200 hover:shadow-md hover:border-slate-300 transition text-left group"
+            >
+              <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center mb-3 group-hover:bg-blue-200 transition">
+                <FileText className="w-5 h-5 text-blue-600" />
+              </div>
+              <h4 className="text-base font-bold text-slate-900 mb-1">Disponibilidad</h4>
+              <p className="text-xs text-slate-600">
+                Gestiona tu horario y disponibilidad para atenciones de telemedicina
+              </p>
+            </button>
+
+            {/* Card 3: Reportes */}
+            <button
+              onClick={() => navigate('/roles/medico/disponibilidad')}
+              className="bg-white rounded-lg p-4 shadow-sm border border-slate-200 hover:shadow-md hover:border-slate-300 transition text-left group"
+            >
+              <div className="w-10 h-10 rounded-lg bg-pink-100 flex items-center justify-center mb-3 group-hover:bg-pink-200 transition">
+                <BarChart3 className="w-5 h-5 text-pink-600" />
+              </div>
+              <h4 className="text-base font-bold text-slate-900 mb-1">Mi Información</h4>
+              <p className="text-xs text-slate-600">
+                Consulta tu perfil, especialidades y datos profesionales
+              </p>
+            </button>
+          </div>
+
+          {/* Primary CTA */}
+          <div className="text-center">
+            <button
+              onClick={() => navigate('/roles/medico/pacientes')}
+              className="bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white font-bold py-3 px-6 rounded-lg shadow-md hover:shadow-lg transition inline-flex items-center gap-2 text-sm"
+            >
+              Ver mis Pacientes
+              <ChevronRight className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+
+        {/* FOOTER */}
+        <div className="mt-4 pt-3 border-t border-slate-200 text-center">
+          <p className="text-xs text-slate-600">
+            ¿Necesitas ayuda? Contacta al equipo de soporte de CENATE o revisa la documentación en tu panel.
+          </p>
+        </div>
       </div>
     </div>
   );

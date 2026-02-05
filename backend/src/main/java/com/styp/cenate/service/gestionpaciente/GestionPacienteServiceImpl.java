@@ -6,12 +6,14 @@ import com.styp.cenate.model.GestionPaciente;
 import com.styp.cenate.model.Ipress;
 import com.styp.cenate.model.PersonalCnt;
 import com.styp.cenate.model.Usuario;
+import com.styp.cenate.model.bolsas.SolicitudBolsa;
 import com.styp.cenate.model.chatbot.SolicitudCita;
 import com.styp.cenate.repository.AseguradoRepository;
 import com.styp.cenate.repository.GestionPacienteRepository;
 import com.styp.cenate.repository.IpressRepository;
 import com.styp.cenate.repository.PersonalCntRepository;
 import com.styp.cenate.repository.UsuarioRepository;
+import com.styp.cenate.repository.bolsas.SolicitudBolsaRepository;
 import com.styp.cenate.repository.chatbot.SolicitudCitaRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -37,6 +39,7 @@ public class GestionPacienteServiceImpl implements IGestionPacienteService {
     private final UsuarioRepository usuarioRepository;
     private final PersonalCntRepository personalCntRepository;
     private final SolicitudCitaRepository solicitudCitaRepository;
+    private final SolicitudBolsaRepository solicitudBolsaRepository;
 
     @Override
     @Transactional
@@ -238,25 +241,40 @@ public class GestionPacienteServiceImpl implements IGestionPacienteService {
             }
 
             Long idPers = personalCnt.getIdPers();
-            log.info("ID del médico: {}", idPers);
+            log.info("ID del médico (PersonalCnt): {}", idPers);
 
-            // Obtener todas las citas registradas por este médico
-            List<SolicitudCita> citas = solicitudCitaRepository.findByPersonal_IdPers(idPers);
-            log.info("Se encontraron {} citas para el médico {}", citas.size(), idPers);
+            // ✅ v1.45.0: Buscar pacientes asignados directamente en dim_solicitud_bolsa (idPersonal)
+            // Esta es la fuente correcta de asignaciones médicas (desde GestionAsegurado)
+            List<SolicitudBolsa> solicitudesBolsa = solicitudBolsaRepository.findByIdPersonalAndActivoTrue(idPers);
+            log.info("Se encontraron {} solicitudes en bolsas para el médico {}", solicitudesBolsa.size(), idPers);
 
-            // Extraer DNIs únicos de los pacientes de esas citas
-            Set<String> dnis = citas.stream()
-                .map(SolicitudCita::getDocPaciente)
+            // Extraer DNIs únicos de los pacientes de esas solicitudes
+            Set<String> dnis = solicitudesBolsa.stream()
+                .map(SolicitudBolsa::getPacienteDni)
                 .filter(dni -> dni != null && !dni.isEmpty())
                 .collect(Collectors.toSet());
 
-            log.info("Se encontraron {} pacientes únicos con citas", dnis.size());
+            log.info("Se encontraron {} pacientes únicos en bolsas asignadas", dnis.size());
+
+            if (dnis.isEmpty()) {
+                // Fallback: Si no hay solicitudes en bolsas, buscar en citas (SolicitudCita)
+                log.info("No hay solicitudes en bolsas. Intentando con citas (SolicitudCita)...");
+                List<SolicitudCita> citas = solicitudCitaRepository.findByPersonal_IdPers(idPers);
+                log.info("Se encontraron {} citas para el médico {}", citas.size(), idPers);
+
+                dnis = citas.stream()
+                    .map(SolicitudCita::getDocPaciente)
+                    .filter(dni -> dni != null && !dni.isEmpty())
+                    .collect(Collectors.toSet());
+
+                log.info("Se encontraron {} pacientes únicos en citas", dnis.size());
+            }
 
             if (dnis.isEmpty()) {
                 return List.of();
             }
 
-            // Buscar la gestión de esos pacientes (uno por uno)
+            // Buscar la gestión de esos pacientes
             List<GestionPaciente> gestiones = dnis.stream()
                 .flatMap(dni -> repository.findByNumDoc(dni).stream())
                 .collect(Collectors.toList());

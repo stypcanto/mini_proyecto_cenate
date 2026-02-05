@@ -815,5 +815,15 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
         """, nativeQuery = true)
     List<String> obtenerEspecialidadesUnicas();
 
+    /**
+     * 🆕 v1.45.0: Busca solicitudes asignadas a un médico (idPersonal)
+     * Usado en obtenerPacientesDelMedicoActual() para recuperar pacientes asignados
+     * Filtra por: id_personal = idPersonal Y activo = true
+     *
+     * @param idPersonal ID del personal médico (doctor)
+     * @return lista de solicitudes activas asignadas al médico
+     */
+    List<SolicitudBolsa> findByIdPersonalAndActivoTrue(Long idPersonal);
+
 }
 

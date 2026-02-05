@@ -365,13 +365,17 @@ export default function GestionAsegurado() {
       console.log("  citaAgendada.especialista:", citaAgendada.especialista);
       
       // Extraer fecha y hora del datetime-local: "2026-02-08T14:30" → fecha: "2026-02-08", hora: "14:30"
-      // ⚠️ SOLO si el estado es "CITADO" - para otros estados, estos campos se envían como null
+      // ✅ v1.45.0: Fecha/hora SOLO requeridos si estado es "CITADO"
+      // ✅ Especialista SIEMPRE puede ser enviado (independiente del estado)
       let fechaAtencion = null;
       let horaAtencion = null;
       let idPersonalEspecialista = null;
-      
+
+      // ✅ Especialista se puede asignar SIEMPRE (no solo para CITADO)
+      idPersonalEspecialista = citaAgendada.especialista || null;
+
       if (nuevoEstadoCodigo === "CITADO") {
-        // Estado CITADO: incluir fecha, hora y especialista si están disponibles
+        // Estado CITADO: requiere fecha, hora y especialista
         if (citaAgendada.fecha) {
           const datetimeValue = citaAgendada.fecha;
           console.log("⏰ Extrayendo fecha y hora de:", datetimeValue);
@@ -381,11 +385,10 @@ export default function GestionAsegurado() {
           console.log("  fechaAtencion:", fechaAtencion);
           console.log("  horaAtencion:", horaAtencion);
         }
-        idPersonalEspecialista = citaAgendada.especialista || null;
         console.log("✅ Estado CITADO: Incluyendo fecha, hora y especialista");
       } else {
-        // Estado NO CITADO: no incluir estos campos (enviados como null)
-        console.log("⏭️ Estado NO es CITADO: Limpiando fecha, hora y especialista");
+        // Estado NO CITADO: fecha/hora son null, pero especialista se mantiene
+        console.log("⏭️ Estado NO es CITADO: Fecha/hora NULL, pero especialista se mantiene si fue seleccionado");
       }
       
       // Preparar body con estado + detalles de cita (null si no es CITADO)
@@ -1306,13 +1309,12 @@ export default function GestionAsegurado() {
                                               }
                                             }));
                                           }}
-                                          disabled={nuevoEstadoSeleccionado !== "CITADO"}
-                                          className={`w-full px-2 py-1.5 border rounded-lg text-xs focus:outline-none focus:ring-2 ${
+                                          className={`w-full px-2 py-1.5 border rounded-lg text-xs focus:outline-none focus:ring-2 cursor-pointer ${
                                             nuevoEstadoSeleccionado === "CITADO"
-                                              ? "border-green-400 bg-green-50 focus:ring-green-500 cursor-pointer"
-                                              : "border-gray-300 bg-gray-100 opacity-50 cursor-not-allowed"
+                                              ? "border-green-400 bg-green-50 focus:ring-green-500"
+                                              : "border-blue-300 bg-blue-50 focus:ring-blue-400"
                                           }`}
-                                          title={nuevoEstadoSeleccionado === "CITADO" ? "" : "Solo requerido para estado CITADO"}
+                                          title="Puedes asignar un médico independientemente del estado"
                                         >
                                           <option value="">Seleccionar médico...</option>
                                           {medicos.map((medico) => (
@@ -1436,18 +1438,19 @@ export default function GestionAsegurado() {
                                 onChange={(e) => {
                                   const nuevoEstado = e.target.value;
                                   setNuevoEstadoSeleccionado(nuevoEstado);
-                                  
-                                  // ✅ Si el estado NO es CITADO, limpiar médico, fecha y hora
+
+                                  // ✅ v1.45.0: Si el estado NO es CITADO, limpiar SOLO la fecha/hora
+                                  // Preservar el especialista porque puede ser asignado independientemente
                                   if (nuevoEstado !== "CITADO") {
                                     setCitasAgendadas(prev => ({
                                       ...prev,
                                       [paciente.id]: {
                                         ...prev[paciente.id],
-                                        especialista: null,
                                         fecha: null
+                                        // ✅ No limpiar especialista: puede mantenerse
                                       }
                                     }));
-                                    console.log(`🧹 Limpiados médico y fecha para paciente ${paciente.id} (estado: ${nuevoEstado})`);
+                                    console.log(`🧹 Limpiada fecha para paciente ${paciente.id} (estado: ${nuevoEstado}), especialista preservado`);
                                   }
                                 }}
                                 className="w-full px-3 py-1.5 border-2 border-orange-400 rounded-lg text-xs font-medium bg-white focus:outline-none focus:ring-2 focus:ring-orange-500"

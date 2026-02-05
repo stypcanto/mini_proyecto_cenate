@@ -177,6 +177,7 @@ export default function DynamicSidebar({ collapsed = false, onToggleCollapse }) 
   // Detección flexible de PERSONAL_107 (puede venir como PERSONAL_107, PERSONAL-107, etc)
   const isPersonal107 = roles.some(r => r.includes("PERSONAL") && r.includes("107"));
   const isEnfermeria = roles.includes("ENFERMERIA");
+  const isMedico = roles.includes("MEDICO");
 
   // ============================================================
   // Obtener modulos permitidos (segun permisos RBAC)
@@ -293,12 +294,31 @@ export default function DynamicSidebar({ collapsed = false, onToggleCollapse }) 
         }
       }
 
+      // Para usuarios MEDICO: expandir "Panel Médico" y "TeleECG"
+      if (isMedico) {
+        const moduloPanelMedico = modulosPermitidos.find(m =>
+          m.nombreModulo?.toLowerCase().includes("panel médico") ||
+          m.nombreModulo?.toLowerCase().includes("panel medico")
+        );
+        if (moduloPanelMedico) {
+          sectionsToOpen[moduloPanelMedico.nombreModulo] = true;
+        }
+
+        const moduloTeleECG = modulosPermitidos.find(m =>
+          m.nombreModulo?.toLowerCase().includes("teleecg") ||
+          m.nombreModulo?.toLowerCase().includes("tele ecg")
+        );
+        if (moduloTeleECG) {
+          sectionsToOpen[moduloTeleECG.nombreModulo] = true;
+        }
+      }
+
       // Si hay secciones para abrir, establecerlas
       if (Object.keys(sectionsToOpen).length > 0) {
         setOpenSections(prev => ({ ...prev, ...sectionsToOpen }));
       }
     }
-  }, [loading, modulosPermitidos, collapsed, isSuperAdmin, isExterno, isCoordinadorRed, isGestorCitas, isCoordinadorGestionCitas, isPersonal107, isEnfermeria]);
+  }, [loading, modulosPermitidos, collapsed, isSuperAdmin, isExterno, isCoordinadorRed, isGestorCitas, isCoordinadorGestionCitas, isPersonal107, isEnfermeria, isMedico]);
 
   // ============================================================
   // Render principal - Menu dinamico desde la BD
