@@ -945,7 +945,7 @@ public class SolicitudBolsaController {
      * @return solicitud creada
      */
     @PostMapping("/crear-adicional")
-    @CheckMBACPermission(ruta = "/citas/gestion-asegurado", accion = "crear")
+    @CheckMBACPermission(pagina = "/citas/gestion-asegurado", accion = "crear")
     public ResponseEntity<SolicitudBolsaDTO> crearSolicitudAdicional(
             @RequestBody @jakarta.validation.Valid CrearSolicitudAdicionalRequest request,
             @AuthenticationPrincipal UserDetails userDetails) {
@@ -966,7 +966,7 @@ public class SolicitudBolsaController {
      * @return lista de solicitudes encontradas
      */
     @GetMapping("/buscar-dni/{dni}")
-    @CheckMBACPermission(ruta = "/citas/gestion-asegurado", accion = "ver")
+    @CheckMBACPermission(pagina = "/citas/gestion-asegurado", accion = "ver")
     public ResponseEntity<List<SolicitudBolsaDTO>> buscarPorDni(@PathVariable String dni) {
         log.info("🔍 GET /api/bolsas/solicitudes/buscar-dni/{}", dni);
         List<SolicitudBolsaDTO> solicitudes = solicitudBolsaService.buscarPorDni(dni);
