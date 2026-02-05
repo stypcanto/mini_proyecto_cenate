@@ -1386,6 +1386,9 @@ export default function GestionAsegurado() {
                         Especialidad
                       </th>
                       <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">
+                        DNI Médico
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">
                         Especialista
                       </th>
                       <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">
@@ -1463,6 +1466,19 @@ export default function GestionAsegurado() {
                         <td className="px-4 py-3 text-slate-600">
                           {paciente.especialidad}
                         </td>
+                        {/* DNI MÉDICO - COLUMNA SEPARADA */}
+                        <td className="px-4 py-3 text-slate-600">
+                          {(() => {
+                            const idServicio = paciente.idServicio;
+                            const medicos = medicosPorServicio[idServicio] || [];
+                            const seleccionadoId = citasAgendadas[paciente.id]?.especialista;
+                            const medicoSeleccionado = medicos.find(m => m.idPers === seleccionadoId);
+
+                            return medicoSeleccionado && medicoSeleccionado.numDocPers
+                              ? medicoSeleccionado.numDocPers
+                              : "-";
+                          })()}
+                        </td>
                         {/* ESPECIALISTA - CARGADO DINÁMICAMENTE - EDITABLE EN MODO EDICIÓN */}
                         <td className="px-4 py-3 text-slate-600">
                           {pacienteEditandoEstado === paciente.id ? (
@@ -1523,16 +1539,7 @@ export default function GestionAsegurado() {
                                         </div>
                                       )}
                                       {medicoSeleccionado && (
-                                        <div className="bg-green-50 border border-green-200 rounded p-1.5 mt-1 text-center space-y-1">
-                                          <div className="flex items-center justify-center gap-2">
-                                            {medicoSeleccionado.dniPers && (
-                                              <span className="text-xs font-mono bg-green-100 text-green-900 px-2 py-0.5 rounded border border-green-300">
-                                                {medicoSeleccionado.dniPers}
-                                              </span>
-                                            )}
-                                            <p className="text-xs font-semibold text-green-900">✓ {medicoSeleccionado.nombre}</p>
-                                          </div>
-                                        </div>
+                                        <p className="text-xs text-slate-600">{medicoSeleccionado.nombre}</p>
                                       )}
                                     </div>
                                   ) : (
@@ -1552,22 +1559,9 @@ export default function GestionAsegurado() {
                               const medicoSeleccionado = medicos.find(m => m.idPers === seleccionadoId);
                               
                               return (
-                                <div className="text-center">
-                                  {medicoSeleccionado ? (
-                                    <div className="bg-blue-50 border border-blue-200 rounded px-2 py-1 space-y-1">
-                                      <div className="flex items-center justify-center gap-2">
-                                        {medicoSeleccionado.dniPers && (
-                                          <span className="text-xs font-mono bg-blue-100 text-blue-900 px-2 py-0.5 rounded border border-blue-300">
-                                            {medicoSeleccionado.dniPers}
-                                          </span>
-                                        )}
-                                        <p className="text-xs font-semibold text-blue-900">✓ {medicoSeleccionado.nombre}</p>
-                                      </div>
-                                    </div>
-                                  ) : (
-                                    <span className="text-xs text-gray-400 italic">No seleccionado</span>
-                                  )}
-                                </div>
+                                <span className="text-xs text-slate-600">
+                                  {medicoSeleccionado ? medicoSeleccionado.nombre : "No seleccionado"}
+                                </span>
                               );
                             })()
                           )}
@@ -1616,9 +1610,7 @@ export default function GestionAsegurado() {
                           )}
                         </td>
                         <td className="px-4 py-3 text-slate-600">
-                          <span className="text-xs bg-blue-50 text-blue-700 px-2 py-1 rounded">
-                            {paciente.descIpress}
-                          </span>
+                          {paciente.descIpress}
                         </td>
                         <td className="px-4 py-3 text-slate-600">
                           {paciente.tipoCita}
