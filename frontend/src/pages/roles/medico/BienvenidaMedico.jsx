@@ -15,7 +15,11 @@ import {
   Stethoscope,
   TrendingUp,
   AlertCircle,
-  Settings
+  Settings,
+  Folder,
+  ChevronDown,
+  BarChart3,
+  FileText
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useAuth } from '../../../context/AuthContext';
@@ -61,15 +65,15 @@ export default function BienvenidaMedico() {
 
   const acciones = [
     {
-      titulo: 'Mis Pacientes',
+      titulo: 'Pacientes',
       descripcion: 'Consulta la lista de pacientes asignados, su estado y condición actual.',
-      icono: Users,
+      icono: Folder,
       color: 'bg-blue-100 text-blue-600',
       ruta: '/roles/medico/pacientes',
       stat: stats.pacientesAsignados
     },
     {
-      titulo: 'Mi Disponibilidad',
+      titulo: 'Disponibilidad',
       descripcion: 'Registra y gestiona tu horario de atención para telemedicina.',
       icono: Calendar,
       color: 'bg-emerald-100 text-emerald-600',
@@ -79,7 +83,7 @@ export default function BienvenidaMedico() {
     {
       titulo: 'Mi Información',
       descripcion: 'Actualiza tu perfil profesional, especialidades y datos de contacto.',
-      icono: Stethoscope,
+      icono: FileText,
       color: 'bg-purple-100 text-purple-600',
       ruta: '/user/security',
       stat: null
@@ -169,44 +173,103 @@ export default function BienvenidaMedico() {
         ))}
       </div>
 
-      {/* Acciones Rápidas */}
-      <div className="bg-white rounded-2xl p-6 shadow-lg">
-        <div className="flex items-center gap-3 mb-6">
-          <div className="p-2 rounded-lg bg-emerald-100">
-            <Heart className="w-6 h-6 text-emerald-600" />
+      {/* Panel Médico - Desglosable Expandido */}
+      <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
+        <div className="bg-gradient-to-r from-blue-500 to-blue-600 px-6 py-4 flex items-center justify-between cursor-pointer hover:shadow-lg transition">
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-lg bg-white/20">
+              <Stethoscope className="w-5 h-5 text-white" />
+            </div>
+            <h2 className="text-lg font-bold text-white">Panel Médico</h2>
           </div>
-          <h2 className="text-2xl font-bold text-gray-900">Acciones Rápidas</h2>
+          <ChevronDown className="w-5 h-5 text-white" />
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="divide-y divide-gray-200">
           {acciones.map((accion, idx) => (
             <button
               key={idx}
               onClick={() => navigate(accion.ruta)}
-              className="p-5 border border-gray-200 rounded-2xl hover:shadow-lg hover:border-emerald-400 transition-all group text-left"
+              className="w-full p-4 flex items-center justify-between hover:bg-gray-50 transition-colors group text-left"
             >
-              <div className="flex items-start justify-between mb-3">
-                <div className={`w-12 h-12 rounded-lg ${accion.color} flex items-center justify-center group-hover:scale-110 transition-transform`}>
-                  <accion.icono className="w-6 h-6" />
+              <div className="flex items-center gap-4 flex-1">
+                <div className={`p-2 rounded-lg ${accion.color}`}>
+                  <accion.icono className="w-5 h-5" />
                 </div>
+                <div>
+                  <h3 className="font-semibold text-gray-900 group-hover:text-blue-600 transition">
+                    {accion.titulo}
+                  </h3>
+                  <p className="text-xs text-gray-600 mt-0.5">
+                    {accion.descripcion}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
                 {accion.stat !== null && (
                   <div className="bg-blue-600 text-white text-xs font-bold px-3 py-1 rounded-full">
                     {accion.stat}
                   </div>
                 )}
-              </div>
-              <h3 className="font-bold text-gray-900 mb-1 group-hover:text-emerald-600 transition">
-                {accion.titulo}
-              </h3>
-              <p className="text-sm text-gray-600 mb-3">
-                {accion.descripcion}
-              </p>
-              <div className="flex items-center gap-2 text-emerald-600 font-semibold text-sm">
-                <span>Acceder</span>
-                <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                <ChevronRight className="w-4 h-4 text-gray-400 group-hover:text-blue-600 transition flex-shrink-0" />
               </div>
             </button>
           ))}
+        </div>
+      </div>
+
+      {/* TeleECG - Desglosable Expandido */}
+      <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
+        <div className="bg-gradient-to-r from-purple-500 to-purple-600 px-6 py-4 flex items-center justify-between cursor-pointer hover:shadow-lg transition">
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-lg bg-white/20">
+              <BarChart3 className="w-5 h-5 text-white" />
+            </div>
+            <h2 className="text-lg font-bold text-white">TeleECG</h2>
+          </div>
+          <ChevronDown className="w-5 h-5 text-white" />
+        </div>
+
+        <div className="divide-y divide-gray-200">
+          <button
+            onClick={() => navigate('/teleecg/recibidas')}
+            className="w-full p-4 flex items-center justify-between hover:bg-gray-50 transition-colors group text-left"
+          >
+            <div className="flex items-center gap-4 flex-1">
+              <div className="p-2 rounded-lg bg-purple-100">
+                <Folder className="w-5 h-5 text-purple-600" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-gray-900 group-hover:text-purple-600 transition">
+                  TeleECG Recibidas
+                </h3>
+                <p className="text-xs text-gray-600 mt-0.5">
+                  Visualiza y revisa las telemedicinas recibidas
+                </p>
+              </div>
+            </div>
+            <ChevronRight className="w-4 h-4 text-gray-400 group-hover:text-purple-600 transition flex-shrink-0" />
+          </button>
+
+          <button
+            onClick={() => navigate('/teleecg/estadisticas')}
+            className="w-full p-4 flex items-center justify-between hover:bg-gray-50 transition-colors group text-left"
+          >
+            <div className="flex items-center gap-4 flex-1">
+              <div className="p-2 rounded-lg bg-purple-100">
+                <BarChart3 className="w-5 h-5 text-purple-600" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-gray-900 group-hover:text-purple-600 transition">
+                  Estadísticas
+                </h3>
+                <p className="text-xs text-gray-600 mt-0.5">
+                  Reportes y análisis de tu actividad
+                </p>
+              </div>
+            </div>
+            <ChevronRight className="w-4 h-4 text-gray-400 group-hover:text-purple-600 transition flex-shrink-0" />
+          </button>
         </div>
       </div>
 
