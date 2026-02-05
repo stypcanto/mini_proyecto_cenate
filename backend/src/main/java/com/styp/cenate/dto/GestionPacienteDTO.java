@@ -49,11 +49,13 @@ public class GestionPacienteDTO {
 
     private Boolean seleccionadoTelemedicina;
 
-    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
+    // Permitir que Jackson serialize en ISO 8601 completo con offset
     private OffsetDateTime fechaCreacion;
 
-    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
     private OffsetDateTime fechaActualizacion;
+
+    // Fecha de asignación al médico (desde dim_solicitud_bolsa)
+    private OffsetDateTime fechaAsignacion;
 
     /**
      * Calcula la edad a partir de la fecha de nacimiento

@@ -274,7 +274,17 @@ public class GestionPacienteServiceImpl implements IGestionPacienteService {
                 return List.of();
             }
 
-            // Buscar la gestión de esos pacientes
+            // ✅ v1.45.0: Retornar directamente desde SolicitudBolsa (no buscar en GestionPaciente que puede estar vacía)
+            // Si vinieron del primer query (SolicitudBolsa), retornar esos registros como DTOs
+            if (!solicitudesBolsa.isEmpty()) {
+                log.info("✅ Retornando pacientes desde solicitudesBolsa (dim_solicitud_bolsa)");
+                return solicitudesBolsa.stream()
+                    .map(this::bolsaToGestionDTO)
+                    .collect(Collectors.toList());
+            }
+
+            // Si vinieron del fallback (SolicitudCita), buscar en GestionPaciente
+            log.info("Buscando pacientes en gestion_paciente (fallback desde SolicitudCita)");
             List<GestionPaciente> gestiones = dnis.stream()
                 .flatMap(dni -> repository.findByNumDoc(dni).stream())
                 .collect(Collectors.toList());
@@ -358,5 +368,28 @@ public class GestionPacienteServiceImpl implements IGestionPacienteService {
     private Integer calcularEdad(LocalDate fechaNacimiento) {
         if (fechaNacimiento == null) return null;
         return Period.between(fechaNacimiento, LocalDate.now()).getYears();
+    }
+
+    /**
+     * ✅ v1.45.0: Convierte SolicitudBolsa a GestionPacienteDTO
+     * Usado cuando los pacientes vienen de dim_solicitud_bolsa (asignaciones médicas)
+     * en lugar de la tabla gestion_paciente
+     */
+    private GestionPacienteDTO bolsaToGestionDTO(SolicitudBolsa bolsa) {
+        if (bolsa == null) return null;
+
+        // ✅ v1.45.2: Obtener nombre de IPRESS en lugar de código
+        String ipressNombre = obtenerNombreIpress(bolsa.getCodigoIpressAdscripcion());
+
+        return GestionPacienteDTO.builder()
+            .numDoc(bolsa.getPacienteDni())
+            .apellidosNombres(bolsa.getPacienteNombre())
+            .sexo(bolsa.getPacienteSexo())
+            .edad(calcularEdad(bolsa.getFechaNacimiento()))
+            .telefono(bolsa.getPacienteTelefono())
+            .ipress(ipressNombre)  // ✅ Mostrar nombre de IPRESS, no código
+            .condicion("Pendiente")  // Asignación desde bolsa no tiene condición específica
+            .fechaAsignacion(bolsa.getFechaAsignacion())  // ✅ v1.45.1: Incluir fecha de asignación
+            .build();
     }
 }
