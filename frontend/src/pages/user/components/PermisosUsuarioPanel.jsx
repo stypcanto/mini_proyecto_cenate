@@ -64,6 +64,7 @@ const PermisosUsuarioPanel = forwardRef(({
 
   // UI State
   const [mostrarRoles, setMostrarRoles] = useState(false);
+  const [permisosPredeterminadosCargados, setPermisosPredeterminadosCargados] = useState(false);
 
   // Obtener headers con token
   const getHeaders = useCallback(() => {
@@ -335,20 +336,18 @@ const PermisosUsuarioPanel = forwardRef(({
     }
   }, [userRoles, rolesAnteriores, cargarPermisosPredeterminadosPorRoles]);
 
-  // Cargar permisos predeterminados en la carga inicial si el usuario no tiene permisos
+  // Cargar permisos predeterminados en la carga inicial
   useEffect(() => {
-    // Solo ejecutar después de que se cargaron los permisos del usuario
-    if (!loading && userRoles.length > 0) {
-      const permisosUsuarioVacios = Object.keys(permisosUsuario).length === 0;
-      const permisosOriginalesVacios = Object.keys(permisosOriginales).length === 0;
-
-      // Si no hay permisos del usuario pero tiene roles, cargar los predeterminados
-      if (permisosUsuarioVacios && permisosOriginalesVacios) {
-        console.log('📋 Usuario sin permisos, cargando predeterminados para roles:', userRoles);
-        cargarPermisosPredeterminadosPorRoles(userRoles);
-      }
+    // Solo ejecutar después de que se cargaron los permisos del usuario y módulos
+    if (!loading && userRoles.length > 0 && Object.keys(modulos).length > 0 && !permisosPredeterminadosCargados) {
+      // Cargar los permisos predeterminados cuando hay roles
+      // Esto asegura que se muestren todas las páginas del rol, incluso si el usuario
+      // ya tiene algunos permisos personalizados guardados
+      console.log('📋 Cargando permisos predeterminados para roles:', userRoles);
+      cargarPermisosPredeterminadosPorRoles(userRoles);
+      setPermisosPredeterminadosCargados(true);
     }
-  }, [loading, userRoles, permisosUsuario, permisosOriginales, cargarPermisosPredeterminadosPorRoles]);
+  }, [loading, userRoles, modulos, permisosPredeterminadosCargados, cargarPermisosPredeterminadosPorRoles]);
 
   // Toggle módulo expandido
   const toggleModulo = (idModulo) => {
