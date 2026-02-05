@@ -133,6 +133,24 @@ public class EmailAuditLogService {
     }
 
     /**
+     * Obtener todos los correos (ordenados por fecha descendente)
+     */
+    @Transactional(readOnly = true)
+    public List<EmailAuditLog> obtenerTodos(int limite) {
+        Pageable pageable = PageRequest.of(0, limite);
+        return emailAuditLogRepository.findAllByOrderByFechaEnvioDesc(pageable);
+    }
+
+    /**
+     * Obtener correos enviados exitosamente
+     */
+    @Transactional(readOnly = true)
+    public List<EmailAuditLog> obtenerEnviados(int limite) {
+        Pageable pageable = PageRequest.of(0, limite);
+        return emailAuditLogRepository.findEnviados(pageable);
+    }
+
+    /**
      * Obtener estadísticas de correos en un período
      */
     @Transactional(readOnly = true)

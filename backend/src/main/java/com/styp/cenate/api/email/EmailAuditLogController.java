@@ -30,6 +30,60 @@ public class EmailAuditLogController {
     private final EmailAuditLogService emailAuditLogService;
 
     /**
+     * Obtener todos los registros de correos (más recientes primero)
+     * GET /api/email-audit/todos?limite=100
+     */
+    @GetMapping("/todos")
+    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN')")
+    public ResponseEntity<?> obtenerTodos(
+        @RequestParam(defaultValue = "100") int limite) {
+        try {
+            log.info("📋 Consultando todos los correos (límite: {})", limite);
+            List<EmailAuditLog> todos = emailAuditLogService.obtenerTodos(limite);
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("total", todos.size());
+            response.put("datos", todos);
+
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            log.error("❌ Error obteniendo correos: {}", e.getMessage());
+            return ResponseEntity.badRequest().body(Map.of(
+                "success", false,
+                "error", e.getMessage()
+            ));
+        }
+    }
+
+    /**
+     * Obtener registros de correos enviados exitosamente
+     * GET /api/email-audit/enviados?limite=50
+     */
+    @GetMapping("/enviados")
+    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN')")
+    public ResponseEntity<?> obtenerEnviados(
+        @RequestParam(defaultValue = "50") int limite) {
+        try {
+            log.info("📋 Consultando correos enviados (límite: {})", limite);
+            List<EmailAuditLog> enviados = emailAuditLogService.obtenerEnviados(limite);
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("total", enviados.size());
+            response.put("datos", enviados);
+
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            log.error("❌ Error obteniendo correos enviados: {}", e.getMessage());
+            return ResponseEntity.badRequest().body(Map.of(
+                "success", false,
+                "error", e.getMessage()
+            ));
+        }
+    }
+
+    /**
      * Obtener registros fallidos de correos
      * GET /api/email-audit/fallidos?limite=50
      */

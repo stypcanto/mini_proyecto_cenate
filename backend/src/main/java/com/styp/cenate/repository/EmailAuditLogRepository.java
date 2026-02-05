@@ -91,4 +91,16 @@ public interface EmailAuditLogRepository extends JpaRepository<EmailAuditLog, Lo
     @Query("SELECT e FROM EmailAuditLog e WHERE e.estado = 'FALLIDO' " +
            "AND e.errorMensaje LIKE '%Connection%' ORDER BY e.fechaEnvio DESC")
     List<EmailAuditLog> findConErroresConexion(Pageable pageable);
+
+    /**
+     * Obtener todos los correos ordenados por fecha (más reciente primero)
+     */
+    @Query("SELECT e FROM EmailAuditLog e ORDER BY e.fechaEnvio DESC")
+    List<EmailAuditLog> findAllByOrderByFechaEnvioDesc(Pageable pageable);
+
+    /**
+     * Obtener correos enviados exitosamente
+     */
+    @Query("SELECT e FROM EmailAuditLog e WHERE e.estado = 'ENVIADO' ORDER BY e.fechaEnvio DESC")
+    List<EmailAuditLog> findEnviados(Pageable pageable);
 }

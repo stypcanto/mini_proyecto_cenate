@@ -71,6 +71,15 @@ services:
       - ALLOWED_SENDER_DOMAINS=essalud.gob.pe
       - POSTFIX_myhostname=cenate.essalud.gob.pe
       - TZ=America/Lima
+      # 🔧 v1.45.4 - Deshabilitar verificación DNS y aceptar correos de red interna
+      - POSTFIX_smtp_dns_support_level=disabled
+      - POSTFIX_disable_dns_lookups=yes
+      - POSTFIX_smtp_host_lookup=native
+      - POSTFIX_smtpd_recipient_restrictions=permit_mynetworks,defer_unauth_destination
+    extra_hosts:
+      # 🔧 v1.45.4 - Mapear dominios EsSalud a IP del servidor de correo
+      - "essalud.gob.pe:172.20.0.227"
+      - "wiracocha.essalud:172.20.0.227"
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "postfix", "status"]

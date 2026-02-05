@@ -153,7 +153,9 @@ public class PasswordTokenService {
     }
 
     /**
-     * Crea un token de cambio de contraseña y envía email con nombre completo explícito
+     * Crea un token de cambio de contraseña y envía email con nombre completo explícito.
+     * 🔧 v1.45.4 - Si ya existe un token válido reciente (menos de 5 min), lo reutiliza
+     * para evitar que solicitudes múltiples generen tokens diferentes.
      */
     @Transactional
     public boolean crearTokenYEnviarEmailDirecto(Usuario usuario, String email, String nombreCompleto, String tipoAccion) {
@@ -162,30 +164,37 @@ public class PasswordTokenService {
             return false;
         }
 
-        // Invalidar tokens anteriores del mismo usuario
-        tokenRepository.invalidarTokensAnteriores(usuario.getIdUser());
+        String tokenValue;
+        LocalDateTime expiracion;
 
-        // Generar nuevo token
-        String tokenValue = generarToken();
-        LocalDateTime expiracion = LocalDateTime.now().plusHours(TOKEN_EXPIRATION_HOURS);
+        // 🔧 v1.45.4 - Buscar si existe un token válido reciente para reutilizar
+        var tokenExistente = tokenRepository.findTokenValidoMasReciente(
+            usuario.getIdUser(), LocalDateTime.now());
 
-        // Crear y guardar el token en base de datos
-        PasswordResetToken token = PasswordResetToken.builder()
-            .token(tokenValue)
-            .idUsuario(usuario.getIdUser())
-            .username(usuario.getNameUser())
-            .email(email)
-            .fechaExpiracion(expiracion)
-            .tipoAccion(tipoAccion)
-            .usado(false)
-            .build();
+        if (tokenExistente.isPresent()) {
+            PasswordResetToken existente = tokenExistente.get();
+            // Si el token fue creado hace menos de 5 minutos, reutilizarlo
+            LocalDateTime limiteReutilizacion = LocalDateTime.now().minusMinutes(5);
+            if (existente.getCreatedAt() != null && existente.getCreatedAt().isAfter(limiteReutilizacion)) {
+                tokenValue = existente.getToken();
+                expiracion = existente.getFechaExpiracion();
+                log.info("♻️ Reutilizando token existente para usuario: {} (creado hace menos de 5 min)",
+                    usuario.getNameUser());
+            } else {
+                // Token existe pero es antiguo, invalidar y generar nuevo
+                tokenRepository.invalidarTokensAnteriores(usuario.getIdUser());
+                tokenValue = generarToken();
+                expiracion = LocalDateTime.now().plusHours(TOKEN_EXPIRATION_HOURS);
+                guardarNuevoToken(usuario, email, tokenValue, expiracion, tipoAccion);
+            }
+        } else {
+            // No hay token válido, generar uno nuevo
+            tokenValue = generarToken();
+            expiracion = LocalDateTime.now().plusHours(TOKEN_EXPIRATION_HOURS);
+            guardarNuevoToken(usuario, email, tokenValue, expiracion, tipoAccion);
+        }
 
-        // ⚠️ IMPORTANTE: Usar saveAndFlush para persistir inmediatamente y evitar race condition
-        // Si el usuario hace clic muy rápido en el enlace del correo, el token debe existir en BD
-        tokenRepository.saveAndFlush(token);
-        log.info("Token guardado y persistido en BD para usuario: {}", usuario.getNameUser());
-
-        // Enviar email con enlace
+        // Enviar email con enlace (siempre envía, sea token nuevo o reutilizado)
         String enlace = frontendUrl + "/cambiar-contrasena?token=" + tokenValue;
         log.info("Enviando correo de {} a {} con enlace: {}", tipoAccion, email, enlace);
 
@@ -198,9 +207,29 @@ public class PasswordTokenService {
             tipoAccion
         );
 
-        log.info("Token de {} creado y enviado a {} para usuario {}",
+        log.info("Token de {} enviado a {} para usuario {}",
             tipoAccion, email, usuario.getNameUser());
         return true;
+    }
+
+    /**
+     * Guarda un nuevo token en la base de datos
+     */
+    private void guardarNuevoToken(Usuario usuario, String email, String tokenValue,
+                                    LocalDateTime expiracion, String tipoAccion) {
+        PasswordResetToken token = PasswordResetToken.builder()
+            .token(tokenValue)
+            .idUsuario(usuario.getIdUser())
+            .username(usuario.getNameUser())
+            .email(email)
+            .fechaExpiracion(expiracion)
+            .tipoAccion(tipoAccion)
+            .usado(false)
+            .build();
+
+        // ⚠️ IMPORTANTE: Usar saveAndFlush para persistir inmediatamente
+        tokenRepository.saveAndFlush(token);
+        log.info("Token nuevo guardado en BD para usuario: {}", usuario.getNameUser());
     }
 
     /**
