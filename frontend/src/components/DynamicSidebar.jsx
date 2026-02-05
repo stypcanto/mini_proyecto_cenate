@@ -621,7 +621,7 @@ function DynamicModuleSection({ modulo, colorConfig, location, toggleSection, op
   const { nombreModulo, icono, paginas } = modulo;
 
   // Icono especial para "Bolsas de Pacientes"
-  let ModuleIcon = getIconComponent(icono);
+  let ModuleIcon = getPageIcon(nombreModulo, nombreModulo) || getIconComponent(icono) || Folder;
   if (nombreModulo === 'Bolsas de Pacientes') {
     ModuleIcon = Package;
   }
@@ -737,7 +737,7 @@ function DynamicModuleSection({ modulo, colorConfig, location, toggleSection, op
             } else {
               // Renderizar como página normal
               const isActive = location.pathname === pagina.ruta;
-              const PageIcon = (pagina.icono ? getIconComponent(pagina.icono) : null) || getPageIcon(nombreModulo, pagina.nombre) || Folder;
+              const PageIcon = getPageIcon(nombreModulo, pagina.nombre) || (pagina.icono ? getIconComponent(pagina.icono) : null) || Folder;
               return (
                 <NavLink
                   key={pagina.id_pagina || idx}
