@@ -774,7 +774,7 @@ export default function GestionAsegurado() {
             pacienteSexo: asegurado.sexo,
             pacienteTelefono: asegurado.telCelular || asegurado.telFijo,
             pacienteTelefonoAlterno: asegurado.telFijo || asegurado.telCelular,
-            descIpress: asegurado.nombreIpress,
+            descIpress: asegurado.casAdscripcion || asegurado.nombreIpress, // Usar código, fallback a nombre
             tipoCita: "TELECONSULTA",
             origen: "Importación Manual",
             codEstadoCita: "01",
