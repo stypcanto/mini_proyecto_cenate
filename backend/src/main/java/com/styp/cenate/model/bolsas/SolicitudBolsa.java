@@ -129,7 +129,7 @@ public class SolicitudBolsa {
     private Long idServicio;
 
     // 🏥 IPRESS Y RED
-    @Column(name = "codigo_adscripcion", length = 20, nullable = false)
+    @Column(name = "codigo_adscripcion", length = 20, nullable = true) // ✅ v1.46.4: Permitir NULL si no hay IPRESS
     private String codigoAdscripcion;
 
     @Column(name = "id_ipress")
