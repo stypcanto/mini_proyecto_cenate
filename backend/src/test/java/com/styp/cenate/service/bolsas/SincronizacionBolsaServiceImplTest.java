@@ -34,6 +34,8 @@ import com.styp.cenate.model.chatbot.SolicitudCita;
 import com.styp.cenate.repository.UsuarioRepository;
 import com.styp.cenate.repository.bolsas.SolicitudBolsaRepository;
 import com.styp.cenate.service.auditlog.AuditLogService;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 
 /**
  * Tests unitarios para sincronización automática de estado ATENDIDO
@@ -62,7 +64,8 @@ class SincronizacionBolsaServiceImplTest {
     @Mock
     private AuditLogService auditLogService;
 
-    @InjectMocks
+    private MeterRegistry meterRegistry;
+
     private SincronizacionBolsaServiceImpl service;
 
     private SolicitudCita solicitudCitaMock;
@@ -73,6 +76,17 @@ class SincronizacionBolsaServiceImplTest {
 
     @BeforeEach
     void setUp() {
+        // Setup MeterRegistry (uso SimpleMeterRegistry para testing)
+        meterRegistry = new SimpleMeterRegistry();
+
+        // Setup service con todas las dependencias
+        service = new SincronizacionBolsaServiceImpl(
+            solicitudBolsaRepository,
+            usuarioRepository,
+            auditLogService,
+            meterRegistry
+        );
+
         // Setup SolicitudCita
         solicitudCitaMock = new SolicitudCita();
         solicitudCitaMock.setIdSolicitud(100L);
