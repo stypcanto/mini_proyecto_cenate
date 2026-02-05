@@ -617,9 +617,6 @@ export default function DiagnosticoIpress() {
                   />
                 </th>
                 <th className="px-4 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">
-                  ID
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">
                   IPRESS
                 </th>
                 <th className="px-4 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">
@@ -642,7 +639,7 @@ export default function DiagnosticoIpress() {
             <tbody>
               {datosPaginados.length === 0 ? (
                 <tr>
-                  <td colSpan="8" className="px-6 py-12 text-center">
+                  <td colSpan="7" className="px-6 py-12 text-center">
                     <div className="flex flex-col items-center gap-3">
                       <XCircle className="w-10 h-10 text-gray-300" />
                       <p className="text-gray-400 text-sm">No se encontraron diagnosticos</p>
@@ -662,9 +659,6 @@ export default function DiagnosticoIpress() {
                         onChange={() => toggleSeleccion(diagnostico.idFormulario)}
                         className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
                       />
-                    </td>
-                    <td className="px-4 py-3">
-                      <span className="text-sm font-medium text-gray-700">#{diagnostico.idFormulario}</span>
                     </td>
                     <td className="px-4 py-3">
                       <div>
