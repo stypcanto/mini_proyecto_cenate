@@ -394,6 +394,57 @@ public class SolicitudBolsaController {
     }
 
     /**
+     * Obtener médicos por especialidad (v1.46.8)
+     * GET /api/bolsas/solicitudes/medicos-por-especialidad?especialidad=CARDIOLOGIA
+     *
+     * @param especialidad nombre de la especialidad (ej: "CARDIOLOGIA", "NUTRICION")
+     * @return lista de médicos activos para esa especialidad
+     */
+    @GetMapping("/medicos-por-especialidad")
+    @CheckMBACPermission(pagina = "/citas/gestion-asegurado", accion = "ver")
+    public ResponseEntity<?> obtenerMedicosPorEspecialidad(@RequestParam String especialidad) {
+        log.info("📥 GET /api/bolsas/solicitudes/medicos-por-especialidad?especialidad={}", especialidad);
+
+        try {
+            // 1. Buscar el ID de la especialidad por nombre (case-insensitive)
+            Optional<Especialidad> especialidadOpt = especialidadRepository
+                    .findByDescServicioIgnoreCase(especialidad);
+
+            if (especialidadOpt.isEmpty()) {
+                log.warn("⚠️ Especialidad no encontrada: {}", especialidad);
+                return ResponseEntity.ok()
+                        .body(Map.of("status", "success", "data", Collections.emptyList()));
+            }
+
+            Long idServicio = especialidadOpt.get().getIdServicio();
+
+            // 2. Obtener médicos usando el servicio existente
+            List<DetalleMedicoDTO> medicos = detalleMedicoService
+                    .obtenerMedicosPorServicio(idServicio);
+
+            // 3. Formatear para el frontend (solo campos necesarios)
+            List<Map<String, Object>> medicosList = new ArrayList<>();
+            for (DetalleMedicoDTO m : medicos) {
+                Map<String, Object> medicoMap = new HashMap<>();
+                medicoMap.put("idPers", m.getIdPers());
+                medicoMap.put("nombre", m.getNombre());
+                medicoMap.put("documento", m.getNumDocPers());
+                medicosList.add(medicoMap);
+            }
+
+            log.info("✅ Se encontraron {} médicos para {}", medicosList.size(), especialidad);
+
+            return ResponseEntity.ok()
+                    .body(Map.of("status", "success", "data", medicosList));
+
+        } catch (Exception e) {
+            log.error("❌ Error al obtener médicos para especialidad {}: {}", especialidad, e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("status", "error", "message", "Error al obtener médicos"));
+        }
+    }
+
+    /**
      * Obtiene una solicitud por ID
      * GET /api/bolsas/solicitudes/{id}
      *
@@ -982,56 +1033,6 @@ public class SolicitudBolsaController {
         return ResponseEntity.ok(solicitudes);
     }
 
-    /**
-     * Obtener médicos por especialidad (v1.46.8)
-     * GET /api/bolsas/solicitudes/medicos-por-especialidad?especialidad=CARDIOLOGIA
-     *
-     * @param especialidad nombre de la especialidad (ej: "CARDIOLOGIA", "NUTRICION")
-     * @return lista de médicos activos para esa especialidad
-     */
-    @GetMapping("/medicos-por-especialidad")
-    @CheckMBACPermission(pagina = "/citas/gestion-asegurado", accion = "ver")
-    public ResponseEntity<?> obtenerMedicosPorEspecialidad(@RequestParam String especialidad) {
-        log.info("📥 GET /api/bolsas/solicitudes/medicos-por-especialidad?especialidad={}", especialidad);
-
-        try {
-            // 1. Buscar el ID de la especialidad por nombre (case-insensitive)
-            Optional<Especialidad> especialidadOpt = especialidadRepository
-                    .findByDescServicioIgnoreCase(especialidad);
-
-            if (especialidadOpt.isEmpty()) {
-                log.warn("⚠️ Especialidad no encontrada: {}", especialidad);
-                return ResponseEntity.ok()
-                        .body(Map.of("status", "success", "data", Collections.emptyList()));
-            }
-
-            Long idServicio = especialidadOpt.get().getIdServicio();
-
-            // 2. Obtener médicos usando el servicio existente
-            List<DetalleMedicoDTO> medicos = detalleMedicoService
-                    .obtenerMedicosPorServicio(idServicio);
-
-            // 3. Formatear para el frontend (solo campos necesarios)
-            List<Map<String, Object>> medicosList = new ArrayList<>();
-            for (DetalleMedicoDTO m : medicos) {
-                Map<String, Object> medicoMap = new HashMap<>();
-                medicoMap.put("idPers", m.getIdPers());
-                medicoMap.put("nombre", m.getNombre());
-                medicoMap.put("documento", m.getNumDocPers());
-                medicosList.add(medicoMap);
-            }
-
-            log.info("✅ Se encontraron {} médicos para {}", medicosList.size(), especialidad);
-
-            return ResponseEntity.ok()
-                    .body(Map.of("status", "success", "data", medicosList));
-
-        } catch (Exception e) {
-            log.error("❌ Error al obtener médicos para especialidad {}: {}", especialidad, e.getMessage(), e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("status", "error", "message", "Error al obtener médicos"));
-        }
-    }
 }
 
 
