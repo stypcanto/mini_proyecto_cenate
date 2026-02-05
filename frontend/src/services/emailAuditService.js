@@ -10,6 +10,32 @@ const ENDPOINT = '/email-audit';
 
 const emailAuditService = {
   /**
+   * Obtener todos los correos
+   */
+  obtenerTodos: async (limite = 100) => {
+    try {
+      const response = await apiClient.get(`${ENDPOINT}/todos?limite=${limite}`, true);
+      return response;
+    } catch (error) {
+      console.error('Error obteniendo correos:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Obtener correos enviados exitosamente
+   */
+  obtenerEnviados: async (limite = 50) => {
+    try {
+      const response = await apiClient.get(`${ENDPOINT}/enviados?limite=${limite}`, true);
+      return response;
+    } catch (error) {
+      console.error('Error obteniendo correos enviados:', error);
+      throw error;
+    }
+  },
+
+  /**
    * Obtener correos fallidos
    */
   obtenerCorreosFallidos: async (limite = 50) => {

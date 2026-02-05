@@ -1,296 +1,417 @@
 /**
- * 📧 EmailAuditLogs.jsx - Auditoría de Correos
+ * 📧 EmailAuditLogs.jsx - Auditoría de Correos (v1.45.4)
  *
- * Panel para visualizar el historial de envíos de correos
- * Muestra: estado, destinatario, tipo, errores, servidor SMTP, etc.
+ * Panel profesional para visualizar el historial de envíos de correos
+ * Incluye: tabla, filtros, estadísticas en tiempo real, y tabs mejorados
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Mail,
-  AlertCircle,
   CheckCircle2,
   XCircle,
   Clock,
   RefreshCw,
-  Download,
-  Filter,
   Search,
   Server,
   Zap,
-  AlertTriangle
+  AlertTriangle,
+  Send,
+  Inbox,
+  BarChart3,
+  ChevronDown,
+  ExternalLink,
+  User,
+  Calendar
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import emailAuditService from '../../services/emailAuditService';
 
+// Componente de Badge para estados
+const StatusBadge = ({ estado }) => {
+  const config = {
+    ENVIADO: { bg: 'bg-emerald-100', text: 'text-emerald-700', icon: CheckCircle2, label: 'Enviado' },
+    FALLIDO: { bg: 'bg-red-100', text: 'text-red-700', icon: XCircle, label: 'Fallido' },
+    PENDIENTE: { bg: 'bg-amber-100', text: 'text-amber-700', icon: Clock, label: 'Pendiente' },
+    EN_COLA: { bg: 'bg-blue-100', text: 'text-blue-700', icon: Zap, label: 'En Cola' }
+  };
+
+  const { bg, text, icon: Icon, label } = config[estado] || config.PENDIENTE;
+
+  return (
+    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${bg} ${text}`}>
+      <Icon className="w-3.5 h-3.5" />
+      {label}
+    </span>
+  );
+};
+
+// Componente de Badge para tipos
+const TypeBadge = ({ tipo }) => {
+  const config = {
+    BIENVENIDO: { bg: 'bg-indigo-50', text: 'text-indigo-700', border: 'border-indigo-200' },
+    RECUPERACION: { bg: 'bg-orange-50', text: 'text-orange-700', border: 'border-orange-200' },
+    RESET: { bg: 'bg-rose-50', text: 'text-rose-700', border: 'border-rose-200' },
+    APROBACION: { bg: 'bg-green-50', text: 'text-green-700', border: 'border-green-200' },
+    RECHAZO: { bg: 'bg-red-50', text: 'text-red-700', border: 'border-red-200' },
+    PRUEBA: { bg: 'bg-slate-50', text: 'text-slate-700', border: 'border-slate-200' },
+    GENERAL: { bg: 'bg-purple-50', text: 'text-purple-700', border: 'border-purple-200' }
+  };
+
+  const { bg, text, border } = config[tipo] || config.GENERAL;
+
+  return (
+    <span className={`inline-flex px-2 py-0.5 rounded text-xs font-medium border ${bg} ${text} ${border}`}>
+      {tipo}
+    </span>
+  );
+};
+
+// Componente de Stat Card
+const StatCard = ({ icon: Icon, label, value, color, subtext }) => (
+  <div className={`bg-white rounded-xl border border-gray-200 p-5 shadow-sm hover:shadow-md transition-shadow`}>
+    <div className="flex items-start justify-between">
+      <div>
+        <p className="text-sm font-medium text-gray-500">{label}</p>
+        <p className={`text-3xl font-bold mt-1 ${color}`}>{value}</p>
+        {subtext && <p className="text-xs text-gray-400 mt-1">{subtext}</p>}
+      </div>
+      <div className={`p-3 rounded-lg ${color.replace('text-', 'bg-').replace('700', '100').replace('600', '100')}`}>
+        <Icon className={`w-6 h-6 ${color}`} />
+      </div>
+    </div>
+  </div>
+);
+
 export default function EmailAuditLogs() {
   const [logs, setLogs] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [filtroEstado, setFiltroEstado] = useState('');
-  const [filtroTipo, setFiltroTipo] = useState('');
+  const [refreshing, setRefreshing] = useState(false);
   const [busqueda, setBusqueda] = useState('');
   const [stats, setStats] = useState(null);
-  const [tab, setTab] = useState('fallidos'); // 'fallidos', 'errores', 'resumen'
+  const [tab, setTab] = useState('todos');
+  const [expandedRow, setExpandedRow] = useState(null);
 
-  useEffect(() => {
-    cargarDatos();
-  }, [tab]);
+  const tabs = [
+    { id: 'todos', label: 'Todos', icon: Inbox, count: null },
+    { id: 'enviados', label: 'Enviados', icon: CheckCircle2, count: null },
+    { id: 'fallidos', label: 'Fallidos', icon: XCircle, count: null },
+    { id: 'errores', label: 'Errores Conexión', icon: AlertTriangle, count: null }
+  ];
 
-  const cargarDatos = async () => {
+  const cargarDatos = useCallback(async (showToast = true) => {
     try {
-      setLoading(true);
+      setRefreshing(true);
 
-      if (tab === 'resumen') {
-        const resumenData = await emailAuditService.obtenerResumen();
-        setStats(resumenData.estadisticas);
-      } else if (tab === 'fallidos') {
-        const fallidos = await emailAuditService.obtenerCorreosFallidos(100);
-        setLogs(fallidos.datos || []);
-      } else if (tab === 'errores') {
-        const errores = await emailAuditService.obtenerErroresConexion(100);
-        setLogs(errores.datos || []);
+      // Cargar estadísticas siempre
+      const resumenData = await emailAuditService.obtenerResumen();
+      setStats(resumenData.estadisticas);
+
+      // Cargar datos según tab
+      let data;
+      switch (tab) {
+        case 'todos':
+          data = await emailAuditService.obtenerTodos(100);
+          break;
+        case 'enviados':
+          data = await emailAuditService.obtenerEnviados(100);
+          break;
+        case 'fallidos':
+          data = await emailAuditService.obtenerCorreosFallidos(100);
+          break;
+        case 'errores':
+          data = await emailAuditService.obtenerErroresConexion(100);
+          break;
+        default:
+          data = await emailAuditService.obtenerTodos(100);
       }
 
-      toast.success('Datos cargados correctamente');
+      setLogs(data.datos || []);
+      if (showToast) toast.success('Datos actualizados');
     } catch (error) {
-      toast.error('Error al cargar los datos: ' + error.message);
+      toast.error('Error al cargar: ' + error.message);
       console.error('Error:', error);
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
-  };
+  }, [tab]);
 
-  const getStatusColor = (estado) => {
-    switch (estado) {
-      case 'ENVIADO':
-        return 'bg-green-50 border-green-200 text-green-700';
-      case 'FALLIDO':
-        return 'bg-red-50 border-red-200 text-red-700';
-      case 'PENDIENTE':
-        return 'bg-yellow-50 border-yellow-200 text-yellow-700';
-      case 'EN_COLA':
-        return 'bg-blue-50 border-blue-200 text-blue-700';
-      default:
-        return 'bg-gray-50 border-gray-200 text-gray-700';
-    }
-  };
-
-  const getStatusIcon = (estado) => {
-    switch (estado) {
-      case 'ENVIADO':
-        return <CheckCircle2 className="w-4 h-4" />;
-      case 'FALLIDO':
-        return <XCircle className="w-4 h-4" />;
-      case 'PENDIENTE':
-        return <Clock className="w-4 h-4" />;
-      case 'EN_COLA':
-        return <Zap className="w-4 h-4" />;
-      default:
-        return <AlertCircle className="w-4 h-4" />;
-    }
-  };
-
-  const getTipoColor = (tipo) => {
-    const colores = {
-      'BIENVENIDO': 'bg-blue-100 text-blue-800',
-      'RECUPERACION': 'bg-orange-100 text-orange-800',
-      'RESET': 'bg-red-100 text-red-800',
-      'APROBACION': 'bg-green-100 text-green-800',
-      'RECHAZO': 'bg-red-100 text-red-800',
-      'PRUEBA': 'bg-gray-100 text-gray-800',
-      'GENERAL': 'bg-purple-100 text-purple-800'
-    };
-    return colores[tipo] || 'bg-gray-100 text-gray-800';
-  };
+  useEffect(() => {
+    cargarDatos(false);
+  }, [tab, cargarDatos]);
 
   const registrosFiltrados = logs.filter(log => {
-    const coincideBusqueda =
-      log.destinatario?.toLowerCase().includes(busqueda.toLowerCase()) ||
-      log.username?.toLowerCase().includes(busqueda.toLowerCase()) ||
-      log.asunto?.toLowerCase().includes(busqueda.toLowerCase());
-
-    const coincideEstado = !filtroEstado || log.estado === filtroEstado;
-    const coincideTipo = !filtroTipo || log.tipoCorreo === filtroTipo;
-
-    return coincideBusqueda && coincideEstado && coincideTipo;
+    if (!busqueda) return true;
+    const search = busqueda.toLowerCase();
+    return (
+      log.destinatario?.toLowerCase().includes(search) ||
+      log.username?.toLowerCase().includes(search) ||
+      log.asunto?.toLowerCase().includes(search) ||
+      log.tipoCorreo?.toLowerCase().includes(search)
+    );
   });
 
-  if (loading && tab !== 'resumen') {
+  const formatDate = (dateString) => {
+    if (!dateString) return '-';
+    const date = new Date(dateString);
+    return new Intl.DateTimeFormat('es-PE', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    }).format(date);
+  };
+
+  if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-white">
+      <div className="flex items-center justify-center min-h-screen bg-gray-50">
         <div className="text-center">
-          <RefreshCw className="w-8 h-8 animate-spin text-blue-500 mx-auto mb-4" />
-          <p className="text-gray-600">Cargando datos...</p>
+          <div className="relative">
+            <Mail className="w-16 h-16 text-blue-500 mx-auto" />
+            <RefreshCw className="w-6 h-6 animate-spin text-blue-600 absolute -bottom-1 -right-1 bg-white rounded-full p-1" />
+          </div>
+          <p className="text-gray-600 mt-4 font-medium">Cargando auditoría de correos...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-white p-6">
-      <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-center gap-3 mb-2">
-            <Mail className="w-8 h-8 text-blue-500" />
-            <h1 className="text-3xl font-bold text-gray-900">📧 Auditoría de Correos</h1>
-          </div>
-          <p className="text-gray-600">Seguimiento de envíos de correos electrónicos del sistema</p>
-        </div>
-
-        {/* Tabs */}
-        <div className="flex gap-2 mb-6 border-b border-gray-200">
-          {['fallidos', 'errores', 'resumen'].map(tabName => (
+    <div className="min-h-screen bg-gray-50">
+      {/* Header con gradiente */}
+      <div className="bg-gradient-to-r from-blue-600 via-blue-700 to-indigo-700 text-white">
+        <div className="max-w-7xl mx-auto px-6 py-8">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className="p-3 bg-white/10 rounded-xl backdrop-blur-sm">
+                <Mail className="w-8 h-8" />
+              </div>
+              <div>
+                <h1 className="text-2xl font-bold">Auditoría de Correos</h1>
+                <p className="text-blue-100 text-sm mt-1">
+                  Monitoreo de envíos del sistema CENATE
+                </p>
+              </div>
+            </div>
             <button
-              key={tabName}
-              onClick={() => setTab(tabName)}
-              className={`px-4 py-2 font-medium transition-colors ${
-                tab === tabName
-                  ? 'text-blue-600 border-b-2 border-blue-600'
-                  : 'text-gray-600 hover:text-gray-900'
-              }`}
+              onClick={() => cargarDatos(true)}
+              disabled={refreshing}
+              className="flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/20 rounded-lg transition-colors disabled:opacity-50"
             >
-              {tabName === 'fallidos' && '❌ Fallidos'}
-              {tabName === 'errores' && '⚠️ Errores Conexión'}
-              {tabName === 'resumen' && '📊 Resumen'}
+              <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
+              Actualizar
             </button>
-          ))}
+          </div>
         </div>
+      </div>
 
-        {/* Resumen Tab */}
-        {tab === 'resumen' && stats && (
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-            <div className="bg-green-50 border border-green-200 rounded-lg p-6">
-              <CheckCircle2 className="w-6 h-6 mb-2 text-green-600" />
-              <div className="text-3xl font-bold text-green-900">{stats.enviados}</div>
-              <div className="text-sm text-green-700">Correos Enviados</div>
-            </div>
-            <div className="bg-red-50 border border-red-200 rounded-lg p-6">
-              <XCircle className="w-6 h-6 mb-2 text-red-600" />
-              <div className="text-3xl font-bold text-red-900">{stats.noEntregados}</div>
-              <div className="text-sm text-red-700">No Entregados</div>
-            </div>
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
-              <Mail className="w-6 h-6 mb-2 text-blue-600" />
-              <div className="text-3xl font-bold text-blue-900">{stats.totalIntentosCorreo}</div>
-              <div className="text-sm text-blue-700">Total Intentos</div>
-            </div>
-            <div className="bg-purple-50 border border-purple-200 rounded-lg p-6">
-              <Zap className="w-6 h-6 mb-2 text-purple-600" />
-              <div className="text-3xl font-bold text-purple-900">{stats.porcentajeExito.toFixed(1)}%</div>
-              <div className="text-sm text-purple-700">Tasa Éxito</div>
-            </div>
+      <div className="max-w-7xl mx-auto px-6 -mt-6">
+        {/* Stats Cards */}
+        {stats && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+            <StatCard
+              icon={Send}
+              label="Correos Enviados"
+              value={stats.enviados}
+              color="text-emerald-600"
+              subtext="Últimos 7 días"
+            />
+            <StatCard
+              icon={XCircle}
+              label="No Entregados"
+              value={stats.noEntregados}
+              color="text-red-600"
+              subtext="Requieren atención"
+            />
+            <StatCard
+              icon={Inbox}
+              label="Total Intentos"
+              value={stats.totalIntentosCorreo}
+              color="text-blue-600"
+              subtext="Enviados + Fallidos"
+            />
+            <StatCard
+              icon={BarChart3}
+              label="Tasa de Éxito"
+              value={`${stats.porcentajeExito?.toFixed(1) || 0}%`}
+              color="text-purple-600"
+              subtext={stats.porcentajeExito >= 90 ? 'Excelente' : stats.porcentajeExito >= 70 ? 'Bueno' : 'Mejorable'}
+            />
           </div>
         )}
 
-        {/* Filtros */}
-        {tab !== 'resumen' && (
-          <div className="bg-gray-50 rounded-lg p-4 mb-6 border border-gray-200">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <label className="block text-sm text-gray-700 mb-2">🔍 Buscar</label>
-                <input
-                  type="text"
-                  placeholder="Email, usuario, asunto..."
-                  value={busqueda}
-                  onChange={(e) => setBusqueda(e.target.value)}
-                  className="w-full bg-white border border-gray-300 rounded px-3 py-2 text-gray-900 placeholder-gray-500 focus:outline-none focus:border-blue-500 focus:ring-blue-500"
-                />
-              </div>
-              <div>
-                <label className="block text-sm text-gray-700 mb-2">📊 Estado</label>
-                <select
-                  value={filtroEstado}
-                  onChange={(e) => setFiltroEstado(e.target.value)}
-                  className="w-full bg-white border border-gray-300 rounded px-3 py-2 text-gray-900 focus:outline-none focus:border-blue-500 focus:ring-blue-500"
+        {/* Tabs + Search */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 mb-6">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-4 border-b border-gray-100">
+            {/* Tabs */}
+            <div className="flex gap-1 overflow-x-auto pb-2 sm:pb-0">
+              {tabs.map(({ id, label, icon: Icon }) => (
+                <button
+                  key={id}
+                  onClick={() => setTab(id)}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap ${
+                    tab === id
+                      ? 'bg-blue-50 text-blue-700 shadow-sm'
+                      : 'text-gray-600 hover:bg-gray-50'
+                  }`}
                 >
-                  <option value="">Todos</option>
-                  <option value="ENVIADO">✅ Enviado</option>
-                  <option value="FALLIDO">❌ Fallido</option>
-                  <option value="PENDIENTE">⏳ Pendiente</option>
-                  <option value="EN_COLA">🔄 En Cola</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm text-gray-700 mb-2">📧 Tipo</label>
-                <select
-                  value={filtroTipo}
-                  onChange={(e) => setFiltroTipo(e.target.value)}
-                  className="w-full bg-white border border-gray-300 rounded px-3 py-2 text-gray-900 focus:outline-none focus:border-blue-500 focus:ring-blue-500"
-                >
-                  <option value="">Todos</option>
-                  <option value="BIENVENIDO">Bienvenido</option>
-                  <option value="RECUPERACION">Recuperación</option>
-                  <option value="RESET">Reset</option>
-                  <option value="APROBACION">Aprobación</option>
-                  <option value="RECHAZO">Rechazo</option>
-                </select>
-              </div>
+                  <Icon className="w-4 h-4" />
+                  {label}
+                </button>
+              ))}
+            </div>
+
+            {/* Search */}
+            <div className="relative mt-3 sm:mt-0">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Buscar por email, usuario..."
+                value={busqueda}
+                onChange={(e) => setBusqueda(e.target.value)}
+                className="w-full sm:w-64 pl-10 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
             </div>
           </div>
-        )}
 
-        {/* Lista de Registros */}
-        {tab !== 'resumen' && (
-          <div className="space-y-3">
+          {/* Results count */}
+          <div className="px-4 py-2 bg-gray-50 border-b border-gray-100 text-sm text-gray-600">
+            Mostrando <span className="font-semibold text-gray-900">{registrosFiltrados.length}</span> registros
+            {busqueda && <span className="text-gray-500"> para "{busqueda}"</span>}
+          </div>
+
+          {/* Table */}
+          <div className="overflow-x-auto">
             {registrosFiltrados.length === 0 ? (
-              <div className="bg-gray-50 rounded-lg p-8 text-center border border-gray-200">
-                <Mail className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                <p className="text-gray-600">No hay registros para mostrar</p>
+              <div className="p-12 text-center">
+                <Mail className="w-12 h-12 text-gray-300 mx-auto mb-4" />
+                <p className="text-gray-500 font-medium">No hay registros para mostrar</p>
+                <p className="text-gray-400 text-sm mt-1">Prueba cambiando los filtros o la búsqueda</p>
               </div>
             ) : (
-              registrosFiltrados.map((log) => (
-                <div
-                  key={log.id}
-                  className={`border rounded-lg p-4 transition-colors ${getStatusColor(log.estado)}`}
-                >
-                  <div className="flex items-start justify-between mb-2">
-                    <div className="flex items-center gap-2">
-                      {getStatusIcon(log.estado)}
-                      <span className="font-medium">{log.destinatario}</span>
-                      <span className={`text-xs px-2 py-1 rounded ${getTipoColor(log.tipoCorreo)}`}>
-                        {log.tipoCorreo}
-                      </span>
-                    </div>
-                    <div className="text-xs opacity-75">
-                      {new Date(log.fechaEnvio).toLocaleString()}
-                    </div>
-                  </div>
+              <table className="w-full">
+                <thead className="bg-gray-50 border-b border-gray-100">
+                  <tr>
+                    <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Estado</th>
+                    <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Destinatario</th>
+                    <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Tipo</th>
+                    <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider hidden md:table-cell">Usuario</th>
+                    <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider hidden lg:table-cell">Servidor</th>
+                    <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Fecha</th>
+                    <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider w-10"></th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {registrosFiltrados.map((log) => (
+                    <React.Fragment key={log.id}>
+                      <tr
+                        className={`hover:bg-gray-50 transition-colors cursor-pointer ${expandedRow === log.id ? 'bg-blue-50' : ''}`}
+                        onClick={() => setExpandedRow(expandedRow === log.id ? null : log.id)}
+                      >
+                        <td className="px-4 py-3">
+                          <StatusBadge estado={log.estado} />
+                        </td>
+                        <td className="px-4 py-3">
+                          <div className="flex items-center gap-2">
+                            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white text-xs font-medium">
+                              {log.destinatario?.charAt(0)?.toUpperCase() || '?'}
+                            </div>
+                            <div>
+                              <p className="text-sm font-medium text-gray-900 truncate max-w-[200px]">
+                                {log.destinatario}
+                              </p>
+                              <p className="text-xs text-gray-500 truncate max-w-[200px]">
+                                {log.asunto || 'Sin asunto'}
+                              </p>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-4 py-3">
+                          <TypeBadge tipo={log.tipoCorreo} />
+                        </td>
+                        <td className="px-4 py-3 hidden md:table-cell">
+                          <div className="flex items-center gap-1.5 text-sm text-gray-600">
+                            <User className="w-3.5 h-3.5 text-gray-400" />
+                            {log.username || '-'}
+                          </div>
+                        </td>
+                        <td className="px-4 py-3 hidden lg:table-cell">
+                          <div className="flex items-center gap-1.5 text-sm text-gray-500 font-mono">
+                            <Server className="w-3.5 h-3.5 text-gray-400" />
+                            {log.servidorSmtp ? `${log.servidorSmtp}:${log.puertoSmtp}` : '-'}
+                          </div>
+                        </td>
+                        <td className="px-4 py-3">
+                          <div className="flex items-center gap-1.5 text-sm text-gray-600">
+                            <Calendar className="w-3.5 h-3.5 text-gray-400" />
+                            {formatDate(log.fechaEnvio)}
+                          </div>
+                        </td>
+                        <td className="px-4 py-3">
+                          <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${expandedRow === log.id ? 'rotate-180' : ''}`} />
+                        </td>
+                      </tr>
 
-                  <p className="text-sm mb-2 opacity-90">{log.asunto}</p>
+                      {/* Expanded Row */}
+                      {expandedRow === log.id && (
+                        <tr className="bg-blue-50">
+                          <td colSpan="7" className="px-4 py-4">
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                              <div>
+                                <p className="text-gray-500 text-xs mb-1">Tiempo respuesta</p>
+                                <p className="font-mono font-medium">
+                                  {log.tiempoRespuestaMs ? `${log.tiempoRespuestaMs} ms` : '-'}
+                                </p>
+                              </div>
+                              <div>
+                                <p className="text-gray-500 text-xs mb-1">Reintentos</p>
+                                <p className="font-mono font-medium">{log.reintentos || 0}</p>
+                              </div>
+                              <div>
+                                <p className="text-gray-500 text-xs mb-1">ID Usuario</p>
+                                <p className="font-mono font-medium">{log.idUsuario || '-'}</p>
+                              </div>
+                              <div>
+                                <p className="text-gray-500 text-xs mb-1">Fecha confirmación</p>
+                                <p className="font-mono font-medium">{formatDate(log.fechaConfirmacion)}</p>
+                              </div>
+                            </div>
 
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs">
-                    <div>
-                      <span className="opacity-75">Usuario:</span>
-                      <div className="font-mono">{log.username || '-'}</div>
-                    </div>
-                    <div>
-                      <span className="opacity-75">Servidor:</span>
-                      <div className="font-mono">{log.servidorSmtp}:{log.puertoSmtp}</div>
-                    </div>
-                    <div>
-                      <span className="opacity-75">Tiempo:</span>
-                      <div className="font-mono">{log.tiempoRespuestaMs ? `${log.tiempoRespuestaMs}ms` : '-'}</div>
-                    </div>
-                    <div>
-                      <span className="opacity-75">Reintentos:</span>
-                      <div className="font-mono">{log.reintentos}</div>
-                    </div>
-                  </div>
-
-                  {log.errorMensaje && (
-                    <div className="mt-2 p-2 bg-red-50 rounded text-xs border border-red-200">
-                      <div className="font-mono text-red-900">{log.errorMensaje}</div>
-                      {log.errorCodigo && (
-                        <div className="text-xs text-red-800 mt-1">Código: {log.errorCodigo}</div>
+                            {log.errorMensaje && (
+                              <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+                                <div className="flex items-start gap-2">
+                                  <AlertTriangle className="w-4 h-4 text-red-500 mt-0.5 flex-shrink-0" />
+                                  <div>
+                                    <p className="text-sm font-medium text-red-700">Error de envío</p>
+                                    <p className="text-xs text-red-600 mt-1 font-mono break-all">
+                                      {log.errorMensaje}
+                                    </p>
+                                    {log.errorCodigo && (
+                                      <p className="text-xs text-red-500 mt-2">
+                                        Código: <span className="font-mono">{log.errorCodigo}</span>
+                                      </p>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+                          </td>
+                        </tr>
                       )}
-                    </div>
-                  )}
-                </div>
-              ))
+                    </React.Fragment>
+                  ))}
+                </tbody>
+              </table>
             )}
           </div>
-        )}
+        </div>
+
+        {/* Footer info */}
+        <div className="text-center text-sm text-gray-500 pb-8">
+          Sistema de Auditoría de Correos CENATE v1.45.4
+        </div>
       </div>
     </div>
   );
