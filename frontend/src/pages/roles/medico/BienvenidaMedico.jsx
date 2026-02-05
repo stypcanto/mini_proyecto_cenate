@@ -66,25 +66,16 @@ export default function BienvenidaMedico() {
   const acciones = [
     {
       titulo: 'Pacientes',
-      descripcion: 'Consulta la lista de pacientes asignados, su estado y condición actual.',
-      icono: Folder,
-      color: 'bg-blue-100 text-blue-600',
       ruta: '/roles/medico/pacientes',
       stat: stats.pacientesAsignados
     },
     {
       titulo: 'Disponibilidad',
-      descripcion: 'Registra y gestiona tu horario de atención para telemedicina.',
-      icono: Calendar,
-      color: 'bg-emerald-100 text-emerald-600',
       ruta: '/roles/medico/disponibilidad',
       stat: null
     },
     {
       titulo: 'Mi Información',
-      descripcion: 'Actualiza tu perfil profesional, especialidades y datos de contacto.',
-      icono: FileText,
-      color: 'bg-purple-100 text-purple-600',
       ruta: '/user/security',
       stat: null
     }
@@ -174,101 +165,59 @@ export default function BienvenidaMedico() {
       </div>
 
       {/* Panel Médico - Desglosable Expandido */}
-      <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
-        <div className="bg-gradient-to-r from-blue-500 to-blue-600 px-6 py-4 flex items-center justify-between cursor-pointer hover:shadow-lg transition">
-          <div className="flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-white/20">
-              <Stethoscope className="w-5 h-5 text-white" />
-            </div>
-            <h2 className="text-lg font-bold text-white">Panel Médico</h2>
-          </div>
-          <ChevronDown className="w-5 h-5 text-white" />
+      <div className="bg-white rounded-xl shadow-md overflow-hidden">
+        <div className="px-5 py-3 flex items-center gap-3 hover:bg-gray-50 transition cursor-pointer">
+          <ChevronDown className="w-5 h-5 text-gray-600" />
+          <h2 className="text-base font-semibold text-gray-800">Panel Médico</h2>
         </div>
 
-        <div className="divide-y divide-gray-200">
+        <div className="space-y-0.5 pl-8">
           {acciones.map((accion, idx) => (
             <button
               key={idx}
               onClick={() => navigate(accion.ruta)}
-              className="w-full p-4 flex items-center justify-between hover:bg-gray-50 transition-colors group text-left"
+              className="w-full px-4 py-2.5 flex items-center gap-3 hover:bg-blue-50 transition-colors group text-left"
             >
-              <div className="flex items-center gap-4 flex-1">
-                <div className={`p-2 rounded-lg ${accion.color}`}>
-                  <accion.icono className="w-5 h-5" />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-gray-900 group-hover:text-blue-600 transition">
-                    {accion.titulo}
-                  </h3>
-                  <p className="text-xs text-gray-600 mt-0.5">
-                    {accion.descripcion}
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-center gap-3">
-                {accion.stat !== null && (
-                  <div className="bg-blue-600 text-white text-xs font-bold px-3 py-1 rounded-full">
-                    {accion.stat}
-                  </div>
-                )}
-                <ChevronRight className="w-4 h-4 text-gray-400 group-hover:text-blue-600 transition flex-shrink-0" />
-              </div>
+              <Folder className="w-4 h-4 text-gray-500 group-hover:text-blue-600 transition flex-shrink-0" />
+              <span className="text-sm font-medium text-gray-700 group-hover:text-blue-600 transition flex-1">
+                {accion.titulo}
+              </span>
+              {accion.stat !== null && (
+                <span className="text-xs font-bold text-gray-600 bg-gray-100 px-2 py-0.5 rounded">
+                  {accion.stat}
+                </span>
+              )}
             </button>
           ))}
         </div>
       </div>
 
       {/* TeleECG - Desglosable Expandido */}
-      <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
-        <div className="bg-gradient-to-r from-purple-500 to-purple-600 px-6 py-4 flex items-center justify-between cursor-pointer hover:shadow-lg transition">
-          <div className="flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-white/20">
-              <BarChart3 className="w-5 h-5 text-white" />
-            </div>
-            <h2 className="text-lg font-bold text-white">TeleECG</h2>
-          </div>
-          <ChevronDown className="w-5 h-5 text-white" />
+      <div className="bg-white rounded-xl shadow-md overflow-hidden">
+        <div className="px-5 py-3 flex items-center gap-3 hover:bg-gray-50 transition cursor-pointer">
+          <ChevronDown className="w-5 h-5 text-gray-600" />
+          <h2 className="text-base font-semibold text-gray-800">TeleECG</h2>
         </div>
 
-        <div className="divide-y divide-gray-200">
+        <div className="space-y-0.5 pl-8">
           <button
             onClick={() => navigate('/teleecg/recibidas')}
-            className="w-full p-4 flex items-center justify-between hover:bg-gray-50 transition-colors group text-left"
+            className="w-full px-4 py-2.5 flex items-center gap-3 hover:bg-purple-50 transition-colors group text-left"
           >
-            <div className="flex items-center gap-4 flex-1">
-              <div className="p-2 rounded-lg bg-purple-100">
-                <Folder className="w-5 h-5 text-purple-600" />
-              </div>
-              <div>
-                <h3 className="font-semibold text-gray-900 group-hover:text-purple-600 transition">
-                  TeleECG Recibidas
-                </h3>
-                <p className="text-xs text-gray-600 mt-0.5">
-                  Visualiza y revisa las telemedicinas recibidas
-                </p>
-              </div>
-            </div>
-            <ChevronRight className="w-4 h-4 text-gray-400 group-hover:text-purple-600 transition flex-shrink-0" />
+            <Folder className="w-4 h-4 text-gray-500 group-hover:text-purple-600 transition flex-shrink-0" />
+            <span className="text-sm font-medium text-gray-700 group-hover:text-purple-600 transition">
+              TeleECG Recibidas
+            </span>
           </button>
 
           <button
             onClick={() => navigate('/teleecg/estadisticas')}
-            className="w-full p-4 flex items-center justify-between hover:bg-gray-50 transition-colors group text-left"
+            className="w-full px-4 py-2.5 flex items-center gap-3 hover:bg-purple-50 transition-colors group text-left"
           >
-            <div className="flex items-center gap-4 flex-1">
-              <div className="p-2 rounded-lg bg-purple-100">
-                <BarChart3 className="w-5 h-5 text-purple-600" />
-              </div>
-              <div>
-                <h3 className="font-semibold text-gray-900 group-hover:text-purple-600 transition">
-                  Estadísticas
-                </h3>
-                <p className="text-xs text-gray-600 mt-0.5">
-                  Reportes y análisis de tu actividad
-                </p>
-              </div>
-            </div>
-            <ChevronRight className="w-4 h-4 text-gray-400 group-hover:text-purple-600 transition flex-shrink-0" />
+            <Folder className="w-4 h-4 text-gray-500 group-hover:text-purple-600 transition flex-shrink-0" />
+            <span className="text-sm font-medium text-gray-700 group-hover:text-purple-600 transition">
+              Estadísticas
+            </span>
           </button>
         </div>
       </div>
