@@ -767,7 +767,7 @@ export default function GestionAsegurado() {
 
     try {
       const response = await fetch(
-        `${getApiBase()}/api/bolsas/solicitudes/medicos-por-especialidad?especialidad=${encodeURIComponent(especialidad)}`,
+        `${getApiBase()}/bolsas/solicitudes/medicos-por-especialidad?especialidad=${encodeURIComponent(especialidad)}`,
         {
           method: "GET",
           headers: getHeaders(),
