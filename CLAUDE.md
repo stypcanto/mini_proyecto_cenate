@@ -1,7 +1,7 @@
 # CLAUDE.md - Proyecto CENATE
 
 > **Sistema de Telemedicina - EsSalud Perú**
-> **Versión:** v1.45.2 (2026-02-05) 🚀
+> **Versión:** v1.45.3 (2026-02-05) 🚀
 > **Status:** ✅ Production Ready
 
 ---
@@ -189,6 +189,34 @@ Frontend (React 19):
 ---
 
 ## 📊 ÚLTIMAS VERSIONES
+
+### v1.45.3 - Completado (2026-02-05) 📥 MULTI-SELECT PDF BATCH DOWNLOAD
+✅ **Descarga Múltiple de PDFs** - Seleccionar y descargar diagnósticos en ZIP
+✅ **Checkboxes en Tabla** - Seleccionar individual o todos los registros
+✅ **Batch ZIP Download** - Nuevo endpoint `POST /descargar-zip` (máx. 50 PDFs)
+✅ **Error Handling Robusto** - Si 1 PDF falla, los demás se incluyen
+✅ **UI/UX Completo** - Action bar + contador + botón con spinner + toasts
+
+**Cambios Backend:**
+- `DescargarZipRequest` DTO (Jakarta validation @Size(max=50))
+- `FirmaDigitalService.generarZipPdfs()` method
+- `FirmaDigitalServiceImpl` - ZIP creation with ByteArrayOutputStream
+- `FormDiagController` POST endpoint `/descargar-zip`
+
+**Cambios Frontend:**
+- `DiagnosticoIpress.jsx` - Multi-select state + toggle functions
+- Checkbox column en tabla con "select all" header
+- Action bar azul mostrando selected count + "Limpiar selección"
+- Botón verde "Descargar Seleccionados" con loading spinner
+- Toast notifications para feedback
+
+**Docs:**
+- **Plan:** [`/Users/styp/.claude/plans/inherited-cooking-puddle.md`](../../.claude/plans/inherited-cooking-puddle.md)
+- **Commit:** c1acbed (311 insertions)
+
+**Build:** ✅ Backend SUCCESS + ✅ Frontend SUCCESS
+
+---
 
 ### v1.45.2 - Completado (2026-02-05) 🏥 IPRESS NAMES + TABLE LAYOUT
 ✅ **Display IPRESS Institution Names** - Muestra "CAP II LURIN" en lugar de código "450"
