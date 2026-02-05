@@ -2889,6 +2889,9 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
         String numeroSolicitud = generarNumeroSolicitud();
 
         // 3. Crear nueva solicitud con campos válidos de la entidad SolicitudBolsa
+        // ✅ v1.46.4: Si codigoIpressAdscripcion es null, usar "999" (código por defecto)
+        String codigoIpress = request.getDescIpress() != null ? request.getDescIpress() : "999";
+
         SolicitudBolsa nuevaSolicitud = SolicitudBolsa.builder()
             .numeroSolicitud(numeroSolicitud)
             .pacienteDni(request.getPacienteDni())
@@ -2897,8 +2900,8 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
             .pacienteSexo(request.getPacienteSexo())
             .pacienteTelefono(request.getPacienteTelefono())
             .pacienteTelefonoAlterno(request.getPacienteTelefonoAlterno())
-            .codigoIpressAdscripcion(request.getDescIpress())
-            .codigoAdscripcion(request.getDescIpress() != null ? request.getDescIpress() : "SIN_CODIGO")
+            .codigoIpressAdscripcion(codigoIpress)
+            .codigoAdscripcion(codigoIpress) // Usar el mismo código
             .tipoCita(request.getTipoCita())
             .estado("PENDIENTE")
             .estadoGestionCitasId(1L) // ID del estado "PENDIENTE CITAR"
