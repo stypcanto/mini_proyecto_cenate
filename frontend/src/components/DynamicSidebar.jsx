@@ -563,8 +563,8 @@ function PaginaConSubmenu({ pagina, location, nombreModulo, getIconComponent, au
     }
   }, [hasActiveSubpage, autoExpand, pagina.nombre]);
 
-  // Priorizar icono de BD (pagina.icono) primero, luego hardcoded, luego por defecto
-  const PageIcon = (pagina.icono ? getIconComponent(pagina.icono) : null) || getPageIcon(nombreModulo, pagina.nombre) || Folder;
+  // Priorizar hardcoded getPageIcon primero (para médico y otros roles específicos), luego icono de BD, luego por defecto
+  const PageIcon = getPageIcon(nombreModulo, pagina.nombre) || (pagina.icono ? getIconComponent(pagina.icono) : null) || Folder;
 
   return (
     <div className="space-y-1">
