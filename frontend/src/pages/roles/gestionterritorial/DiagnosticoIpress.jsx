@@ -37,6 +37,10 @@ export default function DiagnosticoIpress() {
   const [paginaActual, setPaginaActual] = useState(1);
   const [itemsPorPagina] = useState(10);
 
+  // Multi-select para descarga batch (v1.45.3)
+  const [seleccionados, setSeleccionados] = useState(new Set());
+  const [cargandoZip, setCargandoZip] = useState(false);
+
   // ================================================================
   // CARGAR DATOS
   // ================================================================
@@ -279,6 +283,91 @@ export default function DiagnosticoIpress() {
     // Implementar exportacion a Excel
   };
 
+  // ================================================================
+  // MULTI-SELECT PARA DESCARGA BATCH (v1.45.3)
+  // ================================================================
+
+  const toggleSeleccion = (id) => {
+    setSeleccionados(prev => {
+      const nuevo = new Set(prev);
+      if (nuevo.has(id)) {
+        nuevo.delete(id);
+      } else {
+        nuevo.add(id);
+      }
+      return nuevo;
+    });
+  };
+
+  const toggleSeleccionarTodos = () => {
+    if (seleccionados.size === datosPaginados.length) {
+      setSeleccionados(new Set());
+    } else {
+      setSeleccionados(new Set(datosPaginados.map(d => d.idFormulario)));
+    }
+  };
+
+  const limpiarSeleccion = () => {
+    setSeleccionados(new Set());
+  };
+
+  const descargarPdfsSeleccionados = async () => {
+    if (seleccionados.size === 0) {
+      toast.warning("Por favor, selecciona al menos un diagnóstico");
+      return;
+    }
+
+    if (seleccionados.size > 50) {
+      toast.error("No se pueden descargar más de 50 PDFs a la vez");
+      return;
+    }
+
+    setCargandoZip(true);
+    try {
+      const token = localStorage.getItem('auth.token');
+      const baseUrl = process.env.REACT_APP_API_URL || 'http://localhost:8080/api';
+
+      const response = await fetch(`${baseUrl}/formulario-diagnostico/descargar-zip`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          ids: Array.from(seleccionados)
+        })
+      });
+
+      if (!response.ok) {
+        const error = await response.text();
+        throw new Error(error || 'Error al generar ZIP');
+      }
+
+      // Descargar ZIP
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+
+      // Nombre con timestamp
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
+      a.download = `diagnosticos_${timestamp}.zip`;
+
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+
+      toast.success(`${seleccionados.size} PDF(s) descargados correctamente`);
+      limpiarSeleccion();
+    } catch (error) {
+      console.error("Error descargando ZIP:", error);
+      toast.error(error.message || "No se pudo descargar el archivo ZIP");
+    } finally {
+      setCargandoZip(false);
+    }
+  };
+
   // Estadisticas
   const stats = useMemo(() => ({
     total: diagnosticos.length,
@@ -451,6 +540,40 @@ export default function DiagnosticoIpress() {
         </div>
       </div>
 
+      {/* Barra de selección múltiple */}
+      {seleccionados.size > 0 && (
+        <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <span className="text-sm font-medium text-blue-900">
+              {seleccionados.size} diagnóstico(s) seleccionado(s)
+            </span>
+            <button
+              onClick={limpiarSeleccion}
+              className="text-sm text-blue-600 hover:text-blue-800 underline"
+            >
+              Limpiar selección
+            </button>
+          </div>
+          <button
+            onClick={descargarPdfsSeleccionados}
+            disabled={cargandoZip}
+            className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {cargandoZip ? (
+              <>
+                <Loader className="animate-spin h-5 w-5" />
+                <span>Generando ZIP...</span>
+              </>
+            ) : (
+              <>
+                <Download className="w-5 h-5" />
+                <span>Descargar Seleccionados</span>
+              </>
+            )}
+          </button>
+        </div>
+      )}
+
       {/* Acciones */}
       <div className="flex justify-between items-center mb-4">
         <p className="text-gray-600">
@@ -486,6 +609,14 @@ export default function DiagnosticoIpress() {
             <thead>
               <tr className="bg-blue-600">
                 <th className="px-4 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">
+                  <input
+                    type="checkbox"
+                    checked={seleccionados.size === datosPaginados.length && datosPaginados.length > 0}
+                    onChange={toggleSeleccionarTodos}
+                    className="w-4 h-4 rounded border-white/30 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                  />
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">
                   ID
                 </th>
                 <th className="px-4 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">
@@ -511,7 +642,7 @@ export default function DiagnosticoIpress() {
             <tbody>
               {datosPaginados.length === 0 ? (
                 <tr>
-                  <td colSpan="7" className="px-6 py-12 text-center">
+                  <td colSpan="8" className="px-6 py-12 text-center">
                     <div className="flex flex-col items-center gap-3">
                       <XCircle className="w-10 h-10 text-gray-300" />
                       <p className="text-gray-400 text-sm">No se encontraron diagnosticos</p>
@@ -524,6 +655,14 @@ export default function DiagnosticoIpress() {
                     key={diagnostico.idFormulario}
                     className="border-b border-gray-100 hover:bg-blue-50/30 transition-colors"
                   >
+                    <td className="px-4 py-3 text-center">
+                      <input
+                        type="checkbox"
+                        checked={seleccionados.has(diagnostico.idFormulario)}
+                        onChange={() => toggleSeleccion(diagnostico.idFormulario)}
+                        className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                      />
+                    </td>
                     <td className="px-4 py-3">
                       <span className="text-sm font-medium text-gray-700">#{diagnostico.idFormulario}</span>
                     </td>

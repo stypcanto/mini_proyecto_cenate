@@ -12,12 +12,17 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.security.MessageDigest;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.Base64;
+import java.util.List;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 /**
  * Implementación del servicio de firma digital para formularios de diagnóstico
@@ -188,6 +193,68 @@ public class FirmaDigitalServiceImpl implements FirmaDigitalService {
         return formularioRepo.findById(idFormulario)
                 .map(f -> f.getFirmaDigital() != null && !f.getFirmaDigital().isEmpty())
                 .orElse(false);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public byte[] generarZipPdfs(List<Integer> ids) {
+        log.info("🗜️  Generando ZIP con {} PDFs", ids.size());
+
+        try (ByteArrayOutputStream baos = new ByteArrayOutputStream();
+             ZipOutputStream zos = new ZipOutputStream(baos)) {
+
+            int pdfsProcesados = 0;
+            int pdfsError = 0;
+
+            for (Integer id : ids) {
+                try {
+                    // Obtener PDF del formulario
+                    byte[] pdfBytes = obtenerPdfFirmado(id);
+
+                    if (pdfBytes == null || pdfBytes.length == 0) {
+                        log.warn("⚠️  PDF vacío o no encontrado para ID: {}", id);
+                        pdfsError++;
+                        continue;
+                    }
+
+                    // Crear entrada en ZIP
+                    String nombreArchivo = String.format("formulario_%d_firmado.pdf", id);
+                    ZipEntry zipEntry = new ZipEntry(nombreArchivo);
+                    zipEntry.setSize(pdfBytes.length);
+
+                    zos.putNextEntry(zipEntry);
+                    zos.write(pdfBytes);
+                    zos.closeEntry();
+
+                    pdfsProcesados++;
+                    log.debug("✅ PDF agregado al ZIP: {} ({} bytes)", nombreArchivo, pdfBytes.length);
+
+                } catch (EntityNotFoundException e) {
+                    log.warn("⚠️  Formulario no encontrado: {}", id);
+                    pdfsError++;
+                } catch (Exception e) {
+                    log.error("❌ Error procesando PDF ID {}: {}", id, e.getMessage());
+                    pdfsError++;
+                }
+            }
+
+            // Finalizar ZIP
+            zos.finish();
+            byte[] zipBytes = baos.toByteArray();
+
+            log.info("🎉 ZIP generado: {} PDFs incluidos, {} errores, {} bytes totales",
+                     pdfsProcesados, pdfsError, zipBytes.length);
+
+            if (pdfsProcesados == 0) {
+                throw new RuntimeException("No se pudo incluir ningún PDF en el ZIP");
+            }
+
+            return zipBytes;
+
+        } catch (IOException e) {
+            log.error("❌ Error fatal al crear ZIP: {}", e.getMessage(), e);
+            throw new RuntimeException("Error al generar archivo ZIP: " + e.getMessage(), e);
+        }
     }
 
     // ==================== MÉTODOS PRIVADOS ====================

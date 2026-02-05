@@ -40,4 +40,17 @@ public interface FirmaDigitalService {
      * @return true si está firmado, false si no
      */
     boolean estaFirmado(Integer idFormulario);
+
+    /**
+     * Genera un archivo ZIP con múltiples PDFs firmados
+     *
+     * Útil para descargas batch de múltiples formularios/diagnósticos.
+     * Si un PDF no existe o falla, se omite pero los demás se incluyen en el ZIP.
+     *
+     * @param ids Lista de IDs de formularios a incluir en el ZIP (máximo 50)
+     * @return Bytes del archivo ZIP, o error si no se puede procesar ninguno
+     * @throws RuntimeException si no se puede procesar ningún PDF
+     * @since v1.45.3
+     */
+    byte[] generarZipPdfs(java.util.List<Integer> ids);
 }

@@ -1,5 +1,6 @@
 package com.styp.cenate.api.formdiag;
 
+import com.styp.cenate.dto.formdiag.DescargarZipRequest;
 import com.styp.cenate.dto.formdiag.FirmaDigitalRequest;
 import com.styp.cenate.dto.formdiag.FirmaDigitalResponse;
 import com.styp.cenate.dto.formdiag.FormDiagListResponse;
@@ -21,6 +22,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
+import jakarta.validation.Valid;
 import java.util.List;
 
 /**
@@ -251,6 +253,60 @@ public class FormDiagController {
         log.info("GET /api/formulario-diagnostico/{}/esta-firmado - Verificando", id);
         boolean firmado = firmaDigitalService.estaFirmado(id);
         return ResponseEntity.ok(firmado);
+    }
+
+    /**
+     * Descargar múltiples PDFs en un archivo ZIP
+     *
+     * @param request DTO con lista de IDs de formularios
+     * @return ZIP con los PDFs firmados
+     */
+    @PostMapping("/descargar-zip")
+    public ResponseEntity<byte[]> descargarPdfsZip(
+            @RequestBody @Valid DescargarZipRequest request) {
+
+        log.info("POST /api/formulario-diagnostico/descargar-zip - {} IDs recibidos",
+                 request.getIds().size());
+
+        // Validación: máximo 50 PDFs
+        if (request.getIds().isEmpty()) {
+            return ResponseEntity.badRequest().build();
+        }
+
+        if (request.getIds().size() > 50) {
+            log.warn("Intento de descargar {} PDFs (máximo: 50)", request.getIds().size());
+            return ResponseEntity.badRequest()
+                    .body("No se pueden descargar más de 50 PDFs a la vez".getBytes());
+        }
+
+        try {
+            // Generar ZIP
+            byte[] zipBytes = firmaDigitalService.generarZipPdfs(request.getIds());
+
+            if (zipBytes == null || zipBytes.length == 0) {
+                log.error("ZIP vacío o null");
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            }
+
+            // Headers para descarga
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.parseMediaType("application/zip"));
+
+            String timestamp = java.time.LocalDateTime.now().format(
+                java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss")
+            );
+            String filename = String.format("diagnosticos_%s.zip", timestamp);
+            headers.setContentDispositionFormData("attachment", filename);
+            headers.setContentLength(zipBytes.length);
+
+            log.info("ZIP generado: {} bytes, {} archivo(s)", zipBytes.length, filename);
+            return new ResponseEntity<>(zipBytes, headers, HttpStatus.OK);
+
+        } catch (Exception e) {
+            log.error("Error al generar ZIP: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(("Error al generar ZIP: " + e.getMessage()).getBytes());
+        }
     }
 
     // ==================== ENDPOINTS DE CATÁLOGOS ====================
