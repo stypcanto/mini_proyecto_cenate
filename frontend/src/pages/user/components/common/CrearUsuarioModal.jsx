@@ -296,10 +296,10 @@ const CrearUsuarioModal = ({ onClose, onSuccess, ipressList, personalData = null
         const espResponse = await api.get(API_ROUTES.INICIO.SERVICIO_ESSI);
         console.log('✅ Especialidades cargadas:', espResponse);
         const espData = Array.isArray(espResponse) ? espResponse : [];
-        // Ordenar alfabéticamente por descripción
+        // Ordenar alfabéticamente por descServicio
         const espOrdenadas = espData.sort((a, b) => {
-          const descA = (a.descripcion || '').toLowerCase();
-          const descB = (b.descripcion || '').toLowerCase();
+          const descA = (a.descServicio || '').toLowerCase();
+          const descB = (b.descServicio || '').toLowerCase();
           return descA.localeCompare(descB);
         });
         setEspecialidades(espOrdenadas);

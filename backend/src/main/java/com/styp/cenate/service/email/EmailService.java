@@ -16,6 +16,7 @@ import org.springframework.stereotype.Service;
 public class EmailService {
 
     private final JavaMailSender mailSender;
+    private final EmailAuditLogService emailAuditLogService;
 
     @Value("${app.mail.from-name:CENATE Sistema}")
     private String fromName;
@@ -232,6 +233,17 @@ public class EmailService {
     public void enviarCorreoCambioContrasena(String destinatario, String nombreCompleto,
                                               String usuario, String enlace, int horasExpiracion,
                                               String tipoAccion) {
+        enviarCorreoCambioContrasena(destinatario, nombreCompleto, usuario, enlace,
+            horasExpiracion, tipoAccion, null, null, null);
+    }
+
+    /**
+     * Enviar correo con enlace para cambiar contraseña (con auditoría)
+     */
+    @Async
+    public void enviarCorreoCambioContrasena(String destinatario, String nombreCompleto,
+                                              String usuario, String enlace, int horasExpiracion,
+                                              String tipoAccion, Long idUsuario, String tokenAsociado, String tokenValue) {
         String asunto = "BIENVENIDO".equals(tipoAccion)
                 ? "CENATE - Configura tu contraseña de acceso"
                 : "CENATE - Restablece tu contraseña";
@@ -315,7 +327,9 @@ public class EmailService {
             """.formatted(tituloHeader, nombreCompleto, mensajePrincipal, usuario,
                           enlace, textoBoton, horasExpiracion, enlace, enlace);
 
-        enviarCorreoHTML(destinatario, asunto, contenido);
+        String tipoCorreoAuditoria = "BIENVENIDO".equals(tipoAccion) ? "BIENVENIDO" : "RECUPERACION";
+        enviarCorreoHTML(destinatario, asunto, contenido, tipoCorreoAuditoria,
+            idUsuario, usuario, tokenValue);
     }
 
     /**
@@ -391,13 +405,27 @@ public class EmailService {
     }
 
     /**
-     * Método base para enviar correos HTML con manejo robusto de errores
+     * Método base para enviar correos HTML con manejo robusto de errores y auditoría
      */
     private void enviarCorreoHTML(String destinatario, String asunto, String contenidoHTML) {
+        enviarCorreoHTML(destinatario, asunto, contenidoHTML, "GENERAL", null, null, null);
+    }
+
+    /**
+     * Método base para enviar correos HTML con auditoría integrada
+     */
+    private void enviarCorreoHTML(String destinatario, String asunto, String contenidoHTML,
+                                  String tipoCorreo, Long idUsuario, String username, String tokenAsociado) {
         log.info("=== INICIANDO ENVÍO DE CORREO ===");
         log.info("Destinatario: {}", destinatario);
         log.info("Asunto: {}", asunto);
         log.info("From: {} <{}>", fromName, fromAddress);
+
+        long tiempoInicio = System.currentTimeMillis();
+
+        // Registrar intento de envío
+        emailAuditLogService.registrarIntento(destinatario, tipoCorreo, asunto,
+            username, idUsuario, mailHost, mailPort, tokenAsociado);
 
         try {
             MimeMessage mensaje = mailSender.createMimeMessage();
@@ -410,19 +438,36 @@ public class EmailService {
 
             log.info("Mensaje preparado, enviando...");
             mailSender.send(mensaje);
-            log.info("✅ Correo enviado exitosamente a: {}", destinatario);
+
+            long tiempoRespuesta = System.currentTimeMillis() - tiempoInicio;
+            log.info("✅ Correo enviado exitosamente a: {} ({} ms)", destinatario, tiempoRespuesta);
+
+            // Marcar como enviado en auditoría
+            emailAuditLogService.marcarEnviado(destinatario, tiempoRespuesta);
 
         } catch (MessagingException e) {
             log.error("❌ MessagingException al enviar correo a {}: {}", destinatario, e.getMessage());
             log.error("Stack trace: ", e);
+
+            // Marcar como fallido en auditoría
+            emailAuditLogService.marcarFallido(destinatario, e.getMessage(), "MESSAGING_ERROR");
+
             diagnosticarErrorSMTP(e);
         } catch (org.springframework.mail.MailException e) {
             log.error("❌ MailException al enviar correo a {}: {}", destinatario, e.getMessage());
             log.error("Stack trace: ", e);
+
+            // Marcar como fallido en auditoría
+            String codigoError = e.getMessage().contains("Connection") ? "CONNECTION_ERROR" : "MAIL_ERROR";
+            emailAuditLogService.marcarFallido(destinatario, e.getMessage(), codigoError);
+
             diagnosticarErrorSMTP(e);
         } catch (Exception e) {
             log.error("❌ Error inesperado al enviar correo a {}: {} - {}", destinatario, e.getClass().getName(), e.getMessage());
             log.error("Stack trace: ", e);
+
+            // Marcar como fallido en auditoría
+            emailAuditLogService.marcarFallido(destinatario, e.getMessage(), "UNKNOWN_ERROR");
         }
     }
 

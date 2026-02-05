@@ -61,6 +61,7 @@ import {
   Headphones,
   Phone,
   PhoneCall,
+  Mail,
 } from "lucide-react";
 
 // Mapeo de nombres de iconos a componentes de Lucide
@@ -109,6 +110,7 @@ const iconMap = {
   'Headphones': Headphones,  // 🎧 Para teleoperadoras/gestoras de citas
   'Phone': Phone,
   'PhoneCall': PhoneCall,
+  'Mail': Mail,  // 📧 Para auditoría de correos
 };
 
 const getIconComponent = (iconName) => {

@@ -62,6 +62,12 @@ export const componentRegistry = {
     requiredAction: 'ver',
   },
 
+  '/admin/email-audit': {
+    component: lazy(() => import('../pages/admin/EmailAuditLogs')),
+    requiredAction: 'ver',
+    requiredRoles: ['SUPERADMIN', 'ADMIN'],
+  },
+
   '/admin/dashboard-medico/cms': {
     component: lazy(() => import('../pages/admin/DashboardMedicoCMS')),
     requiredAction: 'ver',

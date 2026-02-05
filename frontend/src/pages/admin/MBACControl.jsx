@@ -511,11 +511,13 @@ export default function MBACControl() {
         apiClient.get("/mbac/paginas", true),
       ]);
 
-      // Agrupar páginas por módulo
-      const modulosAgrupados = modulosRes.map(mod => ({
-        ...mod,
-        paginas: paginasRes.filter(pag => pag.idModulo === mod.idModulo)
-      }));
+      // Agrupar páginas por módulo y ordenar alfabéticamente
+      const modulosAgrupados = modulosRes
+        .map(mod => ({
+          ...mod,
+          paginas: paginasRes.filter(pag => pag.idModulo === mod.idModulo)
+        }))
+        .sort((a, b) => (a.nombreModulo || '').localeCompare(b.nombreModulo || '', 'es'));
 
       setModulosConPaginas(modulosAgrupados);
     } catch (error) {
