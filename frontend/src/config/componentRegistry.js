@@ -131,7 +131,7 @@ export const componentRegistry = {
   // 👨‍⚕️ MÓDULO MÉDICO
   // ========================================================================
   '/roles/medico/bienvenida': {
-    component: lazy(() => import('../pages/common/Bienvenida')),
+    component: lazy(() => import('../pages/roles/medico/BienvenidaMedico')),
     requiredAction: 'ver',
   },
 
