@@ -2874,45 +2874,45 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
     public SolicitudBolsaDTO crearSolicitudAdicional(CrearSolicitudAdicionalRequest request, String username) {
         log.info("📝 Creando solicitud adicional para DNI: {}", request.getPacienteDni());
 
-        // 1. Validar que no exista ya una solicitud para este DNI
-        List<SolicitudBolsa> existentes = solicitudBolsaRepository
-            .findByPacienteDni(request.getPacienteDni());
+        // 1. Validar que no exista ya una solicitud ACTIVA para este DNI
+        List<SolicitudBolsa> existentes = solicitudRepository
+            .findByPacienteDniAndActivoTrue(request.getPacienteDni());
 
         if (!existentes.isEmpty()) {
             throw new ValidationException(
-                "Ya existe una solicitud para el paciente con DNI: " + request.getPacienteDni()
+                "Ya existe una solicitud activa para el paciente con DNI: " + request.getPacienteDni()
             );
         }
 
         // 2. Generar número de solicitud único
         String numeroSolicitud = generarNumeroSolicitud();
 
-        // 3. Crear nueva solicitud
+        // 3. Crear nueva solicitud con campos válidos de la entidad SolicitudBolsa
         SolicitudBolsa nuevaSolicitud = SolicitudBolsa.builder()
             .numeroSolicitud(numeroSolicitud)
             .pacienteDni(request.getPacienteDni())
             .pacienteNombre(request.getPacienteNombre())
-            .pacienteEdad(request.getPacienteEdad())
+            .pacienteId(request.getPacienteDni()) // Usar DNI como ID de paciente
             .pacienteSexo(request.getPacienteSexo())
             .pacienteTelefono(request.getPacienteTelefono())
             .pacienteTelefonoAlterno(request.getPacienteTelefonoAlterno())
-            .descIpress(request.getDescIpress())
+            .codigoIpressAdscripcion(request.getDescIpress())
+            .codigoAdscripcion(request.getDescIpress() != null ? request.getDescIpress() : "SIN_CODIGO")
             .tipoCita(request.getTipoCita())
-            .origen(request.getOrigen() != null ? request.getOrigen() : "Importación Manual")
-            .codEstadoCita(request.getCodEstadoCita())
-            .fechaSolicitud(LocalDateTime.now())
-            .fechaAsignacion(LocalDateTime.now())
-            .usuarioCreacion(request.getUsuarioCreacion())
-            .fechaCreacion(LocalDateTime.now())
+            .estado("PENDIENTE")
+            .estadoGestionCitasId(1L) // ID del estado "PENDIENTE CITAR"
+            .idBolsa(107L) // Bolsa por defecto para importación manual
+            .idServicio(1L) // Servicio por defecto
+            .activo(true)
             .build();
 
         // 4. Guardar
-        SolicitudBolsa guardado = solicitudBolsaRepository.save(nuevaSolicitud);
+        SolicitudBolsa guardado = solicitudRepository.save(nuevaSolicitud);
 
         log.info("✅ Solicitud adicional creada: {}", guardado.getIdSolicitud());
 
         // 5. Mapear a DTO
-        return mapToDTO(guardado);
+        return SolicitudBolsaMapper.toDTO(guardado);
     }
 
     @Override
@@ -2920,11 +2920,11 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
     public List<SolicitudBolsaDTO> buscarPorDni(String dni) {
         log.info("🔍 Buscando solicitudes para DNI: {}", dni);
 
-        List<SolicitudBolsa> solicitudes = solicitudBolsaRepository
-            .findByPacienteDni(dni);
+        List<SolicitudBolsa> solicitudes = solicitudRepository
+            .findByPacienteDniAndActivoTrue(dni);
 
         return solicitudes.stream()
-            .map(this::mapToDTO)
+            .map(SolicitudBolsaMapper::toDTO)
             .collect(Collectors.toList());
     }
 
@@ -2935,7 +2935,7 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
         String fecha = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
 
         // Contar solicitudes del día
-        long contador = solicitudBolsaRepository.countByFechaSolicitudBetween(
+        long contador = solicitudRepository.countByFechaSolicitudBetween(
             LocalDateTime.now().toLocalDate().atStartOfDay(),
             LocalDateTime.now().toLocalDate().atTime(23, 59, 59)
         );
