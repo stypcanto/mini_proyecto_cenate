@@ -20,7 +20,7 @@ import {
   RefreshCw
 } from 'lucide-react';
 import toast from 'react-hot-toast';
-import apiClient from '../../../../services/apiClient';
+import gestionPacientesService from '../../../../services/gestionPacientesService';
 
 export default function MisPacientes() {
   const [pacientes, setPacientes] = useState([]);
@@ -36,13 +36,12 @@ export default function MisPacientes() {
   const cargarPacientes = async () => {
     try {
       setLoading(true);
-      // Endpoint para obtener pacientes del sistema
-      // TODO: Cambiar a endpoint de pacientes asignados al médico cuando esté disponible
-      const response = await apiClient.get('/api/gestion-paciente', true);
+      // Obtener pacientes del módulo de Gestión de Pacientes (misma fuente que Citas)
+      const data = await gestionPacientesService.listar();
 
-      if (response.data) {
-        setPacientes(Array.isArray(response.data) ? response.data : []);
-        toast.success('Pacientes cargados');
+      if (data) {
+        setPacientes(Array.isArray(data) ? data : []);
+        toast.success(`${data.length} pacientes cargados`);
       }
     } catch (error) {
       console.error('Error cargando pacientes:', error);
@@ -55,11 +54,11 @@ export default function MisPacientes() {
 
   const pacientesFiltrados = pacientes.filter(p => {
     const coincideBusqueda =
-      (p.nombre?.toLowerCase().includes(busqueda.toLowerCase())) ||
-      (p.numeroDocumento?.includes(busqueda)) ||
-      (p.apellido?.toLowerCase().includes(busqueda.toLowerCase()));
+      (p.apellidosNombres?.toLowerCase().includes(busqueda.toLowerCase())) ||
+      (p.numDoc?.includes(busqueda)) ||
+      (p.telefonoCelular?.includes(busqueda));
 
-    const coincideEstado = !filtroEstado || (p.estado === filtroEstado);
+    const coincideEstado = !filtroEstado || (p.condicion === filtroEstado);
 
     return coincideBusqueda && coincideEstado;
   });
@@ -112,21 +111,23 @@ export default function MisPacientes() {
               />
             </div>
 
-            {/* Filtro de estado */}
+            {/* Filtro de condición */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 <Filter className="w-4 h-4 inline mr-2" />
-                Estado
+                Condición
               </label>
               <select
                 value={filtroEstado}
                 onChange={(e) => setFiltroEstado(e.target.value)}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
               >
-                <option value="">Todos</option>
-                <option value="Activo">Activo</option>
-                <option value="Inactivo">Inactivo</option>
+                <option value="">Todas</option>
+                <option value="Citado">Citado</option>
+                <option value="Reprogramación Fallida">Reprogramación Fallida</option>
+                <option value="Pendiente">Pendiente</option>
                 <option value="Atendido">Atendido</option>
+                <option value="No Contactado">No Contactado</option>
               </select>
             </div>
 
@@ -167,10 +168,10 @@ export default function MisPacientes() {
                     </div>
                     <div className="text-left">
                       <p className="font-semibold text-gray-900">
-                        {paciente.nombre} {paciente.apellido}
+                        {paciente.apellidosNombres}
                       </p>
                       <p className="text-sm text-gray-600">
-                        DNI: {paciente.numeroDocumento}
+                        DNI: {paciente.numDoc}
                       </p>
                     </div>
                   </div>
@@ -185,53 +186,80 @@ export default function MisPacientes() {
                 {expandidos[paciente.id] && (
                   <div className="px-6 py-4 border-t border-gray-200 bg-gray-50">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {/* Contacto */}
-                      {paciente.telefono && (
+                      {/* Contacto - Teléfono */}
+                      {paciente.telefonoCelular && (
                         <div className="flex items-start gap-3">
                           <Phone className="w-5 h-5 text-gray-400 mt-0.5 flex-shrink-0" />
                           <div>
                             <p className="text-sm text-gray-600">Teléfono</p>
-                            <p className="font-medium text-gray-900">{paciente.telefono}</p>
+                            <p className="font-medium text-gray-900">{paciente.telefonoCelular}</p>
                           </div>
                         </div>
                       )}
 
-                      {paciente.email && (
-                        <div className="flex items-start gap-3">
-                          <Mail className="w-5 h-5 text-gray-400 mt-0.5 flex-shrink-0" />
-                          <div>
-                            <p className="text-sm text-gray-600">Email</p>
-                            <p className="font-medium text-gray-900">{paciente.email}</p>
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Estado */}
+                      {/* Condición */}
                       <div className="flex items-start gap-3">
                         <Calendar className="w-5 h-5 text-gray-400 mt-0.5 flex-shrink-0" />
                         <div>
-                          <p className="text-sm text-gray-600">Estado</p>
+                          <p className="text-sm text-gray-600">Condición</p>
                           <div className="flex items-center gap-2">
                             <span className={`px-2 py-1 rounded text-xs font-semibold ${
-                              paciente.estado === 'Activo'
+                              paciente.condicion === 'Citado'
                                 ? 'bg-green-100 text-green-800'
-                                : paciente.estado === 'Atendido'
+                                : paciente.condicion === 'Atendido'
                                 ? 'bg-blue-100 text-blue-800'
+                                : paciente.condicion === 'Pendiente'
+                                ? 'bg-yellow-100 text-yellow-800'
+                                : paciente.condicion === 'Reprogramación Fallida'
+                                ? 'bg-red-100 text-red-800'
                                 : 'bg-gray-100 text-gray-800'
                             }`}>
-                              {paciente.estado || 'Sin asignar'}
+                              {paciente.condicion || 'Sin asignar'}
                             </span>
                           </div>
                         </div>
                       </div>
 
-                      {/* Especialidad */}
-                      {paciente.especialidad && (
+                      {/* Red Asistencial */}
+                      {paciente.redAsistencial && (
                         <div className="flex items-start gap-3">
                           <Heart className="w-5 h-5 text-gray-400 mt-0.5 flex-shrink-0" />
                           <div>
-                            <p className="text-sm text-gray-600">Especialidad</p>
-                            <p className="font-medium text-gray-900">{paciente.especialidad}</p>
+                            <p className="text-sm text-gray-600">Red Asistencial</p>
+                            <p className="font-medium text-gray-900">{paciente.redAsistencial}</p>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Gestora */}
+                      {paciente.gestora && (
+                        <div className="flex items-start gap-3">
+                          <Users className="w-5 h-5 text-gray-400 mt-0.5 flex-shrink-0" />
+                          <div>
+                            <p className="text-sm text-gray-600">Gestora</p>
+                            <p className="font-medium text-gray-900">{paciente.gestora}</p>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* IPRESS */}
+                      {paciente.ipress && (
+                        <div className="flex items-start gap-3">
+                          <Heart className="w-5 h-5 text-gray-400 mt-0.5 flex-shrink-0" />
+                          <div>
+                            <p className="text-sm text-gray-600">IPRESS</p>
+                            <p className="font-medium text-gray-900">{paciente.ipress}</p>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Observaciones */}
+                      {paciente.observaciones && (
+                        <div className="flex items-start gap-3 md:col-span-2">
+                          <AlertCircle className="w-5 h-5 text-gray-400 mt-0.5 flex-shrink-0" />
+                          <div>
+                            <p className="text-sm text-gray-600">Observaciones</p>
+                            <p className="font-medium text-gray-900">{paciente.observaciones}</p>
                           </div>
                         </div>
                       )}
@@ -254,9 +282,9 @@ export default function MisPacientes() {
             <p className="text-3xl font-bold text-blue-600 mt-2">{pacientesFiltrados.length}</p>
           </div>
           <div className="bg-white rounded-lg shadow-sm p-6">
-            <p className="text-gray-600 text-sm">Activos</p>
+            <p className="text-gray-600 text-sm">Citados</p>
             <p className="text-3xl font-bold text-green-600 mt-2">
-              {pacientes.filter(p => p.estado === 'Activo').length}
+              {pacientes.filter(p => p.condicion === 'Citado').length}
             </p>
           </div>
         </div>
