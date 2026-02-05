@@ -36,12 +36,12 @@ export default function MisPacientes() {
   const cargarPacientes = async () => {
     try {
       setLoading(true);
-      // Obtener pacientes del módulo de Gestión de Pacientes (misma fuente que Citas)
-      const data = await gestionPacientesService.listar();
+      // Obtener pacientes asignados al médico actual
+      const data = await gestionPacientesService.obtenerPacientesMedico();
 
       if (data) {
         setPacientes(Array.isArray(data) ? data : []);
-        toast.success(`${data.length} pacientes cargados`);
+        toast.success(`${data.length} pacientes asignados cargados`);
       }
     } catch (error) {
       console.error('Error cargando pacientes:', error);

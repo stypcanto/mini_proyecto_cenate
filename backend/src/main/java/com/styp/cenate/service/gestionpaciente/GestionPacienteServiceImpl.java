@@ -4,11 +4,18 @@ import com.styp.cenate.dto.GestionPacienteDTO;
 import com.styp.cenate.model.Asegurado;
 import com.styp.cenate.model.GestionPaciente;
 import com.styp.cenate.model.Ipress;
+import com.styp.cenate.model.PersonalCnt;
+import com.styp.cenate.model.Usuario;
+import com.styp.cenate.model.chatbot.SolicitudCita;
 import com.styp.cenate.repository.AseguradoRepository;
 import com.styp.cenate.repository.GestionPacienteRepository;
 import com.styp.cenate.repository.IpressRepository;
+import com.styp.cenate.repository.PersonalCntRepository;
+import com.styp.cenate.repository.UsuarioRepository;
+import com.styp.cenate.repository.chatbot.SolicitudCitaRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -16,6 +23,7 @@ import java.time.LocalDate;
 import java.time.Period;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -26,6 +34,9 @@ public class GestionPacienteServiceImpl implements IGestionPacienteService {
     private final GestionPacienteRepository repository;
     private final AseguradoRepository aseguradoRepository;
     private final IpressRepository ipressRepository;
+    private final UsuarioRepository usuarioRepository;
+    private final PersonalCntRepository personalCntRepository;
+    private final SolicitudCitaRepository solicitudCitaRepository;
 
     @Override
     @Transactional
@@ -205,6 +216,62 @@ public class GestionPacienteServiceImpl implements IGestionPacienteService {
 
         return aseguradoRepository.findByDocPaciente(dni)
             .map(this::aseguradoToDto);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<GestionPacienteDTO> obtenerPacientesDelMedicoActual() {
+        try {
+            // Obtener el usuario autenticado
+            String username = SecurityContextHolder.getContext().getAuthentication().getName();
+            log.info("Obteniendo pacientes para el médico: {}", username);
+
+            // Buscar el usuario con sus datos personales completos
+            Usuario usuario = usuarioRepository.findByNameUserWithFullDetails(username)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado: " + username));
+
+            // Verificar que el usuario tenga PersonalCnt (sea personal interno/CENATE)
+            PersonalCnt personalCnt = usuario.getPersonalCnt();
+            if (personalCnt == null) {
+                log.warn("Usuario {} no tiene datos de PersonalCnt", username);
+                return List.of();
+            }
+
+            Long idPers = personalCnt.getIdPers();
+            log.info("ID del médico: {}", idPers);
+
+            // Obtener todas las citas registradas por este médico
+            List<SolicitudCita> citas = solicitudCitaRepository.findByPersonal_IdPers(idPers);
+            log.info("Se encontraron {} citas para el médico {}", citas.size(), idPers);
+
+            // Extraer DNIs únicos de los pacientes de esas citas
+            Set<String> dnis = citas.stream()
+                .map(SolicitudCita::getDocPaciente)
+                .filter(dni -> dni != null && !dni.isEmpty())
+                .collect(Collectors.toSet());
+
+            log.info("Se encontraron {} pacientes únicos con citas", dnis.size());
+
+            if (dnis.isEmpty()) {
+                return List.of();
+            }
+
+            // Buscar la gestión de esos pacientes (uno por uno)
+            List<GestionPaciente> gestiones = dnis.stream()
+                .flatMap(dni -> repository.findByNumDoc(dni).stream())
+                .collect(Collectors.toList());
+
+            log.info("Se encontraron {} gestiones de pacientes para el médico {}", gestiones.size(), idPers);
+
+            // Convertir a DTOs y retornar
+            return gestiones.stream()
+                .map(this::toDto)
+                .collect(Collectors.toList());
+
+        } catch (Exception e) {
+            log.error("Error obteniendo pacientes del médico actual", e);
+            throw new RuntimeException("Error obteniendo pacientes: " + e.getMessage(), e);
+        }
     }
 
     // ========================================================================

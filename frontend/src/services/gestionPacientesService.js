@@ -19,6 +19,13 @@ const gestionPacientesService = {
     },
 
     /**
+     * Obtener pacientes asignados al médico actual
+     */
+    obtenerPacientesMedico: async () => {
+        return await apiClient.get(`${BASE_ENDPOINT}/medico/asignados`);
+    },
+
+    /**
      * Obtener paciente por ID
      */
     obtenerPorId: async (id) => {
