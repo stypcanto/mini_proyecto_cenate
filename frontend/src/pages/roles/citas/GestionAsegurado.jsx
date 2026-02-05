@@ -759,54 +759,9 @@ export default function GestionAsegurado() {
     try {
       const dni = asegurado.docPaciente;
 
-      // 1. Validar que NO exista en dim_solicitud_bolsa
-      try {
-        const existeBolsa = await fetch(
-          `${API_BASE}/bolsas/solicitudes/buscar-dni/${dni}`,
-          {
-            method: "GET",
-            headers: getHeaders(),
-          }
-        );
-
-        // Fetch no lanza excepciones en 404/500, verificamos status directamente
-        if (existeBolsa.status === 200) {
-          const datos = await existeBolsa.json();
-          if (Array.isArray(datos) && datos.length > 0) {
-            toast.error(`El paciente ${dni} ya está en bolsa de pacientes`);
-            setAgregandoPaciente(false);
-            return;
-          }
-        } else if (existeBolsa.status !== 404) {
-          // Si no es 200 ni 404, hay un error en el servidor
-          console.error("Error buscando DNI en bolsas:", existeBolsa.status);
-        }
-      } catch (err) {
-        console.error("Error validando dim_solicitud_bolsa:", err);
-      }
-
-      // 2. Crear en tabla gestion_paciente
-      const createGestionRes = await fetch(
-        `${API_BASE}/gestion-pacientes`,
-        {
-          method: "POST",
-          headers: getHeaders(),
-          body: JSON.stringify({
-            pkAsegurado: asegurado.pkAsegurado,
-            condicion: "Pendiente",
-            origen: "Importación Manual",
-            seleccionadoTelemedicina: false,
-            gestora: user?.username || "Sistema",
-          }),
-        }
-      );
-
-      if (!createGestionRes.ok) {
-        const errorData = await createGestionRes.json().catch(() => ({}));
-        throw new Error(errorData.message || `Error al crear en gestion_paciente (${createGestionRes.status})`);
-      }
-
-      // 3. Crear en tabla dim_solicitud_bolsa
+      // ✅ v1.46.4: IMPORTAR SOLO A dim_solicitud_bolsa (bandeja del gestor de citas)
+      // No crear en gestion_paciente - solo agregar a la bandeja del gestor
+      // El gestor puede entonces asignar especialidad y médico
       const createBolsaRes = await fetch(
         `${API_BASE}/bolsas/solicitudes/crear-adicional`,
         {

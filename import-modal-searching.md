@@ -1,0 +1,446 @@
+- generic [ref=e53]:
+  - complementary [ref=e54]:
+    - generic [ref=e56]:
+      - generic [ref=e59]:
+        - img "Logo CENATE" [ref=e60]
+        - button "Colapsar menu" [ref=e61] [cursor=pointer]:
+          - img [ref=e62]
+      - navigation [ref=e64]:
+        - generic [ref=e65]:
+          - button "Gestión de Citas" [ref=e66] [cursor=pointer]:
+            - generic [ref=e67]:
+              - img [ref=e68]
+              - generic [ref=e71]: Gestión de Citas
+            - img [ref=e72]
+          - generic [ref=e74]:
+            - link "Bienvenida" [ref=e75] [cursor=pointer]:
+              - /url: /citas/bienvenida
+              - img [ref=e76]
+              - generic [ref=e79]: Bienvenida
+            - link "Dashboard Citas" [ref=e80] [cursor=pointer]:
+              - /url: /citas/dashboard
+              - img [ref=e81]
+              - generic [ref=e86]: Dashboard Citas
+            - link "Gestionar Citas" [ref=e87] [cursor=pointer]:
+              - /url: /citas/gestion-asegurado
+              - img [ref=e88]
+              - generic [ref=e91]: Gestionar Citas
+            - link "Bolsa de Pacientes Asignados" [ref=e92] [cursor=pointer]:
+              - /url: /citas/bolsa-pacientes
+              - img [ref=e93]
+              - generic [ref=e98]: Bolsa de Pacientes Asignados
+      - paragraph [ref=e100]: v1.37.4
+  - main "Contenido principal" [ref=e101]:
+    - generic [ref=e103]:
+      - button "Notificaciones" [ref=e104] [cursor=pointer]:
+        - img [ref=e105]
+      - button "J Jhonatan Test Test GESTOR DE CITAS" [ref=e109] [cursor=pointer]:
+        - generic [ref=e111]: J
+        - generic [ref=e112]:
+          - generic [ref=e113]: Jhonatan Test Test
+          - generic [ref=e114]: GESTOR DE CITAS
+        - img [ref=e115]
+    - generic [ref=e117]:
+      - generic [ref=e162]:
+        - generic [ref=e163]:
+          - generic [ref=e166]:
+            - generic [ref=e167]: J
+            - generic [ref=e168]:
+              - heading "Bienvenid(a), Jhonatan" [level=1] [ref=e169]
+              - paragraph [ref=e170]: Gestor de Citas - Gestión de Pacientes Asignados
+              - generic [ref=e171]:
+                - generic [ref=e172]: "Rol: GESTOR DE CITAS"
+                - generic [ref=e173]: 📅 jueves, 5 de febrero de 2026
+          - generic [ref=e174]:
+            - generic [ref=e176]:
+              - img [ref=e177]
+              - generic [ref=e182]:
+                - paragraph [ref=e183]: Total de Pacientes
+                - paragraph [ref=e184]: "11"
+            - generic [ref=e186]:
+              - img [ref=e187]
+              - generic [ref=e190]:
+                - paragraph [ref=e191]: Pacientes Atendidos
+                - paragraph [ref=e192]: "0"
+            - generic [ref=e194]:
+              - img [ref=e195]
+              - generic [ref=e197]:
+                - paragraph [ref=e198]: Pacientes Pendientes
+                - paragraph [ref=e199]: "8"
+            - generic [ref=e201]:
+              - img [ref=e202]
+              - generic [ref=e204]:
+                - paragraph [ref=e205]: Solicitudes Pendientes
+                - paragraph [ref=e206]: "8"
+          - generic [ref=e207]:
+            - generic [ref=e209]:
+              - generic [ref=e210]:
+                - heading "Mi Bandeja de Pacientes" [level=2] [ref=e211]
+                - paragraph [ref=e212]: Pacientes asignados desde el módulo de Bolsas de Pacientes
+              - generic [ref=e213]:
+                - button "Importar Paciente" [ref=e214] [cursor=pointer]:
+                  - img [ref=e215]
+                  - text: Importar Paciente
+                - button "Actualizar" [ref=e218] [cursor=pointer]:
+                  - img [ref=e219]
+                  - text: Actualizar
+                - button "🔄✓ Auto" [ref=e224] [cursor=pointer]
+                - generic [ref=e225]: 14:26:13
+            - generic [ref=e226]:
+              - generic [ref=e228]:
+                - heading "Filtros" [level=3] [ref=e229]
+                - button "Mostrar filtros" [ref=e230] [cursor=pointer]:
+                  - text: Mostrar filtros
+                  - img [ref=e231]
+              - table [ref=e234]:
+                - rowgroup [ref=e235]:
+                  - row "Seleccionar todo Fecha Asignación DNI Paciente Nombre Paciente Edad Género Especialidad DNI Médico Especialista Fecha y Hora de Cita IPRESS Tipo de Cita Teléfono 1 Teléfono 2 Estado Fecha Cambio Estado Usuario Cambio Estado Acciones" [ref=e236]:
+                    - columnheader "Seleccionar todo" [ref=e237]:
+                      - checkbox "Seleccionar todo" [ref=e238] [cursor=pointer]
+                    - columnheader "Fecha Asignación" [ref=e239]
+                    - columnheader "DNI Paciente" [ref=e240]
+                    - columnheader "Nombre Paciente" [ref=e241]
+                    - columnheader "Edad" [ref=e242]
+                    - columnheader "Género" [ref=e243]
+                    - columnheader "Especialidad" [ref=e244]
+                    - columnheader "DNI Médico" [ref=e245]
+                    - columnheader "Especialista" [ref=e246]
+                    - columnheader "Fecha y Hora de Cita" [ref=e247]
+                    - columnheader "IPRESS" [ref=e248]
+                    - columnheader "Tipo de Cita" [ref=e249]
+                    - columnheader "Teléfono 1" [ref=e250]
+                    - columnheader "Teléfono 2" [ref=e251]
+                    - columnheader "Estado" [ref=e252]
+                    - columnheader "Fecha Cambio Estado" [ref=e253]
+                    - columnheader "Usuario Cambio Estado" [ref=e254]
+                    - columnheader "Acciones" [ref=e255]
+                - rowgroup [ref=e256]:
+                  - row "05/02/2026, 12:28 a. m. 08824568 AGUIRRE BERDANDUCCI SILVINO CINCINATO 77 M NUTRICION - No seleccionado No seleccionado - - 998322386 - Pendiente Citar 5/2/2026, 9:14:37 — Editar 📱" [ref=e257]:
+                    - cell [ref=e258]:
+                      - checkbox [ref=e259] [cursor=pointer]
+                    - cell "05/02/2026, 12:28 a. m." [ref=e260]
+                    - cell "08824568" [ref=e261]
+                    - cell "AGUIRRE BERDANDUCCI SILVINO CINCINATO" [ref=e262]
+                    - cell "77" [ref=e263]
+                    - cell "M" [ref=e264]
+                    - cell "NUTRICION" [ref=e265]
+                    - cell "-" [ref=e266]
+                    - cell "No seleccionado" [ref=e267]
+                    - cell "No seleccionado" [ref=e268]
+                    - cell "-" [ref=e269]
+                    - cell "-" [ref=e270]
+                    - cell "998322386" [ref=e271]
+                    - cell "-" [ref=e272]
+                    - cell "Pendiente Citar" [ref=e273]:
+                      - generic [ref=e274]: Pendiente Citar
+                    - cell "5/2/2026, 9:14:37" [ref=e275]
+                    - cell "—" [ref=e276]
+                    - cell "Editar 📱" [ref=e277]:
+                      - generic [ref=e278]:
+                        - button "Editar" [ref=e279] [cursor=pointer]:
+                          - img [ref=e280]
+                          - text: Editar
+                        - button "📱" [ref=e282] [cursor=pointer]
+                  - row "05/02/2026, 12:26 a. m. 01077232 SONIA AGNES FRANCO CABRERA 1061 F NUTRICION - No seleccionado No seleccionado - - 956869737 - Pendiente Citar 5/2/2026, 9:13:43 — Editar 📱" [ref=e283]:
+                    - cell [ref=e284]:
+                      - checkbox [ref=e285] [cursor=pointer]
+                    - cell "05/02/2026, 12:26 a. m." [ref=e286]
+                    - cell "01077232" [ref=e287]
+                    - cell "SONIA AGNES FRANCO CABRERA" [ref=e288]
+                    - cell "1061" [ref=e289]
+                    - cell "F" [ref=e290]
+                    - cell "NUTRICION" [ref=e291]
+                    - cell "-" [ref=e292]
+                    - cell "No seleccionado" [ref=e293]
+                    - cell "No seleccionado" [ref=e294]
+                    - cell "-" [ref=e295]
+                    - cell "-" [ref=e296]
+                    - cell "956869737" [ref=e297]
+                    - cell "-" [ref=e298]
+                    - cell "Pendiente Citar" [ref=e299]:
+                      - generic [ref=e300]: Pendiente Citar
+                    - cell "5/2/2026, 9:13:43" [ref=e301]
+                    - cell "—" [ref=e302]
+                    - cell "Editar 📱" [ref=e303]:
+                      - generic [ref=e304]:
+                        - button "Editar" [ref=e305] [cursor=pointer]:
+                          - img [ref=e306]
+                          - text: Editar
+                        - button "📱" [ref=e308] [cursor=pointer]
+                  - row "05/02/2026, 12:39 a. m. 45498124 PALMA AGUILAR REBECA RUTH 38 F MEDICINA GENERAL - No seleccionado No seleccionado - - 941726912 - Pendiente Citar 4/2/2026, 23:32:49 — Editar 📱" [ref=e309]:
+                    - cell [ref=e310]:
+                      - checkbox [ref=e311] [cursor=pointer]
+                    - cell "05/02/2026, 12:39 a. m." [ref=e312]
+                    - cell "45498124" [ref=e313]
+                    - cell "PALMA AGUILAR REBECA RUTH" [ref=e314]
+                    - cell "38" [ref=e315]
+                    - cell "F" [ref=e316]
+                    - cell "MEDICINA GENERAL" [ref=e317]
+                    - cell "-" [ref=e318]
+                    - cell "No seleccionado" [ref=e319]
+                    - cell "No seleccionado" [ref=e320]
+                    - cell "-" [ref=e321]
+                    - cell "-" [ref=e322]
+                    - cell "941726912" [ref=e323]
+                    - cell "-" [ref=e324]
+                    - cell "Pendiente Citar" [ref=e325]:
+                      - generic [ref=e326]: Pendiente Citar
+                    - cell "4/2/2026, 23:32:49" [ref=e327]
+                    - cell "—" [ref=e328]
+                    - cell "Editar 📱" [ref=e329]:
+                      - generic [ref=e330]:
+                        - button "Editar" [ref=e331] [cursor=pointer]:
+                          - img [ref=e332]
+                          - text: Editar
+                        - button "📱" [ref=e334] [cursor=pointer]
+                  - row "05/02/2026, 01:09 a. m. 25667630 RUBIO OLIVA ERNESTO OSWALDO 64 M NUTRICION - No seleccionado No seleccionado - - 950908340 - Pendiente Citar 4/2/2026, 23:32:49 — Editar 📱" [ref=e335]:
+                    - cell [ref=e336]:
+                      - checkbox [ref=e337] [cursor=pointer]
+                    - cell "05/02/2026, 01:09 a. m." [ref=e338]
+                    - cell "25667630" [ref=e339]
+                    - cell "RUBIO OLIVA ERNESTO OSWALDO" [ref=e340]
+                    - cell "64" [ref=e341]
+                    - cell "M" [ref=e342]
+                    - cell "NUTRICION" [ref=e343]
+                    - cell "-" [ref=e344]
+                    - cell "No seleccionado" [ref=e345]
+                    - cell "No seleccionado" [ref=e346]
+                    - cell "-" [ref=e347]
+                    - cell "-" [ref=e348]
+                    - cell "950908340" [ref=e349]
+                    - cell "-" [ref=e350]
+                    - cell "Pendiente Citar" [ref=e351]:
+                      - generic [ref=e352]: Pendiente Citar
+                    - cell "4/2/2026, 23:32:49" [ref=e353]
+                    - cell "—" [ref=e354]
+                    - cell "Editar 📱" [ref=e355]:
+                      - generic [ref=e356]:
+                        - button "Editar" [ref=e357] [cursor=pointer]:
+                          - img [ref=e358]
+                          - text: Editar
+                        - button "📱" [ref=e360] [cursor=pointer]
+                  - row "05/02/2026, 01:10 a. m. 25667630 ERNESTO OSWALDO ERNESTO OSWALDO 64 M NUTRICION - No seleccionado No seleccionado - - 950908340 - Pendiente Citar 4/2/2026, 23:32:49 — Editar 📱" [ref=e361]:
+                    - cell [ref=e362]:
+                      - checkbox [ref=e363] [cursor=pointer]
+                    - cell "05/02/2026, 01:10 a. m." [ref=e364]
+                    - cell "25667630" [ref=e365]
+                    - cell "ERNESTO OSWALDO ERNESTO OSWALDO" [ref=e366]
+                    - cell "64" [ref=e367]
+                    - cell "M" [ref=e368]
+                    - cell "NUTRICION" [ref=e369]
+                    - cell "-" [ref=e370]
+                    - cell "No seleccionado" [ref=e371]
+                    - cell "No seleccionado" [ref=e372]
+                    - cell "-" [ref=e373]
+                    - cell "-" [ref=e374]
+                    - cell "950908340" [ref=e375]
+                    - cell "-" [ref=e376]
+                    - cell "Pendiente Citar" [ref=e377]:
+                      - generic [ref=e378]: Pendiente Citar
+                    - cell "4/2/2026, 23:32:49" [ref=e379]
+                    - cell "—" [ref=e380]
+                    - cell "Editar 📱" [ref=e381]:
+                      - generic [ref=e382]:
+                        - button "Editar" [ref=e383] [cursor=pointer]:
+                          - img [ref=e384]
+                          - text: Editar
+                        - button "📱" [ref=e386] [cursor=pointer]
+                  - row "05/02/2026, 01:17 a. m. 07839174 FORTUNA EGUSQUIZA MARIO ALFONSO 87 M NUTRICION - No seleccionado No seleccionado - - 969469185 - Pendiente Citar 4/2/2026, 23:32:49 — Editar 📱" [ref=e387]:
+                    - cell [ref=e388]:
+                      - checkbox [ref=e389] [cursor=pointer]
+                    - cell "05/02/2026, 01:17 a. m." [ref=e390]
+                    - cell "07839174" [ref=e391]
+                    - cell "FORTUNA EGUSQUIZA MARIO ALFONSO" [ref=e392]
+                    - cell "87" [ref=e393]
+                    - cell "M" [ref=e394]
+                    - cell "NUTRICION" [ref=e395]
+                    - cell "-" [ref=e396]
+                    - cell "No seleccionado" [ref=e397]
+                    - cell "No seleccionado" [ref=e398]
+                    - cell "-" [ref=e399]
+                    - cell "-" [ref=e400]
+                    - cell "969469185" [ref=e401]
+                    - cell "-" [ref=e402]
+                    - cell "Pendiente Citar" [ref=e403]:
+                      - generic [ref=e404]: Pendiente Citar
+                    - cell "4/2/2026, 23:32:49" [ref=e405]
+                    - cell "—" [ref=e406]
+                    - cell "Editar 📱" [ref=e407]:
+                      - generic [ref=e408]:
+                        - button "Editar" [ref=e409] [cursor=pointer]:
+                          - img [ref=e410]
+                          - text: Editar
+                        - button "📱" [ref=e412] [cursor=pointer]
+                  - row "29/01/2026, 12:28 p. m. 46183586 MAMANI CCOSI DIEGO JESUS 36 M NEUROLOGIA - No seleccionado No seleccionado CAP III SURQUILLO Referencia 987654321 - Pendiente Citar 5/2/2026, 1:08:56 Jhonatan Test Test Editar 📱" [ref=e413]:
+                    - cell [ref=e414]:
+                      - checkbox [ref=e415] [cursor=pointer]
+                    - cell "29/01/2026, 12:28 p. m." [ref=e416]
+                    - cell "46183586" [ref=e417]
+                    - cell "MAMANI CCOSI DIEGO JESUS" [ref=e418]
+                    - cell "36" [ref=e419]
+                    - cell "M" [ref=e420]
+                    - cell "NEUROLOGIA" [ref=e421]
+                    - cell "-" [ref=e422]
+                    - cell "No seleccionado" [ref=e423]
+                    - cell "No seleccionado" [ref=e424]
+                    - cell "CAP III SURQUILLO" [ref=e425]
+                    - cell "Referencia" [ref=e426]
+                    - cell "987654321" [ref=e427]
+                    - cell "-" [ref=e428]
+                    - cell "Pendiente Citar" [ref=e429]:
+                      - generic [ref=e430]: Pendiente Citar
+                    - cell "5/2/2026, 1:08:56" [ref=e431]
+                    - cell "Jhonatan Test Test" [ref=e432]
+                    - cell "Editar 📱" [ref=e433]:
+                      - generic [ref=e434]:
+                        - button "Editar" [ref=e435] [cursor=pointer]:
+                          - img [ref=e436]
+                          - text: Editar
+                        - button "📱" [ref=e438] [cursor=pointer]
+                  - row "30/01/2026, 10:09 a. m. 10417941 AMADO HUAPAYA MANUEL ROBERTO 70 M NEUROLOGIA 43903520 Ivette Stphanie Leon Jimenez 04/01/2026 15:23:00 POL.- APP - GUILLERMO KAELIN DE LA F. Interconsulta 910412263 - Citado 5/2/2026, 13:21:38 Jhonatan Test Test Editar 📱" [ref=e439]:
+                    - cell [ref=e440]:
+                      - checkbox [ref=e441] [cursor=pointer]
+                    - cell "30/01/2026, 10:09 a. m." [ref=e442]
+                    - cell "10417941" [ref=e443]
+                    - cell "AMADO HUAPAYA MANUEL ROBERTO" [ref=e444]
+                    - cell "70" [ref=e445]
+                    - cell "M" [ref=e446]
+                    - cell "NEUROLOGIA" [ref=e447]
+                    - cell "43903520" [ref=e448]
+                    - cell "Ivette Stphanie Leon Jimenez" [ref=e449]
+                    - cell "04/01/2026 15:23:00" [ref=e450]:
+                      - generic [ref=e451]: 04/01/2026 15:23:00
+                    - cell "POL.- APP - GUILLERMO KAELIN DE LA F." [ref=e452]
+                    - cell "Interconsulta" [ref=e453]
+                    - cell "910412263" [ref=e454]
+                    - cell "-" [ref=e455]
+                    - cell "Citado" [ref=e456]:
+                      - generic [ref=e457]: Citado
+                    - cell "5/2/2026, 13:21:38" [ref=e458]
+                    - cell "Jhonatan Test Test" [ref=e459]
+                    - cell "Editar 📱" [ref=e460]:
+                      - generic [ref=e461]:
+                        - button "Editar" [ref=e462] [cursor=pointer]:
+                          - img [ref=e463]
+                          - text: Editar
+                        - button "📱" [ref=e465] [cursor=pointer]
+                  - row "03/02/2026, 06:38 p. m. 40046461 COSIO ESPINO CARMEN MAGALY 48 F NEUROLOGIA 43903520 Ivette Stphanie Leon Jimenez 28/02/2026 07:13:00 CAP III SURQUILLO Referencia 943873303 - Citado 5/2/2026, 1:08:30 — Editar 📱" [ref=e466]:
+                    - cell [ref=e467]:
+                      - checkbox [ref=e468] [cursor=pointer]
+                    - cell "03/02/2026, 06:38 p. m." [ref=e469]
+                    - cell "40046461" [ref=e470]
+                    - cell "COSIO ESPINO CARMEN MAGALY" [ref=e471]
+                    - cell "48" [ref=e472]
+                    - cell "F" [ref=e473]
+                    - cell "NEUROLOGIA" [ref=e474]
+                    - cell "43903520" [ref=e475]
+                    - cell "Ivette Stphanie Leon Jimenez" [ref=e476]
+                    - cell "28/02/2026 07:13:00" [ref=e477]:
+                      - generic [ref=e478]: 28/02/2026 07:13:00
+                    - cell "CAP III SURQUILLO" [ref=e479]
+                    - cell "Referencia" [ref=e480]
+                    - cell "943873303" [ref=e481]
+                    - cell "-" [ref=e482]
+                    - cell "Citado" [ref=e483]:
+                      - generic [ref=e484]: Citado
+                    - cell "5/2/2026, 1:08:30" [ref=e485]
+                    - cell "—" [ref=e486]
+                    - cell "Editar 📱" [ref=e487]:
+                      - generic [ref=e488]:
+                        - button "Editar" [ref=e489] [cursor=pointer]:
+                          - img [ref=e490]
+                          - text: Editar
+                        - button "📱" [ref=e492] [cursor=pointer]
+                  - row "05/02/2026, 02:09 a. m. 07888772 ARIAS CUBILLAS MARIA 91 F CARDIOLOGIA 99999999 Doctor Test 1 No seleccionado CAP II LURIN Voluntaria 962942164 - Pendiente Citar 5/2/2026, 2:24:44 — Editar 📱" [ref=e493]:
+                    - cell [ref=e494]:
+                      - checkbox [ref=e495] [cursor=pointer]
+                    - cell "05/02/2026, 02:09 a. m." [ref=e496]
+                    - cell "07888772" [ref=e497]
+                    - cell "ARIAS CUBILLAS MARIA" [ref=e498]
+                    - cell "91" [ref=e499]
+                    - cell "F" [ref=e500]
+                    - cell "CARDIOLOGIA" [ref=e501]
+                    - cell "99999999" [ref=e502]
+                    - cell "Doctor Test 1" [ref=e503]
+                    - cell "No seleccionado" [ref=e504]
+                    - cell "CAP II LURIN" [ref=e505]
+                    - cell "Voluntaria" [ref=e506]
+                    - cell "962942164" [ref=e507]
+                    - cell "-" [ref=e508]
+                    - cell "Pendiente Citar" [ref=e509]:
+                      - generic [ref=e510]: Pendiente Citar
+                    - cell "5/2/2026, 2:24:44" [ref=e511]
+                    - cell "—" [ref=e512]
+                    - cell "Editar 📱" [ref=e513]:
+                      - generic [ref=e514]:
+                        - button "Editar" [ref=e515] [cursor=pointer]:
+                          - img [ref=e516]
+                          - text: Editar
+                        - button "📱" [ref=e518] [cursor=pointer]
+                  - row "05/02/2026, 02:09 a. m. 07887379 LA ROSA DE ARIAS SATURNINA 86 F CARDIOLOGIA 72945564 Carito Lisset Zumaeta Cabrera 27/02/2026 18:24:00 CAP II LURIN Voluntaria 958071514 - Citado 5/2/2026, 13:19:15 — Editar 📱" [ref=e519]:
+                    - cell [ref=e520]:
+                      - checkbox [ref=e521] [cursor=pointer]
+                    - cell "05/02/2026, 02:09 a. m." [ref=e522]
+                    - cell "07887379" [ref=e523]
+                    - cell "LA ROSA DE ARIAS SATURNINA" [ref=e524]
+                    - cell "86" [ref=e525]
+                    - cell "F" [ref=e526]
+                    - cell "CARDIOLOGIA" [ref=e527]
+                    - cell "72945564" [ref=e528]
+                    - cell "Carito Lisset Zumaeta Cabrera" [ref=e529]
+                    - cell "27/02/2026 18:24:00" [ref=e530]:
+                      - generic [ref=e531]: 27/02/2026 18:24:00
+                    - cell "CAP II LURIN" [ref=e532]
+                    - cell "Voluntaria" [ref=e533]
+                    - cell "958071514" [ref=e534]
+                    - cell "-" [ref=e535]
+                    - cell "Citado" [ref=e536]:
+                      - generic [ref=e537]: Citado
+                    - cell "5/2/2026, 13:19:15" [ref=e538]
+                    - cell "—" [ref=e539]
+                    - cell "Editar 📱" [ref=e540]:
+                      - generic [ref=e541]:
+                        - button "Editar" [ref=e542] [cursor=pointer]:
+                          - img [ref=e543]
+                          - text: Editar
+                        - button "📱" [ref=e545] [cursor=pointer]
+        - generic [ref=e547]:
+          - generic [ref=e548]:
+            - generic [ref=e549]:
+              - img [ref=e550]
+              - heading "Importar Paciente Adicional" [level=2] [ref=e553]
+            - button [ref=e554] [cursor=pointer]:
+              - img [ref=e555]
+          - generic [ref=e558]:
+            - generic [ref=e559]:
+              - generic [ref=e560]: Buscar por DNI o Nombre
+              - generic [ref=e561]:
+                - img [ref=e562]
+                - textbox "Ingresa DNI o nombre del paciente..." [active] [ref=e565]: "12345601"
+              - paragraph [ref=e566]: Mínimo 3 caracteres para buscar
+            - generic [ref=e574]:
+              - generic [ref=e575]:
+                - generic [ref=e576]:
+                  - paragraph [ref=e577]: DNI
+                  - paragraph [ref=e578]: "12345601"
+                - generic [ref=e579]:
+                  - paragraph [ref=e580]: Edad / Sexo
+                  - paragraph [ref=e581]: 40 años / M
+                - generic [ref=e582]:
+                  - paragraph [ref=e583]: Nombre Completo
+                  - paragraph [ref=e584]: Juan Carlos García López
+                - generic [ref=e585]:
+                  - paragraph [ref=e586]: Teléfono
+                  - paragraph [ref=e587]: "987654321"
+                - generic [ref=e588]:
+                  - paragraph [ref=e589]: Tipo Seguro
+                  - paragraph [ref=e590]: REGULAR
+                - generic [ref=e591]:
+                  - paragraph [ref=e592]: IPRESS Adscrita
+                  - paragraph [ref=e593]: P.M. ALAMEDA
+              - button "Agregar" [ref=e594] [cursor=pointer]:
+                - img [ref=e595]
+                - generic [ref=e596]: Agregar
+      - generic [ref=e159]:
+        - paragraph [ref=e160]: CENATE - Sistema de Telemedicina - EsSalud 2026
+        - paragraph [ref=e161]: v1.37.4 - Performance Optimization + Deduplicación Automática + Foto Header + SMTP EsSalud
