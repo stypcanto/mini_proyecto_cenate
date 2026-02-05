@@ -21,9 +21,11 @@ import java.util.Optional;
 public interface EmailAuditLogRepository extends JpaRepository<EmailAuditLog, Long> {
 
     /**
-     * Buscar registros por destinatario
+     * Buscar registros por destinatario (más reciente primero)
      */
-    List<EmailAuditLog> findByDestinatario(String destinatario);
+    @Query("SELECT e FROM EmailAuditLog e WHERE e.destinatario = :destinatario " +
+           "ORDER BY e.fechaEnvio DESC")
+    List<EmailAuditLog> findByDestinatario(@Param("destinatario") String destinatario);
 
     /**
      * Buscar registros por estado

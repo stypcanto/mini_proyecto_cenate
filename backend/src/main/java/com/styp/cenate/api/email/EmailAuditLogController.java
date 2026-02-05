@@ -66,12 +66,13 @@ public class EmailAuditLogController {
         @RequestParam String email) {
         try {
             log.info("📋 Consultando correos para: {}", email);
-            // Implementar búsqueda si se necesita
+            List<EmailAuditLog> registros = emailAuditLogService.obtenerCorreosPorDestinatario(email);
 
             Map<String, Object> response = new HashMap<>();
             response.put("success", true);
             response.put("destinatario", email);
-            response.put("datos", List.of());
+            response.put("total", registros.size());
+            response.put("datos", registros);
 
             return ResponseEntity.ok(response);
         } catch (Exception e) {

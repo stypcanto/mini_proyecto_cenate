@@ -8,6 +8,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -27,9 +28,9 @@ public class EmailAuditLogService {
     private final EmailAuditLogRepository emailAuditLogRepository;
 
     /**
-     * Registrar un intento de envío de correo (asíncrono)
+     * Registrar un intento de envío de correo (síncrono para garantizar persistencia)
      */
-    @Async
+    @Transactional
     public void registrarIntento(String destinatario, String tipoCorreo, String asunto,
                                  String username, Long idUsuario, String servidorSmtp,
                                  Integer puertoSmtp, String tokenAsociado) {
@@ -47,16 +48,16 @@ public class EmailAuditLogService {
                 .build();
 
             emailAuditLogRepository.save(auditLog);
-            log.info("📋 Registro de auditoría creado para: {}", destinatario);
+            log.info("📋 Registro de auditoría creado para: {} [TIPO: {}]", destinatario, tipoCorreo);
         } catch (Exception e) {
-            log.error("❌ Error registrando intento de correo: {}", e.getMessage());
+            log.error("❌ Error registrando intento de correo: {}", e.getMessage(), e);
         }
     }
 
     /**
-     * Marcar un correo como enviado exitosamente
+     * Marcar un correo como enviado exitosamente (síncrono)
      */
-    @Async
+    @Transactional
     public void marcarEnviado(String destinatario, long tiempoMs) {
         try {
             List<EmailAuditLog> registros = emailAuditLogRepository
@@ -68,17 +69,20 @@ public class EmailAuditLogService {
                 if (!ultimoRegistro.esExitoso()) {
                     ultimoRegistro.marcarEnviado(tiempoMs);
                     emailAuditLogRepository.save(ultimoRegistro);
+                    log.info("✅ Auditoría actualizada: {} marcado como ENVIADO", destinatario);
                 }
+            } else {
+                log.warn("⚠️ No se encontró registro de auditoría para actualizar: {}", destinatario);
             }
         } catch (Exception e) {
-            log.error("❌ Error marcando correo como enviado: {}", e.getMessage());
+            log.error("❌ Error marcando correo como enviado: {}", e.getMessage(), e);
         }
     }
 
     /**
-     * Marcar un correo como fallido
+     * Marcar un correo como fallido (síncrono)
      */
-    @Async
+    @Transactional
     public void marcarFallido(String destinatario, String mensajeError, String codigoError) {
         try {
             List<EmailAuditLog> registros = emailAuditLogRepository
@@ -90,16 +94,28 @@ public class EmailAuditLogService {
                 if (!"ENVIADO".equalsIgnoreCase(ultimoRegistro.getEstado())) {
                     ultimoRegistro.marcarFallido(mensajeError, codigoError);
                     emailAuditLogRepository.save(ultimoRegistro);
+                    log.warn("❌ Auditoría actualizada: {} marcado como FALLIDO", destinatario);
                 }
+            } else {
+                log.warn("⚠️ No se encontró registro de auditoría para actualizar: {}", destinatario);
             }
         } catch (Exception e) {
-            log.error("❌ Error marcando correo como fallido: {}", e.getMessage());
+            log.error("❌ Error marcando correo como fallido: {}", e.getMessage(), e);
         }
+    }
+
+    /**
+     * Obtener correos por destinatario
+     */
+    @Transactional(readOnly = true)
+    public List<EmailAuditLog> obtenerCorreosPorDestinatario(String destinatario) {
+        return emailAuditLogRepository.findByDestinatario(destinatario);
     }
 
     /**
      * Obtener histórico de correos de un usuario
      */
+    @Transactional(readOnly = true)
     public List<EmailAuditLog> obtenerHistoricoUsuario(Long idUsuario, int pagina, int tamanio) {
         Pageable pageable = PageRequest.of(pagina, tamanio);
         return emailAuditLogRepository
@@ -110,6 +126,7 @@ public class EmailAuditLogService {
     /**
      * Obtener correos fallidos
      */
+    @Transactional(readOnly = true)
     public List<EmailAuditLog> obtenerCorreosFallidos(int limite) {
         Pageable pageable = PageRequest.of(0, limite);
         return emailAuditLogRepository.findFallidos(pageable);
@@ -118,6 +135,7 @@ public class EmailAuditLogService {
     /**
      * Obtener estadísticas de correos en un período
      */
+    @Transactional(readOnly = true)
     public EmailAuditStats obtenerEstadisticas(LocalDateTime inicio, LocalDateTime fin) {
         long enviados = emailAuditLogRepository
             .countEnviadosEnPeriodo(inicio, fin);
@@ -142,6 +160,7 @@ public class EmailAuditLogService {
     /**
      * Buscar correo por token
      */
+    @Transactional(readOnly = true)
     public Optional<EmailAuditLog> obtenerPorToken(String token) {
         return emailAuditLogRepository.findByTokenAsociado(token);
     }
@@ -149,6 +168,7 @@ public class EmailAuditLogService {
     /**
      * Obtener correos con errores de conexión
      */
+    @Transactional(readOnly = true)
     public List<EmailAuditLog> obtenerErroresConexion(int limite) {
         Pageable pageable = PageRequest.of(0, limite);
         return emailAuditLogRepository.findConErroresConexion(pageable);
