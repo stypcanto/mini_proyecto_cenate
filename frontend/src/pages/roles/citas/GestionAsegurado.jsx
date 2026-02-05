@@ -752,38 +752,14 @@ export default function GestionAsegurado() {
   }, [busquedaAsegurado, buscarAsegurados]);
 
   // ============================================================================
-  // ➕ IMPORTAR PACIENTE ADICIONAL (v1.46.0)
+  // ➕ IMPORTAR PACIENTE ADICIONAL (v1.46.0) - FIXED v1.46.1
   // ============================================================================
   const importarPacienteAdicional = async (asegurado) => {
     setAgregandoPaciente(true);
     try {
       const dni = asegurado.docPaciente;
 
-      // 1. Validar que NO exista en gestion_paciente
-      try {
-        const existeGestion = await fetch(
-          `${API_BASE}/gestion-pacientes/documento/${dni}`,
-          {
-            method: "GET",
-            headers: getHeaders(),
-          }
-        );
-
-        if (existeGestion.status === 200 && existeGestion.ok) {
-          const datos = await existeGestion.json();
-          if (datos) {
-            toast.warning(`El paciente ${dni} ya está en gestión`);
-            return;
-          }
-        }
-      } catch (err) {
-        // 204 No Content = no existe, OK para continuar
-        if (err.response?.status !== 204 && err.status !== 404) {
-          console.error("Error validando gestion_paciente:", err);
-        }
-      }
-
-      // 2. Validar que NO exista en dim_solicitud_bolsa
+      // 1. Validar que NO exista en dim_solicitud_bolsa
       try {
         const existeBolsa = await fetch(
           `${API_BASE}/bolsas/solicitudes/buscar-dni/${dni}`,
@@ -793,21 +769,23 @@ export default function GestionAsegurado() {
           }
         );
 
-        if (existeBolsa.ok) {
+        // Fetch no lanza excepciones en 404/500, verificamos status directamente
+        if (existeBolsa.status === 200) {
           const datos = await existeBolsa.json();
           if (Array.isArray(datos) && datos.length > 0) {
-            toast.warning(`El paciente ${dni} ya está en bolsa de pacientes`);
+            toast.error(`El paciente ${dni} ya está en bolsa de pacientes`);
+            setAgregandoPaciente(false);
             return;
           }
+        } else if (existeBolsa.status !== 404) {
+          // Si no es 200 ni 404, hay un error en el servidor
+          console.error("Error buscando DNI en bolsas:", existeBolsa.status);
         }
       } catch (err) {
-        // 404 = no existe, OK para continuar
-        if (err.status !== 404) {
-          console.error("Error validando dim_solicitud_bolsa:", err);
-        }
+        console.error("Error validando dim_solicitud_bolsa:", err);
       }
 
-      // 3. Crear en tabla gestion_paciente
+      // 2. Crear en tabla gestion_paciente
       const createGestionRes = await fetch(
         `${API_BASE}/gestion-pacientes`,
         {
@@ -824,10 +802,11 @@ export default function GestionAsegurado() {
       );
 
       if (!createGestionRes.ok) {
-        throw new Error("Error al crear en gestion_paciente");
+        const errorData = await createGestionRes.json().catch(() => ({}));
+        throw new Error(errorData.message || `Error al crear en gestion_paciente (${createGestionRes.status})`);
       }
 
-      // 4. Crear en tabla dim_solicitud_bolsa
+      // 3. Crear en tabla dim_solicitud_bolsa
       const createBolsaRes = await fetch(
         `${API_BASE}/bolsas/solicitudes/crear-adicional`,
         {
@@ -850,12 +829,13 @@ export default function GestionAsegurado() {
       );
 
       if (!createBolsaRes.ok) {
-        throw new Error("Error al crear en dim_solicitud_bolsa");
+        const errorData = await createBolsaRes.json().catch(() => ({}));
+        throw new Error(errorData.message || `Error al crear en dim_solicitud_bolsa (${createBolsaRes.status})`);
       }
 
       toast.success(`Paciente ${asegurado.paciente} agregado correctamente`);
 
-      // 5. Cerrar modal y recargar tabla
+      // 4. Cerrar modal y recargar tabla
       setModalImportar(false);
       setBusquedaAsegurado("");
       setResultadosBusqueda([]);
@@ -1543,10 +1523,15 @@ export default function GestionAsegurado() {
                                         </div>
                                       )}
                                       {medicoSeleccionado && (
-                                        <div className="bg-green-50 border border-green-200 rounded p-1.5 mt-1">
-                                          <p className="text-xs font-semibold text-green-900">{medicoSeleccionado.nombre}</p>
-                                          <p className="text-xs text-green-700">📱 {medicoSeleccionado.movilPers || "N/A"}</p>
-                                          <p className="text-xs text-green-700">📧 {medicoSeleccionado.emailCorpPers || "N/A"}</p>
+                                        <div className="bg-green-50 border border-green-200 rounded p-1.5 mt-1 text-center space-y-1">
+                                          <div className="flex items-center justify-center gap-2">
+                                            {medicoSeleccionado.dniPers && (
+                                              <span className="text-xs font-mono bg-green-100 text-green-900 px-2 py-0.5 rounded border border-green-300">
+                                                {medicoSeleccionado.dniPers}
+                                              </span>
+                                            )}
+                                            <p className="text-xs font-semibold text-green-900">✓ {medicoSeleccionado.nombre}</p>
+                                          </div>
                                         </div>
                                       )}
                                     </div>
@@ -1567,17 +1552,18 @@ export default function GestionAsegurado() {
                               const medicoSeleccionado = medicos.find(m => m.idPers === seleccionadoId);
                               
                               return (
-                                <div className="space-y-1">
+                                <div className="text-center">
                                   {medicoSeleccionado ? (
-                                    <>
-                                      <div className="text-xs font-semibold text-gray-900">
-                                        {medicoSeleccionado.nombre}
+                                    <div className="bg-blue-50 border border-blue-200 rounded px-2 py-1 space-y-1">
+                                      <div className="flex items-center justify-center gap-2">
+                                        {medicoSeleccionado.dniPers && (
+                                          <span className="text-xs font-mono bg-blue-100 text-blue-900 px-2 py-0.5 rounded border border-blue-300">
+                                            {medicoSeleccionado.dniPers}
+                                          </span>
+                                        )}
+                                        <p className="text-xs font-semibold text-blue-900">✓ {medicoSeleccionado.nombre}</p>
                                       </div>
-                                      <div className="bg-blue-50 border border-blue-200 rounded p-1">
-                                        <p className="text-xs text-blue-700">📱 {medicoSeleccionado.movilPers || "N/A"}</p>
-                                        <p className="text-xs text-blue-700">📧 {medicoSeleccionado.emailCorpPers || "N/A"}</p>
-                                      </div>
-                                    </>
+                                    </div>
                                   ) : (
                                     <span className="text-xs text-gray-400 italic">No seleccionado</span>
                                   )}
