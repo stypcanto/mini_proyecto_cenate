@@ -3,6 +3,8 @@
 > Changelog detallado del proyecto
 >
 > 📌 **IMPORTANTE**: Ver documentación en:
+> - ⭐ **NUEVO - v1.45.2**: IPRESS Institution Names Display (2026-02-05) - Backend convierte códigos a nombres ("450" → "CAP II LURIN")
+> - ⭐ **NUEVO - v1.45.1**: Mis Pacientes Complete Workflow (2026-02-05) - Tabla + 3 acciones médicas + modal system + live stats
 > - ⭐ **NUEVO - v1.42.2**: Fix Vista Auditoría + Styling EmailAuditLogs (2026-02-05) - Crear vista vw_auditoria_modular_detallada + Tema claro (blanco/azul)
 > - ⭐ **NUEVO - v1.42.1**: Módulo Email Audit + Correo Bienvenida (2026-02-04) - Sistema completo de logs de correos (Backend + Frontend)
 > - ⭐ **NUEVO - v3.3.1**: Auditoría Cambios de Estado + Fix Endpoint bolsas/solicitudes (2026-02-02) - Fecha + Usuario cambio estado
@@ -22,6 +24,251 @@
 > - ⭐ **Mejoras UI/UX Bienvenida v2.0.0**: `spec/frontend/05_mejoras_ui_ux_bienvenida_v2.md` (2026-01-26)
 > - ⭐ **Mejoras UI/UX Módulo Asegurados v1.2.0**: `spec/UI-UX/01_design_system_tablas.md` (2026-01-26)
 > - ⭐ **Sistema Auditoría Duplicados v1.1.0**: `spec/database/13_sistema_auditoria_duplicados.md` (2026-01-26)
+
+---
+
+## v1.45.2 (2026-02-05) - 🏥 IPRESS Institution Names Display
+
+### ✅ Implementación Completada
+
+**Feature: IPRESS Names en lugar de Códigos**
+- Backend ahora convierte códigos IPRESS a nombres amigables
+- Ejemplo: "450" → "CAP II LURIN"
+- Mejora UX: usuarios ven nombres legibles en lugar de códigos técnicos
+
+### 🔧 Cambios Backend
+
+**GestionPacienteServiceImpl.java - Método bolsaToGestionDTO()**
+```java
+private GestionPacienteDTO bolsaToGestionDTO(SolicitudBolsa bolsa) {
+    if (bolsa == null) return null;
+
+    // ✅ v1.45.2: Obtener nombre de IPRESS en lugar de código
+    String ipressNombre = obtenerNombreIpress(bolsa.getCodigoIpressAdscripcion());
+
+    return GestionPacienteDTO.builder()
+        .numDoc(bolsa.getPacienteDni())
+        .apellidosNombres(bolsa.getPacienteNombre())
+        .sexo(bolsa.getPacienteSexo())
+        .edad(calcularEdad(bolsa.getFechaNacimiento()))
+        .telefono(bolsa.getPacienteTelefono())
+        .ipress(ipressNombre)  // ✅ Mostrar nombre de IPRESS, no código
+        .condicion("Pendiente")
+        .fechaAsignacion(bolsa.getFechaAsignacion())
+        .build();
+}
+```
+
+**IpressRepository - Lookup Method**
+```java
+Optional<Ipress> findByCodIpress(String codIpress);
+```
+
+**obtenerNombreIpress() - Método existente**
+- Busca en tabla `dim_ipress` por código
+- Retorna descripción (nombre) o código si no encuentra
+- Incluye manejo de excepciones para robustez
+
+### 📊 API Response - Antes vs Después
+
+**ANTES (v1.45.1):**
+```json
+{
+  "ipress": "450",
+  "apellidosNombres": "ARIAS CUBILLAS MARIA",
+  ...
+}
+```
+
+**DESPUÉS (v1.45.2):**
+```json
+{
+  "ipress": "CAP II LURIN",
+  "apellidosNombres": "ARIAS CUBILLAS MARIA",
+  ...
+}
+```
+
+### 🧪 Verificación
+
+**Test directo del endpoint:**
+```bash
+TOKEN="eyJ...Aeyw"
+curl -s http://localhost:8080/api/gestion-pacientes/medico/asignados \
+  -H "Authorization: Bearer $TOKEN" | jq '.[] | .ipress'
+
+# Output: "CAP II LURIN" ✅
+```
+
+**Frontend display:**
+- ✅ Patient 1: IPRESS = CAP II LURIN
+- ✅ Patient 2: IPRESS = CAP II LURIN
+
+### 📋 Archivos Modificados
+
+1. **Backend:**
+   - `GestionPacienteServiceImpl.java` (línea 382)
+   - Cambio: Una línea + importación de getCodigoIpressAdscripcion()
+
+2. **Frontend:**
+   - `MisPacientes.jsx` (sin cambios - display directo del valor API)
+   - Componente ya estaba preparado para mostrar valores enriquecidos
+
+### ⚙️ Deployment
+
+1. Recompilar backend: `./gradlew bootRun`
+2. Reiniciar Spring Boot application
+3. Frontend auto actualiza en siguiente llamada API
+4. Usuario clickea "Actualizar" en MisPacientes para ver cambios inmediatos
+
+### 📚 Documentación
+
+- **Frontend spec:** `spec/frontend/15_mis_pacientes_medico.md`
+- **Backend spec:** `spec/backend/14_gestion_pacientes_service.md`
+- **Changelog:** Este archivo
+
+---
+
+## v1.45.1 (2026-02-05) - 👨‍⚕️ Mis Pacientes Complete Workflow
+
+### ✅ Features Implementadas
+
+**1. Tabla de Pacientes Asignados**
+- Reemplaza layout de tarjetas con tabla profesional
+- 7 columnas: DNI, Paciente, Teléfono, IPRESS, Condición, Fecha Asignación, Acciones
+- Busqueda por nombre/DNI en tiempo real
+- Filtro por condición (Todas, Citado, Pendiente, Atendido, Reprogramación Fallida, No Contactado)
+
+**2. Tres Acciones Médicas por Paciente**
+- ✅ **Marcar como Atendido** (botón verde con checkmark)
+- 📋 **Generar Receta** (botón azul con documento)
+- 🔄 **Generar Interconsulta** (botón morado con share)
+
+**3. Modal System para Acciones**
+- Modal abre al hacer click en cualquier acción
+- Muestra nombre del paciente
+- Campo de notas/diagnóstico (opcional)
+- Botones Confirmar/Cancelar
+- Toast notification al completar
+
+**4. Live Statistics Dashboard**
+- Total de Pacientes
+- Filtrados (según búsqueda/filtro)
+- Atendidos (contador dinámico)
+
+**5. Fecha de Asignación**
+- Nueva columna con fecha/hora en formato legible
+- Provinene de `dim_solicitud_bolsa.fecha_asignacion`
+- Formato: "DD/MM/YYYY, HH:MM:SS AM/PM"
+
+### 🔧 Cambios Backend
+
+**GestionPacienteDTO.java - Nuevo Field**
+```java
+// Fecha de asignación al médico (desde dim_solicitud_bolsa)
+private OffsetDateTime fechaAsignacion;
+```
+
+**GestionPacienteServiceImpl.java - Nuevo Método**
+```java
+/**
+ * ✅ v1.45.0: Convierte SolicitudBolsa a GestionPacienteDTO
+ */
+private GestionPacienteDTO bolsaToGestionDTO(SolicitudBolsa bolsa) {
+    // Convertir data desde dim_solicitud_bolsa
+    // Incluir: DNI, Nombre, Sexo, Edad, Teléfono, IPRESS, Condición, FechaAsignación
+}
+```
+
+### 🎨 Cambios Frontend
+
+**MisPacientes.jsx - Completa Redesign**
+```jsx
+// Tabla con:
+// - columnheaders: DNI, Paciente, Teléfono, IPRESS, Condición, Fecha Asignación, Acciones
+// - tbody rows con renderizado de pacientes
+// - Action buttons por fila
+// - formatearFecha() para mostrar fechas en formato local
+
+// Modales:
+// - Marcar Atendido: "✓ Marcar como Atendido"
+// - Generar Receta: "📋 Generar Receta"
+// - Generar Interconsulta: "🔄 Generar Interconsulta"
+
+// estadísticas:
+// - Total de Pacientes
+// - Filtrados
+// - Atendidos (actualiza en tiempo real)
+```
+
+### 📊 API Integration
+
+**Endpoint:**
+```
+GET /api/gestion-pacientes/medico/asignados
+```
+
+**Response:**
+```json
+[
+  {
+    "numDoc": "07888772",
+    "apellidosNombres": "ARIAS CUBILLAS MARIA",
+    "telefono": "962942164",
+    "ipress": "CAP II LURIN",
+    "condicion": "Pendiente",
+    "fechaAsignacion": "2026-02-05T07:09:54.096196Z",
+    "sexo": "F",
+    "edad": 90
+  },
+  ...
+]
+```
+
+### 🧪 Testing Results
+
+**Test 1: Patient List Display**
+- ✅ 2 pacientes cargados correctamente
+- ✅ Tabla muestra todos los datos
+- ✅ Estatísticas: Total=2, Filtrados=2, Atendidos=0
+
+**Test 2: Action Modals**
+- ✅ Modal abre al clickear acción
+- ✅ Muestra nombre del paciente
+- ✅ Notas field permite input
+- ✅ Confirmar y Cancelar funcionan
+
+**Test 3: Search & Filter**
+- ✅ Busqueda por nombre funciona
+- ✅ Busqueda por DNI funciona
+- ✅ Filtro por condición funciona
+
+**Test 4: Statistics Update**
+- ✅ Atendidos incrementa después de acción
+- ✅ Filtrados actualiza con busqueda
+
+### 📋 Archivos Creados/Modificados
+
+1. **Frontend:**
+   - `frontend/src/pages/roles/medico/pacientes/MisPacientes.jsx` (NEW - completo)
+   - `frontend/src/services/gestionPacientesService.js` (actualizado - método obtenerPacientesMedico())
+
+2. **Backend:**
+   - `GestionPacienteDTO.java` (+ fechaAsignacion field)
+   - `GestionPacienteServiceImpl.java` (+ bolsaToGestionDTO method + obtenerPacientesDelMedicoActual improvements)
+   - `GestionPacienteController.java` (endpoint: /medico/asignados)
+
+### 📚 Documentación
+
+- **Frontend spec:** `spec/frontend/15_mis_pacientes_medico.md`
+- **Backend spec:** `spec/backend/14_gestion_pacientes_service.md`
+
+### ⚙️ Deployment
+
+1. Backend build: `./gradlew bootRun`
+2. Frontend load: `npm start`
+3. Navigate: `/roles/medico/pacientes`
+4. Test con pacientes asignados
 
 ---
 

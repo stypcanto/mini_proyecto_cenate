@@ -1,7 +1,7 @@
-# 📚 CENATE Documentation Index v1.44.0
+# 📚 CENATE Documentation Index v1.45.2
 
 **Última actualización:** 2026-02-05
-**Estado:** Sincronización ATENDIDO + Batch Optimization ✅ - PRODUCCIÓN 🚀
+**Estado:** Mis Pacientes Complete Workflow + IPRESS Names Display ✅ - PRODUCCIÓN 🚀
 
 ---
 
@@ -35,6 +35,9 @@ spec/
 
 ### Para Desarrolladores Frontend
 **Comienza en:** `/frontend/README.md`
+- **🔥 NUEVO Mis Pacientes Médico:** `frontend/15_mis_pacientes_medico.md` (v1.45.1-45.2 ⭐)
+  - Tabla de pacientes asignados + 3 acciones médicas
+  - IPRESS institution names display (v1.45.2)
 - Estructura: `frontend/02_pages/01_estructura_minima_paginas.md`
 - Permisos: `frontend/01_gestion_usuarios_permisos.md`
 - Excel Import: `frontend/02_pages/04_estructura_excel_solicitud_bolsa_v1_6.md`
@@ -84,11 +87,14 @@ spec/
 6. `backend/06_resumen_modulo_bolsas_completo.md` - Resumen módulo
 7. `backend/05_modulo_tipos_bolsas_crud.md` - Tipos bolsas v1.1.0 (anterior)
 
-### 📱 Frontend (4 docs principales)
-1. `frontend/02_pages/01_estructura_minima_paginas.md` - Patrón arquitectónico
-2. `frontend/01_modulo_personal_externo.md` - Módulo personal externo v1.18.0
-3. `frontend/02_configuracion_modulos_ipress.md` - Config por IPRESS v1.20.1
-4. `frontend/02_pages/02_estructura_excel_pacientes.md` - Excel estructura
+### 📱 Frontend (5 docs principales)
+1. **`frontend/15_mis_pacientes_medico.md` - Mis Pacientes Médico v1.45.2 ⭐ NUEVO**
+   - Tabla pacientes asignados + 3 acciones médicas
+   - IPRESS institution names (v1.45.2)
+2. `frontend/02_pages/01_estructura_minima_paginas.md` - Patrón arquitectónico
+3. `frontend/01_modulo_personal_externo.md` - Módulo personal externo v1.18.0
+4. `frontend/02_configuracion_modulos_ipress.md` - Config por IPRESS v1.20.1
+5. `frontend/02_pages/02_estructura_excel_pacientes.md` - Excel estructura
 
 ### 💾 Database (6 docs principales)
 1. `database/08_plan_backup_protecciones_completo.md` - Plan completo backups

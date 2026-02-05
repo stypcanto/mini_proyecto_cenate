@@ -1,7 +1,7 @@
 # CLAUDE.md - Proyecto CENATE
 
 > **Sistema de Telemedicina - EsSalud Perú**
-> **Versión:** v1.44.0 (2026-02-05) 🚀
+> **Versión:** v1.45.2 (2026-02-05) 🚀
 > **Status:** ✅ Production Ready
 
 ---
@@ -137,6 +137,71 @@ Frontend (React 19):
 ---
 
 ## 📊 ÚLTIMAS VERSIONES
+
+### v1.45.2 - Completado (2026-02-05) 🏥 IPRESS NAMES + TABLE LAYOUT
+✅ **Display IPRESS Institution Names** - Muestra "CAP II LURIN" en lugar de código "450"
+✅ **API Data Enrichment** - Backend convierte códigos a nombres antes de enviar
+✅ **Verification Tested** - API endpoint confirmado devolviendo nombres correctos
+✅ **Frontend Display** - Tabla actualiza después de click en botón "Actualizar"
+
+**Features:**
+- IPRESS names from database lookup (IpressRepository.findByCodIpress())
+- Centralized conversion in `bolsaToGestionDTO()` method
+- Better UX: usuarios ven nombres amigables en lugar de códigos técnicos
+- Backwards compatible: usa mismo método obtenerNombreIpress()
+
+**Cambios:**
+- Backend: GestionPacienteServiceImpl.java line 382 - Call obtenerNombreIpress()
+- API Response: `"ipress": "CAP II LURIN"` (antes: `"ipress": "450"`)
+- Frontend: MisPacientes.jsx recibe y muestra directamente los nombres
+
+**Docs:** [`spec/frontend/15_mis_pacientes_medico.md`](spec/frontend/15_mis_pacientes_medico.md) (crear)
+
+**Verification:**
+```bash
+# Test API endpoint
+curl -H "Authorization: Bearer $TOKEN" \
+  http://localhost:8080/api/gestion-pacientes/medico/asignados | jq '.[] | .ipress'
+# Output: "CAP II LURIN" ✅
+```
+
+**Screenshots:**
+- ✅ Patient 1: IPRESS = CAP II LURIN
+- ✅ Patient 2: IPRESS = CAP II LURIN
+
+---
+
+### v1.45.1 - Completado (2026-02-05) 👨‍⚕️ MIS PACIENTES COMPLETE + 3 ACTIONS
+✅ **Complete Patient Workflow** - Tabla de pacientes asignados + 3 acciones médicas
+✅ **Table Layout** - Reemplaza card layout con tabla profesional
+✅ **Three Medical Actions** - Marcar Atendido, Generar Receta, Generar Interconsulta
+✅ **Assignment Date** - Columna nueva "Fecha Asignación" desde dim_solicitud_bolsa
+✅ **Action Modals** - Modal system con notas/diagnóstico por acción
+✅ **Live Statistics** - Dashboard actualiza: Total, Filtrados, Atendidos
+
+**Features:**
+- Tabla con 7 columnas: DNI, Paciente, Teléfono, IPRESS, Condición, Fecha Asignación, Acciones
+- 3 botones de acción por paciente (verde, azul, morado)
+- Modal for each action (notes field + confirm/cancel)
+- Real-time stats update después de actions
+- Busca y filtro por condición
+- Toast notifications para feedback
+
+**Cambios:**
+- Frontend: MisPacientes.jsx completa redesign (card → table)
+- Backend: GestionPacienteDTO.java + fechaAsignacion field
+- Service: bolsaToGestionDTO() nuevo método (v1.45.1)
+- Date formatting: ISO 8601 con timezone parsing
+
+**Docs:** [`spec/frontend/15_mis_pacientes_medico.md`](spec/frontend/15_mis_pacientes_medico.md)
+
+**Live Testing Results:**
+- ✅ Patient assignment visible in table
+- ✅ Actions modal opens correctly
+- ✅ Statistics update after actions
+- ✅ Both patients show in list
+
+---
 
 ### v1.44.0 - Completado (2026-02-05) ⚡ BATCH OPTIMIZATION + 📊 METRICS + 🔄 AUTO-SYNC
 ✅ **Sincronización Automática ATENDIDO** - Cuando médico marca cita ATENDIDO, sincroniza auto a dim_solicitud_bolsa
