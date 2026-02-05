@@ -363,12 +363,24 @@ const PermisosUsuarioPanel = forwardRef(({
 
     setPermisosUsuario(prev => {
       const permisoActual = prev[rutaPagina] || {};
+      const nuevoPermiso = {
+        ...permisoActual,
+        [tipoPermiso]: !permisoActual[tipoPermiso]
+      };
+
+      // 🔐 LÓGICA AUTOMÁTICA: Si se marca cualquier acción (crear, editar, eliminar, exportar, aprobar)
+      // automáticamente marcar "ver" = true (no puedes actuar en algo que no puedes ver)
+      const tieneAcciones = nuevoPermiso.crear || nuevoPermiso.editar ||
+                           nuevoPermiso.eliminar || nuevoPermiso.exportar ||
+                           nuevoPermiso.aprobar;
+
+      if (tieneAcciones && !nuevoPermiso.ver) {
+        nuevoPermiso.ver = true; // Auto-activar "ver" si hay cualquier otra acción
+      }
+
       return {
         ...prev,
-        [rutaPagina]: {
-          ...permisoActual,
-          [tipoPermiso]: !permisoActual[tipoPermiso]
-        }
+        [rutaPagina]: nuevoPermiso
       };
     });
   };
@@ -382,14 +394,29 @@ const PermisosUsuarioPanel = forwardRef(({
     const permisosActuales = permisosUsuario[rutaPagina] || {};
     const tieneAlgunPermiso = Object.values(permisosActuales).some(v => v === true);
 
-    setPermisosUsuario(prev => ({
-      ...prev,
-      [rutaPagina]: PERMISOS_CONFIG.reduce((acc, p) => {
+    setPermisosUsuario(prev => {
+      const nuevoPermiso = PERMISOS_CONFIG.reduce((acc, p) => {
         // Si tiene algún permiso, quitar todos. Si no tiene ninguno, activar todos.
         acc[p.key] = !tieneAlgunPermiso;
         return acc;
-      }, {})
-    }));
+      }, {});
+
+      // 🔐 LÓGICA AUTOMÁTICA: Si se activan otros permisos, asegurar que "ver" también esté activo
+      if (!tieneAlgunPermiso) { // Si estamos ACTIVANDO todos los permisos
+        // Verificar si hay acciones marcadas y activar "ver" automáticamente
+        const tieneAcciones = nuevoPermiso.crear || nuevoPermiso.editar ||
+                             nuevoPermiso.eliminar || nuevoPermiso.exportar ||
+                             nuevoPermiso.aprobar;
+        if (tieneAcciones) {
+          nuevoPermiso.ver = true;
+        }
+      }
+
+      return {
+        ...prev,
+        [rutaPagina]: nuevoPermiso
+      };
+    });
   };
 
   // Toggle todos los permisos de un módulo
@@ -404,10 +431,22 @@ const PermisosUsuarioPanel = forwardRef(({
 
     const nuevosPermisos = { ...permisosUsuario };
     modulo.paginas.forEach(pagina => {
-      nuevosPermisos[pagina.rutaPagina] = PERMISOS_CONFIG.reduce((acc, p) => {
+      const nuevoPermiso = PERMISOS_CONFIG.reduce((acc, p) => {
         acc[p.key] = !todasActivas;
         return acc;
       }, {});
+
+      // 🔐 LÓGICA AUTOMÁTICA: Si se activan otros permisos, asegurar que "ver" también esté activo
+      if (!todasActivas) { // Si estamos ACTIVANDO todos los permisos
+        const tieneAcciones = nuevoPermiso.crear || nuevoPermiso.editar ||
+                             nuevoPermiso.eliminar || nuevoPermiso.exportar ||
+                             nuevoPermiso.aprobar;
+        if (tieneAcciones) {
+          nuevoPermiso.ver = true;
+        }
+      }
+
+      nuevosPermisos[pagina.rutaPagina] = nuevoPermiso;
     });
 
     setPermisosUsuario(nuevosPermisos);
