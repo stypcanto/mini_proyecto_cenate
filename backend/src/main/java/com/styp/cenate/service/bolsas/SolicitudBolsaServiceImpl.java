@@ -3,6 +3,7 @@ package com.styp.cenate.service.bolsas;
 import com.styp.cenate.dto.bolsas.SolicitudBolsaDTO;
 import com.styp.cenate.dto.bolsas.SolicitudBolsaExcelRowDTO;
 import com.styp.cenate.dto.bolsas.ReporteDuplicadosDTO;
+import com.styp.cenate.dto.bolsas.CrearSolicitudAdicionalRequest;
 import com.styp.cenate.mapper.SolicitudBolsaMapper;
 import com.styp.cenate.model.bolsas.SolicitudBolsa;
 import com.styp.cenate.model.bolsas.TipoErrorImportacion;
@@ -37,6 +38,8 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 
 import java.io.IOException;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -2860,6 +2863,84 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
             return "\"" + valor.replace("\"", "\"\"") + "\"";
         }
         return valor;
+    }
+
+    // ============================================================================
+    // ➕ IMPORTACIÓN DE PACIENTES ADICIONALES (v1.46.0)
+    // ============================================================================
+
+    @Override
+    @Transactional
+    public SolicitudBolsaDTO crearSolicitudAdicional(CrearSolicitudAdicionalRequest request, String username) {
+        log.info("📝 Creando solicitud adicional para DNI: {}", request.getPacienteDni());
+
+        // 1. Validar que no exista ya una solicitud para este DNI
+        List<SolicitudBolsa> existentes = solicitudBolsaRepository
+            .findByPacienteDni(request.getPacienteDni());
+
+        if (!existentes.isEmpty()) {
+            throw new ValidationException(
+                "Ya existe una solicitud para el paciente con DNI: " + request.getPacienteDni()
+            );
+        }
+
+        // 2. Generar número de solicitud único
+        String numeroSolicitud = generarNumeroSolicitud();
+
+        // 3. Crear nueva solicitud
+        SolicitudBolsa nuevaSolicitud = SolicitudBolsa.builder()
+            .numeroSolicitud(numeroSolicitud)
+            .pacienteDni(request.getPacienteDni())
+            .pacienteNombre(request.getPacienteNombre())
+            .pacienteEdad(request.getPacienteEdad())
+            .pacienteSexo(request.getPacienteSexo())
+            .pacienteTelefono(request.getPacienteTelefono())
+            .pacienteTelefonoAlterno(request.getPacienteTelefonoAlterno())
+            .descIpress(request.getDescIpress())
+            .tipoCita(request.getTipoCita())
+            .origen(request.getOrigen() != null ? request.getOrigen() : "Importación Manual")
+            .codEstadoCita(request.getCodEstadoCita())
+            .fechaSolicitud(LocalDateTime.now())
+            .fechaAsignacion(LocalDateTime.now())
+            .usuarioCreacion(request.getUsuarioCreacion())
+            .fechaCreacion(LocalDateTime.now())
+            .build();
+
+        // 4. Guardar
+        SolicitudBolsa guardado = solicitudBolsaRepository.save(nuevaSolicitud);
+
+        log.info("✅ Solicitud adicional creada: {}", guardado.getIdSolicitud());
+
+        // 5. Mapear a DTO
+        return mapToDTO(guardado);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<SolicitudBolsaDTO> buscarPorDni(String dni) {
+        log.info("🔍 Buscando solicitudes para DNI: {}", dni);
+
+        List<SolicitudBolsa> solicitudes = solicitudBolsaRepository
+            .findByPacienteDni(dni);
+
+        return solicitudes.stream()
+            .map(this::mapToDTO)
+            .collect(Collectors.toList());
+    }
+
+    /**
+     * Genera número de solicitud único con formato: IMP-YYYYMMDD-NNNN
+     */
+    private String generarNumeroSolicitud() {
+        String fecha = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
+
+        // Contar solicitudes del día
+        long contador = solicitudBolsaRepository.countByFechaSolicitudBetween(
+            LocalDateTime.now().toLocalDate().atStartOfDay(),
+            LocalDateTime.now().toLocalDate().atTime(23, 59, 59)
+        );
+
+        return String.format("IMP-%s-%04d", fecha, contador + 1);
     }
 
 }

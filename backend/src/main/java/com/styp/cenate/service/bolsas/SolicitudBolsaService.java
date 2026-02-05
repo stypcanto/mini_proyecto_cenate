@@ -1,6 +1,7 @@
 package com.styp.cenate.service.bolsas;
 
 import com.styp.cenate.dto.bolsas.SolicitudBolsaDTO;
+import com.styp.cenate.dto.bolsas.CrearSolicitudAdicionalRequest;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
@@ -208,4 +209,23 @@ public interface SolicitudBolsaService {
      * @return datos CSV en bytes
      */
     byte[] exportarCSV(List<Long> ids);
+
+    /**
+     * Crear solicitud adicional desde importación manual (v1.46.0)
+     * Genera número de solicitud único y crea registro en dim_solicitud_bolsa
+     *
+     * @param request datos del paciente a importar
+     * @param username usuario que realiza la importación
+     * @return solicitud creada con número de solicitud asignado
+     */
+    SolicitudBolsaDTO crearSolicitudAdicional(CrearSolicitudAdicionalRequest request, String username);
+
+    /**
+     * Buscar solicitudes por DNI de paciente (v1.46.0)
+     * Valida que el paciente no esté duplicado antes de importar
+     *
+     * @param dni documento de identidad del paciente
+     * @return lista de solicitudes encontradas (vacía si no existe)
+     */
+    List<SolicitudBolsaDTO> buscarPorDni(String dni);
 }

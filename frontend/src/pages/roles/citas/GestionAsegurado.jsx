@@ -23,6 +23,10 @@ import {
   Edit2,
   ChevronDown,
   Download,
+  Search,
+  Plus,
+  X,
+  Loader2,
 } from "lucide-react";
 import toast from "react-hot-toast";
 
@@ -87,6 +91,15 @@ export default function GestionAsegurado() {
   const [medicosPorServicio, setMedicosPorServicio] = useState({}); // { idServicio: [médicos] }
   const [cargandoMedicos, setCargandoMedicos] = useState(false);
 
+  // ============================================================================
+  // 🔧 ESTADO PARA IMPORTACIÓN DE PACIENTES ADICIONALES (v1.46.0)
+  // ============================================================================
+  const [modalImportar, setModalImportar] = useState(false);
+  const [busquedaAsegurado, setBusquedaAsegurado] = useState("");
+  const [resultadosBusqueda, setResultadosBusqueda] = useState([]);
+  const [cargandoBusqueda, setCargandoBusqueda] = useState(false);
+  const [agregandoPaciente, setAgregandoPaciente] = useState(false);
+
   // 🔧 API_BASE dinámico basado en el host actual o variable de entorno
   const getApiBase = () => {
     // Prioridad: variable de entorno > window.location
@@ -102,6 +115,32 @@ export default function GestionAsegurado() {
   };
   
   const API_BASE = getApiBase();
+
+  // ============================================================================
+  // 🔐 FUNCIÓN AUXILIAR: OBTENER HEADERS CON TOKEN
+  // ============================================================================
+  const getHeaders = () => {
+    const token = getToken();
+    return {
+      "Authorization": `Bearer ${token}`,
+      "Content-Type": "application/json",
+    };
+  };
+
+  // ============================================================================
+  // ⏱️ UTILIDAD: DEBOUNCE PARA BÚSQUEDA OPTIMIZADA
+  // ============================================================================
+  const debounce = (func, wait) => {
+    let timeout;
+    return function executedFunction(...args) {
+      const later = () => {
+        clearTimeout(timeout);
+        func(...args);
+      };
+      clearTimeout(timeout);
+      timeout = setTimeout(later, wait);
+    };
+  };
 
   // ============================================================================
   // 🏥 CARGAR MÉDICOS POR SERVICIO (DINÁMICO)
@@ -664,6 +703,172 @@ export default function GestionAsegurado() {
     }
   };
 
+  // ============================================================================
+  // 🔍 BUSCAR ASEGURADOS CON DEBOUNCE (v1.46.0)
+  // ============================================================================
+  const buscarAseguradosImpl = async (termino) => {
+    if (!termino || termino.length < 3) {
+      setResultadosBusqueda([]);
+      return;
+    }
+
+    setCargandoBusqueda(true);
+    try {
+      const response = await fetch(
+        `${API_BASE}/asegurados/buscar?q=${encodeURIComponent(termino)}&size=10`,
+        {
+          method: "GET",
+          headers: getHeaders(),
+        }
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        const asegurados = data?.content || [];
+        console.log(`🔍 Búsqueda encontró ${asegurados.length} resultados`);
+        setResultadosBusqueda(asegurados);
+      } else {
+        console.error("Error en búsqueda:", response.status);
+        setResultadosBusqueda([]);
+      }
+    } catch (error) {
+      console.error("Error buscando asegurados:", error);
+      toast.error("Error al buscar asegurados");
+      setResultadosBusqueda([]);
+    } finally {
+      setCargandoBusqueda(false);
+    }
+  };
+
+  // Crear versión con debounce
+  const buscarAsegurados = React.useMemo(
+    () => debounce(buscarAseguradosImpl, 500),
+    []
+  );
+
+  // Trigger búsqueda cuando cambia el término
+  React.useEffect(() => {
+    buscarAsegurados(busquedaAsegurado);
+  }, [busquedaAsegurado, buscarAsegurados]);
+
+  // ============================================================================
+  // ➕ IMPORTAR PACIENTE ADICIONAL (v1.46.0)
+  // ============================================================================
+  const importarPacienteAdicional = async (asegurado) => {
+    setAgregandoPaciente(true);
+    try {
+      const dni = asegurado.docPaciente;
+
+      // 1. Validar que NO exista en gestion_paciente
+      try {
+        const existeGestion = await fetch(
+          `${API_BASE}/gestion-pacientes/documento/${dni}`,
+          {
+            method: "GET",
+            headers: getHeaders(),
+          }
+        );
+
+        if (existeGestion.status === 200 && existeGestion.ok) {
+          const datos = await existeGestion.json();
+          if (datos) {
+            toast.warning(`El paciente ${dni} ya está en gestión`);
+            return;
+          }
+        }
+      } catch (err) {
+        // 204 No Content = no existe, OK para continuar
+        if (err.response?.status !== 204 && err.status !== 404) {
+          console.error("Error validando gestion_paciente:", err);
+        }
+      }
+
+      // 2. Validar que NO exista en dim_solicitud_bolsa
+      try {
+        const existeBolsa = await fetch(
+          `${API_BASE}/bolsas/solicitudes/buscar-dni/${dni}`,
+          {
+            method: "GET",
+            headers: getHeaders(),
+          }
+        );
+
+        if (existeBolsa.ok) {
+          const datos = await existeBolsa.json();
+          if (Array.isArray(datos) && datos.length > 0) {
+            toast.warning(`El paciente ${dni} ya está en bolsa de pacientes`);
+            return;
+          }
+        }
+      } catch (err) {
+        // 404 = no existe, OK para continuar
+        if (err.status !== 404) {
+          console.error("Error validando dim_solicitud_bolsa:", err);
+        }
+      }
+
+      // 3. Crear en tabla gestion_paciente
+      const createGestionRes = await fetch(
+        `${API_BASE}/gestion-pacientes`,
+        {
+          method: "POST",
+          headers: getHeaders(),
+          body: JSON.stringify({
+            pkAsegurado: asegurado.pkAsegurado,
+            condicion: "Pendiente",
+            origen: "Importación Manual",
+            seleccionadoTelemedicina: false,
+            gestora: user?.username || "Sistema",
+          }),
+        }
+      );
+
+      if (!createGestionRes.ok) {
+        throw new Error("Error al crear en gestion_paciente");
+      }
+
+      // 4. Crear en tabla dim_solicitud_bolsa
+      const createBolsaRes = await fetch(
+        `${API_BASE}/bolsas/solicitudes/crear-adicional`,
+        {
+          method: "POST",
+          headers: getHeaders(),
+          body: JSON.stringify({
+            pacienteDni: asegurado.docPaciente,
+            pacienteNombre: asegurado.paciente,
+            pacienteEdad: asegurado.edad,
+            pacienteSexo: asegurado.sexo,
+            pacienteTelefono: asegurado.telCelular || asegurado.telFijo,
+            pacienteTelefonoAlterno: asegurado.telFijo || asegurado.telCelular,
+            descIpress: asegurado.nombreIpress,
+            tipoCita: "TELECONSULTA",
+            origen: "Importación Manual",
+            codEstadoCita: "01",
+            usuarioCreacion: user?.id,
+          }),
+        }
+      );
+
+      if (!createBolsaRes.ok) {
+        throw new Error("Error al crear en dim_solicitud_bolsa");
+      }
+
+      toast.success(`Paciente ${asegurado.paciente} agregado correctamente`);
+
+      // 5. Cerrar modal y recargar tabla
+      setModalImportar(false);
+      setBusquedaAsegurado("");
+      setResultadosBusqueda([]);
+      await fetchPacientesAsignados();
+    } catch (error) {
+      console.error("Error importando paciente:", error);
+      const mensaje = error.message || "Error al importar paciente";
+      toast.error(mensaje);
+    } finally {
+      setAgregandoPaciente(false);
+    }
+  };
+
   useEffect(() => {
     const loadData = async () => {
       try {
@@ -942,6 +1147,15 @@ export default function GestionAsegurado() {
                 </p>
               </div>
               <div className="flex gap-2 items-center">
+                <button
+                  onClick={() => setModalImportar(true)}
+                  className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors shadow-sm font-medium"
+                  title="Importar paciente desde base de asegurados"
+                >
+                  <UserPlus className="w-4 h-4" />
+                  Importar Paciente
+                </button>
+
                 <button
                   onClick={() => {
                     console.log("🔄 Recargando pacientes asignados...");
@@ -1657,6 +1871,139 @@ export default function GestionAsegurado() {
                   )}
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Importar Paciente Adicional (v1.46.0) */}
+      {modalImportar && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-hidden flex flex-col">
+            {/* Header */}
+            <div className="bg-gradient-to-r from-green-600 to-green-700 px-6 py-4 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <UserPlus className="w-6 h-6 text-white" />
+                <h2 className="text-xl font-bold text-white">
+                  Importar Paciente Adicional
+                </h2>
+              </div>
+              <button
+                onClick={() => {
+                  setModalImportar(false);
+                  setBusquedaAsegurado("");
+                  setResultadosBusqueda([]);
+                }}
+                className="text-white/80 hover:text-white transition-colors"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+
+            {/* Body */}
+            <div className="p-6 overflow-y-auto flex-1">
+              {/* Input búsqueda */}
+              <div className="mb-6">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Buscar por DNI o Nombre
+                </label>
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                  <input
+                    type="text"
+                    value={busquedaAsegurado}
+                    onChange={(e) => setBusquedaAsegurado(e.target.value)}
+                    placeholder="Ingresa DNI o nombre del paciente..."
+                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                    autoFocus
+                  />
+                  {cargandoBusqueda && (
+                    <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 animate-spin" />
+                  )}
+                </div>
+                <p className="text-xs text-gray-500 mt-1">
+                  Mínimo 3 caracteres para buscar
+                </p>
+              </div>
+
+              {/* Resultados */}
+              {busquedaAsegurado.length >= 3 && (
+                <div className="space-y-3">
+                  {cargandoBusqueda ? (
+                    <div className="flex items-center justify-center py-8">
+                      <Loader2 className="w-8 h-8 text-green-600 animate-spin" />
+                    </div>
+                  ) : resultadosBusqueda.length === 0 ? (
+                    <div className="text-center py-8 text-gray-500">
+                      <AlertCircle className="w-12 h-12 mx-auto mb-3 text-gray-400" />
+                      <p>No se encontraron resultados</p>
+                    </div>
+                  ) : (
+                    resultadosBusqueda.map((asegurado) => (
+                      <div
+                        key={asegurado.pkAsegurado}
+                        className="border border-gray-200 rounded-lg p-4 hover:border-green-500 hover:bg-green-50/30 transition-all"
+                      >
+                        <div className="flex items-start justify-between gap-4">
+                          {/* Info paciente */}
+                          <div className="flex-1 grid grid-cols-2 gap-x-4 gap-y-2">
+                            <div>
+                              <p className="text-xs text-gray-500">DNI</p>
+                              <p className="font-medium text-gray-900">
+                                {asegurado.docPaciente}
+                              </p>
+                            </div>
+                            <div>
+                              <p className="text-xs text-gray-500">Edad / Sexo</p>
+                              <p className="font-medium text-gray-900">
+                                {asegurado.edad} años / {asegurado.sexo}
+                              </p>
+                            </div>
+                            <div className="col-span-2">
+                              <p className="text-xs text-gray-500">Nombre Completo</p>
+                              <p className="font-semibold text-gray-900">
+                                {asegurado.paciente}
+                              </p>
+                            </div>
+                            <div>
+                              <p className="text-xs text-gray-500">Teléfono</p>
+                              <p className="text-sm text-gray-700">
+                                {asegurado.telCelular || asegurado.telFijo || "Sin teléfono"}
+                              </p>
+                            </div>
+                            <div>
+                              <p className="text-xs text-gray-500">Tipo Seguro</p>
+                              <p className="text-sm text-gray-700">
+                                {asegurado.tipoSeguro}
+                              </p>
+                            </div>
+                            <div className="col-span-2">
+                              <p className="text-xs text-gray-500">IPRESS Adscrita</p>
+                              <p className="text-sm text-gray-700">
+                                {asegurado.nombreIpress || "Sin IPRESS"}
+                              </p>
+                            </div>
+                          </div>
+
+                          {/* Botón agregar */}
+                          <button
+                            onClick={() => importarPacienteAdicional(asegurado)}
+                            disabled={agregandoPaciente}
+                            className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+                          >
+                            {agregandoPaciente ? (
+                              <Loader2 className="w-4 h-4 animate-spin" />
+                            ) : (
+                              <Plus className="w-4 h-4" />
+                            )}
+                            <span className="font-medium">Agregar</span>
+                          </button>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              )}
             </div>
           </div>
         </div>

@@ -2,6 +2,7 @@ package com.styp.cenate.api.bolsas;
 
 import com.styp.cenate.dto.bolsas.SolicitudBolsaDTO;
 import com.styp.cenate.dto.bolsas.ActualizarEstadoCitaDTO;
+import com.styp.cenate.dto.bolsas.CrearSolicitudAdicionalRequest;
 import com.styp.cenate.model.bolsas.HistorialCargaBolsas;
 import com.styp.cenate.repository.bolsas.HistorialCargaBolsasRepository;
 import com.styp.cenate.service.bolsas.SolicitudBolsaService;
@@ -13,7 +14,10 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -930,6 +934,43 @@ public class SolicitudBolsaController {
             log.error("❌ Error exportando solicitudes asignadas: ", e);
             return ResponseEntity.status(500).body(("Error: " + e.getMessage()).getBytes());
         }
+    }
+
+    /**
+     * Crear solicitud adicional desde importación manual de gestora (v1.46.0)
+     * POST /api/bolsas/solicitudes/crear-adicional
+     *
+     * @param request datos del paciente a importar
+     * @param userDetails datos del usuario autenticado
+     * @return solicitud creada
+     */
+    @PostMapping("/crear-adicional")
+    @CheckMBACPermission(ruta = "/citas/gestion-asegurado", accion = "crear")
+    public ResponseEntity<SolicitudBolsaDTO> crearSolicitudAdicional(
+            @RequestBody @jakarta.validation.Valid CrearSolicitudAdicionalRequest request,
+            @AuthenticationPrincipal UserDetails userDetails) {
+
+        log.info("📝 POST /api/bolsas/solicitudes/crear-adicional - DNI: {}", request.getPacienteDni());
+
+        String username = userDetails != null ? userDetails.getUsername() : "Sistema";
+        SolicitudBolsaDTO nuevaSolicitud = solicitudBolsaService.crearSolicitudAdicional(request, username);
+
+        return ResponseEntity.status(HttpStatus.CREATED).body(nuevaSolicitud);
+    }
+
+    /**
+     * Buscar solicitudes por DNI de paciente (v1.46.0)
+     * GET /api/bolsas/solicitudes/buscar-dni/{dni}
+     *
+     * @param dni documento de identidad del paciente
+     * @return lista de solicitudes encontradas
+     */
+    @GetMapping("/buscar-dni/{dni}")
+    @CheckMBACPermission(ruta = "/citas/gestion-asegurado", accion = "ver")
+    public ResponseEntity<List<SolicitudBolsaDTO>> buscarPorDni(@PathVariable String dni) {
+        log.info("🔍 GET /api/bolsas/solicitudes/buscar-dni/{}", dni);
+        List<SolicitudBolsaDTO> solicitudes = solicitudBolsaService.buscarPorDni(dni);
+        return ResponseEntity.ok(solicitudes);
     }
 }
 

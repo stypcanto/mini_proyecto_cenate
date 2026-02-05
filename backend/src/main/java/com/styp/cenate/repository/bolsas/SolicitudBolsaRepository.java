@@ -825,5 +825,33 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
      */
     List<SolicitudBolsa> findByIdPersonalAndActivoTrue(Long idPersonal);
 
+    /**
+     * 🆕 v1.46.0: Buscar solicitudes por DNI de paciente
+     * Usado para validar duplicados al importar pacientes adicionales
+     * Retorna TODAS las solicitudes (sin filtro de activo)
+     *
+     * @param pacienteDni DNI del paciente
+     * @return lista de solicitudes para ese DNI
+     */
+    List<SolicitudBolsa> findByPacienteDni(String pacienteDni);
+
+    /**
+     * 🆕 v1.46.0: Contar solicitudes entre dos fechas
+     * Usado para generar número de solicitud único (IMP-YYYYMMDD-NNNN)
+     * Valida que no haya duplicados del mismo día
+     *
+     * @param inicio fecha inicio del rango
+     * @param fin fecha fin del rango
+     * @return cantidad de solicitudes en ese rango
+     */
+    @Query(value = """
+        SELECT COUNT(*) FROM dim_solicitud_bolsa
+        WHERE fecha_solicitud BETWEEN :inicio AND :fin
+        """, nativeQuery = true)
+    long countByFechaSolicitudBetween(
+        @org.springframework.data.repository.query.Param("inicio") java.time.LocalDateTime inicio,
+        @org.springframework.data.repository.query.Param("fin") java.time.LocalDateTime fin
+    );
+
 }
 
