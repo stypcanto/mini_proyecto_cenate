@@ -113,7 +113,7 @@ export default function BienvenidaMedico() {
   ];
 
   return (
-    <div className="space-y-6 pb-8">
+    <div className="space-y-8 pb-12">
       {/* Banner de Bienvenida */}
       <div className="bg-gradient-to-r from-emerald-600 via-teal-600 to-blue-600 rounded-3xl p-8 shadow-2xl overflow-hidden">
         <div className="flex items-center gap-6">
@@ -166,24 +166,24 @@ export default function BienvenidaMedico() {
 
       {/* Panel Médico - Desglosable Expandido */}
       <div className="bg-white rounded-xl shadow-md overflow-hidden">
-        <div className="px-5 py-3 flex items-center gap-3 hover:bg-gray-50 transition cursor-pointer">
-          <ChevronDown className="w-5 h-5 text-gray-600" />
-          <h2 className="text-base font-semibold text-gray-800">Panel Médico</h2>
+        <div className="px-6 py-4 flex items-center gap-3 hover:bg-gray-50 transition cursor-pointer bg-blue-50 border-l-4 border-blue-600">
+          <ChevronDown className="w-6 h-6 text-blue-600" />
+          <h2 className="text-lg font-bold text-blue-900">Panel Médico</h2>
         </div>
 
-        <div className="space-y-0.5 pl-8">
+        <div className="space-y-2 p-4">
           {acciones.map((accion, idx) => (
             <button
               key={idx}
               onClick={() => navigate(accion.ruta)}
-              className="w-full px-4 py-2.5 flex items-center gap-3 hover:bg-blue-50 transition-colors group text-left"
+              className="w-full px-4 py-3 flex items-center gap-4 hover:bg-blue-50 transition-colors group text-left rounded-lg border border-gray-200 hover:border-blue-300"
             >
-              <Folder className="w-4 h-4 text-gray-500 group-hover:text-blue-600 transition flex-shrink-0" />
-              <span className="text-sm font-medium text-gray-700 group-hover:text-blue-600 transition flex-1">
+              <Folder className="w-5 h-5 text-gray-400 group-hover:text-blue-600 transition flex-shrink-0" />
+              <span className="text-base font-semibold text-gray-800 group-hover:text-blue-600 transition flex-1">
                 {accion.titulo}
               </span>
               {accion.stat !== null && (
-                <span className="text-xs font-bold text-gray-600 bg-gray-100 px-2 py-0.5 rounded">
+                <span className="text-sm font-bold text-white bg-blue-600 px-3 py-1 rounded-full">
                   {accion.stat}
                 </span>
               )}
@@ -194,28 +194,28 @@ export default function BienvenidaMedico() {
 
       {/* TeleECG - Desglosable Expandido */}
       <div className="bg-white rounded-xl shadow-md overflow-hidden">
-        <div className="px-5 py-3 flex items-center gap-3 hover:bg-gray-50 transition cursor-pointer">
-          <ChevronDown className="w-5 h-5 text-gray-600" />
-          <h2 className="text-base font-semibold text-gray-800">TeleECG</h2>
+        <div className="px-6 py-4 flex items-center gap-3 hover:bg-gray-50 transition cursor-pointer bg-purple-50 border-l-4 border-purple-600">
+          <ChevronDown className="w-6 h-6 text-purple-600" />
+          <h2 className="text-lg font-bold text-purple-900">TeleECG</h2>
         </div>
 
-        <div className="space-y-0.5 pl-8">
+        <div className="space-y-2 p-4">
           <button
             onClick={() => navigate('/teleecg/recibidas')}
-            className="w-full px-4 py-2.5 flex items-center gap-3 hover:bg-purple-50 transition-colors group text-left"
+            className="w-full px-4 py-3 flex items-center gap-4 hover:bg-purple-50 transition-colors group text-left rounded-lg border border-gray-200 hover:border-purple-300"
           >
-            <Folder className="w-4 h-4 text-gray-500 group-hover:text-purple-600 transition flex-shrink-0" />
-            <span className="text-sm font-medium text-gray-700 group-hover:text-purple-600 transition">
+            <Folder className="w-5 h-5 text-gray-400 group-hover:text-purple-600 transition flex-shrink-0" />
+            <span className="text-base font-semibold text-gray-800 group-hover:text-purple-600 transition">
               TeleECG Recibidas
             </span>
           </button>
 
           <button
             onClick={() => navigate('/teleecg/estadisticas')}
-            className="w-full px-4 py-2.5 flex items-center gap-3 hover:bg-purple-50 transition-colors group text-left"
+            className="w-full px-4 py-3 flex items-center gap-4 hover:bg-purple-50 transition-colors group text-left rounded-lg border border-gray-200 hover:border-purple-300"
           >
-            <Folder className="w-4 h-4 text-gray-500 group-hover:text-purple-600 transition flex-shrink-0" />
-            <span className="text-sm font-medium text-gray-700 group-hover:text-purple-600 transition">
+            <Folder className="w-5 h-5 text-gray-400 group-hover:text-purple-600 transition flex-shrink-0" />
+            <span className="text-base font-semibold text-gray-800 group-hover:text-purple-600 transition">
               Estadísticas
             </span>
           </button>
