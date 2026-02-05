@@ -62,6 +62,9 @@ import {
   Phone,
   PhoneCall,
   Mail,
+  Home,
+  User,
+  Inbox,
 } from "lucide-react";
 
 // Mapeo de nombres de iconos a componentes de Lucide
@@ -111,6 +114,9 @@ const iconMap = {
   'Phone': Phone,
   'PhoneCall': PhoneCall,
   'Mail': Mail,  // 📧 Para auditoría de correos
+  'Home': Home,  // 🏠 Para Bienvenida
+  'User': User,  // 👤 Para Mi Información
+  'Inbox': Inbox,  // 📥 Para TeleECG Recibidas
 };
 
 const getIconComponent = (iconName) => {
@@ -490,7 +496,10 @@ function getPageIcon(nombreModulo, nombrePagina) {
   }
 
   // Iconos generales
-  if (lowerName.includes('bienvenida') || lowerName.includes('inicio') || lowerName.includes('dashboard')) {
+  if (lowerName.includes('bienvenida')) {
+    return Home;  // 🏠 Para Bienvenida
+  }
+  if (lowerName.includes('inicio') || lowerName.includes('dashboard')) {
     return LayoutDashboard;
   }
   if (lowerName.includes('excel') || lowerName.includes('cargar') || lowerName.includes('importar')) {
@@ -502,11 +511,20 @@ function getPageIcon(nombreModulo, nombrePagina) {
   if (lowerName.includes('buscar') || lowerName.includes('búsqueda') || lowerName.includes('search')) {
     return Search;
   }
-  if (lowerName.includes('resultado') || lowerName.includes('estadística') || lowerName.includes('analisis')) {
+  if (lowerName.includes('resultado') || lowerName.includes('estadística') || lowerName.includes('estadisticas') || lowerName.includes('analisis')) {
     return BarChart3;
   }
   if (lowerName.includes('paciente')) {
     return Users;
+  }
+  if (lowerName.includes('disponibilidad')) {
+    return Calendar;  // 📅 Para Disponibilidad
+  }
+  if (lowerName.includes('información') || lowerName.includes('informacion') || lowerName.includes('perfil')) {
+    return User;  // 👤 Para Mi Información
+  }
+  if (lowerName.includes('recibida') || lowerName.includes('recibido') || lowerName.includes('teleecg')) {
+    return Inbox;  // 📥 Para TeleECG Recibidas
   }
   if (lowerName.includes('atención') || lowerName.includes('atencion') || lowerName.includes('clínica') || lowerName.includes('clinica')) {
     return Stethoscope;
