@@ -54,6 +54,11 @@ spec/
 
 ### Para Arquitectura General
 **Comienza en:** `/architecture/README.md`
+- **🏥 FLUJO COMPLETO DE ATENCIONES:** `architecture/01_flujo_atenciones_completo.md` ⭐ v1.45.2
+  - 4 etapas: Bolsas → Coordinador → Gestión Citas → Médico
+  - Tabla de vinculaciones entre etapas
+  - APIs por etapa
+  - KPIs y seguridad
 - Visión General: `architecture/004_arquitectura.md`
 
 ### Para Troubleshooting

@@ -15,6 +15,39 @@
 
 ---
 
+---
+
+## 🏥 FLUJO COMPLETO DE ATENCIONES
+
+**⭐ Documento Maestro:** [`spec/architecture/01_flujo_atenciones_completo.md`](spec/architecture/01_flujo_atenciones_completo.md)
+
+El flujo comprende **4 etapas**:
+
+1. **📦 Etapa 1: Generación en Bolsas** (Módulo 107, Dengue, etc.)
+   - Tabla: `dim_solicitud_bolsa`
+   - Rol: COORDINADOR
+   - Acción: Paciente ingresa a bolsa
+
+2. **👤 Etapa 2: Coordinador Gestión Citas Asigna Médico**
+   - Tabla: `dim_solicitud_bolsa.id_personal` ← ASIGNADO AQUÍ
+   - Rol: COORDINADOR_GESTION_CITAS
+   - Acción: Asignar médico al paciente
+
+3. **📋 Etapa 3: Gestión de Citas Maneja Estados**
+   - Tabla: `solicitud_cita`
+   - Rol: COORDINADOR
+   - Acción: Cambiar estado (Pendiente → Citado → Atendido, etc.)
+
+4. **👨‍⚕️ Etapa 4: Médico Atiende Paciente**
+   - Tabla: `dim_solicitud_bolsa` (lectura) → Sincroniza a `solicitud_cita`
+   - Rol: MEDICO
+   - Acción: Marcar Atendido, Generar Receta, Generar Interconsulta
+   - Componente: **MisPacientes.jsx** (v1.45.1+)
+
+**Sincronización (v1.44.0+):** Cuando médico marca ATENDIDO, sincroniza automáticamente a ambas tablas.
+
+---
+
 ## 🏗️ ARQUITECTURA DE BOLSAS (v1.42.0+)
 
 ### **Modelo de Dos Niveles: Universo General + Mini-Bolsas**
