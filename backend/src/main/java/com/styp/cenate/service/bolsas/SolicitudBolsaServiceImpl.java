@@ -2874,15 +2874,16 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
     public SolicitudBolsaDTO crearSolicitudAdicional(CrearSolicitudAdicionalRequest request, String username) {
         log.info("📝 Creando solicitud adicional para DNI: {}", request.getPacienteDni());
 
-        // 1. Validar que no exista ya una solicitud ACTIVA para este DNI
-        List<SolicitudBolsa> existentes = solicitudRepository
-            .findByPacienteDniAndActivoTrue(request.getPacienteDni());
+        // ✅ v1.46.0: PERMITIR MÚLTIPLES ASIGNACIONES del mismo paciente
+        // Un paciente puede tener múltiples solicitudes/asignaciones activas a diferentes médicos
+        // Solo validar que el paciente exista en la BD de asegurados
 
-        if (!existentes.isEmpty()) {
-            throw new ValidationException(
-                "Ya existe una solicitud activa para el paciente con DNI: " + request.getPacienteDni()
-            );
-        }
+        Asegurado asegurado = aseguradoRepository.findByDocPaciente(request.getPacienteDni())
+            .orElseThrow(() -> new ResourceNotFoundException(
+                "Paciente con DNI " + request.getPacienteDni() + " no existe en la base de datos"
+            ));
+
+        log.info("✅ Paciente validado: {} - DNI: {}", asegurado.getPaciente(), request.getPacienteDni());
 
         // 2. Generar número de solicitud único
         String numeroSolicitud = generarNumeroSolicitud();

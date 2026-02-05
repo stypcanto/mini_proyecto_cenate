@@ -50,10 +50,9 @@ public class GestionPacienteServiceImpl implements IGestionPacienteService {
         Asegurado asegurado = aseguradoRepository.findById(dto.getPkAsegurado())
             .orElseThrow(() -> new RuntimeException("Asegurado no encontrado: " + dto.getPkAsegurado()));
 
-        // Verificar si ya existe una gestión para este asegurado
-        if (repository.existsByAsegurado_PkAsegurado(dto.getPkAsegurado())) {
-            throw new RuntimeException("Ya existe una gestión para el asegurado: " + dto.getPkAsegurado());
-        }
+        // ✅ v1.46.0: PERMITIR MÚLTIPLES GESTIONES del mismo paciente
+        // Un paciente puede tener múltiples gestiones (para diferentes médicos/asignaciones)
+        // Solo validar que el asegurado exista (ya se hizo arriba)
 
         GestionPaciente entity = GestionPaciente.builder()
             .asegurado(asegurado)
