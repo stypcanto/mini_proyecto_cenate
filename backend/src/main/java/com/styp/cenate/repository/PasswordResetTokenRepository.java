@@ -46,4 +46,10 @@ public interface PasswordResetTokenRepository extends JpaRepository<PasswordRese
      */
     @Query("SELECT COUNT(t) FROM PasswordResetToken t WHERE t.idUsuario = :idUsuario AND t.usado = false AND t.fechaExpiracion > :ahora")
     long contarTokensValidos(@Param("idUsuario") Long idUsuario, @Param("ahora") LocalDateTime ahora);
+
+    /**
+     * Busca el token válido más reciente de un usuario (para reutilizar si es reciente)
+     */
+    @Query("SELECT t FROM PasswordResetToken t WHERE t.idUsuario = :idUsuario AND t.usado = false AND t.fechaExpiracion > :ahora ORDER BY t.createdAt DESC")
+    Optional<PasswordResetToken> findTokenValidoMasReciente(@Param("idUsuario") Long idUsuario, @Param("ahora") LocalDateTime ahora);
 }
