@@ -148,15 +148,19 @@ public class AtenderPacienteService {
         // ✅ v1.47.3: Buscar idServicio por especialidad para permitir asignación de médico
         Long idServicioRecita = null;
         try {
+            String especialidadTrimmed = solicitudOriginal.getEspecialidad() != null ?
+                    solicitudOriginal.getEspecialidad().trim() : "";
+            log.info("🔍 RECITA: Buscando idServicio para especialidad: '{}'", especialidadTrimmed);
+
             var servicioOpt = servicioEssiRepository.findFirstByDescServicioIgnoreCaseAndEstado(
-                    solicitudOriginal.getEspecialidad(), "A");
+                    especialidadTrimmed, "A");
             if (servicioOpt.isPresent()) {
                 idServicioRecita = servicioOpt.get().getIdServicio();
                 log.info("✅ RECITA: idServicio encontrado para especialidad '{}': {}",
-                        solicitudOriginal.getEspecialidad(), idServicioRecita);
+                        especialidadTrimmed, idServicioRecita);
             } else {
-                log.warn("⚠️ RECITA: No se encontró idServicio para especialidad '{}'",
-                        solicitudOriginal.getEspecialidad());
+                log.warn("⚠️ RECITA: No se encontró idServicio para especialidad '{}'. Buscando todos los servicios...",
+                        especialidadTrimmed);
             }
         } catch (Exception e) {
             log.error("❌ RECITA: Error buscando idServicio para especialidad: {}",
@@ -198,14 +202,18 @@ public class AtenderPacienteService {
         // ✅ v1.47.3: Buscar idServicio por especialidad para permitir asignación de médico
         Long idServicioInterconsulta = null;
         try {
+            String especialidadTrimmed = especialidad != null ? especialidad.trim() : "";
+            log.info("🔍 INTERCONSULTA: Buscando idServicio para especialidad: '{}'", especialidadTrimmed);
+
             var servicioOpt = servicioEssiRepository.findFirstByDescServicioIgnoreCaseAndEstado(
-                    especialidad, "A");
+                    especialidadTrimmed, "A");
             if (servicioOpt.isPresent()) {
                 idServicioInterconsulta = servicioOpt.get().getIdServicio();
                 log.info("✅ INTERCONSULTA: idServicio encontrado para especialidad '{}': {}",
-                        especialidad, idServicioInterconsulta);
+                        especialidadTrimmed, idServicioInterconsulta);
             } else {
-                log.warn("⚠️ INTERCONSULTA: No se encontró idServicio para especialidad '{}'", especialidad);
+                log.warn("⚠️ INTERCONSULTA: No se encontró idServicio para especialidad '{}'. Buscando todos los servicios...",
+                        especialidadTrimmed);
             }
         } catch (Exception e) {
             log.error("❌ INTERCONSULTA: Error buscando idServicio para especialidad: {}", especialidad, e);
