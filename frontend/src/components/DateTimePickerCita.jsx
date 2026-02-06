@@ -237,22 +237,38 @@ export default function DateTimePickerCita({
         }`}
       >
         {/* FECHA - Lado Izquierdo */}
-        <div className="flex-1 flex items-center relative px-3">
-          <Calendar className="w-4 h-4 text-gray-400 absolute left-3 pointer-events-none" />
-          <input
-            type="text"
-            value={fechaInput}
-            onChange={handleFechaInput}
-            placeholder="DD/MM/AAAA"
-            disabled={disabled}
-            onFocus={() => !disabled && setMostrarCalendario(true)}
-            className={`w-full pl-7 pr-2 py-2 text-sm focus:outline-none ${
-              fechaInput
-                ? "bg-white text-gray-900"
-                : "bg-gray-50 text-gray-400"
-            } ${disabled ? "bg-gray-100 cursor-not-allowed text-gray-400" : ""}`}
-            maxLength="10"
-          />
+        <div className="flex-1 px-3">
+          {fechaInput ? (
+            // Mostrar fecha seleccionada como texto (similar a la hora)
+            <button
+              type="button"
+              disabled={disabled}
+              onClick={() => !disabled && setMostrarCalendario(!mostrarCalendario)}
+              className={`w-full py-2 text-sm font-medium flex items-center justify-center gap-1.5 transition-colors focus:outline-none ${
+                disabled
+                  ? "text-gray-400 cursor-not-allowed"
+                  : "text-gray-900 hover:text-blue-700"
+              }`}
+              title="Cambiar fecha"
+            >
+              <Calendar className="w-4 h-4" strokeWidth={2} />
+              <span className="font-semibold">{fechaInput}</span>
+            </button>
+          ) : (
+            // Input para escribir la fecha manualmente
+            <input
+              type="text"
+              value={fechaInput}
+              onChange={handleFechaInput}
+              placeholder="DD/MM/AAAA"
+              disabled={disabled}
+              onFocus={() => !disabled && setMostrarCalendario(true)}
+              className={`w-full px-2 py-2 text-sm focus:outline-none ${
+                disabled ? "bg-gray-100 cursor-not-allowed text-gray-400" : "text-gray-600"
+              }`}
+              maxLength="10"
+            />
+          )}
         </div>
 
         {/* SEPARADOR VERTICAL */}
