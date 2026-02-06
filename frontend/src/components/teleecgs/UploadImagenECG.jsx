@@ -544,7 +544,7 @@ export default function UploadImagenEKG({ onSuccess }) {
             </div>
 
             {/* Datos Auto-cargados - Confirmación (Oculto en Desktop) */}
-            {pacienteEncontrado && (
+            {pacienteEncontrado ? (
               <div className="mt-4 xl:hidden bg-gradient-to-br from-green-400 to-emerald-500 rounded-xl p-5 border-3 border-green-600 shadow-lg">
                 <p className="text-sm font-bold text-green-900 mb-3">✅ PACIENTE CONFIRMADO</p>
                 <div className="text-lg font-bold text-white mb-2">
@@ -555,7 +555,7 @@ export default function UploadImagenEKG({ onSuccess }) {
                 </div>
               </div>
             ) : (
-              <div className="mt-4 bg-gray-200 rounded-xl p-5 text-sm text-gray-700 text-center font-medium">
+              <div className="mt-4 xl:hidden bg-gray-200 rounded-xl p-5 text-sm text-gray-700 text-center font-medium">
                 👆 Ingresa DNI para buscar paciente
               </div>
             )}
@@ -625,20 +625,6 @@ export default function UploadImagenEKG({ onSuccess }) {
                             : "border-gray-400 hover:border-blue-400 hover:shadow-lg"
                         }`}
                       />
-                      {/* Delete Button (X) - GRANDE Y VISIBLE */}
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          removerArchivo(index);
-                        }}
-                        className="absolute -top-4 -right-4 bg-gradient-to-br from-red-500 to-red-700 hover:from-red-600 hover:to-red-800 text-white rounded-full p-2.5 md:p-3 shadow-2xl transition transform hover:scale-110 active:scale-95 z-10 group-hover:scale-110 border-3 border-white"
-                        disabled={loading}
-                        title="Eliminar foto"
-                      >
-                        <X className="w-6 h-6 md:w-7 md:h-7" strokeWidth={3} />
-                      </button>
-
                       {/* Index Badge */}
                       <div className="absolute bottom-2 left-2 bg-blue-600 text-white text-sm md:text-base font-bold px-2.5 py-1.5 rounded-lg shadow-lg border-2 border-white">
                         {index + 1}
@@ -649,13 +635,28 @@ export default function UploadImagenEKG({ onSuccess }) {
               </div>
 
               {/* Resumen Comprimido */}
-              <div className="mt-3 text-xs text-gray-600 space-y-1">
-                <p>
-                  <strong>Capturadas:</strong> {archivos.length}/{MAX_IMAGENES}
-                </p>
-                <p>
-                  <strong>Tamaño:</strong> {(archivos.reduce((sum, f) => sum + f.size, 0) / 1024 / 1024).toFixed(2)}MB
-                </p>
+              <div className="mt-4 space-y-3">
+                <div className="text-xs text-gray-600 space-y-1">
+                  <p>
+                    <strong>Capturadas:</strong> {archivos.length}/{MAX_IMAGENES}
+                  </p>
+                  <p>
+                    <strong>Tamaño:</strong> {(archivos.reduce((sum, f) => sum + f.size, 0) / 1024 / 1024).toFixed(2)}MB
+                  </p>
+                </div>
+
+                {/* Botón Eliminar Foto Seleccionada */}
+                {archivos.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => removerArchivo(carouselIndex)}
+                    disabled={loading}
+                    className="w-full py-3 md:py-4 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white font-bold rounded-xl transition transform hover:scale-105 active:scale-95 shadow-lg flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <Trash2 className="w-5 h-5" />
+                    <span>Eliminar Foto #{carouselIndex + 1}</span>
+                  </button>
+                )}
               </div>
             </div>
           )}
