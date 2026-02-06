@@ -512,6 +512,7 @@ export default function Solicitudes() {
             macroregion: solicitud.desc_macro || 'Sin asignar',
             bolsa: generarCodigoBolsa(solicitud.desc_tipo_bolsa),
             nombreBolsa: generarAliasBolsa(solicitud.desc_tipo_bolsa),
+            descBolsa: solicitud.desc_tipo_bolsa || 'Sin clasificar',
             fechaCita: solicitud.fecha_asignacion ? new Date(solicitud.fecha_asignacion).toLocaleDateString('es-PE') : 'N/A',
             fechaAsignacion: solicitud.fecha_solicitud ? new Date(solicitud.fecha_solicitud).toLocaleDateString('es-PE') : 'N/A',
             gestoraAsignada: gestoraAsignadaNombre,
