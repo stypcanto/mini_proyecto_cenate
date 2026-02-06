@@ -3,9 +3,15 @@ package com.styp.cenate.dto;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.time.Period;
+import java.time.format.DateTimeFormatter;
+import java.io.IOException;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.databind.JsonSerializer;
+import com.fasterxml.jackson.databind.SerializerProvider;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
@@ -19,6 +25,20 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Builder
 public class GestionPacienteDTO {
+
+    // ✅ Serializador personalizado para OffsetDateTime (mantiene offset local sin normalizar a UTC)
+    public static class OffsetDateTimeSerializer extends JsonSerializer<OffsetDateTime> {
+        private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSXXX");
+
+        @Override
+        public void serialize(OffsetDateTime value, JsonGenerator gen, SerializerProvider serializers) throws IOException {
+            if (value == null) {
+                gen.writeNull();
+            } else {
+                gen.writeString(FORMATTER.format(value));
+            }
+        }
+    }
 
     private Long idGestion;
 
@@ -60,13 +80,14 @@ public class GestionPacienteDTO {
     private OffsetDateTime fechaActualizacion;
 
     // Fecha de asignación al médico (desde dim_solicitud_bolsa)
+    // ✅ v1.47.0: Usar serializador personalizado para mantener offset local (-05:00) sin normalizar a UTC
     @JsonProperty("fechaAsignacion")
-    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSSXXX")
+    @JsonSerialize(using = OffsetDateTimeSerializer.class)
     private OffsetDateTime fechaAsignacion;
 
     // Fecha de atención médica (cuando se marca como Atendido o Deserción)
     @JsonProperty("fechaAtencion")
-    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSSXXX")
+    @JsonSerialize(using = OffsetDateTimeSerializer.class)
     private OffsetDateTime fechaAtencion;
 
     /**

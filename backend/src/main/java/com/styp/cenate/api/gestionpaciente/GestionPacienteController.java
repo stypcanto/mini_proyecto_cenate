@@ -233,7 +233,7 @@ public class GestionPacienteController {
             @RequestBody @Valid AtenderPacienteRequest request,
             BindingResult bindingResult
     ) {
-        log.info("🏥 [v1.47.0] POST /api/gestion-pacientes/{}/atendido - Registrando atención", id);
+        log.info("🏥 [v1.47.0] POST /api/gestion-pacientes/{}/atendido - Registrando atención (idSolicitudBolsa: {})", id, id);
 
         // ✅ Validación condicional
         atenderPacienteValidator.validate(request, bindingResult);
@@ -248,10 +248,11 @@ public class GestionPacienteController {
             ));
         }
 
-        // Obtener la solicitud original para extraer especialidad
-        GestionPacienteDTO paciente = servicio.buscarPorId(id)
-            .orElseThrow(() -> new RuntimeException("Paciente no encontrado"));
-        String especialidad = paciente.getCondicion(); // Usa condición como especialidad temporal
+        // ✅ v1.47.0: Usar idSolicitudBolsa (no idGestion) - el id es del dim_solicitud_bolsa
+        // El atenderPacienteService ya espera idSolicitudBolsa
+        String especialidad = request.getInterconsultaEspecialidad() != null
+            ? request.getInterconsultaEspecialidad()
+            : "General"; // Fallback a especialidad general
 
         atenderPacienteService.atenderPaciente(id, especialidad, request);
 
