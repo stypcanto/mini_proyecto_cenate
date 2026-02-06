@@ -154,7 +154,10 @@ export default function DateTimePickerCita({
     const día_str = String(día).padStart(2, "0");
 
     setFechaInput(`${día_str}/${mes}/${año}`);
+    // ✅ CERRAR CALENDARIO INMEDIATAMENTE después de seleccionar
     setMostrarCalendario(false);
+    // ✅ ABRIR SELECTOR DE HORAS automáticamente
+    setMostrarHoras(true);
 
     // Si hay hora seleccionada, validar disponibilidad
     if (horaSeleccionada) {
