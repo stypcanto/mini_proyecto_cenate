@@ -195,7 +195,7 @@ export default function RegistroPacientes() {
           </div>
         </div>
 
-        {/* Tabla */}
+        {/* ✅ v1.49.0: Tabla Responsive - Desktop Table + Mobile Cards */}
         <div className="bg-white rounded-lg shadow-md overflow-hidden">
           {loading ? (
             <div className="p-8 text-center">
@@ -208,124 +208,234 @@ export default function RegistroPacientes() {
               <p className="text-gray-600">No se encontraron registros</p>
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white">
-                  <tr>
-                    <th className="px-6 py-4 text-left text-sm font-semibold">
-                      Fecha
-                    </th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold">
-                      DNI
-                    </th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold">
-                      Paciente
-                    </th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold">
-                      Estado
-                    </th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold">
-                      Evaluación (Solo CENATE)
-                    </th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold">
-                      Archivo
-                    </th>
-                    <th className="px-6 py-4 text-center text-sm font-semibold">
-                      Acciones
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200">
-                  {filteredEcgs.map((paciente) => (
-                    <tr key={paciente.numDocPaciente} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 text-sm text-gray-700">
-                        <div className="flex items-center gap-2">
-                          <Calendar className="w-4 h-4 text-gray-400" />
-                          {formatearFecha(paciente.fechaPrimera)}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 text-sm font-semibold text-gray-900">
-                        {paciente.numDocPaciente}
-                      </td>
-                      <td className="px-6 py-4 text-sm text-gray-700">
-                        <div>
-                          <p className="font-medium">
-                            {paciente.nombresPaciente}
-                          </p>
-                          <p className="text-xs text-blue-600 font-semibold">
-                            📸 {paciente.imagenes.length} EKG{paciente.imagenes.length !== 1 ? 's' : ''}
-                          </p>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 text-sm">
-                        <span
-                          className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${getEstadoBadge(
-                            paciente.estado
-                          )}`}
-                        >
-                          {paciente.estado}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 text-sm">
-                        {paciente.imagenes[0]?.evaluacion ? (
-                          <span className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${
-                            paciente.imagenes[0].evaluacion === 'NORMAL'
-                              ? 'bg-green-100 text-green-800 border border-green-300'
-                              : paciente.imagenes[0].evaluacion === 'ANORMAL'
-                              ? 'bg-red-100 text-red-800 border border-red-300'
-                              : 'bg-gray-100 text-gray-800 border border-gray-300'
-                          }`}>
-                            {paciente.imagenes[0].evaluacion}
-                          </span>
-                        ) : (
-                          <span className="text-gray-500 text-xs">—</span>
-                        )}
-                      </td>
-                      <td className="px-6 py-4 text-sm text-gray-700">
-                        {paciente.imagenes[0]?.nombreArchivo}
-                      </td>
-                      <td className="px-6 py-4 text-center">
-                        <div className="flex items-center justify-center gap-2">
-                          <button
-                            onClick={() => abrirVisor(paciente.imagenes[0])}
-                            className="p-2 hover:bg-blue-100 rounded-lg transition-colors text-blue-600"
-                            title={`Ver ${paciente.imagenes.length} imagen(es)`}
-                          >
-                            <Eye className="w-4 h-4" />
-                          </button>
-                          <button
-                            onClick={() =>
-                              manejarDescargar(
-                                paciente.imagenes[0].idImagen,
-                                paciente.imagenes[0].nombreArchivo
-                              )
-                            }
-                            className="p-2 hover:bg-green-100 rounded-lg transition-colors text-green-600"
-                            title="Descargar primera imagen"
-                          >
-                            <Download className="w-4 h-4" />
-                          </button>
-                          {/* ✅ Botón "Ver en CENATE" */}
-                          <button
-                            onClick={() => {
-                              // Abrir vista CENATE en nueva pestaña filtrada por DNI
-                              window.open(
-                                `/teleecg/recibidas?dni=${paciente.numDocPaciente}`,
-                                "_blank"
-                              );
-                            }}
-                            className="p-2 hover:bg-purple-100 rounded-lg transition-colors text-purple-600"
-                            title="Ver en vista CENATE"
-                          >
-                            <ExternalLink className="w-4 h-4" />
-                          </button>
-                        </div>
-                      </td>
+            <>
+              {/* DESKTOP: Tabla (≥768px) */}
+              <div className="hidden md:block overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white">
+                    <tr>
+                      <th className="px-6 py-4 text-left text-sm font-semibold">
+                        Fecha
+                      </th>
+                      <th className="px-6 py-4 text-left text-sm font-semibold">
+                        DNI
+                      </th>
+                      <th className="px-6 py-4 text-left text-sm font-semibold">
+                        Paciente
+                      </th>
+                      <th className="px-6 py-4 text-left text-sm font-semibold">
+                        Estado
+                      </th>
+                      <th className="px-6 py-4 text-left text-sm font-semibold">
+                        Evaluación (Solo CENATE)
+                      </th>
+                      <th className="px-6 py-4 text-left text-sm font-semibold">
+                        Archivo
+                      </th>
+                      <th className="px-6 py-4 text-center text-sm font-semibold">
+                        Acciones
+                      </th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody className="divide-y divide-gray-200">
+                    {filteredEcgs.map((paciente) => (
+                      <tr key={paciente.numDocPaciente} className="hover:bg-gray-50">
+                        <td className="px-6 py-4 text-sm text-gray-700">
+                          <div className="flex items-center gap-2">
+                            <Calendar className="w-4 h-4 text-gray-400" />
+                            {formatearFecha(paciente.fechaPrimera)}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 text-sm font-semibold text-gray-900">
+                          {paciente.numDocPaciente}
+                        </td>
+                        <td className="px-6 py-4 text-sm text-gray-700">
+                          <div>
+                            <p className="font-medium">
+                              {paciente.nombresPaciente}
+                            </p>
+                            <p className="text-xs text-blue-600 font-semibold">
+                              📸 {paciente.imagenes.length} EKG{paciente.imagenes.length !== 1 ? 's' : ''}
+                            </p>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 text-sm">
+                          <span
+                            className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${getEstadoBadge(
+                              paciente.estado
+                            )}`}
+                          >
+                            {paciente.estado}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 text-sm">
+                          {paciente.imagenes[0]?.evaluacion ? (
+                            <span className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${
+                              paciente.imagenes[0].evaluacion === 'NORMAL'
+                                ? 'bg-green-100 text-green-800 border border-green-300'
+                                : paciente.imagenes[0].evaluacion === 'ANORMAL'
+                                ? 'bg-red-100 text-red-800 border border-red-300'
+                                : 'bg-gray-100 text-gray-800 border border-gray-300'
+                            }`}>
+                              {paciente.imagenes[0].evaluacion}
+                            </span>
+                          ) : (
+                            <span className="text-gray-500 text-xs">—</span>
+                          )}
+                        </td>
+                        <td className="px-6 py-4 text-sm text-gray-700">
+                          {paciente.imagenes[0]?.nombreArchivo}
+                        </td>
+                        <td className="px-6 py-4 text-center">
+                          <div className="flex items-center justify-center gap-3">
+                            {/* ✅ 44×44px touch targets + ARIA labels */}
+                            <button
+                              onClick={() => abrirVisor(paciente.imagenes[0])}
+                              className="flex items-center justify-center h-11 w-11 hover:bg-blue-100 rounded-lg transition-colors text-blue-600 active:bg-blue-200"
+                              title={`Ver ${paciente.imagenes.length} imagen(es)`}
+                              aria-label={`Ver electrocardiograma de paciente ${paciente.numDocPaciente}`}
+                            >
+                              <Eye className="w-5 h-5" />
+                            </button>
+                            <button
+                              onClick={() =>
+                                manejarDescargar(
+                                  paciente.imagenes[0].idImagen,
+                                  paciente.imagenes[0].nombreArchivo
+                                )
+                              }
+                              className="flex items-center justify-center h-11 w-11 hover:bg-green-100 rounded-lg transition-colors text-green-600 active:bg-green-200"
+                              title="Descargar primera imagen"
+                              aria-label={`Descargar electrocardiograma de paciente ${paciente.numDocPaciente}`}
+                            >
+                              <Download className="w-5 h-5" />
+                            </button>
+                            <button
+                              onClick={() => {
+                                window.open(
+                                  `/teleecg/recibidas?dni=${paciente.numDocPaciente}`,
+                                  "_blank"
+                                );
+                              }}
+                              className="flex items-center justify-center h-11 w-11 hover:bg-purple-100 rounded-lg transition-colors text-purple-600 active:bg-purple-200"
+                              title="Ver en vista CENATE"
+                              aria-label={`Ver electrocardiograma en vista CENATE de paciente ${paciente.numDocPaciente}`}
+                            >
+                              <ExternalLink className="w-5 h-5" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* MOBILE: Cards (<768px) */}
+              <div className="md:hidden space-y-4 p-4">
+                {filteredEcgs.map((paciente) => (
+                  <div
+                    key={paciente.numDocPaciente}
+                    className="bg-white border border-gray-200 rounded-lg shadow-sm p-4 space-y-3"
+                  >
+                    {/* Header Row: DNI + Estado */}
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <p className="text-xs text-gray-500 uppercase tracking-wide font-semibold">DNI</p>
+                        <p className="text-lg font-bold text-gray-900">{paciente.numDocPaciente}</p>
+                      </div>
+                      <span
+                        className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${getEstadoBadge(
+                          paciente.estado
+                        )}`}
+                      >
+                        {paciente.estado}
+                      </span>
+                    </div>
+
+                    {/* Paciente Info */}
+                    <div>
+                      <p className="text-xs text-gray-500 uppercase tracking-wide font-semibold">Paciente</p>
+                      <p className="text-base font-semibold text-gray-900">
+                        {paciente.nombresPaciente}
+                      </p>
+                      <p className="text-sm text-blue-600 font-semibold">
+                        📸 {paciente.imagenes.length} EKG{paciente.imagenes.length !== 1 ? 's' : ''}
+                      </p>
+                    </div>
+
+                    {/* Fecha */}
+                    <div>
+                      <p className="text-xs text-gray-500 uppercase tracking-wide font-semibold">Fecha Registro</p>
+                      <p className="text-sm text-gray-700 flex items-center gap-2">
+                        <Calendar className="w-4 h-4 text-gray-400" />
+                        {formatearFecha(paciente.fechaPrimera)}
+                      </p>
+                    </div>
+
+                    {/* Evaluación */}
+                    {paciente.imagenes[0]?.evaluacion && (
+                      <div>
+                        <p className="text-xs text-gray-500 uppercase tracking-wide font-semibold">Evaluación CENATE</p>
+                        <span className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${
+                          paciente.imagenes[0].evaluacion === 'NORMAL'
+                            ? 'bg-green-100 text-green-800 border border-green-300'
+                            : paciente.imagenes[0].evaluacion === 'ANORMAL'
+                            ? 'bg-red-100 text-red-800 border border-red-300'
+                            : 'bg-gray-100 text-gray-800 border border-gray-300'
+                        }`}>
+                          {paciente.imagenes[0].evaluacion}
+                        </span>
+                      </div>
+                    )}
+
+                    {/* Archivo */}
+                    <div>
+                      <p className="text-xs text-gray-500 uppercase tracking-wide font-semibold">Archivo</p>
+                      <p className="text-sm text-gray-700 truncate">{paciente.imagenes[0]?.nombreArchivo}</p>
+                    </div>
+
+                    {/* ✅ Action Buttons (44×44px touch targets) */}
+                    <div className="flex gap-3 pt-2">
+                      <button
+                        onClick={() => abrirVisor(paciente.imagenes[0])}
+                        className="flex-1 flex items-center justify-center gap-2 h-12 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition-colors active:bg-blue-800"
+                        aria-label={`Ver electrocardiograma de paciente ${paciente.numDocPaciente}`}
+                      >
+                        <Eye className="w-5 h-5" />
+                        <span>Ver EKG</span>
+                      </button>
+                      <button
+                        onClick={() =>
+                          manejarDescargar(
+                            paciente.imagenes[0].idImagen,
+                            paciente.imagenes[0].nombreArchivo
+                          )
+                        }
+                        className="h-12 w-12 flex items-center justify-center bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors active:bg-green-800"
+                        title="Descargar"
+                        aria-label={`Descargar electrocardiograma de paciente ${paciente.numDocPaciente}`}
+                      >
+                        <Download className="w-5 h-5" />
+                      </button>
+                      <button
+                        onClick={() => {
+                          window.open(
+                            `/teleecg/recibidas?dni=${paciente.numDocPaciente}`,
+                            "_blank"
+                          );
+                        }}
+                        className="h-12 w-12 flex items-center justify-center bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors active:bg-purple-800"
+                        title="Ver en CENATE"
+                        aria-label={`Ver en vista CENATE de paciente ${paciente.numDocPaciente}`}
+                      >
+                        <ExternalLink className="w-5 h-5" />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </>
           )}
         </div>
       </div>
