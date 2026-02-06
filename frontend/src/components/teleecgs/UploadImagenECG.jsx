@@ -505,7 +505,7 @@ export default function UploadImagenEKG({ onSuccess }) {
         </div>
         {/* Close Button - Desktop Only */}
         <button
-          onClick={onClose}
+          onClick={() => navigate(-1)}
           className="hidden lg:flex p-2 hover:bg-white/20 rounded-lg transition-colors absolute top-4 right-4"
           aria-label="Cerrar"
         >
