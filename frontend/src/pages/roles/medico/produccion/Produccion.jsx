@@ -1,26 +1,24 @@
 /**
- * 📊 Producción.jsx - Resumen de Atenciones Médicas (v1.47.0)
+ * 📊 Producción.jsx - Producción Diaria con Calendario (v1.48.0)
  *
- * Panel que muestra el resumen general de todas las atenciones
- * realizadas por el médico:
- * - Total de pacientes atendidos
- * - Recetas emitidas
- * - Interconsultas realizadas
- * - Enfermedades crónicas registradas
- * - Tabla de atenciones detalladas
+ * Panel que muestra la producción diaria del médico:
+ * - Calendario interactivo con días que tienen atenciones
+ * - Estadísticas del día seleccionado
+ * - Listado de pacientes atendidos ese día
  */
 
 import React, { useState, useEffect } from 'react';
 import {
-  BarChart3,
+  TrendingUp,
   FileText,
   Share2,
   Heart,
-  Download,
   RefreshCw,
   AlertCircle,
   Loader,
-  TrendingUp
+  ChevronLeft,
+  ChevronRight,
+  Users
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import gestionPacientesService from '../../../../services/gestionPacientesService';
@@ -28,12 +26,12 @@ import gestionPacientesService from '../../../../services/gestionPacientesServic
 export default function Produccion() {
   const [pacientes, setPacientes] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [filtroMes, setFiltroMes] = useState(new Date().getMonth() + 1);
-  const [filtroAno, setFiltroAno] = useState(new Date().getFullYear());
+  const [mesActual, setMesActual] = useState(new Date());
+  const [diaSeleccionado, setDiaSeleccionado] = useState(new Date());
 
   useEffect(() => {
     cargarDatos();
-  }, [filtroMes, filtroAno]);
+  }, []);
 
   const cargarDatos = async () => {
     try {
@@ -49,49 +47,65 @@ export default function Produccion() {
     }
   };
 
-  // Filtrar pacientes atendidos por mes/año
-  const pacientesAtendidos = pacientes.filter(p => {
-    if (p.condicion !== 'Atendido') return false;
-    if (!p.fechaAtencion) return false;
-
-    try {
-      const fecha = new Date(p.fechaAtencion);
-      return fecha.getMonth() + 1 === filtroMes && fecha.getFullYear() === filtroAno;
-    } catch {
-      return false;
-    }
-  });
-
-  // Estadísticas calculadas
-  const stats = {
-    totalAtendidos: pacientesAtendidos.length,
-    recetas: pacientesAtendidos.filter(p => p.tieneRecita).length,
-    interconsultas: pacientesAtendidos.filter(p => p.tieneInterconsulta).length,
-    cronicas: pacientesAtendidos.filter(p => p.esCronico).length,
+  // Obtener pacientes atendidos en una fecha específica
+  const getPacientesDelDia = (fecha) => {
+    return pacientes.filter(p => {
+      if (p.condicion !== 'Atendido' || !p.fechaAtencion) return false;
+      try {
+        const fechaAtencion = new Date(p.fechaAtencion);
+        return (
+          fechaAtencion.getDate() === fecha.getDate() &&
+          fechaAtencion.getMonth() === fecha.getMonth() &&
+          fechaAtencion.getFullYear() === fecha.getFullYear()
+        );
+      } catch {
+        return false;
+      }
+    });
   };
+
+  // Obtener todos los días del mes que tienen atenciones
+  const getDiasConAtenciones = () => {
+    const diasSet = new Set();
+    pacientes.forEach(p => {
+      if (p.condicion === 'Atendido' && p.fechaAtencion) {
+        try {
+          const fecha = new Date(p.fechaAtencion);
+          if (fecha.getMonth() === mesActual.getMonth() && fecha.getFullYear() === mesActual.getFullYear()) {
+            diasSet.add(fecha.getDate());
+          }
+        } catch {}
+      }
+    });
+    return diasSet;
+  };
+
+  const pacientesDiaSeleccionado = getPacientesDelDia(diaSeleccionado);
+  const diasConAtenciones = getDiasConAtenciones();
+
+  // Estadísticas del día
+  const statsDelDia = {
+    total: pacientesDiaSeleccionado.length,
+    recetas: pacientesDiaSeleccionado.filter(p => p.tieneRecita).length,
+    interconsultas: pacientesDiaSeleccionado.filter(p => p.tieneInterconsulta).length,
+    cronicas: pacientesDiaSeleccionado.filter(p => p.esCronico).length,
+  };
+
+  // Generar calendario
+  const primerDiaDelMes = new Date(mesActual.getFullYear(), mesActual.getMonth(), 1);
+  const ultimoDiaDelMes = new Date(mesActual.getFullYear(), mesActual.getMonth() + 1, 0);
+  const diasDelMes = ultimoDiaDelMes.getDate();
+  const diaInicialSemana = primerDiaDelMes.getDay();
+
+  const mesAnterior = () => setMesActual(new Date(mesActual.getFullYear(), mesActual.getMonth() - 1));
+  const mesSiguiente = () => setMesActual(new Date(mesActual.getFullYear(), mesActual.getMonth() + 1));
 
   const formatearFecha = (fecha) => {
     if (!fecha) return '-';
     try {
-      let año, mes, día, hora, minuto;
-      if (fecha.endsWith('Z')) {
-        const date = new Date(fecha);
-        let peruDate = new Date(date.getTime() - (5 * 60 * 60 * 1000));
-        año = peruDate.getUTCFullYear();
-        mes = String(peruDate.getUTCMonth() + 1).padStart(2, '0');
-        día = String(peruDate.getUTCDate()).padStart(2, '0');
-        hora = String(peruDate.getUTCHours()).padStart(2, '0');
-        minuto = String(peruDate.getUTCMinutes()).padStart(2, '0');
-      } else {
-        const isoMatch = fecha.match(/(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/);
-        if (!isoMatch) return '-';
-        año = isoMatch[1];
-        mes = isoMatch[2];
-        día = isoMatch[3];
-        hora = isoMatch[4];
-        minuto = isoMatch[5];
-      }
-      return `${día}/${mes}/${año}`;
+      const partes = fecha.match(/(\d{4})-(\d{2})-(\d{2})/);
+      if (!partes) return '-';
+      return `${partes[3]}/${partes[2]}/${partes[1]}`;
     } catch {
       return '-';
     }
@@ -102,7 +116,7 @@ export default function Produccion() {
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
           <Loader className="w-12 h-12 animate-spin text-[#0A5BA9] mx-auto mb-4" />
-          <p className="text-gray-600">Cargando datos de producción...</p>
+          <p className="text-gray-600">Cargando producción...</p>
         </div>
       </div>
     );
@@ -110,183 +124,188 @@ export default function Produccion() {
 
   return (
     <div className="min-h-screen bg-gray-50 p-6">
-      <div className="max-w-7xl mx-auto">
+      <div className="max-w-6xl mx-auto">
         {/* Header */}
         <div className="mb-8">
           <div className="flex items-center gap-3 mb-2">
-            <BarChart3 className="w-8 h-8 text-[#0A5BA9]" />
+            <TrendingUp className="w-8 h-8 text-[#0A5BA9]" />
             <h1 className="text-3xl font-bold text-gray-900">📊 Producción</h1>
           </div>
-          <p className="text-gray-600 font-medium">Resumen de tus atenciones médicas</p>
+          <p className="text-gray-600 font-medium">Visualiza tu producción diaria</p>
         </div>
 
-        {/* Filtros */}
-        <div className="bg-white border border-gray-200 shadow-sm rounded-lg p-6 mb-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Mes</label>
-              <select
-                value={filtroMes}
-                onChange={(e) => setFiltroMes(parseInt(e.target.value))}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0A5BA9]/50 focus:border-[#0A5BA9] transition-colors"
-              >
-                {Array.from({ length: 12 }, (_, i) => i + 1).map(mes => (
-                  <option key={mes} value={mes}>
-                    {new Date(2024, mes - 1).toLocaleString('es-PE', { month: 'long' })}
-                  </option>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Calendario */}
+          <div className="lg:col-span-1">
+            <div className="bg-white border border-gray-200 shadow-sm rounded-lg p-6">
+              {/* Navegación de meses */}
+              <div className="flex items-center justify-between mb-6">
+                <button
+                  onClick={mesAnterior}
+                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                >
+                  <ChevronLeft className="w-5 h-5 text-gray-600" />
+                </button>
+                <h3 className="font-semibold text-gray-900">
+                  {mesActual.toLocaleString('es-PE', { month: 'long', year: 'numeric' })}
+                </h3>
+                <button
+                  onClick={mesSiguiente}
+                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                >
+                  <ChevronRight className="w-5 h-5 text-gray-600" />
+                </button>
+              </div>
+
+              {/* Días de la semana */}
+              <div className="grid grid-cols-7 gap-2 mb-4">
+                {['D', 'L', 'M', 'X', 'J', 'V', 'S'].map(dia => (
+                  <div key={dia} className="text-center text-xs font-semibold text-gray-600">
+                    {dia}
+                  </div>
                 ))}
-              </select>
-            </div>
+              </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Año</label>
-              <select
-                value={filtroAno}
-                onChange={(e) => setFiltroAno(parseInt(e.target.value))}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0A5BA9]/50 focus:border-[#0A5BA9] transition-colors"
-              >
-                {Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - i).map(ano => (
-                  <option key={ano} value={ano}>{ano}</option>
+              {/* Días del mes */}
+              <div className="grid grid-cols-7 gap-2">
+                {/* Espacios vacíos al inicio */}
+                {Array.from({ length: diaInicialSemana }).map((_, i) => (
+                  <div key={`empty-${i}`} className="aspect-square" />
                 ))}
-              </select>
-            </div>
 
-            <div className="flex items-end">
-              <button
-                onClick={cargarDatos}
-                className="w-full px-4 py-2 bg-[#0A5BA9] text-white rounded-lg hover:bg-[#083d78] transition-colors duration-200 flex items-center justify-center gap-2 font-medium"
-              >
-                <RefreshCw className="w-4 h-4" />
-                Actualizar
-              </button>
-            </div>
-          </div>
-        </div>
+                {/* Días del mes */}
+                {Array.from({ length: diasDelMes }).map((_, i) => {
+                  const dia = i + 1;
+                  const fecha = new Date(mesActual.getFullYear(), mesActual.getMonth(), dia);
+                  const tieneAtenciones = diasConAtenciones.has(dia);
+                  const esSeleccionado =
+                    diaSeleccionado.getDate() === dia &&
+                    diaSeleccionado.getMonth() === mesActual.getMonth() &&
+                    diaSeleccionado.getFullYear() === mesActual.getFullYear();
 
-        {/* KPIs */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-          <div className="bg-white border border-gray-200 shadow-sm rounded-lg p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-gray-600 text-sm font-medium">Pacientes Atendidos</p>
-                <p className="text-3xl font-bold text-[#0A5BA9] mt-2">{stats.totalAtendidos}</p>
+                  return (
+                    <button
+                      key={dia}
+                      onClick={() => setDiaSeleccionado(fecha)}
+                      className={`
+                        aspect-square rounded-lg font-semibold text-sm flex items-center justify-center
+                        transition-all duration-200
+                        ${esSeleccionado
+                          ? 'bg-[#0A5BA9] text-white shadow-md'
+                          : tieneAtenciones
+                          ? 'bg-blue-50 text-[#0A5BA9] border-2 border-[#0A5BA9] hover:bg-blue-100'
+                          : 'bg-gray-50 text-gray-600 hover:bg-gray-100'
+                        }
+                      `}
+                    >
+                      {dia}
+                    </button>
+                  );
+                })}
               </div>
-              <div className="p-3 bg-blue-50 rounded-lg">
-                <TrendingUp className="w-6 h-6 text-[#0A5BA9]" />
-              </div>
-            </div>
-          </div>
 
-          <div className="bg-white border border-gray-200 shadow-sm rounded-lg p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-gray-600 text-sm font-medium">Recetas Emitidas</p>
-                <p className="text-3xl font-bold text-emerald-600 mt-2">{stats.recetas}</p>
-              </div>
-              <div className="p-3 bg-emerald-50 rounded-lg">
-                <FileText className="w-6 h-6 text-emerald-600" />
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white border border-gray-200 shadow-sm rounded-lg p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-gray-600 text-sm font-medium">Interconsultas</p>
-                <p className="text-3xl font-bold text-purple-600 mt-2">{stats.interconsultas}</p>
-              </div>
-              <div className="p-3 bg-purple-50 rounded-lg">
-                <Share2 className="w-6 h-6 text-purple-600" />
+              {/* Leyenda */}
+              <div className="mt-6 pt-6 border-t border-gray-200 text-xs text-gray-600">
+                <p className="mb-2">
+                  <span className="inline-block w-3 h-3 bg-[#0A5BA9] rounded mr-2"></span>
+                  Día seleccionado
+                </p>
+                <p>
+                  <span className="inline-block w-3 h-3 border-2 border-[#0A5BA9] rounded mr-2"></span>
+                  Con atenciones
+                </p>
               </div>
             </div>
           </div>
 
-          <div className="bg-white border border-gray-200 shadow-sm rounded-lg p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-gray-600 text-sm font-medium">Crónicos</p>
-                <p className="text-3xl font-bold text-red-600 mt-2">{stats.cronicas}</p>
-              </div>
-              <div className="p-3 bg-red-50 rounded-lg">
-                <Heart className="w-6 h-6 text-red-600" />
-              </div>
-            </div>
-          </div>
-        </div>
+          {/* Detalles del día */}
+          <div className="lg:col-span-2 space-y-6">
+            {/* KPIs del día */}
+            <div>
+              <h2 className="text-lg font-bold text-gray-900 mb-4">
+                {diaSeleccionado.toLocaleString('es-PE', { weekday: 'long', day: 'numeric', month: 'long' })}
+              </h2>
 
-        {/* Tabla de atenciones */}
-        {pacientesAtendidos.length === 0 ? (
-          <div className="bg-white border border-gray-200 shadow-sm rounded-lg p-12 text-center">
-            <div className="p-4 bg-gray-100 rounded-full inline-block mb-4">
-              <AlertCircle className="w-8 h-8 text-gray-400" strokeWidth={1.5} />
+              <div className="grid grid-cols-2 gap-4">
+                <div className="bg-white border border-gray-200 shadow-sm rounded-lg p-4">
+                  <p className="text-sm text-gray-600">Pacientes Atendidos</p>
+                  <p className="text-2xl font-bold text-[#0A5BA9] mt-1">{statsDelDia.total}</p>
+                </div>
+                <div className="bg-white border border-gray-200 shadow-sm rounded-lg p-4">
+                  <p className="text-sm text-gray-600">Recetas</p>
+                  <p className="text-2xl font-bold text-emerald-600 mt-1">{statsDelDia.recetas}</p>
+                </div>
+                <div className="bg-white border border-gray-200 shadow-sm rounded-lg p-4">
+                  <p className="text-sm text-gray-600">Interconsultas</p>
+                  <p className="text-2xl font-bold text-purple-600 mt-1">{statsDelDia.interconsultas}</p>
+                </div>
+                <div className="bg-white border border-gray-200 shadow-sm rounded-lg p-4">
+                  <p className="text-sm text-gray-600">Crónicos</p>
+                  <p className="text-2xl font-bold text-red-600 mt-1">{statsDelDia.cronicas}</p>
+                </div>
+              </div>
             </div>
-            <p className="text-gray-600 font-medium">No hay atenciones registradas</p>
-            <p className="text-gray-500 text-sm mt-1">Para el período seleccionado</p>
-          </div>
-        ) : (
-          <div className="relative overflow-hidden bg-white border border-gray-200 shadow-sm rounded-lg">
-            <div className="overflow-x-auto relative">
-              <table className="w-full text-sm text-left">
-                <thead className="text-xs font-semibold text-white uppercase tracking-wider bg-[#0A5BA9] relative z-20">
-                  <tr>
-                    <th className="px-4 py-3">DNI</th>
-                    <th className="px-4 py-3">Paciente</th>
-                    <th className="px-4 py-3">Teléfono</th>
-                    <th className="px-4 py-3">IPRESS</th>
-                    <th className="px-4 py-3">Receta</th>
-                    <th className="px-4 py-3">Interconsulta</th>
-                    <th className="px-4 py-3">Crónico</th>
-                    <th className="px-4 py-3">Fecha Atención</th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {pacientesAtendidos.map((paciente, idx) => (
-                    <tr key={idx} className={`hover:bg-gray-50 transition-colors duration-150 ${idx % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'}`}>
-                      <td className="px-4 py-3 font-medium text-gray-900">{paciente.numDoc}</td>
-                      <td className="px-4 py-3 text-gray-700">{paciente.apellidosNombres}</td>
-                      <td className="px-4 py-3 text-gray-600">{paciente.telefono || '-'}</td>
-                      <td className="px-4 py-3 text-gray-600">{paciente.ipress || '-'}</td>
-                      <td className="px-4 py-3">
-                        {paciente.tieneRecita ? (
-                          <span className="inline-flex px-2.5 py-1 rounded text-xs font-medium bg-emerald-100 text-emerald-800 border border-emerald-200">
-                            ✓ Sí
-                          </span>
-                        ) : (
-                          <span className="text-gray-400">-</span>
-                        )}
-                      </td>
-                      <td className="px-4 py-3">
-                        {paciente.tieneInterconsulta ? (
-                          <span className="inline-flex px-2.5 py-1 rounded text-xs font-medium bg-purple-100 text-purple-800 border border-purple-200">
-                            ✓ Sí
-                          </span>
-                        ) : (
-                          <span className="text-gray-400">-</span>
-                        )}
-                      </td>
-                      <td className="px-4 py-3">
-                        {paciente.esCronico ? (
-                          <span className="inline-flex px-2.5 py-1 rounded text-xs font-medium bg-red-100 text-red-800 border border-red-200">
-                            ✓ Sí
-                          </span>
-                        ) : (
-                          <span className="text-gray-400">-</span>
-                        )}
-                      </td>
-                      <td className="px-4 py-3 text-gray-600 text-xs">
-                        {formatearFecha(paciente.fechaAtencion)}
-                      </td>
-                    </tr>
+
+            {/* Listado de pacientes del día */}
+            <div className="bg-white border border-gray-200 shadow-sm rounded-lg p-6">
+              <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                <Users className="w-5 h-5 text-[#0A5BA9]" />
+                Pacientes atendidos
+              </h3>
+
+              {pacientesDiaSeleccionado.length === 0 ? (
+                <div className="text-center py-8">
+                  <AlertCircle className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+                  <p className="text-gray-600">No hay atenciones este día</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {pacientesDiaSeleccionado.map((paciente, idx) => (
+                    <div key={idx} className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors">
+                      <div className="flex items-start justify-between mb-2">
+                        <div>
+                          <p className="font-semibold text-gray-900">{paciente.apellidosNombres}</p>
+                          <p className="text-sm text-gray-600">DNI: {paciente.numDoc}</p>
+                        </div>
+                        <div className="flex gap-2">
+                          {paciente.tieneRecita && (
+                            <span className="inline-flex px-2 py-1 rounded text-xs font-medium bg-emerald-100 text-emerald-800">
+                              📋 Receta
+                            </span>
+                          )}
+                          {paciente.tieneInterconsulta && (
+                            <span className="inline-flex px-2 py-1 rounded text-xs font-medium bg-purple-100 text-purple-800">
+                              🔗 Inter
+                            </span>
+                          )}
+                          {paciente.esCronico && (
+                            <span className="inline-flex px-2 py-1 rounded text-xs font-medium bg-red-100 text-red-800">
+                              ❤️ Crónico
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-2 text-sm text-gray-600 gap-2">
+                        <p>📞 {paciente.telefono || '-'}</p>
+                        <p>🏥 {paciente.ipress || '-'}</p>
+                      </div>
+                    </div>
                   ))}
-                </tbody>
-              </table>
+                </div>
+              )}
             </div>
           </div>
-        )}
+        </div>
 
-        {/* Pie */}
-        <div className="mt-8 text-center text-sm text-gray-500">
-          <p>Período: {new Date(filtroAno, filtroMes - 1).toLocaleString('es-PE', { month: 'long', year: 'numeric' })}</p>
+        {/* Botón actualizar */}
+        <div className="mt-8 text-center">
+          <button
+            onClick={cargarDatos}
+            className="px-6 py-2 bg-[#0A5BA9] text-white rounded-lg hover:bg-[#083d78] transition-colors flex items-center gap-2 mx-auto"
+          >
+            <RefreshCw className="w-4 h-4" />
+            Actualizar datos
+          </button>
         </div>
       </div>
     </div>

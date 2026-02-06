@@ -17,7 +17,8 @@ import {
   Loader,
   RefreshCw,
   CheckCircle,
-  ChevronRight
+  ChevronRight,
+  X
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import gestionPacientesService from '../../../../services/gestionPacientesService';
@@ -472,123 +473,133 @@ export default function MisPacientes() {
       {/* Modal de Cambio de Estado */}
       {modalAccion === 'cambiarEstado' && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-lg max-w-2xl w-full flex flex-col max-h-[90vh]">
-            {/* Header Fijo */}
-            <div className="p-6 border-b border-gray-200">
-              <h2 className="text-xl font-bold text-gray-900 mb-4">Cambiar Estado de Consulta</h2>
+          <div className="bg-white rounded-lg shadow-2xl max-w-2xl w-full flex flex-col max-h-[90vh]">
+            {/* Header Fijo - Compacto y limpio */}
+            <div className="relative p-4 bg-[#0A5BA9] rounded-t-lg">
+              {/* Close Button X */}
+              <button
+                onClick={() => setModalAccion(null)}
+                className="absolute top-3 right-3 p-1 hover:bg-white/20 rounded transition-colors"
+                title="Cerrar"
+              >
+                <X className="w-5 h-5 text-white" strokeWidth={2.5} />
+              </button>
 
-              <div className="mb-4">
-                <p className="text-sm text-gray-600 mb-2">Paciente</p>
-                <p className="text-lg font-semibold text-gray-900">{pacienteSeleccionado?.apellidosNombres}</p>
-              </div>
+              <div className="flex items-baseline justify-between gap-4 pr-8">
+                {/* Nombre del paciente - Destacado */}
+                <div>
+                  <p className="text-2xl font-bold text-white">{pacienteSeleccionado?.apellidosNombres}</p>
+                </div>
 
-              <div className="p-3 bg-gray-50 rounded-lg border border-gray-200">
-                <p className="text-sm text-gray-600">Estado Actual</p>
-                <p className="text-lg font-semibold text-gray-900">{pacienteSeleccionado?.condicion || 'Citado'}</p>
+                {/* Estado Actual como Badge */}
+                <div className="inline-block px-3 py-1 bg-white/25 rounded-full backdrop-blur-sm">
+                  <p className="text-xs font-semibold text-white uppercase tracking-wide">{pacienteSeleccionado?.condicion || 'Citado'}</p>
+                </div>
               </div>
             </div>
 
-            {/* Contenido Scrolleable */}
-            <div className="flex-1 overflow-y-auto p-6">
-              {/* Opciones de Estado */}
-              <div className="space-y-4 mb-6">
-              <h3 className="text-sm font-semibold text-gray-900">Seleccione el nuevo estado:</h3>
-
-              {/* Opción Atendido */}
-              <div className="flex items-start gap-4 p-4 border border-gray-200 rounded-lg hover:bg-blue-50 cursor-pointer transition"
-                   onClick={() => setEstadoSeleccionado('Atendido')}>
-                <input
-                  type="radio"
-                  name="estado"
-                  value="Atendido"
-                  checked={estadoSeleccionado === 'Atendido'}
-                  onChange={(e) => setEstadoSeleccionado(e.target.value)}
-                  className="mt-1 w-4 h-4 text-blue-600"
-                />
-                <div className="flex-1">
-                  <p className="font-semibold text-gray-900">✓ Atendido</p>
-                  <p className="text-xs text-gray-600">Consulta completada</p>
+            {/* Contenido Scrolleable - Más espacio blanco */}
+            <div className="flex-1 overflow-y-auto p-8 bg-white space-y-6">
+              {/* Opción Atendido - DESTACADA */}
+              <div
+                onClick={() => setEstadoSeleccionado('Atendido')}
+                className={`relative p-4 rounded-lg border-2 cursor-pointer transition-all ${
+                  estadoSeleccionado === 'Atendido'
+                    ? 'border-green-400 bg-green-50 shadow-md'
+                    : 'border-gray-300 bg-white hover:border-green-300 hover:bg-gray-50'
+                }`}>
+                <div className="flex items-start gap-4">
+                  <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center flex-shrink-0 mt-0.5 transition-all ${
+                    estadoSeleccionado === 'Atendido'
+                      ? 'border-green-500 bg-green-500'
+                      : 'border-gray-400 bg-white'
+                  }`}>
+                    {estadoSeleccionado === 'Atendido' && (
+                      <CheckCircle className="w-4 h-4 text-white" strokeWidth={3} />
+                    )}
+                  </div>
+                  <div className="flex-1">
+                    <p className="font-bold text-gray-900 text-base">✓ Atendido</p>
+                    <p className="text-sm text-gray-600 mt-1">Consulta completada</p>
+                  </div>
                 </div>
               </div>
 
-              {/* ✅ Opciones de Atención (aparecen cuando selecciona Atendido) */}
+              {/* ✅ Opciones de Atención (aparecen cuando selecciona Atendido) - Chips simples */}
               {estadoSeleccionado === 'Atendido' && (
-                <div className="mb-6 p-4 bg-gradient-to-br from-gray-50 to-white border-2 border-dashed border-gray-300 rounded-lg space-y-3">
-                  {/* Grid 3 columnas para botones */}
+                <div className="space-y-3 pl-10">
+                  {/* Grid 3 columnas para chips */}
                   <div className="grid grid-cols-3 gap-3">
-                    {/* Opción 1: Recita */}
+                    {/* Chip 1: Recita */}
                     <button
                       onClick={() => {
                         setTieneRecita(!tieneRecita);
                         setExpandRecita(!expandRecita);
                       }}
-                      className={`p-3 rounded-lg border-2 transition-all cursor-pointer text-left ${
+                      className={`p-3 rounded-lg transition-all cursor-pointer text-center font-semibold text-sm ${
                         tieneRecita
-                          ? 'border-green-400 bg-green-50 shadow-sm'
-                          : 'border-gray-200 bg-white hover:border-green-300'
+                          ? 'bg-green-100 text-green-900 border-2 border-green-400 shadow-sm'
+                          : 'bg-gray-100 text-gray-700 border-2 border-transparent hover:bg-gray-200'
                       }`}
                     >
-                      <div className="flex items-center gap-2 mb-1">
+                      <div className="flex items-center justify-center gap-2">
                         <input
                           type="checkbox"
                           checked={tieneRecita}
                           onChange={() => {}}
-                          className="w-5 h-5 text-green-600 rounded"
+                          className="w-4 h-4 text-green-600 rounded cursor-pointer"
                           onClick={(e) => e.stopPropagation()}
                         />
-                        <span className="text-sm font-bold text-gray-900">📋 Recita</span>
+                        <span>📋 Recita</span>
                       </div>
-                      <span className="text-xs text-gray-600 block ml-7">Seguimiento</span>
                     </button>
 
-                    {/* Opción 2: Referencia */}
+                    {/* Chip 2: Referencia */}
                     <button
                       onClick={() => {
                         setTieneInterconsulta(!tieneInterconsulta);
                         setExpandInterconsulta(!expandInterconsulta);
                       }}
-                      className={`p-3 rounded-lg border-2 transition-all cursor-pointer text-left ${
+                      className={`p-3 rounded-lg transition-all cursor-pointer text-center font-semibold text-sm ${
                         tieneInterconsulta
-                          ? 'border-blue-400 bg-blue-50 shadow-sm'
-                          : 'border-gray-200 bg-white hover:border-blue-300'
+                          ? 'bg-blue-100 text-blue-900 border-2 border-blue-400 shadow-sm'
+                          : 'bg-gray-100 text-gray-700 border-2 border-transparent hover:bg-gray-200'
                       }`}
                     >
-                      <div className="flex items-center gap-2 mb-1">
+                      <div className="flex items-center justify-center gap-2">
                         <input
                           type="checkbox"
                           checked={tieneInterconsulta}
                           onChange={() => {}}
-                          className="w-5 h-5 text-blue-600 rounded"
+                          className="w-4 h-4 text-blue-600 rounded cursor-pointer"
                           onClick={(e) => e.stopPropagation()}
                         />
-                        <span className="text-sm font-bold text-gray-900">🔗 Referencia</span>
+                        <span>🔗 Referencia</span>
                       </div>
-                      <span className="text-xs text-gray-600 block ml-7">Especialista</span>
                     </button>
 
-                    {/* Opción 3: Crónico */}
+                    {/* Chip 3: Crónico */}
                     <button
                       onClick={() => {
                         setEsCronico(!esCronico);
                         setExpandCronico(!expandCronico);
                       }}
-                      className={`p-3 rounded-lg border-2 transition-all cursor-pointer text-left ${
+                      className={`p-3 rounded-lg transition-all cursor-pointer text-center font-semibold text-sm ${
                         esCronico
-                          ? 'border-purple-400 bg-purple-50 shadow-sm'
-                          : 'border-gray-200 bg-white hover:border-purple-300'
+                          ? 'bg-purple-100 text-purple-900 border-2 border-purple-400 shadow-sm'
+                          : 'bg-gray-100 text-gray-700 border-2 border-transparent hover:bg-gray-200'
                       }`}
                     >
-                      <div className="flex items-center gap-2 mb-1">
+                      <div className="flex items-center justify-center gap-2">
                         <input
                           type="checkbox"
                           checked={esCronico}
                           onChange={() => {}}
-                          className="w-5 h-5 text-purple-600 rounded"
+                          className="w-4 h-4 text-purple-600 rounded cursor-pointer"
                           onClick={(e) => e.stopPropagation()}
                         />
-                        <span className="text-sm font-bold text-gray-900">🏥 Crónico</span>
+                        <span>🏥 Crónico</span>
                       </div>
-                      <span className="text-xs text-gray-600 block ml-7">Enfermedad</span>
                     </button>
                   </div>
 
@@ -683,37 +694,51 @@ export default function MisPacientes() {
               )}
 
               {/* Opción Pendiente */}
-              <div className="flex items-start gap-4 p-4 border border-gray-200 rounded-lg hover:bg-blue-50 cursor-pointer transition"
-                   onClick={() => setEstadoSeleccionado('Pendiente')}>
-                <input
-                  type="radio"
-                  name="estado"
-                  value="Pendiente"
-                  checked={estadoSeleccionado === 'Pendiente'}
-                  onChange={(e) => setEstadoSeleccionado(e.target.value)}
-                  className="mt-1 w-4 h-4 text-blue-600"
-                />
-                <div className="flex-1">
-                  <p className="font-semibold text-gray-900">⏳ Pendiente <span className="text-xs text-gray-500">(por defecto)</span></p>
-                  <p className="text-xs text-gray-600">Aún no atendido, requiere seguimiento</p>
+              <div
+                onClick={() => setEstadoSeleccionado('Pendiente')}
+                className={`relative p-4 rounded-lg border-2 cursor-pointer transition-all ${
+                  estadoSeleccionado === 'Pendiente'
+                    ? 'border-amber-400 bg-amber-50 shadow-md'
+                    : 'border-gray-300 bg-white hover:border-amber-300 hover:bg-gray-50'
+                }`}>
+                <div className="flex items-start gap-4">
+                  <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center flex-shrink-0 mt-0.5 transition-all ${
+                    estadoSeleccionado === 'Pendiente'
+                      ? 'border-amber-500 bg-amber-500'
+                      : 'border-gray-400 bg-white'
+                  }`}>
+                    {estadoSeleccionado === 'Pendiente' && (
+                      <Clock className="w-4 h-4 text-white" strokeWidth={3} />
+                    )}
+                  </div>
+                  <div className="flex-1">
+                    <p className="font-bold text-gray-900 text-base">⏳ Pendiente <span className="text-xs text-gray-500 font-normal">(por defecto)</span></p>
+                    <p className="text-sm text-gray-600 mt-1">Aún no atendido, requiere seguimiento</p>
+                  </div>
                 </div>
               </div>
 
               {/* Opción Deserción */}
-              <div className="p-4 border border-gray-200 rounded-lg hover:bg-red-50 transition">
-                <div className="flex items-start gap-4 cursor-pointer"
-                     onClick={() => setEstadoSeleccionado('Deserción')}>
-                  <input
-                    type="radio"
-                    name="estado"
-                    value="Deserción"
-                    checked={estadoSeleccionado === 'Deserción'}
-                    onChange={(e) => setEstadoSeleccionado(e.target.value)}
-                    className="mt-1 w-4 h-4 text-red-600"
-                  />
+              <div
+                onClick={() => setEstadoSeleccionado('Deserción')}
+                className={`relative p-4 rounded-lg border-2 cursor-pointer transition-all ${
+                  estadoSeleccionado === 'Deserción'
+                    ? 'border-red-300 bg-red-50 shadow-md'
+                    : 'border-gray-300 bg-white hover:border-red-300 hover:bg-gray-50'
+                }`}>
+                <div className="flex items-start gap-4">
+                  <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center flex-shrink-0 mt-0.5 transition-all ${
+                    estadoSeleccionado === 'Deserción'
+                      ? 'border-red-400'
+                      : 'border-gray-400 bg-white'
+                  }`}>
+                    {estadoSeleccionado === 'Deserción' && (
+                      <div className="w-2 h-2 rounded-full bg-red-500"></div>
+                    )}
+                  </div>
                   <div className="flex-1">
-                    <p className="font-semibold text-gray-900">❌ Deserción</p>
-                    <p className="text-xs text-gray-600">Paciente no asistió o no desea atención</p>
+                    <p className="font-bold text-gray-900 text-base">❌ Deserción</p>
+                    <p className="text-sm text-gray-600 mt-1">Paciente no asistió o no desea atención</p>
                   </div>
                 </div>
 
@@ -752,21 +777,19 @@ export default function MisPacientes() {
               </div>
             </div>
 
-            </div>
-
             {/* Footer Fijo con Botones */}
-            <div className="border-t border-gray-200 p-6 bg-gray-50 flex gap-3 justify-end">
+            <div className="border-t border-gray-200 p-6 bg-white flex gap-3 justify-end rounded-b-lg">
               <button
                 onClick={() => setModalAccion(null)}
                 disabled={procesando}
-                className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition disabled:opacity-50 font-medium"
+                className="px-5 py-2.5 text-gray-700 hover:text-gray-900 font-semibold text-sm transition disabled:opacity-50 hover:bg-gray-100 rounded"
               >
                 Cancelar
               </button>
               <button
                 onClick={procesarAccion}
                 disabled={procesando}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition disabled:opacity-50 font-medium flex items-center justify-center gap-2"
+                className="px-6 py-2.5 bg-[#0A5BA9] text-white rounded-lg hover:bg-[#083d78] transition disabled:opacity-50 font-semibold text-sm flex items-center justify-center gap-2 shadow-sm"
               >
                 {procesando ? (
                   <>
@@ -774,7 +797,7 @@ export default function MisPacientes() {
                     Procesando...
                   </>
                 ) : (
-                  'Confirmar'
+                  '✓ Confirmar'
                 )}
               </button>
             </div>
