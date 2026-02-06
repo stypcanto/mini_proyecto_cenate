@@ -11,6 +11,7 @@ import { useAuth } from "../../../context/AuthContext";
 import { getToken } from "../../../constants/auth";
 import { useStatusChange } from "../../../hooks/useStatusChange";
 import ListHeader from "../../../components/ListHeader";
+import DateTimePickerCita from "../../../components/DateTimePickerCita";
 import {
   Users,
   CheckCircle2,
@@ -1977,27 +1978,24 @@ export default function GestionAsegurado() {
                         {/* FECHA Y HORA DE CITA - EDITABLE EN MODO EDICIÓN */}
                         <td className="px-2 py-1.5 text-slate-600">
                           {pacienteEditandoEstado === paciente.id ? (
-                            // MODO EDICIÓN: Input editable
-                            <input
-                              type="datetime-local"
+                            // MODO EDICIÓN: DateTimePickerCita profesional
+                            <DateTimePickerCita
                               value={citasAgendadas[paciente.id]?.fecha || ""}
-                              onChange={(e) => {
+                              onChange={(fecha) => {
                                 setCitasAgendadas(prev => ({
                                   ...prev,
                                   [paciente.id]: {
                                     ...prev[paciente.id],
-                                    fecha: e.target.value
+                                    fecha: fecha
                                   }
                                 }));
                               }}
                               disabled={nuevoEstadoSeleccionado !== "CITADO"}
-                              className={`w-full px-2 py-1.5 border rounded-lg text-xs focus:outline-none focus:ring-2 ${
-                                nuevoEstadoSeleccionado === "CITADO"
-                                  ? "border-green-400 bg-green-50 focus:ring-green-500 cursor-pointer"
-                                  : "border-gray-300 bg-gray-100 opacity-50 cursor-not-allowed"
-                              }`}
-                              placeholder="Seleccionar fecha y hora"
-                              title={nuevoEstadoSeleccionado === "CITADO" ? "Selecciona la fecha y hora de la cita" : "Solo requerido para estado CITADO"}
+                              idMedico={citasAgendadas[paciente.id]?.especialista}
+                              onValidationChange={(esValido) => {
+                                // Actualizar estado de validación si es necesario
+                                console.log(`Validación de cita: ${esValido ? "✅" : "❌"}`);
+                              }}
                             />
                           ) : (
                             // MODO NORMAL: Mostrar como texto
