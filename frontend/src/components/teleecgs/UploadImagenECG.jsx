@@ -553,15 +553,15 @@ export default function UploadImagenEKG({ onSuccess }) {
 
             {/* Datos Auto-cargados - Confirmación (Oculto en Desktop) - COMPRIMIDO TABLET */}
             {pacienteEncontrado ? (
-              <div className="mt-1 md:mt-0.5 xl:hidden bg-gradient-to-br from-green-400 to-emerald-500 rounded-lg p-2 md:p-1.5 border md:border border-green-600 shadow-sm">
-                <p className="text-xs md:text-xs font-bold text-green-900 mb-0.5 leading-tight">✅ OK</p>
+              <div className="mt-1 md:mt-1 xl:hidden bg-gradient-to-br from-green-400 to-emerald-500 rounded-lg p-2 md:p-2 border md:border border-green-600 shadow-md">
+                <p className="text-xs md:text-xs font-bold text-green-900 mb-0.5 leading-tight">✅ CONFIRMADO</p>
                 <div className="text-xs md:text-xs font-bold text-white leading-tight">
                   {datosCompletos.apellidos}
                 </div>
               </div>
             ) : (
-              <div className="mt-1 md:mt-0.5 xl:hidden bg-gray-200 rounded-lg p-2 md:p-1.5 text-xs text-gray-700 text-center font-medium leading-tight">
-                👆 DNI
+              <div className="mt-1 md:mt-1 xl:hidden bg-gray-200 rounded-lg p-2 md:p-2 text-xs text-gray-700 text-center font-medium leading-tight">
+                👆 Ingresa DNI
               </div>
             )}
           </div>
@@ -703,7 +703,7 @@ export default function UploadImagenEKG({ onSuccess }) {
               onDragLeave={handleDragLeave}
               onDrop={handleDrop}
               onClick={() => fileInputRef.current?.click()}
-              className={`hidden xl:flex flex-col border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-all ${
+              className={`hidden xl:flex flex-col border-2 border-dashed rounded-lg p-4 text-center cursor-pointer transition-all ${
                 pacienteEncontrado && !loading && archivos.length < MAX_IMAGENES
                   ? dragActive
                     ? "border-purple-600 bg-purple-50"
@@ -711,19 +711,19 @@ export default function UploadImagenEKG({ onSuccess }) {
                   : "border-gray-300 bg-gray-100 cursor-not-allowed opacity-50"
               }`}
             >
-              <Upload className={`w-16 h-16 mx-auto mb-3 ${
+              <Upload className={`w-12 h-12 mx-auto mb-2 ${
                 pacienteEncontrado && !loading
                   ? "text-purple-600"
                   : "text-gray-400"
               }`} />
-              <p className={`text-base font-semibold mb-2 ${
+              <p className={`text-sm font-semibold mb-1 ${
                 pacienteEncontrado && !loading
                   ? "text-purple-700"
                   : "text-gray-500"
               }`}>
                 O arrastra tus archivos aquí
               </p>
-              <p className={`text-sm ${
+              <p className={`text-xs ${
                 pacienteEncontrado && !loading
                   ? "text-purple-600"
                   : "text-gray-400"
@@ -733,7 +733,6 @@ export default function UploadImagenEKG({ onSuccess }) {
             </div>
           </div>
 
-          {/* Hidden File Inputs */}
           {/* Hidden File Inputs */}
           <input
             ref={cameraInputRef}
@@ -756,14 +755,11 @@ export default function UploadImagenEKG({ onSuccess }) {
 
           {/* Respuesta del Servidor */}
           {enviado && respuestaServidor && (
-            <div className="bg-green-50 border-2 md:border border-green-300 rounded-lg md:rounded p-2 md:p-1.5">
-              <div className="flex gap-2">
-                <CheckCircle className="w-5 h-5 md:w-4 md:h-4 text-green-600 flex-shrink-0 mt-0" />
+            <div className="bg-green-50 border md:border border-green-300 rounded-lg p-1.5 md:p-1">
+              <div className="flex gap-1">
+                <CheckCircle className="w-4 h-4 md:w-3.5 md:h-3.5 text-green-600 flex-shrink-0 mt-0" />
                 <div className="flex-1">
-                  <p className="font-bold text-green-800 text-sm md:text-xs leading-tight">✅ {archivos.length} EKGs OK!</p>
-                  <p className="text-xs md:text-xs text-green-700 mt-0.5">
-                    {datosCompletos.apellidos}
-                  </p>
+                  <p className="font-bold text-green-800 text-xs md:text-xs leading-tight">✅ OK</p>
                 </div>
               </div>
             </div>
@@ -774,10 +770,10 @@ export default function UploadImagenEKG({ onSuccess }) {
             <button
               type="submit"
               disabled={archivos.length < MIN_IMAGENES || loading || enviado || !pacienteEncontrado}
-              className={`py-3 md:py-2 xl:py-2.5 rounded-lg md:rounded-lg xl:rounded-lg font-bold text-sm md:text-xs xl:text-sm flex items-center justify-center gap-2 md:gap-1 xl:gap-1 transition duration-200 shadow-md md:shadow-sm ${
+              className={`py-2 md:py-1.5 xl:py-2.5 rounded-lg md:rounded font-bold text-sm md:text-xs xl:text-sm flex items-center justify-center gap-1.5 md:gap-0.5 xl:gap-1 transition duration-200 shadow-sm md:shadow-none xl:shadow-md ${
                 archivos.length < MIN_IMAGENES || loading || enviado || !pacienteEncontrado
                   ? "bg-gray-400 text-gray-600 cursor-not-allowed opacity-60"
-                  : "bg-gradient-to-r from-slate-500 to-slate-600 hover:from-slate-600 hover:to-slate-700 text-white shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+                  : "bg-gradient-to-r from-slate-500 to-slate-600 hover:from-slate-600 hover:to-slate-700 text-white hover:shadow-lg transform hover:-translate-y-0.5"
               }`}
               title={archivos.length < MIN_IMAGENES ? `Se requieren al menos ${MIN_IMAGENES} imágenes` : ""}
             >
@@ -801,7 +797,7 @@ export default function UploadImagenEKG({ onSuccess }) {
                 type="button"
                 onClick={resetFormulario}
                 disabled={loading}
-                className="py-2 md:py-1.5 xl:py-2 border-2 md:border border-red-300 rounded-lg md:rounded-lg xl:rounded-lg font-bold text-xs md:text-xs xl:text-xs text-red-700 hover:bg-red-50 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                className="py-1.5 md:py-1 xl:py-2 border-2 md:border border-red-300 rounded-lg md:rounded font-bold text-xs md:text-xs xl:text-xs text-red-700 hover:bg-red-50 transition disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 🗑️ Limpiar
               </button>
