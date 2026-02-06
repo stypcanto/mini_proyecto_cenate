@@ -489,8 +489,8 @@ export default function MisPacientes() {
                 <X className="w-5 h-5 text-white" strokeWidth={2.5} />
               </button>
 
-              <div className="flex items-center justify-between gap-6 pr-12">
-                {/* Nombre del paciente - Title Case */}
+              <div className="flex items-start justify-between gap-6 pr-12">
+                {/* Nombre del paciente y DNI */}
                 <div className="flex-1">
                   <p className="text-2xl font-bold text-white leading-relaxed">
                     {pacienteSeleccionado?.apellidosNombres
@@ -498,6 +498,7 @@ export default function MisPacientes() {
                       .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
                       .join(' ')}
                   </p>
+                  <p className="text-sm text-white/75 font-medium mt-1">DNI: {pacienteSeleccionado?.numDoc}</p>
                 </div>
 
                 {/* Estado Actual como Badge - Mejor alineación */}
