@@ -737,16 +737,22 @@ export default function GestionAsegurado() {
       return;
     }
 
-    // Obtener nombre del médico desde citasAgendadas o medicosPorServicio
+    // Obtener nombre del médico - buscar en múltiples lugares
     let pacienteConMedico = { ...paciente };
 
+    console.log("🔍 DEBUG - Buscando médico para paciente:", paciente.id);
+    console.log("   - idPersonal:", paciente.idPersonal);
+    console.log("   - citasAgendadas[id]:", citasAgendadas[paciente.id]);
+    console.log("   - idServicio:", paciente.idServicio);
+
+    // Opción 1: Buscar en citasAgendadas (si el usuario acababa de seleccionar)
     const citaAgendada = citasAgendadas[paciente.id];
     if (citaAgendada && citaAgendada.especialista && paciente.idServicio) {
       const medicos = medicosPorServicio[paciente.idServicio] || [];
+      console.log(`   - Médicos en servicio ${paciente.idServicio}:`, medicos);
       const medicoEncontrado = medicos.find(m => m.idPers === citaAgendada.especialista);
 
       if (medicoEncontrado) {
-        // Construir nombre completo del médico
         const nombre = [
           medicoEncontrado.nomPers,
           medicoEncontrado.apePaterPers,
@@ -754,9 +760,32 @@ export default function GestionAsegurado() {
         ]
           .filter(Boolean)
           .join(" ");
-
-        pacienteConMedico.nombreMedico = nombre || "Por asignar";
+        pacienteConMedico.nombreMedico = nombre;
+        console.log("   ✅ Médico encontrado en citasAgendadas:", nombre);
       }
+    }
+
+    // Opción 2: Si paciente ya tiene idPersonal (médico guardado previamente)
+    if (!pacienteConMedico.nombreMedico && paciente.idPersonal) {
+      if (paciente.idServicio) {
+        const medicos = medicosPorServicio[paciente.idServicio] || [];
+        const medicoEncontrado = medicos.find(m => m.idPers === paciente.idPersonal);
+        if (medicoEncontrado) {
+          const nombre = [
+            medicoEncontrado.nomPers,
+            medicoEncontrado.apePaterPers,
+            medicoEncontrado.apeMaterPers
+          ]
+            .filter(Boolean)
+            .join(" ");
+          pacienteConMedico.nombreMedico = nombre;
+          console.log("   ✅ Médico encontrado en idPersonal:", nombre);
+        }
+      }
+    }
+
+    if (!pacienteConMedico.nombreMedico) {
+      console.log("   ⚠️ Médico no encontrado, usando 'Por asignar'");
     }
 
     setModalMensajeCita({
@@ -774,7 +803,15 @@ export default function GestionAsegurado() {
   // Generar mensaje de cita formateado (v1.50.2 - Sin API)
   const generarMensajeCita = (paciente) => {
     // Formato de fecha: DD/MM/YY
-    const fechaObj = new Date(paciente.fechaAtencion);
+    // Nota: Ajustar por timezone UTC (la BD devuelve en UTC, nosotros estamos en UTC-5)
+    let fechaObj = new Date(paciente.fechaAtencion);
+
+    // Si la fecha viene en formato ISO (YYYY-MM-DD), ajustar timezone
+    if (typeof paciente.fechaAtencion === "string" && paciente.fechaAtencion.includes("-")) {
+      // Sumar 1 día para compensar offset de timezone (UTC → UTC-5)
+      fechaObj.setDate(fechaObj.getDate() + 1);
+    }
+
     const dia = String(fechaObj.getDate()).padStart(2, "0");
     const mes = String(fechaObj.getMonth() + 1).padStart(2, "0");
     const año = String(fechaObj.getFullYear()).slice(-2);
