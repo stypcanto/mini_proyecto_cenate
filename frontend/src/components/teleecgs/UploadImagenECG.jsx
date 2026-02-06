@@ -505,8 +505,8 @@ export default function UploadImagenEKG({ onSuccess }) {
       {/* Contenido - RESPONSIVE LAYOUT */}
       {/* Nota: v1.51.0 - Agregado soporte Desktop (xl:flex) junto con Tablet */}
       <form onSubmit={handleSubmit} className="flex flex-1 overflow-hidden gap-6 p-6 md:flex xl:flex">
-        {/* LEFT PANEL - Paciente (50% ancho) - TABLET + DESKTOP */}
-        <div className="hidden md:flex md:flex-col md:w-1/2 gap-5 border-r-3 border-gray-300 pr-8 overflow-y-auto">
+        {/* LEFT PANEL - Paciente (50% tablet, 35% desktop) - TABLET + DESKTOP */}
+        <div className="hidden md:flex md:flex-col md:w-1/2 xl:w-2/5 gap-5 border-r-3 border-gray-300 md:pr-8 xl:pr-6 overflow-y-auto">
           {/* Sección de Búsqueda de Paciente */}
           <div className="bg-blue-50 border-2 border-blue-200 rounded-xl p-5">
             <h3 className="text-base font-bold text-blue-900 mb-4 flex items-center gap-2">
@@ -578,24 +578,24 @@ export default function UploadImagenEKG({ onSuccess }) {
           )}
         </div>
 
-        {/* RIGHT PANEL - Cámara (50% ancho) - TABLET + DESKTOP */}
-        <div className="flex-1 md:w-1/2 flex flex-col gap-4 overflow-y-auto pl-2">
+        {/* RIGHT PANEL - Cámara (50% tablet, 65% desktop) - TABLET + DESKTOP */}
+        <div className="flex-1 md:w-1/2 xl:w-3/5 flex flex-col gap-4 overflow-y-auto md:pl-2">
 
-          {/* GIANT CAMERA BUTTON - Primary CTA */}
+          {/* GIANT CAMERA BUTTON - Primary CTA (v1.51.0: Mejorado para Desktop) */}
           <button
             type="button"
             onClick={() => cameraInputRef.current?.click()}
             disabled={!pacienteEncontrado || loading}
-            className={`w-full py-12 md:py-16 rounded-3xl font-black text-3xl md:text-4xl flex flex-col items-center justify-center gap-4 transition transform active:scale-95 shadow-2xl ${
+            className={`w-full py-12 md:py-16 xl:py-24 rounded-3xl font-black text-3xl md:text-4xl xl:text-5xl flex flex-col items-center justify-center gap-4 xl:gap-6 transition transform active:scale-95 shadow-2xl ${
               pacienteEncontrado && !loading
                 ? "bg-gradient-to-br from-cyan-500 via-teal-500 to-teal-600 hover:from-cyan-600 hover:via-teal-600 hover:to-teal-700 text-white hover:shadow-3xl"
                 : "bg-gray-300 text-gray-500 cursor-not-allowed opacity-60"
             }`}
             aria-label="Tomar foto del EKG"
           >
-            <Camera className={`${pacienteEncontrado ? 'w-16 h-16' : 'w-12 h-12'} md:w-20 md:h-20`} strokeWidth={1.5} />
+            <Camera className={`${pacienteEncontrado ? 'w-16 h-16' : 'w-12 h-12'} md:w-20 md:h-20 xl:w-24 xl:h-24`} strokeWidth={1.5} />
             <span>TOMAR FOTO</span>
-            <span className={`${pacienteEncontrado ? 'text-xl' : 'text-lg'} font-bold text-white/95 md:text-2xl`}>
+            <span className={`${pacienteEncontrado ? 'text-xl' : 'text-lg'} font-bold text-white/95 md:text-2xl xl:text-3xl`}>
               {archivos.length}/{MAX_IMAGENES}
             </span>
           </button>
@@ -707,12 +707,12 @@ export default function UploadImagenEKG({ onSuccess }) {
             </div>
           )}
 
-          {/* Botones de Acción - Optimizados para Tablet */}
-          <div className="flex flex-col gap-3 pt-4 mt-auto">
+          {/* Botones de Acción - Optimizados para Tablet + Desktop */}
+          <div className="flex flex-col gap-3 pt-4 mt-auto xl:gap-4 xl:pt-6">
             <button
               type="submit"
               disabled={archivos.length < MIN_IMAGENES || loading || enviado || !pacienteEncontrado}
-              className={`py-5 md:py-6 rounded-2xl font-black text-lg md:text-xl flex items-center justify-center gap-3 transition duration-200 shadow-xl ${
+              className={`py-5 md:py-6 xl:py-7 rounded-2xl font-black text-lg md:text-xl xl:text-2xl flex items-center justify-center gap-3 transition duration-200 shadow-xl ${
                 archivos.length < MIN_IMAGENES || loading || enviado || !pacienteEncontrado
                   ? "bg-gray-400 text-gray-600 cursor-not-allowed opacity-60"
                   : "bg-gradient-to-r from-emerald-600 via-teal-600 to-teal-700 hover:from-emerald-700 hover:via-teal-700 hover:to-teal-800 text-white shadow-2xl hover:shadow-3xl transform hover:-translate-y-1"
