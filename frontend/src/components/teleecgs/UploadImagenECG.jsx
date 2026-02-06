@@ -107,6 +107,9 @@ export default function UploadImagenEKG({ onSuccess }) {
   const [aseguradoNoExiste, setAseguradoNoExiste] = useState(false);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [carouselIndex, setCarouselIndex] = useState(0);
+  const [imageValidationStates, setImageValidationStates] = useState({});
+  const [imageErrors, setImageErrors] = useState({});
+  const [activeSection, setActiveSection] = useState("patient");
 
   // Refs
   const fileInputRef = useRef(null);
@@ -515,9 +518,9 @@ export default function UploadImagenEKG({ onSuccess }) {
 
       {/* Contenido - RESPONSIVE LAYOUT */}
       {/* v1.51.0 - Desktop: Vertical compacto (flex-col) | Tablet: Horizontal lado-a-lado (flex-row) - ULTRACOMPACTO TABLET */}
-      <form onSubmit={handleSubmit} className="flex flex-col xl:flex-col flex-1 overflow-hidden gap-6 xl:gap-1 p-6 xl:p-3 md:flex-row md:gap-0.5 md:p-1.5 md:overflow-y-auto">
-        {/* LEFT PANEL - Paciente (Desktop: ancho completo | Tablet: 50%) - COMPRIMIDO PARA TABLET */}
-        <div className="hidden md:flex md:flex-col md:w-1/2 w-full gap-1.5 md:gap-1.5 xl:gap-2 border-r-2 md:border-r border-gray-300 md:pr-2 xl:pr-0 overflow-y-auto md:overflow-y-visible">
+      <form onSubmit={handleSubmit} className="flex flex-col xl:flex-col flex-1 overflow-hidden gap-6 xl:gap-2 p-6 xl:p-4 md:grid md:grid-cols-3 md:gap-3 md:p-3 md:overflow-hidden">
+        {/* LEFT PANEL - Paciente (Tablet: 66% | Desktop: ancho completo) - SPLIT VIEW v1.52.0 */}
+        <div className="hidden md:flex md:col-span-2 md:flex-col w-full gap-2 xl:gap-3 border-r-2 border-gray-300 md:pr-3 xl:border-r-0 xl:pr-0 overflow-y-auto">
           {/* Sección de Búsqueda de Paciente - v1.51.0 Desktop Compacto | Tablet Ultracompacto */}
           <div className="bg-blue-50 border-2 md:border border-blue-200 rounded-lg p-3 md:p-2 xl:p-3 xl:rounded-lg">
             <h3 className="text-sm md:text-xs xl:text-sm font-bold text-blue-900 mb-2 md:mb-1 xl:mb-2 flex items-center gap-1.5">
@@ -586,82 +589,62 @@ export default function UploadImagenEKG({ onSuccess }) {
           )}
         </div>
 
-        {/* RIGHT PANEL - Cámara (Desktop: ancho completo | Tablet: 50%) - COMPRIMIDO */}
-        <div className="flex-1 md:flex-none md:w-1/2 w-full flex flex-col gap-1 md:gap-0.5 xl:gap-2 overflow-y-auto md:pl-1 xl:pl-0">
+        {/* RIGHT PANEL - Cámara (Tablet: 34% | Desktop: ancho completo) - SPLIT VIEW v1.52.0 */}
+        <div className="flex-1 md:col-span-1 w-full flex flex-col gap-2 xl:gap-3 overflow-hidden md:flex-col xl:flex-col md:justify-between">
 
-          {/* CAMERA BUTTON - Desktop: Compacto | Tablet: ULTRACOMPACTO */}
+          {/* CAMERA BUTTON - GIANT (40% altura tablet) - SPLIT VIEW v1.52.0 */}
           <button
             type="button"
             onClick={() => cameraInputRef.current?.click()}
             disabled={!pacienteEncontrado || loading}
-            className={`w-full py-4 md:py-3 xl:hidden rounded-2xl md:rounded-xl font-black text-2xl md:text-base flex flex-col items-center justify-center gap-1 md:gap-0.5 transition transform active:scale-95 shadow-lg md:shadow ${
+            className={`w-full py-6 md:flex-1 xl:hidden rounded-2xl md:rounded-2xl font-black text-2xl md:text-5xl flex flex-col items-center justify-center gap-2 md:gap-4 transition transform active:scale-95 shadow-xl md:shadow-2xl ${
               pacienteEncontrado && !loading
                 ? "bg-gradient-to-br from-cyan-500 via-teal-500 to-teal-600 hover:from-cyan-600 hover:via-teal-600 hover:to-teal-700 text-white hover:shadow-2xl"
                 : "bg-gray-300 text-gray-500 cursor-not-allowed opacity-60"
             }`}
             aria-label="Tomar foto del EKG"
           >
-            <Camera className={`${pacienteEncontrado ? 'w-10 h-10' : 'w-8 h-8'} md:w-8 md:h-8`} strokeWidth={2} />
-            <span className="md:text-sm md:leading-tight">TOMAR FOTO</span>
-            <span className={`${pacienteEncontrado ? 'text-base' : 'text-sm'} font-bold text-white/95 md:text-sm`}>
-              {archivos.length}/{MAX_IMAGENES}
-            </span>
+            <Camera className={`${pacienteEncontrado ? 'w-16 h-16' : 'w-12 h-12'} md:w-24 md:h-24 xl:w-10 xl:h-10`} strokeWidth={1.5} />
+            <div className="flex flex-col items-center gap-1 md:gap-2">
+              <span className="md:text-4xl">TOMAR FOTO</span>
+              <span className={`font-bold text-white/95 md:text-3xl`}>
+                {archivos.length}/{MAX_IMAGENES}
+              </span>
+            </div>
           </button>
 
-          {/* Carrete/Carousel de Thumbnails (Oculto en Desktop) */}
+          {/* Carrete Horizontal Inferior - Split View v1.52.0 */}
           {archivos.length > 0 && (
-            <div className="xl:hidden bg-white border-2 md:border border-gray-300 rounded-xl md:rounded-lg p-2 md:p-1.5 shadow-md md:shadow-sm">
-              <p className="text-xs md:text-xs font-bold text-gray-800 mb-2 md:mb-1.5 uppercase tracking-wide">
-                📸 Fotos ({archivos.length})
-              </p>
+            <div className="xl:hidden bg-white border-t-2 md:border-t border-gray-300 pt-2 md:pt-2 mt-auto md:mt-0">
+              <p className="text-xs font-bold text-gray-700 mb-1.5 px-1">📸 Fotos ({archivos.length}/{MAX_IMAGENES})</p>
 
-              {/* Carousel Horizontal */}
-              <div className="relative">
-                <div className="flex gap-2 md:gap-1.5 overflow-x-auto pb-1.5 md:pb-1 scroll-smooth">
-                  {previews.map((preview, index) => (
-                    <div key={index} className="relative flex-shrink-0 group">
-                      <img
-                        src={preview}
-                        alt={`Captura ${index + 1}`}
-                        onClick={() => setCarouselIndex(index)}
-                        className={`w-20 h-20 md:w-24 md:h-24 rounded-lg md:rounded-lg object-cover cursor-pointer transition-all border-2 md:border-2 ${
-                          carouselIndex === index
-                            ? "border-blue-600 ring-4 ring-blue-400 shadow-2xl scale-105"
-                            : "border-gray-400 hover:border-blue-400 hover:shadow-lg"
-                        }`}
-                      />
-                      {/* Index Badge */}
-                      <div className="absolute bottom-1 left-1 bg-blue-600 text-white text-xs md:text-xs font-bold px-1.5 py-0.5 rounded-md shadow-md border border-white">
-                        {index + 1}
-                      </div>
+              {/* Carousel Horizontal Compacto */}
+              <div className="flex gap-1.5 overflow-x-auto pb-1.5 px-1 scroll-smooth">
+                {previews.map((preview, index) => (
+                  <div key={index} className="relative flex-shrink-0 group">
+                    <img
+                      src={preview}
+                      alt={`Captura ${index + 1}`}
+                      onClick={() => setCarouselIndex(index)}
+                      className={`w-16 h-16 md:w-20 md:h-20 rounded-lg object-cover cursor-pointer transition-all border-2 ${
+                        carouselIndex === index
+                          ? "border-blue-600 ring-2 ring-blue-400 shadow-lg"
+                          : "border-gray-300 hover:border-blue-400"
+                      }`}
+                    />
+                    <div className="absolute bottom-0.5 left-0.5 bg-blue-600 text-white text-xs font-bold px-1.5 py-0.5 rounded-sm shadow-md">
+                      {index + 1}
                     </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Resumen Comprimido */}
-              <div className="mt-1 md:mt-1 space-y-0.5 md:space-y-0.5">
-                <div className="text-xs md:text-xs text-gray-600 space-y-0">
-                  <p className="leading-tight">
-                    <strong>Capturadas:</strong> {archivos.length}/{MAX_IMAGENES}
-                  </p>
-                  <p className="leading-tight">
-                    <strong>Tamaño:</strong> {(archivos.reduce((sum, f) => sum + f.size, 0) / 1024 / 1024).toFixed(2)}MB
-                  </p>
-                </div>
-
-                {/* Botón Eliminar Foto Seleccionada */}
-                {archivos.length > 0 && (
-                  <button
-                    type="button"
-                    onClick={() => removerArchivo(carouselIndex)}
-                    disabled={loading}
-                    className="w-full py-2 md:py-2 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white font-bold text-sm md:text-xs rounded-lg md:rounded transition transform hover:scale-105 active:scale-95 shadow-md md:shadow-sm flex items-center justify-center gap-1 md:gap-0.5 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    <Trash2 className="w-4 md:w-3.5 h-4 md:h-3.5" />
-                    <span>Eliminar Foto #{carouselIndex + 1}</span>
-                  </button>
-                )}
+                    <button
+                      type="button"
+                      onClick={() => removerArchivo(index)}
+                      className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-lg hover:bg-red-600"
+                      title="Eliminar"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                ))}
               </div>
             </div>
           )}
