@@ -2897,9 +2897,14 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
         Long responsableGestoraId = usuarioActual != null ? usuarioActual.getIdUser() : null;
         log.info("🔍 [Auto-Assign] Usuario encontrado: {} → ID: {}", usuarioActual != null ? usuarioActual.getNameUser() : "NO ENCONTRADO", responsableGestoraId);
 
-        // 4. Crear nueva solicitud con campos válidos de la entidad SolicitudBolsa
+        // 4. ✅ v1.46.8: Obtener código IPRESS válido desde descripción
+        String codigoIpressValido = obtenerCodigoIpress(request.getDescIpress());
+        log.info("🔍 [v1.46.8] IPRESS input: '{}' → código final: '{}'", request.getDescIpress(), codigoIpressValido);
+
+        // 5. Crear nueva solicitud con campos válidos de la entidad SolicitudBolsa
         // ✅ v1.46.4: Si codigoIpressAdscripcion es null, pasarlo como null (nullable)
         // ✅ v1.46.4: Auto-asignar al gestor que realiza la importación
+        // ✅ v1.46.8: Usar código IPRESS válido
         SolicitudBolsa nuevaSolicitud = SolicitudBolsa.builder()
             .numeroSolicitud(numeroSolicitud)
             .pacienteDni(request.getPacienteDni())
@@ -2908,8 +2913,8 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
             .pacienteSexo(request.getPacienteSexo())
             .pacienteTelefono(request.getPacienteTelefono())
             .pacienteTelefonoAlterno(request.getPacienteTelefonoAlterno())
-            .codigoIpressAdscripcion(request.getDescIpress()) // Puede ser null
-            .codigoAdscripcion(request.getDescIpress()) // Puede ser null (ahora nullable=true)
+            .codigoIpressAdscripcion(codigoIpressValido) // ✅ v1.46.8: Ahora con código válido
+            .codigoAdscripcion(codigoIpressValido) // ✅ v1.46.8: Usar código válido (ahora nullable=true)
             .tipoCita(request.getTipoCita())
             .especialidad(request.getEspecialidad()) // ✅ v1.46.5 - Especialidad seleccionada por usuario
             .estado("PENDIENTE")
@@ -2921,12 +2926,12 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
             .activo(true)
             .build();
 
-        // 5. Guardar
+        // 6. Guardar
         SolicitudBolsa guardado = solicitudRepository.save(nuevaSolicitud);
 
-        log.info("✅ Solicitud adicional creada: {} - Asignada a gestor ID: {}", guardado.getIdSolicitud(), responsableGestoraId);
+        log.info("✅ Solicitud adicional creada: {} - Asignada a gestor ID: {} - IPRESS: {}", guardado.getIdSolicitud(), responsableGestoraId, codigoIpressValido);
 
-        // 6. Mapear a DTO
+        // 7. Mapear a DTO
         return SolicitudBolsaMapper.toDTO(guardado);
     }
 
@@ -2941,6 +2946,36 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
         return solicitudes.stream()
             .map(SolicitudBolsaMapper::toDTO)
             .collect(Collectors.toList());
+    }
+
+    /**
+     * ✅ v1.46.8: Obtiene el código de IPRESS a partir de código o descripción
+     * Recibe cualquier identificador IPRESS (código o nombre)
+     * y retorna el código IPRESS válido para almacenar en codigoIpressAdscripcion
+     */
+    private String obtenerCodigoIpress(String ipressInfo) {
+        if (ipressInfo == null || ipressInfo.trim().isEmpty()) {
+            return null;
+        }
+
+        // 1. Intentar buscar como código directo
+        var ipressByCode = ipressRepository.findByCodIpress(ipressInfo);
+        if (ipressByCode.isPresent()) {
+            log.info("✅ IPRESS encontrada por código: {}", ipressInfo);
+            return ipressInfo;
+        }
+
+        // 2. Intentar buscar como descripción (nombre)
+        var ipresList = ipressRepository.findByDescIpressContainingIgnoreCase(ipressInfo);
+        if (!ipresList.isEmpty()) {
+            String codigo = ipresList.get(0).getCodIpress();
+            log.info("✅ IPRESS encontrada por nombre '{}' → código: {}", ipressInfo, codigo);
+            return codigo;
+        }
+
+        // 3. Si no encuentra, retornar null (será manejado gracefully)
+        log.warn("⚠️ No se encontró IPRESS con código o nombre: {}", ipressInfo);
+        return null;
     }
 
     /**

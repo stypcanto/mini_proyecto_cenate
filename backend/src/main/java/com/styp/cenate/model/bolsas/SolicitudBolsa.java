@@ -196,6 +196,16 @@ public class SolicitudBolsa {
     @Column(name = "activo", nullable = false)
     private Boolean activo;
 
+    // ============================================================================
+    // 👨‍⚕️ GESTIÓN MÉDICA (v1.46.0)
+    // ============================================================================
+
+    @Column(name = "condicion_medica", length = 50)
+    private String condicionMedica;
+
+    @Column(name = "observaciones_medicas", columnDefinition = "text")
+    private String observacionesMedicas;
+
     @PrePersist
     void prePersist() {
         if (fechaSolicitud == null) {

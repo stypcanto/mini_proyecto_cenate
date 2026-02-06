@@ -199,16 +199,38 @@ public class GestionPacienteServiceImpl implements IGestionPacienteService {
     public GestionPacienteDTO actualizarCondicion(Long id, String condicion, String observaciones) {
         log.info("Actualizando condición para ID: {} a {}", id, condicion);
 
-        GestionPaciente existing = repository.findById(id)
-            .orElseThrow(() -> new RuntimeException("Gestión no encontrada con ID: " + id));
+        // ✅ v1.46.0: Intentar actualizar en GestionPaciente primero
+        var gestionOpt = repository.findById(id);
 
-        existing.setCondicion(condicion);
-        if (observaciones != null) {
-            existing.setObservaciones(observaciones);
+        if (gestionOpt.isPresent()) {
+            // Actualizar en gestion_paciente
+            GestionPaciente existing = gestionOpt.get();
+            existing.setCondicion(condicion);
+            if (observaciones != null) {
+                existing.setObservaciones(observaciones);
+            }
+            GestionPaciente updated = repository.save(existing);
+            log.info("✅ Condición actualizada en tabla gestion_paciente: {}", id);
+            return toDto(updated);
         }
 
-        GestionPaciente updated = repository.save(existing);
-        return toDto(updated);
+        // ✅ v1.46.0: Si no existe en gestion_paciente, intentar actualizar en SolicitudBolsa
+        // El ID podría ser el idSolicitudBolsa
+        var solicitudOpt = solicitudBolsaRepository.findById(id);
+
+        if (solicitudOpt.isPresent()) {
+            SolicitudBolsa existing = solicitudOpt.get();
+            existing.setCondicionMedica(condicion);
+            if (observaciones != null) {
+                existing.setObservacionesMedicas(observaciones);
+            }
+            SolicitudBolsa updated = solicitudBolsaRepository.save(existing);
+            log.info("✅ Condición actualizada en tabla dim_solicitud_bolsa: {}", id);
+            return bolsaToGestionDTO(updated);
+        }
+
+        // Si no existe en ninguna tabla, lanzar excepción
+        throw new RuntimeException("Gestión o Solicitud no encontrada con ID: " + id);
     }
 
     @Override
@@ -370,9 +392,12 @@ public class GestionPacienteServiceImpl implements IGestionPacienteService {
     }
 
     /**
-     * ✅ v1.45.0: Convierte SolicitudBolsa a GestionPacienteDTO
+     * ✅ v1.46.0: Convierte SolicitudBolsa a GestionPacienteDTO
      * Usado cuando los pacientes vienen de dim_solicitud_bolsa (asignaciones médicas)
      * en lugar de la tabla gestion_paciente
+     *
+     * ⭐ CAMBIO v1.46.0: Ahora incluye idSolicitudBolsa para poder actualizar
+     * la condición directamente en dim_solicitud_bolsa
      */
     private GestionPacienteDTO bolsaToGestionDTO(SolicitudBolsa bolsa) {
         if (bolsa == null) return null;
@@ -381,13 +406,15 @@ public class GestionPacienteServiceImpl implements IGestionPacienteService {
         String ipressNombre = obtenerNombreIpress(bolsa.getCodigoIpressAdscripcion());
 
         return GestionPacienteDTO.builder()
+            .idSolicitudBolsa(bolsa.getIdSolicitud())  // ✅ v1.46.0: Incluir ID de bolsa
             .numDoc(bolsa.getPacienteDni())
             .apellidosNombres(bolsa.getPacienteNombre())
             .sexo(bolsa.getPacienteSexo())
             .edad(calcularEdad(bolsa.getFechaNacimiento()))
             .telefono(bolsa.getPacienteTelefono())
             .ipress(ipressNombre)  // ✅ Mostrar nombre de IPRESS, no código
-            .condicion("Pendiente")  // Asignación desde bolsa no tiene condición específica
+            .condicion(bolsa.getCondicionMedica() != null ? bolsa.getCondicionMedica() : "Pendiente")  // ✅ v1.46.0: Usar condición médica si existe
+            .observaciones(bolsa.getObservacionesMedicas())  // ✅ v1.46.0: Incluir observaciones médicas
             .fechaAsignacion(bolsa.getFechaAsignacion())  // ✅ v1.45.1: Incluir fecha de asignación
             .build();
     }

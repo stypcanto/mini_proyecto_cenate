@@ -1,8 +1,10 @@
 /**
- * 👨‍⚕️ MisPacientes.jsx - Tabla de Pacientes para Médicos (v1.45.1)
+ * 👨‍⚕️ MisPacientes.jsx - Tabla de Pacientes para Médicos (v1.46.0)
  *
  * Panel que muestra los pacientes asignados al médico en tabla
- * con acciones: Marcar Atendido, Receta, Interconsulta
+ * con acciones profesionales de gestión de estado:
+ * - Cambiar Estado: Atendido | Pendiente | Deserción (con razones)
+ * - Generar Interconsulta
  */
 
 import React, { useState, useEffect } from 'react';
@@ -15,7 +17,6 @@ import {
   Loader,
   RefreshCw,
   CheckCircle,
-  FileText,
   Share2
 } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -30,6 +31,8 @@ export default function MisPacientes() {
   const [pacienteSeleccionado, setPacienteSeleccionado] = useState(null);
   const [notasAccion, setNotasAccion] = useState('');
   const [procesando, setProcesando] = useState(false);
+  const [estadoSeleccionado, setEstadoSeleccionado] = useState('Pendiente');
+  const [razonDesercion, setRazonDesercion] = useState('');
 
   useEffect(() => {
     cargarPacientes();
@@ -39,6 +42,14 @@ export default function MisPacientes() {
     try {
       setLoading(true);
       const data = await gestionPacientesService.obtenerPacientesMedico();
+      console.log('🔍 [DEBUG] Datos del API:', data);
+      if (data?.length > 0) {
+        console.log('🔍 [DEBUG] Primer paciente estructura:', data[0]);
+        console.log('🔍 [DEBUG] Campos disponibles:', Object.keys(data[0]));
+        console.log('🔍 [DEBUG] ipress:', data[0].ipress);
+        console.log('🔍 [DEBUG] fechaAsignacion:', data[0].fechaAsignacion);
+        console.log('🔍 [DEBUG] TODOS LOS CAMPOS:', JSON.stringify(data[0], null, 2));
+      }
       setPacientes(Array.isArray(data) ? data : []);
       if (data?.length > 0) {
         toast.success(`${data.length} pacientes cargados`);
@@ -66,16 +77,29 @@ export default function MisPacientes() {
     if (!fecha) return '-';
 
     try {
-      // Parsear ISO 8601 con offset: "2026-02-05T02:09:54-05:00"
-      const match = fecha.match(/(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})([+-]\d{2}):?(\d{2})?/);
-      if (!match) return '-';
+      // Parsear ISO 8601 con dos formatos posibles:
+      // 1. Con offset: "2026-02-05T02:09:54-05:00" o "2026-02-05T02:09:54+05:30"
+      // 2. Con Z (UTC): "2026-02-06T10:58:54.563975Z"
 
-      const [, año, mes, día, hora, minuto, segundo, offsetHoras, offsetMinutos] = match;
+      let localDate;
 
-      // Parsear como UTC y aplicar el offset
-      const utcDate = new Date(`${año}-${mes}-${día}T${hora}:${minuto}:${segundo}Z`);
-      const offset = (parseInt(offsetHoras) * 60 + (parseInt(offsetMinutos) || 0)) * 60000;
-      const localDate = new Date(utcDate.getTime() + offset);
+      // Intentar con Z (UTC con posibles millisegundos)
+      if (fecha.endsWith('Z')) {
+        localDate = new Date(fecha);
+      } else {
+        // Intentar con offset: "2026-02-05T02:09:54-05:00"
+        const offsetMatch = fecha.match(/(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})([+-]\d{2}):?(\d{2})?/);
+        if (!offsetMatch) return '-';
+
+        const [, año, mes, día, hora, minuto, segundo, offsetHoras, offsetMinutos] = offsetMatch;
+
+        // Parsear como UTC y aplicar el offset
+        const utcDate = new Date(`${año}-${mes}-${día}T${hora}:${minuto}:${segundo}Z`);
+        const offset = (parseInt(offsetHoras) * 60 + (parseInt(offsetMinutos) || 0)) * 60000;
+        localDate = new Date(utcDate.getTime() + offset);
+      }
+
+      if (isNaN(localDate.getTime())) return '-';
 
       // Extraer componentes
       const h = localDate.getUTCHours();
@@ -107,42 +131,73 @@ export default function MisPacientes() {
     return colores[condicion] || 'bg-gray-50 text-gray-700 border-gray-200';
   };
 
-  const abrirAccion = (paciente, tipo) => {
+  const abrirAccion = (paciente) => {
     setPacienteSeleccionado(paciente);
-    setModalAccion(tipo);
+    setModalAccion('cambiarEstado');
+    setEstadoSeleccionado('Pendiente'); // Por defecto
+    setRazonDesercion('');
     setNotasAccion('');
   };
 
   const procesarAccion = async () => {
     if (!pacienteSeleccionado) return;
 
+    // Validación para deserción
+    if (estadoSeleccionado === 'Deserción' && !razonDesercion) {
+      toast.error('Debe seleccionar una razón para registrar deserción');
+      return;
+    }
+
     try {
       setProcesando(true);
 
-      // Aquí iría la lógica para guardar la acción
-      // Por ahora simulamos el éxito
-      await new Promise(resolve => setTimeout(resolve, 500));
+      // Preparar observaciones basadas en el estado
+      let observaciones = '';
+      if (estadoSeleccionado === 'Deserción') {
+        observaciones = `Deserción registrada. Razón: ${razonDesercion}`;
+      } else if (estadoSeleccionado === 'Atendido') {
+        observaciones = 'Paciente atendido por el médico';
+      }
 
-      const mensajes = {
-        'atendido': 'Paciente marcado como Atendido ✓',
-        'receta': 'Receta generada exitosamente ✓',
-        'interconsulta': 'Interconsulta creada exitosamente ✓'
-      };
+      // ✅ v1.46.0: Usar idSolicitudBolsa si existe (pacientes de dim_solicitud_bolsa)
+      // Si no, usar idGestion (pacientes de gestion_paciente)
+      const idParaActualizar = pacienteSeleccionado.idSolicitudBolsa || pacienteSeleccionado.idGestion;
 
-      toast.success(mensajes[modalAccion] || 'Acción completada');
+      console.log('🔍 [DEBUG] Actualizando condición:', {
+        idSolicitudBolsa: pacienteSeleccionado.idSolicitudBolsa,
+        idGestion: pacienteSeleccionado.idGestion,
+        idParaActualizar,
+        estado: estadoSeleccionado
+      });
+
+      // Guardar cambio en la base de datos
+      await gestionPacientesService.actualizarCondicion(
+        idParaActualizar,
+        estadoSeleccionado,
+        observaciones
+      );
+
+      // Mensaje de éxito
+      if (estadoSeleccionado === 'Deserción') {
+        toast.success(`Deserción registrada: ${razonDesercion} ✓`);
+      } else {
+        toast.success(`Estado cambiado a "${estadoSeleccionado}" ✓`);
+      }
 
       // Actualizar condición del paciente en la tabla
       setPacientes(pacientes.map(p =>
         p.numDoc === pacienteSeleccionado.numDoc
-          ? { ...p, condicion: 'Atendido' }
+          ? { ...p, condicion: estadoSeleccionado }
           : p
       ));
 
       setModalAccion(null);
       setPacienteSeleccionado(null);
+      setEstadoSeleccionado('Pendiente');
+      setRazonDesercion('');
     } catch (error) {
       console.error('Error procesando acción:', error);
-      toast.error('Error al procesar la acción');
+      toast.error('Error al cambiar estado. Intenta nuevamente.');
     } finally {
       setProcesando(false);
     }
@@ -248,9 +303,13 @@ export default function MisPacientes() {
                       <td className="px-6 py-4 text-sm text-gray-600">{paciente.telefono || '-'}</td>
                       <td className="px-6 py-4 text-sm text-gray-600">{paciente.ipress || '-'}</td>
                       <td className="px-6 py-4">
-                        <span className={`px-3 py-1 rounded-full text-xs font-semibold border ${getColorCondicion(paciente.condicion)}`}>
+                        <button
+                          onClick={() => abrirAccion(paciente)}
+                          title="Haz clic para cambiar estado"
+                          className={`px-3 py-1 rounded-full text-xs font-semibold border cursor-pointer hover:shadow-md hover:scale-105 transition ${getColorCondicion(paciente.condicion)}`}
+                        >
                           {paciente.condicion || 'Sin asignar'}
-                        </span>
+                        </button>
                       </td>
                       <td className="px-6 py-4 text-sm text-gray-600">
                         <div className="flex items-center gap-2">
@@ -259,23 +318,12 @@ export default function MisPacientes() {
                         </div>
                       </td>
                       <td className="px-6 py-4">
-                        <div className="flex items-center justify-center gap-2">
+                        <div className="flex items-center justify-center">
                           <button
-                            onClick={() => abrirAccion(paciente, 'atendido')}
-                            title="Marcar como Atendido"
-                            className="p-2 bg-green-100 text-green-600 rounded-lg hover:bg-green-200 transition"
-                          >
-                            <CheckCircle className="w-4 h-4" />
-                          </button>
-                          <button
-                            onClick={() => abrirAccion(paciente, 'receta')}
-                            title="Generar Receta"
-                            className="p-2 bg-blue-100 text-blue-600 rounded-lg hover:bg-blue-200 transition"
-                          >
-                            <FileText className="w-4 h-4" />
-                          </button>
-                          <button
-                            onClick={() => abrirAccion(paciente, 'interconsulta')}
+                            onClick={() => {
+                              setPacienteSeleccionado(paciente);
+                              setModalAccion('interconsulta');
+                            }}
                             title="Generar Interconsulta"
                             className="p-2 bg-purple-100 text-purple-600 rounded-lg hover:bg-purple-200 transition"
                           >
@@ -310,15 +358,146 @@ export default function MisPacientes() {
         </div>
       </div>
 
-      {/* Modal de Acciones */}
-      {modalAccion && (
+      {/* Modal de Cambio de Estado */}
+      {modalAccion === 'cambiarEstado' && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-lg max-w-2xl w-full p-6">
+            <h2 className="text-xl font-bold text-gray-900 mb-6">Cambiar Estado de Consulta</h2>
+
+            <div className="mb-6">
+              <p className="text-sm text-gray-600 mb-2">Paciente</p>
+              <p className="text-lg font-semibold text-gray-900">{pacienteSeleccionado?.apellidosNombres}</p>
+            </div>
+
+            <div className="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
+              <p className="text-sm text-gray-600">Estado Actual</p>
+              <p className="text-lg font-semibold text-gray-900">{pacienteSeleccionado?.condicion || 'Citado'}</p>
+            </div>
+
+            {/* Opciones de Estado */}
+            <div className="space-y-4 mb-6">
+              <h3 className="text-sm font-semibold text-gray-900">Seleccione el nuevo estado:</h3>
+
+              {/* Opción Atendido */}
+              <div className="flex items-start gap-4 p-4 border border-gray-200 rounded-lg hover:bg-blue-50 cursor-pointer transition"
+                   onClick={() => setEstadoSeleccionado('Atendido')}>
+                <input
+                  type="radio"
+                  name="estado"
+                  value="Atendido"
+                  checked={estadoSeleccionado === 'Atendido'}
+                  onChange={(e) => setEstadoSeleccionado(e.target.value)}
+                  className="mt-1 w-4 h-4 text-blue-600"
+                />
+                <div className="flex-1">
+                  <p className="font-semibold text-gray-900">✓ Atendido</p>
+                  <p className="text-xs text-gray-600">Consulta completada</p>
+                </div>
+              </div>
+
+              {/* Opción Pendiente */}
+              <div className="flex items-start gap-4 p-4 border border-gray-200 rounded-lg hover:bg-blue-50 cursor-pointer transition"
+                   onClick={() => setEstadoSeleccionado('Pendiente')}>
+                <input
+                  type="radio"
+                  name="estado"
+                  value="Pendiente"
+                  checked={estadoSeleccionado === 'Pendiente'}
+                  onChange={(e) => setEstadoSeleccionado(e.target.value)}
+                  className="mt-1 w-4 h-4 text-blue-600"
+                />
+                <div className="flex-1">
+                  <p className="font-semibold text-gray-900">⏳ Pendiente <span className="text-xs text-gray-500">(por defecto)</span></p>
+                  <p className="text-xs text-gray-600">Aún no atendido, requiere seguimiento</p>
+                </div>
+              </div>
+
+              {/* Opción Deserción */}
+              <div className="p-4 border border-gray-200 rounded-lg hover:bg-red-50 transition">
+                <div className="flex items-start gap-4 cursor-pointer"
+                     onClick={() => setEstadoSeleccionado('Deserción')}>
+                  <input
+                    type="radio"
+                    name="estado"
+                    value="Deserción"
+                    checked={estadoSeleccionado === 'Deserción'}
+                    onChange={(e) => setEstadoSeleccionado(e.target.value)}
+                    className="mt-1 w-4 h-4 text-red-600"
+                  />
+                  <div className="flex-1">
+                    <p className="font-semibold text-gray-900">❌ Deserción</p>
+                    <p className="text-xs text-gray-600">Paciente no asistió o no desea atención</p>
+                  </div>
+                </div>
+
+                {/* Campo de razón para deserción */}
+                {estadoSeleccionado === 'Deserción' && (
+                  <div className="mt-4 ml-8">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Seleccione la razón:</label>
+                    <select
+                      value={razonDesercion}
+                      onChange={(e) => setRazonDesercion(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-red-500 focus:border-red-500 text-sm"
+                    >
+                      <option value="">-- Seleccionar razón --</option>
+                      <optgroup label="Contacto">
+                        <option value="No contactado">No contactado</option>
+                        <option value="No contesta">No contesta</option>
+                        <option value="Número apagado">Número apagado</option>
+                        <option value="Número no existe">Número no existe</option>
+                        <option value="Número equivocado">Número equivocado</option>
+                      </optgroup>
+                      <optgroup label="Rechazo">
+                        <option value="Paciente rechazó">Paciente rechazó</option>
+                        <option value="No desea atención">No desea atención</option>
+                      </optgroup>
+                      <optgroup label="Condición Médica">
+                        <option value="Paciente internado">Paciente internado</option>
+                        <option value="Paciente fallecido">Paciente fallecido</option>
+                        <option value="Examen pendiente">Examen pendiente</option>
+                      </optgroup>
+                      <optgroup label="Otro">
+                        <option value="Otro">Otro</option>
+                      </optgroup>
+                    </select>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Botones */}
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => setModalAccion(null)}
+                disabled={procesando}
+                className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition disabled:opacity-50 font-medium"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={procesarAccion}
+                disabled={procesando}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition disabled:opacity-50 font-medium flex items-center justify-center gap-2"
+              >
+                {procesando ? (
+                  <>
+                    <Loader className="w-4 h-4 animate-spin" />
+                    Procesando...
+                  </>
+                ) : (
+                  'Confirmar'
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Interconsulta */}
+      {modalAccion === 'interconsulta' && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg shadow-lg max-w-md w-full p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">
-              {modalAccion === 'atendido' && '✓ Marcar como Atendido'}
-              {modalAccion === 'receta' && '📋 Generar Receta'}
-              {modalAccion === 'interconsulta' && '🔄 Generar Interconsulta'}
-            </h3>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">🔄 Generar Interconsulta</h3>
             <p className="text-gray-600 text-sm mb-4">
               Paciente: <span className="font-semibold">{pacienteSeleccionado?.apellidosNombres}</span>
             </p>
@@ -329,7 +508,7 @@ export default function MisPacientes() {
               <textarea
                 value={notasAccion}
                 onChange={(e) => setNotasAccion(e.target.value)}
-                placeholder="Agrega observaciones o diagnóstico..."
+                placeholder="Agrega observaciones o detalles de interconsulta..."
                 rows="4"
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 resize-none"
               />
@@ -345,9 +524,16 @@ export default function MisPacientes() {
                 Cancelar
               </button>
               <button
-                onClick={procesarAccion}
+                onClick={() => {
+                  setProcesando(true);
+                  setTimeout(() => {
+                    toast.success('Interconsulta creada exitosamente ✓');
+                    setModalAccion(null);
+                    setProcesando(false);
+                  }, 500);
+                }}
                 disabled={procesando}
-                className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition disabled:opacity-50 flex items-center justify-center gap-2"
+                className="flex-1 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition disabled:opacity-50 flex items-center justify-center gap-2"
               >
                 {procesando ? (
                   <>

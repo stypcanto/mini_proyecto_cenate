@@ -5,6 +5,7 @@ import java.time.OffsetDateTime;
 import java.time.Period;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
@@ -21,6 +22,9 @@ public class GestionPacienteDTO {
 
     private Long idGestion;
 
+    // ✅ v1.46.0: ID de SolicitudBolsa para pacientes que vienen de dim_solicitud_bolsa
+    private Long idSolicitudBolsa;
+
     // Datos del asegurado (vienen de la relación)
     @NotBlank(message = "El pk_asegurado es obligatorio")
     private String pkAsegurado;
@@ -33,6 +37,7 @@ public class GestionPacienteDTO {
     private String telefono;
     private String tipoPaciente;
     private String tipoSeguro;
+    @JsonProperty("ipress")
     private String ipress;  // Nombre de la IPRESS
 
     // Datos de gestión (editables)
@@ -55,6 +60,8 @@ public class GestionPacienteDTO {
     private OffsetDateTime fechaActualizacion;
 
     // Fecha de asignación al médico (desde dim_solicitud_bolsa)
+    @JsonProperty("fechaAsignacion")
+    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSSZZZ")
     private OffsetDateTime fechaAsignacion;
 
     /**
