@@ -45,7 +45,7 @@ export default function ResponsiveSidebar() {
 
   // Ancho del sidebar: más ancho para EXTERNO, normal para otros
   const sidebarWidth = isExternoRole
-    ? "w-full max-w-lg lg:w-[420px]"  // Más ancho para EXTERNO (420px vs 340px)
+    ? "w-full max-w-lg lg:w-[360px]"  // EXTERNO en desktop: 360px (reducido de 420px)
     : "w-4/5 max-w-xs lg:w-[340px]";
 
   return (
