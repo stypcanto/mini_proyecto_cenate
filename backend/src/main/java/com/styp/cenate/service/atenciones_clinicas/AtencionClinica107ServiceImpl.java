@@ -115,7 +115,12 @@ public class AtencionClinica107ServiceImpl implements AtencionClinica107Service 
     }
 
     /**
-     * Obtener estadísticas globales de atenciones
+     * Obtener estadísticas globales de atenciones por estado
+     * Estados principales (estado_gestion_citas_id):
+     *   - 1: CITADO (Para atender)
+     *   - 2: ATENDIDO_IPRESS (Completados)
+     *   - 11: PENDIENTE_CITA (Nuevos en bolsa)
+     *   - Otros: Total - (CITADO + ATENDIDO + PENDIENTE)
      */
     @Override
     public EstadisticasAtencion107DTO obtenerEstadisticas() {
@@ -124,20 +129,30 @@ public class AtencionClinica107ServiceImpl implements AtencionClinica107Service 
         try {
             long inicio = System.currentTimeMillis();
 
+            // Contar estados principales por estado_gestion_citas_id
             Long total = repository.contarTotal();
-            Long pendientes = repository.contarPorEstadoDescripcion("PENDIENTE");
-            Long atendidos = repository.contarPorEstadoDescripcion("ATENDIDO");
+            Long citado = repository.contarPorEstado(1L);          // CITADO
+            Long atendidoIpress = repository.contarPorEstado(2L);  // ATENDIDO_IPRESS
+            Long pendienteCita = repository.contarPorEstado(11L);  // PENDIENTE_CITA
+            
+            // Otros = Total - (CITADO + ATENDIDO + PENDIENTE)
+            Long otros = total != null ? total : 0L;
+            otros -= (citado != null ? citado : 0L);
+            otros -= (atendidoIpress != null ? atendidoIpress : 0L);
+            otros -= (pendienteCita != null ? pendienteCita : 0L);
 
             long tiempo = System.currentTimeMillis() - inicio;
 
             EstadisticasAtencion107DTO stats = EstadisticasAtencion107DTO.builder()
                 .total(total != null ? total : 0L)
-                .pendientes(pendientes != null ? pendientes : 0L)
-                .atendidos(atendidos != null ? atendidos : 0L)
+                .citado(citado != null ? citado : 0L)
+                .atendidoIpress(atendidoIpress != null ? atendidoIpress : 0L)
+                .pendienteCita(pendienteCita != null ? pendienteCita : 0L)
+                .otros(otros >= 0 ? otros : 0L)
                 .build();
 
-            log.info("✅ [MODULO 107] Estadísticas (Bolsa=1): Total={}, Pendientes={}, Atendidos={} ({}ms)",
-                total, pendientes, atendidos, tiempo);
+            log.info("✅ [MODULO 107] Estadísticas (Bolsa=1): Total={}, Citado={}, Atendido={}, Pendiente={}, Otros={} ({}ms)",
+                total, citado, atendidoIpress, pendienteCita, otros, tiempo);
 
             return stats;
 
@@ -229,6 +244,8 @@ public class AtencionClinica107ServiceImpl implements AtencionClinica107Service 
             .fechaAtencion(atencion.getFechaAtencion()) // 🆕 Fecha de atención programada
             .horaAtencion(atencion.getHoraAtencion()) // 🆕 Hora de atención programada
             .idPersonal(atencion.getIdPersonal()) // 🆕 ID del personal que atiende
+            .tiempoInicioSintomas(atencion.getTiempoInicioSintomas()) // 🆕 Tiempo inicio síntomas
+            .consentimientoInformado(atencion.getConsentimientoInformado()) // 🆕 Consentimiento informado
             .build();
     }
 }

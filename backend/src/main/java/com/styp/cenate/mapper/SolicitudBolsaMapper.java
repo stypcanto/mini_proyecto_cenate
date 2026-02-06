@@ -56,6 +56,8 @@ public class SolicitudBolsaMapper {
                 .pacienteEmail(entity.getPacienteEmail())
                 .codigoIpressAdscripcion(entity.getCodigoIpressAdscripcion())
                 .tipoCita(entity.getTipoCita())
+                .tiempoInicioSintomas(entity.getTiempoInicioSintomas())
+                .consentimientoInformado(entity.getConsentimientoInformado())
                 .fechaPreferidaNoAtendida(entity.getFechaPreferidaNoAtendida())
                 // ===== ASIGNACIÓN GESTORA (2) - NEW v2.4.0 =====
                 .responsableGestoraId(entity.getResponsableGestoraId())

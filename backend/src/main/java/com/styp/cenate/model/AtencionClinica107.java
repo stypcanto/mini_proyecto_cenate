@@ -135,4 +135,11 @@ public class AtencionClinica107 {
 
     @Column(name = "id_personal")
     private Long idPersonal;
+
+    // 🆕 Nuevos campos para derivación de atenciones
+    @Column(name = "tiempo_inicio_sintomas")
+    private String tiempoInicioSintomas;
+
+    @Column(name = "consentimiento_informado")
+    private Boolean consentimientoInformado;
 }
