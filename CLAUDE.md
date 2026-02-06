@@ -247,6 +247,48 @@ BOLSA_GESTORES_TERRITORIAL (Bolsa Gestores Territorial - Gestión territorial)
 
 ---
 
+### v1.48.9 - Completado (2026-02-06) 📋 ATENDER PACIENTE - SCHEMA ALMACENAMIENTO
+✅ **Schema de Tablas Completo** - Dónde se guardan datos de Atendido, Recita, Interconsulta, Crónico
+✅ **4 Operaciones Médicas** - Mapeo exacto de cada acción a su tabla de BD
+✅ **Validaciones Condicionales** - Lógica de validación para campos opcionales
+✅ **Flujo Backend Completo** - AtenderPacienteService.java con todas las operaciones
+✅ **Relaciones y Constraints** - Foreign keys, UNIQUE constraints, sincronización automática
+✅ **Ejemplos SQL** - Queries reales para verificar datos en BD
+
+**Features:**
+- `dim_solicitud_bolsa` + `solicitud_cita` para estado ATENDIDO (con sincronización v1.44.0+)
+- `receta` tabla para Recita (con dias_seguimiento)
+- `interconsulta` tabla para Interconsulta (con especialidad_referida)
+- `asegurado_enfermedad_cronica` para Crónico (con tipo_enfermedad + descripcion_otra)
+- Diagrama visual de flujo de datos y relaciones entre tablas
+- Validación de datos: al menos 1 acción obligatoria + campos condicionales requeridos
+- DTO `AtenderPacienteRequest` completo con toda la documentación
+- Ejemplos SQL: obtener pacientes, contar acciones, verificar duplicados
+
+**Cambios:**
+- Nuevo archivo: `spec/backend/16_atender_paciente_storage.md` (400+ líneas)
+- Actualizado: `CLAUDE.md` - Added v1.48.9 reference
+- Actualizado: `spec/INDEX.md` - Added to backend docs list
+
+**Docs:**
+- **Completo:** [`spec/backend/16_atender_paciente_storage.md`](spec/backend/16_atender_paciente_storage.md)
+- **Padre:** [`spec/backend/15_recita_interconsulta_v1.47.md`](spec/backend/15_recita_interconsulta_v1.47.md)
+- **Sincronización:** [`spec/backend/14_sincronizacion_atendido/README.md`](spec/backend/14_sincronizacion_atendido/README.md)
+
+**SQL Reference:**
+- Actualizar ATENDIDO: `UPDATE dim_solicitud_bolsa SET estado='ATENDIDO'...`
+- Crear Recita: `INSERT INTO receta (id_solicitud_cita, dni_paciente, dias_seguimiento)...`
+- Crear Interconsulta: `INSERT INTO interconsulta (id_solicitud_cita, especialidad_referida)...`
+- Registrar Crónico: `INSERT INTO asegurado_enfermedad_cronica (pk_asegurado, tipo_enfermedad)...`
+
+**Relaciones:**
+- `dim_solicitud_bolsa` ↔ `solicitud_cita` (sincronización automática)
+- `solicitud_cita` → `receta` (1:N - una cita, muchas recitas)
+- `solicitud_cita` → `interconsulta` (1:N - una cita, muchas interconsultas)
+- `asegurados` → `asegurado_enfermedad_cronica` (1:N - paciente, muchas enfermedades)
+
+---
+
 ### v1.49.0 - Completado (2026-02-06) 🔍 FILTROS AVANZADOS EN MIS PACIENTES
 ✅ **Filtro por IPRESS** - Médicos ven solo pacientes de su sede física actual
 ✅ **Filtros de Tiempo** - Hoy, Ayer, Últimos 7 días + Rango personalizado

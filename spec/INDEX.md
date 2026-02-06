@@ -28,6 +28,7 @@ spec/
 **Comienza en:** `/backend/README.md`
 - API Endpoints: `backend/01_api/003_api_endpoints.md`
 - Módulo Bolsas: `backend/08_modulo_bolsas_pacientes_completo.md`
+- **🔥 NUEVO Storage Schema:** `backend/16_atender_paciente_storage.md` (v1.48.9 ⭐⭐ - Dónde se guardan datos de Atendido/Recita/Interconsulta/Crónico)
 - **🔥 NUEVO Recita + Interconsulta:** `backend/15_recita_interconsulta_v1.47.md` (v1.47.2 ⭐⭐ - Atender Paciente completo)
 - **🔥 NUEVO Sincronización ATENDIDO:** `backend/14_sincronizacion_atendido/README.md` (v1.43.0-44.0 ⭐⭐)
 - **🔥 NUEVO Tipos de Bolsas Architecture:** `backend/tipos_bolsas.md` (v1.48.8 ⭐⭐ - dim_tipos_bolsas vs dim_solicitud_bolsa)
@@ -84,24 +85,29 @@ spec/
 
 ## 📋 Documentos Principales por Tipo
 
-### 📦 Backend (9 docs principales)
-1. **`backend/15_recita_interconsulta_v1.47.md` - Recita + Interconsulta + Crónico v1.47.2 ⭐ NUEVO**
+### 📦 Backend (10 docs principales)
+1. **`backend/16_atender_paciente_storage.md` - Storage Schema Atender Paciente v1.48.9 ⭐ NUEVO**
+   - Schema exacto: Dónde se guardan datos de Atendido, Recita, Interconsulta, Crónico
+   - 4 Tablas involucradas: dim_solicitud_bolsa, solicitud_cita, receta, interconsulta, asegurado_enfermedad_cronica
+   - DTO AtenderPacienteRequest + Validaciones condicionales
+   - Ejemplos SQL + Relaciones FK + Diagrama de flujo
+2. **`backend/15_recita_interconsulta_v1.47.md` - Recita + Interconsulta + Crónico v1.47.2 ⭐ NUEVO**
    - Flujo completo: Médico → Backend → Coordinador
    - Crear Recita automáticamente (seguimiento en días)
    - Crear Interconsulta automáticamente (referencia especialista)
    - Validaciones y duplicados
-2. **`backend/tipos_bolsas.md` - Arquitectura Tipos de Bolsas v1.48.8 ⭐ NUEVO**
+3. **`backend/tipos_bolsas.md` - Arquitectura Tipos de Bolsas v1.48.8 ⭐ NUEVO**
    - dim_tipos_bolsas (catálogo) vs dim_solicitud_bolsa (operacional)
    - Flujo de datos: import → backend → frontend
    - Tabla de equivalencia códigos ↔ descripciones
    - Troubleshooting y FAQ
-3. `backend/01_api/003_api_endpoints.md` - Endpoints REST v1.34.1
-4. `backend/08_modulo_bolsas_pacientes_completo.md` - Módulo bolsas v1.32.1
-5. `backend/07_modulo_estados_gestion_citas_crud.md` - Estados citas v1.33.0
-6. **`backend/11_modulo_tipos_bolsas_completo.md` - Tipos bolsas v1.37.0 ⭐ ANTERIOR**
-7. **`backend/13_gestion_iconos.md` - Gestión de iconos v1.37.4 ⭐**
-8. `backend/06_resumen_modulo_bolsas_completo.md` - Resumen módulo
-9. `backend/05_modulo_tipos_bolsas_crud.md` - Tipos bolsas v1.1.0 (anterior)
+4. `backend/01_api/003_api_endpoints.md` - Endpoints REST v1.34.1
+5. `backend/08_modulo_bolsas_pacientes_completo.md` - Módulo bolsas v1.32.1
+6. `backend/07_modulo_estados_gestion_citas_crud.md` - Estados citas v1.33.0
+7. **`backend/11_modulo_tipos_bolsas_completo.md` - Tipos bolsas v1.37.0 ⭐ ANTERIOR**
+8. **`backend/13_gestion_iconos.md` - Gestión de iconos v1.37.4 ⭐**
+9. `backend/06_resumen_modulo_bolsas_completo.md` - Resumen módulo
+10. `backend/05_modulo_tipos_bolsas_crud.md` - Tipos bolsas v1.1.0 (anterior)
 
 ### 📱 Frontend (5 docs principales)
 1. **`frontend/15_mis_pacientes_medico.md` - Mis Pacientes Médico v1.45.2 ⭐ NUEVO**
