@@ -43,6 +43,29 @@ function generarAliasBolsa(nombreBolsa) {
   return `Bolsa ${alias}`;
 }
 
+/**
+ * ✅ v1.48.4: Convierte nombre de bolsa a código
+ * Ejemplos:
+ * "Bolsa 107" → "BOLSA_107"
+ * "Bolsa Dengue" → "BOLSA_DENGUE"
+ * "Bolsa Explotación de Datos" → "BOLSA_EXPLOTACION_DATOS"
+ */
+function generarCodigoBolsa(nombreBolsa) {
+  if (!nombreBolsa) return 'SIN_CLASIFICAR';
+
+  return nombreBolsa
+    .toUpperCase()
+    .replace(/[àáäâ]/g, 'A')
+    .replace(/[èéëê]/g, 'E')
+    .replace(/[ìíïî]/g, 'I')
+    .replace(/[òóöô]/g, 'O')
+    .replace(/[ùúüû]/g, 'U')
+    .replace(/[ñ]/g, 'N')
+    .replace(/[^A-Z0-9]/g, '_')
+    .replace(/_+/g, '_')
+    .replace(/^_|_$/g, '');
+}
+
 export default function Solicitudes() {
   const REGISTROS_POR_PAGINA = 25;
   const { esSuperAdmin } = usePermisos();
@@ -487,7 +510,7 @@ export default function Solicitudes() {
             red: solicitud.desc_red || 'Sin asignar',
             ipress: solicitud.desc_ipress || 'N/A',
             macroregion: solicitud.desc_macro || 'Sin asignar',
-            bolsa: solicitud.cod_tipo_bolsa || 'Sin clasificar',
+            bolsa: generarCodigoBolsa(solicitud.desc_tipo_bolsa),
             nombreBolsa: generarAliasBolsa(solicitud.desc_tipo_bolsa),
             fechaCita: solicitud.fecha_asignacion ? new Date(solicitud.fecha_asignacion).toLocaleDateString('es-PE') : 'N/A',
             fechaAsignacion: solicitud.fecha_solicitud ? new Date(solicitud.fecha_solicitud).toLocaleDateString('es-PE') : 'N/A',
@@ -640,7 +663,7 @@ export default function Solicitudes() {
               red: solicitud.desc_red || 'Sin asignar',
               ipress: solicitud.desc_ipress || 'N/A',
               macroregion: solicitud.desc_macro || 'Sin asignar',
-              bolsa: solicitud.cod_tipo_bolsa || 'Sin clasificar',
+              bolsa: generarCodigoBolsa(solicitud.desc_tipo_bolsa),
               nombreBolsa: generarAliasBolsa(solicitud.desc_tipo_bolsa),
               fechaCita: solicitud.fecha_asignacion ? new Date(solicitud.fecha_asignacion).toLocaleString('es-PE') : 'N/A',
               fechaAsignacion: solicitud.fecha_solicitud ? new Date(solicitud.fecha_solicitud).toLocaleString('es-PE') : 'N/A',
@@ -769,7 +792,7 @@ export default function Solicitudes() {
               red: solicitud.desc_red || 'Sin asignar',
               ipress: solicitud.desc_ipress || 'N/A',
               macroregion: solicitud.desc_macro || 'Sin asignar',
-              bolsa: solicitud.cod_tipo_bolsa || 'Sin clasificar',
+              bolsa: generarCodigoBolsa(solicitud.desc_tipo_bolsa),
               nombreBolsa: generarAliasBolsa(solicitud.desc_tipo_bolsa),
               fechaCita: solicitud.fecha_asignacion ? new Date(solicitud.fecha_asignacion).toLocaleString('es-PE') : 'N/A',
               fechaAsignacion: solicitud.fecha_solicitud ? new Date(solicitud.fecha_solicitud).toLocaleString('es-PE') : 'N/A',
