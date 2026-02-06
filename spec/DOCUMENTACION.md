@@ -77,6 +77,7 @@ spec/
 | **👩‍💻 Frontend Dev** | Componentes, Páginas, UI | `frontend/README.md` |
 | **🏗️ Arquitecto** | Flujos, Diagramas, Modelos | `architecture/README.md` |
 | **💾 Admin BD** | Esquemas, Migrations, Backups | `database/README.md` |
+| **📦 Gestión Bolsas** | Tipos de Bolsas, Arquitectura | `backend/tipos_bolsas.md` |
 | **🚀 DevOps** | Performance, Monitoreo, Logs | `backend/10_performance_monitoring/README.md` |
 | **🔐 Security** | Auditoría, MBAC, JWT | `security/SECURITY_AUDIT_LOGIN.md` |
 | **🧪 QA/Testing** | Test Plans, Edge Cases | `troubleshooting/README.md` |
@@ -164,5 +165,5 @@ Cuando agregues nueva documentación:
 ---
 
 **Última Actualización:** 2026-02-06
-**Versión:** v1.48.3
-**Estado:** 📚 Documentación Organizada ✅
+**Versión:** v1.48.8
+**Estado:** 📚 Documentación Completa + Tipos de Bolsas Architecture ✅

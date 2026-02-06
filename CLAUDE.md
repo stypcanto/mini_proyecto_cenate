@@ -2,6 +2,7 @@
 
 > **Sistema de Telemedicina - EsSalud Perú**
 > **Versión:** v1.49.0 (2026-02-06) 🚀
+> **Última Feature:** v1.47.2 - Recita + Interconsulta (2026-02-06) ⭐
 > **Status:** ✅ Production Ready
 
 ---
@@ -149,6 +150,7 @@ Frontend (React 19):
 | **💾 Admin BD** | [`spec/database/README.md`](spec/database/README.md) |
 | **🚀 DevOps/Performance** | [`spec/backend/10_performance_monitoring/README.md`](spec/backend/10_performance_monitoring/README.md) |
 | **📧 Email/SMTP** | [`spec/backend/11_email_smtp/README.md`](spec/backend/11_email_smtp/README.md) |
+| **📦 Gestión Bolsas** | [`spec/backend/tipos_bolsas.md`](spec/backend/tipos_bolsas.md) |
 | **🔍 QA/Support** | [`spec/troubleshooting/README.md`](spec/troubleshooting/README.md) |
 | **🔐 Security** | [`plan/01_Seguridad_Auditoria/`](plan/01_Seguridad_Auditoria/) |
 | **🤖 AI/Spring AI** | [`plan/06_Integracion_Spring_AI/`](plan/06_Integracion_Spring_AI/) |
@@ -173,6 +175,13 @@ Frontend (React 19):
 
 ## 📖 DOCUMENTACIÓN PRINCIPAL POR VERSIÓN
 
+### ✅ v1.47.2 - Documentación Completa
+- **Backend Spec:** [`spec/backend/15_recita_interconsulta_v1.47.md`](spec/backend/15_recita_interconsulta_v1.47.md) - Recita + Interconsulta Complete Workflow (400+ líneas)
+- **Changelog:** [`checklist/01_Historial/01_changelog.md#v1472-2026-02-06`](checklist/01_Historial/01_changelog.md) - Registro de atención médica con seguimiento
+- **Index:** [`spec/INDEX.md`](spec/INDEX.md) - Referencia maestra actualizada con v1.47.2
+- **Backend:** `AtenderPacienteService.java` - Atender paciente, crear Recita e Interconsulta
+- **Frontend:** `MisPacientes.jsx` - Modal para seleccionar Recita días, Interconsulta especialidad, Enfermedades crónicas
+
 ### ✅ v1.45.2 - Documentación Completa
 - **Frontend Spec:** [`spec/frontend/15_mis_pacientes_medico.md`](spec/frontend/15_mis_pacientes_medico.md) - Mis Pacientes Médico (350+ líneas)
 - **Changelog:** [`checklist/01_Historial/01_changelog.md#v1452-2026-02-05`](checklist/01_Historial/01_changelog.md) - IPRESS Names Implementation
@@ -189,6 +198,49 @@ Frontend (React 19):
 ---
 
 ## 📊 ÚLTIMAS VERSIONES
+
+### v1.48.8 - Completado (2026-02-06) 📦 TIPOS DE BOLSAS - DOCUMENTACIÓN COMPLETA
+✅ **Documentación Bolsa Types Architecture** - Explicación completa del sistema de dos tablas
+✅ **dim_tipos_bolsas vs dim_solicitud_bolsa** - Diferencia entre catálogo y datos operacionales
+✅ **Flujo de Datos Completo** - Cómo se importan bolsas y se muestran en frontend
+✅ **Troubleshooting Guide** - Respuestas a preguntas frecuentes sobre tipos de bolsas
+✅ **Tabla de Equivalencia** - Mapeo de códigos (BOLSA_107) a descripciones (Bolsa 107 - Importación...)
+
+**Features:**
+- Diagrama detallado de arquitectura de datos (2 tablas, 3 niveles de abstracción)
+- Explicación de por qué `desc_tipo_bolsa` en API puede variar de catálogo
+- SQL examples para entender estructura de tablas
+- Backend DTOs y Entity definitions
+- Frontend rendering logic explicado
+- Ejemplos de cómo cambiar/agregar tipos de bolsas
+- Referencias a módulos relacionados (Pacientes, Citas, Telemedicina)
+
+**Cambios:**
+- Nuevo archivo: `spec/backend/tipos_bolsas.md` (310+ líneas)
+- Actualizado: `CLAUDE.md` - Added reference in "Por Rol" section + version entry
+- Actualizado: `spec/DOCUMENTACION.md` - Links in index
+
+**Docs:**
+- **Completo:** [`spec/backend/tipos_bolsas.md`](spec/backend/tipos_bolsas.md)
+- **Índice:** [`spec/DOCUMENTACION.md`](spec/DOCUMENTACION.md)
+
+**Referencia Rápida:**
+```
+BOLSA_107 (BOLSA_107 - Importación de pacientes masiva)
+BOLSA_DENGUE (Bolsa Dengue - Control epidemiológico)
+BOLSAS_ENFERMERIA (Bolsas Enfermería - Atenciones de enfermería)
+BOLSAS_EXPLOTADATOS (Bolsas Explotación de Datos - Análisis y reportes)
+BOLSAS_IVR (Bolsas IVR - Sistema interactivo de respuesta de voz)
+BOLSAS_REPROGRAMACION (Bolsas Reprogramación - Citas reprogramadas)
+BOLSA_GESTORES_TERRITORIAL (Bolsa Gestores Territorial - Gestión territorial)
+```
+
+**Frontend Impact:**
+- FilaSolicitud.jsx: Muestra `solicitud.descBolsa` (descripción operacional)
+- Solicitudes.jsx: Mapea `desc_tipo_bolsa` a `descBolsa` field
+- MisPacientes.jsx: Acceso a información de origen de bolsa del paciente
+
+---
 
 ### v1.49.0 - Completado (2026-02-06) 🔍 FILTROS AVANZADOS EN MIS PACIENTES
 ✅ **Filtro por IPRESS** - Médicos ven solo pacientes de su sede física actual
@@ -254,6 +306,71 @@ Frontend (React 19):
 - **Commit:** c1acbed (311 insertions)
 
 **Build:** ✅ Backend SUCCESS + ✅ Frontend SUCCESS
+
+---
+
+### v1.47.2 - Completado (2026-02-06) 📋 RECITA + INTERCONSULTA + CRÓNICO
+✅ **Registro de Atención Médica Completo** - Médico marca paciente "Atendido" con seguimiento automático
+✅ **Crear Recita** - Solicitud de seguimiento en días específicos (7, 14, 30 días)
+✅ **Crear Interconsulta** - Referencia automática a especialista diferente
+✅ **Enfermedades Crónicas** - Registro de condiciones crónicas del paciente
+✅ **Duplicado Validation** - Prevenir Recitas duplicadas y múltiples interconsultas por especialidad
+✅ **Especialidad Correcta** - Recita usa especialidad del médico (no la de interconsulta)
+✅ **FechaAtencion Registrada** - Fecha de atención se guarda automáticamente (UTC-5 Peru)
+
+**Features:**
+- Modal en MisPacientes con 4 campos: Condición, ¿Tiene Recita? (días), ¿Tiene Interconsulta? (especialidad), ¿Es Crónico? (enfermedades)
+- Atender automáticamente crea hasta 3 nuevas solicitudes: RECITA + INTERCONSULTA + CRÓNICO
+- Bolsas creadas: ID 11 (BOLSA_GENERADA_X_PROFESIONAL) para Recita/Interconsulta
+- Ambas se asignan a la coordinadora responsable (aparecen en su bandeja)
+- Fecha preferida calculada: hoy + días especificados
+- Transacción atómica: all-or-nothing (todo se crea o nada)
+
+**Cambios Backend:**
+- `AtenderPacienteService.java` - Método principal atenderPaciente() con 5 validaciones
+- `crearBolsaRecita()` - Usa especialidad original del médico, NO la de interconsulta
+- `crearBolsaInterconsulta()` - Usa especialidad seleccionada por médico
+- `existeRecitaParaPaciente()` - Valida que no haya Recita previa
+- `existeInterconsultaParaPaciente(especialidad)` - Valida por especialidad
+- Método `guardarEnfermedadesCronicas()` - Persiste condiciones crónicas
+- FechaAtencion: Guardada como LocalDate (UTC-5 Peru timezone)
+
+**Cambios Frontend:**
+- Modal "Atendido" con 4 secciones: Condición, Recita toggle + días, Interconsulta toggle + especialidad, Crónico toggle + multiselect enfermedades
+- Validaciones de negocio en frontend (días 1-365, especialidades válidas)
+- Toast feedback: éxito, duplicado, error
+
+**Database:**
+- Tabla: `dim_solicitud_bolsa` - Ambas bolsas (RECITA, INTERCONSULTA) creadas aquí
+- UNIQUE constraint: (id_bolsa, paciente_id, id_servicio) - Se evita con idServicio=NULL
+- Índice: `idx_solicitud_bolsa_paciente_dni_activo` - Búsqueda rápida de pacientes
+- Campo: `fecha_preferida_no_atendida` - Calculado como LocalDate (hoy + días)
+- Campo: `fecha_atencion` - Registrada automáticamente cuando se marca Atendido
+
+**Docs:**
+- **Completo:** [`spec/backend/15_recita_interconsulta_v1.47.md`](spec/backend/15_recita_interconsulta_v1.47.md) (400+ líneas)
+- **Changelog:** [`checklist/01_Historial/01_changelog.md#v1472-2026-02-06`](checklist/01_Historial/01_changelog.md)
+- **Test Cases:** 10/10 PASS - Flujo completo médico → coordinador → bandeja
+
+**Testing Results:**
+✅ Médico marca paciente como Atendido
+✅ Sistema crea automáticamente RECITA (7 días)
+✅ Sistema crea automáticamente INTERCONSULTA (especialidad seleccionada)
+✅ Enfermedades crónicas se guardan correctamente
+✅ Coordinador ve todas las 3 solicitudes en su bandeja
+✅ Recita muestra especialidad del médico (MEDICINA GENERAL)
+✅ Interconsulta muestra especialidad seleccionada (Cardiología)
+✅ FechaAtencion se registra correctamente
+✅ Duplicados rechazados con mensaje amigable
+✅ Transacción atómica: si falla 1 paso, se revierte todo
+
+**Stack:**
+- Backend: `AtenderPacienteService.atenderPaciente()` transactional method
+- Database: Bolsa ID 11 (BOLSA_GENERADA_X_PROFESIONAL) + idServicio NULL
+- Security: @CheckMBACPermission para /roles/medico/pacientes (editar)
+- Auditoría: Cada atención registrada en audit_logs
+
+**Commit:** Múltiples (últimos 5 commits resuelven constraint violations + especialidad + fecha atencion)
 
 ---
 

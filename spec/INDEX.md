@@ -1,7 +1,7 @@
-# 📚 CENATE Documentation Index v1.45.2
+# 📚 CENATE Documentation Index v1.48.8
 
-**Última actualización:** 2026-02-05
-**Estado:** Mis Pacientes Complete Workflow + IPRESS Names Display ✅ - PRODUCCIÓN 🚀
+**Última actualización:** 2026-02-06
+**Estado:** Recita + Interconsulta + Tipos de Bolsas Architecture Complete ✅ - PRODUCCIÓN 🚀
 
 ---
 
@@ -28,8 +28,9 @@ spec/
 **Comienza en:** `/backend/README.md`
 - API Endpoints: `backend/01_api/003_api_endpoints.md`
 - Módulo Bolsas: `backend/08_modulo_bolsas_pacientes_completo.md`
+- **🔥 NUEVO Recita + Interconsulta:** `backend/15_recita_interconsulta_v1.47.md` (v1.47.2 ⭐⭐ - Atender Paciente completo)
 - **🔥 NUEVO Sincronización ATENDIDO:** `backend/14_sincronizacion_atendido/README.md` (v1.43.0-44.0 ⭐⭐)
-- **NUEVO Tipos de Bolsas:** `backend/11_modulo_tipos_bolsas_completo.md` (v1.37.0)
+- **🔥 NUEVO Tipos de Bolsas Architecture:** `backend/tipos_bolsas.md` (v1.48.8 ⭐⭐ - dim_tipos_bolsas vs dim_solicitud_bolsa)
 - **NUEVO Gestión de Iconos:** `backend/13_gestion_iconos.md` (v1.37.4)
 - Estados Citas: `backend/07_modulo_estados_gestion_citas_crud.md`
 
@@ -83,14 +84,24 @@ spec/
 
 ## 📋 Documentos Principales por Tipo
 
-### 📦 Backend (7 docs principales)
-1. `backend/01_api/003_api_endpoints.md` - Endpoints REST v1.34.1
-2. `backend/08_modulo_bolsas_pacientes_completo.md` - Módulo bolsas v1.32.1
-3. `backend/07_modulo_estados_gestion_citas_crud.md` - Estados citas v1.33.0
-4. **`backend/11_modulo_tipos_bolsas_completo.md` - Tipos bolsas v1.37.0 ⭐ NUEVO**
-5. **`backend/13_gestion_iconos.md` - Gestión de iconos v1.37.4 ⭐ NUEVO**
-6. `backend/06_resumen_modulo_bolsas_completo.md` - Resumen módulo
-7. `backend/05_modulo_tipos_bolsas_crud.md` - Tipos bolsas v1.1.0 (anterior)
+### 📦 Backend (9 docs principales)
+1. **`backend/15_recita_interconsulta_v1.47.md` - Recita + Interconsulta + Crónico v1.47.2 ⭐ NUEVO**
+   - Flujo completo: Médico → Backend → Coordinador
+   - Crear Recita automáticamente (seguimiento en días)
+   - Crear Interconsulta automáticamente (referencia especialista)
+   - Validaciones y duplicados
+2. **`backend/tipos_bolsas.md` - Arquitectura Tipos de Bolsas v1.48.8 ⭐ NUEVO**
+   - dim_tipos_bolsas (catálogo) vs dim_solicitud_bolsa (operacional)
+   - Flujo de datos: import → backend → frontend
+   - Tabla de equivalencia códigos ↔ descripciones
+   - Troubleshooting y FAQ
+3. `backend/01_api/003_api_endpoints.md` - Endpoints REST v1.34.1
+4. `backend/08_modulo_bolsas_pacientes_completo.md` - Módulo bolsas v1.32.1
+5. `backend/07_modulo_estados_gestion_citas_crud.md` - Estados citas v1.33.0
+6. **`backend/11_modulo_tipos_bolsas_completo.md` - Tipos bolsas v1.37.0 ⭐ ANTERIOR**
+7. **`backend/13_gestion_iconos.md` - Gestión de iconos v1.37.4 ⭐**
+8. `backend/06_resumen_modulo_bolsas_completo.md` - Resumen módulo
+9. `backend/05_modulo_tipos_bolsas_crud.md` - Tipos bolsas v1.1.0 (anterior)
 
 ### 📱 Frontend (5 docs principales)
 1. **`frontend/15_mis_pacientes_medico.md` - Mis Pacientes Médico v1.45.2 ⭐ NUEVO**
@@ -186,8 +197,8 @@ spec/
 
 ---
 
-**Versión:** 1.37.4
-**Última actualización:** 2026-01-29
-**Status:** ✅ READY FOR PRODUCTION
+**Versión:** 1.48.8
+**Última actualización:** 2026-02-06
+**Status:** ✅ READY FOR PRODUCTION - Tipos de Bolsas Architecture Documented
 **Responsable:** Sistema CENATE
 
