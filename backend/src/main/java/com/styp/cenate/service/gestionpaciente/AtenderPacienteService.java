@@ -123,7 +123,6 @@ public class AtenderPacienteService {
                 .estadoGestionCitasId(1L) // PENDIENTE CITAR
                 .idBolsa(11L) // BOLSA_GENERADA_X_PROFESIONAL
                 .idServicio(solicitudOriginal.getIdServicio())
-                .origenBolsa("BOLSA_GENERADA_X_PROFESIONAL")
                 .fechaAsignacion(OffsetDateTime.now())
                 .activo(true)
                 .build();
@@ -149,7 +148,6 @@ public class AtenderPacienteService {
                 .estadoGestionCitasId(1L) // PENDIENTE CITAR
                 .idBolsa(11L) // BOLSA_GENERADA_X_PROFESIONAL
                 .idServicio(solicitudOriginal.getIdServicio())
-                .origenBolsa("BOLSA_GENERADA_X_PROFESIONAL")
                 .fechaAsignacion(OffsetDateTime.now())
                 .activo(true)
                 .build();

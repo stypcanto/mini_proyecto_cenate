@@ -198,28 +198,22 @@ public class SolicitudBolsa {
     @Column(name = "id_personal")
     private Long idPersonal;
 
-    // 🔔 AUDITORÍA
-    @Column(name = "activo", nullable = false)
-    private Boolean activo;
-
     // ============================================================================
-    // 👨‍⚕️ GESTIÓN MÉDICA (v1.46.0)
+    // 🏥 DATOS MÉDICOS (v1.46.0 - 2026-02-03)
     // ============================================================================
 
-    @Column(name = "condicion_medica", length = 50)
+    @Column(name = "condicion_medica", length = 100)
     private String condicionMedica;
 
-    @Column(name = "observaciones_medicas", columnDefinition = "text")
+    @Column(name = "observaciones_medicas", columnDefinition = "TEXT")
     private String observacionesMedicas;
 
     @Column(name = "fecha_atencion_medica", columnDefinition = "TIMESTAMP WITH TIME ZONE")
     private OffsetDateTime fechaAtencionMedica;
 
-    // ✅ v1.47.0: Origen de la bolsa (BOLSA_GENERADA_X_PROFESIONAL, etc.)
-    // NOTA: Comentado porque la columna 'origen_bolsa' no existe en la BD actual
-    // Usar 'transient' para que Hibernate lo ignore completamente
-    @Transient
-    private String origenBolsa;
+    // 🔔 AUDITORÍA
+    @Column(name = "activo", nullable = false)
+    private Boolean activo;
 
     @PrePersist
     void prePersist() {

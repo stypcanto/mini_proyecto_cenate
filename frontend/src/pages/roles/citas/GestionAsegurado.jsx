@@ -1521,6 +1521,9 @@ export default function GestionAsegurado() {
                         />
                       </th>
                       <th className="px-2 py-2 text-left text-[10px] font-bold uppercase">
+                        Bolsa
+                      </th>
+                      <th className="px-2 py-2 text-left text-[10px] font-bold uppercase">
                         F. Asign.
                       </th>
                       <th className="px-2 py-2 text-left text-[10px] font-bold uppercase">
@@ -1598,6 +1601,11 @@ export default function GestionAsegurado() {
                                 : 'border-gray-300 hover:border-blue-400'
                             }`}
                           />
+                        </td>
+                        <td className="px-2 py-1.5 text-[10px]">
+                          <span className="px-1.5 py-0.5 rounded bg-indigo-100 text-indigo-800 font-medium">
+                            {paciente.descTipoBolsa || "Sin clasificar"}
+                          </span>
                         </td>
                         <td className="px-2 py-1.5 text-gray-900 text-[10px]">
                           {paciente.fechaAsignacion === "-"

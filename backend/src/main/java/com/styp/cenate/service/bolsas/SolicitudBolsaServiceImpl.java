@@ -2322,15 +2322,24 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
             if (!solicitudes.isEmpty()) {
                 log.info("   📋 Primeras 3 solicitudes:");
                 solicitudes.stream().limit(3).forEach(s ->
-                    log.info("      - ID: {}, DNI: {}, Nombre: {}, Estado: {}",
-                        s.getIdSolicitud(), s.getPacienteDni(), s.getPacienteNombre(), s.getEstado())
+                    log.info("      - ID: {}, DNI: {}, Nombre: {}, Estado: {}, idBolsa: {}",
+                        s.getIdSolicitud(), s.getPacienteDni(), s.getPacienteNombre(), s.getEstado(), s.getIdBolsa())
                 );
             }
 
             // 4️⃣ MAPEAR A DTOs CON ENRIQUECIMIENTO
-            return solicitudes.stream()
+            List<SolicitudBolsaDTO> dtoList = solicitudes.stream()
                 .map(this::mapSolicitudBolsaToDTO)
                 .collect(Collectors.toList());
+            
+            // LOG: Verificar dto mapeado
+            if (!dtoList.isEmpty()) {
+                SolicitudBolsaDTO primerDto = dtoList.get(0);
+                log.info("   🔍 Primer DTO mapeado: idBolsa={}, descTipoBolsa={}", 
+                    primerDto.getIdBolsa(), primerDto.getDescTipoBolsa());
+            }
+            
+            return dtoList;
 
         } catch (ResourceNotFoundException e) {
             log.error("❌ Usuario no encontrado: {}", e.getMessage());
@@ -2360,6 +2369,25 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
             }
         }
 
+        // Enriquecer con descripción de Tipo de Bolsa si existe
+        String descTipoBolsa = null;
+        if (solicitud.getIdBolsa() != null) {
+            try {
+                log.info("🔍 Buscando TipoBolsa con ID: {}", solicitud.getIdBolsa());
+                TipoBolsa tipoBolsa = tipoBolsaRepository.findById(solicitud.getIdBolsa()).orElse(null);
+                if (tipoBolsa != null) {
+                    descTipoBolsa = tipoBolsa.getDescTipoBolsa();
+                    log.info("✅ TipoBolsa encontrado: ID={} -> desc='{}'", solicitud.getIdBolsa(), descTipoBolsa);
+                } else {
+                    log.warn("⚠️ TipoBolsa NO encontrado para ID: {}", solicitud.getIdBolsa());
+                }
+            } catch (Exception e) {
+                log.warn("⚠️ No se pudo cargar descripción de Tipo de Bolsa: {}", e.getMessage());
+            }
+        } else {
+            log.warn("⚠️ Solicitud {} tiene id_bolsa NULL", solicitud.getIdSolicitud());
+        }
+
         return SolicitudBolsaDTO.builder()
             .idSolicitud(solicitud.getIdSolicitud())
             .numeroSolicitud(solicitud.getNumeroSolicitud())
@@ -2377,7 +2405,10 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
             .pacienteEdad(calcularEdad(solicitud.getFechaNacimiento()))
             .codigoIpressAdscripcion(solicitud.getCodigoIpressAdscripcion())
             .tipoCita(solicitud.getTipoCita())
+            .tiempoInicioSintomas(solicitud.getTiempoInicioSintomas())
+            .consentimientoInformado(solicitud.getConsentimientoInformado())
             .idBolsa(solicitud.getIdBolsa())
+            .descTipoBolsa(descTipoBolsa)
             .idServicio(solicitud.getIdServicio())
             .codigoAdscripcion(solicitud.getCodigoAdscripcion())
             .idIpress(solicitud.getIdIpress())
@@ -2897,24 +2928,28 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
         Long responsableGestoraId = usuarioActual != null ? usuarioActual.getIdUser() : null;
         log.info("🔍 [Auto-Assign] Usuario encontrado: {} → ID: {}", usuarioActual != null ? usuarioActual.getNameUser() : "NO ENCONTRADO", responsableGestoraId);
 
-        // 4. ✅ v1.46.8: Obtener código IPRESS válido desde descripción
-        String codigoIpressValido = obtenerCodigoIpress(request.getDescIpress());
-        log.info("🔍 [v1.46.8] IPRESS input: '{}' → código final: '{}'", request.getDescIpress(), codigoIpressValido);
+        // 3.1 Obtener ID del servicio (v1.47.0)
+        // Prioridad: 1) idServicio directo del request, 2) buscar por nombre de especialidad
+        Long idServicio = 1L; // Valor por defecto
+        if (request.getIdServicio() != null) {
+            // ✅ v1.47.0: Usar idServicio directo si viene en el request
+            idServicio = request.getIdServicio();
+            log.info("✅ [v1.47.0] Usando idServicio directo del request: {}", idServicio);
+        } else if (request.getEspecialidad() != null && !request.getEspecialidad().trim().isEmpty()) {
+            // Fallback: buscar por nombre de especialidad
+            Optional<DimServicioEssi> servicioOpt = dimServicioEssiRepository
+                .findFirstByDescServicioIgnoreCaseAndEstado(request.getEspecialidad().trim(), "A");
+            if (servicioOpt.isPresent()) {
+                idServicio = servicioOpt.get().getIdServicio();
+                log.info("✅ [v1.47.0] Servicio encontrado por nombre: '{}' → idServicio={}", request.getEspecialidad(), idServicio);
+            } else {
+                log.warn("⚠️ [v1.47.0] Servicio '{}' no encontrado, usando idServicio por defecto: 1", request.getEspecialidad());
+            }
+        }
 
-        // 5. ✅ v1.46.9: Usar idPersonal del request si se proporciona
-        Long idPersonalFinal = request.getIdPersonal() != null ? request.getIdPersonal() : null;
-        log.info("🔍 [v1.46.9] idPersonal enviado: {}", idPersonalFinal);
-
-        // ✅ v1.46.9: Usar fechaAsignacion del request o generar la actual
-        OffsetDateTime fechaAsignacionFinal = request.getFechaAsignacion() != null
-            ? request.getFechaAsignacion()
-            : OffsetDateTime.now();
-
-        // 6. Crear nueva solicitud con campos válidos de la entidad SolicitudBolsa
+        // 4. Crear nueva solicitud con campos válidos de la entidad SolicitudBolsa
         // ✅ v1.46.4: Si codigoIpressAdscripcion es null, pasarlo como null (nullable)
         // ✅ v1.46.4: Auto-asignar al gestor que realiza la importación
-        // ✅ v1.46.8: Usar código IPRESS válido
-        // ✅ v1.46.9: Asignar médico (idPersonal) si se proporciona
         SolicitudBolsa nuevaSolicitud = SolicitudBolsa.builder()
             .numeroSolicitud(numeroSolicitud)
             .pacienteDni(request.getPacienteDni())
@@ -2923,27 +2958,28 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
             .pacienteSexo(request.getPacienteSexo())
             .pacienteTelefono(request.getPacienteTelefono())
             .pacienteTelefonoAlterno(request.getPacienteTelefonoAlterno())
-            .codigoIpressAdscripcion(codigoIpressValido) // ✅ v1.46.8: Ahora con código válido
-            .codigoAdscripcion(codigoIpressValido) // ✅ v1.46.8: Usar código válido (ahora nullable=true)
+            .codigoIpressAdscripcion(request.getDescIpress()) // Puede ser null
+            .codigoAdscripcion(request.getDescIpress()) // Puede ser null (ahora nullable=true)
             .tipoCita(request.getTipoCita())
             .especialidad(request.getEspecialidad()) // ✅ v1.46.5 - Especialidad seleccionada por usuario
             .estado("PENDIENTE")
             .estadoGestionCitasId(1L) // ID del estado "PENDIENTE CITAR"
             .idBolsa(10L) // BOLSA_GESTORA (v1.46.4 - usar bolsa de gestora para importados)
-            .idServicio(1L) // Servicio por defecto
-            .idPersonal(idPersonalFinal) // ✅ v1.46.9: Asignar a médico si se proporciona
+            .idServicio(idServicio) // ✅ v1.47.0 - ID del servicio basado en especialidad
+            .idPersonal(request.getIdPersonal()) // ✅ v1.47.1 - ID del médico especialista
+            .fechaAtencion(request.getFechaAtencion()) // ✅ v1.47.2 - Fecha de atención
+            .horaAtencion(request.getHoraAtencion()) // ✅ v1.47.2 - Hora de atención
             .responsableGestoraId(responsableGestoraId) // ✅ Auto-asignar al gestor actual
-            .fechaAsignacion(fechaAsignacionFinal) // ✅ v1.46.9: Usar fecha proporcionada o actual
+            .fechaAsignacion(OffsetDateTime.now()) // ✅ Registrar fecha de asignación
             .activo(true)
             .build();
 
-        // 7. Guardar
+        // 5. Guardar
         SolicitudBolsa guardado = solicitudRepository.save(nuevaSolicitud);
 
-        log.info("✅ Solicitud adicional creada: {} - Médico ID: {} - Gestor ID: {} - IPRESS: {}",
-            guardado.getIdSolicitud(), idPersonalFinal, responsableGestoraId, codigoIpressValido);
+        log.info("✅ Solicitud adicional creada: {} - Asignada a gestor ID: {}", guardado.getIdSolicitud(), responsableGestoraId);
 
-        // 8. Mapear a DTO
+        // 6. Mapear a DTO
         return SolicitudBolsaMapper.toDTO(guardado);
     }
 
@@ -2958,36 +2994,6 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
         return solicitudes.stream()
             .map(SolicitudBolsaMapper::toDTO)
             .collect(Collectors.toList());
-    }
-
-    /**
-     * ✅ v1.46.8: Obtiene el código de IPRESS a partir de código o descripción
-     * Recibe cualquier identificador IPRESS (código o nombre)
-     * y retorna el código IPRESS válido para almacenar en codigoIpressAdscripcion
-     */
-    private String obtenerCodigoIpress(String ipressInfo) {
-        if (ipressInfo == null || ipressInfo.trim().isEmpty()) {
-            return null;
-        }
-
-        // 1. Intentar buscar como código directo
-        var ipressByCode = ipressRepository.findByCodIpress(ipressInfo);
-        if (ipressByCode.isPresent()) {
-            log.info("✅ IPRESS encontrada por código: {}", ipressInfo);
-            return ipressInfo;
-        }
-
-        // 2. Intentar buscar como descripción (nombre)
-        var ipresList = ipressRepository.findByDescIpressContainingIgnoreCase(ipressInfo);
-        if (!ipresList.isEmpty()) {
-            String codigo = ipresList.get(0).getCodIpress();
-            log.info("✅ IPRESS encontrada por nombre '{}' → código: {}", ipressInfo, codigo);
-            return codigo;
-        }
-
-        // 3. Si no encuentra, retornar null (será manejado gracefully)
-        log.warn("⚠️ No se encontró IPRESS con código o nombre: {}", ipressInfo);
-        return null;
     }
 
     /**
