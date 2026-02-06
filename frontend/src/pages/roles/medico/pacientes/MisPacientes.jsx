@@ -162,13 +162,76 @@ export default function MisPacientes() {
     }
   };
 
+  // ✅ v1.48.0: Formato humanizado sin segundos (para tabla)
+  const formatearFechaHumana = (fecha) => {
+    if (!fecha) return '-';
+
+    try {
+      let año, mes, día, hora, minuto;
+
+      if (fecha.endsWith('Z')) {
+        const date = new Date(fecha);
+        let peruDate = new Date(date.getTime() - (5 * 60 * 60 * 1000));
+
+        año = peruDate.getUTCFullYear();
+        mes = String(peruDate.getUTCMonth() + 1).padStart(2, '0');
+        día = String(peruDate.getUTCDate()).padStart(2, '0');
+        hora = String(peruDate.getUTCHours()).padStart(2, '0');
+        minuto = String(peruDate.getUTCMinutes()).padStart(2, '0');
+      } else {
+        const isoMatch = fecha.match(/(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})(?:\.(\d+))?([+-]\d{2}):?(\d{2})?/);
+        if (!isoMatch) return '-';
+
+        año = isoMatch[1];
+        mes = isoMatch[2];
+        día = isoMatch[3];
+        hora = isoMatch[4];
+        minuto = isoMatch[5];
+      }
+
+      const h = parseInt(hora);
+      const m = parseInt(minuto);
+      const d = parseInt(día);
+      const mo = parseInt(mes);
+      const y = parseInt(año);
+
+      // Verificar si es hoy
+      const hoy = new Date();
+      const peruHoy = new Date(hoy.getTime() - (5 * 60 * 60 * 1000));
+      const diaHoy = peruHoy.getUTCDate();
+      const mesHoy = peruHoy.getUTCMonth() + 1;
+      const anoHoy = peruHoy.getUTCFullYear();
+
+      const esHoy = d === diaHoy && mo === mesHoy && y === anoHoy;
+
+      const meridiem = h >= 12 ? 'p. m.' : 'a. m.';
+      const h12 = h % 12 || 12;
+      const horaFormato = `${String(h12).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+
+      if (esHoy) {
+        return `Hoy, ${horaFormato} ${meridiem}`;
+      } else {
+        return `${String(d).padStart(2, '0')}/${String(mo).padStart(2, '0')}/${String(y).slice(-2)} ${horaFormato} ${meridiem}`;
+      }
+    } catch (e) {
+      console.error('Error formateando fecha humanizada:', fecha, e);
+      return '-';
+    }
+  };
+
   const getColorCondicion = (condicion) => {
+    // ✅ v1.48.0: Colores más distintos y visualmente separados
+    // - Pendiente: Naranja vibrante (llama atención = acción requerida)
+    // - Atendido: Verde suave (descarte visual = completado)
+    // - Citado: Azul profesional (estado intermedio)
+    // - Reprogramación Fallida: Rojo (problema)
+    // - No Contactado: Gris neutro (estado neutro)
     const colores = {
-      'Citado': 'bg-emerald-100 text-emerald-700 border-emerald-200',
-      'Atendido': 'bg-blue-100 text-blue-700 border-blue-200',
-      'Pendiente': 'bg-amber-100 text-amber-700 border-amber-200',
-      'Reprogramación Fallida': 'bg-red-100 text-red-700 border-red-200',
-      'No Contactado': 'bg-gray-100 text-gray-700 border-gray-200'
+      'Citado': 'bg-sky-100 text-sky-700 border-sky-300',
+      'Atendido': 'bg-emerald-100 text-emerald-700 border-emerald-300',
+      'Pendiente': 'bg-orange-100 text-orange-700 border-orange-300',
+      'Reprogramación Fallida': 'bg-red-100 text-red-700 border-red-300',
+      'No Contactado': 'bg-slate-100 text-slate-600 border-slate-300'
     };
     return colores[condicion] || 'bg-gray-100 text-gray-700 border-gray-200';
   };
@@ -302,6 +365,18 @@ export default function MisPacientes() {
     );
   };
 
+  // ✅ v1.48.0: Estilos dinámicos para botón de condición
+  const getButtonStyleCondicion = (condicion) => {
+    const baseClasses = 'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border cursor-pointer transition-all duration-200 hover:shadow-lg hover:scale-105';
+
+    if (condicion === 'Atendido') {
+      return `${baseClasses} ${getColorCondicion(condicion)} opacity-70`;
+    } else if (condicion === 'Pendiente') {
+      return `${baseClasses} ${getColorCondicion(condicion)} shadow-md hover:shadow-lg`;
+    }
+    return `${baseClasses} ${getColorCondicion(condicion)}`;
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -325,9 +400,33 @@ export default function MisPacientes() {
           <p className="text-gray-600 font-medium">Gestiona tus pacientes asignados</p>
         </div>
 
+        {/* 📊 Estadísticas - Parte Superior */}
+        <div className="mb-6 grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="bg-white border border-gray-200 shadow-sm rounded-lg p-6">
+            <p className="text-gray-600 text-sm font-medium">Total de Pacientes</p>
+            <p className="text-3xl font-bold text-gray-900 mt-2">{pacientes.length}</p>
+          </div>
+          <div className="bg-white border border-gray-200 shadow-sm rounded-lg p-6">
+            <p className="text-gray-600 text-sm font-medium">Filtrados</p>
+            <p className="text-3xl font-bold text-[#0A5BA9] mt-2">{pacientesFiltrados.length}</p>
+          </div>
+          <div className="bg-white border border-gray-200 shadow-sm rounded-lg p-6">
+            <p className="text-gray-600 text-sm font-medium">Atendidos</p>
+            <p className="text-3xl font-bold text-emerald-600 mt-2">
+              {pacientes.filter(p => p.condicion === 'Atendido').length}
+            </p>
+          </div>
+          <div className="bg-white border border-gray-200 shadow-sm rounded-lg p-6">
+            <p className="text-gray-600 text-sm font-medium">Pendientes</p>
+            <p className="text-3xl font-bold text-amber-600 mt-2">
+              {pacientes.filter(p => p.condicion === 'Pendiente').length}
+            </p>
+          </div>
+        </div>
+
         {/* Filtros y búsqueda */}
         <div className="bg-white border border-gray-200 shadow-sm rounded-lg p-6 mb-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 <Search className="w-4 h-4 inline mr-2" />
@@ -342,32 +441,33 @@ export default function MisPacientes() {
               />
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                <Filter className="w-4 h-4 inline mr-2" />
-                Condición
-              </label>
-              <select
-                value={filtroEstado}
-                onChange={(e) => setFiltroEstado(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0A5BA9]/50 focus:border-[#0A5BA9] transition-colors"
-              >
-                <option value="">Todas</option>
-                <option value="Citado">Citado</option>
-                <option value="Pendiente">Pendiente</option>
-                <option value="Atendido">Atendido</option>
-                <option value="Reprogramación Fallida">Reprogramación Fallida</option>
-                <option value="No Contactado">No Contactado</option>
-              </select>
-            </div>
+            <div className="flex gap-3">
+              <div className="flex-1">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <Filter className="w-4 h-4 inline mr-2" />
+                  Condición
+                </label>
+                <select
+                  value={filtroEstado}
+                  onChange={(e) => setFiltroEstado(e.target.value)}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0A5BA9]/50 focus:border-[#0A5BA9] transition-colors"
+                >
+                  <option value="">Todas</option>
+                  <option value="Citado">Citado</option>
+                  <option value="Pendiente">Pendiente</option>
+                  <option value="Atendido">Atendido</option>
+                  <option value="Reprogramación Fallida">Reprogramación Fallida</option>
+                  <option value="No Contactado">No Contactado</option>
+                </select>
+              </div>
 
-            <div className="flex items-end">
+              {/* ✅ v1.48.0: Botón Actualizar discreto - solo icono */}
               <button
                 onClick={cargarPacientes}
-                className="w-full px-4 py-2 bg-[#0A5BA9] text-white rounded-lg hover:bg-[#083d78] transition-colors duration-200 flex items-center justify-center gap-2 font-medium"
+                title="Actualizar lista de pacientes"
+                className="px-3 py-2 bg-[#0A5BA9] text-white rounded-lg hover:bg-[#083d78] transition-colors duration-200 flex items-center justify-center hover:shadow-md flex-shrink-0"
               >
-                <RefreshCw className="w-4 h-4" />
-                Actualizar
+                <RefreshCw className="w-5 h-5" />
               </button>
             </div>
           </div>
@@ -388,28 +488,32 @@ export default function MisPacientes() {
               <table className="w-full text-sm text-left">
                 <thead className="text-xs font-semibold text-white uppercase tracking-wider bg-[#0A5BA9] relative z-20">
                   <tr>
-                    <th className="px-4 py-3">DNI</th>
-                    <th className="px-4 py-3">Paciente</th>
-                    <th className="px-4 py-3">Teléfono</th>
-                    <th className="px-4 py-3">IPRESS</th>
-                    <th className="px-4 py-3">Condición</th>
-                    <th className="px-4 py-3">Motivo</th>
-                    <th className="px-4 py-3">Fecha Asignación</th>
-                    <th className="px-4 py-3">Fecha Atención</th>
+                    <th className="px-4 py-3 text-left">Paciente</th>
+                    <th className="px-4 py-3 text-left">Teléfono</th>
+                    <th className="px-4 py-3 text-left">IPRESS</th>
+                    <th className="px-4 py-3 text-left">Condición</th>
+                    <th className="px-4 py-3 text-left">Motivo</th>
+                    <th className="px-4 py-3 text-left">Fecha Asignación</th>
+                    <th className="px-4 py-3 text-left">Fecha Atención</th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
                   {pacientesFiltrados.map((paciente, idx) => (
-                    <tr key={idx} className={`hover:bg-gray-50 transition-colors duration-150 ${idx % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'}`}>
-                      <td className="px-4 py-3 font-medium text-gray-900">{paciente.numDoc}</td>
-                      <td className="px-4 py-3 text-gray-700">{paciente.apellidosNombres}</td>
+                    <tr key={idx} className={`hover:bg-gray-50 transition-colors duration-150 ${paciente.condicion === 'Atendido' ? 'bg-emerald-50/30' : 'bg-white'} ${idx % 2 === 0 ? '' : 'bg-opacity-50'}`}>
+                      {/* Paciente: Nombre en bold + DNI abajo en gris */}
+                      <td className="px-4 py-3">
+                        <div className="flex flex-col gap-0.5">
+                          <div className="font-bold text-gray-900 text-sm">{paciente.apellidosNombres}</div>
+                          <div className="text-gray-500 text-xs">DNI: {paciente.numDoc}</div>
+                        </div>
+                      </td>
                       <td className="px-4 py-3 text-gray-600">{paciente.telefono || '-'}</td>
                       <td className="px-4 py-3 text-gray-600">{paciente.ipress || '-'}</td>
                       <td className="px-4 py-3">
                         <button
                           onClick={() => abrirAccion(paciente)}
                           title="Haz clic para cambiar estado"
-                          className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded text-xs font-medium border cursor-pointer transition-all duration-200 hover:shadow-md ${getColorCondicion(paciente.condicion)}`}
+                          className={getButtonStyleCondicion(paciente.condicion)}
                         >
                           <span>{paciente.condicion || 'Sin asignar'}</span>
                           <ChevronRight className="w-3.5 h-3.5" />
@@ -424,17 +528,11 @@ export default function MisPacientes() {
                           <span className="text-gray-400">-</span>
                         )}
                       </td>
-                      <td className="px-4 py-3 text-gray-600">
-                        <div className="flex items-center gap-2">
-                          <Clock className="w-4 h-4 text-gray-400" />
-                          <span className="text-xs">{formatearFecha(paciente.fechaAsignacion)}</span>
-                        </div>
+                      <td className="px-4 py-3 text-gray-600 text-xs whitespace-nowrap">
+                        {formatearFechaHumana(paciente.fechaAsignacion)}
                       </td>
-                      <td className="px-4 py-3 text-gray-600">
-                        <div className="flex items-center gap-2">
-                          <Clock className="w-4 h-4 text-gray-400" />
-                          <span className="text-xs">{formatearFecha(paciente.fechaAtencion)}</span>
-                        </div>
+                      <td className="px-4 py-3 text-gray-600 text-xs whitespace-nowrap">
+                        {formatearFechaHumana(paciente.fechaAtencion)}
                       </td>
                     </tr>
                   ))}
@@ -443,24 +541,6 @@ export default function MisPacientes() {
             </div>
           </div>
         )}
-
-        {/* Estadísticas */}
-        <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="bg-white border border-gray-200 shadow-sm rounded-lg p-6">
-            <p className="text-gray-600 text-sm font-medium">Total de Pacientes</p>
-            <p className="text-3xl font-bold text-gray-900 mt-2">{pacientes.length}</p>
-          </div>
-          <div className="bg-white border border-gray-200 shadow-sm rounded-lg p-6">
-            <p className="text-gray-600 text-sm font-medium">Filtrados</p>
-            <p className="text-3xl font-bold text-[#0A5BA9] mt-2">{pacientesFiltrados.length}</p>
-          </div>
-          <div className="bg-white border border-gray-200 shadow-sm rounded-lg p-6">
-            <p className="text-gray-600 text-sm font-medium">Atendidos</p>
-            <p className="text-3xl font-bold text-emerald-600 mt-2">
-              {pacientes.filter(p => p.condicion === 'Atendido').length}
-            </p>
-          </div>
-        </div>
       </div>
 
       {/* Modal de Cambio de Estado */}
