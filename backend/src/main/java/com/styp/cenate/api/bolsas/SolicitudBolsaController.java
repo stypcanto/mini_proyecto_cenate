@@ -18,6 +18,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -41,6 +42,8 @@ import com.styp.cenate.model.Especialidad;
 import com.styp.cenate.repository.EspecialidadRepository;
 import com.styp.cenate.dto.DetalleMedicoDTO;
 import com.styp.cenate.service.atenciones_clinicas.DetalleMedicoService;
+import com.styp.cenate.model.Usuario;
+import com.styp.cenate.repository.UsuarioRepository;
 
 /**
  * Controller REST para gestión de solicitudes de bolsa
@@ -62,6 +65,7 @@ public class SolicitudBolsaController {
     private final DimEstadosGestionCitasRepository estadosRepository;
     private final EspecialidadRepository especialidadRepository; // v1.46.8: Para obtener médicos
     private final DetalleMedicoService detalleMedicoService; // v1.46.8: Para obtener médicos
+    private final UsuarioRepository usuarioRepository; // ✅ v1.47.0: Para sincronizar gestora
 
     /**
      * Importa solicitudes desde archivo Excel
@@ -650,6 +654,17 @@ public class SolicitudBolsaController {
             if (dto.getIdPersonal() != null && dto.getIdPersonal() > 0) {
                 log.info("👨‍⚕️ Guardando personal/médico: {}", dto.getIdPersonal());
                 solicitud.setIdPersonal(dto.getIdPersonal());
+
+                // ✅ v1.47.0: Cuando se asigna un médico desde Gestión de Citas,
+                // también asignar la gestora actual para que aparezca en "Mi Bandeja"
+                String username = SecurityContextHolder.getContext().getAuthentication().getName();
+                Usuario gestoraActual = usuarioRepository.findByNameUser(username)
+                    .orElse(null);
+                if (gestoraActual != null) {
+                    solicitud.setResponsableGestoraId(gestoraActual.getIdUser());
+                    log.info("✅ [SYNC] Asignando gestora (ID: {}, User: {}) a solicitud",
+                        gestoraActual.getIdUser(), username);
+                }
             } else {
                 log.warn("⚠️  idPersonal es NULL o 0 - Limpiando campo en BD");
                 solicitud.setIdPersonal(null);  // ✅ LIMPIAR
