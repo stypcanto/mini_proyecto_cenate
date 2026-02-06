@@ -234,6 +234,11 @@ public class GestionPacienteController {
             BindingResult bindingResult
     ) {
         log.info("🏥 [v1.47.0] POST /api/gestion-pacientes/{}/atendido - Registrando atención (idSolicitudBolsa: {})", id, id);
+        log.info("📨 Request recibido: esCronico={}, enfermedades={}, tieneRecita={}, tieneInterconsulta={}",
+            request.getEsCronico(),
+            request.getEnfermedades() != null ? String.join(", ", request.getEnfermedades()) : "null",
+            request.getTieneRecita(),
+            request.getTieneInterconsulta());
 
         // ✅ Validación condicional
         atenderPacienteValidator.validate(request, bindingResult);

@@ -3,6 +3,11 @@ import lombok.Data;
 
 import jakarta.persistence.*;
 import java.time.LocalDate;
+import java.util.List;
+import java.util.Arrays;
+import java.util.stream.Collectors;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
 @Entity
 @Table(name = "asegurados")
@@ -49,6 +54,10 @@ public class Asegurado {
     @Column(name = "vigencia", nullable = false)
     private Boolean vigencia;
 
+    // ✅ v1.47.2: Array de enfermedades crónicas (TEXT[] en PostgreSQL)
+    @Column(name = "enfermedad_cronica", columnDefinition = "text[]")
+    private String[] enfermedadCronica;
+
     // Getters y Setters
     public String getPkAsegurado() { return pkAsegurado; }
     public void setPkAsegurado(String pkAsegurado) { this.pkAsegurado = pkAsegurado; }
@@ -88,4 +97,7 @@ public class Asegurado {
 
     public Boolean getVigencia() { return vigencia; }
     public void setVigencia(Boolean vigencia) { this.vigencia = vigencia; }
+
+    public String[] getEnfermedadCronica() { return enfermedadCronica; }
+    public void setEnfermedadCronica(String[] enfermedadCronica) { this.enfermedadCronica = enfermedadCronica; }
 }

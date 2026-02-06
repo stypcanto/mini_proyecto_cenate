@@ -52,6 +52,17 @@
 - ✅ Toast notifications
 - ✅ Problemas resueltos (3 fixes SQL)
 
+#### 📋 Recita + Interconsulta (Atención Médica)
+**[15_recita_interconsulta_v1.47.md](./15_recita_interconsulta_v1.47.md)** ⭐ **NUEVO v1.47.2**
+- ✅ Registro completo de atención médica
+- ✅ Crear Recita automáticamente (seguimiento en 7/14/30 días)
+- ✅ Crear Interconsulta automáticamente (referencia a especialista)
+- ✅ Guardar enfermedades crónicas
+- ✅ Validaciones de duplicados
+- ✅ Especialidad correcta (Recita usa especialidad del médico)
+- ✅ FechaAtencion registrada automáticamente
+- ✅ Transacciones atómicas (all-or-nothing)
+
 #### 📷 Módulo de Foto Header
 **[11_modulo_foto_header.md](./11_modulo_foto_header.md)** ⭐ **NUEVO v1.37.4**
 - ✅ Foto de perfil en header superior
@@ -81,6 +92,7 @@
 | **01_api_endpoints.md** | Referencia de endpoints | - |
 | **09_modules_bolsas/12_modulo_solicitudes_bolsa_v1.12.0.md** | Módulo de bolsas (solicitudes) | v1.12.0 |
 | **09_modules_bolsas/13_estadisticas_dashboard_v2.0.0.md** | **NUEVO:** Dashboard estadísticas | v2.0.0 ⭐ |
+| **15_recita_interconsulta_v1.47.md** | **NUEVO:** Recita + Interconsulta (Atención Médica) | v1.47.2 ⭐ |
 | **07_modulo_estados_gestion_citas_crud.md** | Estados de gestión de citas | v1.33.0 |
 | **11_modulo_tipos_bolsas_completo.md** | Tipos de Bolsas (catálogo) | v1.37.0 |
 | **09_teleecg_v3.0.0_guia_rapida.md** | Tele-ECG - Guía rápida | v1.24.0 |
@@ -102,8 +114,12 @@
 
 ## 📚 Lectura Recomendada
 
-1. **Módulo de Bolsas (Solicitudes):** 👉 [`09_modules_bolsas/12_modulo_solicitudes_bolsa_v1.12.0.md`](./09_modules_bolsas/12_modulo_solicitudes_bolsa_v1.12.0.md)
-2. **Dashboard Estadísticas:** 👉 [`09_modules_bolsas/13_estadisticas_dashboard_v2.0.0.md`](./09_modules_bolsas/13_estadisticas_dashboard_v2.0.0.md) ⭐ **NUEVO**
-3. **Implementar nuevo endpoint:** 👉 [`11_reference/00_Procedimiento_NuevoModulo_Pagina.md`](./11_reference/00_Procedimiento_NuevoModulo_Pagina.md)
-4. **Referencia técnica:** 👉 [`11_reference/01_api_endpoints.md`](./11_reference/01_api_endpoints.md)
+1. **Recita + Interconsulta (Atención Médica):** 👉 [`15_recita_interconsulta_v1.47.md`](./15_recita_interconsulta_v1.47.md) ⭐ **NUEVO v1.47.2**
+   - Flujo completo de registro de atención médica
+   - Crear seguimiento y referencia automáticamente
+   - Validaciones y especialidades correctas
+2. **Módulo de Bolsas (Solicitudes):** 👉 [`09_modules_bolsas/12_modulo_solicitudes_bolsa_v1.12.0.md`](./09_modules_bolsas/12_modulo_solicitudes_bolsa_v1.12.0.md)
+3. **Dashboard Estadísticas:** 👉 [`09_modules_bolsas/13_estadisticas_dashboard_v2.0.0.md`](./09_modules_bolsas/13_estadisticas_dashboard_v2.0.0.md) ⭐ **NUEVO**
+4. **Implementar nuevo endpoint:** 👉 [`11_reference/00_Procedimiento_NuevoModulo_Pagina.md`](./11_reference/00_Procedimiento_NuevoModulo_Pagina.md)
+5. **Referencia técnica:** 👉 [`11_reference/01_api_endpoints.md`](./11_reference/01_api_endpoints.md)
 

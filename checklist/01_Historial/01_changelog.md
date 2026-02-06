@@ -4,6 +4,7 @@
 >
 > 📌 **IMPORTANTE**: Ver documentación en:
 > - ⭐ **NUEVO - v1.49.0**: Filtros Avanzados en MisPacientes (2026-02-06) - IPRESS + Rango Fecha + Ordenamiento Cronológico - 583 líneas de specs
+> - ⭐ **NUEVO - v1.47.2**: Recita + Interconsulta Production-Ready (2026-02-06) - Atender Paciente Completo - 400+ líneas de specs
 > - ⭐ **NUEVO - v1.47.0**: Sistema Completo de Registro de Atención Médica (2026-02-06) - Recita + Interconsulta + Crónico - 824 insertions
 > - ⭐ **NUEVO - v1.45.2**: IPRESS Institution Names Display (2026-02-05) - Backend convierte códigos a nombres ("450" → "CAP II LURIN")
 > - ⭐ **NUEVO - v1.45.1**: Mis Pacientes Complete Workflow (2026-02-05) - Tabla + 3 acciones médicas + modal system + live stats
@@ -154,6 +155,99 @@
 | Responsive UI | ✅ | Mobile/Tablet/Desktop |
 | Performance | ✅ | O(n log n), <100ms para 100 pacientes |
 | Documentation | ✅ | 350+ líneas en spec |
+
+---
+
+## v1.47.2 (2026-02-06) - 📋 Recita + Interconsulta Production-Ready
+
+### ✅ Implementación Completada
+
+**Feature: Registro de Atención Médica Completo con Seguimiento Automático**
+- ✅ Médico marca paciente como "ATENDIDO" en MisPacientes
+- ✅ Sistema crea automáticamente RECITA (seguimiento en 7/14/30 días)
+- ✅ Sistema crea automáticamente INTERCONSULTA (referencia a especialista)
+- ✅ Guardar enfermedades crónicas del paciente
+- ✅ Validaciones: No duplicar Recita, No duplicar Interconsulta por especialidad
+- ✅ Especialidad correcta: Recita usa especialidad del médico, no la de interconsulta
+- ✅ FechaAtencion se registra automáticamente
+- ✅ Transacción atómica: all-or-nothing
+- ✅ Coordinador ve ambas solicitudes (Recita + Interconsulta) en su bandeja
+
+### 🔧 Cambios Técnicos
+
+**Backend (Java/Spring Boot):**
+- Archivo: `AtenderPacienteService.java` - Servicio principal
+- Método: `atenderPaciente()` - @Transactional (all-or-nothing)
+- Métodos nuevos:
+  - `crearBolsaRecita()` - Usa especialidad original del médico
+  - `crearBolsaInterconsulta()` - Usa especialidad seleccionada
+  - `existeRecitaParaPaciente()` - Valida duplicados Recita
+  - `existeInterconsultaParaPaciente(especialidad)` - Valida duplicados Interconsulta
+  - `guardarEnfermedadesCronicas()` - Persiste condiciones crónicas
+- Cambios clave:
+  - Ambas bolsas: idBolsa=11 (BOLSA_GENERADA_X_PROFESIONAL)
+  - Ambas bolsas: idServicio=NULL (evita UNIQUE constraint violation)
+  - FechaAtencion: LocalDate con UTC-5 (Peru timezone)
+  - ResponsableGestoraId: Asignado automáticamente
+
+**Frontend (React 19):**
+- Modal "Atendido" con 4 secciones:
+  - Condición: dropdown selector
+  - ¿Tiene Recita?: toggle + campo días (1-365)
+  - ¿Tiene Interconsulta?: toggle + dropdown especialidad
+  - ¿Es Crónico?: toggle + multiselect enfermedades
+- Validaciones: días válidos, especialidades predefinidas
+- Toast feedback
+
+**Database (PostgreSQL):**
+- Tabla: `dim_solicitud_bolsa`
+- Campos para Recita/Interconsulta:
+  - tipo_cita: "RECITA" | "INTERCONSULTA"
+  - especialidad: del médico (Recita) o seleccionada (Interconsulta)
+  - fecha_preferida_no_atendida: hoy + días
+  - fecha_atencion: LocalDate (cuando marca Atendido)
+  - responsable_gestora_id: Coordinador responsable
+  - id_servicio: NULL (evita UNIQUE constraint)
+
+### 🧪 Testing & QA
+
+**Test Plan (10 casos) - ✅ 10/10 PASS:**
+1. ✅ Login Médico
+2. ✅ Buscar Paciente
+3. ✅ Marcar Atendido → Mensaje: "Atención registrada correctamente"
+4. ✅ Crear RECITA → Especialidad: del médico
+5. ✅ Crear INTERCONSULTA → Especialidad: seleccionada
+6. ✅ Verificar Estado → "Atendido"
+7. ✅ Coordinador ve bandeja → 3 solicitudes
+8. ✅ Fecha Preferida → hoy + 7 días
+9. ✅ Duplicados → Mensaje amigable
+10. ✅ Fecha Atención → Registrada correctamente
+
+### 📚 Documentación
+
+**Specs:**
+- Main: `spec/backend/15_recita_interconsulta_v1.47.md` (400+ líneas)
+- Flujo completo, DB schema, código, validaciones, casos de uso, seguridad
+
+**Actualizado:**
+- CLAUDE.md: Sección "ÚLTIMAS VERSIONES" con v1.47.2
+- INDEX.md: Referencia a 15_recita_interconsulta_v1.47.md
+- Changelog: Este archivo
+
+### ✅ Checklist Producción
+
+- [x] Tests (10/10 PASS)
+- [x] Compilación sin errores
+- [x] Base de datos migrada
+- [x] Documentación (400+ líneas)
+- [x] Validaciones
+- [x] Mensajes de error
+- [x] Permisos MBAC
+- [x] Transacciones atómicas
+- [x] Timezone UTC-5
+- [x] Especialidades correctas
+
+**Status:** ✅ **LISTO PARA PRODUCCIÓN**
 
 ---
 

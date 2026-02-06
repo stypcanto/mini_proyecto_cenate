@@ -467,8 +467,8 @@ export default function MisPacientes() {
         tieneInterconsulta,
         interconsultaEspecialidad: tieneInterconsulta ? interconsultaEspecialidad : null,
         esCronico,
-        enfermedades: esCronico ? enfermedadesCronicas : [],
-        otroDetalle: esCronico && enfermedadesCronicas.includes('Otro') ? otroDetalle : null
+        enfermedades: esCronico ? enfermedadesCronicas : []
+        // ✅ v1.47.2: Sin otroDetalle - solo respuestas cerradas (Hipertensión, Diabetes)
       };
 
       console.log('🏥 [v1.47.0] Registrando atención:', payload);
@@ -1015,6 +1015,7 @@ export default function MisPacientes() {
                     )}
 
                     {/* Detalle 3: CRÓNICO */}
+                    {/* ✅ v1.47.2: Solo respuestas cerradas - Hipertensión y Diabetes */}
                     {expandCronico && esCronico && (
                       <div className="bg-purple-50 border border-purple-200 rounded-lg p-3 animate-in slide-in-from-top-2">
                         <div className="space-y-2">
@@ -1037,27 +1038,7 @@ export default function MisPacientes() {
                             />
                             <span className="text-xs font-medium text-gray-800">Diabetes</span>
                           </label>
-
-                          <label className="flex items-center gap-3 cursor-pointer p-2 rounded hover:bg-purple-100 transition-colors">
-                            <input
-                              type="checkbox"
-                              checked={enfermedadesCronicas.includes('Otro')}
-                              onChange={() => toggleEnfermedad('Otro')}
-                              className="w-4 h-4 text-purple-600 rounded"
-                            />
-                            <span className="text-xs font-medium text-gray-800">Otra</span>
-                          </label>
                         </div>
-
-                        {enfermedadesCronicas.includes('Otro') && (
-                          <input
-                            type="text"
-                            placeholder="Describa..."
-                            value={otroDetalle}
-                            onChange={(e) => setOtroDetalle(e.target.value)}
-                            className="w-full mt-2 px-2 py-1 border border-purple-300 rounded text-xs"
-                          />
-                        )}
                       </div>
                     )}
                   </div>
