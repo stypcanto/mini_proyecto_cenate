@@ -1,7 +1,7 @@
 # CLAUDE.md - Proyecto CENATE
 
 > **Sistema de Telemedicina - EsSalud Perú**
-> **Versión:** v1.45.3 (2026-02-05) 🚀
+> **Versión:** v1.49.0 (2026-02-06) 🚀
 > **Status:** ✅ Production Ready
 
 ---
@@ -189,6 +189,45 @@ Frontend (React 19):
 ---
 
 ## 📊 ÚLTIMAS VERSIONES
+
+### v1.49.0 - Completado (2026-02-06) 🔍 FILTROS AVANZADOS EN MIS PACIENTES
+✅ **Filtro por IPRESS** - Médicos ven solo pacientes de su sede física actual
+✅ **Filtros de Tiempo** - Hoy, Ayer, Últimos 7 días + Rango personalizado
+✅ **Ordenamiento Cronológico** - Más recientes primero o más antiguos primero
+✅ **3-Row Filter UI** - Layout profesional responsive con 3 filas de filtros
+✅ **Smart IPRESS Loading** - API-first con fallback a datos de pacientes cargados
+✅ **Combined Filtering** - Todos los filtros funcionan en conjunto (búsqueda + condición + IPRESS + fecha + orden)
+✅ **Optimized Rendering** - React.useMemo para evitar re-renders innecesarios
+
+**Features:**
+- IPRESS dropdown carga desde `/ipress/activas` endpoint
+- 5 opciones de rango de fecha: Todas, Hoy, Ayer, Últimos 7 días, Personalizado
+- Date pickers aparecen condicionalmente cuando selecciona "Personalizado"
+- Ordenamiento: "Más recientes primero" (DESC) o "Más antiguos primero" (ASC)
+- Botón "Limpiar todos los filtros" auto-oculto cuando no hay filtros activos
+- Soporte completo para ISO 8601 (Z y offset timezone)
+
+**Cambios:**
+- Frontend: MisPacientes.jsx - 6 nuevos estados + useEffect para IPRESS + filtrado de 5 niveles
+- Imports: Calendar icon + ipressService
+- UI: Reemplazó sección de filtros con layout de 3 filas responsive
+
+**Docs:**
+- Implementación Plan: Filtros Avanzados en MisPacientes.jsx ✅ COMPLETO
+- Changelog: [`checklist/01_Historial/01_changelog.md#v1490-2026-02-06`](checklist/01_Historial/01_changelog.md)
+
+**Testing Results:**
+✅ IPRESS filter dropdown funciona
+✅ Date range filters (Hoy, Ayer, 7 días) filtra correctamente
+✅ Custom date range con "Desde" y "Hasta" funciona
+✅ Ordenamiento cronológico (reciente/antiguo) ordena correctamente
+✅ Filtros combinados trabajan en conjunto sin conflictos
+✅ Botón limpiar aparece cuando hay filtros activos
+✅ Responsive en móvil (1 columna) y desktop (2-3 columnas)
+
+**Commit:** 7c9ee26
+
+---
 
 ### v1.45.3 - Completado (2026-02-05) 📥 MULTI-SELECT PDF BATCH DOWNLOAD
 ✅ **Descarga Múltiple de PDFs** - Seleccionar y descargar diagnósticos en ZIP
