@@ -11,6 +11,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.time.OffsetDateTime;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.util.List;
 
 /**
@@ -48,22 +51,40 @@ public class AtenderPacienteService {
         Asegurado asegurado = aseguradoRepository.findByDocPaciente(solicitudOriginal.getPacienteDni())
                 .orElseThrow(() -> new RuntimeException("Asegurado no encontrado"));
 
+        // ✅ v1.47.0: IMPORTANTE - Marcar la solicitud original como "Atendido"
+        // Esto asegura que aparezca como "Atendido" en Mis Pacientes del médico
+        log.info("✅ Marcando solicitud original {} como Atendido", idSolicitudBolsa);
+        solicitudOriginal.setCondicionMedica("Atendido");
+
+        // Registrar fecha de atención en zona horaria de Perú (UTC-5)
+        ZonedDateTime zonedDateTime = Instant.now().atZone(ZoneId.of("America/Lima"));
+        OffsetDateTime fechaAtencion = zonedDateTime.toOffsetDateTime();
+        solicitudOriginal.setFechaAtencionMedica(fechaAtencion);
+        log.info("✅ Fecha de atención registrada: {}", fechaAtencion);
+
+        // Guardar cambios en la solicitud original
+        solicitudBolsaRepository.save(solicitudOriginal);
+
         // 2. Guardar enfermedades crónicas si aplica
         if (request.getEsCronico() != null && request.getEsCronico() && request.getEnfermedades() != null) {
             guardarEnfermedadesCronicas(pkAsegurado, request.getEnfermedades(), request.getOtroDetalle());
         }
 
         // 3. Crear bolsa Recita si aplica
+        // ✅ v1.47.0: La Recita es una NUEVA SOLICITUD de seguimiento para la gestora
+        // NO es información que deba aparecer en "Mis Pacientes" del médico
         if (request.getTieneRecita() != null && request.getTieneRecita()) {
             crearBolsaRecita(solicitudOriginal, especialidadActual, request.getRecitaDias());
+            log.info("✅ Nueva bolsa RECITA creada - visible solo para gestora de citas");
         }
 
         // 4. Crear bolsa Interconsulta si aplica
         if (request.getTieneInterconsulta() != null && request.getTieneInterconsulta()) {
             crearBolsaInterconsulta(solicitudOriginal, request.getInterconsultaEspecialidad());
+            log.info("✅ Nueva bolsa INTERCONSULTA creada - visible solo para gestora de citas");
         }
 
-        log.info("✅ [v1.47.0] Atención registrada completamente");
+        log.info("✅ [v1.47.0] Atención registrada completamente - Solicitud original marcada como Atendido");
     }
 
     private void guardarEnfermedadesCronicas(String pkAsegurado, List<String> enfermedades, String otroDetalle) {
