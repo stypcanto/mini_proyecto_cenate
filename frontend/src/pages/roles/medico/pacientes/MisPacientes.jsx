@@ -23,7 +23,8 @@ import {
   FileText,
   Share2,
   Heart,
-  Calendar
+  Calendar,
+  Eye
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import gestionPacientesService from '../../../../services/gestionPacientesService';
@@ -39,6 +40,10 @@ export default function MisPacientes() {
   const [procesando, setProcesando] = useState(false);
   const [estadoSeleccionado, setEstadoSeleccionado] = useState('Pendiente');
   const [razonDesercion, setRazonDesercion] = useState('');
+
+  // ✅ v1.50.0: Modal de detalles del paciente
+  const [mostrarDetalles, setMostrarDetalles] = useState(false);
+  const [pacienteDetalles, setPacienteDetalles] = useState(null);
 
   // ✅ v1.47.0: Estados para modal Atender Paciente
   const [tieneRecita, setTieneRecita] = useState(false);
@@ -384,6 +389,12 @@ export default function MisPacientes() {
     setEstadoSeleccionado('Pendiente'); // Por defecto
     setRazonDesercion('');
     setNotasAccion('');
+  };
+
+  // ✅ v1.50.0: Abrir modal de detalles del paciente
+  const abrirDetallesPaciente = (paciente) => {
+    setPacienteDetalles(paciente);
+    setMostrarDetalles(true);
   };
 
   const procesarAccion = async () => {
@@ -812,11 +823,22 @@ export default function MisPacientes() {
                 <tbody className="bg-white divide-y divide-gray-200">
                   {pacientesFiltrados.map((paciente, idx) => (
                     <tr key={idx} className={`hover:bg-gray-50 transition-colors duration-150 ${paciente.condicion === 'Atendido' ? 'bg-emerald-50/30' : 'bg-white'} ${idx % 2 === 0 ? '' : 'bg-opacity-50'}`}>
-                      {/* Paciente: Nombre en bold + DNI abajo en gris */}
+                      {/* Paciente: Nombre en bold + DNI abajo en gris + Ojo para ver detalles */}
                       <td className="px-4 py-3">
-                        <div className="flex flex-col gap-0.5">
-                          <div className="font-bold text-gray-900 text-sm">{paciente.apellidosNombres}</div>
-                          <div className="text-gray-500 text-xs">DNI: {paciente.numDoc}</div>
+                        <div className="flex items-start gap-3">
+                          {/* Ojo - icono interactivo */}
+                          <button
+                            onClick={() => abrirDetallesPaciente(paciente)}
+                            title="Ver detalles del paciente"
+                            className="flex-shrink-0 mt-0.5 text-gray-400 hover:text-[#0A5BA9] transition-colors duration-150"
+                          >
+                            <Eye className="w-4 h-4" strokeWidth={2} />
+                          </button>
+                          {/* Nombre y DNI */}
+                          <div className="flex flex-col gap-0.5 min-w-0">
+                            <div className="font-bold text-gray-900 text-sm">{paciente.apellidosNombres}</div>
+                            <div className="text-gray-500 text-xs">DNI: {paciente.numDoc}</div>
+                          </div>
                         </div>
                       </td>
                       <td className="px-4 py-3 text-gray-600">{paciente.telefono || '-'}</td>
@@ -1147,6 +1169,126 @@ export default function MisPacientes() {
                 ) : (
                   '✓ Confirmar'
                 )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ✅ v1.50.0: Modal de Detalles del Paciente */}
+      {mostrarDetalles && pacienteDetalles && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+            {/* Header */}
+            <div className="relative px-6 py-5 bg-gradient-to-r from-[#0A5BA9] to-[#0A5BA9]/90">
+              <button
+                onClick={() => setMostrarDetalles(false)}
+                className="absolute top-5 right-5 w-10 h-10 rounded-full bg-white/15 hover:bg-white/25 flex items-center justify-center transition-colors"
+                title="Cerrar"
+              >
+                <X className="w-5 h-5 text-white" strokeWidth={2.5} />
+              </button>
+
+              <div className="flex items-start gap-4">
+                <div className="flex-1">
+                  <p className="text-2xl font-bold text-white">
+                    {pacienteDetalles.apellidosNombres}
+                  </p>
+                  <p className="text-sm text-white/80 mt-1">DNI: {pacienteDetalles.numDoc}</p>
+                </div>
+                <div className="px-3 py-2 bg-white/20 rounded-full backdrop-blur-sm flex-shrink-0">
+                  <p className="text-xs font-semibold text-white uppercase tracking-wider">{pacienteDetalles.condicion}</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Contenido */}
+            <div className="flex-1 overflow-y-auto p-6 space-y-6">
+              {/* Grid 2 columnas */}
+              <div className="grid grid-cols-2 gap-4">
+                {/* Teléfono */}
+                <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                  <p className="text-xs font-semibold text-gray-600 uppercase tracking-wider mb-1">Teléfono</p>
+                  <p className="text-lg font-bold text-gray-900">{pacienteDetalles.telefono || '-'}</p>
+                </div>
+
+                {/* IPRESS */}
+                <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                  <p className="text-xs font-semibold text-gray-600 uppercase tracking-wider mb-1">IPRESS</p>
+                  <p className="text-sm font-semibold text-gray-900">{pacienteDetalles.ipress || '-'}</p>
+                </div>
+              </div>
+
+              {/* Fechas */}
+              <div className="grid grid-cols-2 gap-4">
+                {/* Fecha Asignación */}
+                <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
+                  <p className="text-xs font-semibold text-blue-700 uppercase tracking-wider mb-1">📅 Asignado</p>
+                  <p className="text-sm font-medium text-gray-900">{formatearFechaHumana(pacienteDetalles.fechaAsignacion) || '-'}</p>
+                </div>
+
+                {/* Fecha Atención */}
+                <div className="bg-emerald-50 rounded-lg p-4 border border-emerald-200">
+                  <p className="text-xs font-semibold text-emerald-700 uppercase tracking-wider mb-1">✓ Atendido</p>
+                  <p className="text-sm font-medium text-gray-900">{formatearFechaHumana(pacienteDetalles.fechaAtencion) || '-'}</p>
+                </div>
+              </div>
+
+              {/* Observaciones */}
+              {pacienteDetalles.observaciones && (
+                <div className="bg-yellow-50 rounded-lg p-4 border border-yellow-200">
+                  <p className="text-xs font-semibold text-yellow-700 uppercase tracking-wider mb-2">Motivo / Observaciones</p>
+                  <p className="text-sm text-gray-900">{pacienteDetalles.observaciones}</p>
+                </div>
+              )}
+
+              {/* Enfermedades Crónicas */}
+              <div className="bg-purple-50 rounded-lg p-4 border border-purple-200">
+                <div className="flex items-center gap-2 mb-3">
+                  <Heart className="w-5 h-5 text-purple-600" strokeWidth={2.5} />
+                  <p className="text-sm font-semibold text-purple-900 uppercase tracking-wider">Enfermedades Crónicas</p>
+                </div>
+                {pacienteDetalles.enfermedadCronica && pacienteDetalles.enfermedadCronica.length > 0 ? (
+                  <div className="space-y-2">
+                    {pacienteDetalles.enfermedadCronica.map((enfermedad, idx) => (
+                      <div key={idx} className="flex items-center gap-2 bg-white p-2 rounded border border-purple-100">
+                        <div className="w-2 h-2 rounded-full bg-purple-600 flex-shrink-0" />
+                        <span className="text-sm font-medium text-gray-900">{enfermedad}</span>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-gray-600 italic">No registra enfermedades crónicas</p>
+                )}
+              </div>
+
+              {/* Información adicional */}
+              <div className="bg-gray-100 rounded-lg p-4 border border-gray-300">
+                <p className="text-xs font-semibold text-gray-700 uppercase tracking-wider mb-3">Información del Sistema</p>
+                <div className="space-y-2 text-xs text-gray-700">
+                  {pacienteDetalles.idSolicitudBolsa && (
+                    <div className="flex justify-between">
+                      <span>ID Solicitud Bolsa:</span>
+                      <span className="font-mono text-gray-900">{pacienteDetalles.idSolicitudBolsa}</span>
+                    </div>
+                  )}
+                  {pacienteDetalles.idGestion && (
+                    <div className="flex justify-between">
+                      <span>ID Gestión:</span>
+                      <span className="font-mono text-gray-900">{pacienteDetalles.idGestion}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="border-t border-gray-200 p-6 bg-white flex justify-end rounded-b-lg">
+              <button
+                onClick={() => setMostrarDetalles(false)}
+                className="px-6 py-2.5 bg-[#0A5BA9] text-white rounded-lg hover:bg-[#083d78] transition font-semibold text-sm"
+              >
+                Cerrar
               </button>
             </div>
           </div>
