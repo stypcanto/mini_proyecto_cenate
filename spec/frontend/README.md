@@ -41,6 +41,17 @@
 - ✅ Responsive design (móvil/desktop)
 - ✅ Debugging y troubleshooting completo
 
+#### 📱 Upload EKG - Tablet Split View
+**[16_upload_ekg_tablet_splitview.md](./16_upload_ekg_tablet_splitview.md)** ⭐ **NUEVO v1.52.1**
+- ✅ Interface optimizada para tablets horizontales
+- ✅ Split View 66% | 34% (LEFT datos, RIGHT cámara)
+- ✅ Búsqueda DNI con auto-load de datos (teléfono, IPRESS, edad)
+- ✅ Botón TOMAR FOTO optimizado (altura comprimida)
+- ✅ Carrete horizontal con eliminar foto
+- ✅ Sin scroll necesario en pantalla tablet
+- ✅ Compresión automática de imágenes (≤1MB)
+- ✅ Offline support con localStorage
+
 #### ✨ Características Específicas
 **[09_features/](./09_features/)**
 - Trazabilidad clínica

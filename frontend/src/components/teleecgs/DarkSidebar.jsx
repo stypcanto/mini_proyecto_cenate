@@ -33,17 +33,17 @@ export default function DarkSidebar({
   ];
 
   return (
-    <div className="hidden xl:flex w-60 bg-gray-900 border-r border-gray-800 flex-col p-4 text-white">
+    <div className="hidden xl:flex w-52 bg-gradient-to-b from-cyan-900 to-cyan-950 border-r border-cyan-800 flex-col p-3 text-white">
       {/* Header */}
-      <div className="mb-8">
-        <h3 className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-2">
+      <div className="mb-4">
+        <h3 className="text-[10px] font-bold uppercase tracking-wider text-cyan-400 mb-1">
           📋 Carga de EKG
         </h3>
-        <div className="h-1 w-8 bg-gradient-to-r from-blue-500 to-blue-600 rounded-full"></div>
+        <div className="h-0.5 w-6 bg-gradient-to-r from-cyan-500 to-cyan-600 rounded-full"></div>
       </div>
 
       {/* Navigation Sections */}
-      <nav className="space-y-2 flex-1">
+      <nav className="space-y-1.5 flex-1">
         {sections.map((section) => {
           const Icon = section.icon;
           const isActive = activeSection === section.id;
@@ -52,26 +52,26 @@ export default function DarkSidebar({
             <button
               key={section.id}
               onClick={() => onSectionChange?.(section.id)}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 text-left group ${
+              className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg transition-all duration-200 text-left group ${
                 isActive
-                  ? "bg-blue-600 text-white border-l-4 border-blue-400"
-                  : "text-gray-300 hover:bg-gray-800 border-l-4 border-transparent"
+                  ? "bg-cyan-600 text-white border-l-4 border-cyan-400"
+                  : "text-cyan-300 hover:bg-cyan-800 border-l-4 border-transparent"
               }`}
             >
-              <Icon className={`w-5 h-5 flex-shrink-0 ${
-                isActive ? "text-blue-200" : "text-gray-500 group-hover:text-gray-300"
+              <Icon className={`w-4 h-4 flex-shrink-0 ${
+                isActive ? "text-cyan-200" : "text-cyan-500 group-hover:text-cyan-300"
               }`} />
               <div className="flex-1 min-w-0">
-                <p className={`text-sm font-medium truncate ${
-                  isActive ? "text-white" : "text-gray-300"
+                <p className={`text-xs font-medium truncate ${
+                  isActive ? "text-white" : "text-cyan-300"
                 }`}>
                   {section.label}
                 </p>
               </div>
-              <span className={`text-xs font-bold px-2 py-1 rounded-full flex-shrink-0 ${
+              <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full flex-shrink-0 ${
                 isActive
-                  ? "bg-blue-700 text-blue-100"
-                  : "bg-gray-800 text-gray-400"
+                  ? "bg-cyan-700 text-cyan-100"
+                  : "bg-cyan-800 text-cyan-400"
               }`}>
                 {section.badge}
               </span>
@@ -81,8 +81,8 @@ export default function DarkSidebar({
       </nav>
 
       {/* Footer Info */}
-      <div className="border-t border-gray-800 pt-4 mt-auto">
-        <p className="text-xs text-gray-500 text-center leading-relaxed">
+      <div className="border-t border-cyan-800 pt-2 mt-auto">
+        <p className="text-[10px] text-cyan-500 text-center leading-relaxed">
           📤 {fileCount > 0 ? `${fileCount} archivos listos` : "Sin archivos aún"}
         </p>
       </div>

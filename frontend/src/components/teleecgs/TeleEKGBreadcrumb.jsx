@@ -1,34 +1,57 @@
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
 import { ChevronRight, Upload, List, Activity } from "lucide-react";
+import { useAuth } from "../../context/AuthContext";
 
 /**
  * 📍 Breadcrumb de navegación para TeleEKG Workflow
  * Muestra las 3 etapas: Upload → Listar → Recibidas (CENATE)
+ * ✅ Oculta "CENATE - Recibidas" para usuarios EXTERNO
  */
 export default function TeleEKGBreadcrumb() {
   const location = useLocation();
+  const { user } = useAuth();
 
-  const steps = [
+  // Verificar si el usuario es externo
+  const isExterno = user?.roles?.some(role =>
+    role.toUpperCase().includes("EXTERNO") || role.toUpperCase().includes("INSTITUCION")
+  );
+
+  const allSteps = [
     {
       path: "/teleekgs/upload",
       label: "Subir Electrocardiogramas",
       icon: Upload,
       description: "Sube tus imágenes ECG",
+      allowedRoles: ["EXTERNO", "INSTITUCION_EX"], // ✅ Solo usuarios externos
     },
     {
       path: "/teleekgs/listar",
       label: "Mis EKGs",
       icon: List,
       description: "Revisa tus cargas",
+      allowedRoles: ["EXTERNO", "INSTITUCION_EX"], // ✅ Solo usuarios externos
     },
     {
       path: "/teleecg/recibidas",
       label: "CENATE - Recibidas",
       icon: Activity,
       description: "Vista consolidada",
+      allowedRoles: ["ADMIN", "COORDINADOR", "COORDINADOR_GESTION_CITAS", "MEDICO", "SUPERADMIN"], // ✅ Solo usuarios CENATE
     },
   ];
+
+  // Filtrar steps según rol del usuario
+  const steps = allSteps.filter(step => {
+    if (!step.allowedRoles) return true;
+
+    // Verificar si el usuario tiene al menos un rol permitido
+    return step.allowedRoles.some(allowedRole =>
+      user?.roles?.some(userRole =>
+        userRole.toUpperCase().includes(allowedRole.toUpperCase())
+      )
+    );
+  });
 
   const currentStepIndex = steps.findIndex(
     (step) => step.path === location.pathname

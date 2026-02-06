@@ -8,6 +8,7 @@ import {
   Filter,
   Calendar,
   ExternalLink,
+  RefreshCw,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import teleeckgService from "../../../../services/teleecgService";
@@ -28,10 +29,13 @@ export default function RegistroPacientes() {
   const [selectedEKG, setSelectedEKG] = useState(null);
   const [showVisor, setShowVisor] = useState(false);
 
-  // ✅ Detectar redirección desde upload
+  // ✅ Detectar redirección desde upload y recargar imágenes
   useEffect(() => {
     if (location.state?.mensaje) {
       toast.success(location.state.mensaje);
+
+      // ✅ RECARGAR las imágenes desde el servidor
+      cargarEKGs();
 
       // Filtrar por DNI del paciente recién subido
       if (location.state.numDoc) {
@@ -158,7 +162,7 @@ export default function RegistroPacientes() {
 
         {/* Filtros */}
         <div className="bg-white rounded-lg shadow-md p-6 mb-8">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             {/* Búsqueda */}
             <div className="relative">
               <Search className="absolute left-3 top-3 w-5 h-5 text-gray-400" />
@@ -185,6 +189,17 @@ export default function RegistroPacientes() {
                 <option value="RECHAZADA">Rechazadas</option>
               </select>
             </div>
+
+            {/* Botón Refrescar */}
+            <button
+              onClick={cargarEKGs}
+              disabled={loading}
+              className="flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-blue-400 transition-colors"
+              title="Refrescar lista de imágenes"
+            >
+              <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+              <span className="hidden sm:inline">Refrescar</span>
+            </button>
 
             {/* Estadísticas rápidas */}
             <div className="bg-blue-50 rounded-lg p-4">

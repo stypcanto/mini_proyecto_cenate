@@ -39,13 +39,13 @@ export default function ImageGridPanel({
   };
 
   return (
-    <div className="flex-1 flex flex-col gap-6 p-8 overflow-y-auto">
+    <div className="flex-1 flex flex-col gap-3 p-5 overflow-y-auto">
       {/* Title & Instructions */}
-      <div className="mb-4">
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">
+      <div className="mb-2">
+        <h2 className="text-lg font-bold text-gray-900 mb-1">
           Selecciona tus Electrocardiogramas
         </h2>
-        <p className="text-gray-600">
+        <p className="text-xs text-gray-600">
           Sube entre {MIN_IMAGENES} y {MAX_IMAGENES} imágenes para procesarlas
         </p>
       </div>
@@ -56,36 +56,36 @@ export default function ImageGridPanel({
         onDragLeave={onDragLeave}
         onDrop={onDrop}
         onClick={onClick}
-        className={`border-4 border-dashed rounded-2xl p-12 text-center cursor-pointer transition-all duration-200 ${
+        className={`border-3 border-dashed rounded-lg p-6 text-center cursor-pointer transition-all duration-200 ${
           pacienteEncontrado && !loading && archivos.length < MAX_IMAGENES
             ? dragActive
-              ? "border-blue-600 bg-blue-50 shadow-lg"
-              : "border-blue-400 bg-gradient-to-br from-blue-50 to-indigo-50 hover:shadow-md hover:border-blue-500"
+              ? "border-cyan-600 bg-cyan-50 shadow-lg"
+              : "border-cyan-400 bg-cyan-50 hover:shadow-md hover:border-cyan-500"
             : "border-gray-300 bg-gray-100 cursor-not-allowed opacity-50"
         }`}
       >
-        <Upload className={`w-16 h-16 mx-auto mb-4 ${
+        <Upload className={`w-12 h-12 mx-auto mb-2 ${
           pacienteEncontrado && !loading
-            ? "text-blue-600 animate-bounce"
+            ? "text-cyan-600"
             : "text-gray-400"
         }`} />
-        <h3 className={`text-xl font-bold mb-2 ${
+        <h3 className={`text-base font-bold mb-1 ${
           pacienteEncontrado && !loading
-            ? "text-blue-900"
+            ? "text-cyan-900"
             : "text-gray-500"
         }`}>
           Arrastra tus archivos aquí
         </h3>
-        <p className={`text-sm ${
+        <p className={`text-xs ${
           pacienteEncontrado && !loading
-            ? "text-blue-700"
+            ? "text-cyan-700"
             : "text-gray-500"
         }`}>
           o haz clic para buscar en tu computadora
         </p>
-        <p className={`text-xs mt-3 ${
+        <p className={`text-xs mt-2 ${
           pacienteEncontrado && !loading
-            ? "text-blue-600"
+            ? "text-cyan-600"
             : "text-gray-400"
         }`}>
           JPEG o PNG • Máximo 5MB cada una
@@ -95,11 +95,11 @@ export default function ImageGridPanel({
       {/* Image Grid */}
       {archivos.length > 0 && (
         <div>
-          <h3 className="text-lg font-bold text-gray-900 mb-4">
+          <h3 className="text-sm font-bold text-gray-900 mb-2">
             Imágenes Cargadas ({archivos.length}/{MAX_IMAGENES})
           </h3>
 
-          <div className="hidden xl:grid grid-cols-4 gap-4">
+          <div className="hidden xl:grid grid-cols-4 gap-2">
             {previews.map((preview, index) => (
               <div key={index} className="relative group">
                 {/* Image Container */}
@@ -129,11 +129,11 @@ export default function ImageGridPanel({
                 </div>
 
                 {/* Info Below Image */}
-                <div className="mt-2 text-center">
-                  <p className="text-xs font-semibold text-gray-800 truncate">
+                <div className="mt-1 text-center">
+                  <p className="text-[10px] font-semibold text-gray-800 truncate">
                     {archivos[index]?.name || `EKG ${index + 1}`}
                   </p>
-                  <p className="text-xs text-gray-500">
+                  <p className="text-[10px] text-gray-500">
                     {archivos[index]?.size
                       ? `${(archivos[index].size / 1024 / 1024).toFixed(2)}MB`
                       : "~1MB"}
@@ -141,14 +141,14 @@ export default function ImageGridPanel({
 
                   {/* Progress Bar */}
                   {validationStates[index] === "processing" && (
-                    <div className="mt-2 bg-gray-300 h-1 rounded-full overflow-hidden">
+                    <div className="mt-1 bg-gray-300 h-0.5 rounded-full overflow-hidden">
                       <div className="bg-green-500 h-full animate-pulse"></div>
                     </div>
                   )}
 
                   {/* Error Message */}
                   {imageErrors[index] && (
-                    <p className="text-xs text-red-600 font-medium mt-1">
+                    <p className="text-[10px] text-red-600 font-medium mt-0.5">
                       {imageErrors[index]}
                     </p>
                   )}

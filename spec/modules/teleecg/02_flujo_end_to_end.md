@@ -1,8 +1,8 @@
-# 🔄 Flujo End-to-End TeleEKG v1.51.0
+# 🔄 Flujo End-to-End TeleEKG v1.52.0
 
-**Versión:** v1.51.0 (2026-02-06)
-**Estado:** ✅ Completo
-**Documentación:** Flujo Upload → Listar → Recibidas con sincronización
+**Versión:** v1.52.0 (2026-02-06)
+**Estado:** ✅ Completo + 🔐 Control de Acceso Bidireccional
+**Documentación:** Flujo Upload → Listar → Recibidas + Seguridad separada por rol
 
 ---
 

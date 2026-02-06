@@ -257,11 +257,13 @@ export const componentRegistry = {
   '/teleekgs/upload': {
     component: lazy(() => import('../pages/roles/externo/teleecgs/TeleECGDashboard')),
     requiredAction: 'ver',
+    requiredRoles: ['EXTERNO', 'INSTITUCION_EX'], // ✅ Solo usuarios externos
   },
 
   '/teleekgs/listar': {
     component: lazy(() => import('../pages/roles/externo/teleecgs/RegistroPacientes')),
     requiredAction: 'ver',
+    requiredRoles: ['EXTERNO', 'INSTITUCION_EX'], // ✅ Solo usuarios externos
   },
 
   '/teleekgs/dashboard': {
@@ -453,6 +455,7 @@ export const componentRegistry = {
   '/teleecg/recibidas': {
     component: lazy(() => import('../pages/teleecg/TeleECGRecibidas')),
     requiredAction: 'ver',
+    requiredRoles: ['ADMIN', 'COORDINADOR', 'COORDINADOR_GESTION_CITAS', 'MEDICO', 'SUPERADMIN'], // ✅ Excluye usuarios EXTERNO
   },
 
   '/teleecg/estadisticas': {

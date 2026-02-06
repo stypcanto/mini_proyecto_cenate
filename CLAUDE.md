@@ -1,8 +1,8 @@
 # CLAUDE.md - Proyecto CENATE
 
 > **Sistema de Telemedicina - EsSalud Perú**
-> **Versión:** v1.51.0 (2026-02-06) 🚀
-> **Última Feature:** v1.51.0 - Flujo End-to-End TeleEKG ✅ (2026-02-06) ⭐
+> **Versión:** v1.52.1 (2026-02-06) 🚀
+> **Última Feature:** v1.52.1 - Upload EKG Tablet Split View ✅ (2026-02-06) ⭐
 > **Última Fix:** v1.47.2.1 - Persistencia de Enfermedades Crónicas ✅ (2026-02-06)
 > **Status:** ✅ Production Ready
 
@@ -229,6 +229,37 @@ Frontend (React 19):
 ---
 
 ## 📊 ÚLTIMAS VERSIONES
+
+### v1.52.1 - Completado (2026-02-06) 📱 UPLOAD EKG TABLET SPLIT VIEW
+✅ **Interface Optimizada para Tablet Horizontal** - Split View 66% datos | 34% cámara
+✅ **Datos Expandidos del Paciente** - Nombre, DNI, edad, teléfono, IPRESS
+✅ **Botón TOMAR FOTO Optimizado** - Altura comprimida, más espacio para carrete
+✅ **Carrete Horizontal Inferior** - Miniaturas con X para eliminar en hover
+✅ **Sin Scroll Necesario** - Todo cabe en pantalla tablet estándar
+✅ **Compresión Automática** - Imágenes ≤1MB JPEG
+✅ **Offline Support** - localStorage draft auto-save
+
+**Features:**
+- Grid layout (3 cols): LEFT 66% (datos), RIGHT 34% (cámara)
+- Búsqueda DNI + auto-load: nombres, edad, teléfono, IPRESS
+- Botón TOMAR FOTO: py-8, text-2xl/xl, icon w-16 (proporcional)
+- Carrete: thumbnails w-20 h-20, X en hover, scroll horizontal
+- Progress bar: motivacional + visual feedback
+- Confirmación paciente: expandida con múltiples boxes
+- Touch-friendly: botones ≥48px para dedos
+
+**Cambios:**
+- `UploadImagenECG.jsx` - Split View grid layout, expanded patient data, reduced button height
+- `datosCompletos` - Agregados: telefono, ipress, edad
+- Left panel - Mostrar todos los datos en boxes
+- Right panel - Botón optimizado, carrete inferior
+
+**Docs:**
+- **Completo:** [`spec/frontend/16_upload_ekg_tablet_splitview.md`](spec/frontend/16_upload_ekg_tablet_splitview.md) (500+ líneas)
+- **Features:** Flujo enfermera, datos expandidos, specs de componentes
+- **Testing:** Checklist de validación incluido
+
+---
 
 ### v1.51.0 - Completado (2026-02-06) 🔄 FLUJO END-TO-END TELEEKG
 ✅ **Redirección Automática** - Upload → Listar (RegistroPacientes.jsx)

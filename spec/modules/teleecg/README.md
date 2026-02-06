@@ -1,8 +1,9 @@
 # 🫀 Módulo TeleEKG - Documentación Completa
 
-**Versión:** v1.51.0 (2026-02-06)
+**Versión:** v1.52.1 (2026-02-06)
 **Estado:** ✅ Production Ready
 **Última Actualización:** 2026-02-06
+**Novedades v1.52:** 🔐 Control de Acceso Bidireccional + 🔧 Auto-recarga de imágenes
 
 ---
 
@@ -102,6 +103,24 @@ ETAPA 3: Recibidas (CENATE)
 
 ---
 
+## ✨ Features v1.52.0 (NEW)
+
+### 🔐 Control de Acceso Bidireccional
+- ✅ Usuarios EXTERNO ven: "Subir" + "Mis EKGs" (2 botones)
+- ✅ Usuarios CENATE ven: "CENATE - Recibidas" (1 botón)
+- ✅ Filtrado dinámico en Breadcrumb según rol
+- ✅ Protección backend en componentRegistry (requiredRoles)
+- ✅ Acceso denegado si intenta URL directa sin permisos
+
+**Matriz de Seguridad:**
+```
+Usuarios EXTERNO:                  Usuarios CENATE:
+├─ VEN: Subir ✅                   ├─ VEN: CENATE-Recibidas ✅
+├─ VEN: Mis EKGs ✅               ├─ OCULTO: Subir ❌
+├─ OCULTO: CENATE-Recibidas ❌     ├─ OCULTO: Mis EKGs ❌
+└─ BLOQUEADO: /teleecg/recibidas ❌ └─ BLOQUEADO: /teleekgs/upload ❌
+```
+
 ## ✨ Features v1.51.0
 
 ### 🎯 Redirección Automática
@@ -182,28 +201,58 @@ PostgreSQL 14+
 
 ---
 
-## 🎯 Permisos MBAC
+## 🎯 Permisos MBAC (v1.52.0 - Bidireccional)
 
 | Rol | Upload | Listar | Recibidas | Evaluar |
 |-----|--------|--------|-----------|---------|
-| **EXTERNO (IPRESS)** | ✅ | ✅ | ❌ | ❌ |
-| **COORDINADOR** | ❌ | ❌ | ✅ | ❌ |
-| **COORDINADOR_RED** | ❌ | ❌ | ✅ | ❌ |
-| **ADMIN** | ❌ | ❌ | ✅ | ✅ |
-| **SUPERADMIN** | ✅ | ✅ | ✅ | ✅ |
+| **EXTERNO (IPRESS)** | ✅ VE | ✅ VE | ❌ OCULTO | ❌ BLOQUEADO |
+| **INSTITUCION_EX** | ✅ VE | ✅ VE | ❌ OCULTO | ❌ BLOQUEADO |
+| **COORDINADOR** | ❌ OCULTO | ❌ OCULTO | ✅ VE | ❌ |
+| **COORDINADOR_RED** | ❌ OCULTO | ❌ OCULTO | ✅ VE | ❌ |
+| **MEDICO** | ❌ OCULTO | ❌ OCULTO | ✅ VE | ❌ |
+| **ADMIN** | ❌ OCULTO | ❌ OCULTO | ✅ VE | ✅ |
+| **SUPERADMIN** | ✅ VE | ✅ VE | ✅ VE | ✅ |
+
+**Leyenda:**
+- ✅ VE = Botón visible en Breadcrumb
+- ❌ OCULTO = Botón no aparece en Breadcrumb
+- ❌ BLOQUEADO = Acceso denegado si intenta URL directa
 
 ---
 
-## 📝 Cambios Principales (v1.51.0)
+## 📝 Cambios Principales
 
-### Frontend
+### v1.52.0 (2026-02-06) - 🔐 Control de Acceso Bidireccional
+
+**Frontend:**
+- ✅ **TeleEKGBreadcrumb.jsx:** Filtrado dinámico por `allowedRoles`
+  - Usuarios EXTERNO ven: Upload + Listar
+  - Usuarios CENATE ven: Recibidas
+  - Lógica: `step.allowedRoles.some(role => user.roles.includes(role))`
+
+**Backend:**
+- ✅ **componentRegistry.js:** Protección bidireccional con `requiredRoles`
+  - `/teleekgs/upload`: `requiredRoles: ['EXTERNO', 'INSTITUCION_EX']`
+  - `/teleekgs/listar`: `requiredRoles: ['EXTERNO', 'INSTITUCION_EX']`
+  - `/teleecg/recibidas`: `requiredRoles: ['ADMIN', 'COORDINADOR', 'COORDINADOR_GESTION_CITAS', 'MEDICO', 'SUPERADMIN']`
+- ✅ **ProtectedRoute.jsx:** Verifica roles y muestra "Acceso Denegado" si no autorizado
+
+**Security:**
+- ✅ Validación en 2 niveles: UI (ocultar botones) + Backend (bloquear URL)
+- ✅ Imposible acceder a rutas sin permisos
+- ✅ Usuarios externo NO pueden ver vista CENATE
+- ✅ Usuarios CENATE NO pueden subir imágenes
+
+### v1.51.0 (2026-02-06) - Redirección Automática + Breadcrumb
+
+**Frontend:**
 - ✅ **UploadImagenECG.jsx:** useNavigate + redirect
 - ✅ **RegistroPacientes.jsx:** useLocation + auto-filter + botón CENATE
 - ✅ **TeleECGDashboard.jsx:** Breadcrumb agregado
 - ✅ **TeleECGRecibidas.jsx:** Auto-refresh (30s) + Breadcrumb
 - ✨ **TeleEKGBreadcrumb.jsx:** NUEVO componente
 
-### Backend
+**Backend:**
 - ✅ Sin cambios en endpoints (reutilizados)
 - ✅ Arquitectura existente mantiene compatibilidad
 
@@ -291,7 +340,9 @@ PostgreSQL 14+
 
 | Versión | Fecha | Cambios |
 |---------|-------|---------|
-| **v1.51.0** | 2026-02-06 | Flujo end-to-end completo + Breadcrumb + Auto-refresh |
+| **v1.52.1** | 2026-02-06 | 🔧 Auto-recarga de imágenes después de upload + Botón Refrescar |
+| v1.52.0 | 2026-02-06 | 🔐 Control de Acceso Bidireccional (Externo ↔ CENATE) |
+| v1.51.0 | 2026-02-06 | Flujo end-to-end completo + Breadcrumb + Auto-refresh |
 | v1.50.3 | 2026-02-06 | Fix nombre médico en WhatsApp |
 | v1.50.2 | 2026-02-05 | Cargar médicos faltantes |
 | v3.0.0 | 2026-01-20 | Transformación de estados |
