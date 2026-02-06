@@ -478,26 +478,31 @@ export default function MisPacientes() {
       {modalAccion === 'cambiarEstado' && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg shadow-2xl max-w-2xl w-full flex flex-col max-h-[90vh]">
-            {/* Header Fijo - Compacto y limpio */}
-            <div className="relative p-4 bg-[#0A5BA9] rounded-t-lg">
-              {/* Close Button X */}
+            {/* Header Fijo - Mejorado con tipografía y espaciado */}
+            <div className="relative px-6 py-5 bg-[#0A5BA9] rounded-t-lg">
+              {/* Close Button X - En círculo con zona segura */}
               <button
                 onClick={() => setModalAccion(null)}
-                className="absolute top-3 right-3 p-1 hover:bg-white/20 rounded transition-colors"
+                className="absolute top-5 right-5 w-10 h-10 rounded-full bg-white/15 hover:bg-white/25 flex items-center justify-center transition-colors"
                 title="Cerrar"
               >
                 <X className="w-5 h-5 text-white" strokeWidth={2.5} />
               </button>
 
-              <div className="flex items-baseline justify-between gap-4 pr-8">
-                {/* Nombre del paciente - Destacado */}
-                <div>
-                  <p className="text-2xl font-bold text-white">{pacienteSeleccionado?.apellidosNombres}</p>
+              <div className="flex items-center justify-between gap-6 pr-12">
+                {/* Nombre del paciente - Title Case */}
+                <div className="flex-1">
+                  <p className="text-2xl font-bold text-white leading-relaxed">
+                    {pacienteSeleccionado?.apellidosNombres
+                      ?.split(' ')
+                      .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+                      .join(' ')}
+                  </p>
                 </div>
 
-                {/* Estado Actual como Badge */}
-                <div className="inline-block px-3 py-1 bg-white/25 rounded-full backdrop-blur-sm">
-                  <p className="text-xs font-semibold text-white uppercase tracking-wide">{pacienteSeleccionado?.condicion || 'Citado'}</p>
+                {/* Estado Actual como Badge - Mejor alineación */}
+                <div className="px-3 py-2 bg-white/20 rounded-full backdrop-blur-sm flex-shrink-0">
+                  <p className="text-xs font-semibold text-white uppercase tracking-wider">{pacienteSeleccionado?.condicion || 'Citado'}</p>
                 </div>
               </div>
             </div>
