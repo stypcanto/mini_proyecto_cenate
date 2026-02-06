@@ -158,9 +158,9 @@ export default function Login() {
       {/* Capa azul institucional */}
       <div className="absolute inset-0 bg-[#0a5ba9]/40"></div>
 
-      {/* ✅ v1.49.2: Responsive max-width + padding for tablet optimization */}
-      {/* Landscape: max-w-md | Portrait: max-w-2xl/3xl */}
-      <div className="w-full max-w-md md:max-w-md lg:max-w-2xl landscape:max-w-sm relative z-10 px-4 md:px-6 py-6 md:py-0">
+      {/* ✅ v1.49.2: Responsive max-width + padding for all devices */}
+      {/* Mobile: max-w-md | Tablet: md:max-w-2xl | Desktop: lg:max-w-3xl | Landscape: landscape:max-w-sm */}
+      <div className="w-full max-w-md md:max-w-2xl lg:max-w-3xl landscape:max-w-sm relative z-10 px-4 md:px-6 py-6 md:py-0">
         <div className="bg-white/95 rounded-3xl shadow-2xl p-6 md:p-10 lg:p-12 backdrop-blur-lg border border-white/40">
           {/* Logo */}
           <div className="text-center mb-6 md:mb-8">
