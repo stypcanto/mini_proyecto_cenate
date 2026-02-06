@@ -1321,12 +1321,10 @@ export default function GestionAsegurado() {
   // FUNCIÓN DE FILTRADO ESPECIALIZADO
   // ============================================================================
   const pacientesFiltrados = pacientesAsignados.filter((paciente) => {
-    // Búsqueda por DNI, Nombre o IPRESS (con debounce)
+    // ✅ Búsqueda SOLO por DNI (v1.50.1)
     const searchMatch =
       debouncedSearch === "" ||
-      paciente.pacienteDni?.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
-      paciente.pacienteNombre?.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
-      paciente.descIpress?.toLowerCase().includes(debouncedSearch.toLowerCase());
+      paciente.pacienteDni?.toLowerCase().includes(debouncedSearch.toLowerCase());
 
     // 📦 Filtro Tipo de Bolsa (v1.48.0)
     const bolsaMatch =
@@ -1668,7 +1666,7 @@ export default function GestionAsegurado() {
                     <div className="flex-1 min-w-[200px] relative">
                       <input
                         type="text"
-                        placeholder="Buscar paciente, DNI o IPRESS..."
+                        placeholder="Buscar por DNI..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                         className="w-full px-8 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 pl-9"
