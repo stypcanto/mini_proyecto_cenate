@@ -759,13 +759,8 @@ export default function GestionAsegurado() {
       const medicoEncontrado = medicos.find(m => m.idPers === citaAgendada.especialista);
 
       if (medicoEncontrado) {
-        const nombre = [
-          medicoEncontrado.nomPers,
-          medicoEncontrado.apePaterPers,
-          medicoEncontrado.apeMaterPers
-        ]
-          .filter(Boolean)
-          .join(" ");
+        // ✅ v1.50.3: Usar 'nombre' field directamente del DetalleMedicoDTO
+        const nombre = medicoEncontrado.nombre || "Por asignar";
         pacienteConMedico.nombreMedico = nombre;
         console.log("   ✅ Médico encontrado en citasAgendadas:", nombre);
       }
@@ -777,13 +772,8 @@ export default function GestionAsegurado() {
         const medicos = medicosPorServicio[paciente.idServicio] || [];
         const medicoEncontrado = medicos.find(m => m.idPers === paciente.idPersonal);
         if (medicoEncontrado) {
-          const nombre = [
-            medicoEncontrado.nomPers,
-            medicoEncontrado.apePaterPers,
-            medicoEncontrado.apeMaterPers
-          ]
-            .filter(Boolean)
-            .join(" ");
+          // ✅ v1.50.3: Usar 'nombre' field directamente del DetalleMedicoDTO
+          const nombre = medicoEncontrado.nombre || "Por asignar";
           pacienteConMedico.nombreMedico = nombre;
           console.log("   ✅ Médico encontrado en idPersonal:", nombre);
         }
