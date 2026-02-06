@@ -396,45 +396,71 @@ export default function UploadImagenEKG({ onSuccess }) {
           <p className="text-xs text-indigo-700 mb-3">Mínimo {MIN_IMAGENES} imágenes requeridas</p>
 
           {archivos.length === 0 ? (
-            <div
-              onDragOver={handleDragOver}
-              onDragLeave={handleDragLeave}
-              onDrop={handleDrop}
-              onClick={() => fileInputRef.current?.click()}
-              className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition ${
-                dragActive
-                  ? "border-indigo-600 bg-indigo-100"
-                  : "border-indigo-300 hover:border-indigo-600"
-              }`}
-            >
-              <FileImage className="w-12 h-12 text-indigo-400 mx-auto mb-3" />
-              <p className="text-sm font-semibold text-indigo-900 mb-1">
-                {pacienteEncontrado ? "Arrastra tus imágenes aquí o haz clic para seleccionar" : "Busca un paciente primero"}
-              </p>
-              <p className="text-xs text-indigo-700">
-                JPEG o PNG • Máximo 5MB cada una • {MIN_IMAGENES}-{MAX_IMAGENES} imágenes
+            <div className="space-y-3">
+              {/* ✅ Primary CTA: File Picker Button (Mobile-First / Thumb-Zone Optimized) */}
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={!pacienteEncontrado}
+                className={`w-full h-14 rounded-lg font-semibold text-base flex items-center justify-center gap-3 transition ${
+                  pacienteEncontrado
+                    ? "bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg active:scale-95"
+                    : "bg-gray-300 text-gray-500 cursor-not-allowed"
+                }`}
+                aria-label="Seleccionar imágenes de electrocardiograma"
+              >
+                <FileImage className="w-6 h-6" />
+                <span>Seleccionar Imágenes ({MIN_IMAGENES}-{MAX_IMAGENES})</span>
+              </button>
+
+              {/* ✅ Secondary: Drag Zone (Desktop/Tablet only - hidden on mobile <768px) */}
+              <div
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onDrop={handleDrop}
+                className={`hidden md:block border-2 border-dashed rounded-lg p-6 text-center transition ${
+                  dragActive
+                    ? "border-indigo-600 bg-indigo-100"
+                    : "border-indigo-300"
+                }`}
+              >
+                <Upload className="w-10 h-10 text-indigo-400 mx-auto mb-2" />
+                <p className="text-sm text-indigo-700">
+                  O arrastra tus archivos aquí
+                </p>
+                <p className="text-xs text-indigo-600 mt-1">
+                  JPEG o PNG • Máximo 5MB cada una
+                </p>
+              </div>
+
+              {/* Mobile Hint (<768px) */}
+              <p className="md:hidden text-xs text-center text-indigo-700 font-medium">
+                📸 JPEG o PNG • Máximo 5MB cada una • {MIN_IMAGENES}-{MAX_IMAGENES} imágenes requeridas
               </p>
             </div>
           ) : (
             <div className="space-y-4">
-              {/* Grilla de previews */}
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+              {/* ✅ Grilla de previews - Responsive (1 col móvil, 2-4 cols desktop) */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                 {previews.map((preview, index) => (
                   <div key={index} className="relative group">
                     <div className="bg-gray-100 rounded-lg overflow-hidden aspect-square">
                       <img src={preview} alt={`Preview ${index + 1}`} className="w-full h-full object-cover" />
                     </div>
-                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition rounded-lg flex items-center justify-center">
+                    {/* ✅ Always visible delete button on mobile, hover on desktop */}
+                    <div className="absolute inset-0 bg-black/0 md:group-hover:bg-black/40 transition rounded-lg flex items-center justify-center">
                       <button
                         type="button"
                         onClick={() => removerArchivo(index)}
-                        className="opacity-0 group-hover:opacity-100 transition bg-red-600 hover:bg-red-700 text-white p-2 rounded-lg"
+                        className="md:opacity-0 md:group-hover:opacity-100 transition bg-red-600 hover:bg-red-700 text-white p-2.5 rounded-lg shadow-lg"
                         disabled={loading}
+                        aria-label={`Eliminar imagen ${index + 1}`}
                       >
-                        <Trash2 className="w-4 h-4" />
+                        <Trash2 className="w-5 h-5" />
                       </button>
                     </div>
-                    <div className="absolute top-1 right-1 bg-blue-600 text-white px-2 py-1 rounded text-xs font-semibold">
+                    {/* Image index badge */}
+                    <div className="absolute top-2 left-2 bg-blue-600 text-white px-3 py-1.5 rounded-lg text-sm font-bold shadow-md">
                       {index + 1}
                     </div>
                   </div>
