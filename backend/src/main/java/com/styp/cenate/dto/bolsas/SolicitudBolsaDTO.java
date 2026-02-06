@@ -84,6 +84,12 @@ public class SolicitudBolsaDTO {
     @JsonProperty("tipo_cita")
     private String tipoCita;
 
+    @JsonProperty("tiempo_inicio_sintomas")
+    private String tiempoInicioSintomas;
+
+    @JsonProperty("consentimiento_informado")
+    private Boolean consentimientoInformado;
+
     // 📦 REFERENCIA A BOLSA
     @JsonProperty("id_bolsa")
     private Long idBolsa;

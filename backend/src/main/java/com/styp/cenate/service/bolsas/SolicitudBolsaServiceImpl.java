@@ -2360,6 +2360,19 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
             }
         }
 
+        // Enriquecer con descripción de Tipo de Bolsa si existe
+        String descTipoBolsa = null;
+        if (solicitud.getIdBolsa() != null) {
+            try {
+                TipoBolsa tipoBolsa = tipoBolsaRepository.findById(solicitud.getIdBolsa()).orElse(null);
+                if (tipoBolsa != null) {
+                    descTipoBolsa = tipoBolsa.getDescTipoBolsa();
+                }
+            } catch (Exception e) {
+                log.warn("⚠️ No se pudo cargar descripción de Tipo de Bolsa: {}", e.getMessage());
+            }
+        }
+
         return SolicitudBolsaDTO.builder()
             .idSolicitud(solicitud.getIdSolicitud())
             .numeroSolicitud(solicitud.getNumeroSolicitud())
@@ -2377,7 +2390,10 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
             .pacienteEdad(calcularEdad(solicitud.getFechaNacimiento()))
             .codigoIpressAdscripcion(solicitud.getCodigoIpressAdscripcion())
             .tipoCita(solicitud.getTipoCita())
+            .tiempoInicioSintomas(solicitud.getTiempoInicioSintomas())
+            .consentimientoInformado(solicitud.getConsentimientoInformado())
             .idBolsa(solicitud.getIdBolsa())
+            .descTipoBolsa(descTipoBolsa)
             .idServicio(solicitud.getIdServicio())
             .codigoAdscripcion(solicitud.getCodigoAdscripcion())
             .idIpress(solicitud.getIdIpress())

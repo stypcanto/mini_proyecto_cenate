@@ -101,6 +101,12 @@ public class SolicitudBolsa {
     @Column(name = "tipo_cita", length = 50)
     private String tipoCita;
 
+    @Column(name = "tiempo_inicio_sintomas", length = 100)
+    private String tiempoInicioSintomas;
+
+    @Column(name = "consentimiento_informado")
+    private Boolean consentimientoInformado;
+
     // ============================================================================
     // 🦟 CAMPOS ESPECÍFICOS DE DENGUE (v1.0.0 - 2026-01-29)
     // ============================================================================

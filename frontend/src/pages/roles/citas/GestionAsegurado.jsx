@@ -76,6 +76,8 @@ export default function GestionAsegurado() {
   const [filtroEspecialidad, setFiltroEspecialidad] = useState("todas");
   const [filtroTipoCita, setFiltroTipoCita] = useState("todas");
   const [filtroEstado, setFiltroEstado] = useState("todos");
+  const [filtroTipoBolsa, setFiltroTipoBolsa] = useState("todas");
+  const [tiposBolsas, setTiposBolsas] = useState([]); // Lista de tipos de bolsas desde API
   const [expandFiltros, setExpandFiltros] = useState(false); // Filtros colapsados por defecto
   const [selectedRows, setSelectedRows] = useState(new Set()); // Selección de pacientes para descarga
 
@@ -280,6 +282,8 @@ export default function GestionAsegurado() {
           especialidad: solicitud.especialidad || "-",
           idServicio: solicitud.id_servicio || solicitud.idServicio || null, // ID numérico del servicio
           tipoCita: solicitud.tipo_cita || solicitud.tipoCita || "-",
+          tiempoInicioSintomas: solicitud.tiempo_inicio_sintomas || solicitud.tiempoInicioSintomas || "-",
+          consentimientoInformado: (solicitud.consentimiento_informado ?? solicitud.consentimientoInformado) === true ? "Sí" : (solicitud.consentimiento_informado ?? solicitud.consentimientoInformado) === false ? "No" : "-",
           descIpress: solicitud.desc_ipress || solicitud.descIpress || "-",
           descEstadoCita: descEstadoFinal,
           codigoEstado: codigoEstado, // Guardar también el código para comparaciones
@@ -292,14 +296,17 @@ export default function GestionAsegurado() {
           fechaAtencion: solicitud.fecha_atencion || null,
           horaAtencion: solicitud.hora_atencion || null,
           idPersonal: solicitud.id_personal || null,
+          // Tipo de Bolsa
+          idBolsa: solicitud.id_bolsa || solicitud.idBolsa || null,
+          descTipoBolsa: solicitud.desc_tipo_bolsa || solicitud.descTipoBolsa || "-",
         };
       });
 
-      // Ordenar por fecha de solicitud descendente (más nuevas primero)
+      // Ordenar por fecha de asignación ascendente (más antiguas primero)
       pacientes.sort((a, b) => {
-        const fechaA = new Date(a.fechaSolicitud || 0).getTime();
-        const fechaB = new Date(b.fechaSolicitud || 0).getTime();
-        return fechaB - fechaA; // Descendente
+        const fechaA = new Date(a.fechaAsignacion || 0).getTime();
+        const fechaB = new Date(b.fechaAsignacion || 0).getTime();
+        return fechaA - fechaB; // Ascendente
       });
 
       setPacientesAsignados(pacientes);
@@ -866,6 +873,7 @@ export default function GestionAsegurado() {
       try {
         setError(null);
         await fetchPacientesAsignados();
+        await fetchTiposBolsas(); // Cargar tipos de bolsas
       } catch (err) {
         console.error("Error loading data:", err);
         setError("Error al cargar los datos. Por favor, intente de nuevo.");
@@ -876,6 +884,33 @@ export default function GestionAsegurado() {
 
     loadData();
   }, []);
+
+  // Función para cargar tipos de bolsas desde API
+  const fetchTiposBolsas = async () => {
+    try {
+      const token = getToken();
+      const response = await fetch(
+        `${API_BASE}/bolsas/tipos-bolsas/activos`,
+        {
+          method: "GET",
+          headers: {
+            "Authorization": `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        console.log("📦 Tipos de bolsas cargados:", data);
+        setTiposBolsas(data || []);
+      } else {
+        console.warn("⚠️ No se pudieron cargar los tipos de bolsas");
+      }
+    } catch (error) {
+      console.error("❌ Error cargando tipos de bolsas:", error);
+    }
+  };
 
   // Auto-refresh polling
   useEffect(() => {
@@ -960,6 +995,11 @@ export default function GestionAsegurado() {
       filtroEstado === "todos" ||
       paciente.codigoEstado === filtroEstado;
     
+    // 📦 Filtro Tipo de Bolsa
+    const tipoBolsaMatch =
+      filtroTipoBolsa === "todas" ||
+      paciente.idBolsa?.toString() === filtroTipoBolsa;
+
     if (filtroEstado !== "todos" && !estadoMatch) {
       console.log(`❌ Paciente ${paciente.pacienteNombre} rechazado por estado. Esperado: ${filtroEstado}, Actual: ${paciente.codigoEstado}`);
     }
@@ -971,9 +1011,20 @@ export default function GestionAsegurado() {
       ipressMatch &&
       especialidadMatch &&
       tipoCitaMatch &&
-      estadoMatch
+      estadoMatch &&
+      tipoBolsaMatch
     );
   });
+
+  // 🔍 Determinar si la bolsa seleccionada es 107 (para mostrar columnas adicionales)
+  const esBolsa107 = (() => {
+    if (filtroTipoBolsa === "todas") return false;
+    const tipoBolsaSeleccionada = tiposBolsas.find(tb => tb.idTipoBolsa?.toString() === filtroTipoBolsa);
+    if (!tipoBolsaSeleccionada) return false;
+    const codigo = tipoBolsaSeleccionada.codTipoBolsa || "";
+    const descripcion = tipoBolsaSeleccionada.descTipoBolsa || "";
+    return codigo.includes("107") || descripcion.includes("107");
+  })();
 
   // ============================================================================
   // 📊 CALCULAR OPCIONES DISPONIBLES PARA FILTROS
@@ -1202,58 +1253,68 @@ export default function GestionAsegurado() {
             </div>
           </div>
 
-          <div className="p-6">
+          <div className="p-4">
             {pacientesAsignados.length === 0 ? (
-              <div className="text-center py-12">
-                <Calendar className="w-12 h-12 text-gray-400 mx-auto mb-3" />
-                <p className="text-gray-500 mb-4">No tienes pacientes asignados aún</p>
+              <div className="text-center py-8">
+                <Calendar className="w-10 h-10 text-gray-400 mx-auto mb-2" />
+                <p className="text-gray-500 mb-4 text-sm">No tienes pacientes asignados aún</p>
               </div>
             ) : (
               <>
                 {/* 🔍 FILTROS ESPECIALIZADOS */}
-                <div className="mb-6 bg-gray-50 border border-gray-200 rounded-lg p-4">
-                  <div className="flex items-center justify-between mb-3">
-                    <h3 className="text-sm font-semibold text-gray-700">Filtros</h3>
+                <div className="mb-4 bg-gray-50 border border-gray-200 rounded-lg p-3">
+                  {/* Fila principal siempre visible: Búsqueda + Tipo de Bolsa */}
+                  <div className="flex flex-wrap items-center gap-3 mb-2">
+                    <div className="flex-1 min-w-[200px]">
+                      <input
+                        type="text"
+                        placeholder="Buscar paciente, DNI o IPRESS..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="w-full px-2 py-1.5 border border-gray-300 rounded text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
+                      />
+                    </div>
+                    <div className="min-w-[180px]">
+                      <select
+                        value={filtroTipoBolsa}
+                        onChange={(e) => setFiltroTipoBolsa(e.target.value)}
+                        className="w-full px-2 py-1.5 border border-blue-400 bg-blue-50 rounded text-xs font-medium focus:outline-none focus:ring-1 focus:ring-blue-500"
+                      >
+                        <option value="todas">📦 Todas las bolsas</option>
+                        {tiposBolsas.map((tb) => (
+                          <option key={tb.idTipoBolsa} value={tb.idTipoBolsa}>
+                            {tb.descTipoBolsa}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
                     <button
                       onClick={() => setExpandFiltros(!expandFiltros)}
-                      className="text-xs font-medium text-gray-600 hover:text-gray-900 flex items-center gap-1"
+                      className="text-xs font-medium text-gray-600 hover:text-gray-900 flex items-center gap-1 px-2 py-1.5 bg-white border border-gray-300 rounded"
                     >
-                      {expandFiltros ? "Ocultar" : "Mostrar"} filtros
+                      {expandFiltros ? "Ocultar" : "Más filtros"}
                       <ChevronDown
-                        size={16}
-                        className={`transition-transform ${
-                          expandFiltros ? "rotate-180" : ""
-                        }`}
+                        size={14}
+                        className={`transition-transform ${expandFiltros ? "rotate-180" : ""}`}
                       />
                     </button>
                   </div>
 
                   {expandFiltros && (
-                    <div className="space-y-3">
-                      {/* Búsqueda */}
-                      <div>
-                        <input
-                          type="text"
-                          placeholder="Buscar paciente, DNI o IPRESS..."
-                          value={searchTerm}
-                          onChange={(e) => setSearchTerm(e.target.value)}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        />
-                      </div>
-
-                      {/* Dropdowns */}
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+                    <div className="space-y-2 pt-2 border-t border-gray-200">
+                      {/* Dropdowns compactos */}
+                      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2">
                         {/* Macrorregión */}
                         <div>
-                          <label className="text-xs font-semibold text-gray-600 block mb-1">
+                          <label className="text-[10px] font-semibold text-gray-500 block mb-0.5">
                             Macrorregión
                           </label>
                           <select
                             value={filtroMacrorregion}
                             onChange={(e) => setFiltroMacrorregion(e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            className="w-full px-2 py-1 border border-gray-300 rounded text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
                           >
-                            <option value="todas">Todas las macrorregiones</option>
+                            <option value="todas">Todas</option>
                             {macrorregionesUnicas.map((m) => (
                               <option key={m} value={m}>
                                 {m}
@@ -1264,15 +1325,15 @@ export default function GestionAsegurado() {
 
                         {/* Red */}
                         <div>
-                          <label className="text-xs font-semibold text-gray-600 block mb-1">
+                          <label className="text-[10px] font-semibold text-gray-500 block mb-0.5">
                             Red
                           </label>
                           <select
                             value={filtroRed}
                             onChange={(e) => setFiltroRed(e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            className="w-full px-2 py-1 border border-gray-300 rounded text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
                           >
-                            <option value="todas">Todas las redes</option>
+                            <option value="todas">Todas</option>
                             {redesUnicas.map((r) => (
                               <option key={r} value={r}>
                                 {r}
@@ -1283,15 +1344,15 @@ export default function GestionAsegurado() {
 
                         {/* IPRESS */}
                         <div>
-                          <label className="text-xs font-semibold text-gray-600 block mb-1">
+                          <label className="text-[10px] font-semibold text-gray-500 block mb-0.5">
                             IPRESS
                           </label>
                           <select
                             value={filtroIpress}
                             onChange={(e) => setFiltroIpress(e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            className="w-full px-2 py-1 border border-gray-300 rounded text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
                           >
-                            <option value="todas">Todas las IPRESS</option>
+                            <option value="todas">Todas</option>
                             {ipressUnicas.map((i) => (
                               <option key={i} value={i}>
                                 {i}
@@ -1302,15 +1363,15 @@ export default function GestionAsegurado() {
 
                         {/* Especialidad */}
                         <div>
-                          <label className="text-xs font-semibold text-gray-600 block mb-1">
+                          <label className="text-[10px] font-semibold text-gray-500 block mb-0.5">
                             Especialidad
                           </label>
                           <select
                             value={filtroEspecialidad}
                             onChange={(e) => setFiltroEspecialidad(e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            className="w-full px-2 py-1 border border-gray-300 rounded text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
                           >
-                            <option value="todas">Todas las especialidades</option>
+                            <option value="todas">Todas</option>
                             {especialidadesConSE.map((e) => (
                               <option key={e} value={e}>
                                 {e}
@@ -1321,15 +1382,15 @@ export default function GestionAsegurado() {
 
                         {/* Tipo de Cita */}
                         <div>
-                          <label className="text-xs font-semibold text-gray-600 block mb-1">
-                            Tipo de Cita
+                          <label className="text-[10px] font-semibold text-gray-500 block mb-0.5">
+                            Tipo Cita
                           </label>
                           <select
                             value={filtroTipoCita}
                             onChange={(e) => setFiltroTipoCita(e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            className="w-full px-2 py-1 border border-gray-300 rounded text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
                           >
-                            <option value="todas">Todos los tipos</option>
+                            <option value="todas">Todos</option>
                             {tiposCitaUnicos.map((t) => (
                               <option key={t} value={t}>
                                 {t}
@@ -1340,15 +1401,15 @@ export default function GestionAsegurado() {
 
                         {/* Estado */}
                         <div>
-                          <label className="text-xs font-semibold text-gray-600 block mb-1">
+                          <label className="text-[10px] font-semibold text-gray-500 block mb-0.5">
                             Estado
                           </label>
                           <select
                             value={filtroEstado}
                             onChange={(e) => setFiltroEstado(e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            className="w-full px-2 py-1 border border-gray-300 rounded text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
                           >
-                            <option value="todos">Todos los estados</option>
+                            <option value="todos">Todos</option>
                             {estadosDisponibles.map((e) => (
                               <option key={e.codigo} value={e.codigo}>
                                 {e.descripcion}
@@ -1359,7 +1420,7 @@ export default function GestionAsegurado() {
                       </div>
 
                       {/* Botón Limpiar */}
-                      <div className="flex justify-end pt-2">
+                      <div className="flex justify-end">
                         <button
                           onClick={() => {
                             setSearchTerm("");
@@ -1369,8 +1430,9 @@ export default function GestionAsegurado() {
                             setFiltroEspecialidad("todas");
                             setFiltroTipoCita("todas");
                             setFiltroEstado("todos");
+                            setFiltroTipoBolsa("todas");
                           }}
-                          className="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 text-sm font-medium rounded-lg transition-colors"
+                          className="px-3 py-1 bg-gray-200 hover:bg-gray-300 text-gray-700 text-xs font-medium rounded transition-colors"
                         >
                           🗑️ Limpiar
                         </button>
@@ -1380,68 +1442,81 @@ export default function GestionAsegurado() {
                 </div>
 
                 <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
+                  <table className="w-full text-xs">
                   <thead className="bg-[#0D5BA9] text-white sticky top-0">
                     <tr className="border-b-2 border-blue-800">
-                      <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">
+                      <th className="px-2 py-1.5 text-left text-[10px] font-bold uppercase">
                         <input
                           type="checkbox"
                           checked={selectedRows.size === pacientesFiltrados.length && pacientesFiltrados.length > 0}
                           onChange={toggleAllRows}
-                          className="w-5 h-5 cursor-pointer"
+                          className="w-4 h-4 cursor-pointer"
                           title={selectedRows.size === pacientesFiltrados.length ? "Deseleccionar todo" : "Seleccionar todo"}
                         />
                       </th>
-                      <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">
-                        Fecha Asignación
+                      <th className="px-2 py-1.5 text-left text-[10px] font-bold uppercase">
+                        Bolsa
                       </th>
-                      <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">
-                        DNI Paciente
+                      <th className="px-2 py-1.5 text-left text-[10px] font-bold uppercase">
+                        F. Asignación
                       </th>
-                      <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">
-                        Nombre Paciente
+                      <th className="px-2 py-1.5 text-left text-[10px] font-bold uppercase">
+                        DNI
                       </th>
-                      <th className="px-4 py-3 text-center text-xs font-bold uppercase tracking-wider">
+                      <th className="px-2 py-1.5 text-left text-[10px] font-bold uppercase">
+                        Paciente
+                      </th>
+                      <th className="px-2 py-1.5 text-center text-[10px] font-bold uppercase">
                         Edad
                       </th>
-                      <th className="px-4 py-3 text-center text-xs font-bold uppercase tracking-wider">
-                        Género
+                      <th className="px-2 py-1.5 text-center text-[10px] font-bold uppercase">
+                        Gén.
                       </th>
-                      <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">
+                      {esBolsa107 && (
+                        <th className="px-2 py-1.5 text-left text-[10px] font-bold uppercase">
+                          T. Síntomas
+                        </th>
+                      )}
+                      {esBolsa107 && (
+                        <th className="px-2 py-1.5 text-center text-[10px] font-bold uppercase">
+                          Consent.
+                        </th>
+                      )}
+                      <th className="px-2 py-1.5 text-left text-[10px] font-bold uppercase">
                         Especialidad
                       </th>
-                      <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">
-                        DNI Médico
+                      <th className="px-2 py-1.5 text-left text-[10px] font-bold uppercase">
+                        DNI Méd.
                       </th>
-                      <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">
+                      <th className="px-2 py-1.5 text-left text-[10px] font-bold uppercase">
                         Especialista
                       </th>
-                      <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">
-                        Fecha y Hora de Cita
+                      <th className="px-2 py-1.5 text-left text-[10px] font-bold uppercase">
+                        Fecha/Hora Cita
                       </th>
-                      <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">
+                      <th className="px-2 py-1.5 text-left text-[10px] font-bold uppercase">
                         IPRESS
                       </th>
-                      <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">
-                        Tipo de Cita
+                      <th className="px-2 py-1.5 text-left text-[10px] font-bold uppercase">
+                        Tipo Cita
                       </th>
-                      <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">
-                        Teléfono 1
+                      <th className="px-2 py-1.5 text-left text-[10px] font-bold uppercase">
+                        Tel. 1
                       </th>
-                      <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">
-                        Teléfono 2
+                      <th className="px-2 py-1.5 text-left text-[10px] font-bold uppercase">
+                        Tel. 2
                       </th>
-                      <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">
+                      <th className="px-2 py-1.5 text-left text-[10px] font-bold uppercase">
                         Estado
                       </th>
-                      <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">
-                        Fecha Cambio Estado
+                      <th className="px-2 py-1.5 text-left text-[10px] font-bold uppercase">
+                        F. Cambio
                       </th>
-                      <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">
-                        Usuario Cambio Estado
+                      <th className="px-2 py-1.5 text-left text-[10px] font-bold uppercase">
+                        Usuario
                       </th>
-                      <th className="px-4 py-3 text-center text-xs font-bold uppercase tracking-wider">
-                        Acciones
+                      <th className="px-2 py-1.5 text-center text-[10px] font-bold uppercase">
+                        Acc.
                       </th>
                     </tr>
                   </thead>
@@ -1453,46 +1528,92 @@ export default function GestionAsegurado() {
                           selectedRows.has(paciente.id) ? 'bg-blue-100 border-blue-300' : (idx % 2 === 0 ? "bg-white" : "bg-gray-50")
                         }`}
                       >
-                        <td className="px-4 py-3">
+                        <td className="px-2 py-1">
                           <input
                             type="checkbox"
                             checked={selectedRows.has(paciente.id)}
                             onChange={() => toggleRowSelection(paciente.id)}
-                            className={`w-5 h-5 border-2 rounded cursor-pointer transition-all ${
+                            className={`w-4 h-4 border-2 rounded cursor-pointer transition-all ${
                               selectedRows.has(paciente.id)
                                 ? 'bg-blue-600 border-blue-600 accent-white'
                                 : 'border-gray-300 hover:border-blue-400'
                             }`}
                           />
                         </td>
-                        <td className="px-4 py-3 text-gray-900 text-xs font-medium">
+                        <td className="px-2 py-1 text-slate-600">
+                          {paciente.descTipoBolsa}
+                        </td>
+                        <td className="px-2 py-1 text-gray-900 text-[10px]">
                           {paciente.fechaAsignacion === "-"
                             ? "-"
                             : new Date(paciente.fechaAsignacion).toLocaleString("es-PE", {
-                                year: 'numeric',
+                                year: '2-digit',
                                 month: '2-digit',
                                 day: '2-digit',
                                 hour: '2-digit',
                                 minute: '2-digit'
                               })}
                         </td>
-                        <td className="px-4 py-3 font-medium text-slate-900">
+                        <td className="px-2 py-1 font-medium text-slate-900">
                           {paciente.pacienteDni}
                         </td>
-                        <td className="px-4 py-3 text-slate-600">
+                        <td className="px-2 py-1 text-slate-600">
                           {paciente.pacienteNombre}
                         </td>
-                        <td className="px-4 py-3 text-center text-slate-600">
+                        <td className="px-2 py-1 text-center text-slate-600">
                           {paciente.pacienteEdad}
                         </td>
-                        <td className="px-4 py-3 text-center text-slate-600">
+                        <td className="px-2 py-1 text-center text-slate-600">
                           {paciente.pacienteSexo}
                         </td>
-                        <td className="px-4 py-3 text-slate-600">
+                        {esBolsa107 && (
+                          <td className="px-2 py-1 text-center text-slate-600">
+                            {(() => {
+                              const valor = paciente.tiempoInicioSintomas || "-";
+                              let colorDot = "bg-green-500"; // Default green
+                              if (valor.includes("< 24") || valor.includes("<24")) {
+                                colorDot = "bg-red-500";
+                              } else if (valor.includes("24 - 72") || valor.includes("24-72")) {
+                                colorDot = "bg-yellow-500";
+                              }
+                              const displayText = valor === "-" ? "Sin datos" : valor;
+                              return (
+                                <div className="flex flex-col items-center">
+                                  <span className={`w-3 h-3 rounded-full ${colorDot}`}></span>
+                                  <span className="text-[9px] mt-0.5 text-gray-600">{displayText}</span>
+                                </div>
+                              );
+                            })()}
+                          </td>
+                        )}
+                        {esBolsa107 && (
+                          <td className="px-2 py-1 text-center text-slate-600">
+                            {(() => {
+                              const valor = paciente.consentimientoInformado;
+                              if (valor === "Sí" || valor === true) {
+                                return (
+                                  <div className="flex flex-col items-center">
+                                    <span className="w-3 h-3 rounded-full bg-green-500"></span>
+                                    <span className="text-[9px] mt-0.5 text-gray-600">Sí</span>
+                                  </div>
+                                );
+                              } else if (valor === "No" || valor === false) {
+                                return (
+                                  <div className="flex flex-col items-center">
+                                    <span className="w-3 h-3 rounded-full bg-red-500"></span>
+                                    <span className="text-[9px] mt-0.5 text-gray-600">No</span>
+                                  </div>
+                                );
+                              }
+                              return "-";
+                            })()}
+                          </td>
+                        )}
+                        <td className="px-2 py-1 text-slate-600">
                           {paciente.especialidad}
                         </td>
                         {/* DNI MÉDICO - COLUMNA SEPARADA */}
-                        <td className="px-4 py-3 text-slate-600">
+                        <td className="px-2 py-1 text-slate-600">
                           {(() => {
                             const idServicio = paciente.idServicio;
                             const medicos = medicosPorServicio[idServicio] || [];
@@ -1505,7 +1626,7 @@ export default function GestionAsegurado() {
                           })()}
                         </td>
                         {/* ESPECIALISTA - CARGADO DINÁMICAMENTE - EDITABLE EN MODO EDICIÓN */}
-                        <td className="px-4 py-3 text-slate-600">
+                        <td className="px-2 py-1 text-slate-600">
                           {pacienteEditandoEstado === paciente.id ? (
                             // MODO EDICIÓN: Mostrar dropdown editable
                             (() => {
@@ -1592,7 +1713,7 @@ export default function GestionAsegurado() {
                           )}
                         </td>
                         {/* FECHA Y HORA DE CITA - EDITABLE EN MODO EDICIÓN */}
-                        <td className="px-4 py-3 text-slate-600">
+                        <td className="px-2 py-1 text-slate-600">
                           {pacienteEditandoEstado === paciente.id ? (
                             // MODO EDICIÓN: Input editable
                             <input
@@ -1634,19 +1755,19 @@ export default function GestionAsegurado() {
                             })()
                           )}
                         </td>
-                        <td className="px-4 py-3 text-slate-600">
+                        <td className="px-2 py-1 text-slate-600">
                           {paciente.descIpress}
                         </td>
-                        <td className="px-4 py-3 text-slate-600">
+                        <td className="px-2 py-1 text-slate-600">
                           {paciente.tipoCita}
                         </td>
-                        <td className="px-4 py-3 text-slate-600">
+                        <td className="px-2 py-1 text-slate-600">
                           {paciente.pacienteTelefono}
                         </td>
-                        <td className="px-4 py-3 text-slate-600">
+                        <td className="px-2 py-1 text-slate-600">
                           {paciente.pacienteTelefonoAlterno}
                         </td>
-                        <td className="px-4 py-3">
+                        <td className="px-2 py-1">
                           {pacienteEditandoEstado === paciente.id ? (
                             // Modo Edición: Mostrar Select
                             <div className="space-y-1">
@@ -1706,7 +1827,7 @@ export default function GestionAsegurado() {
                           )}
                         </td>
                         {/* FECHA CAMBIO ESTADO - Auditoría v3.3.1 */}
-                        <td className="px-4 py-3 text-slate-600 text-xs">
+                        <td className="px-2 py-1 text-slate-600 text-[10px]">
                           {paciente.fechaCambioEstado ? (
                             <span className="text-blue-700 font-medium">
                               {new Date(paciente.fechaCambioEstado).toLocaleString("es-ES")}
@@ -1716,7 +1837,7 @@ export default function GestionAsegurado() {
                           )}
                         </td>
                         {/* USUARIO CAMBIO ESTADO - Auditoría v3.3.1 */}
-                        <td className="px-4 py-3 text-slate-600 text-xs">
+                        <td className="px-2 py-1 text-slate-600 text-[10px]">
                           {paciente.usuarioCambioEstado ? (
                             <span className="text-gray-900 font-medium">
                               {paciente.usuarioCambioEstado}
@@ -1726,7 +1847,7 @@ export default function GestionAsegurado() {
                           )}
                         </td>
                         {/* COLUMNA ACCIONES - Lápiz para editar + Guardar/Cancelar */}
-                        <td className="px-4 py-3 text-center">
+                        <td className="px-2 py-1 text-center">
                           {pacienteEditandoEstado === paciente.id ? (
                             // Modo Edición: Mostrar Guardar y Cancelar
                             <div className="flex gap-2 justify-center">
@@ -1755,11 +1876,10 @@ export default function GestionAsegurado() {
                                   setPacienteEditandoEstado(paciente.id);
                                   setNuevoEstadoSeleccionado(paciente.codigoEstado || "");
                                 }}
-                                className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded text-xs font-medium transition-colors flex items-center gap-1"
+                                className="bg-blue-600 hover:bg-blue-700 text-white p-1.5 rounded text-xs font-medium transition-colors flex items-center justify-center"
                                 title="Editar estado y cita"
                               >
                                 <Edit2 size={14} />
-                                Editar
                               </button>
                               <button
                                 onClick={() => abrirModalTelefono(paciente)}
