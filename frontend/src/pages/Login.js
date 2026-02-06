@@ -150,7 +150,7 @@ export default function Login() {
   // ============================================================
   return (
     <div
-      className="min-h-screen flex items-center justify-center bg-center bg-no-repeat bg-cover relative"
+      className="min-h-screen flex items-center justify-center bg-center bg-no-repeat bg-cover relative overflow-y-auto"
       style={{
         backgroundImage: "url('/images/fondo-portal-web-cenate-2025.png')",
       }}
@@ -159,7 +159,8 @@ export default function Login() {
       <div className="absolute inset-0 bg-[#0a5ba9]/40"></div>
 
       {/* ✅ v1.49.2: Responsive max-width + padding for tablet optimization */}
-      <div className="w-full max-w-md md:max-w-2xl lg:max-w-3xl relative z-10 px-4 md:px-6">
+      {/* Landscape: max-w-md | Portrait: max-w-2xl/3xl */}
+      <div className="w-full max-w-md md:max-w-md lg:max-w-2xl landscape:max-w-sm relative z-10 px-4 md:px-6 py-6 md:py-0">
         <div className="bg-white/95 rounded-3xl shadow-2xl p-6 md:p-10 lg:p-12 backdrop-blur-lg border border-white/40">
           {/* Logo */}
           <div className="text-center mb-6 md:mb-8">
