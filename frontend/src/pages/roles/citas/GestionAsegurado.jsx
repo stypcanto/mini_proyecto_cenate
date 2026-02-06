@@ -138,6 +138,42 @@ export default function GestionAsegurado() {
   };
 
   // ============================================================================
+  // 🎨 FUNCIÓN: OBTENER COLORES POR TIPO DE BOLSA
+  // ============================================================================
+  const getBolsaColor = (descTipoBolsa) => {
+    if (!descTipoBolsa) return "bg-gray-100 text-gray-800";
+    
+    const desc = descTipoBolsa.toLowerCase();
+    
+    // Mapeo de palabras clave a colores Tailwind
+    if (desc.includes("107") || desc.includes("importación")) 
+      return "bg-blue-100 text-blue-800";
+    if (desc.includes("dengue")) 
+      return "bg-red-100 text-red-800";
+    if (desc.includes("recita") || desc.includes("interconsulta")) 
+      return "bg-purple-100 text-purple-800";
+    if (desc.includes("reprogramación") || desc.includes("reprogram")) 
+      return "bg-amber-100 text-amber-800";
+    if (desc.includes("gestores territorial") || desc.includes("territorial")) 
+      return "bg-emerald-100 text-emerald-800";
+    if (desc.includes("gineco") || desc.includes("oncología")) 
+      return "bg-pink-100 text-pink-800";
+    if (desc.includes("enfermería")) 
+      return "bg-cyan-100 text-cyan-800";
+    if (desc.includes("explotación") || desc.includes("datos")) 
+      return "bg-indigo-100 text-indigo-800";
+    if (desc.includes("ivr") || desc.includes("respuesta de voz")) 
+      return "bg-teal-100 text-teal-800";
+    if (desc.includes("padomi") || desc.includes("derivado")) 
+      return "bg-rose-100 text-rose-800";
+    if (desc.includes("gestora")) 
+      return "bg-lime-100 text-lime-800";
+    
+    // Default para otras bolsas
+    return "bg-slate-100 text-slate-800";
+  };
+
+  // ============================================================================
   // ⏱️ UTILIDAD: DEBOUNCE PARA BÚSQUEDA OPTIMIZADA
   // ============================================================================
   const debounce = (func, wait) => {
@@ -1603,7 +1639,7 @@ export default function GestionAsegurado() {
                           />
                         </td>
                         <td className="px-2 py-1.5 text-[10px]">
-                          <span className="px-1.5 py-0.5 rounded bg-indigo-100 text-indigo-800 font-medium">
+                          <span className={`px-1.5 py-0.5 rounded font-medium transition-colors ${getBolsaColor(paciente.descTipoBolsa)}`}>
                             {paciente.descTipoBolsa || "Sin clasificar"}
                           </span>
                         </td>
