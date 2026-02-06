@@ -219,7 +219,7 @@ export default function DateTimePickerCita({
       {/* MENSAJE INFORMATIVO si está deshabilitado */}
       {disabled && (
         <div className="text-xs text-amber-600 mb-2 flex items-center gap-1">
-          ℹ️ <strong>Selecciona un médico primero</strong> para agendar la cita
+          ℹ️ <strong>Selecciona estado "CITADO"</strong> para agendar fecha/hora
         </div>
       )}
 
