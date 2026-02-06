@@ -158,20 +158,21 @@ export default function Login() {
       {/* Capa azul institucional */}
       <div className="absolute inset-0 bg-[#0a5ba9]/40"></div>
 
-      <div className="w-full max-w-md relative z-10">
-        <div className="bg-white/95 rounded-3xl shadow-2xl p-8 backdrop-blur-lg border border-white/40">
+      {/* ✅ v1.49.2: Responsive max-width + padding for tablet optimization */}
+      <div className="w-full max-w-md md:max-w-lg lg:max-w-xl relative z-10">
+        <div className="bg-white/95 rounded-3xl shadow-2xl p-6 md:p-10 lg:p-12 backdrop-blur-lg border border-white/40">
           {/* Logo */}
-          <div className="text-center mb-6">
+          <div className="text-center mb-6 md:mb-8">
             <img
               src="/images/LogoESSALUDAzul.png"
               alt="Logo EsSalud"
-              className="mx-auto h-14 mb-8 drop-shadow-md"
+              className="mx-auto h-14 md:h-16 lg:h-20 mb-6 md:mb-8 drop-shadow-md"
             />
 
-            <h1 className="text-2xl font-bold text-[#0a5ba9] mb-1">
+            <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold text-[#0a5ba9] mb-1 md:mb-2">
               Inicio de Sesión
             </h1>
-            <p className="text-sm text-gray-600">
+            <p className="text-sm md:text-base text-gray-600">
               Centro Nacional de Telemedicina – CENATE
             </p>
           </div>
@@ -203,10 +204,10 @@ export default function Login() {
           )}
 
           {/* Formulario */}
-          <form onSubmit={handleSubmit} className="space-y-5">
+          <form onSubmit={handleSubmit} className="space-y-5 md:space-y-6">
             {/* Usuario */}
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-1">
+              <label className="block text-sm md:text-base font-semibold text-gray-700 mb-2 md:mb-3">
                 Usuario
               </label>
               <input
@@ -221,14 +222,14 @@ export default function Login() {
                 maxLength={12}
                 inputMode="numeric"
                 autoComplete="username"
-                className={`w-full px-4 py-3 border-2 rounded-xl text-gray-800 placeholder-gray-400 transition-all focus:outline-none focus:ring-4 ${
+                className={`w-full px-4 py-3 md:py-4 border-2 rounded-xl text-gray-800 placeholder-gray-400 transition-all focus:outline-none focus:ring-4 text-base md:text-lg ${
                   errors.username
                     ? "border-red-400 focus:ring-red-100"
                     : "border-gray-200 focus:border-[#0a5ba9] focus:ring-[#0a5ba9]/20"
                 }`}
               />
               {errors.username && (
-                <div className="flex items-center gap-1 mt-2 text-red-600 text-sm">
+                <div className="flex items-center gap-1 mt-2 text-red-600 text-sm md:text-base">
                   <AlertCircle size={14} />
                   <span>{errors.username}</span>
                 </div>
@@ -237,7 +238,7 @@ export default function Login() {
 
             {/* Contraseña */}
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-1">
+              <label className="block text-sm md:text-base font-semibold text-gray-700 mb-2 md:mb-3">
                 Contraseña
               </label>
               <div className="relative">
@@ -248,7 +249,7 @@ export default function Login() {
                   onChange={(e) =>
                     setFormData({ ...formData, password: e.target.value })
                   }
-                  className={`w-full px-4 py-3 pr-12 border-2 rounded-xl text-gray-800 placeholder-gray-400 transition-all focus:outline-none focus:ring-4 ${
+                  className={`w-full px-4 py-3 md:py-4 pr-12 border-2 rounded-xl text-gray-800 placeholder-gray-400 transition-all focus:outline-none focus:ring-4 text-base md:text-lg ${
                     errors.password
                       ? "border-red-400 focus:ring-red-100"
                       : "border-gray-200 focus:border-[#0a5ba9] focus:ring-[#0a5ba9]/20"
@@ -258,12 +259,13 @@ export default function Login() {
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-[#0a5ba9] transition-colors"
+                  aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
                 >
                   {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                 </button>
               </div>
               {errors.password && (
-                <div className="flex items-center gap-1 mt-2 text-red-600 text-sm">
+                <div className="flex items-center gap-1 mt-2 text-red-600 text-sm md:text-base">
                   <AlertCircle size={14} />
                   <span>{errors.password}</span>
                 </div>
@@ -285,37 +287,38 @@ export default function Login() {
               </label>
             </div>
 
-            {/* Botón principal */}
+            {/* ✅ Botón principal con responsive sizing */}
             <button
               type="submit"
               disabled={loading}
-              className={`w-full py-3.5 mt-2 rounded-xl font-semibold text-white flex items-center justify-center gap-2 transition-all shadow-md ${
+              className={`w-full py-3.5 md:py-4 lg:py-5 mt-2 md:mt-4 rounded-xl font-semibold text-white text-base md:text-lg flex items-center justify-center gap-2 transition-all shadow-md focus:outline-none focus:ring-4 focus:ring-[#0a5ba9]/50 ${
                 loading
                   ? "bg-blue-400 cursor-not-allowed"
-                  : "bg-[#0a5ba9] hover:bg-[#094580] hover:shadow-lg hover:scale-[1.01]"
+                  : "bg-[#0a5ba9] hover:bg-[#094580] hover:shadow-lg hover:scale-[1.02] active:scale-[0.98]"
               }`}
             >
               {loading ? (
                 <>
-                  <Loader2 size={18} className="animate-spin" />
-                  Verificando...
+                  <Loader2 size={20} className="animate-spin" />
+                  <span className="hidden md:inline">Verificando credenciales...</span>
+                  <span className="md:hidden">Verificando...</span>
                 </>
               ) : (
                 <>
-                  <LogIn size={18} />
+                  <LogIn size={20} />
                   Iniciar Sesión
                 </>
               )}
             </button>
           </form>
 
-          {/* Acciones complementarias */}
-          <div className="mt-6 flex flex-col items-center text-sm text-gray-600 space-y-3">
+          {/* ✅ Acciones complementarias con responsive sizing */}
+          <div className="mt-6 md:mt-8 flex flex-col items-center text-sm md:text-base text-gray-600 space-y-2 md:space-y-3">
             <Link
               to="/crear-cuenta"
-              className="text-[#0a5ba9] font-semibold hover:underline flex items-center gap-1"
+              className="text-[#0a5ba9] font-semibold hover:text-[#083d78] hover:underline flex items-center gap-2 py-2 md:py-3 px-3 rounded-lg hover:bg-blue-50 transition-colors"
             >
-              <UserPlus size={15} /> Crear nueva cuenta
+              <UserPlus size={18} /> Crear nueva cuenta
             </Link>
             <button
               onClick={() =>{
@@ -323,15 +326,15 @@ export default function Login() {
                   setShowForgot(true)
                 }
               }
-              className="hover:text-[#0a5ba9] flex items-center gap-1"
+              className="hover:text-[#0a5ba9] flex items-center gap-2 py-2 md:py-3 px-3 rounded-lg hover:bg-blue-50 transition-colors font-medium"
             >
-              <KeyRound size={15} /> Olvidé mi contraseña
+              <KeyRound size={18} /> Olvidé mi contraseña
             </button>
             <Link
               to="/"
-              className="hover:text-[#0a5ba9] flex items-center gap-1"
+              className="hover:text-[#0a5ba9] flex items-center gap-2 py-2 md:py-3 px-3 rounded-lg hover:bg-blue-50 transition-colors"
             >
-              <Home size={15} /> Regresar al inicio
+              <Home size={18} /> Regresar al inicio
             </Link>
           </div>
 
@@ -389,14 +392,14 @@ export default function Login() {
 
 
           {/* Footer */}
-          <div className="mt-6 text-center text-gray-500 text-xs border-t pt-4">
-            <p>Sistema CENATE – EsSalud 2025</p>
+          <div className="mt-6 md:mt-8 text-center text-gray-500 text-xs md:text-sm border-t pt-4 md:pt-6">
+            <p className="font-medium">Sistema CENATE – EsSalud 2025</p>
             <p>Autenticación segura con validaciones de servidor</p>
           </div>
         </div>
 
         {/* Versión */}
-        <div className="mt-4 text-center text-white/90 text-sm drop-shadow">
+        <div className="mt-4 md:mt-6 text-center text-white/90 text-sm drop-shadow">
           CENATE v{VERSION.number} – Plataforma institucional
         </div>
       </div>
