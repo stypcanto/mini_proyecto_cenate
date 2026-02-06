@@ -2,7 +2,8 @@
 
 > **Sistema de Telemedicina - EsSalud Perú**
 > **Versión:** v1.49.0 (2026-02-06) 🚀
-> **Última Feature:** v1.47.2 - Recita + Interconsulta (2026-02-06) ⭐
+> **Última Feature:** v1.47.2 - Recita + Interconsulta + Enfermedades Crónicas ✅ (2026-02-06) ⭐
+> **Última Fix:** v1.47.2.1 - Persistencia de Enfermedades Crónicas (PostgreSQL text[]) ✅ (2026-02-06)
 > **Status:** ✅ Production Ready
 
 ---
@@ -175,12 +176,16 @@ Frontend (React 19):
 
 ## 📖 DOCUMENTACIÓN PRINCIPAL POR VERSIÓN
 
-### ✅ v1.47.2 - Documentación Completa
+### ✅ v1.47.2 - Documentación Completa + Fix v1.47.2.1
 - **Backend Spec:** [`spec/backend/15_recita_interconsulta_v1.47.md`](spec/backend/15_recita_interconsulta_v1.47.md) - Recita + Interconsulta Complete Workflow (400+ líneas)
-- **Changelog:** [`checklist/01_Historial/01_changelog.md#v1472-2026-02-06`](checklist/01_Historial/01_changelog.md) - Registro de atención médica con seguimiento
+- **Changelog:** [`checklist/01_Historial/01_changelog.md#v1472-2026-02-06`](checklist/01_Historial/01_changelog.md) - Registro de atención médica + Fix Persistencia Enfermedades Crónicas
 - **Index:** [`spec/INDEX.md`](spec/INDEX.md) - Referencia maestra actualizada con v1.47.2
-- **Backend:** `AtenderPacienteService.java` - Atender paciente, crear Recita e Interconsulta
-- **Frontend:** `MisPacientes.jsx` - Modal para seleccionar Recita días, Interconsulta especialidad, Enfermedades crónicas
+- **Backend:**
+  - `AtenderPacienteService.java` - Atender paciente, crear Recita e Interconsulta
+  - `Asegurado.java` - Fix: mapeo `String[]` → PostgreSQL `text[]`
+  - `GestionPacienteController.java` - Logging de request
+- **Frontend:** `MisPacientes.jsx` - Modal para seleccionar Recita días, Interconsulta especialidad, Enfermedades crónicas (sin "Otra")
+- **Fix v1.47.2.1:** Enfermedades crónicas ahora se guardan correctamente en BD (✅ Probado con {Hipertensión,Diabetes})
 
 ### ✅ v1.45.2 - Documentación Completa
 - **Frontend Spec:** [`spec/frontend/15_mis_pacientes_medico.md`](spec/frontend/15_mis_pacientes_medico.md) - Mis Pacientes Médico (350+ líneas)
@@ -332,8 +337,18 @@ BOLSA_GESTORES_TERRITORIAL (Bolsa Gestores Territorial - Gestión territorial)
 - `crearBolsaInterconsulta()` - Usa especialidad seleccionada por médico
 - `existeRecitaParaPaciente()` - Valida que no haya Recita previa
 - `existeInterconsultaParaPaciente(especialidad)` - Valida por especialidad
-- Método `guardarEnfermedadesCronicas()` - Persiste condiciones crónicas
+- **Enfermedades Crónicas** - Se guardan directamente en tabla `asegurados` (String[] → PostgreSQL text[])
 - FechaAtencion: Guardada como LocalDate (UTC-5 Peru timezone)
+
+**🔧 Fix v1.47.2 - Persistencia de Enfermedades Crónicas (2026-02-06):**
+- **Problema:** Array de enfermedades no se guardaba en BD (enfermedad_cronica column vacío)
+- **Causa:** `@JdbcType(ArrayJdbcType.class)` incompatible con Hibernate 6 + Jakarta Persistence
+- **Solución:** Remover anotación compleja, usar `@Column(columnDefinition = "text[]")`
+- **Cambios:**
+  * `Asegurado.java` - Mapeo correcto de `String[] enfermedadCronica`
+  * `AtenderPacienteService.java` - Agregar `EntityManager.flush()` para persistencia inmediata
+  * `GestionPacienteController.java` - Logging de request para debugging
+- **Testing:** ✅ {Hipertensión,Diabetes}, {Diabetes} - Ambos casos funcionan
 
 **Cambios Frontend:**
 - Modal "Atendido" con 4 secciones: Condición, Recita toggle + días, Interconsulta toggle + especialidad, Crónico toggle + multiselect enfermedades

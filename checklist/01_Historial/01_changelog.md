@@ -3,6 +3,7 @@
 > Changelog detallado del proyecto
 >
 > 📌 **IMPORTANTE**: Ver documentación en:
+> - ⭐ **FIX - v1.47.2.1**: Persistencia de Enfermedades Crónicas (2026-02-06) - ✅ CORREGIDO - Array PostgreSQL text[] mapeo Hibernate 6 - Probado: {Hipertensión,Diabetes} ✅
 > - ⭐ **NUEVO - v1.49.0**: Filtros Avanzados en MisPacientes (2026-02-06) - IPRESS + Rango Fecha + Ordenamiento Cronológico - 583 líneas de specs
 > - ⭐ **NUEVO - v1.47.2**: Recita + Interconsulta Production-Ready (2026-02-06) - Atender Paciente Completo - 400+ líneas de specs
 > - ⭐ **NUEVO - v1.47.0**: Sistema Completo de Registro de Atención Médica (2026-02-06) - Recita + Interconsulta + Crónico - 824 insertions
@@ -208,6 +209,51 @@
   - fecha_atencion: LocalDate (cuando marca Atendido)
   - responsable_gestora_id: Coordinador responsable
   - id_servicio: NULL (evita UNIQUE constraint)
+- Tabla: `asegurados`
+  - enfermedad_cronica: TEXT[] array (PostgreSQL)
+  - Mapeo Hibernate 6: `@Column(columnDefinition = "text[]")`
+
+### 🔧 Fix v1.47.2.1 - Persistencia de Enfermedades Crónicas (2026-02-06)
+
+**Problema:**
+- Array de enfermedades crónicas se recibía en API pero NO se guardaba en BD
+- Columna `enfermedad_cronica` en tabla `asegurados` quedaba vacía
+- Error al iniciar: `Parameter 0 of constructor in ArrayJdbcType required a bean...`
+
+**Causa:**
+- Anotación `@JdbcType(ArrayJdbcType.class)` incompatible con Hibernate 6 + Jakarta Persistence
+- Constructor de `ArrayJdbcType` requería parámetro que no se estaba proporcionando
+- Hibernate no podía mapear `String[]` a PostgreSQL `text[]`
+
+**Solución:**
+- Remover anotación problemática `@JdbcType(ArrayJdbcType.class)`
+- Usar solo `@Column(name = "enfermedad_cronica", columnDefinition = "text[]")`
+- Hibernate maneja automáticamente el mapeo a PostgreSQL text[]
+- Agregar `EntityManager.flush()` para persistencia inmediata
+
+**Cambios:**
+- `Asegurado.java` (línea 57-60):
+  ```java
+  @Column(name = "enfermedad_cronica", columnDefinition = "text[]")
+  private String[] enfermedadCronica;  // ← Sin @JdbcType
+  ```
+- `AtenderPacienteService.java`:
+  * Agregar `EntityManager entityManager` en constructor
+  * Agregar `entityManager.flush()` después de `aseguradoRepository.save()`
+  * Logging detallado: `log.info()` antes y después de save
+- `GestionPacienteController.java`:
+  * Logging de request para verificar enfermedades se reciben correctamente
+
+**Testing Results (2026-02-06):**
+- ✅ Paciente 06159397: `{Hipertensión,Diabetes}` guardado correctamente
+- ✅ Paciente 10279663: `{Diabetes}` guardado correctamente
+- ✅ Verificación BD: `array_length(enfermedad_cronica, 1) = 2` ✅
+- ✅ Ambos casos de uso: múltiples enfermedades y una sola enfermedad
+
+**Commit:**
+- Hash: `a702134`
+- Message: `fix(v1.47.2): Corregir persistencia de enfermedades crónicas en BD`
+- Files: 7 changed, 622 insertions(+), 67 deletions(-)
 
 ### 🧪 Testing & QA
 
