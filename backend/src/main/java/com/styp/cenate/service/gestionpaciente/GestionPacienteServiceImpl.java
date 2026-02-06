@@ -237,6 +237,10 @@ public class GestionPacienteServiceImpl implements IGestionPacienteService {
                 OffsetDateTime fechaAtencion = zonedDateTime.toOffsetDateTime();
                 existing.setFechaAtencionMedica(fechaAtencion);
                 log.info("✅ Fecha de atención registrada (Instant→America/Lima): {} | LocalTime: {}", fechaAtencion, zonedDateTime.toLocalTime());
+            } else if ("Pendiente".equalsIgnoreCase(condicion)) {
+                // ✅ v1.47.0: Limpiar fecha de atención cuando se cambia a "Pendiente"
+                existing.setFechaAtencionMedica(null);
+                log.info("✅ Fecha de atención limpiada - estado cambiado a Pendiente");
             }
 
             SolicitudBolsa updated = solicitudBolsaRepository.save(existing);

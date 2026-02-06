@@ -3,6 +3,7 @@
 > Changelog detallado del proyecto
 >
 > 📌 **IMPORTANTE**: Ver documentación en:
+> - ⭐ **NUEVO - v1.47.0**: Sistema Completo de Registro de Atención Médica (2026-02-06) - Recita + Interconsulta + Crónico - 824 insertions
 > - ⭐ **NUEVO - v1.45.2**: IPRESS Institution Names Display (2026-02-05) - Backend convierte códigos a nombres ("450" → "CAP II LURIN")
 > - ⭐ **NUEVO - v1.45.1**: Mis Pacientes Complete Workflow (2026-02-05) - Tabla + 3 acciones médicas + modal system + live stats
 > - ⭐ **NUEVO - v1.42.2**: Fix Vista Auditoría + Styling EmailAuditLogs (2026-02-05) - Crear vista vw_auditoria_modular_detallada + Tema claro (blanco/azul)
@@ -24,6 +25,137 @@
 > - ⭐ **Mejoras UI/UX Bienvenida v2.0.0**: `spec/frontend/05_mejoras_ui_ux_bienvenida_v2.md` (2026-01-26)
 > - ⭐ **Mejoras UI/UX Módulo Asegurados v1.2.0**: `spec/UI-UX/01_design_system_tablas.md` (2026-01-26)
 > - ⭐ **Sistema Auditoría Duplicados v1.1.0**: `spec/database/13_sistema_auditoria_duplicados.md` (2026-01-26)
+
+---
+
+## v1.47.0 (2026-02-06) - 🏥 Sistema Completo de Registro de Atención Médica
+
+### ✅ Implementación Completada
+
+**Feature: Registro Integral de Atenciones (Recita + Interconsulta + Crónico)**
+- Médicos pueden registrar atenciones completas en una acción
+- Crear bolsas RECITA con plazo configurable (3, 7, 15, 30, 60, 90 días)
+- Crear bolsas INTERCONSULTA con especialidad seleccionable
+- Guardar enfermedades crónicas (Hipertensión, Diabetes, Otra)
+- Modal intuitivo con 3 secciones expandibles
+- Transacciones atómicas: all-or-nothing
+- Nuevas bolsas esperan coordinador para gestión
+
+### 🔧 Cambios Backend (824 insertions, 157 deletions)
+
+**New Service: AtenderPacienteService.java**
+```java
+@Service
+@Transactional
+public class AtenderPacienteService {
+    public void atenderPaciente(Long idSolicitudBolsa, String especialidadActual, AtenderPacienteRequest request)
+
+    private void guardarEnfermedadesCronicas(String pkAsegurado, List<String> enfermedades, String otroDetalle)
+    private void crearBolsaRecita(SolicitudBolsa solicitudOriginal, String especialidad, Integer dias)
+    private void crearBolsaInterconsulta(SolicitudBolsa solicitudOriginal, String especialidad)
+    private String generarNumeroSolicitud(String prefijo)
+}
+```
+
+**New Entity: AseguradoEnfermedadCronica.java**
+- Tabla: `asegurado_enfermedad_cronica`
+- Campos: idAseguradoEnfermedad, pkAsegurado, tipoEnfermedad, descripcionOtra, fechaRegistro, fechaActualizacion, activo
+- Unique constraint: (pkAsegurado, tipoEnfermedad)
+- 3 índices para performance
+
+**New Repository: AseguradoEnfermedadCronicaRepository.java**
+- findByPkAseguradoAndActivoTrue()
+- findByPkAseguradoAndTipoEnfermedad()
+- existsByPkAseguradoAndActivoTrue()
+- deleteByPkAsegurado()
+
+**New DTOs:**
+- AtenderPacienteRequest: tieneRecita, recitaDias, tieneInterconsulta, interconsultaEspecialidad, esCronico, enfermedades[], otroDetalle
+- EspecialidadSelectDTO: id, descServicio (dropdown simplificado)
+
+**New Controller Endpoints:**
+- `POST /api/gestion-pacientes/{id}/atendido` - Registrar atención médica
+- `GET /api/gestion-pacientes/especialidades` - Obtener especialidades disponibles
+
+**Database Migrations:**
+- V3_1_3__add_fecha_atencion_medica.sql - Columna fecha_atencion_medica
+- V3_1_4__add_enfermedad_cronica_support.sql - Tabla asegurado_enfermedad_cronica
+- V3_1_5__add_origen_bolsa_column.sql - Columna origen_bolsa para auditoría
+
+**SolicitudBolsa Changes:**
+- Campo nuevo: `origenBolsa` = "BOLSA_GENERADA_X_PROFESIONAL"
+- Usado para rastrear bolsas creadas por médicos
+
+### 🎨 Cambios Frontend
+
+**MisPacientes.jsx - Modal System Enhancement**
+- Estado anterior: Solo modal "cambiarEstado"
+- Nuevo flujo:
+  1. Click Atendido → abre "cambiarEstado" modal
+  2. Selecciona Atendido → abre "atender" modal
+  3. Completa Recita/Interconsulta/Crónico → POST /atendido → Atendido en original bolsa
+
+**Modal v1.47.0: Registrar Atención Médica**
+```
+┌─ 📋 RECITA ───────────────────┐
+│ ☐ Checkbox                    │
+│ ▼ Plazo: 3|7|15|30|60|90 días│
+├─ 🔗 INTERCONSULTA ────────────┤
+│ ☐ Checkbox                    │
+│ ▼ Especialidad (dinámico)     │
+├─ 🏥 PACIENTE CRÓNICO ─────────┤
+│ ☐ Checkbox                    │
+│ ☐ Hipertensión               │
+│ ☐ Diabetes                    │
+│ ☐ Otra enfermedad crónica    │
+│ [Descripción opcional]        │
+├─ Validación: Al menos 1 acción│
+├─ Botones: [← Atrás] [Cancel] │
+│ [✓ Registrar Atención]        │
+└───────────────────────────────┘
+```
+
+**gestionPacientesService.js - New Methods**
+```javascript
+obtenerEspecialidades() // GET /especialidades
+atenderPaciente(id, payload) // POST /{id}/atendido
+```
+
+**State Management**
+- tieneRecita, recitaDias
+- tieneInterconsulta, interconsultaEspecialidad
+- esCronico, enfermedadesCronicas[], otroDetalle
+- especialidades[], cargarEspecialidades()
+- procesarAtencionMedica(), toggleEnfermedad()
+
+### 🧪 Testing
+- ✅ Backend: Compila sin errores
+- ✅ Frontend: Compila sin errores
+- ✅ Build: Ambos proyectos SUCCESS
+- Ready for integration testing
+
+### 📊 Workflow Completo
+1. Médico: Click "Atendido" en tabla
+2. Modal 1: Selecciona "Atendido" → Confirmar
+3. Modal 2: Selecciona Recita/Interconsulta/Crónico
+4. Backend: Crea bolsas + guarda enfermedades (transaccional)
+5. Coordinador: Gestiona nuevas bolsas PENDIENTE
+6. Estado: Original bolsa cambia a "Atendido"
+
+### 📚 Documentación
+- **Spec**: `spec/frontend/16_v1_47_0_atender_paciente.md` (350+ líneas)
+- **Changelog**: Este archivo
+- **Commit**: 0c76093
+
+### ⚡ Performance
+- Índices: asegurado_enfermedad_cronica(pk_asegurado), dim_solicitud_bolsa(origen_bolsa)
+- Transacción: ~3 BD queries máximo
+- Modal: Lazy load especialidades on mount
+
+### 🔐 Security
+- MBAC: /roles/medico/pacientes (ver + editar)
+- Validaciones: Frontend + Backend
+- Transacciones atómicas: No estado inconsistente
 
 ---
 
