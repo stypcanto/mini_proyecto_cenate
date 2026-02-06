@@ -129,8 +129,10 @@ public class AtencionClinica107PublicController {
      * Respuesta:
      *   {
      *     "total": <int>,
-     *     "pendientes": <int>,
-     *     "atendidos": <int>
+     *     "citado": <int>,           (Estado 1 - Para atender)
+     *     "atendidoIpress": <int>,   (Estado 2 - Completados)
+     *     "pendienteCita": <int>,    (Estado 11 - Nuevos en bolsa)
+     *     "otros": <int>             (Resto de estados)
      *   }
      */
     @GetMapping("/estadisticas")
@@ -142,8 +144,10 @@ public class AtencionClinica107PublicController {
 
             Map<String, Object> response = new HashMap<>();
             response.put("total", stats.getTotal());
-            response.put("pendientes", stats.getPendientes());
-            response.put("atendidos", stats.getAtendidos());
+            response.put("citado", stats.getCitado());
+            response.put("atendidoIpress", stats.getAtendidoIpress());
+            response.put("pendienteCita", stats.getPendienteCita());
+            response.put("otros", stats.getOtros());
 
             return ResponseEntity.ok(response);
 

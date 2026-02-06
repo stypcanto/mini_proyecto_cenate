@@ -34,7 +34,7 @@ export default function Modulo107PacientesList() {
   const [pacientes, setPacientes] = useState([]);
   const [totalElementos, setTotalElementos] = useState(0);
   const [loading, setLoading] = useState(true);
-  const [expandFiltros, setExpandFiltros] = useState(true);
+  const [expandFiltros, setExpandFiltros] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedIds, setSelectedIds] = useState([]);
 
@@ -53,10 +53,10 @@ export default function Modulo107PacientesList() {
   // ==================== ESTADÍSTICAS ====================
   const [stats, setStats] = useState({
     total: 0,
-    atendidos: 0,
-    pendientes: 0,
-    en_proceso: 0,
-    cancelados: 0,
+    citado: 0,              // Estado 1: CITADO (Para atender)
+    atendidoIpress: 0,      // Estado 2: ATENDIDO_IPRESS (Completados)
+    pendienteCita: 0,       // Estado 11: PENDIENTE_CITA (Nuevos en bolsa)
+    otros: 0                // Resto de estados (problemas, rechazos, etc.)
   });
 
   // ==================== CATÁLOGOS ====================
@@ -136,7 +136,7 @@ export default function Modulo107PacientesList() {
 
   // ==================== CARGAR PACIENTES ====================
 
-  const cargarPacientes = useCallback(async () => {
+  const cargarPacientes = useCallback(async (pageNum = 0) => {
     setLoading(true);
     try {
       // Preparar filtros para el backend
@@ -166,7 +166,7 @@ export default function Modulo107PacientesList() {
       // Llamar al servicio
       const response = await atencionesClinicasService.listarConFiltros(
         filtros, 
-        currentPage - 1,
+        pageNum,
         REGISTROS_POR_PAGINA
       );
       
@@ -187,14 +187,19 @@ export default function Modulo107PacientesList() {
       const tipos = [...new Set(data.map(p => p.tipoDocumento).filter(Boolean))];
       setTiposDocumentoUnicos(tipos);
       
-      // Estadísticas
-      setStats({
-        total: response.totalElements || data.length,
-        atendidos: data.filter(p => p.estadoDescripcion?.includes("ATENDIDO")).length,
-        pendientes: data.filter(p => p.estadoDescripcion?.includes("PENDIENTE")).length,
-        en_proceso: data.filter(p => p.estadoDescripcion?.includes("PROCESO")).length,
-        cancelados: data.filter(p => p.estadoDescripcion?.includes("CANCELADO")).length,
-      });
+      // Cargar estadísticas desde API (mismos estados que atenciones-clínicas)
+      try {
+        const estatsApi = await atencionesClinicasService.obtenerEstadisticas();
+        setStats({
+          total: estatsApi.total || 0,
+          citado: estatsApi.citado || 0,
+          atendidoIpress: estatsApi.atendidoIpress || 0,
+          pendienteCita: estatsApi.pendienteCita || 0,
+          otros: estatsApi.otros || 0
+        });
+      } catch (error) {
+        console.error("Error al cargar estadísticas:", error);
+      }
       
       // Los datos ya vienen filtrados del backend
       setPacientes(data);
@@ -209,7 +214,7 @@ export default function Modulo107PacientesList() {
   }, [
     filtroEstado, filtroTipoDoc, filtroDocumento, 
     filtroRangoFechas, filtroDerivacion, searchTerm,
-    filtroIpress, currentPage, ipressUnicas
+    filtroIpress, ipressUnicas
   ]);
 
   // ==================== EFECTOS ====================
@@ -229,10 +234,18 @@ export default function Modulo107PacientesList() {
     cargarIpress(redId);
   }, [filtroRed, redesUnicas]);
 
+  // Cuando cambien los filtros, resetear a página 1 y cargar
   useEffect(() => {
     setCurrentPage(1);
-    cargarPacientes();
+    cargarPacientes(0);
   }, [cargarPacientes]);
+
+  // Cuando cambie currentPage, cargar esa página específica
+  useEffect(() => {
+    if (currentPage > 1) {
+      cargarPacientes(currentPage - 1);
+    }
+  }, [currentPage, cargarPacientes]);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -281,16 +294,20 @@ export default function Modulo107PacientesList() {
     try {
       const pacientesExportar = pacientes.filter((p) => selectedIds.includes(p.idSolicitud));
       const datosExcel = pacientesExportar.map((p) => ({
-        "Fecha Registro": p.fechaSolicitud ? formatFecha(p.fechaSolicitud) : "",
+        "Fecha de Solicitud": p.fechaSolicitud ? formatFecha(p.fechaSolicitud) : "",
         DNI: p.pacienteDni || "",
         Paciente: p.pacienteNombre || "",
         Sexo: p.pacienteSexo === "M" ? "Masculino" : "Femenino" || "",
         Edad: p.pacienteEdad || "",
         "IPRESS Nombre": p.ipressNombre || "",
         "Derivación": p.derivacionInterna || "",
-        "Estado Atención": p.estadoDescripcion || "",
-        "Fecha Atención": p.fechaAtencion ? formatFecha(p.fechaAtencion) : "",
-        "Hora Atención": p.horaAtencion ? formatHora(p.horaAtencion) : "",
+        "Tiempo Inicio Síntomas": p.tiempoInicioSintomas || "",
+        "Consentimiento Informado": p.consentimientoInformado === true ? "Sí" : p.consentimientoInformado === false ? "No" : "",
+        "Fecha de Cita": p.fechaAtencion && p.horaAtencion 
+          ? `${formatFecha(p.fechaAtencion)} ${formatHora(p.horaAtencion)}`
+          : p.fechaAtencion
+          ? formatFecha(p.fechaAtencion)
+          : "",
         "Personal ID": p.idPersonal || "",
       }));
 
@@ -361,14 +378,14 @@ export default function Modulo107PacientesList() {
     };
 
     const iconos = {
-      ATENDIDO: <CheckCircle2 className="w-4 h-4" />,
-      PENDIENTE: <Clock className="w-4 h-4" />,
-      EN_PROCESO: <RefreshCw className="w-4 h-4 animate-spin" />,
-      CANCELADO: <AlertCircle className="w-4 h-4" />,
+      ATENDIDO: <CheckCircle2 className="w-3 h-3" />,
+      PENDIENTE: <Clock className="w-3 h-3" />,
+      EN_PROCESO: <RefreshCw className="w-3 h-3 animate-spin" />,
+      CANCELADO: <AlertCircle className="w-3 h-3" />,
     };
 
     return (
-      <div className={`px-3 py-1 rounded-full text-xs font-semibold border flex items-center gap-2 w-fit ${estilos[estado]}`}>
+      <div className={`px-2 py-0.5 rounded-full text-xs font-semibold border flex items-center gap-1 w-fit ${estilos[estado]}`}>
         {iconos[estado]}
         {estado}
       </div>
@@ -385,7 +402,7 @@ export default function Modulo107PacientesList() {
     const estilo = estilos[derivacion] || "bg-gray-100 text-gray-800 border-gray-300 border";
 
     return (
-      <span className={`px-3 py-1 rounded-lg text-xs font-semibold ${estilo}`}>
+      <span className={`px-2 py-0.5 rounded-lg text-xs font-semibold ${estilo}`}>
         {derivacion || "—"}
       </span>
     );
@@ -409,7 +426,7 @@ export default function Modulo107PacientesList() {
               <p className="text-slate-600">Visualización de pacientes con estado de atención médica</p>
             </div>
             <button
-              onClick={cargarPacientes}
+              onClick={() => cargarPacientes(currentPage - 1)}
               disabled={loading}
               className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-6 py-2 rounded-lg font-semibold shadow-lg disabled:opacity-50"
             >
@@ -422,50 +439,54 @@ export default function Modulo107PacientesList() {
         {/* Estadísticas */}
         <div className="mb-8">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Estadísticas de Pacientes</h3>
-          <div className="grid grid-cols-1 md:grid-cols-5 gap-4 animate-fade-in">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-3 animate-fade-in">
             {/* Total */}
-            <div className="bg-gradient-to-br from-blue-600 to-blue-700 rounded-lg shadow-lg p-6 text-white transform hover:scale-105 transition-all duration-300 hover:shadow-xl">
-              <div className="flex items-center justify-between mb-4">
-                <span className="text-blue-100">Total Pacientes</span>
-                <span className="text-3xl">👥</span>
+            <div className="bg-gradient-to-br from-slate-600 to-slate-700 rounded-lg shadow-lg p-4 text-white transform hover:scale-105 transition-all duration-300 hover:shadow-xl">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-slate-100 text-xs font-semibold">Total de Pacientes</span>
+                <span className="text-2xl">👥</span>
               </div>
-              <div className="text-4xl font-bold">{stats.total}</div>
+              <div className="text-3xl font-bold">{stats.total}</div>
             </div>
 
-            {/* Atendidos */}
-            <div className="bg-gradient-to-br from-green-600 to-green-700 rounded-lg shadow-lg p-6 text-white transform hover:scale-105 transition-all duration-300 hover:shadow-xl">
-              <div className="flex items-center justify-between mb-4">
-                <span className="text-green-100">Atendidos</span>
-                <span className="text-3xl">✓</span>
+            {/* Citado - Para Atender (Prioritario) */}
+            <div className="bg-gradient-to-br from-blue-600 to-blue-700 rounded-lg shadow-lg p-4 text-white transform hover:scale-105 transition-all duration-300 hover:shadow-xl">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-blue-100 text-xs font-semibold">Por Atender</span>
+                <span className="text-2xl">📋</span>
               </div>
-              <div className="text-4xl font-bold">{stats.atendidos}</div>
+              <div className="text-3xl font-bold">{stats.citado}</div>
+              <p className="text-blue-200 text-xs mt-1">Citados</p>
             </div>
 
-            {/* Pendientes */}
-            <div className="bg-gradient-to-br from-orange-500 to-orange-600 rounded-lg shadow-lg p-6 text-white transform hover:scale-105 transition-all duration-300 hover:shadow-xl">
-              <div className="flex items-center justify-between mb-4">
-                <span className="text-orange-100">Pendientes</span>
-                <span className="text-3xl">⏳</span>
+            {/* Atendido IPRESS - Completados */}
+            <div className="bg-gradient-to-br from-green-600 to-green-700 rounded-lg shadow-lg p-4 text-white transform hover:scale-105 transition-all duration-300 hover:shadow-xl">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-green-100 text-xs font-semibold">Completados</span>
+                <span className="text-2xl">✓</span>
               </div>
-              <div className="text-4xl font-bold">{stats.pendientes}</div>
+              <div className="text-3xl font-bold">{stats.atendidoIpress}</div>
+              <p className="text-green-200 text-xs mt-1">IPRESS</p>
             </div>
 
-            {/* En Proceso */}
-            <div className="bg-gradient-to-br from-purple-600 to-purple-700 rounded-lg shadow-lg p-6 text-white transform hover:scale-105 transition-all duration-300 hover:shadow-xl">
-              <div className="flex items-center justify-between mb-4">
-                <span className="text-purple-100">En Proceso</span>
-                <span className="text-3xl">🔄</span>
+            {/* Pendientes en Bolsa - Nuevos */}
+            <div className="bg-gradient-to-br from-amber-500 to-amber-600 rounded-lg shadow-lg p-4 text-white transform hover:scale-105 transition-all duration-300 hover:shadow-xl">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-amber-100 text-xs font-semibold">Nuevos</span>
+                <span className="text-2xl">⏱️</span>
               </div>
-              <div className="text-4xl font-bold">{stats.en_proceso}</div>
+              <div className="text-3xl font-bold">{stats.pendienteCita}</div>
+              <p className="text-amber-200 text-xs mt-1">En la bolsa</p>
             </div>
 
-            {/* Cancelados */}
-            <div className="bg-gradient-to-br from-red-600 to-red-700 rounded-lg shadow-lg p-6 text-white transform hover:scale-105 transition-all duration-300 hover:shadow-xl">
-              <div className="flex items-center justify-between mb-4">
-                <span className="text-red-100">Cancelados</span>
-                <span className="text-3xl">✕</span>
+            {/* Otros - Problemas/Rechazos */}
+            <div className="bg-gradient-to-br from-red-600 to-red-700 rounded-lg shadow-lg p-4 text-white transform hover:scale-105 transition-all duration-300 hover:shadow-xl">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-red-100 text-xs font-semibold">Otros</span>
+                <span className="text-2xl">⚠️</span>
               </div>
-              <div className="text-4xl font-bold">{stats.cancelados}</div>
+              <div className="text-3xl font-bold">{stats.otros}</div>
+              <p className="text-red-200 text-xs mt-1">Problemas</p>
             </div>
           </div>
         </div>
@@ -473,17 +494,17 @@ export default function Modulo107PacientesList() {
         {/* Tabla con Filtros */}
         <div className="bg-white rounded-lg shadow-md overflow-hidden">
           {/* Header con toggle de filtros */}
-          <div className="px-6 py-4 bg-gradient-to-r from-blue-50 to-white border-b border-gray-200 flex items-center justify-between">
-            <h2 className="text-xl font-bold text-gray-900">Lista de Pacientes</h2>
+          <div className="px-4 py-3 bg-gradient-to-r from-blue-50 to-white border-b border-gray-200 flex items-center justify-between">
+            <h2 className="text-lg font-bold text-gray-900">Lista de Pacientes</h2>
             <button
               onClick={() => setExpandFiltros(!expandFiltros)}
-              className="px-4 py-2 hover:bg-blue-100 rounded-lg transition-colors flex items-center gap-2"
+              className="px-3 py-1.5 hover:bg-blue-100 rounded-lg transition-colors flex items-center gap-2 text-sm"
             >
-              <span className="text-sm font-semibold text-gray-700">
+              <span className="text-xs font-semibold text-gray-700">
                 {expandFiltros ? "Ocultar" : "Mostrar"} filtros
               </span>
               <ChevronDown
-                size={20}
+                size={16}
                 className={`text-gray-600 transition-transform duration-300 ${
                   expandFiltros ? "rotate-180" : ""
                 }`}
@@ -495,16 +516,16 @@ export default function Modulo107PacientesList() {
           <div className={`overflow-hidden transition-all duration-500 ease-in-out ${
             expandFiltros ? "max-h-screen opacity-100" : "max-h-0 opacity-0"
           }`}>
-            <div className="p-6 border-b border-gray-200 bg-gray-50 space-y-6">
+            <div className="p-3 border-b border-gray-200 bg-gray-50 space-y-2">
               {/* Búsqueda */}
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">Búsqueda General</label>
+                <label className="block text-xs font-semibold text-gray-700 mb-1">Búsqueda General</label>
                 <div className="relative">
-                  <Search className="absolute left-3 top-3 w-5 h-5 text-gray-400" />
+                  <Search className="absolute left-3 top-2 w-4 h-4 text-gray-400" />
                   <input
                     type="text"
                     placeholder="Buscar por nombre o DNI..."
-                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full pl-10 pr-4 py-1.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
                     value={searchTerm}
                     onChange={(e) => {
                       setSearchTerm(e.target.value);
@@ -515,16 +536,16 @@ export default function Modulo107PacientesList() {
               </div>
 
               {/* Fila 1: Estado, Tipo Doc, Documento */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Estado</label>
+                  <label className="block text-xs font-semibold text-gray-700 mb-1">Estado</label>
                   <select
                     value={filtroEstado}
                     onChange={(e) => {
                       setFiltroEstado(e.target.value);
                       setCurrentPage(1);
                     }}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-1.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
                   >
                     <option value="todos">Todos los estados</option>
                     {estadosUnicos.map((estado) => (
@@ -536,14 +557,14 @@ export default function Modulo107PacientesList() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Tipo de Documento</label>
+                  <label className="block text-xs font-semibold text-gray-700 mb-1">Tipo de Documento</label>
                   <select
                     value={filtroTipoDoc}
                     onChange={(e) => {
                       setFiltroTipoDoc(e.target.value);
                       setCurrentPage(1);
                     }}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-1.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
                   >
                     <option value="todos">Todos</option>
                     {tiposDocumentoUnicos.map(tipo => (
@@ -553,11 +574,11 @@ export default function Modulo107PacientesList() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Documento</label>
+                  <label className="block text-xs font-semibold text-gray-700 mb-1">Documento</label>
                   <input
                     type="text"
                     placeholder="Ingrese número de documento"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-1.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
                     value={filtroDocumento}
                     onChange={(e) => {
                       setFiltroDocumento(e.target.value);
@@ -568,13 +589,13 @@ export default function Modulo107PacientesList() {
               </div>
 
               {/* Rango de Fechas */}
-              <div className="grid grid-cols-1 gap-4">
+              <div className="grid grid-cols-1 gap-2">
                 <div className="relative date-picker-container">
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  <label className="block text-xs font-semibold text-gray-700 mb-1">
                     Rango de Fechas de Registro
                   </label>
                   <div 
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 cursor-pointer bg-white flex items-center justify-between"
+                    className="w-full px-3 py-1.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 cursor-pointer bg-white flex items-center justify-between text-sm"
                     onClick={() => setMostrarSelectorFechas(!mostrarSelectorFechas)}
                   >
                     <span className="text-gray-700">
@@ -587,18 +608,18 @@ export default function Modulo107PacientesList() {
                         : "Seleccionar rango de fechas"
                       }
                     </span>
-                    <Calendar className="w-5 h-5 text-gray-400" />
+                    <Calendar className="w-4 h-4 text-gray-400" />
                   </div>
                   
                   {/* Panel desplegable para seleccionar fechas */}
                   {mostrarSelectorFechas && (
-                    <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-gray-300 rounded-lg shadow-lg z-10 p-4">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-300 rounded-lg shadow-lg z-10 p-3">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">Fecha de Inicio</label>
+                          <label className="block text-xs font-medium text-gray-700 mb-1">Fecha de Inicio</label>
                           <input
                             type="date"
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                            className="w-full px-3 py-1.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
                             value={filtroRangoFechas.inicio}
                             onChange={(e) => {
                               setFiltroRangoFechas(prev => ({ ...prev, inicio: e.target.value }));
@@ -607,10 +628,10 @@ export default function Modulo107PacientesList() {
                           />
                         </div>
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">Fecha de Fin</label>
+                          <label className="block text-xs font-medium text-gray-700 mb-1">Fecha de Fin</label>
                           <input
                             type="date"
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                            className="w-full px-3 py-1.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
                             value={filtroRangoFechas.fin}
                             min={filtroRangoFechas.inicio}
                             onChange={(e) => {
@@ -620,19 +641,19 @@ export default function Modulo107PacientesList() {
                           />
                         </div>
                       </div>
-                      <div className="mt-4 flex justify-between">
+                      <div className="mt-2 flex justify-between gap-2">
                         <button
                           onClick={() => {
                             setFiltroRangoFechas({ inicio: "", fin: "" });
                             setCurrentPage(1);
                           }}
-                          className="px-3 py-1 text-sm text-gray-600 hover:text-gray-800 border border-gray-300 rounded hover:bg-gray-50"
+                          className="px-2 py-1 text-xs text-gray-600 hover:text-gray-800 border border-gray-300 rounded hover:bg-gray-50"
                         >
                           Limpiar
                         </button>
                         <button
                           onClick={() => setMostrarSelectorFechas(false)}
-                          className="px-4 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700"
+                          className="px-3 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700"
                         >
                           Aplicar
                         </button>
@@ -643,16 +664,16 @@ export default function Modulo107PacientesList() {
               </div>
 
               {/* Macrorregión, Red, IPRESS */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Macrorregión</label>
+                  <label className="block text-xs font-semibold text-gray-700 mb-1">Macrorregión</label>
                   <select
                     value={filtroMacrorregion}
                     onChange={(e) => {
                       setFiltroMacrorregion(e.target.value);
                       setCurrentPage(1);
                     }}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-1.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
                   >
                     <option value="todas">Todas</option>
                     {macrorregionesUnicas.map(macro => (
@@ -662,14 +683,14 @@ export default function Modulo107PacientesList() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Red</label>
+                  <label className="block text-xs font-semibold text-gray-700 mb-1">Red</label>
                   <select
                     value={filtroRed}
                     onChange={(e) => {
                       setFiltroRed(e.target.value);
                       setCurrentPage(1);
                     }}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-1.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
                     disabled={redesUnicas.length === 0}
                   >
                     <option value="todas">Todas</option>
@@ -680,14 +701,14 @@ export default function Modulo107PacientesList() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">IPRESS</label>
+                  <label className="block text-xs font-semibold text-gray-700 mb-1">IPRESS</label>
                   <select
                     value={filtroIpress}
                     onChange={(e) => {
                       setFiltroIpress(e.target.value);
                       setCurrentPage(1);
                     }}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-1.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
                     disabled={ipressUnicas.length === 0}
                   >
                     <option value="todas">Todas</option>
@@ -699,16 +720,16 @@ export default function Modulo107PacientesList() {
               </div>
 
               {/* Derivación Interna */}
-              <div className="grid grid-cols-1 md:grid-cols-1 gap-4">
+              <div className="grid grid-cols-1 gap-2">
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Derivación Interna</label>
+                  <label className="block text-xs font-semibold text-gray-700 mb-1">Derivación Interna</label>
                   <select
                     value={filtroDerivacion}
                     onChange={(e) => {
                       setFiltroDerivacion(e.target.value);
                       setCurrentPage(1);
                     }}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-1.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
                   >
                     <option value="todas">Todas</option>
                     {derivacionesInternas.map(derivacion => (
@@ -719,7 +740,7 @@ export default function Modulo107PacientesList() {
               </div>
 
               {/* Botones de acción */}
-              <div className="flex gap-3">
+              <div className="flex gap-2">
                 <button
                   onClick={() => {
                     setSearchTerm("");
@@ -734,7 +755,7 @@ export default function Modulo107PacientesList() {
                     setFiltroDerivacion("todas");
                     setCurrentPage(1);
                   }}
-                  className="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-lg font-semibold transition-colors"
+                  className="px-3 py-1.5 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-lg font-semibold transition-colors text-sm"
                 >
                   Limpiar Filtros
                 </button>
@@ -835,8 +856,8 @@ export default function Modulo107PacientesList() {
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead className="bg-[#0D5BA9] text-white sticky top-0">
-                <tr className="border-b-2 border-blue-800">
-                  <th className="text-left py-3 px-4">
+                <tr className="border-b border-blue-700">
+                  <th className="text-left py-1.5 px-2">
                     <input
                       type="checkbox"
                       checked={
@@ -847,31 +868,32 @@ export default function Modulo107PacientesList() {
                       className="w-4 h-4 text-blue-600 rounded"
                     />
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">Fecha Registro</th>
-                  <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">DNI</th>
-                  <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">Paciente</th>
-                  <th className="px-4 py-3 text-center text-xs font-bold uppercase tracking-wider">Sexo</th>
-                  <th className="px-4 py-3 text-center text-xs font-bold uppercase tracking-wider">Edad</th>
-                  <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">IPRESS</th>
-                  <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">Derivación</th>
-                  <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">Estado Atención</th>
-                  <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">Fecha Atención</th>
-                  <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">Hora Atención</th>
-                  <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">Personal ID</th>
+                  <th className="px-2 py-1.5 text-left text-xs font-bold uppercase">Fecha de Solicitud</th>
+                  <th className="px-2 py-1.5 text-left text-xs font-bold uppercase">DNI</th>
+                  <th className="px-2 py-1.5 text-left text-xs font-bold uppercase">Paciente</th>
+                  <th className="px-2 py-1.5 text-center text-xs font-bold uppercase">Sexo</th>
+                  <th className="px-2 py-1.5 text-center text-xs font-bold uppercase">Edad</th>
+                  <th className="px-2 py-1.5 text-left text-xs font-bold uppercase">IPRESS</th>
+                  <th className="px-2 py-1.5 text-left text-xs font-bold uppercase">Derivación</th>
+                  <th className="px-2 py-1.5 text-left text-xs font-bold uppercase">Tiempo Inicio Síntomas</th>
+                  <th className="px-2 py-1.5 text-center text-xs font-bold uppercase">Consentimiento Informado</th>
+                  <th className="px-2 py-1.5 text-left text-xs font-bold uppercase">Fecha de Cita</th>
+                  <th className="px-2 py-1.5 text-left text-xs font-bold uppercase">Personal ID</th>
+                  <th className="px-2 py-1.5 text-left text-xs font-bold uppercase">Estado Atención</th>
                 </tr>
               </thead>
               <tbody>
                 {loading ? (
                   <tr>
-                    <td colSpan="12" className="py-12 text-center">
-                      <RefreshCw className="w-12 h-12 text-slate-300 animate-spin mx-auto mb-2" />
-                      <p className="font-medium text-lg text-slate-500">Cargando pacientes...</p>
+                    <td colSpan="13" className="py-8 text-center">
+                      <RefreshCw className="w-10 h-10 text-slate-300 animate-spin mx-auto mb-1" />
+                      <p className="font-medium text-sm text-slate-500">Cargando pacientes...</p>
                     </td>
                   </tr>
                 ) : pacientesPaginados.length > 0 ? (
                   pacientesPaginados.map((paciente) => (
                     <tr key={paciente.idSolicitud} className="border-b border-gray-200 hover:bg-blue-50 transition-colors">
-                      <td className="px-4 py-3">
+                      <td className="px-2 py-1">
                         <input
                           type="checkbox"
                           checked={selectedIds.includes(paciente.idSolicitud)}
@@ -879,11 +901,11 @@ export default function Modulo107PacientesList() {
                           className="w-4 h-4 text-blue-600 rounded"
                         />
                       </td>
-                      <td className="px-4 py-3 text-sm text-gray-700">{formatFecha(paciente.fechaSolicitud)}</td>
-                      <td className="px-4 py-3 text-sm text-gray-700 font-mono">{paciente.pacienteDni}</td>
-                      <td className="px-4 py-3 text-sm text-gray-900 font-medium">{paciente.pacienteNombre}</td>
-                      <td className="px-4 py-3 text-sm text-center">
-                        <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                      <td className="px-2 py-1 text-xs text-gray-700">{formatFecha(paciente.fechaSolicitud)}</td>
+                      <td className="px-2 py-1 text-xs text-gray-700 font-mono">{paciente.pacienteDni}</td>
+                      <td className="px-2 py-1 text-xs text-gray-900 font-medium">{paciente.pacienteNombre}</td>
+                      <td className="px-2 py-1 text-xs text-center">
+                        <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${
                           paciente.pacienteSexo === "M"
                             ? "bg-blue-100 text-blue-800"
                             : "bg-pink-100 text-pink-800"
@@ -891,39 +913,83 @@ export default function Modulo107PacientesList() {
                           {paciente.pacienteSexo === "M" ? "M" : "F"}
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-sm text-center text-gray-700">
+                      <td className="px-2 py-1 text-xs text-center text-gray-700">
                         {paciente.pacienteEdad}
                       </td>
-                      <td className="px-4 py-3 text-sm text-gray-700">
+                      <td className="px-2 py-1 text-xs text-gray-700">
                         {paciente.ipressNombre ? (
-                          <div className="flex flex-col">
-                            <span className="font-medium">{paciente.ipressNombre}</span>
+                          <div className="flex flex-col gap-0">
+                            <span className="font-medium text-xs">{paciente.ipressNombre}</span>
                             <span className="text-xs text-gray-500">{paciente.ipressCodigo}</span>
                           </div>
                         ) : (
                           <span className="text-gray-400 italic">Sin IPRESS</span>
                         )}
                       </td>
-                      <td className="px-4 py-3 text-sm text-gray-700">
+                      <td className="px-2 py-1 text-xs text-gray-700">
                         {getDerivacionBadge(paciente.derivacionInterna)}
                       </td>
-                      <td className="px-4 py-3 text-sm">{getEstadoBadge(paciente.estadoDescripcion || "PENDIENTE")}</td>
-                      <td className="px-4 py-3 text-sm text-gray-700">
-                        {formatFecha(paciente.fechaAtencion) || "—"}
+                      <td className="px-2 py-1 text-xs text-gray-700">
+                        {(() => {
+                          const tiempo = paciente.tiempoInicioSintomas;
+                          if (!tiempo || tiempo.trim() === '') {
+                            return <span className="text-gray-400 italic text-xs">Sin datos</span>;
+                          }
+                          
+                          const tiempoUpper = tiempo.toUpperCase();
+                          let bgColor, textColor;
+                          
+                          if (tiempoUpper.includes('< 24') || tiempoUpper.includes('<24')) {
+                            bgColor = 'bg-red-100';
+                            textColor = 'text-red-700';
+                          } else if (tiempoUpper.includes('24') && tiempoUpper.includes('72')) {
+                            bgColor = 'bg-yellow-100';
+                            textColor = 'text-yellow-700';
+                          } else if (tiempoUpper.includes('> 72') || tiempoUpper.includes('>72')) {
+                            bgColor = 'bg-green-100';
+                            textColor = 'text-green-700';
+                          } else {
+                            bgColor = 'bg-green-100';
+                            textColor = 'text-green-700';
+                          }
+                          
+                          return (
+                            <span className={`inline-block ${bgColor} ${textColor} px-1.5 py-0.5 rounded text-xs font-semibold`}>
+                              {tiempo}
+                            </span>
+                          );
+                        })()}
                       </td>
-                      <td className="px-4 py-3 text-sm text-gray-700">
-                        {formatHora(paciente.horaAtencion) || "—"}
+                      <td className="px-2 py-1 text-xs text-center">
+                        {(() => {
+                          const consentimiento = paciente.consentimientoInformado;
+                          if (consentimiento === true || consentimiento === 'true' || consentimiento === 'v') {
+                            return <span className="inline-block bg-green-100 text-green-700 px-1.5 py-0.5 rounded text-xs font-semibold">✓ Sí</span>;
+                          } else if (consentimiento === false || consentimiento === 'false') {
+                            return <span className="inline-block bg-red-100 text-red-700 px-1.5 py-0.5 rounded text-xs font-semibold">✗ No</span>;
+                          } else {
+                            return <span className="inline-block bg-gray-100 text-gray-700 px-1.5 py-0.5 rounded text-xs font-semibold">—</span>;
+                          }
+                        })()}
                       </td>
-                      <td className="px-4 py-3 text-sm text-gray-700">
+                      <td className="px-2 py-1 text-xs text-gray-700">
+                        {paciente.fechaAtencion && paciente.horaAtencion
+                          ? `${formatFecha(paciente.fechaAtencion)} ${formatHora(paciente.horaAtencion)}`
+                          : paciente.fechaAtencion
+                          ? formatFecha(paciente.fechaAtencion)
+                          : "—"}
+                      </td>
+                      <td className="px-2 py-1 text-xs text-gray-700">
                         {paciente.idPersonal || "—"}
                       </td>
+                      <td className="px-2 py-1 text-xs">{getEstadoBadge(paciente.estadoDescripcion || "PENDIENTE")}</td>
                     </tr>
                   ))
                 ) : (
                   <tr>
-                    <td colSpan="12" className="py-12 text-center">
-                      <Activity className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                      <p className="text-gray-500 font-medium">No se encontraron pacientes con los filtros aplicados</p>
+                    <td colSpan="13" className="py-8 text-center">
+                      <Activity className="w-12 h-12 text-gray-300 mx-auto mb-2" />
+                      <p className="text-sm text-gray-500 font-medium">No se encontraron pacientes con los filtros aplicados</p>
                     </td>
                   </tr>
                 )}

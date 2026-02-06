@@ -59,4 +59,8 @@ public class AtencionClinica107DTO {
     private LocalDate fechaAtencion;
     private String horaAtencion;
     private Long idPersonal;
+
+    // 🆕 Nuevos campos para derivación de atenciones
+    private String tiempoInicioSintomas;
+    private Boolean consentimientoInformado;
 }

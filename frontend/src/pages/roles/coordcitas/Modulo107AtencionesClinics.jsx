@@ -1,8 +1,8 @@
 // ========================================================================
-// 🏥 Modulo107AtencionesClinics.jsx – Atenciones Clínicas Módulo 107
+// 🏥 Modulo107AtencionesClinics.jsx – Derivación de atenciones, LÍNEA 107 - CENATE
 // ========================================================================
 /**
- * v2.0.0 - Rediseño completo con tabla de atenciones y filtros avanzados
+ * v2.0.0 - Rediseño completo con tabla de derivaciones y filtros avanzados
  * Características:
  * - Dashboard de estadísticas por estado (Total, Pendientes, Atendidos)
  * - Tabla con columnas de identificación, datos del paciente, contexto asistencial y trazabilidad
@@ -30,7 +30,7 @@ export default function Modulo107AtencionesClinics() {
   const [totalElementos, setTotalElementos] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
-  const [expandFiltros, setExpandFiltros] = useState(true);
+  const [expandFiltros, setExpandFiltros] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [errorMessage, setErrorMessage] = useState("");
 
@@ -52,8 +52,10 @@ export default function Modulo107AtencionesClinics() {
   // ==================== ESTADÍSTICAS ====================
   const [estadisticas, setEstadisticas] = useState({
     total: 0,
-    pendientes: 0,
-    atendidos: 0
+    citado: 0,              // Estado 1: CITADO (Para atender)
+    atendidoIpress: 0,      // Estado 2: ATENDIDO_IPRESS (Completados)
+    pendienteCita: 0,       // Estado 11: PENDIENTE_CITA (Nuevos en bolsa)
+    otros: 0                // Resto de estados (problemas, rechazos, etc.)
   });
 
   // ==================== CATÁLOGOS ====================
@@ -218,7 +220,7 @@ export default function Modulo107AtencionesClinics() {
       
     } catch (error) {
       console.error("Error al cargar atenciones:", error);
-      setErrorMessage("Error al cargar los datos de atenciones clínicas");
+      setErrorMessage("Error al cargar los datos de derivaciones");
       setAtenciones([]);
       setTotalElementos(0);
     } finally {
@@ -234,8 +236,10 @@ export default function Modulo107AtencionesClinics() {
       const stats = await atencionesClinicasService.obtenerEstadisticas();
       setEstadisticas({
         total: stats.total || 0,
-        pendientes: stats.pendientes || 0,
-        atendidos: stats.atendidos || 0
+        citado: stats.citado || 0,
+        atendidoIpress: stats.atendidoIpress || 0,
+        pendienteCita: stats.pendienteCita || 0,
+        otros: stats.otros || 0
       });
     } catch (error) {
       console.error("Error al cargar estadísticas:", error);
@@ -330,7 +334,7 @@ export default function Modulo107AtencionesClinics() {
             bgColor: "bg-purple-100 text-purple-700",
             icon: Activity
           }}
-          title="Atenciones Clínicas"
+          title="Derivación de atenciones, LÍNEA 107 - CENATE"
           primaryAction={{
             label: "Descargar Reporte",
             onClick: () => alert("Funcionalidad a implementar"),
@@ -341,32 +345,54 @@ export default function Modulo107AtencionesClinics() {
         {/* Estadísticas */}
         <div className="mb-8">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Estadísticas de Atenciones</h3>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 animate-fade-in">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 animate-fade-in">
             {/* Total */}
-            <div className="bg-gradient-to-br from-blue-600 to-blue-700 rounded-lg shadow-lg p-6 text-white transform hover:scale-105 transition-all duration-300 hover:shadow-xl">
+            <div className="bg-gradient-to-br from-slate-600 to-slate-700 rounded-lg shadow-lg p-6 text-white transform hover:scale-105 transition-all duration-300 hover:shadow-xl">
               <div className="flex items-center justify-between mb-4">
-                <span className="text-blue-100">Total de Atenciones</span>
+                <span className="text-slate-100 text-sm font-semibold">Total de Atenciones</span>
                 <span className="text-3xl">👥</span>
               </div>
               <div className="text-4xl font-bold">{estadisticas.total}</div>
             </div>
 
-            {/* Pendientes */}
-            <div className="bg-gradient-to-br from-orange-500 to-orange-600 rounded-lg shadow-lg p-6 text-white transform hover:scale-105 transition-all duration-300 hover:shadow-xl">
+            {/* Citado - Para Atender (Prioritario) */}
+            <div className="bg-gradient-to-br from-blue-600 to-blue-700 rounded-lg shadow-lg p-6 text-white transform hover:scale-105 transition-all duration-300 hover:shadow-xl">
               <div className="flex items-center justify-between mb-4">
-                <span className="text-orange-100">Pendientes</span>
-                <span className="text-3xl">⏳</span>
+                <span className="text-blue-100 text-sm font-semibold">Por Atender</span>
+                <span className="text-3xl">📋</span>
               </div>
-              <div className="text-4xl font-bold">{estadisticas.pendientes}</div>
+              <div className="text-4xl font-bold">{estadisticas.citado}</div>
+              <p className="text-blue-200 text-xs mt-2">Citados</p>
             </div>
 
-            {/* Atendidos */}
+            {/* Atendido IPRESS - Completados */}
             <div className="bg-gradient-to-br from-green-600 to-green-700 rounded-lg shadow-lg p-6 text-white transform hover:scale-105 transition-all duration-300 hover:shadow-xl">
               <div className="flex items-center justify-between mb-4">
-                <span className="text-green-100">Atendidos</span>
+                <span className="text-green-100 text-sm font-semibold">Completados</span>
                 <span className="text-3xl">✓</span>
               </div>
-              <div className="text-4xl font-bold">{estadisticas.atendidos}</div>
+              <div className="text-4xl font-bold">{estadisticas.atendidoIpress}</div>
+              <p className="text-green-200 text-xs mt-2">IPRESS</p>
+            </div>
+
+            {/* Pendientes en Bolsa - Nuevos */}
+            <div className="bg-gradient-to-br from-amber-500 to-amber-600 rounded-lg shadow-lg p-6 text-white transform hover:scale-105 transition-all duration-300 hover:shadow-xl">
+              <div className="flex items-center justify-between mb-4">
+                <span className="text-amber-100 text-sm font-semibold">Nuevos</span>
+                <span className="text-3xl">⏱️</span>
+              </div>
+              <div className="text-4xl font-bold">{estadisticas.pendienteCita}</div>
+              <p className="text-amber-200 text-xs mt-2">En la bolsa</p>
+            </div>
+
+            {/* Otros - Problemas/Rechazos */}
+            <div className="bg-gradient-to-br from-red-600 to-red-700 rounded-lg shadow-lg p-6 text-white transform hover:scale-105 transition-all duration-300 hover:shadow-xl">
+              <div className="flex items-center justify-between mb-4">
+                <span className="text-red-100 text-sm font-semibold">Otros</span>
+                <span className="text-3xl">⚠️</span>
+              </div>
+              <div className="text-4xl font-bold">{estadisticas.otros}</div>
+              <p className="text-red-200 text-xs mt-2">Problemas</p>
             </div>
           </div>
         </div>
@@ -375,7 +401,7 @@ export default function Modulo107AtencionesClinics() {
         <div className="bg-white rounded-lg shadow-md overflow-hidden">
           {/* Header con toggle de filtros */}
           <div className="px-6 py-4 bg-gradient-to-r from-blue-50 to-white border-b border-gray-200 flex items-center justify-between">
-            <h2 className="text-xl font-bold text-gray-900">Lista de Atenciones Clínicas</h2>
+            <h2 className="text-xl font-bold text-gray-900">Lista de Derivaciones Línea 107</h2>
             <button
               onClick={() => setExpandFiltros(!expandFiltros)}
               className="px-4 py-2 hover:bg-blue-100 rounded-lg transition-colors flex items-center gap-2"
@@ -733,61 +759,92 @@ export default function Modulo107AtencionesClinics() {
                 <table className="w-full">
                   <thead className="bg-[#0D5BA9] text-white sticky top-0">
                     <tr className="border-b-2 border-blue-800">
-                      <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">ID Solicitud</th>
-                      <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">Nro Solicitud</th>
-                      <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">Nombre Paciente</th>
-                      <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">DNI</th>
-                      <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">Edad</th>
-                      <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">Sexo</th>
-                      <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">Teléfono</th>
-                      <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">IPRESS</th>
-                      <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">Derivación</th>
-                      <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">Estado</th>
                       <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">Fecha Solicitud</th>
-                      <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">Acciones</th>
+                      <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">DNI</th>
+                      <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">Nombre Paciente</th>
+                      <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">Sexo</th>
+                      <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">Edad</th>
+                      <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">Teléfono</th>
+                      <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">Servicio</th>
+                      <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">Tiempo Inicio Síntomas</th>
+                      <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">Consentimiento Informado</th>
+                      <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">Estado</th>
                     </tr>
                   </thead>
                   <tbody>
                     {atencionesPaginadas.map((atencion) => (
                       <tr key={atencion.idSolicitud} className="border-b border-gray-200 hover:bg-blue-50 transition-colors">
-                        <td className="px-4 py-3 text-sm text-gray-900 font-semibold">{atencion.idSolicitud}</td>
-                        <td className="px-4 py-3 text-sm text-gray-700">{atencion.numeroSolicitud}</td>
-                        <td className="px-4 py-3 text-sm text-gray-900 font-medium">{atencion.pacienteNombre}</td>
+                        <td className="px-4 py-3 text-sm text-gray-700">
+                          {atencion.fechaSolicitud ? new Date(atencion.fechaSolicitud).toLocaleDateString('es-ES') : 'N/A'}
+                        </td>
                         <td className="px-4 py-3 text-sm text-gray-700">{atencion.pacienteDni}</td>
+                        <td className="px-4 py-3 text-sm text-gray-900 font-medium">{atencion.pacienteNombre}</td>
+                        <td className="px-4 py-3 text-sm text-gray-700">{atencion.pacienteSexo === "M" ? "M" : atencion.pacienteSexo === "F" ? "F" : atencion.pacienteSexo}</td>
                         <td className="px-4 py-3 text-sm text-gray-700">{atencion.pacienteEdad}</td>
-                        <td className="px-4 py-3 text-sm text-gray-700">{atencion.pacienteSexo === "M" ? "Masculino" : "Femenino"}</td>
                         <td className="px-4 py-3 text-sm text-gray-700">{atencion.pacienteTelefono}</td>
-                        <td className="px-4 py-3 text-sm text-gray-700">{atencion.ipressNombre}</td>
+                        <td className="px-4 py-3 text-sm text-gray-700">{atencion.derivacionInterna || 'N/A'}</td>
                         <td className="px-4 py-3 text-sm">
                           {(() => {
-                            const derivacion = atencion.derivacionInterna;
-                            let bgColor = "bg-gray-100";
-                            let textColor = "text-gray-700";
+                            const tiempo = atencion.tiempoInicioSintomas;
+                            if (!tiempo || tiempo.trim() === '') {
+                              // Vacío o nulo = VERDE (sin prioridad)
+                              return <span className="inline-flex items-center gap-2 px-2 py-1 bg-green-100 text-green-700 rounded text-xs font-semibold">
+                                <span className="w-2 h-2 bg-green-600 rounded-full"></span>
+                                Sin datos
+                              </span>;
+                            }
                             
-                            if (derivacion === "PSICOLOGIA CENATE") {
-                              bgColor = "bg-pink-100";
-                              textColor = "text-pink-700";
-                            } else if (derivacion === "NUTRICION CENATE") {
-                              bgColor = "bg-green-100";
-                              textColor = "text-green-700";
-                            } else if (derivacion === "MEDICINA CENATE") {
-                              bgColor = "bg-blue-100";
-                              textColor = "text-blue-700";
+                            const tiempoUpper = tiempo.toUpperCase();
+                            let color, bgColor, textColor, icon;
+                            
+                            if (tiempoUpper.includes('< 24') || tiempoUpper.includes('<24')) {
+                              // < 24 hrs = ROJO (más urgente)
+                              color = 'red';
+                              bgColor = 'bg-red-100';
+                              textColor = 'text-red-700';
+                            } else if (tiempoUpper.includes('24') && tiempoUpper.includes('72')) {
+                              // 24 - 72 hrs = AMARILLO (prioridad media)
+                              color = 'yellow';
+                              bgColor = 'bg-yellow-100';
+                              textColor = 'text-yellow-700';
+                            } else if (tiempoUpper.includes('> 72') || tiempoUpper.includes('>72')) {
+                              // > 72 hrs = VERDE (sin prioridad)
+                              color = 'green';
+                              bgColor = 'bg-green-100';
+                              textColor = 'text-green-700';
+                            } else {
+                              // Otro valor = VERDE (sin prioridad)
+                              color = 'green';
+                              bgColor = 'bg-green-100';
+                              textColor = 'text-green-700';
                             }
                             
                             return (
-                              <span className={`px-3 py-1 ${bgColor} ${textColor} rounded-full text-xs font-semibold`}>
-                                {derivacion}
+                              <span className={`inline-flex items-center gap-2 px-2 py-1 ${bgColor} ${textColor} rounded text-xs font-semibold`}>
+                                <span className={`w-2 h-2 ${
+                                  color === 'red' ? 'bg-red-600' :
+                                  color === 'yellow' ? 'bg-yellow-500' :
+                                  'bg-green-600'
+                                } rounded-full`}></span>
+                                {tiempo}
                               </span>
                             );
                           })()}
                         </td>
                         <td className="px-4 py-3 text-sm">
                           {(() => {
-                            // Debug
-                            console.log("Atencion object - estadoDescripcion:", atencion.estadoDescripcion, "estadoGestionCitasId:", atencion.estadoGestionCitasId);
-                            
-                            // Solo mostrar si tenemos descripción
+                            const consentimiento = atencion.consentimientoInformado;
+                            if (consentimiento === true || consentimiento === 'true' || consentimiento === 'v') {
+                              return <span className="inline-block bg-green-100 text-green-700 px-2 py-1 rounded text-xs font-semibold">✓ Sí</span>;
+                            } else if (consentimiento === false || consentimiento === 'false') {
+                              return <span className="inline-block bg-red-100 text-red-700 px-2 py-1 rounded text-xs font-semibold">✗ No</span>;
+                            } else {
+                              return <span className="inline-block bg-gray-100 text-gray-700 px-2 py-1 rounded text-xs font-semibold">—</span>;
+                            }
+                          })()}
+                        </td>
+                        <td className="px-4 py-3 text-sm">
+                          {(() => {
                             if (!atencion.estadoDescripcion) {
                               return <span className="text-gray-500 text-xs">Sin estado</span>;
                             }
@@ -812,19 +869,29 @@ export default function Modulo107AtencionesClinics() {
                             );
                           })()}
                         </td>
-                        <td className="px-4 py-3 text-sm text-gray-700">{atencion.fechaSolicitud}</td>
-                        <td className="px-4 py-3 text-sm">
-                          <button 
-                            onClick={() => abrirModal(atencion)}
-                            className="text-blue-600 hover:text-blue-800 font-semibold flex items-center gap-1 hover:bg-blue-50 px-2 py-1 rounded transition-colors"
-                          >
-                            <Eye size={16} /> Ver Detalle
-                          </button>
-                        </td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
+
+                {/* Leyenda de Semáforo */}
+                <div className="px-6 py-4 bg-white border-b border-gray-200">
+                  <p className="text-xs font-semibold text-gray-600 mb-3">Leyenda - Tiempo de Inicio de Síntomas:</p>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div className="flex items-center gap-2">
+                      <span className="w-3 h-3 rounded-full bg-red-600"></span>
+                      <span className="text-xs text-gray-700"><strong>Rojo (Urgente):</strong> Menos de 24 horas</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="w-3 h-3 rounded-full bg-yellow-500"></span>
+                      <span className="text-xs text-gray-700"><strong>Amarillo (Prioridad Media):</strong> 24 - 72 horas</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="w-3 h-3 rounded-full bg-green-600"></span>
+                      <span className="text-xs text-gray-700"><strong>Verde (Sin Prioridad):</strong> Más de 72 horas o sin datos</span>
+                    </div>
+                  </div>
+                </div>
 
                 {/* Paginación */}
                 <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 flex items-center justify-between">
