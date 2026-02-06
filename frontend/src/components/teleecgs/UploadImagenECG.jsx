@@ -515,19 +515,19 @@ export default function UploadImagenEKG({ onSuccess }) {
 
       {/* Contenido - RESPONSIVE LAYOUT */}
       {/* v1.51.0 - Desktop: Vertical compacto (flex-col) | Tablet: Horizontal lado-a-lado (flex-row) - ULTRACOMPACTO TABLET */}
-      <form onSubmit={handleSubmit} className="flex flex-col xl:flex-col flex-1 overflow-hidden gap-6 xl:gap-2 p-6 xl:p-4 md:flex-row md:gap-2 md:p-2 md:overflow-y-auto">
+      <form onSubmit={handleSubmit} className="flex flex-col xl:flex-col flex-1 overflow-hidden gap-6 xl:gap-1 p-6 xl:p-3 md:flex-row md:gap-0.5 md:p-1.5 md:overflow-y-auto">
         {/* LEFT PANEL - Paciente (Desktop: ancho completo | Tablet: 50%) - COMPRIMIDO PARA TABLET */}
-        <div className="hidden md:flex md:flex-col md:w-1/2 w-full gap-2 md:gap-2.5 xl:gap-2 border-r-3 md:border-r-2 xl:border-r-0 border-gray-300 md:pr-3 xl:pr-0 overflow-y-auto">
+        <div className="hidden md:flex md:flex-col md:w-1/2 w-full gap-1.5 md:gap-1.5 xl:gap-2 border-r-2 md:border-r border-gray-300 md:pr-2 xl:pr-0 overflow-y-auto md:overflow-y-visible">
           {/* Sección de Búsqueda de Paciente - v1.51.0 Desktop Compacto | Tablet Ultracompacto */}
-          <div className="bg-blue-50 border-2 border-blue-200 rounded-xl p-5 md:p-2.5 xl:p-3 xl:rounded-lg">
-            <h3 className="text-base md:text-sm xl:text-sm font-bold text-blue-900 mb-4 md:mb-2 xl:mb-2 flex items-center gap-2">
-              <User className="w-5 h-5 md:w-4 md:h-4 xl:w-4 xl:h-4" />
-              Información del Paciente
+          <div className="bg-blue-50 border-2 md:border border-blue-200 rounded-lg p-3 md:p-2 xl:p-3 xl:rounded-lg">
+            <h3 className="text-sm md:text-xs xl:text-sm font-bold text-blue-900 mb-2 md:mb-1 xl:mb-2 flex items-center gap-1.5">
+              <User className="w-4 h-4 md:w-3.5 md:h-3.5 xl:w-4 xl:h-4" />
+              <span>Paciente</span>
             </h3>
 
             {/* DNI Input con type="tel" para teclado numérico */}
             <div>
-              <label className="block text-sm md:text-xs xl:text-xs font-bold text-gray-800 mb-2 md:mb-1 xl:mb-1 uppercase tracking-wide">DNI *</label>
+              <label className="block text-xs md:text-xs xl:text-xs font-bold text-gray-800 mb-1 md:mb-0.5 xl:mb-1 uppercase tracking-wide">DNI</label>
               <div className="relative">
                 <input
                   type="tel"
@@ -538,14 +538,14 @@ export default function UploadImagenEKG({ onSuccess }) {
                   placeholder="8 dígitos"
                   maxLength="8"
                   disabled={searchingPaciente}
-                  className="w-full px-3 py-2.5 md:py-2 xl:py-2 border-2 border-blue-400 rounded-lg md:rounded xl:rounded focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent text-lg md:text-sm xl:text-sm font-bold md:font-semibold xl:font-semibold"
+                  className="w-full px-3 py-2.5 md:py-1 xl:py-2 border-2 border-blue-400 rounded-lg md:rounded xl:rounded focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent text-lg md:text-xs xl:text-sm font-bold md:font-semibold xl:font-semibold"
                 />
-                <div className="absolute right-3 top-3 xl:top-2">
+                <div className="absolute right-2 top-2.5 md:top-1.5 xl:top-2">
                   {searchingPaciente && (
-                    <Loader className="w-5 h-5 animate-spin text-blue-600" />
+                    <Loader className="w-4 h-4 md:w-3.5 md:h-3.5 animate-spin text-blue-600" />
                   )}
                   {pacienteEncontrado && !searchingPaciente && (
-                    <CheckCircle className="w-5 h-5 text-green-600" />
+                    <CheckCircle className="w-4 h-4 md:w-3.5 md:h-3.5 text-green-600" />
                   )}
                 </div>
               </div>
@@ -553,36 +553,33 @@ export default function UploadImagenEKG({ onSuccess }) {
 
             {/* Datos Auto-cargados - Confirmación (Oculto en Desktop) - COMPRIMIDO TABLET */}
             {pacienteEncontrado ? (
-              <div className="mt-2 md:mt-1.5 xl:hidden bg-gradient-to-br from-green-400 to-emerald-500 rounded-xl p-3 md:p-2 border-2 md:border border-green-600 shadow-lg">
-                <p className="text-xs md:text-xs font-bold text-green-900 mb-1 md:mb-1">✅ CONFIRMADO</p>
-                <div className="text-sm md:text-xs font-bold text-white mb-0.5 md:mb-0.5 leading-tight">
-                  {datosCompletos.apellidos} {datosCompletos.nombres}
-                </div>
-                <div className="text-xs text-green-100">
-                  {datosCompletos.sexo === "M" ? "👨" : datosCompletos.sexo === "F" ? "👩" : "👤"}
+              <div className="mt-1 md:mt-0.5 xl:hidden bg-gradient-to-br from-green-400 to-emerald-500 rounded-lg p-2 md:p-1.5 border md:border border-green-600 shadow-sm">
+                <p className="text-xs md:text-xs font-bold text-green-900 mb-0.5 leading-tight">✅ OK</p>
+                <div className="text-xs md:text-xs font-bold text-white leading-tight">
+                  {datosCompletos.apellidos}
                 </div>
               </div>
             ) : (
-              <div className="mt-2 md:mt-1.5 xl:hidden bg-gray-200 rounded-xl p-3 md:p-2 text-xs text-gray-700 text-center font-medium">
-                👆 Ingresa DNI
+              <div className="mt-1 md:mt-0.5 xl:hidden bg-gray-200 rounded-lg p-2 md:p-1.5 text-xs text-gray-700 text-center font-medium leading-tight">
+                👆 DNI
               </div>
             )}
           </div>
 
           {/* Contador y Progreso (Oculto en Desktop) - COMPRIMIDO TABLET */}
           {archivos.length > 0 && (
-            <div className="xl:hidden bg-indigo-50 border-2 md:border border-indigo-300 rounded-xl p-3 md:p-2">
-              <p className="text-sm md:text-xs font-bold text-indigo-900 mb-2 md:mb-1.5">
+            <div className="xl:hidden bg-indigo-50 border md:border border-indigo-300 rounded-lg p-1.5 md:p-1">
+              <p className="text-xs md:text-xs font-bold text-indigo-900 mb-1 leading-tight">
                 {getContadorMensaje()}
               </p>
               {/* Progress Bar */}
-              <div className="w-full bg-gray-400 rounded-full h-3 md:h-2 overflow-hidden shadow-md">
+              <div className="w-full bg-gray-400 rounded-full h-1.5 md:h-1 overflow-hidden shadow-sm">
                 <div
                   className="bg-gradient-to-r from-green-400 to-emerald-600 h-full transition-all duration-300"
                   style={{ width: `${getProgressPercentage()}%` }}
                 />
               </div>
-              <p className="text-xs md:text-xs font-semibold text-indigo-800 mt-1.5 md:mt-1">
+              <p className="text-xs md:text-xs font-semibold text-indigo-800 mt-0.5">
                 📸 {archivos.length}/{MIN_IMAGENES}
               </p>
             </div>
@@ -590,14 +587,14 @@ export default function UploadImagenEKG({ onSuccess }) {
         </div>
 
         {/* RIGHT PANEL - Cámara (Desktop: ancho completo | Tablet: 50%) - COMPRIMIDO */}
-        <div className="flex-1 md:w-1/2 w-full flex flex-col gap-3 md:gap-2 xl:gap-2 overflow-y-auto md:pl-1.5 xl:pl-0">
+        <div className="flex-1 md:flex-none md:w-1/2 w-full flex flex-col gap-1 md:gap-0.5 xl:gap-2 overflow-y-auto md:pl-1 xl:pl-0">
 
           {/* CAMERA BUTTON - Desktop: Compacto | Tablet: ULTRACOMPACTO */}
           <button
             type="button"
             onClick={() => cameraInputRef.current?.click()}
             disabled={!pacienteEncontrado || loading}
-            className={`w-full py-6 md:py-5 xl:hidden rounded-2xl md:rounded-xl font-black text-2xl md:text-lg flex flex-col items-center justify-center gap-2 md:gap-1 transition transform active:scale-95 shadow-lg md:shadow ${
+            className={`w-full py-4 md:py-3 xl:hidden rounded-2xl md:rounded-xl font-black text-2xl md:text-base flex flex-col items-center justify-center gap-1 md:gap-0.5 transition transform active:scale-95 shadow-lg md:shadow ${
               pacienteEncontrado && !loading
                 ? "bg-gradient-to-br from-cyan-500 via-teal-500 to-teal-600 hover:from-cyan-600 hover:via-teal-600 hover:to-teal-700 text-white hover:shadow-2xl"
                 : "bg-gray-300 text-gray-500 cursor-not-allowed opacity-60"
@@ -613,28 +610,28 @@ export default function UploadImagenEKG({ onSuccess }) {
 
           {/* Carrete/Carousel de Thumbnails (Oculto en Desktop) */}
           {archivos.length > 0 && (
-            <div className="xl:hidden bg-white border-3 border-gray-300 rounded-2xl p-4 shadow-lg">
-              <p className="text-sm font-bold text-gray-800 mb-4 uppercase tracking-wider">
-                📸 Fotos Capturadas ({archivos.length})
+            <div className="xl:hidden bg-white border-2 md:border border-gray-300 rounded-xl md:rounded-lg p-2 md:p-1.5 shadow-md md:shadow-sm">
+              <p className="text-xs md:text-xs font-bold text-gray-800 mb-2 md:mb-1.5 uppercase tracking-wide">
+                📸 Fotos ({archivos.length})
               </p>
 
               {/* Carousel Horizontal */}
               <div className="relative">
-                <div className="flex gap-3 overflow-x-auto pb-3 scroll-smooth">
+                <div className="flex gap-2 md:gap-1.5 overflow-x-auto pb-1.5 md:pb-1 scroll-smooth">
                   {previews.map((preview, index) => (
                     <div key={index} className="relative flex-shrink-0 group">
                       <img
                         src={preview}
                         alt={`Captura ${index + 1}`}
                         onClick={() => setCarouselIndex(index)}
-                        className={`w-20 h-20 md:w-28 md:h-28 rounded-2xl object-cover cursor-pointer transition-all border-4 ${
+                        className={`w-20 h-20 md:w-24 md:h-24 rounded-lg md:rounded-lg object-cover cursor-pointer transition-all border-2 md:border-2 ${
                           carouselIndex === index
                             ? "border-blue-600 ring-4 ring-blue-400 shadow-2xl scale-105"
                             : "border-gray-400 hover:border-blue-400 hover:shadow-lg"
                         }`}
                       />
                       {/* Index Badge */}
-                      <div className="absolute bottom-2 left-2 bg-blue-600 text-white text-sm md:text-base font-bold px-2.5 py-1.5 rounded-lg shadow-lg border-2 border-white">
+                      <div className="absolute bottom-1 left-1 bg-blue-600 text-white text-xs md:text-xs font-bold px-1.5 py-0.5 rounded-md shadow-md border border-white">
                         {index + 1}
                       </div>
                     </div>
@@ -643,12 +640,12 @@ export default function UploadImagenEKG({ onSuccess }) {
               </div>
 
               {/* Resumen Comprimido */}
-              <div className="mt-4 space-y-3">
-                <div className="text-xs text-gray-600 space-y-1">
-                  <p>
+              <div className="mt-1 md:mt-1 space-y-0.5 md:space-y-0.5">
+                <div className="text-xs md:text-xs text-gray-600 space-y-0">
+                  <p className="leading-tight">
                     <strong>Capturadas:</strong> {archivos.length}/{MAX_IMAGENES}
                   </p>
-                  <p>
+                  <p className="leading-tight">
                     <strong>Tamaño:</strong> {(archivos.reduce((sum, f) => sum + f.size, 0) / 1024 / 1024).toFixed(2)}MB
                   </p>
                 </div>
@@ -659,9 +656,9 @@ export default function UploadImagenEKG({ onSuccess }) {
                     type="button"
                     onClick={() => removerArchivo(carouselIndex)}
                     disabled={loading}
-                    className="w-full py-3 md:py-4 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white font-bold rounded-xl transition transform hover:scale-105 active:scale-95 shadow-lg flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full py-2 md:py-2 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white font-bold text-sm md:text-xs rounded-lg md:rounded transition transform hover:scale-105 active:scale-95 shadow-md md:shadow-sm flex items-center justify-center gap-1 md:gap-0.5 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    <Trash2 className="w-5 h-5" />
+                    <Trash2 className="w-4 md:w-3.5 h-4 md:h-3.5" />
                     <span>Eliminar Foto #{carouselIndex + 1}</span>
                   </button>
                 )}
@@ -669,70 +666,74 @@ export default function UploadImagenEKG({ onSuccess }) {
             </div>
           )}
 
-          {/* Seleccionar Imágenes del EKG - Desktop: Drop Zone Visual | Tablet/Mobile: Botón */}
-          <div className="xl:block hidden">
-            <h3 className="text-sm font-bold text-gray-900 mb-2 flex items-center gap-2">
-              <FileImage className="w-4 h-4" />
-              Selecciona las Imágenes del EKG
+
+          {/* Seleccionar Imágenes del EKG - Desktop: Con título | Tablet/Mobile: Solo botón */}
+          <div>
+            {/* Título con contador - Desktop */}
+            <h3 className="hidden xl:flex items-center gap-2 text-base font-bold text-purple-700 mb-2">
+              <FileImage className="w-5 h-5" />
+              Selecciona las Imágenes del EKG * ({archivos.length}/{MAX_IMAGENES})
             </h3>
+
+            {/* Subtítulo - Desktop */}
+            <p className="hidden xl:block text-sm font-semibold text-purple-600 mb-3">
+              Mínimo {MIN_IMAGENES} imágenes requeridas
+            </p>
+
+            {/* Botón Seleccionar - Todos los dispositivos */}
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={!pacienteEncontrado || loading || archivos.length >= MAX_IMAGENES}
+              className={`w-full py-1.5 md:py-1.5 xl:py-3 rounded-lg md:rounded-lg font-bold text-base md:text-xs xl:text-sm flex items-center justify-center gap-1 md:gap-0.5 transition mb-0 md:mb-0 xl:mb-2 ${
+                pacienteEncontrado && !loading && archivos.length < MAX_IMAGENES
+                  ? "bg-gray-400 hover:bg-gray-500 text-gray-800 shadow-sm md:shadow-none"
+                  : "bg-gray-200 text-gray-500 cursor-not-allowed opacity-50"
+              }`}
+              aria-label="Buscar imágenes en galería"
+            >
+              <FileImage className="w-4 h-4 md:w-3.5 md:h-3.5 xl:w-5 xl:h-5" />
+              <span className="hidden xl:inline">Seleccionar Imágenes ({MIN_IMAGENES}-{MAX_IMAGENES})</span>
+              <span className="md:inline xl:hidden text-xs">Sel</span>
+            </button>
+
+            {/* Drop Zone - Solo Desktop */}
             <div
               onDragOver={handleDragOver}
               onDragLeave={handleDragLeave}
               onDrop={handleDrop}
               onClick={() => fileInputRef.current?.click()}
-              className={`border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-all ${
+              className={`hidden xl:flex flex-col border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-all ${
                 pacienteEncontrado && !loading && archivos.length < MAX_IMAGENES
                   ? dragActive
-                    ? "border-blue-500 bg-blue-50 xl:border-indigo-500 xl:bg-indigo-50"
-                    : "border-gray-400 bg-gray-50 hover:border-blue-400 hover:bg-blue-50 xl:border-indigo-300 xl:bg-indigo-50 xl:hover:border-indigo-500 xl:hover:bg-indigo-100"
+                    ? "border-purple-600 bg-purple-50"
+                    : "border-purple-400 bg-purple-50 hover:border-purple-500 hover:bg-purple-100"
                   : "border-gray-300 bg-gray-100 cursor-not-allowed opacity-50"
               }`}
             >
-              <Upload className={`w-10 h-10 mx-auto mb-2 ${
+              <Upload className={`w-16 h-16 mx-auto mb-3 ${
                 pacienteEncontrado && !loading
-                  ? "text-gray-600 xl:text-indigo-600"
+                  ? "text-purple-600"
                   : "text-gray-400"
               }`} />
-              <p className={`text-sm font-semibold mb-1 ${
+              <p className={`text-base font-semibold mb-2 ${
                 pacienteEncontrado && !loading
-                  ? "text-gray-800 xl:text-gray-900"
+                  ? "text-purple-700"
                   : "text-gray-500"
-              }`}>
-                Haz clic para seleccionar archivos
-              </p>
-              <p className={`text-xs ${
-                pacienteEncontrado && !loading
-                  ? "text-gray-600 xl:text-gray-700"
-                  : "text-gray-400"
               }`}>
                 O arrastra tus archivos aquí
               </p>
-              <p className={`text-xs mt-2 ${
+              <p className={`text-sm ${
                 pacienteEncontrado && !loading
-                  ? "text-gray-500 xl:text-gray-600"
+                  ? "text-purple-600"
                   : "text-gray-400"
               }`}>
-                Mínimo {MIN_IMAGENES}, máximo {MAX_IMAGENES} imágenes
+                JPEG o PNG • Máximo 5MB cada una
               </p>
             </div>
           </div>
 
-          {/* Botón Seleccionar - Solo Tablet/Mobile - COMPRIMIDO */}
-          <button
-            type="button"
-            onClick={() => fileInputRef.current?.click()}
-            disabled={!pacienteEncontrado || loading || archivos.length >= MAX_IMAGENES}
-            className={`xl:hidden w-full py-3 md:py-2.5 rounded-xl md:rounded-lg font-bold text-sm md:text-xs flex items-center justify-center gap-2 transition ${
-              pacienteEncontrado && !loading && archivos.length < MAX_IMAGENES
-                ? "bg-gray-300 hover:bg-gray-400 text-gray-800 shadow-md"
-                : "bg-gray-200 text-gray-500 cursor-not-allowed opacity-50"
-            }`}
-            aria-label="Buscar imágenes en galería"
-          >
-            <FileImage className="w-5 h-5" />
-            <span>Seleccionar Imágenes (4-10)</span>
-          </button>
-
+          {/* Hidden File Inputs */}
           {/* Hidden File Inputs */}
           <input
             ref={cameraInputRef}
@@ -755,13 +756,13 @@ export default function UploadImagenEKG({ onSuccess }) {
 
           {/* Respuesta del Servidor */}
           {enviado && respuestaServidor && (
-            <div className="bg-green-50 border-2 border-green-300 rounded-xl p-4">
-              <div className="flex gap-3">
-                <CheckCircle className="w-6 h-6 text-green-600 flex-shrink-0 mt-0.5" />
+            <div className="bg-green-50 border-2 md:border border-green-300 rounded-lg md:rounded p-2 md:p-1.5">
+              <div className="flex gap-2">
+                <CheckCircle className="w-5 h-5 md:w-4 md:h-4 text-green-600 flex-shrink-0 mt-0" />
                 <div className="flex-1">
-                  <p className="font-bold text-green-800">✅ ¡{archivos.length} EKGs Cargados!</p>
-                  <p className="text-xs text-green-700 mt-1">
-                    Paciente: {datosCompletos.apellidos} {datosCompletos.nombres}
+                  <p className="font-bold text-green-800 text-sm md:text-xs leading-tight">✅ {archivos.length} EKGs OK!</p>
+                  <p className="text-xs md:text-xs text-green-700 mt-0.5">
+                    {datosCompletos.apellidos}
                   </p>
                 </div>
               </div>
@@ -769,11 +770,11 @@ export default function UploadImagenEKG({ onSuccess }) {
           )}
 
           {/* Botones de Acción - Desktop Compacto | Tablet Comprimido */}
-          <div className="flex flex-col gap-2 md:gap-1.5 pt-3 md:pt-2 mt-auto xl:gap-1.5 xl:pt-2">
+          <div className="flex flex-col gap-1 md:gap-0.5 pt-1 md:pt-0 mt-0 md:mt-0 xl:gap-1.5 xl:pt-2 xl:mt-auto">
             <button
               type="submit"
               disabled={archivos.length < MIN_IMAGENES || loading || enviado || !pacienteEncontrado}
-              className={`py-4 md:py-3 xl:py-2.5 rounded-2xl md:rounded-xl xl:rounded-lg font-black text-base md:text-base xl:text-sm flex items-center justify-center gap-2 md:gap-2 xl:gap-1 transition duration-200 shadow-lg md:shadow ${
+              className={`py-3 md:py-2 xl:py-2.5 rounded-lg md:rounded-lg xl:rounded-lg font-bold text-sm md:text-xs xl:text-sm flex items-center justify-center gap-2 md:gap-1 xl:gap-1 transition duration-200 shadow-md md:shadow-sm ${
                 archivos.length < MIN_IMAGENES || loading || enviado || !pacienteEncontrado
                   ? "bg-gray-400 text-gray-600 cursor-not-allowed opacity-60"
                   : "bg-gradient-to-r from-slate-500 to-slate-600 hover:from-slate-600 hover:to-slate-700 text-white shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
@@ -800,7 +801,7 @@ export default function UploadImagenEKG({ onSuccess }) {
                 type="button"
                 onClick={resetFormulario}
                 disabled={loading}
-                className="py-3 md:py-2.5 xl:py-2 border-2 md:border-2 xl:border border-red-300 rounded-xl md:rounded-lg xl:rounded-lg font-bold text-sm md:text-xs xl:text-xs text-red-700 hover:bg-red-50 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                className="py-2 md:py-1.5 xl:py-2 border-2 md:border border-red-300 rounded-lg md:rounded-lg xl:rounded-lg font-bold text-xs md:text-xs xl:text-xs text-red-700 hover:bg-red-50 transition disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 🗑️ Limpiar
               </button>
@@ -809,17 +810,16 @@ export default function UploadImagenEKG({ onSuccess }) {
         </div>
       </form>
 
-      {/* Información de Ayuda - Footer (Desktop: Compacto | Tablet: Detallado) */}
-      <div className="bg-blue-50 border-t-2 xl:border-t border-blue-200 px-6 py-4 xl:py-2 text-xs text-blue-800 space-y-1 xl:space-y-0">
-        <div className="flex gap-2 xl:gap-1.5">
-          <AlertCircle className="w-4 h-4 xl:w-3.5 xl:h-3.5 flex-shrink-0 mt-0.5 xl:mt-0 text-blue-600" />
-          <div className="space-y-1 xl:space-y-0">
-            <p className="font-semibold xl:font-bold xl:text-blue-900 xl:text-[11px]">Información Importante - PADOMI</p>
-            <ul className="list-disc list-inside space-y-0.5 xl:text-[10px] xl:leading-tight">
-              <li><strong>Mínimo {MIN_IMAGENES} imágenes</strong> requeridas por envío</li>
-              <li><strong>Máximo {MAX_IMAGENES} imágenes</strong> permitidas por envío</li>
-              <li>Todas las imágenes se asociarán al mismo paciente</li>
-              <li>Solo se aceptan archivos JPEG y PNG (máx 5MB cada uno)</li>
+      {/* Información de Ayuda - Footer (Solo Desktop - Oculto en Tablet para ahorrar espacio) */}
+      <div className="hidden xl:flex bg-blue-50 border-t border-blue-200 px-6 py-3 text-xs text-blue-800 space-y-1">
+        <div className="flex gap-2">
+          <AlertCircle className="w-3.5 h-3.5 flex-shrink-0 mt-0.5 text-blue-600" />
+          <div className="space-y-0.5">
+            <p className="font-bold text-blue-900 text-[11px]">Información - PADOMI</p>
+            <ul className="list-disc list-inside text-[10px] leading-tight space-y-0">
+              <li><strong>Min {MIN_IMAGENES}</strong> imágenes requeridas</li>
+              <li><strong>Máx {MAX_IMAGENES}</strong> imágenes permitidas</li>
+              <li>JPEG y PNG (máx 5MB cada uno)</li>
             </ul>
           </div>
         </div>
