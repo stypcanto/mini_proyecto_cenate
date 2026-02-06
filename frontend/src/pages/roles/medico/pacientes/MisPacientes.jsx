@@ -331,24 +331,40 @@ export default function MisPacientes() {
 
       console.log('🏥 [v1.47.0] Registrando atención:', payload);
 
+      // 1️⃣ Registrar atención médica
       await gestionPacientesService.atenderPaciente(idParaAtender, payload);
 
-      toast.success('✅ Atención registrada correctamente');
-
-      // Recargar pacientes
-      await cargarPacientes();
-
-      // Cambiar estado a Atendido en la BD
+      // 2️⃣ Cambiar estado a Atendido en la BD
       await gestionPacientesService.actualizarCondicion(
         idParaAtender,
         'Atendido',
         ''
       );
 
-      // Cerrar modales
+      // 3️⃣ Actualizar el estado local INMEDIATAMENTE (sin recargar del servidor)
+      setPacientes(prevPacientes =>
+        prevPacientes.map(p =>
+          (p.idSolicitudBolsa === idParaAtender || p.idGestion === idParaAtender)
+            ? { ...p, condicion: 'Atendido' }
+            : p
+        )
+      );
+
+      toast.success('✅ Atención registrada correctamente');
+
+      // 4️⃣ Cerrar modales
       setModalAccion(null);
       setPacienteSeleccionado(null);
       setEstadoSeleccionado('Pendiente');
+
+      // Limpiar campos del modal
+      setTieneRecita(false);
+      setRecitaDias(7);
+      setTieneInterconsulta(false);
+      setInterconsultaEspecialidad('');
+      setEsCronico(false);
+      setEnfermedadesCronicas([]);
+      setOtroDetalle('');
     } catch (error) {
       console.error('Error registrando atención:', error);
       toast.error('Error al registrar atención. Intenta nuevamente.');
