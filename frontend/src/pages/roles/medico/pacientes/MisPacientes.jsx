@@ -22,10 +22,12 @@ import {
   Check,
   FileText,
   Share2,
-  Heart
+  Heart,
+  Calendar
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import gestionPacientesService from '../../../../services/gestionPacientesService';
+import ipressService from '../../../../services/ipressService';
 
 export default function MisPacientes() {
   const [pacientes, setPacientes] = useState([]);
@@ -55,6 +57,14 @@ export default function MisPacientes() {
   const [especialidades, setEspecialidades] = useState([]);
   const [notasAccion, setNotasAccion] = useState('');
 
+  // ============ v1.49.0: FILTROS AVANZADOS ============
+  const [filtroIpress, setFiltroIpress] = useState('');
+  const [filtroRangoFecha, setFiltroRangoFecha] = useState('todos');
+  const [fechaDesde, setFechaDesde] = useState('');
+  const [fechaHasta, setFechaHasta] = useState('');
+  const [ipressDisponibles, setIpressDisponibles] = useState([]);
+  const [ordenarPor, setOrdenarPor] = useState('reciente');
+
   useEffect(() => {
     cargarPacientes();
     cargarEspecialidades();
@@ -68,6 +78,50 @@ export default function MisPacientes() {
       console.error('Error cargando especialidades:', error);
     }
   };
+
+  // ✅ v1.49.0: Cargar IPRESS disponibles
+  useEffect(() => {
+    const cargarIpress = async () => {
+      try {
+        const data = await ipressService.obtenerActivas();
+
+        if (data && Array.isArray(data) && data.length > 0) {
+          // Usar datos del API
+          const ipressFormatted = data.map(i => ({
+            id: i.idIpress,
+            nombre: i.descIpress
+          }));
+          setIpressDisponibles(ipressFormatted);
+        } else {
+          // Fallback: extraer IPRESS únicas de pacientes
+          const ipressUnicos = [...new Set(
+            pacientes
+              .map(p => p.ipress)
+              .filter(i => i && i !== '-')
+          )].sort();
+
+          setIpressDisponibles(ipressUnicos.map((nombre, idx) => ({
+            id: idx,
+            nombre
+          })));
+        }
+      } catch (error) {
+        console.error('Error cargando IPRESS:', error);
+        // Fallback en caso de error
+        const ipressUnicos = [...new Set(
+          pacientes.map(p => p.ipress).filter(i => i && i !== '-')
+        )].sort();
+        setIpressDisponibles(ipressUnicos.map((nombre, idx) => ({
+          id: idx,
+          nombre
+        })));
+      }
+    };
+
+    if (pacientes.length > 0) {
+      cargarIpress();
+    }
+  }, [pacientes]);
 
   const cargarPacientes = async () => {
     try {
@@ -94,15 +148,103 @@ export default function MisPacientes() {
     }
   };
 
-  const pacientesFiltrados = pacientes.filter(p => {
-    const coincideBusqueda =
-      (p.apellidosNombres?.toLowerCase().includes(busqueda.toLowerCase())) ||
-      (p.numDoc?.includes(busqueda));
+  // ✅ v1.49.0: Filtrado completo con 5 niveles
+  const pacientesFiltrados = React.useMemo(() => {
+    let resultados = [...pacientes];
 
-    const coincideEstado = !filtroEstado || (p.condicion === filtroEstado);
+    // 1. Filtro búsqueda (DNI/Nombre)
+    if (busqueda.trim()) {
+      const searchLower = busqueda.toLowerCase();
+      resultados = resultados.filter(p =>
+        (p.apellidosNombres?.toLowerCase().includes(searchLower)) ||
+        (p.numDoc?.includes(busqueda))
+      );
+    }
 
-    return coincideBusqueda && coincideEstado;
-  });
+    // 2. Filtro condición
+    if (filtroEstado) {
+      resultados = resultados.filter(p => p.condicion === filtroEstado);
+    }
+
+    // 3. NUEVO: Filtro IPRESS
+    if (filtroIpress) {
+      resultados = resultados.filter(p => p.ipress === filtroIpress);
+    }
+
+    // 4. NUEVO: Filtro rango fecha
+    if (filtroRangoFecha !== 'todos') {
+      const ahora = new Date();
+      const hoy = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate());
+
+      resultados = resultados.filter(p => {
+        if (!p.fechaAsignacion) return false;
+
+        // Parsear ISO 8601 (maneja Z y offset)
+        let fechaPaciente;
+        if (p.fechaAsignacion.endsWith('Z')) {
+          fechaPaciente = new Date(new Date(p.fechaAsignacion).getTime() - (5 * 60 * 60 * 1000));
+        } else {
+          fechaPaciente = new Date(p.fechaAsignacion);
+        }
+
+        const fechaSoloFecha = new Date(
+          fechaPaciente.getFullYear(),
+          fechaPaciente.getMonth(),
+          fechaPaciente.getDate()
+        );
+
+        switch (filtroRangoFecha) {
+          case 'hoy':
+            return fechaSoloFecha.getTime() === hoy.getTime();
+
+          case 'ayer':
+            const ayer = new Date(hoy);
+            ayer.setDate(ayer.getDate() - 1);
+            return fechaSoloFecha.getTime() === ayer.getTime();
+
+          case '7dias':
+            const hace7Dias = new Date(hoy);
+            hace7Dias.setDate(hace7Dias.getDate() - 7);
+            return fechaSoloFecha >= hace7Dias && fechaSoloFecha <= hoy;
+
+          case 'personalizado':
+            if (!fechaDesde && !fechaHasta) return true;
+
+            const desde = fechaDesde ? new Date(fechaDesde + 'T00:00:00') : null;
+            const hasta = fechaHasta ? new Date(fechaHasta + 'T23:59:59') : null;
+
+            if (desde && hasta) {
+              return fechaPaciente >= desde && fechaPaciente <= hasta;
+            } else if (desde) {
+              return fechaPaciente >= desde;
+            } else if (hasta) {
+              return fechaPaciente <= hasta;
+            }
+            return true;
+
+          default:
+            return true;
+        }
+      });
+    }
+
+    // 5. NUEVO: Ordenamiento
+    if (ordenarPor === 'reciente') {
+      resultados.sort((a, b) => {
+        if (!a.fechaAsignacion) return 1;
+        if (!b.fechaAsignacion) return -1;
+        return new Date(b.fechaAsignacion) - new Date(a.fechaAsignacion);
+      });
+    } else if (ordenarPor === 'antiguo') {
+      resultados.sort((a, b) => {
+        if (!a.fechaAsignacion) return 1;
+        if (!b.fechaAsignacion) return -1;
+        return new Date(a.fechaAsignacion) - new Date(b.fechaAsignacion);
+      });
+    }
+
+    return resultados;
+  }, [pacientes, busqueda, filtroEstado, filtroIpress, filtroRangoFecha, fechaDesde, fechaHasta, ordenarPor]);
 
   const formatearFecha = (fecha) => {
     if (!fecha) return '-';
@@ -465,9 +607,10 @@ export default function MisPacientes() {
           </button>
         </div>
 
-        {/* Filtros y búsqueda */}
+        {/* Filtros y búsqueda - v1.49.0: Expandido a 3 filas */}
         <div className="bg-white border border-gray-200 shadow-sm rounded-lg p-6 mb-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
+          {/* FILA 1: Búsqueda + Condición + Actualizar */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end mb-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 <Search className="w-4 h-4 inline mr-2" />
@@ -497,12 +640,11 @@ export default function MisPacientes() {
                   <option value="Citado">Citado</option>
                   <option value="Pendiente">Pendiente</option>
                   <option value="Atendido">Atendido</option>
-                  <option value="Reprogramación Fallida">Reprogramación Fallida</option>
+                  <option value="Reprogramación Fallida">Rep. Fallida</option>
                   <option value="No Contactado">No Contactado</option>
                 </select>
               </div>
 
-              {/* ✅ v1.48.0: Botón Actualizar discreto - solo icono */}
               <button
                 onClick={cargarPacientes}
                 title="Actualizar lista de pacientes"
@@ -512,6 +654,121 @@ export default function MisPacientes() {
               </button>
             </div>
           </div>
+
+          {/* FILA 2: IPRESS + Rango Fecha */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* NUEVO: Filtro IPRESS */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                <svg className="w-4 h-4 inline mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                </svg>
+                IPRESS (Institución)
+              </label>
+              <select
+                value={filtroIpress}
+                onChange={(e) => setFiltroIpress(e.target.value)}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0A5BA9]/50 focus:border-[#0A5BA9] transition-colors"
+              >
+                <option value="">Todas las IPRESS</option>
+                {ipressDisponibles.map((ipress) => (
+                  <option key={ipress.id} value={ipress.nombre}>
+                    {ipress.nombre}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* NUEVO: Filtro Rango Fecha */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                <Calendar className="w-4 h-4 inline mr-2" />
+                Rango de Fecha (Asignación)
+              </label>
+              <select
+                value={filtroRangoFecha}
+                onChange={(e) => {
+                  setFiltroRangoFecha(e.target.value);
+                  if (e.target.value !== 'personalizado') {
+                    setFechaDesde('');
+                    setFechaHasta('');
+                  }
+                }}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0A5BA9]/50 focus:border-[#0A5BA9] transition-colors"
+              >
+                <option value="todos">Todas las fechas</option>
+                <option value="hoy">Hoy</option>
+                <option value="ayer">Ayer</option>
+                <option value="7dias">Últimos 7 días</option>
+                <option value="personalizado">Personalizado...</option>
+              </select>
+            </div>
+          </div>
+
+          {/* FILA 3: Rango Personalizado + Ordenar (condicional) */}
+          {filtroRangoFecha === 'personalizado' && (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4 mt-4 border-t border-gray-200">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Desde
+                </label>
+                <input
+                  type="date"
+                  value={fechaDesde}
+                  onChange={(e) => setFechaDesde(e.target.value)}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0A5BA9]/50 focus:border-[#0A5BA9] transition-colors"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Hasta
+                </label>
+                <input
+                  type="date"
+                  value={fechaHasta}
+                  onChange={(e) => setFechaHasta(e.target.value)}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0A5BA9]/50 focus:border-[#0A5BA9] transition-colors"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Ordenar por
+                </label>
+                <select
+                  value={ordenarPor}
+                  onChange={(e) => setOrdenarPor(e.target.value)}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0A5BA9]/50 focus:border-[#0A5BA9] transition-colors"
+                >
+                  <option value="reciente">Más recientes primero</option>
+                  <option value="antiguo">Más antiguos primero</option>
+                </select>
+              </div>
+            </div>
+          )}
+
+          {/* Botón Limpiar Filtros */}
+          {(busqueda || filtroEstado || filtroIpress || filtroRangoFecha !== 'todos') && (
+            <div className="mt-4 pt-4 border-t border-gray-200">
+              <button
+                onClick={() => {
+                  setBusqueda('');
+                  setFiltroEstado('');
+                  setFiltroIpress('');
+                  setFiltroRangoFecha('todos');
+                  setFechaDesde('');
+                  setFechaHasta('');
+                  setOrdenarPor('reciente');
+                  toast.success('Filtros limpiados');
+                }}
+                className="text-sm text-gray-600 hover:text-[#0A5BA9] font-medium transition-colors flex items-center gap-2"
+              >
+                <X className="w-4 h-4" />
+                Limpiar todos los filtros
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Tabla de pacientes */}
