@@ -156,9 +156,8 @@ export default function MisPacientes() {
       let observaciones = '';
       if (estadoSeleccionado === 'Deserción') {
         observaciones = `Deserción registrada. Razón: ${razonDesercion}`;
-      } else if (estadoSeleccionado === 'Atendido') {
-        observaciones = 'Paciente atendido por el médico';
       }
+      // ✅ Cuando es "Atendido" o "Pendiente": observaciones quedan vacías (borrar motivo)
 
       // ✅ v1.46.0: Usar idSolicitudBolsa si existe (pacientes de dim_solicitud_bolsa)
       // Si no, usar idGestion (pacientes de gestion_paciente)
