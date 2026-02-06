@@ -14,6 +14,7 @@ import teleeckgService from "../../../../services/teleecgService";
 import UploadImagenECG from "../../../../components/teleecgs/UploadImagenECG";
 import ListaECGsPacientes from "../../../../components/teleecgs/ListaECGsPacientes";
 import VisorECGModal from "../../../../components/teleecgs/VisorECGModal";
+import TeleEKGBreadcrumb from "../../../../components/teleecgs/TeleEKGBreadcrumb";
 
 /**
  * 🫀 TeleEKGDashboard - Página principal de envío de electrocardiogramas
@@ -224,6 +225,9 @@ export default function TeleEKGDashboard() {
             Carga y gestiona imágenes de electrocardiogramas de tus pacientes
           </p>
         </div>
+
+        {/* ✅ Breadcrumb de navegación */}
+        <TeleEKGBreadcrumb />
 
         {/* 📊 Tarjetas de Estadísticas */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">

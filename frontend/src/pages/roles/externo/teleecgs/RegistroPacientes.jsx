@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useLocation } from "react-router-dom";
 import {
   Users,
   Search,
@@ -6,14 +7,19 @@ import {
   Download,
   Filter,
   Calendar,
+  ExternalLink,
 } from "lucide-react";
+import toast from "react-hot-toast";
 import teleeckgService from "../../../../services/teleecgService";
 import VisorECGModal from "../../../../components/teleecgs/VisorECGModal";
+import TeleEKGBreadcrumb from "../../../../components/teleecgs/TeleEKGBreadcrumb";
 
 /**
  * 👥 Página de Registro de Pacientes con EKGs
  */
 export default function RegistroPacientes() {
+  const location = useLocation();
+
   const [ecgs, setEcgs] = useState([]);
   const [filteredEcgs, setFilteredEcgs] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -21,6 +27,21 @@ export default function RegistroPacientes() {
   const [filterEstado, setFilterEstado] = useState("TODOS");
   const [selectedEKG, setSelectedEKG] = useState(null);
   const [showVisor, setShowVisor] = useState(false);
+
+  // ✅ Detectar redirección desde upload
+  useEffect(() => {
+    if (location.state?.mensaje) {
+      toast.success(location.state.mensaje);
+
+      // Filtrar por DNI del paciente recién subido
+      if (location.state.numDoc) {
+        setSearchTerm(location.state.numDoc);
+      }
+
+      // Limpiar state para no mostrar mensaje en refresh
+      window.history.replaceState({}, document.title);
+    }
+  }, [location.state]);
 
   useEffect(() => {
     cargarEKGs();
@@ -131,6 +152,9 @@ export default function RegistroPacientes() {
             Listado de pacientes con electrocardiogramas registrados
           </p>
         </div>
+
+        {/* ✅ Breadcrumb de navegación */}
+        <TeleEKGBreadcrumb />
 
         {/* Filtros */}
         <div className="bg-white rounded-lg shadow-md p-6 mb-8">
@@ -280,6 +304,20 @@ export default function RegistroPacientes() {
                             title="Descargar primera imagen"
                           >
                             <Download className="w-4 h-4" />
+                          </button>
+                          {/* ✅ Botón "Ver en CENATE" */}
+                          <button
+                            onClick={() => {
+                              // Abrir vista CENATE en nueva pestaña filtrada por DNI
+                              window.open(
+                                `/teleecg/recibidas?dni=${paciente.numDocPaciente}`,
+                                "_blank"
+                              );
+                            }}
+                            className="p-2 hover:bg-purple-100 rounded-lg transition-colors text-purple-600"
+                            title="Ver en vista CENATE"
+                          >
+                            <ExternalLink className="w-4 h-4" />
                           </button>
                         </div>
                       </td>

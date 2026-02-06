@@ -18,6 +18,7 @@ import teleecgService from "../../services/teleecgService";
 import VisorEKGModal from "../../components/teleecgs/VisorECGModal";
 import CarrouselECGModal from "../../components/teleecgs/CarrouselECGModal";
 import ModalEvaluacionECG from "../../components/teleecgs/ModalEvaluacionECG";
+import TeleEKGBreadcrumb from "../../components/teleecgs/TeleEKGBreadcrumb";
 import toast from "react-hot-toast";
 
 /**
@@ -66,6 +67,23 @@ export default function TeleEKGRecibidas() {
   useEffect(() => {
     cargarEKGs();
     cargarEstadisticasGlobales();
+  }, []);
+
+  // ✅ Auto-refresh cada 30 segundos (para sincronización en tiempo real)
+  useEffect(() => {
+    const interval = setInterval(async () => {
+      try {
+        // Recargar datos silenciosamente (sin mostrar loading)
+        await Promise.all([
+          cargarEKGs(),
+          cargarEstadisticasGlobales()
+        ]);
+      } catch (error) {
+        console.warn("⚠️ Error en auto-refresh:", error);
+      }
+    }, 30000); // 30 segundos
+
+    return () => clearInterval(interval);
   }, []);
 
   /**
@@ -423,6 +441,9 @@ export default function TeleEKGRecibidas() {
             Vista consolidada de todos los electrocardiogramas recibidos de las IPRESS
           </p>
         </div>
+
+        {/* ✅ Breadcrumb de navegación */}
+        <TeleEKGBreadcrumb />
 
         {/* 📊 Tarjetas de Estadísticas */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">

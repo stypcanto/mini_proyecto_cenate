@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Upload, X, CheckCircle, AlertCircle, FileImage,
   Loader, Heart, User, Trash2, Plus
@@ -14,6 +15,9 @@ const MIN_IMAGENES = 4;  // Mínimo de imágenes (PADOMI requirement)
 const MAX_IMAGENES = 10; // Máximo de imágenes (PADOMI requirement)
 
 export default function UploadImagenEKG({ onSuccess }) {
+  // Router navigation
+  const navigate = useNavigate();
+
   // Archivos
   const [archivos, setArchivos] = useState([]);
   const [previews, setPreviews] = useState([]);
@@ -236,6 +240,14 @@ export default function UploadImagenEKG({ onSuccess }) {
       setTimeout(() => {
         resetFormulario();
         if (onSuccess) onSuccess();
+
+        // ✅ Redirigir a la vista de listado con información del paciente
+        navigate("/teleekgs/listar", {
+          state: {
+            mensaje: `✅ ${archivos.length} EKGs subidos correctamente`,
+            numDoc: numDocPaciente,
+          },
+        });
       }, 2000);
 
     } catch (error) {
