@@ -503,10 +503,10 @@ export default function UploadImagenEKG({ onSuccess }) {
       </div>
 
       {/* Contenido - RESPONSIVE LAYOUT */}
-      {/* Nota: md:flex xl:hidden = Solo tablets (768px-1279px) */}
-      <form onSubmit={handleSubmit} className="flex flex-1 overflow-hidden gap-6 p-6 md:flex xl:hidden">
-        {/* LEFT PANEL - Paciente (50% ancho) - SOLO TABLET */}
-        <div className="hidden md:flex md:flex-col md:w-1/2 gap-5 border-r-3 border-gray-300 pr-8 overflow-y-auto xl:hidden">
+      {/* Nota: v1.51.0 - Agregado soporte Desktop (xl:flex) junto con Tablet */}
+      <form onSubmit={handleSubmit} className="flex flex-1 overflow-hidden gap-6 p-6 md:flex xl:flex">
+        {/* LEFT PANEL - Paciente (50% ancho) - TABLET + DESKTOP */}
+        <div className="hidden md:flex md:flex-col md:w-1/2 gap-5 border-r-3 border-gray-300 pr-8 overflow-y-auto">
           {/* Sección de Búsqueda de Paciente */}
           <div className="bg-blue-50 border-2 border-blue-200 rounded-xl p-5">
             <h3 className="text-base font-bold text-blue-900 mb-4 flex items-center gap-2">
@@ -578,8 +578,8 @@ export default function UploadImagenEKG({ onSuccess }) {
           )}
         </div>
 
-        {/* RIGHT PANEL - Cámara (50% ancho) - SOLO TABLET */}
-        <div className="flex-1 md:w-1/2 flex flex-col gap-4 overflow-y-auto pl-2 xl:hidden">
+        {/* RIGHT PANEL - Cámara (50% ancho) - TABLET + DESKTOP */}
+        <div className="flex-1 md:w-1/2 flex flex-col gap-4 overflow-y-auto pl-2">
 
           {/* GIANT CAMERA BUTTON - Primary CTA */}
           <button
@@ -746,8 +746,8 @@ export default function UploadImagenEKG({ onSuccess }) {
         </div>
       </form>
 
-      {/* Información de Ayuda - Footer Compacto */}
-      <div className="bg-blue-50 border-t-2 border-blue-200 px-6 py-4 text-xs text-blue-800 space-y-1">
+      {/* Información de Ayuda - Footer Compacto (Solo Tablet) */}
+      <div className="bg-blue-50 border-t-2 border-blue-200 px-6 py-4 text-xs text-blue-800 space-y-1 md:flex xl:hidden">
         <div className="flex gap-2">
           <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5 text-blue-600" />
           <div className="space-y-1">
