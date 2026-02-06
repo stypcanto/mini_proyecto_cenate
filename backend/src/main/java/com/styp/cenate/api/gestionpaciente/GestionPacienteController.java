@@ -7,6 +7,7 @@ import com.styp.cenate.service.gestionpaciente.IGestionPacienteService;
 import com.styp.cenate.service.gestionpaciente.AtenderPacienteService;
 import com.styp.cenate.repository.DimServicioEssiRepository;
 import com.styp.cenate.security.mbac.CheckMBACPermission;
+import com.styp.cenate.validation.AtenderPacienteValidator;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
@@ -15,6 +16,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.BindingResult;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -32,6 +34,7 @@ public class GestionPacienteController {
     private final IGestionPacienteService servicio;
     private final AtenderPacienteService atenderPacienteService;
     private final DimServicioEssiRepository servicioEssiRepository;
+    private final AtenderPacienteValidator atenderPacienteValidator;
 
     // ========================================================================
     // CRUD Básico
@@ -227,9 +230,23 @@ public class GestionPacienteController {
     @CheckMBACPermission(pagina = "/roles/medico/pacientes", accion = "editar", mensajeDenegado = "No tiene permiso para registrar atención")
     public ResponseEntity<Map<String, String>> atenderPaciente(
             @PathVariable @Min(1) Long id,
-            @RequestBody @Valid AtenderPacienteRequest request
+            @RequestBody @Valid AtenderPacienteRequest request,
+            BindingResult bindingResult
     ) {
         log.info("🏥 [v1.47.0] POST /api/gestion-pacientes/{}/atendido - Registrando atención", id);
+
+        // ✅ Validación condicional
+        atenderPacienteValidator.validate(request, bindingResult);
+        if (bindingResult.hasErrors()) {
+            String errorMessage = bindingResult.getAllErrors().stream()
+                .map(error -> error.getDefaultMessage())
+                .findFirst()
+                .orElse("Validación fallida");
+            return ResponseEntity.badRequest().body(Map.of(
+                "error", errorMessage,
+                "solicitudId", id.toString()
+            ));
+        }
 
         // Obtener la solicitud original para extraer especialidad
         GestionPacienteDTO paciente = servicio.buscarPorId(id)

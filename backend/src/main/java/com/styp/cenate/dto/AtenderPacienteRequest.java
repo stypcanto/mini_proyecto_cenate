@@ -20,8 +20,7 @@ public class AtenderPacienteRequest {
 
     // Interconsulta (Opcional)
     private Boolean tieneInterconsulta;
-    @NotBlank(message = "Especialidad requerida para interconsulta")
-    private String interconsultaEspecialidad; // desc_servicio de dim_servicio_essi
+    private String interconsultaEspecialidad; // desc_servicio de dim_servicio_essi (validado condicionalmente)
 
     // Enfermedades crónicas (Opcional)
     private Boolean esCronico;
