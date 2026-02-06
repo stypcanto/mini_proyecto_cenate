@@ -206,9 +206,8 @@ public class GestionPacienteServiceImpl implements IGestionPacienteService {
             // Actualizar en gestion_paciente
             GestionPaciente existing = gestionOpt.get();
             existing.setCondicion(condicion);
-            if (observaciones != null) {
-                existing.setObservaciones(observaciones);
-            }
+            // ✅ v1.46.0: Siempre actualizar observaciones (incluso si es vacío) para limpiar motivos anteriores
+            existing.setObservaciones(observaciones);
             GestionPaciente updated = repository.save(existing);
             log.info("✅ Condición actualizada en tabla gestion_paciente: {}", id);
             return toDto(updated);
@@ -221,9 +220,8 @@ public class GestionPacienteServiceImpl implements IGestionPacienteService {
         if (solicitudOpt.isPresent()) {
             SolicitudBolsa existing = solicitudOpt.get();
             existing.setCondicionMedica(condicion);
-            if (observaciones != null) {
-                existing.setObservacionesMedicas(observaciones);
-            }
+            // ✅ v1.46.0: Siempre actualizar observaciones (incluso si es vacío) para limpiar motivos anteriores
+            existing.setObservacionesMedicas(observaciones);
             SolicitudBolsa updated = solicitudBolsaRepository.save(existing);
             log.info("✅ Condición actualizada en tabla dim_solicitud_bolsa: {}", id);
             return bolsaToGestionDTO(updated);

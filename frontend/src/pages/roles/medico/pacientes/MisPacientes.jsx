@@ -185,10 +185,10 @@ export default function MisPacientes() {
         toast.success(`Estado cambiado a "${estadoSeleccionado}" ✓`);
       }
 
-      // Actualizar condición del paciente en la tabla
+      // Actualizar condición y observaciones del paciente en la tabla
       setPacientes(pacientes.map(p =>
         p.numDoc === pacienteSeleccionado.numDoc
-          ? { ...p, condicion: estadoSeleccionado }
+          ? { ...p, condicion: estadoSeleccionado, observaciones: observaciones }
           : p
       ));
 
