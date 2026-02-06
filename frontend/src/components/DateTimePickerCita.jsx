@@ -10,7 +10,7 @@
  */
 
 import React, { useState, useRef, useEffect } from "react";
-import { ChevronLeft, ChevronRight, Clock, AlertCircle } from "lucide-react";
+import { ChevronLeft, ChevronRight, Clock, Calendar } from "lucide-react";
 import toast from "react-hot-toast";
 
 const HORAS = [
@@ -216,10 +216,19 @@ export default function DateTimePickerCita({
 
   return (
     <div ref={containerRef} className="relative">
-      {/* Input Principal */}
-      <div className="flex gap-2">
-        {/* Fecha */}
-        <div className="flex-1 relative">
+      {/* CÁPSULA UNIFICADA: Fecha + Hora */}
+      <div
+        className={`flex items-center border-2 rounded-lg transition-all ${
+          validacionError
+            ? "border-red-500 bg-red-50"
+            : disabled
+            ? "border-gray-300 bg-gray-100"
+            : "border-blue-400 focus-within:ring-2 focus-within:ring-blue-500"
+        }`}
+      >
+        {/* FECHA - Lado Izquierdo */}
+        <div className="flex-1 flex items-center relative px-3">
+          <Calendar className="w-4 h-4 text-gray-400 absolute left-3 pointer-events-none" />
           <input
             type="text"
             value={fechaInput}
@@ -227,38 +236,45 @@ export default function DateTimePickerCita({
             placeholder="DD/MM/AAAA"
             disabled={disabled}
             onFocus={() => !disabled && setMostrarCalendario(true)}
-            className={`w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 ${
-              validacionError
-                ? "border-red-500 bg-red-50 focus:ring-red-500"
-                : "border-gray-300 bg-white focus:ring-blue-500"
-            } ${disabled ? "bg-gray-100 cursor-not-allowed" : ""}`}
+            className={`w-full pl-7 pr-2 py-2 text-sm focus:outline-none ${
+              fechaInput
+                ? "bg-white text-gray-900"
+                : "bg-gray-50 text-gray-400"
+            } ${disabled ? "bg-gray-100 cursor-not-allowed text-gray-400" : ""}`}
             maxLength="10"
           />
-          {validacionError && (
-            <div className="absolute top-10 left-0 bg-red-100 border border-red-500 text-red-700 text-xs px-2 py-1 rounded mt-1 whitespace-nowrap">
-              {validacionError}
-            </div>
-          )}
         </div>
 
-        {/* Hora */}
-        <div className="w-24 relative">
+        {/* SEPARADOR VERTICAL */}
+        <div className="h-6 w-px bg-gray-300"></div>
+
+        {/* HORA - Lado Derecho */}
+        <div className="w-24 px-3">
           <button
             type="button"
             disabled={disabled || !fecha}
             onClick={() => !disabled && setMostrarHoras(!mostrarHoras)}
-            className={`w-full px-3 py-2 border rounded-lg text-sm font-medium flex items-center justify-center gap-1 transition-colors ${
+            className={`w-full py-2 text-sm font-medium flex items-center justify-center gap-1.5 transition-colors focus:outline-none ${
               disabled || !fecha
-                ? "bg-gray-100 text-gray-400 cursor-not-allowed border-gray-300"
-                : "bg-blue-50 text-blue-700 border-blue-300 hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                ? "text-gray-400 cursor-not-allowed"
+                : horaSeleccionada
+                ? "text-gray-900 hover:text-blue-700"
+                : "text-gray-500 hover:text-blue-600"
             }`}
             title={fecha ? "Seleccionar hora (intervalos de 15 min)" : "Selecciona fecha primero"}
           >
             <Clock className="w-4 h-4" strokeWidth={2} />
-            {horaSeleccionada || "--:--"}
+            <span className="font-semibold">{horaSeleccionada || "--:--"}</span>
           </button>
         </div>
       </div>
+
+      {/* MENSAJE DE ERROR */}
+      {validacionError && (
+        <div className="absolute top-full left-0 mt-2 bg-red-100 border border-red-500 text-red-700 text-xs px-3 py-2 rounded-lg whitespace-nowrap shadow-lg z-40">
+          ❌ {validacionError}
+        </div>
+      )}
 
       {/* Calendario Flotante */}
       {mostrarCalendario && !disabled && (
