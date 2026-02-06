@@ -78,6 +78,7 @@ export default function GestionAsegurado() {
   const [filtroEstado, setFiltroEstado] = useState("todos");
   const [filtroTipoBolsa, setFiltroTipoBolsa] = useState("todas");
   const [tiposBolsas, setTiposBolsas] = useState([]); // Lista de tipos de bolsas desde API
+  const [filtroPrioridad107, setFiltroPrioridad107] = useState("todas"); // Filtro prioridad para bolsa 107
   const [expandFiltros, setExpandFiltros] = useState(false); // Filtros colapsados por defecto
   const [selectedRows, setSelectedRows] = useState(new Set()); // Selección de pacientes para descarga
 
@@ -1000,6 +1001,20 @@ export default function GestionAsegurado() {
       filtroTipoBolsa === "todas" ||
       paciente.idBolsa?.toString() === filtroTipoBolsa;
 
+    // 🚦 Filtro Prioridad (solo para bolsa 107)
+    const getPrioridadCategoria = (tiempoSintomas) => {
+      if (!tiempoSintomas || tiempoSintomas === "-") return "> 72";
+      if (tiempoSintomas.includes("< 24") || tiempoSintomas.includes("<24")) return "< 24";
+      if (tiempoSintomas.includes("24 - 72") || tiempoSintomas.includes("24-72")) return "24 - 72";
+      return "> 72";
+    };
+    
+    const prioridadMatch = (() => {
+      if (filtroPrioridad107 === "todas") return true;
+      const categoria = getPrioridadCategoria(paciente.tiempoInicioSintomas);
+      return categoria === filtroPrioridad107;
+    })();
+
     if (filtroEstado !== "todos" && !estadoMatch) {
       console.log(`❌ Paciente ${paciente.pacienteNombre} rechazado por estado. Esperado: ${filtroEstado}, Actual: ${paciente.codigoEstado}`);
     }
@@ -1012,18 +1027,33 @@ export default function GestionAsegurado() {
       especialidadMatch &&
       tipoCitaMatch &&
       estadoMatch &&
-      tipoBolsaMatch
+      tipoBolsaMatch &&
+      prioridadMatch
     );
   });
 
   // 🔍 Determinar si la bolsa seleccionada es 107 (para mostrar columnas adicionales)
   const esBolsa107 = (() => {
     if (filtroTipoBolsa === "todas") return false;
+    // Verificar si el filtro es "1" (id de bolsa 107)
+    if (filtroTipoBolsa === "1") return true;
     const tipoBolsaSeleccionada = tiposBolsas.find(tb => tb.idTipoBolsa?.toString() === filtroTipoBolsa);
     if (!tipoBolsaSeleccionada) return false;
-    const codigo = tipoBolsaSeleccionada.codTipoBolsa || "";
+    const codigo = tipoBolsaSeleccionada.codTipoBolsa?.toString() || "";
     const descripcion = tipoBolsaSeleccionada.descTipoBolsa || "";
-    return codigo.includes("107") || descripcion.includes("107");
+    return codigo === "1" || codigo.includes("107") || descripcion.includes("107");
+  })();
+
+  // 🔄 Determinar si la bolsa seleccionada es Reprogramación (id 6)
+  const esBolsaReprogramacion = (() => {
+    if (filtroTipoBolsa === "todas") return false;
+    // Verificar si el filtro seleccionado es el id 6 o si el código contiene "6" o "REPROG"
+    if (filtroTipoBolsa === "6") return true;
+    const tipoBolsaSeleccionada = tiposBolsas.find(tb => tb.idTipoBolsa?.toString() === filtroTipoBolsa);
+    if (!tipoBolsaSeleccionada) return false;
+    const codigo = tipoBolsaSeleccionada.codTipoBolsa?.toString() || "";
+    const descripcion = (tipoBolsaSeleccionada.descTipoBolsa || "").toUpperCase();
+    return codigo === "6" || descripcion.includes("REPROG");
   })();
 
   // ============================================================================
@@ -1277,7 +1307,10 @@ export default function GestionAsegurado() {
                     <div className="min-w-[180px]">
                       <select
                         value={filtroTipoBolsa}
-                        onChange={(e) => setFiltroTipoBolsa(e.target.value)}
+                        onChange={(e) => {
+                          setFiltroTipoBolsa(e.target.value);
+                          setFiltroPrioridad107("todas"); // Reset prioridad al cambiar bolsa
+                        }}
                         className="w-full px-2 py-1.5 border border-blue-400 bg-blue-50 rounded text-xs font-medium focus:outline-none focus:ring-1 focus:ring-blue-500"
                       >
                         <option value="todas">📦 Todas las bolsas</option>
@@ -1288,6 +1321,20 @@ export default function GestionAsegurado() {
                         ))}
                       </select>
                     </div>
+                    {esBolsa107 && (
+                      <div className="min-w-[160px]">
+                        <select
+                          value={filtroPrioridad107}
+                          onChange={(e) => setFiltroPrioridad107(e.target.value)}
+                          className="w-full px-2 py-1.5 border border-red-400 bg-red-50 rounded text-xs font-medium focus:outline-none focus:ring-1 focus:ring-red-500"
+                        >
+                          <option value="todas">🚦 Todas las prioridades</option>
+                          <option value="< 24">🔴 &lt; 24 hrs (Urgente)</option>
+                          <option value="24 - 72">🟡 24 - 72 hrs (Media)</option>
+                          <option value="> 72">🟢 &gt; 72 hrs (Baja)</option>
+                        </select>
+                      </div>
+                    )}
                     <button
                       onClick={() => setExpandFiltros(!expandFiltros)}
                       className="text-xs font-medium text-gray-600 hover:text-gray-900 flex items-center gap-1 px-2 py-1.5 bg-white border border-gray-300 rounded"
@@ -1431,6 +1478,7 @@ export default function GestionAsegurado() {
                             setFiltroTipoCita("todas");
                             setFiltroEstado("todos");
                             setFiltroTipoBolsa("todas");
+                            setFiltroPrioridad107("todas");
                           }}
                           className="px-3 py-1 bg-gray-200 hover:bg-gray-300 text-gray-700 text-xs font-medium rounded transition-colors"
                         >
@@ -1480,6 +1528,11 @@ export default function GestionAsegurado() {
                       {esBolsa107 && (
                         <th className="px-2 py-1.5 text-center text-[10px] font-bold uppercase">
                           Consent.
+                        </th>
+                      )}
+                      {esBolsaReprogramacion && (
+                        <th className="px-2 py-1.5 text-center text-[10px] font-bold uppercase">
+                          Prioridad
                         </th>
                       )}
                       <th className="px-2 py-1.5 text-left text-[10px] font-bold uppercase">
@@ -1606,6 +1659,36 @@ export default function GestionAsegurado() {
                                 );
                               }
                               return "-";
+                            })()}
+                          </td>
+                        )}
+                        {esBolsaReprogramacion && (
+                          <td className="px-2 py-1 text-center text-slate-600">
+                            {(() => {
+                              const fechaSolicitud = paciente.fechaSolicitud;
+                              if (!fechaSolicitud || fechaSolicitud === "-") {
+                                return "-";
+                              }
+                              const fechaSol = new Date(fechaSolicitud);
+                              const hoy = new Date();
+                              const diffTime = hoy.getTime() - fechaSol.getTime();
+                              const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+                              
+                              let colorDot = "bg-green-500";
+                              let leyenda = `${diffDays}d`;
+                              
+                              if (diffDays > 30) {
+                                colorDot = "bg-red-500";
+                              } else if (diffDays >= 16) {
+                                colorDot = "bg-yellow-500";
+                              }
+                              
+                              return (
+                                <div className="flex flex-col items-center">
+                                  <span className={`w-3 h-3 rounded-full ${colorDot}`}></span>
+                                  <span className="text-[9px] mt-0.5 text-gray-600">{leyenda}</span>
+                                </div>
+                              );
                             })()}
                           </td>
                         )}
