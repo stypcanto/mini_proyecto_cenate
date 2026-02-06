@@ -50,12 +50,28 @@ spec/
 
 ### Para Base de Datos
 **Comienza en:** `/database/README.md`
+- **🔥 NUEVO Diagnostic Queries:** `database/diagnostic_queries.sql` (v1.50.1 ⭐⭐⭐ - MANDATORY)
+  - 9 secciones de análisis: Size, Audit, Indexes, Historical, BLOBs, Fragmentation, Backups, Performance, Summary
+  - Identificar top 5 space consumers
+  - Detectar bloated indexes, dead tuples, missing indexes
+  - Decision matrix: Cuando ES necesaria segunda BD
 - Modelo Usuarios: `database/01_models/01_modelo_usuarios.md`
 - Plan Backups: `database/08_plan_backup_protecciones_completo.md`
 - Auditoría: `database/02_audit/02_guia_auditoria.md`
 
 ### Para Arquitectura General
 **Comienza en:** `/architecture/README.md`
+- **🔥 NUEVO Database Scaling Review:** `architecture/database_scaling_architecture_review.md` (v1.50.1 ⭐⭐⭐ - CRÍTICO)
+  - Análisis arquitectónico completo de propuesta de segunda BD
+  - Por qué NO implementar segunda BD (premature optimization)
+  - Diagnostic queries + Phase 1-2 optimizations
+  - SOLID principles compliance + violations
+  - Decision matrix + cost comparison
+- **🔥 NUEVO Database Scaling Summary:** `architecture/database_scaling_decision_summary.md` (v1.50.1 ⭐⭐⭐ - Quick Reference)
+  - TL;DR: DO NOT implement second database
+  - Red flags + What to do instead
+  - Cost comparison ($78,400 vs $550)
+  - Action items + Decision record
 - **🏥 FLUJO COMPLETO DE ATENCIONES:** `architecture/01_flujo_atenciones_completo.md` ⭐ v1.45.2
   - 4 etapas: Bolsas → Coordinador → Gestión Citas → Médico
   - Tabla de vinculaciones entre etapas
