@@ -37,9 +37,10 @@ export default function GestionAsegurado() {
   const [pacientesAsignados, setPacientesAsignados] = useState([]);
   const [metrics, setMetrics] = useState({
     totalPacientes: 0,
-    pacientesAtendidos: 0,
-    pacientesPendientes: 0,
-    solicitudesPendientes: 0,
+    citado: 0,              // Estado: CITADO (Por atender)
+    atendidoIpress: 0,      // Estado: ATENDIDO_IPRESS (Completados)
+    pendienteCita: 0,       // Estado: PENDIENTE_CITA (Nuevos en bolsa)
+    otros: 0                // Resto de estados (NO_CONTESTA, NO_DESEA, etc.)
   });
   const [error, setError] = useState(null);
   const [modalTelefono, setModalTelefono] = useState({
@@ -78,6 +79,11 @@ export default function GestionAsegurado() {
   const [filtroEstado, setFiltroEstado] = useState("todos");
   const [expandFiltros, setExpandFiltros] = useState(false); // Filtros colapsados por defecto
   const [selectedRows, setSelectedRows] = useState(new Set()); // Selección de pacientes para descarga
+  
+  // 🆕 Filtros de Bolsa y Prioridad (v1.48.0)
+  const [filtroTipoBolsa, setFiltroTipoBolsa] = useState("todas");
+  const [filtroPrioridad107, setFiltroPrioridad107] = useState("todas");
+  const [tiposBolsasAPI, setTiposBolsasAPI] = useState([]); // Bolsas cargadas desde el backend
 
   // Estados para manejar edición de estado con botones Guardar/Cancelar
   const [pacienteEditandoEstado, setPacienteEditandoEstado] = useState(null);
@@ -259,6 +265,8 @@ export default function GestionAsegurado() {
         console.log("📋 Campos disponibles en solicitud[0]:", Object.keys(solicitudes[0]));
         console.log("📋 paciente_edad:", solicitudes[0].paciente_edad);
         console.log("📋 pacienteEdad:", solicitudes[0].pacienteEdad);
+        console.log("📦 id_bolsa:", solicitudes[0].id_bolsa);
+        console.log("📦 desc_tipo_bolsa:", solicitudes[0].desc_tipo_bolsa);
       }
 
       // Transform SolicitudBolsaDTO to table structure
@@ -292,6 +300,12 @@ export default function GestionAsegurado() {
           fechaAtencion: solicitud.fecha_atencion || null,
           horaAtencion: solicitud.hora_atencion || null,
           idPersonal: solicitud.id_personal || null,
+          // 🆕 Campos para filtro de bolsa y prioridad (v1.48.0)
+          idTipoBolsa: solicitud.id_bolsa || solicitud.idBolsa || null,
+          descTipoBolsa: solicitud.desc_tipo_bolsa || solicitud.descTipoBolsa || "Sin clasificar",
+          tiempoInicioSintomas: solicitud.tiempo_inicio_sintomas || solicitud.tiempoInicioSintomas || null,
+          consentimientoInformado: solicitud.consentimiento_informado || solicitud.consentimientoInformado || null,
+          prioridad: solicitud.prioridad || null,
         };
       });
 
@@ -332,15 +346,23 @@ export default function GestionAsegurado() {
         console.log("📅 Citas guardadas cargadas:", citasGuardadas);
       }
 
-      // Calculate metrics
+      // Calculate metrics por estado
+      const citados = pacientes.filter(p => p.codigoEstado === "CITADO").length;
       const atendidos = pacientes.filter(p => p.codigoEstado === "ATENDIDO_IPRESS").length;
       const pendientes = pacientes.filter(p => p.codigoEstado === "PENDIENTE_CITA").length;
+      const otros = pacientes.filter(p => 
+        !["CITADO", "ATENDIDO_IPRESS", "PENDIENTE_CITA"].includes(p.codigoEstado)
+      ).length;
+
+      console.log("📊 Métricas calculadas:", { total: pacientes.length, citados, atendidos, pendientes, otros });
+      console.log("📊 Estados encontrados:", [...new Set(pacientes.map(p => p.codigoEstado))]);
 
       setMetrics({
         totalPacientes: pacientes.length,
-        pacientesAtendidos: atendidos,
-        pacientesPendientes: pendientes,
-        solicitudesPendientes: pendientes,
+        citado: citados,
+        atendidoIpress: atendidos,
+        pendienteCita: pendientes,
+        otros: otros
       });
     } catch (err) {
       console.error("Error fetching assigned patients:", err);
@@ -868,6 +890,19 @@ export default function GestionAsegurado() {
     const loadData = async () => {
       try {
         setError(null);
+        // Cargar bolsas desde el API
+        try {
+          const resBolsas = await fetch(`${getApiBase()}/bolsas/tipos-bolsas/activos`, {
+            headers: getHeaders(),
+          });
+          if (resBolsas.ok) {
+            const bolsas = await resBolsas.json();
+            console.log("📦 Bolsas cargadas desde API:", bolsas);
+            setTiposBolsasAPI(bolsas || []);
+          }
+        } catch (e) {
+          console.error("❌ Error cargando bolsas:", e);
+        }
         await fetchPacientesAsignados();
       } catch (err) {
         console.error("Error loading data:", err);
@@ -922,6 +957,27 @@ export default function GestionAsegurado() {
   }, [pacientesAsignados, medicosPorServicio]);
 
   // ============================================================================
+  // 🆕 TIPOS DE BOLSAS Y COMPUTED VALUES (v1.48.0)
+  // ============================================================================
+  // Usar bolsas del API si están disponibles, sino calcular desde pacientes
+  const tiposBolsas = tiposBolsasAPI.length > 0 
+    ? tiposBolsasAPI.map(b => ({ idTipoBolsa: b.idTipoBolsa, descTipoBolsa: b.descTipoBolsa }))
+    : [
+        ...new Set(pacientesAsignados
+          .map((p) => JSON.stringify({ idTipoBolsa: p.idTipoBolsa, descTipoBolsa: p.descTipoBolsa }))
+          .filter((s) => s && s !== '{"idTipoBolsa":null,"descTipoBolsa":"Sin clasificar"}'))
+      ].map(s => JSON.parse(s)).sort((a, b) => (a.descTipoBolsa || "").localeCompare(b.descTipoBolsa || ""));
+
+  const esBolsa107 = filtroTipoBolsa !== "todas" && 
+    tiposBolsas.find(tb => String(tb.idTipoBolsa) === String(filtroTipoBolsa))?.descTipoBolsa?.toLowerCase().includes("107");
+  
+  // Bolsa ID 1 específicamente (para mostrar columna Prioridad)
+  const esBolsaId1 = filtroTipoBolsa === "1";
+  
+  const esBolsaReprogramacion = filtroTipoBolsa !== "todas" && 
+    tiposBolsas.find(tb => String(tb.idTipoBolsa) === String(filtroTipoBolsa))?.descTipoBolsa?.toLowerCase().includes("reprogram");
+
+  // ============================================================================
   // 🔍 FUNCIÓN DE FILTRADO ESPECIALIZADO
   // ============================================================================
   const pacientesFiltrados = pacientesAsignados.filter((paciente) => {
@@ -931,6 +987,22 @@ export default function GestionAsegurado() {
       paciente.pacienteDni?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       paciente.pacienteNombre?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       paciente.descIpress?.toLowerCase().includes(searchTerm.toLowerCase());
+
+    // 📦 Filtro Tipo de Bolsa (v1.48.0)
+    const bolsaMatch =
+      filtroTipoBolsa === "todas" ||
+      String(paciente.idTipoBolsa) === String(filtroTipoBolsa);
+
+    // 🚦 Filtro Prioridad 107 (v1.48.0) - Basado en tiempo_inicio_sintomas
+    const prioridadMatch = (() => {
+      if (filtroPrioridad107 === "todas") return true;
+      const tiempo = paciente.tiempoInicioSintomas;
+      // Si el filtro es "> 72", incluir también valores nulos o vacíos
+      if (filtroPrioridad107 === "> 72") {
+        return tiempo === "> 72" || !tiempo || tiempo === "";
+      }
+      return tiempo === filtroPrioridad107;
+    })();
 
     // 🌎 Filtro Macrorregión
     const macrorregionMatch =
@@ -969,6 +1041,8 @@ export default function GestionAsegurado() {
 
     return (
       searchMatch &&
+      bolsaMatch &&
+      prioridadMatch &&
       macrorregionMatch &&
       redMatch &&
       ipressMatch &&
@@ -1067,8 +1141,8 @@ export default function GestionAsegurado() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
-      <div className="max-w-7xl mx-auto space-y-6">
+    <div className="min-h-screen bg-gray-50 p-4">
+      <div className="w-full space-y-6">
         {/* Header */}
         <div className="bg-gradient-to-r from-blue-600 to-teal-600 rounded-2xl shadow-lg p-8 text-white">
           <div className="flex items-start justify-between">
@@ -1101,45 +1175,57 @@ export default function GestionAsegurado() {
           </div>
         </div>
 
-        {/* Métricas */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
-            <div className="flex items-center gap-3">
-              <Users className="w-6 h-6 text-blue-600" />
-              <div>
-                <p className="text-gray-600 text-sm">Total de Pacientes</p>
-                <p className="text-3xl font-bold text-slate-900">{metrics.totalPacientes}</p>
+        {/* Estadísticas de Atenciones */}
+        <div className="space-y-2">
+          <h3 className="text-lg font-semibold text-gray-900">Estadísticas de Atenciones</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+            {/* Total */}
+            <div className="bg-gradient-to-br from-slate-600 to-slate-700 rounded-lg shadow-lg p-4 text-white transform hover:scale-105 transition-all duration-300 hover:shadow-xl">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-slate-100 text-sm font-semibold">Total de Atenciones</span>
+                <span className="text-2xl">👥</span>
               </div>
+              <div className="text-3xl font-bold">{metrics.totalPacientes}</div>
             </div>
-          </div>
 
-          <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
-            <div className="flex items-center gap-3">
-              <CheckCircle2 className="w-6 h-6 text-green-600" />
-              <div>
-                <p className="text-gray-600 text-sm">Pacientes Atendidos</p>
-                <p className="text-3xl font-bold text-slate-900">{metrics.pacientesAtendidos}</p>
+            {/* Citado - Por Atender */}
+            <div className="bg-gradient-to-br from-blue-600 to-blue-700 rounded-lg shadow-lg p-4 text-white transform hover:scale-105 transition-all duration-300 hover:shadow-xl">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-blue-100 text-sm font-semibold">Por Atender</span>
+                <span className="text-2xl">📋</span>
               </div>
+              <div className="text-3xl font-bold">{metrics.citado || 0}</div>
+              <p className="text-blue-200 text-xs mt-1">Citados</p>
             </div>
-          </div>
 
-          <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
-            <div className="flex items-center gap-3">
-              <Calendar className="w-6 h-6 text-yellow-600" />
-              <div>
-                <p className="text-gray-600 text-sm">Pacientes Pendientes</p>
-                <p className="text-3xl font-bold text-slate-900">{metrics.pacientesPendientes}</p>
+            {/* Atendido IPRESS - Completados */}
+            <div className="bg-gradient-to-br from-green-600 to-green-700 rounded-lg shadow-lg p-4 text-white transform hover:scale-105 transition-all duration-300 hover:shadow-xl">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-green-100 text-sm font-semibold">Completados</span>
+                <span className="text-2xl">✓</span>
               </div>
+              <div className="text-3xl font-bold">{metrics.atendidoIpress || 0}</div>
+              <p className="text-green-200 text-xs mt-1">IPRESS</p>
             </div>
-          </div>
 
-          <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
-            <div className="flex items-center gap-3">
-              <AlertCircle className="w-6 h-6 text-red-600" />
-              <div>
-                <p className="text-gray-600 text-sm">Solicitudes Pendientes</p>
-                <p className="text-3xl font-bold text-slate-900">{metrics.solicitudesPendientes}</p>
+            {/* Pendientes en Bolsa - Nuevos */}
+            <div className="bg-gradient-to-br from-amber-500 to-amber-600 rounded-lg shadow-lg p-4 text-white transform hover:scale-105 transition-all duration-300 hover:shadow-xl">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-amber-100 text-sm font-semibold">Nuevos</span>
+                <span className="text-2xl">⏱️</span>
               </div>
+              <div className="text-3xl font-bold">{metrics.pendienteCita || 0}</div>
+              <p className="text-amber-200 text-xs mt-1">En la bolsa</p>
+            </div>
+
+            {/* Otros - Problemas/Rechazos */}
+            <div className="bg-gradient-to-br from-red-600 to-red-700 rounded-lg shadow-lg p-4 text-white transform hover:scale-105 transition-all duration-300 hover:shadow-xl">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-red-100 text-sm font-semibold">Otros</span>
+                <span className="text-2xl">⚠️</span>
+              </div>
+              <div className="text-3xl font-bold">{metrics.otros || 0}</div>
+              <p className="text-red-200 text-xs mt-1">Problemas</p>
             </div>
           </div>
         </div>
@@ -1213,37 +1299,74 @@ export default function GestionAsegurado() {
               </div>
             ) : (
               <>
-                {/* 🔍 FILTROS ESPECIALIZADOS */}
-                <div className="mb-6 bg-gray-50 border border-gray-200 rounded-lg p-4">
-                  <div className="flex items-center justify-between mb-3">
-                    <h3 className="text-sm font-semibold text-gray-700">Filtros</h3>
+                {/* 🔍 FILTROS SIEMPRE VISIBLES - BOLSA Y PRIORIDAD (v1.48.0) */}
+                <div className="mb-4 bg-gray-50 border border-gray-200 rounded-lg p-4">
+                  <div className="flex flex-wrap items-center gap-3 mb-3">
+                    <span className="text-sm font-bold text-blue-700 bg-blue-100 px-3 py-1 rounded">
+                      🔍 FILTROS
+                    </span>
+                    
+                    {/* Búsqueda */}
+                    <div className="flex-1 min-w-[200px]">
+                      <input
+                        type="text"
+                        placeholder="Buscar paciente, DNI o IPRESS..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                    
+                    {/* Filtro Bolsa - SIEMPRE VISIBLE */}
+                    <div className="min-w-[200px]">
+                      <select
+                        value={filtroTipoBolsa}
+                        onChange={(e) => {
+                          setFiltroTipoBolsa(e.target.value);
+                          setFiltroPrioridad107("todas"); // Reset prioridad al cambiar bolsa
+                        }}
+                        className="w-full px-3 py-2 border-2 border-blue-400 bg-blue-50 rounded-lg text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      >
+                        <option value="todas">📦 Todas las bolsas</option>
+                        {tiposBolsas.map((tb) => (
+                          <option key={tb.idTipoBolsa} value={tb.idTipoBolsa}>
+                            {tb.descTipoBolsa}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    
+                    {/* Filtro Prioridad - VISIBLE SOLO PARA BOLSA 107 */}
+                    {esBolsa107 && (
+                      <div className="min-w-[180px]">
+                        <select
+                          value={filtroPrioridad107}
+                          onChange={(e) => setFiltroPrioridad107(e.target.value)}
+                          className="w-full px-3 py-2 border-2 border-red-400 bg-red-50 rounded-lg text-sm font-medium focus:outline-none focus:ring-2 focus:ring-red-500"
+                        >
+                          <option value="todas">🚦 Todas las prioridades</option>
+                          <option value="< 24">🔴 &lt; 24 hrs (Urgente)</option>
+                          <option value="24 - 72">🟡 24 - 72 hrs (Media)</option>
+                          <option value="> 72">🟢 &gt; 72 hrs (Baja)</option>
+                        </select>
+                      </div>
+                    )}
+                    
+                    {/* Botón para más filtros */}
                     <button
                       onClick={() => setExpandFiltros(!expandFiltros)}
-                      className="text-xs font-medium text-gray-600 hover:text-gray-900 flex items-center gap-1"
+                      className="px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-600 hover:text-gray-900 flex items-center gap-1"
                     >
-                      {expandFiltros ? "Ocultar" : "Mostrar"} filtros
+                      {expandFiltros ? "Ocultar" : "Más filtros"}
                       <ChevronDown
                         size={16}
-                        className={`transition-transform ${
-                          expandFiltros ? "rotate-180" : ""
-                        }`}
+                        className={`transition-transform ${expandFiltros ? "rotate-180" : ""}`}
                       />
                     </button>
                   </div>
 
                   {expandFiltros && (
-                    <div className="space-y-3">
-                      {/* Búsqueda */}
-                      <div>
-                        <input
-                          type="text"
-                          placeholder="Buscar paciente, DNI o IPRESS..."
-                          value={searchTerm}
-                          onChange={(e) => setSearchTerm(e.target.value)}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        />
-                      </div>
-
+                    <div className="space-y-3 pt-3 border-t border-gray-200">
                       {/* Dropdowns */}
                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
                         {/* Macrorregión */}
@@ -1366,6 +1489,8 @@ export default function GestionAsegurado() {
                         <button
                           onClick={() => {
                             setSearchTerm("");
+                            setFiltroTipoBolsa("todas");
+                            setFiltroPrioridad107("todas");
                             setFiltroMacrorregion("todas");
                             setFiltroRed("todas");
                             setFiltroIpress("todas");
@@ -1375,7 +1500,7 @@ export default function GestionAsegurado() {
                           }}
                           className="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 text-sm font-medium rounded-lg transition-colors"
                         >
-                          🗑️ Limpiar
+                          🗑️ Limpiar todos
                         </button>
                       </div>
                     </div>
@@ -1383,68 +1508,74 @@ export default function GestionAsegurado() {
                 </div>
 
                 <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
+                  <table className="w-full text-xs">
                   <thead className="bg-[#0D5BA9] text-white sticky top-0">
                     <tr className="border-b-2 border-blue-800">
-                      <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">
+                      <th className="px-2 py-2 text-left text-[10px] font-bold uppercase">
                         <input
                           type="checkbox"
                           checked={selectedRows.size === pacientesFiltrados.length && pacientesFiltrados.length > 0}
                           onChange={toggleAllRows}
-                          className="w-5 h-5 cursor-pointer"
+                          className="w-4 h-4 cursor-pointer"
                           title={selectedRows.size === pacientesFiltrados.length ? "Deseleccionar todo" : "Seleccionar todo"}
                         />
                       </th>
-                      <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">
-                        Fecha Asignación
+                      <th className="px-2 py-2 text-left text-[10px] font-bold uppercase">
+                        F. Asign.
                       </th>
-                      <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">
-                        DNI Paciente
+                      <th className="px-2 py-2 text-left text-[10px] font-bold uppercase">
+                        DNI
                       </th>
-                      <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">
-                        Nombre Paciente
+                      <th className="px-2 py-2 text-left text-[10px] font-bold uppercase">
+                        Paciente
                       </th>
-                      <th className="px-4 py-3 text-center text-xs font-bold uppercase tracking-wider">
+                      <th className="px-2 py-2 text-center text-[10px] font-bold uppercase">
                         Edad
                       </th>
-                      <th className="px-4 py-3 text-center text-xs font-bold uppercase tracking-wider">
-                        Género
+                      <th className="px-2 py-2 text-center text-[10px] font-bold uppercase">
+                        Gén.
                       </th>
-                      <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">
+                      {/* Columna Prioridad - Solo visible para Bolsa ID 1 */}
+                      {esBolsaId1 && (
+                        <th className="px-2 py-2 text-center text-[10px] font-bold uppercase">
+                          Prioridad
+                        </th>
+                      )}
+                      <th className="px-2 py-2 text-left text-[10px] font-bold uppercase">
                         Especialidad
                       </th>
-                      <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">
-                        DNI Médico
+                      <th className="px-2 py-2 text-left text-[10px] font-bold uppercase">
+                        DNI Méd.
                       </th>
-                      <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">
+                      <th className="px-2 py-2 text-left text-[10px] font-bold uppercase">
                         Especialista
                       </th>
-                      <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">
-                        Fecha y Hora de Cita
+                      <th className="px-2 py-2 text-left text-[10px] font-bold uppercase">
+                        Fecha/Hora Cita
                       </th>
-                      <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">
+                      <th className="px-2 py-2 text-left text-[10px] font-bold uppercase">
                         IPRESS
                       </th>
-                      <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">
-                        Tipo de Cita
+                      <th className="px-2 py-2 text-left text-[10px] font-bold uppercase">
+                        Tipo Cita
                       </th>
-                      <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">
-                        Teléfono 1
+                      <th className="px-2 py-2 text-left text-[10px] font-bold uppercase">
+                        Tel. 1
                       </th>
-                      <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">
-                        Teléfono 2
+                      <th className="px-2 py-2 text-left text-[10px] font-bold uppercase">
+                        Tel. 2
                       </th>
-                      <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">
+                      <th className="px-2 py-2 text-left text-[10px] font-bold uppercase">
                         Estado
                       </th>
-                      <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">
-                        Fecha Cambio Estado
+                      <th className="px-2 py-2 text-left text-[10px] font-bold uppercase">
+                        F. Cambio
                       </th>
-                      <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">
-                        Usuario Cambio Estado
+                      <th className="px-2 py-2 text-left text-[10px] font-bold uppercase">
+                        Usuario
                       </th>
-                      <th className="px-4 py-3 text-center text-xs font-bold uppercase tracking-wider">
-                        Acciones
+                      <th className="px-2 py-2 text-center text-[10px] font-bold uppercase">
+                        Acc.
                       </th>
                     </tr>
                   </thead>
@@ -1456,46 +1587,88 @@ export default function GestionAsegurado() {
                           selectedRows.has(paciente.id) ? 'bg-blue-100 border-blue-300' : (idx % 2 === 0 ? "bg-white" : "bg-gray-50")
                         }`}
                       >
-                        <td className="px-4 py-3">
+                        <td className="px-2 py-1.5">
                           <input
                             type="checkbox"
                             checked={selectedRows.has(paciente.id)}
                             onChange={() => toggleRowSelection(paciente.id)}
-                            className={`w-5 h-5 border-2 rounded cursor-pointer transition-all ${
+                            className={`w-4 h-4 border-2 rounded cursor-pointer transition-all ${
                               selectedRows.has(paciente.id)
                                 ? 'bg-blue-600 border-blue-600 accent-white'
                                 : 'border-gray-300 hover:border-blue-400'
                             }`}
                           />
                         </td>
-                        <td className="px-4 py-3 text-gray-900 text-xs font-medium">
+                        <td className="px-2 py-1.5 text-gray-900 text-[10px]">
                           {paciente.fechaAsignacion === "-"
                             ? "-"
                             : new Date(paciente.fechaAsignacion).toLocaleString("es-PE", {
-                                year: 'numeric',
+                                year: '2-digit',
                                 month: '2-digit',
                                 day: '2-digit',
                                 hour: '2-digit',
                                 minute: '2-digit'
                               })}
                         </td>
-                        <td className="px-4 py-3 font-medium text-slate-900">
+                        <td className="px-2 py-1.5 font-medium text-slate-900">
                           {paciente.pacienteDni}
                         </td>
-                        <td className="px-4 py-3 text-slate-600">
+                        <td className="px-2 py-1.5 text-slate-600">
                           {paciente.pacienteNombre}
                         </td>
-                        <td className="px-4 py-3 text-center text-slate-600">
+                        <td className="px-2 py-1.5 text-center text-slate-600">
                           {paciente.pacienteEdad}
                         </td>
-                        <td className="px-4 py-3 text-center text-slate-600">
+                        <td className="px-2 py-1.5 text-center text-slate-600">
                           {paciente.pacienteSexo}
                         </td>
-                        <td className="px-4 py-3 text-slate-600">
+                        {/* Celda Prioridad - Solo visible para Bolsa ID 1 */}
+                        {esBolsaId1 && (
+                          <td className="px-2 py-1.5 text-center">
+                            {(() => {
+                              const tiempo = paciente.tiempoInicioSintomas;
+                              if (!tiempo) {
+                                return (
+                                  <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-green-100 text-green-800">
+                                    🟢 Sin datos
+                                  </span>
+                                );
+                              }
+                              if (tiempo === "< 24") {
+                                return (
+                                  <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-red-100 text-red-800">
+                                    🔴 &lt; 24 hrs
+                                  </span>
+                                );
+                              }
+                              if (tiempo === "24 - 72") {
+                                return (
+                                  <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-yellow-100 text-yellow-800">
+                                    🟡 24-72 hrs
+                                  </span>
+                                );
+                              }
+                              if (tiempo === "> 72") {
+                                return (
+                                  <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-green-100 text-green-800">
+                                    🟢 &gt; 72 hrs
+                                  </span>
+                                );
+                              }
+                              // Valor desconocido
+                              return (
+                                <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-gray-100 text-gray-800">
+                                  {tiempo}
+                                </span>
+                              );
+                            })()}
+                          </td>
+                        )}
+                        <td className="px-2 py-1.5 text-slate-600">
                           {paciente.especialidad}
                         </td>
                         {/* DNI MÉDICO - COLUMNA SEPARADA */}
-                        <td className="px-4 py-3 text-slate-600">
+                        <td className="px-2 py-1.5 text-slate-600">
                           {(() => {
                             const idServicio = paciente.idServicio;
                             const medicos = medicosPorServicio[idServicio] || [];
@@ -1508,7 +1681,7 @@ export default function GestionAsegurado() {
                           })()}
                         </td>
                         {/* ESPECIALISTA - CARGADO DINÁMICAMENTE - EDITABLE EN MODO EDICIÓN */}
-                        <td className="px-4 py-3 text-slate-600">
+                        <td className="px-2 py-1.5 text-slate-600">
                           {pacienteEditandoEstado === paciente.id ? (
                             // MODO EDICIÓN: Mostrar dropdown editable
                             (() => {
@@ -1595,7 +1768,7 @@ export default function GestionAsegurado() {
                           )}
                         </td>
                         {/* FECHA Y HORA DE CITA - EDITABLE EN MODO EDICIÓN */}
-                        <td className="px-4 py-3 text-slate-600">
+                        <td className="px-2 py-1.5 text-slate-600">
                           {pacienteEditandoEstado === paciente.id ? (
                             // MODO EDICIÓN: Input editable
                             <input
@@ -1637,19 +1810,19 @@ export default function GestionAsegurado() {
                             })()
                           )}
                         </td>
-                        <td className="px-4 py-3 text-slate-600">
+                        <td className="px-2 py-1.5 text-slate-600">
                           {paciente.descIpress}
                         </td>
-                        <td className="px-4 py-3 text-slate-600">
+                        <td className="px-2 py-1.5 text-slate-600">
                           {paciente.tipoCita}
                         </td>
-                        <td className="px-4 py-3 text-slate-600">
+                        <td className="px-2 py-1.5 text-slate-600">
                           {paciente.pacienteTelefono}
                         </td>
-                        <td className="px-4 py-3 text-slate-600">
+                        <td className="px-2 py-1.5 text-slate-600">
                           {paciente.pacienteTelefonoAlterno}
                         </td>
-                        <td className="px-4 py-3">
+                        <td className="px-2 py-1.5">
                           {pacienteEditandoEstado === paciente.id ? (
                             // Modo Edición: Mostrar Select
                             <div className="space-y-1">
@@ -1695,7 +1868,7 @@ export default function GestionAsegurado() {
                             </div>
                           ) : (
                             // Modo Normal: Mostrar Badge del Estado
-                            <span className={`px-3 py-1.5 rounded-lg text-xs font-medium inline-block ${
+                            <span className={`px-2 py-1 rounded-lg text-[10px] font-medium inline-block ${
                               paciente.codigoEstado === "ATENDIDO_IPRESS"
                                 ? "bg-green-100 text-green-800"
                                 : paciente.codigoEstado === "PENDIENTE_CITA"
@@ -1709,7 +1882,7 @@ export default function GestionAsegurado() {
                           )}
                         </td>
                         {/* FECHA CAMBIO ESTADO - Auditoría v3.3.1 */}
-                        <td className="px-4 py-3 text-slate-600 text-xs">
+                        <td className="px-2 py-1.5 text-slate-600 text-xs">
                           {paciente.fechaCambioEstado ? (
                             <span className="text-blue-700 font-medium">
                               {new Date(paciente.fechaCambioEstado).toLocaleString("es-ES")}
@@ -1719,7 +1892,7 @@ export default function GestionAsegurado() {
                           )}
                         </td>
                         {/* USUARIO CAMBIO ESTADO - Auditoría v3.3.1 */}
-                        <td className="px-4 py-3 text-slate-600 text-xs">
+                        <td className="px-2 py-1.5 text-slate-600 text-xs">
                           {paciente.usuarioCambioEstado ? (
                             <span className="text-gray-900 font-medium">
                               {paciente.usuarioCambioEstado}
@@ -1729,44 +1902,43 @@ export default function GestionAsegurado() {
                           )}
                         </td>
                         {/* COLUMNA ACCIONES - Lápiz para editar + Guardar/Cancelar */}
-                        <td className="px-4 py-3 text-center">
+                        <td className="px-2 py-1.5 text-center">
                           {pacienteEditandoEstado === paciente.id ? (
                             // Modo Edición: Mostrar Guardar y Cancelar
-                            <div className="flex gap-2 justify-center">
+                            <div className="flex gap-1 justify-center">
                               <button
                                 onClick={handleGuardarEstado}
                                 disabled={!nuevoEstadoSeleccionado || guardandoEstado}
-                                className="bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white px-3 py-1.5 rounded text-xs font-medium transition-colors"
+                                className="bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white px-2 py-1 rounded text-[10px] font-medium transition-colors"
                                 title="Guardar cambios"
                               >
-                                💾 Guardar
+                                💾
                               </button>
                               <button
                                 onClick={handleCancelarEstado}
                                 disabled={guardandoEstado}
-                                className="bg-gray-400 hover:bg-gray-500 disabled:bg-gray-300 text-white px-3 py-1.5 rounded text-xs font-medium transition-colors"
+                                className="bg-gray-400 hover:bg-gray-500 disabled:bg-gray-300 text-white px-2 py-1 rounded text-[10px] font-medium transition-colors"
                                 title="Cancelar edición"
                               >
-                                ✕ Cancelar
+                                ✕
                               </button>
                             </div>
                           ) : (
                             // Modo Normal: Mostrar Lápiz de Editar
-                            <div className="flex gap-2 justify-center">
+                            <div className="flex gap-1 justify-center">
                               <button
                                 onClick={() => {
                                   setPacienteEditandoEstado(paciente.id);
                                   setNuevoEstadoSeleccionado(paciente.codigoEstado || "");
                                 }}
-                                className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded text-xs font-medium transition-colors flex items-center gap-1"
+                                className="bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 rounded text-[10px] font-medium transition-colors"
                                 title="Editar estado y cita"
                               >
-                                <Edit2 size={14} />
-                                Editar
+                                ✏️
                               </button>
                               <button
                                 onClick={() => abrirModalTelefono(paciente)}
-                                className="bg-purple-600 hover:bg-purple-700 text-white px-3 py-1.5 rounded text-xs font-medium transition-colors"
+                                className="bg-purple-600 hover:bg-purple-700 text-white px-2 py-1 rounded text-[10px] font-medium transition-colors"
                                 title="Actualizar teléfonos"
                               >
                                 📱

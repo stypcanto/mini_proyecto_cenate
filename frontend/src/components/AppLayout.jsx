@@ -28,11 +28,16 @@ export default function AppLayout({ children, title = "" }) {
 
   // Ajustar márgenes laterales basado en si el sidebar está colapsado
   const horizontalPadding = collapsed
-    ? "px-6 md:px-12" // MENOS padding cuando está colapsado = MÁS espacio para contenido
-    : "px-24 md:px-12"; // MÁS padding cuando está expandido = MENOS espacio (sidebar ocupa más)
+    ? "px-4 md:px-6" // MENOS padding cuando está colapsado = MÁS espacio para contenido
+    : "px-4 md:px-6"; // Padding uniforme
 
-  // Ajustar margen izquierdo para EXTERNO (sidebar más ancho)
-  const mainLeftMargin = isExternoRole ? "lg:ml-[420px]" : "lg:ml-[340px]";
+  // Ajustar margen izquierdo dinámicamente según estado del sidebar
+  // Valores exactos: w-20 = 80px (colapsado), w-[340px] = 340px, w-[420px] = 420px
+  const mainLeftMargin = collapsed
+    ? "lg:ml-[80px]" // Sidebar colapsado (w-20 = 80px)
+    : isExternoRole 
+      ? "lg:ml-[420px]" // Sidebar expandido para EXTERNO
+      : "lg:ml-[340px]"; // Sidebar expandido normal
 
   return (
     <div
