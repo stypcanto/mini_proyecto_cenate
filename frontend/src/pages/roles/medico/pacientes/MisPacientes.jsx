@@ -17,7 +17,8 @@ import {
   Loader,
   RefreshCw,
   CheckCircle,
-  Share2
+  Share2,
+  ChevronRight
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import gestionPacientesService from '../../../../services/gestionPacientesService';
@@ -291,6 +292,7 @@ export default function MisPacientes() {
                     <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700">Teléfono</th>
                     <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700">IPRESS</th>
                     <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700">Condición</th>
+                    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700">Motivo</th>
                     <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700">Fecha Asignación</th>
                     <th className="px-6 py-3 text-center text-xs font-semibold text-gray-700">Acciones</th>
                   </tr>
@@ -306,10 +308,22 @@ export default function MisPacientes() {
                         <button
                           onClick={() => abrirAccion(paciente)}
                           title="Haz clic para cambiar estado"
-                          className={`px-3 py-1 rounded-full text-xs font-semibold border cursor-pointer hover:shadow-md hover:scale-105 transition ${getColorCondicion(paciente.condicion)}`}
+                          className={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs font-semibold border cursor-pointer transition-all duration-200 hover:shadow-lg hover:scale-110 active:scale-95 ${getColorCondicion(paciente.condicion)}`}
                         >
-                          {paciente.condicion || 'Sin asignar'}
+                          <span>{paciente.condicion || 'Sin asignar'}</span>
+                          <ChevronRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
                         </button>
+                      </td>
+                      <td className="px-6 py-4 text-sm text-gray-600">
+                        {paciente.observaciones ? (
+                          <div className="max-w-xs">
+                            <p className="text-xs bg-yellow-50 text-yellow-800 border border-yellow-200 rounded px-2 py-1">
+                              {paciente.observaciones}
+                            </p>
+                          </div>
+                        ) : (
+                          <span className="text-gray-400">-</span>
+                        )}
                       </td>
                       <td className="px-6 py-4 text-sm text-gray-600">
                         <div className="flex items-center gap-2">

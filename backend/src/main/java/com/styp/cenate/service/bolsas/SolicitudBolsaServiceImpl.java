@@ -2901,10 +2901,20 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
         String codigoIpressValido = obtenerCodigoIpress(request.getDescIpress());
         log.info("🔍 [v1.46.8] IPRESS input: '{}' → código final: '{}'", request.getDescIpress(), codigoIpressValido);
 
-        // 5. Crear nueva solicitud con campos válidos de la entidad SolicitudBolsa
+        // 5. ✅ v1.46.9: Usar idPersonal del request si se proporciona
+        Long idPersonalFinal = request.getIdPersonal() != null ? request.getIdPersonal() : null;
+        log.info("🔍 [v1.46.9] idPersonal enviado: {}", idPersonalFinal);
+
+        // ✅ v1.46.9: Usar fechaAsignacion del request o generar la actual
+        OffsetDateTime fechaAsignacionFinal = request.getFechaAsignacion() != null
+            ? request.getFechaAsignacion()
+            : OffsetDateTime.now();
+
+        // 6. Crear nueva solicitud con campos válidos de la entidad SolicitudBolsa
         // ✅ v1.46.4: Si codigoIpressAdscripcion es null, pasarlo como null (nullable)
         // ✅ v1.46.4: Auto-asignar al gestor que realiza la importación
         // ✅ v1.46.8: Usar código IPRESS válido
+        // ✅ v1.46.9: Asignar médico (idPersonal) si se proporciona
         SolicitudBolsa nuevaSolicitud = SolicitudBolsa.builder()
             .numeroSolicitud(numeroSolicitud)
             .pacienteDni(request.getPacienteDni())
@@ -2921,17 +2931,19 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
             .estadoGestionCitasId(1L) // ID del estado "PENDIENTE CITAR"
             .idBolsa(10L) // BOLSA_GESTORA (v1.46.4 - usar bolsa de gestora para importados)
             .idServicio(1L) // Servicio por defecto
+            .idPersonal(idPersonalFinal) // ✅ v1.46.9: Asignar a médico si se proporciona
             .responsableGestoraId(responsableGestoraId) // ✅ Auto-asignar al gestor actual
-            .fechaAsignacion(OffsetDateTime.now()) // ✅ Registrar fecha de asignación
+            .fechaAsignacion(fechaAsignacionFinal) // ✅ v1.46.9: Usar fecha proporcionada o actual
             .activo(true)
             .build();
 
-        // 6. Guardar
+        // 7. Guardar
         SolicitudBolsa guardado = solicitudRepository.save(nuevaSolicitud);
 
-        log.info("✅ Solicitud adicional creada: {} - Asignada a gestor ID: {} - IPRESS: {}", guardado.getIdSolicitud(), responsableGestoraId, codigoIpressValido);
+        log.info("✅ Solicitud adicional creada: {} - Médico ID: {} - Gestor ID: {} - IPRESS: {}",
+            guardado.getIdSolicitud(), idPersonalFinal, responsableGestoraId, codigoIpressValido);
 
-        // 7. Mapear a DTO
+        // 8. Mapear a DTO
         return SolicitudBolsaMapper.toDTO(guardado);
     }
 

@@ -833,6 +833,9 @@ export default function GestionAsegurado() {
             codEstadoCita: "01",
             usuarioCreacion: user?.id,
             especialidad: especialidadSeleccionada, // ✅ v1.46.5: Agregar especialidad
+            // ✅ v1.46.9: Agregar médico y fecha de cita si se seleccionaron
+            idPersonal: medicoSeleccionado ? parseInt(medicoSeleccionado) : null,
+            fechaAsignacion: fechaHoraCitaSeleccionada ? new Date(fechaHoraCitaSeleccionada).toISOString() : null,
           }),
         }
       );
