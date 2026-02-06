@@ -745,6 +745,12 @@ export default function GestionAsegurado() {
     console.log("   - citasAgendadas[id]:", citasAgendadas[paciente.id]);
     console.log("   - idServicio:", paciente.idServicio);
 
+    // ✅ v1.50.2: Cargar médicos si falta idServicio
+    if (paciente.idServicio && !medicosPorServicio[paciente.idServicio]) {
+      console.log("📥 Cargando médicos para servicio:", paciente.idServicio);
+      await obtenerMedicosPorServicio(paciente.idServicio);
+    }
+
     // Opción 1: Buscar en citasAgendadas (si el usuario acababa de seleccionar)
     const citaAgendada = citasAgendadas[paciente.id];
     if (citaAgendada && citaAgendada.especialista && paciente.idServicio) {
