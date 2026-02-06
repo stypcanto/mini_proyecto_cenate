@@ -36,11 +36,17 @@ export default function MisPacientes() {
   // ✅ v1.47.0: Estados para modal Atender Paciente
   const [tieneRecita, setTieneRecita] = useState(false);
   const [recitaDias, setRecitaDias] = useState(7);
+  const [expandRecita, setExpandRecita] = useState(false);
+
   const [tieneInterconsulta, setTieneInterconsulta] = useState(false);
   const [interconsultaEspecialidad, setInterconsultaEspecialidad] = useState('');
+  const [expandInterconsulta, setExpandInterconsulta] = useState(false);
+
   const [esCronico, setEsCronico] = useState(false);
   const [enfermedadesCronicas, setEnfermedadesCronicas] = useState([]);
   const [otroDetalle, setOtroDetalle] = useState('');
+  const [expandCronico, setExpandCronico] = useState(false);
+
   const [especialidades, setEspecialidades] = useState([]);
   const [notasAccion, setNotasAccion] = useState('');
 
@@ -466,21 +472,26 @@ export default function MisPacientes() {
       {/* Modal de Cambio de Estado */}
       {modalAccion === 'cambiarEstado' && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-lg max-w-2xl w-full p-6">
-            <h2 className="text-xl font-bold text-gray-900 mb-6">Cambiar Estado de Consulta</h2>
+          <div className="bg-white rounded-lg shadow-lg max-w-2xl w-full flex flex-col max-h-[90vh]">
+            {/* Header Fijo */}
+            <div className="p-6 border-b border-gray-200">
+              <h2 className="text-xl font-bold text-gray-900 mb-4">Cambiar Estado de Consulta</h2>
 
-            <div className="mb-6">
-              <p className="text-sm text-gray-600 mb-2">Paciente</p>
-              <p className="text-lg font-semibold text-gray-900">{pacienteSeleccionado?.apellidosNombres}</p>
+              <div className="mb-4">
+                <p className="text-sm text-gray-600 mb-2">Paciente</p>
+                <p className="text-lg font-semibold text-gray-900">{pacienteSeleccionado?.apellidosNombres}</p>
+              </div>
+
+              <div className="p-3 bg-gray-50 rounded-lg border border-gray-200">
+                <p className="text-sm text-gray-600">Estado Actual</p>
+                <p className="text-lg font-semibold text-gray-900">{pacienteSeleccionado?.condicion || 'Citado'}</p>
+              </div>
             </div>
 
-            <div className="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
-              <p className="text-sm text-gray-600">Estado Actual</p>
-              <p className="text-lg font-semibold text-gray-900">{pacienteSeleccionado?.condicion || 'Citado'}</p>
-            </div>
-
-            {/* Opciones de Estado */}
-            <div className="space-y-4 mb-6">
+            {/* Contenido Scrolleable */}
+            <div className="flex-1 overflow-y-auto p-6">
+              {/* Opciones de Estado */}
+              <div className="space-y-4 mb-6">
               <h3 className="text-sm font-semibold text-gray-900">Seleccione el nuevo estado:</h3>
 
               {/* Opción Atendido */}
@@ -581,12 +592,15 @@ export default function MisPacientes() {
                 <div className="space-y-5">
                   {/* Sección 1: RECITA */}
                   <div className="border-2 border-green-300 rounded-xl bg-gradient-to-br from-green-50 to-emerald-50 p-5 hover:shadow-md transition-shadow">
-                    <div className="flex items-start gap-4 cursor-pointer" onClick={() => setTieneRecita(!tieneRecita)}>
+                    <div className="flex items-start gap-4 cursor-pointer" onClick={() => setExpandRecita(!expandRecita)}>
                       <input
                         type="checkbox"
                         id="recita"
                         checked={tieneRecita}
-                        onChange={(e) => setTieneRecita(e.target.checked)}
+                        onChange={(e) => {
+                          setTieneRecita(e.target.checked);
+                          if (e.target.checked) setExpandRecita(true);
+                        }}
                         className="w-6 h-6 text-green-600 rounded mt-1"
                       />
                       <div className="flex-1">
@@ -595,10 +609,11 @@ export default function MisPacientes() {
                         </label>
                         <p className="text-xs text-gray-600 mt-1">Crear una cita de seguimiento posterior</p>
                       </div>
+                      <ChevronRight className={`w-5 h-5 text-green-600 transition-transform ${expandRecita ? 'rotate-90' : ''}`} />
                     </div>
 
-                    {tieneRecita && (
-                      <div className="mt-5 ml-10 pt-5 border-t border-green-200">
+                    {expandRecita && tieneRecita && (
+                      <div className="mt-5 ml-10 pt-5 border-t border-green-200 animate-in slide-in-from-top-2">
                         <label className="block text-sm font-semibold text-gray-800 mb-3">
                           ⏰ Plazo para la recita:
                         </label>
@@ -620,12 +635,15 @@ export default function MisPacientes() {
 
                   {/* Sección 2: INTERCONSULTA */}
                   <div className="border-2 border-blue-300 rounded-xl bg-gradient-to-br from-blue-50 to-cyan-50 p-5 hover:shadow-md transition-shadow">
-                    <div className="flex items-start gap-4 cursor-pointer" onClick={() => setTieneInterconsulta(!tieneInterconsulta)}>
+                    <div className="flex items-start gap-4 cursor-pointer" onClick={() => setExpandInterconsulta(!expandInterconsulta)}>
                       <input
                         type="checkbox"
                         id="interconsulta"
                         checked={tieneInterconsulta}
-                        onChange={(e) => setTieneInterconsulta(e.target.checked)}
+                        onChange={(e) => {
+                          setTieneInterconsulta(e.target.checked);
+                          if (e.target.checked) setExpandInterconsulta(true);
+                        }}
                         className="w-6 h-6 text-blue-600 rounded mt-1"
                       />
                       <div className="flex-1">
@@ -634,10 +652,11 @@ export default function MisPacientes() {
                         </label>
                         <p className="text-xs text-gray-600 mt-1">Referir a un especialista para evaluación</p>
                       </div>
+                      <ChevronRight className={`w-5 h-5 text-blue-600 transition-transform ${expandInterconsulta ? 'rotate-90' : ''}`} />
                     </div>
 
-                    {tieneInterconsulta && (
-                      <div className="mt-5 ml-10 pt-5 border-t border-blue-200">
+                    {expandInterconsulta && tieneInterconsulta && (
+                      <div className="mt-5 ml-10 pt-5 border-t border-blue-200 animate-in slide-in-from-top-2">
                         <label className="block text-sm font-semibold text-gray-800 mb-3">
                           👨‍⚕️ Especialidad requerida:
                         </label>
@@ -659,12 +678,15 @@ export default function MisPacientes() {
 
                   {/* Sección 3: ENFERMEDAD CRÓNICA */}
                   <div className="border-2 border-purple-300 rounded-xl bg-gradient-to-br from-purple-50 to-pink-50 p-5 hover:shadow-md transition-shadow">
-                    <div className="flex items-start gap-4 cursor-pointer" onClick={() => setEsCronico(!esCronico)}>
+                    <div className="flex items-start gap-4 cursor-pointer" onClick={() => setExpandCronico(!expandCronico)}>
                       <input
                         type="checkbox"
                         id="cronico"
                         checked={esCronico}
-                        onChange={(e) => setEsCronico(e.target.checked)}
+                        onChange={(e) => {
+                          setEsCronico(e.target.checked);
+                          if (e.target.checked) setExpandCronico(true);
+                        }}
                         className="w-6 h-6 text-purple-600 rounded mt-1"
                       />
                       <div className="flex-1">
@@ -673,10 +695,11 @@ export default function MisPacientes() {
                         </label>
                         <p className="text-xs text-gray-600 mt-1">Registrar condiciones crónicas del paciente</p>
                       </div>
+                      <ChevronRight className={`w-5 h-5 text-purple-600 transition-transform ${expandCronico ? 'rotate-90' : ''}`} />
                     </div>
 
-                    {esCronico && (
-                      <div className="mt-5 ml-10 pt-5 border-t border-purple-200">
+                    {expandCronico && esCronico && (
+                      <div className="mt-5 ml-10 pt-5 border-t border-purple-200 animate-in slide-in-from-top-2">
                         <p className="text-sm font-semibold text-gray-800 mb-4">
                           ✓ Seleccione enfermedad(es):
                         </p>
@@ -730,9 +753,10 @@ export default function MisPacientes() {
                 </div>
               </div>
             )}
+            </div>
 
-            {/* Botones */}
-            <div className="flex gap-3 justify-end">
+            {/* Footer Fijo con Botones */}
+            <div className="border-t border-gray-200 p-6 bg-gray-50 flex gap-3 justify-end">
               <button
                 onClick={() => setModalAccion(null)}
                 disabled={procesando}
