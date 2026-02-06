@@ -673,6 +673,38 @@ export default function GestionAsegurado() {
       setPacienteEditandoEstado(null);
       setNuevoEstadoSeleccionado("");
       console.log("✅ Estado de edición limpiado");
+
+      // ✅ Toast minimalista de éxito
+      toast.custom((t) => (
+        <div
+          className={`flex items-center gap-3 bg-white border-l-4 border-green-500 rounded-lg px-4 py-3 shadow-lg transition-all ${
+            t.visible ? 'animate-in' : 'animate-out'
+          }`}
+        >
+          <div className="flex-shrink-0">
+            <svg className="h-5 w-5 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+            </svg>
+          </div>
+          <div className="flex-1">
+            <p className="text-sm font-medium text-gray-900">
+              Cita programada con éxito
+            </p>
+            <p className="text-xs text-gray-500 mt-0.5">
+              {paciente.pacienteNombre}
+            </p>
+          </div>
+          <button
+            onClick={() => toast.dismiss(t.id)}
+            className="text-gray-400 hover:text-gray-600 transition-colors"
+          >
+            ✕
+          </button>
+        </div>
+      ), {
+        position: 'top-right',
+        duration: 4000,
+      });
     } catch (error) {
       console.error("❌ Error en handleGuardarEstado:", error);
       toast.error("Error al guardar el estado");
