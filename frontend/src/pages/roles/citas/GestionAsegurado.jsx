@@ -2387,25 +2387,11 @@ export default function GestionAsegurado() {
                                 <button
                                   onClick={() => abrirModalMensajeCita(paciente)}
                                   className="bg-purple-600 hover:bg-purple-700 text-white p-2 rounded transition-colors"
-                                  title="Enviar mensaje de cita"
+                                  title="Enviar mensaje de cita formateado"
                                 >
                                   <MessageCircle className="w-4 h-4" strokeWidth={2} />
                                 </button>
                               )}
-                              <button
-                                onClick={() => {
-                                  if (paciente.pacienteTelefono) {
-                                    const url = `https://wa.me/${paciente.pacienteTelefono.replace(/\D/g, '')}`;
-                                    window.open(url, '_blank');
-                                  } else {
-                                    toast.error("No hay teléfono registrado");
-                                  }
-                                }}
-                                className="bg-green-600 hover:bg-green-700 text-white p-2 rounded transition-colors"
-                                title="Chat directo WhatsApp"
-                              >
-                                <Smartphone className="w-4 h-4" strokeWidth={2} />
-                              </button>
                             </div>
                           )}
                         </td>
