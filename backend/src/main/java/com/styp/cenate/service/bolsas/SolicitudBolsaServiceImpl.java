@@ -2913,6 +2913,25 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
         Long responsableGestoraId = usuarioActual != null ? usuarioActual.getIdUser() : null;
         log.info("🔍 [Auto-Assign] Usuario encontrado: {} → ID: {}", usuarioActual != null ? usuarioActual.getNameUser() : "NO ENCONTRADO", responsableGestoraId);
 
+        // 3.1 Obtener ID del servicio (v1.47.0)
+        // Prioridad: 1) idServicio directo del request, 2) buscar por nombre de especialidad
+        Long idServicio = 1L; // Valor por defecto
+        if (request.getIdServicio() != null) {
+            // ✅ v1.47.0: Usar idServicio directo si viene en el request
+            idServicio = request.getIdServicio();
+            log.info("✅ [v1.47.0] Usando idServicio directo del request: {}", idServicio);
+        } else if (request.getEspecialidad() != null && !request.getEspecialidad().trim().isEmpty()) {
+            // Fallback: buscar por nombre de especialidad
+            Optional<DimServicioEssi> servicioOpt = dimServicioEssiRepository
+                .findFirstByDescServicioIgnoreCaseAndEstado(request.getEspecialidad().trim(), "A");
+            if (servicioOpt.isPresent()) {
+                idServicio = servicioOpt.get().getIdServicio();
+                log.info("✅ [v1.47.0] Servicio encontrado por nombre: '{}' → idServicio={}", request.getEspecialidad(), idServicio);
+            } else {
+                log.warn("⚠️ [v1.47.0] Servicio '{}' no encontrado, usando idServicio por defecto: 1", request.getEspecialidad());
+            }
+        }
+
         // 4. Crear nueva solicitud con campos válidos de la entidad SolicitudBolsa
         // ✅ v1.46.4: Si codigoIpressAdscripcion es null, pasarlo como null (nullable)
         // ✅ v1.46.4: Auto-asignar al gestor que realiza la importación
@@ -2931,7 +2950,10 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
             .estado("PENDIENTE")
             .estadoGestionCitasId(1L) // ID del estado "PENDIENTE CITAR"
             .idBolsa(10L) // BOLSA_GESTORA (v1.46.4 - usar bolsa de gestora para importados)
-            .idServicio(1L) // Servicio por defecto
+            .idServicio(idServicio) // ✅ v1.47.0 - ID del servicio basado en especialidad
+            .idPersonal(request.getIdPersonal()) // ✅ v1.47.1 - ID del médico especialista
+            .fechaAtencion(request.getFechaAtencion()) // ✅ v1.47.2 - Fecha de atención
+            .horaAtencion(request.getHoraAtencion()) // ✅ v1.47.2 - Hora de atención
             .responsableGestoraId(responsableGestoraId) // ✅ Auto-asignar al gestor actual
             .fechaAsignacion(OffsetDateTime.now()) // ✅ Registrar fecha de asignación
             .activo(true)

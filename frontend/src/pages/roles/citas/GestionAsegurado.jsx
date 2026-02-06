@@ -103,6 +103,8 @@ export default function GestionAsegurado() {
   const [cargandoBusqueda, setCargandoBusqueda] = useState(false);
   const [agregandoPaciente, setAgregandoPaciente] = useState(false);
   const [especialidadSeleccionada, setEspecialidadSeleccionada] = useState("");
+  const [idServicioSeleccionado, setIdServicioSeleccionado] = useState(null); // v1.47.0: ID del servicio
+  const [especialidadesApi, setEspecialidadesApi] = useState([]); // v1.47.0: Especialidades desde API
   const [medicoSeleccionado, setMedicoSeleccionado] = useState(""); // v1.46.7: Médico en modal
   const [fechaHoraCitaSeleccionada, setFechaHoraCitaSeleccionada] = useState(""); // v1.46.7: Fecha/Hora en modal
   const [medicosDisponibles, setMedicosDisponibles] = useState([]); // v1.46.7: Médicos por especialidad
@@ -807,11 +809,11 @@ export default function GestionAsegurado() {
   }, [especialidadSeleccionada]);
 
   // ============================================================================
-  // ➕ IMPORTAR PACIENTE ADICIONAL (v1.46.0) - FIXED v1.46.1
+  // ➕ IMPORTAR PACIENTE ADICIONAL (v1.46.0) - FIXED v1.47.0
   // ============================================================================
   const importarPacienteAdicional = async (asegurado) => {
-    // ✅ v1.46.5: Validar especialidad seleccionada
-    if (!especialidadSeleccionada || especialidadSeleccionada.trim() === "") {
+    // ✅ v1.47.0: Validar idServicio seleccionado
+    if (!idServicioSeleccionado) {
       toast.error("⚠️ Debes seleccionar una especialidad antes de importar");
       return;
     }
@@ -823,6 +825,17 @@ export default function GestionAsegurado() {
       // ✅ v1.46.4: IMPORTAR SOLO A dim_solicitud_bolsa (bandeja del gestor de citas)
       // No crear en gestion_paciente - solo agregar a la bandeja del gestor
       // El gestor puede entonces asignar especialidad y médico
+      
+      // ✅ v1.47.2: Extraer fecha y hora del datetime-local
+      let fechaAtencionParsed = null;
+      let horaAtencionParsed = null;
+      if (fechaHoraCitaSeleccionada) {
+        const [fecha, hora] = fechaHoraCitaSeleccionada.split('T');
+        fechaAtencionParsed = fecha; // YYYY-MM-DD
+        horaAtencionParsed = hora;   // HH:mm
+        console.log("⏰ Fecha atención:", fechaAtencionParsed, "Hora:", horaAtencionParsed);
+      }
+      
       const createBolsaRes = await fetch(
         `${API_BASE}/bolsas/solicitudes/crear-adicional`,
         {
@@ -840,7 +853,11 @@ export default function GestionAsegurado() {
             origen: "Importación Manual",
             codEstadoCita: "01",
             usuarioCreacion: user?.id,
-            especialidad: especialidadSeleccionada, // ✅ v1.46.5: Agregar especialidad
+            especialidad: especialidadSeleccionada, // ✅ v1.46.5: Agregar especialidad (nombre)
+            idServicio: idServicioSeleccionado, // ✅ v1.47.0: Agregar idServicio directamente
+            idPersonal: medicoSeleccionado ? parseInt(medicoSeleccionado) : null, // ✅ v1.47.1: ID del médico
+            fechaAtencion: fechaAtencionParsed, // ✅ v1.47.2: Fecha de atención
+            horaAtencion: horaAtencionParsed, // ✅ v1.47.2: Hora de atención
           }),
         }
       );
@@ -857,6 +874,7 @@ export default function GestionAsegurado() {
       setBusquedaAsegurado("");
       setResultadosBusqueda([]);
       setEspecialidadSeleccionada(""); // ✅ v1.46.5: Resetear especialidad
+      setIdServicioSeleccionado(null); // ✅ v1.47.0: Resetear idServicio
       setMedicoSeleccionado(""); // ✅ v1.46.7: Resetear médico
       setFechaHoraCitaSeleccionada(""); // ✅ v1.46.7: Resetear fecha/hora
       await fetchPacientesAsignados();
@@ -875,6 +893,7 @@ export default function GestionAsegurado() {
         setError(null);
         await fetchPacientesAsignados();
         await fetchTiposBolsas(); // Cargar tipos de bolsas
+        await fetchEspecialidadesApi(); // v1.47.0: Cargar especialidades
       } catch (err) {
         console.error("Error loading data:", err);
         setError("Error al cargar los datos. Por favor, intente de nuevo.");
@@ -910,6 +929,33 @@ export default function GestionAsegurado() {
       }
     } catch (error) {
       console.error("❌ Error cargando tipos de bolsas:", error);
+    }
+  };
+
+  // 🏥 v1.47.0: Cargar especialidades desde API (activos-cenate)
+  const fetchEspecialidadesApi = async () => {
+    try {
+      const token = getToken();
+      const response = await fetch(
+        `${API_BASE}/servicio-essi/activos-cenate`,
+        {
+          method: "GET",
+          headers: {
+            "Authorization": `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        console.log("🏥 Especialidades cargadas desde API:", data);
+        setEspecialidadesApi(data || []);
+      } else {
+        console.warn("⚠️ No se pudieron cargar las especialidades");
+      }
+    } catch (error) {
+      console.error("❌ Error cargando especialidades:", error);
     }
   };
 
@@ -1077,18 +1123,8 @@ export default function GestionAsegurado() {
       .filter((i) => i))
   ].sort();
 
-  // 🏥 Especialidades disponibles para importación (v1.46.5)
-  const especialidadesDisponibles = [
-    "NUTRICION",
-    "CARDIOLOGIA",
-    "MEDICINA GENERAL",
-    "NEUROLOGIA",
-    "PSIQUIATRIA",
-    "PEDIATRIA",
-    "DERMATOLOGIA",
-    "OFTALMOLOGIA",
-    "S/E"
-  ];
+  // 🏥 Especialidades disponibles para importación (v1.47.0 - cargadas desde API)
+  const especialidadesDisponibles = especialidadesApi.map(e => e.descServicio);
 
   const especialidadesUnicas = [
     ...new Set(
@@ -2194,10 +2230,15 @@ export default function GestionAsegurado() {
                                 📋 Especialidad <span className="text-red-600 text-lg">*</span>
                               </label>
                               <select
-                                value={especialidadSeleccionada}
-                                onChange={(e) => setEspecialidadSeleccionada(e.target.value)}
+                                value={idServicioSeleccionado || ""}
+                                onChange={(e) => {
+                                  const selectedId = e.target.value ? parseInt(e.target.value) : null;
+                                  setIdServicioSeleccionado(selectedId);
+                                  const esp = especialidadesApi.find(x => x.idServicio === selectedId);
+                                  setEspecialidadSeleccionada(esp?.descServicio || "");
+                                }}
                                 className={`w-full px-3 py-2.5 border-2 rounded-lg focus:ring-2 focus:ring-green-600 focus:border-green-600 text-sm font-medium transition-all ${
-                                  especialidadSeleccionada
+                                  idServicioSeleccionado
                                     ? "bg-white border-green-500 text-green-900"
                                     : "bg-green-50 border-green-300 text-gray-500"
                                 }`}
@@ -2205,9 +2246,9 @@ export default function GestionAsegurado() {
                                 <option value="" disabled className="text-gray-400">
                                   🔴 Seleccionar especialidad (obligatorio)
                                 </option>
-                                {especialidadesDisponibles.map((esp) => (
-                                  <option key={esp} value={esp} className="text-gray-900">
-                                    ✓ {esp}
+                                {especialidadesApi.map((esp) => (
+                                  <option key={esp.idServicio} value={esp.idServicio} className="text-gray-900">
+                                    ✓ {esp.descServicio}
                                   </option>
                                 ))}
                               </select>
@@ -2221,9 +2262,9 @@ export default function GestionAsegurado() {
                               <select
                                 value={medicoSeleccionado}
                                 onChange={(e) => setMedicoSeleccionado(e.target.value)}
-                                disabled={!especialidadSeleccionada || medicosDisponibles.length === 0}
+                                disabled={!idServicioSeleccionado || medicosDisponibles.length === 0}
                                 className={`w-full px-3 py-2.5 border-2 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-blue-600 text-sm font-medium transition-all ${
-                                  !especialidadSeleccionada || medicosDisponibles.length === 0
+                                  !idServicioSeleccionado || medicosDisponibles.length === 0
                                     ? "bg-gray-100 border-gray-300 text-gray-500 cursor-not-allowed"
                                     : medicoSeleccionado
                                     ? "bg-white border-blue-500 text-blue-900"
@@ -2231,7 +2272,7 @@ export default function GestionAsegurado() {
                                 }`}
                               >
                                 <option value="">
-                                  {!especialidadSeleccionada
+                                  {!idServicioSeleccionado
                                     ? "⚠️ Primero selecciona una especialidad"
                                     : medicosDisponibles.length === 0
                                     ? "⚠️ No hay médicos disponibles"

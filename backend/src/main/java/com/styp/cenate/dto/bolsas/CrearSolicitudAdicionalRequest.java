@@ -2,6 +2,8 @@ package com.styp.cenate.dto.bolsas;
 
 import lombok.*;
 import jakarta.validation.constraints.*;
+import java.time.LocalDate;
+import java.time.LocalTime;
 
 /**
  * 📋 DTO para crear solicitud adicional desde importación manual
@@ -43,4 +45,12 @@ public class CrearSolicitudAdicionalRequest {
 
     @NotBlank(message = "Especialidad es requerida")
     private String especialidad; // v1.46.5 - Especialidad del médico
+
+    private Long idServicio; // v1.47.0 - ID del servicio/especialidad (opcional, si se envía se usa directo)
+
+    private Long idPersonal; // v1.47.1 - ID del médico especialista (opcional)
+
+    private LocalDate fechaAtencion; // v1.47.2 - Fecha de atención (opcional)
+
+    private LocalTime horaAtencion; // v1.47.2 - Hora de atención (opcional)
 }
