@@ -737,27 +737,50 @@ export default function GestionAsegurado() {
       return;
     }
 
+    // Obtener nombre del médico desde citasAgendadas o medicosPorServicio
+    let pacienteConMedico = { ...paciente };
+
+    const citaAgendada = citasAgendadas[paciente.id];
+    if (citaAgendada && citaAgendada.especialista && paciente.idServicio) {
+      const medicos = medicosPorServicio[paciente.idServicio] || [];
+      const medicoEncontrado = medicos.find(m => m.idPers === citaAgendada.especialista);
+
+      if (medicoEncontrado) {
+        // Construir nombre completo del médico
+        const nombre = [
+          medicoEncontrado.nomPers,
+          medicoEncontrado.apePaterPers,
+          medicoEncontrado.apeMaterPers
+        ]
+          .filter(Boolean)
+          .join(" ");
+
+        pacienteConMedico.nombreMedico = nombre || "Por asignar";
+      }
+    }
+
     setModalMensajeCita({
       visible: true,
-      paciente,
+      paciente: pacienteConMedico,
       preview: null,
       enviando: false,
       step: "preview",
     });
 
     // Cargar vista previa
-    await previsualizarMensajeCita(paciente);
+    await previsualizarMensajeCita(pacienteConMedico);
   };
 
   // Generar mensaje de cita formateado (v1.50.2 - Sin API)
   const generarMensajeCita = (paciente) => {
-    const dia = new Date(paciente.fechaAtencion).toLocaleDateString("es-PE", {
-      weekday: "long",
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-    });
+    // Formato de fecha: DD/MM/YY
+    const fechaObj = new Date(paciente.fechaAtencion);
+    const dia = String(fechaObj.getDate()).padStart(2, "0");
+    const mes = String(fechaObj.getMonth() + 1).padStart(2, "0");
+    const año = String(fechaObj.getFullYear()).slice(-2);
+    const fechaFormato = `${dia}/${mes}/${año}`;
 
+    // Calcular hora fin (suma 55 minutos)
     const horaFin = paciente.horaFin
       ? paciente.horaFin.substring(0, 5)
       : (() => {
@@ -768,12 +791,18 @@ export default function GestionAsegurado() {
           ).padStart(2, "0")}`;
         })();
 
+    // Obtener nombre del médico (puede estar en diferentes campos)
+    const nombreMedico =
+      paciente.nombreMedico ||
+      paciente.nomMedico ||
+      (paciente.medicoNombre ? `Dr. ${paciente.medicoNombre}` : "Por asignar");
+
     return `Estimado asegurado(a): ${paciente.pacienteNombre}
 Recuerde estar pendiente 30 minutos antes de su cita virtual:
 
-👩🏻 MEDICO/LICENCIADO: ${paciente.nombreMedico || "Por asignar"}
+👩🏻 MEDICO/LICENCIADO: ${nombreMedico}
 ⚕️ ESPECIALIDAD: ${paciente.especialidad || "No especificada"}
-🗓️ DIA: ${dia}
+🗓️ DIA: ${fechaFormato}
 ⏰ HORA REFERENCIAL: ${paciente.horaAtencion.substring(0, 5)} a ${horaFin}
 
 IMPORTANTE: Usted va a ser atendido por el Centro Nacional de Telemedicina (CENATE) - ESSALUD, por su seguridad las atenciones están siendo grabadas.
