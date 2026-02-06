@@ -395,15 +395,16 @@ public class SolicitudBolsaController {
 
     /**
      * Obtener médicos por especialidad (v1.46.8)
-     * GET /api/bolsas/solicitudes/medicos-por-especialidad?especialidad=CARDIOLOGIA
+     * POST /api/bolsas/solicitudes/medicos-por-especialidad?especialidad=CARDIOLOGIA
      *
+     * Se usa POST en lugar de GET para evitar conflicto con ruta /{id}
      * @param especialidad nombre de la especialidad (ej: "CARDIOLOGIA", "NUTRICION")
      * @return lista de médicos activos para esa especialidad
      */
-    @GetMapping("/medicos-por-especialidad")
+    @PostMapping("/fetch-doctors-by-specialty")
     @CheckMBACPermission(pagina = "/citas/gestion-asegurado", accion = "ver")
     public ResponseEntity<?> obtenerMedicosPorEspecialidad(@RequestParam String especialidad) {
-        log.info("📥 GET /api/bolsas/solicitudes/medicos-por-especialidad?especialidad={}", especialidad);
+        log.info("📥 POST /api/bolsas/solicitudes/fetch-doctors-by-specialty?especialidad={}", especialidad);
 
         try {
             // 1. Buscar el ID de la especialidad por nombre (case-insensitive)
@@ -448,11 +449,11 @@ public class SolicitudBolsaController {
      * Obtiene una solicitud por ID
      * GET /api/bolsas/solicitudes/{id}
      *
-     * IMPORTANTE: Este endpoint DEBE estar al final para evitar capturar rutas específicas
-     * @param id ID de la solicitud
+     * IMPORTANTE: Solo acepta IDs numéricos para evitar conflicto con rutas específicas
+     * @param id ID de la solicitud (debe ser un número)
      * @return solicitud encontrada o 404
      */
-    @GetMapping("/{id}")
+    @GetMapping("/{id:[0-9]+}")
     public ResponseEntity<SolicitudBolsaDTO> obtenerPorId(@PathVariable Long id) {
         log.info("Obteniendo solicitud por ID: {}", id);
         return solicitudBolsaService.obtenerPorId(id)

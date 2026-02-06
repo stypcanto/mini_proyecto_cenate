@@ -40,4 +40,7 @@ public class CrearSolicitudAdicionalRequest {
     private String codEstadoCita; // "01" = PENDIENTE CITAR
 
     private Long usuarioCreacion;
+
+    @NotBlank(message = "Especialidad es requerida")
+    private String especialidad; // v1.46.5 - Especialidad del médico
 }

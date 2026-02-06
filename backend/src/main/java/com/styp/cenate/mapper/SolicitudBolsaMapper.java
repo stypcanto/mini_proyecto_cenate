@@ -45,6 +45,8 @@ public class SolicitudBolsaMapper {
                 // ===== DESCRIPCIÓN ESTADO DE GESTIÓN CITAS (v3.3.1) =====
                 .codEstadoCita(entity.getEstadoGestionCitas() != null ? entity.getEstadoGestionCitas().getCodigoEstado() : null)
                 .descEstadoCita(entity.getEstadoGestionCitas() != null ? entity.getEstadoGestionCitas().getDescripcionEstado() : null)
+                // ===== ESPECIALIDAD (1) - NEW v1.46.5 =====
+                .especialidad(entity.getEspecialidad())
                 // ===== CAMPOS EXCEL v1.8.0 (9 ahora) =====
                 .tipoDocumento(entity.getTipoDocumento())
                 .pacienteSexo(entity.getPacienteSexo())

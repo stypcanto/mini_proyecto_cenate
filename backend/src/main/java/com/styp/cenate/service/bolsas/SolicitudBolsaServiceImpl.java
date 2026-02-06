@@ -39,6 +39,7 @@ import jakarta.persistence.PersistenceContext;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -2873,6 +2874,7 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
     @Transactional
     public SolicitudBolsaDTO crearSolicitudAdicional(CrearSolicitudAdicionalRequest request, String username) {
         log.info("📝 Creando solicitud adicional para DNI: {}", request.getPacienteDni());
+        log.info("🔍 [v1.46.5] ESPECIALIDAD RECIBIDA: '{}' (null={})", request.getEspecialidad(), request.getEspecialidad() == null);
 
         // ✅ v1.46.0: PERMITIR MÚLTIPLES ASIGNACIONES del mismo paciente
         // Un paciente puede tener múltiples solicitudes/asignaciones activas a diferentes médicos
@@ -2888,8 +2890,16 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
         // 2. Generar número de solicitud único
         String numeroSolicitud = generarNumeroSolicitud();
 
-        // 3. Crear nueva solicitud con campos válidos de la entidad SolicitudBolsa
+        // 3. Obtener ID del usuario actual para auto-asignación (v1.46.4)
+        log.info("🔍 [Auto-Assign] Buscando usuario con username: '{}'", username);
+        Usuario usuarioActual = usuarioRepository.findByNameUserWithFullDetails(username)
+            .orElse(null);
+        Long responsableGestoraId = usuarioActual != null ? usuarioActual.getIdUser() : null;
+        log.info("🔍 [Auto-Assign] Usuario encontrado: {} → ID: {}", usuarioActual != null ? usuarioActual.getNameUser() : "NO ENCONTRADO", responsableGestoraId);
+
+        // 4. Crear nueva solicitud con campos válidos de la entidad SolicitudBolsa
         // ✅ v1.46.4: Si codigoIpressAdscripcion es null, pasarlo como null (nullable)
+        // ✅ v1.46.4: Auto-asignar al gestor que realiza la importación
         SolicitudBolsa nuevaSolicitud = SolicitudBolsa.builder()
             .numeroSolicitud(numeroSolicitud)
             .pacienteDni(request.getPacienteDni())
@@ -2901,19 +2911,22 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
             .codigoIpressAdscripcion(request.getDescIpress()) // Puede ser null
             .codigoAdscripcion(request.getDescIpress()) // Puede ser null (ahora nullable=true)
             .tipoCita(request.getTipoCita())
+            .especialidad(request.getEspecialidad()) // ✅ v1.46.5 - Especialidad seleccionada por usuario
             .estado("PENDIENTE")
             .estadoGestionCitasId(1L) // ID del estado "PENDIENTE CITAR"
-            .idBolsa(107L) // Bolsa por defecto para importación manual
+            .idBolsa(10L) // BOLSA_GESTORA (v1.46.4 - usar bolsa de gestora para importados)
             .idServicio(1L) // Servicio por defecto
+            .responsableGestoraId(responsableGestoraId) // ✅ Auto-asignar al gestor actual
+            .fechaAsignacion(OffsetDateTime.now()) // ✅ Registrar fecha de asignación
             .activo(true)
             .build();
 
-        // 4. Guardar
+        // 5. Guardar
         SolicitudBolsa guardado = solicitudRepository.save(nuevaSolicitud);
 
-        log.info("✅ Solicitud adicional creada: {}", guardado.getIdSolicitud());
+        log.info("✅ Solicitud adicional creada: {} - Asignada a gestor ID: {}", guardado.getIdSolicitud(), responsableGestoraId);
 
-        // 5. Mapear a DTO
+        // 6. Mapear a DTO
         return SolicitudBolsaMapper.toDTO(guardado);
     }
 
