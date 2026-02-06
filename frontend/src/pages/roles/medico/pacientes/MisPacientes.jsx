@@ -18,7 +18,11 @@ import {
   RefreshCw,
   CheckCircle,
   ChevronRight,
-  X
+  X,
+  Check,
+  FileText,
+  Share2,
+  Heart
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import gestionPacientesService from '../../../../services/gestionPacientesService';
@@ -501,34 +505,32 @@ export default function MisPacientes() {
             {/* Contenido Scrolleable - Más espacio blanco */}
             <div className="flex-1 overflow-y-auto p-8 bg-white space-y-6">
               {/* Opción Atendido - DESTACADA */}
-              <div
+              <button
                 onClick={() => setEstadoSeleccionado('Atendido')}
-                className={`relative p-4 rounded-lg border-2 cursor-pointer transition-all ${
+                className={`w-full text-left p-4 rounded-lg border-2 cursor-pointer transition-all font-semibold ${
                   estadoSeleccionado === 'Atendido'
-                    ? 'border-green-400 bg-green-50 shadow-md'
-                    : 'border-gray-300 bg-white hover:border-green-300 hover:bg-gray-50'
+                    ? 'border-green-500 bg-green-50 shadow-md text-green-900'
+                    : 'border-gray-300 bg-white hover:border-green-300 hover:bg-gray-50 text-gray-900'
                 }`}>
-                <div className="flex items-start gap-4">
-                  <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center flex-shrink-0 mt-0.5 transition-all ${
+                <div className="flex items-center gap-3">
+                  <div className={`w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 transition-all ${
                     estadoSeleccionado === 'Atendido'
-                      ? 'border-green-500 bg-green-500'
-                      : 'border-gray-400 bg-white'
+                      ? 'bg-green-500 text-white'
+                      : 'border-2 border-gray-400 text-gray-400'
                   }`}>
-                    {estadoSeleccionado === 'Atendido' && (
-                      <CheckCircle className="w-4 h-4 text-white" strokeWidth={3} />
-                    )}
+                    <Check className="w-4 h-4" strokeWidth={3} />
                   </div>
                   <div className="flex-1">
-                    <p className="font-bold text-gray-900 text-base">✓ Atendido</p>
-                    <p className="text-sm text-gray-600 mt-1">Consulta completada</p>
+                    <p className="text-base font-bold">Atendido</p>
+                    <p className="text-sm text-gray-600 font-normal mt-1">Consulta completada</p>
                   </div>
                 </div>
-              </div>
+              </button>
 
               {/* ✅ Opciones de Atención (aparecen cuando selecciona Atendido) - Chips simples */}
               {estadoSeleccionado === 'Atendido' && (
                 <div className="space-y-3 pl-10">
-                  {/* Grid 3 columnas para chips */}
+                  {/* Grid 3 columnas para chips grandes */}
                   <div className="grid grid-cols-3 gap-3">
                     {/* Chip 1: Recita */}
                     <button
@@ -536,21 +538,15 @@ export default function MisPacientes() {
                         setTieneRecita(!tieneRecita);
                         setExpandRecita(!expandRecita);
                       }}
-                      className={`p-3 rounded-lg transition-all cursor-pointer text-center font-semibold text-sm ${
+                      className={`p-4 rounded-lg transition-all cursor-pointer text-center font-semibold ${
                         tieneRecita
-                          ? 'bg-green-100 text-green-900 border-2 border-green-400 shadow-sm'
-                          : 'bg-gray-100 text-gray-700 border-2 border-transparent hover:bg-gray-200'
+                          ? 'bg-green-100 text-green-900 border-2 border-green-400 shadow-md'
+                          : 'bg-gray-100 text-gray-700 border-2 border-gray-300 hover:bg-gray-200 hover:border-green-300'
                       }`}
                     >
-                      <div className="flex items-center justify-center gap-2">
-                        <input
-                          type="checkbox"
-                          checked={tieneRecita}
-                          onChange={() => {}}
-                          className="w-4 h-4 text-green-600 rounded cursor-pointer"
-                          onClick={(e) => e.stopPropagation()}
-                        />
-                        <span>📋 Recita</span>
+                      <div className="flex flex-col items-center gap-2">
+                        <FileText className="w-5 h-5" strokeWidth={2.5} />
+                        <span className="text-sm">Recita</span>
                       </div>
                     </button>
 
@@ -560,21 +556,15 @@ export default function MisPacientes() {
                         setTieneInterconsulta(!tieneInterconsulta);
                         setExpandInterconsulta(!expandInterconsulta);
                       }}
-                      className={`p-3 rounded-lg transition-all cursor-pointer text-center font-semibold text-sm ${
+                      className={`p-4 rounded-lg transition-all cursor-pointer text-center font-semibold ${
                         tieneInterconsulta
-                          ? 'bg-blue-100 text-blue-900 border-2 border-blue-400 shadow-sm'
-                          : 'bg-gray-100 text-gray-700 border-2 border-transparent hover:bg-gray-200'
+                          ? 'bg-blue-100 text-blue-900 border-2 border-blue-400 shadow-md'
+                          : 'bg-gray-100 text-gray-700 border-2 border-gray-300 hover:bg-gray-200 hover:border-blue-300'
                       }`}
                     >
-                      <div className="flex items-center justify-center gap-2">
-                        <input
-                          type="checkbox"
-                          checked={tieneInterconsulta}
-                          onChange={() => {}}
-                          className="w-4 h-4 text-blue-600 rounded cursor-pointer"
-                          onClick={(e) => e.stopPropagation()}
-                        />
-                        <span>🔗 Referencia</span>
+                      <div className="flex flex-col items-center gap-2">
+                        <Share2 className="w-5 h-5" strokeWidth={2.5} />
+                        <span className="text-sm">Referencia</span>
                       </div>
                     </button>
 
@@ -584,21 +574,15 @@ export default function MisPacientes() {
                         setEsCronico(!esCronico);
                         setExpandCronico(!expandCronico);
                       }}
-                      className={`p-3 rounded-lg transition-all cursor-pointer text-center font-semibold text-sm ${
+                      className={`p-4 rounded-lg transition-all cursor-pointer text-center font-semibold ${
                         esCronico
-                          ? 'bg-purple-100 text-purple-900 border-2 border-purple-400 shadow-sm'
-                          : 'bg-gray-100 text-gray-700 border-2 border-transparent hover:bg-gray-200'
+                          ? 'bg-purple-100 text-purple-900 border-2 border-purple-400 shadow-md'
+                          : 'bg-gray-100 text-gray-700 border-2 border-gray-300 hover:bg-gray-200 hover:border-purple-300'
                       }`}
                     >
-                      <div className="flex items-center justify-center gap-2">
-                        <input
-                          type="checkbox"
-                          checked={esCronico}
-                          onChange={() => {}}
-                          className="w-4 h-4 text-purple-600 rounded cursor-pointer"
-                          onClick={(e) => e.stopPropagation()}
-                        />
-                        <span>🏥 Crónico</span>
+                      <div className="flex flex-col items-center gap-2">
+                        <Heart className="w-5 h-5" strokeWidth={2.5} />
+                        <span className="text-sm">Crónico</span>
                       </div>
                     </button>
                   </div>
@@ -694,58 +678,55 @@ export default function MisPacientes() {
               )}
 
               {/* Opción Pendiente */}
-              <div
+              <button
                 onClick={() => setEstadoSeleccionado('Pendiente')}
-                className={`relative p-4 rounded-lg border-2 cursor-pointer transition-all ${
+                className={`w-full text-left p-4 rounded-lg border-2 cursor-pointer transition-all font-semibold ${
                   estadoSeleccionado === 'Pendiente'
-                    ? 'border-amber-400 bg-amber-50 shadow-md'
-                    : 'border-gray-300 bg-white hover:border-amber-300 hover:bg-gray-50'
+                    ? 'border-amber-500 bg-amber-50 shadow-md text-amber-900'
+                    : 'border-gray-300 bg-white hover:border-amber-300 hover:bg-gray-50 text-gray-900'
                 }`}>
-                <div className="flex items-start gap-4">
-                  <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center flex-shrink-0 mt-0.5 transition-all ${
+                <div className="flex items-center gap-3">
+                  <div className={`w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 transition-all ${
                     estadoSeleccionado === 'Pendiente'
-                      ? 'border-amber-500 bg-amber-500'
-                      : 'border-gray-400 bg-white'
+                      ? 'bg-amber-500 text-white'
+                      : 'border-2 border-gray-400 text-gray-400'
                   }`}>
-                    {estadoSeleccionado === 'Pendiente' && (
-                      <Clock className="w-4 h-4 text-white" strokeWidth={3} />
-                    )}
+                    <Clock className="w-4 h-4" strokeWidth={3} />
                   </div>
                   <div className="flex-1">
-                    <p className="font-bold text-gray-900 text-base">⏳ Pendiente <span className="text-xs text-gray-500 font-normal">(por defecto)</span></p>
-                    <p className="text-sm text-gray-600 mt-1">Aún no atendido, requiere seguimiento</p>
+                    <p className="text-base font-bold">Pendiente <span className="text-xs text-gray-500 font-normal">(por defecto)</span></p>
+                    <p className="text-sm text-gray-600 font-normal mt-1">Aún no atendido, requiere seguimiento</p>
                   </div>
                 </div>
-              </div>
+              </button>
 
               {/* Opción Deserción */}
-              <div
+              <button
                 onClick={() => setEstadoSeleccionado('Deserción')}
-                className={`relative p-4 rounded-lg border-2 cursor-pointer transition-all ${
+                className={`w-full text-left p-4 rounded-lg border-2 cursor-pointer transition-all font-semibold ${
                   estadoSeleccionado === 'Deserción'
-                    ? 'border-red-300 bg-red-50 shadow-md'
-                    : 'border-gray-300 bg-white hover:border-red-300 hover:bg-gray-50'
+                    ? 'border-red-400 bg-red-50 shadow-md text-red-900'
+                    : 'border-gray-300 bg-white hover:border-red-300 hover:bg-gray-50 text-gray-900'
                 }`}>
-                <div className="flex items-start gap-4">
-                  <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center flex-shrink-0 mt-0.5 transition-all ${
+                <div className="flex items-center gap-3">
+                  <div className={`w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 transition-all ${
                     estadoSeleccionado === 'Deserción'
-                      ? 'border-red-400'
-                      : 'border-gray-400 bg-white'
+                      ? 'border-2 border-red-500 text-red-500'
+                      : 'border-2 border-gray-400 text-gray-400'
                   }`}>
-                    {estadoSeleccionado === 'Deserción' && (
-                      <div className="w-2 h-2 rounded-full bg-red-500"></div>
-                    )}
+                    <X className="w-4 h-4" strokeWidth={3} />
                   </div>
                   <div className="flex-1">
-                    <p className="font-bold text-gray-900 text-base">❌ Deserción</p>
-                    <p className="text-sm text-gray-600 mt-1">Paciente no asistió o no desea atención</p>
+                    <p className="text-base font-bold">Deserción</p>
+                    <p className="text-sm text-gray-600 font-normal mt-1">Paciente no asistió o no desea atención</p>
                   </div>
                 </div>
+              </button>
 
                 {/* Campo de razón para deserción */}
                 {estadoSeleccionado === 'Deserción' && (
-                  <div className="mt-4 ml-8">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Seleccione la razón:</label>
+                  <div className="mt-6 ml-10 pt-6 border-t border-red-200">
+                    <label className="block text-sm font-medium text-gray-700 mb-3">Seleccione la razón:</label>
                     <select
                       value={razonDesercion}
                       onChange={(e) => setRazonDesercion(e.target.value)}
@@ -774,7 +755,6 @@ export default function MisPacientes() {
                     </select>
                   </div>
                 )}
-              </div>
             </div>
 
             {/* Footer Fijo con Botones */}
@@ -782,7 +762,7 @@ export default function MisPacientes() {
               <button
                 onClick={() => setModalAccion(null)}
                 disabled={procesando}
-                className="px-5 py-2.5 text-gray-700 hover:text-gray-900 font-semibold text-sm transition disabled:opacity-50 hover:bg-gray-100 rounded"
+                className="px-5 py-2.5 text-gray-700 border-2 border-gray-300 rounded-lg hover:bg-gray-100 hover:border-gray-400 transition disabled:opacity-50 font-semibold text-sm"
               >
                 Cancelar
               </button>
