@@ -5,7 +5,7 @@
 // Integración real con /api/bolsas/solicitudes/mi-bandeja
 // ========================================================================
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../../context/AuthContext";
 import { getToken } from "../../../constants/auth";
@@ -27,8 +27,13 @@ import {
   Plus,
   X,
   Loader2,
+  Building2,
+  ClipboardList,
+  Phone,
+  AlertTriangle,
 } from "lucide-react";
 import toast from "react-hot-toast";
+import { formatearTiempoRelativo } from "../../../utils/dateUtils";
 
 export default function GestionAsegurado() {
   const { user } = useAuth();
@@ -68,9 +73,10 @@ export default function GestionAsegurado() {
   ]);
 
   // ============================================================================
-  // 🔍 FILTROS ESPECIALIZADOS v1.42.0 (inspirados en Solicitudes)
+  // FILTROS ESPECIALIZADOS v1.42.0 (inspirados en Solicitudes)
   // ============================================================================
   const [searchTerm, setSearchTerm] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [filtroMacrorregion, setFiltroMacrorregion] = useState("todas");
   const [filtroRed, setFiltroRed] = useState("todas");
   const [filtroIpress, setFiltroIpress] = useState("todas");
@@ -80,10 +86,15 @@ export default function GestionAsegurado() {
   const [expandFiltros, setExpandFiltros] = useState(false); // Filtros colapsados por defecto
   const [selectedRows, setSelectedRows] = useState(new Set()); // Selección de pacientes para descarga
   
-  // 🆕 Filtros de Bolsa y Prioridad (v1.48.0)
+  // Filtros de Bolsa y Prioridad (v1.48.0)
   const [filtroTipoBolsa, setFiltroTipoBolsa] = useState("todas");
   const [filtroPrioridad107, setFiltroPrioridad107] = useState("todas");
   const [tiposBolsasAPI, setTiposBolsasAPI] = useState([]); // Bolsas cargadas desde el backend
+
+  // Filtros avanzados Phase 2 (v1.50.0)
+  const [soloPendientes, setSoloPendientes] = useState(false);
+  const [ipressDisponibles, setIpressDisponibles] = useState([]);
+  const [cargandoIpress, setCargandoIpress] = useState(false);
 
   // Estados para manejar edición de estado con botones Guardar/Cancelar
   const [pacienteEditandoEstado, setPacienteEditandoEstado] = useState(null);
@@ -173,8 +184,50 @@ export default function GestionAsegurado() {
     return "bg-slate-100 text-slate-800";
   };
 
+  // Función para obtener clase condicional de fila según estado del paciente (Phase 3 v1.50.0)
+  const getRowAlertClass = (paciente) => {
+    const estado = paciente.descEstadoCita?.toLowerCase() || '';
+    const codigoEstado = paciente.codigoEstado || '';
+
+    // Sin servicio asignado = Rojo tenue + borde naranja
+    if (estado.includes('sin servicio') || estado.includes('requiere médico')) {
+      return 'bg-red-50/30 border-l-4 border-orange-500 hover:bg-red-50/50';
+    }
+
+    // Requiere fecha = Amarillo tenue
+    if (estado.includes('requiere fecha') || codigoEstado === 'PENDIENTE_CITA') {
+      return 'bg-amber-50/30 border-l-4 border-amber-400 hover:bg-amber-50/50';
+    }
+
+    // Citado = Verde tenue
+    if (codigoEstado === 'CITADO') {
+      return 'bg-emerald-50/20 hover:bg-emerald-50/40';
+    }
+
+    // Atendido = Verde claro
+    if (codigoEstado === 'ATENDIDO_IPRESS') {
+      return 'bg-green-50/20 hover:bg-green-50/40';
+    }
+
+    // Default
+    return 'hover:bg-gray-50';
+  };
+
+  // Función para obtener colores de badge de estado (Phase 3 v1.50.0)
+  const getEstadoBadgeColor = (estado) => {
+    if (!estado) return 'bg-gray-100 text-gray-800';
+
+    const lower = estado.toLowerCase();
+    if (lower.includes('atendido')) return 'bg-green-100 text-green-800';
+    if (lower.includes('citado')) return 'bg-blue-100 text-blue-800';
+    if (lower.includes('pendiente')) return 'bg-amber-100 text-amber-800';
+    if (lower.includes('sin servicio')) return 'bg-red-100 text-red-800';
+
+    return 'bg-gray-100 text-gray-800';
+  };
+
   // ============================================================================
-  // ⏱️ UTILIDAD: DEBOUNCE PARA BÚSQUEDA OPTIMIZADA
+  // UTILIDAD: DEBOUNCE PARA BÚSQUEDA OPTIMIZADA
   // ============================================================================
   const debounce = (func, wait) => {
     let timeout;
@@ -969,6 +1022,57 @@ export default function GestionAsegurado() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [autoRefreshEnabled]);
 
+  // Debounce search - actualizar debouncedSearch después de 300ms sin escribir
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchTerm);
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
+  // Cargar IPRESS disponibles desde API (Phase 2 v1.50.0)
+  useEffect(() => {
+    const cargarIpress = async () => {
+      setCargandoIpress(true);
+      try {
+        const ipressService = (await import("../../../services/ipressService")).default;
+        const data = await ipressService.obtenerActivas();
+        if (data && Array.isArray(data) && data.length > 0) {
+          const ipressFormatted = data.map(i => ({
+            id: i.idIpress,
+            codigo: i.codIpress,
+            nombre: i.descIpress
+          }));
+          setIpressDisponibles(ipressFormatted);
+          console.log("✅ IPRESS cargadas desde API:", ipressFormatted);
+        }
+      } catch (error) {
+        console.error("Error cargando IPRESS:", error);
+        // Fallback: usar IPRESS de los pacientes cargados
+        if (pacientesAsignados.length > 0) {
+          const ipressUnicas = [...new Set(
+            pacientesAsignados
+              .map(p => p.descIpress)
+              .filter(i => i && i !== "-")
+          )];
+          setIpressDisponibles(
+            ipressUnicas.map(nombre => ({
+              id: nombre,
+              codigo: nombre,
+              nombre: nombre
+            }))
+          );
+          console.log("✅ IPRESS cargadas desde pacientes (fallback):", ipressUnicas);
+        }
+      } finally {
+        setCargandoIpress(false);
+      }
+    };
+
+    cargarIpress();
+  }, [pacientesAsignados.length]);
+
   // Cargar automáticamente médicos de pacientes que ya tienen idPersonal
   useEffect(() => {
     if (pacientesAsignados.length === 0) return;
@@ -1014,15 +1118,15 @@ export default function GestionAsegurado() {
     tiposBolsas.find(tb => String(tb.idTipoBolsa) === String(filtroTipoBolsa))?.descTipoBolsa?.toLowerCase().includes("reprogram");
 
   // ============================================================================
-  // 🔍 FUNCIÓN DE FILTRADO ESPECIALIZADO
+  // FUNCIÓN DE FILTRADO ESPECIALIZADO
   // ============================================================================
   const pacientesFiltrados = pacientesAsignados.filter((paciente) => {
-    // 🔎 Búsqueda por DNI, Nombre o IPRESS
+    // Búsqueda por DNI, Nombre o IPRESS (con debounce)
     const searchMatch =
-      searchTerm === "" ||
-      paciente.pacienteDni?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      paciente.pacienteNombre?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      paciente.descIpress?.toLowerCase().includes(searchTerm.toLowerCase());
+      debouncedSearch === "" ||
+      paciente.pacienteDni?.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
+      paciente.pacienteNombre?.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
+      paciente.descIpress?.toLowerCase().includes(debouncedSearch.toLowerCase());
 
     // 📦 Filtro Tipo de Bolsa (v1.48.0)
     const bolsaMatch =
@@ -1066,14 +1170,16 @@ export default function GestionAsegurado() {
       filtroTipoCita === "todas" ||
       paciente.tipoCita === filtroTipoCita;
 
-    // 📌 Filtro Estado
+    // Estado
     const estadoMatch =
       filtroEstado === "todos" ||
       paciente.codigoEstado === filtroEstado;
-    
-    if (filtroEstado !== "todos" && !estadoMatch) {
-      console.log(`❌ Paciente ${paciente.pacienteNombre} rechazado por estado. Esperado: ${filtroEstado}, Actual: ${paciente.codigoEstado}`);
-    }
+
+    // Filtro Solo Pendientes (Phase 2 v1.50.0)
+    const pendienteMatch =
+      !soloPendientes ||
+      (paciente.codigoEstado !== "CITADO" &&
+       paciente.codigoEstado !== "ATENDIDO_IPRESS");
 
     return (
       searchMatch &&
@@ -1084,12 +1190,31 @@ export default function GestionAsegurado() {
       ipressMatch &&
       especialidadMatch &&
       tipoCitaMatch &&
-      estadoMatch
+      estadoMatch &&
+      pendienteMatch
     );
   });
 
+  // Contadores dinámicos para filtros (Phase 2 v1.50.0)
+  const contadores = useMemo(() => {
+    const pendientes = pacientesFiltrados.filter(p =>
+      p.codigoEstado !== "CITADO" &&
+      p.codigoEstado !== "ATENDIDO_IPRESS"
+    ).length;
+
+    const citados = pacientesFiltrados.filter(p =>
+      p.codigoEstado === "CITADO"
+    ).length;
+
+    const atendidos = pacientesFiltrados.filter(p =>
+      p.codigoEstado === "ATENDIDO_IPRESS"
+    ).length;
+
+    return { pendientes, citados, atendidos };
+  }, [pacientesFiltrados]);
+
   // ============================================================================
-  // 📊 CALCULAR OPCIONES DISPONIBLES PARA FILTROS
+  // CALCULAR OPCIONES DISPONIBLES PARA FILTROS
   // ============================================================================
   const macrorregionesUnicas = [
     ...new Set(pacientesAsignados
@@ -1213,55 +1338,51 @@ export default function GestionAsegurado() {
 
         {/* Estadísticas de Atenciones */}
         <div className="space-y-2">
-          <h3 className="text-lg font-semibold text-gray-900">Estadísticas de Atenciones</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+          <h3 className="text-base font-semibold text-gray-900">Estadísticas</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-3">
             {/* Total */}
-            <div className="bg-gradient-to-br from-slate-600 to-slate-700 rounded-lg shadow-lg p-4 text-white transform hover:scale-105 transition-all duration-300 hover:shadow-xl">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-slate-100 text-sm font-semibold">Total de Atenciones</span>
-                <span className="text-2xl">👥</span>
+            <div className="bg-gradient-to-br from-slate-600 to-slate-700 rounded-lg shadow-md p-3 text-white transform hover:scale-[1.02] transition-all duration-300 hover:shadow-lg">
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-slate-100 text-xs font-semibold">Total</span>
+                <Users className="w-6 h-6 text-slate-200" strokeWidth={1.5} />
               </div>
-              <div className="text-3xl font-bold">{metrics.totalPacientes}</div>
+              <div className="text-2xl font-bold">{metrics.totalPacientes}</div>
             </div>
 
             {/* Citado - Por Atender */}
-            <div className="bg-gradient-to-br from-blue-600 to-blue-700 rounded-lg shadow-lg p-4 text-white transform hover:scale-105 transition-all duration-300 hover:shadow-xl">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-blue-100 text-sm font-semibold">Por Atender</span>
-                <span className="text-2xl">📋</span>
+            <div className="bg-gradient-to-br from-blue-600 to-blue-700 rounded-lg shadow-md p-3 text-white transform hover:scale-[1.02] transition-all duration-300 hover:shadow-lg">
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-blue-100 text-xs font-semibold">Por Atender</span>
+                <ClipboardList className="w-6 h-6 text-blue-200" strokeWidth={1.5} />
               </div>
-              <div className="text-3xl font-bold">{metrics.citado || 0}</div>
-              <p className="text-blue-200 text-xs mt-1">Citados</p>
+              <div className="text-2xl font-bold">{metrics.citado || 0}</div>
             </div>
 
             {/* Atendido IPRESS - Completados */}
-            <div className="bg-gradient-to-br from-green-600 to-green-700 rounded-lg shadow-lg p-4 text-white transform hover:scale-105 transition-all duration-300 hover:shadow-xl">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-green-100 text-sm font-semibold">Completados</span>
-                <span className="text-2xl">✓</span>
+            <div className="bg-gradient-to-br from-green-600 to-green-700 rounded-lg shadow-md p-3 text-white transform hover:scale-[1.02] transition-all duration-300 hover:shadow-lg">
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-green-100 text-xs font-semibold">Completados</span>
+                <CheckCircle2 className="w-6 h-6 text-green-200" strokeWidth={1.5} />
               </div>
-              <div className="text-3xl font-bold">{metrics.atendidoIpress || 0}</div>
-              <p className="text-green-200 text-xs mt-1">IPRESS</p>
+              <div className="text-2xl font-bold">{metrics.atendidoIpress || 0}</div>
             </div>
 
             {/* Pendientes en Bolsa - Nuevos */}
-            <div className="bg-gradient-to-br from-amber-500 to-amber-600 rounded-lg shadow-lg p-4 text-white transform hover:scale-105 transition-all duration-300 hover:shadow-xl">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-amber-100 text-sm font-semibold">Nuevos</span>
-                <span className="text-2xl">⏱️</span>
+            <div className="bg-gradient-to-br from-amber-500 to-amber-600 rounded-lg shadow-md p-3 text-white transform hover:scale-[1.02] transition-all duration-300 hover:shadow-lg">
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-amber-100 text-xs font-semibold">Nuevos</span>
+                <Calendar className="w-6 h-6 text-amber-200" strokeWidth={1.5} />
               </div>
-              <div className="text-3xl font-bold">{metrics.pendienteCita || 0}</div>
-              <p className="text-amber-200 text-xs mt-1">En la bolsa</p>
+              <div className="text-2xl font-bold">{metrics.pendienteCita || 0}</div>
             </div>
 
             {/* Otros - Problemas/Rechazos */}
-            <div className="bg-gradient-to-br from-red-600 to-red-700 rounded-lg shadow-lg p-4 text-white transform hover:scale-105 transition-all duration-300 hover:shadow-xl">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-red-100 text-sm font-semibold">Otros</span>
-                <span className="text-2xl">⚠️</span>
+            <div className="bg-gradient-to-br from-red-600 to-red-700 rounded-lg shadow-md p-3 text-white transform hover:scale-[1.02] transition-all duration-300 hover:shadow-lg">
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-red-100 text-xs font-semibold">Otros</span>
+                <AlertTriangle className="w-6 h-6 text-red-200" strokeWidth={1.5} />
               </div>
-              <div className="text-3xl font-bold">{metrics.otros || 0}</div>
-              <p className="text-red-200 text-xs mt-1">Problemas</p>
+              <div className="text-2xl font-bold">{metrics.otros || 0}</div>
             </div>
           </div>
         </div>
@@ -1338,19 +1459,24 @@ export default function GestionAsegurado() {
                 {/* 🔍 FILTROS SIEMPRE VISIBLES - BOLSA Y PRIORIDAD (v1.48.0) */}
                 <div className="mb-4 bg-gray-50 border border-gray-200 rounded-lg p-4">
                   <div className="flex flex-wrap items-center gap-3 mb-3">
-                    <span className="text-sm font-bold text-blue-700 bg-blue-100 px-3 py-1 rounded">
-                      🔍 FILTROS
+                    <span className="text-sm font-bold text-blue-700 bg-blue-100 px-3 py-1 rounded flex items-center gap-1">
+                      <Search className="w-4 h-4" strokeWidth={2} />
+                      FILTROS
                     </span>
                     
-                    {/* Búsqueda */}
-                    <div className="flex-1 min-w-[200px]">
+                    {/* Búsqueda con Debounce */}
+                    <div className="flex-1 min-w-[200px] relative">
                       <input
                         type="text"
                         placeholder="Buscar paciente, DNI o IPRESS..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-8 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 pl-9"
                       />
+                      <Search className="absolute left-3 top-2.5 w-4 h-4 text-gray-400" />
+                      {searchTerm !== debouncedSearch && (
+                        <Loader2 className="absolute right-3 top-2.5 w-4 h-4 text-blue-500 animate-spin" />
+                      )}
                     </div>
                     
                     {/* Filtro Bolsa - SIEMPRE VISIBLE */}
@@ -1363,7 +1489,7 @@ export default function GestionAsegurado() {
                         }}
                         className="w-full px-3 py-2 border-2 border-blue-400 bg-blue-50 rounded-lg text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500"
                       >
-                        <option value="todas">📦 Todas las bolsas</option>
+                        <option value="todas">Todas las bolsas</option>
                         {tiposBolsas.map((tb) => (
                           <option key={tb.idTipoBolsa} value={tb.idTipoBolsa}>
                             {tb.descTipoBolsa}
@@ -1380,14 +1506,45 @@ export default function GestionAsegurado() {
                           onChange={(e) => setFiltroPrioridad107(e.target.value)}
                           className="w-full px-3 py-2 border-2 border-red-400 bg-red-50 rounded-lg text-sm font-medium focus:outline-none focus:ring-2 focus:ring-red-500"
                         >
-                          <option value="todas">🚦 Todas las prioridades</option>
-                          <option value="< 24">🔴 &lt; 24 hrs (Urgente)</option>
-                          <option value="24 - 72">🟡 24 - 72 hrs (Media)</option>
-                          <option value="> 72">🟢 &gt; 72 hrs (Baja)</option>
+                          <option value="todas">Todas las prioridades</option>
+                          <option value="< 24">&lt; 24 hrs (Urgente)</option>
+                          <option value="24 - 72">24 - 72 hrs (Media)</option>
+                          <option value="> 72">&gt; 72 hrs (Baja)</option>
                         </select>
                       </div>
                     )}
-                    
+
+                    {/* Filtro IPRESS (Phase 2 v1.50.0) */}
+                    <div className="min-w-[180px]">
+                      <select
+                        value={filtroIpress}
+                        onChange={(e) => setFiltroIpress(e.target.value)}
+                        className="w-full px-3 py-2 border-2 border-green-400 bg-green-50 rounded-lg text-sm font-medium focus:outline-none focus:ring-2 focus:ring-green-500"
+                      >
+                        <option value="todas">
+                          {cargandoIpress ? "Cargando..." : `Todas (${pacientesFiltrados.length})`}
+                        </option>
+                        {ipressDisponibles.map((ipress) => (
+                          <option key={ipress.id} value={ipress.nombre}>
+                            {ipress.nombre}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    {/* Toggle Solo Pendientes (Phase 2 v1.50.0) */}
+                    <label className="flex items-center gap-2 px-3 py-2 bg-white border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
+                      <input
+                        type="checkbox"
+                        checked={soloPendientes}
+                        onChange={(e) => setSoloPendientes(e.target.checked)}
+                        className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
+                      />
+                      <span className="text-sm font-medium text-gray-700 whitespace-nowrap">
+                        Solo Pendientes ({contadores.pendientes})
+                      </span>
+                    </label>
+
                     {/* Botón para más filtros */}
                     <button
                       onClick={() => setExpandFiltros(!expandFiltros)}
@@ -1622,8 +1779,10 @@ export default function GestionAsegurado() {
                     {pacientesFiltrados.map((paciente, idx) => (
                       <tr
                         key={paciente.id}
-                        className={`border-b border-gray-200 hover:bg-blue-50 transition-colors ${
-                          selectedRows.has(paciente.id) ? 'bg-blue-100 border-blue-300' : (idx % 2 === 0 ? "bg-white" : "bg-gray-50")
+                        className={`border-b border-gray-200 transition-colors ${
+                          selectedRows.has(paciente.id)
+                            ? 'bg-blue-100 border-blue-300'
+                            : getRowAlertClass(paciente)
                         }`}
                       >
                         <td className="px-2 py-1.5">
@@ -1643,16 +1802,10 @@ export default function GestionAsegurado() {
                             {paciente.descTipoBolsa || "Sin clasificar"}
                           </span>
                         </td>
-                        <td className="px-2 py-1.5 text-gray-900 text-[10px]">
+                        <td className="px-2 py-1.5 text-gray-700 text-[10px] font-medium whitespace-nowrap">
                           {paciente.fechaAsignacion === "-"
-                            ? "-"
-                            : new Date(paciente.fechaAsignacion).toLocaleString("es-PE", {
-                                year: '2-digit',
-                                month: '2-digit',
-                                day: '2-digit',
-                                hour: '2-digit',
-                                minute: '2-digit'
-                              })}
+                            ? <span className="text-gray-300 italic">N/D</span>
+                            : formatearTiempoRelativo(paciente.fechaAsignacion)}
                         </td>
                         <td className="px-2 py-1.5 font-medium text-slate-900">
                           {paciente.pacienteDni}
@@ -1660,11 +1813,19 @@ export default function GestionAsegurado() {
                         <td className="px-2 py-1.5 text-slate-600">
                           {paciente.pacienteNombre}
                         </td>
-                        <td className="px-2 py-1.5 text-center text-slate-600">
-                          {paciente.pacienteEdad}
+                        <td className="px-2 py-1.5 text-center">
+                          {paciente.pacienteEdad && paciente.pacienteEdad !== "-" ? (
+                            <span className="text-slate-600">{paciente.pacienteEdad}</span>
+                          ) : (
+                            <span className="text-gray-300 italic text-[10px]">N/D</span>
+                          )}
                         </td>
-                        <td className="px-2 py-1.5 text-center text-slate-600">
-                          {paciente.pacienteSexo}
+                        <td className="px-2 py-1.5 text-center">
+                          {paciente.pacienteSexo && paciente.pacienteSexo !== "-" ? (
+                            <span className="text-slate-600">{paciente.pacienteSexo}</span>
+                          ) : (
+                            <span className="text-gray-300 italic text-[10px]">N/D</span>
+                          )}
                         </td>
                         {/* Celda Prioridad - Solo visible para Bolsa ID 1 */}
                         {esBolsaId1 && (
@@ -1860,11 +2021,37 @@ export default function GestionAsegurado() {
                         <td className="px-2 py-1.5 text-slate-600">
                           {paciente.tipoCita}
                         </td>
-                        <td className="px-2 py-1.5 text-slate-600">
-                          {paciente.pacienteTelefono}
+                        <td className="px-2 py-1.5">
+                          {paciente.pacienteTelefono ? (
+                            <a
+                              href={`https://wa.me/${paciente.pacienteTelefono.replace(/\D/g, '')}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex items-center gap-1 text-green-600 hover:text-green-700 hover:underline font-medium text-xs"
+                              title="Abrir en WhatsApp"
+                            >
+                              <Phone className="w-3 h-3" strokeWidth={2} />
+                              {paciente.pacienteTelefono}
+                            </a>
+                          ) : (
+                            <span className="text-gray-300 italic text-[10px]">N/D</span>
+                          )}
                         </td>
-                        <td className="px-2 py-1.5 text-slate-600">
-                          {paciente.pacienteTelefonoAlterno}
+                        <td className="px-2 py-1.5">
+                          {paciente.pacienteTelefonoAlterno ? (
+                            <a
+                              href={`https://wa.me/${paciente.pacienteTelefonoAlterno.replace(/\D/g, '')}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex items-center gap-1 text-green-600 hover:text-green-700 hover:underline font-medium text-xs"
+                              title="Abrir en WhatsApp"
+                            >
+                              <Phone className="w-3 h-3" strokeWidth={2} />
+                              {paciente.pacienteTelefonoAlterno}
+                            </a>
+                          ) : (
+                            <span className="text-gray-300 italic text-[10px]">N/D</span>
+                          )}
                         </td>
                         <td className="px-2 py-1.5">
                           {pacienteEditandoEstado === paciente.id ? (
@@ -1926,13 +2113,13 @@ export default function GestionAsegurado() {
                           )}
                         </td>
                         {/* FECHA CAMBIO ESTADO - Auditoría v3.3.1 */}
-                        <td className="px-2 py-1.5 text-slate-600 text-xs">
+                        <td className="px-2 py-1.5 text-gray-700 text-[10px] font-medium">
                           {paciente.fechaCambioEstado ? (
-                            <span className="text-blue-700 font-medium">
-                              {new Date(paciente.fechaCambioEstado).toLocaleString("es-ES")}
+                            <span className="text-blue-700">
+                              {formatearTiempoRelativo(paciente.fechaCambioEstado)}
                             </span>
                           ) : (
-                            <span className="text-gray-400 italic">—</span>
+                            <span className="text-gray-300 italic">—</span>
                           )}
                         </td>
                         {/* USUARIO CAMBIO ESTADO - Auditoría v3.3.1 */}
@@ -1999,6 +2186,47 @@ export default function GestionAsegurado() {
             )}
           </div>
         </div>
+
+        {/* Floating Action Bar para selecciones masivas (Phase 4 v1.50.0) */}
+        {selectedRows.size > 0 && (
+          <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 bg-gradient-to-r from-blue-600 to-blue-700 text-white px-6 py-3 rounded-full shadow-2xl flex items-center gap-4 z-50 flex-wrap justify-center">
+            <span className="font-semibold text-base">{selectedRows.size} seleccionados</span>
+
+            <div className="flex gap-2">
+              <button
+                onClick={() => {
+                  // TODO: Implementar asignación masiva de médicos
+                  toast.info("Función próximamente: Asignación masiva de médicos");
+                }}
+                className="flex items-center gap-2 px-4 py-1.5 bg-white text-blue-600 rounded-full hover:bg-gray-100 transition-colors text-sm font-semibold"
+                title="Asignar médico a pacientes seleccionados"
+              >
+                <UserPlus className="w-4 h-4" strokeWidth={2} />
+                Asignar
+              </button>
+
+              {selectedRows.size > 0 && (
+                <button
+                  onClick={descargarSeleccion}
+                  className="flex items-center gap-2 px-4 py-1.5 bg-green-500 hover:bg-green-600 text-white rounded-full transition-colors text-sm font-semibold"
+                  title="Descargar pacientes seleccionados"
+                >
+                  <Download className="w-4 h-4" strokeWidth={2} />
+                  Descargar
+                </button>
+              )}
+
+              <button
+                onClick={() => setSelectedRows(new Set())}
+                className="flex items-center gap-2 px-4 py-1.5 bg-red-500 hover:bg-red-600 text-white rounded-full transition-colors text-sm font-semibold"
+                title="Limpiar selección"
+              >
+                <X className="w-4 h-4" strokeWidth={2} />
+                Limpiar
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Modal Actualizar Teléfono */}
