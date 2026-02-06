@@ -749,45 +749,57 @@ export default function GestionAsegurado() {
     await previsualizarMensajeCita(paciente);
   };
 
-  const previsualizarMensajeCita = async (paciente) => {
-    try {
-      const request = {
-        idSolicitud: paciente.id || paciente.idSolicitud,
-        nombrePaciente: paciente.pacienteNombre,
-        telefonoPaciente: paciente.pacienteTelefono,
-        nombreMedico: paciente.nombreMedico || "Por asignar",
-        especialidad: paciente.especialidad || "No especificada",
-        fechaAtencion: paciente.fechaAtencion,
-        horaAtencion: paciente.horaAtencion?.substring(0, 5), // HH:mm
-        horaFin: paciente.horaFin?.substring(0, 5), // HH:mm (opcional)
-        canal: "WHATSAPP",
-      };
+  // Generar mensaje de cita formateado (v1.50.2 - Sin API)
+  const generarMensajeCita = (paciente) => {
+    const dia = new Date(paciente.fechaAtencion).toLocaleDateString("es-PE", {
+      weekday: "long",
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
 
-      const response = await fetch(`${API_BASE}/citas/mensaje/preview`, {
-        method: "POST",
-        headers: getHeaders(),
-        body: JSON.stringify(request),
-      });
+    const horaFin = paciente.horaFin
+      ? paciente.horaFin.substring(0, 5)
+      : (() => {
+          const [horas, minutos] = paciente.horaAtencion.substring(0, 5).split(":");
+          const horaFinal = new Date(0, 0, 0, parseInt(horas), parseInt(minutos) + 55);
+          return `${String(horaFinal.getHours()).padStart(2, "0")}:${String(
+            horaFinal.getMinutes()
+          ).padStart(2, "0")}`;
+        })();
 
-      const data = await response.json();
+    return `Estimado asegurado(a): ${paciente.pacienteNombre}
+Recuerde estar pendiente 30 minutos antes de su cita virtual:
 
-      if (data.contenido_mensaje) {
-        setModalMensajeCita((prev) => ({
-          ...prev,
-          preview: data.contenido_mensaje,
-        }));
-      }
-    } catch (error) {
-      console.error("Error cargando vista previa:", error);
-      toast.error("Error al cargar vista previa del mensaje");
-    }
+👩🏻 MEDICO/LICENCIADO: ${paciente.nombreMedico || "Por asignar"}
+⚕️ ESPECIALIDAD: ${paciente.especialidad || "No especificada"}
+🗓️ DIA: ${dia}
+⏰ HORA REFERENCIAL: ${paciente.horaAtencion.substring(0, 5)} a ${horaFin}
+
+IMPORTANTE: Usted va a ser atendido por el Centro Nacional de Telemedicina (CENATE) - ESSALUD, por su seguridad las atenciones están siendo grabadas.
+*Usted autoriza el tratamiento de sus datos personales afines a su atención por Telemedicina.
+*Recuerde que se le llamará hasta 24 horas antes para confirmar su cita.
+*Recuerde estar pendiente media hora antes de su cita.
+
+El profesional se comunicará con usted a través del siguiente número: 01 2118830
+
+Atte. Centro Nacional de Telemedicina
+CENATE de Essalud`;
   };
 
-  const enviarMensajeCita = async () => {
+  const previsualizarMensajeCita = (paciente) => {
+    const mensaje = generarMensajeCita(paciente);
+    setModalMensajeCita((prev) => ({
+      ...prev,
+      preview: mensaje,
+    }));
+  };
+
+  const enviarMensajeCita = () => {
     const paciente = modalMensajeCita.paciente;
 
-    if (!paciente) {
-      toast.error("Paciente no válido");
+    if (!paciente || !paciente.pacienteTelefono) {
+      toast.error("❌ Paciente o teléfono no válido");
       return;
     }
 
@@ -797,83 +809,80 @@ export default function GestionAsegurado() {
     }));
 
     try {
-      const request = {
-        idSolicitud: paciente.id || paciente.idSolicitud,
-        nombrePaciente: paciente.pacienteNombre,
-        telefonoPaciente: paciente.pacienteTelefono,
-        nombreMedico: paciente.nombreMedico || "Por asignar",
-        especialidad: paciente.especialidad || "No especificada",
-        fechaAtencion: paciente.fechaAtencion,
-        horaAtencion: paciente.horaAtencion?.substring(0, 5), // HH:mm
-        horaFin: paciente.horaFin?.substring(0, 5), // HH:mm (opcional)
-        canal: "WHATSAPP",
-      };
+      // Generar mensaje
+      const mensaje = generarMensajeCita(paciente);
 
-      const response = await fetch(`${API_BASE}/citas/mensaje/enviar/whatsapp`, {
-        method: "POST",
-        headers: getHeaders(),
-        body: JSON.stringify(request),
+      // Normalizar teléfono (agregar código de país 51 si no lo tiene)
+      let telefono = paciente.pacienteTelefono.replace(/\D/g, "");
+      if (!telefono.startsWith("51")) {
+        telefono = "51" + (telefono.length === 10 ? telefono.substring(1) : telefono);
+      }
+
+      // Construir URL de WhatsApp Web
+      const mensajeEncodificado = encodeURIComponent(mensaje);
+      const urlWhatsApp = `https://wa.me/${telefono}?text=${mensajeEncodificado}`;
+
+      // Abrir WhatsApp en nueva ventana
+      window.open(urlWhatsApp, "_blank");
+
+      // Mostrar toast de éxito
+      setModalMensajeCita((prev) => ({
+        ...prev,
+        enviando: false,
+      }));
+
+      toast.custom((t) => (
+        <div
+          className={`flex items-center gap-3 bg-white border-l-4 border-green-500 rounded-lg px-4 py-3 shadow-lg transition-all ${
+            t.visible ? "animate-in" : "animate-out"
+          }`}
+        >
+          <div className="flex-shrink-0">
+            <svg
+              className="h-5 w-5 text-green-600"
+              fill="currentColor"
+              viewBox="0 0 20 20"
+            >
+              <path
+                fillRule="evenodd"
+                d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                clipRule="evenodd"
+              />
+            </svg>
+          </div>
+          <div className="flex-1">
+            <p className="text-sm font-medium text-gray-900">
+              ✓ WhatsApp abierto con mensaje
+            </p>
+            <p className="text-xs text-gray-500 mt-0.5">
+              {paciente.pacienteTelefono}
+            </p>
+          </div>
+          <button
+            onClick={() => toast.dismiss(t.id)}
+            className="text-gray-400 hover:text-gray-600 transition-colors"
+          >
+            ✕
+          </button>
+        </div>
+      ), {
+        position: "top-right",
+        duration: 4000,
       });
 
-      const data = await response.json();
-
-      if (data.exitoso) {
-        setModalMensajeCita((prev) => ({
-          ...prev,
-          step: "enviado",
+      // Cerrar modal después de 1 segundo
+      setTimeout(() => {
+        setModalMensajeCita({
+          visible: false,
+          paciente: null,
+          preview: null,
           enviando: false,
-        }));
-
-        // Toast minimalista de éxito
-        toast.custom((t) => (
-          <div className={`flex items-center gap-3 bg-white border-l-4 border-green-500 rounded-lg px-4 py-3 shadow-lg transition-all ${
-            t.visible ? 'animate-in' : 'animate-out'
-          }`}>
-            <div className="flex-shrink-0">
-              <svg className="h-5 w-5 text-green-600" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-              </svg>
-            </div>
-            <div className="flex-1">
-              <p className="text-sm font-medium text-gray-900">
-                ✓ Mensaje enviado al paciente
-              </p>
-              <p className="text-xs text-gray-500 mt-0.5">
-                {paciente.pacienteTelefono}
-              </p>
-            </div>
-            <button
-              onClick={() => toast.dismiss(t.id)}
-              className="text-gray-400 hover:text-gray-600 transition-colors"
-            >
-              ✕
-            </button>
-          </div>
-        ), {
-          position: 'top-right',
-          duration: 4000,
+          step: "preview",
         });
-
-        // Cerrar modal después de 2 segundos
-        setTimeout(() => {
-          setModalMensajeCita({
-            visible: false,
-            paciente: null,
-            preview: null,
-            enviando: false,
-            step: "preview",
-          });
-        }, 2000);
-      } else {
-        toast.error(`❌ Error: ${data.mensaje}`);
-        setModalMensajeCita((prev) => ({
-          ...prev,
-          enviando: false,
-        }));
-      }
+      }, 1000);
     } catch (error) {
-      console.error("Error enviando mensaje:", error);
-      toast.error("Error al enviar el mensaje");
+      console.error("Error abriendo WhatsApp:", error);
+      toast.error("❌ Error al abrir WhatsApp");
       setModalMensajeCita((prev) => ({
         ...prev,
         enviando: false,
