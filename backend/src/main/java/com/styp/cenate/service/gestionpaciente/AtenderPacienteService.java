@@ -156,7 +156,6 @@ public class AtenderPacienteService {
                 .idBolsa(11L) // BOLSA_GENERADA_X_PROFESIONAL - ✅ v1.47.2 Corregir bolsa correcta
                 .idServicio(null) // ✅ v1.47.1 NULL para evitar violación de UNIQUE constraint
                 .responsableGestoraId(solicitudOriginal.getResponsableGestoraId()) // ✅ Asignar gestora responsable
-                .origenBolsa("BOLSA_GENERADA_X_PROFESIONAL")
                 .fechaAsignacion(OffsetDateTime.now())
                 .fechaPreferidaNoAtendida(fechaPreferida.toLocalDate()) // ✅ Fecha preferida calculada (hoy + días)
                 .activo(true)
@@ -188,7 +187,6 @@ public class AtenderPacienteService {
                 .idBolsa(11L) // BOLSA_GENERADA_X_PROFESIONAL - ✅ v1.47.2 Corregir bolsa correcta
                 .idServicio(null) // ✅ v1.47.1 NULL para evitar violación de UNIQUE constraint
                 .responsableGestoraId(solicitudOriginal.getResponsableGestoraId()) // ✅ Asignar gestora responsable
-                .origenBolsa("BOLSA_GENERADA_X_PROFESIONAL")
                 .fechaAsignacion(OffsetDateTime.now())
                 .activo(true)
                 .build();
