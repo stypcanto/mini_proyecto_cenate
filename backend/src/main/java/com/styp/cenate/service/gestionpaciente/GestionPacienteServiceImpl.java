@@ -372,6 +372,8 @@ public class GestionPacienteServiceImpl implements IGestionPacienteService {
             .seleccionadoTelemedicina(entity.getSeleccionadoTelemedicina())
             .fechaCreacion(entity.getFechaCreacion())
             .fechaActualizacion(entity.getFechaActualizacion())
+            // ✅ v1.50.0: Enfermedades crónicas
+            .enfermedadCronica(asegurado.getEnfermedadCronica())
             .build();
     }
 
@@ -390,6 +392,8 @@ public class GestionPacienteServiceImpl implements IGestionPacienteService {
             .tipoPaciente(asegurado.getTipoPaciente())
             .tipoSeguro(asegurado.getTipoSeguro())
             .ipress(ipressNombre)
+            // ✅ v1.50.0: Enfermedades crónicas
+            .enfermedadCronica(asegurado.getEnfermedadCronica())
             .build();
     }
 
@@ -423,6 +427,7 @@ public class GestionPacienteServiceImpl implements IGestionPacienteService {
 
         // ✅ v1.46.9: Obtener IPRESS desde dim_solicitud_bolsa O desde asegurados como fallback
         String ipressNombre = null;
+        String[] enfermedadesCronicas = null;
 
         // Intentar primero desde codigo_ipress en la bolsa
         if (bolsa.getCodigoIpressAdscripcion() != null) {
@@ -444,6 +449,22 @@ public class GestionPacienteServiceImpl implements IGestionPacienteService {
             }
         }
 
+        // ✅ v1.50.0: Obtener enfermedades crónicas desde asegurados
+        if (bolsa.getPacienteId() != null) {
+            try {
+                Optional<Asegurado> aseguradoOpt = aseguradoRepository.findById(bolsa.getPacienteId());
+                if (aseguradoOpt.isPresent()) {
+                    enfermedadesCronicas = aseguradoOpt.get().getEnfermedadCronica();
+                    if (enfermedadesCronicas != null && enfermedadesCronicas.length > 0) {
+                        log.info("Enfermedades crónicas encontradas para paciente {}: {}",
+                            bolsa.getPacienteDni(), String.join(", ", enfermedadesCronicas));
+                    }
+                }
+            } catch (Exception e) {
+                log.warn("No se pudo obtener enfermedades crónicas desde asegurados para paciente_id: {}", bolsa.getPacienteId());
+            }
+        }
+
         return GestionPacienteDTO.builder()
             .idSolicitudBolsa(bolsa.getIdSolicitud())  // ✅ v1.46.0: Incluir ID de bolsa
             .numDoc(bolsa.getPacienteDni())
@@ -456,6 +477,7 @@ public class GestionPacienteServiceImpl implements IGestionPacienteService {
             .observaciones(bolsa.getObservacionesMedicas())  // ✅ v1.46.0: Incluir observaciones médicas
             .fechaAsignacion(bolsa.getFechaAsignacion())  // ✅ v1.45.1: Incluir fecha de asignación
             .fechaAtencion(bolsa.getFechaAtencionMedica())  // ✅ v1.47.0: Incluir fecha de atención médica
+            .enfermedadCronica(enfermedadesCronicas)  // ✅ v1.50.0: Incluir enfermedades crónicas
             .build();
     }
 }

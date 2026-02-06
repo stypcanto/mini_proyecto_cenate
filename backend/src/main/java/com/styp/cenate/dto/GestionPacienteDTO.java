@@ -90,6 +90,9 @@ public class GestionPacienteDTO {
     @JsonSerialize(using = OffsetDateTimeSerializer.class)
     private OffsetDateTime fechaAtencion;
 
+    // ✅ v1.50.0: Enfermedades crónicas del paciente (desde asegurado_enfermedad_cronica)
+    private String[] enfermedadCronica;
+
     /**
      * Calcula la edad a partir de la fecha de nacimiento
      */
