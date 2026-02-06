@@ -206,6 +206,13 @@ public class SolicitudBolsa {
     @Column(name = "observaciones_medicas", columnDefinition = "text")
     private String observacionesMedicas;
 
+    @Column(name = "fecha_atencion_medica", columnDefinition = "TIMESTAMP WITH TIME ZONE")
+    private OffsetDateTime fechaAtencionMedica;
+
+    // ✅ v1.47.0: Origen de la bolsa (BOLSA_GENERADA_X_PROFESIONAL, etc.)
+    @Column(name = "origen_bolsa", length = 100)
+    private String origenBolsa;
+
     @PrePersist
     void prePersist() {
         if (fechaSolicitud == null) {

@@ -18,7 +18,7 @@ public class GestionPaciente {
     private Long idGestion;
 
     // Relación con Asegurado (FK)
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "pk_asegurado", referencedColumnName = "pk_asegurado", nullable = false)
     private Asegurado asegurado;
 

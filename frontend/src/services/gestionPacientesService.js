@@ -150,6 +150,24 @@ const gestionPacientesService = {
     },
 
     // ========================================================================
+    // ✅ v1.47.0: Registro de Atención Médica
+    // ========================================================================
+
+    /**
+     * Obtener especialidades disponibles para interconsulta
+     */
+    obtenerEspecialidades: async () => {
+        return await apiClient.get(`${BASE_ENDPOINT}/especialidades`);
+    },
+
+    /**
+     * Registrar atención médica completa (Recita + Interconsulta + Crónico)
+     */
+    atenderPaciente: async (id, atenderPacienteRequest) => {
+        return await apiClient.post(`${BASE_ENDPOINT}/${id}/atendido`, atenderPacienteRequest);
+    },
+
+    // ========================================================================
     // Generar enlace de WhatsApp
     // ========================================================================
 

@@ -1,7 +1,11 @@
 package com.styp.cenate.api.gestionpaciente;
 
 import com.styp.cenate.dto.GestionPacienteDTO;
+import com.styp.cenate.dto.AtenderPacienteRequest;
+import com.styp.cenate.dto.EspecialidadSelectDTO;
 import com.styp.cenate.service.gestionpaciente.IGestionPacienteService;
+import com.styp.cenate.service.gestionpaciente.AtenderPacienteService;
+import com.styp.cenate.repository.DimServicioEssiRepository;
 import com.styp.cenate.security.mbac.CheckMBACPermission;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
@@ -26,6 +30,8 @@ import java.util.Map;
 public class GestionPacienteController {
 
     private final IGestionPacienteService servicio;
+    private final AtenderPacienteService atenderPacienteService;
+    private final DimServicioEssiRepository servicioEssiRepository;
 
     // ========================================================================
     // CRUD Básico
@@ -211,5 +217,46 @@ public class GestionPacienteController {
         log.info("GET /api/gestion-pacientes/medico/asignados - Obteniendo pacientes del médico actual");
         List<GestionPacienteDTO> pacientes = servicio.obtenerPacientesDelMedicoActual();
         return ResponseEntity.ok(pacientes);
+    }
+
+    // ========================================================================
+    // v1.47.0: Atender paciente (Recita + Interconsulta + Crónico)
+    // ========================================================================
+
+    @PostMapping("/{id}/atendido")
+    @CheckMBACPermission(pagina = "/roles/medico/pacientes", accion = "editar", mensajeDenegado = "No tiene permiso para registrar atención")
+    public ResponseEntity<Map<String, String>> atenderPaciente(
+            @PathVariable @Min(1) Long id,
+            @RequestBody @Valid AtenderPacienteRequest request
+    ) {
+        log.info("🏥 [v1.47.0] POST /api/gestion-pacientes/{}/atendido - Registrando atención", id);
+
+        // Obtener la solicitud original para extraer especialidad
+        GestionPacienteDTO paciente = servicio.buscarPorId(id)
+            .orElseThrow(() -> new RuntimeException("Paciente no encontrado"));
+        String especialidad = paciente.getCondicion(); // Usa condición como especialidad temporal
+
+        atenderPacienteService.atenderPaciente(id, especialidad, request);
+
+        return ResponseEntity.ok(Map.of(
+            "mensaje", "Atención registrada correctamente",
+            "solicitudId", id.toString()
+        ));
+    }
+
+    @GetMapping("/especialidades")
+    @CheckMBACPermission(pagina = "/roles/medico/pacientes", accion = "ver", mensajeDenegado = "No tiene permiso para ver especialidades")
+    public ResponseEntity<List<EspecialidadSelectDTO>> obtenerEspecialidades() {
+        log.info("GET /api/gestion-pacientes/especialidades - Obteniendo especialidades");
+
+        List<EspecialidadSelectDTO> especialidades = servicioEssiRepository.findByEstado("A")
+            .stream()
+            .map(servicio -> EspecialidadSelectDTO.builder()
+                .id(servicio.getIdServicio())
+                .descServicio(servicio.getDescServicio())
+                .build())
+            .toList();
+
+        return ResponseEntity.ok(especialidades);
     }
 }

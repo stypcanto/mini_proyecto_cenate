@@ -64,6 +64,11 @@ public class GestionPacienteDTO {
     @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSSZZZ")
     private OffsetDateTime fechaAsignacion;
 
+    // Fecha de atención médica (cuando se marca como Atendido o Deserción)
+    @JsonProperty("fechaAtencion")
+    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSSZZZ")
+    private OffsetDateTime fechaAtencion;
+
     /**
      * Calcula la edad a partir de la fecha de nacimiento
      */

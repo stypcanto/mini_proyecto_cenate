@@ -21,8 +21,13 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
 import java.time.LocalDate;
+import java.time.OffsetDateTime;
 import java.time.Period;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -222,6 +227,18 @@ public class GestionPacienteServiceImpl implements IGestionPacienteService {
             existing.setCondicionMedica(condicion);
             // ✅ v1.46.0: Siempre actualizar observaciones (incluso si es vacío) para limpiar motivos anteriores
             existing.setObservacionesMedicas(observaciones);
+
+            // ✅ v1.47.0: Guardar fecha de atención cuando se marca como "Atendido" o "Deserción"
+            if ("Atendido".equalsIgnoreCase(condicion) || "Deserción".equalsIgnoreCase(condicion)) {
+                // Usar zona horaria de Perú (UTC-5)
+                // Obtener el momento actual (Instant es independiente de timezone)
+                // Luego aplicar la zona horaria de Perú explícitamente
+                ZonedDateTime zonedDateTime = Instant.now().atZone(ZoneId.of("America/Lima"));
+                OffsetDateTime fechaAtencion = zonedDateTime.toOffsetDateTime();
+                existing.setFechaAtencionMedica(fechaAtencion);
+                log.info("✅ Fecha de atención registrada (Instant→America/Lima): {} | LocalTime: {}", fechaAtencion, zonedDateTime.toLocalTime());
+            }
+
             SolicitudBolsa updated = solicitudBolsaRepository.save(existing);
             log.info("✅ Condición actualizada en tabla dim_solicitud_bolsa: {}", id);
             return bolsaToGestionDTO(updated);
@@ -400,8 +417,28 @@ public class GestionPacienteServiceImpl implements IGestionPacienteService {
     private GestionPacienteDTO bolsaToGestionDTO(SolicitudBolsa bolsa) {
         if (bolsa == null) return null;
 
-        // ✅ v1.45.2: Obtener nombre de IPRESS en lugar de código
-        String ipressNombre = obtenerNombreIpress(bolsa.getCodigoIpressAdscripcion());
+        // ✅ v1.46.9: Obtener IPRESS desde dim_solicitud_bolsa O desde asegurados como fallback
+        String ipressNombre = null;
+
+        // Intentar primero desde codigo_ipress en la bolsa
+        if (bolsa.getCodigoIpressAdscripcion() != null) {
+            ipressNombre = obtenerNombreIpress(bolsa.getCodigoIpressAdscripcion());
+        }
+
+        // Si no hay codigo_ipress en la bolsa, intentar obtenerlo desde asegurados
+        if (ipressNombre == null && bolsa.getPacienteId() != null) {
+            try {
+                Optional<Asegurado> aseguradoOpt = aseguradoRepository.findById(bolsa.getPacienteId());
+                if (aseguradoOpt.isPresent()) {
+                    String codIpressFromAsegurado = aseguradoOpt.get().getCasAdscripcion();
+                    if (codIpressFromAsegurado != null) {
+                        ipressNombre = obtenerNombreIpress(codIpressFromAsegurado);
+                    }
+                }
+            } catch (Exception e) {
+                log.warn("No se pudo obtener IPRESS desde asegurados para paciente_id: {}", bolsa.getPacienteId());
+            }
+        }
 
         return GestionPacienteDTO.builder()
             .idSolicitudBolsa(bolsa.getIdSolicitud())  // ✅ v1.46.0: Incluir ID de bolsa
@@ -410,10 +447,11 @@ public class GestionPacienteServiceImpl implements IGestionPacienteService {
             .sexo(bolsa.getPacienteSexo())
             .edad(calcularEdad(bolsa.getFechaNacimiento()))
             .telefono(bolsa.getPacienteTelefono())
-            .ipress(ipressNombre)  // ✅ Mostrar nombre de IPRESS, no código
+            .ipress(ipressNombre)  // ✅ v1.46.9: Mostrar nombre de IPRESS, obtenido desde bolsa o asegurados
             .condicion(bolsa.getCondicionMedica() != null ? bolsa.getCondicionMedica() : "Pendiente")  // ✅ v1.46.0: Usar condición médica si existe
             .observaciones(bolsa.getObservacionesMedicas())  // ✅ v1.46.0: Incluir observaciones médicas
             .fechaAsignacion(bolsa.getFechaAsignacion())  // ✅ v1.45.1: Incluir fecha de asignación
+            .fechaAtencion(bolsa.getFechaAtencionMedica())  // ✅ v1.47.0: Incluir fecha de atención médica
             .build();
     }
 }
