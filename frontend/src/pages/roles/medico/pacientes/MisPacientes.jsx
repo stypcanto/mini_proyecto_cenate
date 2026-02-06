@@ -642,6 +642,7 @@ export default function MisPacientes() {
                   <option value="Atendido">Atendido</option>
                   <option value="Reprogramación Fallida">Rep. Fallida</option>
                   <option value="No Contactado">No Contactado</option>
+                  <option value="Deserción">Deserción</option>
                 </select>
               </div>
 
