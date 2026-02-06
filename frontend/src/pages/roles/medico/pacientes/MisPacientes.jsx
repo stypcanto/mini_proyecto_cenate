@@ -637,11 +637,8 @@ export default function MisPacientes() {
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0A5BA9]/50 focus:border-[#0A5BA9] transition-colors"
                 >
                   <option value="">Todas</option>
-                  <option value="Citado">Citado</option>
                   <option value="Pendiente">Pendiente</option>
                   <option value="Atendido">Atendido</option>
-                  <option value="Reprogramación Fallida">Rep. Fallida</option>
-                  <option value="No Contactado">No Contactado</option>
                   <option value="Deserción">Deserción</option>
                 </select>
               </div>
