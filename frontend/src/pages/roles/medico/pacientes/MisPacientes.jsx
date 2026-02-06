@@ -559,7 +559,7 @@ export default function MisPacientes() {
         </div>
 
         {/* 📊 Estadísticas - Clicables para Filtrar */}
-        <div className="mb-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="mb-6 grid grid-cols-1 md:grid-cols-4 gap-4">
           {/* Total de Pacientes - Clicable para limpiar filtro */}
           <button
             onClick={() => setFiltroEstado('')}
@@ -579,15 +579,15 @@ export default function MisPacientes() {
             onClick={() => setFiltroEstado('Atendido')}
             className={`text-left rounded-lg p-6 border-2 transition-all duration-200 cursor-pointer transform hover:scale-105 ${
               filtroEstado === 'Atendido'
-                ? 'bg-gradient-to-br from-emerald-500 to-emerald-600 border-emerald-700 text-white shadow-lg'
-                : 'bg-gradient-to-br from-emerald-50 to-emerald-100 border-emerald-300 hover:border-emerald-500 text-emerald-900'
+                ? 'bg-gradient-to-br from-teal-600 to-teal-700 border-teal-900 text-white shadow-lg'
+                : 'bg-gradient-to-br from-teal-50 to-teal-100 border-teal-400 hover:border-teal-600 text-teal-900'
             }`}
           >
-            <p className={`text-sm font-medium ${filtroEstado === 'Atendido' ? 'text-emerald-100' : 'text-emerald-700'}`}>Atendidos</p>
-            <p className={`text-3xl font-bold mt-2 ${filtroEstado === 'Atendido' ? 'text-white' : 'text-emerald-600'}`}>
+            <p className={`text-sm font-medium ${filtroEstado === 'Atendido' ? 'text-teal-100' : 'text-teal-800'}`}>Atendidos</p>
+            <p className={`text-3xl font-bold mt-2 ${filtroEstado === 'Atendido' ? 'text-white' : 'text-teal-700'}`}>
               {pacientes.filter(p => p.condicion === 'Atendido').length}
             </p>
-            <p className={`text-xs mt-2 ${filtroEstado === 'Atendido' ? 'text-emerald-100' : 'text-emerald-600'}`}>Haz clic para filtrar</p>
+            <p className={`text-xs mt-2 ${filtroEstado === 'Atendido' ? 'text-teal-100' : 'text-teal-700'}`}>Haz clic para filtrar</p>
           </button>
 
           {/* Pendientes - Clicable */}
@@ -595,15 +595,31 @@ export default function MisPacientes() {
             onClick={() => setFiltroEstado('Pendiente')}
             className={`text-left rounded-lg p-6 border-2 transition-all duration-200 cursor-pointer transform hover:scale-105 ${
               filtroEstado === 'Pendiente'
-                ? 'bg-gradient-to-br from-amber-500 to-amber-600 border-amber-700 text-white shadow-lg'
-                : 'bg-gradient-to-br from-amber-50 to-amber-100 border-amber-300 hover:border-amber-500 text-amber-900'
+                ? 'bg-gradient-to-br from-orange-600 to-orange-700 border-orange-900 text-white shadow-lg'
+                : 'bg-gradient-to-br from-orange-50 to-orange-100 border-orange-400 hover:border-orange-600 text-orange-900'
             }`}
           >
-            <p className={`text-sm font-medium ${filtroEstado === 'Pendiente' ? 'text-amber-100' : 'text-amber-700'}`}>Pendientes</p>
-            <p className={`text-3xl font-bold mt-2 ${filtroEstado === 'Pendiente' ? 'text-white' : 'text-amber-600'}`}>
+            <p className={`text-sm font-medium ${filtroEstado === 'Pendiente' ? 'text-orange-100' : 'text-orange-800'}`}>Pendientes</p>
+            <p className={`text-3xl font-bold mt-2 ${filtroEstado === 'Pendiente' ? 'text-white' : 'text-orange-700'}`}>
               {pacientes.filter(p => p.condicion === 'Pendiente').length}
             </p>
-            <p className={`text-xs mt-2 ${filtroEstado === 'Pendiente' ? 'text-amber-100' : 'text-amber-600'}`}>Haz clic para filtrar</p>
+            <p className={`text-xs mt-2 ${filtroEstado === 'Pendiente' ? 'text-orange-100' : 'text-orange-700'}`}>Haz clic para filtrar</p>
+          </button>
+
+          {/* Deserción - Clicable */}
+          <button
+            onClick={() => setFiltroEstado('Deserción')}
+            className={`text-left rounded-lg p-6 border-2 transition-all duration-200 cursor-pointer transform hover:scale-105 ${
+              filtroEstado === 'Deserción'
+                ? 'bg-gradient-to-br from-red-600 to-red-700 border-red-900 text-white shadow-lg'
+                : 'bg-gradient-to-br from-red-50 to-red-100 border-red-400 hover:border-red-600 text-red-900'
+            }`}
+          >
+            <p className={`text-sm font-medium ${filtroEstado === 'Deserción' ? 'text-red-100' : 'text-red-800'}`}>Deserción</p>
+            <p className={`text-3xl font-bold mt-2 ${filtroEstado === 'Deserción' ? 'text-white' : 'text-red-700'}`}>
+              {pacientes.filter(p => p.condicion === 'Deserción').length}
+            </p>
+            <p className={`text-xs mt-2 ${filtroEstado === 'Deserción' ? 'text-red-100' : 'text-red-700'}`}>Haz clic para filtrar</p>
           </button>
         </div>
 
