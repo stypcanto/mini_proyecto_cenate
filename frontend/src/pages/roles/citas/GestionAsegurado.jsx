@@ -61,6 +61,15 @@ export default function GestionAsegurado() {
     saving: false,
   });
 
+  // 📱 Estado para modal de envío de mensaje de cita (v1.50.1)
+  const [modalMensajeCita, setModalMensajeCita] = useState({
+    visible: false,
+    paciente: null,
+    preview: null,
+    enviando: false,
+    step: "preview", // preview | confirmar | enviado
+  });
+
   const [autoRefreshEnabled, setAutoRefreshEnabled] = useState(true);
   const [lastRefreshTime, setLastRefreshTime] = useState(new Date());
   const [estadosDisponibles] = useState([
@@ -716,6 +725,160 @@ export default function GestionAsegurado() {
   const handleCancelarEstado = () => {
     setPacienteEditandoEstado(null);
     setNuevoEstadoSeleccionado("");
+  };
+
+  // ========================================================================
+  // 📱 FUNCIONES PARA ENVÍO DE MENSAJE DE CITA (v1.50.1)
+  // ========================================================================
+
+  const abrirModalMensajeCita = async (paciente) => {
+    if (!paciente.fechaAtencion || !paciente.horaAtencion) {
+      toast.error("❌ El paciente debe tener fecha y hora de cita agendada");
+      return;
+    }
+
+    setModalMensajeCita({
+      visible: true,
+      paciente,
+      preview: null,
+      enviando: false,
+      step: "preview",
+    });
+
+    // Cargar vista previa
+    await previsualizarMensajeCita(paciente);
+  };
+
+  const previsualizarMensajeCita = async (paciente) => {
+    try {
+      const request = {
+        idSolicitud: paciente.id || paciente.idSolicitud,
+        nombrePaciente: paciente.pacienteNombre,
+        telefonoPaciente: paciente.pacienteTelefono,
+        nombreMedico: paciente.nombreMedico || "Por asignar",
+        especialidad: paciente.especialidad || "No especificada",
+        fechaAtencion: paciente.fechaAtencion,
+        horaAtencion: paciente.horaAtencion?.substring(0, 5), // HH:mm
+        horaFin: paciente.horaFin?.substring(0, 5), // HH:mm (opcional)
+        canal: "WHATSAPP",
+      };
+
+      const response = await fetch(`${API_BASE}/citas/mensaje/preview`, {
+        method: "POST",
+        headers: getHeaders(),
+        body: JSON.stringify(request),
+      });
+
+      const data = await response.json();
+
+      if (data.contenido_mensaje) {
+        setModalMensajeCita((prev) => ({
+          ...prev,
+          preview: data.contenido_mensaje,
+        }));
+      }
+    } catch (error) {
+      console.error("Error cargando vista previa:", error);
+      toast.error("Error al cargar vista previa del mensaje");
+    }
+  };
+
+  const enviarMensajeCita = async () => {
+    const paciente = modalMensajeCita.paciente;
+
+    if (!paciente) {
+      toast.error("Paciente no válido");
+      return;
+    }
+
+    setModalMensajeCita((prev) => ({
+      ...prev,
+      enviando: true,
+    }));
+
+    try {
+      const request = {
+        idSolicitud: paciente.id || paciente.idSolicitud,
+        nombrePaciente: paciente.pacienteNombre,
+        telefonoPaciente: paciente.pacienteTelefono,
+        nombreMedico: paciente.nombreMedico || "Por asignar",
+        especialidad: paciente.especialidad || "No especificada",
+        fechaAtencion: paciente.fechaAtencion,
+        horaAtencion: paciente.horaAtencion?.substring(0, 5), // HH:mm
+        horaFin: paciente.horaFin?.substring(0, 5), // HH:mm (opcional)
+        canal: "WHATSAPP",
+      };
+
+      const response = await fetch(`${API_BASE}/citas/mensaje/enviar/whatsapp`, {
+        method: "POST",
+        headers: getHeaders(),
+        body: JSON.stringify(request),
+      });
+
+      const data = await response.json();
+
+      if (data.exitoso) {
+        setModalMensajeCita((prev) => ({
+          ...prev,
+          step: "enviado",
+          enviando: false,
+        }));
+
+        // Toast minimalista de éxito
+        toast.custom((t) => (
+          <div className={`flex items-center gap-3 bg-white border-l-4 border-green-500 rounded-lg px-4 py-3 shadow-lg transition-all ${
+            t.visible ? 'animate-in' : 'animate-out'
+          }`}>
+            <div className="flex-shrink-0">
+              <svg className="h-5 w-5 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+              </svg>
+            </div>
+            <div className="flex-1">
+              <p className="text-sm font-medium text-gray-900">
+                ✓ Mensaje enviado al paciente
+              </p>
+              <p className="text-xs text-gray-500 mt-0.5">
+                {paciente.pacienteTelefono}
+              </p>
+            </div>
+            <button
+              onClick={() => toast.dismiss(t.id)}
+              className="text-gray-400 hover:text-gray-600 transition-colors"
+            >
+              ✕
+            </button>
+          </div>
+        ), {
+          position: 'top-right',
+          duration: 4000,
+        });
+
+        // Cerrar modal después de 2 segundos
+        setTimeout(() => {
+          setModalMensajeCita({
+            visible: false,
+            paciente: null,
+            preview: null,
+            enviando: false,
+            step: "preview",
+          });
+        }, 2000);
+      } else {
+        toast.error(`❌ Error: ${data.mensaje}`);
+        setModalMensajeCita((prev) => ({
+          ...prev,
+          enviando: false,
+        }));
+      }
+    } catch (error) {
+      console.error("Error enviando mensaje:", error);
+      toast.error("Error al enviar el mensaje");
+      setModalMensajeCita((prev) => ({
+        ...prev,
+        enviando: false,
+      }));
+    }
   };
 
   // Guardar teléfono actualizado
@@ -2222,6 +2385,15 @@ export default function GestionAsegurado() {
                               >
                                 <Smartphone className="w-4 h-4" strokeWidth={2} />
                               </button>
+                              {paciente.fechaAtencion && paciente.horaAtencion && (
+                                <button
+                                  onClick={() => abrirModalMensajeCita(paciente)}
+                                  className="bg-purple-600 hover:bg-purple-700 text-white p-2 rounded transition-colors"
+                                  title="Enviar mensaje de cita"
+                                >
+                                  <MessageCircle className="w-4 h-4" strokeWidth={2} />
+                                </button>
+                              )}
                               <button
                                 onClick={() => {
                                   if (paciente.pacienteTelefono) {
@@ -2232,9 +2404,9 @@ export default function GestionAsegurado() {
                                   }
                                 }}
                                 className="bg-green-600 hover:bg-green-700 text-white p-2 rounded transition-colors"
-                                title="Mandar mensaje WhatsApp"
+                                title="Chat directo WhatsApp"
                               >
-                                <MessageCircle className="w-4 h-4" strokeWidth={2} />
+                                <Smartphone className="w-4 h-4" strokeWidth={2} />
                               </button>
                             </div>
                           )}
@@ -2383,6 +2555,89 @@ export default function GestionAsegurado() {
                   )}
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Envío de Mensaje de Cita (v1.50.1) */}
+      {modalMensajeCita.visible && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[80vh] flex flex-col">
+            {/* Header */}
+            <div className="bg-gradient-to-r from-purple-600 to-purple-700 p-6 text-white rounded-t-2xl">
+              <h2 className="text-xl font-bold flex items-center gap-3">
+                <MessageCircle className="w-6 h-6" />
+                <span>Enviar Mensaje de Cita</span>
+              </h2>
+            </div>
+
+            {/* Body */}
+            <div className="p-6 overflow-y-auto flex-1">
+              {/* Paciente info */}
+              <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                <p className="text-sm text-gray-600">Paciente:</p>
+                <p className="text-lg font-bold text-gray-900">
+                  {modalMensajeCita.paciente?.pacienteNombre}
+                </p>
+                <p className="text-sm text-gray-500 mt-1">
+                  DNI: {modalMensajeCita.paciente?.pacienteDni} |
+                  Tel: {modalMensajeCita.paciente?.pacienteTelefono}
+                </p>
+              </div>
+
+              {/* Vista Previa */}
+              {modalMensajeCita.preview && (
+                <div className="mb-6">
+                  <p className="text-sm font-semibold text-gray-700 mb-3">Vista Previa del Mensaje:</p>
+                  <div className="bg-gray-50 border border-gray-300 rounded-lg p-4 text-xs whitespace-pre-wrap text-gray-800 max-h-48 overflow-y-auto font-mono leading-relaxed">
+                    {modalMensajeCita.preview}
+                  </div>
+                </div>
+              )}
+
+              {/* Información */}
+              <div className="bg-amber-50 border border-amber-200 p-3 rounded-lg mb-6">
+                <p className="text-xs text-amber-800">
+                  <strong>📱 Se enviará por WhatsApp</strong> al teléfono registrado del paciente. Incluye fecha, hora y detalles de la cita médica.
+                </p>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="flex gap-3 p-6 border-t border-gray-200 bg-gray-50 rounded-b-2xl">
+              <button
+                onClick={() =>
+                  setModalMensajeCita({
+                    visible: false,
+                    paciente: null,
+                    preview: null,
+                    enviando: false,
+                    step: "preview",
+                  })
+                }
+                disabled={modalMensajeCita.enviando}
+                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-100 transition-colors disabled:opacity-50"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={enviarMensajeCita}
+                disabled={modalMensajeCita.enviando}
+                className="flex-1 px-4 py-2 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+              >
+                {modalMensajeCita.enviando ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Enviando...
+                  </>
+                ) : (
+                  <>
+                    <Check className="w-4 h-4" />
+                    Enviar Mensaje
+                  </>
+                )}
+              </button>
             </div>
           </div>
         </div>
