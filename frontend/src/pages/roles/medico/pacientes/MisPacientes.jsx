@@ -400,28 +400,53 @@ export default function MisPacientes() {
           <p className="text-gray-600 font-medium">Gestiona tus pacientes asignados</p>
         </div>
 
-        {/* 📊 Estadísticas - Parte Superior */}
-        <div className="mb-6 grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div className="bg-white border border-gray-200 shadow-sm rounded-lg p-6">
-            <p className="text-gray-600 text-sm font-medium">Total de Pacientes</p>
-            <p className="text-3xl font-bold text-gray-900 mt-2">{pacientes.length}</p>
-          </div>
-          <div className="bg-white border border-gray-200 shadow-sm rounded-lg p-6">
-            <p className="text-gray-600 text-sm font-medium">Filtrados</p>
-            <p className="text-3xl font-bold text-[#0A5BA9] mt-2">{pacientesFiltrados.length}</p>
-          </div>
-          <div className="bg-white border border-gray-200 shadow-sm rounded-lg p-6">
-            <p className="text-gray-600 text-sm font-medium">Atendidos</p>
-            <p className="text-3xl font-bold text-emerald-600 mt-2">
+        {/* 📊 Estadísticas - Clicables para Filtrar */}
+        <div className="mb-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+          {/* Total de Pacientes - Clicable para limpiar filtro */}
+          <button
+            onClick={() => setFiltroEstado('')}
+            className={`text-left rounded-lg p-6 border-2 transition-all duration-200 cursor-pointer transform hover:scale-105 ${
+              filtroEstado === ''
+                ? 'bg-gradient-to-br from-slate-600 to-slate-700 border-slate-800 text-white shadow-lg'
+                : 'bg-gradient-to-br from-slate-100 to-slate-200 border-slate-400 hover:border-slate-600 text-slate-900'
+            }`}
+          >
+            <p className={`text-sm font-medium ${filtroEstado === '' ? 'text-slate-200' : 'text-slate-700'}`}>Total de Pacientes</p>
+            <p className={`text-3xl font-bold mt-2 ${filtroEstado === '' ? 'text-white' : 'text-slate-600'}`}>{pacientes.length}</p>
+            <p className={`text-xs mt-2 ${filtroEstado === '' ? 'text-slate-300' : 'text-slate-600'}`}>Haz clic para limpiar filtro</p>
+          </button>
+
+          {/* Atendidos - Clicable */}
+          <button
+            onClick={() => setFiltroEstado('Atendido')}
+            className={`text-left rounded-lg p-6 border-2 transition-all duration-200 cursor-pointer transform hover:scale-105 ${
+              filtroEstado === 'Atendido'
+                ? 'bg-gradient-to-br from-emerald-500 to-emerald-600 border-emerald-700 text-white shadow-lg'
+                : 'bg-gradient-to-br from-emerald-50 to-emerald-100 border-emerald-300 hover:border-emerald-500 text-emerald-900'
+            }`}
+          >
+            <p className={`text-sm font-medium ${filtroEstado === 'Atendido' ? 'text-emerald-100' : 'text-emerald-700'}`}>Atendidos</p>
+            <p className={`text-3xl font-bold mt-2 ${filtroEstado === 'Atendido' ? 'text-white' : 'text-emerald-600'}`}>
               {pacientes.filter(p => p.condicion === 'Atendido').length}
             </p>
-          </div>
-          <div className="bg-white border border-gray-200 shadow-sm rounded-lg p-6">
-            <p className="text-gray-600 text-sm font-medium">Pendientes</p>
-            <p className="text-3xl font-bold text-amber-600 mt-2">
+            <p className={`text-xs mt-2 ${filtroEstado === 'Atendido' ? 'text-emerald-100' : 'text-emerald-600'}`}>Haz clic para filtrar</p>
+          </button>
+
+          {/* Pendientes - Clicable */}
+          <button
+            onClick={() => setFiltroEstado('Pendiente')}
+            className={`text-left rounded-lg p-6 border-2 transition-all duration-200 cursor-pointer transform hover:scale-105 ${
+              filtroEstado === 'Pendiente'
+                ? 'bg-gradient-to-br from-amber-500 to-amber-600 border-amber-700 text-white shadow-lg'
+                : 'bg-gradient-to-br from-amber-50 to-amber-100 border-amber-300 hover:border-amber-500 text-amber-900'
+            }`}
+          >
+            <p className={`text-sm font-medium ${filtroEstado === 'Pendiente' ? 'text-amber-100' : 'text-amber-700'}`}>Pendientes</p>
+            <p className={`text-3xl font-bold mt-2 ${filtroEstado === 'Pendiente' ? 'text-white' : 'text-amber-600'}`}>
               {pacientes.filter(p => p.condicion === 'Pendiente').length}
             </p>
-          </div>
+            <p className={`text-xs mt-2 ${filtroEstado === 'Pendiente' ? 'text-amber-100' : 'text-amber-600'}`}>Haz clic para filtrar</p>
+          </button>
         </div>
 
         {/* Filtros y búsqueda */}
