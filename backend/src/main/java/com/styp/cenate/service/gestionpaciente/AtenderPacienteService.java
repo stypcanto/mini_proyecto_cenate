@@ -5,6 +5,7 @@ import com.styp.cenate.model.Asegurado;
 import com.styp.cenate.model.bolsas.SolicitudBolsa;
 import com.styp.cenate.repository.AseguradoRepository;
 import com.styp.cenate.repository.bolsas.SolicitudBolsaRepository;
+import com.styp.cenate.repository.DimServicioEssiRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -29,14 +30,17 @@ public class AtenderPacienteService {
     private final SolicitudBolsaRepository solicitudBolsaRepository;
     private final AseguradoRepository aseguradoRepository;
     private final EntityManager entityManager;
+    private final DimServicioEssiRepository servicioEssiRepository;
 
     public AtenderPacienteService(
             SolicitudBolsaRepository solicitudBolsaRepository,
             AseguradoRepository aseguradoRepository,
-            EntityManager entityManager) {
+            EntityManager entityManager,
+            com.styp.cenate.repository.DimServicioEssiRepository servicioEssiRepository) {
         this.solicitudBolsaRepository = solicitudBolsaRepository;
         this.aseguradoRepository = aseguradoRepository;
         this.entityManager = entityManager;
+        this.servicioEssiRepository = servicioEssiRepository;
     }
 
     @Transactional
@@ -141,6 +145,24 @@ public class AtenderPacienteService {
         ZonedDateTime zonedDateTime = Instant.now().atZone(ZoneId.of("America/Lima"));
         ZonedDateTime fechaPreferida = zonedDateTime.plusDays(dias != null ? dias : 7);
 
+        // ✅ v1.47.3: Buscar idServicio por especialidad para permitir asignación de médico
+        Long idServicioRecita = null;
+        try {
+            var servicioOpt = servicioEssiRepository.findFirstByDescServicioIgnoreCaseAndEstado(
+                    solicitudOriginal.getEspecialidad(), "A");
+            if (servicioOpt.isPresent()) {
+                idServicioRecita = servicioOpt.get().getIdServicio();
+                log.info("✅ RECITA: idServicio encontrado para especialidad '{}': {}",
+                        solicitudOriginal.getEspecialidad(), idServicioRecita);
+            } else {
+                log.warn("⚠️ RECITA: No se encontró idServicio para especialidad '{}'",
+                        solicitudOriginal.getEspecialidad());
+            }
+        } catch (Exception e) {
+            log.error("❌ RECITA: Error buscando idServicio para especialidad: {}",
+                    solicitudOriginal.getEspecialidad(), e);
+        }
+
         SolicitudBolsa bolsaRecita = SolicitudBolsa.builder()
                 .numeroSolicitud(generarNumeroSolicitud("REC"))
                 .pacienteDni(solicitudOriginal.getPacienteDni())
@@ -154,7 +176,7 @@ public class AtenderPacienteService {
                 .estado("PENDIENTE")
                 .estadoGestionCitasId(1L) // PENDIENTE CITAR
                 .idBolsa(11L) // BOLSA_GENERADA_X_PROFESIONAL - ✅ v1.47.2 Corregir bolsa correcta
-                .idServicio(null) // ✅ v1.47.1 NULL para evitar violación de UNIQUE constraint
+                .idServicio(idServicioRecita) // ✅ v1.47.3 Asignar idServicio para permitir selector de médicos
                 .responsableGestoraId(solicitudOriginal.getResponsableGestoraId()) // ✅ Asignar gestora responsable
                 .fechaAsignacion(OffsetDateTime.now())
                 .fechaPreferidaNoAtendida(fechaPreferida.toLocalDate()) // ✅ Fecha preferida calculada (hoy + días)
@@ -162,7 +184,8 @@ public class AtenderPacienteService {
                 .build();
 
         solicitudBolsaRepository.save(bolsaRecita);
-        log.info("✅ Bolsa RECITA creada: {} - Fecha preferida: {}", bolsaRecita.getIdSolicitud(), fechaPreferida);
+        log.info("✅ Bolsa RECITA creada: {} - Fecha preferida: {} - idServicio: {}",
+                bolsaRecita.getIdSolicitud(), fechaPreferida, idServicioRecita);
     }
 
     private void crearBolsaInterconsulta(SolicitudBolsa solicitudOriginal, String especialidad) {
@@ -171,6 +194,22 @@ public class AtenderPacienteService {
         // ✅ v1.47.1: Usar BOLSA_GESTORA (10) en lugar de BOLSA_GENERADA_X_PROFESIONAL (11)
         // para permitir múltiples interconsultas de diferentes especialidades sin violar UNIQUE constraint
         ZonedDateTime zonedDateTime = Instant.now().atZone(ZoneId.of("America/Lima"));
+
+        // ✅ v1.47.3: Buscar idServicio por especialidad para permitir asignación de médico
+        Long idServicioInterconsulta = null;
+        try {
+            var servicioOpt = servicioEssiRepository.findFirstByDescServicioIgnoreCaseAndEstado(
+                    especialidad, "A");
+            if (servicioOpt.isPresent()) {
+                idServicioInterconsulta = servicioOpt.get().getIdServicio();
+                log.info("✅ INTERCONSULTA: idServicio encontrado para especialidad '{}': {}",
+                        especialidad, idServicioInterconsulta);
+            } else {
+                log.warn("⚠️ INTERCONSULTA: No se encontró idServicio para especialidad '{}'", especialidad);
+            }
+        } catch (Exception e) {
+            log.error("❌ INTERCONSULTA: Error buscando idServicio para especialidad: {}", especialidad, e);
+        }
 
         SolicitudBolsa bolsaInterconsulta = SolicitudBolsa.builder()
                 .numeroSolicitud(generarNumeroSolicitud("INT"))
@@ -185,14 +224,15 @@ public class AtenderPacienteService {
                 .estado("PENDIENTE")
                 .estadoGestionCitasId(1L) // PENDIENTE CITAR
                 .idBolsa(11L) // BOLSA_GENERADA_X_PROFESIONAL - ✅ v1.47.2 Corregir bolsa correcta
-                .idServicio(null) // ✅ v1.47.1 NULL para evitar violación de UNIQUE constraint
+                .idServicio(idServicioInterconsulta) // ✅ v1.47.3 Asignar idServicio para permitir selector de médicos
                 .responsableGestoraId(solicitudOriginal.getResponsableGestoraId()) // ✅ Asignar gestora responsable
                 .fechaAsignacion(OffsetDateTime.now())
                 .activo(true)
                 .build();
 
         solicitudBolsaRepository.save(bolsaInterconsulta);
-        log.info("✅ Bolsa INTERCONSULTA creada: {} para especialidad: {}", bolsaInterconsulta.getIdSolicitud(), especialidad);
+        log.info("✅ Bolsa INTERCONSULTA creada: {} para especialidad: {} - idServicio: {}",
+                bolsaInterconsulta.getIdSolicitud(), especialidad, idServicioInterconsulta);
     }
 
     private String generarNumeroSolicitud(String prefijo) {
