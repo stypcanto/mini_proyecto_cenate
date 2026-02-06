@@ -937,7 +937,7 @@ export default function MisPacientes() {
                       </div>
                     </button>
 
-                    {/* Chip 2: Referencia */}
+                    {/* Chip 2: Interconsulta */}
                     <button
                       onClick={() => {
                         setTieneInterconsulta(!tieneInterconsulta);
@@ -951,11 +951,11 @@ export default function MisPacientes() {
                     >
                       <div className="flex flex-col items-center gap-2">
                         <Share2 className="w-5 h-5" strokeWidth={2.5} />
-                        <span className="text-sm">Referencia</span>
+                        <span className="text-sm">Interconsulta</span>
                       </div>
                     </button>
 
-                    {/* Chip 3: Crónico */}
+                    {/* Chip 3: Registrar Crónico */}
                     <button
                       onClick={() => {
                         setEsCronico(!esCronico);
@@ -969,7 +969,7 @@ export default function MisPacientes() {
                     >
                       <div className="flex flex-col items-center gap-2">
                         <Heart className="w-5 h-5" strokeWidth={2.5} />
-                        <span className="text-sm">Crónico</span>
+                        <span className="text-sm">Registrar Crónico</span>
                       </div>
                     </button>
                   </div>
