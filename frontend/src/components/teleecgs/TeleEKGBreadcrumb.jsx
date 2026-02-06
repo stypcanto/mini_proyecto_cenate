@@ -12,7 +12,7 @@ export default function TeleEKGBreadcrumb() {
   const steps = [
     {
       path: "/teleekgs/upload",
-      label: "Cargar EKG",
+      label: "Subir Electrocardiogramas",
       icon: Upload,
       description: "Sube tus imágenes ECG",
     },
