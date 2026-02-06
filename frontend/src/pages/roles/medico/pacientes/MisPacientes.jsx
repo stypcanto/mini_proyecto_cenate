@@ -173,19 +173,15 @@ export default function MisPacientes() {
   const procesarAccion = async () => {
     if (!pacienteSeleccionado) return;
 
-    // ✅ v1.47.0: Si seleccionó "Atendido", abrir modal Atender en lugar de cambiar estado directamente
-    if (estadoSeleccionado === 'Atendido') {
-      // Resetear valores v1.47.0
-      setTieneRecita(false);
-      setRecitaDias(7);
-      setTieneInterconsulta(false);
-      setInterconsultaEspecialidad('');
-      setEsCronico(false);
-      setEnfermedadesCronicas([]);
-      setOtroDetalle('');
+    // ✅ v1.47.0: Si seleccionó "Atendido" Y tiene opciones seleccionadas, registrar atención
+    if (estadoSeleccionado === 'Atendido' && (tieneRecita || tieneInterconsulta || esCronico)) {
+      await procesarAtencionMedica();
+      return;
+    }
 
-      // Cambiar a modal Atender
-      setModalAccion('atender');
+    // ✅ v1.47.0: Si seleccionó "Atendido" pero NO tiene opciones, mostrar error
+    if (estadoSeleccionado === 'Atendido' && !tieneRecita && !tieneInterconsulta && !esCronico) {
+      toast.error('Seleccione al menos una opción: Recita, Interconsulta o Crónico');
       return;
     }
 
@@ -467,181 +463,6 @@ export default function MisPacientes() {
         </div>
       </div>
 
-      {/* ✅ v1.47.0: Modal Atender Paciente (Recita + Interconsulta + Crónico) */}
-      {modalAccion === 'atender' && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-lg max-w-3xl w-full p-6 max-h-[90vh] overflow-y-auto">
-            <h2 className="text-xl font-bold text-gray-900 mb-2">🏥 Registrar Atención Médica</h2>
-            <p className="text-sm text-gray-600 mb-6">{pacienteSeleccionado?.apellidosNombres}</p>
-
-            {/* Sección 1: Recita */}
-            <div className="mb-8 p-4 border border-gray-200 rounded-lg">
-              <div className="flex items-center gap-3 mb-4">
-                <input
-                  type="checkbox"
-                  id="recita"
-                  checked={tieneRecita}
-                  onChange={(e) => setTieneRecita(e.target.checked)}
-                  className="w-5 h-5 text-green-600 rounded"
-                />
-                <label htmlFor="recita" className="text-lg font-semibold text-gray-900">📋 Recita</label>
-              </div>
-
-              {tieneRecita && (
-                <div className="ml-8 space-y-3">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Plazo de Recita (días):</label>
-                    <select
-                      value={recitaDias}
-                      onChange={(e) => setRecitaDias(parseInt(e.target.value))}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                    >
-                      <option value={3}>3 días</option>
-                      <option value={7}>7 días</option>
-                      <option value={15}>15 días</option>
-                      <option value={30}>30 días</option>
-                      <option value={60}>60 días</option>
-                      <option value={90}>90 días</option>
-                    </select>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Sección 2: Interconsulta */}
-            <div className="mb-8 p-4 border border-gray-200 rounded-lg">
-              <div className="flex items-center gap-3 mb-4">
-                <input
-                  type="checkbox"
-                  id="interconsulta"
-                  checked={tieneInterconsulta}
-                  onChange={(e) => setTieneInterconsulta(e.target.checked)}
-                  className="w-5 h-5 text-blue-600 rounded"
-                />
-                <label htmlFor="interconsulta" className="text-lg font-semibold text-gray-900">🔗 Interconsulta</label>
-              </div>
-
-              {tieneInterconsulta && (
-                <div className="ml-8 space-y-3">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Especialidad:</label>
-                    <select
-                      value={interconsultaEspecialidad}
-                      onChange={(e) => setInterconsultaEspecialidad(e.target.value)}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    >
-                      <option value="">-- Seleccione especialidad --</option>
-                      {especialidades.map(esp => (
-                        <option key={esp.id} value={esp.descServicio}>{esp.descServicio}</option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Sección 3: Enfermedad Crónica */}
-            <div className="mb-8 p-4 border border-gray-200 rounded-lg">
-              <div className="flex items-center gap-3 mb-4">
-                <input
-                  type="checkbox"
-                  id="cronico"
-                  checked={esCronico}
-                  onChange={(e) => setEsCronico(e.target.checked)}
-                  className="w-5 h-5 text-purple-600 rounded"
-                />
-                <label htmlFor="cronico" className="text-lg font-semibold text-gray-900">🏥 Paciente Crónico</label>
-              </div>
-
-              {esCronico && (
-                <div className="ml-8 space-y-4">
-                  <p className="text-sm text-gray-600 font-medium">Seleccione enfermedad(es):</p>
-
-                  <div className="space-y-2">
-                    <label className="flex items-center gap-3 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={enfermedadesCronicas.includes('Hipertensión')}
-                        onChange={() => toggleEnfermedad('Hipertensión')}
-                        className="w-4 h-4 text-purple-600 rounded"
-                      />
-                      <span className="text-sm text-gray-700">Hipertensión</span>
-                    </label>
-
-                    <label className="flex items-center gap-3 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={enfermedadesCronicas.includes('Diabetes')}
-                        onChange={() => toggleEnfermedad('Diabetes')}
-                        className="w-4 h-4 text-purple-600 rounded"
-                      />
-                      <span className="text-sm text-gray-700">Diabetes</span>
-                    </label>
-
-                    <label className="flex items-center gap-3 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={enfermedadesCronicas.includes('Otro')}
-                        onChange={() => toggleEnfermedad('Otro')}
-                        className="w-4 h-4 text-purple-600 rounded"
-                      />
-                      <span className="text-sm text-gray-700">Otra enfermedad crónica</span>
-                    </label>
-                  </div>
-
-                  {enfermedadesCronicas.includes('Otro') && (
-                    <div>
-                      <input
-                        type="text"
-                        placeholder="Describa la enfermedad crónica..."
-                        value={otroDetalle}
-                        onChange={(e) => setOtroDetalle(e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 text-sm"
-                      />
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-
-            {/* Botones */}
-            <div className="flex gap-3 justify-end pt-4 border-t border-gray-200">
-              <button
-                onClick={() => {
-                  setModalAccion('cambiarEstado');
-                  setEstadoSeleccionado('Atendido');
-                }}
-                disabled={procesando}
-                className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition disabled:opacity-50 font-medium"
-              >
-                ← Atrás
-              </button>
-              <button
-                onClick={() => setModalAccion(null)}
-                disabled={procesando}
-                className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition disabled:opacity-50 font-medium"
-              >
-                Cancelar
-              </button>
-              <button
-                onClick={procesarAtencionMedica}
-                disabled={procesando || (!tieneRecita && !tieneInterconsulta && !esCronico)}
-                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition disabled:opacity-50 font-medium flex items-center justify-center gap-2"
-              >
-                {procesando ? (
-                  <>
-                    <Loader className="w-4 h-4 animate-spin" />
-                    Registrando...
-                  </>
-                ) : (
-                  '✓ Registrar Atención'
-                )}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Modal de Cambio de Estado */}
       {modalAccion === 'cambiarEstado' && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
@@ -748,6 +569,155 @@ export default function MisPacientes() {
                 )}
               </div>
             </div>
+
+            {/* ✅ v1.47.0: Opciones Atención Médica (aparecen cuando selecciona Atendido) */}
+            {estadoSeleccionado === 'Atendido' && (
+              <div className="space-y-4 mb-6 pt-6 border-t border-gray-200">
+                <h3 className="text-sm font-semibold text-gray-900">📋 Opciones de Atención Médica:</h3>
+
+                {/* Sección 1: RECITA */}
+                <div className="p-4 border border-green-200 rounded-lg bg-green-50">
+                  <div className="flex items-center gap-3 mb-3">
+                    <input
+                      type="checkbox"
+                      id="recita"
+                      checked={tieneRecita}
+                      onChange={(e) => setTieneRecita(e.target.checked)}
+                      className="w-5 h-5 text-green-600 rounded"
+                    />
+                    <label htmlFor="recita" className="text-lg font-semibold text-gray-900">
+                      📋 Recita
+                    </label>
+                  </div>
+
+                  {tieneRecita && (
+                    <div className="ml-8 space-y-3">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Plazo de Recita (días):
+                        </label>
+                        <select
+                          value={recitaDias}
+                          onChange={(e) => setRecitaDias(parseInt(e.target.value))}
+                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                        >
+                          <option value={3}>3 días</option>
+                          <option value={7}>7 días</option>
+                          <option value={15}>15 días</option>
+                          <option value={30}>30 días</option>
+                          <option value={60}>60 días</option>
+                          <option value={90}>90 días</option>
+                        </select>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Sección 2: INTERCONSULTA */}
+                <div className="p-4 border border-blue-200 rounded-lg bg-blue-50">
+                  <div className="flex items-center gap-3 mb-3">
+                    <input
+                      type="checkbox"
+                      id="interconsulta"
+                      checked={tieneInterconsulta}
+                      onChange={(e) => setTieneInterconsulta(e.target.checked)}
+                      className="w-5 h-5 text-blue-600 rounded"
+                    />
+                    <label htmlFor="interconsulta" className="text-lg font-semibold text-gray-900">
+                      🔗 Interconsulta
+                    </label>
+                  </div>
+
+                  {tieneInterconsulta && (
+                    <div className="ml-8 space-y-3">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Especialidad:
+                        </label>
+                        <select
+                          value={interconsultaEspecialidad}
+                          onChange={(e) => setInterconsultaEspecialidad(e.target.value)}
+                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        >
+                          <option value="">-- Seleccione especialidad --</option>
+                          {especialidades.map(esp => (
+                            <option key={esp.id} value={esp.descServicio}>
+                              {esp.descServicio}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Sección 3: ENFERMEDAD CRÓNICA */}
+                <div className="p-4 border border-purple-200 rounded-lg bg-purple-50">
+                  <div className="flex items-center gap-3 mb-3">
+                    <input
+                      type="checkbox"
+                      id="cronico"
+                      checked={esCronico}
+                      onChange={(e) => setEsCronico(e.target.checked)}
+                      className="w-5 h-5 text-purple-600 rounded"
+                    />
+                    <label htmlFor="cronico" className="text-lg font-semibold text-gray-900">
+                      🏥 Paciente Crónico
+                    </label>
+                  </div>
+
+                  {esCronico && (
+                    <div className="ml-8 space-y-4">
+                      <p className="text-sm text-gray-600 font-medium">Seleccione enfermedad(es):</p>
+
+                      <div className="space-y-2">
+                        <label className="flex items-center gap-3 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={enfermedadesCronicas.includes('Hipertensión')}
+                            onChange={() => toggleEnfermedad('Hipertensión')}
+                            className="w-4 h-4 text-purple-600 rounded"
+                          />
+                          <span className="text-sm text-gray-700">Hipertensión</span>
+                        </label>
+
+                        <label className="flex items-center gap-3 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={enfermedadesCronicas.includes('Diabetes')}
+                            onChange={() => toggleEnfermedad('Diabetes')}
+                            className="w-4 h-4 text-purple-600 rounded"
+                          />
+                          <span className="text-sm text-gray-700">Diabetes</span>
+                        </label>
+
+                        <label className="flex items-center gap-3 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={enfermedadesCronicas.includes('Otro')}
+                            onChange={() => toggleEnfermedad('Otro')}
+                            className="w-4 h-4 text-purple-600 rounded"
+                          />
+                          <span className="text-sm text-gray-700">Otra enfermedad crónica</span>
+                        </label>
+                      </div>
+
+                      {enfermedadesCronicas.includes('Otro') && (
+                        <div>
+                          <input
+                            type="text"
+                            placeholder="Describa la enfermedad crónica..."
+                            value={otroDetalle}
+                            onChange={(e) => setOtroDetalle(e.target.value)}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 text-sm"
+                          />
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
 
             {/* Botones */}
             <div className="flex gap-3 justify-end">

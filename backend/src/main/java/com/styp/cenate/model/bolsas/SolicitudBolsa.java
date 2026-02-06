@@ -210,7 +210,9 @@ public class SolicitudBolsa {
     private OffsetDateTime fechaAtencionMedica;
 
     // ✅ v1.47.0: Origen de la bolsa (BOLSA_GENERADA_X_PROFESIONAL, etc.)
-    @Column(name = "origen_bolsa", length = 100)
+    // NOTA: Comentado porque la columna 'origen_bolsa' no existe en la BD actual
+    // Usar 'transient' para que Hibernate lo ignore completamente
+    @Transient
     private String origenBolsa;
 
     @PrePersist

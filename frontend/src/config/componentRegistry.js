@@ -146,6 +146,11 @@ export const componentRegistry = {
     requiredAction: 'ver',
   },
 
+  '/roles/medico/produccion': {
+    component: lazy(() => import('../pages/roles/medico/produccion/Produccion')),
+    requiredAction: 'ver',
+  },
+
   // ========================================================================
   // 📊 MÓDULO COORDINADOR
   // ========================================================================

@@ -61,12 +61,12 @@ public class GestionPacienteDTO {
 
     // Fecha de asignación al médico (desde dim_solicitud_bolsa)
     @JsonProperty("fechaAsignacion")
-    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSSZZZ")
+    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSSXXX")
     private OffsetDateTime fechaAsignacion;
 
     // Fecha de atención médica (cuando se marca como Atendido o Deserción)
     @JsonProperty("fechaAtencion")
-    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSSZZZ")
+    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSSXXX")
     private OffsetDateTime fechaAtencion;
 
     /**
