@@ -158,30 +158,30 @@ export default function Login() {
       {/* Capa azul institucional */}
       <div className="absolute inset-0 bg-[#0a5ba9]/40"></div>
 
-      {/* ✅ v1.49.2: Responsive max-width + padding for all devices */}
-      {/* Mobile: max-w-md | Tablet/Desktop: md:max-w-lg | Landscape: landscape:max-w-sm */}
-      <div className="w-full max-w-md md:max-w-lg landscape:max-w-sm relative z-10 px-4 md:px-6 py-6 md:py-0">
-        <div className="bg-white/95 rounded-3xl shadow-2xl p-6 md:p-10 lg:p-12 backdrop-blur-lg border border-white/40">
+      {/* ✅ v1.50.1: Wider, simpler login - less compressed, not too tall */}
+      {/* Mobile: max-w-md | Tablet: md:max-w-2xl | Landscape: landscape:max-w-lg */}
+      <div className="w-full max-w-md md:max-w-2xl landscape:max-w-lg relative z-10 px-4 md:px-6 py-4 md:py-0">
+        <div className="bg-white/95 rounded-2xl shadow-2xl p-5 md:p-8 backdrop-blur-lg border border-white/40">
           {/* Logo */}
-          <div className="text-center mb-6 md:mb-8">
+          <div className="text-center mb-5 md:mb-6">
             <img
               src="/images/LogoESSALUDAzul.png"
               alt="Logo EsSalud"
-              className="mx-auto h-14 md:h-16 lg:h-20 mb-6 md:mb-8 drop-shadow-md"
+              className="mx-auto h-12 md:h-14 mb-4 md:mb-5 drop-shadow-md"
             />
 
-            <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold text-[#0a5ba9] mb-1 md:mb-2">
+            <h1 className="text-xl md:text-2xl font-bold text-[#0a5ba9] mb-1">
               Inicio de Sesión
             </h1>
-            <p className="text-sm md:text-base text-gray-600">
-              Centro Nacional de Telemedicina – CENATE
+            <p className="text-xs md:text-sm text-gray-600">
+              CENATE – Sistema de Telemedicina
             </p>
           </div>
 
           {/* Asistente UX */}
           {assistantMsg && (
             <div
-              className={`flex items-center gap-2 p-3 rounded-lg mb-4 text-sm ${
+              className={`flex items-center gap-2 p-2.5 rounded-lg mb-3 text-xs md:text-sm ${
                 msgType === "success"
                   ? "bg-green-50 text-green-700 border border-green-200"
                   : msgType === "error"
@@ -192,23 +192,23 @@ export default function Login() {
               }`}
             >
               {msgType === "success" ? (
-                <CheckCircle2 size={18} />
+                <CheckCircle2 size={16} />
               ) : msgType === "error" ? (
-                <AlertCircle size={18} />
+                <AlertCircle size={16} />
               ) : msgType === "warning" ? (
-                <Lock size={18} />
+                <Lock size={16} />
               ) : (
-                <Info size={18} />
+                <Info size={16} />
               )}
               <span>{assistantMsg}</span>
             </div>
           )}
 
           {/* Formulario */}
-          <form onSubmit={handleSubmit} className="space-y-5 md:space-y-6">
+          <form onSubmit={handleSubmit} className="space-y-3 md:space-y-4">
             {/* Usuario */}
             <div>
-              <label className="block text-sm md:text-base font-semibold text-gray-700 mb-2 md:mb-3">
+              <label className="block text-xs md:text-sm font-semibold text-gray-700 mb-1.5">
                 Usuario
               </label>
               <input
@@ -223,15 +223,15 @@ export default function Login() {
                 maxLength={12}
                 inputMode="numeric"
                 autoComplete="username"
-                className={`w-full px-4 py-3 md:py-4 border-2 rounded-xl text-gray-800 placeholder-gray-400 transition-all focus:outline-none focus:ring-4 text-base md:text-lg ${
+                className={`w-full px-3 py-2.5 md:py-3 border-2 rounded-lg text-gray-800 placeholder-gray-400 transition-all focus:outline-none focus:ring-4 text-sm md:text-base ${
                   errors.username
                     ? "border-red-400 focus:ring-red-100"
                     : "border-gray-200 focus:border-[#0a5ba9] focus:ring-[#0a5ba9]/20"
                 }`}
               />
               {errors.username && (
-                <div className="flex items-center gap-1 mt-2 text-red-600 text-sm md:text-base">
-                  <AlertCircle size={14} />
+                <div className="flex items-center gap-1 mt-1 text-red-600 text-xs md:text-sm">
+                  <AlertCircle size={12} />
                   <span>{errors.username}</span>
                 </div>
               )}
@@ -239,7 +239,7 @@ export default function Login() {
 
             {/* Contraseña */}
             <div>
-              <label className="block text-sm md:text-base font-semibold text-gray-700 mb-2 md:mb-3">
+              <label className="block text-xs md:text-sm font-semibold text-gray-700 mb-1.5">
                 Contraseña
               </label>
               <div className="relative">
@@ -250,7 +250,7 @@ export default function Login() {
                   onChange={(e) =>
                     setFormData({ ...formData, password: e.target.value })
                   }
-                  className={`w-full px-4 py-3 md:py-4 pr-12 border-2 rounded-xl text-gray-800 placeholder-gray-400 transition-all focus:outline-none focus:ring-4 text-base md:text-lg ${
+                  className={`w-full px-3 py-2.5 md:py-3 pr-10 border-2 rounded-lg text-gray-800 placeholder-gray-400 transition-all focus:outline-none focus:ring-4 text-sm md:text-base ${
                     errors.password
                       ? "border-red-400 focus:ring-red-100"
                       : "border-gray-200 focus:border-[#0a5ba9] focus:ring-[#0a5ba9]/20"
@@ -259,22 +259,22 @@ export default function Login() {
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-[#0a5ba9] transition-colors"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-[#0a5ba9] transition-colors"
                   aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
                 >
-                  {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                 </button>
               </div>
               {errors.password && (
-                <div className="flex items-center gap-1 mt-2 text-red-600 text-sm md:text-base">
-                  <AlertCircle size={14} />
+                <div className="flex items-center gap-1 mt-1 text-red-600 text-xs md:text-sm">
+                  <AlertCircle size={12} />
                   <span>{errors.password}</span>
                 </div>
               )}
             </div>
 
             {/* Recordar usuario */}
-            <div className="flex items-center justify-between text-sm text-gray-600">
+            <div className="flex items-center justify-between text-xs md:text-sm text-gray-600">
               <label className="flex items-center gap-2 cursor-pointer">
                 <input
                   type="checkbox"
@@ -292,21 +292,21 @@ export default function Login() {
             <button
               type="submit"
               disabled={loading}
-              className={`w-full py-3.5 md:py-4 lg:py-5 mt-2 md:mt-4 rounded-xl font-semibold text-white text-base md:text-lg flex items-center justify-center gap-2 transition-all shadow-md focus:outline-none focus:ring-4 focus:ring-[#0a5ba9]/50 ${
+              className={`w-full py-2.5 md:py-3 mt-2 md:mt-3 rounded-lg font-semibold text-white text-sm md:text-base flex items-center justify-center gap-2 transition-all shadow-md focus:outline-none focus:ring-4 focus:ring-[#0a5ba9]/50 ${
                 loading
                   ? "bg-blue-400 cursor-not-allowed"
-                  : "bg-[#0a5ba9] hover:bg-[#094580] hover:shadow-lg hover:scale-[1.02] active:scale-[0.98]"
+                  : "bg-[#0a5ba9] hover:bg-[#094580] hover:shadow-lg hover:scale-[1.01] active:scale-[0.99]"
               }`}
             >
               {loading ? (
                 <>
-                  <Loader2 size={20} className="animate-spin" />
-                  <span className="hidden md:inline">Verificando credenciales...</span>
-                  <span className="md:hidden">Verificando...</span>
+                  <Loader2 size={16} className="animate-spin" />
+                  <span className="hidden md:inline">Verificando...</span>
+                  <span className="md:hidden">Verificando</span>
                 </>
               ) : (
                 <>
-                  <LogIn size={20} />
+                  <LogIn size={16} />
                   Iniciar Sesión
                 </>
               )}
@@ -314,12 +314,12 @@ export default function Login() {
           </form>
 
           {/* ✅ Acciones complementarias con responsive sizing */}
-          <div className="mt-6 md:mt-8 flex flex-col items-center text-sm md:text-base text-gray-600 space-y-2 md:space-y-3">
+          <div className="mt-4 md:mt-5 flex flex-col items-center text-xs md:text-sm text-gray-600 space-y-1.5 md:space-y-2">
             <Link
               to="/crear-cuenta"
-              className="text-[#0a5ba9] font-semibold hover:text-[#083d78] hover:underline flex items-center gap-2 py-2 md:py-3 px-3 rounded-lg hover:bg-blue-50 transition-colors"
+              className="text-[#0a5ba9] font-semibold hover:text-[#083d78] hover:underline flex items-center gap-2 py-1.5 md:py-2 px-2 rounded-lg hover:bg-blue-50 transition-colors"
             >
-              <UserPlus size={18} /> Crear nueva cuenta
+              <UserPlus size={16} /> Crear cuenta
             </Link>
             <button
               onClick={() =>{
@@ -327,15 +327,15 @@ export default function Login() {
                   setShowForgot(true)
                 }
               }
-              className="hover:text-[#0a5ba9] flex items-center gap-2 py-2 md:py-3 px-3 rounded-lg hover:bg-blue-50 transition-colors font-medium"
+              className="hover:text-[#0a5ba9] flex items-center gap-2 py-1.5 md:py-2 px-2 rounded-lg hover:bg-blue-50 transition-colors font-medium"
             >
-              <KeyRound size={18} /> Olvidé mi contraseña
+              <KeyRound size={16} /> Recuperar contraseña
             </button>
             <Link
               to="/"
-              className="hover:text-[#0a5ba9] flex items-center gap-2 py-2 md:py-3 px-3 rounded-lg hover:bg-blue-50 transition-colors"
+              className="hover:text-[#0a5ba9] flex items-center gap-2 py-1.5 md:py-2 px-2 rounded-lg hover:bg-blue-50 transition-colors"
             >
-              <Home size={18} /> Regresar al inicio
+              <Home size={16} /> Regresar
             </Link>
           </div>
 
@@ -393,9 +393,9 @@ export default function Login() {
 
 
           {/* Footer */}
-          <div className="mt-6 md:mt-8 text-center text-gray-500 text-xs md:text-sm border-t pt-4 md:pt-6">
-            <p className="font-medium">Sistema CENATE – EsSalud 2025</p>
-            <p>Autenticación segura con validaciones de servidor</p>
+          <div className="mt-4 md:mt-5 text-center text-gray-500 text-[10px] md:text-xs border-t pt-3 md:pt-4">
+            <p className="font-medium">CENATE – EsSalud 2025</p>
+            <p>Autenticación segura</p>
           </div>
         </div>
 
