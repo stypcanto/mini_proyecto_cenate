@@ -496,9 +496,9 @@ export default function UploadImagenEKG({ onSuccess }) {
   }
 
   return (
-    <div className="bg-white rounded-xl shadow-2xl overflow-hidden flex flex-col h-screen xl:h-auto xl:w-[1400px] xl:fixed xl:inset-0 xl:m-auto xl:max-h-screen xl:flex-row">
+    <div className="bg-white rounded-xl shadow-2xl overflow-hidden flex flex-col h-screen xl:h-auto xl:w-[1400px] xl:fixed xl:inset-0 xl:m-auto xl:max-h-screen">
       {/* Header Profesional - Full width for all devices */}
-      <div className="xl:col-span-full bg-gradient-to-r from-purple-600 to-indigo-700 xl:from-purple-700 xl:to-indigo-800 md:from-emerald-600 md:to-teal-700 px-6 py-5 xl:py-3 flex items-center justify-between relative">
+      <div className="bg-gradient-to-r from-purple-600 to-indigo-700 xl:from-purple-700 xl:to-indigo-800 md:from-emerald-600 md:to-teal-700 px-6 py-5 xl:py-3 flex items-center justify-between relative">
         <div className="flex items-center gap-3">
           <div className="bg-white/20 p-2.5 rounded-lg">
             <Heart className="w-6 h-6 text-white" />
@@ -537,8 +537,10 @@ export default function UploadImagenEKG({ onSuccess }) {
         </button>
       </div>
 
-      {/* Desktop: 3-Column Layout (xl: 1280px+) */}
-      <form onSubmit={handleSubmit} className="hidden xl:flex flex-1 overflow-hidden">
+      {/* Content Container - flex-row for desktop, flex-col for mobile/tablet */}
+      <div className="flex flex-col xl:flex-row flex-1 overflow-hidden">
+        {/* Desktop: 3-Column Layout (xl: 1280px+) */}
+        <form onSubmit={handleSubmit} className="hidden xl:flex flex-1 overflow-hidden">
         {/* Left Sidebar (240px) */}
         <DarkSidebar
           activeSection={activeSection}
@@ -887,6 +889,7 @@ export default function UploadImagenEKG({ onSuccess }) {
           disabled={loading || archivos.length >= MAX_IMAGENES}
         />
       </form>
+      </div>
 
       {/* Información de Ayuda - Footer (Solo Desktop - Oculto en Tablet para ahorrar espacio) */}
       <div className="hidden xl:flex bg-blue-50 border-t border-blue-200 px-6 py-3 text-xs text-blue-800 space-y-1">
