@@ -31,6 +31,8 @@ import {
   ClipboardList,
   Phone,
   AlertTriangle,
+  Smartphone,
+  MessageCircle,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { formatearTiempoRelativo } from "../../../utils/dateUtils";
@@ -2155,24 +2157,38 @@ export default function GestionAsegurado() {
                               </button>
                             </div>
                           ) : (
-                            // Modo Normal: Mostrar Lápiz de Editar
-                            <div className="flex gap-1 justify-center">
+                            // Modo Normal: Mostrar botones de acciones
+                            <div className="flex gap-1 justify-center items-center">
                               <button
                                 onClick={() => {
                                   setPacienteEditandoEstado(paciente.id);
                                   setNuevoEstadoSeleccionado(paciente.codigoEstado || "");
                                 }}
-                                className="bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 rounded text-[10px] font-medium transition-colors"
+                                className="bg-blue-600 hover:bg-blue-700 text-white p-2 rounded transition-colors"
                                 title="Editar estado y cita"
                               >
-                                ✏️
+                                <Edit2 className="w-4 h-4" strokeWidth={2} />
                               </button>
                               <button
                                 onClick={() => abrirModalTelefono(paciente)}
-                                className="bg-purple-600 hover:bg-purple-700 text-white px-2 py-1 rounded text-[10px] font-medium transition-colors"
-                                title="Actualizar teléfonos"
+                                className="bg-slate-600 hover:bg-slate-700 text-white p-2 rounded transition-colors"
+                                title="Actualizar teléfono"
                               >
-                                📱
+                                <Smartphone className="w-4 h-4" strokeWidth={2} />
+                              </button>
+                              <button
+                                onClick={() => {
+                                  if (paciente.pacienteTelefono) {
+                                    const url = `https://wa.me/${paciente.pacienteTelefono.replace(/\D/g, '')}`;
+                                    window.open(url, '_blank');
+                                  } else {
+                                    toast.error("No hay teléfono registrado");
+                                  }
+                                }}
+                                className="bg-green-600 hover:bg-green-700 text-white p-2 rounded transition-colors"
+                                title="Mandar mensaje WhatsApp"
+                              >
+                                <MessageCircle className="w-4 h-4" strokeWidth={2} />
                               </button>
                             </div>
                           )}
