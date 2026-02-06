@@ -1,9 +1,9 @@
 # CLAUDE.md - Proyecto CENATE
 
 > **Sistema de Telemedicina - EsSalud Perú**
-> **Versión:** v1.49.0 (2026-02-06) 🚀
-> **Última Feature:** v1.47.2 - Recita + Interconsulta + Enfermedades Crónicas ✅ (2026-02-06) ⭐
-> **Última Fix:** v1.47.2.1 - Persistencia de Enfermedades Crónicas (PostgreSQL text[]) ✅ (2026-02-06)
+> **Versión:** v1.51.0 (2026-02-06) 🚀
+> **Última Feature:** v1.51.0 - Flujo End-to-End TeleEKG ✅ (2026-02-06) ⭐
+> **Última Fix:** v1.47.2.1 - Persistencia de Enfermedades Crónicas ✅ (2026-02-06)
 > **Status:** ✅ Production Ready
 
 ---
@@ -176,6 +176,32 @@ Frontend (React 19):
 
 ## 📖 DOCUMENTACIÓN PRINCIPAL POR VERSIÓN
 
+### ✅ v1.51.0 - Flujo End-to-End TeleEKG (2026-02-06)
+✅ **Redirección automática** - Upload → Listar (RegistroPacientes.jsx)
+✅ **Breadcrumb de navegación** - 3 pasos con indicador de progreso (TeleEKGBreadcrumb.jsx)
+✅ **Botón "Ver en CENATE"** - Abre vista consolidada en nueva pestaña
+✅ **Auto-refresh en tiempo real** - Sincronización cada 30 segundos (TeleECGRecibidas.jsx)
+✅ **Detección de redirección** - Auto-filtrado por DNI después de upload
+
+**Features:**
+- `UploadImagenECG.jsx` - useNavigate con state passing
+- `RegistroPacientes.jsx` - useLocation, detecta redirección, aplica filtro, botón CENATE
+- `TeleECGDashboard.jsx` - Breadcrumb agregado
+- `TeleECGRecibidas.jsx` - Auto-refresh interval (30s silencioso)
+- `TeleEKGBreadcrumb.jsx` - NUEVO componente (breadcrumb + progress bar)
+
+**Frontend Spec:** [`spec/frontend/16_teleekg_workflow_end_to_end.md`](spec/frontend/16_teleekg_workflow_end_to_end.md) - Flujo completo documentado
+**Changelog:** [`checklist/01_Historial/01_changelog.md#v1510-2026-02-06`](checklist/01_Historial/01_changelog.md) - Testing cases incluidos
+
+**Flujo:**
+1. IPRESS sube → Upload redirige a Listar (automático)
+2. IPRESS ve cargas → Botón "Ver en CENATE" abre vista consolidada
+3. CENATE ve todas → Auto-refresh cada 30 segundos
+
+**Commit:** fdbbf9a
+
+---
+
 ### ✅ v1.47.2 - Documentación Completa + Fix v1.47.2.1
 - **Backend Spec:** [`spec/backend/15_recita_interconsulta_v1.47.md`](spec/backend/15_recita_interconsulta_v1.47.md) - Recita + Interconsulta Complete Workflow (400+ líneas)
 - **Changelog:** [`checklist/01_Historial/01_changelog.md#v1472-2026-02-06`](checklist/01_Historial/01_changelog.md) - Registro de atención médica + Fix Persistencia Enfermedades Crónicas
@@ -203,6 +229,46 @@ Frontend (React 19):
 ---
 
 ## 📊 ÚLTIMAS VERSIONES
+
+### v1.51.0 - Completado (2026-02-06) 🔄 FLUJO END-TO-END TELEEKG
+✅ **Redirección Automática** - Upload → Listar (RegistroPacientes.jsx)
+✅ **Breadcrumb de Navegación** - 3 pasos con indicador de progreso (TeleEKGBreadcrumb.jsx)
+✅ **Botón "Ver en CENATE"** - Abre vista consolidada en nueva pestaña
+✅ **Auto-refresh en Tiempo Real** - Sincronización cada 30 segundos (TeleECGRecibidas.jsx)
+✅ **Detección de Redirección** - Auto-filtrado por DNI después de upload
+
+**Features:**
+- Redirección automática con state passing (useNavigate)
+- Breadcrumb con 3 pasos: Upload → Listar → Recibidas
+- Indicador visual de progreso (barra azul)
+- Auto-filtrado por DNI cuando viene del upload
+- Toast de confirmación en cada etapa
+- Botón "Ver en CENATE" para abrir consolidado
+- Auto-refresh silencioso cada 30 segundos
+- 0 breaking changes, 100% compatible
+
+**Cambios:**
+- `UploadImagenECG.jsx` - useNavigate, redirige con state
+- `RegistroPacientes.jsx` - useLocation, detecta redirect, auto-filtra, botón CENATE
+- `TeleECGDashboard.jsx` - Breadcrumb agregado
+- `TeleECGRecibidas.jsx` - Auto-refresh interval (30s)
+- `TeleEKGBreadcrumb.jsx` - NUEVO (breadcrumb + progress bar)
+
+**Docs:**
+- **Completo:** [`spec/frontend/16_teleekg_workflow_end_to_end.md`](spec/frontend/16_teleekg_workflow_end_to_end.md)
+
+**Testing:**
+- ✅ Upload → Listar (automático)
+- ✅ Auto-filtrado por DNI
+- ✅ Breadcrumb navegable
+- ✅ Botón "Ver en CENATE" (nueva pestaña)
+- ✅ Auto-refresh (30s silencioso)
+- ✅ Frontend compila sin errores
+
+**Build:** ✅ npm run build SUCCESS
+**Commit:** fdbbf9a
+
+---
 
 ### v1.48.8 - Completado (2026-02-06) 📦 TIPOS DE BOLSAS - DOCUMENTACIÓN COMPLETA
 ✅ **Documentación Bolsa Types Architecture** - Explicación completa del sistema de dos tablas
