@@ -184,15 +184,9 @@ export default function MisPacientes() {
   const procesarAccion = async () => {
     if (!pacienteSeleccionado) return;
 
-    // ✅ v1.47.0: Si seleccionó "Atendido" Y tiene opciones seleccionadas, registrar atención
-    if (estadoSeleccionado === 'Atendido' && (tieneRecita || tieneInterconsulta || esCronico)) {
+    // ✅ v1.47.0: Si seleccionó "Atendido", registrar atención (opciones son opcionales)
+    if (estadoSeleccionado === 'Atendido') {
       await procesarAtencionMedica();
-      return;
-    }
-
-    // ✅ v1.47.0: Si seleccionó "Atendido" pero NO tiene opciones, mostrar error
-    if (estadoSeleccionado === 'Atendido' && !tieneRecita && !tieneInterconsulta && !esCronico) {
-      toast.error('Seleccione al menos una opción: Recita, Interconsulta o Crónico');
       return;
     }
 
@@ -256,12 +250,7 @@ export default function MisPacientes() {
   const procesarAtencionMedica = async () => {
     if (!pacienteSeleccionado) return;
 
-    // Validación: al menos una acción debe estar seleccionada
-    if (!tieneRecita && !tieneInterconsulta && !esCronico) {
-      toast.error('Debe seleccionar al menos una acción: Recita, Interconsulta o Crónico');
-      return;
-    }
-
+    // ✅ v1.47.0: Opciones son opcionales - el médico decide si son necesarias
     try {
       setProcesando(true);
 
