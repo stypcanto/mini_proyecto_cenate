@@ -21,10 +21,27 @@ const VisorEKGModal = ({ ecg, imagenes = [], onClose, onDescargar }) => {
     [imagenes, ecg]
   );
 
+  // Debug logging
+  if (todasLasImagenes.length > 0) {
+    const totalImages = todasLasImagenes.length;
+    const withContent = todasLasImagenes.filter(img => img.contenidoImagen).length;
+    console.log(`📸 [VisorECGModal] Totales=${totalImages}, ConContenido=${withContent}, indiceActual=${indiceActual}`);
+  }
+
   const imagenActual = useMemo(
     () => todasLasImagenes[indiceActual],
     [todasLasImagenes, indiceActual]
   );
+
+  // Debug current image
+  if (imagenActual) {
+    console.log(`👁️ [VisorECGModal] imagenActual:`, {
+      idImagen: imagenActual.idImagen,
+      tieneContenido: !!imagenActual.contenidoImagen,
+      tamanioBase64: imagenActual.contenidoImagen?.length || 0,
+      tipoContenido: imagenActual.tipoContenido
+    });
+  }
 
   // Navegación optimizada
   const siguiente = useCallback(() => {

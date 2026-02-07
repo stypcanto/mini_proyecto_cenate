@@ -362,12 +362,17 @@ export default function IPRESSWorkspace() {
       // Detectar si es un DNI (del click en card) o una imagen individual
       const isDni = param.dni && !param.idImagen;
 
+      console.log(`🖼️ [handleVerImagen] isDni=${isDni}, param:`, param);
+
       if (isDni) {
         // 🎯 NUEVO: Click en card del paciente - Cargar TODAS sus imágenes
         // ✅ IMPORTANTE: Filtrar de todasLasImagenes (no de ecgs que está deduplicado)
         const imagenesPaciente = todasLasImagenes.filter(
           (img) => (img.numDocPaciente || img.dni) === param.dni
         );
+
+        console.log(`📸 [handleVerImagen] Encontradas ${imagenesPaciente.length} imágenes para DNI ${param.dni}`);
+        console.log(`📋 [handleVerImagen] Primera imagen:`, imagenesPaciente[0]);
 
         if (imagenesPaciente.length === 0) {
           toast.error("No se encontraron imágenes para este paciente");
@@ -376,24 +381,34 @@ export default function IPRESSWorkspace() {
 
         // Cargar todas las imágenes en base64
         const imagenesConBase64 = await Promise.all(
-          imagenesPaciente.map(async (img) => {
+          imagenesPaciente.map(async (img, idx) => {
+            console.log(`🔄 [handleVerImagen] Procesando imagen ${idx + 1}/${imagenesPaciente.length}, idImagen=${img.idImagen || img.id}`);
+
             if (img.contenidoImagen) {
+              console.log(`✅ [handleVerImagen] Imagen ${idx + 1} ya tiene contenidoImagen`);
               return img;
             }
             try {
-              const respuesta = await teleecgService.descargarImagenBase64(
-                img.idImagen || img.id
-              );
+              const idToUse = img.idImagen || img.id;
+              console.log(`📥 [handleVerImagen] Descargando base64 para imagen ${idx + 1}, idImagen=${idToUse}`);
+
+              const respuesta = await teleecgService.descargarImagenBase64(idToUse);
+
+              console.log(`✅ [handleVerImagen] Imagen ${idx + 1} descargada, tamaño base64=${respuesta.contenidoImagen?.length || 0} bytes`);
+
               return {
                 ...img,
                 contenidoImagen: respuesta.contenidoImagen,
                 tipoContenido: respuesta.tipoContenido,
               };
-            } catch {
+            } catch (error) {
+              console.error(`❌ [handleVerImagen] Error descargando imagen ${idx + 1}:`, error.message);
               return img; // Si falla, devolver sin base64
             }
           })
         );
+
+        console.log(`📊 [handleVerImagen] Resultado: ${imagenesConBase64.filter(img => img.contenidoImagen).length}/${imagenesConBase64.length} imágenes con base64`);
 
         // Abrir modal con TODAS las imágenes del paciente
         setSelectedImage({
@@ -404,8 +419,14 @@ export default function IPRESSWorkspace() {
         setShowImageModal(true);
       } else {
         // 📌 ANTIGUO: Carga individual de imagen (backward compatibility)
+        console.log(`🖼️ [handleVerImagen] Cargando imagen individual, idImagen=${param.idImagen}`);
+
         if (!param.contenidoImagen && param.idImagen) {
+          console.log(`📥 [handleVerImagen] Descargando base64 para imagen individual`);
           const respuesta = await teleecgService.descargarImagenBase64(param.idImagen);
+
+          console.log(`✅ [handleVerImagen] Imagen individual descargada, tamaño=${respuesta.contenidoImagen?.length || 0} bytes`);
+
           setSelectedImage({
             ...param,
             contenidoImagen: respuesta.contenidoImagen,
@@ -413,6 +434,7 @@ export default function IPRESSWorkspace() {
             esCarousel: false,
           });
         } else {
+          console.log(`⚠️ [handleVerImagen] Imagen sin contenidoImagen y sin idImagen`);
           setSelectedImage({ ...param, esCarousel: false });
         }
         setShowImageModal(true);
