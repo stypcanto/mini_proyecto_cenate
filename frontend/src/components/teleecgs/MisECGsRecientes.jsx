@@ -377,7 +377,7 @@ export default function MisECGsRecientes({
 
       {/* ==================== TABLA PROFESIONAL DE CARGAS ==================== */}
       <div className="mb-6">
-        <h3 className="text-sm font-bold text-gray-900 mb-4">
+        <h3 className="text-sm md:text-base font-bold text-gray-900 mb-4">
           📋 Cargas Recientes {datosFiltrados.length !== ultimas3.length && ultimas3.length > 0 && (
             <span className="text-xs font-normal text-blue-600">({datosFiltrados.length}/{ultimas3.length})</span>
           )}
@@ -386,17 +386,30 @@ export default function MisECGsRecientes({
         {ultimas3.length > 0 ? (
           datosFiltrados.length > 0 ? (
             <div className="overflow-x-auto rounded-lg border border-gray-200 shadow-sm">
-              <table className="w-full text-sm">
+              <table className="w-full text-sm md:text-base">
                 {/* Header */}
                 <thead className="bg-gradient-to-r from-slate-700 to-slate-800 text-white">
                   <tr>
-                    <th className="px-3 py-2 text-left font-bold whitespace-nowrap text-xs">Hora</th>
-                    <th className="px-3 py-2 text-left font-bold whitespace-nowrap text-xs">DNI</th>
-                    <th className="px-3 py-2 text-left font-bold whitespace-nowrap text-xs">Paciente</th>
-                    <th className="px-3 py-2 text-left font-bold whitespace-nowrap text-xs">Perfil</th>
-                    <th className="px-3 py-2 text-center font-bold whitespace-nowrap text-xs">Prioridad</th>
-                    <th className="px-3 py-2 text-left font-bold whitespace-nowrap text-xs">Estado</th>
-                    <th className="px-3 py-2 text-center font-bold whitespace-nowrap text-xs">Acciones</th>
+                    {/* Hora - Oculto en tablet, visible en desktop */}
+                    <th className="hidden lg:table-cell px-3 md:px-4 py-2 md:py-3 text-left font-bold whitespace-nowrap text-xs md:text-sm">Hora</th>
+
+                    {/* DNI */}
+                    <th className="px-3 md:px-4 py-2 md:py-3 text-left font-bold whitespace-nowrap text-xs md:text-sm">DNI</th>
+
+                    {/* Paciente */}
+                    <th className="px-3 md:px-4 py-2 md:py-3 text-left font-bold whitespace-nowrap text-xs md:text-sm">Paciente</th>
+
+                    {/* Perfil - Oculto en tablet, visible en desktop */}
+                    <th className="hidden lg:table-cell px-3 md:px-4 py-2 md:py-3 text-left font-bold whitespace-nowrap text-xs md:text-sm">Perfil</th>
+
+                    {/* Prioridad */}
+                    <th className="px-3 md:px-4 py-2 md:py-3 text-center font-bold whitespace-nowrap text-xs md:text-sm">Prioridad</th>
+
+                    {/* Estado */}
+                    <th className="px-3 md:px-4 py-2 md:py-3 text-left font-bold whitespace-nowrap text-xs md:text-sm">Estado</th>
+
+                    {/* Acciones */}
+                    <th className="px-3 md:px-4 py-2 md:py-3 text-center font-bold whitespace-nowrap text-xs md:text-sm">Acciones</th>
                   </tr>
                 </thead>
 
@@ -427,30 +440,30 @@ export default function MisECGsRecientes({
                         }`}
                         onClick={() => onVerImagen({ dni: carga.dni, nombrePaciente: carga.nombrePaciente })}
                       >
-                        {/* Hora - Formato Compacto */}
-                        <td className="px-3 py-2 text-gray-700 text-xs font-mono">
+                        {/* Hora - Oculto en tablet, visible en desktop */}
+                        <td className="hidden lg:table-cell px-3 md:px-4 py-2 md:py-3 text-gray-700 text-xs md:text-sm font-mono">
                           {fechaCompacta}
                         </td>
 
                         {/* DNI */}
-                        <td className="px-3 py-2 text-gray-700 text-xs font-mono">
+                        <td className="px-3 md:px-4 py-2 md:py-3 text-gray-700 text-xs md:text-sm font-mono">
                           {carga.dni}
                         </td>
 
                         {/* Paciente - BOLD y destacado */}
-                        <td className="px-3 py-2 min-w-max" title={carga.nombrePaciente}>
-                          <div className="font-bold text-gray-900 text-sm">{carga.nombrePaciente}</div>
+                        <td className="px-3 md:px-4 py-2 md:py-3 min-w-max" title={carga.nombrePaciente}>
+                          <div className="font-bold text-gray-900 text-xs md:text-sm line-clamp-2">{carga.nombrePaciente}</div>
                         </td>
 
-                        {/* Perfil: Edad / Género */}
-                        <td className="px-3 py-2 text-gray-700 text-xs">
+                        {/* Perfil: Edad / Género - Oculto en tablet, visible en desktop */}
+                        <td className="hidden lg:table-cell px-3 md:px-4 py-2 md:py-3 text-gray-700 text-xs md:text-sm">
                           {perfil}
                         </td>
 
                         {/* Prioridad - Círculo Pulsante */}
-                        <td className="px-3 py-2 text-center flex items-center justify-center">
+                        <td className="px-3 md:px-4 py-2 md:py-3 text-center flex items-center justify-center">
                           <div
-                            className={`w-4 h-4 rounded-full animate-pulse ${
+                            className={`w-4 h-4 md:w-5 md:h-5 rounded-full animate-pulse ${
                               carga.esUrgente ? 'bg-red-500' : 'bg-green-500'
                             }`}
                             title={carga.esUrgente ? 'Urgente' : 'Normal'}
@@ -458,9 +471,9 @@ export default function MisECGsRecientes({
                         </td>
 
                         {/* Estado - Distinto */}
-                        <td className="px-3 py-2">
+                        <td className="px-3 md:px-4 py-2 md:py-3">
                           <span
-                            className={`inline-flex px-2.5 py-1 rounded text-xs font-semibold whitespace-nowrap ${
+                            className={`inline-flex px-2.5 md:px-3 py-1 md:py-1.5 rounded text-xs md:text-sm font-semibold whitespace-nowrap ${
                               carga.estado === 'ENVIADA'
                                 ? 'bg-blue-100 text-blue-800'
                                 : carga.estado === 'OBSERVADA'
@@ -475,18 +488,18 @@ export default function MisECGsRecientes({
                         </td>
 
                         {/* Acciones */}
-                        <td className="px-3 py-2 text-center">
-                          <div className="flex items-center justify-center gap-2">
+                        <td className="px-3 md:px-4 py-2 md:py-3 text-center">
+                          <div className="flex items-center justify-center gap-1 md:gap-2">
                             {/* Preview Eye */}
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
                                 onVerImagen({ dni: carga.dni, nombrePaciente: carga.nombrePaciente });
                               }}
-                              className="p-1.5 rounded hover:bg-blue-100 text-blue-600 hover:text-blue-800 transition-colors"
+                              className="p-1.5 md:p-2 rounded hover:bg-blue-100 text-blue-600 hover:text-blue-800 transition-colors"
                               title="Ver imágenes"
                             >
-                              <Eye className="w-4 h-4" />
+                              <Eye className="w-4 h-4 md:w-5 md:h-5" />
                             </button>
 
                             {/* Download - Solo si ATENDIDA */}
@@ -496,10 +509,10 @@ export default function MisECGsRecientes({
                                   e.stopPropagation();
                                   toast.success('Descarga disponible');
                                 }}
-                                className="p-1.5 rounded hover:bg-green-100 text-green-600 hover:text-green-800 transition-colors"
+                                className="p-1.5 md:p-2 rounded hover:bg-green-100 text-green-600 hover:text-green-800 transition-colors"
                                 title="Descargar informe"
                               >
-                                <Download className="w-4 h-4" />
+                                <Download className="w-4 h-4 md:w-5 md:h-5" />
                               </button>
                             )}
 
@@ -526,10 +539,10 @@ export default function MisECGsRecientes({
                                   toast.error('No hay teléfono disponible');
                                 }
                               }}
-                              className="p-1.5 rounded hover:bg-gray-100 text-gray-600 hover:text-gray-800 transition-colors"
+                              className="p-1.5 md:p-2 rounded hover:bg-gray-100 text-gray-600 hover:text-gray-800 transition-colors"
                               title="Ver teléfono"
                             >
-                              <Info className="w-4 h-4" />
+                              <Info className="w-4 h-4 md:w-5 md:h-5" />
                             </button>
                           </div>
                         </td>

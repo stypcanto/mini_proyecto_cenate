@@ -1,49 +1,98 @@
-import React, { useState } from "react";
+import React, { useState, useMemo, useEffect, useCallback } from "react";
 import { X, Download, ZoomIn, ZoomOut, RotateCw, ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
 
 /**
  * 👁️ Modal para visualizar imágenes EKG con zoom y rotación
  * Soporta múltiples imágenes por paciente
+ * v1.56.9: Optimizado con memoization y lazy loading
  */
-export default function VisorEKGModal({ ecg, imagenes = [], onClose, onDescargar }) {
+const VisorEKGModal = ({ ecg, imagenes = [], onClose, onDescargar }) => {
   const [scale, setScale] = useState(1);
   const [rotation, setRotation] = useState(0);
   const [indiceActual, setIndiceActual] = useState(0);
+  const [imageCache, setImageCache] = useState({});
+  const [estaCargando, setEstaCargando] = useState(false);
 
   // Si es array, usar imagenes; si es objeto individual, envolver en array
-  const todasLasImagenes = Array.isArray(imagenes) && imagenes.length > 0
-    ? imagenes
-    : (ecg ? [ecg] : []);
+  const todasLasImagenes = useMemo(
+    () => (Array.isArray(imagenes) && imagenes.length > 0
+      ? imagenes
+      : (ecg ? [ecg] : [])),
+    [imagenes, ecg]
+  );
 
-  const imagenActual = todasLasImagenes[indiceActual];
+  const imagenActual = useMemo(
+    () => todasLasImagenes[indiceActual],
+    [todasLasImagenes, indiceActual]
+  );
 
-  const siguiente = () => {
+  // Navegación optimizada
+  const siguiente = useCallback(() => {
     setIndiceActual((prev) => (prev + 1) % todasLasImagenes.length);
     setScale(1);
     setRotation(0);
-  };
+  }, [todasLasImagenes.length]);
 
-  const anterior = () => {
+  const anterior = useCallback(() => {
     setIndiceActual((prev) => (prev - 1 + todasLasImagenes.length) % todasLasImagenes.length);
     setScale(1);
     setRotation(0);
-  };
+  }, [todasLasImagenes.length]);
 
-  const handleZoomIn = () => setScale((s) => Math.min(s + 0.1, 3));
-  const handleZoomOut = () => setScale((s) => Math.max(s - 0.1, 0.5));
-  const handleRotate = () => setRotation((r) => (r + 90) % 360);
-  const handleReset = () => {
+  const handleZoomIn = useCallback(() => setScale((s) => Math.min(s + 0.1, 3)), []);
+  const handleZoomOut = useCallback(() => setScale((s) => Math.max(s - 0.1, 0.5)), []);
+  const handleRotate = useCallback(() => setRotation((r) => (r + 90) % 360), []);
+  const handleReset = useCallback(() => {
     setScale(1);
     setRotation(0);
-  };
+  }, []);
 
-  // Convertir bytes a URL de imagen
-  const imageUrl = imagenActual?.contenidoImagen
-    ? `data:${imagenActual.tipoContenido};base64,${imagenActual.contenidoImagen}`
-    : null;
+  // Decodificar imagen en background con caching
+  useEffect(() => {
+    if (!imagenActual?.contenidoImagen) {
+      setEstaCargando(false);
+      return;
+    }
 
-  // Detectar si la imagen está cargando
-  const estaCargando = imagenActual && !imageUrl;
+    const id = imagenActual.idImagen || `${indiceActual}`;
+
+    // Si ya está en cache, usar cache
+    if (imageCache[id]) {
+      setEstaCargando(false);
+      return;
+    }
+
+    // Decodificar en background
+    setEstaCargando(true);
+
+    // Usar requestIdleCallback para no bloquear UI
+    const callback = window.requestIdleCallback ?
+      window.requestIdleCallback(() => {
+        const url = `data:${imagenActual.tipoContenido};base64,${imagenActual.contenidoImagen}`;
+        setImageCache((prev) => ({ ...prev, [id]: url }));
+        setEstaCargando(false);
+      }) :
+      setTimeout(() => {
+        const url = `data:${imagenActual.tipoContenido};base64,${imagenActual.contenidoImagen}`;
+        setImageCache((prev) => ({ ...prev, [id]: url }));
+        setEstaCargando(false);
+      }, 0);
+
+    return () => {
+      if (window.requestIdleCallback) {
+        window.cancelIdleCallback(callback);
+      } else {
+        clearTimeout(callback);
+      }
+    };
+  }, [imagenActual, indiceActual, imageCache]);
+
+  // Obtener URL cached o null
+  const imageUrl = useMemo(() => {
+    if (!imagenActual?.contenidoImagen) return null;
+    const id = imagenActual.idImagen || `${indiceActual}`;
+    return imageCache[id] || null;
+  }, [imagenActual, indiceActual, imageCache]);
 
   const formatearFecha = (fecha) => {
     if (!fecha) return "-";
@@ -220,4 +269,6 @@ export default function VisorEKGModal({ ecg, imagenes = [], onClose, onDescargar
       </div>
     </div>
   );
-}
+};
+
+export default React.memo(VisorEKGModal);
