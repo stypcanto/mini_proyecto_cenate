@@ -503,6 +503,83 @@ public class EmailService {
     }
 
     /**
+     * 🆕 v1.58.2: Enviar notificación de ECG nuevo a coordinador
+     */
+    @Async
+    public void enviarNotificacionECGNuevo(String emailCoordinador, String nombreCoordinador,
+                                           String pacienteNombre, String pacienteDni,
+                                           String ipress, Boolean esUrgente) {
+        String asunto = esUrgente ? "🚨 URGENTE - Nuevo ECG cargado: " + pacienteNombre
+                                  : "📊 Nuevo ECG cargado: " + pacienteNombre;
+
+        String urgenciaHTML = esUrgente ?
+            "<div style='background-color: #fee2e2; border-left: 4px solid #dc2626; padding: 15px; margin: 20px 0;'>" +
+            "<strong style='color: #991b1b;'>⚠️ URGENTE:</strong> Este ECG ha sido marcado como urgente." +
+            "</div>" : "";
+
+        String contenido = String.format("""
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <meta charset="UTF-8">
+                <style>
+                    body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+                    .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+                    .header { background-color: #0d5ba9; color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0; }
+                    .content { background-color: #f9fafb; padding: 30px; border: 1px solid #e5e7eb; }
+                    .patient-info { background-color: #fff; padding: 20px; border-radius: 8px; border-left: 4px solid #0d5ba9; margin: 20px 0; }
+                    .info-row { margin: 10px 0; }
+                    .info-label { font-weight: bold; color: #374151; display: inline-block; width: 120px; }
+                    .button { display: inline-block; background-color: #0d5ba9; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin-top: 20px; }
+                    .footer { text-align: center; padding: 20px; color: #6b7280; font-size: 12px; }
+                </style>
+            </head>
+            <body>
+                <div class="container">
+                    <div class="header">
+                        <h1>📊 Nuevo ECG Cargado</h1>
+                    </div>
+                    <div class="content">
+                        <p>Estimado/a <strong>%s</strong>,</p>
+
+                        <p>Se ha cargado un nuevo electrocardiograma (ECG) en el sistema CENATE.</p>
+
+                        %s
+
+                        <div class="patient-info">
+                            <h3 style="margin-top: 0; color: #0d5ba9;">Información del Paciente:</h3>
+                            <div class="info-row">
+                                <span class="info-label">Paciente:</span>
+                                <span>%s</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label">DNI:</span>
+                                <span>%s</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label">IPRESS Origen:</span>
+                                <span>%s</span>
+                            </div>
+                        </div>
+
+                        <p>Por favor, revisa el ECG y procesa según sea necesario. El ECG está disponible en tu bandeja de trabajo de CENATE.</p>
+
+                        <a href="http://cenate.essalud.gob.pe/citas/gestion-asegurado" class="button">Ir a CENATE</a>
+                    </div>
+                    <div class="footer">
+                        <p>Este es un correo automático, por favor no responda a este mensaje.</p>
+                        <p>&copy; 2025 CENATE - Centro Nacional de Telemedicina</p>
+                    </div>
+                </div>
+            </body>
+            </html>
+            """, nombreCoordinador, urgenciaHTML, pacienteNombre, pacienteDni, ipress);
+
+        enviarCorreo(emailCoordinador, asunto, contenido);
+        log.info("📧 Notificación ECG enviada a coordinador: {}", emailCoordinador);
+    }
+
+    /**
      * Método de prueba para verificar conexión SMTP (síncrono)
      */
     public boolean probarConexionSMTP(String emailPrueba) {

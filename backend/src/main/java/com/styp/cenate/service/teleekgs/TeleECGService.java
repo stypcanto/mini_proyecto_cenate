@@ -935,13 +935,36 @@ public class TeleECGService {
             solicitudBolsaRepository.save(bolsa);
             log.info("✅ Bolsa TeleECG creada: ID={}, DNI={}", bolsa.getIdSolicitud(), imagen.getNumDocPaciente());
 
+            // 6. v1.58.2: Enviar notificación email al coordinador
+            try {
+                if (responsableGestoraId != null) {
+                    var coordOpt = usuarioRepository.findById(responsableGestoraId);
+                    if (coordOpt.isPresent()) {
+                        Usuario coordinador = coordOpt.get();
+                        if (coordinador.getEmail() != null && !coordinador.getEmail().isEmpty()) {
+                            emailService.enviarNotificacionECGNuevo(
+                                coordinador.getEmail(),
+                                coordinador.getNombreCompleto() != null ? coordinador.getNombreCompleto() : coordinador.getNameUser(),
+                                asegurado.getNombreCompleto(),
+                                asegurado.getDocPaciente(),
+                                ipress.getDescIpress(),
+                                imagen.getEsUrgente()
+                            );
+                            log.info("📧 Notificación ECG enviada a coordinador: {}", coordinador.getEmail());
+                        }
+                    }
+                }
+            } catch (Exception e) {
+                log.warn("⚠️ Error enviando notificación ECG (continuando): {}", e.getMessage());
+            }
+
             // Auditoría
             auditLogService.registrarEvento(
                 "SYSTEM",
                 "CREATE_BOLSA_TELEECG",
                 "TELEEKGS",
-                String.format("Bolsa TeleECG creada - Solicitud: %s, Paciente: %s",
-                    numeroSolicitud, imagen.getNumDocPaciente()),
+                String.format("Bolsa TeleECG creada - Solicitud: %s, Paciente: %s, Urgente: %s",
+                    numeroSolicitud, imagen.getNumDocPaciente(), imagen.getEsUrgente()),
                 "INFO",
                 "SUCCESS"
             );
