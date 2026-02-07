@@ -1,12 +1,33 @@
 import React, { useState } from "react";
-import { X, Download, ZoomIn, ZoomOut, RotateCw } from "lucide-react";
+import { X, Download, ZoomIn, ZoomOut, RotateCw, ChevronLeft, ChevronRight } from "lucide-react";
 
 /**
  * 👁️ Modal para visualizar imágenes EKG con zoom y rotación
+ * Soporta múltiples imágenes por paciente
  */
-export default function VisorEKGModal({ ecg, onClose, onDescargar }) {
+export default function VisorEKGModal({ ecg, imagenes = [], onClose, onDescargar }) {
   const [scale, setScale] = useState(1);
   const [rotation, setRotation] = useState(0);
+  const [indiceActual, setIndiceActual] = useState(0);
+
+  // Si es array, usar imagenes; si es objeto individual, envolver en array
+  const todasLasImagenes = Array.isArray(imagenes) && imagenes.length > 0
+    ? imagenes
+    : (ecg ? [ecg] : []);
+
+  const imagenActual = todasLasImagenes[indiceActual];
+
+  const siguiente = () => {
+    setIndiceActual((prev) => (prev + 1) % todasLasImagenes.length);
+    setScale(1);
+    setRotation(0);
+  };
+
+  const anterior = () => {
+    setIndiceActual((prev) => (prev - 1 + todasLasImagenes.length) % todasLasImagenes.length);
+    setScale(1);
+    setRotation(0);
+  };
 
   const handleZoomIn = () => setScale((s) => Math.min(s + 0.1, 3));
   const handleZoomOut = () => setScale((s) => Math.max(s - 0.1, 0.5));
@@ -17,8 +38,8 @@ export default function VisorEKGModal({ ecg, onClose, onDescargar }) {
   };
 
   // Convertir bytes a URL de imagen
-  const imageUrl = ecg.contenidoImagen
-    ? `data:${ecg.tipoContenido};base64,${ecg.contenidoImagen}`
+  const imageUrl = imagenActual?.contenidoImagen
+    ? `data:${imagenActual.tipoContenido};base64,${imagenActual.contenidoImagen}`
     : null;
 
   const formatearFecha = (fecha) => {
@@ -39,10 +60,11 @@ export default function VisorEKGModal({ ecg, onClose, onDescargar }) {
         <div className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white p-4 flex items-center justify-between">
           <div>
             <h2 className="text-xl font-bold">
-              EKG de {ecg.nombresPaciente} {ecg.apellidosPaciente}
+              EKG de {imagenActual?.nombresPaciente} {imagenActual?.apellidosPaciente}
             </h2>
             <p className="text-blue-100 text-sm">
-              DNI: {ecg.numDocPaciente} | Fecha: {formatearFecha(ecg.fechaEnvio)}
+              DNI: {imagenActual?.numDocPaciente} | Fecha: {formatearFecha(imagenActual?.fechaEnvio)}
+              {todasLasImagenes.length > 1 && ` | ${indiceActual + 1}/${todasLasImagenes.length}`}
             </p>
           </div>
           <button
@@ -54,17 +76,43 @@ export default function VisorEKGModal({ ecg, onClose, onDescargar }) {
         </div>
 
         {/* Visor principal */}
-        <div className="flex-1 overflow-auto flex items-center justify-center bg-gray-100 p-4">
+        <div className="flex-1 min-h-[400px] overflow-auto flex items-center justify-center bg-gray-100 p-4 relative">
           {imageUrl ? (
-            <img
-              src={imageUrl}
-              alt="EKG"
-              style={{
-                transform: `scale(${scale}) rotate(${rotation}deg)`,
-                transition: "transform 0.2s",
-              }}
-              className="max-w-full max-h-full object-contain"
-            />
+            <>
+              <img
+                src={imageUrl}
+                alt="EKG"
+                style={{
+                  transform: `scale(${scale}) rotate(${rotation}deg)`,
+                  transition: "transform 0.2s",
+                  maxWidth: "90%",
+                  maxHeight: "90%",
+                  width: "auto",
+                  height: "auto",
+                }}
+                className="object-contain"
+              />
+
+              {/* Botones de navegación */}
+              {todasLasImagenes.length > 1 && (
+                <>
+                  <button
+                    onClick={anterior}
+                    className="absolute left-4 top-1/2 -translate-y-1/2 p-2 bg-blue-600 hover:bg-blue-700 text-white rounded-full transition-colors"
+                    title="Imagen anterior"
+                  >
+                    <ChevronLeft className="w-6 h-6" />
+                  </button>
+                  <button
+                    onClick={siguiente}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 p-2 bg-blue-600 hover:bg-blue-700 text-white rounded-full transition-colors"
+                    title="Siguiente imagen"
+                  >
+                    <ChevronRight className="w-6 h-6" />
+                  </button>
+                </>
+              )}
+            </>
           ) : (
             <div className="text-center text-gray-500">
               <p>No hay imagen disponible</p>
@@ -129,29 +177,29 @@ export default function VisorEKGModal({ ecg, onClose, onDescargar }) {
         <div className="bg-white border-t border-gray-200 p-4 grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
           <div>
             <p className="text-gray-600 font-medium">Archivo</p>
-            <p className="text-gray-800">{ecg.nombreArchivo}</p>
+            <p className="text-gray-800">{imagenActual?.nombreArchivo}</p>
           </div>
           <div>
             <p className="text-gray-600 font-medium">Tamaño</p>
             <p className="text-gray-800">
-              {ecg.tamanioByte ? (ecg.tamanioByte / 1024 / 1024).toFixed(2) + " MB" : "-"}
+              {imagenActual?.tamanioByte ? (imagenActual.tamanioByte / 1024 / 1024).toFixed(2) + " MB" : "-"}
             </p>
           </div>
           <div>
             <p className="text-gray-600 font-medium">Tipo</p>
-            <p className="text-gray-800">{ecg.tipoContenido}</p>
+            <p className="text-gray-800">{imagenActual?.tipoContenido}</p>
           </div>
           <div>
             <p className="text-gray-600 font-medium">Estado</p>
             {/* v3.0.0: Mostrar estado transformado si está disponible */}
             <p className={`font-semibold ${
-              (ecg.estadoTransformado || ecg.estado) === "ATENDIDA" ? "text-green-600" :
-              (ecg.estadoTransformado || ecg.estado) === "ENVIADA" || (ecg.estadoTransformado || ecg.estado) === "PENDIENTE" ? "text-yellow-600" :
-              (ecg.estadoTransformado || ecg.estado) === "OBSERVADA" ? "text-purple-600" :
-              (ecg.estadoTransformado || ecg.estado) === "RECHAZADA" ? "text-red-600" :
+              (imagenActual?.estadoTransformado || imagenActual?.estado) === "ATENDIDA" ? "text-green-600" :
+              (imagenActual?.estadoTransformado || imagenActual?.estado) === "ENVIADA" || (imagenActual?.estadoTransformado || imagenActual?.estado) === "PENDIENTE" ? "text-yellow-600" :
+              (imagenActual?.estadoTransformado || imagenActual?.estado) === "OBSERVADA" ? "text-purple-600" :
+              (imagenActual?.estadoTransformado || imagenActual?.estado) === "RECHAZADA" ? "text-red-600" :
               "text-gray-600"
             }`}>
-              {ecg.estadoTransformado || ecg.estado}
+              {imagenActual?.estadoTransformado || imagenActual?.estado}
             </p>
           </div>
         </div>

@@ -27,6 +27,7 @@ export default function RegistroPacientes() {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterEstado, setFilterEstado] = useState("TODOS");
   const [selectedEKG, setSelectedEKG] = useState(null);
+  const [selectedPaciente, setSelectedPaciente] = useState(null);
   const [showVisor, setShowVisor] = useState(false);
 
   // ✅ Detectar redirección desde upload y recargar imágenes
@@ -128,9 +129,32 @@ export default function RegistroPacientes() {
     return Object.values(agrupadas);
   };
 
-  const abrirVisor = (ecg) => {
-    setSelectedEKG(ecg);
-    setShowVisor(true);
+  const abrirVisor = async (pacienteAgrupado) => {
+    try {
+      // ✅ Obtener TODAS las imágenes en base64
+      const imagenesConContenido = await Promise.all(
+        pacienteAgrupado.imagenes.map(async (img) => {
+          const respuesta = await teleeckgService.descargarImagenBase64(img.idImagen);
+          return {
+            ...img,
+            contenidoImagen: respuesta.contenidoImagen, // ✅ Extraer la propiedad correcta
+            tipoContenido: respuesta.tipoContenido,
+          };
+        })
+      );
+
+      const pacienteConImagenes = {
+        ...pacienteAgrupado,
+        imagenes: imagenesConContenido,
+      };
+
+      setSelectedEKG(imagenesConContenido[0]); // Primera imagen como referencia
+      setSelectedPaciente(pacienteConImagenes); // Guardar paciente completo
+      setShowVisor(true);
+    } catch (error) {
+      console.error("❌ Error al cargar imágenes:", error);
+      toast.error("No se pudo cargar las imágenes");
+    }
   };
 
   const manejarDescargar = async (idImagen, nombreArchivo) => {
@@ -305,7 +329,7 @@ export default function RegistroPacientes() {
                           <div className="flex items-center justify-center gap-3">
                             {/* ✅ 44×44px touch targets + ARIA labels */}
                             <button
-                              onClick={() => abrirVisor(paciente.imagenes[0])}
+                              onClick={() => abrirVisor(paciente)}
                               className="flex items-center justify-center h-11 w-11 hover:bg-blue-100 rounded-lg transition-colors text-blue-600 active:bg-blue-200"
                               title={`Ver ${paciente.imagenes.length} imagen(es)`}
                               aria-label={`Ver electrocardiograma de paciente ${paciente.numDocPaciente}`}
@@ -413,7 +437,7 @@ export default function RegistroPacientes() {
                     {/* ✅ Action Buttons (44×44px touch targets) */}
                     <div className="flex gap-3 pt-2">
                       <button
-                        onClick={() => abrirVisor(paciente.imagenes[0])}
+                        onClick={() => abrirVisor(paciente)}
                         className="flex-1 flex items-center justify-center gap-2 h-12 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition-colors active:bg-blue-800"
                         aria-label={`Ver electrocardiograma de paciente ${paciente.numDocPaciente}`}
                       >
@@ -456,12 +480,14 @@ export default function RegistroPacientes() {
       </div>
 
       {/* Modal Visor */}
-      {showVisor && selectedEKG && (
+      {showVisor && selectedEKG && selectedPaciente && (
         <VisorECGModal
           ecg={selectedEKG}
+          imagenes={selectedPaciente.imagenes}
           onClose={() => {
             setShowVisor(false);
             setSelectedEKG(null);
+            setSelectedPaciente(null);
           }}
           onDescargar={() =>
             manejarDescargar(selectedEKG.idImagen, selectedEKG.nombreArchivo)

@@ -1,6 +1,6 @@
 # 🫀 Módulo TeleEKG - Documentación Completa
 
-**Versión:** v1.52.1 (2026-02-06)
+**Versión:** v1.52.3 (2026-02-06)
 **Estado:** ✅ Production Ready
 **Última Actualización:** 2026-02-06
 **Novedades v1.52:** 🔐 Control de Acceso Bidireccional + 🔧 Auto-recarga de imágenes
@@ -222,6 +222,49 @@ PostgreSQL 14+
 
 ## 📝 Cambios Principales
 
+### v1.52.3 (2026-02-06) - 🔧 Extracción Base64 - Imágenes Renderizadas
+
+**Problema Identificado:**
+- ❌ Imágenes no se visualizaban en modal (solo alt text "EKG")
+- ❌ Base64 se asignaba como objeto completo en lugar de extraer la propiedad
+- ❌ Data URL resultante era inválida: `data:image/jpeg;base64,[object Object]`
+
+**Solución:**
+- ✅ Extraer `respuesta.contenidoImagen` (string) correctamente
+- ✅ Incluir `respuesta.tipoContenido` para MIME type correcto
+- ✅ Data URL ahora válida: `data:image/jpeg;base64,iVBORw0KGgoAAAANSUhEUgAAA...`
+
+**Archivos Modificados:**
+- `RegistroPacientes.jsx` líneas 140-141: Extracción de propiedades
+
+**Documentación:**
+- 📄 Nuevo: `10_fix_base64_extraction_v1.52.3.md`
+
+**Build:** ✅ SUCCESS - npm run build completado exitosamente
+
+---
+
+### v1.52.1 (2026-02-06) - 🔧 Auto-recarga + Botón Refrescar
+
+**Problema Reportado:**
+- ❌ Imágenes no se visualizaban después de upload
+- ❌ Filtros no funcionaban
+- ❌ Tabla quedaba vacía
+
+**Solución:**
+- ✅ **Auto-recarga:** Cuando se redirige desde upload → llama `cargarEKGs()`
+- ✅ **Botón Refrescar:** Usuario puede recargar manualmente
+- ✅ **Animación:** Icono gira durante carga
+- ✅ **Responsive:** Texto oculto en móvil
+
+**Archivos Modificados:**
+- `RegistroPacientes.jsx`: Agregar `cargarEKGs()` en useEffect + botón Refrescar
+
+**Documentación:**
+- 📄 Nuevo: `08_fix_recarga_imagenes_v1.52.1.md`
+
+---
+
 ### v1.52.0 (2026-02-06) - 🔐 Control de Acceso Bidireccional
 
 **Frontend:**
@@ -340,7 +383,9 @@ PostgreSQL 14+
 
 | Versión | Fecha | Cambios |
 |---------|-------|---------|
-| **v1.52.1** | 2026-02-06 | 🔧 Auto-recarga de imágenes después de upload + Botón Refrescar |
+| **v1.52.3** | 2026-02-06 | 🔧 Extracción correcta de Base64 - Imágenes renderizadas completamente |
+| v1.52.2 | 2026-02-06 | 👁️ Visor EKG con navegación multi-imagen (4 EKGs visibles) |
+| v1.52.1 | 2026-02-06 | 🔧 Auto-recarga de imágenes después de upload + Botón Refrescar |
 | v1.52.0 | 2026-02-06 | 🔐 Control de Acceso Bidireccional (Externo ↔ CENATE) |
 | v1.51.0 | 2026-02-06 | Flujo end-to-end completo + Breadcrumb + Auto-refresh |
 | v1.50.3 | 2026-02-06 | Fix nombre médico en WhatsApp |

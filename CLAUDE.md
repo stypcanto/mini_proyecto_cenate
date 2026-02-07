@@ -1,9 +1,9 @@
 # CLAUDE.md - Proyecto CENATE
 
 > **Sistema de Telemedicina - EsSalud Perú**
-> **Versión:** v1.53.0 (2026-02-06) 🚀
-> **Última Feature:** v1.53.0 - Rediseño Modal EKG: 3 Bloques Verticales + Paleta Profesional ✅ (2026-02-06) ⭐
-> **Última Fix:** v1.52.2 - Visor de Imágenes + Auto-recarga + Botón Refrescar ✅ (2026-02-06)
+> **Versión:** v1.52.3 (2026-02-06) 🚀
+> **Última Feature:** v1.53.0 - Rediseño Modal EKG: 3 Bloques Verticales + Paleta Profesional ✅ (2026-02-06)
+> **Última Fix:** v1.52.3 - Extracción Correcta de Base64 - Imágenes Renderizadas ✅ (2026-02-06) ⭐
 > **Status:** ✅ Production Ready
 
 ---
@@ -229,6 +229,48 @@ Frontend (React 19):
 ---
 
 ## 📊 ÚLTIMAS VERSIONES
+
+### v1.52.3 - Completado (2026-02-06) 🔧 EXTRACCIÓN BASE64 - IMÁGENES RENDERIZADAS CORRECTAMENTE
+✅ **Extracción Correcta de Propiedades** - Base64 ahora se extrae correctamente del response
+✅ **Imágenes Visibles en Modal** - Todas las 4 imágenes se renderizam sin problemas
+✅ **Root Cause Fix** - Problema: asignaba objeto completo en lugar de propiedad contenidoImagen
+✅ **Build Production Ready** - npm run build SUCCESS, listo para deployment
+✅ **Todas las Funciones Operacionales** - Zoom, rotación, navegación, descarga
+
+**Features v1.52.3 (Base64 Fix):**
+- Extrae `respuesta.contenidoImagen` (string) en lugar de asignar `respuesta` (objeto)
+- Extrae `respuesta.tipoContenido` para tipo MIME correcto
+- Data URL ahora válida: `data:image/jpeg;base64,iVBORw0KGgoAAAANSUhEUgAAA...` en lugar de `[object Object]`
+- 4 imágenes visualizadas sin problemas
+- Todas las funciones del visor (zoom 50-300%, rotación 90°, descarga) operacionales
+
+**Problema Identificado:**
+- Service retorna: `{ success: true, contenidoImagen: "...", tipoContenido: "..." }`
+- Código antes asignaba: `contenidoImagen: respuesta` (objeto completo)
+- Resultado: data URL inválida `[object Object]` → no había imagen
+
+**Cambios:**
+- `RegistroPacientes.jsx` línea 140-141: Extracción correcta de propiedades
+- `VisorECGModal.jsx`: Sin cambios (código estaba correcto)
+
+**Docs:**
+- **Base64 Fix:** [`spec/modules/teleecg/10_fix_base64_extraction_v1.52.3.md`](spec/modules/teleecg/10_fix_base64_extraction_v1.52.3.md) (400+ líneas)
+
+**Testing:**
+- ✅ 4 imágenes se cargan correctamente
+- ✅ Imagen 1 visualizada correctamente (no solo alt text "EKG")
+- ✅ Navegación (← →) funciona entre 4 imágenes
+- ✅ Contador "1/4", "2/4", "3/4", "4/4" actualiza correctamente
+- ✅ Zoom 50%-300% funciona
+- ✅ Rotación 90°/180°/270°/360° funciona
+- ✅ Descarga JPG funciona
+- ✅ Build npm sin errores de compilación
+
+**Build Status:** ✅ SUCCESS (frontend/build/ creada)
+
+**Deployment:** ✅ Ready - Todas las imágenes renderizadas, feature completamente funcional
+
+---
 
 ### v1.53.0 - Completado (2026-02-06) 🎨 REDISEÑO MODAL EKG - 3 BLOQUES VERTICALES + PALETA PROFESIONAL
 ✅ **Layout Vertical Apilado** - Reemplazó 3 columnas horizontales por 3 bloques verticales
