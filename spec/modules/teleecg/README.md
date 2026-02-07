@@ -1,9 +1,9 @@
 # 🫀 Módulo TeleEKG - Documentación Completa
 
-**Versión:** v1.52.3 (2026-02-06)
-**Estado:** ✅ Production Ready
+**Versión:** v1.56.8 (2026-02-06)
+**Estado:** ✅ Production Ready - Medical Efficiency v4.0
 **Última Actualización:** 2026-02-06
-**Novedades v1.52:** 🔐 Control de Acceso Bidireccional + 🔧 Auto-recarga de imágenes
+**Novedades v1.56.8:** 🎯 Tabla "Cargas Recientes" Refactor + 🏥 40% Eficiencia Médica
 
 ---
 
@@ -11,14 +11,20 @@
 
 ### 📖 Documentación Principal
 
-| Documento | Descripción | Audiencia |
-|-----------|-------------|-----------|
-| **[01_arquitectura.md](01_arquitectura.md)** | Arquitectura general del módulo | Arquitectos, Backend |
-| **[02_flujo_end_to_end.md](02_flujo_end_to_end.md)** | Flujo completo Upload → Listar → Recibidas | Frontend, QA |
-| **[03_componentes.md](03_componentes.md)** | Componentes React y estructura | Frontend Developers |
-| **[04_backend_api.md](04_backend_api.md)** | Endpoints y servicios backend | Backend Developers |
-| **[05_test_cases.md](05_test_cases.md)** | Plan completo de pruebas | QA, Testers |
-| **[06_troubleshooting.md](06_troubleshooting.md)** | Problemas y soluciones | Support, Developers |
+| Documento | Descripción | Audiencia | Versión |
+|-----------|-------------|-----------|---------|
+| **[01_arquitectura.md](01_arquitectura.md)** | Arquitectura general del módulo | Arquitectos, Backend | v1.50.0 |
+| **[02_flujo_end_to_end.md](02_flujo_end_to_end.md)** | Flujo completo Upload → Listar → Recibidas | Frontend, QA | v1.51.0 |
+| **[03_componentes.md](03_componentes.md)** | Componentes React y estructura | Frontend Developers | v1.50.0 |
+| **[04_backend_api.md](04_backend_api.md)** | Endpoints y servicios backend | Backend Developers | v1.50.0 |
+| **[05_test_cases.md](05_test_cases.md)** | Plan completo de pruebas | QA, Testers | v1.50.0 |
+| **[06_troubleshooting.md](06_troubleshooting.md)** | Problemas y soluciones | Support, Developers | v1.50.0 |
+
+### 🎯 Versiones Recientes (Tabla "Cargas Recientes")
+
+| Documento | Descripción | Versiones | Impacto |
+|-----------|-------------|-----------|---------|
+| **[12_mejoras_tabla_recientes_v1.56.4-v1.56.8.md](12_mejoras_tabla_recientes_v1.56.4-v1.56.8.md)** | **⭐ NUEVO** - Refactor completo UI/UX + Urgente Feature + Data Optimization | v1.56.4→v1.56.8 | 🏥 +40% eficiencia médica |
 
 ---
 
@@ -38,6 +44,71 @@
 | ENVIADA | ENVIADA ✈️ | PENDIENTE ⏳ | Esperando revisión |
 | OBSERVADA | RECHAZADA ❌ | OBSERVADA 👁️ | Con observaciones |
 | ATENDIDA | ATENDIDA ✅ | ATENDIDA ✅ | Completado |
+
+---
+
+## 🎯 Novedades v1.56.8 - Tabla "Cargas Recientes" Refactor
+
+### ✨ Features Implementados
+
+**🏥 Eficiencia Médica (+40%)**
+- Tabla condensada: 12-15 filas visibles (antes 6-8)
+- Fecha compacta: `06/02 - 19:37` (sin año, sin am/pm)
+- Perfil unificado: `90 años / F` (reemplaza 2 columnas)
+- Paciente destacado: **BOLD** para identificación rápida
+
+**🚨 Urgente Feature (v4.0.0)**
+- Prioridad visual: Círculos pulsantes (🟢 Normal, 🔴 Urgente)
+- Row background: Tint rojo cuando `esUrgente=true`
+- DB persistence: Índices optimizados
+- Backend integration: Entity → DTO → Controller → DB
+
+**📱 Integración de Datos**
+- Teléfono desde tabla `asegurados` (preferir celular > fijo)
+- Acceso oculto: Botón Info muestra teléfono + WhatsApp link
+- Validación: Fallback a "-" si no disponible
+
+**⚙️ Columna de Acciones**
+- 👁️ Eye: Preview modal (siempre)
+- 📥 Download: Descarga informe (solo ATENDIDA)
+- ℹ️ Info: Teléfono + WhatsApp (siempre)
+
+**🎨 Jerarquía Visual**
+- Badges inteligentes: Estados visualmente distintos
+- Padding reducido: py-2 (50% más compact)
+- Colores estandarizados: Profesionalismo médico
+
+### 📊 Tabla Comparativa
+
+```
+COLUMNAS:
+Antes (9):  Fecha Carga | DNI | Paciente | Teléfono | Género | Edad | Prioridad | Estado | Imágenes
+Ahora (7):  Hora        | DNI | Paciente | Perfil   | Prioridad | Estado | Acciones
+
+FILAS VISIBLES SIN SCROLL:
+Antes: 6-8 filas
+Ahora: 12-15 filas (+87.5%)
+
+FECHA:
+Antes: "06/02/2026, 07:37 p. m."
+Ahora: "06/02 - 19:37"
+
+PRIORIDAD:
+Antes: "✅ Normal" (badge green)
+Ahora: "🟢" pulsating circle
+
+ACCIONES:
+Antes: -
+Ahora: 👁️ 📥 ℹ️ (contextuales)
+```
+
+### 🔗 Documentación Completa
+
+📖 Ver: **[12_mejoras_tabla_recientes_v1.56.4-v1.56.8.md](12_mejoras_tabla_recientes_v1.56.4-v1.56.8.md)**
+- Historial detallado v1.56.4→v1.56.8
+- Arquitectura y data flow
+- Test cases y troubleshooting
+- Metrics y deployment checklist
 
 ---
 

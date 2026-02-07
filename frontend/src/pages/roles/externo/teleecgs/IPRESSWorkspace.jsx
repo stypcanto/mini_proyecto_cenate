@@ -262,6 +262,10 @@ export default function IPRESSWorkspace() {
       const ecgsFormateados = Object.entries(deduplicados).slice(0, 3).map(([dni, img]) => ({
         ...img,
         nombrePaciente: img.nombreCompleto || img.nombresPaciente || img.nombrePaciente || "Sin datos",
+        genero: img.generoPaciente || img.genero || img.sexo || "-",
+        edad: img.edadPaciente || img.edad || img.ageinyears || "-",
+        telefono: img.telefonoPrincipalPaciente || img.telefono || "-",
+        esUrgente: img.esUrgente || img.urgente || false,
         cantidadImagenes: porDni[dni]?.length || 0,
       }));
 
