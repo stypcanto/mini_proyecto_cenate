@@ -106,7 +106,7 @@ const teleecgService = {
     if (numDocPaciente) params.append("numDocPaciente", numDocPaciente);
     params.append("page", page);
 
-    const response = await apiClient.get(`/teleekgs/listar?${params}`, true);
+    const response = await apiClient.get(`/teleekgs?${params}`, true);
 
     // El API retorna: { success, message, code, data: { content: [...], pageable: {...}, ... } }
     // El componente espera: { content: [...], pageable: {...}, ... }
