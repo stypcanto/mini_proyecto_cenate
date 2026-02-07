@@ -67,8 +67,6 @@ public class PermissionsPolicyFilter extends OncePerRequestFilter {
         // 📝 Headers adicionales útiles
         response.setHeader("Access-Control-Allow-Credentials", "true");
 
-        log.debug("✅ Headers de Permissions-Policy aplicados permitiendo acceso a micrófono y cámara en iframes");
-
         filterChain.doFilter(request, response);
     }
 }

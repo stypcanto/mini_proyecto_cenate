@@ -47,8 +47,6 @@ module.exports = function(app) {
     // 📝 Headers adicionales útiles
     res.setHeader('Access-Control-Allow-Credentials', 'true');
 
-    console.log('✅ Headers de Permissions-Policy aplicados a desarrollo permitiendo acceso a micrófono y cámara');
-
     next();
   });
 

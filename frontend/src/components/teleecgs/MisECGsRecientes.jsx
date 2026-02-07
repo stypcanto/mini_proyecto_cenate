@@ -62,29 +62,24 @@ export default function MisECGsRecientes({
     );
   };
 
-  const parsearTiempoTranscurrido = (tiempoTranscurrido) => {
-    // Parse "hace X horas" or "hace X minutos" to determine if it matches selected date
-    // For MVP: we check if upload is "today" by looking at time string
-    const hoy = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
-
-    // Simple heuristic: if time says "hace X horas" or "hace X minutos", it's today
-    if (tiempoTranscurrido && (tiempoTranscurrido.includes('hace') || tiempoTranscurrido.includes('minuto') || tiempoTranscurrido.includes('hora'))) {
-      return hoy;
+  // ✅ MEJORADO: Usar fechaEnvio directamente (más confiable que parsear tiempoTranscurrido)
+  const obtenerFechaUpload = (item) => {
+    if (item.fechaEnvio) {
+      // Convertir ISO datetime a YYYY-MM-DD
+      const fecha = new Date(item.fechaEnvio);
+      const año = fecha.getFullYear();
+      const mes = String(fecha.getMonth() + 1).padStart(2, '0');
+      const día = String(fecha.getDate()).padStart(2, '0');
+      return `${año}-${mes}-${día}`;
     }
-
-    // If it has a date format, extract it
-    const dateMatch = tiempoTranscurrido?.match(/(\d{4}-\d{2}-\d{2})/);
-    if (dateMatch) {
-      return dateMatch[1];
-    }
-
-    return hoy; // Default to today
+    // Fallback: usar hoy si no hay fechaEnvio
+    return new Date().toISOString().split('T')[0];
   };
 
   const filtrarPorFecha = (datos, fechaBusqueda) => {
     if (!fechaBusqueda) return datos;
     return datos.filter(item => {
-      const uploadDate = parsearTiempoTranscurrido(item.tiempoTranscurrido);
+      const uploadDate = obtenerFechaUpload(item);
       return uploadDate === fechaBusqueda;
     });
   };
@@ -151,11 +146,11 @@ export default function MisECGsRecientes({
         </div>
 
         {/* Grid responsive - Professional Stats Cards Compact */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
           {/* Total - Verde SATURADO (Par - Luz) */}
           <button
             onClick={() => setFiltroEstado(null)}
-            className={`relative overflow-hidden rounded-lg bg-gradient-to-br from-emerald-500 to-emerald-600 border p-4 shadow-md hover:shadow-xl transition-all duration-300 hover:scale-105 text-left cursor-pointer ${
+            className={`relative overflow-hidden rounded-lg bg-gradient-to-br from-emerald-500 to-emerald-600 border p-3 md:p-4 shadow-md hover:shadow-xl transition-all duration-300 hover:scale-105 text-left cursor-pointer ${
               filtroEstado === null ? 'border-white ring-2 ring-white' : 'border-emerald-600'
             }`}
             title="Ver todos"
@@ -165,21 +160,21 @@ export default function MisECGsRecientes({
 
             <div className="relative z-10">
               {/* Icono */}
-              <div className="mb-2.5">
+              <div className="mb-2">
                 <div className="inline-flex p-2 bg-white/20 rounded-lg">
-                  <BarChart3 className="w-5 h-5 text-white" strokeWidth={2.5} />
+                  <BarChart3 className="w-4 h-4 md:w-5 md:h-5 text-white" strokeWidth={2.5} />
                 </div>
               </div>
 
               {/* Número */}
-              <div className="mb-1.5">
-                <span className="text-3xl font-bold text-white">
+              <div className="mb-1">
+                <span className="text-2xl md:text-3xl font-bold text-white">
                   {estadisticas.total}
                 </span>
               </div>
 
               {/* Etiqueta */}
-              <span className="text-xs font-semibold text-white/90">
+              <span className="text-xs md:text-sm font-semibold text-white/90">
                 Total
               </span>
             </div>
@@ -188,7 +183,7 @@ export default function MisECGsRecientes({
           {/* Pendiente - Gris Oscuro/Negro SATURADO */}
           <button
             onClick={() => setFiltroEstado('ENVIADA')}
-            className={`relative overflow-hidden rounded-lg bg-gradient-to-br from-slate-700 to-slate-800 border p-4 shadow-md hover:shadow-xl transition-all duration-300 hover:scale-105 text-left cursor-pointer ${
+            className={`relative overflow-hidden rounded-lg bg-gradient-to-br from-slate-700 to-slate-800 border p-3 md:p-4 shadow-md hover:shadow-xl transition-all duration-300 hover:scale-105 text-left cursor-pointer ${
               filtroEstado === 'ENVIADA' ? 'border-white ring-2 ring-white' : 'border-slate-800'
             }`}
             title="Filtrar por Pendiente"
@@ -221,7 +216,7 @@ export default function MisECGsRecientes({
           {/* Observadas - Ámbar SATURADO (Impar - Oscuro) */}
           <button
             onClick={() => setFiltroEstado('OBSERVADA')}
-            className={`relative overflow-hidden rounded-lg bg-gradient-to-br from-orange-500 to-orange-600 border p-4 shadow-md hover:shadow-xl transition-all duration-300 hover:scale-105 text-left cursor-pointer ${
+            className={`relative overflow-hidden rounded-lg bg-gradient-to-br from-orange-500 to-orange-600 border p-3 md:p-4 shadow-md hover:shadow-xl transition-all duration-300 hover:scale-105 text-left cursor-pointer ${
               filtroEstado === 'OBSERVADA' ? 'border-white ring-2 ring-white' : 'border-orange-600'
             }`}
             title="Filtrar por Observadas"
@@ -254,7 +249,7 @@ export default function MisECGsRecientes({
           {/* Atendidas - Teal CLARO (Par - Luz) */}
           <button
             onClick={() => setFiltroEstado('ATENDIDA')}
-            className={`relative overflow-hidden rounded-lg bg-gradient-to-br from-teal-50 to-teal-100 border p-4 shadow-sm hover:shadow-lg transition-all duration-300 hover:scale-105 text-left cursor-pointer ${
+            className={`relative overflow-hidden rounded-lg bg-gradient-to-br from-teal-50 to-teal-100 border p-3 md:p-4 shadow-sm hover:shadow-lg transition-all duration-300 hover:scale-105 text-left cursor-pointer ${
               filtroEstado === 'ATENDIDA' ? 'border-teal-700 ring-2 ring-teal-700' : 'border-teal-200'
             }`}
             title="Filtrar por Atendidas"

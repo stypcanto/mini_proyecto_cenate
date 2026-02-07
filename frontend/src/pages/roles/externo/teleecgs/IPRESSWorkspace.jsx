@@ -140,6 +140,9 @@ export default function IPRESSWorkspace() {
   // ✅ Modal de carga de imágenes
   const [showUploadModal, setShowUploadModal] = useState(false);
 
+  // ✅ TODOS LAS IMÁGENES (para poder filtrar cuando clickea el ojo)
+  const [todasLasImagenes, setTodasLasImagenes] = useState([]);
+
   // =======================================
   // 🔄 LIFECYCLE - Load data & handle resize
   // =======================================
@@ -274,6 +277,7 @@ export default function IPRESSWorkspace() {
       // ✅ TERCERO: Actualizar estados
       setPacientesCache(newCache);
       setEcgs(ecgsFormateados);
+      setTodasLasImagenes(imagenesEnriquecidas);  // ✅ Guardar TODAS las imágenes para modal
 
       // Calcular estadísticas basadas en pacientes únicos, no en total de imágenes
       const pacientesPendientes = new Set(
@@ -360,7 +364,8 @@ export default function IPRESSWorkspace() {
 
       if (isDni) {
         // 🎯 NUEVO: Click en card del paciente - Cargar TODAS sus imágenes
-        const imagenesPaciente = ecgs.filter(
+        // ✅ IMPORTANTE: Filtrar de todasLasImagenes (no de ecgs que está deduplicado)
+        const imagenesPaciente = todasLasImagenes.filter(
           (img) => (img.numDocPaciente || img.dni) === param.dni
         );
 
@@ -484,6 +489,8 @@ export default function IPRESSWorkspace() {
               setSelectedImage(null);
             }}
             ecg={selectedImage}
+            imagenes={selectedImage.imagenes || [selectedImage]}
+            onDescargar={() => toast.success("📥 Descargando imagen...")}
           />
         )}
 
