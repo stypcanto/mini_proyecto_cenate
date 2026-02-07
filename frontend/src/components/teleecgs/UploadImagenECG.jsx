@@ -405,6 +405,8 @@ export default function UploadImagenEKG({ onSuccess, onUploadSuccess, isWorkspac
       if (pkAsegurado) {
         formData.append("pkAsegurado", pkAsegurado);
       }
+      // ✅ v1.60.7: Enviar indicador de urgencia
+      formData.append("esUrgente", esUrgente);
 
       // Simular progreso por archivo (10 archivos máx)
       const progressPerFile = 100 / archivos.length;
