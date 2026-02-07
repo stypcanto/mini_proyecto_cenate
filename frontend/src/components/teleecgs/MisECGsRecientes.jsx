@@ -390,6 +390,7 @@ export default function MisECGsRecientes({
                     <th className="px-4 py-3 text-left font-bold whitespace-nowrap">📅 Fecha Carga</th>
                     <th className="px-4 py-3 text-left font-bold whitespace-nowrap">🆔 DNI</th>
                     <th className="px-4 py-3 text-left font-bold whitespace-nowrap">👤 Paciente</th>
+                    <th className="px-4 py-3 text-left font-bold whitespace-nowrap">📱 Teléfono</th>
                     <th className="px-4 py-3 text-left font-bold whitespace-nowrap">⚧ Género</th>
                     <th className="px-4 py-3 text-left font-bold whitespace-nowrap">🎂 Edad</th>
                     <th className="px-4 py-3 text-center font-bold whitespace-nowrap">⚡ Prioridad</th>
@@ -426,6 +427,24 @@ export default function MisECGsRecientes({
                       {/* Nombres Completo */}
                       <td className="px-4 py-3 text-gray-900 font-semibold min-w-max" title={carga.nombrePaciente}>
                         {carga.nombrePaciente}
+                      </td>
+
+                      {/* Teléfono */}
+                      <td className="px-4 py-3 text-gray-700">
+                        {carga.telefono ? (
+                          <a
+                            href={`https://wa.me/${carga.telefono.replace(/\D/g, '')}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-green-600 hover:text-green-700 hover:underline font-mono text-xs"
+                            title="Abrir WhatsApp"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            {carga.telefono}
+                          </a>
+                        ) : (
+                          <span className="text-gray-400 text-xs">-</span>
+                        )}
                       </td>
 
                       {/* Género */}
