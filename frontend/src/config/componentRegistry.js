@@ -253,17 +253,25 @@ export const componentRegistry = {
     pathMatch: '/roles/externo/teleekgs',
   },
 
-  // ✅ FIX: Rutas separadas para cada submenu del módulo TeleECG (Externo)
-  '/teleekgs/upload': {
-    component: lazy(() => import('../pages/roles/externo/teleecgs/TeleECGDashboard')),
+  // ✅ NUEVO v1.52.0: IPRESSWorkspace - Split View/Tabs (Upload + Listar) integrados
+  '/teleekgs/ipress-workspace': {
+    component: lazy(() => import('../pages/roles/externo/teleecgs/IPRESSWorkspace')),
     requiredAction: 'ver',
-    requiredRoles: ['EXTERNO', 'INSTITUCION_EX'], // ✅ Solo usuarios externos
+    requiredRoles: ['EXTERNO', 'INSTITUCION_EX'],
+  },
+
+  // ⚠️ DEPRECATED: Rutas antiguas mantenidas para backward compatibility
+  // → Redirigen a /teleekgs/ipress-workspace vía App.js redirect
+  '/teleekgs/upload': {
+    component: lazy(() => import('../pages/roles/externo/teleecgs/IPRESSWorkspace')),
+    requiredAction: 'ver',
+    requiredRoles: ['EXTERNO', 'INSTITUCION_EX'],
   },
 
   '/teleekgs/listar': {
-    component: lazy(() => import('../pages/roles/externo/teleecgs/RegistroPacientes')),
+    component: lazy(() => import('../pages/roles/externo/teleecgs/IPRESSWorkspace')),
     requiredAction: 'ver',
-    requiredRoles: ['EXTERNO', 'INSTITUCION_EX'], // ✅ Solo usuarios externos
+    requiredRoles: ['EXTERNO', 'INSTITUCION_EX'],
   },
 
   '/teleekgs/dashboard': {

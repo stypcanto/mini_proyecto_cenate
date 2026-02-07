@@ -16,29 +16,40 @@ import VisorECGModal from "../../../../components/teleecgs/VisorECGModal";
 import TeleEKGBreadcrumb from "../../../../components/teleecgs/TeleEKGBreadcrumb";
 
 /**
- * 👥 Página de Registro de Pacientes con EKGs
+ * 👥 Registro de Pacientes con EKGs
+ *
+ * Puede usarse de dos formas:
+ * 1. Standalone (/teleekgs/listar) - Carga datos del servidor
+ * 2. En IPRESSWorkspace - Recibe datos como props desde parent
  */
-export default function RegistroPacientes() {
+export default function RegistroPacientes({
+  ecgs: propsEcgs,
+  loading: propsLoading,
+  onRefresh,
+  isWorkspace
+} = {}) {
   const location = useLocation();
 
-  const [ecgs, setEcgs] = useState([]);
+  // State - Solo se usa si NOT en workspace mode
+  const [ecgs, setEcgs] = useState(propsEcgs || []);
   const [filteredEcgs, setFilteredEcgs] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(propsLoading !== undefined ? propsLoading : true);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterEstado, setFilterEstado] = useState("TODOS");
   const [selectedEKG, setSelectedEKG] = useState(null);
   const [selectedPaciente, setSelectedPaciente] = useState(null);
   const [showVisor, setShowVisor] = useState(false);
 
-  // ✅ Detectar redirección desde upload y recargar imágenes
+  // Si es workspace, usar props; si no, usar state local
+  const currentEcgs = isWorkspace ? propsEcgs : ecgs;
+  const currentLoading = isWorkspace ? propsLoading : loading;
+
+  // ✅ Detectar redirección desde upload (solo en modo standalone)
   useEffect(() => {
-    if (location.state?.mensaje) {
+    if (!isWorkspace && location.state?.mensaje) {
       toast.success(location.state.mensaje);
 
-      // ✅ RECARGAR las imágenes desde el servidor
-      cargarEKGs();
-
-      // Filtrar por DNI del paciente recién subido
+      // Filtrar por DNI si viene del upload
       if (location.state.numDoc) {
         setSearchTerm(location.state.numDoc);
       }
@@ -46,24 +57,34 @@ export default function RegistroPacientes() {
       // Limpiar state para no mostrar mensaje en refresh
       window.history.replaceState({}, document.title);
     }
-  }, [location.state]);
+  }, [location.state, isWorkspace]);
 
+  // ✅ Solo cargar datos si NO estamos en workspace mode
   useEffect(() => {
-    cargarEKGs();
-  }, []);
+    if (!isWorkspace) {
+      cargarEKGs();
+    }
+  }, [isWorkspace]);
 
   useEffect(() => {
     filtrar();
-  }, [searchTerm, filterEstado, ecgs]);
+  }, [searchTerm, filterEstado, currentEcgs]);
+
+  // ✅ Actualizar estado local cuando props cambian (en caso standalone)
+  useEffect(() => {
+    if (!isWorkspace && propsEcgs) {
+      setEcgs(propsEcgs);
+    }
+  }, [propsEcgs, isWorkspace]);
 
   const cargarEKGs = async () => {
     try {
       setLoading(true);
       const response = await teleeckgService.listarImagenes();
-      // El servicio retorna response.data.data que es el page object con content
       setEcgs(response?.content || []);
     } catch (error) {
       console.error("❌ Error al cargar EKGs:", error);
+      toast.error("Error al cargar las imágenes");
     } finally {
       setLoading(false);
     }
@@ -71,7 +92,7 @@ export default function RegistroPacientes() {
 
   const filtrar = () => {
     // Primero agrupar por paciente
-    let pacientesAgrupados = agruparImagenesPorPaciente(ecgs);
+    let pacientesAgrupados = agruparImagenesPorPaciente(currentEcgs);
     let resultado = [...pacientesAgrupados];
 
     // Filtrar por búsqueda
@@ -181,8 +202,8 @@ export default function RegistroPacientes() {
           </p>
         </div>
 
-        {/* ✅ Breadcrumb de navegación */}
-        <TeleEKGBreadcrumb />
+        {/* ✅ Breadcrumb de navegación - Solo en modo standalone */}
+        {!isWorkspace && <TeleEKGBreadcrumb />}
 
         {/* Filtros */}
         <div className="bg-white rounded-lg shadow-md p-6 mb-8">
@@ -216,27 +237,27 @@ export default function RegistroPacientes() {
 
             {/* Botón Refrescar */}
             <button
-              onClick={cargarEKGs}
-              disabled={loading}
+              onClick={() => isWorkspace && onRefresh ? onRefresh() : cargarEKGs()}
+              disabled={currentLoading}
               className="flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-blue-400 transition-colors"
               title="Refrescar lista de imágenes"
             >
-              <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+              <RefreshCw className={`w-4 h-4 ${currentLoading ? 'animate-spin' : ''}`} />
               <span className="hidden sm:inline">Refrescar</span>
             </button>
 
             {/* Estadísticas rápidas */}
             <div className="bg-blue-50 rounded-lg p-4">
               <p className="text-sm text-gray-600">Total</p>
-              <p className="text-2xl font-bold text-blue-600">{agruparImagenesPorPaciente(ecgs).length}</p>
-              <p className="text-xs text-gray-500">{ecgs.length} EKG{ecgs.length !== 1 ? 's' : ''}</p>
+              <p className="text-2xl font-bold text-blue-600">{agruparImagenesPorPaciente(currentEcgs).length}</p>
+              <p className="text-xs text-gray-500">{currentEcgs.length} EKG{currentEcgs.length !== 1 ? 's' : ''}</p>
             </div>
           </div>
         </div>
 
         {/* ✅ v1.49.0: Tabla Responsive - Desktop Table + Mobile Cards */}
         <div className="bg-white rounded-lg shadow-md overflow-hidden">
-          {loading ? (
+          {currentLoading ? (
             <div className="p-8 text-center">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
               <p className="text-gray-600 mt-4">Cargando registro...</p>

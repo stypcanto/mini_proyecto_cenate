@@ -1,5 +1,4 @@
 import React, { useState, useRef, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
 import {
   Upload, X, CheckCircle, AlertCircle, FileImage,
   Loader, Heart, User, Trash2, Plus, Camera, WifiOff, Wifi
@@ -77,9 +76,8 @@ const comprimirImagen = (file) => {
   });
 };
 
-export default function UploadImagenEKG({ onSuccess }) {
-  // Router navigation
-  const navigate = useNavigate();
+export default function UploadImagenEKG({ onSuccess, onUploadSuccess, isWorkspace }) {
+  // No longer using useNavigate for redirect (handled by parent in workspace mode)
 
   // Archivos
   const [archivos, setArchivos] = useState([]);
@@ -402,13 +400,14 @@ export default function UploadImagenEKG({ onSuccess }) {
         resetFormulario();
         if (onSuccess) onSuccess();
 
-        // ✅ Redirigir a la vista de listado con información del paciente
-        navigate("/teleekgs/listar", {
-          state: {
-            mensaje: `✅ ${archivos.length} EKGs subidos correctamente`,
-            numDoc: numDocPaciente,
-          },
-        });
+        // ✅ Si estamos en workspace, usar callback. Si no, redirigir a listar
+        if (isWorkspace && onUploadSuccess) {
+          // Modo workspace: pasar nuevas imágenes al padre para sincronización
+          onUploadSuccess(respuesta?.data || []);
+        } else {
+          // Modo standalone: redirigir a listado
+          window.location.href = "/teleekgs/listar";
+        }
       }, 2000);
 
     } catch (error) {
@@ -514,7 +513,7 @@ export default function UploadImagenEKG({ onSuccess }) {
         </div>
         {/* Close Button - Desktop Only */}
         <button
-          onClick={() => navigate(-1)}
+          onClick={() => window.history.back()}
           className="hidden xl:flex p-1.5 hover:bg-white/20 rounded-lg transition-colors absolute top-2.5 right-2.5"
           aria-label="Cerrar"
         >
