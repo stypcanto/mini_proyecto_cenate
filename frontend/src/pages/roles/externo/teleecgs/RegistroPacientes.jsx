@@ -320,6 +320,8 @@ export default function RegistroPacientes({
                       <th className="px-4 py-3 text-left text-xs font-semibold w-[120px]">Fecha</th>
                       <th className="px-4 py-3 text-left text-xs font-semibold w-[100px]">DNI</th>
                       <th className="px-4 py-3 text-left text-xs font-semibold w-auto">Paciente</th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold w-[80px]">👥 Género</th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold w-[70px]">🎂 Edad</th>
                       <th className="px-4 py-3 text-left text-xs font-semibold w-[150px]">Estado</th>
                       <th className="px-4 py-3 text-left text-xs font-semibold w-[180px]">Evaluación</th>
                       <th className="px-4 py-3 text-left text-xs font-semibold w-[100px]">Archivo</th>
@@ -347,6 +349,32 @@ export default function RegistroPacientes({
                               📸 {paciente.imagenes.length} EKG
                             </p>
                           </div>
+                        </td>
+                        {/* ✅ Género Column */}
+                        <td className="px-4 py-3 text-xs font-semibold text-center">
+                          {paciente.generoPaciente ? (
+                            <span className={`inline-block px-2 py-1 rounded-full text-xs font-bold whitespace-nowrap ${
+                              paciente.generoPaciente === 'F'
+                                ? 'bg-pink-100 text-pink-700'
+                                : paciente.generoPaciente === 'M'
+                                ? 'bg-blue-100 text-blue-700'
+                                : 'bg-gray-100 text-gray-700'
+                            }`}>
+                              {paciente.generoPaciente === 'F' ? '👩 Mujer' : paciente.generoPaciente === 'M' ? '👨 Hombre' : paciente.generoPaciente}
+                            </span>
+                          ) : (
+                            <span className="text-gray-400">—</span>
+                          )}
+                        </td>
+                        {/* ✅ Edad Column */}
+                        <td className="px-4 py-3 text-xs font-semibold text-center">
+                          {paciente.edadPaciente ? (
+                            <span className="inline-block px-2 py-1 rounded-lg bg-amber-100 text-amber-700 font-bold whitespace-nowrap">
+                              {paciente.edadPaciente} años
+                            </span>
+                          ) : (
+                            <span className="text-gray-400">—</span>
+                          )}
                         </td>
                         <td className="px-4 py-3 text-xs">
                           {(() => {
@@ -458,6 +486,36 @@ export default function RegistroPacientes({
                       <p className="text-sm text-blue-600 font-semibold">
                         📸 {paciente.imagenes.length} EKG{paciente.imagenes.length !== 1 ? 's' : ''}
                       </p>
+                    </div>
+
+                    {/* ✅ Género & Edad Row */}
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <p className="text-xs text-gray-500 uppercase tracking-wide font-semibold">Género</p>
+                        {paciente.generoPaciente ? (
+                          <span className={`inline-block px-2 py-1 rounded-full text-xs font-bold whitespace-nowrap ${
+                            paciente.generoPaciente === 'F'
+                              ? 'bg-pink-100 text-pink-700'
+                              : paciente.generoPaciente === 'M'
+                              ? 'bg-blue-100 text-blue-700'
+                              : 'bg-gray-100 text-gray-700'
+                          }`}>
+                            {paciente.generoPaciente === 'F' ? '👩 Mujer' : paciente.generoPaciente === 'M' ? '👨 Hombre' : paciente.generoPaciente}
+                          </span>
+                        ) : (
+                          <span className="text-gray-400 text-sm">—</span>
+                        )}
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-500 uppercase tracking-wide font-semibold">Edad</p>
+                        {paciente.edadPaciente ? (
+                          <span className="inline-block px-2 py-1 rounded-lg bg-amber-100 text-amber-700 text-xs font-bold whitespace-nowrap">
+                            {paciente.edadPaciente} años
+                          </span>
+                        ) : (
+                          <span className="text-gray-400 text-sm">—</span>
+                        )}
+                      </div>
                     </div>
 
                     {/* Fecha */}
