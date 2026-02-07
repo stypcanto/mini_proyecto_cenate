@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Upload, List, BarChart3 } from "lucide-react";
 import toast from "react-hot-toast";
 import UploadImagenECG from "../../../../components/teleecgs/UploadImagenECG";
+import UploadFormWrapper from "../../../../components/teleecgs/UploadFormWrapper";
 import RegistroPacientes from "./RegistroPacientes";
 import TeleECGEstadisticas from "./TeleECGEstadisticas";
 import TeleEKGBreadcrumb from "../../../../components/teleecgs/TeleEKGBreadcrumb";
@@ -164,12 +165,9 @@ export default function IPRESSWorkspace() {
 
           {/* Split View Container */}
           <div className="grid grid-cols-[40%_60%] gap-6">
-            {/* Panel Izquierdo - Upload Form */}
-            <div className="bg-white rounded-lg shadow-lg p-6 h-fit sticky top-6">
-              <h2 className="text-xl font-semibold text-slate-900 mb-4">
-                📤 Cargar EKGs
-              </h2>
-              <UploadImagenECG
+            {/* Panel Izquierdo - Upload Form (mejorado con UploadFormWrapper) */}
+            <div className="h-fit sticky top-6">
+              <UploadFormWrapper
                 onUploadSuccess={handleUploadSuccess}
                 isWorkspace={true}
               />
