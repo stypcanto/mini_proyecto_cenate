@@ -748,6 +748,9 @@ public class TeleECGService {
         dto.setCreatedAt(imagen.getCreatedAt());
         dto.setUpdatedAt(imagen.getUpdatedAt());
 
+        // ✅ v1.60.5: Mapear indicador de urgencia desde la entidad
+        dto.setEsUrgente(imagen.getEsUrgente() != null ? imagen.getEsUrgente() : false);
+
         return dto;
     }
 
