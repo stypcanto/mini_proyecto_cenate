@@ -374,7 +374,7 @@ export default function MisECGsRecientes({
                       </td>
 
                       {/* Nombres Completo */}
-                      <td className="px-4 py-3 text-gray-900 font-semibold truncate">
+                      <td className="px-4 py-3 text-gray-900 font-semibold min-w-max" title={carga.nombrePaciente}>
                         {carga.nombrePaciente}
                       </td>
 
