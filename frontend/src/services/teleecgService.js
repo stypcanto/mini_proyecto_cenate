@@ -180,6 +180,7 @@ const teleecgService = {
           fechaEnvioFormato: ecg.fecha_envio_formato || ecg.fechaEnvioFormato,
           diasRestantes: ecg.dias_restantes || ecg.diasRestantes,
           vigencia: ecg.vigencia,
+          esUrgente: ecg.es_urgente || ecg.esUrgente || false,  // ✅ Indicador de urgencia para MisECGsRecientes
 
           // ✅ ALIASES para componentes que esperan nombres diferentes
           dni: numDocPaciente,  // MisECGsRecientes espera 'dni'
