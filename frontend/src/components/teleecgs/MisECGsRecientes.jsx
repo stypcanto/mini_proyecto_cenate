@@ -397,7 +397,14 @@ export default function MisECGsRecientes({
                     >
                       {/* Fecha Carga */}
                       <td className="px-4 py-3 text-gray-900 font-medium">
-                        {carga.tiempoTranscurrido}
+                        {carga.fechaEnvio ? new Date(carga.fechaEnvio).toLocaleString('es-PE', {
+                          year: 'numeric',
+                          month: '2-digit',
+                          day: '2-digit',
+                          hour: '2-digit',
+                          minute: '2-digit',
+                          hour12: true
+                        }) : '-'}
                       </td>
 
                       {/* DNI */}
@@ -417,7 +424,7 @@ export default function MisECGsRecientes({
 
                       {/* Edad */}
                       <td className="px-4 py-3 text-gray-700 font-medium text-center">
-                        {carga.edad ? `${carga.edad}a` : '-'}
+                        {carga.edad && carga.edad !== '-' ? `${carga.edad}a` : '-'}
                       </td>
 
                       {/* Prioridad - Urgente/Normal */}

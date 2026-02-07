@@ -46,16 +46,28 @@ function formatECGsForRecientes(ecgs, pacientesCache = {}) {
     // Si existe en cache, usar el nombre formateado completo
     if (pacientesCache[dni]) {
       const cached = pacientesCache[dni];
+      console.log(`🔍 [formatECG] DNI ${dni} encontrado en cache:`, cached);
+
       if (cached.apellidos && cached.nombres) {
         nombreFormateado = `${cached.apellidos.toUpperCase()}, ${cached.nombres.toUpperCase()}`;
+        console.log(`✨ [formatECG] Nombre formateado: ${nombreFormateado}`);
+      } else if (cached.nombres) {
+        nombreFormateado = cached.nombres.toUpperCase();
+        console.log(`⚠️ [formatECG] Solo nombres disponibles: ${nombreFormateado}`);
       }
+    } else {
+      console.log(`❌ [formatECG] DNI ${dni} NO encontrado en cache. Cache keys:`, Object.keys(pacientesCache));
     }
 
     return {
       idImagen: img.idImagen || img.id,  // ✅ NECESARIO para cargar imagen
       nombrePaciente: nombreFormateado,
       dni: dni || "N/A",
+      genero: img.generoPaciente || img.genero || img.sexo || "-",  // ✅ Backend envía 'generoPaciente' (F/M)
+      edad: img.edadPaciente || img.edad || img.ageinyears || "-",  // ✅ Backend envía 'edadPaciente' (años)
+      esUrgente: img.esUrgente || img.urgente || false,  // ✅ Indicador de urgencia
       cantidadImagenes: porDni[dni]?.length || 0,  // ✅ Contar imágenes del paciente
+      fechaEnvio: img.fechaEnvio || img.fechaCarga || null,  // ✅ Fecha real para mostrar en tabla
       tiempoTranscurrido: img.fechaEnvio || img.fechaCarga
         ? (() => {
             const ahora = new Date();
@@ -169,7 +181,7 @@ export default function IPRESSWorkspace() {
   // =======================================
 
   /**
-   * Cargar imágenes desde el servidor
+   * Cargar imágenes desde el servidor y enriquecer con datos de pacientes
    */
   const cargarEKGs = async () => {
     try {
@@ -177,10 +189,43 @@ export default function IPRESSWorkspace() {
       const response = await teleecgService.listarImagenes();
       const imagenes = response?.content || [];
 
+      // ✅ PRIMERO: Buscar datos de pacientes únicos para enriquecer nombres
+      const pacientesUnicos = new Set(imagenes.map((img) => img.dni || img.numDocPaciente).filter(Boolean));
+      const newCache = { ...pacientesCache };
+
+      // Buscar datos de pacientes que no estén en cache
+      for (const dni of pacientesUnicos) {
+        if (!newCache[dni]) {
+          try {
+            const datoPaciente = await gestionPacientesService.buscarAseguradoPorDni(dni);
+            console.log(`📋 [DEBUG] Datos obtenidos para DNI ${dni}:`, datoPaciente);
+
+            // Intentar múltiples campos posibles para nombres y apellidos
+            const nombres = datoPaciente?.nombres || datoPaciente?.nombre || datoPaciente?.nombreCompleto || "";
+            const apellidos = datoPaciente?.apellidos || datoPaciente?.apellido || "";
+
+            if (nombres) {
+              newCache[dni] = {
+                nombres: nombres.trim(),
+                apellidos: apellidos.trim(),
+              };
+              console.log(`✅ [Cache] Agregado ${dni}: ${apellidos}, ${nombres}`);
+            }
+          } catch (err) {
+            console.warn(`⚠️ No se pudo obtener datos del paciente ${dni}:`, err);
+            // Continuar sin el nombre enriquecido, usará el que viene del ECG
+          }
+        }
+      }
+      console.log(`💾 [Cache Final] Estado del caché:`, newCache);
+
+      // ✅ SEGUNDO: Actualizar el caché ANTES de actualizar los ECGs
+      setPacientesCache(newCache);
+
+      // ✅ TERCERO: Ahora sí, actualizar los ECGs (que ya tienen el caché disponible)
       setEcgs(imagenes);
 
       // Calcular estadísticas basadas en pacientes únicos, no en total de imágenes
-      const pacientesUnicos = new Set(imagenes.map((img) => img.dni));
       const pacientesPendientes = new Set(
         imagenes
           .filter((img) => img.estado === "ENVIADA")
@@ -213,12 +258,6 @@ export default function IPRESSWorkspace() {
         totalImagenes: imagenes.length,
         pacientesUnicos: Array.from(pacientesUnicos),
         pacientesUnicosCount: pacientesUnicos.size,
-        pacientesPendientes: Array.from(pacientesPendientes),
-        pacientesPendientesCount: pacientesPendientes.size,
-        pacientesObservadas: Array.from(pacientesObservadas),
-        pacientesObservadasCount: pacientesObservadas.size,
-        pacientesAtendidas: Array.from(pacientesAtendidas),
-        pacientesAtendidasCount: pacientesAtendidas.size,
         newStats
       });
 
@@ -371,7 +410,7 @@ export default function IPRESSWorkspace() {
           {/* Dashboard Full-Width */}
           <div className="w-full">
             <MisECGsRecientes
-              ultimas3={formatECGsForRecientes(ecgs)}
+              ultimas3={formatECGsForRecientes(ecgs, pacientesCache)}
               estadisticas={{
                 total: stats.cargadas + stats.enEvaluacion + stats.observadas + (stats.atendidas || 0),
                 cargadas: stats.cargadas,
