@@ -6,7 +6,6 @@ import UploadFormWrapper from "../../../../components/teleecgs/UploadFormWrapper
 import MisECGsRecientes from "../../../../components/teleecgs/MisECGsRecientes";
 import RegistroPacientes from "./RegistroPacientes";
 import TeleECGEstadisticas from "./TeleECGEstadisticas";
-import TeleEKGBreadcrumb from "../../../../components/teleecgs/TeleEKGBreadcrumb";
 import teleecgService from "../../../../services/teleecgService";
 import { getEstadoClasses } from "../../../../config/designSystem";
 
@@ -197,9 +196,6 @@ export default function IPRESSWorkspace() {
             </p>
           </div>
 
-          {/* Breadcrumb */}
-          <TeleEKGBreadcrumb />
-
           {/* Split View Container */}
           <div className="grid grid-cols-[40%_60%] gap-6">
             {/* Panel Izquierdo - Upload Form (mejorado con UploadFormWrapper) */}
@@ -246,9 +242,6 @@ export default function IPRESSWorkspace() {
               Sube y gestiona tus imágenes ECG
             </p>
           </div>
-
-          {/* Breadcrumb */}
-          <TeleEKGBreadcrumb />
 
           {/* Stacked Layout: Upload + Tabla */}
           <div className="space-y-6">
@@ -350,9 +343,6 @@ export default function IPRESSWorkspace() {
             Sube y gestiona tus imágenes ECG
           </p>
         </div>
-
-        {/* Breadcrumb */}
-        <TeleEKGBreadcrumb />
 
         {/* Manual Tabs Container */}
         <div className="bg-white rounded-lg shadow-lg overflow-hidden">
