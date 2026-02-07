@@ -2,11 +2,14 @@ package com.styp.cenate.service.teleekgs;
 
 import com.styp.cenate.dto.teleekgs.*;
 import com.styp.cenate.model.*;
+import com.styp.cenate.model.bolsas.SolicitudBolsa;
 import com.styp.cenate.repository.TeleECGAuditoriaRepository;
 import com.styp.cenate.repository.TeleECGImagenRepository;
 import com.styp.cenate.repository.UsuarioRepository;
 import com.styp.cenate.repository.IpressRepository;
 import com.styp.cenate.repository.AseguradoRepository;
+import com.styp.cenate.repository.bolsas.SolicitudBolsaRepository;
+import com.styp.cenate.repository.TipoBolsaRepository;
 import com.styp.cenate.service.email.EmailService;
 import com.styp.cenate.service.auditlog.AuditLogService;
 import com.styp.cenate.service.storage.FileStorageService;
@@ -74,6 +77,12 @@ public class TeleECGService {
 
     @Autowired
     private TeleECGEstadoTransformer estadoTransformer;
+
+    @Autowired
+    private SolicitudBolsaRepository solicitudBolsaRepository;
+
+    @Autowired
+    private TipoBolsaRepository tipoBolsaRepository;
 
     /**
      * Subir nueva imagen ECG
@@ -179,6 +188,15 @@ public class TeleECGService {
 
         imagen = teleECGImagenRepository.save(imagen);
         log.info("✅ Imagen registrada en BD: ID={}", imagen.getIdImagen());
+
+        // 6.5. 🆕 v1.58.0: Crear bolsa automática en dim_solicitud_bolsa para CENATE
+        try {
+            crearBolsaTeleECG(imagen, aseguradoVerificacion.get(), ipressOrigen);
+            log.info("✅ Bolsa TeleECG creada automáticamente para paciente {}", imagen.getNumDocPaciente());
+        } catch (Exception e) {
+            log.error("⚠️ Error creando bolsa TeleECG (continuando): {}", e.getMessage(), e);
+            // NO bloquear - si falla creación de bolsa, la imagen ya se guardó
+        }
 
         // 7. Registrar auditoría
         auditLogService.registrarEvento(
@@ -865,6 +883,73 @@ public class TeleECGService {
 
         log.info("✅ ECGs agrupadas: {} asegurados encontrados", resultado.size());
         return resultado;
+    }
+
+    /**
+     * 🆕 v1.58.0: Crear bolsa automática en dim_solicitud_bolsa para CENATE
+     * Permite que coordinadores/médicos vean el ECG en su bandeja de trabajo
+     */
+    @Transactional
+    private void crearBolsaTeleECG(TeleECGImagen imagen, Asegurado asegurado, Ipress ipress) {
+        try {
+            log.info("🆕 Creando bolsa TeleECG para paciente: {}", imagen.getNumDocPaciente());
+
+            // 1. Obtener tipo de bolsa TELEECG
+            TipoBolsa tipoBolsa = tipoBolsaRepository.findByCodTipoBolsa("BOLSA_TELEECG")
+                .orElseThrow(() -> new RuntimeException("Tipo de bolsa TELEECG no encontrado. Ejecutar migración V4_0_0"));
+
+            // 2. Generar número único de solicitud
+            String numeroSolicitud = "TEL-" + System.currentTimeMillis();
+
+            // 3. Obtener coordinador responsable del IPRESS (si existe)
+            Long responsableGestoraId = null;
+            try {
+                var coordsOpt = usuarioRepository.findByCodIpressAndRol(ipress.getCodIpress(), "COORDINADOR_GESTION_CITAS");
+                if (coordsOpt.isPresent()) {
+                    responsableGestoraId = coordsOpt.get().getId();
+                }
+            } catch (Exception e) {
+                log.warn("⚠️ No se encontró coordinador para IPRESS: {}", ipress.getCodIpress());
+            }
+
+            // 4. Crear bolsa (estado PENDIENTE)
+            SolicitudBolsa bolsa = SolicitudBolsa.builder()
+                .numeroSolicitud(numeroSolicitud)
+                .pacienteId(asegurado.getPkAsegurado())
+                .pacienteDni(asegurado.getDocPaciente())
+                .pacienteNombre(asegurado.getNombreCompleto() != null ? asegurado.getNombreCompleto() :
+                    (asegurado.getApellidosNombres() != null ? asegurado.getApellidosNombres() : "N/A"))
+                .idBolsa(tipoBolsa.getIdTipoBolsa())
+                .idServicio(1L) // Servicio genérico para TeleECG
+                .codigoAdscripcion(ipress.getCodIpress())
+                .idIpress(ipress.getIdIpress())
+                .estado("PENDIENTE")
+                .estadoGestionCitasId(1L) // PENDIENTE
+                .responsableGestoraId(responsableGestoraId)
+                .activo(true)
+                .build();
+
+            // 5. Guardar referencia a imagen TeleECG (nuevo campo v4.0.0)
+            // bolsa.setIdTeleecgImagen(imagen.getIdImagen()); // Si la columna existe
+
+            solicitudBolsaRepository.save(bolsa);
+            log.info("✅ Bolsa TeleECG creada: ID={}, DNI={}", bolsa.getIdSolicitud(), imagen.getNumDocPaciente());
+
+            // Auditoría
+            auditLogService.registrarEvento(
+                "SYSTEM",
+                "CREATE_BOLSA_TELEECG",
+                "TELEEKGS",
+                String.format("Bolsa TeleECG creada - Solicitud: %s, Paciente: %s",
+                    numeroSolicitud, imagen.getNumDocPaciente()),
+                "INFO",
+                "SUCCESS"
+            );
+
+        } catch (Exception e) {
+            log.error("❌ Error creando bolsa TeleECG: {}", e.getMessage(), e);
+            throw new RuntimeException("Error creando bolsa automática: " + e.getMessage(), e);
+        }
     }
 
     /**

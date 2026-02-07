@@ -3,8 +3,10 @@ package com.styp.cenate.api.gestionpaciente;
 import com.styp.cenate.dto.GestionPacienteDTO;
 import com.styp.cenate.dto.AtenderPacienteRequest;
 import com.styp.cenate.dto.EspecialidadSelectDTO;
+import com.styp.cenate.dto.teleekgs.TeleECGImagenDTO;
 import com.styp.cenate.service.gestionpaciente.IGestionPacienteService;
 import com.styp.cenate.service.gestionpaciente.AtenderPacienteService;
+import com.styp.cenate.service.teleekgs.TeleECGService;
 import com.styp.cenate.repository.DimServicioEssiRepository;
 import com.styp.cenate.security.mbac.CheckMBACPermission;
 import com.styp.cenate.validation.AtenderPacienteValidator;
@@ -35,6 +37,7 @@ public class GestionPacienteController {
     private final AtenderPacienteService atenderPacienteService;
     private final DimServicioEssiRepository servicioEssiRepository;
     private final AtenderPacienteValidator atenderPacienteValidator;
+    private final TeleECGService teleECGService;
 
     // ========================================================================
     // CRUD Básico
@@ -281,5 +284,63 @@ public class GestionPacienteController {
             .toList();
 
         return ResponseEntity.ok(especialidades);
+    }
+
+    // ========================================================================
+    // v1.58.0: TeleECG - Panel de ECGs para coordinadores/médicos
+    // ========================================================================
+
+    @GetMapping("/teleecgs")
+    @CheckMBACPermission(pagina = "/citas/gestion-asegurado", accion = "ver", mensajeDenegado = "No tiene permiso para ver ECGs")
+    public ResponseEntity<Map<String, Object>> obtenerECGs(
+            @RequestParam(required = false) String numDoc,
+            @RequestParam(required = false) String estado,
+            @RequestParam(required = false, defaultValue = "0") int page,
+            @RequestParam(required = false, defaultValue = "20") int size
+    ) {
+        log.info("GET /api/gestion-pacientes/teleecgs - Listando ECGs para coordinador (DNI: {}, Estado: {})", numDoc, estado);
+
+        org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(page, size);
+        var imagenes = teleECGService.listarImagenes(numDoc, estado, null, null, null, pageable);
+
+        return ResponseEntity.ok(Map.of(
+            "totalElements", imagenes.getTotalElements(),
+            "totalPages", imagenes.getTotalPages(),
+            "currentPage", page,
+            "content", imagenes.getContent()
+        ));
+    }
+
+    @GetMapping("/teleecgs/{idImagen}")
+    @CheckMBACPermission(pagina = "/citas/gestion-asegurado", accion = "ver", mensajeDenegado = "No tiene permiso para ver ECG")
+    public ResponseEntity<TeleECGImagenDTO> obtenerECGDetalle(
+            @PathVariable @Min(1) Long idImagen
+    ) {
+        log.info("GET /api/gestion-pacientes/teleecgs/{} - Obteniendo detalles ECG", idImagen);
+
+        TeleECGImagenDTO ecg = teleECGService.obtenerDetallesImagen(idImagen, null, null);
+        return ResponseEntity.ok(ecg);
+    }
+
+    @PutMapping("/teleecgs/{idImagen}/atender")
+    @CheckMBACPermission(pagina = "/citas/gestion-asegurado", accion = "editar", mensajeDenegado = "No tiene permiso para atender ECGs")
+    public ResponseEntity<Map<String, String>> atenderECG(
+            @PathVariable @Min(1) Long idImagen,
+            @RequestBody @Valid AtenderPacienteRequest request
+    ) {
+        log.info("PUT /api/gestion-pacientes/teleecgs/{}/atender - Atendiendo ECG con especialidad: {}",
+            idImagen, request.getInterconsultaEspecialidad());
+
+        // Reutilizar servicio de atención existente
+        String especialidad = request.getInterconsultaEspecialidad() != null
+            ? request.getInterconsultaEspecialidad()
+            : "General";
+
+        atenderPacienteService.atenderPaciente(idImagen, especialidad, request);
+
+        return ResponseEntity.ok(Map.of(
+            "mensaje", "ECG atendido correctamente",
+            "imagenId", idImagen.toString()
+        ));
     }
 }
