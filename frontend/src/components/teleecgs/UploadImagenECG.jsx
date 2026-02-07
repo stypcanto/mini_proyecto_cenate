@@ -480,7 +480,11 @@ export default function UploadImagenEKG({ onSuccess, onUploadSuccess, isWorkspac
   }
 
   return (
-    <div className="bg-white rounded-xl shadow-2xl overflow-hidden flex flex-col h-screen xl:h-auto xl:w-[850px] xl:fixed xl:inset-0 xl:m-auto xl:max-h-[85vh]">
+    <div className={`bg-white rounded-xl shadow-2xl overflow-hidden flex flex-col h-screen ${
+      isWorkspace
+        ? 'xl:h-auto xl:w-auto' // Workspace: adaptarse al contenedor parent
+        : 'xl:h-auto xl:w-[850px] xl:fixed xl:inset-0 xl:m-auto xl:max-h-[85vh]' // Standalone: modal centrado
+    }`}>
       {/* Header Institucional - Azul CENATE (Desktop Solo) */}
       <div className="bg-emerald-600 md:bg-gradient-to-r md:from-emerald-600 md:to-teal-700 xl:bg-blue-900 px-6 py-4 xl:py-3 flex items-center justify-between relative">
         <div className="flex items-center gap-2.5">
