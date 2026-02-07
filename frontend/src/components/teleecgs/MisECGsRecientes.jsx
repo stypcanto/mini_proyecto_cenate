@@ -21,6 +21,7 @@ import {
   Search,
   X,
   Calendar,
+  BarChart3,
 } from 'lucide-react';
 import { COLORS, MEDICAL_PALETTE } from '../../config/designSystem';
 import toast from 'react-hot-toast';
@@ -130,7 +131,7 @@ export default function MisECGsRecientes({
 
         {/* Grid responsive - Professional Stats Cards Compact */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-          {/* Cargadas - Verde SATURADO (Impar - Oscuro) */}
+          {/* Total - Verde SATURADO (Par - Luz) */}
           <div className="relative overflow-hidden rounded-lg bg-gradient-to-br from-emerald-500 to-emerald-600 border border-emerald-600 p-4 shadow-md hover:shadow-xl transition-all duration-300 hover:scale-105">
             {/* Background decorativo */}
             <div className="absolute top-0 right-0 w-16 h-16 bg-white/10 rounded-full -mr-8 -mt-8" />
@@ -139,25 +140,25 @@ export default function MisECGsRecientes({
               {/* Icono */}
               <div className="mb-2.5">
                 <div className="inline-flex p-2 bg-white/20 rounded-lg">
-                  <CloudUpload className="w-5 h-5 text-white" strokeWidth={2.5} />
+                  <BarChart3 className="w-5 h-5 text-white" strokeWidth={2.5} />
                 </div>
               </div>
 
               {/* Número */}
               <div className="mb-1.5">
                 <span className="text-3xl font-bold text-white">
-                  {estadisticas.cargadas}
+                  {estadisticas.total}
                 </span>
               </div>
 
               {/* Etiqueta */}
               <span className="text-xs font-semibold text-white/90">
-                Cargados
+                Total
               </span>
             </div>
           </div>
 
-          {/* En Evaluación - Gris Oscuro/Negro SATURADO */}
+          {/* Pendiente - Gris Oscuro/Negro SATURADO */}
           <div className="relative overflow-hidden rounded-lg bg-gradient-to-br from-slate-700 to-slate-800 border border-slate-800 p-4 shadow-md hover:shadow-xl transition-all duration-300 hover:scale-105">
             {/* Background decorativo */}
             <div className="absolute top-0 right-0 w-16 h-16 bg-white/10 rounded-full -mr-8 -mt-8" />
@@ -173,13 +174,13 @@ export default function MisECGsRecientes({
               {/* Número */}
               <div className="mb-1.5">
                 <span className="text-3xl font-bold text-white">
-                  {estadisticas.enEvaluacion}
+                  {estadisticas.cargadas}
                 </span>
               </div>
 
               {/* Etiqueta */}
               <span className="text-xs font-semibold text-white/90">
-                En Evaluación
+                Pendiente
               </span>
             </div>
           </div>
@@ -411,7 +412,7 @@ export default function MisECGsRecientes({
                               : 'bg-gray-100 text-gray-900'
                           }`}
                         >
-                          {carga.estado === 'ENVIADA' ? '📥 Cargada' : carga.estado === 'OBSERVADA' ? '👁️ Observada' : carga.estado === 'ATENDIDA' ? '✅ Atendida' : carga.estado}
+                          {carga.estado === 'ENVIADA' ? '⏳ Pendiente' : carga.estado === 'OBSERVADA' ? '👁️ Observada' : carga.estado === 'ATENDIDA' ? '✅ Atendida' : carga.estado}
                         </span>
                       </td>
 

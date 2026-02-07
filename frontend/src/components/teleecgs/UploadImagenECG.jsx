@@ -517,13 +517,13 @@ export default function UploadImagenEKG({ onSuccess, onUploadSuccess, isWorkspac
         ? 'xl:h-auto xl:w-auto' // Workspace: adaptarse al contenedor parent
         : 'xl:h-auto xl:w-[850px] xl:fixed xl:inset-0 xl:m-auto xl:max-h-[85vh]' // Standalone: modal centrado
     }`}>
-      {/* Header Institucional - Compacto */}
-      <div className="bg-gradient-to-r from-blue-900 to-blue-800 px-6 py-3 flex items-center gap-3 relative">
-        <div className="bg-white/15 p-2 rounded-lg">
+      {/* Header Institucional - Más alto */}
+      <div className="bg-gradient-to-r from-blue-900 to-blue-800 px-6 py-5 flex items-center gap-3 relative">
+        <div className="bg-white/15 p-2.5 rounded-lg">
           <Heart className="w-5 h-5 text-white" />
         </div>
         <div>
-          <h2 className="text-sm font-bold text-white">Cargar Electrocardiogramas</h2>
+          <h2 className="text-base font-bold text-white">Cargar Electrocardiogramas</h2>
           <p className="text-blue-100 text-xs font-medium">CENATE - Centro Nacional de Telemedicina</p>
         </div>
       </div>
@@ -544,7 +544,7 @@ export default function UploadImagenEKG({ onSuccess, onUploadSuccess, isWorkspac
         )}
 
         {/* Section 1: Patient Information */}
-        <div className={`rounded-lg border p-4 transition-all duration-200 ${
+        <div className={`rounded-lg border p-3 transition-all duration-200 ${
           esUrgente
             ? 'bg-red-50 border-red-900/20'
             : 'bg-gray-50 border-blue-900/20'
@@ -553,7 +553,7 @@ export default function UploadImagenEKG({ onSuccess, onUploadSuccess, isWorkspac
           <button
             type="button"
             onClick={() => setExpandPatientInfo(!expandPatientInfo)}
-            className={`w-full flex items-center justify-between mb-3 ${
+            className={`w-full flex items-center justify-between mb-2 ${
               esUrgente ? 'text-red-900' : 'text-blue-900'
             }`}
             title={expandPatientInfo ? "Ocultar" : "Expandir"}
@@ -568,12 +568,11 @@ export default function UploadImagenEKG({ onSuccess, onUploadSuccess, isWorkspac
           {expandPatientInfo && (
             <>
               {/* Toggle de Urgencia - Compacto */}
-              <div className="mb-3 flex items-center justify-between p-3 bg-white rounded-lg border border-gray-200">
+              <div className="mb-2 flex items-center justify-between p-2.5 bg-white rounded-lg border border-gray-200">
                 <div className="flex items-center gap-2">
-                  <Heart className={`w-4 h-4 ${esUrgente ? 'text-red-600' : 'text-gray-400'}`} />
-                  <div className="flex-1">
-                    <p className="font-semibold text-gray-900 text-xs">¿Urgente?</p>
-                    <p className="text-xs text-gray-600">Prioridad</p>
+                  <Heart className={`w-4 h-4 flex-shrink-0 ${esUrgente ? 'text-red-600' : 'text-gray-400'}`} />
+                  <div>
+                    <p className="font-semibold text-gray-900 text-xs leading-tight">¿Urgente?</p>
                   </div>
                 </div>
                 <button
@@ -605,7 +604,7 @@ export default function UploadImagenEKG({ onSuccess, onUploadSuccess, isWorkspac
                     placeholder="12345678"
                     maxLength="8"
                     disabled={searchingPaciente}
-                    className="w-full px-3 py-3 border-2 border-blue-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent text-2xl font-bold text-center text-blue-900 placeholder:text-blue-200 transition-all disabled:bg-gray-100 disabled:opacity-60"
+                    className="w-full px-3 py-3 border-2 border-blue-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent text-lg font-bold text-center text-blue-900 placeholder:text-blue-200 transition-all disabled:bg-gray-100 disabled:opacity-60"
                   />
                   {searchingPaciente && <Loader className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 animate-spin text-blue-600" />}
                   {pacienteEncontrado && !searchingPaciente && <CheckCircle className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-green-600" />}

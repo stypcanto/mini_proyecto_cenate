@@ -165,7 +165,7 @@ export default function IPRESSWorkspace() {
 
       // Calcular estadísticas basadas en pacientes únicos, no en total de imágenes
       const pacientesUnicos = new Set(imagenes.map((img) => img.dni));
-      const pacientesEnEvaluacion = new Set(
+      const pacientesPendientes = new Set(
         imagenes
           .filter((img) => img.estado === "ENVIADA")
           .map((img) => img.dni)
@@ -175,16 +175,21 @@ export default function IPRESSWorkspace() {
           .filter((img) => img.estado === "OBSERVADA")
           .map((img) => img.dni)
       );
+      const pacientesAtendidas = new Set(
+        imagenes
+          .filter((img) => img.estado === "ATENDIDA")
+          .map((img) => img.dni)
+      );
 
       const newStats = {
-        // Para MisECGsRecientes - Pacientes únicos
+        // Para MisECGsRecientes - Pacientes únicos por estado
+        total: pacientesPendientes.size + pacientesObservadas.size + pacientesAtendidas.size,  // Total = Pendiente + Observada + Atendida
         cargadas: pacientesUnicos.size,        // Pacientes con imágenes cargadas
-        enEvaluacion: pacientesEnEvaluacion.size,  // Pacientes con imágenes en evaluación
+        enEvaluacion: pacientesPendientes.size,  // Pacientes PENDIENTES
         observadas: pacientesObservadas.size,  // Pacientes con observaciones
+        atendidas: pacientesAtendidas.size,    // Pacientes atendidas
         // Para tablet/mobile stats - Por compatibilidad
-        total: pacientesUnicos.size,           // Total de pacientes únicos
-        enviadas: pacientesEnEvaluacion.size,  // Pacientes con imágenes en ENVIADA
-        atendidas: imagenes.filter((img) => img.estado === "ATENDIDA").length,  // Total de imágenes atendidas
+        enviadas: pacientesPendientes.size,  // Pacientes con imágenes en ENVIADA
       };
 
       // 🔍 Debug logging
@@ -192,10 +197,12 @@ export default function IPRESSWorkspace() {
         totalImagenes: imagenes.length,
         pacientesUnicos: Array.from(pacientesUnicos),
         pacientesUnicosCount: pacientesUnicos.size,
-        pacientesEnEvaluacion: Array.from(pacientesEnEvaluacion),
-        pacientesEnEvaluacionCount: pacientesEnEvaluacion.size,
+        pacientesPendientes: Array.from(pacientesPendientes),
+        pacientesPendientesCount: pacientesPendientes.size,
         pacientesObservadas: Array.from(pacientesObservadas),
         pacientesObservadasCount: pacientesObservadas.size,
+        pacientesAtendidas: Array.from(pacientesAtendidas),
+        pacientesAtendidasCount: pacientesAtendidas.size,
         newStats
       });
 
@@ -378,12 +385,13 @@ export default function IPRESSWorkspace() {
         {showUploadModal && (
           <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
             <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto relative flex flex-col">
-              {/* Botón cerrar - esquina superior derecha */}
+              {/* Botón cerrar - Círculo celeste */}
               <button
                 onClick={() => setShowUploadModal(false)}
-                className="absolute top-4 right-4 p-2 hover:bg-gray-100 rounded-lg transition-colors z-10"
+                className="absolute top-3 right-3 w-10 h-10 rounded-full bg-blue-100 hover:bg-blue-200 flex items-center justify-center transition-all duration-200 shadow-md hover:shadow-lg z-10 hover:scale-110"
+                title="Cerrar modal"
               >
-                <X className="w-6 h-6 text-gray-600" />
+                <X className="w-5 h-5 text-blue-600" />
               </button>
 
               {/* Contenido del modal - sin padding superior para header ajustado */}

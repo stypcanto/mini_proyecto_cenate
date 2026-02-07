@@ -129,8 +129,8 @@ const teleecgService = {
             nombresPaciente: imagen.nombres_paciente || imagen.nombresPaciente || asegurado.nombresPaciente,
             apellidosPaciente: imagen.apellidos_paciente || imagen.apellidosPaciente || asegurado.apellidosPaciente,
             // Copiar género y edad del asegurado (nivel padre)
-            generoPaciente: imagen.genero_paciente || imagen.generoPaciente || asegurado.generoPaciente,
-            edadPaciente: imagen.edad_paciente || imagen.edadPaciente || asegurado.edadPaciente,
+            generoPaciente: imagen.genero_paciente || imagen.generoPaciente || asegurado.genero_paciente,
+            edadPaciente: imagen.edad_paciente || imagen.edadPaciente || asegurado.edad_paciente,
           });
         });
       });
