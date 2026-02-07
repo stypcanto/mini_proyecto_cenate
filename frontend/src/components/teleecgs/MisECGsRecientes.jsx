@@ -164,10 +164,10 @@ export default function MisECGsRecientes({
                       )}
                     </div>
 
-                    {/* Botón "Ver" - Abre en nueva pestaña */}
+                    {/* Botón "Ver" - Abre en nueva pestaña (ruta accesible para rol actual) */}
                     <button
                       onClick={() =>
-                        window.open(`/teleecg/recibidas?dni=${carga.dni}`, '_blank', 'noopener,noreferrer')
+                        window.open(`/teleekgs/listar?dni=${carga.dni}`, '_blank', 'noopener,noreferrer')
                       }
                       className="flex-shrink-0 p-2 hover:bg-blue-100 rounded-lg
                         transition-colors duration-200"
@@ -193,13 +193,14 @@ export default function MisECGsRecientes({
 
       {/* ==================== BOTONES DE ACCIÓN ==================== */}
       <div className="flex gap-2">
-        {/* Ver Registro Completo - ABRE EN NUEVA PESTAÑA */}
+        {/* Ver Registro Completo - ABRE EN NUEVA PESTAÑA (ruta accesible para rol actual) */}
         <button
           onClick={onVerRegistro}
           className="flex-1 px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white
             rounded-lg font-semibold text-sm transition-all duration-200
             flex items-center justify-center gap-2 shadow-sm hover:shadow-md
             active:translate-y-0.5"
+          title="Abrir registro completo de EKGs en nueva pestaña"
         >
           <ExternalLink className="w-4 h-4" />
           Ver Registro Completo ↗

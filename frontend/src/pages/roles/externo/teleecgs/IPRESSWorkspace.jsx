@@ -173,11 +173,11 @@ export default function IPRESSWorkspace() {
   };
 
   /**
-   * Helper: Open full registry in new tab
+   * Helper: Open full registry in new tab (ruta accesible para rol actual)
    */
   const handleVerRegistroCompleto = () => {
-    window.open("/teleecg/recibidas", "_blank", "noopener,noreferrer");
-    toast.success("Abriendo registro completo...");
+    window.open("/teleekgs/listar", "_blank", "noopener,noreferrer");
+    toast.success("Abriendo registro completo de EKGs...");
   };
 
   // =======================================
