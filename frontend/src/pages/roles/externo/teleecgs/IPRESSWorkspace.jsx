@@ -237,9 +237,34 @@ export default function IPRESSWorkspace() {
 
       console.log(`💾 [Enriquecimiento Final] ${imagenesEnriquecidas.length} imágenes enriquecidas con nombres completos`);
 
-      // ✅ SEGUNDO: Enriquecer formato para tabla
-      const ecgsFormateados = formatECGsForRecientes(imagenesEnriquecidas, newCache);
-      console.log(`✅ [Formatos] ${ecgsFormateados.length} imágenes formateadas para tabla`);
+      // ✅ SEGUNDO: Preparar datos para tabla (deduplicar por DNI, tomar últimas 3)
+      const porDni = {};
+      imagenesEnriquecidas.forEach(img => {
+        const dni = img.dni || img.numDocPaciente;
+        if (dni) {
+          if (!porDni[dni]) {
+            porDni[dni] = [];
+          }
+          porDni[dni].push(img);
+        }
+      });
+
+      const deduplicados = {};
+      imagenesEnriquecidas.forEach(img => {
+        const dni = img.dni || img.numDocPaciente;
+        if (dni && !deduplicados[dni]) {
+          deduplicados[dni] = img;
+        }
+      });
+
+      // Mapear a formato de tabla
+      const ecgsFormateados = Object.entries(deduplicados).slice(0, 3).map(([dni, img]) => ({
+        ...img,
+        nombrePaciente: img.nombreCompleto || img.nombresPaciente || img.nombrePaciente || "Sin datos",
+        cantidadImagenes: porDni[dni]?.length || 0,
+      }));
+
+      console.log(`✅ [Formatos] ${ecgsFormateados.length} imágenes formateadas. Primera:`, ecgsFormateados[0]?.nombrePaciente);
 
       // ✅ TERCERO: Actualizar estados
       setPacientesCache(newCache);

@@ -22,6 +22,9 @@ import {
   X,
   Calendar,
   BarChart3,
+  Download,
+  Info,
+  Eye as EyeIcon,
 } from 'lucide-react';
 import { COLORS, MEDICAL_PALETTE } from '../../config/designSystem';
 import toast from 'react-hot-toast';
@@ -387,113 +390,155 @@ export default function MisECGsRecientes({
                 {/* Header */}
                 <thead className="bg-gradient-to-r from-slate-700 to-slate-800 text-white">
                   <tr>
-                    <th className="px-4 py-3 text-left font-bold whitespace-nowrap">Fecha Carga</th>
-                    <th className="px-4 py-3 text-left font-bold whitespace-nowrap">DNI</th>
-                    <th className="px-4 py-3 text-left font-bold whitespace-nowrap">Paciente</th>
-                    <th className="px-4 py-3 text-left font-bold whitespace-nowrap">Teléfono</th>
-                    <th className="px-4 py-3 text-left font-bold whitespace-nowrap">Género</th>
-                    <th className="px-4 py-3 text-left font-bold whitespace-nowrap">Edad</th>
-                    <th className="px-4 py-3 text-center font-bold whitespace-nowrap">Prioridad</th>
-                    <th className="px-4 py-3 text-left font-bold whitespace-nowrap">Estado</th>
-                    <th className="px-4 py-3 text-center font-bold whitespace-nowrap">Imágenes</th>
+                    <th className="px-3 py-2 text-left font-bold whitespace-nowrap text-xs">Hora</th>
+                    <th className="px-3 py-2 text-left font-bold whitespace-nowrap text-xs">DNI</th>
+                    <th className="px-3 py-2 text-left font-bold whitespace-nowrap text-xs">Paciente</th>
+                    <th className="px-3 py-2 text-left font-bold whitespace-nowrap text-xs">Perfil</th>
+                    <th className="px-3 py-2 text-center font-bold whitespace-nowrap text-xs">Prioridad</th>
+                    <th className="px-3 py-2 text-left font-bold whitespace-nowrap text-xs">Estado</th>
+                    <th className="px-3 py-2 text-center font-bold whitespace-nowrap text-xs">Acciones</th>
                   </tr>
                 </thead>
 
                 {/* Body */}
                 <tbody>
-                  {datosFiltrados.map((carga, idx) => (
-                    <tr
-                      key={idx}
-                      className="border-b border-gray-200 hover:bg-blue-50 transition-colors duration-150 cursor-pointer"
-                      onClick={() => onVerImagen({ dni: carga.dni, nombrePaciente: carga.nombrePaciente })}
-                    >
-                      {/* Fecha Carga */}
-                      <td className="px-4 py-3 text-gray-700">
-                        {carga.fechaEnvio ? new Date(carga.fechaEnvio).toLocaleString('es-PE', {
-                          year: 'numeric',
-                          month: '2-digit',
-                          day: '2-digit',
-                          hour: '2-digit',
-                          minute: '2-digit',
-                          hour12: true
-                        }) : '-'}
-                      </td>
+                  {datosFiltrados.map((carga, idx) => {
+                    // Formato de fecha compacto: "06/02 - 19:37"
+                    const fechaCompacta = carga.fechaEnvio
+                      ? (() => {
+                          const fecha = new Date(carga.fechaEnvio);
+                          const dia = String(fecha.getDate()).padStart(2, '0');
+                          const mes = String(fecha.getMonth() + 1).padStart(2, '0');
+                          const hora = String(fecha.getHours()).padStart(2, '0');
+                          const min = String(fecha.getMinutes()).padStart(2, '0');
+                          return `${dia}/${mes} - ${hora}:${min}`;
+                        })()
+                      : '-';
 
-                      {/* DNI */}
-                      <td className="px-4 py-3 text-gray-700">
-                        {carga.dni}
-                      </td>
+                    // Género corto para Perfil
+                    const generoCortoun = carga.genero === 'M' ? 'M' : carga.genero === 'F' ? 'F' : '-';
+                    const perfil = carga.edad && carga.edad !== '-' ? `${carga.edad} años / ${generoCortoun}` : `-`;
 
-                      {/* Nombres Completo */}
-                      <td className="px-4 py-3 text-gray-700 min-w-max" title={carga.nombrePaciente}>
-                        {carga.nombrePaciente}
-                      </td>
+                    return (
+                      <tr
+                        key={idx}
+                        className={`border-b border-gray-200 hover:bg-blue-50 transition-colors duration-150 cursor-pointer ${
+                          carga.esUrgente ? 'bg-red-50' : ''
+                        }`}
+                        onClick={() => onVerImagen({ dni: carga.dni, nombrePaciente: carga.nombrePaciente })}
+                      >
+                        {/* Hora - Formato Compacto */}
+                        <td className="px-3 py-2 text-gray-700 text-xs font-mono">
+                          {fechaCompacta}
+                        </td>
 
-                      {/* Teléfono */}
-                      <td className="px-4 py-3 text-gray-700">
-                        {carga.telefono ? (
-                          <a
-                            href={`https://wa.me/${carga.telefono.replace(/\D/g, '')}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-gray-700 hover:text-gray-900 cursor-pointer"
-                            title="Abrir WhatsApp"
-                            onClick={(e) => e.stopPropagation()}
+                        {/* DNI */}
+                        <td className="px-3 py-2 text-gray-700 text-xs font-mono">
+                          {carga.dni}
+                        </td>
+
+                        {/* Paciente - BOLD y destacado */}
+                        <td className="px-3 py-2 min-w-max" title={carga.nombrePaciente}>
+                          <div className="font-bold text-gray-900 text-sm">{carga.nombrePaciente}</div>
+                        </td>
+
+                        {/* Perfil: Edad / Género */}
+                        <td className="px-3 py-2 text-gray-700 text-xs">
+                          {perfil}
+                        </td>
+
+                        {/* Prioridad - Inteligente */}
+                        <td className="px-3 py-2 text-center">
+                          {carga.esUrgente ? (
+                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-red-500 text-white animate-pulse">
+                              🚨 Urgente
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded text-xs text-gray-600 bg-gray-100">
+                              Normal
+                            </span>
+                          )}
+                        </td>
+
+                        {/* Estado - Distinto */}
+                        <td className="px-3 py-2">
+                          <span
+                            className={`inline-flex px-2.5 py-1 rounded text-xs font-semibold whitespace-nowrap ${
+                              carga.estado === 'ENVIADA'
+                                ? 'bg-blue-100 text-blue-800'
+                                : carga.estado === 'OBSERVADA'
+                                ? 'bg-orange-100 text-orange-800'
+                                : carga.estado === 'ATENDIDA'
+                                ? 'bg-green-100 text-green-800'
+                                : 'bg-gray-100 text-gray-800'
+                            }`}
                           >
-                            {carga.telefono}
-                          </a>
-                        ) : (
-                          <span className="text-gray-700">-</span>
-                        )}
-                      </td>
+                            {carga.estado === 'ENVIADA' ? 'Pendiente' : carga.estado === 'OBSERVADA' ? 'Observada' : carga.estado === 'ATENDIDA' ? 'Atendida' : carga.estado}
+                          </span>
+                        </td>
 
-                      {/* Género */}
-                      <td className="px-4 py-3 text-gray-700">
-                        {carga.genero === 'M' ? 'Masculino' : carga.genero === 'F' ? 'Femenino' : '-'}
-                      </td>
+                        {/* Acciones */}
+                        <td className="px-3 py-2 text-center">
+                          <div className="flex items-center justify-center gap-2">
+                            {/* Preview Eye */}
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onVerImagen({ dni: carga.dni, nombrePaciente: carga.nombrePaciente });
+                              }}
+                              className="p-1.5 rounded hover:bg-blue-100 text-blue-600 hover:text-blue-800 transition-colors"
+                              title="Ver imágenes"
+                            >
+                              <Eye className="w-4 h-4" />
+                            </button>
 
-                      {/* Edad */}
-                      <td className="px-4 py-3 text-gray-700">
-                        {carga.edad && carga.edad !== '-' ? `${carga.edad} años` : '-'}
-                      </td>
+                            {/* Download - Solo si ATENDIDA */}
+                            {carga.estado === 'ATENDIDA' && (
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  toast.success('Descarga disponible');
+                                }}
+                                className="p-1.5 rounded hover:bg-green-100 text-green-600 hover:text-green-800 transition-colors"
+                                title="Descargar informe"
+                              >
+                                <Download className="w-4 h-4" />
+                              </button>
+                            )}
 
-                      {/* Prioridad - Urgente/Normal */}
-                      <td className="px-4 py-3 text-center">
-                        <span
-                          className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold whitespace-nowrap ${
-                            carga.esUrgente
-                              ? 'bg-red-100 text-red-900'
-                              : 'bg-green-100 text-green-900'
-                          }`}
-                        >
-                          <div className={`w-2 h-2 rounded-full ${carga.esUrgente ? 'bg-red-500 animate-pulse' : 'bg-green-500'}`} />
-                          {carga.esUrgente ? '🚨 Urgente' : '✅ Normal'}
-                        </span>
-                      </td>
-
-                      {/* Estado */}
-                      <td className="px-4 py-3">
-                        <span
-                          className={`inline-flex px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap ${
-                            carga.estado === 'ENVIADA'
-                              ? 'bg-blue-100 text-blue-900'
-                              : carga.estado === 'OBSERVADA'
-                              ? 'bg-amber-100 text-amber-900'
-                              : carga.estado === 'ATENDIDA'
-                              ? 'bg-green-100 text-green-900'
-                              : 'bg-gray-100 text-gray-900'
-                          }`}
-                        >
-                          {carga.estado === 'ENVIADA' ? '⏳ Pendiente' : carga.estado === 'OBSERVADA' ? '👁️ Observada' : carga.estado === 'ATENDIDA' ? '✅ Atendida' : carga.estado}
-                        </span>
-                      </td>
-
-                      {/* Contador Imágenes */}
-                      <td className="px-4 py-3 text-center font-bold text-slate-700">
-                        {carga.cantidadImagenes || 0}
-                      </td>
-                    </tr>
-                  ))}
+                            {/* Info - Para ver teléfono oculto */}
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                if (carga.telefono && carga.telefono !== '-') {
+                                  toast((t) => (
+                                    <div className="flex items-center gap-3">
+                                      <span>📱 {carga.telefono}</span>
+                                      <a
+                                        href={`https://wa.me/${carga.telefono.replace(/\D/g, '')}`}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="text-green-600 hover:text-green-800 font-bold"
+                                        onClick={() => toast.dismiss(t.id)}
+                                      >
+                                        WhatsApp
+                                      </a>
+                                    </div>
+                                  ), { duration: 4000 });
+                                } else {
+                                  toast.error('No hay teléfono disponible');
+                                }
+                              }}
+                              className="p-1.5 rounded hover:bg-gray-100 text-gray-600 hover:text-gray-800 transition-colors"
+                              title="Ver teléfono"
+                            >
+                              <Info className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
