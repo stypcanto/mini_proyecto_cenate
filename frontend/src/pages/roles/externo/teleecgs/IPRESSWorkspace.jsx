@@ -40,10 +40,10 @@ function formatECGsForRecientes(ecgs) {
   return Object.entries(deduplicados).slice(0, 3).map(([dni, img]) => ({
     idImagen: img.idImagen || img.id,  // ✅ NECESARIO para cargar imagen
     nombrePaciente: (() => {
-      // Combinar nombres y apellidos completos
-      const apellidos = img.apellidos || img.apellido || '';
+      // Combinar nombres y apellidos: NOMBRE APELLIDO
       const nombres = img.nombres || img.nombresPaciente || img.nombrePaciente || '';
-      const nombreCompleto = [apellidos, nombres].filter(Boolean).join(' ');
+      const apellidos = img.apellidos || img.apellido || '';
+      const nombreCompleto = [nombres, apellidos].filter(Boolean).join(' ');
       return nombreCompleto || "Sin datos";
     })(),
     dni: dni || "N/A",
