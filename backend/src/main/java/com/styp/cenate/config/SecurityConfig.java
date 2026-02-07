@@ -211,11 +211,12 @@ public class SecurityConfig {
                                                 // =====================================================
                                                 // 🫀 TELE-ECG (Electrocardiogramas)
                                                 // =====================================================
-                                                // Especificar métodos explícitamente para POST/PUT/DELETE
-                                                .requestMatchers(HttpMethod.GET, "/api/teleekgs/**").authenticated()
-                                                .requestMatchers(HttpMethod.POST, "/api/teleekgs/**").authenticated()
-                                                .requestMatchers(HttpMethod.PUT, "/api/teleekgs/**").authenticated()
-                                                .requestMatchers(HttpMethod.DELETE, "/api/teleekgs/**").authenticated()
+                                                // ✅ IMPORTANT: Include base path "/api/teleekgs" explicitly
+                                                // because "/api/teleekgs/**" doesn't match "/api/teleekgs" without subpath
+                                                .requestMatchers(HttpMethod.GET, "/api/teleekgs", "/api/teleekgs/**").authenticated()
+                                                .requestMatchers(HttpMethod.POST, "/api/teleekgs", "/api/teleekgs/**").authenticated()
+                                                .requestMatchers(HttpMethod.PUT, "/api/teleekgs", "/api/teleekgs/**").authenticated()
+                                                .requestMatchers(HttpMethod.DELETE, "/api/teleekgs", "/api/teleekgs/**").authenticated()
 
                                                 // =====================================================
                                                 // 🧩 ADMINISTRACIÓN GENERAL

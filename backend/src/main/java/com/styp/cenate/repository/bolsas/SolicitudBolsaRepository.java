@@ -199,7 +199,7 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
           AND (:red IS NULL OR dr.desc_red = :red)
           AND (:ipress IS NULL OR di.desc_ipress = :ipress)
           AND (:especialidad IS NULL OR LOWER(COALESCE(sb.especialidad, '')) LIKE LOWER(CONCAT('%', :especialidad, '%')))
-          AND (:estadoCodigo IS NULL OR UPPER(COALESCE(sb.estado, '')) = UPPER(:estadoCodigo))
+          AND (:estadoCodigo IS NULL OR UPPER(COALESCE(deg.cod_estado_cita, '')) = UPPER(:estadoCodigo))
           AND (:tipoCita IS NULL OR UPPER(COALESCE(sb.tipo_cita, 'N/A')) = UPPER(:tipoCita))
           AND (CASE
                WHEN :asignacion IS NULL THEN 1=1
@@ -225,6 +225,7 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
 
     /**
      * Cuenta solicitudes con filtros aplicados (v2.6.0 + v1.42.0: asignación)
+     * ✅ v1.54.4: Fixed estado filter to use deg.cod_estado_cita instead of sb.estado
      * Se usa para calcular el total de páginas en filtrado
      */
     @Query(value = """
@@ -234,13 +235,14 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
         LEFT JOIN dim_ipress di ON sb.id_ipress = di.id_ipress
         LEFT JOIN dim_red dr ON di.id_red = dr.id_red
         LEFT JOIN dim_macroregion dm ON dr.id_macro = dm.id_macro
+        LEFT JOIN dim_estados_gestion_citas deg ON sb.estado_gestion_citas_id = deg.id_estado_cita
         WHERE sb.activo = true
           AND (:bolsaNombre IS NULL OR LOWER(COALESCE(tb.desc_tipo_bolsa, '')) LIKE LOWER(CONCAT('%', :bolsaNombre, '%')))
           AND (:macrorregion IS NULL OR dm.desc_macro = :macrorregion)
           AND (:red IS NULL OR dr.desc_red = :red)
           AND (:ipress IS NULL OR di.desc_ipress = :ipress)
           AND (:especialidad IS NULL OR LOWER(COALESCE(sb.especialidad, '')) LIKE LOWER(CONCAT('%', :especialidad, '%')))
-          AND (:estadoCodigo IS NULL OR UPPER(COALESCE(sb.estado, '')) = UPPER(:estadoCodigo))
+          AND (:estadoCodigo IS NULL OR UPPER(COALESCE(deg.cod_estado_cita, '')) = UPPER(:estadoCodigo))
           AND (:tipoCita IS NULL OR UPPER(COALESCE(sb.tipo_cita, 'N/A')) = UPPER(:tipoCita))
           AND (CASE
                WHEN :asignacion IS NULL THEN 1=1
@@ -466,27 +468,33 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
 
     /**
      * 6️⃣ KPIs generales - métricas clave de rendimiento
+     * ✅ v1.54.4: Fixed estado descriptions to match actual database values:
+     *    - 'ATENDIDO_IPRESS' (not 'ATENDIDO')
+     *    - 'PENDIENTE_CITA' (not 'PENDIENTE')
+     *    - 'CITADO' for "citados" metric
+     *    Removed non-existent states: 'CANCELADO', 'DERIVADO'
      */
     @Query(value = """
         SELECT
             COUNT(sb.id_solicitud) as total_solicitudes,
-            COUNT(CASE WHEN dgc.desc_estado_cita = 'ATENDIDO' THEN 1 END) as total_atendidas,
-            COUNT(CASE WHEN dgc.desc_estado_cita = 'PENDIENTE' THEN 1 END) as total_pendientes,
-            COUNT(CASE WHEN dgc.desc_estado_cita = 'CANCELADO' THEN 1 END) as total_canceladas,
-            COUNT(CASE WHEN dgc.desc_estado_cita = 'DERIVADO' THEN 1 END) as total_derivadas,
+            COUNT(CASE WHEN dgc.cod_estado_cita = 'ATENDIDO_IPRESS' THEN 1 END) as total_atendidas,
+            COUNT(CASE WHEN dgc.cod_estado_cita = 'PENDIENTE_CITA' THEN 1 END) as total_pendientes,
+            COUNT(CASE WHEN dgc.cod_estado_cita = 'CITADO' THEN 1 END) as total_citados,
+            0 as total_canceladas,
+            0 as total_derivadas,
             ROUND(
-                COUNT(CASE WHEN dgc.desc_estado_cita = 'ATENDIDO' THEN 1 END) * 100.0 /
+                COUNT(CASE WHEN dgc.cod_estado_cita = 'ATENDIDO_IPRESS' THEN 1 END) * 100.0 /
                 NULLIF(COUNT(sb.id_solicitud), 0), 2
             ) as tasa_completacion,
             ROUND(
-                COUNT(CASE WHEN dgc.desc_estado_cita = 'CANCELADO' THEN 1 END) * 100.0 /
+                COUNT(CASE WHEN dgc.cod_estado_cita IN ('SIN_VIGENCIA', 'NO_DESEA', 'NO_CONTESTA') THEN 1 END) * 100.0 /
                 NULLIF(COUNT(sb.id_solicitud), 0), 2
             ) as tasa_abandono,
             CAST(ROUND(
                 AVG(EXTRACT(EPOCH FROM (sb.fecha_actualizacion - sb.fecha_solicitud)) / 3600),
                 2
             ) AS INTEGER) as horas_promedio_general,
-            COUNT(CASE WHEN dgc.desc_estado_cita = 'PENDIENTE'
+            COUNT(CASE WHEN dgc.cod_estado_cita = 'PENDIENTE_CITA'
                 AND sb.fecha_solicitud < NOW() AT TIME ZONE 'America/Lima' - INTERVAL '7 days'
                 THEN 1 END) as pendientes_vencidas
         FROM dim_solicitud_bolsa sb
