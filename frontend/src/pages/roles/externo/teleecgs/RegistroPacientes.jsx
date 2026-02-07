@@ -239,33 +239,35 @@ export default function RegistroPacientes({
         {/* ✅ Breadcrumb de navegación - Solo en modo standalone */}
         {!isWorkspace && <TeleEKGBreadcrumb />}
 
-        {/* Filtros */}
-        <div className="bg-white rounded-lg shadow-md p-6 mb-8">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            {/* Búsqueda */}
-            <div className="relative">
-              <Search className="absolute left-3 top-3 w-5 h-5 text-gray-400" />
+        {/* Filtros - Improved Layout */}
+        <div className="bg-gradient-to-r from-white to-slate-50 rounded-lg shadow-md border border-gray-200 mb-8">
+          {/* Fila 1: Búsqueda */}
+          <div className="px-6 py-4 border-b border-gray-200">
+            <div className="relative max-w-md">
+              <Search className="absolute left-3 top-3.5 w-5 h-5 text-gray-400" />
               <input
                 type="text"
-                placeholder="Buscar por DNI, nombre o apellido..."
+                placeholder="Buscar DNI, nombre..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600"
+                className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
               />
             </div>
+          </div>
 
+          {/* Fila 2: Controles */}
+          <div className="px-6 py-4 flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
             {/* Filtro de Estado */}
-            <div className="flex items-center gap-2">
-              <Filter className="w-5 h-5 text-gray-400" />
+            <div className="flex-1 min-w-[200px]">
               <select
                 value={filterEstado}
                 onChange={(e) => setFilterEstado(e.target.value)}
-                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600"
+                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm bg-white"
               >
-                <option value="TODOS">Todos los estados</option>
-                <option value="ENVIADA">Enviadas</option>
-                <option value="ATENDIDA">Atendidas</option>
-                <option value="RECHAZADA">Rechazadas</option>
+                <option value="TODOS">📊 Todos los estados</option>
+                <option value="ENVIADA">✈️ Enviadas</option>
+                <option value="ATENDIDA">✅ Atendidas</option>
+                <option value="RECHAZADA">❌ Rechazadas</option>
               </select>
             </div>
 
@@ -273,18 +275,25 @@ export default function RegistroPacientes({
             <button
               onClick={() => isWorkspace && onRefresh ? onRefresh() : cargarEKGs()}
               disabled={currentLoading}
-              className="flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-blue-400 transition-colors"
+              className="flex items-center justify-center gap-2 px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors disabled:bg-blue-400 disabled:cursor-not-allowed font-medium text-sm whitespace-nowrap"
               title="Refrescar lista de imágenes"
             >
               <RefreshCw className={`w-4 h-4 ${currentLoading ? 'animate-spin' : ''}`} />
               <span className="hidden sm:inline">Refrescar</span>
+              <span className="sm:hidden">🔄</span>
             </button>
 
             {/* Estadísticas rápidas */}
-            <div className="bg-blue-50 rounded-lg p-4">
-              <p className="text-sm text-gray-600">Total</p>
-              <p className="text-2xl font-bold text-blue-600">{agruparImagenesPorPaciente(currentEcgs).length}</p>
-              <p className="text-xs text-gray-500">{currentEcgs.length} EKG{currentEcgs.length !== 1 ? 's' : ''}</p>
+            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg px-4 py-2.5 flex items-center justify-between sm:justify-center gap-3 text-right sm:text-center">
+              <div>
+                <p className="text-xs text-gray-600 font-medium">Total pacientes</p>
+                <p className="text-lg font-bold text-blue-600">{agruparImagenesPorPaciente(currentEcgs).length}</p>
+              </div>
+              <div className="hidden sm:block w-px h-8 bg-blue-200"></div>
+              <div>
+                <p className="text-xs text-gray-600 font-medium">Total EKGs</p>
+                <p className="text-lg font-bold text-indigo-600">{currentEcgs.length}</p>
+              </div>
             </div>
           </div>
         </div>
