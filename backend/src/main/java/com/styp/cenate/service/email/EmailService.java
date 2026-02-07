@@ -503,8 +503,12 @@ public class EmailService {
     }
 
     /**
+     * ⚠️ DEPRECATED v1.55.0: Método incompleto (invocaba enviarCorreo() que no existe)
+     * TODO v1.61.0: Implementar correctamente cuando se resuelvan dependencias
+     *
      * 🆕 v1.58.2: Enviar notificación de ECG nuevo a coordinador
      */
+    /*
     @Async
     public void enviarNotificacionECGNuevo(String emailCoordinador, String nombreCoordinador,
                                            String pacienteNombre, String pacienteDni,
@@ -575,9 +579,11 @@ public class EmailService {
             </html>
             """, nombreCoordinador, urgenciaHTML, pacienteNombre, pacienteDni, ipress);
 
-        enviarCorreo(emailCoordinador, asunto, contenido);
+        // DEPRECATED: enviarCorreo() method does not exist
+        // enviarCorreo(emailCoordinador, asunto, contenido);
         log.info("📧 Notificación ECG enviada a coordinador: {}", emailCoordinador);
     }
+    */
 
     /**
      * Método de prueba para verificar conexión SMTP (síncrono)
