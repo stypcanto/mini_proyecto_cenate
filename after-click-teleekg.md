@@ -1,0 +1,129 @@
+- generic [ref=e157]:
+  - complementary [ref=e158]:
+    - generic [ref=e160]:
+      - generic [ref=e163]:
+        - img "Logo CENATE" [ref=e164]
+        - button "Colapsar menu" [ref=e165] [cursor=pointer]:
+          - img [ref=e166]
+      - navigation [ref=e168]:
+        - generic [ref=e196]:
+          - button "Gestión de Personal Externo" [ref=e197] [cursor=pointer]:
+            - generic [ref=e198]:
+              - img [ref=e199]
+              - generic [ref=e202]: Gestión de Personal Externo
+            - img [ref=e203]
+          - generic [ref=e205]:
+            - link "Bienvenida" [ref=e206] [cursor=pointer]:
+              - /url: /roles/externo/bienvenida
+              - img [ref=e207]
+              - generic [ref=e210]: Bienvenida
+            - link "Formulario de Diagnóstico" [ref=e211] [cursor=pointer]:
+              - /url: /roles/externo/formulario-diagnostico
+              - img [ref=e212]
+              - generic [ref=e215]: Formulario de Diagnóstico
+            - link "Solicitud de Turnos" [ref=e216] [cursor=pointer]:
+              - /url: /roles/externo/solicitud-turnos
+              - img [ref=e217]
+              - generic [ref=e220]: Solicitud de Turnos
+            - link "Gestión de Modalidad de Atención" [ref=e221] [cursor=pointer]:
+              - /url: /roles/externo/gestion-modalidad
+              - img [ref=e222]
+              - generic [ref=e226]: Gestión de Modalidad de Atención
+            - link "Seguimiento de Lecturas Pendientes" [ref=e227] [cursor=pointer]:
+              - /url: /roles/externo/seguimiento-lecturas
+              - img [ref=e228]
+              - generic [ref=e231]: Seguimiento de Lecturas Pendientes
+            - generic [ref=e232]:
+              - button "TELE EKG" [active] [ref=e233] [cursor=pointer]:
+                - generic [ref=e234]:
+                  - img [ref=e235]
+                  - generic [ref=e238]: TELE EKG
+                - img [ref=e338]
+              - generic [ref=e340]:
+                - link "Subir Electrocardiogramas" [ref=e341] [cursor=pointer]:
+                  - /url: /teleekgs/upload
+                  - img [ref=e342]
+                  - generic [ref=e345]: Subir Electrocardiogramas
+                - link "Registro de Pacientes" [ref=e346] [cursor=pointer]:
+                  - /url: /teleekgs/listar
+                  - img [ref=e347]
+                  - generic [ref=e352]: Registro de Pacientes
+                - link "Estadísticas" [ref=e353] [cursor=pointer]:
+                  - /url: /teleekgs/dashboard
+                  - img [ref=e354]
+                  - generic [ref=e356]: Estadísticas
+      - paragraph [ref=e171]: v1.37.4
+  - main "Contenido principal" [ref=e172]:
+    - generic [ref=e174]:
+      - button "Notificaciones" [ref=e175] [cursor=pointer]:
+        - img [ref=e176]
+      - button "J Jesus Lopez Silva INSTITUCION_EX" [ref=e180] [cursor=pointer]:
+        - generic [ref=e182]: J
+        - generic [ref=e183]:
+          - generic [ref=e184]: Jesus Lopez Silva
+          - generic [ref=e185]: INSTITUCION_EX
+        - img [ref=e186]
+    - generic [ref=e188]:
+      - generic [ref=e242]:
+        - generic [ref=e244]:
+          - heading "Menú de Navegación" [level=2] [ref=e246]
+          - navigation [ref=e247]:
+            - button "Formulario de Diagnóstico" [ref=e248] [cursor=pointer]
+            - button "Solicitud de Turnos" [ref=e249] [cursor=pointer]
+            - button "Gestión de Modalidades" [ref=e250] [cursor=pointer]
+            - button "Seguimiento de Lecturas" [ref=e251] [cursor=pointer]
+        - generic [ref=e253]:
+          - generic [ref=e254]:
+            - heading "¡Bienvenido, Jesus Lopez Silva!" [level=1] [ref=e255]
+            - paragraph [ref=e256]: Centro Nacional de Telemedicina - CENATE
+          - generic [ref=e259]:
+            - generic [ref=e260]:
+              - heading "Portal de Servicios de Telemedicina para IPRESS Consultantes" [level=2] [ref=e261]
+              - paragraph [ref=e262]: Como IPRESS externa, utiliza este portal para solicitar servicios de telemedicina, verificar el estado de tus solicitudes, informar diagnósticos situacionales y acceder a información sobre los servicios de telemedicina disponibles en CENATE.
+              - generic [ref=e263]:
+                - img [ref=e264]
+                - generic [ref=e267]: INSTITUCIÓN EXTERNA (IPRESS)
+            - img [ref=e269]
+          - generic [ref=e276]:
+            - heading "Acciones Rápidas" [level=3] [ref=e277]
+            - generic [ref=e278]:
+              - button "Formulario de Diagnóstico" [ref=e279] [cursor=pointer]:
+                - img [ref=e281]
+                - heading "Formulario de Diagnóstico" [level=4] [ref=e284]
+                - paragraph [ref=e285]: Recopila información para el diagnóstico situacional de Telesalud y realiza el requerimiento de servicios.
+              - button "Solicitud de Turnos" [ref=e286] [cursor=pointer]:
+                - generic [ref=e288]: Disponible a partir de marzo
+                - img [ref=e290]
+                - heading "Solicitud de Turnos" [level=4] [ref=e292]
+                - paragraph [ref=e293]: Solicita las especialidades médicas que requieres de CENATE para que programe médicos a atender a tus pacientes por telemedicina.
+              - button "Gestión de Modalidades" [ref=e294] [cursor=pointer]:
+                - img [ref=e296]
+                - heading "Gestión de Modalidades" [level=4] [ref=e299]
+                - paragraph [ref=e300]: "Actualiza información sobre qué atenciones recibirás desde CENATE: por teleconsultorio, por teleconsulta, o de manera mixta."
+              - button "Seguimiento de Lecturas" [ref=e301] [cursor=pointer]:
+                - img [ref=e303]
+                - heading "Seguimiento de Lecturas" [level=4] [ref=e305]
+                - paragraph [ref=e306]: Dashboard dinámico para monitorear el número de lecturas pendientes por IPRESS. Datos actualizados diariamente.
+          - generic [ref=e307]:
+            - heading "Módulos Especializados" [level=3] [ref=e308]
+            - generic [ref=e309]:
+              - button "TELE-EKG" [disabled] [ref=e310]:
+                - generic [ref=e312]: Actualmente disponible solo para PADOMI
+                - generic [ref=e313]:
+                  - img [ref=e316]
+                  - generic [ref=e318]:
+                    - heading "TELE-EKG" [level=4] [ref=e319]
+                    - paragraph [ref=e320]: Envío de electrocardiogramas a CENATE para interpretación remota por especialistas. Agiliza el diagnóstico cardiológico.
+              - button "Enlace de Videollamada Accede a la teleconsulta con CENATE a través de Zoom. Abrir en Zoom" [ref=e321] [cursor=pointer]:
+                - generic [ref=e322]:
+                  - img [ref=e325]
+                  - generic [ref=e328]:
+                    - heading "Enlace de Videollamada" [level=4] [ref=e329]
+                    - paragraph [ref=e330]: Accede a la teleconsulta con CENATE a través de Zoom.
+                    - generic [ref=e331]:
+                      - text: Abrir en Zoom
+                      - img [ref=e332]
+          - paragraph [ref=e337]: ¿Necesitas ayuda? Contacta al equipo de soporte de CENATE o revisa la documentación en tu panel.
+      - generic [ref=e193]:
+        - paragraph [ref=e194]: CENATE - Sistema de Telemedicina - EsSalud 2026
+        - paragraph [ref=e195]: v1.37.4 - Performance Optimization + Deduplicación Automática + Foto Header + SMTP EsSalud

@@ -1,0 +1,168 @@
+- generic [ref=e3]:
+  - complementary [ref=e4]:
+    - generic [ref=e6]:
+      - generic [ref=e9]:
+        - img "Logo CENATE" [ref=e10]
+        - button "Colapsar menu" [ref=e11] [cursor=pointer]:
+          - img [ref=e12]
+      - navigation [ref=e14]:
+        - generic [ref=e112]:
+          - button "Gestión de Personal Externo" [ref=e113] [cursor=pointer]:
+            - generic [ref=e114]:
+              - img [ref=e115]
+              - generic [ref=e118]: Gestión de Personal Externo
+            - img [ref=e119]
+          - generic [ref=e121]:
+            - link "Bienvenida" [ref=e122] [cursor=pointer]:
+              - /url: /roles/externo/bienvenida
+              - img [ref=e123]
+              - generic [ref=e126]: Bienvenida
+            - link "Formulario de Diagnóstico" [ref=e127] [cursor=pointer]:
+              - /url: /roles/externo/formulario-diagnostico
+              - img [ref=e128]
+              - generic [ref=e131]: Formulario de Diagnóstico
+            - link "Solicitud de Turnos" [ref=e132] [cursor=pointer]:
+              - /url: /roles/externo/solicitud-turnos
+              - img [ref=e133]
+              - generic [ref=e136]: Solicitud de Turnos
+            - link "Gestión de Modalidad de Atención" [ref=e137] [cursor=pointer]:
+              - /url: /roles/externo/gestion-modalidad
+              - img [ref=e138]
+              - generic [ref=e142]: Gestión de Modalidad de Atención
+            - link "Seguimiento de Lecturas Pendientes" [ref=e143] [cursor=pointer]:
+              - /url: /roles/externo/seguimiento-lecturas
+              - img [ref=e144]
+              - generic [ref=e147]: Seguimiento de Lecturas Pendientes
+            - generic [ref=e148]:
+              - button "TELE EKG" [ref=e149] [cursor=pointer]:
+                - generic [ref=e150]:
+                  - img [ref=e151]
+                  - generic [ref=e154]: TELE EKG
+                - img [ref=e155]
+              - generic [ref=e157]:
+                - link "Subir Electrocardiogramas" [ref=e158] [cursor=pointer]:
+                  - /url: /teleekgs/upload
+                  - img [ref=e159]
+                  - generic [ref=e162]: Subir Electrocardiogramas
+                - link "Registro de Pacientes" [ref=e163] [cursor=pointer]:
+                  - /url: /teleekgs/listar
+                  - img [ref=e164]
+                  - generic [ref=e169]: Registro de Pacientes
+                - link "Estadísticas" [ref=e170] [cursor=pointer]:
+                  - /url: /teleekgs/dashboard
+                  - img [ref=e171]
+                  - generic [ref=e173]: Estadísticas
+      - paragraph [ref=e17]: v1.37.4
+  - main "Contenido principal" [ref=e18]:
+    - generic [ref=e20]:
+      - button "Notificaciones" [ref=e21] [cursor=pointer]:
+        - img [ref=e22]
+      - button "J Jesus Lopez Silva INSTITUCION_EX" [ref=e26] [cursor=pointer]:
+        - generic [ref=e28]: J
+        - generic [ref=e29]:
+          - generic [ref=e30]: Jesus Lopez Silva
+          - generic [ref=e31]: INSTITUCION_EX
+        - img [ref=e32]
+    - generic [ref=e34]:
+      - generic [ref=e36]:
+        - generic [ref=e37]:
+          - generic [ref=e38]:
+            - img [ref=e39]
+            - heading "Envío de Electrocardiogramas (EKG)" [level=1] [ref=e41]
+          - paragraph [ref=e42]: Carga y gestiona imágenes de electrocardiogramas de tus pacientes
+        - generic [ref=e44]:
+          - link "Subir Electrocardiogramas" [ref=e45] [cursor=pointer]:
+            - /url: /teleekgs/upload
+            - img [ref=e46]
+            - generic [ref=e49]: Subir Electrocardiogramas
+          - img [ref=e50]
+          - link "Mis EKGs" [ref=e52] [cursor=pointer]:
+            - /url: /teleekgs/listar
+            - img [ref=e53]
+            - generic [ref=e54]: Mis EKGs
+        - generic [ref=e57]:
+          - generic [ref=e59]:
+            - generic [ref=e60]:
+              - paragraph [ref=e61]: Total
+              - paragraph [ref=e62]: "1"
+              - paragraph [ref=e63]: 4 EKGs
+            - img [ref=e64]
+          - generic [ref=e69]:
+            - generic [ref=e70]:
+              - paragraph [ref=e71]: Enviadas
+              - paragraph [ref=e72]: "1"
+              - paragraph [ref=e73]: 4 EKGs
+            - img [ref=e74]
+          - generic [ref=e78]:
+            - generic [ref=e79]:
+              - paragraph [ref=e80]: Atendidas
+              - paragraph [ref=e81]: "0"
+              - paragraph [ref=e82]: 0 EKGs
+            - img [ref=e83]
+          - generic [ref=e87]:
+            - generic [ref=e88]:
+              - paragraph [ref=e89]: Rechazadas
+              - paragraph [ref=e90]: "0"
+              - paragraph [ref=e91]: 0 EKGs
+            - img [ref=e92]
+        - generic [ref=e96]:
+          - generic [ref=e97]:
+            - img [ref=e98]
+            - textbox "Buscar por DNI o nombre del paciente..." [ref=e101]
+          - button "Subir EKG" [ref=e102] [cursor=pointer]:
+            - img [ref=e103]
+            - generic [ref=e104]: Subir EKG
+        - table [ref=e175]:
+          - rowgroup [ref=e176]:
+            - row "Fecha DNI Paciente Teléfono Fecha Nacimiento Edad Género Estado Acciones" [ref=e177]:
+              - columnheader "Fecha" [ref=e178]
+              - columnheader "DNI" [ref=e179]
+              - columnheader "Paciente" [ref=e180]
+              - columnheader "Teléfono" [ref=e181]
+              - columnheader "Fecha Nacimiento" [ref=e182]
+              - columnheader "Edad" [ref=e183]
+              - columnheader "Género" [ref=e184]
+              - columnheader "Estado" [ref=e185]
+              - columnheader "Acciones" [ref=e186]
+          - rowgroup [ref=e187]:
+            - row "6/2/2026 09164101 GODOFREDO EDGARDO RAMIREZ CAMONES 📸 4 EKGs 992867660 - 76 🧑 Masculino ENVIADA 🔴 107m⚠️" [ref=e188]:
+              - cell "6/2/2026" [ref=e189]:
+                - generic [ref=e190]:
+                  - img [ref=e191]
+                  - text: 6/2/2026
+              - cell "09164101" [ref=e193]
+              - cell "GODOFREDO EDGARDO RAMIREZ CAMONES 📸 4 EKGs" [ref=e194]:
+                - generic [ref=e195]:
+                  - img [ref=e196]
+                  - generic [ref=e199]:
+                    - paragraph [ref=e200]: GODOFREDO EDGARDO RAMIREZ CAMONES
+                    - paragraph [ref=e201]: 📸 4 EKGs
+              - cell "992867660" [ref=e202]:
+                - generic [ref=e203]:
+                  - img [ref=e204]
+                  - text: "992867660"
+              - cell "-" [ref=e206]:
+                - generic [ref=e207]:
+                  - img [ref=e208]
+                  - text: "-"
+              - cell "76" [ref=e210]
+              - cell "🧑 Masculino" [ref=e211]
+              - cell "ENVIADA 🔴 107m⚠️" [ref=e212]:
+                - generic [ref=e213]:
+                  - generic [ref=e214]: ENVIADA
+                  - generic [ref=e215]: 🔴 107m⚠️
+              - cell [ref=e216]:
+                - generic [ref=e217]:
+                  - button "Ver 4 imagen(es) en carrusel" [ref=e218] [cursor=pointer]:
+                    - img [ref=e219]
+                  - button "Descargar primera imagen" [ref=e222] [cursor=pointer]:
+                    - img [ref=e223]
+                  - button "Procesar todos los 4 EKGs" [ref=e226] [cursor=pointer]:
+                    - img [ref=e227]
+                  - button "Rechazar todos los 4 EKGs" [ref=e230] [cursor=pointer]:
+                    - img [ref=e231]
+                  - button "Eliminar todos los 4 EKGs" [ref=e235] [cursor=pointer]:
+                    - img [ref=e236]
+      - generic [ref=e109]:
+        - paragraph [ref=e110]: CENATE - Sistema de Telemedicina - EsSalud 2026
+        - paragraph [ref=e111]: v1.37.4 - Performance Optimization + Deduplicación Automática + Foto Header + SMTP EsSalud

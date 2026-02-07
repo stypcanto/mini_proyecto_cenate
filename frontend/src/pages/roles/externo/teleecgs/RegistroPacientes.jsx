@@ -113,13 +113,44 @@ export default function RegistroPacientes({
     setFilteredEcgs(resultado);
   };
 
+  /**
+   * ✅ v1.52.1: Semáforo de estados mejorado con iconos
+   * Visualización clara del estado de cada EKG
+   */
   const getEstadoBadge = (estado) => {
-    const estilos = {
-      PENDIENTE: "bg-yellow-100 text-yellow-800 border border-yellow-300",
-      PROCESADA: "bg-green-100 text-green-800 border border-green-300",
-      RECHAZADA: "bg-red-100 text-red-800 border border-red-300",
+    const estados = {
+      ENVIADA: {
+        badge: "bg-yellow-100 text-yellow-800 border border-yellow-300",
+        emoji: "📤",
+        label: "Enviada",
+        description: "En espera de evaluación"
+      },
+      PENDIENTE: {
+        badge: "bg-blue-100 text-blue-800 border border-blue-300",
+        emoji: "⏳",
+        label: "Pendiente",
+        description: "No evaluada aún"
+      },
+      OBSERVADA: {
+        badge: "bg-orange-100 text-orange-800 border border-orange-300",
+        emoji: "👁️",
+        label: "Observada",
+        description: "Con observaciones"
+      },
+      ATENDIDA: {
+        badge: "bg-green-100 text-green-800 border border-green-300",
+        emoji: "✅",
+        label: "Atendida",
+        description: "Evaluación completada"
+      },
+      RECHAZADA: {
+        badge: "bg-red-100 text-red-800 border border-red-300",
+        emoji: "❌",
+        label: "Rechazada",
+        description: "No válida"
+      },
     };
-    return estilos[estado] || estilos.PENDIENTE;
+    return estados[estado] || estados.PENDIENTE;
   };
 
   const formatearFecha = (fecha) => {
@@ -299,34 +330,39 @@ export default function RegistroPacientes({
                   </thead>
                   <tbody className="divide-y divide-gray-200">
                     {filteredEcgs.map((paciente) => (
-                      <tr key={paciente.numDocPaciente} className="hover:bg-gray-50">
+                      <tr key={paciente.numDocPaciente} className="hover:bg-blue-50 transition-colors border-l-4" style={{borderColor: getEstadoBadge(paciente.estado).badge.includes('yellow') ? '#fbbf24' : getEstadoBadge(paciente.estado).badge.includes('green') ? '#34d399' : getEstadoBadge(paciente.estado).badge.includes('red') ? '#f87171' : '#60a5fa'}}>
                         <td className="px-6 py-4 text-sm text-gray-700">
                           <div className="flex items-center gap-2">
                             <Calendar className="w-4 h-4 text-gray-400" />
                             {formatearFecha(paciente.fechaPrimera)}
                           </div>
                         </td>
-                        <td className="px-6 py-4 text-sm font-semibold text-gray-900">
+                        <td className="px-6 py-4 text-sm font-semibold text-gray-900 font-mono">
                           {paciente.numDocPaciente}
                         </td>
                         <td className="px-6 py-4 text-sm text-gray-700">
                           <div>
-                            <p className="font-medium">
+                            <p className="font-medium text-gray-900">
                               {paciente.nombresPaciente}
                             </p>
-                            <p className="text-xs text-blue-600 font-semibold">
+                            <p className="text-xs text-blue-600 font-semibold mt-1">
                               📸 {paciente.imagenes.length} EKG{paciente.imagenes.length !== 1 ? 's' : ''}
                             </p>
                           </div>
                         </td>
                         <td className="px-6 py-4 text-sm">
-                          <span
-                            className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${getEstadoBadge(
-                              paciente.estado
-                            )}`}
-                          >
-                            {paciente.estado}
-                          </span>
+                          {(() => {
+                            const estadoInfo = getEstadoBadge(paciente.estado);
+                            return (
+                              <div>
+                                <span className={`inline-block px-3 py-1.5 rounded-full text-xs font-bold ${estadoInfo.badge}`} title={estadoInfo.description}>
+                                  <span className="mr-1">{estadoInfo.emoji}</span>
+                                  {estadoInfo.label}
+                                </span>
+                                <p className="text-xs text-gray-500 mt-1">{estadoInfo.description}</p>
+                              </div>
+                            );
+                          })()}
                         </td>
                         <td className="px-6 py-4 text-sm">
                           {paciente.imagenes[0]?.evaluacion ? (
@@ -404,13 +440,15 @@ export default function RegistroPacientes({
                         <p className="text-xs text-gray-500 uppercase tracking-wide font-semibold">DNI</p>
                         <p className="text-lg font-bold text-gray-900">{paciente.numDocPaciente}</p>
                       </div>
-                      <span
-                        className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${getEstadoBadge(
-                          paciente.estado
-                        )}`}
-                      >
-                        {paciente.estado}
-                      </span>
+                      {(() => {
+                        const estadoInfo = getEstadoBadge(paciente.estado);
+                        return (
+                          <span className={`inline-block px-3 py-1.5 rounded-full text-xs font-bold ${estadoInfo.badge}`} title={estadoInfo.description}>
+                            <span className="mr-1">{estadoInfo.emoji}</span>
+                            {estadoInfo.label}
+                          </span>
+                        );
+                      })()}
                     </div>
 
                     {/* Paciente Info */}

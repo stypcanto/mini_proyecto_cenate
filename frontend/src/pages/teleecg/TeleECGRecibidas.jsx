@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
+import { useSearchParams } from "react-router-dom";
 import {
   Activity,
   Filter,
@@ -12,6 +13,8 @@ import {
   XCircle,
   Stethoscope,
   Edit,
+  Zap,
+  Bell,
 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import teleecgService from "../../services/teleecgService";
@@ -28,6 +31,9 @@ import toast from "react-hot-toast";
  */
 export default function TeleEKGRecibidas() {
   const { user } = useAuth();
+  const [searchParams] = useSearchParams();
+  const dniParam = searchParams.get('dni'); // ✅ URL parameter support (?dni=123)
+  const wsRef = React.useRef(null); // ✅ WebSocket reference
 
   // Estados principales
   const [loading, setLoading] = useState(true);
@@ -51,9 +57,9 @@ export default function TeleEKGRecibidas() {
     atendidas: 0,        // ATENDIDA = completadas
   });
 
-  // Filtros
+  // Filtros (inicializar con DNI desde URL si existe)
   const [filtros, setFiltros] = useState({
-    searchTerm: "",
+    searchTerm: dniParam || "",
     estado: "TODOS",
     ipress: "TODOS",
     fechaDesde: "",
@@ -63,11 +69,130 @@ export default function TeleEKGRecibidas() {
   // IPRESS disponibles (para el filtro)
   const [ipressOptions, setIpressOptions] = useState([]);
 
+  // ✅ WebSocket & Real-time
+  const [wsConnected, setWsConnected] = useState(false);
+  const [notificaciones, setNotificaciones] = useState([]);
+  const [mostrarNotificaciones, setMostrarNotificaciones] = useState(false);
+
+  // ✅ Inicializar WebSocket para real-time sync
+  const inicializarWebSocket = useCallback(() => {
+    try {
+      const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+      const wsUrl = `${wsProtocol}//${window.location.host}/ws/teleekgs`;
+
+      wsRef.current = new WebSocket(wsUrl);
+
+      wsRef.current.onopen = () => {
+        console.log("✅ WebSocket conectado - Real-time sync habilitado");
+        setWsConnected(true);
+        toast.success("🔗 Conectado a sync en tiempo real");
+      };
+
+      wsRef.current.onmessage = (event) => {
+        console.log("📨 Notificación WebSocket:", event.data);
+
+        try {
+          const data = JSON.parse(event.data);
+
+          // Nueva imagen subida
+          if (data.type === "NEW_IMAGE") {
+            cargarEKGs(); // Recargar tabla automáticamente
+            cargarEstadisticasGlobales();
+
+            // Agregar a notificaciones
+            const notif = {
+              id: Date.now(),
+              type: "success",
+              message: `📸 ${data.message || "Nueva imagen ECG recibida"}`,
+              timestamp: new Date(),
+            };
+            setNotificaciones(prev => [...prev, notif]);
+            setTimeout(() => {
+              setNotificaciones(prev => prev.filter(n => n.id !== notif.id));
+            }, 5000);
+          }
+
+          // Imagen evaluada
+          if (data.type === "IMAGE_EVALUATED") {
+            cargarEKGs();
+            cargarEstadisticasGlobales();
+
+            const notif = {
+              id: Date.now(),
+              type: "info",
+              message: `✅ EKG evaluada: ${data.resultado || ""}`,
+              timestamp: new Date(),
+            };
+            setNotificaciones(prev => [...prev, notif]);
+            setTimeout(() => {
+              setNotificaciones(prev => prev.filter(n => n.id !== notif.id));
+            }, 5000);
+          }
+        } catch (error) {
+          console.error("Error procesando mensaje WebSocket:", error);
+        }
+      };
+
+      wsRef.current.onerror = (error) => {
+        console.error("❌ Error WebSocket:", error);
+        setWsConnected(false);
+      };
+
+      wsRef.current.onclose = () => {
+        console.log("🔌 WebSocket desconectado - Fallback a polling");
+        setWsConnected(false);
+        // Reconectar después de 5 segundos
+        setTimeout(inicializarWebSocket, 5000);
+      };
+    } catch (error) {
+      console.error("No se pudo inicializar WebSocket:", error);
+      // Fallback: usar polling (ya está en auto-refresh)
+    }
+  }, []);
+
+  // ✅ Inicializar Push Notifications
+  const inicializarPushNotifications = useCallback(() => {
+    if (!('Notification' in window)) {
+      console.log("Push Notifications no soportadas en este navegador");
+      return;
+    }
+
+    if (Notification.permission === 'granted') {
+      console.log("✅ Push Notifications habilitadas");
+    } else if (Notification.permission !== 'denied') {
+      Notification.requestPermission().then(permission => {
+        if (permission === 'granted') {
+          console.log("✅ Push Notifications habilitadas");
+          new Notification('CENATE TeleEKG', {
+            body: 'Recibirás notificaciones sobre nuevas imágenes ECG',
+            icon: '🫀'
+          });
+        }
+      });
+    }
+  }, []);
+
   // Cargar EKGs al montarse
   useEffect(() => {
     cargarEKGs();
     cargarEstadisticasGlobales();
+    inicializarWebSocket();
+    inicializarPushNotifications();
+
+    return () => {
+      if (wsRef.current) {
+        wsRef.current.close();
+      }
+    };
   }, []);
+
+  // ✅ Aplicar filtro DNI desde URL si existe
+  useEffect(() => {
+    if (dniParam) {
+      setFiltros(prev => ({ ...prev, searchTerm: dniParam }));
+      toast.info(`📍 Filtrado automáticamente por DNI: ${dniParam}`);
+    }
+  }, [dniParam]);
 
   // ✅ Auto-refresh cada 30 segundos (para sincronización en tiempo real)
   useEffect(() => {
