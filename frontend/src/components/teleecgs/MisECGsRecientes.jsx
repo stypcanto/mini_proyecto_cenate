@@ -420,14 +420,18 @@ export default function MisECGsRecientes({
                         {carga.edad ? `${carga.edad}a` : '-'}
                       </td>
 
-                      {/* Prioridad - Círculo de Color */}
+                      {/* Prioridad - Urgente/Normal */}
                       <td className="px-4 py-3 text-center">
-                        <div
-                          className={`w-4 h-4 rounded-full mx-auto animate-pulse ${
-                            carga.esUrgente ? 'bg-red-500' : 'bg-green-500'
+                        <span
+                          className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold whitespace-nowrap ${
+                            carga.esUrgente
+                              ? 'bg-red-100 text-red-900'
+                              : 'bg-green-100 text-green-900'
                           }`}
-                          title={carga.esUrgente ? 'Urgente' : 'Normal'}
-                        />
+                        >
+                          <div className={`w-2 h-2 rounded-full ${carga.esUrgente ? 'bg-red-500 animate-pulse' : 'bg-green-500'}`} />
+                          {carga.esUrgente ? '🚨 Urgente' : '✅ Normal'}
+                        </span>
                       </td>
 
                       {/* Estado */}

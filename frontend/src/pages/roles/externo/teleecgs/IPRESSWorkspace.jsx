@@ -9,13 +9,15 @@ import VisorEKGModal from "../../../../components/teleecgs/VisorECGModal";
 import RegistroPacientes from "./RegistroPacientes";
 import TeleECGEstadisticas from "./TeleECGEstadisticas";
 import teleecgService from "../../../../services/teleecgService";
+import gestionPacientesService from "../../../../services/gestionPacientesService";
 import { getEstadoClasses } from "../../../../config/designSystem";
 
 /**
  * Helper: Format ECGs for MisECGsRecientes component
  * Agrupa por paciente y cuenta imágenes
+ * Enriquece nombres con formato "APELLIDOS, NOMBRES"
  */
-function formatECGsForRecientes(ecgs) {
+function formatECGsForRecientes(ecgs, pacientesCache = {}) {
   // Agrupar por DNI para contar imágenes
   const porDni = {};
   ecgs.forEach(img => {
@@ -37,32 +39,45 @@ function formatECGsForRecientes(ecgs) {
     }
   });
 
-  return Object.entries(deduplicados).slice(0, 3).map(([dni, img]) => ({
-    idImagen: img.idImagen || img.id,  // ✅ NECESARIO para cargar imagen
-    nombrePaciente: img.nombresPaciente || img.nombrePaciente || img.nombres || "Sin datos",
-    dni: dni || "N/A",
-    cantidadImagenes: porDni[dni]?.length || 0,  // ✅ Contar imágenes del paciente
-    tiempoTranscurrido: img.fechaEnvio || img.fechaCarga
-      ? (() => {
-          const ahora = new Date();
-          const fecha = new Date(img.fechaEnvio || img.fechaCarga);
-          const diferencia = ahora - fecha;
-          const minutos = Math.floor(diferencia / 60000);
-          const horas = Math.floor(minutos / 60);
-          const dias = Math.floor(horas / 24);
+  return Object.entries(deduplicados).slice(0, 3).map(([dni, img]) => {
+    // ✅ Obtener nombre completo del cache o del ECG
+    let nombreFormateado = img.nombresPaciente || img.nombrePaciente || img.nombres || "Sin datos";
 
-          if (dias > 0) return `Hace ${dias}d`;
-          if (horas > 0) return `Hace ${horas}h`;
-          if (minutos > 0) return `Hace ${minutos}m`;
-          return "Ahora";
-        })()
-      : "Desconocido",
-    estado: img.estadoTransformado || img.estado || "DESCONOCIDA",
-    observacion: img.observacion || null,
-    contenidoImagen: img.contenidoImagen || null,  // ✅ Para imágenes precargadas
-    nombreArchivo: img.nombreArchivo || null,
-    mimeType: img.mimeType || "image/jpeg",
-  }));
+    // Si existe en cache, usar el nombre formateado completo
+    if (pacientesCache[dni]) {
+      const cached = pacientesCache[dni];
+      if (cached.apellidos && cached.nombres) {
+        nombreFormateado = `${cached.apellidos.toUpperCase()}, ${cached.nombres.toUpperCase()}`;
+      }
+    }
+
+    return {
+      idImagen: img.idImagen || img.id,  // ✅ NECESARIO para cargar imagen
+      nombrePaciente: nombreFormateado,
+      dni: dni || "N/A",
+      cantidadImagenes: porDni[dni]?.length || 0,  // ✅ Contar imágenes del paciente
+      tiempoTranscurrido: img.fechaEnvio || img.fechaCarga
+        ? (() => {
+            const ahora = new Date();
+            const fecha = new Date(img.fechaEnvio || img.fechaCarga);
+            const diferencia = ahora - fecha;
+            const minutos = Math.floor(diferencia / 60000);
+            const horas = Math.floor(minutos / 60);
+            const dias = Math.floor(horas / 24);
+
+            if (dias > 0) return `Hace ${dias}d`;
+            if (horas > 0) return `Hace ${horas}h`;
+            if (minutos > 0) return `Hace ${minutos}m`;
+            return "Ahora";
+          })()
+        : "Desconocido",
+      estado: img.estadoTransformado || img.estado || "DESCONOCIDA",
+      observacion: img.observacion || null,
+      contenidoImagen: img.contenidoImagen || null,  // ✅ Para imágenes precargadas
+      nombreArchivo: img.nombreArchivo || null,
+      mimeType: img.mimeType || "image/jpeg",
+    };
+  });
 }
 
 /**
@@ -98,6 +113,7 @@ export default function IPRESSWorkspace() {
   const isOnline = useOnlineStatus();
   const [ecgs, setEcgs] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [pacientesCache, setPacientesCache] = useState({});  // ✅ Cache de nombres de pacientes
   const [stats, setStats] = useState({
     total: 0,
     enviadas: 0,

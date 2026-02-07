@@ -175,6 +175,7 @@ public class TeleECGService {
         imagen.setNavegador(navegador);
         imagen.setRutaAcceso("/api/teleekgs/upload");
         imagen.setObservaciones(dto.getObservaciones());
+        imagen.setEsUrgente(dto.getEsUrgente() != null ? dto.getEsUrgente() : false);  // v4.0.0: Marcar como urgente si aplica
 
         imagen = teleECGImagenRepository.save(imagen);
         log.info("✅ Imagen registrada en BD: ID={}", imagen.getIdImagen());

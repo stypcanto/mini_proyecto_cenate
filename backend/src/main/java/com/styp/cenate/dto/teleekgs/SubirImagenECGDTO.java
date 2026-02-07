@@ -90,6 +90,14 @@ public class SubirImagenECGDTO {
     private String observaciones;
 
     /**
+     * ¿Es urgente? (v4.0.0 - Nuevo)
+     * TRUE: Requiere atención prioritaria
+     * FALSE: Atención normal (default)
+     * Opcional: Default es false
+     */
+    private Boolean esUrgente = false;
+
+    /**
      * Validación personalizada post-construcción
      * (Realizada también en backend)
      */

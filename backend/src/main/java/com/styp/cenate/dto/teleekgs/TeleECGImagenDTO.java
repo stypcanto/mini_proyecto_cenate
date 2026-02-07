@@ -218,6 +218,14 @@ public class TeleECGImagenDTO {
     private String observaciones;
 
     /**
+     * ¿Es urgente? (v4.0.0 - Nuevo)
+     * TRUE: Requiere atención prioritaria
+     * FALSE: Atención normal (default)
+     */
+    @JsonProperty("es_urgente")
+    private Boolean esUrgente;
+
+    /**
      * EVALUACIÓN MÉDICA del ECG (v3.0.0 - ML Dataset)
      * Valores: NORMAL, ANORMAL, SIN_EVALUAR (default)
      * Usado para crear dataset de entrenamiento para modelos ML

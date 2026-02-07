@@ -631,11 +631,11 @@ export default function UploadImagenEKG({ onSuccess, onUploadSuccess, isWorkspac
                     </div>
                     <div className="bg-white rounded p-2 border border-green-200">
                       <p className="font-bold text-green-700">Edad</p>
-                      <p className="font-bold text-gray-900">{datosCompletos.edad ? `${datosCompletos.edad}a` : '—'}</p>
+                      <p className="font-bold text-gray-900">{datosCompletos.edad ? `${datosCompletos.edad} años` : '—'}</p>
                     </div>
                     <div className="bg-white rounded p-2 border border-green-200">
                       <p className="font-bold text-green-700">Sexo</p>
-                      <p className="font-bold text-gray-900">{datosCompletos.sexo === 'M' ? 'M' : datosCompletos.sexo === 'F' ? 'F' : '—'}</p>
+                      <p className="font-bold text-gray-900">{datosCompletos.sexo === 'M' ? 'Masculino' : datosCompletos.sexo === 'F' ? 'Femenino' : '—'}</p>
                     </div>
                     {datosCompletos.telefono && <div className="bg-white rounded p-2 border border-green-200">
                       <p className="font-bold text-green-700">Teléfono</p>

@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import toast from "react-hot-toast";
 import teleeckgService from "../../../../services/teleecgService";
+import gestionPacientesService from "../../../../services/gestionPacientesService";
 import VisorECGModal from "../../../../components/teleecgs/VisorECGModal";
 import TeleEKGBreadcrumb from "../../../../components/teleecgs/TeleEKGBreadcrumb";
 import { getEstadoClasses } from "../../../../config/designSystem";
@@ -42,6 +43,7 @@ export default function RegistroPacientes({
   const [selectedEKG, setSelectedEKG] = useState(null);
   const [selectedPaciente, setSelectedPaciente] = useState(null);
   const [showVisor, setShowVisor] = useState(false);
+  const [enriquecimientoIniciado, setEnriquecimientoIniciado] = useState(false);
 
   // Si es workspace, usar props; si no, usar state local
   const currentEcgs = isWorkspace ? propsEcgs : ecgs;
@@ -79,6 +81,63 @@ export default function RegistroPacientes({
       setEcgs(propsEcgs);
     }
   }, [propsEcgs, isWorkspace]);
+
+  // ✅ Enriquecer datos de ECGs con información del asegurado (edad, sexo)
+  // Solo enriquecer si NO estamos en workspace mode
+  useEffect(() => {
+    if (propsEcgs || isWorkspace || ecgs.length === 0 || enriquecimientoIniciado) {
+      return;
+    }
+
+    let isMounted = true;
+
+    const enriquecerDatos = async () => {
+      try {
+        const dnisUnicos = [...new Set(ecgs.map(e => e.numDocPaciente))];
+        const datosAsegurados = {};
+
+        // Buscar datos completos para cada paciente único
+        for (const dni of dnisUnicos) {
+          try {
+            const response = await gestionPacientesService.buscarAseguradoPorDni(dni);
+
+            if (response && response.numDoc) {
+              // Extraer edad del response (puede tener múltiples nombres de campo)
+              const edad = response.edad || response.edad_asegurado || response.edadAsegurado;
+              const sexo = response.sexo;
+              datosAsegurados[dni] = { edad, sexo };
+            }
+          } catch (err) {
+            console.warn(`⚠️ No se pudo obtener datos para DNI ${dni}`);
+          }
+        }
+
+        // Solo actualizar si el componente sigue montado
+        if (!isMounted) return;
+
+        // Enriquecer los ECGs
+        const ecsEnriquecidos = ecgs.map(ecg => ({
+          ...ecg,
+          generoPaciente: datosAsegurados[ecg.numDocPaciente]?.sexo || ecg.generoPaciente,
+          edadPaciente: datosAsegurados[ecg.numDocPaciente]?.edad || ecg.edadPaciente,
+        }));
+
+        setEcgs(ecsEnriquecidos);
+        setEnriquecimientoIniciado(true);
+      } catch (error) {
+        console.error("❌ Error enriqueciendo datos:", error);
+        if (isMounted) {
+          setEnriquecimientoIniciado(true);
+        }
+      }
+    };
+
+    enriquecerDatos();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [ecgs.length, propsEcgs, isWorkspace]);
 
   const cargarEKGs = async () => {
     try {

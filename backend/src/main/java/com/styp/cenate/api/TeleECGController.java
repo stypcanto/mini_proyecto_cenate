@@ -142,9 +142,10 @@ public class TeleECGController {
             @RequestParam("apellidosPaciente") String apellidosPaciente,
             @RequestParam(value = "pkAsegurado", required = false) String pkAsegurado,
             @RequestParam("archivo") MultipartFile archivo,
+            @RequestParam(value = "esUrgente", required = false, defaultValue = "false") Boolean esUrgente,
             HttpServletRequest request) {
 
-        log.info("📤 Upload ECG - DNI: {}", numDocPaciente);
+        log.info("📤 Upload ECG - DNI: {}, Urgente: {}", numDocPaciente, esUrgente);
 
         try {
             SubirImagenECGDTO dto = new SubirImagenECGDTO();
@@ -156,6 +157,7 @@ public class TeleECGController {
                 dto.setPkAsegurado(pkAsegurado);
             }
             dto.setArchivo(archivo);
+            dto.setEsUrgente(esUrgente != null ? esUrgente : false);
 
             Long idUsuario = getUsuarioActual();
             String ipCliente = request.getRemoteAddr();

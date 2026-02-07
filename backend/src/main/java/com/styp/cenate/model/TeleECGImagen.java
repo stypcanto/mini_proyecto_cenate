@@ -424,6 +424,15 @@ public class TeleECGImagen {
     @Column(name = "fecha_nota_clinica")
     private LocalDateTime fechaNotaClinica;
 
+    /**
+     * ¿URGENTE? (v4.0.0 - Nuevo)
+     * TRUE: Requiere atención prioritaria
+     * FALSE: Atención normal
+     * Default: FALSE
+     */
+    @Column(name = "es_urgente", nullable = false)
+    private Boolean esUrgente = false;
+
     @PrePersist
     protected void onCreate() {
         this.createdAt = LocalDateTime.now();
