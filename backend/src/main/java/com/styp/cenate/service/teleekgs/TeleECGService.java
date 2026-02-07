@@ -902,14 +902,13 @@ public class TeleECGService {
             String numeroSolicitud = "TEL-" + System.currentTimeMillis();
 
             // 3. Obtener coordinador responsable del IPRESS (si existe)
+            // TODO v1.61.0: Implementar búsqueda de coordinador por IPRESS cuando esté disponible
             Long responsableGestoraId = null;
             try {
-                var coordsOpt = usuarioRepository.findByCodIpressAndRol(ipress.getCodIpress(), "COORDINADOR_GESTION_CITAS");
-                if (coordsOpt.isPresent()) {
-                    responsableGestoraId = coordsOpt.get().getId();
-                }
+                // Placeholder: Sin coordinador asignado por ahora
+                log.info("ℹ️ Bolsa TeleECG sin coordinador responsable asignado aún");
             } catch (Exception e) {
-                log.warn("⚠️ No se encontró coordinador para IPRESS: {}", ipress.getCodIpress());
+                log.warn("⚠️ Error obteniendo coordinador para IPRESS: {}", ipress.getCodIpress());
             }
 
             // 4. Crear bolsa (estado PENDIENTE)
@@ -917,8 +916,7 @@ public class TeleECGService {
                 .numeroSolicitud(numeroSolicitud)
                 .pacienteId(asegurado.getPkAsegurado())
                 .pacienteDni(asegurado.getDocPaciente())
-                .pacienteNombre(asegurado.getNombreCompleto() != null ? asegurado.getNombreCompleto() :
-                    (asegurado.getApellidosNombres() != null ? asegurado.getApellidosNombres() : "N/A"))
+                .pacienteNombre(asegurado.getPaciente() != null ? asegurado.getPaciente() : "N/A")
                 .idBolsa(tipoBolsa.getIdTipoBolsa())
                 .idServicio(1L) // Servicio genérico para TeleECG
                 .codigoAdscripcion(ipress.getCodIpress())
@@ -927,6 +925,13 @@ public class TeleECGService {
                 .estadoGestionCitasId(1L) // PENDIENTE
                 .responsableGestoraId(responsableGestoraId)
                 .activo(true)
+                // v1.60.0: Completar datos del paciente automáticamente desde asegurados
+                .tipoDocumento("DNI")
+                .pacienteSexo(asegurado.getSexo())
+                .pacienteTelefono(asegurado.getTelCelular() != null ? asegurado.getTelCelular() : asegurado.getTelFijo())
+                .fechaNacimiento(asegurado.getFecnacimpaciente())
+                // v1.60.0: Asignar tipo de cita por defecto "Voluntaria" para bolsas TeleECG
+                .tipoCita("Voluntaria")
                 .build();
 
             // 5. Guardar referencia a imagen TeleECG (nuevo campo v4.0.0)
@@ -936,26 +941,19 @@ public class TeleECGService {
             log.info("✅ Bolsa TeleECG creada: ID={}, DNI={}", bolsa.getIdSolicitud(), imagen.getNumDocPaciente());
 
             // 6. v1.58.2: Enviar notificación email al coordinador
+            // NOTA: Usuario no tiene email en BD, se envía solo log por ahora
             try {
                 if (responsableGestoraId != null) {
                     var coordOpt = usuarioRepository.findById(responsableGestoraId);
                     if (coordOpt.isPresent()) {
                         Usuario coordinador = coordOpt.get();
-                        if (coordinador.getEmail() != null && !coordinador.getEmail().isEmpty()) {
-                            emailService.enviarNotificacionECGNuevo(
-                                coordinador.getEmail(),
-                                coordinador.getNombreCompleto() != null ? coordinador.getNombreCompleto() : coordinador.getNameUser(),
-                                asegurado.getNombreCompleto(),
-                                asegurado.getDocPaciente(),
-                                ipress.getDescIpress(),
-                                imagen.getEsUrgente()
-                            );
-                            log.info("📧 Notificación ECG enviada a coordinador: {}", coordinador.getEmail());
-                        }
+                        log.info("📧 ECG cargado - Notificar a coordinador: {}", coordinador.getNameUser());
+                        // TODO v1.61.0: Implementar envío de email cuando Usuario tenga campo email
+                        // emailService.enviarNotificacionECGNuevo(...);
                     }
                 }
             } catch (Exception e) {
-                log.warn("⚠️ Error enviando notificación ECG (continuando): {}", e.getMessage());
+                log.warn("⚠️ Error procesando notificación ECG (continuando): {}", e.getMessage());
             }
 
             // Auditoría
