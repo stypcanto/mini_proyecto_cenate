@@ -3,11 +3,39 @@ import { Upload, List, BarChart3 } from "lucide-react";
 import toast from "react-hot-toast";
 import UploadImagenECG from "../../../../components/teleecgs/UploadImagenECG";
 import UploadFormWrapper from "../../../../components/teleecgs/UploadFormWrapper";
+import MisECGsRecientes from "../../../../components/teleecgs/MisECGsRecientes";
 import RegistroPacientes from "./RegistroPacientes";
 import TeleECGEstadisticas from "./TeleECGEstadisticas";
 import TeleEKGBreadcrumb from "../../../../components/teleecgs/TeleEKGBreadcrumb";
 import teleecgService from "../../../../services/teleecgService";
 import { getEstadoClasses } from "../../../../config/designSystem";
+
+/**
+ * Helper: Format ECGs for MisECGsRecientes component
+ */
+function formatECGsForRecientes(ecgs) {
+  return ecgs.slice(0, 3).map((img) => ({
+    nombrePaciente: img.nombrePaciente || "Sin datos",
+    dni: img.dni || "N/A",
+    tiempoTranscurrido: img.fechaCarga
+      ? (() => {
+          const ahora = new Date();
+          const fecha = new Date(img.fechaCarga);
+          const diferencia = ahora - fecha;
+          const minutos = Math.floor(diferencia / 60000);
+          const horas = Math.floor(minutos / 60);
+          const dias = Math.floor(horas / 24);
+
+          if (dias > 0) return `Hace ${dias}d`;
+          if (horas > 0) return `Hace ${horas}h`;
+          if (minutos > 0) return `Hace ${minutos}m`;
+          return "Ahora";
+        })()
+      : "Desconocido",
+    estado: img.estado || "DESCONOCIDA",
+    observacion: img.observacion || null,
+  }));
+}
 
 /**
  * 🏢 IPRESS Workspace - Contenedor principal para Upload + Listar
@@ -144,6 +172,14 @@ export default function IPRESSWorkspace() {
     toast.success("✅ Datos actualizados");
   };
 
+  /**
+   * Helper: Open full registry in new tab
+   */
+  const handleVerRegistroCompleto = () => {
+    window.open("/teleecg/recibidas", "_blank", "noopener,noreferrer");
+    toast.success("Abriendo registro completo...");
+  };
+
   // =======================================
   // 🎨 RENDER - Desktop Split View
   // =======================================
@@ -174,62 +210,18 @@ export default function IPRESSWorkspace() {
               />
             </div>
 
-            {/* Panel Derecho - Tabla de Imágenes */}
-            <div className="bg-white rounded-lg shadow-lg p-6">
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-xl font-semibold text-slate-900">
-                  📋 Mis EKGs Subidos
-                </h2>
-                <button
-                  onClick={handleRefresh}
-                  disabled={loading}
-                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg disabled:opacity-50 transition-colors"
-                >
-                  🔄 Refrescar
-                </button>
-              </div>
-
-              {/* Stats Cards - Compact Pill Format */}
-              <div className="flex gap-2 mb-4 flex-wrap">
-                {/* Total */}
-                <div className="flex items-center gap-2 bg-gradient-to-r from-blue-50 to-blue-100 rounded-full px-4 py-2 border border-blue-200 shadow-sm">
-                  <div className="bg-blue-600 text-white rounded-full w-8 h-8 flex items-center justify-center font-bold text-sm">
-                    {stats.total}
-                  </div>
-                  <span className="text-xs font-semibold text-blue-900">Total</span>
-                </div>
-
-                {/* Enviadas */}
-                <div className="flex items-center gap-2 bg-gradient-to-r from-yellow-50 to-yellow-100 rounded-full px-4 py-2 border border-yellow-200 shadow-sm">
-                  <div className="bg-yellow-600 text-white rounded-full w-8 h-8 flex items-center justify-center font-bold text-sm">
-                    {stats.enviadas}
-                  </div>
-                  <span className="text-xs font-semibold text-yellow-900">Enviadas</span>
-                </div>
-
-                {/* Observadas */}
-                <div className="flex items-center gap-2 bg-gradient-to-r from-orange-50 to-orange-100 rounded-full px-4 py-2 border border-orange-200 shadow-sm">
-                  <div className="bg-orange-600 text-white rounded-full w-8 h-8 flex items-center justify-center font-bold text-sm">
-                    {stats.observadas}
-                  </div>
-                  <span className="text-xs font-semibold text-orange-900">Observadas</span>
-                </div>
-
-                {/* Atendidas */}
-                <div className="flex items-center gap-2 bg-gradient-to-r from-green-50 to-green-100 rounded-full px-4 py-2 border border-green-200 shadow-sm">
-                  <div className="bg-green-600 text-white rounded-full w-8 h-8 flex items-center justify-center font-bold text-sm">
-                    {stats.atendidas}
-                  </div>
-                  <span className="text-xs font-semibold text-green-900">Atendidas</span>
-                </div>
-              </div>
-
-              {/* Registro de Pacientes Component */}
-              <RegistroPacientes
-                ecgs={ecgs}
+            {/* Panel Derecho - Mis EKGs Recientes (60%) */}
+            <div>
+              <MisECGsRecientes
+                ultimas3={formatECGsForRecientes(ecgs)}
+                estadisticas={{
+                  exitosas: stats.enviadas,
+                  evaluacion: stats.total,
+                  observaciones: stats.observadas,
+                }}
+                onVerRegistro={handleVerRegistroCompleto}
+                onRefrescar={handleRefresh}
                 loading={loading}
-                onRefresh={handleRefresh}
-                isWorkspace={true}
               />
             </div>
           </div>

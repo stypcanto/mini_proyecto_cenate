@@ -552,9 +552,11 @@ export default function UploadImagenEKG({ onSuccess, onUploadSuccess, isWorkspac
             <span>Información del Paciente</span>
           </h3>
 
-          {/* DNI Input */}
+          {/* DNI Input - GRANDE Y VISIBLE */}
           <div className="mb-4">
-            <label className="block text-sm font-bold text-gray-800 mb-2 uppercase tracking-wide">DNI del Paciente *</label>
+            <label className="block text-xs font-bold text-gray-700 mb-2 uppercase tracking-widest">
+              🆔 DNI del Paciente *
+            </label>
             <div className="relative">
               <input
                 type="tel"
@@ -562,66 +564,115 @@ export default function UploadImagenEKG({ onSuccess, onUploadSuccess, isWorkspac
                 pattern="[0-9]{8}"
                 value={numDocPaciente}
                 onChange={(e) => setNumDocPaciente(e.target.value.replace(/[^0-9]/g, '').slice(0, 8))}
-                placeholder="Ingresa 8 dígitos"
+                placeholder="12 34 56 78"
                 maxLength="8"
                 disabled={searchingPaciente}
-                className="w-full px-4 py-4 border-2 border-blue-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent text-3xl font-bold tracking-wider text-center"
+                className="w-full px-4 py-4 border-2 border-blue-300 rounded-lg
+                  focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent
+                  text-3xl font-bold tracking-widest text-center text-blue-900
+                  placeholder:text-blue-200 placeholder:text-2xl
+                  transition-all duration-200 hover:border-blue-400
+                  disabled:bg-gray-100 disabled:opacity-60"
               />
-              <div className="absolute right-3 top-3">
+
+              {/* Indicador de estado - Derecha */}
+              <div className="absolute right-4 top-4 flex items-center gap-2">
                 {searchingPaciente && (
-                  <Loader className="w-5 h-5 animate-spin text-blue-600" />
+                  <Loader className="w-6 h-6 animate-spin text-blue-600" />
                 )}
                 {pacienteEncontrado && !searchingPaciente && (
-                  <CheckCircle className="w-5 h-5 text-green-600" />
+                  <div className="flex items-center gap-1">
+                    <CheckCircle className="w-6 h-6 text-green-600" />
+                    <span className="text-xs text-green-600 font-bold">Valido</span>
+                  </div>
+                )}
+                {!pacienteEncontrado && numDocPaciente.length === 8 && !searchingPaciente && (
+                  <AlertCircle className="w-6 h-6 text-red-600" />
                 )}
               </div>
             </div>
+
+            {/* Mensaje de ayuda */}
+            <p className="text-xs text-blue-600 mt-2 font-medium">
+              💡 Ingresa exactamente 8 dígitos
+            </p>
           </div>
 
-          {/* Patient Confirmation */}
+          {/* Patient Confirmation - Paleta Médica Profesional */}
           {pacienteEncontrado ? (
-            <div className="bg-gradient-to-br from-green-400 to-emerald-500 rounded-xl p-4 border-2 border-green-600 shadow-md space-y-3">
-              <p className="text-sm font-bold text-green-900">✅ PACIENTE CONFIRMADO</p>
+            <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-lg p-4 border-2 border-green-300 space-y-3 shadow-sm">
+              <div className="flex items-center gap-2 mb-2">
+                <CheckCircle className="w-5 h-5 text-green-600" />
+                <p className="text-sm font-bold text-green-900">✅ PACIENTE CONFIRMADO</p>
+              </div>
 
-              {/* Full Name */}
-              <div className="bg-white/30 rounded-lg p-3 space-y-1">
-                <p className="text-xs font-bold text-green-800">Paciente</p>
-                <p className="text-base font-bold text-white">
-                  {datosCompletos.apellidos} {datosCompletos.nombres}
+              {/* Full Name - GRANDE Y VISIBLE */}
+              <div className="bg-white rounded-lg p-3 border border-green-200">
+                <p className="text-xs font-bold text-green-700 mb-1 uppercase tracking-wide">Paciente</p>
+                <p className="text-lg font-bold text-gray-900">
+                  {datosCompletos.apellidos && datosCompletos.nombres
+                    ? `${datosCompletos.apellidos.toUpperCase()}, ${datosCompletos.nombres.toUpperCase()}`
+                    : 'Paciente identificado'}
                 </p>
               </div>
 
-              {/* DNI + Age */}
-              <div className="grid grid-cols-2 gap-3">
-                <div className="bg-white/30 rounded-lg p-3">
-                  <p className="text-xs font-bold text-green-800">DNI</p>
-                  <p className="text-sm font-bold text-white">{numDocPaciente}</p>
+              {/* Datos en grid 3 columnas */}
+              <div className="grid grid-cols-3 gap-2">
+                {/* DNI */}
+                <div className="bg-white rounded-lg p-2.5 border border-green-200">
+                  <p className="text-xs font-bold text-green-700 uppercase tracking-wide">DNI</p>
+                  <p className="text-base font-bold text-gray-900 font-mono mt-0.5">{numDocPaciente}</p>
                 </div>
-                <div className="bg-white/30 rounded-lg p-3">
-                  <p className="text-xs font-bold text-green-800">Edad</p>
-                  <p className="text-sm font-bold text-white">{datosCompletos.edad || "-"}</p>
+
+                {/* Edad */}
+                <div className="bg-white rounded-lg p-2.5 border border-green-200">
+                  <p className="text-xs font-bold text-green-700 uppercase tracking-wide">Edad</p>
+                  <p className="text-base font-bold text-gray-900 mt-0.5">
+                    {datosCompletos.edad ? `${datosCompletos.edad}a` : '—'}
+                  </p>
+                </div>
+
+                {/* Sexo */}
+                <div className="bg-white rounded-lg p-2.5 border border-green-200">
+                  <p className="text-xs font-bold text-green-700 uppercase tracking-wide">Sexo</p>
+                  <p className="text-base font-bold text-gray-900 mt-0.5">
+                    {datosCompletos.sexo === 'M'
+                      ? '🧑‍⚕️ M'
+                      : datosCompletos.sexo === 'F'
+                        ? '👩‍⚕️ F'
+                        : '—'}
+                  </p>
                 </div>
               </div>
 
-              {/* Phone */}
+              {/* Teléfono */}
               {datosCompletos.telefono && (
-                <div className="bg-white/30 rounded-lg p-3">
-                  <p className="text-xs font-bold text-green-800">Teléfono</p>
-                  <p className="text-sm font-bold text-white">{datosCompletos.telefono}</p>
+                <div className="bg-white rounded-lg p-2.5 border border-green-200">
+                  <p className="text-xs font-bold text-green-700 uppercase tracking-wide">Teléfono</p>
+                  <p className="text-sm font-bold text-gray-900 mt-0.5">{datosCompletos.telefono}</p>
                 </div>
               )}
 
               {/* IPRESS */}
               {datosCompletos.ipress && (
-                <div className="bg-white/30 rounded-lg p-3">
-                  <p className="text-xs font-bold text-green-800">IPRESS</p>
-                  <p className="text-sm font-bold text-white">{datosCompletos.ipress}</p>
+                <div className="bg-white rounded-lg p-2.5 border border-green-200">
+                  <p className="text-xs font-bold text-green-700 uppercase tracking-wide">IPRESS</p>
+                  <p className="text-sm font-bold text-gray-900 mt-0.5 truncate">{datosCompletos.ipress}</p>
                 </div>
               )}
             </div>
+          ) : numDocPaciente.length > 0 && numDocPaciente.length < 8 ? (
+            <div className="bg-blue-50 border-2 border-blue-300 rounded-lg p-4 text-center">
+              <p className="text-sm font-bold text-blue-900">
+                ⏳ Escribe {8 - numDocPaciente.length} dígito(s) más...
+              </p>
+            </div>
           ) : (
-            <div className="bg-gray-100 border-2 border-gray-300 rounded-lg p-4 text-sm text-gray-700 text-center font-medium">
-              👆 Ingresa el DNI del paciente (8 dígitos)
+            <div className="bg-gray-50 border-2 border-gray-300 rounded-lg p-4 text-center">
+              <p className="text-sm font-bold text-gray-700">
+                👆 Ingresa el DNI del paciente (8 dígitos)
+              </p>
+              <p className="text-xs text-gray-600 mt-1">Se buscará automáticamente</p>
             </div>
           )}
         </div>
@@ -699,34 +750,86 @@ export default function UploadImagenEKG({ onSuccess, onUploadSuccess, isWorkspac
             </div>
           </div>
 
-          {/* Image Grid - Display uploaded images */}
+          {/* Image Grid - Display uploaded images con miniaturas profesionales */}
           {archivos.length > 0 && (
             <div className="space-y-3">
-              <p className="text-sm font-bold text-gray-700">Imágenes Seleccionadas</p>
-              <div className="grid grid-cols-4 gap-3">
+              <div className="flex items-center justify-between">
+                <p className="text-sm font-bold text-gray-900">
+                  📋 Imágenes Seleccionadas ({archivos.length}/10)
+                </p>
+                <p className="text-xs text-green-600 font-semibold">
+                  ✅ Listo para cargar
+                </p>
+              </div>
+
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                 {previews.map((preview, index) => (
-                  <div key={index} className="relative group">
+                  <div
+                    key={index}
+                    className="relative group"
+                  >
+                    {/* 🔴 MINIATURA - Ver imagen real */}
                     <img
                       src={preview}
                       alt={`EKG ${index + 1}`}
-                      className="w-full h-24 rounded-lg object-cover border-2 border-gray-300 shadow-sm"
+                      className="w-full h-32 rounded-lg object-cover border-2 border-gray-300
+                        shadow-sm hover:shadow-lg hover:border-blue-500 transition-all duration-200
+                        cursor-pointer"
+                      title={`EKG ${index + 1}`}
                     />
-                    <div className="absolute bottom-1 left-1 bg-blue-600 text-white text-xs font-bold px-2 py-0.5 rounded shadow">
+
+                    {/* Tamaño archivo - Arriba derecha */}
+                    <div className="absolute top-2 right-2 bg-gray-800 bg-opacity-75 text-white text-xs
+                      px-2.5 py-1 rounded font-medium shadow-md">
+                      {archivos[index]?.size
+                        ? `${(archivos[index].size / 1024).toFixed(0)} KB`
+                        : '—'}
+                    </div>
+
+                    {/* Número de foto - Abajo izquierda */}
+                    <div className="absolute bottom-2 left-2 bg-blue-600 text-white text-xs font-bold
+                      px-3 py-1 rounded-full shadow-md">
                       {index + 1}
                     </div>
+
+                    {/* Checkmark verde - Aparece en hover */}
+                    <div className="absolute top-2 left-2 bg-green-500 text-white rounded-full w-6 h-6
+                      flex items-center justify-center opacity-0 group-hover:opacity-100
+                      transition-opacity duration-200 shadow-md">
+                      <CheckCircle className="w-5 h-5" />
+                    </div>
+
+                    {/* Botón eliminar - Hidden hasta hover */}
                     <button
                       type="button"
                       onClick={() => removerArchivo(index)}
-                      className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-lg hover:bg-red-600"
-                      title="Eliminar"
+                      className="absolute -top-2 -right-2 bg-red-500 hover:bg-red-600 text-white rounded-full w-7 h-7
+                        flex items-center justify-center opacity-0 group-hover:opacity-100
+                        transition-opacity duration-200 shadow-lg"
+                      title="Eliminar esta imagen"
+                      aria-label={`Eliminar EKG ${index + 1}`}
                     >
                       <X className="w-4 h-4" />
                     </button>
-                    {/* File name and size */}
-                    <p className="text-xs text-gray-600 mt-1 truncate">{archivos[index]?.name || `imagen-${index + 1}`}</p>
-                    <p className="text-xs text-gray-500">{archivos[index]?.size ? `${(archivos[index].size / 1024).toFixed(0)} KB` : ''}</p>
+
+                    {/* Nombre archivo - Debajo */}
+                    <p className="text-xs text-gray-700 mt-2 font-medium truncate">
+                      {archivos[index]?.name
+                        ? archivos[index].name.substring(0, 20)
+                        : `imagen-${index + 1}.jpg`}
+                    </p>
                   </div>
                 ))}
+              </div>
+
+              {/* Info de validación */}
+              <div className="bg-green-50 border border-green-300 rounded-lg p-3">
+                <p className="text-xs text-green-900 font-medium flex items-center gap-2">
+                  <CheckCircle className="w-4 h-4" />
+                  {archivos.length >= 4
+                    ? `✅ ${archivos.length} fotos seleccionadas - Listo para cargar`
+                    : `⏳ ${4 - archivos.length} fotos más necesarias`}
+                </p>
               </div>
             </div>
           )}
