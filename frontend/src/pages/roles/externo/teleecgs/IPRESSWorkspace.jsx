@@ -40,24 +40,14 @@ function formatECGsForRecientes(ecgs, pacientesCache = {}) {
   });
 
   return Object.entries(deduplicados).slice(0, 3).map(([dni, img]) => {
-    // ✅ Obtener nombre completo del cache o del ECG
-    let nombreFormateado = img.nombresPaciente || img.nombrePaciente || img.nombres || "Sin datos";
+    // ✅ Usar nombreCompleto si ya está enriquecido, si no buscar alternativas
+    let nombreFormateado = img.nombreCompleto ||
+                          img.nombresPaciente ||
+                          img.nombrePaciente ||
+                          img.nombres ||
+                          "Sin datos";
 
-    // Si existe en cache, usar el nombre formateado completo
-    if (pacientesCache[dni]) {
-      const cached = pacientesCache[dni];
-      console.log(`🔍 [formatECG] DNI ${dni} encontrado en cache:`, cached);
-
-      if (cached.apellidos && cached.nombres) {
-        nombreFormateado = `${cached.apellidos.toUpperCase()}, ${cached.nombres.toUpperCase()}`;
-        console.log(`✨ [formatECG] Nombre formateado: ${nombreFormateado}`);
-      } else if (cached.nombres) {
-        nombreFormateado = cached.nombres.toUpperCase();
-        console.log(`⚠️ [formatECG] Solo nombres disponibles: ${nombreFormateado}`);
-      }
-    } else {
-      console.log(`❌ [formatECG] DNI ${dni} NO encontrado en cache. Cache keys:`, Object.keys(pacientesCache));
-    }
+    console.log(`✅ [formatECG] DNI ${dni} - Nombre formateado: ${nombreFormateado}`);
 
     return {
       idImagen: img.idImagen || img.id,  // ✅ NECESARIO para cargar imagen
@@ -193,42 +183,65 @@ export default function IPRESSWorkspace() {
       const response = await teleecgService.listarImagenes();
       const imagenes = response?.content || [];
 
-      // ✅ PRIMERO: Buscar datos de pacientes únicos para enriquecer nombres
+      // ✅ PRIMERO: Buscar datos de pacientes y enriquecer ECGs directamente
       const pacientesUnicos = new Set(imagenes.map((img) => img.dni || img.numDocPaciente).filter(Boolean));
       const newCache = { ...pacientesCache };
 
-      // Buscar datos de pacientes que no estén en cache
-      for (const dni of pacientesUnicos) {
-        if (!newCache[dni]) {
+      // Enriquecer imágenes con datos de pacientes
+      const imagenesEnriquecidas = await Promise.all(
+        imagenes.map(async (img) => {
+          const dni = img.dni || img.numDocPaciente;
+
+          // Si ya está en cache, usar directamente
+          if (newCache[dni]) {
+            const cached = newCache[dni];
+            return {
+              ...img,
+              nombreCompleto: `${cached.apellidos}, ${cached.nombres}`.toUpperCase(),
+              apellidosPaciente: cached.apellidos,
+              nombresPaciente: cached.nombres,
+            };
+          }
+
+          // Si no está en cache, buscar en BD
           try {
             const datoPaciente = await gestionPacientesService.buscarAseguradoPorDni(dni);
             console.log(`📋 [DEBUG] Datos obtenidos para DNI ${dni}:`, datoPaciente);
 
-            // Intentar múltiples campos posibles para nombres y apellidos
+            // Extraer nombres y apellidos
             const nombres = datoPaciente?.nombres || datoPaciente?.nombre || datoPaciente?.nombreCompleto || "";
             const apellidos = datoPaciente?.apellidos || datoPaciente?.apellido || "";
 
             if (nombres) {
+              const nombreCompleto = `${apellidos}, ${nombres}`.toUpperCase();
               newCache[dni] = {
                 nombres: nombres.trim(),
                 apellidos: apellidos.trim(),
               };
-              console.log(`✅ [Cache] Agregado ${dni}: ${apellidos}, ${nombres}`);
+              console.log(`✅ [Enriquecimiento] Agregado ${dni}: ${nombreCompleto}`);
+
+              return {
+                ...img,
+                nombreCompleto: nombreCompleto,
+                apellidosPaciente: apellidos.trim(),
+                nombresPaciente: nombres.trim(),
+              };
             }
           } catch (err) {
             console.warn(`⚠️ No se pudo obtener datos del paciente ${dni}:`, err);
-            // Continuar sin el nombre enriquecido, usará el que viene del ECG
           }
-        }
-      }
-      console.log(`💾 [Cache Final] Estado del caché:`, newCache);
 
-      // ✅ SEGUNDO: Enriquecer los ECGs directamente con el caché local (no depender del state)
-      console.log(`🎯 [Enriquecimiento] Enriqueciendo ${imagenes.length} imágenes con caché local...`);
-      const ecgsFormateados = formatECGsForRecientes(imagenes, newCache);
-      console.log(`✅ [Enriquecimiento Completado] ${ecgsFormateados.length} imágenes enriquecidas`);
+          return img; // Fallback: retornar sin enriquecer
+        })
+      );
 
-      // ✅ TERCERO: Actualizar ambos estados (caché y ECGs enriquecidos)
+      console.log(`💾 [Enriquecimiento Final] ${imagenesEnriquecidas.length} imágenes enriquecidas con nombres completos`);
+
+      // ✅ SEGUNDO: Enriquecer formato para tabla
+      const ecgsFormateados = formatECGsForRecientes(imagenesEnriquecidas, newCache);
+      console.log(`✅ [Formatos] ${ecgsFormateados.length} imágenes formateadas para tabla`);
+
+      // ✅ TERCERO: Actualizar estados
       setPacientesCache(newCache);
       setEcgs(ecgsFormateados);
 

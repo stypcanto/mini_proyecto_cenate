@@ -408,7 +408,7 @@ export default function MisECGsRecientes({
                       onClick={() => onVerImagen({ dni: carga.dni, nombrePaciente: carga.nombrePaciente })}
                     >
                       {/* Fecha Carga */}
-                      <td className="px-4 py-3 text-gray-900 font-medium">
+                      <td className="px-4 py-3 text-gray-700">
                         {carga.fechaEnvio ? new Date(carga.fechaEnvio).toLocaleString('es-PE', {
                           year: 'numeric',
                           month: '2-digit',
@@ -420,12 +420,12 @@ export default function MisECGsRecientes({
                       </td>
 
                       {/* DNI */}
-                      <td className="px-4 py-3 text-gray-700 font-mono font-semibold">
+                      <td className="px-4 py-3 text-gray-700">
                         {carga.dni}
                       </td>
 
                       {/* Nombres Completo */}
-                      <td className="px-4 py-3 text-gray-900 font-semibold min-w-max" title={carga.nombrePaciente}>
+                      <td className="px-4 py-3 text-gray-700 min-w-max" title={carga.nombrePaciente}>
                         {carga.nombrePaciente}
                       </td>
 
@@ -436,14 +436,14 @@ export default function MisECGsRecientes({
                             href={`https://wa.me/${carga.telefono.replace(/\D/g, '')}`}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="text-green-600 hover:text-green-700 hover:underline font-mono text-xs"
+                            className="text-gray-700 hover:text-gray-900 cursor-pointer"
                             title="Abrir WhatsApp"
                             onClick={(e) => e.stopPropagation()}
                           >
                             {carga.telefono}
                           </a>
                         ) : (
-                          <span className="text-gray-400 text-xs">-</span>
+                          <span className="text-gray-700">-</span>
                         )}
                       </td>
 
@@ -453,7 +453,7 @@ export default function MisECGsRecientes({
                       </td>
 
                       {/* Edad */}
-                      <td className="px-4 py-3 text-gray-700 font-medium text-center">
+                      <td className="px-4 py-3 text-gray-700">
                         {carga.edad && carga.edad !== '-' ? `${carga.edad} años` : '-'}
                       </td>
 
