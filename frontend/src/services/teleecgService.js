@@ -108,40 +108,55 @@ const teleecgService = {
 
     const response = await apiClient.get(`/teleekgs?${params}`, true);
 
-    // El API retorna: { success, message, code, data: { content: [...], pageable: {...}, ... } }
-    // El componente espera: { content: [...], pageable: {...}, ... }
-    const apiData = response?.data || response || {};
+    // Backend devuelve: Lista de AseguradoConECGsDTO (bare array)
+    // ej: [ { idAsegurado: 1, ecgs: [...] }, ... ]
+    // Pero el componente espera: { content: [...] }
+    let apiData = response?.data || response || [];
+
+    // ✅ IMPORTANTE: Si la respuesta es un array directo (v1.52.6+),
+    // envolverlo en un objeto { content: [...] }
+    if (Array.isArray(apiData)) {
+      // Es un array directo del backend - envolverlo en estructura esperada
+      const arrayData = apiData;
+      apiData = { content: arrayData };
+    } else if (apiData && Array.isArray(apiData.content)) {
+      // Es una respuesta paginada tradicional - procesar normalmente
+      // (keep existing structure)
+    } else {
+      // Fallback: asegurarse de que content sea array
+      apiData = { content: [] };
+    }
 
     // Transformar propiedades de snake_case a camelCase
     if (apiData && Array.isArray(apiData.content)) {
       apiData.content = apiData.content.map(ecg => ({
-        idImagen: ecg.id_imagen,
-        numDocPaciente: ecg.num_doc_paciente,
-        nombresPaciente: ecg.nombres_paciente,
-        apellidosPaciente: ecg.apellidos_paciente,
-        pacienteNombreCompleto: ecg.paciente_nombre_completo,
-        generoPaciente: ecg.genero_paciente,
-        edadPaciente: ecg.edad_paciente,
-        telefonoPrincipalPaciente: ecg.telefono_principal_paciente,
-        codigoIpress: ecg.codigo_ipress,
-        nombreIpress: ecg.nombre_ipress,
-        nombreArchivo: ecg.nombre_archivo,
-        nombreOriginal: ecg.nombre_original,
+        idImagen: ecg.id_imagen || ecg.idImagen,
+        numDocPaciente: ecg.num_doc_paciente || ecg.numDocPaciente,
+        nombresPaciente: ecg.nombres_paciente || ecg.nombresPaciente,
+        apellidosPaciente: ecg.apellidos_paciente || ecg.apellidosPaciente,
+        pacienteNombreCompleto: ecg.paciente_nombre_completo || ecg.pacienteNombreCompleto,
+        generoPaciente: ecg.genero_paciente || ecg.generoPaciente,
+        edadPaciente: ecg.edad_paciente || ecg.edadPaciente,
+        telefonoPrincipalPaciente: ecg.telefono_principal_paciente || ecg.telefonoPrincipalPaciente,
+        codigoIpress: ecg.codigo_ipress || ecg.codigoIpress,
+        nombreIpress: ecg.nombre_ipress || ecg.nombreIpress,
+        nombreArchivo: ecg.nombre_archivo || ecg.nombreArchivo,
+        nombreOriginal: ecg.nombre_original || ecg.nombreOriginal,
         extension: ecg.extension,
-        mimeType: ecg.mime_type,
-        sizeBytes: ecg.size_bytes,
+        mimeType: ecg.mime_type || ecg.mimeType,
+        sizeBytes: ecg.size_bytes || ecg.sizeBytes,
         estado: ecg.estado,
-        fechaEnvio: ecg.fecha_envio,
-        fechaRecepcion: ecg.fecha_recepcion,
-        fechaExpiracion: ecg.fecha_expiracion,
-        storageTipo: ecg.storage_tipo,
-        storageRuta: ecg.storage_ruta,
+        fechaEnvio: ecg.fecha_envio || ecg.fechaEnvio,
+        fechaRecepcion: ecg.fecha_recepcion || ecg.fechaRecepcion,
+        fechaExpiracion: ecg.fecha_expiracion || ecg.fechaExpiracion,
+        storageTipo: ecg.storage_tipo || ecg.storageTipo,
+        storageRuta: ecg.storage_ruta || ecg.storageRuta,
         sha256: ecg.sha256,
         // Propiedades formateadas
-        tamanoFormato: ecg.tamanio_formato,
-        estadoFormato: ecg.estado_formato,
-        fechaEnvioFormato: ecg.fecha_envio_formato,
-        diasRestantes: ecg.dias_restantes,
+        tamanoFormato: ecg.tamanio_formato || ecg.tamanoFormato,
+        estadoFormato: ecg.estado_formato || ecg.estadoFormato,
+        fechaEnvioFormato: ecg.fecha_envio_formato || ecg.fechaEnvioFormato,
+        diasRestantes: ecg.dias_restantes || ecg.diasRestantes,
         vigencia: ecg.vigencia,
         // Mantener originales también
         ...ecg

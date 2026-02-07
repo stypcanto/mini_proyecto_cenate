@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import {
   Upload, X, CheckCircle, AlertCircle, FileImage,
-  Loader, Heart, User, Trash2, Plus, Camera, WifiOff, Wifi
+  Loader, Heart, User, Trash2, Plus, Camera, WifiOff, Wifi, ChevronDown, ChevronUp
 } from "lucide-react";
 import toast from "react-hot-toast";
 import teleekgService from "../../services/teleekgService";
@@ -112,6 +112,7 @@ export default function UploadImagenEKG({ onSuccess, onUploadSuccess, isWorkspac
   const [imageValidationStates, setImageValidationStates] = useState({});
   const [imageErrors, setImageErrors] = useState({});
   const [activeSection, setActiveSection] = useState("patient");
+  const [expandPatientInfo, setExpandPatientInfo] = useState(true); // Toggle sección paciente
 
   // Progress Bar States
   const [uploadProgress, setUploadProgress] = useState(0); // 0-100%
@@ -561,18 +562,38 @@ export default function UploadImagenEKG({ onSuccess, onUploadSuccess, isWorkspac
         )}
 
         {/* Section 1: Patient Information */}
-        <div className={`rounded-lg border p-4 transition-all duration-200 ${
+        <div className={`rounded-lg border transition-all duration-200 ${
+          expandPatientInfo ? 'p-4' : 'p-3'
+        } ${
           esUrgente
             ? 'bg-red-50 border-red-900/20'
             : 'bg-gray-50 border-blue-900/20'
         }`}>
-          <h3 className={`text-sm font-bold mb-3 flex items-center gap-2 ${
-            esUrgente ? 'text-red-900' : 'text-blue-900'
-          }`}>
-            <User className="w-4 h-4" />
-            <span>Información del Paciente</span>
-          </h3>
+          {/* Header con botón toggle */}
+          <button
+            type="button"
+            onClick={() => setExpandPatientInfo(!expandPatientInfo)}
+            className={`w-full flex items-center justify-between mb-3 p-2 rounded-lg hover:bg-white/50 transition-colors ${
+              esUrgente ? 'text-red-900' : 'text-blue-900'
+            }`}
+            title={expandPatientInfo ? "Ocultar sección" : "Expandir sección"}
+          >
+            <h3 className="text-sm font-bold flex items-center gap-2">
+              <User className="w-4 h-4" />
+              <span>Información del Paciente</span>
+            </h3>
+            <div className="flex items-center gap-1">
+              {expandPatientInfo ? (
+                <ChevronUp className="w-5 h-5" />
+              ) : (
+                <ChevronDown className="w-5 h-5" />
+              )}
+            </div>
+          </button>
 
+          {/* Contenido expandible */}
+          {expandPatientInfo && (
+            <>
           {/* Toggle de Urgencia */}
           <div className="mb-4 flex items-center justify-between p-4 bg-white rounded-lg border border-gray-200">
             <div className="flex items-center gap-3">
@@ -722,6 +743,8 @@ export default function UploadImagenEKG({ onSuccess, onUploadSuccess, isWorkspac
               </p>
               <p className="text-xs text-gray-600 mt-1">Se buscará automáticamente</p>
             </div>
+          )}
+            </>
           )}
         </div>
 
