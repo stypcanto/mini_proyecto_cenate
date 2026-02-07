@@ -592,8 +592,8 @@ export default function UploadImagenEKG({ onSuccess, onUploadSuccess, isWorkspac
               </div>
 
               {/* DNI Input */}
-              <div className="mb-2">
-                <label className="block text-xs font-bold text-gray-700 mb-1.5">🆔 DNI del Paciente *</label>
+              <div className="mb-1.5">
+                <label className="block text-xs font-bold text-gray-700 mb-1">🆔 DNI del Paciente *</label>
                 <div className="relative">
                   <input
                     type="tel"
