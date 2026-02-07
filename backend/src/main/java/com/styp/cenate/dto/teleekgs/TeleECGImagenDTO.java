@@ -409,4 +409,12 @@ public class TeleECGImagenDTO {
             fechaExpiracion
         );
     }
+
+    /**
+     * Thumbnail Base64 para preview rápido (v1.56.9)
+     * Imagen comprimida 200x150px para mostrar mientras carga imagen completa
+     * Reduce tamaño: imagen original → ~5-10% thumbnail
+     */
+    @JsonProperty("thumbnail_base64")
+    private String thumbnailBase64;
 }

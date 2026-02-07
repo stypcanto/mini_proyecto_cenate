@@ -47,7 +47,7 @@ const VisorEKGModal = ({ ecg, imagenes = [], onClose, onDescargar }) => {
     setRotation(0);
   }, []);
 
-  // Decodificar imagen en background con caching
+  // Decodificar imagen actual + precargar siguiente en background
   useEffect(() => {
     if (!imagenActual?.contenidoImagen) {
       setEstaCargando(false);
@@ -59,23 +59,27 @@ const VisorEKGModal = ({ ecg, imagenes = [], onClose, onDescargar }) => {
     // Si ya está en cache, usar cache
     if (imageCache[id]) {
       setEstaCargando(false);
+      // Precargar siguiente imagen mientras mostramos actual
+      precargarSiguiente();
       return;
     }
 
-    // Decodificar en background
+    // Decodificar imagen actual en background
     setEstaCargando(true);
 
-    // Usar requestIdleCallback para no bloquear UI
     const callback = window.requestIdleCallback ?
       window.requestIdleCallback(() => {
         const url = `data:${imagenActual.tipoContenido};base64,${imagenActual.contenidoImagen}`;
         setImageCache((prev) => ({ ...prev, [id]: url }));
         setEstaCargando(false);
+        // Una vez cargada, precargar siguiente
+        precargarSiguiente();
       }) :
       setTimeout(() => {
         const url = `data:${imagenActual.tipoContenido};base64,${imagenActual.contenidoImagen}`;
         setImageCache((prev) => ({ ...prev, [id]: url }));
         setEstaCargando(false);
+        precargarSiguiente();
       }, 0);
 
     return () => {
@@ -86,6 +90,29 @@ const VisorEKGModal = ({ ecg, imagenes = [], onClose, onDescargar }) => {
       }
     };
   }, [imagenActual, indiceActual, imageCache]);
+
+  // Precargar siguiente imagen en background (v1.56.9)
+  const precargarSiguiente = useCallback(() => {
+    if (todasLasImagenes.length <= 1) return;
+
+    const indiceSiguiente = (indiceActual + 1) % todasLasImagenes.length;
+    const imagenSiguiente = todasLasImagenes[indiceSiguiente];
+    const idSiguiente = imagenSiguiente.idImagen || `${indiceSiguiente}`;
+
+    // Si ya está en cache, no precargar
+    if (imageCache[idSiguiente]) return;
+
+    // Precargar cuando navegador está libre
+    if (window.requestIdleCallback) {
+      window.requestIdleCallback(() => {
+        if (imagenSiguiente?.contenidoImagen) {
+          const url = `data:${imagenSiguiente.tipoContenido};base64,${imagenSiguiente.contenidoImagen}`;
+          setImageCache((prev) => ({ ...prev, [idSiguiente]: url }));
+          console.log(`📦 Precargar imagen ${indiceSiguiente + 1} completada`);
+        }
+      });
+    }
+  }, [indiceActual, todasLasImagenes, imageCache]);
 
   // Obtener URL cached o null
   const imageUrl = useMemo(() => {

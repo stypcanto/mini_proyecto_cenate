@@ -128,8 +128,8 @@ export default function IPRESSWorkspace() {
   const [activeTab, setActiveTab] = useState("upload");
   const [deviceSize, setDeviceSize] = useState(() => {
     const width = window.innerWidth;
-    if (width >= 1200) return "desktop";
-    if (width >= 768) return "tablet";
+    if (width >= 1024) return "desktop";  // lg breakpoint de Tailwind
+    if (width >= 768) return "tablet";    // md breakpoint de Tailwind
     return "mobile";
   });
 
@@ -151,8 +151,8 @@ export default function IPRESSWorkspace() {
     const handleResize = () => {
       const width = window.innerWidth;
       let newSize = "mobile";
-      if (width >= 1200) newSize = "desktop";
-      else if (width >= 768) newSize = "tablet";
+      if (width >= 1024) newSize = "desktop";  // lg breakpoint de Tailwind
+      else if (width >= 768) newSize = "tablet"; // md breakpoint de Tailwind
       setDeviceSize(newSize);
     };
 
