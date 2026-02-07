@@ -32,9 +32,22 @@ export default function MisECGsRecientes({
 
   return (
     <div className="bg-white rounded-lg shadow-lg p-6 border border-gray-100 h-fit">
-      {/* ==================== ESTADÍSTICAS EN PÍLDORAS ==================== */}
+      {/* ==================== ESTADÍSTICAS EN PÍLDORAS CON BOTÓN REFRESCAR ==================== */}
       <div className="mb-6">
-        <h3 className="text-sm font-bold text-gray-900 mb-3">📊 Resumen de Hoy</h3>
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="text-sm font-bold text-gray-900">📊 Resumen de Hoy</h3>
+
+          {/* Botón Refrescar - Solo ícono, arriba a la derecha */}
+          <button
+            onClick={onRefrescar}
+            disabled={loading}
+            className="p-2 hover:bg-gray-100 rounded-full transition-all duration-200 disabled:opacity-50"
+            title="Refrescar estadísticas"
+            aria-label="Refrescar datos"
+          >
+            <RefreshCw className={`w-4 h-4 text-gray-600 ${loading ? 'animate-spin' : ''}`} />
+          </button>
+        </div>
 
         <div className="flex gap-2 flex-wrap">
           {/* Exitosas - Verde */}
@@ -69,12 +82,12 @@ export default function MisECGsRecientes({
         </div>
       </div>
 
-      {/* ==================== ÚLTIMAS CARGAS CON TOOLTIPS ==================== */}
+      {/* ==================== ÚLTIMAS CARGAS CON TOOLTIPS - COMPACTO ==================== */}
       <div className="mb-6">
         <h3 className="text-sm font-bold text-gray-900 mb-3">🕐 Últimas Cargas</h3>
 
         {ultimas3.length > 0 ? (
-          <div className="space-y-3">
+          <div className="space-y-2">
             {ultimas3.map((carga, idx) => {
               const esObservacion = carga.estado === 'OBSERVACION';
               const tooltipAbierto = expandidoTooltip === idx;
@@ -88,20 +101,20 @@ export default function MisECGsRecientes({
                       : 'bg-green-50 border-green-300 hover:shadow-md hover:border-green-400'
                     }`}
                 >
-                  <div className="p-3 flex items-start gap-3">
+                  <div className="p-2 flex items-start gap-2">
                     {/* Icono estado */}
                     <div className="flex-shrink-0 mt-0.5">
                       {carga.estado === 'ENVIADA' ? (
-                        <CheckCircle className="w-5 h-5 text-green-600" />
+                        <CheckCircle className="w-4 h-4 text-green-600" />
                       ) : (
-                        <AlertCircle className="w-5 h-5 text-amber-600" />
+                        <AlertCircle className="w-4 h-4 text-amber-600" />
                       )}
                     </div>
 
                     {/* Info paciente */}
                     <div className="flex-1 min-w-0">
-                      {/* Nombre paciente */}
-                      <p className="font-bold text-gray-900 text-sm truncate">
+                      {/* Nombre paciente - Fuente más pequeña */}
+                      <p className="font-bold text-gray-900 text-xs truncate">
                         {carga.nombrePaciente}
                       </p>
 
@@ -111,28 +124,28 @@ export default function MisECGsRecientes({
                       </p>
 
                       {/* Tiempo transcurrido */}
-                      <p className="text-xs text-gray-500 mt-1 flex items-center gap-1">
+                      <p className="text-xs text-gray-500 mt-0.5 flex items-center gap-1">
                         <Clock className="w-3 h-3" />
                         {carga.tiempoTranscurrido}
                       </p>
 
-                      {/* 🔴 TOOLTIP INTEGRADO - Observaciones */}
+                      {/* 🔴 TOOLTIP INTEGRADO - Observaciones - Compacto */}
                       {esObservacion && carga.observacion && (
                         <div
-                          className={`mt-3 p-3 bg-white border-l-4 border-amber-600 rounded
+                          className={`mt-1.5 p-2 bg-white border-l-4 border-amber-600 rounded text-xs
                             transition-all duration-300 ease-out cursor-pointer
                             ${tooltipAbierto ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0 overflow-hidden'}`}
                           onClick={() =>
                             setExpandidoTooltip(tooltipAbierto ? null : idx)
                           }
                         >
-                          <div className="flex items-start gap-2">
-                            <AlertCircle className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
+                          <div className="flex items-start gap-1.5">
+                            <AlertCircle className="w-3 h-3 text-amber-600 flex-shrink-0 mt-0.5" />
                             <div className="flex-1">
-                              <p className="text-xs font-bold text-amber-900 mb-1">
-                                📌 Observación del médico:
+                              <p className="font-bold text-amber-900 mb-0.5">
+                                📌 Observación:
                               </p>
-                              <p className="text-xs text-amber-800 leading-relaxed">
+                              <p className="text-amber-800 leading-relaxed">
                                 "{carga.observacion}"
                               </p>
                             </div>
@@ -140,41 +153,41 @@ export default function MisECGsRecientes({
                         </div>
                       )}
 
-                      {/* Botón expandir/colapsar tooltip (si hay observación) */}
+                      {/* Botón expandir/colapsar tooltip - Más pequeño */}
                       {esObservacion && carga.observacion && (
                         <button
                           onClick={() =>
                             setExpandidoTooltip(tooltipAbierto ? null : idx)
                           }
-                          className="text-xs text-amber-600 hover:text-amber-700 font-medium mt-2
-                            flex items-center gap-1 transition-colors"
+                          className="text-xs text-amber-600 hover:text-amber-700 font-medium mt-1
+                            flex items-center gap-0.5 transition-colors"
                         >
                           {tooltipAbierto ? (
                             <>
                               <ChevronUp className="w-3 h-3" />
-                              Ocultar detalle
+                              Ocultar
                             </>
                           ) : (
                             <>
                               <ChevronDown className="w-3 h-3" />
-                              Ver detalle
+                              Ver
                             </>
                           )}
                         </button>
                       )}
                     </div>
 
-                    {/* Botón "Ver" - Abre en nueva pestaña (ruta accesible para rol actual) */}
+                    {/* Botón "Ver" - Pequeño */}
                     <button
                       onClick={() =>
                         window.open(`/teleekgs/listar?dni=${carga.dni}`, '_blank', 'noopener,noreferrer')
                       }
-                      className="flex-shrink-0 p-2 hover:bg-blue-100 rounded-lg
+                      className="flex-shrink-0 p-1.5 hover:bg-blue-100 rounded-lg
                         transition-colors duration-200"
                       title="Ver en nueva pestaña"
                       aria-label={`Ver EKG de ${carga.nombrePaciente} en nueva pestaña`}
                     >
-                      <ExternalLink className="w-4 h-4 text-blue-600 hover:text-blue-700" />
+                      <ExternalLink className="w-3.5 h-3.5 text-blue-600 hover:text-blue-700" />
                     </button>
                   </div>
                 </div>
@@ -182,21 +195,21 @@ export default function MisECGsRecientes({
             })}
           </div>
         ) : (
-          <div className="bg-gray-50 border-2 border-gray-200 rounded-lg p-4 text-center">
-            <Clock className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-            <p className="text-sm text-gray-600">
+          <div className="bg-gray-50 border-2 border-gray-200 rounded-lg p-3 text-center">
+            <Clock className="w-6 h-6 text-gray-400 mx-auto mb-1.5" />
+            <p className="text-xs text-gray-600">
               No hay cargas recientes. ¡Sube tu primer EKG!
             </p>
           </div>
         )}
       </div>
 
-      {/* ==================== BOTONES DE ACCIÓN ==================== */}
-      <div className="flex gap-2">
+      {/* ==================== BOTÓN DE ACCIÓN PRINCIPAL ==================== */}
+      <div>
         {/* Ver Registro Completo - ABRE EN NUEVA PESTAÑA (ruta accesible para rol actual) */}
         <button
           onClick={onVerRegistro}
-          className="flex-1 px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white
+          className="w-full px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white
             rounded-lg font-semibold text-sm transition-all duration-200
             flex items-center justify-center gap-2 shadow-sm hover:shadow-md
             active:translate-y-0.5"
@@ -204,21 +217,6 @@ export default function MisECGsRecientes({
         >
           <ExternalLink className="w-4 h-4" />
           Ver Registro Completo ↗
-        </button>
-
-        {/* Refrescar */}
-        <button
-          onClick={onRefrescar}
-          disabled={loading}
-          className="px-4 py-3 bg-gray-200 hover:bg-gray-300 text-gray-800
-            rounded-lg font-semibold text-sm transition-all duration-200
-            disabled:opacity-50 disabled:cursor-not-allowed shadow-sm hover:shadow-md
-            flex items-center justify-center gap-2"
-          title="Refrescar estadísticas"
-        >
-          <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-          <span className="hidden sm:inline">🔄</span>
-          <span className="sm:hidden">Refrescar</span>
         </button>
       </div>
     </div>

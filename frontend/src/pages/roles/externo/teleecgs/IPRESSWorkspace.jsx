@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
-import { Upload, List, BarChart3 } from "lucide-react";
+import { Upload, List, BarChart3, Wifi, WifiOff } from "lucide-react";
 import toast from "react-hot-toast";
+import { useOnlineStatus } from "../../../../hooks/useOnlineStatus";
 import UploadImagenECG from "../../../../components/teleecgs/UploadImagenECG";
 import UploadFormWrapper from "../../../../components/teleecgs/UploadFormWrapper";
 import MisECGsRecientes from "../../../../components/teleecgs/MisECGsRecientes";
@@ -66,6 +67,7 @@ export default function IPRESSWorkspace() {
   // =======================================
   // 📊 STATE MANAGEMENT
   // =======================================
+  const isOnline = useOnlineStatus();
   const [ecgs, setEcgs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({
@@ -186,14 +188,38 @@ export default function IPRESSWorkspace() {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
         <div className="max-w-7xl mx-auto px-4 py-6">
-          {/* Header */}
-          <div className="mb-6">
-            <h1 className="text-3xl font-bold text-slate-900 mb-2">
-              📋 Gestión de Electrocardiogramas
-            </h1>
-            <p className="text-slate-600">
-              Sube y gestiona tus imágenes ECG desde aquí
-            </p>
+          {/* Header con indicador de conexión */}
+          <div className="mb-6 flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold text-slate-900 mb-2">
+                📋 Gestión de Electrocardiogramas
+              </h1>
+              <p className="text-slate-600">
+                Sube y gestiona tus imágenes ECG desde aquí
+              </p>
+            </div>
+
+            {/* Indicador de Conexión */}
+            <div className={`flex items-center gap-2 px-4 py-2 rounded-full border-2 transition-all duration-200 ${
+              isOnline
+                ? 'bg-green-50 border-green-300'
+                : 'bg-red-50 border-red-300 animate-pulse'
+            }`}>
+              {isOnline ? (
+                <>
+                  <Wifi className="w-5 h-5 text-green-600" />
+                  <span className="text-sm font-semibold text-green-900">Conectado</span>
+                </>
+              ) : (
+                <>
+                  <WifiOff className="w-5 h-5 text-red-600" />
+                  <div className="flex flex-col">
+                    <span className="text-sm font-bold text-red-900">Sin conexión</span>
+                    <span className="text-xs text-red-700">Se guardará localmente</span>
+                  </div>
+                </>
+              )}
+            </div>
           </div>
 
           {/* Split View Container */}
@@ -233,14 +259,35 @@ export default function IPRESSWorkspace() {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
         <div className="w-full px-4 py-6">
-          {/* Header */}
-          <div className="mb-6">
-            <h1 className="text-2xl font-bold text-slate-900 mb-2">
-              📋 Gestión de EKGs
-            </h1>
-            <p className="text-slate-600 text-sm">
-              Sube y gestiona tus imágenes ECG
-            </p>
+          {/* Header con indicador de conexión */}
+          <div className="mb-6 flex items-start justify-between gap-4">
+            <div>
+              <h1 className="text-2xl font-bold text-slate-900 mb-2">
+                📋 Gestión de EKGs
+              </h1>
+              <p className="text-slate-600 text-sm">
+                Sube y gestiona tus imágenes ECG
+              </p>
+            </div>
+
+            {/* Indicador de Conexión - Tablet */}
+            <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full border-2 text-sm transition-all duration-200 flex-shrink-0 ${
+              isOnline
+                ? 'bg-green-50 border-green-300'
+                : 'bg-red-50 border-red-300 animate-pulse'
+            }`}>
+              {isOnline ? (
+                <>
+                  <Wifi className="w-4 h-4 text-green-600" />
+                  <span className="font-semibold text-green-900 hidden sm:inline">Conectado</span>
+                </>
+              ) : (
+                <>
+                  <WifiOff className="w-4 h-4 text-red-600" />
+                  <span className="font-semibold text-red-900 hidden sm:inline">Sin conexión</span>
+                </>
+              )}
+            </div>
           </div>
 
           {/* Stacked Layout: Upload + Tabla */}
@@ -334,14 +381,29 @@ export default function IPRESSWorkspace() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
       <div className="max-w-4xl mx-auto px-4 py-6">
-        {/* Header */}
-        <div className="mb-6">
-          <h1 className="text-2xl font-bold text-slate-900 mb-2">
-            📋 Gestión de EKGs
-          </h1>
-          <p className="text-slate-600 text-sm">
-            Sube y gestiona tus imágenes ECG
-          </p>
+        {/* Header con indicador de conexión */}
+        <div className="mb-6 flex items-start justify-between gap-3">
+          <div>
+            <h1 className="text-2xl font-bold text-slate-900 mb-2">
+              📋 Gestión de EKGs
+            </h1>
+            <p className="text-slate-600 text-sm">
+              Sube y gestiona tus imágenes ECG
+            </p>
+          </div>
+
+          {/* Indicador de Conexión - Mobile */}
+          <div className={`flex items-center justify-center rounded-full p-2.5 border-2 transition-all duration-200 flex-shrink-0 ${
+            isOnline
+              ? 'bg-green-50 border-green-300'
+              : 'bg-red-50 border-red-300 animate-pulse'
+          }`}>
+            {isOnline ? (
+              <Wifi className="w-5 h-5 text-green-600" />
+            ) : (
+              <WifiOff className="w-5 h-5 text-red-600" />
+            )}
+          </div>
         </div>
 
         {/* Manual Tabs Container */}

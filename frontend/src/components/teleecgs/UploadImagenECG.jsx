@@ -98,6 +98,7 @@ export default function UploadImagenEKG({ onSuccess, onUploadSuccess, isWorkspac
   });
   const [searchingPaciente, setSearchingPaciente] = useState(false);
   const [pacienteEncontrado, setPacienteEncontrado] = useState(false);
+  const [esUrgente, setEsUrgente] = useState(false);
 
   // UI
   const [loading, setLoading] = useState(false);
@@ -461,6 +462,7 @@ export default function UploadImagenEKG({ onSuccess, onUploadSuccess, isWorkspac
     setRespuestaServidor(null);
     setPacienteEncontrado(false);
     setCarouselIndex(0);
+    setEsUrgente(false); // ✅ Limpiar urgencia
     localStorage.removeItem(STORAGE_KEY);
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
@@ -544,13 +546,59 @@ export default function UploadImagenEKG({ onSuccess, onUploadSuccess, isWorkspac
       </div>
 
       {/* Desktop: 3 Vertical Sections - Profesional y Compacto */}
-      <form onSubmit={handleSubmit} className="hidden xl:flex xl:flex-col flex-1 overflow-y-auto gap-3 p-5 bg-white">
+      <form onSubmit={handleSubmit} className={`hidden xl:flex xl:flex-col flex-1 overflow-y-auto gap-3 p-5 bg-white border-l-4 transition-all duration-200 ${
+        esUrgente ? 'border-red-600' : 'border-transparent'
+      }`}>
+        {/* Alert de Urgencia */}
+        {esUrgente && (
+          <div className="bg-red-50 border-2 border-red-300 rounded-lg p-3 flex items-start gap-2">
+            <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+            <div>
+              <p className="text-sm font-bold text-red-900">⚠️ Caso marcado como URGENTE</p>
+              <p className="text-xs text-red-700">Este EKG será priorizado para evaluación inmediata</p>
+            </div>
+          </div>
+        )}
+
         {/* Section 1: Patient Information */}
-        <div className="bg-gray-50 rounded-lg border border-blue-900/20 p-4">
-          <h3 className="text-sm font-bold text-blue-900 mb-3 flex items-center gap-2">
+        <div className={`rounded-lg border p-4 transition-all duration-200 ${
+          esUrgente
+            ? 'bg-red-50 border-red-900/20'
+            : 'bg-gray-50 border-blue-900/20'
+        }`}>
+          <h3 className={`text-sm font-bold mb-3 flex items-center gap-2 ${
+            esUrgente ? 'text-red-900' : 'text-blue-900'
+          }`}>
             <User className="w-4 h-4" />
             <span>Información del Paciente</span>
           </h3>
+
+          {/* Toggle de Urgencia */}
+          <div className="mb-4 flex items-center justify-between p-4 bg-white rounded-lg border border-gray-200">
+            <div className="flex items-center gap-3">
+              <Heart className={`w-5 h-5 ${esUrgente ? 'text-red-600' : 'text-gray-400'}`} />
+              <div>
+                <p className="font-bold text-gray-900 text-sm">¿Caso urgente?</p>
+                <p className="text-xs text-gray-600">Marcar si requiere atención prioritaria</p>
+              </div>
+            </div>
+
+            {/* Toggle Switch */}
+            <button
+              type="button"
+              onClick={() => setEsUrgente(!esUrgente)}
+              className={`relative inline-flex h-8 w-14 items-center rounded-full transition-all duration-200 ${
+                esUrgente ? 'bg-red-600' : 'bg-gray-300'
+              }`}
+              title="Marcar caso como urgente"
+            >
+              <span
+                className={`inline-block h-6 w-6 transform rounded-full bg-white transition-transform duration-200 ${
+                  esUrgente ? 'translate-x-7' : 'translate-x-1'
+                }`}
+              />
+            </button>
+          </div>
 
           {/* DNI Input - GRANDE Y VISIBLE */}
           <div className="mb-4">
@@ -564,7 +612,7 @@ export default function UploadImagenEKG({ onSuccess, onUploadSuccess, isWorkspac
                 pattern="[0-9]{8}"
                 value={numDocPaciente}
                 onChange={(e) => setNumDocPaciente(e.target.value.replace(/[^0-9]/g, '').slice(0, 8))}
-                placeholder="12 34 56 78"
+                placeholder="12345678"
                 maxLength="8"
                 disabled={searchingPaciente}
                 className="w-full px-4 py-4 border-2 border-blue-300 rounded-lg
@@ -678,8 +726,14 @@ export default function UploadImagenEKG({ onSuccess, onUploadSuccess, isWorkspac
         </div>
 
         {/* Section 2: Image Selection */}
-        <div className="bg-gray-50 rounded-lg border border-blue-900/20 p-4">
-          <h3 className="text-sm font-bold text-blue-900 mb-1.5 flex items-center gap-2 transition-colors">
+        <div className={`rounded-lg border p-4 transition-all duration-200 ${
+          esUrgente
+            ? 'bg-red-50 border-red-900/20'
+            : 'bg-gray-50 border-blue-900/20'
+        }`}>
+          <h3 className={`text-sm font-bold mb-1.5 flex items-center gap-2 transition-colors ${
+            esUrgente ? 'text-red-900' : 'text-blue-900'
+          }`}>
             <FileImage className="w-4 h-4" />
             Selecciona Imágenes del EKG ({archivos.length}/{MAX_IMAGENES})
           </h3>
@@ -837,20 +891,30 @@ export default function UploadImagenEKG({ onSuccess, onUploadSuccess, isWorkspac
 
         {/* Barra de Progreso - Desktop Upload */}
         {uploadingFiles && (
-          <div className="bg-blue-50 border-2 border-blue-200 rounded-lg p-4 mb-3">
+          <div className={`border-2 rounded-lg p-4 mb-3 transition-all duration-200 ${
+            esUrgente
+              ? 'bg-red-50 border-red-200'
+              : 'bg-blue-50 border-blue-200'
+          }`}>
             <div className="flex items-center justify-between mb-2">
-              <p className="text-sm font-bold text-blue-900">
+              <p className={`text-sm font-bold ${esUrgente ? 'text-red-900' : 'text-blue-900'}`}>
                 📤 Subiendo archivos...
               </p>
-              <p className="text-xs font-semibold text-blue-700">
+              <p className={`text-xs font-semibold ${esUrgente ? 'text-red-700' : 'text-blue-700'}`}>
                 {currentFileIndex}/{archivos.length} archivos
               </p>
             </div>
 
             {/* Progress Bar */}
-            <div className="w-full bg-blue-200 rounded-full h-3 overflow-hidden shadow-inner">
+            <div className={`w-full rounded-full h-3 overflow-hidden shadow-inner ${
+              esUrgente ? 'bg-red-200' : 'bg-blue-200'
+            }`}>
               <div
-                className="bg-gradient-to-r from-blue-600 to-indigo-600 h-full transition-all duration-300 flex items-center justify-end"
+                className={`h-full transition-all duration-300 flex items-center justify-end ${
+                  esUrgente
+                    ? 'bg-gradient-to-r from-red-600 to-orange-600'
+                    : 'bg-gradient-to-r from-blue-600 to-indigo-600'
+                }`}
                 style={{ width: `${uploadProgress}%` }}
               >
                 <span className="text-white text-xs font-bold pr-2">
@@ -861,46 +925,50 @@ export default function UploadImagenEKG({ onSuccess, onUploadSuccess, isWorkspac
 
             {/* Spinner animado */}
             <div className="flex items-center gap-2 mt-2">
-              <Loader className="w-4 h-4 animate-spin text-blue-600" />
-              <p className="text-xs text-blue-700">
+              <Loader className={`w-4 h-4 animate-spin ${esUrgente ? 'text-red-600' : 'text-blue-600'}`} />
+              <p className={`text-xs ${esUrgente ? 'text-red-700' : 'text-blue-700'}`}>
                 {uploadProgress < 100 ? 'Cargando imágenes al servidor...' : '✅ Upload completo'}
               </p>
             </div>
           </div>
         )}
 
-        {/* Section 3: Upload Button - Institucional */}
+        {/* Section 3: Upload Button - GRANDE Y DESTACADO */}
         <button
           type="submit"
-          disabled={archivos.length < MIN_IMAGENES || loading || enviado || !pacienteEncontrado}
-          className={`w-full py-2.5 rounded font-bold text-xs flex items-center justify-center gap-2 transition duration-200 shadow-md ${
-            archivos.length >= MIN_IMAGENES && !loading && !enviado && pacienteEncontrado
-              ? "bg-blue-900 hover:bg-blue-800 text-white hover:shadow-lg"
-              : "bg-gray-300 text-gray-500 cursor-not-allowed opacity-60"
+          disabled={!validarFormulario() || loading || uploadingFiles}
+          className={`w-full py-5 px-6 rounded-xl font-bold text-lg transition-all duration-200 flex items-center justify-center gap-3 shadow-lg hover:shadow-xl transform ${
+            validarFormulario() && !loading && !uploadingFiles
+              ? 'bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white hover:scale-102 active:scale-95'
+              : 'bg-gray-300 text-gray-500 cursor-not-allowed'
           }`}
           title={archivos.length < MIN_IMAGENES ? `Se requieren al menos ${MIN_IMAGENES} imágenes` : ""}
         >
-          {loading ? (
+          {loading || uploadingFiles ? (
             <>
-              <Loader className="w-3.5 h-3.5 animate-spin" />
+              <Loader className="w-6 h-6 animate-spin" />
               <span>Subiendo...</span>
-            </>
-          ) : enviado ? (
-            <>
-              <CheckCircle className="w-3.5 h-3.5" />
-              <span>✅ Cargado</span>
             </>
           ) : (
             <>
-              <Upload className="w-3.5 h-3.5" />
-              <span>
-                {archivos.length >= MIN_IMAGENES
-                  ? `Cargar ${archivos.length} EKGs`
-                  : `Requiere ${MIN_IMAGENES - archivos.length} más`}
-              </span>
+              <Upload className="w-6 h-6" />
+              <span>Cargar {archivos.length} EKGs →</span>
             </>
           )}
         </button>
+
+        {/* Requisitos debajo del botón */}
+        <div className="mt-3 flex items-center justify-center gap-2 text-sm text-gray-600 flex-wrap">
+          <div className={`flex items-center gap-1 ${pacienteEncontrado ? 'text-green-600' : 'text-gray-400'}`}>
+            {pacienteEncontrado ? <CheckCircle className="w-4 h-4" /> : <AlertCircle className="w-4 h-4" />}
+            <span className="text-xs">DNI válido</span>
+          </div>
+          <span className="text-gray-300">•</span>
+          <div className={`flex items-center gap-1 ${archivos.length >= MIN_IMAGENES ? 'text-green-600' : 'text-gray-400'}`}>
+            {archivos.length >= MIN_IMAGENES ? <CheckCircle className="w-4 h-4" /> : <AlertCircle className="w-4 h-4" />}
+            <span className="text-xs">{archivos.length}/{MIN_IMAGENES} fotos</span>
+          </div>
+        </div>
 
         {/* Hidden File Inputs */}
         <input
