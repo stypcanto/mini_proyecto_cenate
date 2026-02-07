@@ -5,6 +5,7 @@ import { useOnlineStatus } from "../../../../hooks/useOnlineStatus";
 import UploadImagenECG from "../../../../components/teleecgs/UploadImagenECG";
 import UploadFormWrapper from "../../../../components/teleecgs/UploadFormWrapper";
 import MisECGsRecientes from "../../../../components/teleecgs/MisECGsRecientes";
+import VisorECGModal from "../../../../components/teleecgs/VisorECGModal";  // ✅ Nuevo
 import RegistroPacientes from "./RegistroPacientes";
 import TeleECGEstadisticas from "./TeleECGEstadisticas";
 import teleecgService from "../../../../services/teleecgService";
@@ -83,6 +84,13 @@ export default function IPRESSWorkspace() {
     if (width >= 768) return "tablet";
     return "mobile";
   });
+
+  // ✅ Nuevo: Estado para modal de visualización de imagen
+  const [showImageModal, setShowImageModal] = useState(false);
+  const [selectedImage, setSelectedImage] = useState(null);
+
+  // ✅ Nuevo: Estado para expandir/contraer panel derecho
+  const [expandedPanel, setExpandedPanel] = useState(false);
 
   // =======================================
   // 🔄 LIFECYCLE - Load data & handle resize
@@ -174,6 +182,32 @@ export default function IPRESSWorkspace() {
   };
 
   /**
+   * ✅ Nuevo: Abrir modal con detalles de la imagen
+   */
+  const handleVerImagen = async (imagen) => {
+    try {
+      // ✅ Expandir panel derecho
+      setExpandedPanel(true);
+
+      // Obtener imagen en base64 si no la tiene
+      if (!imagen.contenidoImagen && imagen.idImagen) {
+        const respuesta = await teleecgService.descargarImagenBase64(imagen.idImagen);
+        setSelectedImage({
+          ...imagen,
+          contenidoImagen: respuesta.contenidoImagen,
+          tipoContenido: respuesta.tipoContenido,
+        });
+      } else {
+        setSelectedImage(imagen);
+      }
+      setShowImageModal(true);
+    } catch (error) {
+      console.error("❌ Error al obtener imagen:", error);
+      toast.error("Error al cargar la imagen");
+    }
+  };
+
+  /**
    * Helper: Open full registry in new tab (ruta accesible para rol actual)
    */
   const handleVerRegistroCompleto = () => {
@@ -222,18 +256,32 @@ export default function IPRESSWorkspace() {
             </div>
           </div>
 
-          {/* Split View Container */}
-          <div className="grid grid-cols-[40%_60%] gap-6">
+          {/* Split View Container - Responsivo a expandedPanel */}
+          <div className={`grid gap-6 transition-all duration-300 ${
+            expandedPanel ? 'grid-cols-1' : 'grid-cols-[40%_60%]'
+          }`}>
             {/* Panel Izquierdo - Upload Form (mejorado con UploadFormWrapper) */}
-            <div className="h-fit sticky top-6">
-              <UploadFormWrapper
-                onUploadSuccess={handleUploadSuccess}
-                isWorkspace={true}
-              />
-            </div>
+            {!expandedPanel && (
+              <div className="h-fit sticky top-6">
+                <UploadFormWrapper
+                  onUploadSuccess={handleUploadSuccess}
+                  isWorkspace={true}
+                />
+              </div>
+            )}
 
-            {/* Panel Derecho - Mis EKGs Recientes (60%) */}
-            <div>
+            {/* Panel Derecho - Mis EKGs Recientes - Expandible */}
+            <div className="relative">
+              {/* Botón para volver (visible solo cuando expandido) */}
+              {expandedPanel && (
+                <button
+                  onClick={() => setExpandedPanel(false)}
+                  className="absolute -top-12 left-0 text-blue-600 hover:text-blue-700 font-semibold text-sm flex items-center gap-1 transition-colors"
+                >
+                  ← Volver a cargar
+                </button>
+              )}
+
               <MisECGsRecientes
                 ultimas3={formatECGsForRecientes(ecgs)}
                 estadisticas={{
@@ -243,11 +291,26 @@ export default function IPRESSWorkspace() {
                 }}
                 onVerRegistro={handleVerRegistroCompleto}
                 onRefrescar={handleRefresh}
+                onVerImagen={handleVerImagen}  // ✅ Nuevo: Pasar callback
                 loading={loading}
               />
             </div>
           </div>
         </div>
+
+        {/* ✅ Modal de visualización de imagen */}
+        {showImageModal && selectedImage && (
+          <VisorECGModal
+            isOpen={showImageModal}
+            onClose={() => {
+              setShowImageModal(false);
+              setSelectedImage(null);
+              // ✅ Contraer panel cuando se cierra el modal
+              setExpandedPanel(false);
+            }}
+            imagen={selectedImage}
+          />
+        )}
       </div>
     );
   }

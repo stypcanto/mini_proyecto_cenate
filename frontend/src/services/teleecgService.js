@@ -109,16 +109,29 @@ const teleecgService = {
     const response = await apiClient.get(`/teleekgs?${params}`, true);
 
     // Backend devuelve: Lista de AseguradoConECGsDTO (bare array)
-    // ej: [ { idAsegurado: 1, ecgs: [...] }, ... ]
-    // Pero el componente espera: { content: [...] }
+    // Estructura: [ { numDocPaciente, nombresPaciente, imagenes: [...], ... }, ... ]
+    // Necesitamos aplanar los imagenes anidados en un array plano
     let apiData = response?.data || response || [];
 
-    // ✅ IMPORTANTE: Si la respuesta es un array directo (v1.52.6+),
-    // envolverlo en un objeto { content: [...] }
+    // ✅ IMPORTANTE: Aplanar la estructura anidada
+    let flattenedImages = [];
     if (Array.isArray(apiData)) {
-      // Es un array directo del backend - envolverlo en estructura esperada
-      const arrayData = apiData;
-      apiData = { content: arrayData };
+      // Es un array de AseguradoConECGsDTO - aplanar imagenes
+      apiData.forEach(asegurado => {
+        // Cada asegurado tiene un array de imagenes anidadas
+        const imagenes = asegurado.imagenes || [];
+        imagenes.forEach(imagen => {
+          // Agregar info del paciente a cada imagen para contexto
+          flattenedImages.push({
+            ...imagen,
+            // Asegurar que tenemos info del paciente
+            numDocPaciente: imagen.num_doc_paciente || imagen.numDocPaciente || asegurado.numDocPaciente,
+            nombresPaciente: imagen.nombres_paciente || imagen.nombresPaciente || asegurado.nombresPaciente,
+            apellidosPaciente: imagen.apellidos_paciente || imagen.apellidosPaciente || asegurado.apellidosPaciente,
+          });
+        });
+      });
+      apiData = { content: flattenedImages };
     } else if (apiData && Array.isArray(apiData.content)) {
       // Es una respuesta paginada tradicional - procesar normalmente
       // (keep existing structure)
@@ -129,38 +142,52 @@ const teleecgService = {
 
     // Transformar propiedades de snake_case a camelCase
     if (apiData && Array.isArray(apiData.content)) {
-      apiData.content = apiData.content.map(ecg => ({
-        idImagen: ecg.id_imagen || ecg.idImagen,
-        numDocPaciente: ecg.num_doc_paciente || ecg.numDocPaciente,
-        nombresPaciente: ecg.nombres_paciente || ecg.nombresPaciente,
-        apellidosPaciente: ecg.apellidos_paciente || ecg.apellidosPaciente,
-        pacienteNombreCompleto: ecg.paciente_nombre_completo || ecg.pacienteNombreCompleto,
-        generoPaciente: ecg.genero_paciente || ecg.generoPaciente,
-        edadPaciente: ecg.edad_paciente || ecg.edadPaciente,
-        telefonoPrincipalPaciente: ecg.telefono_principal_paciente || ecg.telefonoPrincipalPaciente,
-        codigoIpress: ecg.codigo_ipress || ecg.codigoIpress,
-        nombreIpress: ecg.nombre_ipress || ecg.nombreIpress,
-        nombreArchivo: ecg.nombre_archivo || ecg.nombreArchivo,
-        nombreOriginal: ecg.nombre_original || ecg.nombreOriginal,
-        extension: ecg.extension,
-        mimeType: ecg.mime_type || ecg.mimeType,
-        sizeBytes: ecg.size_bytes || ecg.sizeBytes,
-        estado: ecg.estado,
-        fechaEnvio: ecg.fecha_envio || ecg.fechaEnvio,
-        fechaRecepcion: ecg.fecha_recepcion || ecg.fechaRecepcion,
-        fechaExpiracion: ecg.fecha_expiracion || ecg.fechaExpiracion,
-        storageTipo: ecg.storage_tipo || ecg.storageTipo,
-        storageRuta: ecg.storage_ruta || ecg.storageRuta,
-        sha256: ecg.sha256,
-        // Propiedades formateadas
-        tamanoFormato: ecg.tamanio_formato || ecg.tamanoFormato,
-        estadoFormato: ecg.estado_formato || ecg.estadoFormato,
-        fechaEnvioFormato: ecg.fecha_envio_formato || ecg.fechaEnvioFormato,
-        diasRestantes: ecg.dias_restantes || ecg.diasRestantes,
-        vigencia: ecg.vigencia,
-        // Mantener originales también
-        ...ecg
-      }));
+      apiData.content = apiData.content.map(ecg => {
+        const numDocPaciente = ecg.num_doc_paciente || ecg.numDocPaciente;
+        const nombresPaciente = ecg.nombres_paciente || ecg.nombresPaciente;
+        const fechaEnvio = ecg.fecha_envio || ecg.fechaEnvio;
+
+        return {
+          // Campos principales con transformación snake_case → camelCase
+          idImagen: ecg.id_imagen || ecg.idImagen,
+          numDocPaciente,
+          nombresPaciente,
+          apellidosPaciente: ecg.apellidos_paciente || ecg.apellidosPaciente,
+          pacienteNombreCompleto: ecg.paciente_nombre_completo || ecg.pacienteNombreCompleto,
+          generoPaciente: ecg.genero_paciente || ecg.generoPaciente,
+          edadPaciente: ecg.edad_paciente || ecg.edadPaciente,
+          telefonoPrincipalPaciente: ecg.telefono_principal_paciente || ecg.telefonoPrincipalPaciente,
+          codigoIpress: ecg.codigo_ipress || ecg.codigoIpress,
+          nombreIpress: ecg.nombre_ipress || ecg.nombreIpress,
+          nombreArchivo: ecg.nombre_archivo || ecg.nombreArchivo,
+          nombreOriginal: ecg.nombre_original || ecg.nombreOriginal,
+          extension: ecg.extension,
+          mimeType: ecg.mime_type || ecg.mimeType,
+          sizeBytes: ecg.size_bytes || ecg.sizeBytes,
+          estado: ecg.estado,
+          fechaEnvio,
+          fechaRecepcion: ecg.fecha_recepcion || ecg.fechaRecepcion,
+          fechaExpiracion: ecg.fecha_expiracion || ecg.fechaExpiracion,
+          storageTipo: ecg.storage_tipo || ecg.storageTipo,
+          storageRuta: ecg.storage_ruta || ecg.storageRuta,
+          sha256: ecg.sha256,
+          // Propiedades formateadas
+          tamanoFormato: ecg.tamanio_formato || ecg.tamanoFormato,
+          estadoFormato: ecg.estado_formato || ecg.estadoFormato,
+          fechaEnvioFormato: ecg.fecha_envio_formato || ecg.fechaEnvioFormato,
+          diasRestantes: ecg.dias_restantes || ecg.diasRestantes,
+          vigencia: ecg.vigencia,
+
+          // ✅ ALIASES para componentes que esperan nombres diferentes
+          dni: numDocPaciente,  // MisECGsRecientes espera 'dni'
+          nombrePaciente: nombresPaciente,  // MisECGsRecientes espera 'nombrePaciente' (singular)
+          fechaCarga: fechaEnvio,  // MisECGsRecientes espera 'fechaCarga'
+          observacion: ecg.observacion || ecg.nota_clinica || null,  // Para observaciones
+
+          // Mantener originales también
+          ...ecg
+        };
+      });
     }
 
     // Retornar directamente el objeto transformado (sin la envoltura de success/message/code)

@@ -26,6 +26,7 @@ export default function MisECGsRecientes({
   },
   onVerRegistro = () => {},
   onRefrescar = () => {},
+  onVerImagen = () => {},  // ✅ Nuevo: Callback cuando hace clic en una imagen
   loading = false,
 }) {
   const [expandidoTooltip, setExpandidoTooltip] = useState(null);
@@ -95,7 +96,8 @@ export default function MisECGsRecientes({
               return (
                 <div
                   key={idx}
-                  className={`relative rounded-lg border-2 transition-all duration-200
+                  onClick={() => onVerImagen(carga)}
+                  className={`relative rounded-lg border-2 transition-all duration-200 cursor-pointer
                     ${esObservacion
                       ? 'bg-amber-50 border-amber-300 hover:shadow-md hover:border-amber-400'
                       : 'bg-green-50 border-green-300 hover:shadow-md hover:border-green-400'

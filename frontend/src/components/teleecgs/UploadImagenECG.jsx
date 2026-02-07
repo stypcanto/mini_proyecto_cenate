@@ -351,6 +351,17 @@ export default function UploadImagenEKG({ onSuccess, onUploadSuccess, isWorkspac
     toast.success("Imagen removida");
   };
 
+  // ✅ IMPORTANTE: Función sin side-effects para usar en render
+  // Solo valida, sin mostrar toasts (evita "Cannot update component during render")
+  const esFormularioValido = () => {
+    if (!numDocPaciente.trim()) return false;
+    if (!pacienteEncontrado) return false;
+    if (archivos.length < MIN_IMAGENES) return false;
+    if (archivos.length > MAX_IMAGENES) return false;
+    return true;
+  };
+
+  // Función con toasts para usar en handleSubmit
   const validarFormulario = () => {
     if (!numDocPaciente.trim()) {
       toast.error("El DNI es requerido");
@@ -520,30 +531,6 @@ export default function UploadImagenEKG({ onSuccess, onUploadSuccess, isWorkspac
             <p className="text-blue-100 md:text-emerald-100 xl:text-blue-100 text-xs xl:text-[10px] mt-0.5 xl:mt-0 font-medium">CENATE - Centro Nacional de Telemedicina</p>
           </div>
         </div>
-        {/* Online/Offline Indicator */}
-        <div className={`hidden xl:flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${
-          isOnline ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"
-        }`}>
-          {isOnline ? (
-            <>
-              <Wifi className="w-3.5 h-3.5" />
-              <span>Conectado</span>
-            </>
-          ) : (
-            <>
-              <WifiOff className="w-3.5 h-3.5" />
-              <span>Sin conexión</span>
-            </>
-          )}
-        </div>
-        {/* Close Button - Desktop Only */}
-        <button
-          onClick={() => window.history.back()}
-          className="hidden xl:flex p-1.5 hover:bg-white/20 rounded-lg transition-colors absolute top-2.5 right-2.5"
-          aria-label="Cerrar"
-        >
-          <X className="w-4 h-4 text-white" />
-        </button>
       </div>
 
       {/* Desktop: 3 Vertical Sections - Profesional y Compacto */}
@@ -959,9 +946,9 @@ export default function UploadImagenEKG({ onSuccess, onUploadSuccess, isWorkspac
         {/* Section 3: Upload Button - GRANDE Y DESTACADO */}
         <button
           type="submit"
-          disabled={!validarFormulario() || loading || uploadingFiles}
+          disabled={!esFormularioValido() || loading || uploadingFiles}
           className={`w-full py-5 px-6 rounded-xl font-bold text-lg transition-all duration-200 flex items-center justify-center gap-3 shadow-lg hover:shadow-xl transform ${
-            validarFormulario() && !loading && !uploadingFiles
+            esFormularioValido() && !loading && !uploadingFiles
               ? 'bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white hover:scale-102 active:scale-95'
               : 'bg-gray-300 text-gray-500 cursor-not-allowed'
           }`}
