@@ -517,19 +517,14 @@ export default function UploadImagenEKG({ onSuccess, onUploadSuccess, isWorkspac
         ? 'xl:h-auto xl:w-auto' // Workspace: adaptarse al contenedor parent
         : 'xl:h-auto xl:w-[850px] xl:fixed xl:inset-0 xl:m-auto xl:max-h-[85vh]' // Standalone: modal centrado
     }`}>
-      {/* Header Institucional - Azul CENATE (Desktop Solo) */}
-      <div className="bg-emerald-600 md:bg-gradient-to-r md:from-emerald-600 md:to-teal-700 xl:bg-blue-900 px-6 py-4 xl:py-3 flex items-center justify-between relative">
-        <div className="flex items-center gap-2.5">
-          <div className="bg-white/15 p-2 rounded-lg">
-            <Heart className="w-5 h-5 text-white" />
-          </div>
-          <div>
-            <h2 className="text-lg xl:text-sm font-bold text-white">
-              <span className="hidden md:inline xl:hidden">📤 Nuevo Upload de EKGs</span>
-              <span className="md:hidden xl:inline">Cargar Electrocardiograma</span>
-            </h2>
-            <p className="text-blue-100 md:text-emerald-100 xl:text-blue-100 text-xs xl:text-[10px] mt-0.5 xl:mt-0 font-medium">CENATE - Centro Nacional de Telemedicina</p>
-          </div>
+      {/* Header Institucional - Compacto */}
+      <div className="bg-gradient-to-r from-blue-900 to-blue-800 px-6 py-3 flex items-center gap-3 relative">
+        <div className="bg-white/15 p-2 rounded-lg">
+          <Heart className="w-5 h-5 text-white" />
+        </div>
+        <div>
+          <h2 className="text-sm font-bold text-white">Cargar Electrocardiogramas</h2>
+          <p className="text-blue-100 text-xs font-medium">CENATE - Centro Nacional de Telemedicina</p>
         </div>
       </div>
 
@@ -549,436 +544,246 @@ export default function UploadImagenEKG({ onSuccess, onUploadSuccess, isWorkspac
         )}
 
         {/* Section 1: Patient Information */}
-        <div className={`rounded-lg border transition-all duration-200 ${
-          expandPatientInfo ? 'p-4' : 'p-3'
-        } ${
-          esUrgente
-            ? 'bg-red-50 border-red-900/20'
-            : 'bg-gray-50 border-blue-900/20'
-        }`}>
-          {/* Header con botón toggle */}
-          <button
-            type="button"
-            onClick={() => setExpandPatientInfo(!expandPatientInfo)}
-            className={`w-full flex items-center justify-between mb-3 p-2 rounded-lg hover:bg-white/50 transition-colors ${
-              esUrgente ? 'text-red-900' : 'text-blue-900'
-            }`}
-            title={expandPatientInfo ? "Ocultar sección" : "Expandir sección"}
-          >
-            <h3 className="text-sm font-bold flex items-center gap-2">
-              <User className="w-4 h-4" />
-              <span>Información del Paciente</span>
-            </h3>
-            <div className="flex items-center gap-1">
-              {expandPatientInfo ? (
-                <ChevronUp className="w-5 h-5" />
-              ) : (
-                <ChevronDown className="w-5 h-5" />
-              )}
-            </div>
-          </button>
-
-          {/* Contenido expandible */}
-          {expandPatientInfo && (
-            <>
-          {/* Toggle de Urgencia */}
-          <div className="mb-4 flex items-center justify-between p-4 bg-white rounded-lg border border-gray-200">
-            <div className="flex items-center gap-3">
-              <Heart className={`w-5 h-5 ${esUrgente ? 'text-red-600' : 'text-gray-400'}`} />
-              <div>
-                <p className="font-bold text-gray-900 text-sm">¿Caso urgente?</p>
-                <p className="text-xs text-gray-600">Marcar si requiere atención prioritaria</p>
-              </div>
-            </div>
-
-            {/* Toggle Switch */}
-            <button
-              type="button"
-              onClick={() => setEsUrgente(!esUrgente)}
-              className={`relative inline-flex h-8 w-14 items-center rounded-full transition-all duration-200 ${
-                esUrgente ? 'bg-red-600' : 'bg-gray-300'
-              }`}
-              title="Marcar caso como urgente"
-            >
-              <span
-                className={`inline-block h-6 w-6 transform rounded-full bg-white transition-transform duration-200 ${
-                  esUrgente ? 'translate-x-7' : 'translate-x-1'
-                }`}
-              />
-            </button>
-          </div>
-
-          {/* DNI Input - GRANDE Y VISIBLE */}
-          <div className="mb-4">
-            <label className="block text-xs font-bold text-gray-700 mb-2 uppercase tracking-widest">
-              🆔 DNI del Paciente *
-            </label>
-            <div className="relative">
-              <input
-                type="tel"
-                inputMode="numeric"
-                pattern="[0-9]{8}"
-                value={numDocPaciente}
-                onChange={(e) => setNumDocPaciente(e.target.value.replace(/[^0-9]/g, '').slice(0, 8))}
-                placeholder="12345678"
-                maxLength="8"
-                disabled={searchingPaciente}
-                className="w-full px-4 py-4 border-2 border-blue-300 rounded-lg
-                  focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent
-                  text-3xl font-bold tracking-widest text-center text-blue-900
-                  placeholder:text-blue-200 placeholder:text-2xl
-                  transition-all duration-200 hover:border-blue-400
-                  disabled:bg-gray-100 disabled:opacity-60"
-              />
-
-              {/* Indicador de estado - Derecha */}
-              <div className="absolute right-4 top-4 flex items-center gap-2">
-                {searchingPaciente && (
-                  <Loader className="w-6 h-6 animate-spin text-blue-600" />
-                )}
-                {pacienteEncontrado && !searchingPaciente && (
-                  <div className="flex items-center gap-1">
-                    <CheckCircle className="w-6 h-6 text-green-600" />
-                    <span className="text-xs text-green-600 font-bold">Valido</span>
-                  </div>
-                )}
-                {!pacienteEncontrado && numDocPaciente.length === 8 && !searchingPaciente && (
-                  <AlertCircle className="w-6 h-6 text-red-600" />
-                )}
-              </div>
-            </div>
-
-            {/* Mensaje de ayuda */}
-            <p className="text-xs text-blue-600 mt-2 font-medium">
-              💡 Ingresa exactamente 8 dígitos
-            </p>
-          </div>
-
-          {/* Patient Confirmation - Paleta Médica Profesional */}
-          {pacienteEncontrado ? (
-            <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-lg p-4 border-2 border-green-300 space-y-3 shadow-sm">
-              <div className="flex items-center gap-2 mb-2">
-                <CheckCircle className="w-5 h-5 text-green-600" />
-                <p className="text-sm font-bold text-green-900">✅ PACIENTE CONFIRMADO</p>
-              </div>
-
-              {/* Full Name - GRANDE Y VISIBLE */}
-              <div className="bg-white rounded-lg p-3 border border-green-200">
-                <p className="text-xs font-bold text-green-700 mb-1 uppercase tracking-wide">Paciente</p>
-                <p className="text-lg font-bold text-gray-900">
-                  {datosCompletos.apellidos && datosCompletos.nombres
-                    ? `${datosCompletos.apellidos.toUpperCase()}, ${datosCompletos.nombres.toUpperCase()}`
-                    : 'Paciente identificado'}
-                </p>
-              </div>
-
-              {/* Datos en grid 3 columnas */}
-              <div className="grid grid-cols-3 gap-2">
-                {/* DNI */}
-                <div className="bg-white rounded-lg p-2.5 border border-green-200">
-                  <p className="text-xs font-bold text-green-700 uppercase tracking-wide">DNI</p>
-                  <p className="text-base font-bold text-gray-900 font-mono mt-0.5">{numDocPaciente}</p>
-                </div>
-
-                {/* Edad */}
-                <div className="bg-white rounded-lg p-2.5 border border-green-200">
-                  <p className="text-xs font-bold text-green-700 uppercase tracking-wide">Edad</p>
-                  <p className="text-base font-bold text-gray-900 mt-0.5">
-                    {datosCompletos.edad ? `${datosCompletos.edad}a` : '—'}
-                  </p>
-                </div>
-
-                {/* Sexo */}
-                <div className="bg-white rounded-lg p-2.5 border border-green-200">
-                  <p className="text-xs font-bold text-green-700 uppercase tracking-wide">Sexo</p>
-                  <p className="text-base font-bold text-gray-900 mt-0.5">
-                    {datosCompletos.sexo === 'M'
-                      ? '🧑‍⚕️ M'
-                      : datosCompletos.sexo === 'F'
-                        ? '👩‍⚕️ F'
-                        : '—'}
-                  </p>
-                </div>
-              </div>
-
-              {/* Teléfono */}
-              {datosCompletos.telefono && (
-                <div className="bg-white rounded-lg p-2.5 border border-green-200">
-                  <p className="text-xs font-bold text-green-700 uppercase tracking-wide">Teléfono</p>
-                  <p className="text-sm font-bold text-gray-900 mt-0.5">{datosCompletos.telefono}</p>
-                </div>
-              )}
-
-              {/* IPRESS */}
-              {datosCompletos.ipress && (
-                <div className="bg-white rounded-lg p-2.5 border border-green-200">
-                  <p className="text-xs font-bold text-green-700 uppercase tracking-wide">IPRESS</p>
-                  <p className="text-sm font-bold text-gray-900 mt-0.5 truncate">{datosCompletos.ipress}</p>
-                </div>
-              )}
-            </div>
-          ) : numDocPaciente.length > 0 && numDocPaciente.length < 8 ? (
-            <div className="bg-blue-50 border-2 border-blue-300 rounded-lg p-4 text-center">
-              <p className="text-sm font-bold text-blue-900">
-                ⏳ Escribe {8 - numDocPaciente.length} dígito(s) más...
-              </p>
-            </div>
-          ) : (
-            <div className="bg-gray-50 border-2 border-gray-300 rounded-lg p-4 text-center">
-              <p className="text-sm font-bold text-gray-700">
-                👆 Ingresa el DNI del paciente (8 dígitos)
-              </p>
-              <p className="text-xs text-gray-600 mt-1">Se buscará automáticamente</p>
-            </div>
-          )}
-            </>
-          )}
-        </div>
-
-        {/* Section 2: Image Selection */}
         <div className={`rounded-lg border p-4 transition-all duration-200 ${
           esUrgente
             ? 'bg-red-50 border-red-900/20'
             : 'bg-gray-50 border-blue-900/20'
         }`}>
-          <h3 className={`text-sm font-bold mb-1.5 flex items-center gap-2 transition-colors ${
-            esUrgente ? 'text-red-900' : 'text-blue-900'
-          }`}>
-            <FileImage className="w-4 h-4" />
-            Selecciona Imágenes del EKG ({archivos.length}/{MAX_IMAGENES})
-          </h3>
+          {/* Header con toggle */}
+          <button
+            type="button"
+            onClick={() => setExpandPatientInfo(!expandPatientInfo)}
+            className={`w-full flex items-center justify-between mb-3 ${
+              esUrgente ? 'text-red-900' : 'text-blue-900'
+            }`}
+            title={expandPatientInfo ? "Ocultar" : "Expandir"}
+          >
+            <h3 className="text-sm font-bold flex items-center gap-2">
+              <User className="w-4 h-4" />
+              Información del Paciente
+            </h3>
+            {expandPatientInfo ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+          </button>
 
-          <p className="text-xs font-medium text-gray-700 mb-3">
-            Mínimo {MIN_IMAGENES} imágenes • Máximo {MAX_IMAGENES}
-          </p>
+          {expandPatientInfo && (
+            <>
+              {/* Toggle de Urgencia - Compacto */}
+              <div className="mb-3 flex items-center justify-between p-3 bg-white rounded-lg border border-gray-200">
+                <div className="flex items-center gap-2">
+                  <Heart className={`w-4 h-4 ${esUrgente ? 'text-red-600' : 'text-gray-400'}`} />
+                  <div className="flex-1">
+                    <p className="font-semibold text-gray-900 text-xs">¿Urgente?</p>
+                    <p className="text-xs text-gray-600">Prioridad</p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setEsUrgente(!esUrgente)}
+                  className={`relative inline-flex h-7 w-12 items-center rounded-full transition-all ${
+                    esUrgente ? 'bg-red-600' : 'bg-gray-300'
+                  }`}
+                  title="Marcar urgente"
+                >
+                  <span
+                    className={`inline-block h-5 w-5 rounded-full bg-white transition-transform ${
+                      esUrgente ? 'translate-x-6' : 'translate-x-1'
+                    }`}
+                  />
+                </button>
+              </div>
 
-          {/* Select Button - Institucional */}
+              {/* DNI Input */}
+              <div className="mb-2">
+                <label className="block text-xs font-bold text-gray-700 mb-1.5">🆔 DNI del Paciente *</label>
+                <div className="relative">
+                  <input
+                    type="tel"
+                    inputMode="numeric"
+                    pattern="[0-9]{8}"
+                    value={numDocPaciente}
+                    onChange={(e) => setNumDocPaciente(e.target.value.replace(/[^0-9]/g, '').slice(0, 8))}
+                    placeholder="12345678"
+                    maxLength="8"
+                    disabled={searchingPaciente}
+                    className="w-full px-3 py-3 border-2 border-blue-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent text-2xl font-bold text-center text-blue-900 placeholder:text-blue-200 transition-all disabled:bg-gray-100 disabled:opacity-60"
+                  />
+                  {searchingPaciente && <Loader className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 animate-spin text-blue-600" />}
+                  {pacienteEncontrado && !searchingPaciente && <CheckCircle className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-green-600" />}
+                  {!pacienteEncontrado && numDocPaciente.length === 8 && !searchingPaciente && <AlertCircle className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-red-600" />}
+                </div>
+              </div>
+
+              {/* Patient Confirmation - Compacto */}
+              {pacienteEncontrado ? (
+                <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-lg p-3 border border-green-300">
+                  <div className="flex items-center gap-1.5 mb-2">
+                    <CheckCircle className="w-4 h-4 text-green-600" />
+                    <p className="text-xs font-bold text-green-900">✅ PACIENTE CONFIRMADO</p>
+                  </div>
+                  <p className="text-base font-bold text-gray-900 mb-2">
+                    {datosCompletos.apellidos && datosCompletos.nombres
+                      ? `${datosCompletos.apellidos.toUpperCase()}, ${datosCompletos.nombres.toUpperCase()}`
+                      : 'Paciente identificado'}
+                  </p>
+                  <div className="grid grid-cols-2 gap-2 text-xs">
+                    <div className="bg-white rounded p-2 border border-green-200">
+                      <p className="font-bold text-green-700">DNI</p>
+                      <p className="font-bold text-gray-900">{numDocPaciente}</p>
+                    </div>
+                    <div className="bg-white rounded p-2 border border-green-200">
+                      <p className="font-bold text-green-700">Edad</p>
+                      <p className="font-bold text-gray-900">{datosCompletos.edad ? `${datosCompletos.edad}a` : '—'}</p>
+                    </div>
+                    <div className="bg-white rounded p-2 border border-green-200">
+                      <p className="font-bold text-green-700">Sexo</p>
+                      <p className="font-bold text-gray-900">{datosCompletos.sexo === 'M' ? 'M' : datosCompletos.sexo === 'F' ? 'F' : '—'}</p>
+                    </div>
+                    {datosCompletos.telefono && <div className="bg-white rounded p-2 border border-green-200">
+                      <p className="font-bold text-green-700">Teléfono</p>
+                      <p className="font-bold text-gray-900 truncate">{datosCompletos.telefono}</p>
+                    </div>}
+                  </div>
+                </div>
+              ) : numDocPaciente.length > 0 && numDocPaciente.length < 8 ? (
+                <div className="bg-blue-50 border border-blue-300 rounded-lg p-2 text-center">
+                  <p className="text-xs font-bold text-blue-900">⏳ Escribe {8 - numDocPaciente.length} dígito(s) más</p>
+                </div>
+              ) : (
+                <div className="bg-gray-50 border border-gray-300 rounded-lg p-2 text-center">
+                  <p className="text-xs font-bold text-gray-700">👆 Ingresa DNI (8 dígitos)</p>
+                </div>
+              )}
+            </>
+          )}
+        </div>
+
+        {/* Section 2: Image Selection - Compacto */}
+        <div className={`rounded-lg border p-3 transition-all ${
+          esUrgente ? 'bg-red-50 border-red-900/20' : 'bg-gray-50 border-blue-900/20'
+        }`}>
+          <div className="flex items-center justify-between mb-2">
+            <h3 className={`text-sm font-bold flex items-center gap-1.5 ${
+              esUrgente ? 'text-red-900' : 'text-blue-900'
+            }`}>
+              <FileImage className="w-4 h-4" />
+              Imágenes ({archivos.length}/{MAX_IMAGENES})
+            </h3>
+            <p className="text-xs text-gray-600">{MIN_IMAGENES}-{MAX_IMAGENES} fotos</p>
+          </div>
+
+          {/* Select Button */}
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
             disabled={!pacienteEncontrado || loading || archivos.length >= MAX_IMAGENES}
-            className={`w-full py-2 rounded text-xs font-bold flex items-center justify-center gap-2 transition mb-3 ${
+            className={`w-full py-2 px-3 rounded text-xs font-bold flex items-center justify-center gap-2 transition mb-2 ${
               pacienteEncontrado && !loading && archivos.length < MAX_IMAGENES
-                ? "bg-blue-900 hover:bg-blue-800 text-white shadow-sm hover:shadow-md"
+                ? "bg-blue-900 hover:bg-blue-800 text-white"
                 : "bg-gray-300 text-gray-500 cursor-not-allowed opacity-60"
             }`}
-            aria-label="Buscar imágenes"
           >
             <FileImage className="w-3.5 h-3.5" />
-            <span>Seleccionar Imágenes</span>
+            Seleccionar
           </button>
 
-          {/* Drop Zone - Enhanced & Visible */}
+          {/* Drop Zone */}
           <div
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
             onDrop={handleDrop}
             onClick={() => fileInputRef.current?.click()}
-            className={`flex flex-col items-center justify-center border-4 border-dashed rounded-xl p-8 text-center cursor-pointer transition-all mb-3 min-h-[200px] ${
+            className={`flex flex-col items-center justify-center border-4 border-dashed rounded-lg p-4 text-center cursor-pointer transition-all min-h-[160px] mb-2 ${
               pacienteEncontrado && !loading && archivos.length < MAX_IMAGENES
                 ? dragActive
-                  ? "border-blue-600 bg-blue-50 shadow-lg scale-105"
-                  : "border-blue-400 bg-gradient-to-br from-blue-50 to-indigo-50 hover:border-blue-600 hover:shadow-md hover:scale-102"
+                  ? "border-blue-600 bg-blue-50 scale-105"
+                  : "border-blue-400 bg-blue-50 hover:border-blue-600"
                 : "border-gray-300 bg-gray-100 cursor-not-allowed opacity-50"
             }`}
           >
-            {/* Icon with circle background */}
-            <div className={`rounded-full p-4 mb-3 ${
-              dragActive ? 'bg-blue-600 animate-pulse' : 'bg-blue-100'
-            }`}>
-              <Upload className={`w-12 h-12 ${
-                pacienteEncontrado && !loading
-                  ? dragActive ? 'text-white' : 'text-blue-900'
-                  : 'text-gray-400'
+            <div className={`rounded-full p-3 mb-2 ${dragActive ? 'bg-blue-600 animate-pulse' : 'bg-blue-100'}`}>
+              <Upload className={`w-10 h-10 ${
+                pacienteEncontrado && !loading ? dragActive ? 'text-white' : 'text-blue-900' : 'text-gray-400'
               }`} />
             </div>
-
-            {/* Main Text - Larger */}
-            <p className={`text-base font-bold mb-1 ${
-              pacienteEncontrado && !loading ? 'text-blue-900' : 'text-gray-500'
-            }`}>
-              {dragActive ? '¡Suelta las fotos aquí!' : '📂 Arrastra tus fotos ECG aquí'}
+            <p className={`text-sm font-bold ${pacienteEncontrado && !loading ? 'text-blue-900' : 'text-gray-500'}`}>
+              {dragActive ? '¡Suelta aquí!' : '📂 Arrastra o haz clic'}
             </p>
-
-            {/* Secondary Text */}
-            <p className={`text-sm font-medium ${
-              pacienteEncontrado && !loading ? 'text-blue-700' : 'text-gray-400'
-            }`}>
-              o haz clic para seleccionar archivos
-            </p>
-
-            {/* Specifications */}
-            <div className="mt-3 flex items-center gap-2 text-xs text-blue-600 font-medium">
-              <FileImage className="w-4 h-4" />
-              <span>JPEG, PNG • Máx 5MB cada uno • 4-10 fotos</span>
-            </div>
+            <p className="text-xs text-gray-600 mt-1">JPEG, PNG • máx 5MB • {MIN_IMAGENES}-{MAX_IMAGENES} fotos</p>
           </div>
 
-          {/* Image Grid - Display uploaded images con miniaturas profesionales */}
+          {/* Image Grid */}
           {archivos.length > 0 && (
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <p className="text-sm font-bold text-gray-900">
-                  📋 Imágenes Seleccionadas ({archivos.length}/10)
-                </p>
-                <p className="text-xs text-green-600 font-semibold">
-                  ✅ Listo para cargar
-                </p>
-              </div>
-
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+            <div>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-2">
                 {previews.map((preview, index) => (
-                  <div
-                    key={index}
-                    className="relative group"
-                  >
-                    {/* 🔴 MINIATURA - Ver imagen real */}
+                  <div key={index} className="relative group">
                     <img
                       src={preview}
                       alt={`EKG ${index + 1}`}
-                      className="w-full h-32 rounded-lg object-cover border-2 border-gray-300
-                        shadow-sm hover:shadow-lg hover:border-blue-500 transition-all duration-200
-                        cursor-pointer"
-                      title={`EKG ${index + 1}`}
+                      className="w-full h-24 rounded-lg object-cover border-2 border-gray-300 hover:border-blue-500 transition-all"
                     />
-
-                    {/* Tamaño archivo - Arriba derecha */}
-                    <div className="absolute top-2 right-2 bg-gray-800 bg-opacity-75 text-white text-xs
-                      px-2.5 py-1 rounded font-medium shadow-md">
-                      {archivos[index]?.size
-                        ? `${(archivos[index].size / 1024).toFixed(0)} KB`
-                        : '—'}
+                    <div className="absolute top-1 right-1 bg-gray-800 bg-opacity-75 text-white text-xs px-2 py-0.5 rounded font-medium">
+                      {archivos[index]?.size ? `${(archivos[index].size / 1024).toFixed(0)}KB` : '—'}
                     </div>
-
-                    {/* Número de foto - Abajo izquierda */}
-                    <div className="absolute bottom-2 left-2 bg-blue-600 text-white text-xs font-bold
-                      px-3 py-1 rounded-full shadow-md">
+                    <div className="absolute bottom-1 left-1 bg-blue-600 text-white text-xs font-bold px-2 py-0.5 rounded-full">
                       {index + 1}
                     </div>
-
-                    {/* Checkmark verde - Aparece en hover */}
-                    <div className="absolute top-2 left-2 bg-green-500 text-white rounded-full w-6 h-6
-                      flex items-center justify-center opacity-0 group-hover:opacity-100
-                      transition-opacity duration-200 shadow-md">
-                      <CheckCircle className="w-5 h-5" />
-                    </div>
-
-                    {/* Botón eliminar - Hidden hasta hover */}
                     <button
                       type="button"
                       onClick={() => removerArchivo(index)}
-                      className="absolute -top-2 -right-2 bg-red-500 hover:bg-red-600 text-white rounded-full w-7 h-7
-                        flex items-center justify-center opacity-0 group-hover:opacity-100
-                        transition-opacity duration-200 shadow-lg"
-                      title="Eliminar esta imagen"
-                      aria-label={`Eliminar EKG ${index + 1}`}
+                      className="absolute -top-2 -right-2 bg-red-500 hover:bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
                     >
-                      <X className="w-4 h-4" />
+                      <X className="w-3.5 h-3.5" />
                     </button>
-
-                    {/* Nombre archivo - Debajo */}
-                    <p className="text-xs text-gray-700 mt-2 font-medium truncate">
-                      {archivos[index]?.name
-                        ? archivos[index].name.substring(0, 20)
-                        : `imagen-${index + 1}.jpg`}
-                    </p>
                   </div>
                 ))}
-              </div>
-
-              {/* Info de validación */}
-              <div className="bg-green-50 border border-green-300 rounded-lg p-3">
-                <p className="text-xs text-green-900 font-medium flex items-center gap-2">
-                  <CheckCircle className="w-4 h-4" />
-                  {archivos.length >= 4
-                    ? `✅ ${archivos.length} fotos seleccionadas - Listo para cargar`
-                    : `⏳ ${4 - archivos.length} fotos más necesarias`}
-                </p>
               </div>
             </div>
           )}
         </div>
 
-        {/* Barra de Progreso - Desktop Upload */}
+        {/* Progress Bar */}
         {uploadingFiles && (
-          <div className={`border-2 rounded-lg p-4 mb-3 transition-all duration-200 ${
-            esUrgente
-              ? 'bg-red-50 border-red-200'
-              : 'bg-blue-50 border-blue-200'
-          }`}>
-            <div className="flex items-center justify-between mb-2">
-              <p className={`text-sm font-bold ${esUrgente ? 'text-red-900' : 'text-blue-900'}`}>
-                📤 Subiendo archivos...
+          <div className={`rounded-lg p-3 mb-2 ${esUrgente ? 'bg-red-50 border border-red-200' : 'bg-blue-50 border border-blue-200'}`}>
+            <div className="flex items-center justify-between mb-1.5">
+              <p className={`text-xs font-bold ${esUrgente ? 'text-red-900' : 'text-blue-900'}`}>
+                📤 {currentFileIndex}/{archivos.length} archivos
               </p>
               <p className={`text-xs font-semibold ${esUrgente ? 'text-red-700' : 'text-blue-700'}`}>
-                {currentFileIndex}/{archivos.length} archivos
+                {Math.round(uploadProgress)}%
               </p>
             </div>
-
-            {/* Progress Bar */}
-            <div className={`w-full rounded-full h-3 overflow-hidden shadow-inner ${
-              esUrgente ? 'bg-red-200' : 'bg-blue-200'
-            }`}>
+            <div className={`w-full h-2 rounded-full overflow-hidden ${esUrgente ? 'bg-red-200' : 'bg-blue-200'}`}>
               <div
-                className={`h-full transition-all duration-300 flex items-center justify-end ${
-                  esUrgente
-                    ? 'bg-gradient-to-r from-red-600 to-orange-600'
-                    : 'bg-gradient-to-r from-blue-600 to-indigo-600'
-                }`}
+                className={`h-full transition-all duration-300 ${esUrgente ? 'bg-gradient-to-r from-red-600 to-orange-600' : 'bg-gradient-to-r from-blue-600 to-indigo-600'}`}
                 style={{ width: `${uploadProgress}%` }}
-              >
-                <span className="text-white text-xs font-bold pr-2">
-                  {Math.round(uploadProgress)}%
-                </span>
-              </div>
-            </div>
-
-            {/* Spinner animado */}
-            <div className="flex items-center gap-2 mt-2">
-              <Loader className={`w-4 h-4 animate-spin ${esUrgente ? 'text-red-600' : 'text-blue-600'}`} />
-              <p className={`text-xs ${esUrgente ? 'text-red-700' : 'text-blue-700'}`}>
-                {uploadProgress < 100 ? 'Cargando imágenes al servidor...' : '✅ Upload completo'}
-              </p>
+              />
             </div>
           </div>
         )}
 
-        {/* Section 3: Upload Button - GRANDE Y DESTACADO */}
+        {/* Upload Button */}
         <button
           type="submit"
           disabled={!esFormularioValido() || loading || uploadingFiles}
-          className={`w-full py-5 px-6 rounded-xl font-bold text-lg transition-all duration-200 flex items-center justify-center gap-3 shadow-lg hover:shadow-xl transform ${
+          className={`w-full py-4 px-4 rounded-lg font-bold text-base transition-all flex items-center justify-center gap-2 ${
             esFormularioValido() && !loading && !uploadingFiles
-              ? 'bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white hover:scale-102 active:scale-95'
+              ? 'bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white shadow-lg'
               : 'bg-gray-300 text-gray-500 cursor-not-allowed'
           }`}
-          title={archivos.length < MIN_IMAGENES ? `Se requieren al menos ${MIN_IMAGENES} imágenes` : ""}
         >
           {loading || uploadingFiles ? (
             <>
-              <Loader className="w-6 h-6 animate-spin" />
-              <span>Subiendo...</span>
+              <Loader className="w-5 h-5 animate-spin" />
+              <span>Cargando...</span>
             </>
           ) : (
             <>
-              <Upload className="w-6 h-6" />
-              <span>Cargar {archivos.length} EKGs →</span>
+              <Upload className="w-5 h-5" />
+              <span>Cargar {archivos.length} EKGs</span>
             </>
           )}
         </button>
-
-        {/* Requisitos debajo del botón */}
-        <div className="mt-3 flex items-center justify-center gap-2 text-sm text-gray-600 flex-wrap">
-          <div className={`flex items-center gap-1 ${pacienteEncontrado ? 'text-green-600' : 'text-gray-400'}`}>
-            {pacienteEncontrado ? <CheckCircle className="w-4 h-4" /> : <AlertCircle className="w-4 h-4" />}
-            <span className="text-xs">DNI válido</span>
-          </div>
-          <span className="text-gray-300">•</span>
-          <div className={`flex items-center gap-1 ${archivos.length >= MIN_IMAGENES ? 'text-green-600' : 'text-gray-400'}`}>
-            {archivos.length >= MIN_IMAGENES ? <CheckCircle className="w-4 h-4" /> : <AlertCircle className="w-4 h-4" />}
-            <span className="text-xs">{archivos.length}/{MIN_IMAGENES} fotos</span>
-          </div>
-        </div>
 
         {/* Hidden File Inputs */}
         <input
