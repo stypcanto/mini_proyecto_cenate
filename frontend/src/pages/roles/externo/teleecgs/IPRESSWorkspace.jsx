@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Upload, List, BarChart3, Wifi, WifiOff } from "lucide-react";
+import { Upload, List, BarChart3, Wifi, WifiOff, CloudUpload, X } from "lucide-react";
 import toast from "react-hot-toast";
 import { useOnlineStatus } from "../../../../hooks/useOnlineStatus";
 import UploadImagenECG from "../../../../components/teleecgs/UploadImagenECG";
@@ -112,12 +112,12 @@ export default function IPRESSWorkspace() {
     return "mobile";
   });
 
-  // ✅ Nuevo: Estado para modal de visualización de imagen
+  // ✅ Modal de visualización de imagen
   const [showImageModal, setShowImageModal] = useState(false);
   const [selectedImage, setSelectedImage] = useState(null);
 
-  // ✅ Nuevo: Estado para expandir/contraer panel derecho
-  const [expandedPanel, setExpandedPanel] = useState(false);
+  // ✅ Modal de carga de imágenes
+  const [showUploadModal, setShowUploadModal] = useState(false);
 
   // =======================================
   // 🔄 LIFECYCLE - Load data & handle resize
@@ -306,14 +306,6 @@ export default function IPRESSWorkspace() {
     }
   };
 
-  /**
-   * Helper: Open full registry in new tab (ruta accesible para rol actual)
-   */
-  const handleVerRegistroCompleto = () => {
-    window.open("/teleekgs/listar", "_blank", "noopener,noreferrer");
-    toast.success("Abriendo registro completo de EKGs...");
-  };
-
   // =======================================
   // 🎨 RENDER - Desktop Split View
   // =======================================
@@ -332,84 +324,101 @@ export default function IPRESSWorkspace() {
               </p>
             </div>
 
-            {/* Indicador de Conexión */}
-            <div className={`flex items-center gap-2 px-4 py-2 rounded-full border-2 transition-all duration-200 ${
-              isOnline
-                ? 'bg-green-50 border-green-300'
-                : 'bg-red-50 border-red-300 animate-pulse'
-            }`}>
-              {isOnline ? (
-                <>
-                  <Wifi className="w-5 h-5 text-green-600" />
-                  <span className="text-sm font-semibold text-green-900">Conectado</span>
-                </>
-              ) : (
-                <>
-                  <WifiOff className="w-5 h-5 text-red-600" />
-                  <div className="flex flex-col">
-                    <span className="text-sm font-bold text-red-900">Sin conexión</span>
-                    <span className="text-xs text-red-700">Se guardará localmente</span>
-                  </div>
-                </>
-              )}
+            {/* Acciones Derecha - Botón Cargar + Indicador de Conexión */}
+            <div className="flex items-center gap-3">
+              {/* Botón Cargar Imágenes */}
+              <button
+                onClick={() => setShowUploadModal(true)}
+                className="px-5 py-2 bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white rounded-lg font-semibold text-sm shadow-md hover:shadow-lg transition-all duration-300 flex items-center gap-2 whitespace-nowrap"
+              >
+                <CloudUpload className="w-5 h-5" />
+                Cargar
+              </button>
+
+              {/* Indicador de Conexión */}
+              <div className={`flex items-center gap-2 px-4 py-2 rounded-full border-2 transition-all duration-200 ${
+                isOnline
+                  ? 'bg-green-50 border-green-300'
+                  : 'bg-red-50 border-red-300 animate-pulse'
+              }`}>
+                {isOnline ? (
+                  <>
+                    <Wifi className="w-5 h-5 text-green-600" />
+                    <span className="text-sm font-semibold text-green-900">Conectado</span>
+                  </>
+                ) : (
+                  <>
+                    <WifiOff className="w-5 h-5 text-red-600" />
+                    <div className="flex flex-col">
+                      <span className="text-sm font-bold text-red-900">Sin conexión</span>
+                      <span className="text-xs text-red-700">Se guardará localmente</span>
+                    </div>
+                  </>
+                )}
+              </div>
             </div>
           </div>
 
-          {/* Split View Container - Responsivo a expandedPanel */}
-          <div className={`grid gap-6 transition-all duration-300 ${
-            expandedPanel ? 'grid-cols-1' : 'grid-cols-[40%_60%]'
-          }`}>
-            {/* Panel Izquierdo - Upload Form (mejorado con UploadFormWrapper) */}
-            {!expandedPanel && (
-              <div className="h-fit sticky top-6">
-                <UploadFormWrapper
-                  onUploadSuccess={handleUploadSuccess}
-                  isWorkspace={true}
-                />
-              </div>
-            )}
+          {/* Dashboard Full-Width */}
+          <div className="w-full">
+            <MisECGsRecientes
+              ultimas3={formatECGsForRecientes(ecgs)}
+              estadisticas={{
+                cargadas: stats.cargadas,
+                enEvaluacion: stats.enEvaluacion,
+                observadas: stats.observadas,
+                atendidas: stats.atendidas || 0,
+              }}
+              onRefrescar={handleRefresh}
+              onVerImagen={handleVerImagen}
+              loading={loading}
+            />
 
-            {/* Panel Derecho - Mis EKGs Recientes - Expandible */}
-            <div className="relative">
-              {/* Botón para volver (visible solo cuando expandido) */}
-              {expandedPanel && (
-                <button
-                  onClick={() => setExpandedPanel(false)}
-                  className="absolute -top-12 left-0 text-blue-600 hover:text-blue-700 font-semibold text-sm flex items-center gap-1 transition-colors"
-                >
-                  ← Volver a cargar
-                </button>
-              )}
-
-              <MisECGsRecientes
-                ultimas3={formatECGsForRecientes(ecgs)}
-                estadisticas={{
-                  cargadas: stats.cargadas,              // ✅ Pacientes cargados
-                  enEvaluacion: stats.enEvaluacion,     // ✅ Pacientes en evaluación
-                  observadas: stats.observadas,         // ✅ Pacientes con observaciones
-                  atendidas: stats.atendidas || 0,      // ✅ Imágenes atendidas
-                }}
-                onVerRegistro={handleVerRegistroCompleto}
-                onRefrescar={handleRefresh}
-                onVerImagen={handleVerImagen}
-                loading={loading}
-              />
-            </div>
           </div>
         </div>
 
-        {/* ✅ Modal de visualización de imagen */}
+        {/* Modal de visualización de imagen */}
         {showImageModal && selectedImage && (
           <VisorECGModal
             isOpen={showImageModal}
             onClose={() => {
               setShowImageModal(false);
               setSelectedImage(null);
-              // ✅ Contraer panel cuando se cierra el modal
-              setExpandedPanel(false);
             }}
             ecg={selectedImage}
           />
+        )}
+
+        {/* Modal de carga de imágenes */}
+        {showUploadModal && (
+          <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+            <div className="bg-white rounded-lg shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+              {/* Header del modal */}
+              <div className="sticky top-0 bg-gradient-to-r from-emerald-500 to-emerald-600 text-white px-6 py-4 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <CloudUpload className="w-6 h-6" />
+                  <h2 className="text-xl font-bold">Cargar Electrocardiogramas</h2>
+                </div>
+                <button
+                  onClick={() => setShowUploadModal(false)}
+                  className="p-1 hover:bg-white/20 rounded-lg transition-colors"
+                >
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
+
+              {/* Contenido del modal */}
+              <div className="p-6">
+                <UploadFormWrapper
+                  onUploadSuccess={(nuevasImagenes) => {
+                    handleUploadSuccess(nuevasImagenes);
+                    setShowUploadModal(false);
+                  }}
+                  isWorkspace={true}
+                />
+              </div>
+            </div>
+          </div>
         )}
       </div>
     );

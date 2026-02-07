@@ -5,7 +5,7 @@
  * v1.55.0 - Diseño médico profesional
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   CheckCircle,
   AlertCircle,
@@ -18,8 +18,12 @@ import {
   Eye,
   MessageSquare,
   CheckCheck,
+  Search,
+  X,
+  Calendar,
 } from 'lucide-react';
 import { COLORS, MEDICAL_PALETTE } from '../../config/designSystem';
+import toast from 'react-hot-toast';
 
 export default function MisECGsRecientes({
   ultimas3 = [],
@@ -29,12 +33,81 @@ export default function MisECGsRecientes({
     observadas: 0,
     atendidas: 0,
   },
-  onVerRegistro = () => {},
   onRefrescar = () => {},
   onVerImagen = () => {},
   loading = false,
 }) {
   const [expandidoTooltip, setExpandidoTooltip] = useState(null);
+
+  // ✅ NEW: Filter State
+  const [filtroDNI, setFiltroDNI] = useState('');
+  const [filtroFecha, setFiltroFecha] = useState('');
+  const [datosOriginales, setDatosOriginales] = useState([]);
+
+  // ✅ Sync ultimas3 to datosOriginales on mount and when ultimas3 changes
+  useEffect(() => {
+    setDatosOriginales(ultimas3);
+  }, [ultimas3]);
+
+  // ✅ Filter Functions
+  const filtrarPorDNI = (datos, dniBusqueda) => {
+    if (!dniBusqueda || dniBusqueda.trim() === '') return datos;
+    return datos.filter(
+      item => item.dni && item.dni.toString().includes(dniBusqueda)
+    );
+  };
+
+  const parsearTiempoTranscurrido = (tiempoTranscurrido) => {
+    // Parse "hace X horas" or "hace X minutos" to determine if it matches selected date
+    // For MVP: we check if upload is "today" by looking at time string
+    const hoy = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+
+    // Simple heuristic: if time says "hace X horas" or "hace X minutos", it's today
+    if (tiempoTranscurrido && (tiempoTranscurrido.includes('hace') || tiempoTranscurrido.includes('minuto') || tiempoTranscurrido.includes('hora'))) {
+      return hoy;
+    }
+
+    // If it has a date format, extract it
+    const dateMatch = tiempoTranscurrido?.match(/(\d{4}-\d{2}-\d{2})/);
+    if (dateMatch) {
+      return dateMatch[1];
+    }
+
+    return hoy; // Default to today
+  };
+
+  const filtrarPorFecha = (datos, fechaBusqueda) => {
+    if (!fechaBusqueda) return datos;
+    return datos.filter(item => {
+      const uploadDate = parsearTiempoTranscurrido(item.tiempoTranscurrido);
+      return uploadDate === fechaBusqueda;
+    });
+  };
+
+  const aplicarFiltrosCombinados = (datos, dniBusqueda, fechaBusqueda) => {
+    let resultado = datos;
+    resultado = filtrarPorDNI(resultado, dniBusqueda);
+    resultado = filtrarPorFecha(resultado, fechaBusqueda);
+    return resultado;
+  };
+
+  // ✅ Computed filtered data
+  const datosFiltrados = useMemo(() => {
+    return aplicarFiltrosCombinados(datosOriginales, filtroDNI, filtroFecha);
+  }, [datosOriginales, filtroDNI, filtroFecha]);
+
+  // ✅ Check if any filters are active
+  const hayFiltrosActivos = filtroDNI !== '' || filtroFecha !== '';
+
+  // ✅ Clear individual filters
+  const limpiarFiltroDNI = () => setFiltroDNI('');
+  const limpiarFiltroFecha = () => setFiltroFecha('');
+
+  // ✅ Clear all filters
+  const limpiarTodosFiltros = () => {
+    setFiltroDNI('');
+    setFiltroFecha('');
+  };
 
   return (
     <div className="bg-white rounded-lg shadow-lg p-6 border border-gray-100 h-fit">
@@ -167,13 +240,107 @@ export default function MisECGsRecientes({
         </div>
       </div>
 
+      {/* ==================== FILTROS CLÍNICOS - PROFESIONAL ==================== */}
+      <div className="mb-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
+        <div className="flex items-center gap-2 mb-3">
+          <Search className="w-4 h-4 text-blue-600" />
+          <h4 className="text-xs font-bold text-blue-900">🔍 Filtrar Cargas Recientes</h4>
+        </div>
+
+        {/* Grid responsive: 1 col móvil, 2 cols tablet, 3 cols desktop */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          {/* DNI Filter */}
+          <div className="relative">
+            <label htmlFor="filtro-dni" className="block text-xs font-semibold text-blue-900 mb-1.5">
+              🆔 DNI Paciente
+            </label>
+            <div className="relative">
+              <div className="absolute left-2.5 top-1/2 transform -translate-y-1/2 text-blue-600">
+                <Search className="w-4 h-4" />
+              </div>
+              <input
+                id="filtro-dni"
+                type="text"
+                placeholder="12345678"
+                value={filtroDNI}
+                onChange={(e) => setFiltroDNI(e.target.value)}
+                maxLength="8"
+                className="w-full pl-8 pr-8 py-2 border border-blue-300 rounded-lg text-xs bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+              />
+              {filtroDNI && (
+                <button
+                  onClick={limpiarFiltroDNI}
+                  className="absolute right-2 top-1/2 transform -translate-y-1/2 text-blue-600 hover:bg-blue-100 p-1 rounded transition-colors"
+                  title="Limpiar DNI"
+                  aria-label="Limpiar filtro DNI"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Date Filter */}
+          <div className="relative">
+            <label htmlFor="filtro-fecha" className="block text-xs font-semibold text-blue-900 mb-1.5">
+              📅 Fecha Carga
+            </label>
+            <div className="relative">
+              <div className="absolute left-2.5 top-1/2 transform -translate-y-1/2 text-blue-600">
+                <Calendar className="w-4 h-4" />
+              </div>
+              <input
+                id="filtro-fecha"
+                type="date"
+                value={filtroFecha}
+                onChange={(e) => setFiltroFecha(e.target.value)}
+                className="w-full pl-8 pr-2 py-2 border border-blue-300 rounded-lg text-xs bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+              />
+            </div>
+          </div>
+
+          {/* Clear All Filters Button */}
+          {hayFiltrosActivos && (
+            <div className="flex items-end">
+              <button
+                onClick={limpiarTodosFiltros}
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs py-2 px-3 rounded-lg transition-all duration-200 active:scale-95"
+                title="Limpiar todos los filtros"
+              >
+                🗑️ Limpiar Filtros
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* Filter Status Info */}
+        {hayFiltrosActivos && (
+          <div className="mt-3 text-xs text-blue-700 bg-blue-100/50 border border-blue-200 rounded px-2.5 py-1.5">
+            {filtroDNI && filtroFecha && (
+              <span>📊 Mostrando resultados para DNI <strong>{filtroDNI}</strong> en <strong>{filtroFecha}</strong> ({datosFiltrados.length} encontrada{datosFiltrados.length !== 1 ? 's' : ''})</span>
+            )}
+            {filtroDNI && !filtroFecha && (
+              <span>📊 Mostrando resultados para DNI <strong>{filtroDNI}</strong> ({datosFiltrados.length} encontrada{datosFiltrados.length !== 1 ? 's' : ''})</span>
+            )}
+            {!filtroDNI && filtroFecha && (
+              <span>📊 Mostrando cargas de <strong>{filtroFecha}</strong> ({datosFiltrados.length} encontrada{datosFiltrados.length !== 1 ? 's' : ''})</span>
+            )}
+          </div>
+        )}
+      </div>
+
       {/* ==================== ÚLTIMAS CARGAS CON TOOLTIPS - COMPACTO ==================== */}
       <div className="mb-6">
-        <h3 className="text-sm font-bold text-gray-900 mb-3">🕐 Últimas Cargas</h3>
+        <h3 className="text-sm font-bold text-gray-900 mb-3">
+          🕐 Últimas Cargas {datosFiltrados.length !== ultimas3.length && ultimas3.length > 0 && (
+            <span className="text-xs font-normal text-blue-600">({datosFiltrados.length}/{ultimas3.length})</span>
+          )}
+        </h3>
 
         {ultimas3.length > 0 ? (
-          <div className="space-y-2">
-            {ultimas3.map((carga, idx) => {
+          datosFiltrados.length > 0 ? (
+          <div className="space-y-1.5">
+            {datosFiltrados.map((carga, idx) => {
               const esObservacion = carga.estado === 'OBSERVACION';
               const tooltipAbierto = expandidoTooltip === idx;
 
@@ -181,108 +348,61 @@ export default function MisECGsRecientes({
                 <div
                   key={idx}
                   onClick={() => onVerImagen({ dni: carga.dni, nombrePaciente: carga.nombrePaciente })}
-                  className={`relative overflow-hidden rounded-xl border transition-all duration-300 cursor-pointer hover:scale-102 ${
+                  className={`relative overflow-hidden rounded-lg border transition-all duration-200 cursor-pointer ${
                     esObservacion
-                      ? 'border-amber-200 bg-gradient-to-r from-amber-50 to-white hover:shadow-lg hover:border-amber-400'
-                      : 'border-blue-200 bg-gradient-to-r from-blue-50 to-white hover:shadow-lg hover:border-blue-400'
+                      ? 'border-amber-200 bg-amber-50/50 hover:bg-amber-50 hover:shadow-md hover:border-amber-300'
+                      : 'border-blue-200 bg-blue-50/50 hover:bg-blue-50 hover:shadow-md hover:border-blue-300'
                   }`}
                 >
-                  {/* Línea decorativa superior */}
-                  <div className={`h-1 w-full ${esObservacion ? 'bg-gradient-to-r from-amber-400 to-amber-300' : 'bg-gradient-to-r from-blue-400 to-blue-300'}`} />
+                  {/* Línea decorativa izquierda - Compacta */}
+                  <div className={`absolute left-0 top-0 bottom-0 w-0.5 ${esObservacion ? 'bg-amber-400' : 'bg-blue-400'}`} />
 
-                  <div className="p-4 flex items-start justify-between gap-3">
-                    {/* Lado izquierdo - Info Paciente */}
-                    <div className="flex-1 min-w-0">
-                      {/* Icono + Nombre Paciente - Prominente */}
-                      <div className="flex items-start gap-2.5 mb-3">
-                        <div className={`flex-shrink-0 p-2 rounded-lg ${esObservacion ? 'bg-amber-100' : 'bg-blue-100'}`}>
-                          {carga.estado === 'ENVIADA' ? (
-                            <CheckCircle className={`w-5 h-5 ${esObservacion ? 'text-amber-600' : 'text-blue-600'}`} />
-                          ) : (
-                            <AlertCircle className={`w-5 h-5 ${esObservacion ? 'text-amber-600' : 'text-blue-600'}`} />
-                          )}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="font-bold text-gray-900 text-sm truncate">
-                            {carga.nombrePaciente}
-                          </p>
-                          <p className="text-xs text-gray-500 mt-0.5 font-mono">
-                            DNI: {carga.dni}
-                          </p>
-                        </div>
+                  <div className="p-2.5 flex items-center justify-between gap-2.5">
+                    {/* Lado izquierdo - Info Compacta */}
+                    <div className="flex items-center gap-2 flex-1 min-w-0">
+                      {/* Icono pequeño */}
+                      <div className={`flex-shrink-0 p-1.5 rounded-md ${esObservacion ? 'bg-amber-100' : 'bg-blue-100'}`}>
+                        {carga.estado === 'ENVIADA' ? (
+                          <CheckCircle className={`w-4 h-4 ${esObservacion ? 'text-amber-600' : 'text-blue-600'}`} />
+                        ) : (
+                          <AlertCircle className={`w-4 h-4 ${esObservacion ? 'text-amber-600' : 'text-blue-600'}`} />
+                        )}
                       </div>
 
-                      {/* Tiempo transcurrido */}
-                      <div className="flex items-center gap-1.5 text-xs text-gray-500">
-                        <Clock className="w-3.5 h-3.5 flex-shrink-0" />
-                        <span>{carga.tiempoTranscurrido}</span>
-                      </div>
-
-                      {/* 🔴 TOOLTIP INTEGRADO - Observaciones - Compacto */}
-                      {esObservacion && carga.observacion && (
-                        <div
-                          className={`mt-1.5 p-2 bg-white border-l-4 border-amber-600 rounded text-xs
-                            transition-all duration-300 ease-out cursor-pointer
-                            ${tooltipAbierto ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0 overflow-hidden'}`}
-                          onClick={() =>
-                            setExpandidoTooltip(tooltipAbierto ? null : idx)
-                          }
-                        >
-                          <div className="flex items-start gap-1.5">
-                            <AlertCircle className="w-3 h-3 text-amber-600 flex-shrink-0 mt-0.5" />
-                            <div className="flex-1">
-                              <p className="font-bold text-amber-900 mb-0.5">
-                                📌 Observación:
-                              </p>
-                              <p className="text-amber-800 leading-relaxed">
-                                "{carga.observacion}"
-                              </p>
-                            </div>
-                          </div>
+                      {/* Info: Nombre, DNI, Tiempo en columna */}
+                      <div className="flex-1 min-w-0">
+                        <p className="font-semibold text-gray-900 text-xs truncate">
+                          {carga.nombrePaciente}
+                        </p>
+                        <div className="flex items-center gap-2 mt-0.5">
+                          <span className="text-xs text-gray-600 font-mono truncate">
+                            {carga.dni}
+                          </span>
+                          <span className="text-xs text-gray-400 flex-shrink-0 flex items-center gap-1">
+                            <Clock className="w-3 h-3" />
+                            {carga.tiempoTranscurrido}
+                          </span>
                         </div>
-                      )}
-
-                      {/* Botón expandir/colapsar tooltip - Más pequeño */}
-                      {esObservacion && carga.observacion && (
-                        <button
-                          onClick={() =>
-                            setExpandidoTooltip(tooltipAbierto ? null : idx)
-                          }
-                          className="text-xs text-amber-600 hover:text-amber-700 font-medium mt-1
-                            flex items-center gap-0.5 transition-colors"
-                        >
-                          {tooltipAbierto ? (
-                            <>
-                              <ChevronUp className="w-3 h-3" />
-                              Ocultar
-                            </>
-                          ) : (
-                            <>
-                              <ChevronDown className="w-3 h-3" />
-                              Ver
-                            </>
-                          )}
-                        </button>
-                      )}
+                      </div>
                     </div>
 
-                    {/* Lado derecho - Contador y Botón */}
-                    <div className="flex flex-col items-end gap-2.5">
-                      {/* Badge de cantidad de imágenes */}
-                      <span className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap ${
+                    {/* Lado derecho - Contador y Botón Compactos */}
+                    <div className="flex items-center gap-1.5 flex-shrink-0">
+                      {/* Badge de cantidad de imágenes - Compacto */}
+                      <span className={`inline-flex items-center gap-0.5 px-2 py-1 rounded-md text-xs font-semibold whitespace-nowrap ${
                         esObservacion
                           ? 'bg-amber-100 text-amber-700'
                           : 'bg-blue-100 text-blue-700'
                       }`}>
-                        📸 {carga.cantidadImagenes} {carga.cantidadImagenes === 1 ? 'imagen' : 'imágenes'}
+                        📸 {carga.cantidadImagenes}
                       </span>
 
-                      {/* Botón "Ver" */}
+                      {/* Botón "Ver" - Pequeño */}
                       <button
                         onClick={() =>
                           window.open(`/teleekgs/listar?dni=${carga.dni}`, '_blank', 'noopener,noreferrer')
                         }
-                        className={`flex-shrink-0 p-2 rounded-lg transition-all duration-200 ${
+                        className={`flex-shrink-0 p-1.5 rounded-md transition-colors duration-200 ${
                           esObservacion
                             ? 'hover:bg-amber-100 text-amber-600 hover:text-amber-700'
                             : 'hover:bg-blue-100 text-blue-600 hover:text-blue-700'
@@ -290,7 +410,7 @@ export default function MisECGsRecientes({
                         title="Ver en nueva pestaña"
                         aria-label={`Ver EKG de ${carga.nombrePaciente} en nueva pestaña`}
                       >
-                        <ExternalLink className="w-5 h-5" />
+                        <ExternalLink className="w-4 h-4" />
                       </button>
                     </div>
                   </div>
@@ -298,6 +418,33 @@ export default function MisECGsRecientes({
               );
             })}
           </div>
+          ) : (
+            // No results for current filters
+            <div className="bg-amber-50 border-2 border-amber-200 rounded-lg p-4 text-center">
+              <AlertCircle className="w-6 h-6 text-amber-600 mx-auto mb-2" />
+              <p className="text-xs text-amber-900 font-medium mb-2">
+                No se encontraron cargas
+              </p>
+              <p className="text-xs text-amber-700 mb-3">
+                {filtroDNI && filtroFecha && (
+                  `DNI "${filtroDNI}" no tiene cargas en ${filtroFecha}`
+                )}
+                {filtroDNI && !filtroFecha && (
+                  `DNI "${filtroDNI}" no tiene cargas recientes`
+                )}
+                {!filtroDNI && filtroFecha && (
+                  `No hay cargas para la fecha ${filtroFecha}`
+                )}
+              </p>
+              <button
+                onClick={limpiarTodosFiltros}
+                className="inline-flex items-center gap-1.5 text-xs font-semibold text-amber-700 hover:text-amber-900 transition-colors"
+              >
+                <X className="w-3.5 h-3.5" />
+                Limpiar filtros
+              </button>
+            </div>
+          )
         ) : (
           <div className="bg-gray-50 border-2 border-gray-200 rounded-lg p-3 text-center">
             <Clock className="w-6 h-6 text-gray-400 mx-auto mb-1.5" />
@@ -308,21 +455,6 @@ export default function MisECGsRecientes({
         )}
       </div>
 
-      {/* ==================== BOTÓN DE ACCIÓN PRINCIPAL ==================== */}
-      <div>
-        {/* Ver Registro Completo - ABRE EN NUEVA PESTAÑA (ruta accesible para rol actual) */}
-        <button
-          onClick={onVerRegistro}
-          className="w-full px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white
-            rounded-lg font-semibold text-sm transition-all duration-200
-            flex items-center justify-center gap-2 shadow-sm hover:shadow-md
-            active:translate-y-0.5"
-          title="Abrir registro completo de EKGs en nueva pestaña"
-        >
-          <ExternalLink className="w-4 h-4" />
-          Ver Registro Completo ↗
-        </button>
-      </div>
     </div>
   );
 }
