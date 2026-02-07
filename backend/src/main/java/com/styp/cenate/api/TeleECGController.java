@@ -378,41 +378,12 @@ public class TeleECGController {
     }
 
     /**
-     * Listar imágenes con filtros
+     * ❌ DEPRECATED v1.52.3: Endpoint /listar eliminado
+     * Usar IPRESSWorkspace en lugar (http://localhost:3000/teleekgs/ipress-workspace)
+     *
+     * Este endpoint ha sido reemplazado por una interfaz más moderna
+     * en el frontend con mejor UX y control de acceso bidireccional.
      */
-    @GetMapping("/listar")
-    @CheckMBACPermission(pagina = "/teleekgs/listar", accion = "ver")
-    @Operation(summary = "Listar imágenes ECG")
-    public ResponseEntity<ApiResponse<Page<TeleECGImagenDTO>>> listarImagenes(
-            @Parameter(description = "Número de documento") @RequestParam(required = false) String numDoc,
-            @Parameter(description = "Estado") @RequestParam(required = false) String estado,
-            @Parameter(description = "Página") @RequestParam(defaultValue = "0") int page,
-            @Parameter(description = "Tamaño") @RequestParam(defaultValue = "20") int size) {
-
-        log.info("📋 Listando imágenes - DNI: {}, Estado: {}", numDoc, estado);
-
-        try {
-            Pageable pageable = PageRequest.of(page, size);
-            Page<TeleECGImagenDTO> resultado = teleECGService.listarImagenes(
-                numDoc, estado, null, null, null, pageable
-            );
-
-            // v3.0.0: Aplicar transformación de estado según rol
-            Usuario usuarioActual = obtenerUsuarioActualObjeto();
-            resultado = aplicarTransformacionEstadoPage(resultado, usuarioActual);
-
-            return ResponseEntity.ok(new ApiResponse<>(
-                true,
-                "Imágenes listadas",
-                "200",
-                resultado
-            ));
-        } catch (Exception e) {
-            log.error("❌ Error en listado", e);
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .body(new ApiResponse<>(false, e.getMessage(), "400", null));
-        }
-    }
 
     /**
      * Listar ECGs agrupadas por asegurado (v1.21.5)
