@@ -179,17 +179,6 @@ export default function IPRESSWorkspace() {
     return () => clearInterval(interval);
   }, []);
 
-  // ✅ NUEVO: Cuando el caché o ECGs cambian, recalcular los datos formateados
-  const [ecgsFormateados, setEcgsFormateados] = useState([]);
-  useEffect(() => {
-    console.log(`🔄 [useEffect] ECGs o Cache cambiaron. Recalculando...`);
-    console.log(`   - ECGs count: ${ecgs.length}`);
-    console.log(`   - Cache keys: ${Object.keys(pacientesCache).join(', ')}`);
-
-    const ecgsFormateados = formatECGsForRecientes(ecgs, pacientesCache);
-    console.log(`✅ [useEffect] ECGs formateados:`, ecgsFormateados);
-    setEcgsFormateados(ecgsFormateados);
-  }, [ecgs, pacientesCache]);
 
   // =======================================
   // 📂 FUNCTIONS
@@ -234,11 +223,14 @@ export default function IPRESSWorkspace() {
       }
       console.log(`💾 [Cache Final] Estado del caché:`, newCache);
 
-      // ✅ SEGUNDO: Actualizar el caché ANTES de actualizar los ECGs
-      setPacientesCache(newCache);
+      // ✅ SEGUNDO: Enriquecer los ECGs directamente con el caché local (no depender del state)
+      console.log(`🎯 [Enriquecimiento] Enriqueciendo ${imagenes.length} imágenes con caché local...`);
+      const ecgsFormateados = formatECGsForRecientes(imagenes, newCache);
+      console.log(`✅ [Enriquecimiento Completado] ${ecgsFormateados.length} imágenes enriquecidas`);
 
-      // ✅ TERCERO: Ahora sí, actualizar los ECGs (que ya tienen el caché disponible)
-      setEcgs(imagenes);
+      // ✅ TERCERO: Actualizar ambos estados (caché y ECGs enriquecidos)
+      setPacientesCache(newCache);
+      setEcgs(ecgsFormateados);
 
       // Calcular estadísticas basadas en pacientes únicos, no en total de imágenes
       const pacientesPendientes = new Set(
@@ -425,7 +417,7 @@ export default function IPRESSWorkspace() {
           {/* Dashboard Full-Width */}
           <div className="w-full">
             <MisECGsRecientes
-              ultimas3={ecgsFormateados}
+              ultimas3={ecgs}
               estadisticas={{
                 total: stats.cargadas + stats.enEvaluacion + stats.observadas + (stats.atendidas || 0),
                 cargadas: stats.cargadas,
