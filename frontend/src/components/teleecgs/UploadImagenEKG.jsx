@@ -8,9 +8,6 @@ import toast from "react-hot-toast";
 import teleekgService from "../../services/teleekgService";
 import gestionPacientesService from "../../services/gestionPacientesService";
 import CrearAseguradoForm from "./CrearAseguradoForm";
-import DarkSidebar from "./DarkSidebar";
-import ImageGridPanel from "./ImageGridPanel";
-import ValidationPanel from "./ValidationPanel";
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 const MAX_COMPRESSED_SIZE = 1 * 1024 * 1024; // 1MB target for compression
@@ -537,45 +534,221 @@ export default function UploadImagenEKG({ onSuccess }) {
         </button>
       </div>
 
-      {/* Desktop: 3-Column Layout (xl: 1280px+) - cyan/blue colors only */}
-      <form onSubmit={handleSubmit} className="hidden xl:flex flex-1 overflow-hidden bg-gradient-to-r from-cyan-50 to-blue-50">
-        {/* Left Sidebar */}
-        <DarkSidebar
-          activeSection={activeSection}
-          onSectionChange={setActiveSection}
-          patientData={datosCompletos}
-          fileCount={archivos.length}
-        />
+      {/* Desktop: 3 Bloques Verticales Apilados (xl: 1280px+) */}
+      <form onSubmit={handleSubmit} className="hidden xl:flex xl:flex-col flex-1 overflow-hidden bg-white">
 
-        {/* Center: Dropzone + Grid */}
-        <ImageGridPanel
-          previews={previews}
-          archivos={archivos}
-          dragActive={dragActive}
-          onDragOver={handleDragOver}
-          onDragLeave={handleDragLeave}
-          onDrop={handleDrop}
-          onClick={() => fileInputRef.current?.click()}
-          onRemove={removerArchivo}
-          validationStates={imageValidationStates}
-          imageErrors={imageErrors}
-          pacienteEncontrado={pacienteEncontrado}
-          loading={loading}
-        />
+        {/* ==================== BLOQUE 1: VALIDACIÓN PACIENTE (20%) ==================== */}
+        <div className="flex-shrink-0 p-5 bg-blue-50 border-b-2 border-blue-300">
+          <h3 className="text-sm font-bold text-blue-900 mb-3 flex items-center gap-2">
+            <User className="w-4 h-4" />
+            Información del Paciente
+          </h3>
 
-        {/* Right Panel */}
-        <ValidationPanel
-          fileCount={archivos.length}
-          isValid={archivos.length >= MIN_IMAGENES}
-          errors={Object.values(imageErrors)}
-          isLoading={loading}
-          minImages={MIN_IMAGENES}
-          maxImages={MAX_IMAGENES}
-          onSubmit={handleSubmit}
-          pacienteEncontrado={pacienteEncontrado}
-        />
+          {/* Input DNI */}
+          <div className="mb-3">
+            <label className="block text-xs font-semibold text-blue-800 mb-1">DNI DEL PACIENTE *</label>
+            <div className="relative">
+              <input
+                type="tel"
+                inputMode="numeric"
+                value={numDocPaciente}
+                onChange={(e) => setNumDocPaciente(e.target.value.replace(/[^0-9]/g, '').slice(0, 8))}
+                placeholder="8 dígitos"
+                maxLength="8"
+                disabled={searchingPaciente}
+                className="w-full px-3 py-2 border-2 border-blue-400 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent text-sm font-semibold transition-all duration-200"
+              />
+              <div className="absolute right-2 top-2">
+                {searchingPaciente && <Loader className="w-4 h-4 animate-spin text-blue-600" />}
+                {pacienteEncontrado && !searchingPaciente && <CheckCircle className="w-4 h-4 text-green-600" />}
+              </div>
+            </div>
+          </div>
 
-        {/* Hidden File Inputs - Desktop */}
+          {/* Panel Confirmación (Condicional) */}
+          {pacienteEncontrado ? (
+            <div className="bg-green-50 border-2 border-green-300 rounded-lg p-3 transition-all duration-200">
+              <p className="text-xs font-bold text-green-800 mb-1 flex items-center gap-1.5">
+                <CheckCircle className="w-4 h-4" />
+                PACIENTE VALIDADO
+              </p>
+              <div className="text-sm font-bold text-green-900">
+                {datosCompletos.apellidos}
+              </div>
+            </div>
+          ) : (
+            <div className="bg-gray-100 border-2 border-gray-300 rounded-lg p-3 text-xs text-gray-700 text-center font-medium transition-all duration-200">
+              👆 Ingresa DNI del paciente
+            </div>
+          )}
+        </div>
+
+        {/* ==================== BLOQUE 2: ÁREA DE CARGA (60%) ==================== */}
+        <div className="flex-1 overflow-y-auto p-5 bg-white border-b-2 border-gray-300">
+          <h3 className="text-sm font-bold text-gray-900 mb-2">
+            Selecciona las Imágenes del EKG
+          </h3>
+          <p className="text-xs text-gray-600 mb-4">
+            Sube entre {MIN_IMAGENES} y {MAX_IMAGENES} imágenes en formato JPEG o PNG
+          </p>
+
+          {/* Dropzone */}
+          <div
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
+            onClick={() => fileInputRef.current?.click()}
+            className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-all duration-200 mb-4 ${
+              pacienteEncontrado && !loading && archivos.length < MAX_IMAGENES
+                ? dragActive
+                  ? "border-blue-600 bg-blue-50 shadow-md"
+                  : "border-blue-400 bg-blue-50/30 hover:border-blue-600 hover:bg-blue-50"
+                : "border-gray-300 bg-gray-50 cursor-not-allowed opacity-50"
+            }`}
+          >
+            <Upload className={`w-10 h-10 mx-auto mb-2 transition-colors duration-200 ${
+              pacienteEncontrado && !loading ? "text-blue-600" : "text-gray-400"
+            }`} />
+            <h4 className={`text-sm font-bold mb-1 transition-colors duration-200 ${
+              pacienteEncontrado && !loading ? "text-blue-900" : "text-gray-500"
+            }`}>
+              Arrastra tus archivos aquí
+            </h4>
+            <p className={`text-xs transition-colors duration-200 ${
+              pacienteEncontrado && !loading ? "text-blue-700" : "text-gray-500"
+            }`}>
+              o haz clic para buscar en tu computadora
+            </p>
+          </div>
+
+          {/* Grid de Imágenes */}
+          {archivos.length > 0 && (
+            <div>
+              <h4 className="text-xs font-bold text-gray-900 mb-2">
+                Imágenes Cargadas ({archivos.length}/{MAX_IMAGENES})
+              </h4>
+              <div className="grid grid-cols-4 gap-3">
+                {previews.map((preview, index) => (
+                  <div key={index} className="relative group">
+                    {/* Contenedor Imagen */}
+                    <div className={`border-2 ${
+                      imageValidationStates[index] === 'valid' ? 'border-blue-500 shadow-md shadow-blue-200' :
+                      imageValidationStates[index] === 'error' ? 'border-red-500 shadow-md shadow-red-200' :
+                      imageValidationStates[index] === 'warning' ? 'border-amber-500 shadow-md shadow-amber-200' :
+                      imageValidationStates[index] === 'processing' ? 'border-green-500 shadow-md shadow-green-200' :
+                      'border-gray-300'
+                    } rounded-lg overflow-hidden bg-white transition-transform duration-200 hover:scale-105`}>
+                      <img src={preview} alt={`EKG ${index + 1}`} className="w-full h-24 object-cover" />
+
+                      {/* Overlay Hover */}
+                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors duration-200 flex items-center justify-center opacity-0 group-hover:opacity-100">
+                        <button
+                          type="button"
+                          onClick={() => removerArchivo(index)}
+                          className="bg-red-600 hover:bg-red-700 text-white p-1.5 rounded-full transition-colors duration-200 shadow-lg"
+                          title="Eliminar imagen"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+
+                      {/* Ícono Estado */}
+                      <div className="absolute top-1.5 right-1.5 bg-white rounded-full p-1 shadow-md">
+                        {imageValidationStates[index] === 'valid' && <CheckCircle className="w-3 h-3 text-blue-600" />}
+                        {imageValidationStates[index] === 'error' && <AlertCircle className="w-3 h-3 text-red-600" />}
+                        {imageValidationStates[index] === 'warning' && <AlertCircle className="w-3 h-3 text-amber-600" />}
+                        {imageValidationStates[index] === 'processing' && <Loader className="w-3 h-3 animate-spin text-green-600" />}
+                      </div>
+                    </div>
+
+                    {/* Info Below */}
+                    <p className="text-[10px] font-semibold text-gray-800 truncate mt-1">
+                      {archivos[index]?.name || `EKG ${index + 1}`}
+                    </p>
+
+                    {/* Error Message */}
+                    {imageErrors[index] && (
+                      <p className="text-[10px] text-amber-700 font-medium mt-0.5 flex items-center gap-1">
+                        <AlertCircle className="w-3 h-3 flex-shrink-0" />
+                        {imageErrors[index]}
+                      </p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* ==================== BLOQUE 3: RESUMEN Y ENVÍO (20%) ==================== */}
+        <div className="flex-shrink-0 p-5 bg-white border-t-2 border-gray-300">
+          {/* Alerta Faltan Fotos (Condicional) */}
+          {archivos.length > 0 && archivos.length < MIN_IMAGENES && (
+            <div className="mb-3 p-3 bg-blue-100 border-2 border-blue-300 rounded-lg transition-all duration-200">
+              <p className="text-xs font-semibold text-blue-800">
+                📸 Faltan {MIN_IMAGENES - archivos.length} imagen(es) más para cumplir el mínimo requerido
+              </p>
+            </div>
+          )}
+
+          {/* Alerta Máximo Alcanzado (Condicional) */}
+          {archivos.length === MAX_IMAGENES && (
+            <div className="mb-3 p-3 bg-amber-100 border-2 border-amber-300 rounded-lg transition-all duration-200">
+              <p className="text-xs font-semibold text-amber-800 flex items-center gap-1.5">
+                <AlertCircle className="w-4 h-4" />
+                ¡Máximo alcanzado! No puedes agregar más imágenes
+              </p>
+            </div>
+          )}
+
+          {/* Errores de Validación (Condicional) */}
+          {Object.values(imageErrors).length > 0 && (
+            <div className="mb-3 p-3 bg-red-50 border-2 border-red-300 rounded-lg transition-all duration-200">
+              <p className="text-xs font-bold text-red-800 mb-1 flex items-center gap-1.5">
+                <AlertCircle className="w-4 h-4" />
+                Errores de Validación
+              </p>
+              <ul className="space-y-0.5">
+                {Object.values(imageErrors).map((error, idx) => (
+                  <li key={idx} className="text-[10px] text-red-700">• {error}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {/* Botón Upload */}
+          <button
+            type="submit"
+            disabled={archivos.length < MIN_IMAGENES || !pacienteEncontrado || loading || Object.values(imageErrors).length > 0}
+            className={`w-full py-3 rounded-lg font-bold text-white flex items-center justify-center gap-2 transition-all duration-200 shadow-md ${
+              archivos.length >= MIN_IMAGENES && pacienteEncontrado && !loading && Object.values(imageErrors).length === 0
+                ? "bg-green-600 hover:bg-green-700 hover:shadow-lg transform hover:scale-105 active:scale-95 cursor-pointer"
+                : "bg-gray-400 cursor-not-allowed opacity-60"
+            }`}
+            title={archivos.length < MIN_IMAGENES ? `Requiere mínimo ${MIN_IMAGENES} imágenes y paciente validado` : "Cargar todos los EKGs"}
+          >
+            {loading ? (
+              <>
+                <div className="animate-spin">
+                  <Upload className="w-5 h-5" />
+                </div>
+                <span className="text-sm">Subiendo...</span>
+              </>
+            ) : (
+              <>
+                <Upload className="w-5 h-5" />
+                <span className="text-sm">Cargar {archivos.length} EKG{archivos.length !== 1 ? 's' : ''}</span>
+              </>
+            )}
+          </button>
+
+          {/* Footer Info */}
+          <p className="text-[10px] text-gray-500 text-center mt-2">
+            Los archivos se procesarán en paralelo
+          </p>
+        </div>
+
+        {/* Hidden File Inputs */}
         <input
           ref={cameraInputRef}
           type="file"

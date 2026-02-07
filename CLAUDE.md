@@ -1,9 +1,9 @@
 # CLAUDE.md - Proyecto CENATE
 
 > **Sistema de Telemedicina - EsSalud Perú**
-> **Versión:** v1.52.1 (2026-02-06) 🚀
-> **Última Feature:** v1.52.1 - Upload EKG Tablet Split View ✅ (2026-02-06) ⭐
-> **Última Fix:** v1.47.2.1 - Persistencia de Enfermedades Crónicas ✅ (2026-02-06)
+> **Versión:** v1.53.0 (2026-02-06) 🚀
+> **Última Feature:** v1.53.0 - Rediseño Modal EKG: 3 Bloques Verticales + Paleta Profesional ✅ (2026-02-06) ⭐
+> **Última Fix:** v1.52.2 - Visor de Imágenes + Auto-recarga + Botón Refrescar ✅ (2026-02-06)
 > **Status:** ✅ Production Ready
 
 ---
@@ -230,34 +230,115 @@ Frontend (React 19):
 
 ## 📊 ÚLTIMAS VERSIONES
 
-### v1.52.1 - Completado (2026-02-06) 📱 UPLOAD EKG TABLET SPLIT VIEW
-✅ **Interface Optimizada para Tablet Horizontal** - Split View 66% datos | 34% cámara
-✅ **Datos Expandidos del Paciente** - Nombre, DNI, edad, teléfono, IPRESS
-✅ **Botón TOMAR FOTO Optimizado** - Altura comprimida, más espacio para carrete
-✅ **Carrete Horizontal Inferior** - Miniaturas con X para eliminar en hover
-✅ **Sin Scroll Necesario** - Todo cabe en pantalla tablet estándar
-✅ **Compresión Automática** - Imágenes ≤1MB JPEG
-✅ **Offline Support** - localStorage draft auto-save
+### v1.53.0 - Completado (2026-02-06) 🎨 REDISEÑO MODAL EKG - 3 BLOQUES VERTICALES + PALETA PROFESIONAL
+✅ **Layout Vertical Apilado** - Reemplazó 3 columnas horizontales por 3 bloques verticales
+✅ **Paleta Profesional** - Azul principal, Verde confirmación, Ámbar alertas, Blanco/gris fondos
+✅ **Desktop Solo (xl: 1280px+)** - Mobile/tablet sin cambios
+✅ **Flujo Visual Lógico** - Paciente → Imágenes → Envío (arriba hacia abajo)
+✅ **Build SUCCESS** - npm run build completed sin errores
 
-**Features:**
-- Grid layout (3 cols): LEFT 66% (datos), RIGHT 34% (cámara)
-- Búsqueda DNI + auto-load: nombres, edad, teléfono, IPRESS
-- Botón TOMAR FOTO: py-8, text-2xl/xl, icon w-16 (proporcional)
-- Carrete: thumbnails w-20 h-20, X en hover, scroll horizontal
-- Progress bar: motivacional + visual feedback
-- Confirmación paciente: expandida con múltiples boxes
-- Touch-friendly: botones ≥48px para dedos
+**Features v1.53.0 (Rediseño Modal):**
+- Bloque 1 (20%): Validación Paciente - Input DNI + Panel confirmación verde/gris
+- Bloque 2 (60%): Área de Carga - Dropzone azul + Grid 4 cols con estados visuales
+- Bloque 3 (20%): Resumen y Envío - Alertas + Botón verde habilitado/gris deshabilitado
+- Transiciones smooth (duration-200) + Transformaciones de escala
+- Estados color-coded: Azul (válido), Ámbar (advertencia), Rojo (error crítico), Verde (processing)
 
 **Cambios:**
-- `UploadImagenECG.jsx` - Split View grid layout, expanded patient data, reduced button height
-- `datosCompletos` - Agregados: telefono, ipress, edad
-- Left panel - Mostrar todos los datos en boxes
-- Right panel - Botón optimizado, carrete inferior
+- `UploadImagenEKG.jsx` - Eliminadas importaciones de DarkSidebar/ImageGridPanel/ValidationPanel
+- Layout desktop: `xl:flex-row` → `xl:flex-col` + 3 bloques inline (flex-shrink-0 + flex-1 + flex-shrink-0)
+- Paleta colores: Cyan/Blue genérica → Profesional (Azul + Verde + Ámbar)
+- Mobile/Tablet: 100% compatibles, layout original sin cambios
 
 **Docs:**
-- **Completo:** [`spec/frontend/16_upload_ekg_tablet_splitview.md`](spec/frontend/16_upload_ekg_tablet_splitview.md) (500+ líneas)
-- **Features:** Flujo enfermera, datos expandidos, specs de componentes
-- **Testing:** Checklist de validación incluido
+- **Rediseño Complete:** [`spec/modules/teleecg/10_rediseno_modal_3bloques_v1.53.0.md`](spec/modules/teleecg/10_rediseno_modal_3bloques_v1.53.0.md) (550+ líneas)
+- Comparación antes/después + paleta detallada + testing checklist
+
+**Testing:**
+- ✅ Bloque 1: Input DNI, búsqueda debounce, panel confirmación
+- ✅ Bloque 2: Dropzone, drag & drop, grid 4 cols, estados de imagen
+- ✅ Bloque 3: Alertas condicionales, botón habilitado/deshabilitado, contador
+- ✅ Responsive: Mobile/tablet sin cambios, desktop nuevo layout
+- ✅ Frontend compila sin errores ✅
+
+**Build:** ✅ npm run build SUCCESS
+**Commit:** TBD (pending)
+
+---
+
+### v1.52.2 - Completado (2026-02-06) 👁️ VISOR IMÁGENES FUNCIONAL - TODAS LAS FUNCIONES
+✅ **Visor EKG Completamente Funcional** - Imágenes se visualizan correctamente
+✅ **Auto-obtención de Base64** - abrirVisor() es async y obtiene contenido
+✅ **Rendering Correcto** - Estilos para max-width/max-height con auto-sizing
+✅ **Zoom + Rotación** - Controles funcionan correctamente
+✅ **Descargar Funcional** - Botón descarga imagen JPG
+
+**Features v1.52.2 (Visor Fix):**
+- Función `abrirVisor` es async
+- Obtiene imagen en base64 antes de abrir modal
+- Estilos corregidos para visualización completa
+- Imagen se visualiza al 100% del contenedor
+- Sin issues de tamaño/escala
+
+**Cambios:**
+- `RegistroPacientes.jsx` - abrirVisor() async + descargarImagenBase64()
+- `VisorECGModal.jsx` - Estilos inline para maxWidth/maxHeight
+
+**Docs:**
+- **Visor Fix:** [`spec/modules/teleecg/09_fix_visor_imagenes_v1.52.2.md`](spec/modules/teleecg/09_fix_visor_imagenes_v1.52.2.md)
+
+**Testing:**
+- ✅ Imagen se visualiza correctamente
+- ✅ Zoom funciona
+- ✅ Rotación funciona
+- ✅ Descargar funciona
+- ✅ Frontend compila sin errores ✅
+
+**Build:** ✅ npm run build SUCCESS
+
+---
+
+### v1.52.1 - Completado (2026-02-06) 🔐🔧 CONTROL ACCESO BIDIRECCIONAL + AUTO-RECARGA
+✅ **Control de Acceso Bidireccional** - Usuarios EXTERNO ↔ CENATE separados
+✅ **Filtrado Dinámico Breadcrumb** - Cada rol ve solo sus botones
+✅ **Protección Backend** - requiredRoles en componentRegistry (2 niveles)
+✅ **Auto-recarga de Imágenes** - Cuando se redirige desde upload
+✅ **Botón Refrescar Manual** - Usuario puede recargar datos cuando quiera
+✅ **Animación de Carga** - Icono gira durante recarga (feedback visual)
+
+**Features v1.52.0 (Control Acceso):**
+- Usuarios EXTERNO ven: "Subir" + "Mis EKGs" (2 botones)
+- Usuarios CENATE ven: "CENATE-Recibidas" (1 botón)
+- Protección dual: UI (ocultar) + Backend (bloquear URL)
+- ProtectedRoute muestra "Acceso Denegado" si intenta sin permisos
+- Componente: `TeleEKGBreadcrumb.jsx` con `allowedRoles`
+
+**Features v1.52.1 (Auto-recarga):**
+- Detecta redirección desde upload (location.state)
+- Llama `cargarEKGs()` automáticamente
+- Botón "Refrescar" para recarga manual
+- Spinner durante carga (disabled state)
+- Responsive: texto oculto en móvil
+
+**Cambios:**
+- `TeleEKGBreadcrumb.jsx` - Agregar `allowedRoles`, filtrado dinámico
+- `componentRegistry.js` - Agregar `requiredRoles` a 3 rutas (/teleekgs/upload, /teleekgs/listar, /teleecg/recibidas)
+- `RegistroPacientes.jsx` - Agregar `cargarEKGs()` en useEffect redirección + botón Refrescar
+
+**Docs:**
+- **Control Acceso:** [`spec/modules/teleecg/07_control_acceso_bidireccional.md`](spec/modules/teleecg/07_control_acceso_bidireccional.md) (400+ líneas)
+- **Fix Recarga:** [`spec/modules/teleecg/08_fix_recarga_imagenes_v1.52.1.md`](spec/modules/teleecg/08_fix_recarga_imagenes_v1.52.1.md) (300+ líneas)
+
+**Testing:**
+- ✅ Usuario EXTERNO no ve botón CENATE
+- ✅ Usuario CENATE no ve botones Upload/Listar
+- ✅ URL bloqueada si acceso no autorizado
+- ✅ Imágenes visibles después de upload
+- ✅ Filtros funcionan correctamente
+- ✅ Botón Refrescar recarga datos
+- ✅ Frontend compila sin errores ✅
+
+**Build:** ✅ npm run build SUCCESS
 
 ---
 
