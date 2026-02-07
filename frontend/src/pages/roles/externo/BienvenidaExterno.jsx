@@ -21,15 +21,12 @@ import {
   Video,
   Copy,
   Radio,
-  Menu,
-  X,
   ExternalLink,
 } from "lucide-react";
 
 export default function BienvenidaExterno() {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const genero = user?.genero === "F" || user?.genero === "FEMENINO" ? "a" : "o";
   const nombreUsuario = user?.nombreCompleto || "Usuario";
@@ -49,84 +46,9 @@ export default function BienvenidaExterno() {
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-slate-50 to-blue-50 flex flex-col overflow-hidden">
       <style>{subtlePulseStyle}</style>
 
-      {/* Mobile Top Bar */}
-      <div className="lg:hidden bg-white border-b border-slate-200 px-4 py-3 flex items-center justify-between">
-        <h1 className="font-bold text-slate-900">CENATE</h1>
-        <button
-          onClick={() => setSidebarOpen(!sidebarOpen)}
-          className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
-          aria-label="Toggle menu"
-        >
-          {sidebarOpen ? (
-            <X className="w-5 h-5 text-slate-600" />
-          ) : (
-            <Menu className="w-5 h-5 text-slate-600" />
-          )}
-        </button>
-      </div>
-
-      {/* Mobile Sidebar Overlay */}
-      {sidebarOpen && (
-        <div
-          className="lg:hidden fixed inset-0 bg-black/50 z-40"
-          onClick={() => setSidebarOpen(false)}
-        />
-      )}
 
       {/* Main Content - Horizontal Layout */}
       <div className="flex flex-1 overflow-hidden">
-        {/* Sidebar - Hidden on mobile, visible on lg+ */}
-        <div
-          className={`${
-            sidebarOpen ? "fixed" : "hidden"
-          } lg:relative lg:block w-60 xl:w-72 bg-white border-r border-slate-200 p-6 overflow-y-auto z-50 lg:z-0 transition-transform duration-300`}
-        >
-          <div className="space-y-6">
-            <div>
-              <h2 className="text-sm font-bold text-slate-900 uppercase tracking-wide">
-                Menú de Navegación
-              </h2>
-            </div>
-            <nav className="space-y-2">
-              <button
-                onClick={() => {
-                  navigate("/roles/externo/formulario-diagnostico");
-                  setSidebarOpen(false);
-                }}
-                className="w-full text-left px-4 py-2.5 rounded-lg text-sm font-medium text-slate-700 hover:bg-blue-50 hover:text-blue-700 transition-colors"
-              >
-                Formulario de Diagnóstico
-              </button>
-              <button
-                onClick={() => {
-                  navigate("/roles/externo/solicitud-turnos");
-                  setSidebarOpen(false);
-                }}
-                className="w-full text-left px-4 py-2.5 rounded-lg text-sm font-medium text-slate-700 hover:bg-emerald-50 hover:text-emerald-700 transition-colors"
-              >
-                Solicitud de Turnos
-              </button>
-              <button
-                onClick={() => {
-                  navigate("/roles/externo/gestion-modalidad");
-                  setSidebarOpen(false);
-                }}
-                className="w-full text-left px-4 py-2.5 rounded-lg text-sm font-medium text-slate-700 hover:bg-purple-50 hover:text-purple-700 transition-colors"
-              >
-                Gestión de Modalidades
-              </button>
-              <button
-                onClick={() => {
-                  navigate("/roles/externo/seguimiento-lecturas");
-                  setSidebarOpen(false);
-                }}
-                className="w-full text-left px-4 py-2.5 rounded-lg text-sm font-medium text-slate-700 hover:bg-purple-50 hover:text-purple-700 transition-colors"
-              >
-                Seguimiento de Lecturas
-              </button>
-            </nav>
-          </div>
-        </div>
 
         {/* Main Scrollable Content */}
         <div className="flex-1 overflow-y-auto">
@@ -294,7 +216,6 @@ export default function BienvenidaExterno() {
         <button
           onClick={() => {
             navigate("/roles/externo/formulario-diagnostico");
-            setSidebarOpen(false);
           }}
           className="flex-1 flex flex-col items-center justify-center py-2 px-1 rounded-lg text-slate-600 hover:text-blue-600 hover:bg-blue-50 transition-colors"
           aria-label="Formulario"
@@ -305,7 +226,6 @@ export default function BienvenidaExterno() {
         <button
           onClick={() => {
             navigate("/roles/externo/solicitud-turnos");
-            setSidebarOpen(false);
           }}
           className="flex-1 flex flex-col items-center justify-center py-2 px-1 rounded-lg text-slate-600 hover:text-emerald-600 hover:bg-emerald-50 transition-colors"
           aria-label="Turnos"
@@ -316,7 +236,6 @@ export default function BienvenidaExterno() {
         <button
           onClick={() => {
             navigate("/roles/externo/gestion-modalidad");
-            setSidebarOpen(false);
           }}
           className="flex-1 flex flex-col items-center justify-center py-2 px-1 rounded-lg text-slate-600 hover:text-purple-600 hover:bg-purple-50 transition-colors"
           aria-label="Modalidades"
@@ -327,7 +246,6 @@ export default function BienvenidaExterno() {
         <button
           onClick={() => {
             navigate("/roles/externo/seguimiento-lecturas");
-            setSidebarOpen(false);
           }}
           className="flex-1 flex flex-col items-center justify-center py-2 px-1 rounded-lg text-slate-600 hover:text-purple-600 hover:bg-purple-50 transition-colors"
           aria-label="Lecturas"

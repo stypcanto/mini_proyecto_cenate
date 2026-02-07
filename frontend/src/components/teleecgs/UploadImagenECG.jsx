@@ -481,53 +481,53 @@ export default function UploadImagenEKG({ onSuccess }) {
   }
 
   return (
-    <div className="bg-white rounded-xl shadow-2xl overflow-hidden flex flex-col h-screen xl:h-auto xl:w-[900px] xl:fixed xl:inset-0 xl:m-auto xl:max-h-screen">
-      {/* Header Profesional - v1.51.0: Azul Púrpura para Desktop */}
-      <div className="bg-gradient-to-r from-purple-600 to-indigo-700 xl:from-purple-700 xl:to-indigo-800 md:from-emerald-600 md:to-teal-700 px-6 py-5 xl:py-3 flex items-center justify-between relative">
-        <div className="flex items-center gap-3">
-          <div className="bg-white/20 p-2.5 rounded-lg">
-            <Heart className="w-6 h-6 text-white" />
+    <div className="bg-white rounded-xl shadow-2xl overflow-hidden flex flex-col h-screen xl:h-auto xl:w-[850px] xl:fixed xl:inset-0 xl:m-auto xl:max-h-[85vh]">
+      {/* Header Institucional - Azul CENATE (Desktop Solo) */}
+      <div className="bg-emerald-600 md:bg-gradient-to-r md:from-emerald-600 md:to-teal-700 xl:bg-blue-900 px-6 py-4 xl:py-3 flex items-center justify-between relative">
+        <div className="flex items-center gap-2.5">
+          <div className="bg-white/15 p-2 rounded-lg">
+            <Heart className="w-5 h-5 text-white" />
           </div>
           <div>
-            <h2 className="text-xl xl:text-base font-bold text-white">
+            <h2 className="text-lg xl:text-sm font-bold text-white">
               <span className="hidden md:inline xl:hidden">📤 Nuevo Upload de EKGs</span>
               <span className="md:hidden xl:inline">Cargar Electrocardiograma</span>
             </h2>
-            <p className="text-blue-100 md:text-emerald-100 xl:text-purple-100 text-xs xl:text-[11px] mt-0.5 xl:mt-0">Centro Nacional de Telemedicina - EsSalud</p>
+            <p className="text-blue-100 md:text-emerald-100 xl:text-blue-100 text-xs xl:text-[10px] mt-0.5 xl:mt-0 font-medium">CENATE - Centro Nacional de Telemedicina</p>
           </div>
         </div>
         {/* Online/Offline Indicator */}
-        <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold ${
-          isOnline ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"
+        <div className={`hidden xl:flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${
+          isOnline ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"
         }`}>
           {isOnline ? (
             <>
-              <Wifi className="w-4 h-4" />
-              Conectado
+              <Wifi className="w-3.5 h-3.5" />
+              <span>Conectado</span>
             </>
           ) : (
             <>
-              <WifiOff className="w-4 h-4" />
-              Sin conexión
+              <WifiOff className="w-3.5 h-3.5" />
+              <span>Sin conexión</span>
             </>
           )}
         </div>
         {/* Close Button - Desktop Only */}
         <button
           onClick={() => navigate(-1)}
-          className="hidden xl:flex p-1.5 hover:bg-white/20 rounded-lg transition-colors absolute top-2 right-2"
+          className="hidden xl:flex p-1.5 hover:bg-white/20 rounded-lg transition-colors absolute top-2.5 right-2.5"
           aria-label="Cerrar"
         >
           <X className="w-4 h-4 text-white" />
         </button>
       </div>
 
-      {/* Desktop: 3 Vertical Sections */}
-      <form onSubmit={handleSubmit} className="hidden xl:flex xl:flex-col flex-1 overflow-y-auto gap-6 p-8 bg-gradient-to-b from-gray-50 to-white">
+      {/* Desktop: 3 Vertical Sections - Profesional y Compacto */}
+      <form onSubmit={handleSubmit} className="hidden xl:flex xl:flex-col flex-1 overflow-y-auto gap-3 p-5 bg-white">
         {/* Section 1: Patient Information */}
-        <div className="bg-white rounded-xl shadow-md border-2 border-blue-200 p-6">
-          <h3 className="text-base font-bold text-blue-900 mb-4 flex items-center gap-2">
-            <User className="w-5 h-5" />
+        <div className="bg-gray-50 rounded-lg border border-blue-900/20 p-4">
+          <h3 className="text-sm font-bold text-blue-900 mb-3 flex items-center gap-2">
+            <User className="w-4 h-4" />
             <span>Información del Paciente</span>
           </h3>
 
@@ -606,64 +606,64 @@ export default function UploadImagenEKG({ onSuccess }) {
         </div>
 
         {/* Section 2: Image Selection */}
-        <div className="bg-white rounded-xl shadow-md border-2 border-purple-200 p-6">
-          <h3 className="text-base font-bold text-purple-700 mb-2 flex items-center gap-2">
-            <FileImage className="w-5 h-5" />
-            Selecciona las Imágenes del EKG * ({archivos.length}/{MAX_IMAGENES})
+        <div className="bg-gray-50 rounded-lg border border-blue-900/20 p-4">
+          <h3 className="text-sm font-bold text-blue-900 mb-1.5 flex items-center gap-2 transition-colors">
+            <FileImage className="w-4 h-4" />
+            Selecciona Imágenes del EKG ({archivos.length}/{MAX_IMAGENES})
           </h3>
 
-          <p className="text-sm font-semibold text-purple-600 mb-4">
-            Mínimo {MIN_IMAGENES} imágenes requeridas
+          <p className="text-xs font-medium text-gray-700 mb-3">
+            Mínimo {MIN_IMAGENES} imágenes • Máximo {MAX_IMAGENES}
           </p>
 
-          {/* Select Button */}
+          {/* Select Button - Institucional */}
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
             disabled={!pacienteEncontrado || loading || archivos.length >= MAX_IMAGENES}
-            className={`w-full py-3 rounded-lg font-bold text-sm flex items-center justify-center gap-2 transition mb-4 ${
+            className={`w-full py-2 rounded text-xs font-bold flex items-center justify-center gap-2 transition mb-3 ${
               pacienteEncontrado && !loading && archivos.length < MAX_IMAGENES
-                ? "bg-gray-400 hover:bg-gray-500 text-white shadow-md hover:shadow-lg"
-                : "bg-gray-200 text-gray-500 cursor-not-allowed opacity-50"
+                ? "bg-blue-900 hover:bg-blue-800 text-white shadow-sm hover:shadow-md"
+                : "bg-gray-300 text-gray-500 cursor-not-allowed opacity-60"
             }`}
-            aria-label="Buscar imágenes en galería"
+            aria-label="Buscar imágenes"
           >
-            <FileImage className="w-5 h-5" />
-            <span>Seleccionar Imágenes ({MIN_IMAGENES}-{MAX_IMAGENES})</span>
+            <FileImage className="w-3.5 h-3.5" />
+            <span>Seleccionar Imágenes</span>
           </button>
 
-          {/* Drop Zone */}
+          {/* Drop Zone - Compacto */}
           <div
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
             onDrop={handleDrop}
             onClick={() => fileInputRef.current?.click()}
-            className={`flex flex-col border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-all mb-4 ${
+            className={`flex flex-col border border-dashed rounded p-3 text-center cursor-pointer transition-all mb-3 ${
               pacienteEncontrado && !loading && archivos.length < MAX_IMAGENES
                 ? dragActive
-                  ? "border-purple-600 bg-purple-50"
-                  : "border-purple-400 bg-purple-50 hover:border-purple-500 hover:bg-purple-100"
+                  ? "border-blue-900 bg-blue-100 shadow-sm"
+                  : "border-blue-900/40 bg-blue-50 hover:border-blue-900 hover:bg-blue-100"
                 : "border-gray-300 bg-gray-100 cursor-not-allowed opacity-50"
             }`}
           >
-            <Upload className={`w-12 h-12 mx-auto mb-2 ${
+            <Upload className={`w-8 h-8 mx-auto mb-1 ${
               pacienteEncontrado && !loading
-                ? "text-purple-600"
+                ? "text-blue-900"
                 : "text-gray-400"
             }`} />
-            <p className={`text-sm font-semibold mb-1 ${
+            <p className={`text-xs font-semibold mb-0.5 ${
               pacienteEncontrado && !loading
-                ? "text-purple-700"
+                ? "text-blue-900"
                 : "text-gray-500"
             }`}>
-              O arrastra tus archivos aquí
+              Arrastra archivos o haz clic
             </p>
-            <p className={`text-xs ${
+            <p className={`text-[10px] ${
               pacienteEncontrado && !loading
-                ? "text-purple-600"
+                ? "text-blue-900/70"
                 : "text-gray-400"
             }`}>
-              JPEG o PNG • Máximo 5MB cada una
+              JPEG, PNG • Máx 5MB
             </p>
           </div>
 
@@ -700,34 +700,34 @@ export default function UploadImagenEKG({ onSuccess }) {
           )}
         </div>
 
-        {/* Section 3: Upload Button */}
+        {/* Section 3: Upload Button - Institucional */}
         <button
           type="submit"
           disabled={archivos.length < MIN_IMAGENES || loading || enviado || !pacienteEncontrado}
-          className={`w-full py-4 rounded-xl font-bold text-base flex items-center justify-center gap-2 transition duration-200 shadow-lg ${
+          className={`w-full py-2.5 rounded font-bold text-xs flex items-center justify-center gap-2 transition duration-200 shadow-md ${
             archivos.length >= MIN_IMAGENES && !loading && !enviado && pacienteEncontrado
-              ? "bg-gradient-to-r from-slate-500 to-slate-600 hover:from-slate-600 hover:to-slate-700 text-white hover:shadow-xl transform hover:-translate-y-0.5"
+              ? "bg-blue-900 hover:bg-blue-800 text-white hover:shadow-lg"
               : "bg-gray-300 text-gray-500 cursor-not-allowed opacity-60"
           }`}
           title={archivos.length < MIN_IMAGENES ? `Se requieren al menos ${MIN_IMAGENES} imágenes` : ""}
         >
           {loading ? (
             <>
-              <Loader className="w-5 h-5 animate-spin" />
-              <span>Subiendo EKGs...</span>
+              <Loader className="w-3.5 h-3.5 animate-spin" />
+              <span>Subiendo...</span>
             </>
           ) : enviado ? (
             <>
-              <CheckCircle className="w-5 h-5" />
-              <span>✅ EKGs Cargados</span>
+              <CheckCircle className="w-3.5 h-3.5" />
+              <span>✅ Cargado</span>
             </>
           ) : (
             <>
-              <Upload className="w-5 h-5" />
+              <Upload className="w-3.5 h-3.5" />
               <span>
                 {archivos.length >= MIN_IMAGENES
                   ? `Cargar ${archivos.length} EKGs`
-                  : `Se requieren ${MIN_IMAGENES - archivos.length} imagen(es) más`}
+                  : `Requiere ${MIN_IMAGENES - archivos.length} más`}
               </span>
             </>
           )}
