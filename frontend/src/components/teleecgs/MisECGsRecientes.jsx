@@ -447,17 +447,14 @@ export default function MisECGsRecientes({
                           {perfil}
                         </td>
 
-                        {/* Prioridad - Inteligente */}
-                        <td className="px-3 py-2 text-center">
-                          {carga.esUrgente ? (
-                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-red-500 text-white animate-pulse">
-                              🚨 Urgente
-                            </span>
-                          ) : (
-                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded text-xs text-gray-600 bg-gray-100">
-                              Normal
-                            </span>
-                          )}
+                        {/* Prioridad - Círculo Pulsante */}
+                        <td className="px-3 py-2 text-center flex items-center justify-center">
+                          <div
+                            className={`w-4 h-4 rounded-full animate-pulse ${
+                              carga.esUrgente ? 'bg-red-500' : 'bg-green-500'
+                            }`}
+                            title={carga.esUrgente ? 'Urgente' : 'Normal'}
+                          />
                         </td>
 
                         {/* Estado - Distinto */}

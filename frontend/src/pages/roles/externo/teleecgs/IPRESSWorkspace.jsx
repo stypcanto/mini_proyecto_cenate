@@ -208,23 +208,24 @@ export default function IPRESSWorkspace() {
             const datoPaciente = await gestionPacientesService.buscarAseguradoPorDni(dni);
             console.log(`📋 [DEBUG] Datos obtenidos para DNI ${dni}:`, datoPaciente);
 
-            // Extraer nombres y apellidos
-            const nombres = datoPaciente?.nombres || datoPaciente?.nombre || datoPaciente?.nombreCompleto || "";
-            const apellidos = datoPaciente?.apellidos || datoPaciente?.apellido || "";
+            // Extraer nombre completo - el backend envía "apellidosNombres"
+            const nombreCompleto = datoPaciente?.apellidosNombres ||
+                                  datoPaciente?.nombres ||
+                                  datoPaciente?.nombre ||
+                                  datoPaciente?.nombreCompleto ||
+                                  "";
 
-            if (nombres) {
-              const nombreCompleto = `${apellidos}, ${nombres}`.toUpperCase();
+            if (nombreCompleto) {
               newCache[dni] = {
-                nombres: nombres.trim(),
-                apellidos: apellidos.trim(),
+                nombres: nombreCompleto,
+                apellidos: "",
               };
               console.log(`✅ [Enriquecimiento] Agregado ${dni}: ${nombreCompleto}`);
 
               return {
                 ...img,
                 nombreCompleto: nombreCompleto,
-                apellidosPaciente: apellidos.trim(),
-                nombresPaciente: nombres.trim(),
+                nombresPaciente: nombreCompleto,
               };
             }
           } catch (err) {
