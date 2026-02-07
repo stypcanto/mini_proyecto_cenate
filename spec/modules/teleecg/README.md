@@ -1,9 +1,9 @@
 # 🫀 Módulo TeleEKG - Documentación Completa
 
-**Versión:** v1.56.8 (2026-02-06)
-**Estado:** ✅ Production Ready - Medical Efficiency v4.0
-**Última Actualización:** 2026-02-06
-**Novedades v1.56.8:** 🎯 Tabla "Cargas Recientes" Refactor + 🏥 40% Eficiencia Médica
+**Versión:** v1.60.7 (2026-02-07)
+**Estado:** ✅ Production Ready - Medical Efficiency v4.0 + Urgency Indicator
+**Última Actualización:** 2026-02-07
+**Novedades v1.60.7:** 🚨 Indicador de Urgencia Completo (End-to-End)
 
 ---
 
@@ -20,11 +20,12 @@
 | **[05_test_cases.md](05_test_cases.md)** | Plan completo de pruebas | QA, Testers | v1.50.0 |
 | **[06_troubleshooting.md](06_troubleshooting.md)** | Problemas y soluciones | Support, Developers | v1.50.0 |
 
-### 🎯 Versiones Recientes (Tabla "Cargas Recientes")
+### 🎯 Versiones Recientes (Urgencia + Optimizaciones)
 
 | Documento | Descripción | Versiones | Impacto |
 |-----------|-------------|-----------|---------|
-| **[12_mejoras_tabla_recientes_v1.56.4-v1.56.8.md](12_mejoras_tabla_recientes_v1.56.4-v1.56.8.md)** | **⭐ NUEVO** - Refactor completo UI/UX + Urgente Feature + Data Optimization | v1.56.4→v1.56.8 | 🏥 +40% eficiencia médica |
+| **[13_urgencia_indicator_v1.60.0.md](13_urgencia_indicator_v1.60.0.md)** | **⭐ NUEVO** - Indicador de Urgencia End-to-End: DB + Backend + Frontend + Testing | v1.60.0→v1.60.7 | 🚨 Priorización Visual de Pacientes |
+| **[12_mejoras_tabla_recientes_v1.56.4-v1.56.8.md](12_mejoras_tabla_recientes_v1.56.4-v1.56.8.md)** | Refactor completo UI/UX + Data Optimization | v1.56.4→v1.56.8 | 🏥 +40% eficiencia médica |
 
 ---
 
@@ -109,6 +110,75 @@ Ahora: 👁️ 📥 ℹ️ (contextuales)
 - Arquitectura y data flow
 - Test cases y troubleshooting
 - Metrics y deployment checklist
+
+---
+
+## 🚨 Novedades v1.60.0-v1.60.7 - Indicador de Urgencia End-to-End
+
+### ✨ Feature Completa: Priorización Visual de Pacientes
+
+**Ciclo de Vida de la Feature:**
+
+1. **v1.60.0 - Security Fix**
+   - Arreglar pattern `/api/teleekgs` en SecurityConfig
+   - Permite autenticación correcta de requests
+
+2. **v1.60.2 - Database Migration**
+   - Crear columna `es_urgente` (BOOLEAN NOT NULL DEFAULT false)
+   - Crear índice `idx_tele_ecg_urgente` para búsquedas rápidas
+
+3. **v1.60.5 - Frontend Data Transformation**
+   - Transformar `es_urgente` (snake_case) → `esUrgente` (camelCase)
+   - Fallback a `false` si campo ausente
+
+4. **v1.60.6 - Backend DTO Mapping**
+   - Mapear `esUrgente` en método `convertirADTO()` de TeleECGService
+   - API response ahora incluye `"esUrgente": true/false`
+
+5. **v1.60.7 - Upload Integration**
+   - Agregar parámetro `esUrgente` a FormData en upload
+   - Nuevas cargas persisten indicador de urgencia
+
+### 📊 Impacto End-to-End
+
+```
+IPRESS (Externo)              CENATE (Médico)
+    ↓                              ↓
+Checkbox "¿Urgente?"  ←→   Círculo Rojo 🔴
+    ↓                              ↓
+FormData.append()     ←→   Row background tint
+    ↓                              ↓
+POST /api/teleekgs    ←→   Visual Priority
+    ↓                              ↓
+tele_ecg_imagenes.es_urgente = true ✅
+```
+
+### 🔍 Testing Realizado
+
+- ✅ Unit tests: DTO mapping con esUrgente
+- ✅ Integration tests: API devuelve esUrgente correctamente
+- ✅ Manual tests: Flujo completo Upload → BD → API → Frontend
+- ✅ Regression tests: Sin funcionalidades rotas
+- ✅ Database verification: es_urgente=true para 09164101
+
+### 🎯 Requisitos Cumplidos
+
+- ✅ Backend: DTO mapping completamente funcional
+- ✅ Frontend: Transformación y rendering de urgencia
+- ✅ Database: Columna, índice y datos persistidos
+- ✅ Security: Patrón de autorización correcto
+- ✅ Testing: Plan completo + manual + automatizado
+- ✅ Documentation: End-to-end flow + troubleshooting
+
+### 🔗 Documentación Completa
+
+📖 Ver: **[13_urgencia_indicator_v1.60.0.md](13_urgencia_indicator_v1.60.0.md)**
+- Arquitectura detallada (DB → Backend → Frontend)
+- Flujo end-to-end visual y código
+- Testing completo (manual + automatizado)
+- SQL queries para debugging
+- Troubleshooting matrix
+- Matriz de verificación final
 
 ---
 
@@ -454,7 +524,12 @@ PostgreSQL 14+
 
 | Versión | Fecha | Cambios |
 |---------|-------|---------|
-| **v1.52.3** | 2026-02-06 | 🔧 Extracción correcta de Base64 - Imágenes renderizadas completamente |
+| **v1.60.7** | 2026-02-07 | 🚨 Indicador de Urgencia End-to-End: Security + DB + Backend DTO + Frontend Transform + Testing |
+| v1.60.6 | 2026-02-07 | 🔧 Backend DTO mapping para `esUrgente` field |
+| v1.60.5 | 2026-02-07 | 📱 Frontend data transformation `es_urgente` → `esUrgente` |
+| v1.60.2-3 | 2026-02-07 | 💾 Database migration + Security fix para /api/teleekgs |
+| v1.56.8 | 2026-02-06 | 🏥 Tabla "Cargas Recientes" Refactor - +40% eficiencia médica |
+| v1.52.3 | 2026-02-06 | 🔧 Extracción correcta de Base64 - Imágenes renderizadas completamente |
 | v1.52.2 | 2026-02-06 | 👁️ Visor EKG con navegación multi-imagen (4 EKGs visibles) |
 | v1.52.1 | 2026-02-06 | 🔧 Auto-recarga de imágenes después de upload + Botón Refrescar |
 | v1.52.0 | 2026-02-06 | 🔐 Control de Acceso Bidireccional (Externo ↔ CENATE) |
@@ -477,4 +552,5 @@ PostgreSQL 14+
 ---
 
 **Módulo TeleEKG - Listo para Producción** ✅
-Última actualización: 2026-02-06
+Última actualización: 2026-02-07
+Mantenedor: Claude Haiku 4.5
