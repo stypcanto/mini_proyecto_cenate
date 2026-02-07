@@ -351,9 +351,10 @@ public class TeleECGController {
      * Endpoint: GET /api/teleekgs?estado=...
      * Retorna una fila por asegurado/paciente con conteo consolidado de ECGs
      * Ideal para dashboard "TeleEKG Recibidas"
+     *
+     * ✅ v1.52.4: Removido @CheckMBACPermission - lectura permitida para usuarios autenticados
      */
     @GetMapping("")
-    @CheckMBACPermission(pagina = "/teleekgs/listar", accion = "ver")
     @Operation(summary = "Listar ECGs agrupadas por asegurado (consolidado)")
     public ResponseEntity<List<AseguradoConECGsDTO>> listarECGsConsolidadas(
             @Parameter(description = "Estado (TODOS, ENVIADA, OBSERVADA, ATENDIDA)") @RequestParam(required = false, defaultValue = "TODOS") String estado) {
@@ -390,9 +391,10 @@ public class TeleECGController {
      *
      * Retorna una lista de asegurados con todas sus ECGs agrupadas
      * Ideal para dashboard que muestra 1 fila por asegurado en lugar de 1 fila por imagen
+     *
+     * ✅ v1.52.4: Removido @CheckMBACPermission - lectura permitida para usuarios autenticados
      */
     @GetMapping("/agrupar-por-asegurado")
-    @CheckMBACPermission(pagina = "/teleekgs/listar", accion = "ver")
     @Operation(summary = "Listar ECGs agrupadas por asegurado")
     public ResponseEntity<ApiResponse<List<AseguradoConECGsDTO>>> listarAgrupoPorAsegurado(
             @Parameter(description = "Número de documento") @RequestParam(required = false) String numDoc,
@@ -441,9 +443,9 @@ public class TeleECGController {
 
     /**
      * Obtener detalles de imagen
+     * ✅ v1.52.4: Removido @CheckMBACPermission - lectura permitida para usuarios autenticados
      */
     @GetMapping("/{idImagen}/detalles")
-    @CheckMBACPermission(pagina = "/teleekgs/listar", accion = "ver")
     @Operation(summary = "Obtener detalles de imagen")
     public ResponseEntity<ApiResponse<TeleECGImagenDTO>> obtenerDetalles(
             @PathVariable Long idImagen,
@@ -476,9 +478,9 @@ public class TeleECGController {
 
     /**
      * Descargar imagen
+     * ✅ v1.52.4: Removido @CheckMBACPermission - lectura permitida para usuarios autenticados
      */
     @GetMapping("/{idImagen}/descargar")
-    @CheckMBACPermission(pagina = "/teleekgs/listar", accion = "ver")
     @Operation(summary = "Descargar imagen ECG")
     public ResponseEntity<byte[]> descargarImagen(
             @PathVariable Long idImagen,
@@ -511,9 +513,9 @@ public class TeleECGController {
 
     /**
      * Ver preview de imagen (mostrar inline en navegador)
+     * ✅ v1.52.4: Removido @CheckMBACPermission - lectura permitida para usuarios autenticados
      */
     @GetMapping("/preview/{imagenId}")
-    @CheckMBACPermission(pagina = "/teleekgs/listar", accion = "ver")
     @Operation(summary = "Ver preview de imagen ECG")
     public ResponseEntity<byte[]> verPreview(
             @PathVariable Long imagenId,
@@ -638,9 +640,9 @@ public class TeleECGController {
 
     /**
      * Obtener imágenes próximas a vencer
+     * ✅ v1.52.4: Removido @CheckMBACPermission - lectura permitida para usuarios autenticados
      */
     @GetMapping("/proximas-vencer")
-    @CheckMBACPermission(pagina = "/teleekgs/dashboard", accion = "ver")
     @Operation(summary = "Imágenes próximas a vencer")
     public ResponseEntity<ApiResponse<?>> obtenerProximasVencer() {
 
