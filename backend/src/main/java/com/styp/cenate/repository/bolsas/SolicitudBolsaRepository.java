@@ -199,7 +199,7 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
           AND (:red IS NULL OR dr.desc_red = :red)
           AND (:ipress IS NULL OR di.desc_ipress = :ipress)
           AND (:especialidad IS NULL OR LOWER(COALESCE(sb.especialidad, '')) LIKE LOWER(CONCAT('%', :especialidad, '%')))
-          AND (:estadoCodigo IS NULL OR UPPER(COALESCE(deg.cod_estado_cita, '')) = UPPER(:estadoCodigo))
+          AND (:estadoCodigo IS NULL OR UPPER(COALESCE(deg.cod_estado_cita, 'PENDIENTE_CITA')) = UPPER(:estadoCodigo))
           AND (:tipoCita IS NULL OR UPPER(COALESCE(sb.tipo_cita, 'N/A')) = UPPER(:tipoCita))
           AND (CASE
                WHEN :asignacion IS NULL THEN 1=1
@@ -242,7 +242,7 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
           AND (:red IS NULL OR dr.desc_red = :red)
           AND (:ipress IS NULL OR di.desc_ipress = :ipress)
           AND (:especialidad IS NULL OR LOWER(COALESCE(sb.especialidad, '')) LIKE LOWER(CONCAT('%', :especialidad, '%')))
-          AND (:estadoCodigo IS NULL OR UPPER(COALESCE(deg.cod_estado_cita, '')) = UPPER(:estadoCodigo))
+          AND (:estadoCodigo IS NULL OR UPPER(COALESCE(deg.cod_estado_cita, 'PENDIENTE_CITA')) = UPPER(:estadoCodigo))
           AND (:tipoCita IS NULL OR UPPER(COALESCE(sb.tipo_cita, 'N/A')) = UPPER(:tipoCita))
           AND (CASE
                WHEN :asignacion IS NULL THEN 1=1
