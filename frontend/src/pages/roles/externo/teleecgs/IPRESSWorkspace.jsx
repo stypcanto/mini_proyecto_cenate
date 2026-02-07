@@ -374,10 +374,10 @@ export default function IPRESSWorkspace() {
           />
         )}
 
-        {/* Modal de carga de imágenes - Simplificado */}
+        {/* Modal de carga de imágenes */}
         {showUploadModal && (
           <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-            <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto relative">
+            <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto relative flex flex-col">
               {/* Botón cerrar - esquina superior derecha */}
               <button
                 onClick={() => setShowUploadModal(false)}
@@ -386,16 +386,14 @@ export default function IPRESSWorkspace() {
                 <X className="w-6 h-6 text-gray-600" />
               </button>
 
-              {/* Contenido del modal */}
-              <div className="p-6">
-                <UploadFormWrapper
-                  onUploadSuccess={(nuevasImagenes) => {
-                    handleUploadSuccess(nuevasImagenes);
-                    setShowUploadModal(false);
-                  }}
-                  isWorkspace={true}
-                />
-              </div>
+              {/* Contenido del modal - sin padding superior para header ajustado */}
+              <UploadFormWrapper
+                onUploadSuccess={(nuevasImagenes) => {
+                  handleUploadSuccess(nuevasImagenes);
+                  setShowUploadModal(false);
+                }}
+                isWorkspace={true}
+              />
             </div>
           </div>
         )}
