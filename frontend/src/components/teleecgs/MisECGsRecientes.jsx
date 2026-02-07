@@ -329,95 +329,101 @@ export default function MisECGsRecientes({
         )}
       </div>
 
-      {/* ==================== ÚLTIMAS CARGAS CON TOOLTIPS - COMPACTO ==================== */}
+      {/* ==================== TABLA PROFESIONAL DE CARGAS ==================== */}
       <div className="mb-6">
-        <h3 className="text-sm font-bold text-gray-900 mb-3">
-          🕐 Últimas Cargas {datosFiltrados.length !== ultimas3.length && ultimas3.length > 0 && (
+        <h3 className="text-sm font-bold text-gray-900 mb-4">
+          📋 Cargas Recientes {datosFiltrados.length !== ultimas3.length && ultimas3.length > 0 && (
             <span className="text-xs font-normal text-blue-600">({datosFiltrados.length}/{ultimas3.length})</span>
           )}
         </h3>
 
         {ultimas3.length > 0 ? (
           datosFiltrados.length > 0 ? (
-          <div className="space-y-1.5">
-            {datosFiltrados.map((carga, idx) => {
-              const esObservacion = carga.estado === 'OBSERVACION';
-              const tooltipAbierto = expandidoTooltip === idx;
+            <div className="overflow-x-auto rounded-lg border border-gray-200 shadow-sm">
+              <table className="w-full text-sm">
+                {/* Header */}
+                <thead className="bg-gradient-to-r from-slate-700 to-slate-800 text-white">
+                  <tr>
+                    <th className="px-4 py-3 text-left font-bold whitespace-nowrap">📅 Fecha Carga</th>
+                    <th className="px-4 py-3 text-left font-bold whitespace-nowrap">🆔 DNI</th>
+                    <th className="px-4 py-3 text-left font-bold whitespace-nowrap">👤 Paciente</th>
+                    <th className="px-4 py-3 text-left font-bold whitespace-nowrap">⚧ Género</th>
+                    <th className="px-4 py-3 text-left font-bold whitespace-nowrap">🎂 Edad</th>
+                    <th className="px-4 py-3 text-center font-bold whitespace-nowrap">⚡ Prioridad</th>
+                    <th className="px-4 py-3 text-left font-bold whitespace-nowrap">📊 Estado</th>
+                    <th className="px-4 py-3 text-center font-bold whitespace-nowrap">📸</th>
+                  </tr>
+                </thead>
 
-              return (
-                <div
-                  key={idx}
-                  onClick={() => onVerImagen({ dni: carga.dni, nombrePaciente: carga.nombrePaciente })}
-                  className={`relative overflow-hidden rounded-lg border transition-all duration-200 cursor-pointer ${
-                    esObservacion
-                      ? 'border-amber-200 bg-amber-50/50 hover:bg-amber-50 hover:shadow-md hover:border-amber-300'
-                      : 'border-blue-200 bg-blue-50/50 hover:bg-blue-50 hover:shadow-md hover:border-blue-300'
-                  }`}
-                >
-                  {/* Línea decorativa izquierda - Compacta */}
-                  <div className={`absolute left-0 top-0 bottom-0 w-0.5 ${esObservacion ? 'bg-amber-400' : 'bg-blue-400'}`} />
+                {/* Body */}
+                <tbody>
+                  {datosFiltrados.map((carga, idx) => (
+                    <tr
+                      key={idx}
+                      className="border-b border-gray-200 hover:bg-blue-50 transition-colors duration-150 cursor-pointer"
+                      onClick={() => onVerImagen({ dni: carga.dni, nombrePaciente: carga.nombrePaciente })}
+                    >
+                      {/* Fecha Carga */}
+                      <td className="px-4 py-3 text-gray-900 font-medium">
+                        {carga.tiempoTranscurrido}
+                      </td>
 
-                  <div className="p-2.5 flex items-center justify-between gap-2.5">
-                    {/* Lado izquierdo - Info Compacta */}
-                    <div className="flex items-center gap-2 flex-1 min-w-0">
-                      {/* Icono pequeño */}
-                      <div className={`flex-shrink-0 p-1.5 rounded-md ${esObservacion ? 'bg-amber-100' : 'bg-blue-100'}`}>
-                        {carga.estado === 'ENVIADA' ? (
-                          <CheckCircle className={`w-4 h-4 ${esObservacion ? 'text-amber-600' : 'text-blue-600'}`} />
-                        ) : (
-                          <AlertCircle className={`w-4 h-4 ${esObservacion ? 'text-amber-600' : 'text-blue-600'}`} />
-                        )}
-                      </div>
+                      {/* DNI */}
+                      <td className="px-4 py-3 text-gray-700 font-mono font-semibold">
+                        {carga.dni}
+                      </td>
 
-                      {/* Info: Nombre, DNI, Tiempo en columna */}
-                      <div className="flex-1 min-w-0">
-                        <p className="font-semibold text-gray-900 text-xs truncate">
-                          {carga.nombrePaciente}
-                        </p>
-                        <div className="flex items-center gap-2 mt-0.5">
-                          <span className="text-xs text-gray-600 font-mono truncate">
-                            {carga.dni}
-                          </span>
-                          <span className="text-xs text-gray-400 flex-shrink-0 flex items-center gap-1">
-                            <Clock className="w-3 h-3" />
-                            {carga.tiempoTranscurrido}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
+                      {/* Nombres Completo */}
+                      <td className="px-4 py-3 text-gray-900 font-semibold truncate">
+                        {carga.nombrePaciente}
+                      </td>
 
-                    {/* Lado derecho - Contador y Botón Compactos */}
-                    <div className="flex items-center gap-1.5 flex-shrink-0">
-                      {/* Badge de cantidad de imágenes - Compacto */}
-                      <span className={`inline-flex items-center gap-0.5 px-2 py-1 rounded-md text-xs font-semibold whitespace-nowrap ${
-                        esObservacion
-                          ? 'bg-amber-100 text-amber-700'
-                          : 'bg-blue-100 text-blue-700'
-                      }`}>
-                        📸 {carga.cantidadImagenes}
-                      </span>
+                      {/* Género */}
+                      <td className="px-4 py-3 text-gray-700">
+                        {carga.genero === 'M' ? '🧑 Masc.' : carga.genero === 'F' ? '👩 Fem.' : '-'}
+                      </td>
 
-                      {/* Botón "Ver" - Pequeño */}
-                      <button
-                        onClick={() =>
-                          window.open(`/teleekgs/listar?dni=${carga.dni}`, '_blank', 'noopener,noreferrer')
-                        }
-                        className={`flex-shrink-0 p-1.5 rounded-md transition-colors duration-200 ${
-                          esObservacion
-                            ? 'hover:bg-amber-100 text-amber-600 hover:text-amber-700'
-                            : 'hover:bg-blue-100 text-blue-600 hover:text-blue-700'
-                        }`}
-                        title="Ver en nueva pestaña"
-                        aria-label={`Ver EKG de ${carga.nombrePaciente} en nueva pestaña`}
-                      >
-                        <ExternalLink className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+                      {/* Edad */}
+                      <td className="px-4 py-3 text-gray-700 font-medium text-center">
+                        {carga.edad ? `${carga.edad}a` : '-'}
+                      </td>
+
+                      {/* Prioridad - Círculo de Color */}
+                      <td className="px-4 py-3 text-center">
+                        <div
+                          className={`w-4 h-4 rounded-full mx-auto animate-pulse ${
+                            carga.esUrgente ? 'bg-red-500' : 'bg-green-500'
+                          }`}
+                          title={carga.esUrgente ? 'Urgente' : 'Normal'}
+                        />
+                      </td>
+
+                      {/* Estado */}
+                      <td className="px-4 py-3">
+                        <span
+                          className={`inline-flex px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap ${
+                            carga.estado === 'ENVIADA'
+                              ? 'bg-blue-100 text-blue-900'
+                              : carga.estado === 'OBSERVADA'
+                              ? 'bg-amber-100 text-amber-900'
+                              : carga.estado === 'ATENDIDA'
+                              ? 'bg-green-100 text-green-900'
+                              : 'bg-gray-100 text-gray-900'
+                          }`}
+                        >
+                          {carga.estado === 'ENVIADA' ? '📥 Cargada' : carga.estado === 'OBSERVADA' ? '👁️ Observada' : carga.estado === 'ATENDIDA' ? '✅ Atendida' : carga.estado}
+                        </span>
+                      </td>
+
+                      {/* Contador Imágenes */}
+                      <td className="px-4 py-3 text-center font-bold text-slate-700">
+                        {carga.cantidadImagenes || 0}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           ) : (
             // No results for current filters
             <div className="bg-amber-50 border-2 border-amber-200 rounded-lg p-4 text-center">

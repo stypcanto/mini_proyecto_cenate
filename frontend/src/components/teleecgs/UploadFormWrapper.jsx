@@ -1,102 +1,87 @@
 import React, { useState } from "react";
-import { Upload, Image, FileCheck, AlertCircle, Info, ChevronDown, ChevronUp, X } from "lucide-react";
+import { Upload, Zap, AlertCircle, ChevronDown, ChevronUp, X } from "lucide-react";
 import UploadImagenECG from "./UploadImagenECG";
 
 /**
- * 🎨 Upload Form Wrapper - UI/UX mejorado
- * Encapsula UploadImagenECG con mejor presentación visual
+ * 🏥 Upload Form Wrapper - Diseño Profesional Médico
+ * Forma minimalista y elegante para carga de electrocardiogramas
  */
 export default function UploadFormWrapper({ onUploadSuccess, isWorkspace, isTablet }) {
-  const [expandedInfo, setExpandedInfo] = useState(false);
-  const [showHelp, setShowHelp] = useState(true);
+  const [expandedSteps, setExpandedSteps] = useState(false);
 
   return (
-    <div className="w-full">
-      {/* Collapsible Info Box - Optimized for Space */}
-      {showHelp && (
-        <div className="mb-3 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-3 border border-blue-200 relative">
-          {/* Collapse/Expand Button */}
-          <button
-            onClick={() => setExpandedInfo(!expandedInfo)}
-            className="absolute top-2 right-2 p-1 hover:bg-blue-100 rounded transition-colors"
-            title={expandedInfo ? "Colapsar ayuda" : "Expandir ayuda"}
-          >
-            {expandedInfo ? (
-              <ChevronUp className="w-4 h-4 text-blue-600" />
-            ) : (
-              <ChevronDown className="w-4 h-4 text-blue-600" />
-            )}
-          </button>
+    <div className="w-full space-y-4">
+      {/* Quick Steps Banner - Compacto y profesional */}
+      <div className="bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-200 rounded-lg p-3.5 flex items-center justify-between">
+        <div className="flex items-center gap-2.5 flex-1">
+          <div className="p-1.5 bg-emerald-500 rounded-lg">
+            <Zap className="w-4 h-4 text-white" strokeWidth={2.5} />
+          </div>
+          <div>
+            <p className="text-xs font-semibold text-emerald-900">
+              3 pasos: DNI → Seleccionar → Cargar
+            </p>
+            <p className="text-xs text-emerald-700">4-10 imágenes de alta calidad</p>
+          </div>
+        </div>
 
-          {/* Close/Hide Button */}
-          <button
-            onClick={() => setShowHelp(false)}
-            className="absolute top-2 right-10 p-1 hover:bg-blue-100 rounded transition-colors"
-            title="Ocultar ayuda permanentemente"
-          >
-            <X className="w-3 h-3 text-blue-600" />
-          </button>
+        {/* Expandir detalles */}
+        <button
+          onClick={() => setExpandedSteps(!expandedSteps)}
+          className="p-1 hover:bg-emerald-200/50 rounded transition-colors flex-shrink-0"
+        >
+          {expandedSteps ? (
+            <ChevronUp className="w-4 h-4 text-emerald-700" />
+          ) : (
+            <ChevronDown className="w-4 h-4 text-emerald-700" />
+          )}
+        </button>
+      </div>
 
-          <div className="flex items-start gap-2 pr-20">
-            <Info className="w-4 h-4 text-blue-600 flex-shrink-0 mt-0.5" />
-
-            {expandedInfo ? (
-              // Expanded View
-              <div className="flex-1">
-                <h3 className="font-semibold text-blue-900 mb-2 text-sm">
-                  ✅ 3 Pasos para cargar tus EKGs
-                </h3>
-                <div className="space-y-1 text-xs text-blue-800">
-                  <div className="flex items-center gap-2">
-                    <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-blue-600 text-white text-xs font-bold">
-                      1
-                    </span>
-                    <span>Ingresa el DNI del paciente</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-blue-600 text-white text-xs font-bold">
-                      2
-                    </span>
-                    <span>Selecciona entre 4 y 10 imágenes ECG (JPEG o PNG)</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-blue-600 text-white text-xs font-bold">
-                      3
-                    </span>
-                    <span>Haz clic en "Cargar EKGs" y listo!</span>
-                  </div>
-                </div>
-              </div>
-            ) : (
-              // Collapsed View
-              <div className="flex-1">
-                <p className="text-xs text-blue-900 font-semibold">
-                  💡 Carga rápida: DNI → Seleccionar 4-10 fotos → Cargar
-                </p>
-              </div>
-            )}
+      {/* Pasos expandidos */}
+      {expandedSteps && (
+        <div className="bg-white border border-emerald-100 rounded-lg p-4 space-y-2.5">
+          <div className="flex items-start gap-3">
+            <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-emerald-500 text-white text-xs font-bold flex-shrink-0">1</span>
+            <div>
+              <p className="text-sm font-semibold text-gray-900">Ingresa DNI del paciente</p>
+              <p className="text-xs text-gray-600">Exactamente 8 dígitos</p>
+            </div>
+          </div>
+          <div className="flex items-start gap-3">
+            <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-emerald-500 text-white text-xs font-bold flex-shrink-0">2</span>
+            <div>
+              <p className="text-sm font-semibold text-gray-900">Selecciona imágenes ECG</p>
+              <p className="text-xs text-gray-600">4-10 imágenes (JPEG, PNG)</p>
+            </div>
+          </div>
+          <div className="flex items-start gap-3">
+            <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-emerald-500 text-white text-xs font-bold flex-shrink-0">3</span>
+            <div>
+              <p className="text-sm font-semibold text-gray-900">Confirma y carga</p>
+              <p className="text-xs text-gray-600">El sistema procesará automáticamente</p>
+            </div>
           </div>
         </div>
       )}
 
-      {/* Form Container */}
-      <div className="bg-white rounded-lg shadow-lg border border-gray-200 overflow-hidden">
-        {/* Form Content */}
-        <div className={isTablet ? "p-4" : "p-6"}>
-          <div className="flex items-center gap-2 mb-6">
-            <Upload className="w-5 h-5 text-blue-600" />
-            <h2 className="text-lg font-semibold text-gray-900">
-              Cargar Electrocardiogramas
-            </h2>
-          </div>
+      {/* Form Container - Minimalista */}
+      <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+        {/* Header compacto */}
+        <div className="px-6 py-4 border-b border-gray-100 flex items-center gap-2">
+          <Upload className="w-5 h-5 text-emerald-600" strokeWidth={2} />
+          <h2 className="text-base font-semibold text-gray-900">Cargar Electrocardiogramas</h2>
+        </div>
 
-          {/* Upload Component */}
+        {/* Form Content */}
+        <div className="p-6">
           <UploadImagenECG
             onUploadSuccess={onUploadSuccess}
             isWorkspace={isWorkspace}
           />
         </div>
       </div>
+    </div>
 
       {/* Tips/Help Section */}
       <div className="mt-4 bg-amber-50 rounded-lg p-4 border border-amber-200">
