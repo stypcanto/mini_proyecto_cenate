@@ -4,6 +4,7 @@ import com.styp.cenate.dto.bolsas.estadisticas.*;
 import com.styp.cenate.repository.bolsas.SolicitudBolsaRepository;
 import com.styp.cenate.service.bolsas.SolicitudBolsaEstadisticasService;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -33,6 +34,7 @@ public class SolicitudBolsaEstadisticasServiceImpl implements SolicitudBolsaEsta
     // ========================================================================
 
     @Override
+    @Cacheable(value = "estadisticas-generales")
     public EstadisticasGeneralesDTO obtenerEstadisticasGenerales() {
         log.info("📊 Calculando estadísticas generales...");
 
@@ -73,6 +75,7 @@ public class SolicitudBolsaEstadisticasServiceImpl implements SolicitudBolsaEsta
     // ========================================================================
 
     @Override
+    @Cacheable(value = "estadisticas-por-estado")
     public List<EstadisticasPorEstadoDTO> obtenerEstadisticasPorEstado() {
         log.info("📊 Obteniendo estadísticas por estado...");
 
@@ -188,6 +191,7 @@ public class SolicitudBolsaEstadisticasServiceImpl implements SolicitudBolsaEsta
     // ========================================================================
 
     @Override
+    @Cacheable(value = "estadisticas-por-ipress")
     public List<EstadisticasPorIpressDTO> obtenerEstadisticasPorIpress() {
         log.info("📊 Obteniendo estadísticas por IPRESS...");
 
@@ -224,6 +228,7 @@ public class SolicitudBolsaEstadisticasServiceImpl implements SolicitudBolsaEsta
     // ========================================================================
 
     @Override
+    @Cacheable(value = "estadisticas-por-tipo-cita")
     public List<EstadisticasPorTipoCitaDTO> obtenerEstadisticasPorTipoCita() {
         log.info("📊 Obteniendo estadísticas por tipo de cita...");
 

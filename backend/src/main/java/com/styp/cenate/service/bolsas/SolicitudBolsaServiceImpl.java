@@ -1064,7 +1064,8 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
             .pacienteTelefonoAlterno(row.telefonoAlterno())
             .pacienteEmail(row.correo())
             .codigoIpressAdscripcion(row.codigoIpress())
-            .tipoCita(row.tipoCita())
+            // v1.60.0: Default "Voluntaria" para Bolsa 107 si tipoCita viene null
+            .tipoCita(row.tipoCita() != null && !row.tipoCita().isBlank() ? row.tipoCita() : "Voluntaria")
             .especialidad(especialidad)
             .build();
     }
@@ -2470,7 +2471,7 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
      * @param especialidad especialidad (null = todas)
      * @param estadoCodigo código estado cita (null = todos)
      * @param tipoCita tipo cita (null = todos)
-     * @param busqueda búsqueda libre: paciente/DNI/IPRESS (null = ignorar)
+     * @param busqueda búsqueda por DNI solamente (null = ignorar)
      * @param pageable paginación
      * @return Page con solicitudes que coinciden los filtros
      */

@@ -1135,11 +1135,7 @@ export default function Solicitudes() {
   // ============================================================================
   const countWithFilters = (filterKey, filterValue) => {
     return solicitudes.filter(sol => {
-      const matchSearch = sol.paciente.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         sol.dni.includes(searchTerm) ||
-                         sol.ipress.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         sol.red.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         (sol.especialidad && sol.especialidad.toLowerCase().includes(searchTerm.toLowerCase()));
+      const matchSearch = !searchTerm || sol.dni.includes(searchTerm);
 
       // Si estamos contando esta opción, usa filterValue; si no, usa el filtro activo
       const matchBolsa = filterKey === 'bolsa' ? sol.nombreBolsa === filterValue : (filtroBolsa === 'todas' ? true : sol.nombreBolsa === filtroBolsa);
@@ -1751,9 +1747,12 @@ export default function Solicitudes() {
           <ListHeader
             title=""
             showTitle={false}
-            searchPlaceholder="Buscar paciente, DNI o IPRESS..."
+            searchPlaceholder="Buscar por DNI (8 dígitos)..."
             searchValue={searchTerm}
-            onSearchChange={(e) => setSearchTerm(e.target.value)}
+            onSearchChange={(e) => {
+              const valor = e.target.value.replace(/\D/g, '').slice(0, 8);
+              setSearchTerm(valor);
+            }}
             filters={[
               {
                 name: "Bolsas",

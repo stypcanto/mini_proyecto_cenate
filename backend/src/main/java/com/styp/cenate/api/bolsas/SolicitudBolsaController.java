@@ -329,7 +329,7 @@ public class SolicitudBolsaController {
      * @param estadoId ID estado gestión citas (null = todos)
      * @param tipoCita tipo de cita (null o "todas" = todos)
      * @param asignacion filtro asignación: null/"todos" = todos, "asignados" = con gestora, "sin_asignar" = sin gestora
-     * @param busqueda búsqueda libre: paciente/DNI/IPRESS (null = ignorar)
+     * @param busqueda búsqueda por DNI solamente (null = ignorar)
      * @param pageable paginación
      * @return Page con solicitudes filtradas
      */

@@ -165,7 +165,7 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
      * @param especialidad especialidad (null = todas)
      * @param estadoId ID estado gestión citas (null = todos)
      * @param tipoCita tipo de cita (null = todos)
-     * @param busqueda búsqueda por paciente, DNI, IPRESS (null = ignorar)
+     * @param busqueda búsqueda por DNI solamente (null = ignorar)
      * @param pageable paginación
      * @return lista paginada de solicitudes enriquecidas
      */
@@ -207,9 +207,7 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
                WHEN :asignacion = 'sin_asignar' THEN sb.responsable_gestora_id IS NULL
                ELSE 1=0
                END)
-          AND (:busqueda IS NULL OR LOWER(COALESCE(sb.paciente_nombre, '')) LIKE LOWER(CONCAT('%', :busqueda, '%'))
-                              OR COALESCE(sb.paciente_dni, '') LIKE CONCAT('%', :busqueda, '%')
-                              OR LOWER(COALESCE(di.desc_ipress, '')) LIKE LOWER(CONCAT('%', :busqueda, '%')))
+          AND (:busqueda IS NULL OR COALESCE(sb.paciente_dni, '') LIKE CONCAT('%', :busqueda, '%'))
         ORDER BY sb.fecha_solicitud DESC
         LIMIT :#{#pageable.pageSize} OFFSET :#{#pageable.offset}
         """, nativeQuery = true)
@@ -250,9 +248,7 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
                WHEN :asignacion = 'sin_asignar' THEN sb.responsable_gestora_id IS NULL
                ELSE 1=0
                END)
-          AND (:busqueda IS NULL OR LOWER(COALESCE(sb.paciente_nombre, '')) LIKE LOWER(CONCAT('%', :busqueda, '%'))
-                              OR COALESCE(sb.paciente_dni, '') LIKE CONCAT('%', :busqueda, '%')
-                              OR LOWER(COALESCE(di.desc_ipress, '')) LIKE LOWER(CONCAT('%', :busqueda, '%')))
+          AND (:busqueda IS NULL OR COALESCE(sb.paciente_dni, '') LIKE CONCAT('%', :busqueda, '%'))
         """, nativeQuery = true)
     long countWithFilters(
             @org.springframework.data.repository.query.Param("bolsaNombre") String bolsaNombre,
