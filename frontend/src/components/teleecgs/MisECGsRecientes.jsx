@@ -14,71 +14,155 @@ import {
   RefreshCw,
   ChevronDown,
   ChevronUp,
+  CloudUpload,
+  Eye,
+  MessageSquare,
+  CheckCheck,
 } from 'lucide-react';
 import { COLORS, MEDICAL_PALETTE } from '../../config/designSystem';
 
 export default function MisECGsRecientes({
   ultimas3 = [],
   estadisticas = {
-    exitosas: 0,
-    evaluacion: 0,
-    observaciones: 0,
+    cargadas: 0,
+    enEvaluacion: 0,
+    observadas: 0,
+    atendidas: 0,
   },
   onVerRegistro = () => {},
   onRefrescar = () => {},
-  onVerImagen = () => {},  // ✅ Nuevo: Callback cuando hace clic en una imagen
+  onVerImagen = () => {},
   loading = false,
 }) {
   const [expandidoTooltip, setExpandidoTooltip] = useState(null);
 
   return (
     <div className="bg-white rounded-lg shadow-lg p-6 border border-gray-100 h-fit">
-      {/* ==================== ESTADÍSTICAS EN PÍLDORAS CON BOTÓN REFRESCAR ==================== */}
-      <div className="mb-6">
-        <div className="flex items-center justify-between mb-3">
-          <h3 className="text-sm font-bold text-gray-900">📊 Resumen de Hoy</h3>
+      {/* ==================== ESTADÍSTICAS PROFESIONALES - FULL WIDTH ==================== */}
+      <div className="mb-8">
+        <div className="flex items-center justify-between mb-5">
+          <h3 className="text-base font-bold text-slate-900">📊 Resumen de Hoy</h3>
 
-          {/* Botón Refrescar - Solo ícono, arriba a la derecha */}
+          {/* Botón Refrescar */}
           <button
             onClick={onRefrescar}
             disabled={loading}
-            className="p-2 hover:bg-gray-100 rounded-full transition-all duration-200 disabled:opacity-50"
+            className="p-2.5 hover:bg-slate-100 rounded-lg transition-all duration-200 disabled:opacity-50"
             title="Refrescar estadísticas"
             aria-label="Refrescar datos"
           >
-            <RefreshCw className={`w-4 h-4 text-gray-600 ${loading ? 'animate-spin' : ''}`} />
+            <RefreshCw className={`w-5 h-5 text-slate-600 ${loading ? 'animate-spin' : ''}`} />
           </button>
         </div>
 
-        <div className="flex gap-2 flex-wrap">
-          {/* Exitosas - Verde */}
-          <div className="flex items-center gap-2 bg-green-50 border-2 border-green-300 rounded-full px-4 py-2.5 shadow-sm">
-            <div className="bg-green-600 text-white rounded-full w-8 h-8 flex items-center justify-center text-xs font-bold">
-              {estadisticas.exitosas}
+        {/* Grid responsive - Professional Stats Cards Compact */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          {/* Cargadas - Verde SATURADO (Impar - Oscuro) */}
+          <div className="relative overflow-hidden rounded-lg bg-gradient-to-br from-emerald-500 to-emerald-600 border border-emerald-600 p-4 shadow-md hover:shadow-xl transition-all duration-300 hover:scale-105">
+            {/* Background decorativo */}
+            <div className="absolute top-0 right-0 w-16 h-16 bg-white/10 rounded-full -mr-8 -mt-8" />
+
+            <div className="relative z-10">
+              {/* Icono */}
+              <div className="mb-2.5">
+                <div className="inline-flex p-2 bg-white/20 rounded-lg">
+                  <CloudUpload className="w-5 h-5 text-white" strokeWidth={2.5} />
+                </div>
+              </div>
+
+              {/* Número */}
+              <div className="mb-1.5">
+                <span className="text-3xl font-bold text-white">
+                  {estadisticas.cargadas}
+                </span>
+              </div>
+
+              {/* Etiqueta */}
+              <span className="text-xs font-semibold text-white/90">
+                Cargados
+              </span>
             </div>
-            <span className="text-xs font-semibold text-green-900 whitespace-nowrap">
-              Exitosas
-            </span>
           </div>
 
-          {/* En evaluación - Azul */}
-          <div className="flex items-center gap-2 bg-blue-50 border-2 border-blue-300 rounded-full px-4 py-2.5 shadow-sm">
-            <div className="bg-blue-600 text-white rounded-full w-8 h-8 flex items-center justify-center text-xs font-bold">
-              {estadisticas.evaluacion}
+          {/* En Evaluación - Gris Oscuro/Negro SATURADO */}
+          <div className="relative overflow-hidden rounded-lg bg-gradient-to-br from-slate-700 to-slate-800 border border-slate-800 p-4 shadow-md hover:shadow-xl transition-all duration-300 hover:scale-105">
+            {/* Background decorativo */}
+            <div className="absolute top-0 right-0 w-16 h-16 bg-white/10 rounded-full -mr-8 -mt-8" />
+
+            <div className="relative z-10">
+              {/* Icono */}
+              <div className="mb-2.5">
+                <div className="inline-flex p-2 bg-white/20 rounded-lg">
+                  <Eye className="w-5 h-5 text-white" strokeWidth={2.5} />
+                </div>
+              </div>
+
+              {/* Número */}
+              <div className="mb-1.5">
+                <span className="text-3xl font-bold text-white">
+                  {estadisticas.enEvaluacion}
+                </span>
+              </div>
+
+              {/* Etiqueta */}
+              <span className="text-xs font-semibold text-white/90">
+                En Evaluación
+              </span>
             </div>
-            <span className="text-xs font-semibold text-blue-900 whitespace-nowrap">
-              Evaluación
-            </span>
           </div>
 
-          {/* Observaciones - Ámbar */}
-          <div className="flex items-center gap-2 bg-amber-50 border-2 border-amber-300 rounded-full px-4 py-2.5 shadow-sm">
-            <div className="bg-amber-600 text-white rounded-full w-8 h-8 flex items-center justify-center text-xs font-bold">
-              {estadisticas.observaciones}
+          {/* Observadas - Ámbar SATURADO (Impar - Oscuro) */}
+          <div className="relative overflow-hidden rounded-lg bg-gradient-to-br from-orange-500 to-orange-600 border border-orange-600 p-4 shadow-md hover:shadow-xl transition-all duration-300 hover:scale-105">
+            {/* Background decorativo */}
+            <div className="absolute top-0 right-0 w-16 h-16 bg-white/10 rounded-full -mr-8 -mt-8" />
+
+            <div className="relative z-10">
+              {/* Icono */}
+              <div className="mb-2.5">
+                <div className="inline-flex p-2 bg-white/20 rounded-lg">
+                  <MessageSquare className="w-5 h-5 text-white" strokeWidth={2.5} />
+                </div>
+              </div>
+
+              {/* Número */}
+              <div className="mb-1.5">
+                <span className="text-3xl font-bold text-white">
+                  {estadisticas.observadas}
+                </span>
+              </div>
+
+              {/* Etiqueta */}
+              <span className="text-xs font-semibold text-white/90">
+                Observadas
+              </span>
             </div>
-            <span className="text-xs font-semibold text-amber-900 whitespace-nowrap">
-              Observaciones
-            </span>
+          </div>
+
+          {/* Atendidas - Teal CLARO (Par - Luz) */}
+          <div className="relative overflow-hidden rounded-lg bg-gradient-to-br from-teal-50 to-teal-100 border border-teal-200 p-4 shadow-sm hover:shadow-lg transition-all duration-300 hover:scale-105">
+            {/* Background decorativo */}
+            <div className="absolute top-0 right-0 w-16 h-16 bg-teal-200/30 rounded-full -mr-8 -mt-8" />
+
+            <div className="relative z-10">
+              {/* Icono */}
+              <div className="mb-2.5">
+                <div className="inline-flex p-2 bg-gradient-to-br from-teal-500 to-teal-600 rounded-lg">
+                  <CheckCheck className="w-5 h-5 text-white" strokeWidth={2.5} />
+                </div>
+              </div>
+
+              {/* Número */}
+              <div className="mb-1.5">
+                <span className="text-3xl font-bold text-teal-900">
+                  {estadisticas.atendidas}
+                </span>
+              </div>
+
+              {/* Etiqueta */}
+              <span className="text-xs font-semibold text-teal-700">
+                Atendidas
+              </span>
+            </div>
           </div>
         </div>
       </div>
@@ -96,40 +180,43 @@ export default function MisECGsRecientes({
               return (
                 <div
                   key={idx}
-                  onClick={() => onVerImagen(carga)}
-                  className={`relative rounded-lg border-2 transition-all duration-200 cursor-pointer
-                    ${esObservacion
-                      ? 'bg-amber-50 border-amber-300 hover:shadow-md hover:border-amber-400'
-                      : 'bg-green-50 border-green-300 hover:shadow-md hover:border-green-400'
-                    }`}
+                  onClick={() => onVerImagen({ dni: carga.dni, nombrePaciente: carga.nombrePaciente })}
+                  className={`relative overflow-hidden rounded-xl border transition-all duration-300 cursor-pointer hover:scale-102 ${
+                    esObservacion
+                      ? 'border-amber-200 bg-gradient-to-r from-amber-50 to-white hover:shadow-lg hover:border-amber-400'
+                      : 'border-blue-200 bg-gradient-to-r from-blue-50 to-white hover:shadow-lg hover:border-blue-400'
+                  }`}
                 >
-                  <div className="p-2 flex items-start gap-2">
-                    {/* Icono estado */}
-                    <div className="flex-shrink-0 mt-0.5">
-                      {carga.estado === 'ENVIADA' ? (
-                        <CheckCircle className="w-4 h-4 text-green-600" />
-                      ) : (
-                        <AlertCircle className="w-4 h-4 text-amber-600" />
-                      )}
-                    </div>
+                  {/* Línea decorativa superior */}
+                  <div className={`h-1 w-full ${esObservacion ? 'bg-gradient-to-r from-amber-400 to-amber-300' : 'bg-gradient-to-r from-blue-400 to-blue-300'}`} />
 
-                    {/* Info paciente */}
+                  <div className="p-4 flex items-start justify-between gap-3">
+                    {/* Lado izquierdo - Info Paciente */}
                     <div className="flex-1 min-w-0">
-                      {/* Nombre paciente - Fuente más pequeña */}
-                      <p className="font-bold text-gray-900 text-xs truncate">
-                        {carga.nombrePaciente}
-                      </p>
-
-                      {/* DNI */}
-                      <p className="text-xs text-gray-600 font-mono mt-0.5">
-                        DNI: {carga.dni}
-                      </p>
+                      {/* Icono + Nombre Paciente - Prominente */}
+                      <div className="flex items-start gap-2.5 mb-3">
+                        <div className={`flex-shrink-0 p-2 rounded-lg ${esObservacion ? 'bg-amber-100' : 'bg-blue-100'}`}>
+                          {carga.estado === 'ENVIADA' ? (
+                            <CheckCircle className={`w-5 h-5 ${esObservacion ? 'text-amber-600' : 'text-blue-600'}`} />
+                          ) : (
+                            <AlertCircle className={`w-5 h-5 ${esObservacion ? 'text-amber-600' : 'text-blue-600'}`} />
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-bold text-gray-900 text-sm truncate">
+                            {carga.nombrePaciente}
+                          </p>
+                          <p className="text-xs text-gray-500 mt-0.5 font-mono">
+                            DNI: {carga.dni}
+                          </p>
+                        </div>
+                      </div>
 
                       {/* Tiempo transcurrido */}
-                      <p className="text-xs text-gray-500 mt-0.5 flex items-center gap-1">
-                        <Clock className="w-3 h-3" />
-                        {carga.tiempoTranscurrido}
-                      </p>
+                      <div className="flex items-center gap-1.5 text-xs text-gray-500">
+                        <Clock className="w-3.5 h-3.5 flex-shrink-0" />
+                        <span>{carga.tiempoTranscurrido}</span>
+                      </div>
 
                       {/* 🔴 TOOLTIP INTEGRADO - Observaciones - Compacto */}
                       {esObservacion && carga.observacion && (
@@ -179,18 +266,33 @@ export default function MisECGsRecientes({
                       )}
                     </div>
 
-                    {/* Botón "Ver" - Pequeño */}
-                    <button
-                      onClick={() =>
-                        window.open(`/teleekgs/listar?dni=${carga.dni}`, '_blank', 'noopener,noreferrer')
-                      }
-                      className="flex-shrink-0 p-1.5 hover:bg-blue-100 rounded-lg
-                        transition-colors duration-200"
-                      title="Ver en nueva pestaña"
-                      aria-label={`Ver EKG de ${carga.nombrePaciente} en nueva pestaña`}
-                    >
-                      <ExternalLink className="w-3.5 h-3.5 text-blue-600 hover:text-blue-700" />
-                    </button>
+                    {/* Lado derecho - Contador y Botón */}
+                    <div className="flex flex-col items-end gap-2.5">
+                      {/* Badge de cantidad de imágenes */}
+                      <span className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap ${
+                        esObservacion
+                          ? 'bg-amber-100 text-amber-700'
+                          : 'bg-blue-100 text-blue-700'
+                      }`}>
+                        📸 {carga.cantidadImagenes} {carga.cantidadImagenes === 1 ? 'imagen' : 'imágenes'}
+                      </span>
+
+                      {/* Botón "Ver" */}
+                      <button
+                        onClick={() =>
+                          window.open(`/teleekgs/listar?dni=${carga.dni}`, '_blank', 'noopener,noreferrer')
+                        }
+                        className={`flex-shrink-0 p-2 rounded-lg transition-all duration-200 ${
+                          esObservacion
+                            ? 'hover:bg-amber-100 text-amber-600 hover:text-amber-700'
+                            : 'hover:bg-blue-100 text-blue-600 hover:text-blue-700'
+                        }`}
+                        title="Ver en nueva pestaña"
+                        aria-label={`Ver EKG de ${carga.nombrePaciente} en nueva pestaña`}
+                      >
+                        <ExternalLink className="w-5 h-5" />
+                      </button>
+                    </div>
                   </div>
                 </div>
               );

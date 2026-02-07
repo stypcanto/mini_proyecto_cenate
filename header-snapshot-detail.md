@@ -1,0 +1,199 @@
+- generic [ref=e3]:
+  - complementary [ref=e4]:
+    - generic [ref=e6]:
+      - generic [ref=e9]:
+        - img "Logo CENATE" [ref=e65]
+        - button "Colapsar menu" [ref=e10] [cursor=pointer]:
+          - img [ref=e11]
+      - navigation [ref=e13]:
+        - generic [ref=e66]:
+          - button "Gestión de Personal Externo" [ref=e67] [cursor=pointer]:
+            - generic [ref=e68]:
+              - img [ref=e69]
+              - generic [ref=e72]: Gestión de Personal Externo
+            - img [ref=e73]
+          - generic [ref=e75]:
+            - link "Bienvenida" [ref=e76] [cursor=pointer]:
+              - /url: /roles/externo/bienvenida
+              - img [ref=e77]
+              - generic [ref=e80]: Bienvenida
+            - link "Formulario de Diagnóstico" [ref=e81] [cursor=pointer]:
+              - /url: /roles/externo/formulario-diagnostico
+              - img [ref=e82]
+              - generic [ref=e85]: Formulario de Diagnóstico
+            - link "Solicitud de Turnos" [ref=e86] [cursor=pointer]:
+              - /url: /roles/externo/solicitud-turnos
+              - img [ref=e87]
+              - generic [ref=e90]: Solicitud de Turnos
+            - link "Gestión de Modalidad de Atención" [ref=e91] [cursor=pointer]:
+              - /url: /roles/externo/gestion-modalidad
+              - img [ref=e92]
+              - generic [ref=e96]: Gestión de Modalidad de Atención
+            - link "Seguimiento de Lecturas Pendientes" [ref=e97] [cursor=pointer]:
+              - /url: /roles/externo/seguimiento-lecturas
+              - img [ref=e98]
+              - generic [ref=e101]: Seguimiento de Lecturas Pendientes
+            - button "TELE EKG" [ref=e103] [cursor=pointer]:
+              - generic [ref=e104]:
+                - img [ref=e105]
+                - generic [ref=e108]: TELE EKG
+              - img [ref=e109]
+      - paragraph [ref=e16]: v1.37.4
+  - main "Contenido principal" [ref=e17]:
+    - generic [ref=e19]:
+      - button "Notificaciones" [ref=e20] [cursor=pointer]:
+        - img [ref=e21]
+      - button "J Jesus Lopez Silva INSTITUCION_EX" [ref=e25] [cursor=pointer]:
+        - generic [ref=e27]: J
+        - generic [ref=e28]:
+          - generic [ref=e29]: Jesus Lopez Silva
+          - generic [ref=e30]: INSTITUCION_EX
+        - img [ref=e31]
+    - generic [ref=e33]:
+      - generic [ref=e112]:
+        - generic [ref=e113]:
+          - generic [ref=e114]:
+            - heading "📋 Gestión de Electrocardiogramas" [level=1] [ref=e115]
+            - paragraph [ref=e116]: Sube y gestiona tus imágenes ECG desde aquí
+          - generic [ref=e117]:
+            - img [ref=e118]
+            - generic [ref=e122]: Conectado
+        - generic [ref=e123]:
+          - generic [ref=e125]:
+            - generic [ref=e126]:
+              - button "Expandir ayuda" [ref=e127] [cursor=pointer]:
+                - img [ref=e128]
+              - button "Ocultar ayuda permanentemente" [ref=e130] [cursor=pointer]:
+                - img [ref=e131]
+              - generic [ref=e134]:
+                - img [ref=e135]
+                - paragraph [ref=e138]: "💡 Carga rápida: DNI → Seleccionar 4-10 fotos → Cargar"
+            - generic [ref=e140]:
+              - generic [ref=e141]:
+                - img [ref=e142]
+                - heading "Cargar Electrocardiogramas" [level=2] [ref=e145]
+              - generic [ref=e146]:
+                - generic [ref=e148]:
+                  - img [ref=e150]
+                  - generic [ref=e152]:
+                    - heading "Cargar Electrocardiograma" [level=2] [ref=e153]
+                    - paragraph [ref=e154]: CENATE - Centro Nacional de Telemedicina
+                - generic [ref=e155]:
+                  - generic [ref=e156]:
+                    - button "Información del Paciente" [ref=e157] [cursor=pointer]:
+                      - heading "Información del Paciente" [level=3] [ref=e158]:
+                        - img [ref=e159]
+                        - generic [ref=e162]: Información del Paciente
+                      - img [ref=e164]
+                    - generic [ref=e166]:
+                      - generic [ref=e167]:
+                        - img [ref=e168]
+                        - generic [ref=e170]:
+                          - paragraph [ref=e171]: ¿Caso urgente?
+                          - paragraph [ref=e172]: Marcar si requiere atención prioritaria
+                      - button "Marcar caso como urgente" [ref=e173] [cursor=pointer]
+                    - generic [ref=e175]:
+                      - generic [ref=e176]: 🆔 DNI del Paciente *
+                      - textbox "12345678" [ref=e178]
+                      - paragraph [ref=e179]: 💡 Ingresa exactamente 8 dígitos
+                    - generic [ref=e180]:
+                      - paragraph [ref=e181]: 👆 Ingresa el DNI del paciente (8 dígitos)
+                      - paragraph [ref=e182]: Se buscará automáticamente
+                  - generic [ref=e183]:
+                    - heading "Selecciona Imágenes del EKG (0/10)" [level=3] [ref=e184]:
+                      - img [ref=e185]
+                      - text: Selecciona Imágenes del EKG (0/10)
+                    - paragraph [ref=e190]: Mínimo 4 imágenes • Máximo 10
+                    - button "Buscar imágenes" [disabled] [ref=e191]:
+                      - img [ref=e192]
+                      - generic [ref=e197]: Seleccionar Imágenes
+                    - generic [ref=e198] [cursor=pointer]:
+                      - img [ref=e200]
+                      - paragraph [ref=e203]: 📂 Arrastra tus fotos ECG aquí
+                      - paragraph [ref=e204]: o haz clic para seleccionar archivos
+                      - generic [ref=e205]:
+                        - img [ref=e206]
+                        - generic [ref=e211]: JPEG, PNG • Máx 5MB cada uno • 4-10 fotos
+                  - button "Cargar 0 EKGs →" [disabled] [ref=e212]:
+                    - img [ref=e213]
+                    - generic [ref=e216]: Cargar 0 EKGs →
+                  - generic [ref=e217]:
+                    - generic [ref=e218]:
+                      - img [ref=e219]
+                      - generic [ref=e221]: DNI válido
+                    - generic [ref=e222]: •
+                    - generic [ref=e223]:
+                      - img [ref=e224]
+                      - generic [ref=e226]: 0/4 fotos
+                - generic [ref=e228]:
+                  - img [ref=e229]
+                  - generic [ref=e231]:
+                    - paragraph [ref=e232]: Información - PADOMI
+                    - list [ref=e233]:
+                      - listitem [ref=e234]:
+                        - strong [ref=e235]: Mínimo 4
+                        - text: imágenes requeridas
+                      - listitem [ref=e236]:
+                        - strong [ref=e237]: Máximo 10
+                        - text: imágenes permitidas
+                      - listitem [ref=e238]: JPEG y PNG (máximo 5MB cada uno)
+            - button "💡 Consejos útiles ▶" [ref=e240] [cursor=pointer]:
+              - generic [ref=e241]:
+                - img [ref=e242]
+                - generic [ref=e244]: 💡 Consejos útiles
+              - generic [ref=e245]: ▶
+          - generic [ref=e247]:
+            - generic [ref=e248]:
+              - generic [ref=e249]:
+                - heading "📊 Resumen de Hoy" [level=3] [ref=e250]
+                - button "Refrescar datos" [ref=e251] [cursor=pointer]:
+                  - img [ref=e252]
+              - generic [ref=e257]:
+                - generic [ref=e258]:
+                  - generic [ref=e259]: "8"
+                  - generic [ref=e260]: Exitosas
+                - generic [ref=e261]:
+                  - generic [ref=e262]: "8"
+                  - generic [ref=e263]: Evaluación
+                - generic [ref=e264]:
+                  - generic [ref=e265]: "0"
+                  - generic [ref=e266]: Observaciones
+            - generic [ref=e267]:
+              - heading "🕐 Últimas Cargas" [level=3] [ref=e268]
+              - generic [ref=e269]:
+                - generic [ref=e271] [cursor=pointer]:
+                  - img [ref=e273]
+                  - generic [ref=e276]:
+                    - paragraph [ref=e277]: ROSA FLOR
+                    - paragraph [ref=e278]: "DNI: 16498964"
+                    - paragraph [ref=e279]:
+                      - img [ref=e280]
+                      - text: Hace 2h
+                  - button "Ver EKG de ROSA FLOR en nueva pestaña" [ref=e283]:
+                    - img [ref=e284]
+                - generic [ref=e289] [cursor=pointer]:
+                  - img [ref=e291]
+                  - generic [ref=e294]:
+                    - paragraph [ref=e295]: ROSA FLOR
+                    - paragraph [ref=e296]: "DNI: 16498964"
+                    - paragraph [ref=e297]:
+                      - img [ref=e298]
+                      - text: Hace 2h
+                  - button "Ver EKG de ROSA FLOR en nueva pestaña" [ref=e301]:
+                    - img [ref=e302]
+                - generic [ref=e307] [cursor=pointer]:
+                  - img [ref=e309]
+                  - generic [ref=e312]:
+                    - paragraph [ref=e313]: ROSA FLOR
+                    - paragraph [ref=e314]: "DNI: 16498964"
+                    - paragraph [ref=e315]:
+                      - img [ref=e316]
+                      - text: Hace 2h
+                  - button "Ver EKG de ROSA FLOR en nueva pestaña" [ref=e319]:
+                    - img [ref=e320]
+            - button "Ver Registro Completo ↗" [ref=e325] [cursor=pointer]:
+              - img [ref=e326]
+              - text: Ver Registro Completo ↗
+      - generic [ref=e38]:
+        - paragraph [ref=e39]: CENATE - Sistema de Telemedicina - EsSalud 2026
+        - paragraph [ref=e40]: v1.37.4 - Performance Optimization + Deduplicación Automática + Foto Header + SMTP EsSalud

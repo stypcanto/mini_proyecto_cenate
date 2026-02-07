@@ -13,15 +13,39 @@ import { getEstadoClasses } from "../../../../config/designSystem";
 
 /**
  * Helper: Format ECGs for MisECGsRecientes component
+ * Agrupa por paciente y cuenta imágenes
  */
 function formatECGsForRecientes(ecgs) {
-  return ecgs.slice(0, 3).map((img) => ({
-    nombrePaciente: img.nombrePaciente || "Sin datos",
-    dni: img.dni || "N/A",
-    tiempoTranscurrido: img.fechaCarga
+  // Agrupar por DNI para contar imágenes
+  const porDni = {};
+  ecgs.forEach(img => {
+    const dni = img.numDocPaciente || img.dni;
+    if (dni) {
+      if (!porDni[dni]) {
+        porDni[dni] = [];
+      }
+      porDni[dni].push(img);
+    }
+  });
+
+  // Deduplicar por DNI para mostrar datos del primer paciente
+  const deduplicados = {};
+  ecgs.forEach(img => {
+    const dni = img.numDocPaciente || img.dni;
+    if (dni && !deduplicados[dni]) {
+      deduplicados[dni] = img;
+    }
+  });
+
+  return Object.entries(deduplicados).slice(0, 3).map(([dni, img]) => ({
+    idImagen: img.idImagen || img.id,  // ✅ NECESARIO para cargar imagen
+    nombrePaciente: img.nombresPaciente || img.nombrePaciente || "Sin datos",
+    dni: dni || "N/A",
+    cantidadImagenes: porDni[dni]?.length || 0,  // ✅ Contar imágenes del paciente
+    tiempoTranscurrido: img.fechaEnvio || img.fechaCarga
       ? (() => {
           const ahora = new Date();
-          const fecha = new Date(img.fechaCarga);
+          const fecha = new Date(img.fechaEnvio || img.fechaCarga);
           const diferencia = ahora - fecha;
           const minutos = Math.floor(diferencia / 60000);
           const horas = Math.floor(minutos / 60);
@@ -33,8 +57,11 @@ function formatECGsForRecientes(ecgs) {
           return "Ahora";
         })()
       : "Desconocido",
-    estado: img.estado || "DESCONOCIDA",
+    estado: img.estadoTransformado || img.estado || "DESCONOCIDA",
     observacion: img.observacion || null,
+    contenidoImagen: img.contenidoImagen || null,  // ✅ Para imágenes precargadas
+    nombreArchivo: img.nombreArchivo || null,
+    mimeType: img.mimeType || "image/jpeg",
   }));
 }
 
@@ -136,13 +163,42 @@ export default function IPRESSWorkspace() {
 
       setEcgs(imagenes);
 
-      // Calcular estadísticas
+      // Calcular estadísticas basadas en pacientes únicos, no en total de imágenes
+      const pacientesUnicos = new Set(imagenes.map((img) => img.dni));
+      const pacientesEnEvaluacion = new Set(
+        imagenes
+          .filter((img) => img.estado === "ENVIADA")
+          .map((img) => img.dni)
+      );
+      const pacientesObservadas = new Set(
+        imagenes
+          .filter((img) => img.estado === "OBSERVADA")
+          .map((img) => img.dni)
+      );
+
       const newStats = {
-        total: imagenes.length,
-        enviadas: imagenes.filter((img) => img.estado === "ENVIADA").length,
-        observadas: imagenes.filter((img) => img.estado === "OBSERVADA").length,
-        atendidas: imagenes.filter((img) => img.estado === "ATENDIDA").length,
+        // Para MisECGsRecientes - Pacientes únicos
+        cargadas: pacientesUnicos.size,        // Pacientes con imágenes cargadas
+        enEvaluacion: pacientesEnEvaluacion.size,  // Pacientes con imágenes en evaluación
+        observadas: pacientesObservadas.size,  // Pacientes con observaciones
+        // Para tablet/mobile stats - Por compatibilidad
+        total: pacientesUnicos.size,           // Total de pacientes únicos
+        enviadas: pacientesEnEvaluacion.size,  // Pacientes con imágenes en ENVIADA
+        atendidas: imagenes.filter((img) => img.estado === "ATENDIDA").length,  // Total de imágenes atendidas
       };
+
+      // 🔍 Debug logging
+      console.log("📊 DEBUG STATS:", {
+        totalImagenes: imagenes.length,
+        pacientesUnicos: Array.from(pacientesUnicos),
+        pacientesUnicosCount: pacientesUnicos.size,
+        pacientesEnEvaluacion: Array.from(pacientesEnEvaluacion),
+        pacientesEnEvaluacionCount: pacientesEnEvaluacion.size,
+        pacientesObservadas: Array.from(pacientesObservadas),
+        pacientesObservadasCount: pacientesObservadas.size,
+        newStats
+      });
+
       setStats(newStats);
     } catch (error) {
       console.error("❌ Error al cargar EKGs:", error);
@@ -182,28 +238,71 @@ export default function IPRESSWorkspace() {
   };
 
   /**
-   * ✅ Nuevo: Abrir modal con detalles de la imagen
+   * ✅ Abre modal con TODAS las imágenes del paciente
+   * Detecta si es un DNI (click en card) o una imagen individual
    */
-  const handleVerImagen = async (imagen) => {
+  const handleVerImagen = async (param) => {
     try {
-      // ✅ Expandir panel derecho
-      setExpandedPanel(true);
+      // Detectar si es un DNI (del click en card) o una imagen individual
+      const isDni = param.dni && !param.idImagen;
 
-      // Obtener imagen en base64 si no la tiene
-      if (!imagen.contenidoImagen && imagen.idImagen) {
-        const respuesta = await teleecgService.descargarImagenBase64(imagen.idImagen);
+      if (isDni) {
+        // 🎯 NUEVO: Click en card del paciente - Cargar TODAS sus imágenes
+        const imagenesPaciente = ecgs.filter(
+          (img) => (img.numDocPaciente || img.dni) === param.dni
+        );
+
+        if (imagenesPaciente.length === 0) {
+          toast.error("No se encontraron imágenes para este paciente");
+          return;
+        }
+
+        // Cargar todas las imágenes en base64
+        const imagenesConBase64 = await Promise.all(
+          imagenesPaciente.map(async (img) => {
+            if (img.contenidoImagen) {
+              return img;
+            }
+            try {
+              const respuesta = await teleecgService.descargarImagenBase64(
+                img.idImagen || img.id
+              );
+              return {
+                ...img,
+                contenidoImagen: respuesta.contenidoImagen,
+                tipoContenido: respuesta.tipoContenido,
+              };
+            } catch {
+              return img; // Si falla, devolver sin base64
+            }
+          })
+        );
+
+        // Abrir modal con TODAS las imágenes del paciente
         setSelectedImage({
-          ...imagen,
-          contenidoImagen: respuesta.contenidoImagen,
-          tipoContenido: respuesta.tipoContenido,
+          ...param,
+          imagenes: imagenesConBase64,
+          esCarousel: true,
         });
+        setShowImageModal(true);
       } else {
-        setSelectedImage(imagen);
+        // 📌 ANTIGUO: Carga individual de imagen (backward compatibility)
+        if (!param.contenidoImagen && param.idImagen) {
+          const respuesta = await teleecgService.descargarImagenBase64(param.idImagen);
+          setSelectedImage({
+            ...param,
+            contenidoImagen: respuesta.contenidoImagen,
+            tipoContenido: respuesta.tipoContenido,
+            esCarousel: false,
+          });
+        } else {
+          setSelectedImage({ ...param, esCarousel: false });
+        }
+        setShowImageModal(true);
       }
-      setShowImageModal(true);
     } catch (error) {
-      console.error("❌ Error al obtener imagen:", error);
-      toast.error("Error al cargar la imagen");
+      console.error("❌ Error al obtener imágenes:", error);
+      toast.error("Error al cargar las imágenes");
     }
   };
 
@@ -285,13 +384,14 @@ export default function IPRESSWorkspace() {
               <MisECGsRecientes
                 ultimas3={formatECGsForRecientes(ecgs)}
                 estadisticas={{
-                  exitosas: stats.enviadas,
-                  evaluacion: stats.total,
-                  observaciones: stats.observadas,
+                  cargadas: stats.cargadas,              // ✅ Pacientes cargados
+                  enEvaluacion: stats.enEvaluacion,     // ✅ Pacientes en evaluación
+                  observadas: stats.observadas,         // ✅ Pacientes con observaciones
+                  atendidas: stats.atendidas || 0,      // ✅ Imágenes atendidas
                 }}
                 onVerRegistro={handleVerRegistroCompleto}
                 onRefrescar={handleRefresh}
-                onVerImagen={handleVerImagen}  // ✅ Nuevo: Pasar callback
+                onVerImagen={handleVerImagen}
                 loading={loading}
               />
             </div>
@@ -308,7 +408,7 @@ export default function IPRESSWorkspace() {
               // ✅ Contraer panel cuando se cierra el modal
               setExpandedPanel(false);
             }}
-            imagen={selectedImage}
+            ecg={selectedImage}
           />
         )}
       </div>
