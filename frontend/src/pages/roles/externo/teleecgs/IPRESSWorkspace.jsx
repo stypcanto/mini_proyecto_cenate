@@ -128,9 +128,11 @@ export default function IPRESSWorkspace() {
   const [pacientesCache, setPacientesCache] = useState({});  // ✅ Cache de nombres de pacientes
   const [stats, setStats] = useState({
     total: 0,
-    enviadas: 0,
+    cargadas: 0,        // ✅ Inicializar cargadas
+    enEvaluacion: 0,    // ✅ Inicializar enEvaluacion
     observadas: 0,
     atendidas: 0,
+    enviadas: 0,
   });
   const [activeTab, setActiveTab] = useState("upload");
   const [deviceSize, setDeviceSize] = useState(() => {

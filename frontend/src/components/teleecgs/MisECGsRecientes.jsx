@@ -117,6 +117,17 @@ export default function MisECGsRecientes({
     setFiltroFecha('');
   };
 
+  // ✅ Mostrar loader mientras carga la primera vez
+  if (loading && ultimas3.length === 0) {
+    return (
+      <div className="bg-white rounded-lg shadow-lg p-12 border border-gray-100 h-fit flex flex-col items-center justify-center">
+        <RefreshCw className="w-14 h-14 text-blue-600 animate-spin mb-4" />
+        <p className="text-gray-700 font-semibold text-lg">Cargando cargas recientes...</p>
+        <p className="text-sm text-gray-500 mt-2">Enriqueciendo datos de pacientes con información completa</p>
+      </div>
+    );
+  }
+
   return (
     <div className="bg-white rounded-lg shadow-lg p-6 border border-gray-100 h-fit">
       {/* ==================== ESTADÍSTICAS PROFESIONALES - FULL WIDTH ==================== */}
@@ -419,12 +430,12 @@ export default function MisECGsRecientes({
 
                       {/* Género */}
                       <td className="px-4 py-3 text-gray-700">
-                        {carga.genero === 'M' ? '🧑 Masc.' : carga.genero === 'F' ? '👩 Fem.' : '-'}
+                        {carga.genero === 'M' ? 'Masculino' : carga.genero === 'F' ? 'Femenino' : '-'}
                       </td>
 
                       {/* Edad */}
                       <td className="px-4 py-3 text-gray-700 font-medium text-center">
-                        {carga.edad && carga.edad !== '-' ? `${carga.edad}a` : '-'}
+                        {carga.edad && carga.edad !== '-' ? `${carga.edad} años` : '-'}
                       </td>
 
                       {/* Prioridad - Urgente/Normal */}
