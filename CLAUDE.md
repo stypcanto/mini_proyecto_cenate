@@ -1,9 +1,9 @@
 # CLAUDE.md - Proyecto CENATE
 
 > **Sistema de Telemedicina - EsSalud Perú**
-> **Versión:** v1.56.1 (2026-02-06) 🚀
+> **Versión:** v1.56.3 (2026-02-06) 🚀
 > **Última Feature:** v1.56.1 - Filtros Clínicos en Últimas Cargas: DNI + Fecha + AND Logic ✅ (2026-02-06)
-> **Última Fix:** v1.54.3 - Correcciones finales - Imágenes cargan + 2 pacientes sin duplicados ✅ (2026-02-06) ⭐
+> **Última Fix:** v1.56.3 - Mostrar Género y Edad en tabla Registros - Copiar datos del asegurado ✅ (2026-02-06) ⭐
 > **Status:** ✅ Production Ready
 
 ---
@@ -265,6 +265,47 @@ Frontend (React 19):
 ---
 
 ## 📊 ÚLTIMAS VERSIONES
+
+### v1.56.3 - Completado (2026-02-06) 👥 GÉNERO Y EDAD EN TABLA - COPIAR DATOS DEL ASEGURADO
+✅ **Género y Edad Visibles** - Columnas muestran datos correctamente en RegistroPacientes.jsx
+✅ **Root Cause Fix** - Frontend no copiaba generoPaciente/edadPaciente al aplanar estructura anidada
+✅ **Fallback Logic** - Copia desde nivel asegurado cuando no existen en imagen
+✅ **Build Production Ready** - npm run build SUCCESS, sin errores
+✅ **Data Flow Correcto** - Backend → Flattening → Transformation → Frontend
+
+**Features v1.56.3 (Género/Edad Display):**
+- Género: 👩 Mujer (pink) | 👨 Hombre (blue)
+- Edad: "XX años" en badge ambar
+- Mobile: Grid 2 columnas en cards
+- Desktop: Columnas en tabla
+
+**Problema Identificado:**
+- Backend retorna: `{ generoPaciente: "M", edadPaciente: 45, imagenes: [...] }` (nivel asegurado)
+- Frontend aplanaba imagenes pero solo copiaba DNI/nombres, NO género/edad
+- Resultado: Columnas mostraban "-" en lugar de datos reales
+
+**Solución:**
+- `teleecgService.js` línea 132-133: Agregar copia de generoPaciente/edadPaciente desde asegurado
+- Usa fallback chain: `imagen.genero_paciente || imagen.generoPaciente || asegurado.generoPaciente`
+- Igual para edadPaciente
+
+**Cambios:**
+- `teleecgService.js`: +3 líneas en flattening logic
+- `UploadFormWrapper.jsx`: Fix estado missing + cierre div
+- `VisorECGModal.jsx`: Agregar loader durante carga imagen
+
+**Docs:**
+- **Fix Summary**: Ver commit d99b4db
+
+**Testing:**
+- ✅ Frontend compila sin errores
+- ✅ npm run build SUCCESS
+- ✅ Código verificado: líneas 132-133 correctas
+- ✅ Fallback logic matches existing pattern
+
+**Commit:** d99b4db
+
+---
 
 ### v1.52.3 - Completado (2026-02-06) 🔧 EXTRACCIÓN BASE64 - IMÁGENES RENDERIZADAS CORRECTAMENTE
 ✅ **Extracción Correcta de Propiedades** - Base64 ahora se extrae correctamente del response
