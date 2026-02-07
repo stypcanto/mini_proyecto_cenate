@@ -357,6 +357,7 @@ export default function IPRESSWorkspace() {
             <MisECGsRecientes
               ultimas3={formatECGsForRecientes(ecgs)}
               estadisticas={{
+                total: stats.cargadas + stats.enEvaluacion + stats.observadas + (stats.atendidas || 0),
                 cargadas: stats.cargadas,
                 enEvaluacion: stats.enEvaluacion,
                 observadas: stats.observadas,

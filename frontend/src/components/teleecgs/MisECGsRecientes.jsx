@@ -39,6 +39,7 @@ export default function MisECGsRecientes({
   loading = false,
 }) {
   const [expandidoTooltip, setExpandidoTooltip] = useState(null);
+  const [filtroEstado, setFiltroEstado] = useState(null); // null = todos, 'ENVIADA', 'OBSERVADA', 'ATENDIDA'
 
   // ✅ NEW: Filter State
   const [filtroDNI, setFiltroDNI] = useState('');
@@ -85,17 +86,23 @@ export default function MisECGsRecientes({
     });
   };
 
-  const aplicarFiltrosCombinados = (datos, dniBusqueda, fechaBusqueda) => {
+  const filtrarPorEstado = (datos, estado) => {
+    if (!estado) return datos;
+    return datos.filter(item => item.estado === estado);
+  };
+
+  const aplicarFiltrosCombinados = (datos, dniBusqueda, fechaBusqueda, estado) => {
     let resultado = datos;
     resultado = filtrarPorDNI(resultado, dniBusqueda);
     resultado = filtrarPorFecha(resultado, fechaBusqueda);
+    resultado = filtrarPorEstado(resultado, estado);
     return resultado;
   };
 
   // ✅ Computed filtered data
   const datosFiltrados = useMemo(() => {
-    return aplicarFiltrosCombinados(datosOriginales, filtroDNI, filtroFecha);
-  }, [datosOriginales, filtroDNI, filtroFecha]);
+    return aplicarFiltrosCombinados(datosOriginales, filtroDNI, filtroFecha, filtroEstado);
+  }, [datosOriginales, filtroDNI, filtroFecha, filtroEstado]);
 
   // ✅ Check if any filters are active
   const hayFiltrosActivos = filtroDNI !== '' || filtroFecha !== '';
@@ -132,7 +139,13 @@ export default function MisECGsRecientes({
         {/* Grid responsive - Professional Stats Cards Compact */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
           {/* Total - Verde SATURADO (Par - Luz) */}
-          <div className="relative overflow-hidden rounded-lg bg-gradient-to-br from-emerald-500 to-emerald-600 border border-emerald-600 p-4 shadow-md hover:shadow-xl transition-all duration-300 hover:scale-105">
+          <button
+            onClick={() => setFiltroEstado(null)}
+            className={`relative overflow-hidden rounded-lg bg-gradient-to-br from-emerald-500 to-emerald-600 border p-4 shadow-md hover:shadow-xl transition-all duration-300 hover:scale-105 text-left cursor-pointer ${
+              filtroEstado === null ? 'border-white ring-2 ring-white' : 'border-emerald-600'
+            }`}
+            title="Ver todos"
+          >
             {/* Background decorativo */}
             <div className="absolute top-0 right-0 w-16 h-16 bg-white/10 rounded-full -mr-8 -mt-8" />
 
@@ -156,10 +169,16 @@ export default function MisECGsRecientes({
                 Total
               </span>
             </div>
-          </div>
+          </button>
 
           {/* Pendiente - Gris Oscuro/Negro SATURADO */}
-          <div className="relative overflow-hidden rounded-lg bg-gradient-to-br from-slate-700 to-slate-800 border border-slate-800 p-4 shadow-md hover:shadow-xl transition-all duration-300 hover:scale-105">
+          <button
+            onClick={() => setFiltroEstado('ENVIADA')}
+            className={`relative overflow-hidden rounded-lg bg-gradient-to-br from-slate-700 to-slate-800 border p-4 shadow-md hover:shadow-xl transition-all duration-300 hover:scale-105 text-left cursor-pointer ${
+              filtroEstado === 'ENVIADA' ? 'border-white ring-2 ring-white' : 'border-slate-800'
+            }`}
+            title="Filtrar por Pendiente"
+          >
             {/* Background decorativo */}
             <div className="absolute top-0 right-0 w-16 h-16 bg-white/10 rounded-full -mr-8 -mt-8" />
 
@@ -183,10 +202,16 @@ export default function MisECGsRecientes({
                 Pendiente
               </span>
             </div>
-          </div>
+          </button>
 
           {/* Observadas - Ámbar SATURADO (Impar - Oscuro) */}
-          <div className="relative overflow-hidden rounded-lg bg-gradient-to-br from-orange-500 to-orange-600 border border-orange-600 p-4 shadow-md hover:shadow-xl transition-all duration-300 hover:scale-105">
+          <button
+            onClick={() => setFiltroEstado('OBSERVADA')}
+            className={`relative overflow-hidden rounded-lg bg-gradient-to-br from-orange-500 to-orange-600 border p-4 shadow-md hover:shadow-xl transition-all duration-300 hover:scale-105 text-left cursor-pointer ${
+              filtroEstado === 'OBSERVADA' ? 'border-white ring-2 ring-white' : 'border-orange-600'
+            }`}
+            title="Filtrar por Observadas"
+          >
             {/* Background decorativo */}
             <div className="absolute top-0 right-0 w-16 h-16 bg-white/10 rounded-full -mr-8 -mt-8" />
 
@@ -210,10 +235,16 @@ export default function MisECGsRecientes({
                 Observadas
               </span>
             </div>
-          </div>
+          </button>
 
           {/* Atendidas - Teal CLARO (Par - Luz) */}
-          <div className="relative overflow-hidden rounded-lg bg-gradient-to-br from-teal-50 to-teal-100 border border-teal-200 p-4 shadow-sm hover:shadow-lg transition-all duration-300 hover:scale-105">
+          <button
+            onClick={() => setFiltroEstado('ATENDIDA')}
+            className={`relative overflow-hidden rounded-lg bg-gradient-to-br from-teal-50 to-teal-100 border p-4 shadow-sm hover:shadow-lg transition-all duration-300 hover:scale-105 text-left cursor-pointer ${
+              filtroEstado === 'ATENDIDA' ? 'border-teal-700 ring-2 ring-teal-700' : 'border-teal-200'
+            }`}
+            title="Filtrar por Atendidas"
+          >
             {/* Background decorativo */}
             <div className="absolute top-0 right-0 w-16 h-16 bg-teal-200/30 rounded-full -mr-8 -mt-8" />
 
@@ -237,7 +268,7 @@ export default function MisECGsRecientes({
                 Atendidas
               </span>
             </div>
-          </div>
+          </button>
         </div>
       </div>
 
