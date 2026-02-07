@@ -8,6 +8,7 @@ import UploadImagenECG from "./UploadImagenECG";
  */
 export default function UploadFormWrapper({ onUploadSuccess, isWorkspace, isTablet }) {
   const [expandedSteps, setExpandedSteps] = useState(false);
+  const [expandedInfo, setExpandedInfo] = useState(false);
 
   return (
     <div className="w-full space-y-4">
@@ -81,7 +82,6 @@ export default function UploadFormWrapper({ onUploadSuccess, isWorkspace, isTabl
           />
         </div>
       </div>
-    </div>
 
       {/* Tips/Help Section */}
       <div className="mt-4 bg-amber-50 rounded-lg p-4 border border-amber-200">

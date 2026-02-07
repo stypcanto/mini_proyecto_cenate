@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { X, Download, ZoomIn, ZoomOut, RotateCw, ChevronLeft, ChevronRight } from "lucide-react";
+import { X, Download, ZoomIn, ZoomOut, RotateCw, ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
 
 /**
  * 👁️ Modal para visualizar imágenes EKG con zoom y rotación
@@ -42,6 +42,9 @@ export default function VisorEKGModal({ ecg, imagenes = [], onClose, onDescargar
     ? `data:${imagenActual.tipoContenido};base64,${imagenActual.contenidoImagen}`
     : null;
 
+  // Detectar si la imagen está cargando
+  const estaCargando = imagenActual && !imageUrl;
+
   const formatearFecha = (fecha) => {
     if (!fecha) return "-";
     return new Date(fecha).toLocaleDateString("es-PE", {
@@ -77,7 +80,18 @@ export default function VisorEKGModal({ ecg, imagenes = [], onClose, onDescargar
 
         {/* Visor principal */}
         <div className="flex-1 min-h-[400px] overflow-auto flex items-center justify-center bg-gray-100 p-4 relative">
-          {imageUrl ? (
+          {estaCargando ? (
+            // 🔄 Loader mientras se carga la imagen
+            <div className="flex flex-col items-center gap-4">
+              <Loader2 className="w-12 h-12 text-blue-600 animate-spin" strokeWidth={1.5} />
+              <div className="text-center">
+                <p className="text-sm font-medium text-gray-700 mb-1">Cargando imagen</p>
+                <p className="text-xs text-gray-500">
+                  {indiceActual + 1} / {todasLasImagenes.length}
+                </p>
+              </div>
+            </div>
+          ) : imageUrl ? (
             <>
               <img
                 src={imageUrl}
@@ -115,7 +129,7 @@ export default function VisorEKGModal({ ecg, imagenes = [], onClose, onDescargar
             </>
           ) : (
             <div className="text-center text-gray-500">
-              <p>No hay imagen disponible</p>
+              <p className="text-sm">❌ No hay imagen disponible</p>
             </div>
           )}
         </div>
