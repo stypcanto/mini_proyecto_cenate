@@ -1011,8 +1011,8 @@ export default function Solicitudes() {
       const asignados = statsMap['ASIGNADOS'] || 0;
       return {
         total: total,
-        pendientes: statsMap['PENDIENTE'] || 0,           // PENDIENTE_CITA → estado 'pendiente'
-        citados: statsMap['CITADO'] || 0,                 // CITADO → estado 'citado'
+        pendientes: statsMap['PENDIENTE_CITA'] || 0,      // ✅ v1.54.4: Usar PENDIENTE_CITA (código del estado)
+        citados: statsMap['CITADO'] || 0,                 // ✅ v1.54.4: CITADO (código del estado)
         asignados: asignados,                             // 👥 v1.41.0: Casos asignados a gestora
         sinAsignar: total - asignados,                    // ✅ v1.42.0: Casos sin asignar
       };
