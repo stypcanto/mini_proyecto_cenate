@@ -297,18 +297,20 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
 
     /**
      * 1️⃣ Estadísticas por estado de gestión de citas
+     * ✅ v1.54.4: Usa cod_estado_cita (códigos como 'CITADO', 'PENDIENTE_CITA')
+     * en lugar de desc_estado_cita (descripciones largas)
      * Agrupa solicitudes activas por estado
      */
     @Query(value = """
         SELECT
-            COALESCE(dgc.desc_estado_cita, 'SIN ESTADO') as estado,
+            COALESCE(dgc.cod_estado_cita, 'PENDIENTE_CITA') as estado,
             COUNT(sb.id_solicitud) as cantidad,
             ROUND(COUNT(sb.id_solicitud) * 100.0 /
                 (SELECT COUNT(*) FROM dim_solicitud_bolsa WHERE activo = true), 2) as porcentaje
         FROM dim_solicitud_bolsa sb
         LEFT JOIN dim_estados_gestion_citas dgc ON sb.estado_gestion_citas_id = dgc.id_estado_cita
         WHERE sb.activo = true
-        GROUP BY dgc.desc_estado_cita, dgc.id_estado_cita
+        GROUP BY dgc.cod_estado_cita, dgc.id_estado_cita
         ORDER BY cantidad DESC
         """, nativeQuery = true)
     List<Map<String, Object>> estadisticasPorEstado();
