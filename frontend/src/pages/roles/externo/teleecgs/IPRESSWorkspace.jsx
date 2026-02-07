@@ -5,7 +5,7 @@ import { useOnlineStatus } from "../../../../hooks/useOnlineStatus";
 import UploadImagenECG from "../../../../components/teleecgs/UploadImagenECG";
 import UploadFormWrapper from "../../../../components/teleecgs/UploadFormWrapper";
 import MisECGsRecientes from "../../../../components/teleecgs/MisECGsRecientes";
-import VisorECGModal from "../../../../components/teleecgs/VisorECGModal";  // ✅ Nuevo
+import VisorEKGModal from "../../../../components/teleecgs/VisorECGModal";
 import RegistroPacientes from "./RegistroPacientes";
 import TeleECGEstadisticas from "./TeleECGEstadisticas";
 import teleecgService from "../../../../services/teleecgService";
@@ -335,27 +335,13 @@ export default function IPRESSWorkspace() {
                 Cargar
               </button>
 
-              {/* Indicador de Conexión */}
-              <div className={`flex items-center gap-2 px-4 py-2 rounded-full border-2 transition-all duration-200 ${
-                isOnline
-                  ? 'bg-green-50 border-green-300'
-                  : 'bg-red-50 border-red-300 animate-pulse'
-              }`}>
-                {isOnline ? (
-                  <>
-                    <Wifi className="w-5 h-5 text-green-600" />
-                    <span className="text-sm font-semibold text-green-900">Conectado</span>
-                  </>
-                ) : (
-                  <>
-                    <WifiOff className="w-5 h-5 text-red-600" />
-                    <div className="flex flex-col">
-                      <span className="text-sm font-bold text-red-900">Sin conexión</span>
-                      <span className="text-xs text-red-700">Se guardará localmente</span>
-                    </div>
-                  </>
-                )}
-              </div>
+              {/* Indicador de Conexión - Punto Pulsante */}
+              <div
+                className={`w-3 h-3 rounded-full animate-pulse transition-all duration-200 ${
+                  isOnline ? 'bg-green-500' : 'bg-red-500'
+                }`}
+                title={isOnline ? "Conectado" : "Sin conexión - Se guardará localmente"}
+              />
             </div>
           </div>
 
@@ -379,8 +365,7 @@ export default function IPRESSWorkspace() {
 
         {/* Modal de visualización de imagen */}
         {showImageModal && selectedImage && (
-          <VisorECGModal
-            isOpen={showImageModal}
+          <VisorEKGModal
             onClose={() => {
               setShowImageModal(false);
               setSelectedImage(null);
@@ -389,23 +374,17 @@ export default function IPRESSWorkspace() {
           />
         )}
 
-        {/* Modal de carga de imágenes */}
+        {/* Modal de carga de imágenes - Simplificado */}
         {showUploadModal && (
           <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-            <div className="bg-white rounded-lg shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-              {/* Header del modal */}
-              <div className="sticky top-0 bg-gradient-to-r from-emerald-500 to-emerald-600 text-white px-6 py-4 flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <CloudUpload className="w-6 h-6" />
-                  <h2 className="text-xl font-bold">Cargar Electrocardiogramas</h2>
-                </div>
-                <button
-                  onClick={() => setShowUploadModal(false)}
-                  className="p-1 hover:bg-white/20 rounded-lg transition-colors"
-                >
-                  <X className="w-6 h-6" />
-                </button>
-              </div>
+            <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto relative">
+              {/* Botón cerrar - esquina superior derecha */}
+              <button
+                onClick={() => setShowUploadModal(false)}
+                className="absolute top-4 right-4 p-2 hover:bg-gray-100 rounded-lg transition-colors z-10"
+              >
+                <X className="w-6 h-6 text-gray-600" />
+              </button>
 
               {/* Contenido del modal */}
               <div className="p-6">
@@ -442,24 +421,13 @@ export default function IPRESSWorkspace() {
               </p>
             </div>
 
-            {/* Indicador de Conexión - Tablet */}
-            <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full border-2 text-sm transition-all duration-200 flex-shrink-0 ${
-              isOnline
-                ? 'bg-green-50 border-green-300'
-                : 'bg-red-50 border-red-300 animate-pulse'
-            }`}>
-              {isOnline ? (
-                <>
-                  <Wifi className="w-4 h-4 text-green-600" />
-                  <span className="font-semibold text-green-900 hidden sm:inline">Conectado</span>
-                </>
-              ) : (
-                <>
-                  <WifiOff className="w-4 h-4 text-red-600" />
-                  <span className="font-semibold text-red-900 hidden sm:inline">Sin conexión</span>
-                </>
-              )}
-            </div>
+            {/* Indicador de Conexión - Punto Pulsante */}
+            <div
+              className={`w-2.5 h-2.5 rounded-full animate-pulse transition-all duration-200 flex-shrink-0 ${
+                isOnline ? 'bg-green-500' : 'bg-red-500'
+              }`}
+              title={isOnline ? "Conectado" : "Sin conexión - Se guardará localmente"}
+            />
           </div>
 
           {/* Stacked Layout: Upload + Tabla */}
@@ -564,18 +532,13 @@ export default function IPRESSWorkspace() {
             </p>
           </div>
 
-          {/* Indicador de Conexión - Mobile */}
-          <div className={`flex items-center justify-center rounded-full p-2.5 border-2 transition-all duration-200 flex-shrink-0 ${
-            isOnline
-              ? 'bg-green-50 border-green-300'
-              : 'bg-red-50 border-red-300 animate-pulse'
-          }`}>
-            {isOnline ? (
-              <Wifi className="w-5 h-5 text-green-600" />
-            ) : (
-              <WifiOff className="w-5 h-5 text-red-600" />
-            )}
-          </div>
+          {/* Indicador de Conexión - Punto Pulsante */}
+          <div
+            className={`w-3 h-3 rounded-full animate-pulse transition-all duration-200 flex-shrink-0 ${
+              isOnline ? 'bg-green-500' : 'bg-red-500'
+            }`}
+            title={isOnline ? "Conectado" : "Sin conexión - Se guardará localmente"}
+          />
         </div>
 
         {/* Manual Tabs Container */}
