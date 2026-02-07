@@ -9,11 +9,14 @@ import {
   Calendar,
   ExternalLink,
   RefreshCw,
+  X,
+  List,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import teleeckgService from "../../../../services/teleecgService";
 import VisorECGModal from "../../../../components/teleecgs/VisorECGModal";
 import TeleEKGBreadcrumb from "../../../../components/teleecgs/TeleEKGBreadcrumb";
+import { getEstadoClasses } from "../../../../config/designSystem";
 
 /**
  * 👥 Registro de Pacientes con EKGs
@@ -302,71 +305,57 @@ export default function RegistroPacientes({
             <>
               {/* DESKTOP: Tabla (≥768px) */}
               <div className="hidden md:block overflow-x-auto">
-                <table className="w-full">
-                  <thead className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white">
+                <table className="w-full table-fixed">
+                  <thead className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white sticky top-0 z-10">
                     <tr>
-                      <th className="px-6 py-4 text-left text-sm font-semibold">
-                        Fecha
-                      </th>
-                      <th className="px-6 py-4 text-left text-sm font-semibold">
-                        DNI
-                      </th>
-                      <th className="px-6 py-4 text-left text-sm font-semibold">
-                        Paciente
-                      </th>
-                      <th className="px-6 py-4 text-left text-sm font-semibold">
-                        Estado
-                      </th>
-                      <th className="px-6 py-4 text-left text-sm font-semibold">
-                        Evaluación (Solo CENATE)
-                      </th>
-                      <th className="px-6 py-4 text-left text-sm font-semibold">
-                        Archivo
-                      </th>
-                      <th className="px-6 py-4 text-center text-sm font-semibold">
-                        Acciones
-                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold w-[120px]">Fecha</th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold w-[100px]">DNI</th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold w-auto">Paciente</th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold w-[150px]">Estado</th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold w-[180px]">Evaluación</th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold w-[100px]">Archivo</th>
+                      <th className="px-4 py-3 text-center text-xs font-semibold w-[120px]">Acciones</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-200">
                     {filteredEcgs.map((paciente) => (
                       <tr key={paciente.numDocPaciente} className="hover:bg-blue-50 transition-colors border-l-4" style={{borderColor: getEstadoBadge(paciente.estado).badge.includes('yellow') ? '#fbbf24' : getEstadoBadge(paciente.estado).badge.includes('green') ? '#34d399' : getEstadoBadge(paciente.estado).badge.includes('red') ? '#f87171' : '#60a5fa'}}>
-                        <td className="px-6 py-4 text-sm text-gray-700">
+                        <td className="px-4 py-3 text-xs text-gray-700">
                           <div className="flex items-center gap-2">
                             <Calendar className="w-4 h-4 text-gray-400" />
                             {formatearFecha(paciente.fechaPrimera)}
                           </div>
                         </td>
-                        <td className="px-6 py-4 text-sm font-semibold text-gray-900 font-mono">
+                        <td className="px-4 py-3 text-xs font-semibold text-gray-900 font-mono truncate">
                           {paciente.numDocPaciente}
                         </td>
-                        <td className="px-6 py-4 text-sm text-gray-700">
+                        <td className="px-4 py-3 text-xs text-gray-700">
                           <div>
-                            <p className="font-medium text-gray-900">
+                            <p className="font-medium text-gray-900 truncate">
                               {paciente.nombresPaciente}
                             </p>
-                            <p className="text-xs text-blue-600 font-semibold mt-1">
-                              📸 {paciente.imagenes.length} EKG{paciente.imagenes.length !== 1 ? 's' : ''}
+                            <p className="text-xs text-blue-600 font-semibold mt-0.5">
+                              📸 {paciente.imagenes.length} EKG
                             </p>
                           </div>
                         </td>
-                        <td className="px-6 py-4 text-sm">
+                        <td className="px-4 py-3 text-xs">
                           {(() => {
                             const estadoInfo = getEstadoBadge(paciente.estado);
                             return (
                               <div>
-                                <span className={`inline-block px-3 py-1.5 rounded-full text-xs font-bold ${estadoInfo.badge}`} title={estadoInfo.description}>
+                                <span className={`inline-block px-2 py-1 rounded-full text-xs font-bold whitespace-nowrap ${estadoInfo.badge}`} title={estadoInfo.description}>
                                   <span className="mr-1">{estadoInfo.emoji}</span>
                                   {estadoInfo.label}
                                 </span>
-                                <p className="text-xs text-gray-500 mt-1">{estadoInfo.description}</p>
+                                <p className="text-xs text-gray-500 mt-0.5 whitespace-nowrap">{estadoInfo.description}</p>
                               </div>
                             );
                           })()}
                         </td>
-                        <td className="px-6 py-4 text-sm">
+                        <td className="px-4 py-3 text-xs">
                           {paciente.imagenes[0]?.evaluacion ? (
-                            <span className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${
+                            <span className={`inline-block px-2 py-1 rounded-full text-xs font-semibold whitespace-nowrap ${
                               paciente.imagenes[0].evaluacion === 'NORMAL'
                                 ? 'bg-green-100 text-green-800 border border-green-300'
                                 : paciente.imagenes[0].evaluacion === 'ANORMAL'
@@ -379,19 +368,19 @@ export default function RegistroPacientes({
                             <span className="text-gray-500 text-xs">—</span>
                           )}
                         </td>
-                        <td className="px-6 py-4 text-sm text-gray-700">
+                        <td className="px-4 py-3 text-xs text-gray-700 truncate">
                           {paciente.imagenes[0]?.nombreArchivo}
                         </td>
-                        <td className="px-6 py-4 text-center">
-                          <div className="flex items-center justify-center gap-3">
-                            {/* ✅ 44×44px touch targets + ARIA labels */}
+                        <td className="px-4 py-3 text-center">
+                          <div className="flex items-center justify-center gap-2">
+                            {/* ✅ 40×40px touch targets + ARIA labels */}
                             <button
                               onClick={() => abrirVisor(paciente)}
-                              className="flex items-center justify-center h-11 w-11 hover:bg-blue-100 rounded-lg transition-colors text-blue-600 active:bg-blue-200"
+                              className="flex items-center justify-center h-10 w-10 hover:bg-blue-100 rounded-lg transition-colors text-blue-600 active:bg-blue-200"
                               title={`Ver ${paciente.imagenes.length} imagen(es)`}
                               aria-label={`Ver electrocardiograma de paciente ${paciente.numDocPaciente}`}
                             >
-                              <Eye className="w-5 h-5" />
+                              <Eye className="w-4 h-4" />
                             </button>
                             <button
                               onClick={() =>
@@ -400,11 +389,11 @@ export default function RegistroPacientes({
                                   paciente.imagenes[0].nombreArchivo
                                 )
                               }
-                              className="flex items-center justify-center h-11 w-11 hover:bg-green-100 rounded-lg transition-colors text-green-600 active:bg-green-200"
+                              className="flex items-center justify-center h-10 w-10 hover:bg-green-100 rounded-lg transition-colors text-green-600 active:bg-green-200"
                               title="Descargar primera imagen"
                               aria-label={`Descargar electrocardiograma de paciente ${paciente.numDocPaciente}`}
                             >
-                              <Download className="w-5 h-5" />
+                              <Download className="w-4 h-4" />
                             </button>
                             <button
                               onClick={() => {
@@ -413,11 +402,11 @@ export default function RegistroPacientes({
                                   "_blank"
                                 );
                               }}
-                              className="flex items-center justify-center h-11 w-11 hover:bg-purple-100 rounded-lg transition-colors text-purple-600 active:bg-purple-200"
+                              className="flex items-center justify-center h-10 w-10 hover:bg-purple-100 rounded-lg transition-colors text-purple-600 active:bg-purple-200"
                               title="Ver en vista CENATE"
                               aria-label={`Ver electrocardiograma en vista CENATE de paciente ${paciente.numDocPaciente}`}
                             >
-                              <ExternalLink className="w-5 h-5" />
+                              <ExternalLink className="w-4 h-4" />
                             </button>
                           </div>
                         </td>

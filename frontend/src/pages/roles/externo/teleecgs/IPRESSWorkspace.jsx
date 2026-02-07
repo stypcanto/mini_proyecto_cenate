@@ -7,6 +7,7 @@ import RegistroPacientes from "./RegistroPacientes";
 import TeleECGEstadisticas from "./TeleECGEstadisticas";
 import TeleEKGBreadcrumb from "../../../../components/teleecgs/TeleEKGBreadcrumb";
 import teleecgService from "../../../../services/teleecgService";
+import { getEstadoClasses } from "../../../../config/designSystem";
 
 /**
  * 🏢 IPRESS Workspace - Contenedor principal para Upload + Listar
@@ -188,35 +189,38 @@ export default function IPRESSWorkspace() {
                 </button>
               </div>
 
-              {/* Stats Cards */}
-              <div className="grid grid-cols-4 gap-3 mb-6">
-                <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg p-3 border border-blue-200">
-                  <p className="text-xs text-blue-600 font-semibold">Total</p>
-                  <p className="text-2xl font-bold text-blue-900">{stats.total}</p>
+              {/* Stats Cards - Compact Pill Format */}
+              <div className="flex gap-2 mb-4 flex-wrap">
+                {/* Total */}
+                <div className="flex items-center gap-2 bg-gradient-to-r from-blue-50 to-blue-100 rounded-full px-4 py-2 border border-blue-200 shadow-sm">
+                  <div className="bg-blue-600 text-white rounded-full w-8 h-8 flex items-center justify-center font-bold text-sm">
+                    {stats.total}
+                  </div>
+                  <span className="text-xs font-semibold text-blue-900">Total</span>
                 </div>
-                <div className="bg-gradient-to-br from-yellow-50 to-yellow-100 rounded-lg p-3 border border-yellow-200">
-                  <p className="text-xs text-yellow-600 font-semibold">
-                    Enviadas
-                  </p>
-                  <p className="text-2xl font-bold text-yellow-900">
+
+                {/* Enviadas */}
+                <div className="flex items-center gap-2 bg-gradient-to-r from-yellow-50 to-yellow-100 rounded-full px-4 py-2 border border-yellow-200 shadow-sm">
+                  <div className="bg-yellow-600 text-white rounded-full w-8 h-8 flex items-center justify-center font-bold text-sm">
                     {stats.enviadas}
-                  </p>
+                  </div>
+                  <span className="text-xs font-semibold text-yellow-900">Enviadas</span>
                 </div>
-                <div className="bg-gradient-to-br from-orange-50 to-orange-100 rounded-lg p-3 border border-orange-200">
-                  <p className="text-xs text-orange-600 font-semibold">
-                    Observadas
-                  </p>
-                  <p className="text-2xl font-bold text-orange-900">
+
+                {/* Observadas */}
+                <div className="flex items-center gap-2 bg-gradient-to-r from-orange-50 to-orange-100 rounded-full px-4 py-2 border border-orange-200 shadow-sm">
+                  <div className="bg-orange-600 text-white rounded-full w-8 h-8 flex items-center justify-center font-bold text-sm">
                     {stats.observadas}
-                  </p>
+                  </div>
+                  <span className="text-xs font-semibold text-orange-900">Observadas</span>
                 </div>
-                <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-lg p-3 border border-green-200">
-                  <p className="text-xs text-green-600 font-semibold">
-                    Atendidas
-                  </p>
-                  <p className="text-2xl font-bold text-green-900">
+
+                {/* Atendidas */}
+                <div className="flex items-center gap-2 bg-gradient-to-r from-green-50 to-green-100 rounded-full px-4 py-2 border border-green-200 shadow-sm">
+                  <div className="bg-green-600 text-white rounded-full w-8 h-8 flex items-center justify-center font-bold text-sm">
                     {stats.atendidas}
-                  </p>
+                  </div>
+                  <span className="text-xs font-semibold text-green-900">Atendidas</span>
                 </div>
               </div>
 
@@ -282,35 +286,38 @@ export default function IPRESSWorkspace() {
                 </button>
               </div>
 
-              {/* Stats Cards - 2 columns en tablet */}
-              <div className="grid grid-cols-2 gap-3 mb-6">
-                <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg p-3 border border-blue-200">
-                  <p className="text-xs text-blue-600 font-semibold">Total</p>
-                  <p className="text-2xl font-bold text-blue-900">{stats.total}</p>
+              {/* Stats Cards - Compact Pill Format (Tablet) */}
+              <div className="flex gap-2 mb-4 flex-wrap">
+                {/* Total */}
+                <div className="flex items-center gap-2 bg-gradient-to-r from-blue-50 to-blue-100 rounded-full px-3 py-1.5 border border-blue-200 shadow-sm">
+                  <div className="bg-blue-600 text-white rounded-full w-7 h-7 flex items-center justify-center font-bold text-xs">
+                    {stats.total}
+                  </div>
+                  <span className="text-xs font-semibold text-blue-900">Total</span>
                 </div>
-                <div className="bg-gradient-to-br from-yellow-50 to-yellow-100 rounded-lg p-3 border border-yellow-200">
-                  <p className="text-xs text-yellow-600 font-semibold">
-                    Enviadas
-                  </p>
-                  <p className="text-2xl font-bold text-yellow-900">
+
+                {/* Enviadas */}
+                <div className="flex items-center gap-2 bg-gradient-to-r from-yellow-50 to-yellow-100 rounded-full px-3 py-1.5 border border-yellow-200 shadow-sm">
+                  <div className="bg-yellow-600 text-white rounded-full w-7 h-7 flex items-center justify-center font-bold text-xs">
                     {stats.enviadas}
-                  </p>
+                  </div>
+                  <span className="text-xs font-semibold text-yellow-900">Enviadas</span>
                 </div>
-                <div className="bg-gradient-to-br from-orange-50 to-orange-100 rounded-lg p-3 border border-orange-200">
-                  <p className="text-xs text-orange-600 font-semibold">
-                    Observadas
-                  </p>
-                  <p className="text-2xl font-bold text-orange-900">
+
+                {/* Observadas */}
+                <div className="flex items-center gap-2 bg-gradient-to-r from-orange-50 to-orange-100 rounded-full px-3 py-1.5 border border-orange-200 shadow-sm">
+                  <div className="bg-orange-600 text-white rounded-full w-7 h-7 flex items-center justify-center font-bold text-xs">
                     {stats.observadas}
-                  </p>
+                  </div>
+                  <span className="text-xs font-semibold text-orange-900">Observadas</span>
                 </div>
-                <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-lg p-3 border border-green-200">
-                  <p className="text-xs text-green-600 font-semibold">
-                    Atendidas
-                  </p>
-                  <p className="text-2xl font-bold text-green-900">
+
+                {/* Atendidas */}
+                <div className="flex items-center gap-2 bg-gradient-to-r from-green-50 to-green-100 rounded-full px-3 py-1.5 border border-green-200 shadow-sm">
+                  <div className="bg-green-600 text-white rounded-full w-7 h-7 flex items-center justify-center font-bold text-xs">
                     {stats.atendidas}
-                  </p>
+                  </div>
+                  <span className="text-xs font-semibold text-green-900">Atendidas</span>
                 </div>
               </div>
 
@@ -424,37 +431,38 @@ export default function IPRESSWorkspace() {
                   </button>
                 </div>
 
-                {/* Stats Cards - Mini */}
-                <div className="grid grid-cols-4 gap-2 mb-6">
-                  <div className="bg-blue-50 rounded-lg p-2 border border-blue-200">
-                    <p className="text-xs text-blue-600 font-semibold">Total</p>
-                    <p className="text-lg font-bold text-blue-900">
+                {/* Stats Cards - Compact Pill Format (Mobile) */}
+                <div className="flex gap-1.5 mb-4 flex-wrap">
+                  {/* Total */}
+                  <div className="flex items-center gap-1.5 bg-gradient-to-r from-blue-50 to-blue-100 rounded-full px-2.5 py-1 border border-blue-200 shadow-sm">
+                    <div className="bg-blue-600 text-white rounded-full w-6 h-6 flex items-center justify-center font-bold text-xs">
                       {stats.total}
-                    </p>
+                    </div>
+                    <span className="text-xs font-semibold text-blue-900">Total</span>
                   </div>
-                  <div className="bg-yellow-50 rounded-lg p-2 border border-yellow-200">
-                    <p className="text-xs text-yellow-600 font-semibold">
-                      Enviadas
-                    </p>
-                    <p className="text-lg font-bold text-yellow-900">
+
+                  {/* Enviadas */}
+                  <div className="flex items-center gap-1.5 bg-gradient-to-r from-yellow-50 to-yellow-100 rounded-full px-2.5 py-1 border border-yellow-200 shadow-sm">
+                    <div className="bg-yellow-600 text-white rounded-full w-6 h-6 flex items-center justify-center font-bold text-xs">
                       {stats.enviadas}
-                    </p>
+                    </div>
+                    <span className="text-xs font-semibold text-yellow-900">Env</span>
                   </div>
-                  <div className="bg-orange-50 rounded-lg p-2 border border-orange-200">
-                    <p className="text-xs text-orange-600 font-semibold">
-                      Observadas
-                    </p>
-                    <p className="text-lg font-bold text-orange-900">
+
+                  {/* Observadas */}
+                  <div className="flex items-center gap-1.5 bg-gradient-to-r from-orange-50 to-orange-100 rounded-full px-2.5 py-1 border border-orange-200 shadow-sm">
+                    <div className="bg-orange-600 text-white rounded-full w-6 h-6 flex items-center justify-center font-bold text-xs">
                       {stats.observadas}
-                    </p>
+                    </div>
+                    <span className="text-xs font-semibold text-orange-900">Obs</span>
                   </div>
-                  <div className="bg-green-50 rounded-lg p-2 border border-green-200">
-                    <p className="text-xs text-green-600 font-semibold">
-                      Atendidas
-                    </p>
-                    <p className="text-lg font-bold text-green-900">
+
+                  {/* Atendidas */}
+                  <div className="flex items-center gap-1.5 bg-gradient-to-r from-green-50 to-green-100 rounded-full px-2.5 py-1 border border-green-200 shadow-sm">
+                    <div className="bg-green-600 text-white rounded-full w-6 h-6 flex items-center justify-center font-bold text-xs">
                       {stats.atendidas}
-                    </p>
+                    </div>
+                    <span className="text-xs font-semibold text-green-900">Ate</span>
                   </div>
                 </div>
 

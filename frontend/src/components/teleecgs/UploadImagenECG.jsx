@@ -112,6 +112,11 @@ export default function UploadImagenEKG({ onSuccess, onUploadSuccess, isWorkspac
   const [imageErrors, setImageErrors] = useState({});
   const [activeSection, setActiveSection] = useState("patient");
 
+  // Progress Bar States
+  const [uploadProgress, setUploadProgress] = useState(0); // 0-100%
+  const [uploadingFiles, setUploadingFiles] = useState(false);
+  const [currentFileIndex, setCurrentFileIndex] = useState(0);
+
   // Refs
   const fileInputRef = useRef(null);
   const cameraInputRef = useRef(null);
@@ -375,6 +380,8 @@ export default function UploadImagenEKG({ onSuccess, onUploadSuccess, isWorkspac
 
     try {
       setLoading(true);
+      setUploadingFiles(true);
+      setUploadProgress(0);
       setAseguradoNoExiste(false);
 
       const formData = new FormData();
@@ -386,18 +393,28 @@ export default function UploadImagenEKG({ onSuccess, onUploadSuccess, isWorkspac
         formData.append("pkAsegurado", pkAsegurado);
       }
 
-      archivos.forEach((archivo) => {
-        formData.append(`archivos`, archivo);
-      });
+      // Simular progreso por archivo (10 archivos máx)
+      const progressPerFile = 100 / archivos.length;
+
+      for (let i = 0; i < archivos.length; i++) {
+        formData.append("archivos", archivos[i]);
+        setCurrentFileIndex(i + 1);
+        setUploadProgress((i + 1) * progressPerFile);
+
+        // Simulación de delay para mostrar progreso (remover en producción si upload es instantáneo)
+        await new Promise(resolve => setTimeout(resolve, 100));
+      }
 
       const respuesta = await teleekgService.subirMultiplesImagenes(formData);
 
       setRespuestaServidor(respuesta);
       setEnviado(true);
+      setUploadProgress(100);
       toast.success(`✅ ${archivos.length} EKGs cargados exitosamente`);
 
       setTimeout(() => {
         resetFormulario();
+        setUploadingFiles(false);
         if (onSuccess) onSuccess();
 
         // ✅ Si estamos en workspace, usar callback. Si no, redirigir a listar
@@ -412,6 +429,7 @@ export default function UploadImagenEKG({ onSuccess, onUploadSuccess, isWorkspac
 
     } catch (error) {
       console.error("Error al cargar EKGs:", error);
+      setUploadingFiles(false);
 
       // 🔍 CRÍTICO: Solo mostrar modal de "Crear Asegurado" si el error es ESPECÍFICO
       // No si contiene "asegurado" en cualquier contexto (ej: fallo técnico)
@@ -547,7 +565,7 @@ export default function UploadImagenEKG({ onSuccess, onUploadSuccess, isWorkspac
                 placeholder="Ingresa 8 dígitos"
                 maxLength="8"
                 disabled={searchingPaciente}
-                className="w-full px-4 py-3 border-2 border-blue-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent text-lg font-semibold"
+                className="w-full px-4 py-4 border-2 border-blue-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent text-3xl font-bold tracking-wider text-center"
               />
               <div className="absolute right-3 top-3">
                 {searchingPaciente && (
@@ -635,39 +653,50 @@ export default function UploadImagenEKG({ onSuccess, onUploadSuccess, isWorkspac
             <span>Seleccionar Imágenes</span>
           </button>
 
-          {/* Drop Zone - Compacto */}
+          {/* Drop Zone - Enhanced & Visible */}
           <div
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
             onDrop={handleDrop}
             onClick={() => fileInputRef.current?.click()}
-            className={`flex flex-col border border-dashed rounded p-3 text-center cursor-pointer transition-all mb-3 ${
+            className={`flex flex-col items-center justify-center border-4 border-dashed rounded-xl p-8 text-center cursor-pointer transition-all mb-3 min-h-[200px] ${
               pacienteEncontrado && !loading && archivos.length < MAX_IMAGENES
                 ? dragActive
-                  ? "border-blue-900 bg-blue-100 shadow-sm"
-                  : "border-blue-900/40 bg-blue-50 hover:border-blue-900 hover:bg-blue-100"
+                  ? "border-blue-600 bg-blue-50 shadow-lg scale-105"
+                  : "border-blue-400 bg-gradient-to-br from-blue-50 to-indigo-50 hover:border-blue-600 hover:shadow-md hover:scale-102"
                 : "border-gray-300 bg-gray-100 cursor-not-allowed opacity-50"
             }`}
           >
-            <Upload className={`w-8 h-8 mx-auto mb-1 ${
-              pacienteEncontrado && !loading
-                ? "text-blue-900"
-                : "text-gray-400"
-            }`} />
-            <p className={`text-xs font-semibold mb-0.5 ${
-              pacienteEncontrado && !loading
-                ? "text-blue-900"
-                : "text-gray-500"
+            {/* Icon with circle background */}
+            <div className={`rounded-full p-4 mb-3 ${
+              dragActive ? 'bg-blue-600 animate-pulse' : 'bg-blue-100'
             }`}>
-              Arrastra archivos o haz clic
-            </p>
-            <p className={`text-[10px] ${
-              pacienteEncontrado && !loading
-                ? "text-blue-900/70"
-                : "text-gray-400"
+              <Upload className={`w-12 h-12 ${
+                pacienteEncontrado && !loading
+                  ? dragActive ? 'text-white' : 'text-blue-900'
+                  : 'text-gray-400'
+              }`} />
+            </div>
+
+            {/* Main Text - Larger */}
+            <p className={`text-base font-bold mb-1 ${
+              pacienteEncontrado && !loading ? 'text-blue-900' : 'text-gray-500'
             }`}>
-              JPEG, PNG • Máx 5MB
+              {dragActive ? '¡Suelta las fotos aquí!' : '📂 Arrastra tus fotos ECG aquí'}
             </p>
+
+            {/* Secondary Text */}
+            <p className={`text-sm font-medium ${
+              pacienteEncontrado && !loading ? 'text-blue-700' : 'text-gray-400'
+            }`}>
+              o haz clic para seleccionar archivos
+            </p>
+
+            {/* Specifications */}
+            <div className="mt-3 flex items-center gap-2 text-xs text-blue-600 font-medium">
+              <FileImage className="w-4 h-4" />
+              <span>JPEG, PNG • Máx 5MB cada uno • 4-10 fotos</span>
+            </div>
           </div>
 
           {/* Image Grid - Display uploaded images */}
@@ -702,6 +731,40 @@ export default function UploadImagenEKG({ onSuccess, onUploadSuccess, isWorkspac
             </div>
           )}
         </div>
+
+        {/* Barra de Progreso - Desktop Upload */}
+        {uploadingFiles && (
+          <div className="bg-blue-50 border-2 border-blue-200 rounded-lg p-4 mb-3">
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-sm font-bold text-blue-900">
+                📤 Subiendo archivos...
+              </p>
+              <p className="text-xs font-semibold text-blue-700">
+                {currentFileIndex}/{archivos.length} archivos
+              </p>
+            </div>
+
+            {/* Progress Bar */}
+            <div className="w-full bg-blue-200 rounded-full h-3 overflow-hidden shadow-inner">
+              <div
+                className="bg-gradient-to-r from-blue-600 to-indigo-600 h-full transition-all duration-300 flex items-center justify-end"
+                style={{ width: `${uploadProgress}%` }}
+              >
+                <span className="text-white text-xs font-bold pr-2">
+                  {Math.round(uploadProgress)}%
+                </span>
+              </div>
+            </div>
+
+            {/* Spinner animado */}
+            <div className="flex items-center gap-2 mt-2">
+              <Loader className="w-4 h-4 animate-spin text-blue-600" />
+              <p className="text-xs text-blue-700">
+                {uploadProgress < 100 ? 'Cargando imágenes al servidor...' : '✅ Upload completo'}
+              </p>
+            </div>
+          </div>
+        )}
 
         {/* Section 3: Upload Button - Institucional */}
         <button
