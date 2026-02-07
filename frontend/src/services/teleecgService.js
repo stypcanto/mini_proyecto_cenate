@@ -145,10 +145,20 @@ const teleecgService = {
 
     // Transformar propiedades de snake_case a camelCase
     if (apiData && Array.isArray(apiData.content)) {
-      apiData.content = apiData.content.map(ecg => {
+      apiData.content = apiData.content.map((ecg, idx) => {
         const numDocPaciente = ecg.num_doc_paciente || ecg.numDocPaciente;
         const nombresPaciente = ecg.nombres_paciente || ecg.nombresPaciente;
         const fechaEnvio = ecg.fecha_envio || ecg.fechaEnvio;
+
+        // 🔍 DEBUG: Log para verificar si es_urgente viene en la respuesta
+        if (idx === 0 || ecg.numDocPaciente === '09164101') {
+          console.log(`🔍 [teleecgService] ECG ${ecg.numDocPaciente}:`);
+          console.log(`   es_urgente: ${ecg.es_urgente}`);
+          console.log(`   esUrgente: ${ecg.esUrgente}`);
+          console.log(`   urgente: ${ecg.urgente}`);
+          console.log(`   Todas propiedades (keys): ${JSON.stringify(Object.keys(ecg))}`);
+          console.log(`   Raw object:`, ecg);
+        }
 
         return {
           // Campos principales con transformación snake_case → camelCase

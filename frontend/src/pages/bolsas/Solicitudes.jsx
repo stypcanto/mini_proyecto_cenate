@@ -1063,9 +1063,9 @@ export default function Solicitudes() {
           setFiltroAsignacion('todos');
           break;
         case 'pendiente':
-          // Pendiente Citar → filtrar por estado PENDIENTE
-          console.log('⏳ Pendiente Citar - filtroEstado=PENDIENTE');
-          setFiltroEstado('PENDIENTE');
+          // Pendiente Citar → filtrar por estado PENDIENTE_CITA
+          console.log('⏳ Pendiente Citar - filtroEstado=PENDIENTE_CITA');
+          setFiltroEstado('PENDIENTE_CITA');
           setFiltroAsignacion('todos');
           break;
         case 'citado':
