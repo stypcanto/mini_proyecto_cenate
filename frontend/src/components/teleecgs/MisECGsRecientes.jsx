@@ -387,15 +387,15 @@ export default function MisECGsRecientes({
                 {/* Header */}
                 <thead className="bg-gradient-to-r from-slate-700 to-slate-800 text-white">
                   <tr>
-                    <th className="px-4 py-3 text-left font-bold whitespace-nowrap">📅 Fecha Carga</th>
-                    <th className="px-4 py-3 text-left font-bold whitespace-nowrap">🆔 DNI</th>
-                    <th className="px-4 py-3 text-left font-bold whitespace-nowrap">👤 Paciente</th>
-                    <th className="px-4 py-3 text-left font-bold whitespace-nowrap">📱 Teléfono</th>
-                    <th className="px-4 py-3 text-left font-bold whitespace-nowrap">⚧ Género</th>
-                    <th className="px-4 py-3 text-left font-bold whitespace-nowrap">🎂 Edad</th>
-                    <th className="px-4 py-3 text-center font-bold whitespace-nowrap">⚡ Prioridad</th>
-                    <th className="px-4 py-3 text-left font-bold whitespace-nowrap">📊 Estado</th>
-                    <th className="px-4 py-3 text-center font-bold whitespace-nowrap">📸</th>
+                    <th className="px-4 py-3 text-left font-bold whitespace-nowrap">Fecha Carga</th>
+                    <th className="px-4 py-3 text-left font-bold whitespace-nowrap">DNI</th>
+                    <th className="px-4 py-3 text-left font-bold whitespace-nowrap">Paciente</th>
+                    <th className="px-4 py-3 text-left font-bold whitespace-nowrap">Teléfono</th>
+                    <th className="px-4 py-3 text-left font-bold whitespace-nowrap">Género</th>
+                    <th className="px-4 py-3 text-left font-bold whitespace-nowrap">Edad</th>
+                    <th className="px-4 py-3 text-center font-bold whitespace-nowrap">Prioridad</th>
+                    <th className="px-4 py-3 text-left font-bold whitespace-nowrap">Estado</th>
+                    <th className="px-4 py-3 text-center font-bold whitespace-nowrap">Imágenes</th>
                   </tr>
                 </thead>
 

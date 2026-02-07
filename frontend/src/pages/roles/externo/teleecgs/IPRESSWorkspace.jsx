@@ -65,6 +65,7 @@ function formatECGsForRecientes(ecgs, pacientesCache = {}) {
       dni: dni || "N/A",
       genero: img.generoPaciente || img.genero || img.sexo || "-",  // ✅ Backend envía 'generoPaciente' (F/M)
       edad: img.edadPaciente || img.edad || img.ageinyears || "-",  // ✅ Backend envía 'edadPaciente' (años)
+      telefono: img.telefonoPrincipalPaciente || img.telefono || "-",  // ✅ Teléfono del asegurado desde BD
       esUrgente: img.esUrgente || img.urgente || false,  // ✅ Indicador de urgencia
       cantidadImagenes: porDni[dni]?.length || 0,  // ✅ Contar imágenes del paciente
       fechaEnvio: img.fechaEnvio || img.fechaCarga || null,  // ✅ Fecha real para mostrar en tabla
@@ -177,6 +178,18 @@ export default function IPRESSWorkspace() {
 
     return () => clearInterval(interval);
   }, []);
+
+  // ✅ NUEVO: Cuando el caché o ECGs cambian, recalcular los datos formateados
+  const [ecgsFormateados, setEcgsFormateados] = useState([]);
+  useEffect(() => {
+    console.log(`🔄 [useEffect] ECGs o Cache cambiaron. Recalculando...`);
+    console.log(`   - ECGs count: ${ecgs.length}`);
+    console.log(`   - Cache keys: ${Object.keys(pacientesCache).join(', ')}`);
+
+    const ecgsFormateados = formatECGsForRecientes(ecgs, pacientesCache);
+    console.log(`✅ [useEffect] ECGs formateados:`, ecgsFormateados);
+    setEcgsFormateados(ecgsFormateados);
+  }, [ecgs, pacientesCache]);
 
   // =======================================
   // 📂 FUNCTIONS
@@ -412,7 +425,7 @@ export default function IPRESSWorkspace() {
           {/* Dashboard Full-Width */}
           <div className="w-full">
             <MisECGsRecientes
-              ultimas3={formatECGsForRecientes(ecgs, pacientesCache)}
+              ultimas3={ecgsFormateados}
               estadisticas={{
                 total: stats.cargadas + stats.enEvaluacion + stats.observadas + (stats.atendidas || 0),
                 cargadas: stats.cargadas,
