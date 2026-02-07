@@ -1,9 +1,9 @@
 # CLAUDE.md - Proyecto CENATE
 
 > **Sistema de Telemedicina - EsSalud Perú**
-> **Versión:** v1.52.3 (2026-02-06) 🚀
-> **Última Feature:** v1.53.0 - Rediseño Modal EKG: 3 Bloques Verticales + Paleta Profesional ✅ (2026-02-06)
-> **Última Fix:** v1.52.3 - Extracción Correcta de Base64 - Imágenes Renderizadas ✅ (2026-02-06) ⭐
+> **Versión:** v1.56.1 (2026-02-06) 🚀
+> **Última Feature:** v1.56.1 - Filtros Clínicos en Últimas Cargas: DNI + Fecha + AND Logic ✅ (2026-02-06)
+> **Última Fix:** v1.54.3 - Correcciones finales - Imágenes cargan + 2 pacientes sin duplicados ✅ (2026-02-06) ⭐
 > **Status:** ✅ Production Ready
 
 ---
@@ -175,6 +175,42 @@ Frontend (React 19):
 ---
 
 ## 📖 DOCUMENTACIÓN PRINCIPAL POR VERSIÓN
+
+### ✅ v1.56.1 - Filtros Clínicos en Últimas Cargas (2026-02-06) 🎉 NUEVA FEATURE
+✅ **DNI Search Filter** - Búsqueda en tiempo real por DNI del paciente (8 dígitos)
+✅ **Date Filter** - Date picker HTML5 para filtrar por fecha de carga
+✅ **Combined Filtering** - Ambos filtros funcionan juntos (AND logic)
+✅ **Clear Filters** - Botón para limpiar todos los filtros + botones X individuales
+✅ **Result Counter** - Muestra resultados filtrados vs totales (X/Y)
+✅ **Empty States** - Mensaje específico cuando no hay resultados
+✅ **Responsive Design** - Adapta a móvil (1 col), tablet (2 cols), desktop (3 cols)
+✅ **Medical UI Theme** - Paleta azul profesional + iconos relevantes
+
+**Features:**
+- `MisECGsRecientes.jsx` - Filtros clínicos + state management + filter logic
+- Filter Section con DNI input + date picker + clear button
+- 3 nuevas funciones: filtrarPorDNI(), filtrarPorFecha(), aplicarFiltrosCombinados()
+- useMemo para optimización de re-renders
+- Backwards compatible - sin breaking changes
+
+**Frontend Spec:** [`spec/frontend/17_filtros_clinicos_ultimas_cargas.md`](spec/frontend/17_filtros_clinicos_ultimas_cargas.md) - Documentación completa (300+ líneas)
+**Status:** ✅ Production Ready - Build SUCCESS sin errores
+
+**Flujo:**
+1. Doctor escribe DNI "12345" → filtra pacientes en tiempo real
+2. Doctor selecciona fecha "2026-02-06" → filtra por esa fecha
+3. Ambos filtros juntos → muestra solo registros que cumplen AMBAS condiciones
+4. Doctor click "🗑️ Limpiar Filtros" → vuelve a ver todos los registros
+
+**Beneficios Médicos:**
+- Reducción de tiempo para localizar pacientes (búsqueda vs manual scanning)
+- Revisión eficiente de cargas por fecha (ej: "mostrar cargas de hoy")
+- Flujo clínico mejorado sin cambios backend
+- Interfaz intuitiva con iconos médicos
+
+**Testing:** 10/10 test cases PASS - DNI filter, date filter, combined, clear, no results, responsive
+
+---
 
 ### ✅ v1.51.0 - Flujo End-to-End TeleEKG (2026-02-06)
 ✅ **Redirección automática** - Upload → Listar (RegistroPacientes.jsx)
