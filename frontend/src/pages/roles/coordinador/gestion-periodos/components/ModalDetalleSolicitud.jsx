@@ -323,18 +323,9 @@ export default function ModalDetalleSolicitud({
               </div>
             </div>
 
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => solicitud && exportarSolicitudCompleta(solicitud, `${solicitud.nombreIpress}_Reporte_Completo`)}
-                className="text-white bg-white/20 hover:bg-white/30 rounded-lg p-2 transition-colors"
-                title="Exportar solicitud completa a Excel (con especialidades)"
-              >
-                <Download className="w-5 h-5" />
-              </button>
-              <button onClick={onClose} className="text-white bg-white/20 hover:bg-white/30 rounded-lg p-2 transition-colors">
-                <XCircle className="w-5 h-5" />
-              </button>
-            </div>
+            <button onClick={onClose} className="text-white bg-white/20 hover:bg-white/30 rounded-lg p-2 transition-colors">
+              <XCircle className="w-5 h-5" />
+            </button>
           </div>
         </div>
 
