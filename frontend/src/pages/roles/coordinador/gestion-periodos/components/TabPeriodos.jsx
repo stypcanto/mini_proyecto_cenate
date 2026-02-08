@@ -114,16 +114,16 @@ export default function TabPeriodos({
       <div className="flex items-center justify-between px-1 py-2">
         <div className="flex items-center gap-2">
           <Calendar className="w-5 h-5 text-[#0A5BA9]" />
-          <h2 className="text-base font-bold text-gray-900">Períodos</h2>
+          <h2 className="text-base font-bold text-gray-900">Programaciones vigentes</h2>
           <span className="text-xs text-gray-500">({(periodos || []).length})</span>
         </div>
 
         <button
           onClick={onCrearPeriodo}
-          className="flex items-center gap-2 px-3 py-1.5 bg-[#0A5BA9] text-white text-xs font-semibold rounded-lg hover:bg-[#0A5BA9]/90 transition-colors"
+          className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-[#0A5BA9] to-[#084a8a] text-white text-xs font-semibold rounded-lg shadow-md hover:shadow-lg hover:-translate-y-0.5 hover:from-[#084a8a] hover:to-[#0A5BA9] transition-all duration-300 active:translate-y-0 active:shadow-sm"
         >
-          <Plus className="w-3 h-3" />
-          Nuevo Período
+          <Plus className="w-3.5 h-3.5 transition-transform duration-300 group-hover:rotate-90" />
+          <span>Nueva Programación</span>
         </button>
       </div>
 

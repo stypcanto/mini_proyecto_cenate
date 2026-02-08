@@ -1,0 +1,101 @@
+/* ModalDetalleSolicitud - Estilos de Tabla Optimizada */
+
+.tableContainer {
+  display: block;
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  background: white;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.tableContainer table {
+  border-collapse: collapse;
+  width: 100%;
+  min-width: max-content;
+  font-size: 13px;
+}
+
+/* Sticky Header */
+.tableContainer thead {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+}
+
+.tableContainer thead tr {
+  background: linear-gradient(to right, #0A5BA9, #084a8a) !important;
+}
+
+.tableContainer thead th {
+  padding: 12px 8px !important;
+  text-align: center;
+  vertical-align: middle;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+  line-height: 1.3;
+  color: white;
+  border: none;
+}
+
+/* Bordes redondeados en esquinas del header */
+.tableContainer thead th:first-child {
+  border-radius: 8px 0 0 0;
+}
+
+.tableContainer thead th:last-child {
+  border-radius: 0 8px 0 0;
+}
+
+/* Filas del cuerpo */
+.tableContainer tbody tr {
+  background: #ffffff;
+  transition: background-color 0.15s ease;
+}
+
+/* Hover effect - Profesional */
+.tableContainer tbody tr:hover {
+  background-color: #f8f9fa;
+}
+
+.tableContainer tbody td {
+  border: none;
+  padding: 10px 8px;
+  vertical-align: middle;
+  text-align: center;
+  font-size: 12px;
+}
+
+/* Columna de Especialidad */
+.tableContainer tbody td:nth-child(3) {
+  padding-left: 8px !important;
+  text-align: left !important;
+  vertical-align: top;
+  font-weight: 500;
+}
+
+/* Alineación de columnas específicas */
+.tableContainer tbody td:nth-child(1),
+.tableContainer tbody td:nth-child(2),
+.tableContainer tbody td:nth-child(4),
+.tableContainer tbody td:nth-child(5),
+.tableContainer tbody td:nth-child(6),
+.tableContainer tbody td:nth-child(7),
+.tableContainer tbody td:nth-child(8),
+.tableContainer tbody td:nth-child(9) {
+  text-align: center !important;
+  vertical-align: middle;
+}
+
+/* Filas alternadas suave */
+.tableContainer tbody tr:nth-child(even) {
+  background-color: #fafbfc;
+}
+
+/* Fila activa/seleccionada */
+.tableContainer tbody tr.active {
+  background-color: #eff6ff;
+  border-left: 3px solid #0A5BA9;
+}

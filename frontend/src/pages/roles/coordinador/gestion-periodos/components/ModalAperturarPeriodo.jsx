@@ -51,7 +51,7 @@ export default function ModalAperturarPeriodo({ onClose, onCrear }) {
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-2xl shadow-xl max-w-lg w-full overflow-hidden">
         <div className="p-6 bg-gradient-to-r from-[#0A5BA9] to-[#2563EB] flex items-center justify-between">
-          <h3 className="text-xl font-semibold text-white">Aperturar Nuevo Periodo</h3>
+          <h3 className="text-xl font-semibold text-white">Nueva Programación de Especialidades</h3>
           <button onClick={onClose} className="text-white hover:text-blue-100">
             <XCircle className="w-7 h-7" />
           </button>
@@ -61,8 +61,7 @@ export default function ModalAperturarPeriodo({ onClose, onCrear }) {
           <div className="rounded-xl border border-blue-200 bg-blue-50 p-4 text-sm text-blue-800">
             <div className="font-semibold mb-1">Importante:</div>
             <div>
-              Al aperturar un nuevo período, el período activo actual se cerrará automáticamente (según tu backend)
-              y se habilitará la solicitud de turnos para el mes seleccionado.
+              Define las fechas de este período. Las IPRESS podrán solicitar especialidades durante este lapso de tiempo.
             </div>
           </div>
 

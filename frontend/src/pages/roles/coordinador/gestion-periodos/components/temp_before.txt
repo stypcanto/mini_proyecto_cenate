@@ -1,0 +1,816 @@
+// src/pages/coordinador/turnos/components/ModalDetalleSolicitud.jsx
+import React, { useEffect, useState, useMemo, useRef } from "react";
+import {
+  Clock,
+  FileText,
+  CheckCircle2,
+  XCircle,
+  Building2,
+  Users,
+  Mail,
+  Phone,
+  Hash,
+  MapPin,
+  ClipboardList,
+  Loader2,
+  MessageSquare,
+  Edit,
+  Save,
+  Search,
+  Filter,
+  CheckCheck,
+  XOctagon,
+  Calendar,
+  Download,
+  Stethoscope,
+  BarChart3,
+  ClipboardCheck,
+} from "lucide-react";
+import { chipDay, fmtDateTime, yesNoPill, TeleIcon } from "../utils/ui";
+import { solicitudTurnosService } from "../../../../../services/solicitudTurnosService";
+import { exportarSolicitudesAExcel, exportarSolicitudCompleta, exportarEspecialidadesAExcel } from "../utils/exportarExcel";
+import Tooltip from "../../../../../components/ui/Tooltip";
+import styles from "./ModalDetalleSolicitud.module.css";
+
+export default function ModalDetalleSolicitud({
+  loading,
+  solicitud,
+  onClose,
+  onAprobar,
+  onRechazar,
+  getEstadoBadge,
+  prefillRechazo = false,
+  onRecargarDetalle,
+}) {
+  const [motivoRechazo, setMotivoRechazo] = useState("");
+  const [showRechazoForm, setShowRechazoForm] = useState(prefillRechazo);
+  const [observacionesDetalle, setObservacionesDetalle] = useState({});
+  const [modalObservacion, setModalObservacion] = useState({ show: false, detalle: null, observacion: "" });
+  const [modalAccion, setModalAccion] = useState({ show: false, tipo: null, detalle: null, observacion: "" });
+  const [modalAccionMasiva, setModalAccionMasiva] = useState({ show: false, tipo: null, detalles: [], observacion: "" });
+  const [modalFechas, setModalFechas] = useState({ show: false, detalle: null });
+  const [modalCalendario, setModalCalendario] = useState(false);
+  const [busquedaEspecialidad, setBusquedaEspecialidad] = useState("");
+  const [debouncedBusqueda, setDebouncedBusqueda] = useState("");
+  const [filtroEstado, setFiltroEstado] = useState("TODOS");
+  const [seleccionadas, setSeleccionadas] = useState(new Set());
+  const [mostrarAccionesMasivas, setMostrarAccionesMasivas] = useState(false);
+  const modalRef = useRef(null);
+
+  // Debounce search input (300ms)
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedBusqueda(busquedaEspecialidad);
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [busquedaEspecialidad]);
+
+  // Handle ESC key and focus management
+  useEffect(() => {
+    const handleEscape = (e) => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
+    };
+
+    const handleClickOutside = (e) => {
+      if (modalRef.current && !modalRef.current.contains(e.target)) {
+        onClose();
+      }
+    };
+
+    // Prevent body scroll when modal is open
+    document.body.style.overflow = 'hidden';
+
+    // Focus modal on open
+    if (modalRef.current) {
+      modalRef.current.focus();
+    }
+
+    document.addEventListener('keydown', handleEscape);
+    document.addEventListener('mousedown', handleClickOutside);
+
+    return () => {
+      document.removeEventListener('keydown', handleEscape);
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.body.style.overflow = 'auto';
+    };
+  }, [onClose]);
+
+  useEffect(() => {
+    setShowRechazoForm(prefillRechazo);
+    setMotivoRechazo("");
+    setSeleccionadas(new Set());
+    // Inicializar observaciones con las existentes
+    if (solicitud?.detalles) {
+      const obs = {};
+      solicitud.detalles.forEach(d => {
+        obs[d.idDetalle] = d.observacion || "";
+      });
+      setObservacionesDetalle(obs);
+    }
+  }, [prefillRechazo, solicitud?.idSolicitud, solicitud?.detalles]);
+
+  const abrirModalObservacion = (detalle, soloLectura = false) => {
+    setModalObservacion({
+      show: true,
+      detalle: detalle,
+      observacion: observacionesDetalle[detalle.idDetalle] || "",
+      soloLectura: soloLectura
+    });
+  };
+
+  const cerrarModalObservacion = () => {
+    setModalObservacion({ show: false, detalle: null, observacion: "" });
+  };
+
+  const abrirModalAprobarDetalle = (detalle) => {
+    setModalAccion({
+      show: true,
+      tipo: 'aprobar',
+      detalle: detalle,
+      observacion: observacionesDetalle[detalle.idDetalle] || ""
+    });
+  };
+
+  const abrirModalRechazarDetalle = (detalle) => {
+    setModalAccion({
+      show: true,
+      tipo: 'rechazar',
+      detalle: detalle,
+      observacion: observacionesDetalle[detalle.idDetalle] || ""
+    });
+  };
+
+  const cerrarModalAccion = () => {
+    setModalAccion({ show: false, tipo: null, detalle: null, observacion: "" });
+  };
+
+  const abrirModalAprobarMasivo = (detalles) => {
+    setModalAccionMasiva({
+      show: true,
+      tipo: 'aprobar',
+      detalles: detalles,
+      observacion: ""
+    });
+  };
+
+  const abrirModalRechazarMasivo = (detalles) => {
+    setModalAccionMasiva({
+      show: true,
+      tipo: 'rechazar',
+      detalles: detalles,
+      observacion: ""
+    });
+  };
+
+  const cerrarModalAccionMasiva = () => {
+    setModalAccionMasiva({ show: false, tipo: null, detalles: [], observacion: "" });
+  };
+
+  const guardarObservacion = async () => {
+    if (modalObservacion.detalle) {
+      try {
+        await solicitudTurnosService.actualizarObservacionDetalle(
+          modalObservacion.detalle.idDetalle, 
+          modalObservacion.observacion
+        );
+        setObservacionesDetalle(prev => ({
+          ...prev,
+          [modalObservacion.detalle.idDetalle]: modalObservacion.observacion
+        }));
+        cerrarModalObservacion();
+        alert("Observación guardada exitosamente");
+      } catch (error) {
+        console.error("Error al guardar observación:", error);
+        alert("Error al guardar la observación. Intente nuevamente.");
+      }
+    }
+  };
+
+  const handleObservacionChange = (idDetalle, value) => {
+    setObservacionesDetalle(prev => ({
+      ...prev,
+      [idDetalle]: value
+    }));
+  };
+
+  const handleAprobarDetalle = async (detalle) => {
+    if (!window.confirm(`¿Aprobar especialidad ${detalle.nombreServicio}?`)) return;
+    const obs = observacionesDetalle[detalle.idDetalle] || "";
+    try {
+      await solicitudTurnosService.aprobarDetalle(detalle.idDetalle, obs);
+      alert("Especialidad aprobada exitosamente");
+      // Recargar detalles actualizados
+      window.location.reload(); // O mejor, recargar solo el detalle
+    } catch (error) {
+      console.error("Error al aprobar detalle:", error);
+      alert("Error al aprobar la especialidad. Intente nuevamente.");
+    }
+  };
+
+  const handleRechazarDetalle = async (detalle) => {
+    const obs = observacionesDetalle[detalle.idDetalle] || "";
+    if (!obs.trim()) {
+      alert("Debe ingresar una observación para rechazar la especialidad");
+      return;
+    }
+    if (!window.confirm(`¿Rechazar especialidad ${detalle.nombreServicio}?`)) return;
+    try {
+      await solicitudTurnosService.rechazarDetalle(detalle.idDetalle, obs);
+      alert("Especialidad rechazada exitosamente");
+      // Recargar detalles actualizados
+      window.location.reload(); // O mejor, recargar solo el detalle
+    } catch (error) {
+      console.error("Error al rechazar detalle:", error);
+      alert("Error al rechazar la especialidad. Intente nuevamente.");
+    }
+  };
+
+  const confirmarAccionDetalle = async () => {
+    const { tipo, detalle, observacion } = modalAccion;
+    
+    if (tipo === 'rechazar' && !observacion.trim()) {
+      alert("Debe ingresar una observación para rechazar la especialidad");
+      return;
+    }
+
+    try {
+      if (tipo === 'aprobar') {
+        await solicitudTurnosService.aprobarDetalle(detalle.idDetalle, observacion);
+        alert("Especialidad aprobada exitosamente");
+      } else {
+        await solicitudTurnosService.rechazarDetalle(detalle.idDetalle, observacion);
+        alert("Especialidad rechazada exitosamente");
+      }
+      cerrarModalAccion();
+      // Recargar detalles actualizados sin cerrar modal
+      if (onRecargarDetalle) {
+        await onRecargarDetalle(solicitud.idSolicitud);
+      }
+    } catch (error) {
+      console.error(`Error al ${tipo} detalle:`, error);
+      alert(`Error al ${tipo === 'aprobar' ? 'aprobar' : 'rechazar'} la especialidad. Intente nuevamente.`);
+    }
+  };
+
+  const confirmarAccionMasiva = async () => {
+    const { tipo, detalles, observacion } = modalAccionMasiva;
+    
+    if (tipo === 'rechazar' && !observacion.trim()) {
+      alert("Debe ingresar una observación para rechazar las especialidades");
+      return;
+    }
+
+    if (!window.confirm(`¿Está seguro de ${tipo === 'aprobar' ? 'aprobar' : 'rechazar'} ${detalles.length} especialidad(es)?`)) {
+      return;
+    }
+
+    try {
+      let exitosas = 0;
+      let fallidas = 0;
+
+      for (const detalle of detalles) {
+        try {
+          if (tipo === 'aprobar') {
+            await solicitudTurnosService.aprobarDetalle(detalle.idDetalle, observacion);
+          } else {
+            await solicitudTurnosService.rechazarDetalle(detalle.idDetalle, observacion);
+          }
+          exitosas++;
+        } catch (error) {
+          console.error(`Error al ${tipo} detalle ${detalle.idDetalle}:`, error);
+          fallidas++;
+        }
+      }
+
+      alert(`Proceso completado:\n✔️ ${exitosas} exitosa(s)\n❌ ${fallidas} fallida(s)`);
+      cerrarModalAccionMasiva();
+      setSeleccionadas(new Set());
+      
+      // Recargar detalles actualizados
+      if (onRecargarDetalle) {
+        await onRecargarDetalle(solicitud.idSolicitud);
+      }
+    } catch (error) {
+      console.error(`Error en acción masiva:`, error);
+      alert(`Error al procesar las especialidades. Intente nuevamente.`);
+    }
+  };
+
+  const isEnviado = solicitud?.estado === "ENVIADO";
+  
+  // Deduplicar detalles por idDetalle (fix para backend que envía duplicados)
+  const detalles = useMemo(() => {
+    if (!Array.isArray(solicitud?.detalles)) return [];
+    
+    const detallesUnicos = new Map();
+    solicitud.detalles.forEach(detalle => {
+      if (detalle.idDetalle && !detallesUnicos.has(detalle.idDetalle)) {
+        detallesUnicos.set(detalle.idDetalle, detalle);
+      }
+    });
+    
+    return Array.from(detallesUnicos.values());
+  }, [solicitud?.detalles]);
+
+  // Estadísticas y filtrado
+  const estadisticas = useMemo(() => {
+    const pendientes = detalles.filter(d => !d.estado || d.estado === 'PENDIENTE').length;
+    const asignados = detalles.filter(d => d.estado === 'ASIGNADO').length;
+    const noProcede = detalles.filter(d => d.estado === 'NO PROCEDE').length;
+    return { pendientes, asignados, noProcede, total: detalles.length };
+  }, [detalles]);
+
+  const detallesFiltrados = useMemo(() => {
+    let resultado = detalles;
+
+    // Filtro por búsqueda (use debouncedBusqueda)
+    if (debouncedBusqueda.trim()) {
+      const busqueda = debouncedBusqueda.toLowerCase();
+      resultado = resultado.filter(d =>
+        (d.nombreServicio || d.nombreEspecialidad || "").toLowerCase().includes(busqueda) ||
+        (d.codigoServicio || d.codServicio || "").toLowerCase().includes(busqueda)
+      );
+    }
+
+    // Filtro por estado
+    if (filtroEstado !== "TODOS") {
+      resultado = resultado.filter(d => {
+        const estado = d.estado || 'PENDIENTE';
+        return estado === filtroEstado;
+      });
+    }
+
+    return resultado;
+  }, [detalles, debouncedBusqueda, filtroEstado]);
+
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-2">
+      <div
+        ref={modalRef}
+        tabIndex={-1}
+        className="bg-white rounded-lg shadow-xl max-w-6xl w-full max-h-[95vh] overflow-y-auto overflow-x-hidden focus:outline-none"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="modal-title"
+      >
+        {/* Header */}
+        <div className="px-4 py-2.5 sticky top-0 bg-cenate-600 rounded-t-lg z-10 border-b border-cenate-700">
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex items-center gap-2 flex-1 min-w-0">
+              <div className="flex-shrink-0 p-1.5 bg-white/15 rounded-lg">
+                <ClipboardList className="w-4 h-4 text-white" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <h3 id="modal-title" className="text-base font-bold text-white truncate">
+                  Detalle de Solicitud
+                </h3>
+                <div className="flex items-center gap-1.5 mt-1 flex-wrap">
+                  <span className="text-xs text-cenate-100 font-medium truncate">{solicitud?.nombreIpress ?? "Cargando..."}</span>
+                  {solicitud?.estado && (
+                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold inline-block ${getEstadoBadge(solicitud.estado)}`}>
+                      {solicitud.estado}
+                    </span>
+                  )}
+                  {solicitud?.periodoDescripcion && (
+                    <span className="text-[10px] text-cenate-200">• {solicitud.periodoDescripcion}</span>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <button
+              onClick={onClose}
+              className="flex-shrink-0 text-white bg-white/20 hover:bg-white/30 rounded-lg p-1.5 transition-all hover:scale-110"
+              aria-label="Cerrar modal"
+              title="Cerrar (ESC)"
+            >
+              <XCircle className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+
+        {/* Body */}
+        <div className="p-3 space-y-2.5">
+          {loading ? (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+            </div>
+          ) : !solicitud ? (
+            <div className="p-6 text-center text-sm text-gray-500">No hay datos para mostrar.</div>
+          ) : (
+            <>
+              {/* Cards de Información */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
+                {/* Card RESUMEN */}
+                <div className="bg-white rounded-lg border-2 border-cenate-100 shadow-sm hover:shadow-md transition-shadow">
+                  <div className="p-2.5 border-b border-cenate-100">
+                    <div className="flex items-center gap-2">
+                      <div className="p-1.5 bg-cenate-100 rounded">
+                        <BarChart3 className="w-4 h-4 text-cenate-600" />
+                      </div>
+                      <h3 className="text-xs font-bold text-gray-900 uppercase tracking-wider">Resumen</h3>
+                    </div>
+                  </div>
+                  <div className="p-2.5 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-1.5">
+                        <Stethoscope className="w-3.5 h-3.5 text-cenate-600" />
+                        <span className="text-xs text-gray-700 font-medium">Especialidades</span>
+                      </div>
+                      <span className="text-lg font-bold text-cenate-600">{solicitud.totalEspecialidades ?? detalles.length}</span>
+                    </div>
+                    <div className="h-px bg-cenate-100"></div>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-1.5">
+                        <Clock className="w-3.5 h-3.5 text-cenate-600" />
+                        <span className="text-xs text-gray-700 font-medium">Turnos</span>
+                      </div>
+                      <span className="text-lg font-bold text-cenate-600">{solicitud.totalTurnosSolicitados ?? "—"}</span>
+                    </div>
+                    <div className="h-px bg-cenate-100"></div>
+                    <div>
+                      <div className="flex items-center gap-1.5 mb-1">
+                        <ClipboardCheck className="w-3.5 h-3.5 text-cenate-600" />
+                        <span className="text-[10px] font-semibold text-gray-600 uppercase">Período</span>
+                      </div>
+                      <p className="text-xs font-bold text-gray-900 ml-5">{solicitud.periodoDescripcion}</p>
+                      <p className="text-[10px] text-gray-500 ml-5">{solicitud.periodo} • ID: {solicitud.idPeriodo}</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Card FECHAS */}
+                <div className="bg-white rounded-lg border-2 border-gray-200 shadow-sm hover:shadow-md transition-shadow">
+                  <div className="p-2.5 border-b border-gray-200">
+                    <div className="flex items-center gap-2">
+                      <div className="p-1.5 bg-gray-100 rounded">
+                        <Clock className="w-4 h-4 text-gray-700" />
+                      </div>
+                      <h3 className="text-xs font-bold text-gray-900 uppercase tracking-wider">Registros</h3>
+                    </div>
+                  </div>
+                  <div className="p-2.5 space-y-2">
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <p className="text-[10px] text-gray-500 font-semibold uppercase mb-0.5">Creación</p>
+                        <p className="text-xs font-semibold text-gray-900">{fmtDateTime(solicitud.fechaCreacion ?? solicitud.createdAt)}</p>
+                      </div>
+                      <div className="w-2 h-2 bg-cenate-500 rounded-full flex-shrink-0 mt-0.5"></div>
+                    </div>
+                    <div className="h-px bg-gray-100"></div>
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <p className="text-[10px] text-gray-500 font-semibold uppercase mb-0.5">Actualización</p>
+                        <p className="text-xs font-semibold text-gray-900">{fmtDateTime(solicitud.fechaActualizacion ?? solicitud.updatedAt)}</p>
+                      </div>
+                      <div className="w-2 h-2 bg-amber-500 rounded-full flex-shrink-0 mt-0.5"></div>
+                    </div>
+                    <div className="h-px bg-gray-100"></div>
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <p className="text-[10px] text-gray-500 font-semibold uppercase mb-0.5">Envío</p>
+                        <p className="text-xs font-semibold text-gray-900">{fmtDateTime(solicitud.fechaEnvio)}</p>
+                      </div>
+                      <div className="w-2 h-2 bg-emerald-500 rounded-full flex-shrink-0 mt-0.5"></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Barra de progreso y estadísticas */}
+              <div className="rounded-lg border-2 border-cenate-100 bg-white p-2.5 shadow-sm">
+                <div className="flex items-center justify-between mb-2">
+                  <h4 className="text-xs font-bold text-gray-900 uppercase tracking-wider">Progreso de Revisión</h4>
+                  <span className="text-[10px] font-semibold text-gray-600 bg-gray-100 px-2 py-0.5 rounded">
+                    {estadisticas.asignados + estadisticas.noProcede} de {estadisticas.total} procesadas
+                  </span>
+                </div>
+
+                <div className="space-y-1 mb-2.5">
+                  <div className="flex gap-1.5 items-center text-[10px]">
+                    <div className="font-semibold text-emerald-700 min-w-fit">Asignadas</div>
+                    <div className="flex-1 h-1.5 bg-gray-200 rounded-full overflow-hidden">
+                      <div
+                        className="h-1.5 bg-emerald-500"
+                        style={{ width: `${estadisticas.total > 0 ? (estadisticas.asignados / estadisticas.total) * 100 : 0}%` }}
+                      />
+                    </div>
+                    <span className="font-bold text-gray-700">{estadisticas.asignados}</span>
+                  </div>
+                  <div className="flex gap-1.5 items-center text-[10px]">
+                    <div className="font-semibold text-red-700 min-w-fit">No procede</div>
+                    <div className="flex-1 h-1.5 bg-gray-200 rounded-full overflow-hidden">
+                      <div
+                        className="h-1.5 bg-red-500"
+                        style={{ width: `${estadisticas.total > 0 ? (estadisticas.noProcede / estadisticas.total) * 100 : 0}%` }}
+                      />
+                    </div>
+                    <span className="font-bold text-gray-700">{estadisticas.noProcede}</span>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-3 gap-1.5">
+                  <button
+                    onClick={() => setFiltroEstado('PENDIENTE')}
+                    className={`rounded px-2 py-1.5 text-center font-semibold transition-all cursor-pointer border-2 ${
+                      filtroEstado === 'PENDIENTE'
+                        ? 'border-amber-500 bg-amber-50 text-amber-700'
+                        : 'border-gray-200 bg-white text-gray-700 hover:border-amber-300'
+                    }`}
+                  >
+                    <div className="text-[9px] font-medium opacity-75">Pendientes</div>
+                    <div className="text-sm font-bold">{estadisticas.pendientes}</div>
+                  </button>
+                  <button
+                    onClick={() => setFiltroEstado('ASIGNADO')}
+                    className={`rounded px-2 py-1.5 text-center font-semibold transition-all cursor-pointer border-2 ${
+                      filtroEstado === 'ASIGNADO'
+                        ? 'border-emerald-500 bg-emerald-50 text-emerald-700'
+                        : 'border-gray-200 bg-white text-gray-700 hover:border-emerald-300'
+                    }`}
+                  >
+                    <div className="text-[9px] font-medium opacity-75">Asignadas</div>
+                    <div className="text-sm font-bold">{estadisticas.asignados}</div>
+                  </button>
+                  <button
+                    onClick={() => setFiltroEstado('NO PROCEDE')}
+                    className={`rounded px-2 py-1.5 text-center font-semibold transition-all cursor-pointer border-2 ${
+                      filtroEstado === 'NO PROCEDE'
+                        ? 'border-red-500 bg-red-50 text-red-700'
+                        : 'border-gray-200 bg-white text-gray-700 hover:border-red-300'
+                    }`}
+                  >
+                    <div className="text-[9px] font-medium opacity-75">No procede</div>
+                    <div className="text-sm font-bold">{estadisticas.noProcede}</div>
+                  </button>
+                </div>
+              </div>
+
+              {/* Botón Ver Calendario */}
+              {detalles.some(d => d.fechasDetalle && d.fechasDetalle.length > 0) && (
+                <div className="rounded-lg border-2 border-cenate-200 bg-cenate-50 p-2">
+                  <button
+                    onClick={() => setModalCalendario(true)}
+                    className="w-full flex items-center justify-center gap-2 px-3 py-1.5 bg-cenate-600 text-white text-xs font-semibold rounded hover:bg-cenate-700 transition-all hover:shadow-md"
+                  >
+                    <Calendar className="w-3.5 h-3.5" />
+                    Ver Calendario del Período
+                  </button>
+                </div>
+              )}
+
+              {/* Acciones masivas - Solo disponible si está ENVIADO */}
+              {isEnviado && seleccionadas.size > 0 && (
+                <div className="sticky top-0 z-20 rounded-xl border-2 border-cenate-300 bg-cenate-50 p-4 shadow-lg">
+                  <div className="flex items-center justify-between gap-4 flex-wrap">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 bg-cenate-200 rounded-lg">
+                        <CheckCheck className="w-5 h-5 text-cenate-700" />
+                      </div>
+                      <span className="text-sm font-bold text-cenate-900">
+                        {seleccionadas.size} especialidad(es) seleccionada(s)
+                      </span>
+                    </div>
+                    <div className="flex gap-2 flex-wrap">
+                      <button
+                        onClick={() => {
+                          const detallesSeleccionados = detallesFiltrados.filter(d =>
+                            seleccionadas.has(d.idDetalle) && (!d.estado || d.estado === 'PENDIENTE')
+                          );
+                          if (detallesSeleccionados.length === 0) {
+                            alert("No hay especialidades pendientes seleccionadas");
+                            return;
+                          }
+                          abrirModalAprobarMasivo(detallesSeleccionados);
+                        }}
+                        className="flex items-center gap-1.5 px-3 py-2 bg-emerald-600 text-white text-xs font-semibold rounded-lg hover:bg-emerald-700 transition-all hover:shadow-md"
+                      >
+                        <CheckCircle2 className="w-4 h-4" />
+                        Asignar
+                      </button>
+                      <button
+                        onClick={() => {
+                          const detallesSeleccionados = detallesFiltrados.filter(d =>
+                            seleccionadas.has(d.idDetalle) && (!d.estado || d.estado === 'PENDIENTE')
+                          );
+                          if (detallesSeleccionados.length === 0) {
+                            alert("No hay especialidades pendientes seleccionadas");
+                            return;
+                          }
+                          abrirModalRechazarMasivo(detallesSeleccionados);
+                        }}
+                        className="flex items-center gap-1.5 px-3 py-2 bg-red-600 text-white text-xs font-semibold rounded-lg hover:bg-red-700 transition-all hover:shadow-md"
+                      >
+                        <XOctagon className="w-4 h-4" />
+                        Rechazar
+                      </button>
+                      <button
+                        onClick={() => setSeleccionadas(new Set())}
+                        className="flex items-center gap-1.5 px-3 py-2 border-2 border-gray-300 bg-white text-gray-700 text-xs font-semibold rounded-lg hover:border-gray-400 transition-colors"
+                      >
+                        Limpiar
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Mensaje informativo para solicitudes que no están ENVIADO */}
+              {!isEnviado && (
+                <div className="rounded-xl border-2 border-amber-200 bg-amber-50 p-4">
+                  <div className="flex items-start gap-3">
+                    <div className="p-2 bg-amber-100 rounded-lg flex-shrink-0">
+                      <FileText className="w-5 h-5 text-amber-700" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-bold text-amber-900">
+                        Solicitud en modo lectura
+                      </p>
+                      <p className="text-xs text-amber-700 mt-1 leading-relaxed">
+                        Las acciones de asignación, rechazo y observaciones están disponibles solo cuando la solicitud está en estado <span className="font-semibold">ENVIADO</span>.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Filtros y búsqueda */}
+              <div className="rounded-lg border-2 border-gray-200 bg-white p-2">
+                <div className="flex gap-2">
+                  <div className="flex-1 relative">
+                    <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" />
+                    <input
+                      type="text"
+                      value={busquedaEspecialidad}
+                      onChange={(e) => setBusquedaEspecialidad(e.target.value)}
+                      placeholder="Buscar especialidad o código..."
+                      className="w-full pl-8 pr-8 py-1.5 text-xs border-2 border-gray-200 rounded focus:border-cenate-500 focus:ring-1 focus:ring-cenate-200 transition-colors"
+                    />
+                    {busquedaEspecialidad !== debouncedBusqueda && (
+                      <Loader2 className="w-3.5 h-3.5 absolute right-2.5 top-1/2 -translate-y-1/2 text-cenate-600 animate-spin" />
+                    )}
+                  </div>
+                  <div className="relative">
+                    <Filter className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+                    <select
+                      value={filtroEstado}
+                      onChange={(e) => setFiltroEstado(e.target.value)}
+                      className="pl-8 pr-2 py-1.5 text-xs border-2 border-gray-200 rounded focus:border-cenate-500 focus:ring-1 focus:ring-cenate-200 transition-colors bg-white cursor-pointer"
+                    >
+                      <option value="TODOS">Todos</option>
+                      <option value="PENDIENTE">Pendientes</option>
+                      <option value="ASIGNADO">Asignadas</option>
+                      <option value="NO PROCEDE">No procede</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              {/* Tabla */}
+              <div className="rounded-xl border-2 border-gray-200 overflow-hidden shadow-sm bg-white">
+                <div className="p-4 bg-white border-b-2 border-gray-100 flex items-center justify-between flex-wrap gap-3">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-cenate-100 rounded-lg">
+                      <FileText className="w-4 h-4 text-cenate-600" />
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-bold text-gray-900">Especialidades solicitadas</h4>
+                      {busquedaEspecialidad && (
+                        <span className="text-[10px] text-cenate-600 font-semibold">
+                          Mostrando {detallesFiltrados.length} de {detalles.length}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <span className="text-xs font-semibold text-gray-500 bg-gray-100 px-2.5 py-1.5 rounded-lg">{detallesFiltrados.length} filas</span>
+                    <Tooltip text="Exportar a Excel" position="top">
+                      <button
+                        onClick={() => exportarEspecialidadesAExcel(detalles, solicitud?.nombreIpress || 'IPRESS', 'Especialidades_Solicitadas')}
+                        disabled={detalles.length === 0}
+                        className="inline-flex items-center gap-2 px-3 py-2 text-xs bg-emerald-600 text-white font-semibold rounded-lg hover:bg-emerald-700 transition-all hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        <Download className="w-4 h-4" />
+                        Exportar
+                      </button>
+                    </Tooltip>
+                  </div>
+                </div>
+
+                <div className="overflow-x-auto max-h-[500px] overflow-y-auto rounded-xl border border-gray-200 shadow-sm">
+                  <table className="w-full">
+                    <thead className="bg-cenate-600 sticky top-0 z-10">
+                      <tr className="border-b-2 border-cenate-700">
+                        <th className="px-3 py-4 text-left" aria-label="Selección masiva">
+                          {isEnviado && detallesFiltrados.some(d => !d.estado || d.estado === 'PENDIENTE') && (
+                            <Tooltip text="Seleccionar todas las pendientes" position="top">
+                              <input
+                                type="checkbox"
+                                checked={
+                                  detallesFiltrados.filter(d => !d.estado || d.estado === 'PENDIENTE').length > 0 &&
+                                  detallesFiltrados.filter(d => !d.estado || d.estado === 'PENDIENTE').every(d => seleccionadas.has(d.idDetalle))
+                                }
+                                onChange={(e) => {
+                                  const pendientes = detallesFiltrados.filter(d => !d.estado || d.estado === 'PENDIENTE');
+                                  if (e.target.checked) {
+                                    setSeleccionadas(new Set(pendientes.map(d => d.idDetalle)));
+                                  } else {
+                                    setSeleccionadas(new Set());
+                                  }
+                                }}
+                                className="w-5 h-5 rounded border-2 border-white text-cenate-600 focus:ring-2 focus:ring-white cursor-pointer"
+                                aria-label="Seleccionar todas las especialidades pendientes"
+                              />
+                            </Tooltip>
+                          )}
+                        </th>
+                        <th className="px-3 py-4 text-center text-xs font-semibold text-white tracking-wide w-8">#</th>
+                        <th className="px-4 py-4 text-left text-sm font-semibold text-white tracking-wide flex-1 min-w-[220px]">
+                          ESPECIALIDAD
+                        </th>
+                        <th className="px-3 py-4 text-center text-xs font-semibold text-white tracking-wide min-w-[80px]">
+                          ESTADO
+                        </th>
+                        <th className="px-3 py-4 text-center text-xs font-semibold text-white tracking-wide min-w-[90px]">
+                          <Tooltip text="Turnos solicitados en horario mañana (08:00 - 13:00)" position="top">
+                            <div className="flex flex-col items-center gap-0.5">
+                              <span>TURNOS</span>
+                              <span>MAÑANA</span>
+                            </div>
+                          </Tooltip>
+                        </th>
+                        <th className="px-3 py-4 text-center text-xs font-semibold text-white tracking-wide min-w-[90px]">
+                          <Tooltip text="Turnos solicitados en horario tarde (13:00 - 18:00)" position="top">
+                            <div className="flex flex-col items-center gap-0.5">
+                              <span>TURNOS</span>
+                              <span>TARDE</span>
+                            </div>
+                          </Tooltip>
+                        </th>
+                        <th className="px-3 py-4 text-center text-xs font-semibold text-white tracking-wide min-w-[100px]">
+                          <Tooltip text="Teleconsulta (Remota): Atención virtual sin presencia física" position="top">
+                            <div className="flex flex-col items-center gap-0.5">
+                              <span>CONSULTA</span>
+                              <span>REMOTA</span>
+                            </div>
+                          </Tooltip>
+                        </th>
+                        <th className="px-3 py-4 text-center text-xs font-semibold text-white tracking-wide min-w-[100px]">
+                          <Tooltip text="Teleconsultorio (Presencial): Atención con médico presente en consultorio" position="top">
+                            <div className="flex flex-col items-center gap-0.5">
+                              <span>CONSULTA</span>
+                              <span>PRESENCIAL</span>
+                            </div>
+                          </Tooltip>
+                        </th>
+                        <th className="px-3 py-4 text-center text-xs font-semibold text-white tracking-wide min-w-[90px]">
+                          <Tooltip text="Fechas programadas para esta especialidad" position="top">
+                            <div className="flex flex-col items-center gap-0.5">
+                              <span>FECHAS</span>
+                              <span>PROGRAMADAS</span>
+                            </div>
+                          </Tooltip>
+                        </th>
+                        <th className="px-4 py-4 text-center text-xs font-semibold text-white tracking-wide sticky z-20 min-w-[140px]" style={{ right: isEnviado ? '120px' : '0px' }}>
+                          OBSERVACIONES CLÍNICAS
+                        </th>
+                        {isEnviado && (
+                          <th className="px-4 py-4 text-center text-xs font-semibold text-white tracking-wide sticky z-20 min-w-[120px]" style={{ right: '0px' }}>
+                            ACCIONES
+                          </th>
+                        )}
+                      </tr>
+                    </thead>
+
+                    <tbody className="divide-y divide-gray-100 bg-white">
+                      {detallesFiltrados.length === 0 ? (
+                        <tr>
+                          <td colSpan={isEnviado ? "11" : "10"} className="px-4 py-8 text-center text-gray-500">
+                            <div className="flex flex-col items-center gap-2">
+                              <FileText className="w-8 h-8 text-gray-300" />
+                              <p className="text-sm">No se encontraron especialidades con los filtros aplicados</p>
+                              {(busquedaEspecialidad || filtroEstado !== "TODOS") && (
+                                <button
+                                  onClick={() => {
+                                    setBusquedaEspecialidad("");
+                                    setFiltroEstado("TODOS");
+                                  }}
+                                  className="text-xs text-blue-600 hover:underline"
+                                >
+                                  Limpiar filtros
+                                </button>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      ) : (
+                        detallesFiltrados.map((d, idx) => {
+                          const estaPendiente = !d.estado || d.estado === 'PENDIENTE';
+                          const estaSeleccionada = seleccionadas.has(d.idDetalle);
+
+                          return (
+                            <tr key={d.idDetalle ?? idx} className="hover:bg-blue-50 transition-colors duration-150">
+                          <td className="px-3 py-3">

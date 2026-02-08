@@ -1,0 +1,636 @@
+                        );
+                      })
+                    )}
+                    </tbody>
+                  </table>
+                </div>
+                
+                {/* Footer de tabla con contador */}
+                <div className="bg-gray-50 px-3 py-2 border-t border-gray-200 flex items-center justify-between rounded-b-lg">
+                  <p className="text-[10px] text-gray-600">
+                    Mostrando {detallesFiltrados.length} de {detalles.length} especialidades
+                  </p>
+                  {estadisticas.pendientes > 0 && (
+                    <span className="text-[10px] text-amber-600 font-medium">
+                      {estadisticas.pendientes} pendiente{estadisticas.pendientes !== 1 ? 's' : ''} de revisar
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              {/* Acciones */}
+              {/* {isEnviado && (
+                <div className="rounded-xl border border-gray-200 bg-white p-4">
+                  {!showRechazoForm ? (
+                    <div className="flex flex-col md:flex-row gap-3">
+                      <button
+                        onClick={() => onAprobar(solicitud.idSolicitud)}
+                        className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                      >
+                        <CheckCircle2 className="w-5 h-5" />
+                        Asignar Solicitud
+                      </button>
+
+                      <button
+                        onClick={() => setShowRechazoForm(true)}
+                        className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+                      >
+                        <XCircle className="w-5 h-5" />
+                        No Procede
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      <label className="block text-sm font-medium text-gray-700">Motivo del Rechazo *</label>
+                      <textarea
+                        value={motivoRechazo}
+                        onChange={(e) => setMotivoRechazo(e.target.value)}
+                        rows={3}
+                        placeholder="Indique el motivo del rechazo..."
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                      />
+
+                      <div className="flex flex-col md:flex-row gap-3">
+                        <button
+                          onClick={() => {
+                            setShowRechazoForm(false);
+                            setMotivoRechazo("");
+                          }}
+                          className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                        >
+                          Cancelar
+                        </button>
+                        <button
+                          onClick={() => onRechazar(solicitud.idSolicitud, motivoRechazo)}
+                          className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+                        >
+                          Confirmar Rechazo
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )} */}
+            </>
+          )}
+        </div>
+      </div>
+
+      {/* Modal de Observación */}
+      {modalObservacion.show && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[60] p-4">
+          <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full">
+            <div className="p-6 bg-cenate-600 rounded-t-xl border-b-4 border-cenate-700">
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex-1">
+                  <h4 className="text-lg font-bold text-white flex items-center gap-2">
+                    <MessageSquare className="w-5 h-5" />
+                    {modalObservacion.soloLectura ? "Consultar Observación" : "Registrar Observación"}
+                  </h4>
+                  <p className="text-sm text-cenate-100 mt-2">
+                    {modalObservacion.detalle?.nombreServicio ?? modalObservacion.detalle?.nombreEspecialidad}
+                  </p>
+                  <p className="text-xs text-cenate-200">
+                    Código: {modalObservacion.detalle?.codigoServicio ?? modalObservacion.detalle?.codServicio}
+                  </p>
+                </div>
+                <button
+                  onClick={cerrarModalObservacion}
+                  className="text-white bg-white/20 hover:bg-white/30 rounded-lg p-2 transition-all hover:scale-110 flex-shrink-0"
+                  aria-label="Cerrar"
+                >
+                  <XCircle className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+
+            <div className="p-6">
+              <label className="block text-sm font-semibold text-gray-900 mb-3">
+                Observación {modalObservacion.soloLectura && <span className="text-xs text-gray-500 font-normal ml-2">(Solo lectura)</span>}
+              </label>
+              <textarea
+                value={modalObservacion.observacion}
+                onChange={(e) => setModalObservacion(prev => ({ ...prev, observacion: e.target.value }))}
+                placeholder={modalObservacion.soloLectura ? "" : "Escriba aquí sus observaciones..."}
+                rows={6}
+                readOnly={modalObservacion.soloLectura}
+                className={`w-full px-4 py-3 border-2 rounded-lg resize-none ${
+                  modalObservacion.soloLectura
+                    ? 'border-gray-200 bg-gray-50 text-gray-700 cursor-default'
+                    : 'border-gray-300 focus:border-cenate-500 focus:ring-2 focus:ring-cenate-200 transition-colors'
+                }`}
+              />
+              {!modalObservacion.soloLectura && (
+                <p className="text-xs text-gray-500 mt-2 text-right">
+                  {modalObservacion.observacion.length} caracteres
+                </p>
+              )}
+            </div>
+
+            <div className="p-6 border-t-2 border-gray-100 flex gap-3">
+              <button
+                onClick={cerrarModalObservacion}
+                className="flex-1 px-4 py-2.5 border-2 border-gray-300 text-gray-700 font-semibold rounded-lg hover:border-gray-400 transition-colors"
+              >
+                {modalObservacion.soloLectura ? "Cerrar" : "Cancelar"}
+              </button>
+              {!modalObservacion.soloLectura && (
+                <button
+                  onClick={guardarObservacion}
+                  className="flex-1 px-4 py-2.5 bg-cenate-600 text-white font-semibold rounded-lg hover:bg-cenate-700 transition-all hover:shadow-md flex items-center justify-center gap-2"
+                >
+                  <Save className="w-4 h-4" />
+                  Guardar
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Aprobar/Rechazar Especialidad */}
+      {modalAccion.show && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[60] p-4">
+          <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full">
+            <div className={`p-6 rounded-t-xl border-b-4 ${
+              modalAccion.tipo === 'aprobar'
+                ? 'bg-emerald-600 border-emerald-700'
+                : 'bg-red-600 border-red-700'
+            }`}>
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex items-center gap-3 flex-1">
+                  <div className="bg-white bg-opacity-20 p-2 rounded-lg">
+                    {modalAccion.tipo === 'aprobar' ? (
+                      <CheckCircle2 className="w-5 h-5 text-white" />
+                    ) : (
+                      <XCircle className="w-5 h-5 text-white" />
+                    )}
+                  </div>
+                  <div className="min-w-0">
+                    <h4 className="text-lg font-bold text-white">
+                      {modalAccion.tipo === 'aprobar' ? 'Asignar Especialidad' : 'Rechazar Especialidad'}
+                    </h4>
+                    <p className="text-sm text-white/90 mt-1 truncate">
+                      {modalAccion.detalle?.nombreServicio ?? modalAccion.detalle?.nombreEspecialidad}
+                    </p>
+                    <p className="text-xs text-white/80">
+                      Código: {modalAccion.detalle?.codigoServicio ?? modalAccion.detalle?.codServicio}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={cerrarModalAccion}
+                  className="text-white bg-white/20 hover:bg-white/30 rounded-lg p-2 transition-all hover:scale-110 flex-shrink-0"
+                  aria-label="Cerrar"
+                >
+                  <XCircle className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+
+            <div className="p-6">
+              <label className="block text-sm font-semibold text-gray-900 mb-3">
+                {modalAccion.tipo === 'rechazar'
+                  ? 'Motivo del Rechazo'
+                  : 'Observaciones'
+                }
+                {modalAccion.tipo === 'rechazar' && <span className="text-red-600 ml-1">*</span>}
+              </label>
+              <textarea
+                value={modalAccion.observacion}
+                onChange={(e) => setModalAccion(prev => ({ ...prev, observacion: e.target.value }))}
+                placeholder={modalAccion.tipo === 'rechazar'
+                  ? "Indique el motivo del rechazo..."
+                  : "Agregue observaciones (opcional)..."}
+                rows={6}
+                className={`w-full px-4 py-3 border-2 rounded-lg resize-none transition-colors ${
+                  modalAccion.tipo === 'rechazar'
+                    ? 'border-red-300 focus:border-red-500 focus:ring-2 focus:ring-red-200'
+                    : 'border-gray-300 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200'
+                }`}
+              />
+              <div className="mt-3 flex items-center justify-between">
+                {modalAccion.tipo === 'rechazar' && !modalAccion.observacion.trim() && (
+                  <p className="text-xs text-red-600 font-semibold">
+                    * Motivo obligatorio
+                  </p>
+                )}
+                <p className={`text-xs ml-auto ${modalAccion.observacion.length > 500 ? 'text-red-600 font-semibold' : 'text-gray-500'}`}>
+                  {modalAccion.observacion.length} caracteres
+                </p>
+              </div>
+            </div>
+
+            <div className="p-6 border-t-2 border-gray-100 flex gap-3">
+              <button
+                onClick={cerrarModalAccion}
+                className="flex-1 px-4 py-2.5 border-2 border-gray-300 text-gray-700 font-semibold rounded-lg hover:border-gray-400 transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={confirmarAccionDetalle}
+                disabled={modalAccion.tipo === 'rechazar' && !modalAccion.observacion.trim()}
+                className={`flex-1 px-4 py-2.5 text-white font-semibold rounded-lg transition-all hover:shadow-md flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed ${
+                  modalAccion.tipo === 'aprobar'
+                    ? 'bg-emerald-600 hover:bg-emerald-700'
+                    : 'bg-red-600 hover:bg-red-700'
+                }`}
+              >
+                {modalAccion.tipo === 'aprobar' ? (
+                  <>
+                    <CheckCircle2 className="w-4 h-4" />
+                    Asignar
+                  </>
+                ) : (
+                  <>
+                    <XCircle className="w-4 h-4" />
+                    Rechazar
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Aprobar/Rechazar MASIVO */}
+      {modalAccionMasiva.show && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[60] p-4">
+          <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full">
+            <div className={`p-6 rounded-t-xl border-b-4 ${
+              modalAccionMasiva.tipo === 'aprobar'
+                ? 'bg-emerald-600 border-emerald-700'
+                : 'bg-red-600 border-red-700'
+            }`}>
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex items-center gap-3 flex-1">
+                  <div className="bg-white bg-opacity-20 p-2 rounded-lg">
+                    {modalAccionMasiva.tipo === 'aprobar' ? (
+                      <CheckCircle2 className="w-5 h-5 text-white" />
+                    ) : (
+                      <XCircle className="w-5 h-5 text-white" />
+                    )}
+                  </div>
+                  <div className="min-w-0">
+                    <h4 className="text-lg font-bold text-white">
+                      {modalAccionMasiva.tipo === 'aprobar' ? 'Asignar Especialidades' : 'Rechazar Especialidades'}
+                    </h4>
+                    <p className="text-sm text-white/90 mt-1">
+                      Se procesarán <span className="font-bold">{modalAccionMasiva.detalles.length}</span> especialidad(es)
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={cerrarModalAccionMasiva}
+                  className="text-white bg-white/20 hover:bg-white/30 rounded-lg p-2 transition-all hover:scale-110 flex-shrink-0"
+                  aria-label="Cerrar"
+                >
+                  <XCircle className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+
+            <div className="p-6">
+              {/* Lista de especialidades */}
+              <div className="mb-5 max-h-44 overflow-y-auto border-2 border-gray-200 rounded-lg bg-gray-50">
+                <div className="divide-y divide-gray-200">
+                  {modalAccionMasiva.detalles.map((detalle, idx) => (
+                    <div key={detalle.idDetalle} className="px-4 py-3 hover:bg-gray-100 transition-colors">
+                      <div className="flex items-center gap-3">
+                        <span className="text-xs font-bold text-gray-400 min-w-fit">{String(idx + 1).padStart(2, '0')}.</span>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-semibold text-gray-900 truncate">
+                            {detalle.nombreServicio ?? detalle.nombreEspecialidad}
+                          </p>
+                          <p className="text-xs text-gray-600 mt-0.5">
+                            Código: {detalle.codigoServicio ?? detalle.codServicio}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <label className="block text-sm font-semibold text-gray-900 mb-2">
+                {modalAccionMasiva.tipo === 'rechazar'
+                  ? 'Motivo del Rechazo'
+                  : 'Observaciones'
+                }
+                {modalAccionMasiva.tipo === 'rechazar' && <span className="text-red-600 ml-1">*</span>}
+              </label>
+              <p className="text-xs text-gray-600 mb-3">
+                Se aplicará a todas las {modalAccionMasiva.detalles.length} especialidad(es) seleccionada(s)
+              </p>
+              <textarea
+                value={modalAccionMasiva.observacion}
+                onChange={(e) => setModalAccionMasiva(prev => ({ ...prev, observacion: e.target.value }))}
+                placeholder={modalAccionMasiva.tipo === 'rechazar'
+                  ? "Indique el motivo del rechazo..."
+                  : "Agregue observaciones (opcional)..."}
+                rows={5}
+                className={`w-full px-4 py-3 border-2 rounded-lg resize-none transition-colors ${
+                  modalAccionMasiva.tipo === 'rechazar'
+                    ? 'border-red-300 focus:border-red-500 focus:ring-2 focus:ring-red-200'
+                    : 'border-gray-300 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200'
+                }`}
+              />
+              <div className="mt-3 flex items-center justify-between">
+                {modalAccionMasiva.tipo === 'rechazar' && !modalAccionMasiva.observacion.trim() && (
+                  <p className="text-xs text-red-600 font-semibold">
+                    * Motivo obligatorio
+                  </p>
+                )}
+                <p className={`text-xs ml-auto ${modalAccionMasiva.observacion.length > 500 ? 'text-red-600 font-semibold' : 'text-gray-500'}`}>
+                  {modalAccionMasiva.observacion.length} caracteres
+                </p>
+              </div>
+            </div>
+
+            <div className="p-6 border-t-2 border-gray-100 flex gap-3">
+              <button
+                onClick={cerrarModalAccionMasiva}
+                className="flex-1 px-4 py-2.5 border-2 border-gray-300 text-gray-700 font-semibold rounded-lg hover:border-gray-400 transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={confirmarAccionMasiva}
+                disabled={modalAccionMasiva.tipo === 'rechazar' && !modalAccionMasiva.observacion.trim()}
+                className={`flex-1 px-4 py-2.5 text-white font-semibold rounded-lg transition-all hover:shadow-md flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed ${
+                  modalAccionMasiva.tipo === 'aprobar'
+                    ? 'bg-emerald-600 hover:bg-emerald-700'
+                    : 'bg-red-600 hover:bg-red-700'
+                }`}
+              >
+                {modalAccionMasiva.tipo === 'aprobar' ? (
+                  <>
+                    <CheckCircle2 className="w-4 h-4" />
+                    Asignar {modalAccionMasiva.detalles.length}
+                  </>
+                ) : (
+                  <>
+                    <XCircle className="w-4 h-4" />
+                    Rechazar {modalAccionMasiva.detalles.length}
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Fechas Seleccionadas */}
+      {modalFechas.show && modalFechas.detalle && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[60] p-4">
+          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full">
+            <div className="p-6 bg-cenate-600 rounded-t-xl border-b-4 border-cenate-700">
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex-1">
+                  <div className="flex items-center gap-3 mb-2">
+                    <div className="bg-white/20 p-2 rounded-lg">
+                      <Calendar className="w-5 h-5 text-white" />
+                    </div>
+                    <h4 className="text-lg font-bold text-white">
+                      Fechas Programadas
+                    </h4>
+                  </div>
+                  <p className="text-sm text-cenate-100 ml-11 truncate">
+                    {modalFechas.detalle.nombreServicio ?? modalFechas.detalle.nombreEspecialidad}
+                  </p>
+                  <p className="text-xs text-cenate-200 ml-11">
+                    Código: {modalFechas.detalle.codigoServicio ?? modalFechas.detalle.codServicio}
+                  </p>
+                </div>
+                <button
+                  onClick={() => setModalFechas({ show: false, detalle: null })}
+                  className="text-white bg-white/20 hover:bg-white/30 rounded-lg p-2 transition-all hover:scale-110 flex-shrink-0"
+                  aria-label="Cerrar"
+                >
+                  <XCircle className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+
+            <div className="p-6 max-h-96 overflow-y-auto">
+              {modalFechas.detalle.fechasDetalle && modalFechas.detalle.fechasDetalle.length > 0 ? (
+                <div className="space-y-2">
+                  {modalFechas.detalle.fechasDetalle.map((fecha, idx) => (
+                    <div
+                      key={idx}
+                      className={`flex items-center justify-between p-3.5 rounded-lg border-2 transition-colors ${
+                        fecha.bloque === 'MANANA'
+                          ? 'bg-blue-50 border-blue-300 hover:bg-blue-100'
+                          : 'bg-orange-50 border-orange-300 hover:bg-orange-100'
+                      }`}
+                    >
+                      <div className="flex items-center gap-3 flex-1 min-w-0">
+                        <Calendar className={`w-5 h-5 flex-shrink-0 ${
+                          fecha.bloque === 'MANANA' ? 'text-cenate-600' : 'text-amber-600'
+                        }`} />
+                        <div className="min-w-0">
+                          <p className="text-sm font-semibold text-gray-900 line-clamp-2">
+                            {new Date(fecha.fecha + 'T00:00:00').toLocaleDateString('es-PE', {
+                              weekday: 'long',
+                              day: 'numeric',
+                              month: 'short'
+                            })}
+                          </p>
+                          <p className="text-xs text-gray-600">{fecha.fecha}</p>
+                        </div>
+                      </div>
+                      <span
+                        className={`px-2.5 py-1 rounded-full text-xs font-semibold flex-shrink-0 ${
+                          fecha.bloque === 'MANANA'
+                            ? 'bg-cenate-600 text-white'
+                            : 'bg-amber-600 text-white'
+                        }`}
+                      >
+                        {fecha.bloque === 'MANANA' ? 'Mañana' : 'Tarde'}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-12 text-gray-500">
+                  <Calendar className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                  <p className="text-sm font-medium">Sin fechas registradas</p>
+                </div>
+              )}
+            </div>
+
+            <div className="p-6 border-t-2 border-gray-100">
+              <button
+                onClick={() => setModalFechas({ show: false, detalle: null })}
+                className="w-full px-4 py-2.5 bg-gray-700 text-white font-semibold rounded-lg hover:bg-gray-800 transition-all hover:shadow-md"
+              >
+                Cerrar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Calendario del Periodo */}
+      {modalCalendario && solicitud && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[60] p-4">
+          <div className="bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+            <div className="p-6 bg-cenate-600 rounded-t-xl border-b-4 border-cenate-700">
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex items-center gap-3 flex-1">
+                  <div className="bg-white/20 p-2 rounded-lg">
+                    <Calendar className="w-5 h-5 text-white" />
+                  </div>
+                  <div className="min-w-0">
+                    <h4 className="text-lg font-bold text-white">
+                      Calendario del Período
+                    </h4>
+                    <p className="text-sm text-cenate-100 mt-1 truncate">
+                      {solicitud.periodoDescripcion} • {solicitud.nombreIpress}
+                    </p>
+                    <p className="text-xs text-cenate-200">
+                      {solicitud.fechaInicio} al {solicitud.fechaFin}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setModalCalendario(false)}
+                  className="text-white bg-white/20 hover:bg-white/30 rounded-lg p-2 transition-all hover:scale-110 flex-shrink-0"
+                  aria-label="Cerrar"
+                >
+                  <XCircle className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+
+            <div className="p-6 overflow-y-auto flex-1">
+              {(() => {
+                // Obtener todas las fechas registradas de todos los detalles
+                const fechasRegistradas = new Map();
+                detalles.forEach(detalle => {
+                  if (detalle.fechasDetalle) {
+                    detalle.fechasDetalle.forEach(f => {
+                      const key = f.fecha;
+                      if (!fechasRegistradas.has(key)) {
+                        fechasRegistradas.set(key, []);
+                      }
+                      fechasRegistradas.get(key).push({
+                        especialidad: detalle.nombreServicio,
+                        bloque: f.bloque
+                      });
+                    });
+                  }
+                });
+
+                // Generar calendario
+                const inicio = new Date(solicitud.fechaInicio + 'T00:00:00');
+                const fin = new Date(solicitud.fechaFin + 'T00:00:00');
+                const diasCalendario = [];
+                
+                for (let d = new Date(inicio); d <= fin; d.setDate(d.getDate() + 1)) {
+                  const fechaStr = d.toISOString().split('T')[0];
+                  diasCalendario.push({
+                    fecha: fechaStr,
+                    dia: d.getDate(),
+                    nombreDia: d.toLocaleDateString('es-PE', { weekday: 'short' }),
+                    registros: fechasRegistradas.get(fechaStr) || []
+                  });
+                }
+
+                return (
+                  <div className="grid grid-cols-7 gap-2">
+                    {['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'].map(dia => (
+                      <div key={dia} className="text-center font-semibold text-gray-700 text-sm py-2">
+                        {dia}
+                      </div>
+                    ))}
+                    
+                    {/* Espacios vacíos para alinear el primer día */}
+                    {Array(inicio.getDay()).fill(null).map((_, idx) => (
+                      <div key={`empty-${idx}`} className="aspect-square" />
+                    ))}
+                    
+                    {diasCalendario.map((dia) => {
+                      const tieneRegistros = dia.registros.length > 0;
+                      const tieneManana = dia.registros.some(r => r.bloque === 'MANANA');
+                      const tieneTarde = dia.registros.some(r => r.bloque === 'TARDE');
+                      
+                      return (
+                        <div
+                          key={dia.fecha}
+                          className={`aspect-square rounded-lg border-2 p-2 relative ${
+                            tieneRegistros
+                              ? 'border-blue-500 bg-blue-50 cursor-pointer hover:bg-blue-100'
+                              : 'border-gray-200 bg-white'
+                          }`}
+                          title={tieneRegistros ? `${dia.registros.length} turno(s) registrado(s)` : ''}
+                          onClick={() => {
+                            if (tieneRegistros) {
+                              alert(`Día ${dia.dia}\\n\\n` + 
+                                dia.registros.map(r => `• ${r.especialidad} (${r.bloque})`).join('\\n'));
+                            }
+                          }}
+                        >
+                          <div className="text-center">
+                            <div className={`text-xs font-medium ${tieneRegistros ? 'text-blue-900' : 'text-gray-500'}`}>
+                              {dia.nombreDia}
+                            </div>
+                            <div className={`text-lg font-bold ${tieneRegistros ? 'text-blue-700' : 'text-gray-700'}`}>
+                              {dia.dia}
+                            </div>
+                          </div>
+                          
+                          {tieneRegistros && (
+                            <div className="absolute bottom-1 left-1 right-1 flex gap-0.5 justify-center">
+                              {tieneManana && (
+                                <div className="w-2 h-2 rounded-full bg-blue-600" title="Mañana" />
+                              )}
+                              {tieneTarde && (
+                                <div className="w-2 h-2 rounded-full bg-orange-600" title="Tarde" />
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                );
+              })()}
+
+              {/* Leyenda */}
+              <div className="mt-8 pt-6 border-t-2 border-gray-200 flex items-center justify-center gap-8 text-sm">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-3 h-3 rounded-full bg-cenate-600" />
+                  <span className="text-gray-700 font-medium">Turno Mañana</span>
+                </div>
+                <div className="flex items-center gap-2.5">
+                  <div className="w-3 h-3 rounded-full bg-amber-600" />
+                  <span className="text-gray-700 font-medium">Turno Tarde</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="p-6 border-t-2 border-gray-100">
+              <button
+                onClick={() => setModalCalendario(false)}
+                className="w-full px-4 py-2.5 bg-gray-700 text-white font-semibold rounded-lg hover:bg-gray-800 transition-all hover:shadow-md"
+              >
+                Cerrar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function Row({ label, value, icon = null }) {
+  return (
+    <div className="flex items-center justify-between py-1">
+      <span className="text-xs text-gray-500 uppercase font-medium">{label}</span>
+      <span className="text-sm text-gray-900 text-right">{value ?? "—"}</span>
+    </div>
+  );
+}

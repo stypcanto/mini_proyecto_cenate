@@ -369,8 +369,8 @@ export default function GestionPeriodosTurnos() {
           <div className="flex items-center gap-3">
             <FileText className="w-8 h-8 text-white" />
             <div>
-              <h1 className="text-2xl font-bold text-white mb-1">Gestión de Períodos y Solicitudes</h1>
-              <p className="text-sm text-blue-100">Administre los períodos y revise solicitudes de turnos de las IPRESS</p>
+              <h1 className="text-2xl font-bold text-white mb-1">Control de Requerimiento de Especialidades</h1>
+              <p className="text-sm text-blue-100">Gestione las programaciones y revise solicitudes de especialidades de las IPRESS</p>
             </div>
           </div>
         </div>
@@ -378,9 +378,9 @@ export default function GestionPeriodosTurnos() {
         {activeTab === "periodos" && (
           <div className="grid grid-cols-4 gap-3 mb-4">
             <CardStat
-              title="Períodos"
+              title="Total"
               value={stats.total}
-              subtitle="Total registrados"
+              subtitle="Programaciones vigentes"
               icon={<Calendar className="w-4 h-4" />}
               tone="blue"
               onClick={() => handleCardFilter("TODOS")}
@@ -437,7 +437,7 @@ export default function GestionPeriodosTurnos() {
               >
                 <div className="flex items-center gap-2">
                   <Calendar className="w-4 h-4" />
-                  <span>Períodos</span>
+                  <span>Programación de Solicitudes</span>
                 </div>
               </button>
 
