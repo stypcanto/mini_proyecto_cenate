@@ -1,9 +1,9 @@
 # CLAUDE.md - Proyecto CENATE
 
 > **Sistema de Telemedicina - EsSalud Perú**
-> **Versión:** v1.57.1 (2026-02-07) 🚀
-> **Última Feature:** v1.57.1 - Exportación de Tabla Especialidades: Botón en modal + 12 columnas ✅ (2026-02-07)
-> **Última Feature Base:** v1.57.0 - Exportación a Excel: Gestión de Períodos y Solicitudes ✅ (2026-02-07)
+> **Versión:** v1.58.0 (2026-02-08) 🚀
+> **Última Feature:** v1.58.0 - Módulo de Requerimiento de Especialidades ✅ (2026-02-08)
+> **Última Feature Base:** v1.57.1 - Exportación de Tabla Especialidades ✅ (2026-02-07)
 > **Status:** ✅ Production Ready
 
 ---
@@ -137,6 +137,49 @@ Frontend (React 19):
 
 ---
 
+## 📋 MÓDULO DE REQUERIMIENTO DE ESPECIALIDADES (v1.58.0)
+
+**⭐ Documento Maestro:** [`spec/backend/12_modulo_requerimientos_especialidades.md`](spec/backend/12_modulo_requerimientos_especialidades.md)
+
+### 🎯 Descripción
+Nuevo módulo completo para gestionar solicitudes de especialidades médicas de las IPRESS.
+
+### 📍 Ubicaciones
+- **Coordinador:** `/roles/coordinador/gestion-periodos`
+  - Crear, editar, enviar, aprobar y rechazar solicitudes
+  - Ver detalles completos con modal profesional
+  - Filtros dinámicos en cascada
+  - Exportación a Excel
+
+- **Gestión Territorial:** `/roles/gestionterritorial/respuestas-solicitudes`
+  - Vista read-only de solicitudes
+  - Ver detalles sin permisos de edición
+  - Acceso controlado por MBAC
+
+### ✨ Nuevas Funcionalidades (v1.58.0)
+- ✅ Modal "Ver Detalle" con información completa de solicitud
+- ✅ Vista read-only para Gestión Territorial
+- ✅ Filtros dinámicos con cascada (Macrorregión → Red → IPRESS)
+- ✅ Columnas Macrorregión y Red pobladas desde BD
+- ✅ Exportación a Excel mejorada (12 columnas)
+- ✅ Registro en MBAC para control de acceso
+- ✅ Botón cerrar (X) con diseño profesional
+- ✅ Tooltips informativos
+- ✅ Limpieza de datos de prueba
+
+### 📊 Datos
+- **Tablas principales:** `solicitud_turno_ipress`, `detalle_solicitud_turno`
+- **Períodos:** `periodo_solicitud_turno`
+- **Ubicación:** `dim_personal_cnt`, `dim_ipress`, `dim_red`
+- **Estados:** BORRADOR, ENVIADO, INICIADO
+
+### 🔐 Acceso (MBAC)
+- **Coordinador:** Acceso completo (crear, editar, aprobar, rechazar)
+- **Gestión Territorial:** Lectura (ver solicitudes y detalles)
+- **Administrador:** Control de períodos y configuración
+
+---
+
 ## 📚 DOCUMENTACIÓN - START HERE
 
 **👉 Índice Maestro:** [`spec/INDEX.md`](spec/INDEX.md)
@@ -151,6 +194,7 @@ Frontend (React 19):
 | **💾 Admin BD** | [`spec/database/README.md`](spec/database/README.md) |
 | **🚀 DevOps/Performance** | [`spec/backend/10_performance_monitoring/README.md`](spec/backend/10_performance_monitoring/README.md) |
 | **📧 Email/SMTP** | [`spec/backend/11_email_smtp/README.md`](spec/backend/11_email_smtp/README.md) |
+| **📋 Requerimientos Especialidades** | [`spec/backend/12_modulo_requerimientos_especialidades.md`](spec/backend/12_modulo_requerimientos_especialidades.md) |
 | **📦 Gestión Bolsas** | [`spec/backend/tipos_bolsas.md`](spec/backend/tipos_bolsas.md) |
 | **🔍 QA/Support** | [`spec/troubleshooting/README.md`](spec/troubleshooting/README.md) |
 | **🔐 Security** | [`plan/01_Seguridad_Auditoria/`](plan/01_Seguridad_Auditoria/) |
@@ -179,11 +223,11 @@ Frontend (React 19):
 **👉 Ver historial completo:** [`CHANGELOG-VERSIONES.md`](CHANGELOG-VERSIONES.md)
 
 Versiones recientes:
+- **v1.58.0** - Módulo de Requerimiento de Especialidades ✅ (2026-02-08)
+- **v1.57.1** - Exportación de Tabla Especialidades (2026-02-07)
 - **v1.56.1** - Filtros Clínicos DNI + Fecha (2026-02-07)
 - **v1.56.3** - Género y Edad en Tabla (2026-02-06)
 - **v1.54.4** - KPI Cards + Filtros Estado (2026-02-07)
-- **v1.52.x** - Visor EKG, Control Acceso, Base64
-- **v1.51.0** - Flujo End-to-End TeleEKG (2026-02-06)
 
 Para ver detalles de cada versión, abre: [`CHANGELOG-VERSIONES.md`](CHANGELOG-VERSIONES.md)
 
@@ -220,7 +264,8 @@ Ver: [`plan/06_Integracion_Spring_AI/`](plan/06_Integracion_Spring_AI/)
 
 **Desarrollado por:** Ing. Styp Canto Rondón
 **Email:** stypcanto@essalud.gob.pe
-**Versión:** v1.42.0 (2026-02-01)
+**Versión:** v1.58.0 (2026-02-08)
+**Última Actualización:** 2026-02-08 - Módulo de Requerimiento de Especialidades
 
 ---
 
