@@ -47,20 +47,28 @@ Se ha agregado la funcionalidad de exportación a Excel en el módulo de **Gesti
 
 ### 4. **Exportación Tabla de Especialidades (Nuevo v1.57.1)**
 - **Ubicación:** Botón "Exportar" en la tabla de "Especialidades solicitadas" dentro del modal
-- **Columnas del Excel (6 columnas clave):**
+- **Columnas del Excel (9 columnas):**
   1. **Nº** - Número de fila (1-13)
-  2. **Especialidad** - Nombre de especialidad + Código
-  3. **Mañana** - Cantidad de turnos mañana
-  4. **Tarde** - Cantidad de turnos tarde
-  5. **TELECONSULTA** - Sí/No (disponible teleconsulta)
-  6. **TELECONSULTORIO** - Sí/No (disponible teleconsultorio)
+  2. **Especialidad** - Nombre de la especialidad (ej: CARDIOLOGÍA)
+  3. **Código** - Código de servicio (ej: A21)
+  4. **Mañana** - Cantidad de turnos solicitados para mañana (ej: 4)
+  5. **Tarde** - Cantidad de turnos solicitados para tarde (ej: 0)
+  6. **Teleconsulta** - Sí/No (si se puede hacer por teleconsulta)
+  7. **Teleconsultorio** - Sí/No (si se puede hacer por teleconsultorio)
+  8. **Fechas (Opcional)** - Cantidad de fechas específicas disponibles
+  9. **Observación (Opcional)** - Notas o comentarios especiales
+
+**Ejemplo de fila:**
+| Nº | Especialidad | Código | Mañana | Tarde | Teleconsulta | Teleconsultorio | Fechas | Observación |
+|---|---|---|---|---|---|---|---|---|
+| 1 | CARDIOLOGÍA | A21 | 4 | 0 | No | Sí | - | - |
 
 - **Archivo generado:** `Especialidades_Solicitadas_{NombreIPRESS}_YYYY-MM-DD_HHmmss.xlsx`
 - **Perfecto para:**
-  - Conocer cuántos turnos se necesitan por cada especialidad
-  - Identificar distribución Mañana vs Tarde
-  - Ver qué especialidades tienen opciones telemáticas
-  - Reporte rápido para "H.I CARLOS ALCANTARA BUTTERFIELD" o cualquier IPRESS
+  - Análisis de necesidad de turnos por especialidad
+  - Identificar distribución Mañana vs Tarde por servicio
+  - Reporte ejecutivo para coordinadores
+  - Exportar reporte completo de solicitud (ej: "H.I CARLOS ALCANTARA BUTTERFIELD")
 
 ## 🚀 Cómo Usar
 
