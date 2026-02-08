@@ -24,7 +24,7 @@ import {
 } from "lucide-react";
 import { chipDay, fmtDateTime, yesNoPill } from "../utils/ui";
 import { solicitudTurnosService } from "../../../../../services/solicitudTurnosService";
-import { exportarSolicitudesAExcel, exportarSolicitudCompleta } from "../utils/exportarExcel";
+import { exportarSolicitudesAExcel, exportarSolicitudCompleta, exportarEspecialidadesAExcel } from "../utils/exportarExcel";
 
 export default function ModalDetalleSolicitud({
   loading,
@@ -589,7 +589,16 @@ export default function ModalDetalleSolicitud({
                       </span>
                     )}
                   </div>
-                  <div className="flex items-center gap-1">
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => exportarEspecialidadesAExcel(detalles, solicitud?.nombreIpress || 'IPRESS', 'Especialidades_Solicitadas')}
+                      disabled={detalles.length === 0}
+                      className="inline-flex items-center gap-1 px-2 py-1 text-xs bg-green-600 text-white font-medium rounded hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      title="Exportar todas las especialidades a Excel"
+                    >
+                      <Download className="w-3 h-3" />
+                      Exportar
+                    </button>
                     <span className="text-xs text-gray-500">{detallesFiltrados.length} filas</span>
                   </div>
                 </div>

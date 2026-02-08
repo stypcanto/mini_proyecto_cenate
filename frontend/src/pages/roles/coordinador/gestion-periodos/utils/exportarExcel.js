@@ -180,3 +180,54 @@ export const exportarSolicitudCompleta = (solicitud, nombreArchivo = 'Reporte_So
   const timestamp = format(new Date(), 'yyyy-MM-dd_HHmmss');
   XLSX.writeFile(wb, `${nombreArchivo}_${timestamp}.xlsx`);
 };
+
+/**
+ * Exporta la tabla de especialidades solicitadas a Excel
+ * @param {Array} especialidades - Array de especialidades (detalles)
+ * @param {String} nombreIPRESS - Nombre de la IPRESS
+ * @param {String} nombreArchivo - Nombre base del archivo
+ */
+export const exportarEspecialidadesAExcel = (especialidades, nombreIPRESS = 'IPRESS', nombreArchivo = 'Especialidades') => {
+  if (!especialidades || especialidades.length === 0) {
+    alert('No hay especialidades para exportar');
+    return;
+  }
+
+  const datosEspecialidades = especialidades.map((especialidad, idx) => ({
+    'Nº': idx + 1,
+    'Especialidad': especialidad.nombreServicio || especialidad.nombreEspecialidad || '-',
+    'Código': especialidad.codigoServicio || especialidad.codServicio || '-',
+    'Estado': especialidad.estado || 'PENDIENTE',
+    'Mañana': especialidad.turnoManana || 0,
+    'Tarde': especialidad.turnoTarde || 0,
+    'Teleconsulta': especialidad.tc ? 'Sí' : 'No',
+    'Teleconsultorio': especialidad.tl ? 'Sí' : 'No',
+    'Cantidad Fechas': especialidad.fechasDetalle ? especialidad.fechasDetalle.length : 0,
+    'Fecha Inicio': especialidad.fechaInicio ? format(new Date(especialidad.fechaInicio), 'dd/MM/yyyy', { locale: es }) : '-',
+    'Fecha Fin': especialidad.fechaFin ? format(new Date(especialidad.fechaFin), 'dd/MM/yyyy', { locale: es }) : '-',
+    'Observación': especialidad.observacion || '-',
+  }));
+
+  const ws = XLSX.utils.json_to_sheet(datosEspecialidades);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Especialidades');
+
+  // Configurar columnas
+  ws['!cols'] = [
+    { wch: 5 },   // Nº
+    { wch: 30 },  // Especialidad
+    { wch: 12 },  // Código
+    { wch: 12 },  // Estado
+    { wch: 10 },  // Mañana
+    { wch: 10 },  // Tarde
+    { wch: 15 },  // Teleconsulta
+    { wch: 15 },  // Teleconsultorio
+    { wch: 15 },  // Cantidad Fechas
+    { wch: 15 },  // Fecha Inicio
+    { wch: 15 },  // Fecha Fin
+    { wch: 30 },  // Observación
+  ];
+
+  const timestamp = format(new Date(), 'yyyy-MM-dd_HHmmss');
+  XLSX.writeFile(wb, `${nombreArchivo}_${nombreIPRESS}_${timestamp}.xlsx`);
+};

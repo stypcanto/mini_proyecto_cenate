@@ -1,8 +1,8 @@
 # CLAUDE.md - Proyecto CENATE
 
 > **Sistema de Telemedicina - EsSalud Perú**
-> **Versión:** v1.54.4 (2026-02-07) 🚀
-> **Última Feature:** v1.56.1 - Filtros Clínicos en Últimas Cargas: DNI + Fecha + AND Logic ✅ (2026-02-06)
+> **Versión:** v1.57.0 (2026-02-07) 🚀
+> **Última Feature:** v1.57.0 - Exportación a Excel: Gestión de Períodos y Solicitudes ✅ (2026-02-07)
 > **Última Fix:** v1.54.4 - KPI Cards + Filtros por Estado: Estadísticas correctas + Filtros funcionan ✅ (2026-02-07) ⭐
 > **Status:** ✅ Production Ready
 

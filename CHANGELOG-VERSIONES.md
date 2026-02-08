@@ -6,6 +6,31 @@
 
 ## 📊 VERSIONES PRINCIPALES
 
+### ✅ v1.57.0 - Exportación a Excel en Gestión de Períodos (2026-02-07) 🎉 NUEVA FEATURE
+✅ **Exportar Solicitudes** - Botón para descargar Excel con lista completa de solicitudes
+✅ **Exportar Individual** - Botón por fila para exportar una solicitud específica
+✅ **Exportar Completa** - Modal con múltiples hojas (General + Especialidades)
+✅ **Formato Profesional** - Encabezados azules, ancho de columnas ajustado, timestamps
+
+**Funcionalidades:**
+- Exportar todas las solicitudes filtradas (estado, período, IPRESS, macroregión, red)
+- Exportar solicitud individual con un clic
+- Exportar detalle completo desde modal (información general + especialidades solicitadas)
+- Soporte para buscar y exportar reportes de IPRESS específicas (ej: "H.I CARLOS ALCANTARA BUTTERFIELD")
+- Nombres de archivo con timestamp automático para evitar sobrescrituras
+
+**Archivos creados:**
+- `frontend/src/pages/roles/coordinador/gestion-periodos/utils/exportarExcel.js` - Utilidades de exportación
+- `spec/frontend/03_exportacion_excel.md` - Documentación completa
+
+**Archivos modificados:**
+- `TabSolicitudes.jsx` - Botones de exportación general e individual
+- `ModalDetalleSolicitud.jsx` - Botón de exportación completa en header
+
+**Docs:** [`spec/frontend/03_exportacion_excel.md`](spec/frontend/03_exportacion_excel.md)
+
+---
+
 ### ✅ v1.56.1 - Filtros Clínicos en Últimas Cargas (2026-02-07) 🎉 NUEVA FEATURE
 ✅ **DNI Search Filter** - Búsqueda en tiempo real por DNI del paciente (8 dígitos)
 ✅ **Date Filter** - Date picker HTML5 para filtrar por fecha de carga
