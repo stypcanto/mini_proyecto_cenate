@@ -12,10 +12,12 @@ import {
   ChevronUp,
   MapPin,
   Download,
+  X,
+  ChevronRight,
 } from "lucide-react";
 import { fmtDateTime } from "../utils/ui";
 import { filtrosUbicacionService } from "../../../../../services/filtrosUbicacionService";
-import { exportarSolicitudesAExcel } from "../utils/exportarExcel";
+import { exportarSolicitudCompleta } from "../utils/exportarExcel";
 
 export default function TabSolicitudes({
   solicitudes,
@@ -144,28 +146,94 @@ export default function TabSolicitudes({
       <ChevronDown className="w-4 h-4 inline ml-1" />;
   };
 
+  // Obtener filtros activos para mostrar como chips
+  const filtrosActivos = [
+    filtros.estado && filtros.estado !== 'TODAS' && { key: 'estado', label: filtros.estado },
+    filtros.periodo && { key: 'periodo', label: periodos?.find(p => p.idPeriodo == filtros.periodo)?.descripcion || `Período ${filtros.periodo}` },
+    filtros.macroId && { key: 'macro', label: macroregiones?.find(m => m.id == filtros.macroId)?.descripcion },
+    filtros.redId && { key: 'red', label: redes?.find(r => r.id == filtros.redId)?.descripcion },
+    filtros.ipressId && { key: 'ipress', label: ipressList?.find(i => i.id == filtros.ipressId)?.descripcion },
+  ].filter(Boolean);
+
   return (
-    <div className="space-y-3">
-      {/* Header con título */}
-      <div className="bg-gradient-to-r from-[#0A5BA9] to-[#2563EB] rounded-lg shadow-sm p-4">
-        <div>
-          <h2 className="text-xl font-bold text-white">Historial de Solicitudes</h2>
-          <p className="text-xs text-blue-100 mt-0.5">Revise y gestione las solicitudes de turnos enviadas</p>
-        </div>
+    <div className="space-y-2">
+      {/* Header Compacto - Fusionado */}
+      <div className="bg-gradient-to-r from-[#1e40af] to-[#2563eb] rounded-lg shadow-sm p-3">
+        <h2 className="text-lg font-bold text-white">Mis Solicitudes de Turnos</h2>
       </div>
 
-      {/* Filtros compactos */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+      {/* Buscador Destacado */}
+      <div className="bg-white rounded-lg shadow-sm border-2 border-blue-400 p-3">
+        <div className="flex gap-2 items-center mb-2">
+          <Search className="w-4 h-4 text-blue-600" />
+          <input
+            type="text"
+            placeholder="🔍 Buscar IPRESS específica..."
+            value={filtros.busqueda || ''}
+            onChange={(e) => setFiltros({ ...filtros, busqueda: e.target.value })}
+            className="flex-1 px-3 py-2 text-sm border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-blue-50"
+          />
+        </div>
+
+        {/* Filtros Activos como Chips */}
+        {filtrosActivos.length > 0 && (
+          <div className="flex flex-wrap gap-2 pt-2 border-t border-gray-200">
+            {filtrosActivos.map((filtro) => (
+              <span
+                key={filtro.key}
+                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700 border border-blue-300"
+              >
+                {filtro.label}
+                <button
+                  onClick={() => {
+                    if (filtro.key === 'estado') {
+                      setFiltros({ ...filtros, estado: 'TODAS' });
+                    } else if (filtro.key === 'periodo') {
+                      setFiltros({ ...filtros, periodo: '' });
+                    } else if (filtro.key === 'macro') {
+                      setFiltros({ ...filtros, macroId: '', redId: '', ipressId: '' });
+                    } else if (filtro.key === 'red') {
+                      setFiltros({ ...filtros, redId: '', ipressId: '' });
+                    } else if (filtro.key === 'ipress') {
+                      setFiltros({ ...filtros, ipressId: '' });
+                    }
+                  }}
+                  className="hover:text-blue-900 transition-colors"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              </span>
+            ))}
+            <button
+              onClick={() => {
+                setFiltros({
+                  estado: 'TODAS',
+                  periodo: '',
+                  macroId: '',
+                  redId: '',
+                  ipressId: '',
+                  busqueda: ''
+                });
+              }}
+              className="text-xs text-blue-600 hover:text-blue-700 font-medium ml-auto"
+            >
+              Limpiar todos
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* Filtros Compactos */}
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-3">
+        <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-5 gap-2">
           <div>
-            <label className="block text-xs font-semibold text-gray-700 mb-1.5">
-              <Filter className="w-3 h-3 inline mr-1" />
+            <label className="block text-xs font-semibold text-gray-600 mb-1">
               Estado
             </label>
             <select
               value={filtros.estado}
               onChange={(e) => setFiltros({ ...filtros, estado: e.target.value })}
-              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
             >
               <option value="TODAS">Todas</option>
               <option value="INICIADO">INICIADO</option>
@@ -174,16 +242,16 @@ export default function TabSolicitudes({
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-gray-700 mb-1.5">
+            <label className="block text-xs font-semibold text-gray-600 mb-1">
               <Calendar className="w-3 h-3 inline mr-1" />
               Período
             </label>
             <select
               value={filtros.periodo}
               onChange={(e) => setFiltros({ ...filtros, periodo: e.target.value })}
-              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
             >
-              <option value="">Todos los períodos</option>
+              <option value="">Todos</option>
               {(periodos || []).map((p) => (
                 <option key={p.idPeriodo} value={p.idPeriodo}>
                   {p.descripcion ?? p.nombrePeriodo ?? `Periodo ${p.periodo ?? p.idPeriodo}`}
@@ -193,7 +261,7 @@ export default function TabSolicitudes({
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-gray-700 mb-1.5">
+            <label className="block text-xs font-semibold text-gray-600 mb-1">
               <MapPin className="w-3 h-3 inline mr-1" />
               Macroregión
             </label>
@@ -201,7 +269,7 @@ export default function TabSolicitudes({
               value={filtros.macroId || ""}
               onChange={(e) => setFiltros({ ...filtros, macroId: e.target.value, redId: "", ipressId: "" })}
               disabled={loadingFiltros}
-              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100"
+              className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100"
             >
               <option value="">Todas</option>
               {macroregiones.map((macro) => (
@@ -213,7 +281,7 @@ export default function TabSolicitudes({
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-gray-700 mb-1.5">
+            <label className="block text-xs font-semibold text-gray-600 mb-1">
               <Building2 className="w-3 h-3 inline mr-1" />
               Red
             </label>
@@ -221,7 +289,7 @@ export default function TabSolicitudes({
               value={filtros.redId || ""}
               onChange={(e) => setFiltros({ ...filtros, redId: e.target.value, ipressId: "" })}
               disabled={!filtros.macroId || loadingFiltros}
-              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100"
+              className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100"
             >
               <option value="">Todas</option>
               {redes.map((red) => (
@@ -233,7 +301,7 @@ export default function TabSolicitudes({
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-gray-700 mb-1.5">
+            <label className="block text-xs font-semibold text-gray-600 mb-1">
               <Building2 className="w-3 h-3 inline mr-1" />
               IPRESS
             </label>
@@ -241,7 +309,7 @@ export default function TabSolicitudes({
               value={filtros.ipressId || ""}
               onChange={(e) => setFiltros({ ...filtros, ipressId: e.target.value })}
               disabled={!filtros.redId || loadingFiltros}
-              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100"
+              className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100"
             >
               <option value="">Todas</option>
               {ipressList.map((ipress) => (
@@ -251,51 +319,8 @@ export default function TabSolicitudes({
               ))}
             </select>
           </div>
-
-          <div>
-            <label className="block text-xs font-semibold text-gray-700 mb-1.5">
-              <Search className="w-3 h-3 inline mr-1" />
-              Buscar
-            </label>
-            <input
-              type="text"
-              value={filtros.busqueda}
-              onChange={(e) => setFiltros({ ...filtros, busqueda: e.target.value })}
-              placeholder="Nombre..."
-              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            />
-          </div>
         </div>
 
-        {/* Botones: Consultar y Exportar */}
-        <div className="mt-3 flex justify-end gap-2">
-          <button
-            onClick={() => exportarSolicitudesAExcel(safeSolicitudes, 'Reporte_Solicitudes', periodoMap)}
-            disabled={loading || safeSolicitudes.length === 0}
-            className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            title="Exportar solicitudes a Excel"
-          >
-            <Download className="w-4 h-4" />
-            Exportar a Excel
-          </button>
-          <button
-            onClick={onConsultar}
-            disabled={loading}
-            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {loading ? (
-              <>
-                <Loader2 className="w-4 h-4 animate-spin" />
-                Consultando...
-              </>
-            ) : (
-              <>
-                <Search className="w-4 h-4" />
-                Consultar
-              </>
-            )}
-          </button>
-        </div>
       </div>
 
       {/* Tabla compacta */}
@@ -313,18 +338,18 @@ export default function TabSolicitudes({
           <p className="text-sm text-gray-500">Ajuste los filtros o espere a que las IPRESS envíen solicitudes</p>
         </div>
       ) : (
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-          <div className="overflow-x-auto">
+        <>
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+            <div className="px-4 py-2 bg-gray-50 border-b border-gray-200">
+              <p className="text-xs text-gray-600">
+                💡 Para descargar los datos de especialidades de una IPRESS, haz clic en el icono para abrir el detalle, donde podrás descargar la información completa.
+              </p>
+            </div>
+            <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className="bg-gradient-to-r from-[#0A5BA9] to-[#2563EB]">
+              <thead className="bg-gradient-to-r from-[#1e40af] to-[#2563eb]">
                 <tr>
-                  <th 
-                    className="px-3 py-2.5 text-left text-xs font-bold text-white cursor-pointer hover:bg-blue-700/50"
-                    onClick={() => handleSort('idSolicitud')}
-                  >
-                    # <SortIcon columnKey="idSolicitud" />
-                  </th>
-                  <th 
+                  <th
                     className="px-3 py-2.5 text-left text-xs font-bold text-white cursor-pointer hover:bg-blue-700/50"
                     onClick={() => handleSort('nombreIpress')}
                   >
@@ -343,7 +368,7 @@ export default function TabSolicitudes({
                     Fecha Envío
                   </th>
                   <th className="px-3 py-2.5 text-center text-xs font-bold text-white">
-                    Acciones
+                    Ver Detalle
                   </th>
                 </tr>
               </thead>
@@ -352,11 +377,12 @@ export default function TabSolicitudes({
                   const periodoLabel = periodoMap.get(Number(s.idPeriodo)) ?? `Periodo ${s.idPeriodo}`;
 
                   return (
-                    <tr key={s.idSolicitud} className="hover:bg-gray-50 transition-colors">
-                      <td className="px-3 py-2 text-sm text-gray-900 font-medium">
-                        {s.idSolicitud}
-                      </td>
-                      <td className="px-3 py-2">
+                    <tr
+                      key={s.idSolicitud}
+                      className="hover:bg-blue-50 transition-colors cursor-pointer border-b border-gray-200"
+                      onClick={() => onVerDetalle(s)}
+                    >
+                      <td className="px-3 py-2.5">
                         <div>
                           <div className="text-sm font-medium text-gray-900">{s.nombreIpress}</div>
                           {s.codIpress && (
@@ -364,50 +390,44 @@ export default function TabSolicitudes({
                           )}
                         </div>
                       </td>
-                      <td className="px-3 py-2 text-sm text-gray-700">
+                      <td className="px-3 py-2.5 text-sm text-gray-700">
                         {periodoLabel}
                       </td>
-                      <td className="px-3 py-2 text-center">
+                      <td className="px-3 py-2.5 text-center">
                         <span className={`inline-block px-2 py-1 rounded-md text-xs font-semibold border ${getEstadoBadge(s.estado)}`}>
                           {s.estado}
                         </span>
                       </td>
-                      <td className="px-3 py-2 text-xs text-gray-600">
+                      <td className="px-3 py-2.5 text-xs text-gray-600">
                         {fmtDateTime(s.fechaEnvio)}
                       </td>
-                      <td className="px-3 py-2 text-center">
-                        <div className="flex items-center gap-1 justify-center">
-                          <button
-                            onClick={() => onVerDetalle(s)}
-                            className="inline-flex items-center gap-1 px-3 py-1.5 bg-blue-600 text-white text-xs font-medium rounded-lg hover:bg-blue-700 transition-colors"
-                            title="Ver detalle"
-                          >
-                            <Eye className="w-3.5 h-3.5" />
-                            Ver
-                          </button>
-                          <button
-                            onClick={() => exportarSolicitudesAExcel([s], `${s.nombreIpress}_Solicitud`, periodoMap)}
-                            className="inline-flex items-center gap-1 px-2 py-1.5 bg-green-600 text-white text-xs font-medium rounded-lg hover:bg-green-700 transition-colors"
-                            title="Exportar esta solicitud a Excel"
-                          >
-                            <Download className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
+                      <td className="px-3 py-2.5 text-center">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onVerDetalle(s);
+                          }}
+                          className="inline-flex items-center justify-center p-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors"
+                          title="Ver detalle de solicitud"
+                        >
+                          <ChevronRight className="w-4 h-4" />
+                        </button>
                       </td>
                     </tr>
                   );
                 })}
               </tbody>
             </table>
+            </div>
+
+            {/* Footer con contador */}
+            <div className="bg-gray-50 px-4 py-2 border-t border-gray-200">
+              <p className="text-xs text-gray-600">
+                Mostrando <span className="font-semibold">{sortedSolicitudes.length}</span> solicitud{sortedSolicitudes.length !== 1 ? 'es' : ''}
+              </p>
+            </div>
           </div>
-          
-          {/* Footer con contador */}
-          <div className="bg-gray-50 px-4 py-2 border-t border-gray-200">
-            <p className="text-xs text-gray-600">
-              Mostrando <span className="font-semibold">{sortedSolicitudes.length}</span> solicitud{sortedSolicitudes.length !== 1 ? 'es' : ''}
-            </p>
-          </div>
-        </div>
+        </>
       )}
     </div>
   );

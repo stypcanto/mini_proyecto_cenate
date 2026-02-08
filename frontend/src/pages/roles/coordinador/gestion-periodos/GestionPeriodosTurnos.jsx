@@ -347,6 +347,14 @@ export default function GestionPeriodosTurnos() {
     return { total, activos, cerrados, borradores };
   }, [periodos]);
 
+  const handleCardFilter = (filterEstado) => {
+    if (filtrosPeriodos.estado === filterEstado) {
+      setFiltrosPeriodos({ ...filtrosPeriodos, estado: "TODOS" });
+    } else {
+      setFiltrosPeriodos({ ...filtrosPeriodos, estado: filterEstado });
+    }
+  };
+
   const statsSolicitudes = useMemo(() => {
     const total = (solicitudes || []).length;
     const enviadas = (solicitudes || []).filter((s) => s.estado === "ENVIADO").length;
@@ -368,11 +376,43 @@ export default function GestionPeriodosTurnos() {
         </div>
 
         {activeTab === "periodos" && (
-          <div className="grid grid-cols-4 gap-2 mb-4">
-            <CardStat title="Períodos" value={stats.total} subtitle="Total registrados" icon={<Calendar className="w-4 h-4" />} tone="blue" />
-            <CardStat title="Activos" value={stats.activos} subtitle="En captura" icon={<Calendar className="w-4 h-4" />} tone="green" />
-            <CardStat title="Cerrados" value={stats.cerrados} subtitle="Históricos" icon={<Calendar className="w-4 h-4" />} tone="orange" />
-            <CardStat title="Borradores" value={stats.borradores} subtitle="Sin publicar" icon={<Calendar className="w-4 h-4" />} tone="purple" />
+          <div className="grid grid-cols-4 gap-3 mb-4">
+            <CardStat
+              title="Períodos"
+              value={stats.total}
+              subtitle="Total registrados"
+              icon={<Calendar className="w-4 h-4" />}
+              tone="blue"
+              onClick={() => handleCardFilter("TODOS")}
+              isActive={filtrosPeriodos.estado === "TODOS"}
+            />
+            <CardStat
+              title="Activos"
+              value={stats.activos}
+              subtitle="En captura"
+              icon={<Calendar className="w-4 h-4" />}
+              tone="green"
+              onClick={() => handleCardFilter("ACTIVO")}
+              isActive={filtrosPeriodos.estado === "ACTIVO"}
+            />
+            <CardStat
+              title="Cerrados"
+              value={stats.cerrados}
+              subtitle="Históricos"
+              icon={<Calendar className="w-4 h-4" />}
+              tone="orange"
+              onClick={() => handleCardFilter("CERRADO")}
+              isActive={filtrosPeriodos.estado === "CERRADO"}
+            />
+            <CardStat
+              title="Borradores"
+              value={stats.borradores}
+              subtitle="Sin publicar"
+              icon={<Calendar className="w-4 h-4" />}
+              tone="purple"
+              onClick={() => handleCardFilter("BORRADOR")}
+              isActive={filtrosPeriodos.estado === "BORRADOR"}
+            />
           </div>
         )}
 

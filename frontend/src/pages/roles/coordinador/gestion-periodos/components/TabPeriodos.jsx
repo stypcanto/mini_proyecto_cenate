@@ -15,6 +15,8 @@ import {
   ChevronUp,
   Pencil,
   Trash2,
+  MoreVertical,
+  X,
 } from "lucide-react";
 
 import { fmtDate, safeNum } from "../utils/ui";
@@ -47,11 +49,26 @@ export default function TabPeriodos({
   aniosDisponibles = [new Date().getFullYear()],
 }) {
   const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
+  const [expandedFilters, setExpandedFilters] = useState(true);
+  const [activeKPIFilter, setActiveKPIFilter] = useState(null);
+  const [openMenuId, setOpenMenuId] = useState(null);
+
+  const kpiFilteredPeriodos = useMemo(() => {
+    let filtered = periodos || [];
+
+    if (activeKPIFilter === 'activo') {
+      filtered = filtered.filter(p => p.estado === 'ACTIVO');
+    } else if (activeKPIFilter === 'cerrado') {
+      filtered = filtered.filter(p => p.estado === 'CERRADO');
+    }
+
+    return filtered;
+  }, [periodos, activeKPIFilter]);
 
   const sortedPeriodos = useMemo(() => {
-    if (!sortConfig.key) return periodos || [];
+    if (!sortConfig.key) return kpiFilteredPeriodos;
 
-    return [...(periodos || [])].sort((a, b) => {
+    return [...kpiFilteredPeriodos].sort((a, b) => {
       let aVal = a[sortConfig.key];
       let bVal = b[sortConfig.key];
 
@@ -64,7 +81,7 @@ export default function TabPeriodos({
       if (aVal > bVal) return sortConfig.direction === 'asc' ? 1 : -1;
       return 0;
     });
-  }, [periodos, sortConfig]);
+  }, [kpiFilteredPeriodos, sortConfig]);
 
   const handleSort = (key) => {
     setSortConfig({
@@ -92,118 +109,143 @@ export default function TabPeriodos({
   }
 
   return (
-    <div className="space-y-3">
-      {/* Header con botón de crear */}
-      <div className="bg-gradient-to-r from-[#0A5BA9] to-[#2563EB] rounded-lg shadow-sm p-4 flex justify-between items-center">
-        <div>
-          <h2 className="text-xl font-bold text-white">Historial de Periodos</h2>
-          <p className="text-xs text-blue-100 mt-0.5">Administre los periodos de solicitud de turnos</p>
+    <div className="space-y-2">
+      {/* Compact Header */}
+      <div className="flex items-center justify-between px-1 py-2">
+        <div className="flex items-center gap-2">
+          <Calendar className="w-5 h-5 text-[#0A5BA9]" />
+          <h2 className="text-base font-bold text-gray-900">Períodos</h2>
+          <span className="text-xs text-gray-500">({(periodos || []).length})</span>
         </div>
 
         <button
           onClick={onCrearPeriodo}
-          className="flex items-center gap-2 px-4 py-2 bg-white text-[#0A5BA9] text-sm font-semibold rounded-lg hover:bg-blue-50 transition-all shadow-sm hover:shadow-md"
+          className="flex items-center gap-2 px-3 py-1.5 bg-[#0A5BA9] text-white text-xs font-semibold rounded-lg hover:bg-[#0A5BA9]/90 transition-colors"
         >
-          <Plus className="w-4 h-4" />
-          Aperturar Nuevo Periodo
+          <Plus className="w-3 h-3" />
+          Nuevo Período
         </button>
       </div>
 
-      {/* Filtros */}
+      {/* Collapsible Filters Section */}
       {filtros && onFiltrosChange && (
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-          <div className="flex items-center gap-4">
-            {/* Filtro Estado */}
-            <div className="flex-1">
-              <label className="block text-xs font-semibold text-gray-700 mb-1.5">
-                Estado
-              </label>
-              <select
-                value={filtros.estado || "TODOS"}
-                onChange={(e) => onFiltrosChange({ ...filtros, estado: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              >
-                <option value="TODOS">Todos</option>
-                <option value="ACTIVO">Activo</option>
-                <option value="CERRADO">Cerrado</option>
-                <option value="BORRADOR">Borrador</option>
-              </select>
-            </div>
+        <div className="border border-gray-200 rounded-lg bg-white overflow-hidden">
+          <button
+            onClick={() => setExpandedFilters(!expandedFilters)}
+            className="w-full px-4 py-2 flex items-center justify-between hover:bg-gray-50 transition-colors"
+          >
+            <span className="text-xs font-semibold text-gray-700 flex items-center gap-2">
+              <ChevronDown className={`w-4 h-4 transition-transform ${expandedFilters ? 'rotate-180' : ''}`} />
+              Filtros Avanzados
+            </span>
+            {(filtros.estado !== "TODOS" || filtros.anio !== new Date().getFullYear()) && (
+              <span className="text-xs font-semibold text-white bg-[#0A5BA9] px-2 py-1 rounded-md">
+                {[filtros.estado !== "TODOS" && 'Estado', filtros.anio !== new Date().getFullYear() && 'Año'].filter(Boolean).join(', ')}
+              </span>
+            )}
+          </button>
 
-            {/* Filtro Año */}
-            <div className="flex-1">
-              <label className="block text-xs font-semibold text-gray-700 mb-1.5">
-                Año
-              </label>
-              <select
-                value={filtros.anio || new Date().getFullYear()}
-                onChange={(e) => onFiltrosChange({ ...filtros, anio: parseInt(e.target.value) })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              >
-                {aniosDisponibles.map(anio => (
-                  <option key={anio} value={anio}>{anio}</option>
-                ))}
-              </select>
-            </div>
+          {expandedFilters && (
+            <div className="px-4 py-3 border-t border-gray-200 space-y-3">
+              <div className="grid grid-cols-2 gap-3">
+                {/* Filtro Estado */}
+                <div>
+                  <label className="block text-xs font-semibold text-gray-700 mb-1">Estado</label>
+                  <div className="relative">
+                    <select
+                      value={filtros.estado || "TODOS"}
+                      onChange={(e) => onFiltrosChange({ ...filtros, estado: e.target.value })}
+                      className="w-full pl-3 pr-8 py-1.5 border border-gray-300 rounded text-xs focus:ring-2 focus:ring-[#0A5BA9] focus:border-[#0A5BA9] appearance-none"
+                    >
+                      <option value="TODOS">Todos</option>
+                      <option value="ACTIVO">Activo</option>
+                      <option value="CERRADO">Cerrado</option>
+                      <option value="BORRADOR">Borrador</option>
+                    </select>
+                    {filtros.estado !== "TODOS" && (
+                      <button
+                        onClick={() => onFiltrosChange({ ...filtros, estado: "TODOS" })}
+                        className="absolute right-6 top-1.5 p-0.5 text-gray-400 hover:text-gray-600"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    )}
+                  </div>
+                </div>
 
-            {/* Botón Limpiar Filtros */}
-            <div className="flex-shrink-0 pt-6">
-              <button
-                onClick={() => onFiltrosChange({ estado: "TODOS", anio: new Date().getFullYear() })}
-                className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-lg hover:bg-gray-200 transition-colors"
-              >
-                Limpiar
-              </button>
-            </div>
-          </div>
+                {/* Filtro Año */}
+                <div>
+                  <label className="block text-xs font-semibold text-gray-700 mb-1">Año</label>
+                  <div className="relative">
+                    <select
+                      value={filtros.anio || new Date().getFullYear()}
+                      onChange={(e) => onFiltrosChange({ ...filtros, anio: parseInt(e.target.value) })}
+                      className="w-full pl-3 pr-8 py-1.5 border border-gray-300 rounded text-xs focus:ring-2 focus:ring-[#0A5BA9] focus:border-[#0A5BA9] appearance-none"
+                    >
+                      {aniosDisponibles.map(anio => (
+                        <option key={anio} value={anio}>{anio}</option>
+                      ))}
+                    </select>
+                    {filtros.anio !== new Date().getFullYear() && (
+                      <button
+                        onClick={() => onFiltrosChange({ ...filtros, anio: new Date().getFullYear() })}
+                        className="absolute right-6 top-1.5 p-0.5 text-gray-400 hover:text-gray-600"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
 
-          {/* Contador de resultados */}
-          <div className="mt-3 text-xs text-gray-600">
-            Mostrando <span className="font-semibold">{(periodos || []).length}</span> periodo(s)
-            {filtros.estado !== "TODOS" && <span> con estado <span className="font-semibold">{filtros.estado}</span></span>}
-            {filtros.anio && <span> del año <span className="font-semibold">{filtros.anio}</span></span>}
-          </div>
+              {/* Clear All Button */}
+              {(filtros.estado !== "TODOS" || filtros.anio !== new Date().getFullYear()) && (
+                <button
+                  onClick={() => onFiltrosChange({ estado: "TODOS", anio: new Date().getFullYear() })}
+                  className="w-full px-3 py-1.5 text-xs font-medium text-[#0A5BA9] bg-blue-50 border border-blue-200 rounded hover:bg-blue-100 transition-colors"
+                >
+                  Limpiar Todos los Filtros
+                </button>
+              )}
+            </div>
+          )}
         </div>
       )}
 
-      {(periodos || []).length === 0 ? (
+      {sortedPeriodos.length === 0 ? (
         <div className="bg-white rounded-lg p-12 text-center border border-gray-200">
           <Calendar className="w-16 h-16 mx-auto mb-3 text-gray-300" />
-          <h3 className="text-lg font-semibold text-gray-900 mb-1">No hay períodos configurados</h3>
-          <p className="text-sm text-gray-500">Aperture un nuevo período para comenzar a gestionar solicitudes</p>
+          <h3 className="text-lg font-semibold text-gray-900 mb-1">
+            {(periodos || []).length === 0 ? 'No hay períodos configurados' : 'No coinciden con los filtros'}
+          </h3>
+          <p className="text-sm text-gray-500">
+            {(periodos || []).length === 0
+              ? 'Aperture un nuevo período para comenzar a gestionar solicitudes'
+              : 'Intente ajustar los filtros o la búsqueda'}
+          </p>
         </div>
       ) : (
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gradient-to-r from-[#0A5BA9] to-[#2563EB]">
+          <table className="w-full text-sm">
+              <thead className="bg-gradient-to-r from-[#0A5BA9] to-[#084a8a]">
                 <tr>
-                  <th 
-                    className="px-3 py-2.5 text-left text-xs font-bold text-white cursor-pointer hover:bg-blue-700/50"
-                    onClick={() => handleSort('idPeriodo')}
-                  >
-                    ID <SortIcon columnKey="idPeriodo" />
-                  </th>
-                  <th 
-                    className="px-3 py-2.5 text-left text-xs font-bold text-white cursor-pointer hover:bg-blue-700/50"
+                  <th
+                    className="px-3 py-2.5 text-left text-xs font-bold text-white cursor-pointer hover:bg-blue-700/40 transition-colors"
                     onClick={() => handleSort('descripcion')}
                   >
                     Descripción <SortIcon columnKey="descripcion" />
                   </th>
                   <th className="px-3 py-2.5 text-center text-xs font-bold text-white">
-                    Total Solicitudes
+                    Total
                   </th>
                   <th className="px-3 py-2.5 text-center text-xs font-bold text-white">
-                    Solicitudes Enviadas
+                    Enviadas
                   </th>
                   <th className="px-3 py-2.5 text-center text-xs font-bold text-white">
-                    Solicitudes Iniciadas
+                    Iniciadas
                   </th>
-                  {/* <th className="px-3 py-2.5 text-center text-xs font-bold text-white">
-                    Ocupación
-                  </th> */}
-                  <th 
-                    className="px-3 py-2.5 text-center text-xs font-bold text-white cursor-pointer hover:bg-blue-700/50"
+                  <th
+                    className="px-3 py-2.5 text-center text-xs font-bold text-white cursor-pointer hover:bg-blue-700/40 transition-colors"
                     onClick={() => handleSort('estado')}
                   >
                     Estado <SortIcon columnKey="estado" />
@@ -226,27 +268,27 @@ export default function TabPeriodos({
                   const isCerrado = p.estado === "CERRADO";
 
                   return (
-                    <tr key={p.idPeriodo} className="hover:bg-gray-50 transition-colors">
-                      <td className="px-3 py-2 text-sm text-gray-900 font-medium">
-                        {p.idPeriodo}
-                      </td>
+                    <tr
+                      key={p.idPeriodo}
+                      className="hover:bg-blue-50 transition-colors border-l-4 border-l-transparent hover:border-l-[#0A5BA9]"
+                    >
                       <td className="px-3 py-2">
-                        <div className="text-sm font-medium text-gray-900">
+                        <div className="text-xs font-semibold text-gray-900">
                           {p.descripcion ?? p.nombrePeriodo ?? `Periodo ${p.periodo ?? p.idPeriodo}`}
                         </div>
                       </td>
                       <td className="px-3 py-2 text-center">
-                        <span className="inline-flex items-center justify-center w-10 h-8 rounded-full bg-blue-100 text-blue-700 text-xs font-semibold">
+                        <span className="inline-flex items-center justify-center px-2.5 py-1 rounded-lg bg-[#0A5BA9]/10 text-[#0A5BA9] text-xs font-bold border border-[#0A5BA9]/30">
                           {cantidadSolicitudes}
                         </span>
                       </td>
                       <td className="px-3 py-2 text-center">
-                        <span className="inline-flex items-center justify-center w-10 h-8 rounded-full bg-green-100 text-green-700 text-xs font-semibold">
+                        <span className="inline-flex items-center justify-center px-2.5 py-1 rounded-lg bg-emerald-100 text-emerald-700 text-xs font-bold border border-emerald-300">
                           {solicitudesEnviadas}
                         </span>
                       </td>
                       <td className="px-3 py-2 text-center">
-                        <span className="inline-flex items-center justify-center w-10 h-8 rounded-full bg-amber-100 text-amber-700 text-xs font-semibold">
+                        <span className="inline-flex items-center justify-center px-2.5 py-1 rounded-lg bg-amber-100 text-amber-700 text-xs font-bold border border-amber-300">
                           {solicitudesIniciadas}
                         </span>
                       </td>
@@ -275,62 +317,63 @@ export default function TabPeriodos({
                       <td className="px-3 py-2">
                         <div className="text-xs text-gray-600 space-y-0.5">
                           <div className="flex items-center gap-1">
-                            <Clock className="w-3 h-3" />
-                            <span>{p.fechaInicio ? fmtDate(p.fechaInicio) : "—"}</span>
+                            <span className="text-gray-400">Inicio:</span>
+                            <span className="font-medium">{p.fechaInicio ? fmtDate(p.fechaInicio) : "—"}</span>
                           </div>
                           <div className="flex items-center gap-1">
-                            <Clock className="w-3 h-3" />
-                            <span>{p.fechaFin ? fmtDate(p.fechaFin) : "—"}</span>
+                            <span className="text-gray-400">Fin:</span>
+                            <span className="font-medium">{p.fechaFin ? fmtDate(p.fechaFin) : "—"}</span>
                           </div>
                         </div>
                       </td>
                       <td className="px-3 py-2">
                         <div className="flex items-center justify-center gap-1">
+                          {/* Ver Button - Primary Action */}
                           <button
                             onClick={() => onVerDetallePeriodo?.(p)}
-                            className="inline-flex items-center gap-1 px-2 py-1 bg-blue-600 text-white text-xs font-medium rounded hover:bg-blue-700 transition-colors"
+                            className="inline-flex items-center justify-center px-2 py-1.5 bg-[#0A5BA9] text-white rounded-lg hover:bg-[#084a8a] transition-colors font-medium text-xs"
                             title="Ver detalle"
                           >
-                            <Eye className="w-3 h-3" />
+                            <Eye className="w-4 h-4" />
                           </button>
-                          
-                          {/* Botón Editar - solo disponible si está ACTIVO */}
+
+                          {/* Edit Button - solo si está ACTIVO */}
                           <button
                             onClick={() => onEditarPeriodo?.(p)}
                             disabled={p.estado !== "ACTIVO"}
-                            className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded transition-colors ${
+                            className={`inline-flex items-center justify-center p-1.5 rounded-lg transition-colors ${
                               p.estado === "ACTIVO"
-                                ? 'bg-amber-600 text-white hover:bg-amber-700'
-                                : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                                ? 'text-[#0A5BA9] hover:bg-blue-100'
+                                : 'text-gray-300 cursor-not-allowed'
                             }`}
-                            title={p.estado === "ACTIVO" ? "Editar fechas" : "Solo se puede editar periodos activos"}
+                            title={p.estado === "ACTIVO" ? "Editar fechas" : "Solo se puede editar períodos activos"}
                           >
-                            <Pencil className="w-3 h-3" />
+                            <Pencil className="w-4 h-4" />
                           </button>
-                          
-                          {/* Botón Eliminar */}
+
+                          {/* Delete Button */}
                           <button
                             onClick={() => onEliminarPeriodo?.(p)}
-                            className="inline-flex items-center gap-1 px-2 py-1 bg-red-600 text-white text-xs font-medium rounded hover:bg-red-700 transition-colors"
+                            className="inline-flex items-center justify-center p-1.5 text-red-600 hover:bg-red-100 rounded-lg transition-colors"
                             title="Eliminar período"
                           >
-                            <Trash2 className="w-3 h-3" />
+                            <Trash2 className="w-4 h-4" />
                           </button>
-                          
-                          {/* Botón Activar/Cerrar */}
+
+                          {/* Toggle Button - Activar/Cerrar */}
                           <button
                             onClick={() => onTogglePeriodo(p)}
-                            className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded transition-colors ${
+                            className={`inline-flex items-center justify-center p-1.5 rounded-lg transition-colors ${
                               isActivo
-                                ? 'bg-orange-600 text-white hover:bg-orange-700'
-                                : 'bg-green-600 text-white hover:bg-green-700'
+                                ? 'text-orange-600 hover:bg-orange-100'
+                                : 'text-green-600 hover:bg-green-100'
                             }`}
                             title={isActivo ? "Cerrar período" : "Activar período"}
                           >
                             {isActivo ? (
-                              <XCircle className="w-3 h-3" />
+                              <XCircle className="w-4 h-4" />
                             ) : (
-                              <CheckCircle2 className="w-3 h-3" />
+                              <CheckCircle2 className="w-4 h-4" />
                             )}
                           </button>
                         </div>
@@ -340,13 +383,21 @@ export default function TabPeriodos({
                 })}
               </tbody>
             </table>
-          </div>
-          
+
           {/* Footer con contador */}
-          <div className="bg-gray-50 px-4 py-2 border-t border-gray-200">
-            <p className="text-xs text-gray-600">
-              Mostrando <span className="font-semibold">{sortedPeriodos.length}</span> período{sortedPeriodos.length !== 1 ? 's' : ''}
+          <div className="bg-gray-50 px-4 py-2 border-t border-gray-200 flex justify-between items-center text-xs">
+            <p className="text-gray-600">
+              Mostrando <span className="font-semibold">{sortedPeriodos.length}</span> de <span className="font-semibold">{(periodos || []).length}</span> período{sortedPeriodos.length !== 1 ? 's' : ''}
             </p>
+            {activeKPIFilter && (
+              <button
+                onClick={() => setActiveKPIFilter(null)}
+                className="text-[#0A5BA9] hover:text-[#084a8a] font-medium flex items-center gap-1"
+              >
+                <X className="w-3 h-3" />
+                Limpiar filtro
+              </button>
+            )}
           </div>
         </div>
       )}

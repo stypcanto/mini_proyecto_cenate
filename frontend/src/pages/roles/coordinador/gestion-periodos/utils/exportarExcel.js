@@ -123,9 +123,14 @@ export const exportarSolicitudCompleta = (solicitud, nombreArchivo = 'Reporte_So
     return;
   }
 
-  const wb = XLSX.utils.book_new();
+  // Si la solicitud tiene detalles, exportar solo especialidades en formato completo
+  if (Array.isArray(solicitud.detalles) && solicitud.detalles.length > 0) {
+    exportarEspecialidadesAExcel(solicitud.detalles, solicitud.nombreIpress || 'IPRESS', nombreArchivo);
+    return;
+  }
 
-  // HOJA 1: Información General de la Solicitud
+  // Si no hay detalles, exportar información general
+  const wb = XLSX.utils.book_new();
   const datosGenerales = [{
     'Campo': 'ID Solicitud',
     'Valor': solicitud.idSolicitud || '-'
@@ -149,33 +154,6 @@ export const exportarSolicitudCompleta = (solicitud, nombreArchivo = 'Reporte_So
   const wsGeneral = XLSX.utils.json_to_sheet(datosGenerales);
   wsGeneral['!cols'] = [{ wch: 25 }, { wch: 50 }];
   XLSX.utils.book_append_sheet(wb, wsGeneral, 'General');
-
-  // HOJA 2: Especialidades Solicitadas
-  if (Array.isArray(solicitud.detalles) && solicitud.detalles.length > 0) {
-    const datosEspecialidades = solicitud.detalles.map((detalle, idx) => ({
-      'Nº': idx + 1,
-      'Especialidad': detalle.nombreEspecialidad || detalle.nombreServicio || '-',
-      'Código': detalle.codigoServicio || detalle.codServicio || '-',
-      'Cantidad Turnos': detalle.cantidadTurnos || '-',
-      'Fecha Inicio': detalle.fechaInicio ? format(new Date(detalle.fechaInicio), 'dd/MM/yyyy', { locale: es }) : '-',
-      'Fecha Fin': detalle.fechaFin ? format(new Date(detalle.fechaFin), 'dd/MM/yyyy', { locale: es }) : '-',
-      'Estado': detalle.estado || 'PENDIENTE',
-      'Observación': detalle.observacion || '-'
-    }));
-
-    const wsEspecialidades = XLSX.utils.json_to_sheet(datosEspecialidades);
-    wsEspecialidades['!cols'] = [
-      { wch: 5 },
-      { wch: 30 },
-      { wch: 12 },
-      { wch: 12 },
-      { wch: 15 },
-      { wch: 15 },
-      { wch: 15 },
-      { wch: 30 }
-    ];
-    XLSX.utils.book_append_sheet(wb, wsEspecialidades, 'Especialidades');
-  }
 
   const timestamp = format(new Date(), 'yyyy-MM-dd_HHmmss');
   XLSX.writeFile(wb, `${nombreArchivo}_${timestamp}.xlsx`);
