@@ -113,11 +113,53 @@ export default function TabSolicitudes({
     return m;
   }, [periodos]);
 
+  // Filtrado
+  const filteredSolicitudes = useMemo(() => {
+    let filtered = safeSolicitudes;
+
+    // Filtro por Estado
+    if (filtros.estado && filtros.estado !== 'TODAS') {
+      filtered = filtered.filter(s => s.estado === filtros.estado);
+    }
+
+    // Filtro por Período
+    if (filtros.periodo) {
+      filtered = filtered.filter(s => String(s.idPeriodo) === String(filtros.periodo));
+    }
+
+    // Filtro por Macrorregión
+    if (filtros.macroId) {
+      filtered = filtered.filter(s => String(s.macroId) === String(filtros.macroId));
+    }
+
+    // Filtro por Red
+    if (filtros.redId) {
+      filtered = filtered.filter(s => String(s.redId) === String(filtros.redId));
+    }
+
+    // Filtro por IPRESS
+    if (filtros.ipressId) {
+      filtered = filtered.filter(s => String(s.ipressId) === String(filtros.ipressId));
+    }
+
+    // Filtro por búsqueda
+    if (filtros.busqueda) {
+      const q = filtros.busqueda.toLowerCase();
+      filtered = filtered.filter(s => {
+        const nombre = (s.nombreIpress || '').toLowerCase();
+        const cod = String(s.codIpress || '').toLowerCase();
+        return nombre.includes(q) || cod.includes(q);
+      });
+    }
+
+    return filtered;
+  }, [safeSolicitudes, filtros]);
+
   // Ordenamiento
   const sortedSolicitudes = useMemo(() => {
-    if (!sortConfig.key) return safeSolicitudes;
+    if (!sortConfig.key) return filteredSolicitudes;
 
-    return [...safeSolicitudes].sort((a, b) => {
+    return [...filteredSolicitudes].sort((a, b) => {
       let aVal = a[sortConfig.key];
       let bVal = b[sortConfig.key];
 
@@ -130,7 +172,7 @@ export default function TabSolicitudes({
       if (aVal > bVal) return sortConfig.direction === 'asc' ? 1 : -1;
       return 0;
     });
-  }, [safeSolicitudes, sortConfig]);
+  }, [filteredSolicitudes, sortConfig]);
 
   const handleSort = (key) => {
     setSortConfig({
@@ -157,72 +199,6 @@ export default function TabSolicitudes({
 
   return (
     <div className="space-y-2">
-      {/* Header Compacto - Fusionado */}
-      <div className="bg-gradient-to-r from-[#1e40af] to-[#2563eb] rounded-lg shadow-sm p-3">
-        <h2 className="text-lg font-bold text-white">Mis Solicitudes de Turnos</h2>
-      </div>
-
-      {/* Buscador Destacado */}
-      <div className="bg-white rounded-lg shadow-sm border-2 border-blue-400 p-3">
-        <div className="flex gap-2 items-center mb-2">
-          <Search className="w-4 h-4 text-blue-600" />
-          <input
-            type="text"
-            placeholder="🔍 Buscar IPRESS específica..."
-            value={filtros.busqueda || ''}
-            onChange={(e) => setFiltros({ ...filtros, busqueda: e.target.value })}
-            className="flex-1 px-3 py-2 text-sm border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-blue-50"
-          />
-        </div>
-
-        {/* Filtros Activos como Chips */}
-        {filtrosActivos.length > 0 && (
-          <div className="flex flex-wrap gap-2 pt-2 border-t border-gray-200">
-            {filtrosActivos.map((filtro) => (
-              <span
-                key={filtro.key}
-                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700 border border-blue-300"
-              >
-                {filtro.label}
-                <button
-                  onClick={() => {
-                    if (filtro.key === 'estado') {
-                      setFiltros({ ...filtros, estado: 'TODAS' });
-                    } else if (filtro.key === 'periodo') {
-                      setFiltros({ ...filtros, periodo: '' });
-                    } else if (filtro.key === 'macro') {
-                      setFiltros({ ...filtros, macroId: '', redId: '', ipressId: '' });
-                    } else if (filtro.key === 'red') {
-                      setFiltros({ ...filtros, redId: '', ipressId: '' });
-                    } else if (filtro.key === 'ipress') {
-                      setFiltros({ ...filtros, ipressId: '' });
-                    }
-                  }}
-                  className="hover:text-blue-900 transition-colors"
-                >
-                  <X className="w-3 h-3" />
-                </button>
-              </span>
-            ))}
-            <button
-              onClick={() => {
-                setFiltros({
-                  estado: 'TODAS',
-                  periodo: '',
-                  macroId: '',
-                  redId: '',
-                  ipressId: '',
-                  busqueda: ''
-                });
-              }}
-              className="text-xs text-blue-600 hover:text-blue-700 font-medium ml-auto"
-            >
-              Limpiar todos
-            </button>
-          </div>
-        )}
-      </div>
-
       {/* Filtros Compactos */}
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-3">
         <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-5 gap-2">
