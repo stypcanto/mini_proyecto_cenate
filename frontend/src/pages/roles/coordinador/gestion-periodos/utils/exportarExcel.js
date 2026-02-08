@@ -182,7 +182,7 @@ export const exportarSolicitudCompleta = (solicitud, nombreArchivo = 'Reporte_So
 };
 
 /**
- * Exporta la tabla de especialidades solicitadas a Excel (versión simplificada)
+ * Exporta la tabla de especialidades solicitadas a Excel
  * @param {Array} especialidades - Array de especialidades (detalles)
  * @param {String} nombreIPRESS - Nombre de la IPRESS
  * @param {String} nombreArchivo - Nombre base del archivo
@@ -193,28 +193,34 @@ export const exportarEspecialidadesAExcel = (especialidades, nombreIPRESS = 'IPR
     return;
   }
 
-  // Crear datos con formato simplificado: Nº | Especialidad (Código) | Mañana | Tarde | Teleconsulta | Teleconsultorio
+  // Crear datos con columnas separadas: Nº | Especialidad | Código | Mañana | Tarde | Teleconsulta | Teleconsultorio | Fechas | Observación
   const datosEspecialidades = especialidades.map((especialidad, idx) => ({
     'Nº': idx + 1,
-    'Especialidad': `${especialidad.nombreServicio || especialidad.nombreEspecialidad || '-'}\n(Cód: ${especialidad.codigoServicio || especialidad.codServicio || '-'})`,
+    'Especialidad': especialidad.nombreServicio || especialidad.nombreEspecialidad || '-',
+    'Código': especialidad.codigoServicio || especialidad.codServicio || '-',
     'Mañana': especialidad.turnoManana || 0,
     'Tarde': especialidad.turnoTarde || 0,
-    'TELECONSULTA': especialidad.tc ? 'Sí' : 'No',
-    'TELECONSULTORIO': especialidad.tl ? 'Sí' : 'No',
+    'Teleconsulta': especialidad.tc ? 'Sí' : 'No',
+    'Teleconsultorio': especialidad.tl ? 'Sí' : 'No',
+    'Fechas (Opcional)': especialidad.fechasDetalle ? especialidad.fechasDetalle.length : '-',
+    'Observación (Opcional)': especialidad.observacion || '-',
   }));
 
   const ws = XLSX.utils.json_to_sheet(datosEspecialidades);
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, 'Especialidades');
 
-  // Configurar columnas (solo las 6 necesarias)
+  // Configurar columnas
   ws['!cols'] = [
     { wch: 5 },   // Nº
-    { wch: 35 },  // Especialidad (con código)
-    { wch: 12 },  // Mañana
-    { wch: 12 },  // Tarde
+    { wch: 30 },  // Especialidad
+    { wch: 10 },  // Código
+    { wch: 10 },  // Mañana
+    { wch: 10 },  // Tarde
     { wch: 15 },  // Teleconsulta
-    { wch: 15 },  // Teleconsultorio
+    { wch: 17 },  // Teleconsultorio
+    { wch: 18 },  // Fechas (Opcional)
+    { wch: 20 },  // Observación (Opcional)
   ];
 
   // Aplicar estilos a los encabezados
@@ -224,7 +230,7 @@ export const exportarEspecialidadesAExcel = (especialidades, nombreIPRESS = 'IPR
     alignment: { horizontal: 'center', vertical: 'center', wrapText: true },
   };
 
-  for (let i = 0; i < 6; i++) {
+  for (let i = 0; i < 9; i++) {
     const cell = ws[XLSX.utils.encode_col(i) + '1'];
     if (cell) {
       cell.s = headerStyle;
