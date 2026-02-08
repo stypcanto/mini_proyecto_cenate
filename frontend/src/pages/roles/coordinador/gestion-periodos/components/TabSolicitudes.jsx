@@ -11,9 +11,11 @@ import {
   ChevronDown,
   ChevronUp,
   MapPin,
+  Download,
 } from "lucide-react";
 import { fmtDateTime } from "../utils/ui";
 import { filtrosUbicacionService } from "../../../../../services/filtrosUbicacionService";
+import { exportarSolicitudesAExcel } from "../utils/exportarExcel";
 
 export default function TabSolicitudes({
   solicitudes,
@@ -265,8 +267,17 @@ export default function TabSolicitudes({
           </div>
         </div>
 
-        {/* Botón Consultar */}
-        <div className="mt-3 flex justify-end">
+        {/* Botones: Consultar y Exportar */}
+        <div className="mt-3 flex justify-end gap-2">
+          <button
+            onClick={() => exportarSolicitudesAExcel(safeSolicitudes, 'Reporte_Solicitudes', periodoMap)}
+            disabled={loading || safeSolicitudes.length === 0}
+            className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            title="Exportar solicitudes a Excel"
+          >
+            <Download className="w-4 h-4" />
+            Exportar a Excel
+          </button>
           <button
             onClick={onConsultar}
             disabled={loading}
@@ -365,14 +376,23 @@ export default function TabSolicitudes({
                         {fmtDateTime(s.fechaEnvio)}
                       </td>
                       <td className="px-3 py-2 text-center">
-                        <button
-                          onClick={() => onVerDetalle(s)}
-                          className="inline-flex items-center gap-1 px-3 py-1.5 bg-blue-600 text-white text-xs font-medium rounded-lg hover:bg-blue-700 transition-colors"
-                          title="Ver detalle"
-                        >
-                          <Eye className="w-3.5 h-3.5" />
-                          Ver
-                        </button>
+                        <div className="flex items-center gap-1 justify-center">
+                          <button
+                            onClick={() => onVerDetalle(s)}
+                            className="inline-flex items-center gap-1 px-3 py-1.5 bg-blue-600 text-white text-xs font-medium rounded-lg hover:bg-blue-700 transition-colors"
+                            title="Ver detalle"
+                          >
+                            <Eye className="w-3.5 h-3.5" />
+                            Ver
+                          </button>
+                          <button
+                            onClick={() => exportarSolicitudesAExcel([s], `${s.nombreIpress}_Solicitud`, periodoMap)}
+                            className="inline-flex items-center gap-1 px-2 py-1.5 bg-green-600 text-white text-xs font-medium rounded-lg hover:bg-green-700 transition-colors"
+                            title="Exportar esta solicitud a Excel"
+                          >
+                            <Download className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   );
