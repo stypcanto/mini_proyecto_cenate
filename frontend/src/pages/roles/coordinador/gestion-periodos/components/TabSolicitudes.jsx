@@ -18,6 +18,7 @@ import {
 import { fmtDateTime } from "../utils/ui";
 import { filtrosUbicacionService } from "../../../../../services/filtrosUbicacionService";
 import { exportarSolicitudCompleta } from "../utils/exportarExcel";
+import ipressService from "../../../../../services/ipressService";
 
 export default function TabSolicitudes({
   solicitudes,
@@ -38,11 +39,12 @@ export default function TabSolicitudes({
   const [macroregiones, setMacroregiones] = useState([]);
   const [redes, setRedes] = useState([]);
   const [ipressList, setIpressList] = useState([]);
+  const [ipressUbicacionMap, setIpressUbicacionMap] = useState(new Map()); // Mapa de IPRESS -> {redId, macroId, redNombre, macroNombre}
   const [loadingFiltros, setLoadingFiltros] = useState(false);
 
-  // Cargar macroregiones al iniciar
+  // Cargar IPRESS para mapear información de ubicación
   useEffect(() => {
-    cargarMacroregiones();
+    cargarIpressYMapear();
   }, []);
 
   // Cargar redes cuando cambia macroregión
@@ -66,6 +68,67 @@ export default function TabSolicitudes({
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filtros.redId]);
+
+  const cargarIpressYMapear = async () => {
+    try {
+      // Cargar todas las IPRESS
+      const allIpress = await ipressService.obtenerTodas();
+
+      // Cargar macroregiones para lookup de nombres
+      const macrosData = await filtrosUbicacionService.obtenerMacroregiones();
+      const macrosMap = new Map(macrosData.map(m => [m.id, m.descripcion]));
+
+      // Cargar redes de cada macrorregión - guardamos el macroId con cada red
+      let redesData = [];
+      for (const macro of macrosData) {
+        try {
+          const redesMacro = await filtrosUbicacionService.obtenerRedesPorMacro(macro.id);
+          // Añadir el macroId a cada red para posterior lookup
+          const redesConMacro = (redesMacro || []).map(red => ({
+            ...red,
+            macroId: macro.id,
+            macroNombre: macro.descripcion
+          }));
+          redesData.push(...redesConMacro);
+        } catch (redError) {
+          console.error("❌ Error al cargar redes para", macro.descripcion, ":", redError);
+        }
+      }
+
+      // Crear mapa: redId -> macroNombre para lookup rápido
+      const redMacroMap = new Map();
+      redesData.forEach((red) => {
+        redMacroMap.set(red.id, red.macroNombre || '—');
+      });
+
+      // Crear mapa: nombreIpress -> {redNombre, macroNombre}
+      const map = new Map();
+
+      (allIpress || []).forEach((ipress) => {
+        // Buscar nombre de Red - campo: red.descRed
+        const redNombre = ipress.red?.descRed || ipress.red?.descripcion || '—';
+
+        // Obtener macrorregión desde el mapa de red->macro
+        let macroNombre = '—';
+        if (ipress.red?.id && redMacroMap.has(ipress.red.id)) {
+          macroNombre = redMacroMap.get(ipress.red.id);
+        } else if (ipress.idRed && redMacroMap.has(ipress.idRed)) {
+          macroNombre = redMacroMap.get(ipress.idRed);
+        }
+
+        // Usar nombreIpress (descIpress) como key para coincidencia con solicitudes
+        const nombreKey = ipress.descIpress || ipress.nombreIpress || ipress.nombre;
+        if (nombreKey) {
+          map.set(nombreKey, { redNombre, macroNombre });
+        }
+      });
+
+      setIpressUbicacionMap(map);
+    } catch (error) {
+      console.error("❌ Error al cargar IPRESS:", error);
+      setIpressUbicacionMap(new Map());
+    }
+  };
 
   const cargarMacroregiones = async () => {
     try {
@@ -112,6 +175,8 @@ export default function TabSolicitudes({
     );
     return m;
   }, [periodos]);
+
+
 
   // Filtrado
   const filteredSolicitudes = useMemo(() => {
@@ -325,6 +390,12 @@ export default function TabSolicitudes({
             <table className="w-full">
               <thead className="bg-gradient-to-r from-[#1e40af] to-[#2563eb]">
                 <tr>
+                  <th className="px-3 py-2.5 text-left text-xs font-bold text-white">
+                    Macrorregión
+                  </th>
+                  <th className="px-3 py-2.5 text-left text-xs font-bold text-white">
+                    Red
+                  </th>
                   <th
                     className="px-3 py-2.5 text-left text-xs font-bold text-white cursor-pointer hover:bg-blue-700/50"
                     onClick={() => handleSort('nombreIpress')}
@@ -334,7 +405,7 @@ export default function TabSolicitudes({
                   <th className="px-3 py-2.5 text-left text-xs font-bold text-white">
                     Periodo
                   </th>
-                  <th 
+                  <th
                     className="px-3 py-2.5 text-center text-xs font-bold text-white cursor-pointer hover:bg-blue-700/50"
                     onClick={() => handleSort('estado')}
                   >
@@ -352,12 +423,23 @@ export default function TabSolicitudes({
                 {sortedSolicitudes.map((s) => {
                   const periodoLabel = periodoMap.get(Number(s.idPeriodo)) ?? `Periodo ${s.idPeriodo}`;
 
+                  // Obtener información de ubicación desde el mapa de IPRESS (buscar por nombre)
+                  const ipressUbicacion = ipressUbicacionMap.get(s.nombreIpress);
+                  const macroregionLabel = ipressUbicacion?.macroNombre || '—';
+                  const redLabel = ipressUbicacion?.redNombre || '—';
+
                   return (
                     <tr
                       key={s.idSolicitud}
                       className="hover:bg-blue-50 transition-colors cursor-pointer border-b border-gray-200"
                       onClick={() => onVerDetalle(s)}
                     >
+                      <td className="px-3 py-2.5 text-sm text-gray-700">
+                        {macroregionLabel}
+                      </td>
+                      <td className="px-3 py-2.5 text-sm text-gray-700">
+                        {redLabel}
+                      </td>
                       <td className="px-3 py-2.5">
                         <div>
                           <div className="text-sm font-medium text-gray-900">{s.nombreIpress}</div>
