@@ -41,6 +41,7 @@ export default function TabSolicitudes({
   const [ipressList, setIpressList] = useState([]);
   const [ipressUbicacionMap, setIpressUbicacionMap] = useState(new Map()); // Mapa de IPRESS -> {redId, macroId, redNombre, macroNombre}
   const [loadingFiltros, setLoadingFiltros] = useState(false);
+  const [loadingUbicacionMap, setLoadingUbicacionMap] = useState(true); // Para mostrar loader mientras carga el mapa
 
   // Cargar IPRESS para mapear información de ubicación
   useEffect(() => {
@@ -70,6 +71,7 @@ export default function TabSolicitudes({
   }, [filtros.redId]);
 
   const cargarIpressYMapear = async () => {
+    setLoadingUbicacionMap(true);
     try {
       // Cargar todas las IPRESS
       const allIpress = await ipressService.obtenerTodas();
@@ -127,6 +129,8 @@ export default function TabSolicitudes({
     } catch (error) {
       console.error("❌ Error al cargar IPRESS:", error);
       setIpressUbicacionMap(new Map());
+    } finally {
+      setLoadingUbicacionMap(false);
     }
   };
 
@@ -192,19 +196,25 @@ export default function TabSolicitudes({
       filtered = filtered.filter(s => String(s.idPeriodo) === String(filtros.periodo));
     }
 
-    // Filtro por Macrorregión
+    // Filtro por Macrorregión (usando nombre en lugar de ID)
     if (filtros.macroId) {
-      filtered = filtered.filter(s => String(s.macroId) === String(filtros.macroId));
+      filtered = filtered.filter(s => {
+        const ubicacion = ipressUbicacionMap.get(s.nombreIpress);
+        return ubicacion?.macroNombre === filtros.macroId;
+      });
     }
 
-    // Filtro por Red
+    // Filtro por Red (usando nombre en lugar de ID)
     if (filtros.redId) {
-      filtered = filtered.filter(s => String(s.redId) === String(filtros.redId));
+      filtered = filtered.filter(s => {
+        const ubicacion = ipressUbicacionMap.get(s.nombreIpress);
+        return ubicacion?.redNombre === filtros.redId;
+      });
     }
 
-    // Filtro por IPRESS
+    // Filtro por IPRESS (usando nombre)
     if (filtros.ipressId) {
-      filtered = filtered.filter(s => String(s.ipressId) === String(filtros.ipressId));
+      filtered = filtered.filter(s => s.nombreIpress === filtros.ipressId);
     }
 
     // Filtro por búsqueda
@@ -218,7 +228,7 @@ export default function TabSolicitudes({
     }
 
     return filtered;
-  }, [safeSolicitudes, filtros]);
+  }, [safeSolicitudes, filtros, ipressUbicacionMap]);
 
   // Ordenamiento
   const sortedSolicitudes = useMemo(() => {
@@ -253,13 +263,103 @@ export default function TabSolicitudes({
       <ChevronDown className="w-4 h-4 inline ml-1" />;
   };
 
+  // Extraer valores únicos que aparecen realmente en la tabla
+  const estadosUnicos = useMemo(() => {
+    const estados = new Set(safeSolicitudes.map(s => s.estado).filter(Boolean));
+    return Array.from(estados).sort();
+  }, [safeSolicitudes]);
+
+  const periodosUnicos = useMemo(() => {
+    const periodoIds = new Set(safeSolicitudes.map(s => String(s.idPeriodo)).filter(Boolean));
+    return Array.from(periodoIds).map(id => {
+      const periodo = periodos?.find(p => p.idPeriodo == id);
+      return { id, descripcion: periodo?.descripcion || `Período ${id}` };
+    });
+  }, [safeSolicitudes, periodos]);
+
+  // Macrorregiones únicas filtrando por Estado y Período
+  const macrorregionesUnicos = useMemo(() => {
+    let filtered = safeSolicitudes;
+
+    if (filtros.estado && filtros.estado !== 'TODAS') {
+      filtered = filtered.filter(s => s.estado === filtros.estado);
+    }
+    if (filtros.periodo) {
+      filtered = filtered.filter(s => String(s.idPeriodo) === String(filtros.periodo));
+    }
+
+    const unicos = new Map();
+    filtered.forEach(s => {
+      const ubicacion = ipressUbicacionMap.get(s.nombreIpress);
+      if (ubicacion?.macroNombre) {
+        unicos.set(ubicacion.macroNombre, ubicacion.macroNombre);
+      }
+    });
+    return Array.from(unicos.values()).sort();
+  }, [safeSolicitudes, filtros, ipressUbicacionMap]);
+
+  // Redes únicas filtrando por Estado, Período y Macrorregión
+  const redesUnicos = useMemo(() => {
+    let filtered = safeSolicitudes;
+
+    if (filtros.estado && filtros.estado !== 'TODAS') {
+      filtered = filtered.filter(s => s.estado === filtros.estado);
+    }
+    if (filtros.periodo) {
+      filtered = filtered.filter(s => String(s.idPeriodo) === String(filtros.periodo));
+    }
+    if (filtros.macroId) {
+      filtered = filtered.filter(s => {
+        const ubicacion = ipressUbicacionMap.get(s.nombreIpress);
+        return ubicacion?.macroNombre === filtros.macroId;
+      });
+    }
+
+    const unicos = new Map();
+    filtered.forEach(s => {
+      const ubicacion = ipressUbicacionMap.get(s.nombreIpress);
+      if (ubicacion?.redNombre) {
+        unicos.set(ubicacion.redNombre, ubicacion.redNombre);
+      }
+    });
+    return Array.from(unicos.values()).sort();
+  }, [safeSolicitudes, filtros, ipressUbicacionMap]);
+
+  // IPRESS únicos filtrando primero por los otros filtros aplicados
+  const ipressUnicos = useMemo(() => {
+    let filtered = safeSolicitudes;
+
+    // Aplicar todos los filtros EXCEPTO ipressId
+    if (filtros.estado && filtros.estado !== 'TODAS') {
+      filtered = filtered.filter(s => s.estado === filtros.estado);
+    }
+    if (filtros.periodo) {
+      filtered = filtered.filter(s => String(s.idPeriodo) === String(filtros.periodo));
+    }
+    if (filtros.macroId) {
+      filtered = filtered.filter(s => {
+        const ubicacion = ipressUbicacionMap.get(s.nombreIpress);
+        return ubicacion?.macroNombre === filtros.macroId;
+      });
+    }
+    if (filtros.redId) {
+      filtered = filtered.filter(s => {
+        const ubicacion = ipressUbicacionMap.get(s.nombreIpress);
+        return ubicacion?.redNombre === filtros.redId;
+      });
+    }
+
+    const unicos = new Set(filtered.map(s => s.nombreIpress).filter(Boolean));
+    return Array.from(unicos).sort();
+  }, [safeSolicitudes, filtros, ipressUbicacionMap]);
+
   // Obtener filtros activos para mostrar como chips
   const filtrosActivos = [
     filtros.estado && filtros.estado !== 'TODAS' && { key: 'estado', label: filtros.estado },
-    filtros.periodo && { key: 'periodo', label: periodos?.find(p => p.idPeriodo == filtros.periodo)?.descripcion || `Período ${filtros.periodo}` },
-    filtros.macroId && { key: 'macro', label: macroregiones?.find(m => m.id == filtros.macroId)?.descripcion },
-    filtros.redId && { key: 'red', label: redes?.find(r => r.id == filtros.redId)?.descripcion },
-    filtros.ipressId && { key: 'ipress', label: ipressList?.find(i => i.id == filtros.ipressId)?.descripcion },
+    filtros.periodo && { key: 'periodo', label: periodosUnicos?.find(p => p.id == filtros.periodo)?.descripcion || `Período ${filtros.periodo}` },
+    filtros.macroId && { key: 'macro', label: filtros.macroId },
+    filtros.redId && { key: 'red', label: filtros.redId },
+    filtros.ipressId && { key: 'ipress', label: filtros.ipressId },
   ].filter(Boolean);
 
   return (
@@ -277,8 +377,11 @@ export default function TabSolicitudes({
               className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
             >
               <option value="TODAS">Todas</option>
-              <option value="INICIADO">INICIADO</option>
-              <option value="ENVIADO">ENVIADO</option>
+              {estadosUnicos.map((estado) => (
+                <option key={estado} value={estado}>
+                  {estado}
+                </option>
+              ))}
             </select>
           </div>
 
@@ -293,9 +396,9 @@ export default function TabSolicitudes({
               className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
             >
               <option value="">Todos</option>
-              {(periodos || []).map((p) => (
-                <option key={p.idPeriodo} value={p.idPeriodo}>
-                  {p.descripcion ?? p.nombrePeriodo ?? `Periodo ${p.periodo ?? p.idPeriodo}`}
+              {periodosUnicos.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.descripcion}
                 </option>
               ))}
             </select>
@@ -309,13 +412,12 @@ export default function TabSolicitudes({
             <select
               value={filtros.macroId || ""}
               onChange={(e) => setFiltros({ ...filtros, macroId: e.target.value, redId: "", ipressId: "" })}
-              disabled={loadingFiltros}
-              className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100"
+              className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
             >
               <option value="">Todas</option>
-              {macroregiones.map((macro) => (
-                <option key={macro.id} value={macro.id}>
-                  {macro.descripcion}
+              {macrorregionesUnicos.map((macro) => (
+                <option key={macro} value={macro}>
+                  {macro}
                 </option>
               ))}
             </select>
@@ -329,13 +431,12 @@ export default function TabSolicitudes({
             <select
               value={filtros.redId || ""}
               onChange={(e) => setFiltros({ ...filtros, redId: e.target.value, ipressId: "" })}
-              disabled={!filtros.macroId || loadingFiltros}
-              className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100"
+              className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
             >
               <option value="">Todas</option>
-              {redes.map((red) => (
-                <option key={red.id} value={red.id}>
-                  {red.codigo} - {red.descripcion}
+              {redesUnicos.map((red) => (
+                <option key={red} value={red}>
+                  {red}
                 </option>
               ))}
             </select>
@@ -349,13 +450,12 @@ export default function TabSolicitudes({
             <select
               value={filtros.ipressId || ""}
               onChange={(e) => setFiltros({ ...filtros, ipressId: e.target.value })}
-              disabled={!filtros.redId || loadingFiltros}
-              className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100"
+              className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
             >
               <option value="">Todas</option>
-              {ipressList.map((ipress) => (
-                <option key={ipress.id} value={ipress.id}>
-                  {ipress.codigo} - {ipress.descripcion}
+              {ipressUnicos.map((ipress) => (
+                <option key={ipress} value={ipress}>
+                  {ipress}
                 </option>
               ))}
             </select>
@@ -425,8 +525,8 @@ export default function TabSolicitudes({
 
                   // Obtener información de ubicación desde el mapa de IPRESS (buscar por nombre)
                   const ipressUbicacion = ipressUbicacionMap.get(s.nombreIpress);
-                  const macroregionLabel = ipressUbicacion?.macroNombre || '—';
-                  const redLabel = ipressUbicacion?.redNombre || '—';
+                  const macroregionLabel = ipressUbicacion?.macroNombre;
+                  const redLabel = ipressUbicacion?.redNombre;
 
                   return (
                     <tr
@@ -434,15 +534,27 @@ export default function TabSolicitudes({
                       className="hover:bg-blue-50 transition-colors cursor-pointer border-b border-gray-200"
                       onClick={() => onVerDetalle(s)}
                     >
-                      <td className="px-3 py-2.5 text-sm text-gray-700">
-                        {macroregionLabel}
+                      <td className="px-3 py-2.5 text-sm text-gray-700 uppercase">
+                        {macroregionLabel ? (
+                          macroregionLabel
+                        ) : loadingUbicacionMap ? (
+                          <Loader2 className="w-4 h-4 animate-spin text-blue-500 inline-block" />
+                        ) : (
+                          '—'
+                        )}
                       </td>
-                      <td className="px-3 py-2.5 text-sm text-gray-700">
-                        {redLabel}
+                      <td className="px-3 py-2.5 text-sm text-gray-700 uppercase">
+                        {redLabel ? (
+                          redLabel
+                        ) : loadingUbicacionMap ? (
+                          <Loader2 className="w-4 h-4 animate-spin text-blue-500 inline-block" />
+                        ) : (
+                          '—'
+                        )}
                       </td>
-                      <td className="px-3 py-2.5">
+                      <td className="px-3 py-2.5 text-sm text-gray-700 uppercase">
                         <div>
-                          <div className="text-sm font-medium text-gray-900">{s.nombreIpress}</div>
+                          <div>{s.nombreIpress}</div>
                           {s.codIpress && (
                             <div className="text-xs text-gray-500">Cód: {s.codIpress}</div>
                           )}
