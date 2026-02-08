@@ -31,6 +31,7 @@ export default function TabSolicitudes({
   getEstadoBadge,
   periodos,
   onConsultar,
+  readOnly = false, // Nuevo prop para modo lectura
 }) {
   const safeSolicitudes = Array.isArray(solicitudes) ? solicitudes : [];
   const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
@@ -531,8 +532,8 @@ export default function TabSolicitudes({
                   return (
                     <tr
                       key={s.idSolicitud}
-                      className="hover:bg-blue-50 transition-colors cursor-pointer border-b border-gray-200"
-                      onClick={() => onVerDetalle(s)}
+                      className={`border-b border-gray-200 transition-colors ${!readOnly ? 'hover:bg-blue-50 cursor-pointer' : ''}`}
+                      onClick={() => !readOnly && onVerDetalle(s)}
                     >
                       <td className="px-3 py-2.5 text-sm text-gray-700 uppercase">
                         {macroregionLabel ? (
@@ -572,16 +573,22 @@ export default function TabSolicitudes({
                         {fmtDateTime(s.fechaEnvio)}
                       </td>
                       <td className="px-3 py-2.5 text-center">
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            onVerDetalle(s);
-                          }}
-                          className="inline-flex items-center justify-center p-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors"
-                          title="Ver detalle de solicitud"
-                        >
-                          <ChevronRight className="w-4 h-4" />
-                        </button>
+                        {!readOnly ? (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onVerDetalle(s);
+                            }}
+                            className="inline-flex items-center justify-center p-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors"
+                            title="Ver detalle de solicitud"
+                          >
+                            <ChevronRight className="w-4 h-4" />
+                          </button>
+                        ) : (
+                          <span className="text-gray-400">
+                            <ChevronRight className="w-4 h-4" />
+                          </span>
+                        )}
                       </td>
                     </tr>
                   );
