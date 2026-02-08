@@ -6,6 +6,20 @@
 
 ## 📊 VERSIONES PRINCIPALES
 
+### ✅ v1.57.1 - Exportación de Tabla Especialidades (2026-02-07) 🎉 MEJORA FEATURE
+✅ **Botón "Exportar" en Tabla** - Nuevo botón en header de especialidades solicitadas
+✅ **12 Columnas Detalladas** - Nº, Especialidad, Código, Estado, Mañana, Tarde, Teleconsulta, Teleconsultorio, Fechas, Inicio, Fin, Observación
+✅ **Exportación Rápida** - Descarga instantánea de la tabla visible
+✅ **Nombre Dinámico** - Incluye nombre de IPRESS en archivo
+
+**Archivos modificados:**
+- `exportarExcel.js` - Nueva función `exportarEspecialidadesAExcel()`
+- `ModalDetalleSolicitud.jsx` - Botón "Exportar" en header tabla
+
+**Docs actualizada:** [`spec/frontend/03_exportacion_excel.md`](spec/frontend/03_exportacion_excel.md)
+
+---
+
 ### ✅ v1.57.0 - Exportación a Excel en Gestión de Períodos (2026-02-07) 🎉 NUEVA FEATURE
 ✅ **Exportar Solicitudes** - Botón para descargar Excel con lista completa de solicitudes
 ✅ **Exportar Individual** - Botón por fila para exportar una solicitud específica

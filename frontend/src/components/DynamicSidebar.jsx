@@ -65,6 +65,35 @@ import {
   Home,
   User,
   Inbox,
+  Plus,
+  Trash2,
+  Edit,
+  Copy,
+  Download,
+  Share2,
+  AlertCircle,
+  CheckCircle,
+  Info,
+  Zap,
+  TrendingDown,
+  PieChart,
+  LineChart,
+  MoreVertical,
+  Filter,
+  RefreshCw,
+  Code,
+  Wifi,
+  AlertTriangle,
+  Pill,
+  MapPin,
+  Ambulance,
+  Heart,
+  Microscope,
+  Bookmark,
+  Star,
+  GitBranch,
+  Briefcase,
+  MapPinned,
 } from "lucide-react";
 
 // Mapeo de nombres de iconos a componentes de Lucide
@@ -74,7 +103,7 @@ const iconMap = {
   'Building2': Building2,
   'CalendarCheck': CalendarCheck,
   'UserCog': UserCog,
-  'UsersCog': UserCog,  // Alias por si está mal escrito en BD
+  'UsersCog': UserCog,
   'Hospital': Hospital,
   'ClipboardList': ClipboardList,
   'Stethoscope': Stethoscope,
@@ -110,13 +139,42 @@ const iconMap = {
   'FolderOpen': FolderOpen,
   'Bug': Bug,
   'List': List,
-  'Headphones': Headphones,  // 🎧 Para teleoperadoras/gestoras de citas
+  'Headphones': Headphones,
   'Phone': Phone,
   'PhoneCall': PhoneCall,
-  'Mail': Mail,  // 📧 Para auditoría de correos
-  'Home': Home,  // 🏠 Para Bienvenida
-  'User': User,  // 👤 Para Mi Información
-  'Inbox': Inbox,  // 📥 Para TeleECG Recibidas
+  'Mail': Mail,
+  'Home': Home,
+  'User': User,
+  'Inbox': Inbox,
+  'Plus': Plus,
+  'Trash2': Trash2,
+  'Edit': Edit,
+  'Copy': Copy,
+  'Download': Download,
+  'Share2': Share2,
+  'AlertCircle': AlertCircle,
+  'CheckCircle': CheckCircle,
+  'Info': Info,
+  'Zap': Zap,
+  'TrendingDown': TrendingDown,
+  'PieChart': PieChart,
+  'LineChart': LineChart,
+  'MoreVertical': MoreVertical,
+  'Filter': Filter,
+  'RefreshCw': RefreshCw,
+  'Code': Code,
+  'Wifi': Wifi,
+  'AlertTriangle': AlertTriangle,
+  'Pill': Pill,
+  'MapPin': MapPin,
+  'Ambulance': Ambulance,
+  'Heart': Heart,
+  'Microscope': Microscope,
+  'Bookmark': Bookmark,
+  'Star': Star,
+  'GitBranch': GitBranch,
+  'Briefcase': Briefcase,
+  'MapPinned': MapPinned,
 };
 
 const getIconComponent = (iconName) => {
@@ -506,64 +564,179 @@ function TooltipWrapper({ children, collapsed, text }) {
   );
 }
 
-// Función helper para obtener el icono según el módulo y página
+// Función helper mejorada para obtener el icono según módulo y página
 function getPageIcon(nombreModulo, nombrePagina) {
   const lowerName = nombrePagina.toLowerCase();
+  const lowerModule = nombreModulo.toLowerCase();
 
-  // Iconos para Dengue (enfermedad/virus)
-  if (lowerName === 'dengue') {
-    return HeartPulse;
+  // ========== MAPEOS ESPECÍFICOS POR MÓDULO ==========
+
+  // --- MÓDULO: ENFERMERÍA ---
+  if (lowerModule.includes('enfermería') || lowerModule.includes('enfermeria')) {
+    if (lowerName.includes('bienvenida')) return Home;
+    if (lowerName.includes('dashboard') || lowerName.includes('inicio')) return LayoutDashboard;
+    if (lowerName.includes('paciente')) return Users;
+    if (lowerName.includes('atención') || lowerName.includes('atencion')) return Stethoscope;
+    if (lowerName.includes('vital') || lowerName.includes('signo')) return HeartPulse;
+    if (lowerName.includes('historia') || lowerName.includes('historial')) return ClipboardList;
+    return Hospital;
   }
 
-  // Iconos generales
-  if (lowerName.includes('bienvenida')) {
-    return Home;  // 🏠 Para Bienvenida
+  // --- MÓDULO: GESTIÓN DE CITAS ---
+  if (lowerModule.includes('gestión de citas') || lowerModule.includes('citas')) {
+    if (lowerName.includes('bienvenida')) return Home;
+    if (lowerName.includes('dashboard') || lowerName.includes('inicio')) return LayoutDashboard;
+    if (lowerName.includes('cita') || lowerName.includes('agendar')) return CalendarCheck;
+    if (lowerName.includes('asegurado')) return Users;
+    if (lowerName.includes('disponibilidad')) return Calendar;
+    if (lowerName.includes('listar') || lowerName.includes('listado')) return List;
+    return Clock;
   }
-  if (lowerName.includes('inicio') || lowerName.includes('dashboard')) {
-    return LayoutDashboard;
+
+  // --- MÓDULO: GESTIÓN DE COORDINADOR MÉDICO ---
+  if (lowerModule.includes('coordinador médico') || lowerModule.includes('coordinador medico')) {
+    if (lowerName.includes('bienvenida')) return Home;
+    if (lowerName.includes('dashboard')) return LayoutDashboard;
+    if (lowerName.includes('rendimiento') || lowerName.includes('performance')) return BarChart3;
+    if (lowerName.includes('feriado') || lowerName.includes('festivo') || lowerName.includes('holiday')) return Calendar;
+    if (lowerName.includes('configuración') || lowerName.includes('configuracion')) return Settings;
+    if (lowerName.includes('coordinación') || lowerName.includes('coordinacion')) return Users;
+    if (lowerName.includes('requerimiento') || lowerName.includes('requisito') || lowerName.includes('especialidad') || lowerName.includes('telemedicina')) return Stethoscope;
+    if (lowerName.includes('período') || lowerName.includes('periodo') || lowerName.includes('disponibilidad')) return Calendar;
+    if (lowerName.includes('paciente')) return Users;
+    if (lowerName.includes('médico') || lowerName.includes('medico')) return Stethoscope;
+    if (lowerName.includes('asignación') || lowerName.includes('asignacion')) return UserCheck;
+    return Briefcase;
   }
-  if (lowerName.includes('excel') || lowerName.includes('cargar') || lowerName.includes('importar')) {
-    return Upload;
-  }
-  if (lowerName.includes('listar') || lowerName.includes('listado') || lowerName.includes('casos')) {
-    return List;
-  }
-  if (lowerName.includes('buscar') || lowerName.includes('búsqueda') || lowerName.includes('search')) {
-    return Search;
-  }
-  if (lowerName.includes('resultado') || lowerName.includes('estadística') || lowerName.includes('estadisticas') || lowerName.includes('analisis')) {
-    return BarChart3;
-  }
-  if (lowerName.includes('paciente')) {
-    return Users;
-  }
-  if (lowerName.includes('disponibilidad')) {
-    return Calendar;  // 📅 Para Disponibilidad
-  }
-  if (lowerName.includes('información') || lowerName.includes('informacion') || lowerName.includes('perfil')) {
-    return User;  // 👤 Para Mi Información
-  }
-  if (lowerName.includes('recibida') || lowerName.includes('recibido') || lowerName.includes('teleecg')) {
-    return Inbox;  // 📥 Para TeleECG Recibidas
-  }
-  if (lowerName.includes('atención') || lowerName.includes('atencion') || lowerName.includes('clínica') || lowerName.includes('clinica')) {
-    return Stethoscope;
-  }
-  if (lowerName.includes('asignación') || lowerName.includes('asignacion') || lowerName.includes('assign')) {
-    return UserCheck;
-  }
-  if (lowerName.includes('error') || lowerName.includes('fallo') || lowerName.includes('problema')) {
-    return FileSearch;
-  }
-  if (lowerName.includes('solicitud') || lowerName.includes('request')) {
-    return ListChecks;
-  }
-  if (lowerName.includes('historial') || lowerName.includes('history') || lowerName.includes('log')) {
-    return FolderOpen;
-  }
-  if (lowerName.includes('módulo') || lowerName.includes('modulo') || lowerName.includes('grupo')) {
+
+  // --- MÓDULO: GESTIÓN DE MÓDULOS ---
+  if (lowerModule.includes('gestión de módulos') || lowerModule.includes('gestion de modulos')) {
+    if (lowerName.includes('descripción')) return FileText;
+    if (lowerName.includes('modulo')) return Layers;
+    if (lowerName.includes('página') || lowerName.includes('pagina')) return Layout;
+    if (lowerName.includes('control') || lowerName.includes('acceso')) return Lock;
+    if (lowerName.includes('rol')) return Shield;
     return Database;
   }
+
+  // --- MÓDULO: CONTROL DE ROLES, ACCESOS Y PERMISOS ---
+  if (lowerModule.includes('control') || lowerModule.includes('roles') || lowerModule.includes('acceso') || lowerModule.includes('permiso')) {
+    if (lowerName.includes('rol')) return Shield;
+    if (lowerName.includes('usuario') || lowerName.includes('personal')) return Users;
+    if (lowerName.includes('permiso')) return Lock;
+    if (lowerName.includes('auditoria') || lowerName.includes('auditoría')) return Eye;
+    return UserCog;
+  }
+
+  // --- MÓDULO: GESTIÓN DE PERSONAL EXTERNO ---
+  if (lowerModule.includes('personal externo')) {
+    if (lowerName.includes('bienvenida')) return Home;
+    if (lowerName.includes('dashboard')) return LayoutDashboard;
+    if (lowerName.includes('personal')) return Users;
+    if (lowerName.includes('institución') || lowerName.includes('institucion')) return Building2;
+    return UserPlus;
+  }
+
+  // --- MÓDULO: GESTIÓN TERRITORIAL ---
+  if (lowerModule.includes('gestión territorial') || lowerModule.includes('gestion territorial')) {
+    if (lowerName.includes('diagnóstico') || lowerName.includes('diagnostico')) return BarChart3;
+    if (lowerName.includes('ipress')) return Hospital;
+    if (lowerName.includes('red') || lowerName.includes('territorio')) return MapPinned;
+    if (lowerName.includes('respuesta')) return CheckCircle;
+    return MapPin;
+  }
+
+  // --- MÓDULO: IPRESS ---
+  if (lowerModule.includes('ipress')) {
+    if (lowerName.includes('bienvenida')) return Home;
+    if (lowerName.includes('institución') || lowerName.includes('institucion')) return Hospital;
+    if (lowerName.includes('catálogo') || lowerName.includes('catalogo')) return Database;
+    if (lowerName.includes('personal')) return Users;
+    return Building2;
+  }
+
+  // --- MÓDULO: PANEL MÉDICO ---
+  if (lowerModule.includes('panel médico') || lowerModule.includes('panel medico')) {
+    if (lowerName.includes('bienvenida')) return Home;
+    if (lowerName.includes('mis pacientes')) return Users;
+    if (lowerName.includes('información') || lowerName.includes('informacion')) return User;
+    if (lowerName.includes('disponibilidad')) return Calendar;
+    if (lowerName.includes('receta')) return Pill;
+    if (lowerName.includes('interconsulta')) return Share2;
+    return Stethoscope;
+  }
+
+  // --- MÓDULO: PROGRAMACIÓN CENATE ---
+  if (lowerModule.includes('programación') || lowerModule.includes('programacion')) {
+    if (lowerName.includes('horario') || lowerName.includes('disponibilidad')) return Calendar;
+    if (lowerName.includes('médico') || lowerName.includes('medico')) return Stethoscope;
+    if (lowerName.includes('turno') || lowerName.includes('schedule')) return Clock;
+    return CalendarCheck;
+  }
+
+  // --- MÓDULO: TELEECG ---
+  if (lowerModule.includes('teleecg') || lowerModule.includes('tele ecg') || lowerModule.includes('ecg')) {
+    if (lowerName.includes('recibida') || lowerName.includes('recibido')) return Inbox;
+    if (lowerName.includes('enviada') || lowerName.includes('enviado')) return Share2;
+    if (lowerName.includes('paciente')) return Users;
+    if (lowerName.includes('resultado') || lowerName.includes('analisis')) return BarChart3;
+    return Heart;
+  }
+
+  // --- MÓDULO: BOLSAS DE PACIENTES ---
+  if (lowerModule.includes('bolsa')) {
+    if (lowerName.includes('módulo 107')) return Database;
+    if (lowerName.includes('dengue')) return AlertTriangle;
+    if (lowerName.includes('solicitud')) return ListChecks;
+    if (lowerName.includes('paciente')) return Users;
+    if (lowerName.includes('respuesta')) return CheckCircle;
+    return Package;
+  }
+
+  // --- MÓDULO: ADMINISTRACIÓN ---
+  if (lowerModule.includes('administración') || lowerModule.includes('administracion')) {
+    if (lowerName.includes('usuario')) return Users;
+    if (lowerName.includes('rol')) return Shield;
+    if (lowerName.includes('módulo') || lowerName.includes('modulo')) return Layers;
+    if (lowerName.includes('configuración') || lowerName.includes('configuracion')) return Settings;
+    if (lowerName.includes('auditoría') || lowerName.includes('auditoria')) return Eye;
+    return UserCog;
+  }
+
+  // --- MÓDULO: ASEGURADOS ---
+  if (lowerModule.includes('asegurado')) {
+    if (lowerName.includes('buscar')) return Search;
+    if (lowerName.includes('duplicado')) return Copy;
+    if (lowerName.includes('dashboard')) return LayoutDashboard;
+    return Users;
+  }
+
+  // ========== MAPEOS GENERALES (FALLBACK) ==========
+
+  if (lowerName.includes('bienvenida')) return Home;
+  if (lowerName.includes('inicio') || lowerName.includes('dashboard')) return LayoutDashboard;
+  if (lowerName.includes('excel') || lowerName.includes('cargar') || lowerName.includes('importar')) return Upload;
+  if (lowerName.includes('descargar') || lowerName.includes('exportar') || lowerName.includes('download')) return Download;
+  if (lowerName.includes('listar') || lowerName.includes('listado') || lowerName.includes('casos')) return List;
+  if (lowerName.includes('buscar') || lowerName.includes('búsqueda') || lowerName.includes('search')) return Search;
+  if (lowerName.includes('resultado') || lowerName.includes('estadística') || lowerName.includes('estadisticas') || lowerName.includes('analisis')) return BarChart3;
+  if (lowerName.includes('paciente')) return Users;
+  if (lowerName.includes('disponibilidad')) return Calendar;
+  if (lowerName.includes('información') || lowerName.includes('informacion') || lowerName.includes('perfil')) return User;
+  if (lowerName.includes('recibida') || lowerName.includes('recibido') || lowerName.includes('inbox')) return Inbox;
+  if (lowerName.includes('atención') || lowerName.includes('atencion') || lowerName.includes('clínica') || lowerName.includes('clinica')) return Stethoscope;
+  if (lowerName.includes('asignación') || lowerName.includes('asignacion') || lowerName.includes('assign')) return UserCheck;
+  if (lowerName.includes('error') || lowerName.includes('fallo') || lowerName.includes('problema')) return AlertTriangle;
+  if (lowerName.includes('solicitud') || lowerName.includes('request')) return ListChecks;
+  if (lowerName.includes('historial') || lowerName.includes('history') || lowerName.includes('log')) return FolderOpen;
+  if (lowerName.includes('módulo') || lowerName.includes('modulo') || lowerName.includes('grupo')) return Database;
+  if (lowerName.includes('rol')) return Shield;
+  if (lowerName.includes('usuario')) return Users;
+  if (lowerName.includes('médico') || lowerName.includes('medico')) return Stethoscope;
+  if (lowerName.includes('enfermería') || lowerName.includes('enfermeria')) return Hospital;
+  if (lowerName.includes('dengue')) return AlertTriangle;
+  if (lowerName.includes('configuración') || lowerName.includes('configuracion')) return Settings;
+  if (lowerName.includes('ayuda') || lowerName.includes('soporte')) return Headphones;
 
   return FileText;
 }
@@ -636,15 +809,46 @@ function PaginaConSubmenu({ pagina, location, nombreModulo, getIconComponent, au
   );
 }
 
+// Función para obtener el mejor icono del módulo
+function getModuleIcon(nombreModulo, iconoDeBaseDatos) {
+  const lowerName = nombreModulo.toLowerCase();
+
+  // Mapeos específicos por nombre de módulo
+  if (lowerName.includes('asegurado')) return Users;
+  if (lowerName.includes('enfermería') || lowerName.includes('enfermeria')) return Hospital;
+  if (lowerName.includes('gestión de citas') || lowerName.includes('citas')) return CalendarCheck;
+  if (lowerName.includes('coordinador médico') || lowerName.includes('coordinador medico')) return Briefcase;
+  if (lowerName.includes('gestión de módulos') || lowerName.includes('gestion de modulos')) return Layers;
+  if (lowerName.includes('control') && (lowerName.includes('rol') || lowerName.includes('acceso') || lowerName.includes('permiso'))) return UserCog;
+  if (lowerName.includes('gestión de personal externo') || lowerName.includes('personal externo')) return UserPlus;
+  if (lowerName.includes('gestión territorial') || lowerName.includes('gestion territorial')) return MapPinned;
+  if (lowerName.includes('ipress')) return Building2;
+  if (lowerName.includes('panel médico') || lowerName.includes('panel medico')) return Stethoscope;
+  if (lowerName.includes('programación') || lowerName.includes('programacion')) return Calendar;
+  if (lowerName.includes('teleecg') || lowerName.includes('tele ecg') || lowerName.includes('ecg')) return Heart;
+  if (lowerName.includes('bolsa')) return Package;
+  if (lowerName.includes('administración') || lowerName.includes('administracion')) return Settings;
+  if (lowerName.includes('dashboard')) return LayoutDashboard;
+  if (lowerName.includes('catálogo') || lowerName.includes('catalogo')) return Database;
+  if (lowerName.includes('reportes') || lowerName.includes('reporte')) return BarChart3;
+  if (lowerName.includes('auditoría') || lowerName.includes('auditoria')) return Eye;
+  if (lowerName.includes('notificaciones')) return MessageSquare;
+  if (lowerName.includes('estado') && lowerName.includes('sistema')) return Activity;
+
+  // Intentar usar el icono de la BD como fallback
+  if (iconoDeBaseDatos) {
+    return null; // Dejar que getPageIcon lo maneje
+  }
+
+  return Folder;
+}
+
 // Componente para renderizar modulos dinamicos con iconos de la BD
 function DynamicModuleSection({ modulo, colorConfig, location, toggleSection, openSections, collapsed, getIconComponent, isPersonal107 = false }) {
   const { nombreModulo, icono, paginas } = modulo;
 
-  // Icono especial para "Bolsas de Pacientes"
-  let ModuleIcon = getPageIcon(nombreModulo, nombreModulo) || getIconComponent(icono) || Folder;
-  if (nombreModulo === 'Bolsas de Pacientes') {
-    ModuleIcon = Package;
-  }
+  // Intentar obtener icono específico del módulo primero
+  let ModuleIcon = getModuleIcon(nombreModulo, icono) || getPageIcon(nombreModulo, nombreModulo) || getIconComponent(icono) || Folder;
 
   const isOpen = openSections[nombreModulo];
 

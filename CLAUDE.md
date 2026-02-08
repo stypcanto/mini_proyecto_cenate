@@ -1,9 +1,9 @@
 # CLAUDE.md - Proyecto CENATE
 
 > **Sistema de Telemedicina - EsSalud Perú**
-> **Versión:** v1.57.0 (2026-02-07) 🚀
-> **Última Feature:** v1.57.0 - Exportación a Excel: Gestión de Períodos y Solicitudes ✅ (2026-02-07)
-> **Última Fix:** v1.54.4 - KPI Cards + Filtros por Estado: Estadísticas correctas + Filtros funcionan ✅ (2026-02-07) ⭐
+> **Versión:** v1.57.1 (2026-02-07) 🚀
+> **Última Feature:** v1.57.1 - Exportación de Tabla Especialidades: Botón en modal + 12 columnas ✅ (2026-02-07)
+> **Última Feature Base:** v1.57.0 - Exportación a Excel: Gestión de Períodos y Solicitudes ✅ (2026-02-07)
 > **Status:** ✅ Production Ready
 
 ---

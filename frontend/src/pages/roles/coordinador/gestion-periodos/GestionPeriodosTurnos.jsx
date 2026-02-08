@@ -451,7 +451,7 @@ export default function GestionPeriodosTurnos() {
               >
                 <div className="flex items-center gap-2">
                   <FileText className="w-4 h-4" />
-                  <span>Solicitudes</span>
+                  <span>Respuestas de los requerimientos de las IPRESS</span>
                 </div>
               </button>
             </nav>

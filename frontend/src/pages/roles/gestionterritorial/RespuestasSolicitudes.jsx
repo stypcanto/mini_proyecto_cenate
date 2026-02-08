@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from "react";
 import { FileText, Loader2 } from "lucide-react";
 import TabSolicitudes from "../coordinador/gestion-periodos/components/TabSolicitudes";
-import { solicitudTurnosService } from "../../services/solicitudTurnosService";
+import { solicitudTurnosService } from "../../../services/solicitudTurnosService";
 import { getEstadoBadgeDefault } from "../coordinador/gestion-periodos/utils/ui";
 
 export default function RespuestasSolicitudes() {
