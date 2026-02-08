@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from "react";
 import { FileText, Loader2 } from "lucide-react";
 import TabSolicitudes from "../coordinador/gestion-periodos/components/TabSolicitudes";
+import ModalDetalleSolicitud from "../coordinador/gestion-periodos/components/ModalDetalleSolicitud";
 import { solicitudTurnosService } from "../../../services/solicitudTurnosService";
 import { getEstadoBadgeDefault } from "../coordinador/gestion-periodos/utils/ui";
 
@@ -9,6 +10,9 @@ export default function RespuestasSolicitudes() {
   const [solicitudes, setSolicitudes] = useState([]);
   const [periodos, setPeriodos] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [solicitudSeleccionada, setSolicitudSeleccionada] = useState(null);
+  const [modalDetalleAbierto, setModalDetalleAbierto] = useState(false);
+  const [loadingDetalle, setLoadingDetalle] = useState(false);
   const [filtros, setFiltros] = useState({
     estado: "TODAS",
     periodo: "",
@@ -18,14 +22,33 @@ export default function RespuestasSolicitudes() {
     ipressId: "",
   });
 
+  // Cargar datos iniciales
   useEffect(() => {
-    cargarDatos();
+    const loadInitialData = async () => {
+      setLoading(true);
+      try {
+        const dataSolicitudes = await solicitudTurnosService.obtenerTodas(filtros);
+        const list = Array.isArray(dataSolicitudes)
+          ? dataSolicitudes
+          : Array.isArray(dataSolicitudes?.content)
+          ? dataSolicitudes.content
+          : [];
+        setSolicitudes(list);
+        setPeriodos([]);
+      } catch (err) {
+        console.error("Error al cargar datos:", err);
+        setSolicitudes([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadInitialData();
   }, []);
 
   const cargarDatos = async () => {
     setLoading(true);
     try {
-      // Cargar solicitudes
       const dataSolicitudes = await solicitudTurnosService.obtenerTodas(filtros);
       const list = Array.isArray(dataSolicitudes)
         ? dataSolicitudes
@@ -33,10 +56,6 @@ export default function RespuestasSolicitudes() {
         ? dataSolicitudes.content
         : [];
       setSolicitudes(list);
-
-      // Cargar periodos (puedes obtenerlos de un servicio si existe)
-      // Por ahora usamos array vacío, el componente TabSolicitudes lo maneja
-      setPeriodos([]);
     } catch (err) {
       console.error("Error al cargar datos:", err);
       setSolicitudes([]);
@@ -45,9 +64,24 @@ export default function RespuestasSolicitudes() {
     }
   };
 
-  const handleVerDetalle = (solicitud) => {
-    // En modo read-only, puedes redirigir a una vista de detalles sin permisos de edición
-    console.log("Ver detalle (read-only):", solicitud);
+  const handleVerDetalle = async (solicitud) => {
+    setLoadingDetalle(true);
+    try {
+      // Obtener detalles completos de la solicitud
+      const detalle = await solicitudTurnosService.obtenerPorId(solicitud.idSolicitud);
+      setSolicitudSeleccionada(detalle);
+      setModalDetalleAbierto(true);
+    } catch (err) {
+      console.error("Error al cargar detalles:", err);
+      alert("Error al cargar los detalles de la solicitud");
+    } finally {
+      setLoadingDetalle(false);
+    }
+  };
+
+  const handleCerrarDetalle = () => {
+    setModalDetalleAbierto(false);
+    setSolicitudSeleccionada(null);
   };
 
   return (
@@ -88,12 +122,25 @@ export default function RespuestasSolicitudes() {
             filtros={filtros}
             setFiltros={setFiltros}
             onVerDetalle={handleVerDetalle}
-            onAprobar={() => {}} // No hacer nada en modo read-only
-            onRechazar={() => {}} // No hacer nada en modo read-only
+            onAprobar={() => {}} // Deshabilitado en modo lectura
+            onRechazar={() => {}} // Deshabilitado en modo lectura
             getEstadoBadge={getEstadoBadgeDefault}
             periodos={periodos}
             onConsultar={() => {}}
-            readOnly={true} // Modo read-only
+            readOnly={false} // Permitir Ver Detalle (pero no editar/aprobar/rechazar)
+          />
+        )}
+
+        {/* Modal de Detalles (Read-Only) */}
+        {modalDetalleAbierto && solicitudSeleccionada && (
+          <ModalDetalleSolicitud
+            loading={loadingDetalle}
+            solicitud={solicitudSeleccionada}
+            onClose={handleCerrarDetalle}
+            onAprobar={() => {}} // Deshabilitado en modo read-only
+            onRechazar={() => {}} // Deshabilitado en modo read-only
+            getEstadoBadge={getEstadoBadgeDefault}
+            readOnly={true} // Modo lectura: sin permisos de edición
           />
         )}
       </div>

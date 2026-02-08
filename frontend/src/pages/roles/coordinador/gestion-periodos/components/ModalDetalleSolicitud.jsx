@@ -41,6 +41,7 @@ export default function ModalDetalleSolicitud({
   getEstadoBadge,
   prefillRechazo = false,
   onRecargarDetalle,
+  readOnly = false,
 }) {
   const [motivoRechazo, setMotivoRechazo] = useState("");
   const [showRechazoForm, setShowRechazoForm] = useState(prefillRechazo);
@@ -383,11 +384,11 @@ export default function ModalDetalleSolicitud({
 
             <button
               onClick={onClose}
-              className="flex-shrink-0 text-white bg-white/20 hover:bg-white/30 rounded-lg p-1.5 transition-all hover:scale-110"
+              className="flex-shrink-0 flex items-center justify-center w-10 h-10 rounded-full bg-white/20 hover:bg-white/40 text-white transition-all duration-200 hover:scale-110 hover:shadow-lg backdrop-blur-sm border border-white/30 hover:border-white/50"
               aria-label="Cerrar modal"
               title="Cerrar (ESC)"
             >
-              <XCircle className="w-4 h-4" />
+              <XCircle className="w-5 h-5" />
             </button>
           </div>
         </div>
@@ -935,22 +936,32 @@ export default function ModalDetalleSolicitud({
                             <td className="px-1.5 py-2 text-center bg-white border-l border-gray-200">
                               {estaPendiente ? (
                                 <div className="inline-flex items-center justify-center gap-1">
-                                  <Tooltip text="Asignar" position="top">
+                                  <Tooltip text={readOnly ? "No disponible (lectura)" : "Asignar"} position="top">
                                     <button
-                                      onClick={() => abrirModalAprobarDetalle(d)}
-                                      className="inline-flex items-center justify-center px-2 py-1 rounded bg-emerald-600 text-white hover:bg-emerald-700 transition-all font-bold text-xs"
+                                      onClick={() => !readOnly && abrirModalAprobarDetalle(d)}
+                                      disabled={readOnly}
+                                      className={`inline-flex items-center justify-center px-2 py-1 rounded font-bold text-xs transition-all ${
+                                        readOnly
+                                          ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+                                          : "bg-emerald-600 text-white hover:bg-emerald-700"
+                                      }`}
                                       aria-label="Asignar"
-                                      title="Asignar"
+                                      title={readOnly ? "No disponible (lectura)" : "Asignar"}
                                     >
                                       ✓
                                     </button>
                                   </Tooltip>
-                                  <Tooltip text="Rechazar" position="top">
+                                  <Tooltip text={readOnly ? "No disponible (lectura)" : "Rechazar"} position="top">
                                     <button
-                                      onClick={() => abrirModalRechazarDetalle(d)}
-                                      className="inline-flex items-center justify-center px-2 py-1 rounded bg-red-600 text-white hover:bg-red-700 transition-all font-bold text-xs"
+                                      onClick={() => !readOnly && abrirModalRechazarDetalle(d)}
+                                      disabled={readOnly}
+                                      className={`inline-flex items-center justify-center px-2 py-1 rounded font-bold text-xs transition-all ${
+                                        readOnly
+                                          ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+                                          : "bg-red-600 text-white hover:bg-red-700"
+                                      }`}
                                       aria-label="Rechazar"
-                                      title="Rechazar"
+                                      title={readOnly ? "No disponible (lectura)" : "Rechazar"}
                                     >
                                       ✕
                                     </button>
