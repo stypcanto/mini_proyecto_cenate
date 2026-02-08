@@ -182,7 +182,7 @@ export const exportarSolicitudCompleta = (solicitud, nombreArchivo = 'Reporte_So
 };
 
 /**
- * Exporta la tabla de especialidades solicitadas a Excel
+ * Exporta la tabla de especialidades solicitadas a Excel (versión simplificada)
  * @param {Array} especialidades - Array de especialidades (detalles)
  * @param {String} nombreIPRESS - Nombre de la IPRESS
  * @param {String} nombreArchivo - Nombre base del archivo
@@ -193,40 +193,43 @@ export const exportarEspecialidadesAExcel = (especialidades, nombreIPRESS = 'IPR
     return;
   }
 
+  // Crear datos con formato simplificado: Nº | Especialidad (Código) | Mañana | Tarde | Teleconsulta | Teleconsultorio
   const datosEspecialidades = especialidades.map((especialidad, idx) => ({
     'Nº': idx + 1,
-    'Especialidad': especialidad.nombreServicio || especialidad.nombreEspecialidad || '-',
-    'Código': especialidad.codigoServicio || especialidad.codServicio || '-',
-    'Estado': especialidad.estado || 'PENDIENTE',
+    'Especialidad': `${especialidad.nombreServicio || especialidad.nombreEspecialidad || '-'}\n(Cód: ${especialidad.codigoServicio || especialidad.codServicio || '-'})`,
     'Mañana': especialidad.turnoManana || 0,
     'Tarde': especialidad.turnoTarde || 0,
-    'Teleconsulta': especialidad.tc ? 'Sí' : 'No',
-    'Teleconsultorio': especialidad.tl ? 'Sí' : 'No',
-    'Cantidad Fechas': especialidad.fechasDetalle ? especialidad.fechasDetalle.length : 0,
-    'Fecha Inicio': especialidad.fechaInicio ? format(new Date(especialidad.fechaInicio), 'dd/MM/yyyy', { locale: es }) : '-',
-    'Fecha Fin': especialidad.fechaFin ? format(new Date(especialidad.fechaFin), 'dd/MM/yyyy', { locale: es }) : '-',
-    'Observación': especialidad.observacion || '-',
+    'TELECONSULTA': especialidad.tc ? 'Sí' : 'No',
+    'TELECONSULTORIO': especialidad.tl ? 'Sí' : 'No',
   }));
 
   const ws = XLSX.utils.json_to_sheet(datosEspecialidades);
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, 'Especialidades');
 
-  // Configurar columnas
+  // Configurar columnas (solo las 6 necesarias)
   ws['!cols'] = [
     { wch: 5 },   // Nº
-    { wch: 30 },  // Especialidad
-    { wch: 12 },  // Código
-    { wch: 12 },  // Estado
-    { wch: 10 },  // Mañana
-    { wch: 10 },  // Tarde
+    { wch: 35 },  // Especialidad (con código)
+    { wch: 12 },  // Mañana
+    { wch: 12 },  // Tarde
     { wch: 15 },  // Teleconsulta
     { wch: 15 },  // Teleconsultorio
-    { wch: 15 },  // Cantidad Fechas
-    { wch: 15 },  // Fecha Inicio
-    { wch: 15 },  // Fecha Fin
-    { wch: 30 },  // Observación
   ];
+
+  // Aplicar estilos a los encabezados
+  const headerStyle = {
+    font: { bold: true, color: 'FFFFFF', size: 11 },
+    fill: { fgColor: { rgb: '0A5BA9' } },
+    alignment: { horizontal: 'center', vertical: 'center', wrapText: true },
+  };
+
+  for (let i = 0; i < 6; i++) {
+    const cell = ws[XLSX.utils.encode_col(i) + '1'];
+    if (cell) {
+      cell.s = headerStyle;
+    }
+  }
 
   const timestamp = format(new Date(), 'yyyy-MM-dd_HHmmss');
   XLSX.writeFile(wb, `${nombreArchivo}_${nombreIPRESS}_${timestamp}.xlsx`);
