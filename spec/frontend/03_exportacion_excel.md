@@ -1,6 +1,6 @@
 # Exportación a Excel - Gestión de Períodos y Solicitudes
 
-**Versión:** v1.57.0
+**Versión:** v1.57.1
 **Fecha:** 2026-02-07
 **Estado:** ✅ Implementada
 
@@ -44,6 +44,23 @@ Se ha agregado la funcionalidad de exportación a Excel en el módulo de **Gesti
     - Observaciones
 
 - **Archivo generado:** `{NombreIPRESS}_Reporte_Completo_YYYY-MM-DD_HHmmss.xlsx`
+
+### 4. **Exportación Tabla de Especialidades (Nuevo v1.57.1)**
+- **Ubicación:** Botón "Exportar" en la tabla de "Especialidades solicitadas" dentro del modal
+- **Columnas del Excel (6 columnas clave):**
+  1. **Nº** - Número de fila (1-13)
+  2. **Especialidad** - Nombre de especialidad + Código
+  3. **Mañana** - Cantidad de turnos mañana
+  4. **Tarde** - Cantidad de turnos tarde
+  5. **TELECONSULTA** - Sí/No (disponible teleconsulta)
+  6. **TELECONSULTORIO** - Sí/No (disponible teleconsultorio)
+
+- **Archivo generado:** `Especialidades_Solicitadas_{NombreIPRESS}_YYYY-MM-DD_HHmmss.xlsx`
+- **Perfecto para:**
+  - Conocer cuántos turnos se necesitan por cada especialidad
+  - Identificar distribución Mañana vs Tarde
+  - Ver qué especialidades tienen opciones telemáticas
+  - Reporte rápido para "H.I CARLOS ALCANTARA BUTTERFIELD" o cualquier IPRESS
 
 ## 🚀 Cómo Usar
 
@@ -125,6 +142,26 @@ exportarSolicitudCompleta(
   solicitudConDetalles,
   'Reporte_Completo',
   periodoMap
+);
+```
+
+#### `exportarEspecialidadesAExcel(especialidades, nombreIPRESS, nombreArchivo)` (Nuevo v1.57.1)
+Exporta solo la tabla de especialidades solicitadas con todos sus detalles.
+
+**Parámetros:**
+- `especialidades` (Array): Array de objetos especialidad/detalle
+- `nombreIPRESS` (String): Nombre de la IPRESS para el nombre del archivo
+- `nombreArchivo` (String): Nombre base del archivo
+
+**Ejemplo:**
+```javascript
+import { exportarEspecialidadesAExcel } from '../utils/exportarExcel';
+
+// Exportar tabla de especialidades del modal
+exportarEspecialidadesAExcel(
+  detalles,  // Array de especialidades
+  solicitud.nombreIpress,
+  'Especialidades_Solicitadas'
 );
 ```
 
