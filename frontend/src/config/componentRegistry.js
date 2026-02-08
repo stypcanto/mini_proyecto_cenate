@@ -398,6 +398,11 @@ export const componentRegistry = {
     requiredAction: 'ver',
   },
 
+  '/roles/gestionterritorial/respuestas-solicitudes': {
+    component: lazy(() => import('../pages/roles/gestionterritorial/RespuestasSolicitudes')),
+    requiredAction: 'ver',
+  },
+
   // ========================================================================
   // 🌐 MÓDULO DE RED - COORDINADORES DE RED
   // ========================================================================
