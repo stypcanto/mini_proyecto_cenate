@@ -509,6 +509,20 @@ export default function IPRESSWorkspace() {
               onRefrescar={handleRefresh}
               onVerImagen={handleVerImagen}
               loading={loading}
+              imagenesPorDni={(() => {
+                // ✅ Agrupar imágenes reales por DNI para el modal de edición
+                const agrupadoPorDni = {};
+                ecgs.forEach(img => {
+                  const dni = img.numDocPaciente || img.dni;
+                  if (dni) {
+                    if (!agrupadoPorDni[dni]) {
+                      agrupadoPorDni[dni] = [];
+                    }
+                    agrupadoPorDni[dni].push(img);
+                  }
+                });
+                return agrupadoPorDni;
+              })()}
             />
 
             {/* ✅ Controles de Paginación */}

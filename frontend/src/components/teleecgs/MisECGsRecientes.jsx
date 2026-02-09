@@ -43,6 +43,7 @@ export default function MisECGsRecientes({
   onRefrescar = () => {},
   onVerImagen = () => {},
   loading = false,
+  imagenesPorDni = {}, // ✅ NEW: Pasar imágenes reales por DNI
 }) {
   const [expandidoTooltip, setExpandidoTooltip] = useState(null);
   const [filtroEstado, setFiltroEstado] = useState(null); // null = todos, 'ENVIADA', 'OBSERVADA', 'ATENDIDA'
@@ -58,12 +59,6 @@ export default function MisECGsRecientes({
   const [modalMode, setModalMode] = useState('view'); // 'view', 'add', 'replace', 'delete', 'preview'
   const [selectedImageIndex, setSelectedImageIndex] = useState(null);
   const [previewImageIndex, setPreviewImageIndex] = useState(null);
-  const [imagenesCarga, setImagenesCarga] = useState([]); // Simular lista de imágenes
-
-  // Simular imágenes EKG - En producción vendrían del backend
-  const imagenesMock = [
-    { id: 1, nombre: 'Imagen 1', url: 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="300"%3E%3Crect fill="%23f0f0f0" width="400" height="300"/%3E%3Ctext x="50%" y="50%" text-anchor="middle" dy=".3em" font-size="20" fill="%23666"%3EEKG - Paciente EKG - Paciente%3C/text%3E%3Ctext x="50%" y="60%" text-anchor="middle" dy=".3em" font-size="14" fill="%23999"%3EFecha: 2026-02-09%3C/text%3E%3C/svg%3E' }
-  ];
 
   // ✅ Sync ultimas3 to datosOriginales on mount and when ultimas3 changes
   useEffect(() => {
@@ -873,13 +868,35 @@ export default function MisECGsRecientes({
                   </span>
                 </div>
 
-                {/* Imagen en grande */}
+                {/* Imagen en grande - Usar imágenes reales del paciente */}
                 <div className="bg-gray-100 rounded-lg overflow-hidden border-2 border-gray-300">
-                  <img
-                    src={imagenesMock[0]?.url || 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="500" height="400"%3E%3Crect fill="%23f0f0f0" width="500" height="400"/%3E%3Ctext x="50%" y="50%" text-anchor="middle" dy=".3em" font-size="24" fill="%23999"%3EEKG Preview%3C/text%3E%3C/svg%3E'}
-                    alt={`Imagen ${previewImageIndex + 1}`}
-                    className="w-full h-auto max-h-96 object-contain"
-                  />
+                  {(() => {
+                    const imagenesDelPaciente = imagenesPorDni[cargaEdicion.dni] || [];
+                    const imagenActual = imagenesDelPaciente[previewImageIndex];
+
+                    if (imagenActual?.contenidoImagen) {
+                      // Imagen real con base64
+                      const url = `data:${imagenActual.tipoContenido || 'image/jpeg'};base64,${imagenActual.contenidoImagen}`;
+                      return (
+                        <img
+                          src={url}
+                          alt={`Imagen ${previewImageIndex + 1}`}
+                          className="w-full h-auto max-h-96 object-contain"
+                        />
+                      );
+                    }
+
+                    // Fallback si no hay imagen
+                    return (
+                      <div className="w-full h-96 flex items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200">
+                        <div className="text-center">
+                          <CloudUpload className="w-12 h-12 text-gray-400 mx-auto mb-3" />
+                          <p className="text-gray-500 font-semibold">Sin contenido de imagen</p>
+                          <p className="text-xs text-gray-400 mt-1">Imagen {previewImageIndex + 1}</p>
+                        </div>
+                      </div>
+                    );
+                  })()}
                 </div>
 
                 {/* Información de la imagen */}
