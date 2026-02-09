@@ -55,6 +55,15 @@ export default function MisECGsRecientes({
   // ✅ NEW: Modal de edición de imágenes
   const [showEditModal, setShowEditModal] = useState(false);
   const [cargaEdicion, setCargaEdicion] = useState(null);
+  const [modalMode, setModalMode] = useState('view'); // 'view', 'add', 'replace', 'delete', 'preview'
+  const [selectedImageIndex, setSelectedImageIndex] = useState(null);
+  const [previewImageIndex, setPreviewImageIndex] = useState(null);
+  const [imagenesCarga, setImagenesCarga] = useState([]); // Simular lista de imágenes
+
+  // Simular imágenes EKG - En producción vendrían del backend
+  const imagenesMock = [
+    { id: 1, nombre: 'Imagen 1', url: 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="300"%3E%3Crect fill="%23f0f0f0" width="400" height="300"/%3E%3Ctext x="50%" y="50%" text-anchor="middle" dy=".3em" font-size="20" fill="%23666"%3EEKG - Paciente EKG - Paciente%3C/text%3E%3Ctext x="50%" y="60%" text-anchor="middle" dy=".3em" font-size="14" fill="%23999"%3EFecha: 2026-02-09%3C/text%3E%3C/svg%3E' }
+  ];
 
   // ✅ Sync ultimas3 to datosOriginales on mount and when ultimas3 changes
   useEffect(() => {
@@ -614,80 +623,311 @@ export default function MisECGsRecientes({
         )}
       </div>
 
-      {/* Modal de Edición de Imágenes */}
+      {/* Modal Profesional de Gestión de Imágenes - Médico Friendly */}
       {showEditModal && cargaEdicion && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-lg shadow-2xl max-w-md w-full p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-bold text-gray-900">
-                Gestionar Imágenes
-              </h2>
+          <div className="bg-white rounded-lg shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6">
+            {/* Encabezado */}
+            <div className="flex items-center justify-between mb-6 sticky top-0 bg-white pb-4 border-b">
+              <div>
+                <h2 className="text-2xl font-bold text-gray-900">🖼️ Gestor de Imágenes EKG</h2>
+                <p className="text-sm text-gray-600 mt-1">
+                  {cargaEdicion.nombrePaciente} • DNI: {cargaEdicion.dni}
+                </p>
+              </div>
               <button
-                onClick={() => setShowEditModal(false)}
-                className="p-1 hover:bg-gray-100 rounded"
+                onClick={() => {
+                  setShowEditModal(false);
+                  setModalMode('view');
+                  setSelectedImageIndex(null);
+                }}
+                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
               >
-                <X className="w-5 h-5" />
+                <X className="w-6 h-6 text-gray-600" />
               </button>
             </div>
 
-            <div className="mb-4 p-4 bg-blue-50 rounded-lg">
-              <p className="text-sm font-semibold text-gray-900">
-                {cargaEdicion.nombrePaciente}
-              </p>
-              <p className="text-xs text-gray-600">
-                DNI: {cargaEdicion.dni}
-              </p>
-              <p className="text-xs text-gray-600">
-                Imágenes: {cargaEdicion.cantidadImagenes}
-              </p>
-            </div>
+            {/* Vista Principal - Imágenes */}
+            {modalMode === 'view' && (
+              <div className="space-y-6">
+                {/* Contador de Imágenes */}
+                <div className="grid grid-cols-3 gap-3">
+                  <div className="bg-blue-50 rounded-lg p-4 text-center">
+                    <p className="text-3xl font-bold text-blue-600">
+                      {cargaEdicion.cantidadImagenes || 0}
+                    </p>
+                    <p className="text-xs text-blue-700 font-semibold mt-1">Total de Imágenes</p>
+                  </div>
+                  <div className="bg-green-50 rounded-lg p-4 text-center">
+                    <p className="text-2xl font-bold text-green-600">+</p>
+                    <p className="text-xs text-green-700 font-semibold mt-1">Agregar</p>
+                  </div>
+                  <div className="bg-orange-50 rounded-lg p-4 text-center">
+                    <p className="text-2xl font-bold text-orange-600">⚙️</p>
+                    <p className="text-xs text-orange-700 font-semibold mt-1">Gestionar</p>
+                  </div>
+                </div>
 
-            <div className="space-y-3 mb-6">
-              {/* Agregar imagen */}
-              <button
-                onClick={() => {
-                  toast.success('📤 Abre el selector de archivos para agregar nueva imagen');
-                  // TODO: Implementar subida de archivo
-                }}
-                className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold transition-colors"
-              >
-                <Plus className="w-4 h-4" />
-                Agregar Imagen
-              </button>
+                {/* Grid de Imágenes Simuladas */}
+                {cargaEdicion.cantidadImagenes && cargaEdicion.cantidadImagenes > 0 ? (
+                  <div>
+                    <h3 className="font-bold text-gray-900 mb-3 flex items-center gap-2">
+                      <CloudUpload className="w-4 h-4 text-blue-600" />
+                      Imágenes Disponibles ({cargaEdicion.cantidadImagenes})
+                    </h3>
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                      {Array.from({ length: cargaEdicion.cantidadImagenes || 0 }).map((_, idx) => (
+                        <div
+                          key={idx}
+                          className="relative group bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg overflow-hidden aspect-square flex items-center justify-center border-2 border-dashed border-blue-300 hover:border-blue-500 transition-all cursor-pointer hover:shadow-lg"
+                        >
+                          {/* Click para previsualizas */}
+                          <button
+                            onClick={() => {
+                              setPreviewImageIndex(idx);
+                              setModalMode('preview');
+                            }}
+                            className="absolute inset-0 flex flex-col items-center justify-center text-center hover:bg-blue-100/30 transition-colors"
+                            title="Click para previsualizar"
+                          >
+                            <CloudUpload className="w-8 h-8 text-blue-500 mb-2 group-hover:scale-110 transition-transform" />
+                            <p className="text-xs text-blue-700 font-semibold">Imagen {idx + 1}</p>
+                            <p className="text-xs text-blue-500 mt-1 group-hover:block hidden">Click para ver</p>
+                          </button>
 
-              {/* Reemplazar imagen */}
-              <button
-                onClick={() => {
-                  toast.success('🔄 Selecciona la imagen a reemplazar y la nueva imagen');
-                  // TODO: Implementar reemplazo de archivo
-                }}
-                className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-orange-600 hover:bg-orange-700 text-white rounded-lg font-semibold transition-colors"
-              >
-                <Edit2 className="w-4 h-4" />
-                Reemplazar Imagen
-              </button>
+                          {/* Overlay de acciones rápidas (sin abrir preview) */}
+                          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-all duration-200 flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100">
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setPreviewImageIndex(idx);
+                                setSelectedImageIndex(idx);
+                                setModalMode('preview');
+                              }}
+                              className="p-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors"
+                              title="Ver en grande"
+                            >
+                              <Eye className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                    <p className="text-xs text-gray-500 mt-3 text-center">
+                      💡 Haz click en una imagen para verla en grande y luego editarla
+                    </p>
+                  </div>
+                ) : (
+                  <div className="bg-amber-50 border-2 border-amber-200 rounded-lg p-6 text-center">
+                    <AlertCircle className="w-8 h-8 text-amber-600 mx-auto mb-2" />
+                    <p className="text-amber-900 font-semibold">Sin imágenes aún</p>
+                    <p className="text-xs text-amber-700 mt-1">Agrega la primera imagen para este paciente</p>
+                  </div>
+                )}
 
-              {/* Eliminar imagen */}
-              <button
-                onClick={() => {
-                  if (window.confirm('¿Estás seguro de eliminar esta imagen?\n\n⚠️ Se eliminará solo la imagen, el registro del paciente se mantendrá.')) {
-                    toast.success('Imagen eliminada correctamente');
-                    setShowEditModal(false);
-                  }
-                }}
-                className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-lg font-semibold transition-colors"
-              >
-                <Trash2 className="w-4 h-4" />
-                Eliminar Imagen
-              </button>
-            </div>
+                {/* Zona de Carga */}
+                <div className="border-2 border-dashed border-green-300 rounded-lg p-8 text-center bg-green-50 hover:bg-green-100 transition-colors">
+                  <Plus className="w-10 h-10 text-green-600 mx-auto mb-3" />
+                  <p className="font-bold text-green-900 mb-2">Agregar Nueva Imagen</p>
+                  <p className="text-xs text-green-700 mb-4">Arrastra una imagen aquí o haz clic para seleccionar</p>
+                  <button
+                    onClick={() => setModalMode('add')}
+                    className="px-6 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold transition-colors"
+                  >
+                    Seleccionar Archivo
+                  </button>
+                </div>
+              </div>
+            )}
 
-            <button
-              onClick={() => setShowEditModal(false)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg text-gray-700 font-semibold hover:bg-gray-50 transition-colors"
-            >
-              Cerrar
-            </button>
+            {/* Modo Agregar */}
+            {modalMode === 'add' && (
+              <div className="space-y-4">
+                <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+                  <Plus className="w-5 h-5 text-green-600" />
+                  Agregar Nueva Imagen
+                </h3>
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-sm text-blue-800">
+                  ℹ️ Selecciona un archivo EKG (JPG, PNG, PDF) para agregarlo al registro
+                </div>
+                <input
+                  type="file"
+                  accept="image/*,.pdf"
+                  className="block w-full text-sm text-gray-600 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-green-600 file:text-white hover:file:bg-green-700"
+                />
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => {
+                      toast.success('✅ Imagen agregada correctamente');
+                      setModalMode('view');
+                    }}
+                    className="flex-1 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold transition-colors"
+                  >
+                    Subir Imagen
+                  </button>
+                  <button
+                    onClick={() => setModalMode('view')}
+                    className="flex-1 py-2.5 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-lg font-semibold transition-colors"
+                  >
+                    Cancelar
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Modo Reemplazar */}
+            {modalMode === 'replace' && (
+              <div className="space-y-4">
+                <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+                  <Edit2 className="w-5 h-5 text-orange-600" />
+                  Reemplazar Imagen {selectedImageIndex !== null ? selectedImageIndex + 1 : ''}
+                </h3>
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-sm text-blue-800">
+                  ℹ️ Selecciona el nuevo archivo EKG que reemplazará a la imagen actual
+                </div>
+                <input
+                  type="file"
+                  accept="image/*,.pdf"
+                  className="block w-full text-sm text-gray-600 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-orange-600 file:text-white hover:file:bg-orange-700"
+                />
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => {
+                      toast.success('🔄 Imagen reemplazada correctamente');
+                      setModalMode('view');
+                      setSelectedImageIndex(null);
+                    }}
+                    className="flex-1 py-2.5 bg-orange-600 hover:bg-orange-700 text-white rounded-lg font-semibold transition-colors"
+                  >
+                    Reemplazar
+                  </button>
+                  <button
+                    onClick={() => {
+                      setModalMode('view');
+                      setSelectedImageIndex(null);
+                    }}
+                    className="flex-1 py-2.5 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-lg font-semibold transition-colors"
+                  >
+                    Cancelar
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Modo Eliminar */}
+            {modalMode === 'delete' && (
+              <div className="space-y-4">
+                <h3 className="text-lg font-bold text-red-600 flex items-center gap-2">
+                  <Trash2 className="w-5 h-5" />
+                  Eliminar Imagen {selectedImageIndex !== null ? selectedImageIndex + 1 : ''}
+                </h3>
+                <div className="bg-red-50 border-2 border-red-200 rounded-lg p-4 text-sm text-red-800">
+                  ⚠️ <strong>Advertencia:</strong> Esta acción no se puede deshacer. Se eliminará solo la imagen, el registro del paciente se mantendrá.
+                </div>
+                <p className="text-gray-700 text-sm">
+                  ¿Estás seguro de que deseas eliminar la Imagen {selectedImageIndex !== null ? selectedImageIndex + 1 : ''}?
+                </p>
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => {
+                      toast.success('🗑️ Imagen eliminada correctamente');
+                      setModalMode('view');
+                      setSelectedImageIndex(null);
+                    }}
+                    className="flex-1 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-lg font-semibold transition-colors"
+                  >
+                    Sí, Eliminar
+                  </button>
+                  <button
+                    onClick={() => {
+                      setModalMode('view');
+                      setSelectedImageIndex(null);
+                    }}
+                    className="flex-1 py-2.5 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-lg font-semibold transition-colors"
+                  >
+                    Cancelar
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Modo Preview - Ver imagen en grande */}
+            {modalMode === 'preview' && previewImageIndex !== null && (
+              <div className="space-y-4">
+                <div className="flex items-center gap-2 mb-4">
+                  <button
+                    onClick={() => {
+                      setModalMode('view');
+                      setPreviewImageIndex(null);
+                    }}
+                    className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                    title="Volver"
+                  >
+                    <ChevronUp className="w-5 h-5 rotate-180" />
+                  </button>
+                  <h3 className="text-lg font-bold text-gray-900">
+                    Imagen {previewImageIndex + 1}
+                  </h3>
+                  <span className="text-xs bg-blue-100 text-blue-700 px-3 py-1 rounded-full font-semibold">
+                    Vista Previa
+                  </span>
+                </div>
+
+                {/* Imagen en grande */}
+                <div className="bg-gray-100 rounded-lg overflow-hidden border-2 border-gray-300">
+                  <img
+                    src={imagenesMock[0]?.url || 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="500" height="400"%3E%3Crect fill="%23f0f0f0" width="500" height="400"/%3E%3Ctext x="50%" y="50%" text-anchor="middle" dy=".3em" font-size="24" fill="%23999"%3EEKG Preview%3C/text%3E%3C/svg%3E'}
+                    alt={`Imagen ${previewImageIndex + 1}`}
+                    className="w-full h-auto max-h-96 object-contain"
+                  />
+                </div>
+
+                {/* Información de la imagen */}
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-sm">
+                  <p className="text-blue-900 font-semibold mb-2">📄 Detalles</p>
+                  <div className="space-y-1 text-xs text-blue-800">
+                    <p>👤 Paciente: {cargaEdicion.nombrePaciente}</p>
+                    <p>🔢 DNI: {cargaEdicion.dni}</p>
+                    <p>📅 Imagen: {previewImageIndex + 1} de {cargaEdicion.cantidadImagenes}</p>
+                    <p>📝 Fecha carga: 2026-02-09 14:30</p>
+                  </div>
+                </div>
+
+                {/* Botones de acción */}
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    onClick={() => {
+                      setSelectedImageIndex(previewImageIndex);
+                      setModalMode('replace');
+                    }}
+                    className="py-2.5 bg-orange-600 hover:bg-orange-700 text-white rounded-lg font-semibold transition-colors flex items-center justify-center gap-2"
+                  >
+                    <Edit2 className="w-4 h-4" />
+                    Reemplazar
+                  </button>
+                  <button
+                    onClick={() => {
+                      setSelectedImageIndex(previewImageIndex);
+                      setModalMode('delete');
+                    }}
+                    className="py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-lg font-semibold transition-colors flex items-center justify-center gap-2"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                    Eliminar
+                  </button>
+                </div>
+
+                <button
+                  onClick={() => {
+                    setModalMode('view');
+                    setPreviewImageIndex(null);
+                  }}
+                  className="w-full py-2.5 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-lg font-semibold transition-colors"
+                >
+                  Volver a listado
+                </button>
+              </div>
+            )}
           </div>
         </div>
       )}
