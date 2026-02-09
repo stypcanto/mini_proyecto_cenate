@@ -17,8 +17,8 @@ ADD COLUMN observaciones TEXT NULL;
 
 -- 110 -- 111  -- 112
 select * from detalle_solicitud_turno where id_solicitud  in (110,111,112);
-delete from  detalle_solicitud_turno where id_solicitud  in (110,111,112);
-delete from  solicitud_turno_ipress where id_solicitud  in (110,111,112);
+delete from  detalle_solicitud_turno where id_solicitud in (113,114,115,116);
+delete from  solicitud_turno_ipress where id_solicitud  in (113,114,115,116);
 
 
 
@@ -134,6 +134,26 @@ CREATE INDEX idx_stiptc_turno_hora_idturno_hora
 
 
 
+
+
+
+
+
+select * from solicitud_turno_ipress_teleconsultorio_turno_hora;
+
+
+select * from solicitud_turno_ipress_teleconsultorio_turno;
+
+
+select * from solicitud_turno_ipress_teleconsultorio_dia;
+
+
+
+
+
+truncate table solicitud_turno_ipress_teleconsultorio_turno_hora;
+truncate table solicitud_turno_ipress_teleconsultorio_dia;
+truncate table solicitud_turno_ipress_teleconsultorio_turno;
 
 
 

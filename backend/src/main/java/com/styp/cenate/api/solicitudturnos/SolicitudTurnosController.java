@@ -2,14 +2,18 @@ package com.styp.cenate.api.solicitudturnos;
 
 import com.styp.cenate.dto.SolicitudTurnosRequest;
 import com.styp.cenate.dto.SolicitudTurnosResponse;
+import com.styp.cenate.dto.teleconsultorio.TeleconsultorioConfigDTO;
 import com.styp.cenate.service.solicitudturnos.ISolicitudTurnosService;
+import com.styp.cenate.service.teleconsultorio.ITeleconsultorioService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 
 @RestController
@@ -33,10 +37,8 @@ import java.util.Map;
 
 public class SolicitudTurnosController {
 
-	
-	
-	
     private final ISolicitudTurnosService solicitudService;
+    private final ITeleconsultorioService teleconsultorioService;
 
     @PostMapping
     public ResponseEntity<SolicitudTurnosResponse> guardarSolicitud(
@@ -146,5 +148,105 @@ public class SolicitudTurnosController {
         boolean existe = solicitudService.existeSolicitud(periodo, idIpress);
         return ResponseEntity.ok(Map.of("existe", existe));
     }
+
+    // === ENDPOINT DE PRUEBA TELECONSULTORIO ===
+    @GetMapping("/{id}/test-teleconsultorio")
+    public ResponseEntity<Map<String, Object>> testTeleconsultorio(@PathVariable Long id) {
+        log.info("GET /api/solicitud-turnos/{}/test-teleconsultorio - Test endpoint", id);
+        Map<String, Object> response = Map.of(
+                "message", "Endpoint de teleconsultorio funcionando",
+                "idSolicitud", id,
+                "timestamp", java.time.LocalDateTime.now().toString(),
+                "serviceInjected", teleconsultorioService != null
+        );
+        return ResponseEntity.ok(response);
+    }
+
+    // === ENDPOINT SUPER SIMPLE PARA PRUEBA ===
+    @GetMapping("/test-simple")
+    public ResponseEntity<String> testSimple() {
+        log.info("GET /api/solicitud-turnos/test-simple - Test super simple");
+        return ResponseEntity.ok("Backend funcionando - " + java.time.LocalDateTime.now());
+    }
+
+    // === ENDPOINTS DE TELECONSULTORIO ===
     
+    /**
+     * Obtiene la configuración de teleconsultorio para una solicitud
+     * GET /api/solicitud-turnos/{id}/teleconsultorio
+     */
+    @GetMapping("/{id}/teleconsultorio")
+    public ResponseEntity<TeleconsultorioConfigDTO> obtenerConfiguracionTeleconsultorio(@PathVariable Long id) {
+        log.info("GET /api/solicitud-turnos/{}/teleconsultorio - Obtener configuración", id);
+        Optional<TeleconsultorioConfigDTO> config = teleconsultorioService.obtenerConfiguracion(id);
+        if (config.isPresent()) {
+            return ResponseEntity.ok(config.get());
+        } else {
+            // Devolver configuración vacía en lugar de 404
+            TeleconsultorioConfigDTO configVacia = new TeleconsultorioConfigDTO();
+            configVacia.setIdSolicitud(id);
+            configVacia.setDias(new ArrayList<String>());
+            configVacia.setTipo("laborables");
+            configVacia.setTotalHoras(0);
+            return ResponseEntity.ok(configVacia);
+        }
+    }
+
+    /**
+     * Guarda o actualiza la configuración de teleconsultorio para una solicitud
+     * POST /api/solicitud-turnos/{id}/teleconsultorio
+     */
+    @PostMapping("/{id}/teleconsultorio")
+    public ResponseEntity<TeleconsultorioConfigDTO> guardarConfiguracionTeleconsultorio(
+            @PathVariable Long id,
+            @RequestBody TeleconsultorioConfigDTO config) {
+        log.info("POST /api/solicitud-turnos/{}/teleconsultorio - Guardar configuración", id);
+        log.info("  - Config recibida: {}", config);
+        log.info("  - Dias: {}", config != null ? config.getDias() : "null");
+        log.info("  - Tipo: {}", config != null ? config.getTipo() : "null");
+        
+        try {
+            config.setIdSolicitud(id); // Asegurar que el ID coincide
+            log.info("  - Llamando al servicio...");
+            TeleconsultorioConfigDTO response = teleconsultorioService.guardarConfiguracion(config);
+            log.info("  - Respuesta del servicio: {}", response);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            log.error("Error al guardar configuración de teleconsultorio: {}", e.getMessage());
+            log.error("Stack trace:", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    /**
+     * Elimina la configuración de teleconsultorio para una solicitud
+     * DELETE /api/solicitud-turnos/{id}/teleconsultorio
+     */
+    @DeleteMapping("/{id}/teleconsultorio")
+    public ResponseEntity<Void> eliminarConfiguracionTeleconsultorio(@PathVariable Long id) {
+        log.info("DELETE /api/solicitud-turnos/{}/teleconsultorio - Eliminar configuración", id);
+        try {
+            teleconsultorioService.eliminarConfiguracion(id);
+            return ResponseEntity.noContent().build();
+        } catch (Exception e) {
+            log.error("Error al eliminar configuración de teleconsultorio: {}", e.getMessage());
+            throw new RuntimeException("Error al eliminar la configuración: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Verifica si existe configuración de teleconsultorio para una solicitud
+     * GET /api/solicitud-turnos/{id}/teleconsultorio/existe
+     */
+    @GetMapping("/{id}/teleconsultorio/existe")
+    public ResponseEntity<Map<String, Object>> verificarExistenciaTeleconsultorio(@PathVariable Long id) {
+        log.info("GET /api/solicitud-turnos/{}/teleconsultorio/existe - Verificar existencia", id);
+        boolean existe = teleconsultorioService.existeConfiguracion(id);
+        Integer totalHoras = teleconsultorioService.obtenerTotalHoras(id);
+        return ResponseEntity.ok(Map.of(
+                "existe", existe,
+                "totalHoras", totalHoras
+        ));
+    }
+
 }

@@ -7,6 +7,9 @@ import java.util.List;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
+import com.styp.cenate.model.teleconsultorio.SolicitudTurnoIpressTeleconsultorioDia;
+import com.styp.cenate.model.teleconsultorio.SolicitudTurnoIpressTeleconsultorioTurno;
+
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -38,7 +41,7 @@ import lombok.ToString;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@ToString(exclude = {"periodo", "personal", "detalles"})
+@ToString(exclude = {"periodo", "personal", "detalles", "teleconsultorioDias", "teleconsultorioTurnos"})
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 public class SolicitudTurnoIpress {
 
@@ -91,6 +94,15 @@ public class SolicitudTurnoIpress {
     @Builder.Default
     @OneToMany(mappedBy = "solicitud", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private List<DetalleSolicitudTurno> detalles = new ArrayList<>();
+
+    // Relaciones de teleconsultorio
+    @Builder.Default
+    @OneToMany(mappedBy = "solicitud", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    private List<SolicitudTurnoIpressTeleconsultorioDia> teleconsultorioDias = new ArrayList<>();
+
+    @Builder.Default
+    @OneToMany(mappedBy = "solicitud", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    private List<SolicitudTurnoIpressTeleconsultorioTurno> teleconsultorioTurnos = new ArrayList<>();
 
     // ==========================================================
     // Metodos utilitarios

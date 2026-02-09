@@ -6,6 +6,7 @@
 
 import React, { useState, useEffect, useMemo } from "react";
 import { X, Clock, Info, Calendar } from "lucide-react";
+import teleconsultorioService from "../services/teleconsultorioApi";
 
 const DIAS_SEMANA = [
   { id: 'LUN', nombre: 'LUN', nombreCompleto: 'Lunes' },
@@ -31,13 +32,15 @@ const HORARIOS_TARDE = [
  * @param {Boolean} props.open - Si el modal está abierto
  * @param {Function} props.onClose - Callback al cerrar
  * @param {String} props.especialidad - Nombre de la especialidad
- * @param {Object} props.horariosIniciales - Horarios previamente configurados
+ * @param {Number} props.idSolicitud - ID de la solicitud (requerido para APIs)
+ * @param {Object} props.horariosIniciales - Horarios previamente configurados (opcional, se cargará del servidor)
  * @param {Function} props.onConfirm - Callback al confirmar (recibe configuración de horarios)
  */
 export default function ModalHorarioTeleconsultorio({
   open,
   onClose,
   especialidad = "",
+  idSolicitud = null,
   horariosIniciales = null,
   onConfirm = () => {},
 }) {
@@ -45,22 +48,78 @@ export default function ModalHorarioTeleconsultorio({
   const [tipoHorario, setTipoHorario] = useState("laborables"); // laborables | todos
   const [horariosManana, setHorariosManana] = useState([]);
   const [horariosTarde, setHorariosTarde] = useState([]);
+  
+  // Estados para manejo de APIs
+  const [cargando, setCargando] = useState(false);
+  const [guardando, setGuardando] = useState(false);
+  const [error, setError] = useState(null);
 
   // Cargar datos iniciales
   useEffect(() => {
-    if (open && horariosIniciales) {
-      setDiasSeleccionados(horariosIniciales.dias || []);
-      setTipoHorario(horariosIniciales.tipo || "laborables");
-      setHorariosManana(horariosIniciales.horariosManana || []);
-      setHorariosTarde(horariosIniciales.horariosTarde || []);
-    } else if (open) {
-      // Reset al abrir - por defecto seleccionar lunes a viernes
-      setDiasSeleccionados(['LUN', 'MAR', 'MIE', 'JUE', 'VIE']);
-      setTipoHorario("laborables");
-      setHorariosManana([]);
-      setHorariosTarde([]);
+    if (open && idSolicitud) {
+      cargarDatosIniciales();
+    } else if (open && !idSolicitud) {
+      // Si no hay idSolicitud, usar defaults o horariosIniciales
+      resetearFormulario();
     }
-  }, [open, horariosIniciales]);
+  }, [open, idSolicitud]);
+
+  // Función para cargar datos del servidor
+  const cargarDatosIniciales = async () => {
+    if (!idSolicitud) return;
+    
+    console.log("🔄 Cargando datos teleconsultorio para ID:", idSolicitud, "(tipo:", typeof idSolicitud, ")");
+    
+    setCargando(true);
+    setError(null);
+    
+    try {
+      const configuracion = await teleconsultorioService.obtenerConfiguracion(idSolicitud);
+      
+      console.log("📡 Configuración recibida del backend:", configuracion);
+      
+      if (configuracion) {
+        // Cargar configuración existente del servidor
+        const configFrontend = teleconsultorioService.convertirConfiguracionParaFrontend(configuracion);
+        console.log("🔄 Configuración convertida para frontend:", configFrontend);
+        
+        setDiasSeleccionados(configFrontend.dias || []);
+        setTipoHorario(configFrontend.tipo || "laborables");
+        setHorariosManana(configFrontend.horariosManana || []);
+        setHorariosTarde(configFrontend.horariosTarde || []);
+        
+        console.log("🎯 Estados establecidos:");
+        console.log("  - Días:", configFrontend.dias);
+        console.log("  - Tipo:", configFrontend.tipo);
+        console.log("  - Horarios Mañana:", configFrontend.horariosManana);
+        console.log("  - Horarios Tarde:", configFrontend.horariosTarde);
+      } else if (horariosIniciales) {
+        // Usar horarios iniciales si se proporcionaron
+        setDiasSeleccionados(horariosIniciales.dias || []);
+        setTipoHorario(horariosIniciales.tipo || "laborables");
+        setHorariosManana(horariosIniciales.horariosManana || []);
+        setHorariosTarde(horariosIniciales.horariosTarde || []);
+      } else {
+        // Resetear a valores por defecto
+        resetearFormulario();
+      }
+    } catch (err) {
+      console.error('Error al cargar configuración:', err);
+      setError('Error al cargar la configuración existente');
+      // En caso de error, usar valores por defecto
+      resetearFormulario();
+    } finally {
+      setCargando(false);
+    }
+  };
+
+  // Función para resetear el formulario a valores por defecto
+  const resetearFormulario = () => {
+    setDiasSeleccionados(['LUN', 'MAR', 'MIE', 'JUE', 'VIE']);
+    setTipoHorario("laborables");
+    setHorariosManana([]);
+    setHorariosTarde([]);
+  };
 
   // Días disponibles según el tipo
   const diasDisponibles = useMemo(() => {
@@ -87,25 +146,30 @@ export default function ModalHorarioTeleconsultorio({
 
   // Toggle horario mañana
   const toggleHorarioManana = (horario) => {
+    // Convertir "10:00" a "10" para mantener consistencia con el formato del backend
+    const horaSimple = horario.split(':')[0];
     setHorariosManana(prev => 
-      prev.includes(horario) 
-        ? prev.filter(h => h !== horario)
-        : [...prev, horario]
+      prev.includes(horaSimple) 
+        ? prev.filter(h => h !== horaSimple)
+        : [...prev, horaSimple]
     );
   };
 
   // Toggle horario tarde
   const toggleHorarioTarde = (horario) => {
+    // Convertir "14:00" a "14" para mantener consistencia con el formato del backend
+    const horaSimple = horario.split(':')[0];
     setHorariosTarde(prev => 
-      prev.includes(horario) 
-        ? prev.filter(h => h !== horario)
-        : [...prev, horario]
+      prev.includes(horaSimple) 
+        ? prev.filter(h => h !== horaSimple)
+        : [...prev, horaSimple]
     );
   };
 
   // Seleccionar todos los horarios de mañana
   const seleccionarTodosManana = () => {
-    setHorariosManana([...HORARIOS_MANANA]);
+    const horariosSimples = HORARIOS_MANANA.map(h => h.split(':')[0]);
+    setHorariosManana(horariosSimples);
   };
 
   // Deseleccionar todos los horarios de mañana
@@ -115,7 +179,8 @@ export default function ModalHorarioTeleconsultorio({
 
   // Seleccionar todos los horarios de tarde
   const seleccionarTodosTarde = () => {
-    setHorariosTarde([...HORARIOS_TARDE]);
+    const horariosSimples = HORARIOS_TARDE.map(h => h.split(':')[0]);
+    setHorariosTarde(horariosSimples);
   };
 
   // Deseleccionar todos los horarios de tarde
@@ -131,27 +196,57 @@ export default function ModalHorarioTeleconsultorio({
   // Validar que hay selecciones
   const esValido = diasSeleccionados.length > 0 && (horariosManana.length > 0 || horariosTarde.length > 0);
 
-  const handleConfirmar = () => {
+  const handleConfirmar = async () => {
     if (!esValido) return;
 
-    const configuracion = {
-      especialidad,
-      dias: diasSeleccionados,
-      tipo: tipoHorario,
-      horariosManana,
-      horariosTarde,
-      totalHoras,
-      resumen: {
-        diasTexto: diasSeleccionados.map(id => DIAS_SEMANA.find(d => d.id === id)?.nombre).join(', '),
-        horasManana: horariosManana.length,
-        horasTarde: horariosTarde.length,
-        rangoManana: horariosManana.length > 0 ? `8:00 - ${horariosManana.length >= 6 ? '14:00' : '13:00'}` : null,
-        rangoTarde: horariosTarde.length > 0 ? `14:00 - ${horariosTarde.length >= 6 ? '20:00' : '19:00'}` : null
-      }
-    };
+    if (!idSolicitud) {
+      console.error('ID de solicitud requerido para guardar configuración');
+      setError('ID de solicitud requerido');
+      return;
+    }
 
-    onConfirm(configuracion);
-    onClose();
+    setGuardando(true);
+    setError(null);
+
+    try {
+      const configuracion = {
+        idSolicitud,
+        dias: diasSeleccionados,
+        tipo: tipoHorario,
+        horariosManana: horariosManana.map(h => h.split(':')[0]), // Enviar solo la hora (ej: "8")
+        horariosTarde: horariosTarde.map(h => h.split(':')[0]), // Enviar solo la hora (ej: "14") 
+        totalHoras: horariosManana.length + horariosTarde.length,
+        resumen: {
+          diasTexto: diasSeleccionados.map(id => DIAS_SEMANA.find(d => d.id === id)?.nombre).join(', '),
+          horasManana: horariosManana.length,
+          horasTarde: horariosTarde.length,
+          rangoManana: horariosManana.length > 0 ? `8:00 - ${horariosManana.length >= 6 ? '14:00' : '13:00'}` : null,
+          rangoTarde: horariosTarde.length > 0 ? `14:00 - ${horariosTarde.length >= 6 ? '20:00' : '19:00'}` : null
+        }
+      };
+
+      // Convertir para backend
+      const configBackend = teleconsultorioService.convertirConfiguracionParaBackend(configuracion);
+      
+      console.log("💾 Guardando configuración teleconsultorio:");
+      console.log("  - ID Solicitud:", idSolicitud, "(tipo:", typeof idSolicitud, ")");
+      console.log("  - Config Backend:", configBackend);
+      
+      // Guardar en servidor
+      const configGuardada = await teleconsultorioService.guardarConfiguracion(idSolicitud, configBackend);
+      
+      // Notificar al componente padre
+      onConfirm(configuracion);
+      
+      // Cerrar modal
+      onClose();
+      
+    } catch (err) {
+      console.error('Error al guardar configuración:', err);
+      setError('Error al guardar la configuración. Inténtalo de nuevo.');
+    } finally {
+      setGuardando(false);
+    }
   };
 
   if (!open) return null;
@@ -197,6 +292,30 @@ export default function ModalHorarioTeleconsultorio({
               </div>
             </div>
           </div>
+
+          {/* Indicadores de estado */}
+          {cargando && (
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <div className="flex items-center gap-3">
+                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600"></div>
+                <p className="text-blue-800 text-sm">Cargando configuración existente...</p>
+              </div>
+            </div>
+          )}
+
+          {error && (
+            <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+              <div className="flex items-start gap-3">
+                <div className="w-5 h-5 bg-red-500 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <span className="text-white text-xs font-bold">!</span>
+                </div>
+                <div>
+                  <h3 className="font-bold text-red-900 mb-1">Error</h3>
+                  <p className="text-sm text-red-800">{error}</p>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Días de Atención */}
           <div className="space-y-3">
@@ -300,13 +419,13 @@ export default function ModalHorarioTeleconsultorio({
                     type="button"
                     onClick={() => toggleHorarioManana(horario)}
                     className={`py-2 px-3 rounded-lg text-sm font-bold transition-all ${
-                      horariosManana.includes(horario)
+                      horariosManana.includes(horario.split(':')[0])
                         ? "bg-orange-500 text-white shadow-md"
                         : "bg-white text-orange-600 border border-orange-300 hover:bg-orange-50"
                     }`}
                   >
                     {horario}
-                    {horariosManana.includes(horario) && <span className="ml-1">✓</span>}
+                    {horariosManana.includes(horario.split(':')[0]) && <span className="ml-1">✓</span>}
                   </button>
                 ))}
               </div>
@@ -350,13 +469,13 @@ export default function ModalHorarioTeleconsultorio({
                     type="button"
                     onClick={() => toggleHorarioTarde(horario)}
                     className={`py-2 px-3 rounded-lg text-sm font-bold transition-all ${
-                      horariosTarde.includes(horario)
+                      horariosTarde.includes(horario.split(':')[0])
                         ? "bg-purple-500 text-white shadow-md"
                         : "bg-white text-purple-600 border border-purple-300 hover:bg-purple-50"
                     }`}
                   >
                     {horario}
-                    {horariosTarde.includes(horario) && <span className="ml-1">✓</span>}
+                    {horariosTarde.includes(horario.split(':')[0]) && <span className="ml-1">✓</span>}
                   </button>
                 ))}
               </div>
@@ -431,16 +550,22 @@ export default function ModalHorarioTeleconsultorio({
         <div className="border-t border-gray-200 px-6 py-4 bg-gray-50 flex gap-3">
           <button
             onClick={onClose}
-            className="flex-1 px-4 py-2 text-gray-700 bg-gray-100 border border-gray-300 rounded-lg hover:bg-gray-200 transition-colors font-semibold"
+            disabled={guardando}
+            className="flex-1 px-4 py-2 text-gray-700 bg-gray-100 border border-gray-300 rounded-lg hover:bg-gray-200 transition-colors font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Cancelar
           </button>
           <button
             onClick={handleConfirmar}
-            disabled={!esValido}
-            className="flex-1 px-4 py-2 bg-gradient-to-r from-[#0A5BA9] to-[#2563EB] text-white rounded-lg font-semibold transition-all hover:from-[#0854A3] hover:to-[#1d4ed8] disabled:opacity-50 disabled:cursor-not-allowed"
+            disabled={!esValido || guardando || cargando}
+            className="flex-1 px-4 py-2 bg-gradient-to-r from-[#0A5BA9] to-[#2563EB] text-white rounded-lg font-semibold transition-all hover:from-[#0854A3] hover:to-[#1d4ed8] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
           >
-            {esValido ? `Confirmar (${totalHoras} hrs)` : 'Selecciona horarios'}
+            {guardando && (
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+            )}
+            {guardando ? 'Guardando...' : 
+             cargando ? 'Cargando...' :
+             esValido ? `Confirmar (${totalHoras} hrs)` : 'Selecciona horarios'}
           </button>
         </div>
       </div>
