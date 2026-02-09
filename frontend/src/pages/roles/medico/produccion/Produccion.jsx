@@ -393,22 +393,6 @@ export default function Produccion() {
               <BarChart3 className="w-8 h-8 text-[#0A5BA9]" />
               <h1 className="text-3xl font-bold text-gray-900">📊 Mi Productividad</h1>
             </div>
-            <div className="flex gap-2">
-              <button
-                onClick={exportarPDF}
-                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors flex items-center gap-2 text-sm font-medium"
-              >
-                <FileDown className="w-4 h-4" />
-                PDF
-              </button>
-              <button
-                onClick={exportarExcel}
-                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2 text-sm font-medium"
-              >
-                <Download className="w-4 h-4" />
-                Excel
-              </button>
-            </div>
           </div>
 
           {/* Filtros de Período */}
