@@ -78,18 +78,29 @@ export default function DashboardCoordinadorTeleurgencias() {
       resultado = resultado.filter(m => m.estado === filtroEstado);
     }
 
-    // Ordenar
-    if (ordenar === 'DESERCION') {
-      resultado.sort((a, b) => {
-        const porcentajeA = (a.desertadas / a.pacientesAsignados) * 100;
-        const porcentajeB = (b.desertadas / b.pacientesAsignados) * 100;
+    // Ordenar: Primero médicos con atenciones y casos pendientes
+    resultado.sort((a, b) => {
+      // Calcular si tienen atenciones y casos pendientes
+      const aConAtenciones = (a.completadas + a.pendientes) > 0;
+      const bConAtenciones = (b.completadas + b.pendientes) > 0;
+
+      // Prioridad 1: Médicos con atenciones van primero
+      if (aConAtenciones && !bConAtenciones) return -1;
+      if (!aConAtenciones && bConAtenciones) return 1;
+
+      // Si ambos tienen o ambos no tienen atenciones, aplicar ordenamiento secundario
+      if (ordenar === 'DESERCION') {
+        const porcentajeA = a.pacientesAsignados > 0 ? (a.desertadas / a.pacientesAsignados) * 100 : 0;
+        const porcentajeB = b.pacientesAsignados > 0 ? (b.desertadas / b.pacientesAsignados) * 100 : 0;
         return porcentajeB - porcentajeA;
-      });
-    } else if (ordenar === 'PENDIENTES') {
-      resultado.sort((a, b) => b.pendientes - a.pendientes);
-    } else if (ordenar === 'COMPLETADAS') {
-      resultado.sort((a, b) => a.completadas - b.completadas);
-    }
+      } else if (ordenar === 'PENDIENTES') {
+        return b.pendientes - a.pendientes;
+      } else if (ordenar === 'COMPLETADAS') {
+        return b.completadas - a.completadas;
+      }
+
+      return 0;
+    });
 
     setFiltrado(resultado);
   }, [busqueda, filtroEstado, ordenar, medicos]);
@@ -260,86 +271,198 @@ export default function DashboardCoordinadorTeleurgencias() {
               </tr>
             </thead>
             <tbody>
-              {filtrado.map((medico, idx) => {
-                const porcentajeDesercion = calcularPorcentajeDesercion(medico);
-                const alertaAlta = parseFloat(porcentajeDesercion) > 5;
+              {/* Sección: Médicos con atenciones y casos pendientes */}
+              {(() => {
+                const medicosActivos = filtrado.filter(m => (m.completadas + m.pendientes) > 0);
+                const medicosSinAtenciones = filtrado.filter(m => (m.completadas + m.pendientes) === 0);
 
                 return (
-                  <tr
-                    key={idx}
-                    className={`border-b border-gray-200 hover:bg-gray-50 transition ${
-                      alertaAlta ? 'bg-red-50' : ''
-                    }`}
-                  >
-                    <td className="px-6 py-4">
-                      <div>
-                        <p className="font-medium text-gray-900">{medico.nombreCompleto}</p>
-                        <p className="text-sm text-gray-500">
-                          {medico.tipoDocumento} {medico.numeroDocumento}
-                        </p>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 text-center">
-                      <span className="inline-flex items-center justify-center w-8 h-8 bg-blue-100 text-blue-700 rounded-full font-semibold text-sm">
-                        {medico.pacientesAsignados}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 text-center">
-                      <span className="inline-flex items-center justify-center w-8 h-8 bg-green-100 text-green-700 rounded-full font-semibold text-sm">
-                        {medico.completadas}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 text-center">
-                      <span
-                        className={`inline-flex items-center justify-center w-8 h-8 rounded-full font-semibold text-sm ${
-                          medico.pendientes > 3
-                            ? 'bg-red-100 text-red-700'
-                            : 'bg-amber-100 text-amber-700'
-                        }`}
-                      >
-                        {medico.pendientes}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 text-center">
-                      <span className="inline-flex items-center justify-center w-8 h-8 bg-red-100 text-red-700 rounded-full font-semibold text-sm">
-                        {medico.desertadas}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 text-center">
-                      <span
-                        className={`font-bold text-sm ${
-                          alertaAlta ? 'text-red-700' : 'text-gray-600'
-                        }`}
-                      >
-                        {porcentajeDesercion}%
-                        {alertaAlta && (
-                          <AlertCircle className="inline w-4 h-4 ml-1 text-red-700" />
-                        )}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 text-center">
-                      <span
-                        className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold ${
-                          medico.estado === 'ACTIVO'
-                            ? 'bg-green-100 text-green-700'
-                            : 'bg-gray-100 text-gray-700'
-                        }`}
-                      >
-                        {medico.estado}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 text-center">
-                      <button
-                        onClick={() => abrirDetalles(medico)}
-                        className="inline-flex items-center gap-1 px-3 py-1 bg-blue-500 hover:bg-blue-600 text-white rounded text-sm font-medium transition"
-                      >
-                        <Eye className="w-4 h-4" />
-                        Detalles
-                      </button>
-                    </td>
-                  </tr>
+                  <>
+                    {medicosActivos.length > 0 && (
+                      <>
+                        <tr className="bg-gradient-to-r from-blue-50 to-blue-100">
+                          <td colSpan="8" className="px-6 py-3 text-sm font-bold text-blue-900 flex items-center gap-2">
+                            <Activity className="w-5 h-5 text-blue-600" />
+                            👨‍⚕️ MÉDICOS ACTIVOS ({medicosActivos.length}) - Con Atenciones y Casos Pendientes
+                          </td>
+                        </tr>
+                        {medicosActivos.map((medico, idx) => {
+                          const porcentajeDesercion = calcularPorcentajeDesercion(medico);
+                          const alertaAlta = parseFloat(porcentajeDesercion) > 5;
+
+                          return (
+                            <tr
+                              key={`activo-${idx}`}
+                              className={`border-b border-gray-200 hover:bg-blue-50 transition ${
+                                alertaAlta ? 'bg-red-50' : ''
+                              }`}
+                            >
+                              <td className="px-6 py-4">
+                                <div>
+                                  <p className="font-medium text-gray-900">{medico.nombreCompleto}</p>
+                                  <p className="text-sm text-gray-500">
+                                    {medico.tipoDocumento} {medico.numeroDocumento}
+                                  </p>
+                                </div>
+                              </td>
+                              <td className="px-6 py-4 text-center">
+                                <span className="inline-flex items-center justify-center w-8 h-8 bg-blue-100 text-blue-700 rounded-full font-semibold text-sm">
+                                  {medico.pacientesAsignados}
+                                </span>
+                              </td>
+                              <td className="px-6 py-4 text-center">
+                                <span className="inline-flex items-center justify-center w-8 h-8 bg-green-100 text-green-700 rounded-full font-semibold text-sm">
+                                  {medico.completadas}
+                                </span>
+                              </td>
+                              <td className="px-6 py-4 text-center">
+                                <span
+                                  className={`inline-flex items-center justify-center w-8 h-8 rounded-full font-semibold text-sm ${
+                                    medico.pendientes > 3
+                                      ? 'bg-red-100 text-red-700'
+                                      : 'bg-amber-100 text-amber-700'
+                                  }`}
+                                >
+                                  {medico.pendientes}
+                                </span>
+                              </td>
+                              <td className="px-6 py-4 text-center">
+                                <span className="inline-flex items-center justify-center w-8 h-8 bg-red-100 text-red-700 rounded-full font-semibold text-sm">
+                                  {medico.desertadas}
+                                </span>
+                              </td>
+                              <td className="px-6 py-4 text-center">
+                                <span
+                                  className={`font-bold text-sm ${
+                                    alertaAlta ? 'text-red-700' : 'text-gray-600'
+                                  }`}
+                                >
+                                  {porcentajeDesercion}%
+                                  {alertaAlta && (
+                                    <AlertCircle className="inline w-4 h-4 ml-1 text-red-700" />
+                                  )}
+                                </span>
+                              </td>
+                              <td className="px-6 py-4 text-center">
+                                <span
+                                  className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold ${
+                                    medico.estado === 'ACTIVO'
+                                      ? 'bg-green-100 text-green-700'
+                                      : 'bg-gray-100 text-gray-700'
+                                  }`}
+                                >
+                                  {medico.estado}
+                                </span>
+                              </td>
+                              <td className="px-6 py-4 text-center">
+                                <button
+                                  onClick={() => abrirDetalles(medico)}
+                                  className="inline-flex items-center gap-1 px-3 py-1 bg-blue-500 hover:bg-blue-600 text-white rounded text-sm font-medium transition"
+                                >
+                                  <Eye className="w-4 h-4" />
+                                  Detalles
+                                </button>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </>
+                    )}
+
+                    {/* Sección: Médicos sin atenciones aún */}
+                    {medicosSinAtenciones.length > 0 && (
+                      <>
+                        <tr className="bg-gradient-to-r from-gray-50 to-gray-100">
+                          <td colSpan="8" className="px-6 py-3 text-sm font-bold text-gray-700 flex items-center gap-2">
+                            <Users className="w-5 h-5 text-gray-600" />
+                            ⏳ MÉDICOS SIN ATENCIONES ({medicosSinAtenciones.length}) - Por Asignar Casos
+                          </td>
+                        </tr>
+                        {medicosSinAtenciones.map((medico, idx) => {
+                          const porcentajeDesercion = calcularPorcentajeDesercion(medico);
+                          const alertaAlta = parseFloat(porcentajeDesercion) > 5;
+
+                          return (
+                            <tr
+                              key={`sin-atencion-${idx}`}
+                              className={`border-b border-gray-200 hover:bg-gray-50 transition opacity-75 ${
+                                alertaAlta ? 'bg-red-50' : ''
+                              }`}
+                            >
+                              <td className="px-6 py-4">
+                                <div>
+                                  <p className="font-medium text-gray-900">{medico.nombreCompleto}</p>
+                                  <p className="text-sm text-gray-500">
+                                    {medico.tipoDocumento} {medico.numeroDocumento}
+                                  </p>
+                                </div>
+                              </td>
+                              <td className="px-6 py-4 text-center">
+                                <span className="inline-flex items-center justify-center w-8 h-8 bg-blue-100 text-blue-700 rounded-full font-semibold text-sm">
+                                  {medico.pacientesAsignados}
+                                </span>
+                              </td>
+                              <td className="px-6 py-4 text-center">
+                                <span className="inline-flex items-center justify-center w-8 h-8 bg-green-100 text-green-700 rounded-full font-semibold text-sm">
+                                  {medico.completadas}
+                                </span>
+                              </td>
+                              <td className="px-6 py-4 text-center">
+                                <span
+                                  className={`inline-flex items-center justify-center w-8 h-8 rounded-full font-semibold text-sm ${
+                                    medico.pendientes > 3
+                                      ? 'bg-red-100 text-red-700'
+                                      : 'bg-amber-100 text-amber-700'
+                                  }`}
+                                >
+                                  {medico.pendientes}
+                                </span>
+                              </td>
+                              <td className="px-6 py-4 text-center">
+                                <span className="inline-flex items-center justify-center w-8 h-8 bg-red-100 text-red-700 rounded-full font-semibold text-sm">
+                                  {medico.desertadas}
+                                </span>
+                              </td>
+                              <td className="px-6 py-4 text-center">
+                                <span
+                                  className={`font-bold text-sm ${
+                                    alertaAlta ? 'text-red-700' : 'text-gray-600'
+                                  }`}
+                                >
+                                  {porcentajeDesercion}%
+                                  {alertaAlta && (
+                                    <AlertCircle className="inline w-4 h-4 ml-1 text-red-700" />
+                                  )}
+                                </span>
+                              </td>
+                              <td className="px-6 py-4 text-center">
+                                <span
+                                  className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold ${
+                                    medico.estado === 'ACTIVO'
+                                      ? 'bg-green-100 text-green-700'
+                                      : 'bg-gray-100 text-gray-700'
+                                  }`}
+                                >
+                                  {medico.estado}
+                                </span>
+                              </td>
+                              <td className="px-6 py-4 text-center">
+                                <button
+                                  onClick={() => abrirDetalles(medico)}
+                                  className="inline-flex items-center gap-1 px-3 py-1 bg-blue-500 hover:bg-blue-600 text-white rounded text-sm font-medium transition"
+                                >
+                                  <Eye className="w-4 h-4" />
+                                  Detalles
+                                </button>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </>
+                    )}
+                  </>
                 );
-              })}
+              })()}
             </tbody>
           </table>
         </div>
