@@ -26,6 +26,16 @@ const gestionPacientesService = {
     },
 
     /**
+     * ⭐ v1.62.0: Obtener contador de pacientes pendientes del médico actual
+     * Utilizado por notificaciones para mostrar campanita
+     * Polling cada 60 segundos
+     */
+    obtenerContadorPendientes: async () => {
+        const response = await apiClient.get(`${BASE_ENDPOINT}/medico/contador-pendientes`);
+        return response?.pendientes || 0;
+    },
+
+    /**
      * Obtener paciente por ID
      */
     obtenerPorId: async (id) => {

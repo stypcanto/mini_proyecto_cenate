@@ -342,6 +342,40 @@ public class GestionPacienteServiceImpl implements IGestionPacienteService {
         }
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public long contarPacientesPendientesDelMedicoActual() {
+        try {
+            // ⭐ v1.62.0: Obtener el usuario autenticado
+            String username = SecurityContextHolder.getContext().getAuthentication().getName();
+            log.info("🔔 Contando pacientes pendientes para el médico: {}", username);
+
+            // Buscar el usuario con sus datos personales completos
+            Usuario usuario = usuarioRepository.findByNameUserWithFullDetails(username)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado: " + username));
+
+            // Verificar que el usuario tenga PersonalCnt (sea personal interno/CENATE)
+            PersonalCnt personalCnt = usuario.getPersonalCnt();
+            if (personalCnt == null) {
+                log.warn("Usuario {} no tiene datos de PersonalCnt", username);
+                return 0;
+            }
+
+            Long idPers = personalCnt.getIdPers();
+            log.info("ID del médico (PersonalCnt): {}", idPers);
+
+            // ⭐ v1.62.0: Contar pacientes pendientes usando query optimizada COUNT(*)
+            long contador = solicitudBolsaRepository.countByIdPersonalAndCondicionPendiente(idPers);
+            log.info("✅ Se encontraron {} pacientes pendientes para el médico {}", contador, idPers);
+
+            return contador;
+
+        } catch (Exception e) {
+            log.error("Error contando pacientes pendientes del médico actual", e);
+            throw new RuntimeException("Error contando pacientes pendientes: " + e.getMessage(), e);
+        }
+    }
+
     // ========================================================================
     // Métodos de conversión
     // ========================================================================

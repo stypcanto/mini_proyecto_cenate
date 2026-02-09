@@ -225,6 +225,21 @@ public class GestionPacienteController {
         return ResponseEntity.ok(pacientes);
     }
 
+    /**
+     * ⭐ v1.62.0: Contar pacientes pendientes del médico actual
+     * Utilizado por notificaciones para mostrar campanita con contador
+     * Polling cada 60 segundos desde frontend
+     *
+     * @return JSON con campo "pendientes" = número de pacientes con estado "Pendiente"
+     */
+    @GetMapping("/medico/contador-pendientes")
+    @CheckMBACPermission(pagina = "/roles/medico/pacientes", accion = "ver", mensajeDenegado = "No tiene permiso para ver sus pacientes")
+    public ResponseEntity<Map<String, Long>> contarPacientesPendientes() {
+        log.info("🔔 GET /api/gestion-pacientes/medico/contador-pendientes - Contando pacientes pendientes");
+        long contador = servicio.contarPacientesPendientesDelMedicoActual();
+        return ResponseEntity.ok(Map.of("pendientes", contador));
+    }
+
     // ========================================================================
     // v1.47.0: Atender paciente (Recita + Interconsulta + Crónico)
     // ========================================================================

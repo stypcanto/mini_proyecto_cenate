@@ -832,6 +832,20 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
     List<SolicitudBolsa> findByIdPersonalAndActivoTrue(Long idPersonal);
 
     /**
+     * ⭐ v1.62.0: Contar pacientes pendientes de un médico específico
+     * Optimizado para notificaciones: usa COUNT(*) sin cargar datos
+     * Filtra por: id_personal = idPersonal Y condicion_medica = 'Pendiente' Y activo = true
+     *
+     * @param idPersonal ID del personal médico (doctor)
+     * @return cantidad de pacientes con estado "Pendiente"
+     */
+    @Query("SELECT COUNT(s) FROM SolicitudBolsa s WHERE " +
+           "s.idPersonal = :idPersonal AND " +
+           "s.condicionMedica = 'Pendiente' AND " +
+           "s.activo = true")
+    long countByIdPersonalAndCondicionPendiente(@org.springframework.data.repository.query.Param("idPersonal") Long idPersonal);
+
+    /**
      * 🆕 v1.46.0: Buscar solicitudes por DNI de paciente
      * Usado para validar duplicados al importar pacientes adicionales
      * Retorna TODAS las solicitudes (sin filtro de activo)

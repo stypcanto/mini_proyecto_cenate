@@ -33,4 +33,7 @@ public interface IGestionPacienteService {
 
     // Pacientes asignados al médico
     List<GestionPacienteDTO> obtenerPacientesDelMedicoActual();
+
+    // ⭐ v1.62.0: Contar pacientes pendientes (para notificaciones)
+    long contarPacientesPendientesDelMedicoActual();
 }
