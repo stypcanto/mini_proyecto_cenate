@@ -48,13 +48,7 @@ export default function Produccion() {
   const [filtroActual, setFiltroActual] = useState('mes'); // 'semana', 'mes', 'año'
 
   // ✅ v1.61.5: Filtro de búsqueda por DNI
-  const [filtroDNI, setFiltroDNI] = useState('')
-
-  // Filtrar pacientes por DNI
-  const pacientesFiltrados = pacientesDiaSeleccionado.filter(p => {
-    if (!filtroDNI.trim()) return true
-    return p.numDoc && p.numDoc.toString().includes(filtroDNI.trim())
-  })
+  const [filtroDNI, setFiltroDNI] = useState('');
 
   useEffect(() => {
     cargarDatos();
@@ -109,6 +103,12 @@ export default function Produccion() {
 
   const pacientesDiaSeleccionado = getPacientesDelDia(diaSeleccionado);
   const diasConAtenciones = getDiasConAtenciones();
+
+  // Filtrar pacientes por DNI
+  const pacientesFiltrados = pacientesDiaSeleccionado.filter(p => {
+    if (!filtroDNI.trim()) return true;
+    return p.numDoc && p.numDoc.toString().includes(filtroDNI.trim());
+  });
 
   // ✅ v1.59.0: ESTADÍSTICAS TOTALES (Período completo)
   const statsTotales = {
