@@ -134,17 +134,17 @@ export default function BienvenidaMedico() {
             {/* Card 1: Pacientes */}
             <button
               onClick={() => navigate('/roles/medico/pacientes')}
-              className="bg-white rounded-lg p-4 shadow-sm border border-purple-200 hover:shadow-md hover:border-purple-300 transition text-left group"
+              className="bg-gradient-to-br from-purple-600 to-purple-800 rounded-lg p-4 shadow-lg hover:shadow-xl hover:from-purple-700 hover:to-purple-900 transition text-left group text-white"
             >
-              <div className="w-10 h-10 rounded-lg bg-purple-100 flex items-center justify-center mb-3 group-hover:bg-purple-200 transition">
-                <Users className="w-5 h-5 text-purple-600" />
+              <div className="w-10 h-10 rounded-lg bg-white/20 flex items-center justify-center mb-3 group-hover:bg-white/30 transition">
+                <Users className="w-5 h-5 text-white" />
               </div>
-              <h4 className="text-base font-bold text-slate-900 mb-1">Pacientes</h4>
+              <h4 className="text-base font-bold text-white mb-1">Pacientes</h4>
               <div className="mb-2">
-                <p className="text-2xl font-bold text-purple-600">{stats.pacientesAsignados}</p>
-                <p className="text-xs text-slate-600">pacientes asignados</p>
+                <p className="text-3xl font-bold text-white">{stats.pacientesAsignados}</p>
+                <p className="text-xs text-purple-100">pacientes asignados</p>
               </div>
-              <p className="text-xs text-slate-500">
+              <p className="text-xs text-purple-200">
                 {stats.pacientesCitados} citados • {stats.pacientesAtendidos} atendidos
               </p>
             </button>
@@ -152,16 +152,16 @@ export default function BienvenidaMedico() {
             {/* Card 2: Producción */}
             <button
               onClick={() => navigate('/roles/medico/produccion')}
-              className="bg-white rounded-lg p-4 shadow-sm border border-blue-200 hover:shadow-md hover:border-blue-300 transition text-left group"
+              className="bg-gradient-to-br from-blue-600 to-blue-800 rounded-lg p-4 shadow-lg hover:shadow-xl hover:from-blue-700 hover:to-blue-900 transition text-left group text-white"
             >
-              <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center mb-3 group-hover:bg-blue-200 transition">
-                <BarChart3 className="w-5 h-5 text-blue-600" />
+              <div className="w-10 h-10 rounded-lg bg-white/20 flex items-center justify-center mb-3 group-hover:bg-white/30 transition">
+                <BarChart3 className="w-5 h-5 text-white" />
               </div>
-              <h4 className="text-base font-bold text-slate-900 mb-1">Producción</h4>
-              <p className="text-xs text-slate-600 mb-2">
+              <h4 className="text-base font-bold text-white mb-1">Producción</h4>
+              <p className="text-xs text-blue-100 mb-2">
                 Visualiza tu productividad y desempeño en atenciones
               </p>
-              <p className="text-xs text-slate-500">
+              <p className="text-xs text-blue-200">
                 KPIs, análisis y tendencias
               </p>
             </button>
@@ -169,19 +169,19 @@ export default function BienvenidaMedico() {
             {/* Card 3: Mi Información */}
             <button
               onClick={() => navigate('/user/profile')}
-              className="bg-white rounded-lg p-4 shadow-sm border border-cyan-200 hover:shadow-md hover:border-cyan-300 transition text-left group"
+              className="bg-gradient-to-br from-cyan-600 to-cyan-800 rounded-lg p-4 shadow-lg hover:shadow-xl hover:from-cyan-700 hover:to-cyan-900 transition text-left group text-white"
             >
-              <div className="w-10 h-10 rounded-lg bg-cyan-100 flex items-center justify-center mb-3 group-hover:bg-cyan-200 transition">
-                <User className="w-5 h-5 text-cyan-600" />
+              <div className="w-10 h-10 rounded-lg bg-white/20 flex items-center justify-center mb-3 group-hover:bg-white/30 transition">
+                <User className="w-5 h-5 text-white" />
               </div>
-              <h4 className="text-base font-bold text-slate-900 mb-1">Mi Información</h4>
-              <p className="text-xs text-slate-900 font-medium mb-1">
+              <h4 className="text-base font-bold text-white mb-1">Mi Información</h4>
+              <p className="text-xs text-white font-medium mb-1">
                 {user?.nombreCompleto || 'Cargando...'}
               </p>
-              <p className="text-xs text-slate-600">
+              <p className="text-xs text-cyan-100">
                 Perfil y datos profesionales
               </p>
-              <p className="text-xs text-slate-500 mt-2">
+              <p className="text-xs text-cyan-200 mt-2">
                 Usuario: <span className="font-mono text-xs">{user?.username}</span>
               </p>
             </button>
