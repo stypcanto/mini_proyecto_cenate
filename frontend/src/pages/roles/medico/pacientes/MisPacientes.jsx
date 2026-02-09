@@ -993,71 +993,66 @@ export default function MisPacientes() {
           </button>
         </div>
 
-        {/* Filtros y búsqueda - v1.49.0: Expandido a 3 filas */}
-        <div className="bg-white border border-gray-200 shadow-sm rounded-lg p-6 mb-6">
+        {/* ✅ v1.65.0: Filtros mejorados - Diseño moderno y profesional */}
+        <div className="bg-gradient-to-br from-slate-50 to-slate-100 border border-slate-200 shadow-md rounded-xl p-6 mb-6">
+          {/* ENCABEZADO */}
+          <div className="flex items-center gap-2 mb-5 pb-4 border-b border-slate-200">
+            <div className="p-2 bg-[#0A5BA9]/10 rounded-lg">
+              <Filter className="w-5 h-5 text-[#0A5BA9]" />
+            </div>
+            <h3 className="text-lg font-bold text-gray-900">Filtros de Búsqueda</h3>
+          </div>
+
           {/* FILA 1: Búsqueda + Condición + Actualizar */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end mb-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                <Search className="w-4 h-4 inline mr-2" />
-                Buscar por nombre o DNI
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end mb-5">
+            {/* Búsqueda */}
+            <div className="md:col-span-2">
+              <label className="block text-xs font-semibold text-gray-700 mb-2 uppercase tracking-wide">
+                <Search className="w-4 h-4 inline mr-2 text-[#0A5BA9]" />
+                Buscar Paciente
               </label>
               <input
                 type="text"
-                placeholder="Ingresa nombre o DNI..."
+                placeholder="Nombre o DNI..."
                 value={busqueda}
                 onChange={(e) => setBusqueda(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0A5BA9]/50 focus:border-[#0A5BA9] transition-colors"
+                className="w-full px-4 py-3 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#0A5BA9] focus:border-transparent transition-all shadow-sm hover:border-slate-400"
               />
             </div>
 
-            <div className="flex gap-3">
-              <div className="flex-1">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  <Filter className="w-4 h-4 inline mr-2" />
-                  Condición
-                </label>
-                <select
-                  value={filtroEstado}
-                  onChange={(e) => setFiltroEstado(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0A5BA9]/50 focus:border-[#0A5BA9] transition-colors"
-                >
-                  <option value="">Todas</option>
-                  <option value="Pendiente">Pendiente</option>
-                  <option value="Atendido">Atendido</option>
-                  <option value="Deserción">Deserción</option>
-                </select>
-              </div>
-
-              <button
-                onClick={cargarPacientes}
-                title="Actualizar lista de pacientes"
-                className="px-3 py-2 bg-[#0A5BA9] text-white rounded-lg hover:bg-[#083d78] transition-colors duration-200 flex items-center justify-center hover:shadow-md flex-shrink-0"
+            {/* Condición */}
+            <div>
+              <label className="block text-xs font-semibold text-gray-700 mb-2 uppercase tracking-wide">
+                <Filter className="w-4 h-4 inline mr-2 text-orange-500" />
+                Estado
+              </label>
+              <select
+                value={filtroEstado}
+                onChange={(e) => setFiltroEstado(e.target.value)}
+                className="w-full px-4 py-3 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-400 focus:border-transparent transition-all shadow-sm hover:border-slate-400"
               >
-                <RefreshCw className="w-5 h-5" />
-              </button>
+                <option value="">Todos</option>
+                <option value="Pendiente">🟠 Pendiente</option>
+                <option value="Atendido">✅ Atendido</option>
+                <option value="Deserción">❌ Deserción</option>
+              </select>
             </div>
           </div>
 
           {/* FILA 2: Tipo de Bolsa + IPRESS + Rango Fecha + Fecha Atención */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            {/* ✅ v1.64.0: NUEVO: Filtro Tipo de Bolsa */}
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-4 items-start">
+            {/* Filtro Tipo de Bolsa */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                <Filter className="w-4 h-4 inline mr-2" />
-                Tipo de Bolsa
-                {bolsasDelMedico.length === 1 && (
-                  <span className="ml-2 text-xs font-normal text-[#0A5BA9]">
-                    (Tu bolsa: {bolsasDisponibles.find(b => b.id === bolsasDelMedico[0])?.nombre})
-                  </span>
-                )}
+              <label className="block text-xs font-semibold text-gray-700 mb-2 uppercase tracking-wide">
+                <span className="inline-block w-4 h-4 mr-2 text-purple-500">📦</span>
+                Bolsa
               </label>
               <select
                 value={filtroBolsa}
                 onChange={(e) => setFiltroBolsa(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0A5BA9]/50 focus:border-[#0A5BA9] transition-colors"
+                className="w-full px-4 py-3 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-400 focus:border-transparent transition-all shadow-sm hover:border-slate-400"
               >
-                <option value="">Todas las bolsas</option>
+                <option value="">Todas</option>
                 {bolsasDisponibles.map((bolsa) => (
                   <option key={bolsa.id} value={bolsa.id.toString()}>
                     {bolsa.nombre}
@@ -1066,20 +1061,18 @@ export default function MisPacientes() {
               </select>
             </div>
 
-            {/* NUEVO: Filtro IPRESS */}
+            {/* Filtro IPRESS */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                <svg className="w-4 h-4 inline mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                </svg>
-                IPRESS (Institución)
+              <label className="block text-xs font-semibold text-gray-700 mb-2 uppercase tracking-wide">
+                <span className="inline-block w-4 h-4 mr-2 text-blue-500">🏥</span>
+                IPRESS
               </label>
               <select
                 value={filtroIpress}
                 onChange={(e) => setFiltroIpress(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0A5BA9]/50 focus:border-[#0A5BA9] transition-colors"
+                className="w-full px-4 py-3 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-400 focus:border-transparent transition-all shadow-sm hover:border-slate-400"
               >
-                <option value="">Todas las IPRESS</option>
+                <option value="">Todas</option>
                 {ipressDisponibles.map((ipress) => (
                   <option key={ipress.id} value={ipress.nombre}>
                     {ipress.nombre}
@@ -1088,11 +1081,11 @@ export default function MisPacientes() {
               </select>
             </div>
 
-            {/* NUEVO: Filtro Rango Fecha */}
+            {/* Filtro Rango Fecha */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                <Calendar className="w-4 h-4 inline mr-2" />
-                Rango de Fecha (Asignación)
+              <label className="block text-xs font-semibold text-gray-700 mb-2 uppercase tracking-wide">
+                <Calendar className="w-4 h-4 inline mr-2 text-green-600" />
+                Asignación
               </label>
               <select
                 value={filtroRangoFecha}
@@ -1103,9 +1096,9 @@ export default function MisPacientes() {
                     setFechaHasta('');
                   }
                 }}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0A5BA9]/50 focus:border-[#0A5BA9] transition-colors"
+                className="w-full px-4 py-3 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-green-400 focus:border-transparent transition-all shadow-sm hover:border-slate-400"
               >
-                <option value="todos">Todas las fechas</option>
+                <option value="todos">Todas</option>
                 <option value="hoy">Hoy</option>
                 <option value="ayer">Ayer</option>
                 <option value="7dias">Últimos 7 días</option>
@@ -1113,21 +1106,20 @@ export default function MisPacientes() {
               </select>
             </div>
 
-            {/* ✅ v1.62.0: Selector de Fecha de Atención */}
+            {/* Selector de Fecha de Atención */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                <Calendar className="w-4 h-4 inline mr-2" />
-                Fecha de Atención
+              <label className="block text-xs font-semibold text-gray-700 mb-2 uppercase tracking-wide">
+                <Calendar className="w-4 h-4 inline mr-2 text-red-500" />
+                Atención
               </label>
               <select
                 value={fechaAtencionSeleccionada}
                 onChange={(e) => setFechaAtencionSeleccionada(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0A5BA9]/50 focus:border-[#0A5BA9] transition-colors"
+                className="w-full px-4 py-3 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-red-400 focus:border-transparent transition-all shadow-sm hover:border-slate-400"
               >
-                <option value="">Todas las fechas</option>
+                <option value="">Todas</option>
                 {fechasAtencionDisponibles.length > 0 ? (
                   fechasAtencionDisponibles.map(fechaISO => {
-                    // Convertir formato ISO (2026-02-06) a DD/MM/YY
                     const [year, month, day] = fechaISO.split('-');
                     const fechaFormato = `${day}/${month}/${year.slice(-2)}`;
                     return (
@@ -1137,36 +1129,48 @@ export default function MisPacientes() {
                     );
                   })
                 ) : (
-                  <option disabled>Sin fechas disponibles</option>
+                  <option disabled>Sin fechas</option>
                 )}
               </select>
             </div>
+
+            {/* Botón Refrescar */}
+            <div className="flex items-end">
+              <button
+                onClick={cargarPacientes}
+                title="Actualizar lista de pacientes"
+                className="w-full px-4 py-3 bg-gradient-to-r from-[#0A5BA9] to-[#0d4a8f] text-white rounded-lg hover:from-[#083d78] hover:to-[#062d5f] transition-all duration-200 flex items-center justify-center gap-2 hover:shadow-lg font-semibold active:scale-95"
+              >
+                <RefreshCw className="w-5 h-5" />
+                Actualizar
+              </button>
+            </div>
           </div>
 
-          {/* FILA 3: Rango Personalizado + Ordenar (condicional) */}
+          {/* FILA 3: Rango Personalizado (condicional) */}
           {filtroRangoFecha === 'personalizado' && (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4 mt-4 border-t border-gray-200">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4 mt-4 pl-6 border-l-4 border-green-500 bg-green-50/30">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Desde
+                <label className="block text-xs font-semibold text-gray-700 mb-2 uppercase tracking-wide">
+                  📅 Desde
                 </label>
                 <input
                   type="date"
                   value={fechaDesde}
                   onChange={(e) => setFechaDesde(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0A5BA9]/50 focus:border-[#0A5BA9] transition-colors"
+                  className="w-full px-4 py-3 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-green-400 focus:border-transparent transition-all shadow-sm hover:border-slate-400"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Hasta
+                <label className="block text-xs font-semibold text-gray-700 mb-2 uppercase tracking-wide">
+                  📅 Hasta
                 </label>
                 <input
                   type="date"
                   value={fechaHasta}
                   onChange={(e) => setFechaHasta(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0A5BA9]/50 focus:border-[#0A5BA9] transition-colors"
+                  className="w-full px-4 py-3 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-green-400 focus:border-transparent transition-all shadow-sm hover:border-slate-400"
                 />
               </div>
 
