@@ -93,6 +93,11 @@ public class GestionPacienteDTO {
     // ✅ v1.50.0: Enfermedades crónicas del paciente (desde asegurado_enfermedad_cronica)
     private String[] enfermedadCronica;
 
+    // ✅ v1.63.0: Datos clínicos de Bolsa 107
+    private Long idBolsa;  // Identificador de tipo de bolsa (107, Dengue, etc.)
+    private String tiempoInicioSintomas;  // "< 24 hrs", "24 - 72 hrs", "> 72 hrs" o null
+    private Boolean consentimientoInformado;  // true/false/null
+
     /**
      * Calcula la edad a partir de la fecha de nacimiento
      */

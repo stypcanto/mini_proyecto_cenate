@@ -419,6 +419,81 @@ export default function MisPacientes() {
     }
   };
 
+  // ✅ v1.63.0: Renderizar tiempo de inicio de síntomas con semáforo (ROJO/AMARILLO/VERDE)
+  const renderTiempoInicioSintomas = (paciente) => {
+    // Si no es Bolsa 107 o no tiene datos
+    if (paciente.idBolsa !== 107) {
+      return <span className="text-gray-400 text-xs">—</span>;
+    }
+
+    const tiempo = paciente.tiempoInicioSintomas;
+
+    // Sin datos = VERDE (sin prioridad)
+    if (!tiempo || tiempo.trim() === '') {
+      return (
+        <span className="inline-flex items-center gap-2 px-2 py-1 bg-green-100 text-green-700 rounded text-xs font-semibold">
+          <span className="w-2 h-2 bg-green-600 rounded-full"></span>
+          Sin datos
+        </span>
+      );
+    }
+
+    // Determinar color según contenido
+    const tiempoUpper = tiempo.toUpperCase();
+    let bgColor, textColor, circleColor;
+
+    if (tiempoUpper.includes('< 24') || tiempoUpper.includes('<24')) {
+      bgColor = 'bg-red-100';
+      textColor = 'text-red-700';
+      circleColor = 'bg-red-600';
+    } else if (tiempoUpper.includes('24') && tiempoUpper.includes('72')) {
+      bgColor = 'bg-yellow-100';
+      textColor = 'text-yellow-700';
+      circleColor = 'bg-yellow-500';
+    } else {
+      bgColor = 'bg-green-100';
+      textColor = 'text-green-700';
+      circleColor = 'bg-green-600';
+    }
+
+    return (
+      <span className={`inline-flex items-center gap-2 px-2 py-1 ${bgColor} ${textColor} rounded text-xs font-semibold`}>
+        <span className={`w-2 h-2 ${circleColor} rounded-full`}></span>
+        {tiempo}
+      </span>
+    );
+  };
+
+  // ✅ v1.63.0: Renderizar consentimiento informado (✓ Sí / ✗ No / —)
+  const renderConsentimientoInformado = (paciente) => {
+    // Si no es Bolsa 107 o no tiene datos
+    if (paciente.idBolsa !== 107) {
+      return <span className="text-gray-400 text-xs">—</span>;
+    }
+
+    const consentimiento = paciente.consentimientoInformado;
+
+    if (consentimiento === true || consentimiento === 'true' || consentimiento === 'v') {
+      return (
+        <span className="inline-block bg-green-100 text-green-700 px-2 py-1 rounded text-xs font-semibold">
+          ✓ Sí
+        </span>
+      );
+    } else if (consentimiento === false || consentimiento === 'false') {
+      return (
+        <span className="inline-block bg-red-100 text-red-700 px-2 py-1 rounded text-xs font-semibold">
+          ✗ No
+        </span>
+      );
+    } else {
+      return (
+        <span className="inline-block bg-gray-100 text-gray-700 px-2 py-1 rounded text-xs font-semibold">
+          —
+        </span>
+      );
+    }
+  };
+
   const getColorCondicion = (condicion) => {
     // ✅ v1.48.0: Colores más distintos y visualmente separados
     // - Pendiente: Naranja vibrante (llama atención = acción requerida)
@@ -981,6 +1056,15 @@ export default function MisPacientes() {
                     <th className="px-4 py-3 text-left">Paciente</th>
                     <th className="px-4 py-3 text-left">Teléfono</th>
                     <th className="px-4 py-3 text-left">IPRESS</th>
+
+                    {/* ✅ v1.63.0: Columnas condicionales SOLO para Bolsa 107 */}
+                    {pacientesFiltradosPorFecha.some(p => p.idBolsa === 107) && (
+                      <>
+                        <th className="px-4 py-3 text-left">Tiempo Inicio Síntomas</th>
+                        <th className="px-4 py-3 text-left">Consentimiento Informado</th>
+                      </>
+                    )}
+
                     <th className="px-4 py-3 text-left">Condición</th>
                     <th className="px-4 py-3 text-left">Motivo</th>
                     <th className="px-4 py-3 text-left">Fecha Asignación</th>
@@ -1010,6 +1094,21 @@ export default function MisPacientes() {
                       </td>
                       <td className="px-4 py-3 text-gray-600">{paciente.telefono || '-'}</td>
                       <td className="px-4 py-3 text-gray-600">{paciente.ipress || '-'}</td>
+
+                      {/* ✅ v1.63.0: TIEMPO INICIO SÍNTOMAS (solo si hay pacientes de Bolsa 107) */}
+                      {pacientesFiltradosPorFecha.some(p => p.idBolsa === 107) && (
+                        <td className="px-4 py-3 text-sm">
+                          {renderTiempoInicioSintomas(paciente)}
+                        </td>
+                      )}
+
+                      {/* ✅ v1.63.0: CONSENTIMIENTO INFORMADO (solo si hay pacientes de Bolsa 107) */}
+                      {pacientesFiltradosPorFecha.some(p => p.idBolsa === 107) && (
+                        <td className="px-4 py-3 text-sm">
+                          {renderConsentimientoInformado(paciente)}
+                        </td>
+                      )}
+
                       <td className="px-4 py-3">
                         <button
                           onClick={() => abrirAccion(paciente)}

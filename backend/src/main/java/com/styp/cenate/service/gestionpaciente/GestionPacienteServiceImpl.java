@@ -501,6 +501,7 @@ public class GestionPacienteServiceImpl implements IGestionPacienteService {
 
         return GestionPacienteDTO.builder()
             .idSolicitudBolsa(bolsa.getIdSolicitud())  // ✅ v1.46.0: Incluir ID de bolsa
+            .idBolsa(bolsa.getIdBolsa())  // ✅ v1.63.0: Tipo de bolsa (107, Dengue, etc.)
             .numDoc(bolsa.getPacienteDni())
             .apellidosNombres(bolsa.getPacienteNombre())
             .sexo(bolsa.getPacienteSexo())
@@ -512,6 +513,8 @@ public class GestionPacienteServiceImpl implements IGestionPacienteService {
             .fechaAsignacion(bolsa.getFechaAsignacion())  // ✅ v1.45.1: Incluir fecha de asignación
             .fechaAtencion(bolsa.getFechaAtencionMedica())  // ✅ v1.47.0: Incluir fecha de atención médica
             .enfermedadCronica(enfermedadesCronicas)  // ✅ v1.50.0: Incluir enfermedades crónicas
+            .tiempoInicioSintomas(bolsa.getTiempoInicioSintomas())  // ✅ v1.63.0: Tiempo de inicio de síntomas
+            .consentimientoInformado(bolsa.getConsentimientoInformado())  // ✅ v1.63.0: Consentimiento informado
             .build();
     }
 }
