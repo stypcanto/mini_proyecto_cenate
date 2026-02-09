@@ -9,7 +9,7 @@
  * - Calendario interactivo con detalles por día
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import {
   TrendingUp,
   Share2,
@@ -148,8 +148,8 @@ export default function Produccion() {
 
   const getColorMotivo = (index) => COLORS[index % COLORS.length];
 
-  // ✅ v1.60.0: Funciones para comparativos y tendencias
-  const getDateRange = (tipo) => {
+  // ✅ v1.60.0: Funciones para comparativos y tendencias (con memoización)
+  const getDateRange = useCallback((tipo) => {
     const hoy = new Date();
     const inicio = new Date();
 
@@ -163,9 +163,9 @@ export default function Produccion() {
     }
 
     return { inicio, fin: hoy };
-  };
+  }, []);
 
-  const getPeriodoAnterior = (tipo) => {
+  const getPeriodoAnterior = useCallback((tipo) => {
     const { inicio } = getDateRange(tipo);
     const inicioPrevio = new Date(inicio);
 
@@ -178,41 +178,46 @@ export default function Produccion() {
     }
 
     return { inicio: inicioPrevio, fin: new Date(inicio) };
-  };
+  }, [getDateRange]);
 
-  const getPacientesEnRango = (pacientes, inicio, fin) => {
+  const getPacientesEnRango = useCallback((pacientes, inicio, fin) => {
     return pacientes.filter(p => {
       if (!p.fechaAtencion || p.condicion !== 'Atendido') return false;
       const fecha = new Date(p.fechaAtencion);
       return fecha >= inicio && fecha <= fin;
     });
-  };
+  }, []);
 
-  // Estadísticas del período actual
-  const { inicio: inicioActual, fin: finActual } = getDateRange(filtroActual);
-  const pacientesActual = getPacientesEnRango(pacientes, inicioActual, finActual);
-  const statsActual = {
-    total: pacientesActual.length,
-    interconsultas: pacientesActual.filter(p => p.tieneInterconsulta).length,
-    cronicas: pacientesActual.filter(p => p.esCronico).length,
-  };
+  // Estadísticas con memoización
+  const estadisticas = useMemo(() => {
+    const { inicio: inicioActual, fin: finActual } = getDateRange(filtroActual);
+    const pacientesActual = getPacientesEnRango(pacientes, inicioActual, finActual);
+    const statsActual = {
+      total: pacientesActual.length,
+      interconsultas: pacientesActual.filter(p => p.tieneInterconsulta).length,
+      cronicas: pacientesActual.filter(p => p.esCronico).length,
+    };
 
-  // Estadísticas del período anterior
-  const { inicio: inicioPrevio, fin: finPrevio } = getPeriodoAnterior(filtroActual);
-  const pacientesPrevio = getPacientesEnRango(pacientes, inicioPrevio, finPrevio);
-  const statsPrevio = {
-    total: pacientesPrevio.length,
-    interconsultas: pacientesPrevio.filter(p => p.tieneInterconsulta).length,
-  };
+    const { inicio: inicioPrevio, fin: finPrevio } = getPeriodoAnterior(filtroActual);
+    const pacientesPrevio = getPacientesEnRango(pacientes, inicioPrevio, finPrevio);
+    const statsPrevio = {
+      total: pacientesPrevio.length,
+      interconsultas: pacientesPrevio.filter(p => p.tieneInterconsulta).length,
+    };
+
+    return { statsActual, statsPrevio };
+  }, [pacientes, filtroActual, getDateRange, getPacientesEnRango, getPeriodoAnterior]);
+
+  const { statsActual, statsPrevio } = estadisticas;
 
   // Calcular comparativos (%)
-  const calcularComparativo = (actual, anterior) => {
+  const calcularComparativo = useCallback((actual, anterior) => {
     if (anterior === 0) return actual > 0 ? 100 : 0;
     return ((actual - anterior) / anterior * 100).toFixed(1);
-  };
+  }, []);
 
-  // Datos para gráfico de tendencia (últimos 7 días)
-  const getDatosTendencia = () => {
+  // Datos para gráfico de tendencia (memoizado)
+  const datosTendencia = useMemo(() => {
     const ultimos7 = [];
     for (let i = 6; i >= 0; i--) {
       const fecha = new Date();
@@ -230,12 +235,10 @@ export default function Produccion() {
       });
     }
     return ultimos7;
-  };
+  }, [pacientes]);
 
-  const datosTendencia = getDatosTendencia();
-
-  // ✅ v1.60.0: Funciones de exportación
-  const exportarPDF = () => {
+  // ✅ v1.60.0: Funciones de exportación (memoizadas)
+  const exportarPDF = useCallback(() => {
     const doc = new jsPDF();
     const fecha = new Date().toLocaleDateString('es-PE');
 
@@ -264,9 +267,9 @@ export default function Produccion() {
 
     doc.save(`Productividad_${fecha.replace(/\//g, '-')}.pdf`);
     toast.success('PDF descargado');
-  };
+  }, [statsActual, statsTotales, filtroActual]);
 
-  const exportarExcel = () => {
+  const exportarExcel = useCallback(() => {
     const hoy = new Date().toLocaleDateString('es-PE');
 
     // Crear workbook
@@ -302,7 +305,7 @@ export default function Produccion() {
     XLSX.utils.book_append_sheet(wb, ws, 'Productividad');
     XLSX.writeFile(wb, `Productividad_${hoy.replace(/\//g, '-')}.xlsx`);
     toast.success('Excel descargado');
-  };
+  }, [statsActual, statsPrevio, statsTotales, datosTendencia, filtroActual]);
 
   // Generar calendario
   const primerDiaDelMes = new Date(mesActual.getFullYear(), mesActual.getMonth(), 1);
