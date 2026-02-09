@@ -1,5 +1,5 @@
 /**
- * 📊 Producción.jsx - Dashboard Completo de Productividad Médica (v1.61.2)
+ * 📊 Producción.jsx - Dashboard Completo de Productividad Médica (v1.61.5)
  *
  * Panel avanzado que muestra:
  * - KPIs totales: Atendidos, Pendientes, Deserciones, Interconsultas
@@ -7,6 +7,8 @@
  * - Análisis de productividad y tendencias
  * - Listado de pacientes pendientes
  * - Calendario interactivo con detalles por día (REORGANIZADO v1.61.2)
+ * - Tabla compacta de pacientes con scroll (v1.61.4)
+ * - Filtro de búsqueda por DNI (v1.61.5)
  * - Soporte para exportación a PDF y Excel
  */
 
