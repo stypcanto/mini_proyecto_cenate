@@ -617,8 +617,19 @@ export default function Produccion() {
           </div>
         )}
 
-        {/* ✅ v1.61.0: SECCIÓN DE CALENDARIO INTERACTIVO Y DETALLES (VINCULADOS) */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Botón actualizar */}
+        <div className="mt-8 text-center">
+          <button
+            onClick={cargarDatos}
+            className="px-6 py-2 bg-[#0A5BA9] text-white rounded-lg hover:bg-[#083d78] transition-colors flex items-center gap-2 mx-auto"
+          >
+            <RefreshCw className="w-4 h-4" />
+            Actualizar datos
+          </button>
+        </div>
+
+        {/* ✅ v1.61.0: SECCIÓN DE CALENDARIO INTERACTIVO Y DETALLES (VINCULADOS) - MOVIDO AL FINAL */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-12">
           {/* ✅ v1.61.0: Calendario - MÁS GRANDE E INTERACTIVO */}
           <div className="lg:col-span-1">
             <div className="bg-white border-2 border-[#0A5BA9] shadow-md rounded-lg p-8 h-full flex flex-col">
@@ -781,17 +792,6 @@ export default function Produccion() {
               )}
             </div>
           </div>
-        </div>
-
-        {/* Botón actualizar */}
-        <div className="mt-8 text-center">
-          <button
-            onClick={cargarDatos}
-            className="px-6 py-2 bg-[#0A5BA9] text-white rounded-lg hover:bg-[#083d78] transition-colors flex items-center gap-2 mx-auto"
-          >
-            <RefreshCw className="w-4 h-4" />
-            Actualizar datos
-          </button>
         </div>
       </div>
     </div>
