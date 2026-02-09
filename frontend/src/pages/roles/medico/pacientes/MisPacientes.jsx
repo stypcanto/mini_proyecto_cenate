@@ -64,7 +64,7 @@ export default function MisPacientes() {
 
   // ============ v1.49.0: FILTROS AVANZADOS ============
   const [filtroIpress, setFiltroIpress] = useState('');
-  const [filtroRangoFecha, setFiltroRangoFecha] = useState('todos');
+  const [filtroRangoFecha, setFiltroRangoFecha] = useState('hoy');
   const [fechaDesde, setFechaDesde] = useState('');
   const [fechaHasta, setFechaHasta] = useState('');
   const [ipressDisponibles, setIpressDisponibles] = useState([]);
@@ -774,14 +774,14 @@ export default function MisPacientes() {
           )}
 
           {/* Botón Limpiar Filtros */}
-          {(busqueda || filtroEstado || filtroIpress || filtroRangoFecha !== 'todos') && (
+          {(busqueda || filtroEstado || filtroIpress || filtroRangoFecha !== 'hoy') && (
             <div className="mt-4 pt-4 border-t border-gray-200">
               <button
                 onClick={() => {
                   setBusqueda('');
                   setFiltroEstado('');
                   setFiltroIpress('');
-                  setFiltroRangoFecha('todos');
+                  setFiltroRangoFecha('hoy');
                   setFechaDesde('');
                   setFechaHasta('');
                   setOrdenarPor('reciente');
@@ -798,12 +798,18 @@ export default function MisPacientes() {
 
         {/* Tabla de pacientes */}
         {pacientesFiltrados.length === 0 ? (
-          <div className="bg-white border border-gray-200 shadow-sm rounded-lg p-12 text-center">
-            <div className="p-4 bg-gray-100 rounded-full inline-block mb-4">
-              <AlertCircle className="w-8 h-8 text-gray-400" strokeWidth={1.5} />
+          <div className="bg-gradient-to-br from-blue-50 to-blue-100 border border-blue-200 shadow-sm rounded-lg p-12 text-center">
+            <div className="p-4 bg-blue-200 rounded-full inline-block mb-4">
+              <Calendar className="w-8 h-8 text-blue-600" strokeWidth={1.5} />
             </div>
-            <p className="text-gray-600 font-medium">No hay pacientes para mostrar</p>
-            <p className="text-gray-500 text-sm mt-1">Intenta ajustando los filtros de búsqueda</p>
+            <p className="text-blue-900 font-semibold text-lg">
+              {filtroRangoFecha === 'hoy' ? 'Hoy no hay pacientes asignados' : 'No hay pacientes que coincidan con los filtros'}
+            </p>
+            <p className="text-blue-700 text-sm mt-2">
+              {filtroRangoFecha === 'hoy'
+                ? 'Es un buen momento para revisar tus pacientes ya atendidos. Puedes ajustar el filtro de fecha para ver tus consultas en días anteriores.'
+                : 'Intenta ajustando los filtros de búsqueda o cambia el rango de fechas.'}
+            </p>
           </div>
         ) : (
           <div className="relative overflow-hidden bg-white border border-gray-200 shadow-sm rounded-lg">
