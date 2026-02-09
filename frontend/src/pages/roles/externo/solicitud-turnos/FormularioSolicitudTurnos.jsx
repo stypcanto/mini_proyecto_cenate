@@ -50,6 +50,7 @@ import { solicitudTurnoService } from "../../../../services/solicitudTurnoServic
 
 // Componentes separados
 import Modal from "./components/Modal";
+import ModalConfirmacionEnvio from "./components/ModalConfirmacionEnvio";
 import PeriodoDetalleCard, { SeccionFechas } from "./components/PeriodoDetalleCard";
 import TablaSolicitudEspecialidades from "./components/TablaSolicitudEspecialidades";
 import VistaSolicitudEnviada from "./components/VistaSolicitudEnviada";
@@ -98,6 +99,7 @@ export default function FormularioSolicitudTurnos() {
   const [openFormModal, setOpenFormModal] = useState(false);
   const [modoModal, setModoModal] = useState("NUEVA"); // NUEVA | EDITAR | VER
   const [openInfoModal, setOpenInfoModal] = useState(false);
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
 
   // periodo seleccionado
   const [periodoSeleccionado, setPeriodoSeleccionado] = useState(null);
@@ -537,6 +539,27 @@ export default function FormularioSolicitudTurnos() {
   };
 
   // =====================================================================
+  // Calcular resumen para modal de confirmación
+  // =====================================================================
+  const calcularResumenSolicitud = () => {
+    const registrosConTurnos = registros.filter(r => {
+      const turnoManana = Number(r.turnoManana || 0);
+      const turnoTarde = Number(r.turnoTarde || 0);
+      return turnoManana + turnoTarde > 0;
+    });
+
+    const totalEspecialidades = registrosConTurnos.length;
+    const turnosMañana = registrosConTurnos.reduce((sum, r) => sum + Number(r.turnoManana || 0), 0);
+    const turnosTarde = registrosConTurnos.reduce((sum, r) => sum + Number(r.turnoTarde || 0), 0);
+
+    return {
+      totalEspecialidades,
+      turnosMañana,
+      turnosTarde
+    };
+  };
+
+  // =====================================================================
   // Guardar borrador / Enviar
   // =====================================================================
   const handleGuardarBorrador = async () => {
@@ -856,15 +879,24 @@ export default function FormularioSolicitudTurnos() {
       setError("Registra al menos un turno antes de enviar.");
       return;
     }
-    // eslint-disable-next-line no-restricted-globals
-    if (!confirm("¿Enviar la solicitud? Luego no podrás modificarla.")) return;
+    
+    // Mostrar modal de confirmación
+    setShowConfirmModal(true);
+  };
 
+  const confirmarEnvio = async (observacionGeneral = '') => {
+    setShowConfirmModal(false);
     setSaving(true);
     setError(null);
     setSuccess(null);
 
     try {
       const { payloadCompat } = buildPayload();
+      
+      // Agregar observación general si se proporcionó
+      if (observacionGeneral.trim()) {
+        payloadCompat.observacionGeneral = observacionGeneral.trim();
+      }
 
       // Primero guardar el borrador (crea o actualiza)
       const guardado = await solicitudTurnoService.guardarBorrador(payloadCompat);
@@ -1499,6 +1531,15 @@ export default function FormularioSolicitudTurnos() {
       </div>
     </div>
     )}
+
+    {/* Modal de Confirmación de Envío */}
+    <ModalConfirmacionEnvio
+      isOpen={showConfirmModal}
+      onClose={() => setShowConfirmModal(false)}
+      onConfirm={confirmarEnvio}
+      resumenSolicitud={calcularResumenSolicitud()}
+      loading={saving}
+    />
     </>
   );
 }
