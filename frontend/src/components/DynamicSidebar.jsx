@@ -236,6 +236,7 @@ export default function DynamicSidebar({ collapsed = false, onToggleCollapse }) 
   const isPersonal107 = roles.some(r => r.includes("PERSONAL") && r.includes("107"));
   const isEnfermeria = roles.includes("ENFERMERIA");
   const isMedico = roles.includes("MEDICO");
+  const isCoordinadorTeleurgencias = roles.includes("COORDINADOR_MEDICO_TELEURGENCIAS");
 
   // ============================================================
   // Obtener modulos permitidos (segun permisos RBAC)
@@ -371,12 +372,23 @@ export default function DynamicSidebar({ collapsed = false, onToggleCollapse }) 
         }
       }
 
+      // Para usuarios COORDINADOR_MEDICO_TELEURGENCIAS: expandir "Coordinador de Teleurgencias"
+      if (isCoordinadorTeleurgencias) {
+        const moduloTeleurgencias = modulosPermitidos.find(m =>
+          m.nombreModulo?.toLowerCase().includes("coordinador de teleurgencias") ||
+          m.nombreModulo?.toLowerCase().includes("teleurgencias")
+        );
+        if (moduloTeleurgencias) {
+          sectionsToOpen[moduloTeleurgencias.nombreModulo] = true;
+        }
+      }
+
       // Si hay secciones para abrir, establecerlas
       if (Object.keys(sectionsToOpen).length > 0) {
         setOpenSections(prev => ({ ...prev, ...sectionsToOpen }));
       }
     }
-  }, [loading, modulosPermitidos, collapsed, isSuperAdmin, isExterno, isCoordinadorRed, isGestorCitas, isCoordinadorGestionCitas, isPersonal107, isEnfermeria, isMedico]);
+  }, [loading, modulosPermitidos, collapsed, isSuperAdmin, isExterno, isCoordinadorRed, isGestorCitas, isCoordinadorGestionCitas, isPersonal107, isEnfermeria, isMedico, isCoordinadorTeleurgencias]);
 
   // ============================================================
   // Render principal - Menu dinamico desde la BD
@@ -817,6 +829,7 @@ function getModuleIcon(nombreModulo, iconoDeBaseDatos) {
   if (lowerName.includes('asegurado')) return Users;
   if (lowerName.includes('enfermería') || lowerName.includes('enfermeria')) return Hospital;
   if (lowerName.includes('gestión de citas') || lowerName.includes('citas')) return CalendarCheck;
+  if (lowerName.includes('coordinador de teleurgencias') || lowerName.includes('teleurgencias')) return Ambulance;
   if (lowerName.includes('coordinador médico') || lowerName.includes('coordinador medico')) return Briefcase;
   if (lowerName.includes('gestión de módulos') || lowerName.includes('gestion de modulos')) return Layers;
   if (lowerName.includes('control') && (lowerName.includes('rol') || lowerName.includes('acceso') || lowerName.includes('permiso'))) return UserCog;

@@ -1,6 +1,7 @@
 package com.styp.cenate.service.gestionpaciente;
 
 import com.styp.cenate.dto.GestionPacienteDTO;
+import com.styp.cenate.dto.MedicoTeleurgenciasDTO;
 import com.styp.cenate.model.Asegurado;
 import com.styp.cenate.model.GestionPaciente;
 import com.styp.cenate.model.Ipress;
@@ -204,6 +205,34 @@ public class GestionPacienteServiceImpl implements IGestionPacienteService {
     public GestionPacienteDTO actualizarCondicion(Long id, String condicion, String observaciones) {
         log.info("Actualizando condición para ID: {} a {}", id, condicion);
 
+        // ✅ v1.64.0: Extraer campos clínicos de Bolsa 107 si vienen en JSON
+        String tiempoInicioSintomas = null;
+        Boolean consentimientoInformado = null;
+        String observacionesLimpias = observaciones;
+
+        if (observaciones != null && !observaciones.isEmpty()) {
+            try {
+                // Si es JSON (comienza con {), extraer campos
+                if (observaciones.trim().startsWith("{")) {
+                    com.fasterxml.jackson.databind.JsonNode node =
+                        new com.fasterxml.jackson.databind.ObjectMapper().readTree(observaciones);
+
+                    if (node.has("tiempoInicioSintomas")) {
+                        tiempoInicioSintomas = node.get("tiempoInicioSintomas").asText();
+                        log.info("✅ Extraído tiempoInicioSintomas: {}", tiempoInicioSintomas);
+                    }
+                    if (node.has("consentimientoInformado")) {
+                        consentimientoInformado = node.get("consentimientoInformado").asBoolean();
+                        log.info("✅ Extraído consentimientoInformado: {}", consentimientoInformado);
+                    }
+                    observacionesLimpias = ""; // No guardar JSON en observaciones
+                }
+            } catch (Exception e) {
+                log.warn("No se pudo parsear JSON de observaciones, se guardará como texto: {}", e.getMessage());
+                observacionesLimpias = observaciones;
+            }
+        }
+
         // ✅ v1.46.0: Intentar actualizar en GestionPaciente primero
         var gestionOpt = repository.findById(id);
 
@@ -211,8 +240,7 @@ public class GestionPacienteServiceImpl implements IGestionPacienteService {
             // Actualizar en gestion_paciente
             GestionPaciente existing = gestionOpt.get();
             existing.setCondicion(condicion);
-            // ✅ v1.46.0: Siempre actualizar observaciones (incluso si es vacío) para limpiar motivos anteriores
-            existing.setObservaciones(observaciones);
+            existing.setObservaciones(observacionesLimpias);
             GestionPaciente updated = repository.save(existing);
             log.info("✅ Condición actualizada en tabla gestion_paciente: {}", id);
             return toDto(updated);
@@ -225,8 +253,17 @@ public class GestionPacienteServiceImpl implements IGestionPacienteService {
         if (solicitudOpt.isPresent()) {
             SolicitudBolsa existing = solicitudOpt.get();
             existing.setCondicionMedica(condicion);
-            // ✅ v1.46.0: Siempre actualizar observaciones (incluso si es vacío) para limpiar motivos anteriores
-            existing.setObservacionesMedicas(observaciones);
+            existing.setObservacionesMedicas(observacionesLimpias);
+
+            // ✅ v1.64.0: Actualizar campos clínicos de Bolsa 107
+            if (tiempoInicioSintomas != null) {
+                existing.setTiempoInicioSintomas(tiempoInicioSintomas);
+                log.info("✅ Actualizado tiempoInicioSintomas: {}", tiempoInicioSintomas);
+            }
+            if (consentimientoInformado != null) {
+                existing.setConsentimientoInformado(consentimientoInformado);
+                log.info("✅ Actualizado consentimientoInformado: {}", consentimientoInformado);
+            }
 
             // ✅ v1.47.0: Guardar fecha de atención cuando se marca como "Atendido" o "Deserción"
             if ("Atendido".equalsIgnoreCase(condicion) || "Deserción".equalsIgnoreCase(condicion)) {
@@ -499,6 +536,24 @@ public class GestionPacienteServiceImpl implements IGestionPacienteService {
             }
         }
 
+        // ✅ v1.64.0: Aplicar valores por defecto para Bolsa 107
+        String condicion = bolsa.getCondicionMedica() != null ? bolsa.getCondicionMedica() : "Pendiente";
+        String tiempoSintomas = bolsa.getTiempoInicioSintomas();
+        Boolean consentimiento = bolsa.getConsentimientoInformado();
+
+        // Si no hay tiempo de síntomas, asignar "> 72 hrs." (baja prioridad)
+        if (tiempoSintomas == null || tiempoSintomas.trim().isEmpty()) {
+            tiempoSintomas = "> 72 hrs.";
+        }
+
+        // Si está en "Deserción", el consentimiento es NO
+        if ("Deserción".equalsIgnoreCase(condicion)) {
+            consentimiento = false;
+        } else if (consentimiento == null) {
+            // Si no hay consentimiento registrado y no es Deserción, asignar Sí
+            consentimiento = true;
+        }
+
         return GestionPacienteDTO.builder()
             .idSolicitudBolsa(bolsa.getIdSolicitud())  // ✅ v1.46.0: Incluir ID de bolsa
             .idBolsa(bolsa.getIdBolsa())  // ✅ v1.63.0: Tipo de bolsa (107, Dengue, etc.)
@@ -508,13 +563,144 @@ public class GestionPacienteServiceImpl implements IGestionPacienteService {
             .edad(calcularEdad(bolsa.getFechaNacimiento()))
             .telefono(bolsa.getPacienteTelefono())
             .ipress(ipressNombre)  // ✅ v1.46.9: Mostrar nombre de IPRESS, obtenido desde bolsa o asegurados
-            .condicion(bolsa.getCondicionMedica() != null ? bolsa.getCondicionMedica() : "Pendiente")  // ✅ v1.46.0: Usar condición médica si existe
+            .condicion(condicion)  // ✅ v1.64.0: Usar condición procesada
             .observaciones(bolsa.getObservacionesMedicas())  // ✅ v1.46.0: Incluir observaciones médicas
             .fechaAsignacion(bolsa.getFechaAsignacion())  // ✅ v1.45.1: Incluir fecha de asignación
             .fechaAtencion(bolsa.getFechaAtencionMedica())  // ✅ v1.47.0: Incluir fecha de atención médica
             .enfermedadCronica(enfermedadesCronicas)  // ✅ v1.50.0: Incluir enfermedades crónicas
-            .tiempoInicioSintomas(bolsa.getTiempoInicioSintomas())  // ✅ v1.63.0: Tiempo de inicio de síntomas
-            .consentimientoInformado(bolsa.getConsentimientoInformado())  // ✅ v1.63.0: Consentimiento informado
+            .tiempoInicioSintomas(tiempoSintomas)  // ✅ v1.64.0: Con valor por defecto "> 72 hrs."
+            .consentimientoInformado(consentimiento)  // ✅ v1.64.0: Con valores por defecto según condición
             .build();
+    }
+
+    /**
+     * ⭐ Dashboard Coordinador: Obtener médicos de Teleurgencias con estadísticas
+     * Retorna lista de médicos con conteo de pacientes completados, pendientes, desertados
+     * @return Lista de MedicoTeleurgenciasDTO con estadísticas
+     */
+    @Override
+    @Transactional(readOnly = true)
+    public List<MedicoTeleurgenciasDTO> obtenerMedicosTeleurgenciasConEstadisticas() {
+        log.info("📊 Obteniendo médicos de Teleurgencias con estadísticas");
+
+        // ⭐ Obtener médicos que están en el área de TELEURGENCIAS Y TELETRIAJE
+        // Los IDs correctos son: 390, 327, 301, 335, 302, 567, 566, 574, 727 (coordinador), 300, 352, 410, etc.
+        // Se obtienen de la vista vw_personal_cnt_detalle que tiene el campo "area" poblado correctamente
+        List<Long> idsTeleurgencias = List.of(
+            390L, 327L, 301L, 335L, 302L, 567L, 566L, 574L, 727L, 300L, 352L, 410L, 560L, 361L, 553L,
+            548L, 554L, 571L, 303L, 378L, 570L, 552L, 379L, 555L, 573L, 415L, 549L, 299L, 557L, 305L, 308L,
+            561L, 341L, 687L, 304L, 568L, 572L, 563L, 545L, 307L, 547L, 550L, 562L, 564L, 306L, 565L, 546L
+        );
+
+        List<PersonalCnt> medicos = personalCntRepository.findAll().stream()
+            .filter(p -> idsTeleurgencias.contains(p.getIdPers()))
+            .collect(Collectors.toList());
+
+        log.info("Encontrados {} médicos en área de Teleurgencias", medicos.size());
+
+        return medicos.stream().map(medico -> {
+            // Obtener solicitudes de bolsa asignadas a este médico
+            List<SolicitudBolsa> solicitudes = solicitudBolsaRepository
+                .findByIdPersonalAndActivoTrue(medico.getIdPers());
+
+            // Contar por condición médica
+            int completadas = (int) solicitudes.stream()
+                .filter(s -> "Atendido".equalsIgnoreCase(s.getCondicionMedica())).count();
+            int pendientes = (int) solicitudes.stream()
+                .filter(s -> "Pendiente".equalsIgnoreCase(s.getCondicionMedica())).count();
+            int desertadas = (int) solicitudes.stream()
+                .filter(s -> "Deserción".equalsIgnoreCase(s.getCondicionMedica())).count();
+
+            int total = solicitudes.size();
+            double porcentajeDesercion = (completadas + desertadas) > 0 ?
+                ((double) desertadas / (completadas + desertadas)) * 100 : 0;
+
+            // Obtener estado del usuario
+            String estado = "INACTIVO";
+            if (medico.getUsuario() != null && "A".equals(medico.getUsuario().getStatUser())) {
+                estado = "ACTIVO";
+            }
+
+            // Obtener tipo de documento
+            String tipoDocumento = "DNI";  // Por defecto
+            try {
+                if (medico.getTipoDocumento() != null) {
+                    tipoDocumento = medico.getTipoDocumento().getDescTipDoc();
+                }
+            } catch (Exception e) {
+                log.warn("No se pudo obtener tipo de documento para médico {}", medico.getIdPers());
+            }
+
+            return MedicoTeleurgenciasDTO.builder()
+                .idPersonal(medico.getIdPers())
+                .nombreCompleto(medico.getPerPers() != null ? medico.getPerPers() :
+                                (medico.getNomPers() != null ? medico.getNomPers() : "") + " " +
+                                (medico.getApePaterPers() != null ? medico.getApePaterPers() : ""))
+                .tipoDocumento(tipoDocumento)
+                .numeroDocumento(medico.getNumDocPers())
+                .username(medico.getNumDocPers())
+                .estado(estado)
+                .pacientesAsignados(total)
+                .completadas(completadas)
+                .pendientes(pendientes)
+                .desertadas(desertadas)
+                .porcentajeDesercion(porcentajeDesercion)
+                .build();
+        }).collect(Collectors.toList());
+    }
+
+    /**
+     * ✅ v1.64.0: Actualizar datos por defecto en BD para Bolsa 107
+     * Aplica valores por defecto:
+     * - tiempoInicioSintomas null → "> 72 hrs."
+     * - consentimientoInformado null (sin Deserción) → true
+     * - estado Deserción → consentimientoInformado = false
+     */
+    @Transactional
+    public void actualizarValoresPorDefectoBlsa107() {
+        try {
+            log.info("🔄 Iniciando actualización de valores por defecto para Bolsa 107...");
+
+            // Obtener todos los registros de Bolsa 107
+            List<SolicitudBolsa> solicitudes = solicitudBolsaRepository.findAll().stream()
+                .filter(s -> s.getIdBolsa() != null && s.getIdBolsa().equals(1L))
+                .collect(Collectors.toList());
+
+            log.info("📊 Se encontraron {} registros de Bolsa 107", solicitudes.size());
+
+            for (SolicitudBolsa bolsa : solicitudes) {
+                boolean updated = false;
+
+                // Aplicar "> 72 hrs." si tiempo está vacío
+                if (bolsa.getTiempoInicioSintomas() == null || bolsa.getTiempoInicioSintomas().trim().isEmpty()) {
+                    bolsa.setTiempoInicioSintomas("> 72 hrs.");
+                    updated = true;
+                    log.debug("✅ Actualizando tiempoInicioSintomas → > 72 hrs. para paciente: {}", bolsa.getPacienteId());
+                }
+
+                // Si es Deserción, consentimiento = false
+                if ("Deserción".equalsIgnoreCase(bolsa.getCondicionMedica())) {
+                    if (!Boolean.FALSE.equals(bolsa.getConsentimientoInformado())) {
+                        bolsa.setConsentimientoInformado(false);
+                        updated = true;
+                        log.debug("✅ Actualizando consentimiento → false (Deserción) para paciente: {}", bolsa.getPacienteId());
+                    }
+                } else if (bolsa.getConsentimientoInformado() == null) {
+                    // Si no es Deserción y consentimiento está null, asignar true
+                    bolsa.setConsentimientoInformado(true);
+                    updated = true;
+                    log.debug("✅ Actualizando consentimiento → true (sin datos) para paciente: {}", bolsa.getPacienteId());
+                }
+
+                if (updated) {
+                    solicitudBolsaRepository.save(bolsa);
+                }
+            }
+
+            log.info("✅ Actualización completada para Bolsa 107");
+        } catch (Exception e) {
+            log.error("❌ Error al actualizar valores por defecto de Bolsa 107: ", e);
+            throw new RuntimeException("Error actualizando valores por defecto: " + e.getMessage());
+        }
     }
 }

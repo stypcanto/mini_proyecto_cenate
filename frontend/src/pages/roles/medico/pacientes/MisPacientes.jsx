@@ -111,6 +111,11 @@ export default function MisPacientes() {
   const [especialidades, setEspecialidades] = useState([]);
   const [notasAccion, setNotasAccion] = useState('');
 
+  // ✅ v1.64.0: Estados para editar Bolsa 107 campos
+  const [editingField, setEditingField] = useState(null); // 'consentimiento' o 'tiempo'
+  const [pacienteEditando, setPacienteEditando] = useState(null);
+  const [editValue, setEditValue] = useState('');
+
   // ============ v1.49.0: FILTROS AVANZADOS ============
   const [filtroIpress, setFiltroIpress] = useState('');
   const [filtroRangoFecha, setFiltroRangoFecha] = useState('hoy');
@@ -122,6 +127,38 @@ export default function MisPacientes() {
   // ============ v1.62.0: FILTRO DE FECHA DE ATENCIÓN ============
   const [fechaAtencionSeleccionada, setFechaAtencionSeleccionada] = useState('');
   const [fechasAtencionDisponibles, setFechasAtencionDisponibles] = useState([]);
+
+  // ✅ v1.64.0: FILTRO DE TIPO DE BOLSA ============
+  const [filtroBolsa, setFiltroBolsa] = useState('');
+  const [bolsasDelMedico, setBolsasDelMedico] = useState([]);
+  const filtroAutoAplicado = React.useRef(false);
+
+  const bolsasDisponibles = [
+    { id: 1, nombre: 'Bolsa 107 (Módulo 107)' },
+    { id: 2, nombre: 'Dengue' },
+    { id: 3, nombre: 'PADOMI' },
+    { id: 4, nombre: 'Referencia INTER' }
+  ];
+
+  // ✅ v1.64.0: Auto-detectar bolsas del médico (SIN aplicar filtro automático)
+  useEffect(() => {
+    if (pacientes && pacientes.length > 0 && !filtroAutoAplicado.current) {
+      // Detectar qué bolsas tiene el médico
+      const bolsasUnicos = [...new Set(
+        pacientes
+          .map(p => p.idBolsa)
+          .filter(b => b !== null && b !== undefined)
+      )].sort((a, b) => a - b);
+
+      console.log('🔍 Bolsas detectadas del médico:', bolsasUnicos);
+      setBolsasDelMedico(bolsasUnicos);
+
+      // POR DEFECTO: Mostrar TODAS las bolsas (sin filtro automático)
+      // El médico puede seleccionar una bolsa específica del dropdown si lo desea
+      console.log('✅ Cargando todas las bolsas por defecto (sin filtro automático)');
+      filtroAutoAplicado.current = true;
+    }
+  }, [pacientes]);
 
   useEffect(() => {
     cargarPacientes();
@@ -224,12 +261,17 @@ export default function MisPacientes() {
       resultados = resultados.filter(p => p.condicion === filtroEstado);
     }
 
-    // 3. NUEVO: Filtro IPRESS
+    // 3. NUEVO: Filtro de Tipo de Bolsa (v1.64.0)
+    if (filtroBolsa) {
+      resultados = resultados.filter(p => p.idBolsa === parseInt(filtroBolsa));
+    }
+
+    // 4. NUEVO: Filtro IPRESS
     if (filtroIpress) {
       resultados = resultados.filter(p => p.ipress === filtroIpress);
     }
 
-    // 4. NUEVO: Filtro rango fecha
+    // 5. NUEVO: Filtro rango fecha
     if (filtroRangoFecha !== 'todos') {
       const ahora = new Date();
       const hoy = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate());
@@ -286,7 +328,7 @@ export default function MisPacientes() {
       });
     }
 
-    // 5. NUEVO: Ordenamiento
+    // 6. NUEVO: Ordenamiento
     if (ordenarPor === 'reciente') {
       resultados.sort((a, b) => {
         if (!a.fechaAsignacion) return 1;
@@ -302,7 +344,7 @@ export default function MisPacientes() {
     }
 
     return resultados;
-  }, [pacientes, busqueda, filtroEstado, filtroIpress, filtroRangoFecha, fechaDesde, fechaHasta, ordenarPor]);
+  }, [pacientes, busqueda, filtroEstado, filtroBolsa, filtroIpress, filtroRangoFecha, fechaDesde, fechaHasta, ordenarPor]);
 
   const formatearFecha = (fecha) => {
     if (!fecha) return '-';
@@ -420,59 +462,128 @@ export default function MisPacientes() {
   };
 
   // ✅ v1.63.0: Renderizar tiempo de inicio de síntomas con semáforo (ROJO/AMARILLO/VERDE)
+  // ✅ v1.64.0: Renderizar tiempo inicio síntomas (EDITABLE en estado Pendiente)
   const renderTiempoInicioSintomas = (paciente) => {
-    // Si no es Bolsa 107 o no tiene datos
-    if (paciente.idBolsa !== 107) {
+    // Si no es Bolsa 107
+    if (paciente.idBolsa !== 1) {
       return <span className="text-gray-400 text-xs">—</span>;
     }
 
     const tiempo = paciente.tiempoInicioSintomas;
+    const esEditable = paciente.condicion === 'Pendiente';
 
-    // Sin datos = VERDE (sin prioridad)
-    if (!tiempo || tiempo.trim() === '') {
+    // Función para determinar colores
+    const getColoresTimepo = (t) => {
+      if (!t || t.trim() === '') {
+        return { bgColor: 'bg-green-100', textColor: 'text-green-700', circleColor: 'bg-green-600' };
+      }
+      const tiempoUpper = t.toUpperCase();
+      if (tiempoUpper.includes('< 24') || tiempoUpper.includes('<24')) {
+        return { bgColor: 'bg-red-100', textColor: 'text-red-700', circleColor: 'bg-red-600' };
+      } else if (tiempoUpper.includes('24') && tiempoUpper.includes('72')) {
+        return { bgColor: 'bg-yellow-100', textColor: 'text-yellow-700', circleColor: 'bg-yellow-500' };
+      } else {
+        return { bgColor: 'bg-green-100', textColor: 'text-green-700', circleColor: 'bg-green-600' };
+      }
+    };
+
+    const { bgColor, textColor, circleColor } = getColoresTimepo(tiempo);
+    const displayTiempo = tiempo && tiempo.trim() !== '' ? tiempo : '> 72 hrs.';
+
+    // Si es editable (Pendiente), renderizar como botón
+    if (esEditable) {
       return (
-        <span className="inline-flex items-center gap-2 px-2 py-1 bg-green-100 text-green-700 rounded text-xs font-semibold">
-          <span className="w-2 h-2 bg-green-600 rounded-full"></span>
-          Sin datos
-        </span>
+        <button
+          onClick={() => {
+            setPacienteEditando(paciente);
+            setEditingField('tiempo');
+            setEditValue(tiempo || '> 72 hrs.');
+          }}
+          className={`inline-flex items-center gap-2 px-2 py-1 ${bgColor} ${textColor} rounded text-xs font-semibold cursor-pointer hover:shadow-md transition-all`}
+          title="Click para editar tiempo de síntomas"
+        >
+          <span className={`w-2 h-2 ${circleColor} rounded-full`}></span>
+          {displayTiempo}
+        </button>
       );
     }
 
-    // Determinar color según contenido
-    const tiempoUpper = tiempo.toUpperCase();
-    let bgColor, textColor, circleColor;
-
-    if (tiempoUpper.includes('< 24') || tiempoUpper.includes('<24')) {
-      bgColor = 'bg-red-100';
-      textColor = 'text-red-700';
-      circleColor = 'bg-red-600';
-    } else if (tiempoUpper.includes('24') && tiempoUpper.includes('72')) {
-      bgColor = 'bg-yellow-100';
-      textColor = 'text-yellow-700';
-      circleColor = 'bg-yellow-500';
-    } else {
-      bgColor = 'bg-green-100';
-      textColor = 'text-green-700';
-      circleColor = 'bg-green-600';
-    }
-
+    // Si NO es editable, renderizar como span normal
     return (
       <span className={`inline-flex items-center gap-2 px-2 py-1 ${bgColor} ${textColor} rounded text-xs font-semibold`}>
         <span className={`w-2 h-2 ${circleColor} rounded-full`}></span>
-        {tiempo}
+        {displayTiempo}
       </span>
     );
   };
 
-  // ✅ v1.63.0: Renderizar consentimiento informado (✓ Sí / ✗ No / —)
+  // ✅ v1.64.0: Renderizar consentimiento informado (EDITABLE en estado Pendiente)
   const renderConsentimientoInformado = (paciente) => {
-    // Si no es Bolsa 107 o no tiene datos
-    if (paciente.idBolsa !== 107) {
+    // Si no es Bolsa 107
+    if (paciente.idBolsa !== 1) {
       return <span className="text-gray-400 text-xs">—</span>;
     }
 
-    const consentimiento = paciente.consentimientoInformado;
+    // 🚨 Si está en estado "Deserción" → NO consentimiento (NO EDITABLE)
+    if (paciente.condicion === 'Deserción') {
+      return (
+        <span className="inline-block bg-red-100 text-red-700 px-2 py-1 rounded text-xs font-semibold">
+          ✗ No
+        </span>
+      );
+    }
 
+    const consentimiento = paciente.consentimientoInformado;
+    const esEditable = paciente.condicion === 'Pendiente';
+
+    // Renderizar como botón clickeable si es Pendiente
+    if (esEditable) {
+      if (consentimiento === true || consentimiento === 'true' || consentimiento === 'v') {
+        return (
+          <button
+            onClick={() => {
+              setPacienteEditando(paciente);
+              setEditingField('consentimiento');
+              setEditValue('true');
+            }}
+            className="inline-block bg-green-100 text-green-700 px-2 py-1 rounded text-xs font-semibold cursor-pointer hover:bg-green-200 hover:shadow-md transition-all"
+            title="Click para editar consentimiento"
+          >
+            ✓ Sí
+          </button>
+        );
+      } else if (consentimiento === false || consentimiento === 'false') {
+        return (
+          <button
+            onClick={() => {
+              setPacienteEditando(paciente);
+              setEditingField('consentimiento');
+              setEditValue('false');
+            }}
+            className="inline-block bg-red-100 text-red-700 px-2 py-1 rounded text-xs font-semibold cursor-pointer hover:bg-red-200 hover:shadow-md transition-all"
+            title="Click para editar consentimiento"
+          >
+            ✗ No
+          </button>
+        );
+      } else {
+        return (
+          <button
+            onClick={() => {
+              setPacienteEditando(paciente);
+              setEditingField('consentimiento');
+              setEditValue('true');
+            }}
+            className="inline-block bg-green-100 text-green-700 px-2 py-1 rounded text-xs font-semibold cursor-pointer hover:bg-green-200 hover:shadow-md transition-all"
+            title="Click para editar consentimiento"
+          >
+            ✓ Sí
+          </button>
+        );
+      }
+    }
+
+    // Si NO es editable (estado distinto a Pendiente), mostrar como span normal
     if (consentimiento === true || consentimiento === 'true' || consentimiento === 'v') {
       return (
         <span className="inline-block bg-green-100 text-green-700 px-2 py-1 rounded text-xs font-semibold">
@@ -487,8 +598,8 @@ export default function MisPacientes() {
       );
     } else {
       return (
-        <span className="inline-block bg-gray-100 text-gray-700 px-2 py-1 rounded text-xs font-semibold">
-          —
+        <span className="inline-block bg-green-100 text-green-700 px-2 py-1 rounded text-xs font-semibold">
+          ✓ Sí
         </span>
       );
     }
@@ -649,6 +760,48 @@ export default function MisPacientes() {
     } catch (error) {
       console.error('Error registrando atención:', error);
       toast.error('Error al registrar atención. Intenta nuevamente.');
+    } finally {
+      setProcesando(false);
+    }
+  };
+
+  // ✅ v1.64.0: Actualizar Consentimiento Informado durante atención
+  const actualizarConsentimiento = async (pacienteId, nuevoValor) => {
+    try {
+      setProcesando(true);
+      await gestionPacientesService.actualizarCondicion(
+        pacienteId,
+        pacienteEditando.condicion,
+        JSON.stringify({ consentimientoInformado: nuevoValor })
+      );
+      toast.success('✅ Consentimiento actualizado');
+      setEditingField(null);
+      setPacienteEditando(null);
+      cargarPacientes();
+    } catch (error) {
+      console.error('Error al actualizar consentimiento:', error);
+      toast.error('Error al actualizar consentimiento');
+    } finally {
+      setProcesando(false);
+    }
+  };
+
+  // ✅ v1.64.0: Actualizar Tiempo Inicio Síntomas durante atención
+  const actualizarTiempoSintomas = async (pacienteId, nuevoTiempo) => {
+    try {
+      setProcesando(true);
+      await gestionPacientesService.actualizarCondicion(
+        pacienteId,
+        pacienteEditando.condicion,
+        JSON.stringify({ tiempoInicioSintomas: nuevoTiempo })
+      );
+      toast.success('✅ Tiempo de síntomas actualizado');
+      setEditingField(null);
+      setPacienteEditando(null);
+      cargarPacientes();
+    } catch (error) {
+      console.error('Error al actualizar tiempo síntomas:', error);
+      toast.error('Error al actualizar tiempo de síntomas');
     } finally {
       setProcesando(false);
     }
@@ -887,8 +1040,33 @@ export default function MisPacientes() {
             </div>
           </div>
 
-          {/* FILA 2: IPRESS + Rango Fecha + Fecha Atención */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {/* FILA 2: Tipo de Bolsa + IPRESS + Rango Fecha + Fecha Atención */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            {/* ✅ v1.64.0: NUEVO: Filtro Tipo de Bolsa */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                <Filter className="w-4 h-4 inline mr-2" />
+                Tipo de Bolsa
+                {bolsasDelMedico.length === 1 && (
+                  <span className="ml-2 text-xs font-normal text-[#0A5BA9]">
+                    (Tu bolsa: {bolsasDisponibles.find(b => b.id === bolsasDelMedico[0])?.nombre})
+                  </span>
+                )}
+              </label>
+              <select
+                value={filtroBolsa}
+                onChange={(e) => setFiltroBolsa(e.target.value)}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0A5BA9]/50 focus:border-[#0A5BA9] transition-colors"
+              >
+                <option value="">Todas las bolsas</option>
+                {bolsasDisponibles.map((bolsa) => (
+                  <option key={bolsa.id} value={bolsa.id.toString()}>
+                    {bolsa.nombre}
+                  </option>
+                ))}
+              </select>
+            </div>
+
             {/* NUEVO: Filtro IPRESS */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -1010,12 +1188,13 @@ export default function MisPacientes() {
           )}
 
           {/* Botón Limpiar Filtros */}
-          {(busqueda || filtroEstado || filtroIpress || filtroRangoFecha !== 'hoy') && (
+          {(busqueda || filtroEstado || filtroBolsa || filtroIpress || filtroRangoFecha !== 'hoy') && (
             <div className="mt-4 pt-4 border-t border-gray-200">
               <button
                 onClick={() => {
                   setBusqueda('');
                   setFiltroEstado('');
+                  setFiltroBolsa('');
                   setFiltroIpress('');
                   setFiltroRangoFecha('hoy');
                   setFechaDesde('');
@@ -1057,8 +1236,8 @@ export default function MisPacientes() {
                     <th className="px-4 py-3 text-left">Teléfono</th>
                     <th className="px-4 py-3 text-left">IPRESS</th>
 
-                    {/* ✅ v1.63.0: Columnas condicionales SOLO para Bolsa 107 */}
-                    {pacientesFiltradosPorFecha.some(p => p.idBolsa === 107) && (
+                    {/* ✅ v1.63.0: Columnas condicionales SOLO para Bolsa 107 (idBolsa = 1) */}
+                    {pacientesFiltradosPorFecha.some(p => p.idBolsa === 1) && (
                       <>
                         <th className="px-4 py-3 text-left">Tiempo Inicio Síntomas</th>
                         <th className="px-4 py-3 text-left">Consentimiento Informado</th>
@@ -1096,14 +1275,14 @@ export default function MisPacientes() {
                       <td className="px-4 py-3 text-gray-600">{paciente.ipress || '-'}</td>
 
                       {/* ✅ v1.63.0: TIEMPO INICIO SÍNTOMAS (solo si hay pacientes de Bolsa 107) */}
-                      {pacientesFiltradosPorFecha.some(p => p.idBolsa === 107) && (
+                      {pacientesFiltradosPorFecha.some(p => p.idBolsa === 1) && (
                         <td className="px-4 py-3 text-sm">
                           {renderTiempoInicioSintomas(paciente)}
                         </td>
                       )}
 
                       {/* ✅ v1.63.0: CONSENTIMIENTO INFORMADO (solo si hay pacientes de Bolsa 107) */}
-                      {pacientesFiltradosPorFecha.some(p => p.idBolsa === 107) && (
+                      {pacientesFiltradosPorFecha.some(p => p.idBolsa === 1) && (
                         <td className="px-4 py-3 text-sm">
                           {renderConsentimientoInformado(paciente)}
                         </td>
@@ -1555,6 +1734,81 @@ export default function MisPacientes() {
                 className="px-6 py-2.5 bg-[#0A5BA9] text-white rounded-lg hover:bg-[#083d78] transition font-semibold text-sm"
               >
                 Cerrar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ✅ v1.64.0: Modal para editar Tiempo Inicio Síntomas o Consentimiento Informado */}
+      {editingField && pacienteEditando && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-2xl max-w-md w-full p-6">
+            <h2 className="text-lg font-bold text-gray-900 mb-4">
+              {editingField === 'tiempo' ? 'Editar Tiempo Inicio Síntomas' : 'Editar Consentimiento Informado'}
+            </h2>
+
+            {editingField === 'tiempo' ? (
+              <div className="space-y-4">
+                <select
+                  value={editValue}
+                  onChange={(e) => setEditValue(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0A5BA9]"
+                >
+                  <option value="< 24 hrs.">🔴 &lt; 24 hrs. (Urgente)</option>
+                  <option value="24 - 72 hrs.">🟡 24 - 72 hrs. (Media Prioridad)</option>
+                  <option value="> 72 hrs.">🟢 &gt; 72 hrs. (Baja Prioridad)</option>
+                </select>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => setEditValue('true')}
+                    className={`flex-1 py-2 px-3 rounded-lg font-semibold text-sm transition-all ${
+                      editValue === 'true'
+                        ? 'bg-green-100 text-green-700 border-2 border-green-600'
+                        : 'bg-gray-100 text-gray-700 border-2 border-gray-200'
+                    }`}
+                  >
+                    ✓ Sí
+                  </button>
+                  <button
+                    onClick={() => setEditValue('false')}
+                    className={`flex-1 py-2 px-3 rounded-lg font-semibold text-sm transition-all ${
+                      editValue === 'false'
+                        ? 'bg-red-100 text-red-700 border-2 border-red-600'
+                        : 'bg-gray-100 text-gray-700 border-2 border-gray-200'
+                    }`}
+                  >
+                    ✗ No
+                  </button>
+                </div>
+              </div>
+            )}
+
+            <div className="flex gap-3 mt-6">
+              <button
+                onClick={() => {
+                  setEditingField(null);
+                  setPacienteEditando(null);
+                }}
+                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-50"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={() => {
+                  if (editingField === 'tiempo') {
+                    actualizarTiempoSintomas(pacienteEditando.idGestion, editValue);
+                  } else {
+                    actualizarConsentimiento(pacienteEditando.idGestion, editValue === 'true');
+                  }
+                }}
+                disabled={procesando}
+                className="flex-1 px-4 py-2 bg-[#0A5BA9] text-white rounded-lg font-medium hover:bg-[#083d78] disabled:opacity-50"
+              >
+                {procesando ? 'Guardando...' : 'Guardar'}
               </button>
             </div>
           </div>

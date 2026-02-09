@@ -215,6 +215,36 @@ export const componentRegistry = {
     requiredRoles: ['COORDINADOR_MEDICO_TELEURGENCIAS', 'ADMIN', 'SUPERADMIN'],
   },
 
+  '/roles/coordinador/teleurgencias/bienvenida': {
+    component: lazy(() => import('../pages/roles/coordinador/teleurgencias/BienvenidaTeleurgencias')),
+    requiredAction: 'ver',
+    requiredRoles: ['COORDINADOR_MEDICO_TELEURGENCIAS', 'ADMIN', 'SUPERADMIN'],
+  },
+
+  '/roles/coordinador/teleurgencias': {
+    component: lazy(() => import('../pages/roles/coordinador/teleurgencias/DashboardCoordinadorTeleurgencias')),
+    requiredAction: 'ver',
+    requiredRoles: ['COORDINADOR_MEDICO_TELEURGENCIAS', 'ADMIN', 'SUPERADMIN'],
+  },
+
+  '/roles/coordinador/teleurgencias/estadisticas': {
+    component: lazy(() => import('../pages/roles/coordinador/dashboard-medico/DashboardCoordinadorMedico')),
+    requiredAction: 'ver',
+    requiredRoles: ['COORDINADOR_MEDICO_TELEURGENCIAS', 'ADMIN', 'SUPERADMIN'],
+  },
+
+  '/roles/coordinador/teleurgencias/reasignar': {
+    component: lazy(() => import('../pages/roles/coordinador/dashboard-medico/DashboardCoordinadorMedico')),
+    requiredAction: 'editar',
+    requiredRoles: ['COORDINADOR_MEDICO_TELEURGENCIAS', 'ADMIN', 'SUPERADMIN'],
+  },
+
+  '/roles/coordinador/teleurgencias/exportar': {
+    component: lazy(() => import('../pages/roles/coordinador/dashboard-medico/DashboardCoordinadorMedico')),
+    requiredAction: 'exportar',
+    requiredRoles: ['COORDINADOR_MEDICO_TELEURGENCIAS', 'ADMIN', 'SUPERADMIN'],
+  },
+
   // ========================================================================
   // 🌐 MÓDULO EXTERNO
   // ========================================================================

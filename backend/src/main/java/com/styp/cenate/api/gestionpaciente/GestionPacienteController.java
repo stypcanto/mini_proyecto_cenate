@@ -3,6 +3,7 @@ package com.styp.cenate.api.gestionpaciente;
 import com.styp.cenate.dto.GestionPacienteDTO;
 import com.styp.cenate.dto.AtenderPacienteRequest;
 import com.styp.cenate.dto.EspecialidadSelectDTO;
+import com.styp.cenate.dto.MedicoTeleurgenciasDTO;
 import com.styp.cenate.dto.teleekgs.TeleECGImagenDTO;
 import com.styp.cenate.service.gestionpaciente.IGestionPacienteService;
 import com.styp.cenate.service.gestionpaciente.AtenderPacienteService;
@@ -240,6 +241,19 @@ public class GestionPacienteController {
         return ResponseEntity.ok(Map.of("pendientes", contador));
     }
 
+    /**
+     * ⭐ Dashboard Coordinador: Obtener médicos de Teleurgencias con estadísticas
+     * Retorna lista de médicos en el área de Teleurgencias con conteo de atenciones
+     * @return Lista de MedicoTeleurgenciasDTO con estadísticas de atenciones
+     */
+    @GetMapping("/coordinador/medicos-teleurgencias")
+    
+    public ResponseEntity<List<MedicoTeleurgenciasDTO>> obtenerMedicosTeleurgenciasConEstadisticas() {
+        log.info("📊 GET /api/gestion-pacientes/coordinador/medicos-teleurgencias - Obteniendo médicos de Teleurgencias");
+        List<MedicoTeleurgenciasDTO> medicos = servicio.obtenerMedicosTeleurgenciasConEstadisticas();
+        return ResponseEntity.ok(medicos);
+    }
+
     // ========================================================================
     // v1.47.0: Atender paciente (Recita + Interconsulta + Crónico)
     // ========================================================================
@@ -357,5 +371,31 @@ public class GestionPacienteController {
             "mensaje", "ECG atendido correctamente",
             "imagenId", idImagen.toString()
         ));
+    }
+
+    /**
+     * ✅ v1.64.0: Endpoint administrativo para actualizar valores por defecto en Bolsa 107
+     * Aplica las transformaciones de datos a la BD:
+     * - tiempoInicioSintomas null → "> 72 hrs."
+     * - consentimientoInformado null (sin Deserción) → true
+     * - estado Deserción → consentimientoInformado = false
+     */
+    @PostMapping("/admin/actualizar-valores-bolsa107")
+    @CheckMBACPermission(pagina = "/roles/coordinador/gestion-pacientes", accion = "actualizar", mensajeDenegado = "No tiene permiso para actualizar valores de Bolsa 107")
+    public ResponseEntity<?> actualizarValoresBolsa107() {
+        try {
+            log.info("🚀 Iniciando actualización de valores por defecto para Bolsa 107...");
+            servicio.actualizarValoresPorDefectoBlsa107();
+            return ResponseEntity.ok(Map.of(
+                "mensaje", "✅ Valores por defecto de Bolsa 107 actualizados correctamente",
+                "timestamp", System.currentTimeMillis()
+            ));
+        } catch (Exception e) {
+            log.error("❌ Error al actualizar valores de Bolsa 107: ", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of(
+                "error", "Error al actualizar: " + e.getMessage(),
+                "timestamp", System.currentTimeMillis()
+            ));
+        }
     }
 }

@@ -16,48 +16,43 @@ ON dim_personal_cnt(area_trabajo);
 -- ============================================================================
 -- 2. Crear nuevo rol COORDINADOR_MEDICO_TELEURGENCIAS
 -- ============================================================================
-INSERT INTO dim_roles (nombre_rol, descripcion_rol, fecha_creacion, stat_rol)
+INSERT INTO dim_roles (desc_rol, stat_rol, activo, nivel_jerarquia, created_at, updated_at)
 VALUES (
     'COORDINADOR_MEDICO_TELEURGENCIAS',
-    'Coordinador Médico de Teleurgencias y Teletriaje - Módulo de Supervisión v1.63.0',
+    'A',
+    true,
+    4,
     NOW(),
-    'A'
+    NOW()
 )
-ON CONFLICT (nombre_rol) DO NOTHING;
+ON CONFLICT (desc_rol) DO NOTHING;
 
 -- ============================================================================
--- 3. Registrar permisos MBAC para el nuevo rol
+-- 3. Registrar nuevo módulo en dim_modulos_sistema
 -- ============================================================================
-INSERT INTO mbac_permisos (pagina, accion, roles_permitidos, descripcion, fecha_creacion)
-VALUES
-    ('/roles/coordinador/dashboard-medico', 'ver', ARRAY['COORDINADOR_MEDICO_TELEURGENCIAS', 'ADMIN', 'SUPERADMIN']::text[], 'Ver dashboard de supervisión médica', NOW()),
-    ('/roles/coordinador/dashboard-medico', 'editar', ARRAY['COORDINADOR_MEDICO_TELEURGENCIAS', 'ADMIN', 'SUPERADMIN']::text[], 'Reasignar pacientes entre médicos', NOW()),
-    ('/roles/coordinador/dashboard-medico', 'exportar', ARRAY['COORDINADOR_MEDICO_TELEURGENCIAS', 'ADMIN', 'SUPERADMIN']::text[], 'Exportar reportes a Excel', NOW())
-ON CONFLICT (pagina, accion) DO NOTHING;
-
--- ============================================================================
--- 4. Registrar nuevo módulo en dim_modulo_sistema
--- ============================================================================
-INSERT INTO dim_modulo_sistema (nombre_modulo, descripcion_modulo, ruta_modulo, estado, fecha_creacion)
+INSERT INTO dim_modulos_sistema (nombre_modulo, descripcion, ruta_base, activo, created_at, updated_at)
 VALUES (
     'Dashboard Coordinador Médico',
     'Módulo de supervisión para coordinadores médicos de Teleurgencias y Teletriaje',
     '/roles/coordinador/dashboard-medico',
-    'A',
+    true,
+    NOW(),
     NOW()
 )
-ON CONFLICT (ruta_modulo) DO NOTHING;
+ON CONFLICT (nombre_modulo) DO NOTHING;
 
 -- ============================================================================
--- 5. Auditoría: Registrar la migración
+-- 4. Auditoría: Registrar la migración
 -- ============================================================================
-INSERT INTO audit_log (usuario, tabla, operacion, descripcion, fecha_operacion)
+INSERT INTO audit_logs (usuario, action, modulo, detalle, fecha_hora, nivel, estado)
 VALUES (
     'SISTEMA',
-    'dim_personal_cnt + dim_roles + mbac_permisos + dim_modulo_sistema',
     'MIGRATION',
-    'v4.2.0: Agregar soporte para Coordinador Médico Teleurgencias',
-    NOW()
+    'dim_personal_cnt',
+    'v4.2.0: Agregar soporte para Coordinador Médico Teleurgencias - Campo area_trabajo + Rol COORDINADOR_MEDICO_TELEURGENCIAS + Módulo Dashboard',
+    NOW(),
+    'CRITICA',
+    'EXITO'
 );
 
 -- ============================================================================
