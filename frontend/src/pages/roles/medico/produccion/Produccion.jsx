@@ -85,14 +85,37 @@ export default function Produccion() {
     });
   };
 
-  // Obtener todos los días del mes que tienen atenciones
+  // ✅ v1.61.12: Obtener días que tienen atenciones (dinámico según filtro de período)
   const getDiasConAtenciones = () => {
     const diasSet = new Set();
+    const hoy = new Date();
+
     pacientes.forEach(p => {
       if (p.condicion === 'Atendido' && p.fechaAtencion) {
         try {
           const fecha = new Date(p.fechaAtencion);
-          if (fecha.getMonth() === mesActual.getMonth() && fecha.getFullYear() === mesActual.getFullYear()) {
+
+          // Determinar si la fecha está dentro del rango del filtro actual
+          let estaEnRango = false;
+
+          if (filtroActual === 'semana') {
+            // Esta semana: lunes a domingo
+            const inicioSemana = new Date(hoy);
+            inicioSemana.setDate(hoy.getDate() - hoy.getDay());
+            const finSemana = new Date(inicioSemana);
+            finSemana.setDate(inicioSemana.getDate() + 6);
+
+            estaEnRango = fecha >= inicioSemana && fecha <= finSemana;
+          } else if (filtroActual === 'mes') {
+            // Este mes
+            estaEnRango = fecha.getMonth() === mesActual.getMonth() && fecha.getFullYear() === mesActual.getFullYear();
+          } else if (filtroActual === 'año') {
+            // Este año (mostrar en el mes actual, pero considerando todo el año)
+            estaEnRango = fecha.getFullYear() === mesActual.getFullYear() &&
+                         fecha.getMonth() === mesActual.getMonth();
+          }
+
+          if (estaEnRango) {
             diasSet.add(fecha.getDate());
           }
         } catch {}
@@ -486,27 +509,34 @@ export default function Produccion() {
           {/* Calendario */}
           <div className="lg:col-span-1">
             <div className="bg-white border-2 border-[#0A5BA9] shadow-md rounded-lg p-8 h-full flex flex-col">
-              {/* Navegación de meses */}
-              <div className="flex items-center justify-between mb-6">
-                <button
-                  onClick={mesAnterior}
-                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-                >
-                  <ChevronLeft className="w-5 h-5 text-gray-600" />
-                </button>
-                <h3 className="font-semibold text-gray-900">
-                  {mesActual.toLocaleString('es-PE', { month: 'long', year: 'numeric' })}
-                </h3>
-                <button
-                  onClick={mesSiguiente}
-                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-                >
-                  <ChevronRight className="w-5 h-5 text-gray-600" />
-                </button>
+              {/* ✅ v1.61.12: Navegación de meses con período dinámico */}
+              <div className="mb-4">
+                <div className="flex items-center justify-between">
+                  <button
+                    onClick={mesAnterior}
+                    className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                  >
+                    <ChevronLeft className="w-5 h-5 text-gray-600" />
+                  </button>
+                  <div className="text-center">
+                    <h3 className="font-semibold text-gray-900">
+                      {mesActual.toLocaleString('es-PE', { month: 'long', year: 'numeric' })}
+                    </h3>
+                    <p className="text-xs text-gray-500 mt-1">
+                      {filtroActual === 'semana' ? '📅 Esta Semana' : filtroActual === 'mes' ? '📅 Este Mes' : '📅 Este Año'}
+                    </p>
+                  </div>
+                  <button
+                    onClick={mesSiguiente}
+                    className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                  >
+                    <ChevronRight className="w-5 h-5 text-gray-600" />
+                  </button>
+                </div>
               </div>
 
               {/* Días de la semana */}
-              <div className="grid grid-cols-7 gap-2 mb-4">
+              <div className="grid grid-cols-7 gap-2 mb-4 mt-4">
                 {['D', 'L', 'M', 'X', 'J', 'V', 'S'].map(dia => (
                   <div key={dia} className="text-center text-xs font-semibold text-gray-600">
                     {dia}
