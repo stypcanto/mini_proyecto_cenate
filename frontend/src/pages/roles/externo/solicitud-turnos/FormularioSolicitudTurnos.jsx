@@ -78,7 +78,7 @@ export default function FormularioSolicitudTurnos() {
   const [miIpress, setMiIpress] = useState(null);
 
   // periodos
-  const [tipoPeriodos, setTipoPeriodos] = useState("VIGENTES"); // VIGENTES | ACTIVOS
+  const [tipoPeriodos, setTipoPeriodos] = useState("TODOS"); // VIGENTES | ACTIVOS | TODOS
   const [periodos, setPeriodos] = useState([]);
   const [loadingPeriodos, setLoadingPeriodos] = useState(false);
 
@@ -125,8 +125,25 @@ export default function FormularioSolicitudTurnos() {
       let data = [];
       if (tipoPeriodos === "VIGENTES") {
         data = await periodoSolicitudService.obtenerVigentes();
-      } else {
+      } else if (tipoPeriodos === "ACTIVOS") {
         data = await periodoSolicitudService.obtenerActivos();
+      } else if (tipoPeriodos === "TODOS") {
+        // Cargar tanto vigentes como activos
+        const [vigentesData, activosData] = await Promise.all([
+          periodoSolicitudService.obtenerVigentes(),
+          periodoSolicitudService.obtenerActivos()
+        ]);
+        
+        // Combinar y eliminar duplicados basándose en idPeriodo
+        const todosLosPeriodos = [...(Array.isArray(vigentesData) ? vigentesData : []), 
+                                   ...(Array.isArray(activosData) ? activosData : [])];
+        
+        // Eliminar duplicados por idPeriodo
+        const periodosUnicos = todosLosPeriodos.filter((periodo, index, self) => 
+          index === self.findIndex(p => p.idPeriodo === periodo.idPeriodo)
+        );
+        
+        data = periodosUnicos;
       }
 
       setPeriodos(Array.isArray(data) ? data : []);
@@ -1038,6 +1055,7 @@ export default function FormularioSolicitudTurnos() {
                 }}
                 disabled={loadingPeriodos}
               >
+                <option value="TODOS">Todos</option>
                 <option value="VIGENTES">Vigentes</option>
                 <option value="ACTIVOS">Activos</option>
               </select>
@@ -1393,9 +1411,42 @@ export default function FormularioSolicitudTurnos() {
                     <Calendar className="w-4 h-4" />
                     1. Gestión de Periodos de Solicitud
                   </h4>
-                  <p className="text-sm text-gray-700 leading-relaxed">
+                  <p className="text-sm text-gray-700 leading-relaxed mb-3">
                     El formulario presenta los periodos habilitados para solicitud de turnos, diferenciados entre periodos vigentes y activos, permitiendo la selección del periodo correspondiente según el calendario establecido por la institución.
                   </p>
+                  
+                  {/* Tipos de Períodos */}
+                  <div className="bg-white rounded-lg p-3 border border-blue-200">
+                    <h5 className="font-semibold text-blue-800 mb-2 text-xs uppercase tracking-wide">Tipos de Períodos:</h5>
+                    <div className="space-y-2">
+                      <div className="flex items-start gap-2">
+                        <div className="w-2 h-2 rounded-full bg-green-500 mt-1.5 flex-shrink-0"></div>
+                        <div>
+                          <p className="text-xs font-medium text-gray-800">VIGENTES</p>
+                          <p className="text-xs text-gray-600">Períodos activos que están dentro de su rango de fechas de vigencia (disponibles para nuevas solicitudes)</p>
+                        </div>
+                      </div>
+                      <div className="flex items-start gap-2">
+                        <div className="w-2 h-2 rounded-full bg-blue-500 mt-1.5 flex-shrink-0"></div>
+                        <div>
+                          <p className="text-xs font-medium text-gray-800">ACTIVOS</p>
+                          <p className="text-xs text-gray-600">Todos los períodos con estado activo, incluye futuros y pasados que mantienen el estado</p>
+                        </div>
+                      </div>
+                      <div className="flex items-start gap-2">
+                        <div className="w-2 h-2 rounded-full bg-gray-500 mt-1.5 flex-shrink-0"></div>
+                        <div>
+                          <p className="text-xs font-medium text-gray-800">TODOS</p>
+                          <p className="text-xs text-gray-600">Combinación de períodos vigentes y activos sin duplicados</p>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="mt-2 pt-2 border-t border-blue-100">
+                      <p className="text-xs text-blue-700 italic">
+                        <span className="font-medium">Criterio VIGENTE:</span> Estado ACTIVO + fechaInicio ≤ hoy + fechaFin ≥ hoy
+                      </p>
+                    </div>
+                  </div>
                 </div>
 
                 {/* 2. Configuración de Turnos */}
