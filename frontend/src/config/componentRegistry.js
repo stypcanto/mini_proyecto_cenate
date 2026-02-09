@@ -209,6 +209,12 @@ export const componentRegistry = {
     requiredAction: 'ver',
   },
 
+  '/roles/coordinador/dashboard-medico': {
+    component: lazy(() => import('../pages/roles/coordinador/dashboard-medico/DashboardCoordinadorMedico')),
+    requiredAction: 'ver',
+    requiredRoles: ['COORDINADOR_MEDICO_TELEURGENCIAS', 'ADMIN', 'SUPERADMIN'],
+  },
+
   // ========================================================================
   // 🌐 MÓDULO EXTERNO
   // ========================================================================

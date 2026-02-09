@@ -873,5 +873,115 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
         @org.springframework.data.repository.query.Param("fin") java.time.LocalDateTime fin
     );
 
+    // ============================================================================
+    // 🏥 v1.63.0: Coordinador Médico - Dashboard de Supervisión
+    // ============================================================================
+
+    /**
+     * Obtener estadísticas de médicos de un área específica
+     * Agrupa por médico: total, atendidos, pendientes, deserciones
+     * @param areaTrabajo área de trabajo (ej: TELEURGENCIAS_TELETRIAJE)
+     * @param fechaDesde fecha inicio (NULL = sin filtro)
+     * @param fechaHasta fecha fin (NULL = sin filtro)
+     * @return lista de estadísticas por médico
+     */
+    @Query(value = """
+        SELECT
+            p.id_pers as idPers,
+            CONCAT(p.nom_pers, ' ', p.ape_pater_pers, ' ', p.ape_mater_pers) as nombreMedico,
+            p.email_pers as email,
+            COUNT(sb.id_solicitud) as totalAsignados,
+            COUNT(CASE WHEN sb.condicion_medica = 'Atendido' THEN 1 END) as totalAtendidos,
+            COUNT(CASE WHEN sb.condicion_medica = 'Pendiente' THEN 1 END) as totalPendientes,
+            COUNT(CASE WHEN sb.condicion_medica = 'Deserción' THEN 1 END) as totalDeserciones,
+            COUNT(CASE WHEN sb.es_cronico = true THEN 1 END) as totalCronicos,
+            COUNT(CASE WHEN sb.tiene_recita = true THEN 1 END) as totalRecitas,
+            COUNT(CASE WHEN sb.tiene_interconsulta = true THEN 1 END) as totalInterconsultas,
+            ROUND(AVG(EXTRACT(EPOCH FROM (sb.fecha_atencion_medica - sb.fecha_asignacion)) / 3600), 2) as horasPromedioAtencion,
+            ROUND(COUNT(CASE WHEN sb.condicion_medica = 'Atendido' THEN 1 END) * 100.0 /
+                  NULLIF(COUNT(sb.id_solicitud), 0), 2) as porcentajeAtencion,
+            ROUND(COUNT(CASE WHEN sb.condicion_medica = 'Deserción' THEN 1 END) * 100.0 /
+                  NULLIF(COUNT(sb.id_solicitud), 0), 2) as tasaDesercion
+        FROM dim_personal_cnt p
+        LEFT JOIN dim_solicitud_bolsa sb ON p.id_pers = sb.id_personal AND sb.activo = true
+        WHERE p.area_trabajo = :areaTrabajo
+          AND p.stat_pers = 'A'
+          AND (:fechaDesde IS NULL OR sb.fecha_asignacion >= :fechaDesde)
+          AND (:fechaHasta IS NULL OR sb.fecha_asignacion <= :fechaHasta)
+        GROUP BY p.id_pers, p.nom_pers, p.ape_pater_pers, p.ape_mater_pers, p.email_pers
+        ORDER BY totalAsignados DESC
+        """, nativeQuery = true)
+    List<Map<String, Object>> obtenerEstadisticasMedicosPorArea(
+        @org.springframework.data.repository.query.Param("areaTrabajo") String areaTrabajo,
+        @org.springframework.data.repository.query.Param("fechaDesde") java.time.OffsetDateTime fechaDesde,
+        @org.springframework.data.repository.query.Param("fechaHasta") java.time.OffsetDateTime fechaHasta
+    );
+
+    /**
+     * Evolución temporal de atenciones por área
+     * Agrupa por día: total, atendidos, pendientes, deserciones
+     * @param areaTrabajo área de trabajo
+     * @param fechaDesde fecha inicio
+     * @param fechaHasta fecha fin
+     * @return lista de evolución temporal
+     */
+    @Query(value = """
+        SELECT
+            DATE(sb.fecha_atencion_medica AT TIME ZONE 'America/Lima') as fecha,
+            COUNT(sb.id_solicitud) as totalAtenciones,
+            COUNT(CASE WHEN sb.condicion_medica = 'Atendido' THEN 1 END) as atendidos,
+            COUNT(CASE WHEN sb.condicion_medica = 'Pendiente' THEN 1 END) as pendientes,
+            COUNT(CASE WHEN sb.condicion_medica = 'Deserción' THEN 1 END) as deserciones
+        FROM dim_solicitud_bolsa sb
+        JOIN dim_personal_cnt p ON sb.id_personal = p.id_pers
+        WHERE p.area_trabajo = :areaTrabajo
+          AND sb.activo = true
+          AND sb.fecha_asignacion >= :fechaDesde
+          AND sb.fecha_asignacion <= :fechaHasta
+        GROUP BY DATE(sb.fecha_atencion_medica AT TIME ZONE 'America/Lima')
+        ORDER BY fecha ASC
+        """, nativeQuery = true)
+    List<Map<String, Object>> obtenerEvolucionTemporalPorArea(
+        @org.springframework.data.repository.query.Param("areaTrabajo") String areaTrabajo,
+        @org.springframework.data.repository.query.Param("fechaDesde") java.time.OffsetDateTime fechaDesde,
+        @org.springframework.data.repository.query.Param("fechaHasta") java.time.OffsetDateTime fechaHasta
+    );
+
+    /**
+     * KPIs consolidados del área
+     * Estadísticas generales de todos los médicos del área
+     * @param areaTrabajo área de trabajo
+     * @param fechaDesde fecha inicio (NULL = sin filtro)
+     * @param fechaHasta fecha fin (NULL = sin filtro)
+     * @return mapa con KPIs consolidados
+     */
+    @Query(value = """
+        SELECT
+            COUNT(sb.id_solicitud) as totalPacientes,
+            COUNT(CASE WHEN sb.condicion_medica = 'Atendido' THEN 1 END) as totalAtendidos,
+            COUNT(CASE WHEN sb.condicion_medica = 'Pendiente' THEN 1 END) as totalPendientes,
+            COUNT(CASE WHEN sb.condicion_medica = 'Deserción' THEN 1 END) as totalDeserciones,
+            COUNT(CASE WHEN sb.es_cronico = true THEN 1 END) as totalCronicos,
+            COUNT(CASE WHEN sb.tiene_recita = true THEN 1 END) as totalRecitas,
+            COUNT(CASE WHEN sb.tiene_interconsulta = true THEN 1 END) as totalInterconsultas,
+            COUNT(DISTINCT sb.id_personal) as totalMedicosActivos,
+            ROUND(AVG(EXTRACT(EPOCH FROM (sb.fecha_atencion_medica - sb.fecha_asignacion)) / 3600), 2) as horasPromedio,
+            ROUND(COUNT(CASE WHEN sb.condicion_medica = 'Atendido' THEN 1 END) * 100.0 /
+                  NULLIF(COUNT(sb.id_solicitud), 0), 2) as tasaCompletacion,
+            ROUND(COUNT(CASE WHEN sb.condicion_medica = 'Deserción' THEN 1 END) * 100.0 /
+                  NULLIF(COUNT(sb.id_solicitud), 0), 2) as tasaDesercion
+        FROM dim_solicitud_bolsa sb
+        JOIN dim_personal_cnt p ON sb.id_personal = p.id_pers
+        WHERE p.area_trabajo = :areaTrabajo
+          AND sb.activo = true
+          AND (:fechaDesde IS NULL OR sb.fecha_asignacion >= :fechaDesde)
+          AND (:fechaHasta IS NULL OR sb.fecha_asignacion <= :fechaHasta)
+        """, nativeQuery = true)
+    Map<String, Object> obtenerKpisPorArea(
+        @org.springframework.data.repository.query.Param("areaTrabajo") String areaTrabajo,
+        @org.springframework.data.repository.query.Param("fechaDesde") java.time.OffsetDateTime fechaDesde,
+        @org.springframework.data.repository.query.Param("fechaHasta") java.time.OffsetDateTime fechaHasta
+    );
+
 }
 

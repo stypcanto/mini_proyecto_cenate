@@ -99,6 +99,9 @@ public class PersonalCnt {
     @Column(name = "per_pers", length = 50)
     private String perPers;
 
+    @Column(name = "area_trabajo", length = 255)
+    private String areaTrabajo; // Área de trabajo (TELEURGENCIAS_TELETRIAJE, TELEMEDICINA_GENERAL, etc.)
+
     // ==========================================================
     // 🕓 Auditoría
     // ==========================================================
