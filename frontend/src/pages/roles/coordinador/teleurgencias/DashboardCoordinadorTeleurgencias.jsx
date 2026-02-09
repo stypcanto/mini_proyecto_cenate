@@ -239,58 +239,121 @@ export default function DashboardCoordinadorTeleurgencias() {
         </div>
       </div>
 
-      {/* === EXECUTIVE VIEW: 3 KPIs Principales === */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-        {/* KPI 1: Capacidad Operativa */}
-        <div className="bg-white rounded-lg p-6 shadow-md border border-gray-200 hover:shadow-lg transition">
-          <div className="flex items-center justify-between mb-3">
-            <h3 className="text-sm font-semibold text-gray-600">Capacidad Operativa</h3>
-            <Users className="w-5 h-5 text-blue-500" />
+      {/* === EXECUTIVE VIEW: 3 KPIs Principales (Premium Design) === */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        {/* KPI 1: Capacidad Operativa - AZUL */}
+        <div className="group relative">
+          {/* Glow Effect */}
+          <div className="absolute inset-0 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg blur-xl opacity-0 group-hover:opacity-40 transition-opacity duration-300" />
+
+          {/* Card */}
+          <div className="relative bg-gradient-to-br from-blue-600 via-blue-650 to-blue-800 rounded-lg p-6 shadow-2xl hover:shadow-2xl transform hover:scale-105 transition-all duration-300 text-white overflow-hidden">
+            {/* Animated Background Pattern */}
+            <div className="absolute top-0 right-0 w-40 h-40 bg-white/10 rounded-full -mr-20 -mt-20 group-hover:scale-150 transition-transform duration-500" />
+            <div className="absolute bottom-0 left-0 w-32 h-32 bg-white/10 rounded-full -ml-16 -mb-16" />
+
+            {/* Content */}
+            <div className="relative z-10">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-sm font-semibold text-blue-100 group-hover:text-white transition-colors duration-300">
+                  Capacidad Operativa
+                </h3>
+                <Users className="w-5 h-5 text-blue-100 group-hover:text-white transition-all duration-300 transform group-hover:scale-110" />
+              </div>
+              <div className="text-5xl font-bold mb-2 text-white group-hover:text-blue-50 transition-colors duration-300">
+                {estadisticas.capacidadOperativa}
+              </div>
+              <p className="text-sm text-blue-100 group-hover:text-white transition-colors duration-300">
+                Médicos con carga activa
+              </p>
+            </div>
           </div>
-          <div className="text-3xl font-bold text-gray-900 mb-1">
-            {estadisticas.capacidadOperativa}
-          </div>
-          <p className="text-xs text-gray-500">Médicos con carga activa</p>
         </div>
 
-        {/* KPI 2: Alertas de Abandono */}
-        <div className={`bg-white rounded-lg p-6 shadow-md border-2 transition ${
-          estadisticas.alertasAltas > 0
-            ? 'border-red-300 bg-red-50'
-            : 'border-gray-200'
-        }`}>
-          <div className="flex items-center justify-between mb-3">
-            <h3 className="text-sm font-semibold text-gray-600">Alerta de Abandono</h3>
-            <AlertTriangle className={`w-5 h-5 ${
-              estadisticas.alertasAltas > 0 ? 'text-red-500' : 'text-green-500'
-            }`} />
-          </div>
-          <div className={`text-3xl font-bold mb-1 ${
-            estadisticas.alertasAltas > 0 ? 'text-red-600' : 'text-green-600'
+        {/* KPI 2: Alertas de Abandono - ROJO/VERDE */}
+        <div className="group relative">
+          {/* Glow Effect */}
+          <div className={`absolute inset-0 rounded-lg blur-xl opacity-0 group-hover:opacity-40 transition-opacity duration-300 ${
+            estadisticas.alertasAltas > 0
+              ? 'bg-gradient-to-br from-red-500 to-red-600'
+              : 'bg-gradient-to-br from-emerald-500 to-emerald-600'
+          }`} />
+
+          {/* Card */}
+          <div className={`relative rounded-lg p-6 shadow-2xl hover:shadow-2xl transform hover:scale-105 transition-all duration-300 text-white overflow-hidden bg-gradient-to-br ${
+            estadisticas.alertasAltas > 0
+              ? 'from-red-600 via-red-650 to-red-800'
+              : 'from-emerald-600 via-emerald-650 to-emerald-800'
           }`}>
-            {estadisticas.alertasAltas}
+            {/* Animated Background Pattern */}
+            <div className={`absolute top-0 right-0 w-40 h-40 opacity-10 rounded-full -mr-20 -mt-20 group-hover:scale-150 transition-transform duration-500 ${
+              estadisticas.alertasAltas > 0 ? 'bg-white' : 'bg-white'
+            }`} />
+            <div className={`absolute bottom-0 left-0 w-32 h-32 opacity-10 rounded-full -ml-16 -mb-16 ${
+              estadisticas.alertasAltas > 0 ? 'bg-white' : 'bg-white'
+            }`} />
+
+            {/* Content */}
+            <div className="relative z-10">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-sm font-semibold opacity-90 group-hover:opacity-100 transition-opacity duration-300">
+                  Alerta de Abandono
+                </h3>
+                <AlertTriangle className="w-5 h-5 opacity-90 group-hover:opacity-100 transition-all duration-300 transform group-hover:scale-110 group-hover:animate-pulse" />
+              </div>
+              <div className="text-5xl font-bold mb-2 group-hover:text-blue-50 transition-colors duration-300">
+                {estadisticas.alertasAltas}
+              </div>
+              <p className="text-sm opacity-90 group-hover:opacity-100 transition-opacity duration-300">
+                {estadisticas.alertasAltas > 0
+                  ? '⚠️ Médicos críticos'
+                  : '✓ Sin alertas'}
+              </p>
+            </div>
           </div>
-          <p className="text-xs text-gray-500">Médicos con deserción alta</p>
         </div>
 
-        {/* KPI 3: Pendientes Totales */}
-        <div className={`bg-white rounded-lg p-6 shadow-md border-2 transition ${
-          estadisticas.pendientes > 0
-            ? 'border-amber-300 bg-amber-50'
-            : 'border-gray-200'
-        }`}>
-          <div className="flex items-center justify-between mb-3">
-            <h3 className="text-sm font-semibold text-gray-600">Pendientes Totales</h3>
-            <Clock className={`w-5 h-5 ${
-              estadisticas.pendientes > 0 ? 'text-amber-500' : 'text-gray-400'
-            }`} />
-          </div>
-          <div className={`text-3xl font-bold mb-1 ${
-            estadisticas.pendientes > 0 ? 'text-amber-600' : 'text-gray-600'
+        {/* KPI 3: Pendientes Totales - ÁMBAR/VERDE */}
+        <div className="group relative">
+          {/* Glow Effect */}
+          <div className={`absolute inset-0 rounded-lg blur-xl opacity-0 group-hover:opacity-40 transition-opacity duration-300 ${
+            estadisticas.pendientes > 0
+              ? 'bg-gradient-to-br from-amber-500 to-amber-600'
+              : 'bg-gradient-to-br from-emerald-500 to-emerald-600'
+          }`} />
+
+          {/* Card */}
+          <div className={`relative rounded-lg p-6 shadow-2xl hover:shadow-2xl transform hover:scale-105 transition-all duration-300 text-white overflow-hidden bg-gradient-to-br ${
+            estadisticas.pendientes > 0
+              ? 'from-amber-600 via-amber-650 to-amber-800'
+              : 'from-emerald-600 via-emerald-650 to-emerald-800'
           }`}>
-            {estadisticas.pendientes}
+            {/* Animated Background Pattern */}
+            <div className={`absolute top-0 right-0 w-40 h-40 opacity-10 rounded-full -mr-20 -mt-20 group-hover:scale-150 transition-transform duration-500 ${
+              estadisticas.pendientes > 0 ? 'bg-white' : 'bg-white'
+            }`} />
+            <div className={`absolute bottom-0 left-0 w-32 h-32 opacity-10 rounded-full -ml-16 -mb-16 ${
+              estadisticas.pendientes > 0 ? 'bg-white' : 'bg-white'
+            }`} />
+
+            {/* Content */}
+            <div className="relative z-10">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-sm font-semibold opacity-90 group-hover:opacity-100 transition-opacity duration-300">
+                  Pendientes Totales
+                </h3>
+                <Clock className="w-5 h-5 opacity-90 group-hover:opacity-100 transition-all duration-300 transform group-hover:scale-110 group-hover:animate-spin" />
+              </div>
+              <div className="text-5xl font-bold mb-2 group-hover:text-blue-50 transition-colors duration-300">
+                {estadisticas.pendientes}
+              </div>
+              <p className="text-sm opacity-90 group-hover:opacity-100 transition-opacity duration-300">
+                {estadisticas.pendientes > 0
+                  ? '⏳ Por gestionar'
+                  : '✓ Resueltos'}
+              </p>
+            </div>
           </div>
-          <p className="text-xs text-gray-500">Casos por gestionar</p>
         </div>
       </div>
 
@@ -312,24 +375,24 @@ export default function DashboardCoordinadorTeleurgencias() {
       <div className="space-y-4">
         {/* ACCORDION 1: Médicos con Carga Activa */}
         <div className="bg-white rounded-lg shadow-md border border-gray-200 overflow-hidden">
-          {/* Encabezado del Accordion */}
+          {/* Encabezado del Accordion - PREMIUM BLUE */}
           <button
             onClick={() => toggleAcordion('activos')}
-            className="w-full px-6 py-4 flex items-center justify-between bg-gradient-to-r from-blue-50 to-blue-100 hover:from-blue-100 hover:to-blue-150 transition border-b border-gray-200"
+            className="w-full px-6 py-4 flex items-center justify-between bg-gradient-to-r from-blue-600 via-blue-650 to-blue-700 hover:from-blue-700 hover:to-blue-800 transition-all duration-300 group text-white"
           >
             <div className="flex items-center gap-3">
-              <Activity className="w-5 h-5 text-blue-600" />
+              <Activity className="w-5 h-5 text-blue-100 group-hover:text-white group-hover:scale-110 transition-all duration-300" />
               <div className="text-left">
-                <h2 className="font-bold text-gray-900">
+                <h2 className="font-bold text-white text-lg">
                   👨‍⚕️ Médicos con Carga Activa
                 </h2>
-                <p className="text-sm text-gray-600">
+                <p className="text-sm text-blue-100 group-hover:text-white transition-colors duration-300">
                   {medicosConCarga.length} médicos con atenciones en progreso
                 </p>
               </div>
             </div>
             <ChevronDown
-              className={`w-5 h-5 text-gray-600 transition-transform ${
+              className={`w-5 h-5 text-blue-100 group-hover:text-white transition-all duration-300 transform ${
                 acordeones.activos ? 'rotate-180' : ''
               }`}
             />
@@ -339,27 +402,27 @@ export default function DashboardCoordinadorTeleurgencias() {
           {acordeones.activos && (
             <div className="overflow-x-auto">
               <table className="w-full">
-                <thead className="bg-gray-50 border-b border-gray-200">
+                <thead className="bg-gradient-to-r from-blue-50 to-blue-100 border-b border-blue-200">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700">
+                    <th className="px-6 py-4 text-left text-xs font-bold text-blue-900 uppercase tracking-wider">
                       Médico
                     </th>
-                    <th className="px-6 py-3 text-center text-xs font-semibold text-gray-700">
+                    <th className="px-6 py-4 text-center text-xs font-bold text-blue-900 uppercase tracking-wider">
                       Estado
                     </th>
-                    <th className="px-6 py-3 text-center text-xs font-semibold text-gray-700">
+                    <th className="px-6 py-4 text-center text-xs font-bold text-blue-900 uppercase tracking-wider">
                       Pac. Asignados
                     </th>
-                    <th className="px-6 py-3 text-center text-xs font-semibold text-gray-700">
+                    <th className="px-6 py-4 text-center text-xs font-bold text-blue-900 uppercase tracking-wider">
                       Completadas
                     </th>
-                    <th className="px-6 py-3 text-center text-xs font-semibold text-gray-700">
+                    <th className="px-6 py-4 text-center text-xs font-bold text-blue-900 uppercase tracking-wider">
                       Pendientes
                     </th>
-                    <th className="px-6 py-3 text-center text-xs font-semibold text-gray-700">
+                    <th className="px-6 py-4 text-center text-xs font-bold text-blue-900 uppercase tracking-wider">
                       % Deserción
                     </th>
-                    <th className="px-6 py-3 text-center text-xs font-semibold text-gray-700">
+                    <th className="px-6 py-4 text-center text-xs font-bold text-blue-900 uppercase tracking-wider">
                       Acción
                     </th>
                   </tr>
@@ -469,24 +532,24 @@ export default function DashboardCoordinadorTeleurgencias() {
         {/* ACCORDION 2: Médicos Disponibles / Sin Carga */}
         {medicosSinCarga.length > 0 && (
           <div className="bg-white rounded-lg shadow-md border border-gray-200 overflow-hidden">
-            {/* Encabezado del Accordion */}
+            {/* Encabezado del Accordion - PREMIUM EMERALD */}
             <button
               onClick={() => toggleAcordion('disponibles')}
-              className="w-full px-6 py-4 flex items-center justify-between bg-gradient-to-r from-gray-50 to-gray-100 hover:from-gray-100 hover:to-gray-150 transition border-b border-gray-200"
+              className="w-full px-6 py-4 flex items-center justify-between bg-gradient-to-r from-emerald-600 via-emerald-650 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 transition-all duration-300 group text-white"
             >
               <div className="flex items-center gap-3">
-                <Users className="w-5 h-5 text-gray-600" />
+                <Users className="w-5 h-5 text-emerald-100 group-hover:text-white group-hover:scale-110 transition-all duration-300" />
                 <div className="text-left">
-                  <h2 className="font-bold text-gray-900">
+                  <h2 className="font-bold text-white text-lg">
                     ⏳ Médicos Disponibles / Sin Carga
                   </h2>
-                  <p className="text-sm text-gray-600">
+                  <p className="text-sm text-emerald-100 group-hover:text-white transition-colors duration-300">
                     {medicosSinCarga.length} médicos listos para asignar
                   </p>
                 </div>
               </div>
               <ChevronDown
-                className={`w-5 h-5 text-gray-600 transition-transform ${
+                className={`w-5 h-5 text-emerald-100 group-hover:text-white transition-all duration-300 transform ${
                   acordeones.disponibles ? 'rotate-180' : ''
                 }`}
               />
@@ -496,27 +559,27 @@ export default function DashboardCoordinadorTeleurgencias() {
             {acordeones.disponibles && (
               <div className="overflow-x-auto">
                 <table className="w-full">
-                  <thead className="bg-gray-50 border-b border-gray-200">
+                  <thead className="bg-gradient-to-r from-emerald-50 to-emerald-100 border-b border-emerald-200">
                     <tr>
-                      <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700">
+                      <th className="px-6 py-4 text-left text-xs font-bold text-emerald-900 uppercase tracking-wider">
                         Médico
                       </th>
-                      <th className="px-6 py-3 text-center text-xs font-semibold text-gray-700">
+                      <th className="px-6 py-4 text-center text-xs font-bold text-emerald-900 uppercase tracking-wider">
                         Estado
                       </th>
-                      <th className="px-6 py-3 text-center text-xs font-semibold text-gray-700">
+                      <th className="px-6 py-4 text-center text-xs font-bold text-emerald-900 uppercase tracking-wider">
                         Pac. Asignados
                       </th>
-                      <th className="px-6 py-3 text-center text-xs font-semibold text-gray-700">
+                      <th className="px-6 py-4 text-center text-xs font-bold text-emerald-900 uppercase tracking-wider">
                         Completadas
                       </th>
-                      <th className="px-6 py-3 text-center text-xs font-semibold text-gray-700">
+                      <th className="px-6 py-4 text-center text-xs font-bold text-emerald-900 uppercase tracking-wider">
                         Pendientes
                       </th>
-                      <th className="px-6 py-3 text-center text-xs font-semibold text-gray-700">
+                      <th className="px-6 py-4 text-center text-xs font-bold text-emerald-900 uppercase tracking-wider">
                         % Deserción
                       </th>
-                      <th className="px-6 py-3 text-center text-xs font-semibold text-gray-700">
+                      <th className="px-6 py-4 text-center text-xs font-bold text-emerald-900 uppercase tracking-wider">
                         Acción
                       </th>
                     </tr>
