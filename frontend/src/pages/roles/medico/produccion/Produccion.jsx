@@ -345,8 +345,8 @@ export default function Produccion() {
         )}
 
         {/* SECCIÓN DE CALENDARIO Y DETALLES POR DÍA */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Calendario */}
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+          {/* Calendario - MÁS PROMINENTE */}
           <div className="lg:col-span-1">
             <div className="bg-white border border-gray-200 shadow-sm rounded-lg p-6">
               {/* Navegación de meses */}
@@ -429,48 +429,27 @@ export default function Produccion() {
             </div>
           </div>
 
-          {/* Detalles del día */}
-          <div className="lg:col-span-2 space-y-6">
-            {/* KPIs del día seleccionado */}
-            <div>
-              <h2 className="text-lg font-bold text-gray-900 mb-4 capitalize">
+          {/* Detalles del día - Listado de pacientes */}
+          <div className="lg:col-span-3">
+            {/* Encabezado con fecha seleccionada */}
+            <div className="mb-6">
+              <h2 className="text-2xl font-bold text-gray-900 capitalize">
                 {diaSeleccionado.toLocaleString('es-PE', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
               </h2>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="bg-white border border-gray-200 shadow-sm rounded-lg p-4 hover:shadow-md transition-shadow">
-                  <p className="text-sm text-gray-600 font-medium">Atendidos</p>
-                  <p className="text-3xl font-bold text-[#0A5BA9] mt-2">{statsDelDia.total}</p>
-                </div>
-                <div className="bg-white border border-gray-200 shadow-sm rounded-lg p-4 hover:shadow-md transition-shadow">
-                  <p className="text-sm text-gray-600 font-medium">Interconsultas</p>
-                  <p className="text-3xl font-bold text-purple-600 mt-2">{statsDelDia.interconsultas}</p>
-                </div>
-                <div className="bg-white border border-gray-200 shadow-sm rounded-lg p-4 hover:shadow-md transition-shadow">
-                  <p className="text-sm text-gray-600 font-medium">Crónicos</p>
-                  <p className="text-3xl font-bold text-red-600 mt-2">{statsDelDia.cronicas}</p>
-                </div>
-                <div className="bg-white border border-gray-200 shadow-sm rounded-lg p-4 hover:shadow-md transition-shadow">
-                  <p className="text-sm text-gray-600 font-medium">Recitas</p>
-                  <p className="text-3xl font-bold text-blue-600 mt-2">
-                    {pacientesDiaSeleccionado.filter(p => p.tieneRecita).length}
-                  </p>
-                </div>
-              </div>
+              <p className="text-sm text-gray-600 mt-1">
+                {pacientesDiaSeleccionado.length === 0
+                  ? 'Sin atenciones registradas'
+                  : `${pacientesDiaSeleccionado.length} paciente${pacientesDiaSeleccionado.length !== 1 ? 's' : ''} atendido${pacientesDiaSeleccionado.length !== 1 ? 's' : ''}`}
+              </p>
             </div>
 
             {/* Listado de pacientes del día */}
             <div className="bg-white border border-gray-200 shadow-sm rounded-lg p-6">
-              <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
-                <Users className="w-5 h-5 text-[#0A5BA9]" />
-                Pacientes atendidos ({pacientesDiaSeleccionado.length})
-              </h3>
-
               {pacientesDiaSeleccionado.length === 0 ? (
-                <div className="text-center py-8">
-                  <Activity className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-                  <p className="text-gray-600 font-medium">No hay atenciones este día</p>
-                  <p className="text-sm text-gray-500 mt-1">Selecciona otro día para ver detalles</p>
+                <div className="text-center py-12">
+                  <Activity className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                  <p className="text-gray-600 font-medium text-lg">Sin atenciones este día</p>
+                  <p className="text-sm text-gray-500 mt-2">Selecciona otro día del calendario para ver los pacientes atendidos</p>
                 </div>
               ) : (
                 <div className="space-y-3">
