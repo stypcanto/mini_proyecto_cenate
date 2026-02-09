@@ -35,6 +35,60 @@ import { useAuth } from '../../../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import gestionPacientesService from '../../../services/gestionPacientesService';
 
+// Estilos de animaciones personalizadas
+const animationStyles = `
+  @keyframes cardFloat {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-8px); }
+  }
+
+  @keyframes cardGlow {
+    0%, 100% { box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2); }
+    50% { box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3); }
+  }
+
+  @keyframes slideUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes iconPulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+  }
+
+  .card-hover {
+    transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  .card-hover:hover {
+    transform: translateY(-12px) scale(1.02);
+    animation: cardGlow 2s ease-in-out infinite;
+  }
+
+  .card-icon-hover {
+    transition: all 0.3s ease;
+  }
+
+  .card-hover:hover .card-icon-hover {
+    animation: iconPulse 0.6s ease-in-out infinite;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .card-animate {
+      animation: slideUp 0.6s ease-out forwards;
+    }
+
+    .card-animate:nth-child(2) {
+      animation-delay: 0.1s;
+    }
+
+    .card-animate:nth-child(3) {
+      animation-delay: 0.2s;
+    }
+  }
+`;
+
 export default function BienvenidaMedico() {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -95,6 +149,7 @@ export default function BienvenidaMedico() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white pb-8">
+      <style>{animationStyles}</style>
       {/* SIMPLE WELCOME */}
       <div className="px-4 md:px-6 py-4 text-center">
         <h1 className="text-3xl md:text-4xl font-bold text-slate-900 mb-1">
@@ -130,60 +185,75 @@ export default function BienvenidaMedico() {
             <span>⚡</span> Acciones Rápidas
           </h3>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-5">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-5">
             {/* Card 1: Pacientes */}
             <button
               onClick={() => navigate('/roles/medico/pacientes')}
-              className="bg-gradient-to-br from-purple-600 to-purple-800 rounded-lg p-4 shadow-lg hover:shadow-xl hover:from-purple-700 hover:to-purple-900 transition text-left group text-white"
+              className="card-animate card-hover bg-gradient-to-br from-purple-600 to-purple-800 rounded-xl p-6 shadow-lg text-left text-white overflow-hidden relative group"
             >
-              <div className="w-10 h-10 rounded-lg bg-white/20 flex items-center justify-center mb-3 group-hover:bg-white/30 transition">
-                <Users className="w-5 h-5 text-white" />
+              {/* Efecto de luz */}
+              <div className="absolute top-0 right-0 w-40 h-40 bg-white/10 rounded-full -mr-20 -mt-20 group-hover:scale-150 transition-transform duration-500"></div>
+
+              <div className="relative z-10">
+                <div className="card-icon-hover w-12 h-12 rounded-lg bg-white/20 flex items-center justify-center mb-4 group-hover:bg-white/40 transition-all duration-300">
+                  <Users className="w-6 h-6 text-white" />
+                </div>
+                <h4 className="text-lg font-bold text-white mb-3">Pacientes</h4>
+                <div className="mb-3">
+                  <p className="text-4xl font-bold text-white">{stats.pacientesAsignados}</p>
+                  <p className="text-sm text-purple-100 mt-1">pacientes asignados</p>
+                </div>
+                <p className="text-sm text-purple-200 group-hover:text-white transition-colors duration-300">
+                  {stats.pacientesCitados} citados • {stats.pacientesAtendidos} atendidos
+                </p>
               </div>
-              <h4 className="text-base font-bold text-white mb-1">Pacientes</h4>
-              <div className="mb-2">
-                <p className="text-3xl font-bold text-white">{stats.pacientesAsignados}</p>
-                <p className="text-xs text-purple-100">pacientes asignados</p>
-              </div>
-              <p className="text-xs text-purple-200">
-                {stats.pacientesCitados} citados • {stats.pacientesAtendidos} atendidos
-              </p>
             </button>
 
             {/* Card 2: Producción */}
             <button
               onClick={() => navigate('/roles/medico/produccion')}
-              className="bg-gradient-to-br from-blue-600 to-blue-800 rounded-lg p-4 shadow-lg hover:shadow-xl hover:from-blue-700 hover:to-blue-900 transition text-left group text-white"
+              className="card-animate card-hover bg-gradient-to-br from-blue-600 to-blue-800 rounded-xl p-6 shadow-lg text-left text-white overflow-hidden relative group"
             >
-              <div className="w-10 h-10 rounded-lg bg-white/20 flex items-center justify-center mb-3 group-hover:bg-white/30 transition">
-                <BarChart3 className="w-5 h-5 text-white" />
+              {/* Efecto de luz */}
+              <div className="absolute top-0 right-0 w-40 h-40 bg-white/10 rounded-full -mr-20 -mt-20 group-hover:scale-150 transition-transform duration-500"></div>
+
+              <div className="relative z-10">
+                <div className="card-icon-hover w-12 h-12 rounded-lg bg-white/20 flex items-center justify-center mb-4 group-hover:bg-white/40 transition-all duration-300">
+                  <BarChart3 className="w-6 h-6 text-white" />
+                </div>
+                <h4 className="text-lg font-bold text-white mb-3">Producción</h4>
+                <p className="text-sm text-blue-100 mb-3 group-hover:text-blue-50 transition-colors duration-300">
+                  Visualiza tu productividad y desempeño
+                </p>
+                <p className="text-sm text-blue-200 group-hover:text-white transition-colors duration-300">
+                  KPIs, análisis y tendencias
+                </p>
               </div>
-              <h4 className="text-base font-bold text-white mb-1">Producción</h4>
-              <p className="text-xs text-blue-100 mb-2">
-                Visualiza tu productividad y desempeño en atenciones
-              </p>
-              <p className="text-xs text-blue-200">
-                KPIs, análisis y tendencias
-              </p>
             </button>
 
             {/* Card 3: Mi Información */}
             <button
               onClick={() => navigate('/user/profile')}
-              className="bg-gradient-to-br from-cyan-600 to-cyan-800 rounded-lg p-4 shadow-lg hover:shadow-xl hover:from-cyan-700 hover:to-cyan-900 transition text-left group text-white"
+              className="card-animate card-hover bg-gradient-to-br from-cyan-600 to-cyan-800 rounded-xl p-6 shadow-lg text-left text-white overflow-hidden relative group"
             >
-              <div className="w-10 h-10 rounded-lg bg-white/20 flex items-center justify-center mb-3 group-hover:bg-white/30 transition">
-                <User className="w-5 h-5 text-white" />
+              {/* Efecto de luz */}
+              <div className="absolute top-0 right-0 w-40 h-40 bg-white/10 rounded-full -mr-20 -mt-20 group-hover:scale-150 transition-transform duration-500"></div>
+
+              <div className="relative z-10">
+                <div className="card-icon-hover w-12 h-12 rounded-lg bg-white/20 flex items-center justify-center mb-4 group-hover:bg-white/40 transition-all duration-300">
+                  <User className="w-6 h-6 text-white" />
+                </div>
+                <h4 className="text-lg font-bold text-white mb-3">Mi Información</h4>
+                <p className="text-sm text-white font-medium mb-2">
+                  {user?.nombreCompleto || 'Cargando...'}
+                </p>
+                <p className="text-sm text-cyan-100 group-hover:text-cyan-50 transition-colors duration-300">
+                  Perfil y datos profesionales
+                </p>
+                <p className="text-xs text-cyan-200 mt-3 group-hover:text-white transition-colors duration-300">
+                  Usuario: <span className="font-mono">{user?.username}</span>
+                </p>
               </div>
-              <h4 className="text-base font-bold text-white mb-1">Mi Información</h4>
-              <p className="text-xs text-white font-medium mb-1">
-                {user?.nombreCompleto || 'Cargando...'}
-              </p>
-              <p className="text-xs text-cyan-100">
-                Perfil y datos profesionales
-              </p>
-              <p className="text-xs text-cyan-200 mt-2">
-                Usuario: <span className="font-mono text-xs">{user?.username}</span>
-              </p>
             </button>
           </div>
 
