@@ -1053,11 +1053,11 @@ export default function MisPacientes() {
 
           {/* CONTENIDO - FILTROS (COLAPSABLE) */}
           {filtrosExpandidos && (
-            <div className="px-6 py-4 border-t border-slate-200 bg-white">
+            <div className="px-6 py-5 border-t border-slate-200 bg-white space-y-5">
 
-          {/* FILA 1: Búsqueda + Condición + Actualizar */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end mb-5">
-            {/* Búsqueda */}
+          {/* FILA 1: Búsqueda + Estado + Actualizar (4-column symmetric grid) */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end mb-5">
+            {/* Búsqueda - span 2 columns */}
             <div className="md:col-span-2">
               <label className="block text-xs font-semibold text-gray-700 mb-2 uppercase tracking-wide">
                 <Search className="w-4 h-4 inline mr-2 text-[#0A5BA9]" />
@@ -1072,7 +1072,7 @@ export default function MisPacientes() {
               />
             </div>
 
-            {/* Condición */}
+            {/* Estado - 1 column */}
             <div>
               <label className="block text-xs font-semibold text-gray-700 mb-2 uppercase tracking-wide">
                 <Filter className="w-4 h-4 inline mr-2 text-orange-500" />
@@ -1089,11 +1089,23 @@ export default function MisPacientes() {
                 <option value="Deserción">❌ Deserción</option>
               </select>
             </div>
+
+            {/* Botón Actualizar - 1 column */}
+            <div>
+              <button
+                onClick={cargarPacientes}
+                title="Actualizar lista de pacientes"
+                className="w-full h-12 px-4 bg-gradient-to-r from-[#0A5BA9] to-[#0d4a8f] text-white rounded-lg hover:from-[#083d78] hover:to-[#062d5f] transition-all duration-200 flex items-center justify-center gap-2 hover:shadow-lg font-semibold active:scale-95"
+              >
+                <RefreshCw className="w-5 h-5" />
+                Actualizar
+              </button>
+            </div>
           </div>
 
-          {/* FILA 2: Tipo de Bolsa + IPRESS + Rango Fecha + Fecha Atención */}
-          <div className="grid grid-cols-1 md:grid-cols-5 gap-4 items-start">
-            {/* Filtro Tipo de Bolsa */}
+          {/* FILA 2: Tipo de Bolsa + IPRESS + Asignación + Atención (4-column symmetric grid) */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-start">
+            {/* Filtro Tipo de Bolsa - 1 column */}
             <div>
               <label className="block text-xs font-semibold text-gray-700 mb-2 uppercase tracking-wide">
                 <span className="inline-block w-4 h-4 mr-2 text-purple-500">📦</span>
@@ -1113,7 +1125,7 @@ export default function MisPacientes() {
               </select>
             </div>
 
-            {/* Filtro IPRESS */}
+            {/* Filtro IPRESS - 1 column */}
             <div>
               <label className="block text-xs font-semibold text-gray-700 mb-2 uppercase tracking-wide">
                 <span className="inline-block w-4 h-4 mr-2 text-blue-500">🏥</span>
@@ -1133,7 +1145,7 @@ export default function MisPacientes() {
               </select>
             </div>
 
-            {/* Filtro Rango Fecha */}
+            {/* Filtro Rango Fecha - 1 column */}
             <div>
               <label className="block text-xs font-semibold text-gray-700 mb-2 uppercase tracking-wide">
                 <Calendar className="w-4 h-4 inline mr-2 text-green-600" />
@@ -1158,14 +1170,14 @@ export default function MisPacientes() {
               </select>
             </div>
 
-            {/* Selector de Fecha de Atención */}
+            {/* Selector de Fecha de Atención - 1 column */}
             <div>
               <label className="block text-xs font-semibold text-gray-700 mb-2 uppercase tracking-wide">
                 <Calendar className="w-4 h-4 inline mr-2 text-red-500" />
                 Atención
                 {filtroEstado && fechasAtencionDisponibles.length > 0 && (
                   <span className="ml-2 text-xs font-normal text-red-600">
-                    ({fechasAtencionDisponibles.length} {filtroEstado})
+                    ({fechasAtencionDisponibles.length})
                   </span>
                 )}
               </label>
@@ -1194,23 +1206,11 @@ export default function MisPacientes() {
                 )}
               </select>
             </div>
-
-            {/* Botón Refrescar */}
-            <div className="flex items-end">
-              <button
-                onClick={cargarPacientes}
-                title="Actualizar lista de pacientes"
-                className="w-full px-4 py-3 bg-gradient-to-r from-[#0A5BA9] to-[#0d4a8f] text-white rounded-lg hover:from-[#083d78] hover:to-[#062d5f] transition-all duration-200 flex items-center justify-center gap-2 hover:shadow-lg font-semibold active:scale-95"
-              >
-                <RefreshCw className="w-5 h-5" />
-                Actualizar
-              </button>
-            </div>
           </div>
 
           {/* FILA 3: Rango Personalizado (condicional) */}
           {filtroRangoFecha === 'personalizado' && (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4 mt-4 pl-6 border-l-4 border-green-500 bg-green-50/30">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 pt-5 mt-2 pl-4 border-l-4 border-green-500 bg-green-50/40 rounded-r-lg">
               <div>
                 <label className="block text-xs font-semibold text-gray-700 mb-2 uppercase tracking-wide">
                   📅 Desde
@@ -1235,14 +1235,14 @@ export default function MisPacientes() {
                 />
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+              <div className="md:col-span-2">
+                <label className="block text-xs font-semibold text-gray-700 mb-2 uppercase tracking-wide">
                   Ordenar por
                 </label>
                 <select
                   value={ordenarPor}
                   onChange={(e) => setOrdenarPor(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0A5BA9]/50 focus:border-[#0A5BA9] transition-colors"
+                  className="w-full px-4 py-3 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-green-400 focus:border-transparent transition-all shadow-sm hover:border-slate-400"
                 >
                   <option value="reciente">Más recientes primero</option>
                   <option value="antiguo">Más antiguos primero</option>
@@ -1250,7 +1250,6 @@ export default function MisPacientes() {
               </div>
             </div>
           )}
-
             </div>
           )}
         </div>
