@@ -1,10 +1,48 @@
 # CHANGELOG - HISTORIAL DE VERSIONES CENATE
 
-**Última actualización:** 2026-02-07
+**Última actualización:** 2026-02-08
 
 ---
 
 ## 📊 VERSIONES PRINCIPALES
+
+### ✅ v1.62.0 - Notificaciones de Pacientes Pendientes para Médicos (2026-02-08) 🎉 NUEVA FEATURE
+✅ **Contador de Pacientes Pendientes** - Muestra número de pacientes en estado "Pendiente"
+✅ **Notificaciones en Campanita** - Integrado con NotificationBell existente
+✅ **Polling cada 60 segundos** - Actualización automática de contador
+✅ **Sección Separada** - Pacientes pendientes en dropdown con color azul
+✅ **Navegación Rápida** - Un clic para ir a /roles/medico/pacientes
+
+**Backend:**
+- Repository: `countByIdPersonalAndCondicionPendiente()` - Query optimizada COUNT(*)
+- Service: `contarPacientesPendientesDelMedicoActual()` - Método nuevo
+- Controller: `GET /api/gestion-pacientes/medico/contador-pendientes` - Endpoint nuevo
+
+**Frontend:**
+- Service: `obtenerContadorPendientes()` - Método nuevo en gestionPacientesService
+- Component: NotificationBell.jsx expandido con soporte para médicos
+- Lógica: Detección de rol MEDICO, polling separado, UI profesional
+
+**Archivos modificados:**
+- Backend:
+  - `SolicitudBolsaRepository.java` - Query de conteo
+  - `IGestionPacienteService.java` - Interfaz actualizada
+  - `GestionPacienteServiceImpl.java` - Implementación del servicio
+  - `GestionPacienteController.java` - Nuevo endpoint
+- Frontend:
+  - `gestionPacientesService.js` - Nuevo método
+  - `NotificationBell.jsx` - Expandido (252 líneas)
+
+**Testing:**
+```bash
+# Backend compiló ✅
+./gradlew compileJava -q
+
+# Frontend compiló ✅
+npm run build
+```
+
+---
 
 ### ✅ v1.57.1 - Exportación de Tabla Especialidades (2026-02-07) 🎉 MEJORA FEATURE
 ✅ **Botón "Exportar" en Tabla** - Nuevo botón en header de especialidades solicitadas

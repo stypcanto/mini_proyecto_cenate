@@ -1,9 +1,9 @@
 # CLAUDE.md - Proyecto CENATE
 
 > **Sistema de Telemedicina - EsSalud Perú**
-> **Versión:** v1.58.0 (2026-02-08) 🚀
-> **Última Feature:** v1.58.0 - Módulo de Requerimiento de Especialidades ✅ (2026-02-08)
-> **Última Feature Base:** v1.57.1 - Exportación de Tabla Especialidades ✅ (2026-02-07)
+> **Versión:** v1.62.0 (2026-02-08) 🚀
+> **Última Feature:** v1.62.0 - Notificaciones de Pacientes Pendientes ✅ (2026-02-08)
+> **Última Feature Base:** v1.58.0 - Módulo de Requerimiento de Especialidades ✅ (2026-02-08)
 > **Status:** ✅ Production Ready
 
 ---
@@ -223,6 +223,7 @@ Nuevo módulo completo para gestionar solicitudes de especialidades médicas de 
 **👉 Ver historial completo:** [`CHANGELOG-VERSIONES.md`](CHANGELOG-VERSIONES.md)
 
 Versiones recientes:
+- **v1.62.0** - Notificaciones de Pacientes Pendientes ✅ (2026-02-08) 🆕
 - **v1.58.0** - Módulo de Requerimiento de Especialidades ✅ (2026-02-08)
 - **v1.57.1** - Exportación de Tabla Especialidades (2026-02-07)
 - **v1.56.1** - Filtros Clínicos DNI + Fecha (2026-02-07)
@@ -264,8 +265,8 @@ Ver: [`plan/06_Integracion_Spring_AI/`](plan/06_Integracion_Spring_AI/)
 
 **Desarrollado por:** Ing. Styp Canto Rondón
 **Email:** stypcanto@essalud.gob.pe
-**Versión:** v1.58.0 (2026-02-08)
-**Última Actualización:** 2026-02-08 - Módulo de Requerimiento de Especialidades
+**Versión:** v1.62.0 (2026-02-08)
+**Última Actualización:** 2026-02-08 - Notificaciones de Pacientes Pendientes
 
 ---
 
