@@ -205,7 +205,8 @@ public class SolicitudTurnoIpressServiceImpl implements SolicitudTurnoIpressServ
 
 		// Crear solicitud
 		SolicitudTurnoIpress solicitud = SolicitudTurnoIpress.builder().periodo(periodo).personal(personal)
-				.estado("INICIADO").totalEspecialidades(0).totalTurnosSolicitados(0).build();
+				.estado("INICIADO").totalEspecialidades(0).totalTurnosSolicitados(0)
+				.observaciones(request.getObservaciones()).build();
 
 		solicitud.setUpdatedAt(OffsetDateTime.now());
 		solicitud = solicitudRepository.save(solicitud);
@@ -282,6 +283,12 @@ public class SolicitudTurnoIpressServiceImpl implements SolicitudTurnoIpressServ
 		}
 
 		recalcularTotales(solicitud);
+		
+		// Mapear observaciones si están presentes
+		if (request.getObservaciones() != null) {
+			solicitud.setObservaciones(request.getObservaciones());
+		}
+		
 		// Actualiza cabecera
 		solicitud.setUpdatedAt(OffsetDateTime.now()); // o @UpdateTimestamp
 
@@ -467,7 +474,7 @@ public class SolicitudTurnoIpressServiceImpl implements SolicitudTurnoIpressServ
 				.builder().idSolicitud(solicitud.getIdSolicitud()).idPeriodo(solicitud.getPeriodo().getIdPeriodo())
 				.periodoDescripcion(solicitud.getPeriodo().getDescripcion()).estado(solicitud.getEstado())
 				.fechaEnvio(solicitud.getFechaEnvio()).createdAt(solicitud.getCreatedAt())
-				.updatedAt(solicitud.getUpdatedAt());
+				.updatedAt(solicitud.getUpdatedAt()).observaciones(solicitud.getObservaciones());
 
 		// Datos del personal
 		PersonalCnt personal = solicitud.getPersonal();
@@ -984,6 +991,12 @@ public class SolicitudTurnoIpressServiceImpl implements SolicitudTurnoIpressServ
 		
 		log.info("Solicitud refrescada. Detalles encontrados: {}", solicitud.getDetalles().size());
 		recalcularTotales(solicitud);
+		
+		// Mapear observaciones si están presentes
+		if (request.getObservaciones() != null) {
+			solicitud.setObservaciones(request.getObservaciones());
+		}
+		
 		log.info("Totales recalculados - Turnos: {}, Especialidades: {}", 
 			solicitud.getTotalTurnosSolicitados(), solicitud.getTotalEspecialidades());
 		solicitud.setUpdatedAt(OffsetDateTime.now());

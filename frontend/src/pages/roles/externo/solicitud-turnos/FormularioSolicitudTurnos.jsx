@@ -895,7 +895,7 @@ export default function FormularioSolicitudTurnos() {
       
       // Agregar observación general si se proporcionó
       if (observacionGeneral.trim()) {
-        payloadCompat.observacionGeneral = observacionGeneral.trim();
+        payloadCompat.observaciones = observacionGeneral.trim();
       }
 
       // Primero guardar el borrador (crea o actualiza)

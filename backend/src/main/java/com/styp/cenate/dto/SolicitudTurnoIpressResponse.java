@@ -45,6 +45,9 @@ public class SolicitudTurnoIpressResponse {
     // Totales calculados
     private Integer totalTurnosSolicitados;
     private Integer totalEspecialidades;
+    
+    // Observaciones generales
+    private String observaciones;
 
     // Metodos de conveniencia
     public boolean isEnviado() {
