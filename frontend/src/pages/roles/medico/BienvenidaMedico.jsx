@@ -46,6 +46,7 @@ export default function BienvenidaMedico() {
     pacientesAtendidos: 0,
     pacientesPendientes: 0
   });
+  const [contadorPendientes, setContadorPendientes] = useState(0);
 
   useEffect(() => {
     cargarDatos();
@@ -54,8 +55,9 @@ export default function BienvenidaMedico() {
   const cargarDatos = async () => {
     try {
       setLoading(true);
-      const data = await gestionPacientesService.obtenerPacientesMedico();
 
+      // Cargar pacientes asignados del médico
+      const data = await gestionPacientesService.obtenerPacientesMedico();
       if (data && Array.isArray(data)) {
         setPacientes(data);
         const estadisticas = {
@@ -65,6 +67,15 @@ export default function BienvenidaMedico() {
           pacientesPendientes: data.filter(p => p.condicion === 'Pendiente').length
         };
         setStats(estadisticas);
+      }
+
+      // Cargar contador de pacientes pendientes (v1.62.0)
+      try {
+        const contador = await gestionPacientesService.obtenerContadorPendientes();
+        setContadorPendientes(contador);
+      } catch (error) {
+        console.warn('Advertencia al cargar contador pendientes:', error);
+        setContadorPendientes(stats.pacientesPendientes);
       }
     } catch (error) {
       console.error('Error cargando datos:', error);
@@ -120,48 +131,58 @@ export default function BienvenidaMedico() {
           </h3>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-5">
-            {/* Card 1: Mis Pacientes */}
+            {/* Card 1: Pacientes */}
             <button
               onClick={() => navigate('/roles/medico/pacientes')}
-              className="bg-white rounded-lg p-4 shadow-sm border border-slate-200 hover:shadow-md hover:border-slate-300 transition text-left group"
+              className="bg-white rounded-lg p-4 shadow-sm border border-purple-200 hover:shadow-md hover:border-purple-300 transition text-left group"
             >
               <div className="w-10 h-10 rounded-lg bg-purple-100 flex items-center justify-center mb-3 group-hover:bg-purple-200 transition">
                 <Users className="w-5 h-5 text-purple-600" />
               </div>
-              <h4 className="text-base font-bold text-slate-900 mb-1">Mis Pacientes</h4>
-              <p className="text-xs text-slate-600 mb-2">
-                Visualiza y gestiona tu cartera de {stats.pacientesAsignados} {stats.pacientesAsignados === 1 ? 'paciente' : 'pacientes'}
-              </p>
+              <h4 className="text-base font-bold text-slate-900 mb-1">Pacientes</h4>
+              <div className="mb-2">
+                <p className="text-2xl font-bold text-purple-600">{stats.pacientesAsignados}</p>
+                <p className="text-xs text-slate-600">pacientes asignados</p>
+              </div>
               <p className="text-xs text-slate-500">
                 {stats.pacientesCitados} citados • {stats.pacientesAtendidos} atendidos
               </p>
             </button>
 
-            {/* Card 2: Atenciones Clínicas */}
+            {/* Card 2: Producción */}
             <button
-              onClick={() => navigate('/roles/medico/disponibilidad')}
-              className="bg-white rounded-lg p-4 shadow-sm border border-slate-200 hover:shadow-md hover:border-slate-300 transition text-left group"
+              onClick={() => navigate('/roles/medico/produccion')}
+              className="bg-white rounded-lg p-4 shadow-sm border border-blue-200 hover:shadow-md hover:border-blue-300 transition text-left group"
             >
               <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center mb-3 group-hover:bg-blue-200 transition">
-                <FileText className="w-5 h-5 text-blue-600" />
+                <BarChart3 className="w-5 h-5 text-blue-600" />
               </div>
-              <h4 className="text-base font-bold text-slate-900 mb-1">Disponibilidad</h4>
-              <p className="text-xs text-slate-600">
-                Gestiona tu horario y disponibilidad para atenciones de telemedicina
+              <h4 className="text-base font-bold text-slate-900 mb-1">Producción</h4>
+              <p className="text-xs text-slate-600 mb-2">
+                Visualiza tu productividad y desempeño en atenciones
+              </p>
+              <p className="text-xs text-slate-500">
+                KPIs, análisis y tendencias
               </p>
             </button>
 
-            {/* Card 3: Reportes */}
+            {/* Card 3: Mi Información */}
             <button
-              onClick={() => navigate('/roles/medico/disponibilidad')}
-              className="bg-white rounded-lg p-4 shadow-sm border border-slate-200 hover:shadow-md hover:border-slate-300 transition text-left group"
+              onClick={() => navigate('/user/profile')}
+              className="bg-white rounded-lg p-4 shadow-sm border border-cyan-200 hover:shadow-md hover:border-cyan-300 transition text-left group"
             >
-              <div className="w-10 h-10 rounded-lg bg-pink-100 flex items-center justify-center mb-3 group-hover:bg-pink-200 transition">
-                <BarChart3 className="w-5 h-5 text-pink-600" />
+              <div className="w-10 h-10 rounded-lg bg-cyan-100 flex items-center justify-center mb-3 group-hover:bg-cyan-200 transition">
+                <User className="w-5 h-5 text-cyan-600" />
               </div>
               <h4 className="text-base font-bold text-slate-900 mb-1">Mi Información</h4>
+              <p className="text-xs text-slate-900 font-medium mb-1">
+                {user?.nombreCompleto || 'Cargando...'}
+              </p>
               <p className="text-xs text-slate-600">
-                Consulta tu perfil, especialidades y datos profesionales
+                Perfil y datos profesionales
+              </p>
+              <p className="text-xs text-slate-500 mt-2">
+                Usuario: <span className="font-mono text-xs">{user?.username}</span>
               </p>
             </button>
           </div>

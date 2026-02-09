@@ -5,11 +5,10 @@
 import React, { useState } from "react";
 import { useAuth } from "../../context/AuthContext";
 import { useNavigate } from "react-router-dom";
-import { ChevronLeft, User, Lock, ShieldCheck } from "lucide-react";
+import { ChevronLeft, User, Lock } from "lucide-react";
 import TabContainer from "../../components/common/TabContainer";
 import PerfilTab from "../../components/user/PerfilTab";
 import SeguridadTab from "../../components/user/SeguridadTab";
-import AccesosTab from "../../components/user/AccesosTab";
 
 export default function Profile() {
   const { user } = useAuth();
@@ -27,11 +26,6 @@ export default function Profile() {
       id: "seguridad",
       label: "Seguridad",
       icon: <Lock className="w-4 h-4" />,
-    },
-    {
-      id: "accesos",
-      label: "Accesos y Permisos",
-      icon: <ShieldCheck className="w-4 h-4" />,
     },
   ];
 
@@ -115,7 +109,6 @@ export default function Profile() {
           <div className="p-6">
             {activeTab === "perfil" && <PerfilTab user={user} />}
             {activeTab === "seguridad" && <SeguridadTab user={user} />}
-            {activeTab === "accesos" && <AccesosTab user={user} />}
           </div>
         </div>
       </div>
