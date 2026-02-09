@@ -89,10 +89,10 @@ export default function Solicitudes() {
   const [filtroIpress, setFiltroIpress] = useState('todas');
   const [filtroMacrorregion, setFiltroMacrorregion] = useState('todas');
   const [filtroEspecialidad, setFiltroEspecialidad] = useState('todas');
-  const [filtroEstado, setFiltroEstado] = useState('PENDIENTE_CITA'); // v1.66.5: Mostrar Pendientes de Citar por defecto
+  const [filtroEstado, setFiltroEstado] = useState('todos'); // Mostrar todos los estados por defecto
   const [filtroTipoCita, setFiltroTipoCita] = useState('todas');
   const [filtroAsignacion, setFiltroAsignacion] = useState('todos');  // ✅ v1.42.0: Filtro asignación (cards clickeables)
-  const [cardSeleccionado, setCardSeleccionado] = useState('pendiente');     // ✅ v1.42.0: Rastrear card activo - Mostrar PENDIENTES por defecto
+  const [cardSeleccionado, setCardSeleccionado] = useState(null);     // ✅ v1.42.0: Rastrear card activo
   const [selectedRows, setSelectedRows] = useState(new Set());
   const [currentPage, setCurrentPage] = useState(1);
 
