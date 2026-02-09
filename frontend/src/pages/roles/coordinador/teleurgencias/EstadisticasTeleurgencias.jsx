@@ -34,6 +34,10 @@ export default function EstadisticasTeleurgencias() {
   const [busqueda, setBusqueda] = useState('');
   const [cargando, setCargando] = useState(true);
   const [periodo, setPeriodo] = useState('mes'); // 'semana', 'mes', 'año'
+  const [medicoSeleccionado, setMedicoSeleccionado] = useState(null);
+  const [showModal, setShowModal] = useState(false);
+  const [pacientesMedico, setPacientesMedico] = useState([]);
+  const [cargandoPacientes, setCargandoPacientes] = useState(false);
 
   useEffect(() => {
     cargarDatos();
@@ -106,6 +110,22 @@ export default function EstadisticasTeleurgencias() {
     pendientes: m.pendientes || 0,
     desertadas: m.desertadas || 0,
   }));
+
+  const abrirDetalles = async (medico) => {
+    setMedicoSeleccionado(medico);
+    setShowModal(true);
+    setCargandoPacientes(true);
+    try {
+      // Obtener pacientes de este médico desde el backend
+      const response = await apiClient.get(`/gestion-pacientes/medico/${medico.username}/pacientes`);
+      setPacientesMedico(Array.isArray(response) ? response : []);
+    } catch (error) {
+      console.error('Error cargando pacientes del médico:', error);
+      setPacientesMedico([]);
+    } finally {
+      setCargandoPacientes(false);
+    }
+  };
 
   if (cargando) {
     return (
@@ -340,7 +360,10 @@ export default function EstadisticasTeleurgencias() {
                       </div>
                     </td>
                     <td className="px-6 py-4 text-center">
-                      <button className="inline-flex items-center gap-1 px-3 py-1 bg-blue-500 hover:bg-blue-600 text-white rounded text-sm font-medium transition">
+                      <button
+                        onClick={() => abrirDetalles(medico)}
+                        className="inline-flex items-center gap-1 px-3 py-1 bg-blue-500 hover:bg-blue-600 text-white rounded text-sm font-medium transition"
+                      >
                         <Eye className="w-4 h-4" />
                         Ver
                       </button>
@@ -352,6 +375,139 @@ export default function EstadisticasTeleurgencias() {
           </table>
         </div>
       </div>
+
+      {/* === MODAL: Detalle de Médico y sus Pacientes === */}
+      {showModal && medicoSeleccionado && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto shadow-xl">
+            {/* Header Modal */}
+            <div className="bg-gradient-to-r from-blue-600 to-blue-800 px-6 py-4 text-white flex items-center justify-between sticky top-0">
+              <div>
+                <h2 className="text-2xl font-bold">{medicoSeleccionado.nombreCompleto}</h2>
+                <p className="text-blue-100 text-sm">@{medicoSeleccionado.username}</p>
+              </div>
+              <button
+                onClick={() => setShowModal(false)}
+                className="p-1 hover:bg-white/20 rounded transition"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+
+            {/* Body Modal */}
+            <div className="p-6">
+              {/* Resumen de Atenciones */}
+              <div className="mb-8 p-4 bg-gradient-to-r from-blue-50 to-blue-100 rounded-lg border border-blue-200">
+                <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                  <Activity className="w-5 h-5 text-blue-600" />
+                  Resumen de Atenciones
+                </h3>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div className="bg-white rounded p-3 text-center">
+                    <p className="text-gray-600 text-sm">Atendidos</p>
+                    <p className="text-3xl font-bold text-emerald-600">
+                      {medicoSeleccionado.atendidos}
+                    </p>
+                  </div>
+                  <div className="bg-white rounded p-3 text-center">
+                    <p className="text-gray-600 text-sm">Pendientes</p>
+                    <p className="text-3xl font-bold text-amber-600">
+                      {medicoSeleccionado.pendientes}
+                    </p>
+                  </div>
+                  <div className="bg-white rounded p-3 text-center">
+                    <p className="text-gray-600 text-sm">Desertadas</p>
+                    <p className="text-3xl font-bold text-red-600">
+                      {medicoSeleccionado.desertadas}
+                    </p>
+                  </div>
+                  <div className="bg-white rounded p-3 text-center">
+                    <p className="text-gray-600 text-sm">Total</p>
+                    <p className="text-3xl font-bold text-blue-600">
+                      {(medicoSeleccionado.atendidos + medicoSeleccionado.pendientes + medicoSeleccionado.desertadas)}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Tabla de Pacientes */}
+              <div>
+                <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                  <Users className="w-5 h-5 text-blue-600" />
+                  Pacientes y sus Estados
+                </h3>
+
+                {cargandoPacientes ? (
+                  <div className="text-center py-8">
+                    <Loader className="w-8 h-8 text-blue-500 animate-spin mx-auto mb-2" />
+                    <p className="text-gray-600">Cargando pacientes...</p>
+                  </div>
+                ) : pacientesMedico.length > 0 ? (
+                  <div className="overflow-x-auto border border-gray-200 rounded-lg">
+                    <table className="w-full">
+                      <thead className="bg-gradient-to-r from-blue-50 to-blue-100 border-b border-blue-200">
+                        <tr>
+                          <th className="px-4 py-3 text-left text-xs font-bold text-blue-900 uppercase">Paciente (DNI)</th>
+                          <th className="px-4 py-3 text-center text-xs font-bold text-blue-900 uppercase">Estado</th>
+                          <th className="px-4 py-3 text-center text-xs font-bold text-blue-900 uppercase">Fecha Atención</th>
+                          <th className="px-4 py-3 text-center text-xs font-bold text-blue-900 uppercase">Condición</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-200">
+                        {pacientesMedico.map((paciente, idx) => (
+                          <tr key={idx} className="hover:bg-gray-50 transition">
+                            <td className="px-4 py-3">
+                              <div>
+                                <p className="font-semibold text-gray-900">{paciente.apellidosNombres}</p>
+                                <p className="text-xs text-gray-500">{paciente.numDoc}</p>
+                              </div>
+                            </td>
+                            <td className="px-4 py-3 text-center">
+                              <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold ${
+                                paciente.condicion === 'Atendido' ? 'bg-emerald-100 text-emerald-700' :
+                                paciente.condicion === 'Pendiente' ? 'bg-amber-100 text-amber-700' :
+                                'bg-red-100 text-red-700'
+                              }`}>
+                                {paciente.condicion === 'Atendido' && '✓ Atendido'}
+                                {paciente.condicion === 'Pendiente' && '⏳ Pendiente'}
+                                {paciente.condicion === 'Deserción' && '❌ Deserción'}
+                              </span>
+                            </td>
+                            <td className="px-4 py-3 text-center text-sm text-gray-600">
+                              {paciente.fechaAtencion ? new Date(paciente.fechaAtencion).toLocaleDateString('es-PE') : '-'}
+                            </td>
+                            <td className="px-4 py-3 text-center text-sm">
+                              <span className="text-gray-700 font-medium">{paciente.condicion}</span>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                ) : (
+                  <div className="text-center py-8 bg-gray-50 rounded-lg border border-gray-200">
+                    <Users className="w-12 h-12 text-gray-300 mx-auto mb-2" />
+                    <p className="text-gray-500">No hay pacientes cargados para este médico</p>
+                  </div>
+                )}
+              </div>
+
+              {/* Acciones */}
+              <div className="mt-8 pt-6 border-t border-gray-200 flex gap-3 justify-end">
+                <button
+                  onClick={() => setShowModal(false)}
+                  className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition font-medium"
+                >
+                  Cerrar
+                </button>
+                <button className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition font-medium">
+                  📋 Exportar
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
