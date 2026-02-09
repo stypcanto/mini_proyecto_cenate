@@ -105,7 +105,7 @@ export const componentRegistry = {
 
   '/admin/solicitudes-diagnostico': {
     component: lazy(() => import('../pages/admin/GestionSolicitudesDiagnostico')),
-    // requiredAction: 'ver', // Temporalmente sin protección para testing
+    requiredAction: 'ver',
   },
 
   // ========================================================================
