@@ -141,7 +141,7 @@ export default function BienvenidaTeleurgencias() {
         </div>
 
         {/* SECCIÓN: Acciones Rápidas - GRID EXPANDIDO */}
-        <div className="mb-6 min-h-[500px] flex flex-col">
+        <div className="mb-6 flex flex-col">
           <h3 className="text-xl font-bold text-slate-900 mb-4 flex items-center gap-2">
             <span>⚡</span> Acciones Rápidas
           </h3>
@@ -153,7 +153,7 @@ export default function BienvenidaTeleurgencias() {
                 <button
                   key={accion.id}
                   onClick={() => navigate(accion.ruta)}
-                  className={`card-animate card-hover bg-gradient-to-br ${accion.gradient} rounded-2xl p-8 shadow-2xl text-left text-white overflow-hidden relative group flex flex-col justify-center items-start h-full min-h-[350px]`}
+                  className={`card-animate card-hover bg-gradient-to-br ${accion.gradient} rounded-2xl p-6 shadow-2xl text-left text-white overflow-hidden relative group flex flex-col justify-center items-start`}
                 >
                   {/* Efecto de luz - más grande */}
                   <div className="absolute top-0 right-0 w-80 h-80 bg-white/10 rounded-full -mr-40 -mt-40 group-hover:scale-150 transition-transform duration-500"></div>
