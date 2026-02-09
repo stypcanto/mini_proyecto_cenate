@@ -515,6 +515,11 @@ export default function Produccion() {
                 {Array.from({ length: diasDelMes }).map((_, i) => {
                   const dia = i + 1;
                   const fecha = new Date(mesActual.getFullYear(), mesActual.getMonth(), dia);
+                  const hoy = new Date();
+                  const esHoy =
+                    dia === hoy.getDate() &&
+                    mesActual.getMonth() === hoy.getMonth() &&
+                    mesActual.getFullYear() === hoy.getFullYear();
                   const tieneAtenciones = diasConAtenciones.has(dia);
                   const esSeleccionado =
                     diaSeleccionado.getDate() === dia &&
@@ -534,6 +539,10 @@ export default function Produccion() {
                         transition-all duration-300 cursor-pointer
                         ${esSeleccionado
                           ? 'bg-[#0A5BA9] text-white shadow-lg scale-105'
+                          : esHoy
+                          ? tieneAtenciones
+                            ? 'bg-yellow-200 text-yellow-900 border-2 border-yellow-400 font-bold'
+                            : 'bg-yellow-100 text-yellow-900 border-2 border-yellow-300 font-bold'
                           : tieneAtenciones
                           ? 'bg-blue-50 text-[#0A5BA9] border-2 border-[#0A5BA9] hover:bg-blue-100 hover:shadow-md'
                           : 'bg-gray-50 text-gray-600 hover:bg-gray-100'
@@ -552,6 +561,10 @@ export default function Produccion() {
                   <p className="mb-2">
                     <span className="inline-block w-3 h-3 bg-[#0A5BA9] rounded mr-2"></span>
                     Día seleccionado
+                  </p>
+                  <p className="mb-2">
+                    <span className="inline-block w-3 h-3 bg-yellow-200 border-2 border-yellow-300 rounded mr-2"></span>
+                    Hoy
                   </p>
                   <p>
                     <span className="inline-block w-3 h-3 border-2 border-[#0A5BA9] rounded mr-2"></span>
