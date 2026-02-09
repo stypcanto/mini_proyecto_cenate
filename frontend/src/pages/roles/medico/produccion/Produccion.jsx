@@ -469,27 +469,27 @@ export default function Produccion() {
             </div>
           </div>
 
-          {/* Interconsultas */}
-          <div className="bg-gradient-to-br from-purple-50 to-purple-100 border-2 border-purple-300 rounded-lg p-6 shadow-sm">
+          {/* Pendientes */}
+          <div className="bg-gradient-to-br from-amber-50 to-amber-100 border-2 border-amber-300 rounded-lg p-6 shadow-sm">
             <div className="flex items-center justify-between mb-3">
-              <p className="text-sm font-semibold text-purple-700 uppercase tracking-wider">Interconsultas</p>
-              <Share2 className="w-5 h-5 text-purple-600" />
+              <p className="text-sm font-semibold text-amber-700 uppercase tracking-wider">Pendientes</p>
+              <Clock className="w-5 h-5 text-amber-600" />
             </div>
-            <p className="text-4xl font-bold text-purple-900">{statsActual.interconsultas}</p>
-            <p className="text-xs text-purple-700 mt-3">
-              Tasa: <span className="font-bold">{statsActual.total > 0 ? ((statsActual.interconsultas / statsActual.total) * 100).toFixed(1) : 0}%</span>
+            <p className="text-4xl font-bold text-amber-900">{statsTotales.pendientes}</p>
+            <p className="text-xs text-amber-700 mt-3">
+              Pacientes pendientes de atender
             </p>
           </div>
 
-          {/* Crónicos */}
+          {/* Deserciones */}
           <div className="bg-gradient-to-br from-red-50 to-red-100 border-2 border-red-300 rounded-lg p-6 shadow-sm">
             <div className="flex items-center justify-between mb-3">
-              <p className="text-sm font-semibold text-red-700 uppercase tracking-wider">Crónicos</p>
-              <Heart className="w-5 h-5 text-red-600" />
+              <p className="text-sm font-semibold text-red-700 uppercase tracking-wider">Deserciones</p>
+              <TrendingDown className="w-5 h-5 text-red-600" />
             </div>
-            <p className="text-4xl font-bold text-red-900">{statsActual.cronicas}</p>
+            <p className="text-4xl font-bold text-red-900">{statsTotales.deserciones}</p>
             <p className="text-xs text-red-700 mt-3">
-              Registrados en período
+              Total de pacientes que desertaron
             </p>
           </div>
         </div>
