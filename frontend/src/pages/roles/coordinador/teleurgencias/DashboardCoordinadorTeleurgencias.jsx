@@ -190,6 +190,55 @@ export default function DashboardCoordinadorTeleurgencias() {
         </button>
       </div>
 
+      {/* === LEYENDA: Significado de Estados y Alertas === */}
+      <div className="mb-6 bg-blue-50 rounded-lg p-4 border border-blue-200">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Leyenda de Estados */}
+          <div>
+            <h3 className="font-semibold text-gray-900 text-sm mb-3">📍 Estado del Médico:</h3>
+            <div className="space-y-2 text-sm">
+              <div className="flex items-center gap-3">
+                <span className="w-3 h-3 rounded-full bg-green-600" />
+                <span className="text-gray-700">
+                  <span className="font-semibold">En turno</span> = Médico ACTIVO (conectado, disponible ahora)
+                </span>
+              </div>
+              <div className="flex items-center gap-3">
+                <span className="w-3 h-3 rounded-full bg-gray-400" />
+                <span className="text-gray-700">
+                  <span className="font-semibold">Fuera</span> = Médico INACTIVO (no está en turno, desconectado)
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Leyenda de Alertas */}
+          <div>
+            <h3 className="font-semibold text-gray-900 text-sm mb-3">🚨 Nivel de Alerta (Barra Lateral):</h3>
+            <div className="space-y-2 text-sm">
+              <div className="flex items-center gap-3">
+                <span className="w-1 h-4 rounded-full bg-red-500" />
+                <span className="text-gray-700">
+                  <span className="font-semibold text-red-600">Crítico</span> = Deserción &gt;25% o Pendientes &gt;5
+                </span>
+              </div>
+              <div className="flex items-center gap-3">
+                <span className="w-1 h-4 rounded-full bg-amber-500" />
+                <span className="text-gray-700">
+                  <span className="font-semibold text-amber-600">Advertencia</span> = Deserción 10-25%
+                </span>
+              </div>
+              <div className="flex items-center gap-3">
+                <span className="w-1 h-4 rounded-full bg-emerald-500" />
+                <span className="text-gray-700">
+                  <span className="font-semibold text-emerald-600">Óptimo</span> = Flujo de trabajo al día
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* === EXECUTIVE VIEW: 3 KPIs Principales === */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
         {/* KPI 1: Capacidad Operativa */}
