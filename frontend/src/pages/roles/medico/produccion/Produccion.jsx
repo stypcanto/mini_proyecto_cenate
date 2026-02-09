@@ -439,7 +439,7 @@ export default function Produccion() {
           </div>
 
           <p className="text-gray-600 font-medium">Análisis completo de tu desempeño médico</p>
-          <p className="text-sm text-gray-500 mt-1">📅 Inicio de registro de atenciones: 06/02/26</p>
+          <p className="text-sm text-gray-500 mt-1">📅 Inicio de registro de atenciones en esta nueva plataforma: 06/02/26</p>
         </div>
 
         {/* ✅ v1.60.0: KPIs DEL PERÍODO ACTUAL + COMPARATIVOS */}
