@@ -623,32 +623,7 @@ export default function Produccion() {
                   <p className="text-sm text-gray-500 mt-2">Selecciona otro día del calendario para ver los pacientes atendidos</p>
                 </div>
               ) : (
-                <>
-                  {/* ✅ v1.61.4: Filtro de búsqueda por DNI */}
-                  <div className="mb-4 flex items-center gap-2">
-                    <input
-                      type="text"
-                      placeholder="🔍 Buscar por DNI..."
-                      value={filtroDNI}
-                      onChange={(e) => setFiltroDNI(e.target.value)}
-                      className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#0A5BA9] focus:border-transparent"
-                    />
-                    {filtroDNI && (
-                      <button
-                        onClick={() => setFiltroDNI('')}
-                        className="px-3 py-2 text-gray-500 hover:text-gray-700 transition-colors"
-                        title="Limpiar filtro"
-                      >
-                        ✕
-                      </button>
-                    )}
-                    <span className="text-xs text-gray-600 font-medium">
-                      {pacientesFiltrados.length} / {pacientesDiaSeleccionado.length}
-                    </span>
-                  </div>
-
-                  {/* Tabla de pacientes */}
-                  <div className="overflow-x-auto max-h-96 overflow-y-auto border border-gray-200 rounded-lg">
+                <div className="overflow-x-auto max-h-96 overflow-y-auto border border-gray-200 rounded-lg">
                   <table className="w-full text-sm">
                     <thead className="bg-gray-50 border-b border-gray-200 sticky top-0">
                       <tr>
@@ -660,7 +635,7 @@ export default function Produccion() {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-200">
-                      {pacientesFiltrados.map((paciente, idx) => (
+                      {pacientesDiaSeleccionado.map((paciente, idx) => (
                         <tr key={idx} className={`${idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'} hover:bg-blue-50 transition-colors duration-150`}>
                           <td className="px-3 py-2 text-gray-900 font-medium">{paciente.apellidosNombres}</td>
                           <td className="px-3 py-2 text-gray-600">{paciente.numDoc}</td>
@@ -684,7 +659,6 @@ export default function Produccion() {
                     </tbody>
                   </table>
                 </div>
-                </>
               )}
             </div>
           </div>
