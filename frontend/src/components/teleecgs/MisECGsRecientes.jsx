@@ -31,6 +31,7 @@ import {
 } from 'lucide-react';
 import { COLORS, MEDICAL_PALETTE } from '../../config/designSystem';
 import toast from 'react-hot-toast';
+import teleecgService from '../../services/teleecgService';
 
 export default function MisECGsRecientes({
   ultimas3 = [],
@@ -73,16 +74,25 @@ export default function MisECGsRecientes({
       const imagen = imagenesPorDni[cargaEdicion.dni][previewImageIndex];
       if (imagen?.idImagen && !imagenPreviewData) {
         setCargandoImagen(true);
-        // Intentar usar thumbnail_base64 del objeto actual
-        if (imagen.thumbnail_base64) {
-          setImagenPreviewData(imagen);
-          setCargandoImagen(false);
-        } else {
-          // Si no hay thumbnail, mostrar fallback elegante
-          setImagenPreviewData(imagen);
-          setCargandoImagen(false);
-          toast.error('ℹ️ Imagen sin vista previa disponible. Haz click en "Ver" en la tabla para verla en grande.');
-        }
+
+        // Llamar al endpoint para obtener la imagen con base64
+        teleecgService.verPreview(imagen.idImagen)
+          .then((respuesta) => {
+            // Combinar datos de la imagen con el contenido base64
+            setImagenPreviewData({
+              ...imagen,
+              ...respuesta, // Incluye contenidoImagen y tipoContenido
+            });
+            setCargandoImagen(false);
+            console.log('✅ Imagen cargada correctamente para preview:', imagen.idImagen);
+          })
+          .catch((error) => {
+            console.error('❌ Error cargando imagen:', error);
+            // En caso de error, mostrar fallback con los datos disponibles
+            setImagenPreviewData(imagen);
+            setCargandoImagen(false);
+            toast.error('⚠️ No se pudo cargar la vista previa de la imagen');
+          });
       }
     }
   }, [modalMode, previewImageIndex, cargaEdicion, imagenesPorDni, imagenPreviewData]);
