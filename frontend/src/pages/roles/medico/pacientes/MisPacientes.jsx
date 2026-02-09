@@ -669,7 +669,13 @@ export default function MisPacientes() {
         <div className="mb-6 grid grid-cols-1 md:grid-cols-4 gap-6">
           {/* Total de Pacientes - Clicable para limpiar filtro */}
           <button
-            onClick={() => setFiltroEstado('')}
+            onClick={() => {
+              setFiltroEstado('');
+              setFiltroRangoFecha('todos');
+              setFechaDesde('');
+              setFechaHasta('');
+              setFechaAtencionSeleccionada('');
+            }}
             className={`kpi-card-animate kpi-card-hover text-left rounded-xl p-7 overflow-hidden relative group ${
               filtroEstado === ''
                 ? 'bg-gradient-to-br from-slate-700 to-slate-900 shadow-xl'
@@ -686,7 +692,13 @@ export default function MisPacientes() {
 
           {/* Atendidos - Clicable */}
           <button
-            onClick={() => setFiltroEstado('Atendido')}
+            onClick={() => {
+              setFiltroEstado('Atendido');
+              setFiltroRangoFecha('todos');
+              setFechaDesde('');
+              setFechaHasta('');
+              setFechaAtencionSeleccionada('');
+            }}
             className={`kpi-card-animate kpi-card-hover text-left rounded-xl p-7 overflow-hidden relative group ${
               filtroEstado === 'Atendido'
                 ? 'bg-gradient-to-br from-emerald-600 to-emerald-800 shadow-xl'
@@ -705,7 +717,13 @@ export default function MisPacientes() {
 
           {/* Pendientes - Clicable */}
           <button
-            onClick={() => setFiltroEstado('Pendiente')}
+            onClick={() => {
+              setFiltroEstado('Pendiente');
+              setFiltroRangoFecha('todos');
+              setFechaDesde('');
+              setFechaHasta('');
+              setFechaAtencionSeleccionada('');
+            }}
             className={`kpi-card-animate kpi-card-hover text-left rounded-xl p-7 overflow-hidden relative group ${
               filtroEstado === 'Pendiente'
                 ? 'bg-gradient-to-br from-amber-600 to-amber-800 shadow-xl'
@@ -724,7 +742,13 @@ export default function MisPacientes() {
 
           {/* Deserción - Clicable */}
           <button
-            onClick={() => setFiltroEstado('Deserción')}
+            onClick={() => {
+              setFiltroEstado('Deserción');
+              setFiltroRangoFecha('todos');
+              setFechaDesde('');
+              setFechaHasta('');
+              setFechaAtencionSeleccionada('');
+            }}
             className={`kpi-card-animate kpi-card-hover text-left rounded-xl p-7 overflow-hidden relative group ${
               filtroEstado === 'Deserción'
                 ? 'bg-gradient-to-br from-rose-600 to-rose-800 shadow-xl'
