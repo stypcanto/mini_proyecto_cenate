@@ -33,7 +33,7 @@ import {
 import toast from 'react-hot-toast';
 import gestionPacientesService from '../../../../services/gestionPacientesService';
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip, LineChart, Line, XAxis, YAxis, CartesianGrid } from 'recharts';
-import jsPDF from 'jspdf';
+import { jsPDF } from 'jspdf';
 import * as XLSX from 'xlsx';
 
 export default function Produccion() {
