@@ -1,12 +1,13 @@
 /**
- * 📊 Producción.jsx - Dashboard Completo de Productividad Médica (v1.59.0)
+ * 📊 Producción.jsx - Dashboard Completo de Productividad Médica (v1.61.2)
  *
  * Panel avanzado que muestra:
  * - KPIs totales: Atendidos, Pendientes, Deserciones, Interconsultas
  * - Gráfico de deserciones por motivo
  * - Análisis de productividad y tendencias
  * - Listado de pacientes pendientes
- * - Calendario interactivo con detalles por día
+ * - Calendario interactivo con detalles por día (REORGANIZADO v1.61.2)
+ * - Soporte para exportación a PDF y Excel
  */
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
@@ -298,7 +299,7 @@ export default function Produccion() {
 
   const exportarExcel = useCallback(async () => {
     try {
-      const XLSX = await import('xlsx');
+      const { default: XLSX } = await import('xlsx');
       const hoy = new Date().toLocaleDateString('es-PE');
 
       // Crear workbook
@@ -498,6 +499,172 @@ export default function Produccion() {
           </ResponsiveContainer>
         </div>
 
+        {/* ✅ v1.61.2: CALENDARIO INTERACTIVO DEBAJO DE CARDS PRINCIPALES */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+          {/* Calendario */}
+          <div className="lg:col-span-1">
+            <div className="bg-white border-2 border-[#0A5BA9] shadow-md rounded-lg p-8 h-full flex flex-col">
+              {/* Navegación de meses */}
+              <div className="flex items-center justify-between mb-6">
+                <button
+                  onClick={mesAnterior}
+                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                >
+                  <ChevronLeft className="w-5 h-5 text-gray-600" />
+                </button>
+                <h3 className="font-semibold text-gray-900">
+                  {mesActual.toLocaleString('es-PE', { month: 'long', year: 'numeric' })}
+                </h3>
+                <button
+                  onClick={mesSiguiente}
+                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                >
+                  <ChevronRight className="w-5 h-5 text-gray-600" />
+                </button>
+              </div>
+
+              {/* Días de la semana */}
+              <div className="grid grid-cols-7 gap-2 mb-4">
+                {['D', 'L', 'M', 'X', 'J', 'V', 'S'].map(dia => (
+                  <div key={dia} className="text-center text-xs font-semibold text-gray-600">
+                    {dia}
+                  </div>
+                ))}
+              </div>
+
+              {/* Días del mes */}
+              <div className="grid grid-cols-7 gap-2">
+                {/* Espacios vacíos al inicio */}
+                {Array.from({ length: diaInicialSemana }).map((_, i) => (
+                  <div key={`empty-${i}`} className="aspect-square" />
+                ))}
+
+                {/* Días del mes */}
+                {Array.from({ length: diasDelMes }).map((_, i) => {
+                  const dia = i + 1;
+                  const fecha = new Date(mesActual.getFullYear(), mesActual.getMonth(), dia);
+                  const tieneAtenciones = diasConAtenciones.has(dia);
+                  const esSeleccionado =
+                    diaSeleccionado.getDate() === dia &&
+                    diaSeleccionado.getMonth() === mesActual.getMonth() &&
+                    diaSeleccionado.getFullYear() === mesActual.getFullYear() &&
+                    !mostrarPeriodoCompleto;
+
+                  return (
+                    <button
+                      key={dia}
+                      onClick={() => {
+                        setDiaSeleccionado(fecha);
+                        setMostrarPeriodoCompleto(false);
+                      }}
+                      className={`
+                        aspect-square rounded-lg font-semibold text-sm flex items-center justify-center
+                        transition-all duration-300 cursor-pointer
+                        ${esSeleccionado
+                          ? 'bg-[#0A5BA9] text-white shadow-lg scale-105'
+                          : tieneAtenciones
+                          ? 'bg-blue-50 text-[#0A5BA9] border-2 border-[#0A5BA9] hover:bg-blue-100 hover:shadow-md'
+                          : 'bg-gray-50 text-gray-600 hover:bg-gray-100'
+                        }
+                      `}
+                    >
+                      {dia}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Leyenda + Botón para periodo completo */}
+              <div className="mt-auto pt-6 border-t border-gray-200">
+                <div className="text-xs text-gray-600 mb-4">
+                  <p className="mb-2">
+                    <span className="inline-block w-3 h-3 bg-[#0A5BA9] rounded mr-2"></span>
+                    Día seleccionado
+                  </p>
+                  <p>
+                    <span className="inline-block w-3 h-3 border-2 border-[#0A5BA9] rounded mr-2"></span>
+                    Con atenciones
+                  </p>
+                </div>
+
+                {/* Botón para ver período completo */}
+                {!mostrarPeriodoCompleto && (
+                  <button
+                    onClick={() => setMostrarPeriodoCompleto(true)}
+                    className="w-full px-3 py-2 mt-4 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors text-sm font-semibold"
+                  >
+                    ← Ver período completo ({filtroActual})
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Detalles - VINCULADO AL CALENDARIO */}
+          <div className="lg:col-span-1">
+            {/* Encabezado dinámico */}
+            <div className="mb-6 bg-gradient-to-r from-[#0A5BA9] to-[#0A5BA9]/80 text-white rounded-lg p-6 shadow-md">
+              <h2 className="text-2xl font-bold capitalize">
+                {mostrarPeriodoCompleto
+                  ? `${filtroActual.charAt(0).toUpperCase() + filtroActual.slice(1)}`
+                  : diaSeleccionado.toLocaleString('es-PE', { weekday: 'long', day: 'numeric', month: 'long' })}
+              </h2>
+              <p className="text-sm text-white/90 mt-2">
+                {mostrarPeriodoCompleto
+                  ? `Estadísticas del ${filtroActual}`
+                  : pacientesDiaSeleccionado.length === 0
+                  ? 'Sin atenciones registradas'
+                  : `${pacientesDiaSeleccionado.length} paciente${pacientesDiaSeleccionado.length !== 1 ? 's' : ''} atendido${pacientesDiaSeleccionado.length !== 1 ? 's' : ''}`}
+              </p>
+            </div>
+
+            {/* Listado de pacientes del día */}
+            <div className="bg-white border border-gray-200 shadow-sm rounded-lg p-6">
+              {pacientesDiaSeleccionado.length === 0 ? (
+                <div className="text-center py-12">
+                  <Activity className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                  <p className="text-gray-600 font-medium text-lg">Sin atenciones este día</p>
+                  <p className="text-sm text-gray-500 mt-2">Selecciona otro día del calendario para ver los pacientes atendidos</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {pacientesDiaSeleccionado.map((paciente, idx) => (
+                    <div key={idx} className="border border-gray-200 rounded-lg p-4 hover:bg-blue-50 transition-colors duration-150">
+                      <div className="flex items-start justify-between mb-3">
+                        <div className="flex-1">
+                          <p className="font-semibold text-gray-900">{paciente.apellidosNombres}</p>
+                          <p className="text-sm text-gray-600">DNI: {paciente.numDoc}</p>
+                        </div>
+                        <div className="flex flex-wrap gap-2 ml-4">
+                          {paciente.tieneRecita && (
+                            <span className="inline-flex px-2.5 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-800 border border-blue-200">
+                              📋 Recita
+                            </span>
+                          )}
+                          {paciente.tieneInterconsulta && (
+                            <span className="inline-flex px-2.5 py-1 rounded-full text-xs font-semibold bg-purple-100 text-purple-800 border border-purple-200">
+                              🔗 Inter
+                            </span>
+                          )}
+                          {paciente.esCronico && (
+                            <span className="inline-flex px-2.5 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-800 border border-red-200">
+                              ❤️ Crónico
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-2 text-sm text-gray-600 gap-2 border-t border-gray-100 pt-2">
+                        <p>📞 {paciente.telefono || '-'}</p>
+                        <p>🏥 {paciente.ipress || '-'}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
         {/* SECCIÓN DE ANÁLISIS DE DESERCIONES Y ESTADÍSTICAS */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
           {/* Gráfico de Deserciones */}
@@ -626,172 +793,6 @@ export default function Produccion() {
             <RefreshCw className="w-4 h-4" />
             Actualizar datos
           </button>
-        </div>
-
-        {/* ✅ v1.61.0: SECCIÓN DE CALENDARIO INTERACTIVO Y DETALLES (VINCULADOS) - MOVIDO AL FINAL */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-12">
-          {/* ✅ v1.61.0: Calendario - MÁS GRANDE E INTERACTIVO */}
-          <div className="lg:col-span-1">
-            <div className="bg-white border-2 border-[#0A5BA9] shadow-md rounded-lg p-8 h-full flex flex-col">
-              {/* Navegación de meses */}
-              <div className="flex items-center justify-between mb-6">
-                <button
-                  onClick={mesAnterior}
-                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-                >
-                  <ChevronLeft className="w-5 h-5 text-gray-600" />
-                </button>
-                <h3 className="font-semibold text-gray-900">
-                  {mesActual.toLocaleString('es-PE', { month: 'long', year: 'numeric' })}
-                </h3>
-                <button
-                  onClick={mesSiguiente}
-                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-                >
-                  <ChevronRight className="w-5 h-5 text-gray-600" />
-                </button>
-              </div>
-
-              {/* Días de la semana */}
-              <div className="grid grid-cols-7 gap-2 mb-4">
-                {['D', 'L', 'M', 'X', 'J', 'V', 'S'].map(dia => (
-                  <div key={dia} className="text-center text-xs font-semibold text-gray-600">
-                    {dia}
-                  </div>
-                ))}
-              </div>
-
-              {/* Días del mes */}
-              <div className="grid grid-cols-7 gap-2">
-                {/* Espacios vacíos al inicio */}
-                {Array.from({ length: diaInicialSemana }).map((_, i) => (
-                  <div key={`empty-${i}`} className="aspect-square" />
-                ))}
-
-                {/* Días del mes */}
-                {Array.from({ length: diasDelMes }).map((_, i) => {
-                  const dia = i + 1;
-                  const fecha = new Date(mesActual.getFullYear(), mesActual.getMonth(), dia);
-                  const tieneAtenciones = diasConAtenciones.has(dia);
-                  const esSeleccionado =
-                    diaSeleccionado.getDate() === dia &&
-                    diaSeleccionado.getMonth() === mesActual.getMonth() &&
-                    diaSeleccionado.getFullYear() === mesActual.getFullYear() &&
-                    !mostrarPeriodoCompleto;
-
-                  return (
-                    <button
-                      key={dia}
-                      onClick={() => {
-                        setDiaSeleccionado(fecha);
-                        setMostrarPeriodoCompleto(false);
-                      }}
-                      className={`
-                        aspect-square rounded-lg font-semibold text-sm flex items-center justify-center
-                        transition-all duration-300 cursor-pointer
-                        ${esSeleccionado
-                          ? 'bg-[#0A5BA9] text-white shadow-lg scale-105'
-                          : tieneAtenciones
-                          ? 'bg-blue-50 text-[#0A5BA9] border-2 border-[#0A5BA9] hover:bg-blue-100 hover:shadow-md'
-                          : 'bg-gray-50 text-gray-600 hover:bg-gray-100'
-                        }
-                      `}
-                    >
-                      {dia}
-                    </button>
-                  );
-                })}
-              </div>
-
-              {/* ✅ v1.61.0: Leyenda + Botón para periodo completo */}
-              <div className="mt-auto pt-6 border-t border-gray-200">
-                <div className="text-xs text-gray-600 mb-4">
-                  <p className="mb-2">
-                    <span className="inline-block w-3 h-3 bg-[#0A5BA9] rounded mr-2"></span>
-                    Día seleccionado
-                  </p>
-                  <p>
-                    <span className="inline-block w-3 h-3 border-2 border-[#0A5BA9] rounded mr-2"></span>
-                    Con atenciones
-                  </p>
-                </div>
-
-                {/* Botón para ver período completo */}
-                {!mostrarPeriodoCompleto && (
-                  <button
-                    onClick={() => setMostrarPeriodoCompleto(true)}
-                    className="w-full px-3 py-2 mt-4 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors text-sm font-semibold"
-                  >
-                    ← Ver período completo ({filtroActual})
-                  </button>
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* ✅ v1.61.0: Detalles - VINCULADO AL CALENDARIO */}
-          <div className="lg:col-span-1">
-            {/* Encabezado dinámico */}
-            <div className="mb-6 bg-gradient-to-r from-[#0A5BA9] to-[#0A5BA9]/80 text-white rounded-lg p-6 shadow-md">
-              <h2 className="text-2xl font-bold capitalize">
-                {mostrarPeriodoCompleto
-                  ? `${filtroActual.charAt(0).toUpperCase() + filtroActual.slice(1)}`
-                  : diaSeleccionado.toLocaleString('es-PE', { weekday: 'long', day: 'numeric', month: 'long' })}
-              </h2>
-              <p className="text-sm text-white/90 mt-2">
-                {mostrarPeriodoCompleto
-                  ? `Estadísticas del ${filtroActual}`
-                  : pacientesDiaSeleccionado.length === 0
-                  ? 'Sin atenciones registradas'
-                  : `${pacientesDiaSeleccionado.length} paciente${pacientesDiaSeleccionado.length !== 1 ? 's' : ''} atendido${pacientesDiaSeleccionado.length !== 1 ? 's' : ''}`}
-              </p>
-            </div>
-
-            {/* Listado de pacientes del día */}
-            <div className="bg-white border border-gray-200 shadow-sm rounded-lg p-6">
-              {pacientesDiaSeleccionado.length === 0 ? (
-                <div className="text-center py-12">
-                  <Activity className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-                  <p className="text-gray-600 font-medium text-lg">Sin atenciones este día</p>
-                  <p className="text-sm text-gray-500 mt-2">Selecciona otro día del calendario para ver los pacientes atendidos</p>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {pacientesDiaSeleccionado.map((paciente, idx) => (
-                    <div key={idx} className="border border-gray-200 rounded-lg p-4 hover:bg-blue-50 transition-colors duration-150">
-                      <div className="flex items-start justify-between mb-3">
-                        <div className="flex-1">
-                          <p className="font-semibold text-gray-900">{paciente.apellidosNombres}</p>
-                          <p className="text-sm text-gray-600">DNI: {paciente.numDoc}</p>
-                        </div>
-                        <div className="flex flex-wrap gap-2 ml-4">
-                          {paciente.tieneRecita && (
-                            <span className="inline-flex px-2.5 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-800 border border-blue-200">
-                              📋 Recita
-                            </span>
-                          )}
-                          {paciente.tieneInterconsulta && (
-                            <span className="inline-flex px-2.5 py-1 rounded-full text-xs font-semibold bg-purple-100 text-purple-800 border border-purple-200">
-                              🔗 Inter
-                            </span>
-                          )}
-                          {paciente.esCronico && (
-                            <span className="inline-flex px-2.5 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-800 border border-red-200">
-                              ❤️ Crónico
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                      <div className="grid grid-cols-2 text-sm text-gray-600 gap-2 border-t border-gray-100 pt-2">
-                        <p>📞 {paciente.telefono || '-'}</p>
-                        <p>🏥 {paciente.ipress || '-'}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
         </div>
       </div>
     </div>
