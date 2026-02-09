@@ -59,11 +59,33 @@ export default function MisECGsRecientes({
   const [modalMode, setModalMode] = useState('view'); // 'view', 'add', 'replace', 'delete', 'preview'
   const [selectedImageIndex, setSelectedImageIndex] = useState(null);
   const [previewImageIndex, setPreviewImageIndex] = useState(null);
+  const [imagenPreviewData, setImagenPreviewData] = useState(null);
+  const [cargandoImagen, setCargandoImagen] = useState(false);
 
   // ✅ Sync ultimas3 to datosOriginales on mount and when ultimas3 changes
   useEffect(() => {
     setDatosOriginales(ultimas3);
   }, [ultimas3]);
+
+  // ✅ Cargar imagen cuando se abre preview
+  useEffect(() => {
+    if (modalMode === 'preview' && previewImageIndex !== null && imagenesPorDni[cargaEdicion?.dni]) {
+      const imagen = imagenesPorDni[cargaEdicion.dni][previewImageIndex];
+      if (imagen?.idImagen && !imagenPreviewData) {
+        setCargandoImagen(true);
+        // Intentar usar thumbnail_base64 del objeto actual
+        if (imagen.thumbnail_base64) {
+          setImagenPreviewData(imagen);
+          setCargandoImagen(false);
+        } else {
+          // Si no hay thumbnail, mostrar fallback elegante
+          setImagenPreviewData(imagen);
+          setCargandoImagen(false);
+          toast.error('ℹ️ Imagen sin vista previa disponible. Haz click en "Ver" en la tabla para verla en grande.');
+        }
+      }
+    }
+  }, [modalMode, previewImageIndex, cargaEdicion, imagenesPorDni, imagenPreviewData]);
 
   // ✅ Filter Functions
   const filtrarPorDNI = (datos, dniBusqueda) => {
@@ -871,25 +893,30 @@ export default function MisECGsRecientes({
                 {/* Imagen en grande - Usar imágenes reales del paciente */}
                 <div className="bg-gray-100 rounded-lg overflow-hidden border-2 border-gray-300">
                   {(() => {
-                    const imagenesDelPaciente = imagenesPorDni[cargaEdicion.dni] || [];
-                    const imagenActual = imagenesDelPaciente[previewImageIndex];
+                    if (!imagenPreviewData) {
+                      return (
+                        <div className="w-full h-96 flex items-center justify-center bg-gray-200">
+                          <p className="text-gray-600">Selecciona una imagen</p>
+                        </div>
+                      );
+                    }
 
-                    if (imagenActual?.thumbnail_base64) {
-                      // Usar thumbnail si está disponible (más rápido)
-                      const url = `data:${imagenActual.mimeType || imagenActual.mime_type || 'image/jpeg'};base64,${imagenActual.thumbnail_base64}`;
+                    if (imagenPreviewData?.thumbnail_base64) {
+                      // Usar thumbnail si está disponible
+                      const url = `data:${imagenPreviewData.mimeType || imagenPreviewData.mime_type || 'image/jpeg'};base64,${imagenPreviewData.thumbnail_base64}`;
                       return (
                         <img
                           src={url}
                           alt={`Imagen ${previewImageIndex + 1}`}
                           className="w-full h-auto max-h-96 object-contain"
-                          title={`${imagenActual.nombreArchivo || imagenActual.nombre_archivo || 'Imagen'}`}
+                          title={`${imagenPreviewData.nombreArchivo || imagenPreviewData.nombre_archivo || 'Imagen'}`}
                         />
                       );
                     }
 
-                    if (imagenActual?.contenidoImagen) {
-                      // Imagen real con base64
-                      const url = `data:${imagenActual.tipoContenido || 'image/jpeg'};base64,${imagenActual.contenidoImagen}`;
+                    if (imagenPreviewData?.contenidoImagen) {
+                      // Imagen real con base64 completo
+                      const url = `data:${imagenPreviewData.tipoContenido || 'image/jpeg'};base64,${imagenPreviewData.contenidoImagen}`;
                       return (
                         <img
                           src={url}
@@ -899,14 +926,15 @@ export default function MisECGsRecientes({
                       );
                     }
 
-                    // Fallback: mostrar info de la imagen con placeholder
+                    // Fallback: Sin vista previa disponible
                     return (
-                      <div className="w-full h-96 flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200">
+                      <div className="w-full h-96 flex items-center justify-center bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-200">
                         <div className="text-center">
-                          <CloudUpload className="w-12 h-12 text-blue-400 mx-auto mb-3 animate-pulse" />
-                          <p className="text-blue-600 font-semibold">Cargando imagen...</p>
-                          <p className="text-xs text-blue-500 mt-2">ID: {imagenActual?.idImagen || imagenesDelPaciente[previewImageIndex]?.id_imagen}</p>
-                          <p className="text-xs text-blue-400 mt-1">{imagenActual?.nombreArchivo || imagenActual?.nombre_archivo || `Imagen ${previewImageIndex + 1}`}</p>
+                          <CloudUpload className="w-12 h-12 text-amber-400 mx-auto mb-3" />
+                          <p className="text-amber-700 font-semibold">Sin vista previa</p>
+                          <p className="text-xs text-amber-600 mt-2">ID: {imagenPreviewData?.idImagen || imagenPreviewData?.id_imagen}</p>
+                          <p className="text-xs text-amber-500 mt-1">{imagenPreviewData?.nombreArchivo || imagenPreviewData?.nombre_archivo || `Imagen ${previewImageIndex + 1}`}</p>
+                          <p className="text-xs text-amber-500 mt-3">Haz click en "Ver" en la tabla para ver la imagen completa</p>
                         </div>
                       </div>
                     );
