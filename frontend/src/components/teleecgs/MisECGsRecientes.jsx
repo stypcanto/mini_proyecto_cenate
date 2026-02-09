@@ -410,6 +410,9 @@ export default function MisECGsRecientes({
                     {/* Estado */}
                     <th className="px-3 md:px-4 py-2 md:py-3 text-left font-bold whitespace-nowrap text-xs md:text-sm">Estado</th>
 
+                    {/* Cant. Imágenes Cargadas */}
+                    <th className="px-3 md:px-4 py-2 md:py-3 text-center font-bold whitespace-nowrap text-xs md:text-sm">Cant. Imágenes</th>
+
                     {/* Acciones */}
                     <th className="px-3 md:px-4 py-2 md:py-3 text-center font-bold whitespace-nowrap text-xs md:text-sm">Acciones</th>
                   </tr>
@@ -486,6 +489,13 @@ export default function MisECGsRecientes({
                             }`}
                           >
                             {carga.estado === 'ENVIADA' ? 'Pendiente' : carga.estado === 'OBSERVADA' ? 'Observada' : carga.estado === 'ATENDIDA' ? 'Atendida' : carga.estado}
+                          </span>
+                        </td>
+
+                        {/* Cant. Imágenes Cargadas */}
+                        <td className="px-3 md:px-4 py-2 md:py-3 text-center">
+                          <span className="inline-flex items-center justify-center px-2.5 md:px-3 py-1 md:py-1.5 bg-indigo-100 text-indigo-800 rounded text-xs md:text-sm font-bold">
+                            {carga.cantidadImagenes || 0}
                           </span>
                         </td>
 
