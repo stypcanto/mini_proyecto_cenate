@@ -712,7 +712,11 @@ export default function Produccion() {
                     cx="50%"
                     cy="50%"
                     labelLine={true}
-                    label={({ name, value }) => `${name}: ${value}`}
+                    label={({ name, value }) => {
+                      const total = datosDeserciones.reduce((sum, item) => sum + item.value, 0);
+                      const percent = ((value / total) * 100).toFixed(1);
+                      return `${percent}%`;
+                    }}
                     outerRadius={100}
                     fill="#8884d8"
                     dataKey="value"
@@ -721,7 +725,13 @@ export default function Produccion() {
                       <Cell key={`cell-${index}`} fill={getColorMotivo(index)} />
                     ))}
                   </Pie>
-                  <Tooltip formatter={(value) => `${value} pacientes`} />
+                  <Tooltip
+                    formatter={(value) => {
+                      const total = datosDeserciones.reduce((sum, item) => sum + item.value, 0);
+                      const percent = ((value / total) * 100).toFixed(1);
+                      return `${value} pacientes (${percent}%)`;
+                    }}
+                  />
                   <Legend />
                 </PieChart>
               </ResponsiveContainer>
