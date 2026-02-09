@@ -103,6 +103,11 @@ export const componentRegistry = {
     requiredAction: 'ver',
   },
 
+  '/admin/solicitudes-diagnostico': {
+    component: lazy(() => import('../pages/admin/GestionSolicitudesDiagnostico')),
+    requiredAction: 'ver',
+  },
+
   // ========================================================================
   // 👤 ÁREA DE USUARIO
   // ========================================================================
