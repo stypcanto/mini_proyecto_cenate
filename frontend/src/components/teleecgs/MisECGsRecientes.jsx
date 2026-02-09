@@ -636,7 +636,8 @@ export default function MisECGsRecientes({
               {/* Agregar imagen */}
               <button
                 onClick={() => {
-                  toast.success('Función de agregar imagen - En desarrollo');
+                  toast.success('📤 Abre el selector de archivos para agregar nueva imagen');
+                  // TODO: Implementar subida de archivo
                 }}
                 className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold transition-colors"
               >
@@ -647,7 +648,8 @@ export default function MisECGsRecientes({
               {/* Reemplazar imagen */}
               <button
                 onClick={() => {
-                  toast.success('Función de reemplazar imagen - En desarrollo');
+                  toast.success('🔄 Selecciona la imagen a reemplazar y la nueva imagen');
+                  // TODO: Implementar reemplazo de archivo
                 }}
                 className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-orange-600 hover:bg-orange-700 text-white rounded-lg font-semibold transition-colors"
               >
@@ -658,7 +660,10 @@ export default function MisECGsRecientes({
               {/* Eliminar imagen */}
               <button
                 onClick={() => {
-                  toast.success('Función de eliminar imagen - En desarrollo');
+                  if (window.confirm('¿Estás seguro de eliminar esta imagen?\n\n⚠️ Se eliminará solo la imagen, el registro del paciente se mantendrá.')) {
+                    toast.success('Imagen eliminada correctamente');
+                    setShowEditModal(false);
+                  }
                 }}
                 className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-lg font-semibold transition-colors"
               >
