@@ -80,6 +80,7 @@ export default function TablaSolicitudEspecialidades({
       inicial[r.idServicio] = {
         idServicio: r.idServicio,
         idDetalle: r.idDetalle || null,
+        turnoTM: r.turnoTM || 0,
         turnoManana: r.turnoManana || 0,
         turnoTarde: r.turnoTarde || 0,
         tc: r.tc !== undefined ? r.tc : false,
@@ -98,6 +99,7 @@ export default function TablaSolicitudEspecialidades({
       nuevo[r.idServicio] = {
         idServicio: r.idServicio,
         idDetalle: r.idDetalle || null,
+        turnoTM: r.turnoTM || 0,
         turnoManana: r.turnoManana || 0,
         turnoTarde: r.turnoTarde || 0,
         tc: r.tc !== undefined ? r.tc : false,
@@ -137,6 +139,8 @@ export default function TablaSolicitudEspecialidades({
 
         nuevo[idServicio] = {
           idServicio,
+          idDetalle: null,
+          turnoTM: 0,
           turnoManana: 0,
           turnoTarde: 0,
           tc: defaults.tc,
@@ -161,7 +165,7 @@ export default function TablaSolicitudEspecialidades({
     const d = datos[idServicio];
     if (!d) return 0;
     return (
-      Number(d.turnoManana || 0) + Number(d.turnoTarde || 0)
+      Number(d.turnoTM || 0) + Number(d.turnoManana || 0) + Number(d.turnoTarde || 0)
     );
   };
 
@@ -321,10 +325,13 @@ export default function TablaSolicitudEspecialidades({
                   Especialidad
                 </th>
                 <th className="px-2 py-2 text-center text-[10px] font-bold text-white uppercase">
-                  Mañana
+                  Mañana y Tarde
                 </th>
                 <th className="px-2 py-2 text-center text-[10px] font-bold text-white uppercase">
-                  Tarde
+                  Solo Mañana
+                </th>
+                <th className="px-2 py-2 text-center text-[10px] font-bold text-white uppercase">
+                  Solo Tarde
                 </th>
                 <th className="px-2 py-2 text-center text-[10px] font-bold text-white uppercase">
                   <Calendar className="w-3 h-3 inline" />
@@ -365,39 +372,69 @@ export default function TablaSolicitudEspecialidades({
                       </div>
                     </td>
 
-                    {/* Turnos Mañana */}
+                    {/* Turnos Mañana y Tarde */}
+                    <td className="px-2 py-2 text-center">
+                      <input
+                        type="number"
+                        min="0"
+                        value={d?.turnoTM || 0}
+                        onChange={(e) => {
+                          const valor = Math.max(0, parseInt(e.target.value) || 0);
+                          actualizarCampo(esp.idServicio, "turnoTM", valor);
+                          // Si se establece turnoTM, limpiar los otros campos
+                          if (valor > 0) {
+                            actualizarCampo(esp.idServicio, "turnoManana", 0);
+                            actualizarCampo(esp.idServicio, "turnoTarde", 0);
+                          }
+                        }}
+                        disabled={soloLectura}
+                        className="w-12 px-2 py-1 text-center text-sm border border-green-300 rounded font-bold text-green-600 focus:ring-1 focus:ring-green-500 focus:border-green-500 disabled:bg-gray-100 disabled:opacity-50"
+                      />
+                    </td>
+
+                    {/* Solo Mañana */}
                     <td className="px-2 py-2 text-center">
                       <input
                         type="number"
                         min="0"
                         value={d?.turnoManana || 0}
-                        onChange={(e) =>
-                          actualizarCampo(
-                            esp.idServicio,
-                            "turnoManana",
-                            Math.max(0, parseInt(e.target.value) || 0)
-                          )
-                        }
-                        disabled={soloLectura}
-                        className="w-12 px-2 py-1 text-center text-sm border border-orange-300 rounded font-bold text-orange-600 focus:ring-1 focus:ring-orange-500 focus:border-orange-500 disabled:bg-gray-100 disabled:opacity-50"
+                        onChange={(e) => {
+                          const valor = Math.max(0, parseInt(e.target.value) || 0);
+                          actualizarCampo(esp.idServicio, "turnoManana", valor);
+                          // Si se establece turno mañana, limpiar turnoTM
+                          if (valor > 0) {
+                            actualizarCampo(esp.idServicio, "turnoTM", 0);
+                          }
+                        }}
+                        disabled={soloLectura || (d?.turnoTM || 0) > 0}
+                        className={`w-12 px-2 py-1 text-center text-sm border rounded font-bold focus:ring-1 ${
+                          (d?.turnoTM || 0) > 0 
+                            ? 'border-gray-300 text-gray-400 bg-gray-50'
+                            : 'border-orange-300 text-orange-600 focus:ring-orange-500 focus:border-orange-500'
+                        } disabled:bg-gray-100 disabled:opacity-50`}
                       />
                     </td>
 
-                    {/* Turnos Tarde */}
+                    {/* Solo Tarde */}
                     <td className="px-2 py-2 text-center">
                       <input
                         type="number"
                         min="0"
                         value={d?.turnoTarde || 0}
-                        onChange={(e) =>
-                          actualizarCampo(
-                            esp.idServicio,
-                            "turnoTarde",
-                            Math.max(0, parseInt(e.target.value) || 0)
-                          )
-                        }
-                        disabled={soloLectura}
-                        className="w-12 px-2 py-1 text-center text-sm border border-purple-300 rounded font-bold text-purple-600 focus:ring-1 focus:ring-purple-500 focus:border-purple-500 disabled:bg-gray-100 disabled:opacity-50"
+                        onChange={(e) => {
+                          const valor = Math.max(0, parseInt(e.target.value) || 0);
+                          actualizarCampo(esp.idServicio, "turnoTarde", valor);
+                          // Si se establece turno tarde, limpiar turnoTM
+                          if (valor > 0) {
+                            actualizarCampo(esp.idServicio, "turnoTM", 0);
+                          }
+                        }}
+                        disabled={soloLectura || (d?.turnoTM || 0) > 0}
+                        className={`w-12 px-2 py-1 text-center text-sm border rounded font-bold focus:ring-1 ${
+                          (d?.turnoTM || 0) > 0 
+                            ? 'border-gray-300 text-gray-400 bg-gray-50'
+                            : 'border-purple-300 text-purple-600 focus:ring-purple-500 focus:border-purple-500'
+                        } disabled:bg-gray-100 disabled:opacity-50`}
                       />
                     </td>
 
@@ -475,6 +512,7 @@ export default function TablaSolicitudEspecialidades({
             setEspecialidadSeleccionada(null);
           }}
           especialidad={especialidadSeleccionada.descripcion}
+          turnoTM={datos[especialidadSeleccionada.idServicio]?.turnoTM || 0}
           turnoManana={datos[especialidadSeleccionada.idServicio]?.turnoManana || 0}
           turnoTarde={datos[especialidadSeleccionada.idServicio]?.turnoTarde || 0}
           idDetalle={datos[especialidadSeleccionada.idServicio]?.idDetalle || null}

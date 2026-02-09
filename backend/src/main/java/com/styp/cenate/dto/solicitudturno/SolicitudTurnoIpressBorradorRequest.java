@@ -22,6 +22,8 @@ public class SolicitudTurnoIpressBorradorRequest {
     private Integer totalTurnosSolicitados; // opcional (igual recalculas)
     private Integer totalEspecialidades;    // opcional
 
+    private String observaciones;
+
     private List<DetalleSolicitudTurnoBorradorRequest> detalles;
     private List<Long> detallesEliminar;
 }

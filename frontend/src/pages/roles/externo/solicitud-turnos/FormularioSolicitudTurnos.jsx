@@ -50,6 +50,8 @@ import { solicitudTurnoService } from "../../../../services/solicitudTurnoServic
 
 // Componentes separados
 import Modal from "./components/Modal";
+import ModalConfirmacionEnvio from "./components/ModalConfirmacionEnvio";
+import ModalHorarioTeleconsultorio from "./components/ModalHorarioTeleconsultorio";
 import PeriodoDetalleCard, { SeccionFechas } from "./components/PeriodoDetalleCard";
 import TablaSolicitudEspecialidades from "./components/TablaSolicitudEspecialidades";
 import VistaSolicitudEnviada from "./components/VistaSolicitudEnviada";
@@ -77,7 +79,7 @@ export default function FormularioSolicitudTurnos() {
   const [miIpress, setMiIpress] = useState(null);
 
   // periodos
-  const [tipoPeriodos, setTipoPeriodos] = useState("VIGENTES"); // VIGENTES | ACTIVOS
+  const [tipoPeriodos, setTipoPeriodos] = useState("TODOS"); // VIGENTES | ACTIVOS | TODOS
   const [periodos, setPeriodos] = useState([]);
   const [loadingPeriodos, setLoadingPeriodos] = useState(false);
 
@@ -98,6 +100,11 @@ export default function FormularioSolicitudTurnos() {
   const [openFormModal, setOpenFormModal] = useState(false);
   const [modoModal, setModoModal] = useState("NUEVA"); // NUEVA | EDITAR | VER
   const [openInfoModal, setOpenInfoModal] = useState(false);
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+
+  // Modal de horarios teleconsultorio
+  const [showHorariosModal, setShowHorariosModal] = useState(false);
+  const [horariosConfigurados, setHorariosConfigurados] = useState(new Map());
 
   // periodo seleccionado
   const [periodoSeleccionado, setPeriodoSeleccionado] = useState(null);
@@ -123,8 +130,25 @@ export default function FormularioSolicitudTurnos() {
       let data = [];
       if (tipoPeriodos === "VIGENTES") {
         data = await periodoSolicitudService.obtenerVigentes();
-      } else {
+      } else if (tipoPeriodos === "ACTIVOS") {
         data = await periodoSolicitudService.obtenerActivos();
+      } else if (tipoPeriodos === "TODOS") {
+        // Cargar tanto vigentes como activos
+        const [vigentesData, activosData] = await Promise.all([
+          periodoSolicitudService.obtenerVigentes(),
+          periodoSolicitudService.obtenerActivos()
+        ]);
+        
+        // Combinar y eliminar duplicados basándose en idPeriodo
+        const todosLosPeriodos = [...(Array.isArray(vigentesData) ? vigentesData : []), 
+                                   ...(Array.isArray(activosData) ? activosData : [])];
+        
+        // Eliminar duplicados por idPeriodo
+        const periodosUnicos = todosLosPeriodos.filter((periodo, index, self) => 
+          index === self.findIndex(p => p.idPeriodo === periodo.idPeriodo)
+        );
+        
+        data = periodosUnicos;
       }
 
       setPeriodos(Array.isArray(data) ? data : []);
@@ -325,6 +349,13 @@ export default function FormularioSolicitudTurnos() {
 
       // EDITAR INICIADO: Cargar detalles de la solicitud
       if (solicitud.detalles && Array.isArray(solicitud.detalles)) {
+        console.log("🔍 ========== CARGA DE DETALLES EXISTENTES ==========");
+        console.log("📋 Detalles del backend:", solicitud.detalles);
+        solicitud.detalles.forEach((det, i) => {
+          console.log(`  ${i+1}. ${det.nombreServicio}: TM=${det.turnoTM || det.turnosTm}, M=${det.turnoManana}, T=${det.turnoTarde}`);
+        });
+        console.log("================================================");
+
         // Agrupar detalles por idServicio para evitar duplicados
         // El backend devuelve múltiples registros (con diferentes idDetalle) para la misma especialidad
         // cuando hay múltiples fechas. Consolidamos todo en un solo registro por especialidad.
@@ -359,6 +390,7 @@ export default function FormularioSolicitudTurnos() {
               idDetalle: det.idDetalle || null, // Tomamos el idDetalle del primer registro
               idServicio: det.idServicio,
 
+              turnoTM: det.turnoTM || det.turnosTm || 0,  // Agregar turnoTM del backend
               turnoManana: det.turnoManana || 0,
               turnoTarde: det.turnoTarde || 0,
               tc: det.tc !== undefined ? det.tc : configDefaults.tc,
@@ -465,14 +497,17 @@ export default function FormularioSolicitudTurnos() {
     const todosLosDetalles = (registros || []).map((r) => {
       const turnoManana = Number(r.turnoManana || 0);
       const turnoTarde = Number(r.turnoTarde || 0);
-      const totalTurnos = turnoManana + turnoTarde;
+      const turnoTM = Number(r.turnoTM || 0);
+      
+      // Calcular total: si hay turnoTM, usarlo; si no, sumar individuales
+      const totalTurnos = turnoTM > 0 ? turnoTM : turnoManana + turnoTarde;
 
       return {
         idServicio: r.idServicio,           // FK a servicio_essi (especialidad)
         idDetalle: r.idDetalle || null,     // si es edición, incluir el id_detalle existente
         requiere: totalTurnos > 0,          // false si el usuario ya no desea esta especialidad
         turnos: totalTurnos,
-        turnoTM: 0,                         // Siempre 0 por defecto
+        turnoTM: turnoTM,                   // Usar valor real del campo turnoTM
         turnoManana: turnoManana,           // Cantidad de turnos mañana (a nivel detalle)
         turnoTarde: turnoTarde,             // Cantidad de turnos tarde (a nivel detalle)
         tc: r.tc !== undefined ? r.tc : false,
@@ -485,8 +520,11 @@ export default function FormularioSolicitudTurnos() {
     console.log("🔍 ========== DEBUG PAYLOAD ==========");
     console.log("📋 TODOS los registros (estado actual):");
     registros.forEach(r => {
-      const total = Number(r.turnoManana || 0) + Number(r.turnoTarde || 0);
-      console.log(`  - idServicio: ${r.idServicio}, idDetalle: ${r.idDetalle}, Mañana: ${r.turnoManana}, Tarde: ${r.turnoTarde}, TOTAL: ${total}`);
+      const turnoTM = Number(r.turnoTM || 0);
+      const turnoManana = Number(r.turnoManana || 0);
+      const turnoTarde = Number(r.turnoTarde || 0);
+      const total = turnoTM > 0 ? turnoTM : turnoManana + turnoTarde;
+      console.log(`  - idServicio: ${r.idServicio}, idDetalle: ${r.idDetalle}, TM: ${turnoTM}, Mañana: ${turnoManana}, Tarde: ${turnoTarde}, TOTAL: ${total}`);
     });
 
     // Separar especialidades según estado de turnos
@@ -537,6 +575,70 @@ export default function FormularioSolicitudTurnos() {
   };
 
   // =====================================================================
+  // Manejar horarios teleconsultorio
+  // =====================================================================
+  const abrirModalHorarios = () => {
+    setShowHorariosModal(true);
+  };
+
+  const confirmarHorarios = (configuracion) => {
+    const nuevosHorarios = new Map(horariosConfigurados);
+    // Por ahora guardar horarios generales, más adelante se puede asociar por especialidad
+    nuevosHorarios.set('general', configuracion);
+    setHorariosConfigurados(nuevosHorarios);
+    console.log('✅ Horarios teleconsultorio configurados:', configuracion);
+    setShowHorariosModal(false);
+  };
+
+  const tieneEspecialidadesConTeleconsultorio = () => {
+    return registros.some(r => {
+      const total = Number(r.turnoTM || 0) > 0 ? Number(r.turnoTM || 0) : Number(r.turnoManana || 0) + Number(r.turnoTarde || 0);
+      return total > 0 && r.tc; // tiene turnos Y teleconsultorio activado
+    });
+  };
+
+  // =====================================================================
+  // Calcular resumen para modal de confirmación
+  // =====================================================================
+  const calcularResumenSolicitud = () => {
+    const registrosConTurnos = registros.filter(r => {
+      const turnoManana = Number(r.turnoManana || 0);
+      const turnoTarde = Number(r.turnoTarde || 0);
+      const turnoTM = Number(r.turnoTM || 0);
+      const total = turnoTM > 0 ? turnoTM : turnoManana + turnoTarde;
+      return total > 0;
+    });
+
+    const totalEspecialidades = registrosConTurnos.length;
+    
+    // Calcular turnos considerando turnoTM
+    let turnosMañana = 0;
+    let turnosTarde = 0;
+    let turnosTM = 0;
+    
+    registrosConTurnos.forEach(r => {
+      const turnoManana = Number(r.turnoManana || 0);
+      const turnoTarde = Number(r.turnoTarde || 0);
+      const turnoTMField = Number(r.turnoTM || 0);
+      
+      if (turnoTMField > 0) {
+        turnosTM += turnoTMField;
+      } else {
+        turnosMañana += turnoManana;
+        turnosTarde += turnoTarde;
+      }
+    });
+
+    return {
+      totalEspecialidades,
+      turnosMañana,
+      turnosTarde,
+      turnosTM,
+      totalTurnos: turnosMañana + turnosTarde + turnosTM
+    };
+  };
+
+  // =====================================================================
   // Guardar borrador / Enviar
   // =====================================================================
   const handleGuardarBorrador = async () => {
@@ -547,14 +649,24 @@ export default function FormularioSolicitudTurnos() {
 
     // Validación adicional: verificar que haya registros con turnos
     const registrosConTurnos = registros.filter(r => {
-      const total = Number(r.turnoManana || 0) + Number(r.turnoTarde || 0);
+      const turnoTM = Number(r.turnoTM || 0);
+      const turnoManana = Number(r.turnoManana || 0);
+      const turnoTarde = Number(r.turnoTarde || 0);
+      const total = turnoTM > 0 ? turnoTM : turnoManana + turnoTarde;
       return total > 0;
     });
 
     console.log("🔍 ========== VALIDACIÓN PREVIA ==========");
     console.log("📋 Total de registros:", registros.length);
     console.log("✅ Registros con turnos:", registrosConTurnos.length);
-    console.log("📊 Registros actuales:", registros);
+    console.log("📊 Registros actuales:");
+    registros.forEach(r => {
+      const turnoTM = Number(r.turnoTM || 0);
+      const turnoManana = Number(r.turnoManana || 0);
+      const turnoTarde = Number(r.turnoTarde || 0);
+      const total = turnoTM > 0 ? turnoTM : turnoManana + turnoTarde;
+      console.log(`  - ${r.nombreServicio}: TM=${turnoTM}, M=${turnoManana}, T=${turnoTarde}, Total=${total}`);
+    });
     console.log("==========================================");
 
     if (registrosConTurnos.length === 0) {
@@ -856,15 +968,24 @@ export default function FormularioSolicitudTurnos() {
       setError("Registra al menos un turno antes de enviar.");
       return;
     }
-    // eslint-disable-next-line no-restricted-globals
-    if (!confirm("¿Enviar la solicitud? Luego no podrás modificarla.")) return;
+    
+    // Mostrar modal de confirmación
+    setShowConfirmModal(true);
+  };
 
+  const confirmarEnvio = async (observacionGeneral = '') => {
+    setShowConfirmModal(false);
     setSaving(true);
     setError(null);
     setSuccess(null);
 
     try {
       const { payloadCompat } = buildPayload();
+      
+      // Agregar observación general si se proporcionó
+      if (observacionGeneral.trim()) {
+        payloadCompat.observaciones = observacionGeneral.trim();
+      }
 
       // Primero guardar el borrador (crea o actualiza)
       const guardado = await solicitudTurnoService.guardarBorrador(payloadCompat);
@@ -1006,6 +1127,7 @@ export default function FormularioSolicitudTurnos() {
                 }}
                 disabled={loadingPeriodos}
               >
+                <option value="TODOS">Todos</option>
                 <option value="VIGENTES">Vigentes</option>
                 <option value="ACTIVOS">Activos</option>
               </select>
@@ -1305,6 +1427,39 @@ export default function FormularioSolicitudTurnos() {
                     }
                   />
 
+                  {/* Botón Horario Teleconsultorio */}
+                  {tieneEspecialidadesConTeleconsultorio() && (
+                    <div className="mt-4 bg-blue-50 border border-blue-200 rounded-lg p-4">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className="bg-blue-500 p-2 rounded-lg">
+                            <Clock className="w-5 h-5 text-white" />
+                          </div>
+                          <div>
+                            <h3 className="font-bold text-blue-900">Horarios de Teleconsultorio</h3>
+                            <p className="text-sm text-blue-700">
+                              {horariosConfigurados.has('general') 
+                                ? "Horarios configurados - Click para modificar"
+                                : "Configura los horarios de atención para teleconsultorio"}
+                            </p>
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={abrirModalHorarios}
+                          className={`px-4 py-2 rounded-lg font-semibold transition-all flex items-center gap-2 ${
+                            horariosConfigurados.has('general')
+                              ? "bg-green-600 text-white hover:bg-green-700"
+                              : "bg-blue-600 text-white hover:bg-blue-700"
+                          }`}
+                        >
+                          <Clock className="w-4 h-4" />
+                          {horariosConfigurados.has('general') ? 'Modificar Horarios' : 'Configurar Horarios'}
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
                   {/* Sección de Fechas en modo EDITAR */}
                   {modoModal === "EDITAR" && solicitudActual && (
                     <SeccionFechas solicitud={solicitudActual} />
@@ -1361,9 +1516,42 @@ export default function FormularioSolicitudTurnos() {
                     <Calendar className="w-4 h-4" />
                     1. Gestión de Periodos de Solicitud
                   </h4>
-                  <p className="text-sm text-gray-700 leading-relaxed">
+                  <p className="text-sm text-gray-700 leading-relaxed mb-3">
                     El formulario presenta los periodos habilitados para solicitud de turnos, diferenciados entre periodos vigentes y activos, permitiendo la selección del periodo correspondiente según el calendario establecido por la institución.
                   </p>
+                  
+                  {/* Tipos de Períodos */}
+                  <div className="bg-white rounded-lg p-3 border border-blue-200">
+                    <h5 className="font-semibold text-blue-800 mb-2 text-xs uppercase tracking-wide">Tipos de Períodos:</h5>
+                    <div className="space-y-2">
+                      <div className="flex items-start gap-2">
+                        <div className="w-2 h-2 rounded-full bg-green-500 mt-1.5 flex-shrink-0"></div>
+                        <div>
+                          <p className="text-xs font-medium text-gray-800">VIGENTES</p>
+                          <p className="text-xs text-gray-600">Períodos activos que están dentro de su rango de fechas de vigencia (disponibles para nuevas solicitudes)</p>
+                        </div>
+                      </div>
+                      <div className="flex items-start gap-2">
+                        <div className="w-2 h-2 rounded-full bg-blue-500 mt-1.5 flex-shrink-0"></div>
+                        <div>
+                          <p className="text-xs font-medium text-gray-800">ACTIVOS</p>
+                          <p className="text-xs text-gray-600">Todos los períodos con estado activo, incluye futuros y pasados que mantienen el estado</p>
+                        </div>
+                      </div>
+                      <div className="flex items-start gap-2">
+                        <div className="w-2 h-2 rounded-full bg-gray-500 mt-1.5 flex-shrink-0"></div>
+                        <div>
+                          <p className="text-xs font-medium text-gray-800">TODOS</p>
+                          <p className="text-xs text-gray-600">Combinación de períodos vigentes y activos sin duplicados</p>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="mt-2 pt-2 border-t border-blue-100">
+                      <p className="text-xs text-blue-700 italic">
+                        <span className="font-medium">Criterio VIGENTE:</span> Estado ACTIVO + fechaInicio ≤ hoy + fechaFin ≥ hoy
+                      </p>
+                    </div>
+                  </div>
                 </div>
 
                 {/* 2. Configuración de Turnos */}
@@ -1499,6 +1687,24 @@ export default function FormularioSolicitudTurnos() {
       </div>
     </div>
     )}
+
+    {/* Modal de Confirmación de Envío */}
+    <ModalConfirmacionEnvio
+      isOpen={showConfirmModal}
+      onClose={() => setShowConfirmModal(false)}
+      onConfirm={confirmarEnvio}
+      resumenSolicitud={calcularResumenSolicitud()}
+      loading={saving}
+    />
+
+    {/* Modal de Horarios Teleconsultorio */}
+    <ModalHorarioTeleconsultorio
+      open={showHorariosModal}
+      onClose={() => setShowHorariosModal(false)}
+      especialidad="Horarios Generales de Teleconsultorio"
+      horariosIniciales={horariosConfigurados.get('general')}
+      onConfirm={confirmarHorarios}
+    />
     </>
   );
 }

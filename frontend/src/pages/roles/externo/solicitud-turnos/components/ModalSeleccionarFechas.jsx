@@ -60,6 +60,7 @@ const calcularRangoPeriodo = (periodo) => {
  * @param {Boolean} props.open - Si el modal está abierto
  * @param {Function} props.onClose - Callback al cerrar
  * @param {String} props.especialidad - Nombre de la especialidad
+ * @param {Number} props.turnoTM - Cantidad de turnos mañana y tarde
  * @param {Number} props.turnoManana - Cantidad de turnos mañana
  * @param {Number} props.turnoTarde - Cantidad de turnos tarde
  * @param {Number} props.idDetalle - ID del detalle (para cargar fechas del backend)
@@ -71,6 +72,7 @@ export default function ModalSeleccionarFechas({
   open,
   onClose,
   especialidad = "",
+  turnoTM = 0,
   turnoManana = 0,
   turnoTarde = 0,
   idDetalle = null,
@@ -183,6 +185,7 @@ export default function ModalSeleccionarFechas({
     if (tipoTurno === "AMBOS") {
       const conteoManana = fechasSeleccionadas.filter((f) => f.turno === "MANANA").length;
       const conteoTarde = fechasSeleccionadas.filter((f) => f.turno === "TARDE").length;
+      const conteoTotal = conteoManana + conteoTarde;
       
       const idManana = `${fechaStr}-MANANA`;
       const idTarde = `${fechaStr}-TARDE`;
@@ -197,13 +200,25 @@ export default function ModalSeleccionarFechas({
         return;
       }
 
-      // Validar límites
-      const puedeAgregarManana = !yaExisteManana && conteoManana < turnoManana;
-      const puedeAgregarTarde = !yaExisteTarde && conteoTarde < turnoTarde;
+      // Validar límites - considerar turnoTM si existe
+      let puedeAgregarManana, puedeAgregarTarde;
+      
+      if (turnoTM > 0) {
+        // Para turnoTM, el límite es compartido para ambos turnos
+        puedeAgregarManana = !yaExisteManana && conteoTotal < turnoTM;
+        puedeAgregarTarde = !yaExisteTarde && conteoTotal < turnoTM;
+      } else {
+        // Para turnos separados, cada uno tiene su propio límite
+        puedeAgregarManana = !yaExisteManana && conteoManana < turnoManana;
+        puedeAgregarTarde = !yaExisteTarde && conteoTarde < turnoTarde;
+      }
 
-      // Si no puede agregar ninguno porque alcanzó ambos límites
+      // Si no puede agregar ninguno porque alcanzó el límite
       if (!puedeAgregarManana && !puedeAgregarTarde && !yaExisteManana && !yaExisteTarde) {
-        alert(`⚠️ Has alcanzado el límite de turnos tanto de Mañana (${turnoManana}) como de Tarde (${turnoTarde}). No puedes agregar más fechas.`);
+        const mensaje = turnoTM > 0 
+          ? `⚠️ Has alcanzado el límite total de turnos (${turnoTM}). No puedes agregar más fechas.`
+          : `⚠️ Has alcanzado el límite de turnos tanto de Mañana (${turnoManana}) como de Tarde (${turnoTarde}). No puedes agregar más fechas.`;
+        alert(mensaje);
         return;
       }
 
@@ -239,7 +254,16 @@ export default function ModalSeleccionarFechas({
 
     // Modo normal (MANANA o TARDE)
     const conteoActual = fechasSeleccionadas.filter((f) => f.turno === tipoTurno).length;
-    const limiteActual = tipoTurno === "MANANA" ? turnoManana : turnoTarde;
+    const conteoTotal = fechasSeleccionadas.length;
+    
+    let limiteActual;
+    if (turnoTM > 0) {
+      // Para turnoTM, el límite es compartido
+      limiteActual = turnoTM;
+    } else {
+      // Para turnos separados, cada uno tiene su límite
+      limiteActual = tipoTurno === "MANANA" ? turnoManana : turnoTarde;
+    }
     
     const idFecha = `${fechaStr}-${tipoTurno}`;
     const yaExiste = fechasSeleccionadas.some((f) => f.id === idFecha);
@@ -251,7 +275,8 @@ export default function ModalSeleccionarFechas({
     }
     
     // Si se alcanzó el límite, no agregar
-    if (conteoActual >= limiteActual) {
+    const limiteParaComparar = turnoTM > 0 ? conteoTotal : conteoActual;
+    if (limiteParaComparar >= limiteActual) {
       return;
     }
 
@@ -295,11 +320,19 @@ export default function ModalSeleccionarFechas({
   };
 
   // Verificar si se alcanzó el límite
-  const limiteAlcanzado = tipoTurno === "AMBOS"
-    ? (fechasManana >= turnoManana || fechasTarde >= turnoTarde)
-    : tipoTurno === "MANANA" 
-      ? fechasManana >= turnoManana 
-      : fechasTarde >= turnoTarde;
+  const limiteAlcanzado = () => {
+    if (turnoTM > 0) {
+      // Si hay turnoTM, el límite es el total de fechas
+      return fechasSeleccionadas.length >= turnoTM;
+    } else {
+      // Si no hay turnoTM, usar límites separados
+      return tipoTurno === "AMBOS"
+        ? (fechasManana >= turnoManana || fechasTarde >= turnoTarde)
+        : tipoTurno === "MANANA" 
+          ? fechasManana >= turnoManana 
+          : fechasTarde >= turnoTarde;
+    }
+  };
 
   // Obtener nombre del mes del periodo
   const nombreMesPeriodo = useMemo(() => {
@@ -387,13 +420,15 @@ export default function ModalSeleccionarFechas({
               </div>
 
               {/* Alerta de límite alcanzado */}
-              {limiteAlcanzado && (
+              {limiteAlcanzado() && (
                 <div className="bg-red-50 border border-red-300 rounded-lg p-1.5">
                   <p className="text-[10px] text-red-800 font-semibold flex items-center gap-1.5">
                     <span>⚠️</span>
-                    {tipoTurno === "AMBOS" 
-                      ? "Límite alcanzado para uno o ambos turnos" 
-                      : `Límite alcanzado para turnos de ${tipoTurno === "MANANA" ? "Mañana" : "Tarde"} (${tipoTurno === "MANANA" ? turnoManana : turnoTarde})`
+                    {turnoTM > 0 
+                      ? `Límite total alcanzado (${turnoTM} turnos)`
+                      : tipoTurno === "AMBOS" 
+                        ? "Límite alcanzado para uno o ambos turnos" 
+                        : `Límite alcanzado para turnos de ${tipoTurno === "MANANA" ? "Mañana" : "Tarde"} (${tipoTurno === "MANANA" ? turnoManana : turnoTarde})`
                     }
                   </p>
                 </div>
@@ -493,61 +528,95 @@ export default function ModalSeleccionarFechas({
               {/* Tarjetas de resumen EN UNA FILA */}
               <div>
                 <h3 className="font-bold text-slate-800 text-xs mb-1.5">Resumen de turnos</h3>
-                <div className="grid grid-cols-2 gap-2">
-                  {/* Turnos Mañana */}
+                
+                {turnoTM > 0 ? (
+                  // Modo turnoTM: mostrar contador total
                   <div className={`rounded-lg p-2 border ${
-                    fechasManana >= turnoManana 
+                    fechasSeleccionadas.length >= turnoTM
                       ? 'bg-red-50 border-red-300' 
-                      : 'bg-orange-50 border-orange-200'
+                      : 'bg-blue-50 border-blue-200'
                   }`}>
                     <div className={`flex items-center gap-1 mb-1 ${
-                      fechasManana >= turnoManana ? 'text-red-600' : 'text-orange-600'
+                      fechasSeleccionadas.length >= turnoTM ? 'text-red-600' : 'text-blue-600'
                     }`}>
-                      <Sun className="w-3 h-3" />
-                      <span className="font-bold text-[10px]">TURNOS MAÑANA</span>
+                      <div className="flex items-center gap-0.5">
+                        <Sun className="w-3 h-3" />
+                        <Moon className="w-3 h-3" />
+                      </div>
+                      <span className="font-bold text-[10px]">TURNOS TOTALES (M+T)</span>
                     </div>
                     <div className="flex items-baseline gap-1">
                       <span className={`text-2xl font-bold ${
+                        fechasSeleccionadas.length >= turnoTM ? 'text-red-600' : 'text-blue-600'
+                      }`}>{fechasSeleccionadas.length}</span>
+                      <span className={`text-sm ${
+                        fechasSeleccionadas.length >= turnoTM ? 'text-red-500' : 'text-blue-500'
+                      }`}>/ {turnoTM}</span>
+                    </div>
+                    <p className={`text-[9px] mt-0.5 font-semibold ${
+                      fechasSeleccionadas.length >= turnoTM ? 'text-red-600' : 'text-blue-600'
+                    }`}>
+                      {fechasSeleccionadas.length >= turnoTM ? '⚠️ Límite' : `${turnoTM - fechasSeleccionadas.length} disp.`}
+                    </p>
+                  </div>
+                ) : (
+                  // Modo separado: mostrar contadores individuales
+                  <div className="grid grid-cols-2 gap-2">
+                    {/* Turnos Mañana */}
+                    <div className={`rounded-lg p-2 border ${
+                      fechasManana >= turnoManana 
+                        ? 'bg-red-50 border-red-300' 
+                        : 'bg-orange-50 border-orange-200'
+                    }`}>
+                      <div className={`flex items-center gap-1 mb-1 ${
                         fechasManana >= turnoManana ? 'text-red-600' : 'text-orange-600'
-                      }`}>{fechasManana}</span>
-                      <span className={`text-sm ${
-                        fechasManana >= turnoManana ? 'text-red-500' : 'text-orange-500'
-                      }`}>/ {turnoManana}</span>
+                      }`}>
+                        <Sun className="w-3 h-3" />
+                        <span className="font-bold text-[10px]">TURNOS MAÑANA</span>
+                      </div>
+                      <div className="flex items-baseline gap-1">
+                        <span className={`text-2xl font-bold ${
+                          fechasManana >= turnoManana ? 'text-red-600' : 'text-orange-600'
+                        }`}>{fechasManana}</span>
+                        <span className={`text-sm ${
+                          fechasManana >= turnoManana ? 'text-red-500' : 'text-orange-500'
+                        }`}>/ {turnoManana}</span>
+                      </div>
+                      <p className={`text-[9px] mt-0.5 font-semibold ${
+                        fechasManana >= turnoManana ? 'text-red-600' : 'text-orange-600'
+                      }`}>
+                        {fechasManana >= turnoManana ? '⚠️ Límite' : `${turnoManana - fechasManana} disp.`}
+                      </p>
                     </div>
-                    <p className={`text-[9px] mt-0.5 font-semibold ${
-                      fechasManana >= turnoManana ? 'text-red-600' : 'text-orange-600'
-                    }`}>
-                      {fechasManana >= turnoManana ? '⚠️ Límite' : `${turnoManana - fechasManana} disp.`}
-                    </p>
-                  </div>
 
-                  {/* Turnos Tarde */}
-                  <div className={`rounded-lg p-2 border ${
-                    fechasTarde >= turnoTarde 
-                      ? 'bg-red-50 border-red-300' 
-                      : 'bg-purple-50 border-purple-200'
-                  }`}>
-                    <div className={`flex items-center gap-1 mb-1 ${
-                      fechasTarde >= turnoTarde ? 'text-red-600' : 'text-purple-600'
+                    {/* Turnos Tarde */}
+                    <div className={`rounded-lg p-2 border ${
+                      fechasTarde >= turnoTarde 
+                        ? 'bg-red-50 border-red-300' 
+                        : 'bg-purple-50 border-purple-200'
                     }`}>
-                      <Moon className="w-3 h-3" />
-                      <span className="font-bold text-[10px]">TURNOS TARDE</span>
-                    </div>
-                    <div className="flex items-baseline gap-1">
-                      <span className={`text-2xl font-bold ${
+                      <div className={`flex items-center gap-1 mb-1 ${
                         fechasTarde >= turnoTarde ? 'text-red-600' : 'text-purple-600'
-                      }`}>{fechasTarde}</span>
-                      <span className={`text-sm ${
-                        fechasTarde >= turnoTarde ? 'text-red-500' : 'text-purple-500'
-                      }`}>/ {turnoTarde}</span>
+                      }`}>
+                        <Moon className="w-3 h-3" />
+                        <span className="font-bold text-[10px]">TURNOS TARDE</span>
+                      </div>
+                      <div className="flex items-baseline gap-1">
+                        <span className={`text-2xl font-bold ${
+                          fechasTarde >= turnoTarde ? 'text-red-600' : 'text-purple-600'
+                        }`}>{fechasTarde}</span>
+                        <span className={`text-sm ${
+                          fechasTarde >= turnoTarde ? 'text-red-500' : 'text-purple-500'
+                        }`}>/ {turnoTarde}</span>
+                      </div>
+                      <p className={`text-[9px] mt-0.5 font-semibold ${
+                        fechasTarde >= turnoTarde ? 'text-red-600' : 'text-purple-600'
+                      }`}>
+                        {fechasTarde >= turnoTarde ? '⚠️ Límite' : `${turnoTarde - fechasTarde} disp.`}
+                      </p>
                     </div>
-                    <p className={`text-[9px] mt-0.5 font-semibold ${
-                      fechasTarde >= turnoTarde ? 'text-red-600' : 'text-purple-600'
-                    }`}>
-                      {fechasTarde >= turnoTarde ? '⚠️ Límite' : `${turnoTarde - fechasTarde} disp.`}
-                    </p>
                   </div>
-                </div>
+                )}
               </div>
 
               {/* Fechas seleccionadas EN 2 COLUMNAS */}

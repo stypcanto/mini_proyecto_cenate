@@ -20,6 +20,8 @@ public class SolicitudTurnoIpressRequest {
     @NotNull(message = "El id del periodo es obligatorio")
     private Long idPeriodo;
 
+    private String observaciones;
+
     @Valid
     private List<DetalleSolicitudTurnoRequest> detalles;
 }

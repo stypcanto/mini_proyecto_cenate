@@ -74,6 +74,9 @@ public class SolicitudTurnoIpress {
     @Column(name = "motivo_rechazo", columnDefinition = "text")
     private String motivoRechazo;
     
+    @Column(name = "observaciones", columnDefinition = "text")
+    private String observaciones;
+    
     
     @Column(name = "total_turnos_solicitados", nullable = false)
     private Integer totalTurnosSolicitados;

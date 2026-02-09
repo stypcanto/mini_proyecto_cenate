@@ -177,8 +177,9 @@ export default function VistaSolicitudEnviada({ solicitud }) {
                 <th className="px-2 py-2.5 text-left font-bold text-white w-8">#</th>
                 <th className="px-2 py-2.5 text-left font-bold text-white">Especialidad</th>
                 <th className="px-2 py-2.5 text-center font-bold text-white">Estado</th>
-                <th className="px-2 py-2.5 text-center font-bold text-white">Mañana</th>
-                <th className="px-2 py-2.5 text-center font-bold text-white">Tarde</th>
+                <th className="px-2 py-2.5 text-center font-bold text-white">Mañana y Tarde</th>
+                <th className="px-2 py-2.5 text-center font-bold text-white">Solo Mañana</th>
+                <th className="px-2 py-2.5 text-center font-bold text-white">Solo Tarde</th>
                 <th className="px-2 py-2.5 text-center font-bold text-white">Total</th>
                 <th className="px-2 py-2.5 text-center font-bold text-white">Teleconsulta</th>
                 <th className="px-2 py-2.5 text-center font-bold text-white">Teleconsultorio</th>
@@ -188,7 +189,7 @@ export default function VistaSolicitudEnviada({ solicitud }) {
             </thead>
             <tbody className="divide-y divide-gray-100">{especialidadesFiltradas.length === 0 ? (
                 <tr>
-                  <td colSpan="10" className="px-4 py-8 text-center text-gray-500">
+                  <td colSpan="11" className="px-4 py-8 text-center text-gray-500">
                     <FileText className="w-10 h-10 text-gray-300 mx-auto mb-2" />
                     <p className="text-xs font-medium">
                       {(solicitud.detalles || []).length === 0
@@ -199,7 +200,10 @@ export default function VistaSolicitudEnviada({ solicitud }) {
                 </tr>
               ) : (
                 especialidadesFiltradas.map((detalle, index) => {
-                  const totalTurnos = (detalle.turnoManana || 0) + (detalle.turnoTarde || 0);
+                  const turnoTM = detalle.turnoTM || 0;
+                  const turnoManana = detalle.turnoManana || 0;
+                  const turnoTarde = detalle.turnoTarde || 0;
+                  const totalTurnos = turnoTM > 0 ? turnoTM : turnoManana + turnoTarde;
                   const tieneObservacion = detalle.observacion && detalle.observacion.trim() !== "";
                   const tieneFechas = detalle.fechasDetalle && detalle.fechasDetalle.length > 0;
 
@@ -228,15 +232,21 @@ export default function VistaSolicitudEnviada({ solicitud }) {
                         </span>
                       </td>
 
+                      <td className="px-2 py-2 text-center bg-blue-50/50">
+                        <span className="inline-flex items-center justify-center w-7 h-6 rounded text-xs font-bold bg-blue-100 text-blue-700 border border-blue-300">
+                          {turnoTM > 0 ? turnoTM : '—'}
+                        </span>
+                      </td>
+
                       <td className="px-2 py-2 text-center bg-yellow-50/50">
                         <span className="inline-flex items-center justify-center w-7 h-6 rounded text-xs font-bold bg-yellow-100 text-yellow-700 border border-yellow-300">
-                          {detalle.turnoManana || 0}
+                          {turnoTM > 0 ? '—' : turnoManana}
                         </span>
                       </td>
 
                       <td className="px-2 py-2 text-center bg-orange-50/50">
                         <span className="inline-flex items-center justify-center w-7 h-6 rounded text-xs font-bold bg-orange-100 text-orange-700 border border-orange-300">
-                          {detalle.turnoTarde || 0}
+                          {turnoTM > 0 ? '—' : turnoTarde}
                         </span>
                       </td>
 
