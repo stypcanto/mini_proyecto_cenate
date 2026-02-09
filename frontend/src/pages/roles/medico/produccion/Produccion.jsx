@@ -47,8 +47,14 @@ export default function Produccion() {
   // ✅ v1.60.0: Filtros de período
   const [filtroActual, setFiltroActual] = useState('mes'); // 'semana', 'mes', 'año'
 
-  // ✅ v1.61.4: Filtro de búsqueda por DNI
-  const [filtroDNI, setFiltroDNI] = useState('');
+  // ✅ v1.61.5: Filtro de búsqueda por DNI
+  const [filtroDNI, setFiltroDNI] = useState('')
+
+  // Filtrar pacientes por DNI
+  const pacientesFiltrados = pacientesDiaSeleccionado.filter(p => {
+    if (!filtroDNI.trim()) return true
+    return p.numDoc && p.numDoc.toString().includes(filtroDNI.trim())
+  })
 
   useEffect(() => {
     cargarDatos();
@@ -103,13 +109,6 @@ export default function Produccion() {
 
   const pacientesDiaSeleccionado = getPacientesDelDia(diaSeleccionado);
   const diasConAtenciones = getDiasConAtenciones();
-
-  // ✅ v1.61.4: Filtrar pacientes por DNI
-  const pacientesFiltrados = filtroDNI.trim() === ''
-    ? pacientesDiaSeleccionado
-    : pacientesDiaSeleccionado.filter(p =>
-        p.numDoc?.toString().includes(filtroDNI.trim())
-      );
 
   // ✅ v1.59.0: ESTADÍSTICAS TOTALES (Período completo)
   const statsTotales = {
@@ -623,7 +622,23 @@ export default function Produccion() {
                   <p className="text-sm text-gray-500 mt-2">Selecciona otro día del calendario para ver los pacientes atendidos</p>
                 </div>
               ) : (
-                <div className="overflow-x-auto max-h-96 overflow-y-auto border border-gray-200 rounded-lg">
+                <>
+                  {/* Filtro de DNI */}
+                  <div className="mb-4 flex items-center gap-2">
+                    <input
+                      type="text"
+                      placeholder="🔍 Buscar DNI..."
+                      value={filtroDNI}
+                      onChange={(e) => setFiltroDNI(e.target.value)}
+                      className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#0A5BA9]"
+                    />
+                    {filtroDNI && (
+                      <button onClick={() => setFiltroDNI('')} className="px-3 py-2 text-gray-500 hover:text-gray-700">✕</button>
+                    )}
+                    <span className="text-xs text-gray-600">{pacientesFiltrados.length} / {pacientesDiaSeleccionado.length}</span>
+                  </div>
+
+                  <div className="overflow-x-auto max-h-96 overflow-y-auto border border-gray-200 rounded-lg">
                   <table className="w-full text-sm">
                     <thead className="bg-gray-50 border-b border-gray-200 sticky top-0">
                       <tr>
@@ -658,7 +673,8 @@ export default function Produccion() {
                       ))}
                     </tbody>
                   </table>
-                </div>
+                  </div>
+                </>
               )}
             </div>
           </div>
