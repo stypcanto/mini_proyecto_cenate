@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Demo: Opción D - Mini-Summary KPIs</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .fade-slide-enter {
+            opacity: 0;
+            transform: translateY(-10px);
+        }
+        .fade-slide-enter-active {
+            opacity: 1;
+            transform: translateY(0);
+            transition: all 300ms cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .kpi-number {
+            transition: all 0.2s ease;
+        }
+        .kpi-number:hover {
+            transform: scale(1.1);
+        }
+        .kpi-number.selected {
+            transform: scale(1.15);
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 p-8">
+    <div class="max-w-7xl mx-auto">
+        <!-- Header -->
+        <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+            <h1 class="text-2xl font-bold text-gray-800 mb-2">
+                🎨 Demo Interactivo: Opción D - Dashboard Progresivo
+            </h1>
+            <p class="text-gray-600">
+                Click en "Ver detalles" para expandir, o en cualquier número para filtrar
+            </p>
+        </div>
+
+        <!-- MINI-SUMMARY MODE (Por defecto) -->
+        <div id="miniMode" class="mb-6">
+            <h2 class="text-lg font-semibold text-gray-700 mb-3">Modo Compacto (Por Defecto):</h2>
+            <div class="bg-gradient-to-r from-blue-50 via-white to-orange-50 rounded-lg p-4 flex items-center justify-between shadow-md border border-gray-200">
+                <div class="flex items-center gap-8 flex-wrap">
+                    <!-- Total -->
+                    <button onclick="handleFilter('total')" class="kpi-number text-sm cursor-pointer group" id="mini-total">
+                        <span class="text-gray-600 mr-2">Total:</span>
+                        <strong class="text-blue-600 text-lg group-hover:underline">2426</strong>
+                    </button>
+
+                    <!-- Pendientes -->
+                    <button onclick="handleFilter('pendiente')" class="kpi-number text-sm cursor-pointer group" id="mini-pendiente">
+                        <span class="text-gray-600 mr-2">Pendientes:</span>
+                        <strong class="text-orange-600 text-lg group-hover:underline">45</strong>
+                    </button>
+
+                    <!-- Citados -->
+                    <button onclick="handleFilter('citado')" class="kpi-number text-sm cursor-pointer group" id="mini-citado">
+                        <span class="text-gray-600 mr-2">Citados:</span>
+                        <strong class="text-purple-600 text-lg group-hover:underline">95</strong>
+                    </button>
+
+                    <!-- Asignados -->
+                    <button onclick="handleFilter('asignado')" class="kpi-number text-sm cursor-pointer group" id="mini-asignado">
+                        <span class="text-gray-600 mr-2">Asignados:</span>
+                        <strong class="text-green-600 text-lg group-hover:underline">120</strong>
+                    </button>
+
+                    <!-- Sin Asignar -->
+                    <button onclick="handleFilter('sin_asignar')" class="kpi-number text-sm cursor-pointer group" id="mini-sin-asignar">
+                        <span class="text-gray-600 mr-2">Sin Asignar:</span>
+                        <strong class="text-gray-600 text-lg group-hover:underline">2306</strong>
+                    </button>
+                </div>
+
+                <button onclick="toggleMode()" class="flex items-center gap-2 px-4 py-2 bg-white hover:bg-blue-50 rounded-lg border border-gray-300 transition-all hover:shadow-md">
+                    <span class="text-sm font-semibold text-gray-700">Ver detalles</span>
+                    <span class="text-lg">📊</span>
+                </button>
+            </div>
+            <p class="text-xs text-gray-500 mt-2 text-center">
+                💡 Click en cualquier número para filtrar la tabla | Click en "Ver detalles" para modo completo
+            </p>
+        </div>
+
+        <!-- CARDS COMPLETOS (Modo Expandido) -->
+        <div id="expandedMode" class="hidden mb-6">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-lg font-semibold text-gray-700">Modo Detallado (Expandido):</h2>
+                <button onclick="toggleMode()" class="px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded-lg text-sm font-semibold">
+                    Minimizar ▲
+                </button>
+            </div>
+
+            <div class="grid grid-cols-5 gap-4">
+                <!-- Total Pacientes -->
+                <div onclick="handleFilter('total')" id="card-total" class="bg-gradient-to-br from-blue-600 to-blue-700 text-white rounded-lg p-6 shadow-lg cursor-pointer hover:scale-105 transform transition-all">
+                    <div class="flex justify-between items-start mb-2">
+                        <span class="text-blue-100">Total Pacientes</span>
+                        <span class="text-xl">👥</span>
+                    </div>
+                    <div class="text-3xl font-bold">2426</div>
+                </div>
+
+                <!-- Pendiente Citar -->
+                <div onclick="handleFilter('pendiente')" id="card-pendiente" class="bg-gradient-to-br from-orange-600 to-orange-700 text-white rounded-lg p-6 shadow-lg cursor-pointer hover:scale-105 transform transition-all">
+                    <div class="flex justify-between items-start mb-2">
+                        <span class="text-orange-100">Pendiente Citar</span>
+                        <span class="text-xl">⏳</span>
+                    </div>
+                    <div class="text-3xl font-bold">45</div>
+                </div>
+
+                <!-- Citados -->
+                <div onclick="handleFilter('citado')" id="card-citado" class="bg-gradient-to-br from-purple-600 to-purple-700 text-white rounded-lg p-6 shadow-lg cursor-pointer hover:scale-105 transform transition-all">
+                    <div class="flex justify-between items-start mb-2">
+                        <span class="text-purple-100">Citados</span>
+                        <span class="text-xl">📞</span>
+                    </div>
+                    <div class="text-3xl font-bold">95</div>
+                </div>
+
+                <!-- Casos Asignados -->
+                <div onclick="handleFilter('asignado')" id="card-asignado" class="bg-gradient-to-br from-green-600 to-green-700 text-white rounded-lg p-6 shadow-lg cursor-pointer hover:scale-105 transform transition-all">
+                    <div class="flex justify-between items-start mb-2">
+                        <span class="text-green-100">Casos Asignados</span>
+                        <span class="text-xl">👥</span>
+                    </div>
+                    <div class="text-3xl font-bold">120</div>
+                </div>
+
+                <!-- Sin Asignar -->
+                <div onclick="handleFilter('sin_asignar')" id="card-sin-asignar" class="bg-gradient-to-br from-gray-600 to-gray-700 text-white rounded-lg p-6 shadow-lg cursor-pointer hover:scale-105 transform transition-all">
+                    <div class="flex justify-between items-start mb-2">
+                        <span class="text-gray-100">Sin Asignar</span>
+                        <span class="text-xl">🔲</span>
+                    </div>
+                    <div class="text-3xl font-bold">2306</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Simulación de Tabla Filtrada -->
+        <div class="bg-white rounded-lg shadow-md p-6">
+            <h3 class="text-xl font-bold text-gray-800 mb-4">
+                Lista de Pacientes
+                <span id="filtroActivo" class="text-sm font-normal text-gray-500 ml-2"></span>
+            </h3>
+            <div id="tablaContenido" class="text-gray-600">
+                <p class="text-center py-8">👆 Click en cualquier número o card para simular el filtrado</p>
+            </div>
+        </div>
+
+        <!-- Comparación Visual -->
+        <div class="mt-8 bg-blue-50 rounded-lg p-6 border-2 border-blue-200">
+            <h3 class="text-lg font-bold text-blue-800 mb-4">📊 Comparación de Altura</h3>
+            <div class="grid grid-cols-2 gap-6">
+                <div>
+                    <p class="font-semibold text-gray-700 mb-2">Modo Compacto (Mini-Summary):</p>
+                    <div class="bg-white rounded p-3 border border-gray-300">
+                        <p class="text-sm text-gray-600">Altura: <strong class="text-blue-600">~60px</strong></p>
+                        <p class="text-xs text-gray-500 mt-1">✅ Libera 140px de espacio vertical</p>
+                    </div>
+                </div>
+                <div>
+                    <p class="font-semibold text-gray-700 mb-2">Modo Expandido (Cards Completos):</p>
+                    <div class="bg-white rounded p-3 border border-gray-300">
+                        <p class="text-sm text-gray-600">Altura: <strong class="text-orange-600">~200px</strong></p>
+                        <p class="text-xs text-gray-500 mt-1">🎨 Cards grandes con gradientes</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Beneficios -->
+        <div class="mt-6 grid grid-cols-3 gap-4">
+            <div class="bg-green-50 rounded-lg p-4 border border-green-200">
+                <h4 class="font-bold text-green-800 mb-2">✅ Funcionalidad</h4>
+                <ul class="text-sm text-green-700 space-y-1">
+                    <li>• Filtrado rápido SIEMPRE activo</li>
+                    <li>• Click en número = filtro aplicado</li>
+                    <li>• Sin pérdida de features</li>
+                </ul>
+            </div>
+            <div class="bg-purple-50 rounded-lg p-4 border border-purple-200">
+                <h4 class="font-bold text-purple-800 mb-2">🎨 UX</h4>
+                <ul class="text-sm text-purple-700 space-y-1">
+                    <li>• Espacio limpio por defecto</li>
+                    <li>• Información siempre visible</li>
+                    <li>• Transiciones suaves</li>
+                </ul>
+            </div>
+            <div class="bg-orange-50 rounded-lg p-4 border border-orange-200">
+                <h4 class="font-bold text-orange-800 mb-2">🚀 Performance</h4>
+                <ul class="text-sm text-orange-700 space-y-1">
+                    <li>• 70% menos altura inicial</li>
+                    <li>• Carga más rápida percibida</li>
+                    <li>• Tabla visible inmediatamente</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let selectedFilter = null;
+        let isExpanded = false;
+
+        function toggleMode() {
+            const miniMode = document.getElementById('miniMode');
+            const expandedMode = document.getElementById('expandedMode');
+
+            if (isExpanded) {
+                // Volver a mini-mode
+                miniMode.classList.remove('hidden');
+                expandedMode.classList.add('hidden');
+                isExpanded = false;
+            } else {
+                // Expandir a cards completos
+                miniMode.classList.add('hidden');
+                expandedMode.classList.remove('hidden');
+                isExpanded = true;
+            }
+        }
+
+        function handleFilter(tipo) {
+            selectedFilter = tipo;
+
+            // Remover clase 'selected' de todos
+            document.querySelectorAll('.kpi-number').forEach(el => {
+                el.classList.remove('selected');
+            });
+            document.querySelectorAll('[id^="card-"]').forEach(el => {
+                el.classList.remove('ring-4', 'ring-white');
+            });
+
+            // Agregar clase 'selected' al activo
+            const miniEl = document.getElementById(`mini-${tipo}`);
+            if (miniEl) miniEl.classList.add('selected');
+
+            const cardEl = document.getElementById(`card-${tipo}`);
+            if (cardEl) cardEl.classList.add('ring-4', 'ring-white');
+
+            // Actualizar UI de filtro
+            const nombres = {
+                'total': 'Todos los pacientes',
+                'pendiente': 'Pendiente de Citar',
+                'citado': 'Citados',
+                'asignado': 'Casos Asignados',
+                'sin_asignar': 'Sin Asignar'
+            };
+
+            const valores = {
+                'total': '2426 registros',
+                'pendiente': '45 registros',
+                'citado': '95 registros',
+                'asignado': '120 registros',
+                'sin_asignar': '2306 registros'
+            };
+
+            document.getElementById('filtroActivo').textContent = `(Filtrado por: ${nombres[tipo]})`;
+            document.getElementById('tablaContenido').innerHTML = `
+                <div class="bg-blue-50 rounded-lg p-6 text-center">
+                    <p class="text-lg font-semibold text-blue-800 mb-2">
+                        ✅ Filtro aplicado: ${nombres[tipo]}
+                    </p>
+                    <p class="text-gray-600">
+                        Mostrando ${valores[tipo]}
+                    </p>
+                    <p class="text-sm text-gray-500 mt-3">
+                        (En la app real, aquí aparecería la tabla filtrada)
+                    </p>
+                </div>
+            `;
+        }
+    </script>
+</body>
+</html>
