@@ -89,10 +89,10 @@ export default function Solicitudes() {
   const [filtroIpress, setFiltroIpress] = useState('todas');
   const [filtroMacrorregion, setFiltroMacrorregion] = useState('todas');
   const [filtroEspecialidad, setFiltroEspecialidad] = useState('todas');
-  const [filtroEstado, setFiltroEstado] = useState('todos');
+  const [filtroEstado, setFiltroEstado] = useState('PENDIENTE_CITA'); // v1.66.5: Mostrar Pendientes de Citar por defecto
   const [filtroTipoCita, setFiltroTipoCita] = useState('todas');
   const [filtroAsignacion, setFiltroAsignacion] = useState('todos');  // ✅ v1.42.0: Filtro asignación (cards clickeables)
-  const [cardSeleccionado, setCardSeleccionado] = useState(null);     // ✅ v1.42.0: Rastrear card activo
+  const [cardSeleccionado, setCardSeleccionado] = useState('pendiente');     // ✅ v1.42.0: Rastrear card activo - Mostrar PENDIENTES por defecto
   const [selectedRows, setSelectedRows] = useState(new Set());
   const [currentPage, setCurrentPage] = useState(1);
 
@@ -666,6 +666,7 @@ export default function Solicitudes() {
               macroregion: solicitud.desc_macro || 'Sin asignar',
               bolsa: generarCodigoBolsa(solicitud.desc_tipo_bolsa),
               nombreBolsa: generarAliasBolsa(solicitud.desc_tipo_bolsa),
+              descTipoBolsa: solicitud.desc_tipo_bolsa, // ✅ v1.66.6: Guardar descripción completa para filtrado
               fechaCita: solicitud.fecha_asignacion ? new Date(solicitud.fecha_asignacion).toLocaleString('es-PE') : 'N/A',
               fechaAsignacion: solicitud.fecha_solicitud ? new Date(solicitud.fecha_solicitud).toLocaleString('es-PE') : 'N/A',
               gestoraAsignada: gestoraAsignadaNombre,
@@ -795,6 +796,7 @@ export default function Solicitudes() {
               macroregion: solicitud.desc_macro || 'Sin asignar',
               bolsa: generarCodigoBolsa(solicitud.desc_tipo_bolsa),
               nombreBolsa: generarAliasBolsa(solicitud.desc_tipo_bolsa),
+              descTipoBolsa: solicitud.desc_tipo_bolsa, // ✅ v1.66.6: Guardar descripción completa para filtrado
               fechaCita: solicitud.fecha_asignacion ? new Date(solicitud.fecha_asignacion).toLocaleString('es-PE') : 'N/A',
               fechaAsignacion: solicitud.fecha_solicitud ? new Date(solicitud.fecha_solicitud).toLocaleString('es-PE') : 'N/A',
               gestoraAsignada: gestoraAsignadaNombre,
@@ -1138,7 +1140,7 @@ export default function Solicitudes() {
       const matchSearch = !searchTerm || sol.dni.includes(searchTerm);
 
       // Si estamos contando esta opción, usa filterValue; si no, usa el filtro activo
-      const matchBolsa = filterKey === 'bolsa' ? sol.nombreBolsa === filterValue : (filtroBolsa === 'todas' ? true : sol.nombreBolsa === filtroBolsa);
+      const matchBolsa = filterKey === 'bolsa' ? sol.descTipoBolsa === filterValue : (filtroBolsa === 'todas' ? true : sol.descTipoBolsa === filtroBolsa); // ✅ v1.66.6: Usar descTipoBolsa para filtrado correcto
       const matchMacrorregion = filterKey === 'macro' ? sol.macroregion === filterValue : (filtroMacrorregion === 'todas' ? true : sol.macroregion === filtroMacrorregion);
       const matchRed = filterKey === 'red' ? sol.red === filterValue : (filtroRed === 'todas' ? true : sol.red === filtroRed);
       const matchIpress = filterKey === 'ipress' ? sol.ipress === filterValue : (filtroIpress === 'todas' ? true : sol.ipress === filtroIpress);
