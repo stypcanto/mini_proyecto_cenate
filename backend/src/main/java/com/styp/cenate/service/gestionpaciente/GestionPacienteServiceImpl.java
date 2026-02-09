@@ -550,8 +550,9 @@ public class GestionPacienteServiceImpl implements IGestionPacienteService {
         if ("Deserción".equalsIgnoreCase(condicion)) {
             consentimiento = false;
         } else if (consentimiento == null) {
-            // Si no hay consentimiento registrado y no es Deserción, asignar Sí
-            consentimiento = true;
+            // ✅ v1.64.1: Si no hay consentimiento registrado, asignar NO (false) por defecto
+            // El médico puede cambiarlo a SÍ durante la atención si obtiene el consentimiento
+            consentimiento = false;
         }
 
         return GestionPacienteDTO.builder()
@@ -631,11 +632,12 @@ public class GestionPacienteServiceImpl implements IGestionPacienteService {
                 log.warn("No se pudo obtener tipo de documento para médico {}", medico.getIdPers());
             }
 
+            // Construir nombre completo: apellido_paterno + nombre + apellido_materno
+            String nombreCompleto = buildFullName(medico.getApePaterPers(), medico.getNomPers(), medico.getApeMaterPers());
+
             return MedicoTeleurgenciasDTO.builder()
                 .idPersonal(medico.getIdPers())
-                .nombreCompleto(medico.getPerPers() != null ? medico.getPerPers() :
-                                (medico.getNomPers() != null ? medico.getNomPers() : "") + " " +
-                                (medico.getApePaterPers() != null ? medico.getApePaterPers() : ""))
+                .nombreCompleto(nombreCompleto)
                 .tipoDocumento(tipoDocumento)
                 .numeroDocumento(medico.getNumDocPers())
                 .username(medico.getNumDocPers())
@@ -647,6 +649,26 @@ public class GestionPacienteServiceImpl implements IGestionPacienteService {
                 .porcentajeDesercion(porcentajeDesercion)
                 .build();
         }).collect(Collectors.toList());
+    }
+
+    /**
+     * Helper: Construir nombre completo a partir de componentes
+     * Orden: apellido_paterno + nombre + apellido_materno
+     */
+    private String buildFullName(String apePater, String nombre, String apeMater) {
+        StringBuilder sb = new StringBuilder();
+        if (apePater != null && !apePater.trim().isEmpty()) {
+            sb.append(apePater.trim());
+        }
+        if (nombre != null && !nombre.trim().isEmpty()) {
+            if (sb.length() > 0) sb.append(" ");
+            sb.append(nombre.trim());
+        }
+        if (apeMater != null && !apeMater.trim().isEmpty()) {
+            if (sb.length() > 0) sb.append(" ");
+            sb.append(apeMater.trim());
+        }
+        return sb.toString();
     }
 
     /**

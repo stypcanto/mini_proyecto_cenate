@@ -519,8 +519,9 @@ export default function MisPacientes() {
 
   // ✅ v1.64.0: Renderizar consentimiento informado (EDITABLE en estado Pendiente)
   const renderConsentimientoInformado = (paciente) => {
-    // Si no es Bolsa 107
-    if (paciente.idBolsa !== 1) {
+    // ✅ v1.64.1: Si no es Bolsa 107 (pero no es NULL), mostrar "—"
+    // Si es NULL, tratarlo como Bolsa 107 y mostrar el valor
+    if (paciente.idBolsa !== null && paciente.idBolsa !== undefined && paciente.idBolsa !== 1) {
       return <span className="text-gray-400 text-xs">—</span>;
     }
 
@@ -567,17 +568,18 @@ export default function MisPacientes() {
           </button>
         );
       } else {
+        // ✅ v1.64.1: Por defecto cuando es NULL, mostrar "✗ No" clickeable para que médico pueda cambiar a "✓ Sí"
         return (
           <button
             onClick={() => {
               setPacienteEditando(paciente);
               setEditingField('consentimiento');
-              setEditValue('true');
+              setEditValue('false');
             }}
-            className="inline-block bg-green-100 text-green-700 px-2 py-1 rounded text-xs font-semibold cursor-pointer hover:bg-green-200 hover:shadow-md transition-all"
+            className="inline-block bg-red-100 text-red-700 px-2 py-1 rounded text-xs font-semibold cursor-pointer hover:bg-red-200 hover:shadow-md transition-all"
             title="Click para editar consentimiento"
           >
-            ✓ Sí
+            ✗ No
           </button>
         );
       }
@@ -597,9 +599,10 @@ export default function MisPacientes() {
         </span>
       );
     } else {
+      // ✅ v1.64.1: Por defecto cuando es NULL, mostrar "✗ No"
       return (
-        <span className="inline-block bg-green-100 text-green-700 px-2 py-1 rounded text-xs font-semibold">
-          ✓ Sí
+        <span className="inline-block bg-red-100 text-red-700 px-2 py-1 rounded text-xs font-semibold">
+          ✗ No
         </span>
       );
     }
