@@ -228,7 +228,7 @@ export const componentRegistry = {
   },
 
   '/roles/coordinador/teleurgencias/estadisticas': {
-    component: lazy(() => import('../pages/roles/coordinador/dashboard-medico/DashboardCoordinadorMedico')),
+    component: lazy(() => import('../pages/roles/coordinador/teleurgencias/EstadisticasTeleurgencias')),
     requiredAction: 'ver',
     requiredRoles: ['COORDINADOR_MEDICO_TELEURGENCIAS', 'ADMIN', 'SUPERADMIN'],
   },
