@@ -119,6 +119,10 @@ export default function MisPacientes() {
   const [ipressDisponibles, setIpressDisponibles] = useState([]);
   const [ordenarPor, setOrdenarPor] = useState('reciente');
 
+  // ============ v1.62.0: FILTRO DE FECHA DE ATENCIÓN ============
+  const [fechaAtencionSeleccionada, setFechaAtencionSeleccionada] = useState('');
+  const [fechasAtencionDisponibles, setFechasAtencionDisponibles] = useState([]);
+
   useEffect(() => {
     cargarPacientes();
     cargarEspecialidades();
@@ -575,6 +579,45 @@ export default function MisPacientes() {
     }
   };
 
+  // ✅ v1.62.0: Obtener fechas de atención únicas según estado filtrado
+  const obtenerFechasAtencion = () => {
+    let pacientesFiltrarados = pacientes;
+
+    // Aplicar filtro de estado si existe
+    if (filtroEstado) {
+      pacientesFiltrarados = pacientesFiltrarados.filter(p => p.condicion === filtroEstado);
+    }
+
+    // Obtener fechas únicas de atención
+    const fechas = [...new Set(
+      pacientesFiltrarados
+        .map(p => {
+          if (p.fechaAtencion) {
+            return p.fechaAtencion.split(' ')[0]; // Extraer solo YYYY-MM-DD
+          }
+          return null;
+        })
+        .filter(f => f !== null)
+    )].sort().reverse(); // Ordenar descendente (más recientes primero)
+
+    return fechas;
+  };
+
+  // Actualizar fechas disponibles cuando cambia el estado
+  useEffect(() => {
+    const fechas = obtenerFechasAtencion();
+    setFechasAtencionDisponibles(fechas);
+    setFechaAtencionSeleccionada(''); // Limpiar selección
+  }, [filtroEstado, pacientes]);
+
+  // ✅ v1.62.0: Filtrar pacientes por fecha de atención si está seleccionada
+  const pacientesFiltradosPorFecha = pacientesFiltrados.filter(p => {
+    if (!fechaAtencionSeleccionada) return true;
+    if (!p.fechaAtencion) return false;
+    const fechaPaciente = p.fechaAtencion.split(' ')[0];
+    return fechaPaciente === fechaAtencionSeleccionada;
+  });
+
   const toggleEnfermedad = (enfermedad) => {
     setEnfermedadesCronicas(prev =>
       prev.includes(enfermedad)
@@ -742,8 +785,8 @@ export default function MisPacientes() {
             </div>
           </div>
 
-          {/* FILA 2: IPRESS + Rango Fecha */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* FILA 2: IPRESS + Rango Fecha + Fecha Atención */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {/* NUEVO: Filtro IPRESS */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -788,6 +831,34 @@ export default function MisPacientes() {
                 <option value="ayer">Ayer</option>
                 <option value="7dias">Últimos 7 días</option>
                 <option value="personalizado">Personalizado...</option>
+              </select>
+            </div>
+
+            {/* ✅ v1.62.0: Selector de Fecha de Atención */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                <Calendar className="w-4 h-4 inline mr-2" />
+                Fecha de Atención
+              </label>
+              <select
+                value={fechaAtencionSeleccionada}
+                onChange={(e) => setFechaAtencionSeleccionada(e.target.value)}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0A5BA9]/50 focus:border-[#0A5BA9] transition-colors"
+              >
+                <option value="">Todas las fechas</option>
+                {fechasAtencionDisponibles.length > 0 ? (
+                  fechasAtencionDisponibles.map(fecha => (
+                    <option key={fecha} value={fecha}>
+                      {new Date(fecha + 'T00:00:00').toLocaleDateString('es-ES', {
+                        day: '2-digit',
+                        month: '2-digit',
+                        year: '2-digit'
+                      })}
+                    </option>
+                  ))
+                ) : (
+                  <option disabled>Sin fechas disponibles</option>
+                )}
               </select>
             </div>
           </div>
@@ -859,7 +930,7 @@ export default function MisPacientes() {
         </div>
 
         {/* Tabla de pacientes */}
-        {pacientesFiltrados.length === 0 ? (
+        {pacientesFiltradosPorFecha.length === 0 ? (
           <div className="bg-gradient-to-br from-blue-50 to-blue-100 border border-blue-200 shadow-sm rounded-lg p-12 text-center">
             <div className="p-4 bg-blue-200 rounded-full inline-block mb-4">
               <Calendar className="w-8 h-8 text-blue-600" strokeWidth={1.5} />
@@ -889,7 +960,7 @@ export default function MisPacientes() {
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {pacientesFiltrados.map((paciente, idx) => (
+                  {pacientesFiltradosPorFecha.map((paciente, idx) => (
                     <tr key={idx} className={`hover:bg-gray-50 transition-colors duration-150 ${paciente.condicion === 'Atendido' ? 'bg-emerald-50/30' : 'bg-white'} ${idx % 2 === 0 ? '' : 'bg-opacity-50'}`}>
                       {/* Paciente: Nombre en bold + DNI abajo en gris + Ojo para ver detalles */}
                       <td className="px-4 py-3">
