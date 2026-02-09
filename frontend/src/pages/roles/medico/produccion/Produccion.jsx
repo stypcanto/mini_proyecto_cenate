@@ -398,7 +398,10 @@ export default function Produccion() {
           {/* Filtros de Período */}
           <div className="flex gap-2 mb-4">
             <button
-              onClick={() => setFiltroActual('semana')}
+              onClick={() => {
+                setFiltroActual('semana');
+                setMostrarPeriodoCompleto(true);
+              }}
               className={`px-4 py-2 rounded-lg font-medium transition-all ${
                 filtroActual === 'semana'
                   ? 'bg-[#0A5BA9] text-white shadow-md'
@@ -408,7 +411,10 @@ export default function Produccion() {
               Esta Semana
             </button>
             <button
-              onClick={() => setFiltroActual('mes')}
+              onClick={() => {
+                setFiltroActual('mes');
+                setMostrarPeriodoCompleto(true);
+              }}
               className={`px-4 py-2 rounded-lg font-medium transition-all ${
                 filtroActual === 'mes'
                   ? 'bg-[#0A5BA9] text-white shadow-md'
@@ -418,7 +424,10 @@ export default function Produccion() {
               Este Mes
             </button>
             <button
-              onClick={() => setFiltroActual('año')}
+              onClick={() => {
+                setFiltroActual('año');
+                setMostrarPeriodoCompleto(true);
+              }}
               className={`px-4 py-2 rounded-lg font-medium transition-all ${
                 filtroActual === 'año'
                   ? 'bg-[#0A5BA9] text-white shadow-md'
