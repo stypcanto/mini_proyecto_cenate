@@ -99,7 +99,7 @@ export default function Produccion() {
           let estaEnRango = false;
 
           if (filtroActual === 'semana') {
-            // Esta semana: lunes a domingo
+            // Esta semana: mostrar solo días de esta semana
             const inicioSemana = new Date(hoy);
             inicioSemana.setDate(hoy.getDate() - hoy.getDay());
             const finSemana = new Date(inicioSemana);
@@ -110,9 +110,8 @@ export default function Produccion() {
             // Este mes
             estaEnRango = fecha.getMonth() === mesActual.getMonth() && fecha.getFullYear() === mesActual.getFullYear();
           } else if (filtroActual === 'año') {
-            // Este año (mostrar en el mes actual, pero considerando todo el año)
-            estaEnRango = fecha.getFullYear() === mesActual.getFullYear() &&
-                         fecha.getMonth() === mesActual.getMonth();
+            // ✅ v1.61.13: Este año - permitir navegar entre todos los meses del año
+            estaEnRango = fecha.getFullYear() === mesActual.getFullYear();
           }
 
           if (estaEnRango) {
@@ -514,7 +513,12 @@ export default function Produccion() {
                 <div className="flex items-center justify-between">
                   <button
                     onClick={mesAnterior}
-                    className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                    disabled={filtroActual === 'semana'}
+                    className={`p-2 rounded-lg transition-colors ${
+                      filtroActual === 'semana'
+                        ? 'opacity-30 cursor-not-allowed'
+                        : 'hover:bg-gray-100'
+                    }`}
                   >
                     <ChevronLeft className="w-5 h-5 text-gray-600" />
                   </button>
@@ -523,12 +527,17 @@ export default function Produccion() {
                       {mesActual.toLocaleString('es-PE', { month: 'long', year: 'numeric' })}
                     </h3>
                     <p className="text-xs text-gray-500 mt-1">
-                      {filtroActual === 'semana' ? '📅 Esta Semana' : filtroActual === 'mes' ? '📅 Este Mes' : '📅 Este Año'}
+                      {filtroActual === 'semana' ? '📅 Esta Semana (navegación deshabilitada)' : filtroActual === 'mes' ? '📅 Este Mes' : '📅 Este Año (navega meses)'}
                     </p>
                   </div>
                   <button
                     onClick={mesSiguiente}
-                    className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                    disabled={filtroActual === 'semana'}
+                    className={`p-2 rounded-lg transition-colors ${
+                      filtroActual === 'semana'
+                        ? 'opacity-30 cursor-not-allowed'
+                        : 'hover:bg-gray-100'
+                    }`}
                   >
                     <ChevronRight className="w-5 h-5 text-gray-600" />
                   </button>
