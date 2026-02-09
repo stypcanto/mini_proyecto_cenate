@@ -807,36 +807,35 @@ export default function MisPacientes() {
   };
 
   // ✅ v1.62.0: Obtener fechas de atención únicas según estado filtrado
+  // ✅ v1.65.1: Obtener fechas de atención filtradas por estado
   const obtenerFechasAtencion = () => {
-    let pacientesFiltrarados = pacientes;
+    let pacientesAFiltrar = pacientes;
 
-    // Aplicar filtro de estado si existe
+    // 1️⃣ Aplicar filtro de estado si existe
     if (filtroEstado) {
-      pacientesFiltrarados = pacientesFiltrarados.filter(p => p.condicion === filtroEstado);
+      pacientesAFiltrar = pacientesAFiltrar.filter(p => p.condicion === filtroEstado);
+      console.log(`✅ Filtrado por estado "${filtroEstado}": ${pacientesAFiltrar.length} pacientes`);
     }
 
-    // Obtener fechas únicas de atención
+    // 2️⃣ Obtener SOLO fechas de pacientes que tienen fechaAtencion
     const fechas = [...new Set(
-      pacientesFiltrarados
+      pacientesAFiltrar
+        .filter(p => p.fechaAtencion) // Solo pacientes con fecha de atención
         .map(p => {
-          if (p.fechaAtencion) {
-            // Extraer fecha en formato ISO: "2026-02-06T16:30:17.428Z"
-            // Retornar: "2026-02-06"
-            return p.fechaAtencion.split('T')[0];
-          }
-          return null;
+          // Extraer fecha en formato ISO: "2026-02-06T16:30:17.428Z" → "2026-02-06"
+          return p.fechaAtencion.split('T')[0];
         })
-        .filter(f => f !== null)
     )].sort().reverse(); // Ordenar descendente (más recientes primero)
 
+    console.log(`📅 Fechas de atención disponibles para estado "${filtroEstado || 'TODOS'}": ${fechas.length} fechas`, fechas);
     return fechas;
   };
 
-  // Actualizar fechas disponibles cuando cambia el estado
+  // ✅ v1.65.1: Actualizar fechas disponibles cuando cambia el estado o pacientes
   useEffect(() => {
     const fechas = obtenerFechasAtencion();
     setFechasAtencionDisponibles(fechas);
-    setFechaAtencionSeleccionada(''); // Limpiar selección
+    setFechaAtencionSeleccionada(''); // Limpiar selección de fecha
   }, [filtroEstado, pacientes]);
 
   // ✅ v1.62.0: Filtrar pacientes por fecha de atención si está seleccionada
@@ -1111,13 +1110,20 @@ export default function MisPacientes() {
               <label className="block text-xs font-semibold text-gray-700 mb-2 uppercase tracking-wide">
                 <Calendar className="w-4 h-4 inline mr-2 text-red-500" />
                 Atención
+                {filtroEstado && fechasAtencionDisponibles.length > 0 && (
+                  <span className="ml-2 text-xs font-normal text-red-600">
+                    ({fechasAtencionDisponibles.length} {filtroEstado})
+                  </span>
+                )}
               </label>
               <select
                 value={fechaAtencionSeleccionada}
                 onChange={(e) => setFechaAtencionSeleccionada(e.target.value)}
                 className="w-full px-4 py-3 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-red-400 focus:border-transparent transition-all shadow-sm hover:border-slate-400"
               >
-                <option value="">Todas</option>
+                <option value="">
+                  {filtroEstado ? `Todas (${filtroEstado})` : 'Todas'}
+                </option>
                 {fechasAtencionDisponibles.length > 0 ? (
                   fechasAtencionDisponibles.map(fechaISO => {
                     const [year, month, day] = fechaISO.split('-');
@@ -1129,7 +1135,9 @@ export default function MisPacientes() {
                     );
                   })
                 ) : (
-                  <option disabled>Sin fechas</option>
+                  <option disabled>
+                    {filtroEstado ? `Sin fechas de ${filtroEstado}` : 'Sin fechas'}
+                  </option>
                 )}
               </select>
             </div>
