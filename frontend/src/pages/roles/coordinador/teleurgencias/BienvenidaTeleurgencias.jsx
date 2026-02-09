@@ -140,47 +140,42 @@ export default function BienvenidaTeleurgencias() {
           </div>
         </div>
 
-        {/* SECCIÓN: Acciones Rápidas */}
-        <div className="mb-6">
+        {/* SECCIÓN: Acciones Rápidas - GRID EXPANDIDO */}
+        <div className="mb-6 min-h-[500px] flex flex-col">
           <h3 className="text-xl font-bold text-slate-900 mb-4 flex items-center gap-2">
             <span>⚡</span> Acciones Rápidas
           </h3>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-5">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 flex-1 mb-5">
             {acciones.map((accion) => {
               const Icon = accion.icono;
               return (
                 <button
                   key={accion.id}
                   onClick={() => navigate(accion.ruta)}
-                  className={`card-animate card-hover bg-gradient-to-br ${accion.gradient} rounded-xl p-6 shadow-lg text-left text-white overflow-hidden relative group`}
+                  className={`card-animate card-hover bg-gradient-to-br ${accion.gradient} rounded-2xl p-8 shadow-2xl text-left text-white overflow-hidden relative group flex flex-col justify-center items-start h-full min-h-[350px]`}
                 >
-                  {/* Efecto de luz */}
-                  <div className="absolute top-0 right-0 w-40 h-40 bg-white/10 rounded-full -mr-20 -mt-20 group-hover:scale-150 transition-transform duration-500"></div>
+                  {/* Efecto de luz - más grande */}
+                  <div className="absolute top-0 right-0 w-80 h-80 bg-white/10 rounded-full -mr-40 -mt-40 group-hover:scale-150 transition-transform duration-500"></div>
 
-                  <div className="relative z-10">
-                    <div className="card-icon-hover w-12 h-12 rounded-lg bg-white/20 flex items-center justify-center mb-4 group-hover:bg-white/40 transition-all duration-300">
-                      <Icon className="w-6 h-6 text-white" />
+                  <div className="relative z-10 w-full">
+                    <div className="card-icon-hover w-20 h-20 rounded-xl bg-white/20 flex items-center justify-center mb-6 group-hover:bg-white/40 transition-all duration-300">
+                      <Icon className="w-10 h-10 text-white" />
                     </div>
-                    <h4 className="text-lg font-bold text-white mb-2">{accion.titulo}</h4>
-                    <p className="text-sm text-white/90 group-hover:text-white transition-colors duration-300">
+                    <h4 className="text-3xl font-bold text-white mb-3">{accion.titulo}</h4>
+                    <p className="text-lg text-white/90 group-hover:text-white transition-colors duration-300 leading-relaxed">
                       {accion.descripcion}
                     </p>
+                  </div>
+
+                  {/* CTA dentro del card */}
+                  <div className="relative z-10 mt-8 inline-flex items-center gap-2 text-sm font-semibold group-hover:gap-3 transition-all duration-300">
+                    Acceder
+                    <ChevronRight className="w-5 h-5" />
                   </div>
                 </button>
               );
             })}
-          </div>
-
-          {/* Primary CTA */}
-          <div className="text-center">
-            <button
-              onClick={() => navigate('/roles/coordinador/teleurgencias')}
-              className="bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white font-bold py-3 px-6 rounded-lg shadow-md hover:shadow-lg transition inline-flex items-center gap-2 text-sm"
-            >
-              Ir al Dashboard
-              <ChevronRight className="w-4 h-4" />
-            </button>
           </div>
         </div>
 
