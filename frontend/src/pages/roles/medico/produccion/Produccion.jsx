@@ -33,8 +33,6 @@ import {
 import toast from 'react-hot-toast';
 import gestionPacientesService from '../../../../services/gestionPacientesService';
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip, LineChart, Line, XAxis, YAxis, CartesianGrid } from 'recharts';
-import { jsPDF } from 'jspdf';
-import * as XLSX from 'xlsx';
 
 export default function Produccion() {
   const [pacientes, setPacientes] = useState([]);
@@ -237,74 +235,86 @@ export default function Produccion() {
     return ultimos7;
   }, [pacientes]);
 
-  // ✅ v1.60.0: Funciones de exportación (memoizadas)
-  const exportarPDF = useCallback(() => {
-    const doc = new jsPDF();
-    const fecha = new Date().toLocaleDateString('es-PE');
+  // ✅ v1.60.0: Funciones de exportación (con importación dinámica)
+  const exportarPDF = useCallback(async () => {
+    try {
+      const { jsPDF } = await import('jspdf');
+      const doc = new jsPDF();
+      const fecha = new Date().toLocaleDateString('es-PE');
 
-    // Encabezado
-    doc.setFontSize(16);
-    doc.text('📊 Reporte de Productividad Médica', 20, 20);
-    doc.setFontSize(10);
-    doc.text(`Fecha: ${fecha}`, 20, 30);
-    doc.text(`Período: ${filtroActual.toUpperCase()}`, 20, 37);
+      // Encabezado
+      doc.setFontSize(16);
+      doc.text('📊 Reporte de Productividad Médica', 20, 20);
+      doc.setFontSize(10);
+      doc.text(`Fecha: ${fecha}`, 20, 30);
+      doc.text(`Período: ${filtroActual.toUpperCase()}`, 20, 37);
 
-    // Estadísticas
-    doc.setFontSize(12);
-    doc.text('Estadísticas Actuales:', 20, 50);
-    doc.setFontSize(10);
-    doc.text(`• Pacientes Atendidos: ${statsActual.total}`, 25, 60);
-    doc.text(`• Interconsultas: ${statsActual.interconsultas}`, 25, 67);
-    doc.text(`• Pacientes Crónicos: ${statsActual.cronicas}`, 25, 74);
+      // Estadísticas
+      doc.setFontSize(12);
+      doc.text('Estadísticas Actuales:', 20, 50);
+      doc.setFontSize(10);
+      doc.text(`• Pacientes Atendidos: ${statsActual.total}`, 25, 60);
+      doc.text(`• Interconsultas: ${statsActual.interconsultas}`, 25, 67);
+      doc.text(`• Pacientes Crónicos: ${statsActual.cronicas}`, 25, 74);
 
-    // Totales
-    doc.setFontSize(12);
-    doc.text('Totales (Histórico):', 20, 90);
-    doc.setFontSize(10);
-    doc.text(`• Total Atendidos: ${statsTotales.atendidos}`, 25, 100);
-    doc.text(`• Total Pendientes: ${statsTotales.pendientes}`, 25, 107);
-    doc.text(`• Total Deserciones: ${statsTotales.deserciones}`, 25, 114);
+      // Totales
+      doc.setFontSize(12);
+      doc.text('Totales (Histórico):', 20, 90);
+      doc.setFontSize(10);
+      doc.text(`• Total Atendidos: ${statsTotales.atendidos}`, 25, 100);
+      doc.text(`• Total Pendientes: ${statsTotales.pendientes}`, 25, 107);
+      doc.text(`• Total Deserciones: ${statsTotales.deserciones}`, 25, 114);
 
-    doc.save(`Productividad_${fecha.replace(/\//g, '-')}.pdf`);
-    toast.success('PDF descargado');
+      doc.save(`Productividad_${fecha.replace(/\//g, '-')}.pdf`);
+      toast.success('PDF descargado');
+    } catch (error) {
+      toast.error('Error al descargar PDF');
+      console.error(error);
+    }
   }, [statsActual, statsTotales, filtroActual]);
 
-  const exportarExcel = useCallback(() => {
-    const hoy = new Date().toLocaleDateString('es-PE');
+  const exportarExcel = useCallback(async () => {
+    try {
+      const XLSX = await import('xlsx');
+      const hoy = new Date().toLocaleDateString('es-PE');
 
-    // Crear workbook
-    const ws = XLSX.utils.aoa_to_sheet([
-      ['REPORTE DE PRODUCTIVIDAD MÉDICA', `Fecha: ${hoy}`],
-      [],
-      ['PERÍODO ACTUAL', `${filtroActual.toUpperCase()}`],
-      ['Pacientes Atendidos', statsActual.total],
-      ['Interconsultas', statsActual.interconsultas],
-      ['Pacientes Crónicos', statsActual.cronicas],
-      [],
-      ['PERÍODO ANTERIOR'],
-      ['Pacientes Atendidos', statsPrevio.total],
-      ['Interconsultas', statsPrevio.interconsultas],
-      [],
-      ['HISTÓRICO COMPLETO'],
-      ['Total Atendidos', statsTotales.atendidos],
-      ['Total Pendientes', statsTotales.pendientes],
-      ['Total Deserciones', statsTotales.deserciones],
-      ['Total Interconsultas', statsTotales.interconsultas],
-      ['Total Crónicos', statsTotales.cronicas],
-      [],
-      ['ÚLTIMOS 7 DÍAS']
-    ]);
+      // Crear workbook
+      const ws = XLSX.utils.aoa_to_sheet([
+        ['REPORTE DE PRODUCTIVIDAD MÉDICA', `Fecha: ${hoy}`],
+        [],
+        ['PERÍODO ACTUAL', `${filtroActual.toUpperCase()}`],
+        ['Pacientes Atendidos', statsActual.total],
+        ['Interconsultas', statsActual.interconsultas],
+        ['Pacientes Crónicos', statsActual.cronicas],
+        [],
+        ['PERÍODO ANTERIOR'],
+        ['Pacientes Atendidos', statsPrevio.total],
+        ['Interconsultas', statsPrevio.interconsultas],
+        [],
+        ['HISTÓRICO COMPLETO'],
+        ['Total Atendidos', statsTotales.atendidos],
+        ['Total Pendientes', statsTotales.pendientes],
+        ['Total Deserciones', statsTotales.deserciones],
+        ['Total Interconsultas', statsTotales.interconsultas],
+        ['Total Crónicos', statsTotales.cronicas],
+        [],
+        ['ÚLTIMOS 7 DÍAS']
+      ]);
 
-    // Agregar datos de tendencia
-    datosTendencia.forEach(dia => {
-      ws['A' + (ws['!ref'].split(':')[1][1] + 1)] = dia.fecha;
-      ws['B' + (ws['!ref'].split(':')[1][1])] = dia.pacientes;
-    });
+      // Agregar datos de tendencia
+      datosTendencia.forEach(dia => {
+        ws['A' + (ws['!ref'].split(':')[1][1] + 1)] = dia.fecha;
+        ws['B' + (ws['!ref'].split(':')[1][1])] = dia.pacientes;
+      });
 
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'Productividad');
-    XLSX.writeFile(wb, `Productividad_${hoy.replace(/\//g, '-')}.xlsx`);
-    toast.success('Excel descargado');
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'Productividad');
+      XLSX.writeFile(wb, `Productividad_${hoy.replace(/\//g, '-')}.xlsx`);
+      toast.success('Excel descargado');
+    } catch (error) {
+      toast.error('Error al descargar Excel');
+      console.error(error);
+    }
   }, [statsActual, statsPrevio, statsTotales, datosTendencia, filtroActual]);
 
   // Generar calendario
