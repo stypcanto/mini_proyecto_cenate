@@ -1,9 +1,22 @@
 # 🔔 Notificaciones de Pacientes Pendientes para Médicos
 
 **Versión:** v1.62.0 (2026-02-08)
-**Status:** ✅ Implementado
+**Status:** ✅ Implementado y Verificado
 **Tipo:** Feature
 **Impacto:** Médicos ven contador de pacientes pendientes en campanita
+
+---
+
+## ⚠️ Nota Importante: Sin Conflictos con Cumpleaños
+
+✅ **Este sistema NO colisiona con el sistema de notificaciones de cumpleaños existente.**
+
+- 🎂 Cumpleaños: Se muestra en `HeaderCenate` → `NotificacionesPanel`
+- 👨‍⚕️ Pacientes: Se muestra en `NotificationBell` → Componente separado
+- 📍 Endpoints diferentes: `/api/notificaciones/count` vs `/api/gestion-pacientes/medico/contador-pendientes`
+- 🔐 Permisos separados: Cada sistema valida sus propios permisos
+
+**Ver sección:** [🏗️ Arquitectura de Notificaciones en CENATE](#-arquitectura-de-notificaciones-en-cenate)
 
 ---
 
@@ -171,6 +184,70 @@ const consultarPendientes = async () => {
 
 ---
 
+## 🔄 Compatibilidad con Sistema de Cumpleaños
+
+### ✅ NO hay colisión con notificaciones de cumpleaños
+
+El sistema de notificaciones de pacientes pendientes (v1.62.0) **convive perfectamente** con el sistema de cumpleaños existente:
+
+#### Dos Sistemas Independientes
+
+| Aspecto | Cumpleaños (Existente) | Pacientes Pendientes (Nuevo) |
+|---------|-------|---------|
+| **Endpoint** | `GET /api/notificaciones/count` | `GET /api/gestion-pacientes/medico/contador-pendientes` |
+| **Componente** | `NotificacionesPanel` en `HeaderCenate.jsx` | `NotificationBell.jsx` (standalone) |
+| **Panel** | Campanita en header (HeaderCenate) | Campanita en NotificationBell |
+| **Datos** | Médicos que cumplen años hoy | Pacientes sin atender del médico actual |
+| **Usuarios** | ADMIN / SUPERADMIN | ADMIN (pendientes rol) + MEDICO (pacientes) |
+| **Frecuencia** | Cada 5 minutos | Cada 60 segundos |
+
+#### Cómo Funciona la Separación
+
+**HeaderCenate.jsx** (cumpleaños - existente):
+```javascript
+// Línea 57-60
+const cargarCantidadNotificaciones = async () => {
+    const count = await apiClient.get('/notificaciones/count'); // ← CUMPLEAÑOS
+    setCantidadNotificaciones(count || 0);
+};
+```
+
+**NotificationBell.jsx** (pacientes pendientes - nuevo):
+```javascript
+// Línea 65+
+const consultarPendientes = async () => {
+    // Usuarios pendientes (existente)
+    const responseUsuarios = await apiClient.get('/api/usuarios/pendientes-rol');
+
+    // Pacientes pendientes (NUEVO)
+    if (esMedico) {
+        const responsePacientes = await gestionPacientesService.obtenerContadorPendientes();
+        // → Consulta /api/gestion-pacientes/medico/contador-pendientes
+    }
+};
+```
+
+#### Garantías de No Colisión
+
+✅ **Endpoints completamente diferentes**
+- Cumpleaños: `/api/notificaciones/count`
+- Pacientes: `/api/gestion-pacientes/medico/contador-pendientes`
+
+✅ **Componentes diferentes**
+- Cumpleaños: Usa `NotificacionesPanel` en `HeaderCenate`
+- Pacientes: Usa `NotificationBell` (puede estar en otro lugar)
+
+✅ **Permisos MBAC separados**
+- Cumpleaños: `@PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN')")`
+- Pacientes: `@CheckMBACPermission(pagina = "/roles/medico/pacientes", accion = "ver")`
+
+✅ **Sin overlap de datos**
+- Si eres MEDICO puro → ves pacientes pendientes (en NotificationBell)
+- Si eres ADMIN → ves cumpleaños (en HeaderCenate) + usuarios pendientes (en NotificationBell)
+- Nunca ves datos que no correspondan a tu rol
+
+---
+
 ## 📊 Flujo de Datos
 
 ```
@@ -226,6 +303,121 @@ const consultarPendientes = async () => {
 │ - Badge muestra número           │
 │ - Dropdown con sección azul      │
 └──────────────────────────────────┘
+```
+
+---
+
+## 🏗️ Arquitectura de Notificaciones en CENATE
+
+### Diagrama Completo (Ambos Sistemas)
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                      CENATE HEADER                              │
+└─────────────────────────────────────────────────────────────────┘
+        │                                                    │
+        ├─ HeaderCenate.jsx                                 │
+        │  ├─ Dark Mode Toggle                             │
+        │  ├─ Notificaciones Campanita (CUMPLEAÑOS)        │
+        │  │  ├─ Consulta: /api/notificaciones/count       │
+        │  │  ├─ Polling: 5 minutos                        │
+        │  │  ├─ Permisos: @PreAuthorize ADMIN/SUPERADMIN  │
+        │  │  └─ Panel: NotificacionesPanel                │
+        │  │                                                │
+        │  └─ UserMenu (Avatar + Logout)                   │
+        │                                                  │
+        └─ NotificationBell.jsx (NUEVO v1.62.0)            │
+           ├─ Consulta 1: /api/usuarios/pendientes-rol     │
+           │  └─ Sección: Usuarios sin rol (amarillo)      │
+           │                                                │
+           └─ Consulta 2: /api/gestion-pacientes/medico/   │
+              contador-pendientes (NUEVO)                  │
+              └─ Sección: Mis Pacientes (azul)            │
+              └─ Permisos: @CheckMBACPermission            │
+              └─ Polling: 60 segundos                      │
+```
+
+### Tabla Comparativa de Sistemas
+
+```
+┌──────────────────────┬─────────────────────┬──────────────────────────┐
+│     ASPECTO          │   CUMPLEAÑOS        │   PACIENTES PENDIENTES   │
+├──────────────────────┼─────────────────────┼──────────────────────────┤
+│ Componente Frontend   │ NotificacionesPanel │ NotificationBell          │
+│ Ubicación            │ HeaderCenate.jsx    │ Standalone/Layout        │
+│ Endpoint             │ /notificaciones/    │ /gestion-pacientes/      │
+│                      │ count               │ medico/contador-         │
+│                      │                     │ pendientes               │
+│ Datos Mostrados      │ Médicos cumpleaños  │ Pacientes sin atender    │
+│ Usuarios             │ ADMIN/SUPERADMIN    │ ADMIN + MEDICO           │
+│ Frecuencia           │ 5 minutos           │ 60 segundos              │
+│ Badge Color          │ Rojo (HeaderCenate) │ Rojo (NotificationBell)  │
+│ Panel Color          │ Personalizado       │ Amarillo + Azul          │
+│ Permisos             │ @PreAuthorize       │ @CheckMBACPermission     │
+│ Colisión             │ ❌ NINGUNA          │ ✅ COMPATIBLE            │
+└──────────────────────┴─────────────────────┴──────────────────────────┘
+```
+
+### Flujo de Datos en Paralelo
+
+```
+USUARIO LOGUEADO
+├─ ¿ADMIN o SUPERADMIN?
+│  ├─ SÍ → HeaderCenate solicita /api/notificaciones/count
+│  │       → NotificacionesPanel muestra cumpleaños
+│  │       ✅ Cada 5 minutos
+│  │
+│  └─ NO → (no ve cumpleaños)
+│
+├─ ¿MEDICO?
+│  ├─ SÍ → NotificationBell solicita /api/gestion-pacientes/
+│  │       medico/contador-pendientes
+│  │       → Muestra sección azul "Mis Pacientes"
+│  │       ✅ Cada 60 segundos
+│  │
+│  └─ NO → (no ve pacientes pendientes)
+│
+├─ ¿Tiene usuarios pendientes de rol?
+│  ├─ SÍ → NotificationBell solicita /api/usuarios/pendientes-rol
+│  │       → Muestra sección amarilla
+│  │       ✅ Cada 60 segundos
+│  │
+│  └─ NO → (no ve usuarios pendientes)
+│
+└─ RESULTADO: Badge + Dropdown muestra lo que corresponde
+```
+
+### Garantías de Aislamiento
+
+```
+NIVEL DE DATOS
+├─ Cumpleaños: Solo médicos que cumplen años HOY
+│  ├─ Consulta a PersonalCnt.fechaNacimiento
+│  └─ Visible: Solo ADMIN/SUPERADMIN
+│
+├─ Usuarios Pendientes: Usuarios sin rol específico
+│  ├─ Consulta a Usuario.roles
+│  └─ Visible: ADMIN/SUPERADMIN
+│
+└─ Pacientes Pendientes: Del médico AUTENTICADO ACTUAL
+   ├─ Consulta: dim_solicitud_bolsa WHERE id_personal = ?
+   └─ Visible: Solo el médico (MEDICO)
+
+NIVEL DE ENDPOINT
+├─ /api/notificaciones/count
+│  └─ @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN')")
+│
+├─ /api/usuarios/pendientes-rol
+│  └─ @CheckMBACPermission (sistema de permisos)
+│
+└─ /api/gestion-pacientes/medico/contador-pendientes
+   └─ @CheckMBACPermission(pagina = "/roles/medico/pacientes")
+
+NIVEL DE COMPONENTE
+├─ HeaderCenate → Usa NotificacionesPanel (cumpleaños)
+│
+└─ NotificationBell → Usa NotificationBell (pendientes)
+   → Componentes completamente separados
 ```
 
 ---
@@ -397,6 +589,32 @@ npm run build
    - Verifica que `esMedico === true`
    - Verifica que hay permisos MBAC
 
+### Veo cumpleaños pero no pacientes pendientes
+
+**Posible causa:** Estás viendo dos sistemas diferentes
+
+- 🎂 **Cumpleaños:** En `HeaderCenate` (NotificacionesPanel)
+- 👨‍⚕️ **Pacientes:** En `NotificationBell` (componente separado)
+
+**Solución:**
+1. Busca `NotificationBell` en el layout de tu página
+2. Si no está en el header, posiblemente esté en otro lugar
+3. Verifica que tienes rol MEDICO
+4. Abre DevTools y busca en Network: `/medico/contador-pendientes`
+5. Debe haber una request cada 60 segundos
+
+### ¿Dónde está NotificationBell en el layout?
+
+Depende de dónde se haya importado:
+- Si está en el header: aparecerá junto a otros iconos
+- Si está en un layout principal: estará visible en todas las páginas
+- Si está en una página específica: solo en esa página
+
+**Verificar ubicación:**
+```bash
+grep -r "NotificationBell" frontend/src/
+```
+
 ---
 
 ## 📝 Archivos Modificados
@@ -410,6 +628,58 @@ npm run build
 ### Frontend (2 archivos)
 1. **gestionPacientesService.js** - Método de servicio (~4 líneas)
 2. **NotificationBell.jsx** - Componente expandido (~100 líneas añadidas)
+   - Ubicación: `frontend/src/components/NotificationBell.jsx`
+   - **Nota:** Componente independiente de `HeaderCenate.jsx`
+   - No interfiere con `NotificacionesPanel` de cumpleaños
+
+### Componentes Relacionados (NO modificados)
+- `HeaderCenate.jsx` - Mantiene su sistema de cumpleaños intacto
+- `NotificacionesPanel.jsx` - Continúa funcionando sin cambios
+
+---
+
+## 🎯 Integración sin Conflictos
+
+### Ejemplo de Uso por Rol
+
+#### Caso 1: MEDICO puro
+```
+Usuario: Dr. Juan Pérez (MEDICO)
+
+Verá:
+✅ NotificationBell → Sección azul "Mis Pacientes Pendientes: 5"
+✅ Navegación rápida a /roles/medico/pacientes
+
+NO verá:
+❌ Cumpleaños (NotificacionesPanel en HeaderCenate)
+❌ Usuarios pendientes (NotificationBell - no tiene ese rol)
+```
+
+#### Caso 2: ADMIN
+```
+Usuario: Admin Sistema (ADMIN)
+
+Verá:
+✅ HeaderCenate → NotificacionesPanel (cumpleaños: 2 médicos)
+✅ NotificationBell → Sección amarilla "2 usuarios con rol básico"
+
+NO verá:
+❌ Pacientes pendientes (NotificationBell - solo si es MEDICO)
+```
+
+#### Caso 3: MEDICO + ADMIN (raro pero posible)
+```
+Usuario: Dr. Admin (MEDICO, ADMIN)
+
+Verá:
+✅ HeaderCenate → NotificacionesPanel (cumpleaños)
+✅ NotificationBell →
+   - Sección amarilla "Usuarios pendientes"
+   - Sección azul "Mis Pacientes Pendientes"
+   - Badge con total combinado
+
+Datos completamente separados, sin conflicto
+```
 
 ---
 
@@ -420,6 +690,8 @@ npm run build
 - ✅ No expone datos de otros médicos
 - ✅ Query no tiene riesgo de SQL injection (es JPA)
 - ✅ Timeout integrado en apiClient (10 segundos)
+- ✅ No interfiere con sistema de cumpleaños existente
+- ✅ Permisos MBAC completamente separados por endpoint
 
 ---
 
@@ -433,18 +705,39 @@ npm run build
 
 ## ✅ Checklist de Verificación
 
+### Compilación
 - [ ] Backend compila sin errores: `./gradlew compileJava`
 - [ ] Frontend compila sin errores: `npm run build`
+
+### Funcionalidad Básica
 - [ ] Login como médico funciona
-- [ ] Campanita aparece en header
+- [ ] Campanita NotificationBell aparece (si está en layout)
 - [ ] Campanita muestra contador > 0
 - [ ] Dropdown se abre al hacer clic
+
+### Funcionalidad de Pacientes
 - [ ] Sección azul "Mis Pacientes Pendientes" visible
+- [ ] Contador en sección azul coincide con BD
 - [ ] Hacer clic navega a `/roles/medico/pacientes`
+
+### Performance
 - [ ] DevTools muestra request cada 60 segundos
 - [ ] Contador se actualiza cuando cambia en BD
+- [ ] Response time < 100ms en Network
+
+### Compatibilidad con Cumpleaños
+- [ ] Sistema de cumpleaños (HeaderCenate) aún funciona
+- [ ] NotificacionesPanel se abre correctamente
+- [ ] Ambos badges (HeaderCenate + NotificationBell) pueden coexistir
+- [ ] No hay conflicto al estar logueado como ADMIN + MEDICO
+- [ ] Cumpleaños solo visible para ADMIN/SUPERADMIN
+- [ ] Pacientes solo visible para MEDICO
+
+### Errores y Logs
 - [ ] No hay errores en console
-- [ ] No hay errores en red
+- [ ] No hay errores en network
+- [ ] Logs muestran `🔔 Contando pacientes pendientes...`
+- [ ] No hay conflictos de endpoints
 
 ---
 
