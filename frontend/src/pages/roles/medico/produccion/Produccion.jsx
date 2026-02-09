@@ -456,17 +456,10 @@ export default function Produccion() {
               <p className="text-sm font-semibold text-emerald-700 uppercase tracking-wider">Atendidos ({filtroActual})</p>
               <CheckCircle2 className="w-5 h-5 text-emerald-600" />
             </div>
-            <p className="text-4xl font-bold text-emerald-900">{statsActual.total}</p>
-            <div className="flex items-center gap-2 mt-3">
-              {calcularComparativo(statsActual.total, statsPrevio.total) >= 0 ? (
-                <TrendingUp className="w-4 h-4 text-emerald-600" />
-              ) : (
-                <TrendingDown className="w-4 h-4 text-red-600" />
-              )}
-              <span className={`text-sm font-semibold ${calcularComparativo(statsActual.total, statsPrevio.total) >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
-                {calcularComparativo(statsActual.total, statsPrevio.total) >= 0 ? '+' : ''}{calcularComparativo(statsActual.total, statsPrevio.total)}% vs anterior
-              </span>
-            </div>
+            <p className="text-4xl font-bold text-emerald-900">{statsTotales.atendidos}</p>
+            <p className="text-xs text-emerald-700 mt-3">
+              Total histórico
+            </p>
           </div>
 
           {/* Pendientes */}
