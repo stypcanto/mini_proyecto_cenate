@@ -483,22 +483,6 @@ export default function Produccion() {
           </div>
         </div>
 
-        {/* ✅ v1.60.0: GRÁFICO DE TENDENCIA */}
-        <div className="bg-white border border-gray-200 shadow-sm rounded-lg p-6 mb-8">
-          <h2 className="text-lg font-bold text-gray-900 mb-6">Tendencia - Últimos 7 Días</h2>
-          <ResponsiveContainer width="100%" height={300}>
-            <LineChart data={datosTendencia}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="fecha" />
-              <YAxis />
-              <Tooltip />
-              <Legend />
-              <Line type="monotone" dataKey="pacientes" stroke="#0A5BA9" strokeWidth={2} name="Pacientes Atendidos" />
-              <Line type="monotone" dataKey="interconsultas" stroke="#a855f7" strokeWidth={2} name="Interconsultas" />
-            </LineChart>
-          </ResponsiveContainer>
-        </div>
-
         {/* ✅ v1.61.2: CALENDARIO INTERACTIVO DEBAJO DE CARDS PRINCIPALES */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
           {/* Calendario */}
@@ -663,6 +647,22 @@ export default function Produccion() {
               )}
             </div>
           </div>
+        </div>
+
+        {/* ✅ v1.60.0: GRÁFICO DE TENDENCIA */}
+        <div className="bg-white border border-gray-200 shadow-sm rounded-lg p-6 mb-8">
+          <h2 className="text-lg font-bold text-gray-900 mb-6">Tendencia - Últimos 7 Días</h2>
+          <ResponsiveContainer width="100%" height={300}>
+            <LineChart data={datosTendencia}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="fecha" />
+              <YAxis />
+              <Tooltip />
+              <Legend />
+              <Line type="monotone" dataKey="pacientes" stroke="#0A5BA9" strokeWidth={2} name="Pacientes Atendidos" />
+              <Line type="monotone" dataKey="interconsultas" stroke="#a855f7" strokeWidth={2} name="Interconsultas" />
+            </LineChart>
+          </ResponsiveContainer>
         </div>
 
         {/* SECCIÓN DE ANÁLISIS DE DESERCIONES Y ESTADÍSTICAS */}
