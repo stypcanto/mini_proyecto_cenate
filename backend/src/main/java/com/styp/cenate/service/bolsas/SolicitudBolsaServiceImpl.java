@@ -552,20 +552,59 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
             java.time.OffsetDateTime fechaAsignacion = row.length > 30 ? convertToOffsetDateTime(row[30]) : null; // NEW v2.4.0 (ajustado a 30)
             java.time.OffsetDateTime fechaCambioEstado = row.length > 31 ? convertToOffsetDateTime(row[31]) : null; // NEW v3.3.1 (ajustado a 31)
 
+            // ✅ v1.67.0 - Extraer datos de contacto y enriquecerlos desde tabla de asegurados si es necesario
+            String pacienteTelefono = (String) row[10];
+            String pacienteTelefonoAlterno = (String) row[11];
+            String pacienteEmail = (String) row[12];
+            String pacienteDni = (String) row[4];
+
+            // Si falta teléfono o correo, buscar en tabla de asegurados por DNI
+            boolean necesitaEnriquecimiento = (isBlank(pacienteTelefono) || isBlank(pacienteTelefonoAlterno) || isBlank(pacienteEmail)) && !isBlank(pacienteDni);
+            if (necesitaEnriquecimiento) {
+                log.info("🔍 v1.67.0 - Necesita enriquecimiento DNI: {} | Tel: [{}] | Email: [{}]", pacienteDni, pacienteTelefono, pacienteEmail);
+                try {
+                    Optional<Asegurado> aseguradoOpt = aseguradoRepository.findByDocPaciente(pacienteDni);
+                    if (aseguradoOpt.isPresent()) {
+                        Asegurado asegurado = aseguradoOpt.get();
+                        log.info("✅ v1.67.0 - Enriqueciendo contacto para DNI {} desde tabla de asegurados", pacienteDni);
+
+                        // Si no hay teléfono principal, usar celular del asegurado
+                        if (isBlank(pacienteTelefono) && !isBlank(asegurado.getTelCelular())) {
+                            log.debug("  📱 Teléfono principal: {} → {}", pacienteTelefono, asegurado.getTelCelular());
+                            pacienteTelefono = asegurado.getTelCelular();
+                        }
+                        // Si no hay teléfono alterno, usar teléfono fijo del asegurado
+                        if (isBlank(pacienteTelefonoAlterno) && !isBlank(asegurado.getTelFijo())) {
+                            log.debug("  ☎️  Teléfono alterno: {} → {}", pacienteTelefonoAlterno, asegurado.getTelFijo());
+                            pacienteTelefonoAlterno = asegurado.getTelFijo();
+                        }
+                        // Si no hay correo, usar correo del asegurado
+                        if (isBlank(pacienteEmail) && !isBlank(asegurado.getCorreoElectronico())) {
+                            log.debug("  📧 Correo: {} → {}", pacienteEmail, asegurado.getCorreoElectronico());
+                            pacienteEmail = asegurado.getCorreoElectronico();
+                        }
+                    } else {
+                        log.debug("⚠️ DNI {} no encontrado en tabla de asegurados", pacienteDni);
+                    }
+                } catch (Exception e) {
+                    log.error("❌ Error enriqueciendo contacto para DNI {}: {}", pacienteDni, e.getMessage());
+                }
+            }
+
             return SolicitudBolsaDTO.builder()
                     .idSolicitud(toLongSafe("id_solicitud", row[0]))
                     .numeroSolicitud((String) row[1])
                     .pacienteId((String) row[2])
                     .pacienteNombre((String) row[3])
-                    .pacienteDni((String) row[4])
+                    .pacienteDni(pacienteDni)
                     .especialidad((String) row[5])
                     .fechaPreferidaNoAtendida(fechaPreferida)
                     .tipoDocumento((String) row[7])
                     .fechaNacimiento(fechaNacimiento)
                     .pacienteSexo((String) row[9])
-                    .pacienteTelefono((String) row[10])
-                    .pacienteTelefonoAlterno((String) row[11])
-                    .pacienteEmail((String) row[12])
+                    .pacienteTelefono(pacienteTelefono)
+                    .pacienteTelefonoAlterno(pacienteTelefonoAlterno)
+                    .pacienteEmail(pacienteEmail)
                     .pacienteEdad(edad)
                     .codigoIpressAdscripcion((String) row[13])
                     .tipoCita((String) row[14])
@@ -662,6 +701,13 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
             log.error("❌ Error convirtiendo campo '{}' a Long. Tipo: {}, Valor: {}, Error: {}", fieldName, value.getClass().getSimpleName(), value, e.getMessage());
             throw new RuntimeException("Error en campo " + fieldName + ": " + e.getMessage(), e);
         }
+    }
+
+    /**
+     * ✅ v1.67.0 - Verifica si un string es null o está en blanco
+     */
+    private boolean isBlank(String value) {
+        return value == null || value.isBlank();
     }
 
     /**

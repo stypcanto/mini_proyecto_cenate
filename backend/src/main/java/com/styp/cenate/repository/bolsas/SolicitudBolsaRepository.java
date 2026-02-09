@@ -113,7 +113,9 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
         LEFT JOIN dim_red dr ON di.id_red = dr.id_red
         LEFT JOIN dim_macroregion dm ON dr.id_macro = dm.id_macro
         WHERE sb.activo = true
-        ORDER BY CASE WHEN UPPER(COALESCE(deg.cod_estado_cita, 'PENDIENTE_CITA')) = 'PENDIENTE_CITA' THEN 0 WHEN UPPER(COALESCE(deg.cod_estado_cita, 'PENDIENTE_CITA')) = 'CITADO' THEN 1 ELSE 2 END, sb.fecha_solicitud DESC
+        ORDER BY CASE WHEN COALESCE(deg.cod_estado_cita, 'PENDIENTE_CITA') = 'PENDIENTE_CITA' THEN 0
+                      WHEN COALESCE(deg.cod_estado_cita, 'PENDIENTE_CITA') = 'CITADO' THEN 1
+                      ELSE 2 END, sb.fecha_solicitud DESC
         """, nativeQuery = true)
     List<Object[]> findAllWithBolsaDescription();
 
@@ -148,7 +150,9 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
         LEFT JOIN dim_usuarios u ON sb.usuario_cambio_estado_id = u.id_user
         LEFT JOIN dim_personal_cnt pc ON u.id_user = pc.id_usuario
         WHERE sb.activo = true
-        ORDER BY CASE WHEN UPPER(COALESCE(deg.cod_estado_cita, 'PENDIENTE_CITA')) = 'PENDIENTE_CITA' THEN 0 WHEN UPPER(COALESCE(deg.cod_estado_cita, 'PENDIENTE_CITA')) = 'CITADO' THEN 1 ELSE 2 END, sb.fecha_solicitud DESC
+        ORDER BY CASE WHEN COALESCE(deg.cod_estado_cita, 'PENDIENTE_CITA') = 'PENDIENTE_CITA' THEN 0
+                      WHEN COALESCE(deg.cod_estado_cita, 'PENDIENTE_CITA') = 'CITADO' THEN 1
+                      ELSE 2 END, sb.fecha_solicitud DESC
         LIMIT :#{#pageable.pageSize} OFFSET :#{#pageable.offset}
         """, nativeQuery = true)
     List<Object[]> findAllWithBolsaDescriptionPaginado(org.springframework.data.domain.Pageable pageable);
@@ -208,7 +212,9 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
                ELSE 1=0
                END)
           AND (:busqueda IS NULL OR COALESCE(sb.paciente_dni, '') LIKE CONCAT('%', :busqueda, '%'))
-        ORDER BY CASE WHEN UPPER(COALESCE(deg.cod_estado_cita, 'PENDIENTE_CITA')) = 'PENDIENTE_CITA' THEN 0 WHEN UPPER(COALESCE(deg.cod_estado_cita, 'PENDIENTE_CITA')) = 'CITADO' THEN 1 ELSE 2 END, sb.fecha_solicitud DESC
+        ORDER BY CASE WHEN COALESCE(deg.cod_estado_cita, 'PENDIENTE_CITA') = 'PENDIENTE_CITA' THEN 0
+                      WHEN COALESCE(deg.cod_estado_cita, 'PENDIENTE_CITA') = 'CITADO' THEN 1
+                      ELSE 2 END, sb.fecha_solicitud DESC
         LIMIT :#{#pageable.pageSize} OFFSET :#{#pageable.offset}
         """, nativeQuery = true)
     List<Object[]> findAllWithFiltersAndPagination(
