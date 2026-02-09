@@ -24,17 +24,26 @@ import {
   CheckCircle2,
   XCircle,
   Activity,
-  BarChart3
+  BarChart3,
+  Download,
+  FileDown,
+  TrendingDown,
+  Filter
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import gestionPacientesService from '../../../../services/gestionPacientesService';
-import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
+import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip, LineChart, Line, XAxis, YAxis, CartesianGrid } from 'recharts';
+import jsPDF from 'jspdf';
+import * as XLSX from 'xlsx';
 
 export default function Produccion() {
   const [pacientes, setPacientes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [mesActual, setMesActual] = useState(new Date());
   const [diaSeleccionado, setDiaSeleccionado] = useState(new Date());
+
+  // ✅ v1.60.0: Filtros de período
+  const [filtroActual, setFiltroActual] = useState('mes'); // 'semana', 'mes', 'año'
 
   useEffect(() => {
     cargarDatos();
@@ -139,6 +148,162 @@ export default function Produccion() {
 
   const getColorMotivo = (index) => COLORS[index % COLORS.length];
 
+  // ✅ v1.60.0: Funciones para comparativos y tendencias
+  const getDateRange = (tipo) => {
+    const hoy = new Date();
+    const inicio = new Date();
+
+    if (tipo === 'semana') {
+      inicio.setDate(hoy.getDate() - hoy.getDay());
+    } else if (tipo === 'mes') {
+      inicio.setDate(1);
+    } else if (tipo === 'año') {
+      inicio.setMonth(0);
+      inicio.setDate(1);
+    }
+
+    return { inicio, fin: hoy };
+  };
+
+  const getPeriodoAnterior = (tipo) => {
+    const { inicio } = getDateRange(tipo);
+    const inicioPrevio = new Date(inicio);
+
+    if (tipo === 'semana') {
+      inicioPrevio.setDate(inicioPrevio.getDate() - 7);
+    } else if (tipo === 'mes') {
+      inicioPrevio.setMonth(inicioPrevio.getMonth() - 1);
+    } else if (tipo === 'año') {
+      inicioPrevio.setFullYear(inicioPrevio.getFullYear() - 1);
+    }
+
+    return { inicio: inicioPrevio, fin: new Date(inicio) };
+  };
+
+  const getPacientesEnRango = (pacientes, inicio, fin) => {
+    return pacientes.filter(p => {
+      if (!p.fechaAtencion || p.condicion !== 'Atendido') return false;
+      const fecha = new Date(p.fechaAtencion);
+      return fecha >= inicio && fecha <= fin;
+    });
+  };
+
+  // Estadísticas del período actual
+  const { inicio: inicioActual, fin: finActual } = getDateRange(filtroActual);
+  const pacientesActual = getPacientesEnRango(pacientes, inicioActual, finActual);
+  const statsActual = {
+    total: pacientesActual.length,
+    interconsultas: pacientesActual.filter(p => p.tieneInterconsulta).length,
+    cronicas: pacientesActual.filter(p => p.esCronico).length,
+  };
+
+  // Estadísticas del período anterior
+  const { inicio: inicioPrevio, fin: finPrevio } = getPeriodoAnterior(filtroActual);
+  const pacientesPrevio = getPacientesEnRango(pacientes, inicioPrevio, finPrevio);
+  const statsPrevio = {
+    total: pacientesPrevio.length,
+    interconsultas: pacientesPrevio.filter(p => p.tieneInterconsulta).length,
+  };
+
+  // Calcular comparativos (%)
+  const calcularComparativo = (actual, anterior) => {
+    if (anterior === 0) return actual > 0 ? 100 : 0;
+    return ((actual - anterior) / anterior * 100).toFixed(1);
+  };
+
+  // Datos para gráfico de tendencia (últimos 7 días)
+  const getDatosTendencia = () => {
+    const ultimos7 = [];
+    for (let i = 6; i >= 0; i--) {
+      const fecha = new Date();
+      fecha.setDate(fecha.getDate() - i);
+      const diaPacientes = pacientes.filter(p => {
+        if (!p.fechaAtencion || p.condicion !== 'Atendido') return false;
+        const fechaPaciente = new Date(p.fechaAtencion);
+        return fechaPaciente.toDateString() === fecha.toDateString();
+      });
+
+      ultimos7.push({
+        fecha: fecha.toLocaleDateString('es-PE', { weekday: 'short', day: 'numeric' }),
+        pacientes: diaPacientes.length,
+        interconsultas: diaPacientes.filter(p => p.tieneInterconsulta).length
+      });
+    }
+    return ultimos7;
+  };
+
+  const datosTendencia = getDatosTendencia();
+
+  // ✅ v1.60.0: Funciones de exportación
+  const exportarPDF = () => {
+    const doc = new jsPDF();
+    const fecha = new Date().toLocaleDateString('es-PE');
+
+    // Encabezado
+    doc.setFontSize(16);
+    doc.text('📊 Reporte de Productividad Médica', 20, 20);
+    doc.setFontSize(10);
+    doc.text(`Fecha: ${fecha}`, 20, 30);
+    doc.text(`Período: ${filtroActual.toUpperCase()}`, 20, 37);
+
+    // Estadísticas
+    doc.setFontSize(12);
+    doc.text('Estadísticas Actuales:', 20, 50);
+    doc.setFontSize(10);
+    doc.text(`• Pacientes Atendidos: ${statsActual.total}`, 25, 60);
+    doc.text(`• Interconsultas: ${statsActual.interconsultas}`, 25, 67);
+    doc.text(`• Pacientes Crónicos: ${statsActual.cronicas}`, 25, 74);
+
+    // Totales
+    doc.setFontSize(12);
+    doc.text('Totales (Histórico):', 20, 90);
+    doc.setFontSize(10);
+    doc.text(`• Total Atendidos: ${statsTotales.atendidos}`, 25, 100);
+    doc.text(`• Total Pendientes: ${statsTotales.pendientes}`, 25, 107);
+    doc.text(`• Total Deserciones: ${statsTotales.deserciones}`, 25, 114);
+
+    doc.save(`Productividad_${fecha.replace(/\//g, '-')}.pdf`);
+    toast.success('PDF descargado');
+  };
+
+  const exportarExcel = () => {
+    const hoy = new Date().toLocaleDateString('es-PE');
+
+    // Crear workbook
+    const ws = XLSX.utils.aoa_to_sheet([
+      ['REPORTE DE PRODUCTIVIDAD MÉDICA', `Fecha: ${hoy}`],
+      [],
+      ['PERÍODO ACTUAL', `${filtroActual.toUpperCase()}`],
+      ['Pacientes Atendidos', statsActual.total],
+      ['Interconsultas', statsActual.interconsultas],
+      ['Pacientes Crónicos', statsActual.cronicas],
+      [],
+      ['PERÍODO ANTERIOR'],
+      ['Pacientes Atendidos', statsPrevio.total],
+      ['Interconsultas', statsPrevio.interconsultas],
+      [],
+      ['HISTÓRICO COMPLETO'],
+      ['Total Atendidos', statsTotales.atendidos],
+      ['Total Pendientes', statsTotales.pendientes],
+      ['Total Deserciones', statsTotales.deserciones],
+      ['Total Interconsultas', statsTotales.interconsultas],
+      ['Total Crónicos', statsTotales.cronicas],
+      [],
+      ['ÚLTIMOS 7 DÍAS']
+    ]);
+
+    // Agregar datos de tendencia
+    datosTendencia.forEach(dia => {
+      ws['A' + (ws['!ref'].split(':')[1][1] + 1)] = dia.fecha;
+      ws['B' + (ws['!ref'].split(':')[1][1])] = dia.pacientes;
+    });
+
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Productividad');
+    XLSX.writeFile(wb, `Productividad_${hoy.replace(/\//g, '-')}.xlsx`);
+    toast.success('Excel descargado');
+  };
+
   // Generar calendario
   const primerDiaDelMes = new Date(mesActual.getFullYear(), mesActual.getMonth(), 1);
   const ultimoDiaDelMes = new Date(mesActual.getFullYear(), mesActual.getMonth() + 1, 0);
@@ -173,56 +338,128 @@ export default function Produccion() {
   return (
     <div className="min-h-screen bg-gray-50 p-6">
       <div className="max-w-7xl mx-auto">
-        {/* Header */}
+        {/* Header + Filtros */}
         <div className="mb-8">
-          <div className="flex items-center gap-3 mb-2">
-            <BarChart3 className="w-8 h-8 text-[#0A5BA9]" />
-            <h1 className="text-3xl font-bold text-gray-900">📊 Mi Productividad</h1>
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-3">
+              <BarChart3 className="w-8 h-8 text-[#0A5BA9]" />
+              <h1 className="text-3xl font-bold text-gray-900">📊 Mi Productividad</h1>
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={exportarPDF}
+                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors flex items-center gap-2 text-sm font-medium"
+              >
+                <FileDown className="w-4 h-4" />
+                PDF
+              </button>
+              <button
+                onClick={exportarExcel}
+                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2 text-sm font-medium"
+              >
+                <Download className="w-4 h-4" />
+                Excel
+              </button>
+            </div>
           </div>
+
+          {/* Filtros de Período */}
+          <div className="flex gap-2 mb-4">
+            <button
+              onClick={() => setFiltroActual('semana')}
+              className={`px-4 py-2 rounded-lg font-medium transition-all ${
+                filtroActual === 'semana'
+                  ? 'bg-[#0A5BA9] text-white shadow-md'
+                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+              }`}
+            >
+              Esta Semana
+            </button>
+            <button
+              onClick={() => setFiltroActual('mes')}
+              className={`px-4 py-2 rounded-lg font-medium transition-all ${
+                filtroActual === 'mes'
+                  ? 'bg-[#0A5BA9] text-white shadow-md'
+                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+              }`}
+            >
+              Este Mes
+            </button>
+            <button
+              onClick={() => setFiltroActual('año')}
+              className={`px-4 py-2 rounded-lg font-medium transition-all ${
+                filtroActual === 'año'
+                  ? 'bg-[#0A5BA9] text-white shadow-md'
+                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+              }`}
+            >
+              Este Año
+            </button>
+          </div>
+
           <p className="text-gray-600 font-medium">Análisis completo de tu desempeño médico</p>
         </div>
 
-        {/* ✅ v1.59.0: KPIs PRINCIPALES */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-          {/* Pacientes Atendidos */}
+        {/* ✅ v1.60.0: KPIs DEL PERÍODO ACTUAL + COMPARATIVOS */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
+          {/* Pacientes Atendidos - Período Actual */}
           <div className="bg-gradient-to-br from-emerald-50 to-emerald-100 border-2 border-emerald-300 rounded-lg p-6 shadow-sm">
-            <div className="flex items-center justify-between mb-2">
-              <p className="text-sm font-semibold text-emerald-700 uppercase tracking-wider">Atendidos</p>
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-sm font-semibold text-emerald-700 uppercase tracking-wider">Atendidos ({filtroActual})</p>
               <CheckCircle2 className="w-5 h-5 text-emerald-600" />
             </div>
-            <p className="text-4xl font-bold text-emerald-900">{statsTotales.atendidos}</p>
-            <p className="text-xs text-emerald-700 mt-2">Pacientes completamente atendidos</p>
-          </div>
-
-          {/* Pacientes Pendientes */}
-          <div className="bg-gradient-to-br from-amber-50 to-amber-100 border-2 border-amber-300 rounded-lg p-6 shadow-sm">
-            <div className="flex items-center justify-between mb-2">
-              <p className="text-sm font-semibold text-amber-700 uppercase tracking-wider">Pendientes</p>
-              <Clock className="w-5 h-5 text-amber-600" />
+            <p className="text-4xl font-bold text-emerald-900">{statsActual.total}</p>
+            <div className="flex items-center gap-2 mt-3">
+              {calcularComparativo(statsActual.total, statsPrevio.total) >= 0 ? (
+                <TrendingUp className="w-4 h-4 text-emerald-600" />
+              ) : (
+                <TrendingDown className="w-4 h-4 text-red-600" />
+              )}
+              <span className={`text-sm font-semibold ${calcularComparativo(statsActual.total, statsPrevio.total) >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
+                {calcularComparativo(statsActual.total, statsPrevio.total) >= 0 ? '+' : ''}{calcularComparativo(statsActual.total, statsPrevio.total)}% vs anterior
+              </span>
             </div>
-            <p className="text-4xl font-bold text-amber-900">{statsTotales.pendientes}</p>
-            <p className="text-xs text-amber-700 mt-2">Requieren seguimiento</p>
-          </div>
-
-          {/* Deserciones */}
-          <div className="bg-gradient-to-br from-red-50 to-red-100 border-2 border-red-300 rounded-lg p-6 shadow-sm">
-            <div className="flex items-center justify-between mb-2">
-              <p className="text-sm font-semibold text-red-700 uppercase tracking-wider">Deserciones</p>
-              <XCircle className="w-5 h-5 text-red-600" />
-            </div>
-            <p className="text-4xl font-bold text-red-900">{statsTotales.deserciones}</p>
-            <p className="text-xs text-red-700 mt-2">Pacientes que no asistieron</p>
           </div>
 
           {/* Interconsultas */}
           <div className="bg-gradient-to-br from-purple-50 to-purple-100 border-2 border-purple-300 rounded-lg p-6 shadow-sm">
-            <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center justify-between mb-3">
               <p className="text-sm font-semibold text-purple-700 uppercase tracking-wider">Interconsultas</p>
               <Share2 className="w-5 h-5 text-purple-600" />
             </div>
-            <p className="text-4xl font-bold text-purple-900">{statsTotales.interconsultas}</p>
-            <p className="text-xs text-purple-700 mt-2">Referencias a especialistas</p>
+            <p className="text-4xl font-bold text-purple-900">{statsActual.interconsultas}</p>
+            <p className="text-xs text-purple-700 mt-3">
+              Tasa: <span className="font-bold">{statsActual.total > 0 ? ((statsActual.interconsultas / statsActual.total) * 100).toFixed(1) : 0}%</span>
+            </p>
           </div>
+
+          {/* Crónicos */}
+          <div className="bg-gradient-to-br from-red-50 to-red-100 border-2 border-red-300 rounded-lg p-6 shadow-sm">
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-sm font-semibold text-red-700 uppercase tracking-wider">Crónicos</p>
+              <Heart className="w-5 h-5 text-red-600" />
+            </div>
+            <p className="text-4xl font-bold text-red-900">{statsActual.cronicas}</p>
+            <p className="text-xs text-red-700 mt-3">
+              Registrados en período
+            </p>
+          </div>
+        </div>
+
+        {/* ✅ v1.60.0: GRÁFICO DE TENDENCIA */}
+        <div className="bg-white border border-gray-200 shadow-sm rounded-lg p-6 mb-8">
+          <h2 className="text-lg font-bold text-gray-900 mb-6">Tendencia - Últimos 7 Días</h2>
+          <ResponsiveContainer width="100%" height={300}>
+            <LineChart data={datosTendencia}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="fecha" />
+              <YAxis />
+              <Tooltip />
+              <Legend />
+              <Line type="monotone" dataKey="pacientes" stroke="#0A5BA9" strokeWidth={2} name="Pacientes Atendidos" />
+              <Line type="monotone" dataKey="interconsultas" stroke="#a855f7" strokeWidth={2} name="Interconsultas" />
+            </LineChart>
+          </ResponsiveContainer>
         </div>
 
         {/* SECCIÓN DE ANÁLISIS DE DESERCIONES Y ESTADÍSTICAS */}
