@@ -593,7 +593,9 @@ export default function MisPacientes() {
       pacientesFiltrarados
         .map(p => {
           if (p.fechaAtencion) {
-            return p.fechaAtencion.split(' ')[0]; // Extraer solo YYYY-MM-DD
+            // Extraer fecha en formato ISO: "2026-02-06T16:30:17.428Z"
+            // Retornar: "2026-02-06"
+            return p.fechaAtencion.split('T')[0];
           }
           return null;
         })
@@ -614,7 +616,8 @@ export default function MisPacientes() {
   const pacientesFiltradosPorFecha = pacientesFiltrados.filter(p => {
     if (!fechaAtencionSeleccionada) return true;
     if (!p.fechaAtencion) return false;
-    const fechaPaciente = p.fechaAtencion.split(' ')[0];
+    // Extraer fecha en formato ISO: "2026-02-06T16:30:17.428Z" → "2026-02-06"
+    const fechaPaciente = p.fechaAtencion.split('T')[0];
     return fechaPaciente === fechaAtencionSeleccionada;
   });
 
@@ -847,15 +850,16 @@ export default function MisPacientes() {
               >
                 <option value="">Todas las fechas</option>
                 {fechasAtencionDisponibles.length > 0 ? (
-                  fechasAtencionDisponibles.map(fecha => (
-                    <option key={fecha} value={fecha}>
-                      {new Date(fecha + 'T00:00:00').toLocaleDateString('es-ES', {
-                        day: '2-digit',
-                        month: '2-digit',
-                        year: '2-digit'
-                      })}
-                    </option>
-                  ))
+                  fechasAtencionDisponibles.map(fechaISO => {
+                    // Convertir formato ISO (2026-02-06) a DD/MM/YY
+                    const [year, month, day] = fechaISO.split('-');
+                    const fechaFormato = `${day}/${month}/${year.slice(-2)}`;
+                    return (
+                      <option key={fechaISO} value={fechaISO}>
+                        {fechaFormato}
+                      </option>
+                    );
+                  })
                 ) : (
                   <option disabled>Sin fechas disponibles</option>
                 )}
