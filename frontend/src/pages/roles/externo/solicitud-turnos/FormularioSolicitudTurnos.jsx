@@ -51,6 +51,7 @@ import { solicitudTurnoService } from "../../../../services/solicitudTurnoServic
 // Componentes separados
 import Modal from "./components/Modal";
 import ModalConfirmacionEnvio from "./components/ModalConfirmacionEnvio";
+import ModalHorarioTeleconsultorio from "./components/ModalHorarioTeleconsultorio";
 import PeriodoDetalleCard, { SeccionFechas } from "./components/PeriodoDetalleCard";
 import TablaSolicitudEspecialidades from "./components/TablaSolicitudEspecialidades";
 import VistaSolicitudEnviada from "./components/VistaSolicitudEnviada";
@@ -100,6 +101,10 @@ export default function FormularioSolicitudTurnos() {
   const [modoModal, setModoModal] = useState("NUEVA"); // NUEVA | EDITAR | VER
   const [openInfoModal, setOpenInfoModal] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
+
+  // Modal de horarios teleconsultorio
+  const [showHorariosModal, setShowHorariosModal] = useState(false);
+  const [horariosConfigurados, setHorariosConfigurados] = useState(new Map());
 
   // periodo seleccionado
   const [periodoSeleccionado, setPeriodoSeleccionado] = useState(null);
@@ -567,6 +572,29 @@ export default function FormularioSolicitudTurnos() {
     }
 
     return { payloadCompat: payload };
+  };
+
+  // =====================================================================
+  // Manejar horarios teleconsultorio
+  // =====================================================================
+  const abrirModalHorarios = () => {
+    setShowHorariosModal(true);
+  };
+
+  const confirmarHorarios = (configuracion) => {
+    const nuevosHorarios = new Map(horariosConfigurados);
+    // Por ahora guardar horarios generales, más adelante se puede asociar por especialidad
+    nuevosHorarios.set('general', configuracion);
+    setHorariosConfigurados(nuevosHorarios);
+    console.log('✅ Horarios teleconsultorio configurados:', configuracion);
+    setShowHorariosModal(false);
+  };
+
+  const tieneEspecialidadesConTeleconsultorio = () => {
+    return registros.some(r => {
+      const total = Number(r.turnoTM || 0) > 0 ? Number(r.turnoTM || 0) : Number(r.turnoManana || 0) + Number(r.turnoTarde || 0);
+      return total > 0 && r.tc; // tiene turnos Y teleconsultorio activado
+    });
   };
 
   // =====================================================================
@@ -1399,6 +1427,39 @@ export default function FormularioSolicitudTurnos() {
                     }
                   />
 
+                  {/* Botón Horario Teleconsultorio */}
+                  {tieneEspecialidadesConTeleconsultorio() && (
+                    <div className="mt-4 bg-blue-50 border border-blue-200 rounded-lg p-4">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className="bg-blue-500 p-2 rounded-lg">
+                            <Clock className="w-5 h-5 text-white" />
+                          </div>
+                          <div>
+                            <h3 className="font-bold text-blue-900">Horarios de Teleconsultorio</h3>
+                            <p className="text-sm text-blue-700">
+                              {horariosConfigurados.has('general') 
+                                ? "Horarios configurados - Click para modificar"
+                                : "Configura los horarios de atención para teleconsultorio"}
+                            </p>
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={abrirModalHorarios}
+                          className={`px-4 py-2 rounded-lg font-semibold transition-all flex items-center gap-2 ${
+                            horariosConfigurados.has('general')
+                              ? "bg-green-600 text-white hover:bg-green-700"
+                              : "bg-blue-600 text-white hover:bg-blue-700"
+                          }`}
+                        >
+                          <Clock className="w-4 h-4" />
+                          {horariosConfigurados.has('general') ? 'Modificar Horarios' : 'Configurar Horarios'}
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
                   {/* Sección de Fechas en modo EDITAR */}
                   {modoModal === "EDITAR" && solicitudActual && (
                     <SeccionFechas solicitud={solicitudActual} />
@@ -1634,6 +1695,15 @@ export default function FormularioSolicitudTurnos() {
       onConfirm={confirmarEnvio}
       resumenSolicitud={calcularResumenSolicitud()}
       loading={saving}
+    />
+
+    {/* Modal de Horarios Teleconsultorio */}
+    <ModalHorarioTeleconsultorio
+      open={showHorariosModal}
+      onClose={() => setShowHorariosModal(false)}
+      especialidad="Horarios Generales de Teleconsultorio"
+      horariosIniciales={horariosConfigurados.get('general')}
+      onConfirm={confirmarHorarios}
     />
     </>
   );
