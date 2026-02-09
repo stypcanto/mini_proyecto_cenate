@@ -39,6 +39,7 @@ export default function Produccion() {
   const [loading, setLoading] = useState(true);
   const [mesActual, setMesActual] = useState(new Date());
   const [diaSeleccionado, setDiaSeleccionado] = useState(new Date());
+  const [mostrarPeriodoCompleto, setMostrarPeriodoCompleto] = useState(true); // ✅ v1.61.0: Control de vista
 
   // ✅ v1.60.0: Filtros de período
   const [filtroActual, setFiltroActual] = useState('mes'); // 'semana', 'mes', 'año'
@@ -186,25 +187,47 @@ export default function Produccion() {
     });
   }, []);
 
-  // Estadísticas con memoización
+  // ✅ v1.61.0: Estadísticas dinámicas (período vs día específico)
   const estadisticas = useMemo(() => {
-    const { inicio: inicioActual, fin: finActual } = getDateRange(filtroActual);
-    const pacientesActual = getPacientesEnRango(pacientes, inicioActual, finActual);
+    let pacientesActual, pacientesPrevio;
+
+    // Si se seleccionó un día específico, mostrar solo ese día
+    if (!mostrarPeriodoCompleto) {
+      const inicio = new Date(diaSeleccionado);
+      const fin = new Date(diaSeleccionado);
+      fin.setHours(23, 59, 59, 999);
+
+      pacientesActual = getPacientesEnRango(pacientes, inicio, fin);
+
+      // Período anterior = día anterior
+      const inicioPrevio = new Date(diaSeleccionado);
+      inicioPrevio.setDate(inicioPrevio.getDate() - 1);
+      const finPrevio = new Date(inicioPrevio);
+      finPrevio.setHours(23, 59, 59, 999);
+
+      pacientesPrevio = getPacientesEnRango(pacientes, inicioPrevio, finPrevio);
+    } else {
+      // Mostrar período completo (Semana/Mes/Año)
+      const { inicio: inicioActual, fin: finActual } = getDateRange(filtroActual);
+      pacientesActual = getPacientesEnRango(pacientes, inicioActual, finActual);
+
+      const { inicio: inicioPrevio, fin: finPrevio } = getPeriodoAnterior(filtroActual);
+      pacientesPrevio = getPacientesEnRango(pacientes, inicioPrevio, finPrevio);
+    }
+
     const statsActual = {
       total: pacientesActual.length,
       interconsultas: pacientesActual.filter(p => p.tieneInterconsulta).length,
       cronicas: pacientesActual.filter(p => p.esCronico).length,
     };
 
-    const { inicio: inicioPrevio, fin: finPrevio } = getPeriodoAnterior(filtroActual);
-    const pacientesPrevio = getPacientesEnRango(pacientes, inicioPrevio, finPrevio);
     const statsPrevio = {
       total: pacientesPrevio.length,
       interconsultas: pacientesPrevio.filter(p => p.tieneInterconsulta).length,
     };
 
     return { statsActual, statsPrevio };
-  }, [pacientes, filtroActual, getDateRange, getPacientesEnRango, getPeriodoAnterior]);
+  }, [pacientes, filtroActual, diaSeleccionado, mostrarPeriodoCompleto, getDateRange, getPacientesEnRango, getPeriodoAnterior]);
 
   const { statsActual, statsPrevio } = estadisticas;
 
@@ -594,11 +617,11 @@ export default function Produccion() {
           </div>
         )}
 
-        {/* SECCIÓN DE CALENDARIO Y DETALLES POR DÍA */}
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-          {/* Calendario - MÁS PROMINENTE */}
+        {/* ✅ v1.61.0: SECCIÓN DE CALENDARIO INTERACTIVO Y DETALLES (VINCULADOS) */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* ✅ v1.61.0: Calendario - MÁS GRANDE E INTERACTIVO */}
           <div className="lg:col-span-1">
-            <div className="bg-white border border-gray-200 shadow-sm rounded-lg p-6">
+            <div className="bg-white border-2 border-[#0A5BA9] shadow-md rounded-lg p-8 h-full flex flex-col">
               {/* Navegación de meses */}
               <div className="flex items-center justify-between mb-6">
                 <button
@@ -642,19 +665,23 @@ export default function Produccion() {
                   const esSeleccionado =
                     diaSeleccionado.getDate() === dia &&
                     diaSeleccionado.getMonth() === mesActual.getMonth() &&
-                    diaSeleccionado.getFullYear() === mesActual.getFullYear();
+                    diaSeleccionado.getFullYear() === mesActual.getFullYear() &&
+                    !mostrarPeriodoCompleto;
 
                   return (
                     <button
                       key={dia}
-                      onClick={() => setDiaSeleccionado(fecha)}
+                      onClick={() => {
+                        setDiaSeleccionado(fecha);
+                        setMostrarPeriodoCompleto(false);
+                      }}
                       className={`
                         aspect-square rounded-lg font-semibold text-sm flex items-center justify-center
-                        transition-all duration-200
+                        transition-all duration-300 cursor-pointer
                         ${esSeleccionado
-                          ? 'bg-[#0A5BA9] text-white shadow-md'
+                          ? 'bg-[#0A5BA9] text-white shadow-lg scale-105'
                           : tieneAtenciones
-                          ? 'bg-blue-50 text-[#0A5BA9] border-2 border-[#0A5BA9] hover:bg-blue-100'
+                          ? 'bg-blue-50 text-[#0A5BA9] border-2 border-[#0A5BA9] hover:bg-blue-100 hover:shadow-md'
                           : 'bg-gray-50 text-gray-600 hover:bg-gray-100'
                         }
                       `}
@@ -665,29 +692,45 @@ export default function Produccion() {
                 })}
               </div>
 
-              {/* Leyenda */}
-              <div className="mt-6 pt-6 border-t border-gray-200 text-xs text-gray-600">
-                <p className="mb-2">
-                  <span className="inline-block w-3 h-3 bg-[#0A5BA9] rounded mr-2"></span>
-                  Día seleccionado
-                </p>
-                <p>
-                  <span className="inline-block w-3 h-3 border-2 border-[#0A5BA9] rounded mr-2"></span>
-                  Con atenciones
-                </p>
+              {/* ✅ v1.61.0: Leyenda + Botón para periodo completo */}
+              <div className="mt-auto pt-6 border-t border-gray-200">
+                <div className="text-xs text-gray-600 mb-4">
+                  <p className="mb-2">
+                    <span className="inline-block w-3 h-3 bg-[#0A5BA9] rounded mr-2"></span>
+                    Día seleccionado
+                  </p>
+                  <p>
+                    <span className="inline-block w-3 h-3 border-2 border-[#0A5BA9] rounded mr-2"></span>
+                    Con atenciones
+                  </p>
+                </div>
+
+                {/* Botón para ver período completo */}
+                {!mostrarPeriodoCompleto && (
+                  <button
+                    onClick={() => setMostrarPeriodoCompleto(true)}
+                    className="w-full px-3 py-2 mt-4 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors text-sm font-semibold"
+                  >
+                    ← Ver período completo ({filtroActual})
+                  </button>
+                )}
               </div>
             </div>
           </div>
 
-          {/* Detalles del día - Listado de pacientes */}
-          <div className="lg:col-span-3">
-            {/* Encabezado con fecha seleccionada */}
-            <div className="mb-6">
-              <h2 className="text-2xl font-bold text-gray-900 capitalize">
-                {diaSeleccionado.toLocaleString('es-PE', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+          {/* ✅ v1.61.0: Detalles - VINCULADO AL CALENDARIO */}
+          <div className="lg:col-span-1">
+            {/* Encabezado dinámico */}
+            <div className="mb-6 bg-gradient-to-r from-[#0A5BA9] to-[#0A5BA9]/80 text-white rounded-lg p-6 shadow-md">
+              <h2 className="text-2xl font-bold capitalize">
+                {mostrarPeriodoCompleto
+                  ? `${filtroActual.charAt(0).toUpperCase() + filtroActual.slice(1)}`
+                  : diaSeleccionado.toLocaleString('es-PE', { weekday: 'long', day: 'numeric', month: 'long' })}
               </h2>
-              <p className="text-sm text-gray-600 mt-1">
-                {pacientesDiaSeleccionado.length === 0
+              <p className="text-sm text-white/90 mt-2">
+                {mostrarPeriodoCompleto
+                  ? `Estadísticas del ${filtroActual}`
+                  : pacientesDiaSeleccionado.length === 0
                   ? 'Sin atenciones registradas'
                   : `${pacientesDiaSeleccionado.length} paciente${pacientesDiaSeleccionado.length !== 1 ? 's' : ''} atendido${pacientesDiaSeleccionado.length !== 1 ? 's' : ''}`}
               </p>
