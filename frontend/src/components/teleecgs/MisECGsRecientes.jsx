@@ -874,6 +874,19 @@ export default function MisECGsRecientes({
                     const imagenesDelPaciente = imagenesPorDni[cargaEdicion.dni] || [];
                     const imagenActual = imagenesDelPaciente[previewImageIndex];
 
+                    if (imagenActual?.thumbnail_base64) {
+                      // Usar thumbnail si está disponible (más rápido)
+                      const url = `data:${imagenActual.mimeType || imagenActual.mime_type || 'image/jpeg'};base64,${imagenActual.thumbnail_base64}`;
+                      return (
+                        <img
+                          src={url}
+                          alt={`Imagen ${previewImageIndex + 1}`}
+                          className="w-full h-auto max-h-96 object-contain"
+                          title={`${imagenActual.nombreArchivo || imagenActual.nombre_archivo || 'Imagen'}`}
+                        />
+                      );
+                    }
+
                     if (imagenActual?.contenidoImagen) {
                       // Imagen real con base64
                       const url = `data:${imagenActual.tipoContenido || 'image/jpeg'};base64,${imagenActual.contenidoImagen}`;
@@ -886,13 +899,14 @@ export default function MisECGsRecientes({
                       );
                     }
 
-                    // Fallback si no hay imagen
+                    // Fallback: mostrar info de la imagen con placeholder
                     return (
-                      <div className="w-full h-96 flex items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200">
+                      <div className="w-full h-96 flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200">
                         <div className="text-center">
-                          <CloudUpload className="w-12 h-12 text-gray-400 mx-auto mb-3" />
-                          <p className="text-gray-500 font-semibold">Sin contenido de imagen</p>
-                          <p className="text-xs text-gray-400 mt-1">Imagen {previewImageIndex + 1}</p>
+                          <CloudUpload className="w-12 h-12 text-blue-400 mx-auto mb-3 animate-pulse" />
+                          <p className="text-blue-600 font-semibold">Cargando imagen...</p>
+                          <p className="text-xs text-blue-500 mt-2">ID: {imagenActual?.idImagen || imagenesDelPaciente[previewImageIndex]?.id_imagen}</p>
+                          <p className="text-xs text-blue-400 mt-1">{imagenActual?.nombreArchivo || imagenActual?.nombre_archivo || `Imagen ${previewImageIndex + 1}`}</p>
                         </div>
                       </div>
                     );
