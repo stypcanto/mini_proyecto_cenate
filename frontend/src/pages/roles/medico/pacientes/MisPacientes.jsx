@@ -18,6 +18,7 @@ import {
   RefreshCw,
   CheckCircle,
   ChevronRight,
+  ChevronDown,
   X,
   Check,
   FileText,
@@ -132,6 +133,9 @@ export default function MisPacientes() {
   const [filtroBolsa, setFiltroBolsa] = useState('');
   const [bolsasDelMedico, setBolsasDelMedico] = useState([]);
   const filtroAutoAplicado = React.useRef(false);
+
+  // ✅ v1.65.2: Estado para filtros colapsables
+  const [filtrosExpandidos, setFiltrosExpandidos] = useState(false);
 
   const bolsasDisponibles = [
     { id: 1, nombre: 'Bolsa 107 (Módulo 107)' },
@@ -992,15 +996,36 @@ export default function MisPacientes() {
           </button>
         </div>
 
-        {/* ✅ v1.65.0: Filtros mejorados - Diseño moderno y profesional */}
-        <div className="bg-gradient-to-br from-slate-50 to-slate-100 border border-slate-200 shadow-md rounded-xl p-6 mb-6">
-          {/* ENCABEZADO */}
-          <div className="flex items-center gap-2 mb-5 pb-4 border-b border-slate-200">
-            <div className="p-2 bg-[#0A5BA9]/10 rounded-lg">
-              <Filter className="w-5 h-5 text-[#0A5BA9]" />
+        {/* ✅ v1.65.2: Filtros colapsables - Accordion */}
+        <div className="bg-gradient-to-br from-slate-50 to-slate-100 border border-slate-200 shadow-md rounded-xl mb-6 overflow-hidden">
+          {/* ENCABEZADO - BOTÓN PARA EXPANDIR/COLAPSAR */}
+          <button
+            onClick={() => setFiltrosExpandidos(!filtrosExpandidos)}
+            className="w-full px-6 py-4 flex items-center justify-between hover:bg-slate-100 transition-colors"
+          >
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-[#0A5BA9]/10 rounded-lg">
+                <Filter className="w-5 h-5 text-[#0A5BA9]" />
+              </div>
+              <div className="text-left">
+                <h3 className="text-lg font-bold text-gray-900">Filtros de Búsqueda</h3>
+                <p className="text-xs text-gray-600">
+                  {filtroEstado || filtroBolsa || filtroIpress || filtroRangoFecha !== 'todos' ?
+                    '✅ Con filtros aplicados' :
+                    'Sin filtros activos'}
+                </p>
+              </div>
             </div>
-            <h3 className="text-lg font-bold text-gray-900">Filtros de Búsqueda</h3>
-          </div>
+            <ChevronDown
+              className={`w-6 h-6 text-gray-600 transition-transform ${
+                filtrosExpandidos ? 'rotate-180' : ''
+              }`}
+            />
+          </button>
+
+          {/* CONTENIDO - FILTROS (COLAPSABLE) */}
+          {filtrosExpandidos && (
+            <div className="px-6 py-4 border-t border-slate-200 bg-white">
 
           {/* FILA 1: Búsqueda + Condición + Actualizar */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end mb-5">
@@ -1198,26 +1223,29 @@ export default function MisPacientes() {
             </div>
           )}
 
-          {/* Botón Limpiar Filtros */}
-          {(busqueda || filtroEstado || filtroBolsa || filtroIpress || filtroRangoFecha !== 'hoy') && (
-            <div className="mt-4 pt-4 border-t border-gray-200">
-              <button
-                onClick={() => {
-                  setBusqueda('');
-                  setFiltroEstado('');
-                  setFiltroBolsa('');
-                  setFiltroIpress('');
-                  setFiltroRangoFecha('hoy');
-                  setFechaDesde('');
-                  setFechaHasta('');
-                  setOrdenarPor('reciente');
-                  toast.success('Filtros limpiados');
-                }}
-                className="text-sm text-gray-600 hover:text-[#0A5BA9] font-medium transition-colors flex items-center gap-2"
-              >
-                <X className="w-4 h-4" />
-                Limpiar todos los filtros
-              </button>
+              {/* Botón Limpiar Filtros */}
+              {(busqueda || filtroEstado || filtroBolsa || filtroIpress || filtroRangoFecha !== 'todos') && (
+                <div className="mt-4 pt-4 border-t border-slate-200">
+                  <button
+                    onClick={() => {
+                      setBusqueda('');
+                      setFiltroEstado('');
+                      setFiltroBolsa('');
+                      setFiltroIpress('');
+                      setFiltroRangoFecha('todos');
+                      setFechaDesde('');
+                      setFechaHasta('');
+                      setFechaAtencionSeleccionada('');
+                      setOrdenarPor('reciente');
+                      toast.success('✨ Filtros limpiados');
+                    }}
+                    className="text-sm text-gray-600 hover:text-[#0A5BA9] font-medium transition-colors flex items-center gap-2"
+                  >
+                    <X className="w-4 h-4" />
+                    Limpiar todos los filtros
+                  </button>
+                </div>
+              )}
             </div>
           )}
         </div>
