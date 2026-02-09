@@ -1604,15 +1604,16 @@ export default function Solicitudes() {
             {/* Total Pacientes - Azul */}
             <div
               onClick={() => handleCardClick('total')}
-              className={`bg-gradient-to-br from-blue-600 to-blue-700 rounded-lg shadow-lg p-6 text-white transform hover:scale-105 transition-all duration-300 hover:shadow-xl cursor-pointer ${
-                cardSeleccionado === 'total' ? 'ring-4 ring-blue-300 shadow-2xl' : ''
+              className={`bg-gradient-to-br from-blue-600 to-blue-700 rounded-lg shadow-lg p-6 text-white transform hover:scale-110 hover:-translate-y-1 transition-all duration-300 hover:shadow-2xl cursor-pointer group overflow-hidden relative ${
+                cardSeleccionado === 'total' ? 'ring-4 ring-blue-300 shadow-2xl scale-110 -translate-y-1' : ''
               }`}
             >
-              <div className="flex items-center justify-between mb-4">
-                <span className="text-blue-100">Total Pacientes</span>
-                <span className="text-xl">👥</span>
+              <div className="absolute inset-0 bg-gradient-to-tr from-white/0 to-white/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-lg pointer-events-none"></div>
+              <div className="relative z-10 flex items-center justify-between mb-4">
+                <span className="text-blue-100 font-semibold">Total Pacientes</span>
+                <span className="text-2xl group-hover:scale-125 transition-transform duration-300">👥</span>
               </div>
-              <div className="text-2xl font-bold">
+              <div className="relative z-10 text-3xl font-bold group-hover:text-blue-100 transition-colors duration-300">
                 {estadisticas.total === null ? (
                   <span className="inline-block animate-pulse text-sm">⟳ Cargando...</span>
                 ) : (
@@ -1624,15 +1625,16 @@ export default function Solicitudes() {
             {/* Pendiente Citar - Naranja */}
             <div
               onClick={() => handleCardClick('pendiente')}
-              className={`bg-gradient-to-br from-orange-500 to-orange-600 rounded-lg shadow-lg p-6 text-white transform hover:scale-105 transition-all duration-300 hover:shadow-xl cursor-pointer ${
-                cardSeleccionado === 'pendiente' ? 'ring-4 ring-orange-300 shadow-2xl' : ''
+              className={`bg-gradient-to-br from-orange-500 to-orange-600 rounded-lg shadow-lg p-6 text-white transform hover:scale-110 hover:-translate-y-1 transition-all duration-300 hover:shadow-2xl cursor-pointer group overflow-hidden relative ${
+                cardSeleccionado === 'pendiente' ? 'ring-4 ring-orange-300 shadow-2xl scale-110 -translate-y-1' : ''
               }`}
             >
-              <div className="flex items-center justify-between mb-4">
-                <span className="text-orange-100">Pendiente Citar</span>
-                <span className="text-xl">⏳</span>
+              <div className="absolute inset-0 bg-gradient-to-tr from-white/0 to-white/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-lg pointer-events-none"></div>
+              <div className="relative z-10 flex items-center justify-between mb-4">
+                <span className="text-orange-100 font-semibold">Pendiente Citar</span>
+                <span className="text-2xl group-hover:scale-125 transition-transform duration-300">⏳</span>
               </div>
-              <div className="text-2xl font-bold">
+              <div className="relative z-10 text-3xl font-bold group-hover:text-orange-100 transition-colors duration-300">
                 {estadisticas.pendientes === null ? (
                   <span className="inline-block animate-pulse text-sm">⟳ Cargando...</span>
                 ) : (
@@ -1644,15 +1646,16 @@ export default function Solicitudes() {
             {/* Citados - Púrpura */}
             <div
               onClick={() => handleCardClick('citado')}
-              className={`bg-gradient-to-br from-purple-600 to-purple-700 rounded-lg shadow-lg p-6 text-white transform hover:scale-105 transition-all duration-300 hover:shadow-xl cursor-pointer ${
-                cardSeleccionado === 'citado' ? 'ring-4 ring-purple-300 shadow-2xl' : ''
+              className={`bg-gradient-to-br from-purple-600 to-purple-700 rounded-lg shadow-lg p-6 text-white transform hover:scale-110 hover:-translate-y-1 transition-all duration-300 hover:shadow-2xl cursor-pointer group overflow-hidden relative ${
+                cardSeleccionado === 'citado' ? 'ring-4 ring-purple-300 shadow-2xl scale-110 -translate-y-1' : ''
               }`}
             >
-              <div className="flex items-center justify-between mb-4">
-                <span className="text-purple-100">Citados</span>
-                <span className="text-xl">📞</span>
+              <div className="absolute inset-0 bg-gradient-to-tr from-white/0 to-white/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-lg pointer-events-none"></div>
+              <div className="relative z-10 flex items-center justify-between mb-4">
+                <span className="text-purple-100 font-semibold">Citados</span>
+                <span className="text-2xl group-hover:scale-125 transition-transform duration-300">📞</span>
               </div>
-              <div className="text-2xl font-bold">
+              <div className="relative z-10 text-3xl font-bold group-hover:text-purple-100 transition-colors duration-300">
                 {estadisticas.citados === null ? (
                   <span className="inline-block animate-pulse text-sm">⟳ Cargando...</span>
                 ) : (
@@ -1664,15 +1667,16 @@ export default function Solicitudes() {
             {/* Casos Asignados - Verde */}
             <div
               onClick={() => handleCardClick('asignado')}
-              className={`bg-gradient-to-br from-green-600 to-green-700 rounded-lg shadow-lg p-6 text-white transform hover:scale-105 transition-all duration-300 hover:shadow-xl cursor-pointer ${
-                cardSeleccionado === 'asignado' ? 'ring-4 ring-green-300 shadow-2xl' : ''
+              className={`bg-gradient-to-br from-green-600 to-green-700 rounded-lg shadow-lg p-6 text-white transform hover:scale-110 hover:-translate-y-1 transition-all duration-300 hover:shadow-2xl cursor-pointer group overflow-hidden relative ${
+                cardSeleccionado === 'asignado' ? 'ring-4 ring-green-300 shadow-2xl scale-110 -translate-y-1' : ''
               }`}
             >
-              <div className="flex items-center justify-between mb-4">
-                <span className="text-green-100">Casos Asignados</span>
-                <span className="text-xl">👥</span>
+              <div className="absolute inset-0 bg-gradient-to-tr from-white/0 to-white/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-lg pointer-events-none"></div>
+              <div className="relative z-10 flex items-center justify-between mb-4">
+                <span className="text-green-100 font-semibold">Casos Asignados</span>
+                <span className="text-2xl group-hover:scale-125 transition-transform duration-300">👥</span>
               </div>
-              <div className="text-2xl font-bold">
+              <div className="relative z-10 text-3xl font-bold group-hover:text-green-100 transition-colors duration-300">
                 {estadisticas.asignados === null ? (
                   <span className="inline-block animate-pulse text-sm">⟳ Cargando...</span>
                 ) : (
@@ -1684,15 +1688,16 @@ export default function Solicitudes() {
             {/* Sin Asignar - Gris */}
             <div
               onClick={() => handleCardClick('sin_asignar')}
-              className={`bg-gradient-to-br from-gray-600 to-gray-700 rounded-lg shadow-lg p-6 text-white transform hover:scale-105 transition-all duration-300 hover:shadow-xl cursor-pointer ${
-                cardSeleccionado === 'sin_asignar' ? 'ring-4 ring-gray-300 shadow-2xl' : ''
+              className={`bg-gradient-to-br from-gray-600 to-gray-700 rounded-lg shadow-lg p-6 text-white transform hover:scale-110 hover:-translate-y-1 transition-all duration-300 hover:shadow-2xl cursor-pointer group overflow-hidden relative ${
+                cardSeleccionado === 'sin_asignar' ? 'ring-4 ring-gray-300 shadow-2xl scale-110 -translate-y-1' : ''
               }`}
             >
-              <div className="flex items-center justify-between mb-4">
-                <span className="text-gray-100">Sin Asignar</span>
-                <span className="text-xl">🔲</span>
+              <div className="absolute inset-0 bg-gradient-to-tr from-white/0 to-white/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-lg pointer-events-none"></div>
+              <div className="relative z-10 flex items-center justify-between mb-4">
+                <span className="text-gray-100 font-semibold">Sin Asignar</span>
+                <span className="text-2xl group-hover:scale-125 transition-transform duration-300">🔲</span>
               </div>
-              <div className="text-2xl font-bold">
+              <div className="relative z-10 text-3xl font-bold group-hover:text-gray-100 transition-colors duration-300">
                 {estadisticas.sinAsignar === null ? (
                   <span className="inline-block animate-pulse text-sm">⟳ Cargando...</span>
                 ) : (

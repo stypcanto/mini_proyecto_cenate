@@ -39,7 +39,7 @@ function formatECGsForRecientes(ecgs, pacientesCache = {}) {
     }
   });
 
-  return Object.entries(deduplicados).slice(0, 3).map(([dni, img]) => {
+  return Object.entries(deduplicados).map(([dni, img]) => {
     // ✅ Usar nombreCompleto si ya está enriquecido, si no buscar alternativas
     let nombreFormateado = img.nombreCompleto ||
                           img.nombresPaciente ||
@@ -142,6 +142,16 @@ export default function IPRESSWorkspace() {
 
   // ✅ TODOS LAS IMÁGENES (para poder filtrar cuando clickea el ojo)
   const [todasLasImagenes, setTodasLasImagenes] = useState([]);
+
+  // ✅ PAGINACIÓN - 15 pacientes por página
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 15;
+
+  // ✅ Calcular datos paginados
+  const totalPages = Math.ceil(ecgs.length / ITEMS_PER_PAGE);
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+  const endIndex = startIndex + ITEMS_PER_PAGE;
+  const ecgsPaginados = ecgs.slice(startIndex, endIndex);
 
   // =======================================
   // 🔄 LIFECYCLE - Load data & handle resize
@@ -262,7 +272,7 @@ export default function IPRESSWorkspace() {
       });
 
       // Mapear a formato de tabla
-      const ecgsFormateados = Object.entries(deduplicados).slice(0, 3).map(([dni, img]) => ({
+      const ecgsFormateados = Object.entries(deduplicados).map(([dni, img]) => ({
         ...img,
         nombrePaciente: img.nombreCompleto || img.nombresPaciente || img.nombrePaciente || "Sin datos",
         genero: img.generoPaciente || img.genero || img.sexo || "-",
@@ -278,6 +288,7 @@ export default function IPRESSWorkspace() {
       setPacientesCache(newCache);
       setEcgs(ecgsFormateados);
       setTodasLasImagenes(imagenesEnriquecidas);  // ✅ Guardar TODAS las imágenes para modal
+      setCurrentPage(1);  // ✅ Resetear a página 1 al cargar nuevos datos
 
       // Calcular estadísticas basadas en pacientes únicos, no en total de imágenes
       const pacientesPendientes = new Set(
@@ -487,7 +498,7 @@ export default function IPRESSWorkspace() {
           {/* Dashboard Full-Width */}
           <div className="w-full">
             <MisECGsRecientes
-              ultimas3={ecgs}
+              ultimas3={ecgsPaginados}
               estadisticas={{
                 total: stats.cargadas + stats.enEvaluacion + stats.observadas + (stats.atendidas || 0),
                 cargadas: stats.cargadas,
@@ -500,6 +511,46 @@ export default function IPRESSWorkspace() {
               loading={loading}
             />
 
+            {/* ✅ Controles de Paginación */}
+            {ecgs.length > 0 && (
+              <div className="mt-6 flex items-center justify-center gap-2">
+                <button
+                  onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                  disabled={currentPage === 1}
+                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded-lg font-semibold transition-colors"
+                >
+                  ← Anterior
+                </button>
+
+                <div className="flex gap-1">
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                    <button
+                      key={page}
+                      onClick={() => setCurrentPage(page)}
+                      className={`w-10 h-10 rounded-lg font-semibold transition-colors ${
+                        currentPage === page
+                          ? 'bg-blue-600 text-white'
+                          : 'bg-gray-200 hover:bg-gray-300 text-gray-800'
+                      }`}
+                    >
+                      {page}
+                    </button>
+                  ))}
+                </div>
+
+                <button
+                  onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                  disabled={currentPage === totalPages}
+                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded-lg font-semibold transition-colors"
+                >
+                  Siguiente →
+                </button>
+
+                <span className="ml-4 text-sm font-semibold text-gray-700">
+                  Página {currentPage} de {totalPages} ({ecgs.length} total)
+                </span>
+              </div>
+            )}
           </div>
         </div>
 
@@ -636,11 +687,52 @@ export default function IPRESSWorkspace() {
 
               {/* Tabla de imágenes */}
               <RegistroPacientes
-                ecgs={ecgs}
+                ecgs={ecgsPaginados}
                 loading={loading}
                 onRefresh={handleRefresh}
                 isWorkspace={true}
               />
+
+              {/* ✅ Controles de Paginación (Tablet) */}
+              {ecgs.length > 0 && (
+                <div className="mt-6 flex flex-col sm:flex-row items-center justify-center gap-4">
+                  <button
+                    onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                    disabled={currentPage === 1}
+                    className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded-lg font-semibold transition-colors"
+                  >
+                    ← Anterior
+                  </button>
+
+                  <div className="flex gap-1 flex-wrap justify-center">
+                    {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                      <button
+                        key={page}
+                        onClick={() => setCurrentPage(page)}
+                        className={`w-10 h-10 rounded-lg font-semibold transition-colors text-sm ${
+                          currentPage === page
+                            ? 'bg-blue-600 text-white'
+                            : 'bg-gray-200 hover:bg-gray-300 text-gray-800'
+                        }`}
+                      >
+                        {page}
+                      </button>
+                    ))}
+                  </div>
+
+                  <button
+                    onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                    disabled={currentPage === totalPages}
+                    className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded-lg font-semibold transition-colors"
+                  >
+                    Siguiente →
+                  </button>
+
+                  <span className="text-sm font-semibold text-gray-700">
+                    {currentPage} de {totalPages}
+                  </span>
+                </div>
+              )}
             </div>
 
             {/* Section 3: Estadísticas */}
@@ -787,11 +879,54 @@ export default function IPRESSWorkspace() {
                 </div>
 
                 <RegistroPacientes
-                  ecgs={ecgs}
+                  ecgs={ecgsPaginados}
                   loading={loading}
                   onRefresh={handleRefresh}
                   isWorkspace={true}
                 />
+
+                {/* ✅ Controles de Paginación (Mobile) */}
+                {ecgs.length > 0 && (
+                  <div className="mt-6 flex flex-col items-center justify-center gap-3">
+                    <div className="flex gap-1 flex-wrap justify-center">
+                      {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                        <button
+                          key={page}
+                          onClick={() => setCurrentPage(page)}
+                          className={`w-9 h-9 rounded-lg font-semibold transition-colors text-xs ${
+                            currentPage === page
+                              ? 'bg-blue-600 text-white'
+                              : 'bg-gray-200 hover:bg-gray-300 text-gray-800'
+                          }`}
+                        >
+                          {page}
+                        </button>
+                      ))}
+                    </div>
+
+                    <div className="flex gap-2 justify-center">
+                      <button
+                        onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                        disabled={currentPage === 1}
+                        className="px-3 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded-lg font-semibold transition-colors text-sm"
+                      >
+                        ← Anterior
+                      </button>
+
+                      <button
+                        onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                        disabled={currentPage === totalPages}
+                        className="px-3 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded-lg font-semibold transition-colors text-sm"
+                      >
+                        Siguiente →
+                      </button>
+                    </div>
+
+                    <span className="text-xs font-semibold text-gray-700">
+                      {currentPage} / {totalPages}
+                    </span>
+                  </div>
+                )}
               </>
             )}
 
