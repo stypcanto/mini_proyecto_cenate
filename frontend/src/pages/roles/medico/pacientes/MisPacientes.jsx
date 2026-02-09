@@ -998,12 +998,12 @@ export default function MisPacientes() {
 
         {/* ✅ v1.65.2: Filtros colapsables - Accordion */}
         <div className="bg-gradient-to-br from-slate-50 to-slate-100 border border-slate-200 shadow-md rounded-xl mb-6 overflow-hidden">
-          {/* ENCABEZADO - BOTÓN PARA EXPANDIR/COLAPSAR */}
-          <button
-            onClick={() => setFiltrosExpandidos(!filtrosExpandidos)}
-            className="w-full px-6 py-4 flex items-center justify-between hover:bg-slate-100 transition-colors"
-          >
-            <div className="flex items-center gap-3">
+          {/* ENCABEZADO - BOTÓN PARA EXPANDIR/COLAPSAR + LIMPIAR */}
+          <div className="px-6 py-4 flex items-center justify-between hover:bg-slate-100 transition-colors border-b border-slate-200">
+            <button
+              onClick={() => setFiltrosExpandidos(!filtrosExpandidos)}
+              className="flex-1 flex items-center gap-3"
+            >
               <div className="p-2 bg-[#0A5BA9]/10 rounded-lg">
                 <Filter className="w-5 h-5 text-[#0A5BA9]" />
               </div>
@@ -1015,13 +1015,41 @@ export default function MisPacientes() {
                     'Sin filtros activos'}
                 </p>
               </div>
+            </button>
+
+            {/* Botones de acción */}
+            <div className="flex items-center gap-2">
+              {/* Botón Limpiar (siempre visible) */}
+              {(busqueda || filtroEstado || filtroBolsa || filtroIpress || filtroRangoFecha !== 'todos') && (
+                <button
+                  onClick={() => {
+                    setBusqueda('');
+                    setFiltroEstado('');
+                    setFiltroBolsa('');
+                    setFiltroIpress('');
+                    setFiltroRangoFecha('todos');
+                    setFechaDesde('');
+                    setFechaHasta('');
+                    setFechaAtencionSeleccionada('');
+                    setOrdenarPor('reciente');
+                    toast.success('✨ Filtros limpiados');
+                  }}
+                  title="Limpiar todos los filtros"
+                  className="px-3 py-2 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg transition-colors flex items-center gap-1 text-sm font-medium"
+                >
+                  <X className="w-4 h-4" />
+                  Limpiar
+                </button>
+              )}
+
+              {/* Chevron expandir/colapsar */}
+              <ChevronDown
+                className={`w-6 h-6 text-gray-600 transition-transform flex-shrink-0 ${
+                  filtrosExpandidos ? 'rotate-180' : ''
+                }`}
+              />
             </div>
-            <ChevronDown
-              className={`w-6 h-6 text-gray-600 transition-transform ${
-                filtrosExpandidos ? 'rotate-180' : ''
-              }`}
-            />
-          </button>
+          </div>
 
           {/* CONTENIDO - FILTROS (COLAPSABLE) */}
           {filtrosExpandidos && (
@@ -1223,29 +1251,6 @@ export default function MisPacientes() {
             </div>
           )}
 
-              {/* Botón Limpiar Filtros */}
-              {(busqueda || filtroEstado || filtroBolsa || filtroIpress || filtroRangoFecha !== 'todos') && (
-                <div className="mt-4 pt-4 border-t border-slate-200">
-                  <button
-                    onClick={() => {
-                      setBusqueda('');
-                      setFiltroEstado('');
-                      setFiltroBolsa('');
-                      setFiltroIpress('');
-                      setFiltroRangoFecha('todos');
-                      setFechaDesde('');
-                      setFechaHasta('');
-                      setFechaAtencionSeleccionada('');
-                      setOrdenarPor('reciente');
-                      toast.success('✨ Filtros limpiados');
-                    }}
-                    className="text-sm text-gray-600 hover:text-[#0A5BA9] font-medium transition-colors flex items-center gap-2"
-                  >
-                    <X className="w-4 h-4" />
-                    Limpiar todos los filtros
-                  </button>
-                </div>
-              )}
             </div>
           )}
         </div>
