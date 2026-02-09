@@ -255,7 +255,7 @@ export default function ModalHorarioTeleconsultorio({
                     <div className="text-[10px] opacity-75">{dia.nombreCompleto.slice(0, 3)}</div>
                   </button>
                 );
-              })}}
+              })}
             </div>
 
             {/* Contador días seleccionados */}
