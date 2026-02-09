@@ -42,13 +42,26 @@ export default function EstadisticasTeleurgencias() {
   const cargarDatos = async () => {
     try {
       setCargando(true);
-      const response = await apiClient.get('/coordinador-medico/estadisticas/medicos');
-      setMedicos(Array.isArray(response) ? response : []);
-      setFiltrado(Array.isArray(response) ? response : []);
+      // Usar endpoint que ya tiene permisos configurados
+      const response = await apiClient.get('/gestion-pacientes/coordinador/medicos-teleurgencias');
+
+      // Transformar datos al formato esperado
+      const datosProcesados = Array.isArray(response) ? response.map(m => ({
+        nombreCompleto: m.nombreCompleto,
+        username: m.username,
+        atendidos: m.completadas || 0,
+        pendientes: m.pendientes || 0,
+        desertadas: m.desertadas || 0,
+      })) : [];
+
+      setMedicos(datosProcesados);
+      setFiltrado(datosProcesados);
       toast.success('Estadísticas cargadas');
     } catch (error) {
       console.error('Error cargando estadísticas:', error);
       toast.error('Error al cargar estadísticas');
+      setMedicos([]);
+      setFiltrado([]);
     } finally {
       setCargando(false);
     }
