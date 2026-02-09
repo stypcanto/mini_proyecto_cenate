@@ -611,38 +611,41 @@ export default function Produccion() {
                   <p className="text-sm text-gray-500 mt-2">Selecciona otro día del calendario para ver los pacientes atendidos</p>
                 </div>
               ) : (
-                <div className="space-y-3">
-                  {pacientesDiaSeleccionado.map((paciente, idx) => (
-                    <div key={idx} className="border border-gray-200 rounded-lg p-4 hover:bg-blue-50 transition-colors duration-150">
-                      <div className="flex items-start justify-between mb-3">
-                        <div className="flex-1">
-                          <p className="font-semibold text-gray-900">{paciente.apellidosNombres}</p>
-                          <p className="text-sm text-gray-600">DNI: {paciente.numDoc}</p>
-                        </div>
-                        <div className="flex flex-wrap gap-2 ml-4">
-                          {paciente.tieneRecita && (
-                            <span className="inline-flex px-2.5 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-800 border border-blue-200">
-                              📋 Recita
-                            </span>
-                          )}
-                          {paciente.tieneInterconsulta && (
-                            <span className="inline-flex px-2.5 py-1 rounded-full text-xs font-semibold bg-purple-100 text-purple-800 border border-purple-200">
-                              🔗 Inter
-                            </span>
-                          )}
-                          {paciente.esCronico && (
-                            <span className="inline-flex px-2.5 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-800 border border-red-200">
-                              ❤️ Crónico
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                      <div className="grid grid-cols-2 text-sm text-gray-600 gap-2 border-t border-gray-100 pt-2">
-                        <p>📞 {paciente.telefono || '-'}</p>
-                        <p>🏥 {paciente.ipress || '-'}</p>
-                      </div>
-                    </div>
-                  ))}
+                <div className="overflow-x-auto max-h-96 overflow-y-auto border border-gray-200 rounded-lg">
+                  <table className="w-full text-sm">
+                    <thead className="bg-gray-50 border-b border-gray-200 sticky top-0">
+                      <tr>
+                        <th className="px-3 py-2 text-left font-semibold text-gray-700">Paciente</th>
+                        <th className="px-3 py-2 text-left font-semibold text-gray-700">DNI</th>
+                        <th className="px-3 py-2 text-left font-semibold text-gray-700">Teléfono</th>
+                        <th className="px-3 py-2 text-left font-semibold text-gray-700">IPRESS</th>
+                        <th className="px-3 py-2 text-center font-semibold text-gray-700">Tipos</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-200">
+                      {pacientesDiaSeleccionado.map((paciente, idx) => (
+                        <tr key={idx} className={`${idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'} hover:bg-blue-50 transition-colors duration-150`}>
+                          <td className="px-3 py-2 text-gray-900 font-medium">{paciente.apellidosNombres}</td>
+                          <td className="px-3 py-2 text-gray-600">{paciente.numDoc}</td>
+                          <td className="px-3 py-2 text-gray-600">{paciente.telefono || '-'}</td>
+                          <td className="px-3 py-2 text-gray-600">{paciente.ipress || '-'}</td>
+                          <td className="px-3 py-2">
+                            <div className="flex justify-center gap-1 flex-wrap">
+                              {paciente.tieneRecita && (
+                                <span className="inline-flex px-2 py-0.5 rounded text-xs font-semibold bg-blue-100 text-blue-800">📋</span>
+                              )}
+                              {paciente.tieneInterconsulta && (
+                                <span className="inline-flex px-2 py-0.5 rounded text-xs font-semibold bg-purple-100 text-purple-800">🔗</span>
+                              )}
+                              {paciente.esCronico && (
+                                <span className="inline-flex px-2 py-0.5 rounded text-xs font-semibold bg-red-100 text-red-800">❤️</span>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
               )}
             </div>
