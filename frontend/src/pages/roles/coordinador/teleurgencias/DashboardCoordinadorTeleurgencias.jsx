@@ -43,6 +43,10 @@ export default function DashboardCoordinadorTeleurgencias() {
   const [showModal, setShowModal] = useState(false);
   const [cargando, setCargando] = useState(true);
 
+  // ✅ v1.65.4: Modal de lista de pacientes por estado
+  const [showPacientesList, setShowPacientesList] = useState(false);
+  const [filtroEstadoPacientes, setFiltroEstadoPacientes] = useState(null); // 'ATENDIDO', 'PENDIENTE', 'DESERCION'
+
   // Accordions
   const [acordeones, setAcordiones] = useState({
     activos: true,      // Abierto por defecto
@@ -700,30 +704,57 @@ export default function DashboardCoordinadorTeleurgencias() {
                   Resumen de Atenciones
                 </h3>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <div className="text-center">
+                  <div className="text-center p-3 rounded-lg bg-white border border-gray-200">
                     <p className="text-gray-600 text-sm">Pacientes Hoy</p>
                     <p className="text-2xl font-bold text-gray-900">
                       {medicoSeleccionado.pacientesAsignados}
                     </p>
                   </div>
-                  <div className="text-center">
+
+                  {/* ✅ v1.65.4: Completadas - Clickeable */}
+                  <button
+                    onClick={() => {
+                      setFiltroEstadoPacientes('ATENDIDO');
+                      setShowPacientesList(true);
+                    }}
+                    disabled={medicoSeleccionado.completadas === 0}
+                    className="text-center p-3 rounded-lg bg-white border border-emerald-200 hover:bg-emerald-50 hover:border-emerald-400 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
                     <p className="text-gray-600 text-sm">Completadas</p>
                     <p className="text-2xl font-bold text-emerald-600">
                       {medicoSeleccionado.completadas}
                     </p>
-                  </div>
-                  <div className="text-center">
+                  </button>
+
+                  {/* ✅ v1.65.4: Pendientes - Clickeable */}
+                  <button
+                    onClick={() => {
+                      setFiltroEstadoPacientes('PENDIENTE');
+                      setShowPacientesList(true);
+                    }}
+                    disabled={medicoSeleccionado.pendientes === 0}
+                    className="text-center p-3 rounded-lg bg-white border border-amber-200 hover:bg-amber-50 hover:border-amber-400 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
                     <p className="text-gray-600 text-sm">Pendientes</p>
                     <p className="text-2xl font-bold text-amber-600">
                       {medicoSeleccionado.pendientes}
                     </p>
-                  </div>
-                  <div className="text-center">
+                  </button>
+
+                  {/* ✅ v1.65.4: Desertadas - Clickeable */}
+                  <button
+                    onClick={() => {
+                      setFiltroEstadoPacientes('DESERCION');
+                      setShowPacientesList(true);
+                    }}
+                    disabled={medicoSeleccionado.desertadas === 0}
+                    className="text-center p-3 rounded-lg bg-white border border-red-200 hover:bg-red-50 hover:border-red-400 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
                     <p className="text-gray-600 text-sm">Desertadas</p>
                     <p className="text-2xl font-bold text-red-600">
                       {medicoSeleccionado.desertadas}
                     </p>
-                  </div>
+                  </button>
                 </div>
               </div>
 
@@ -744,6 +775,133 @@ export default function DashboardCoordinadorTeleurgencias() {
                   Llamar
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ✅ v1.65.4: Modal de Lista de Pacientes por Estado */}
+      {showPacientesList && medicoSeleccionado && filtroEstadoPacientes && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg max-w-4xl w-full max-h-[85vh] overflow-y-auto shadow-xl">
+            {/* Header */}
+            <div className="bg-gradient-to-r from-blue-600 to-blue-800 px-6 py-4 text-white flex items-center justify-between sticky top-0">
+              <div>
+                <h2 className="text-2xl font-bold">
+                  {filtroEstadoPacientes === 'ATENDIDO' && '✅ Atenciones Completadas'}
+                  {filtroEstadoPacientes === 'PENDIENTE' && '🕐 Atenciones Pendientes'}
+                  {filtroEstadoPacientes === 'DESERCION' && '❌ Atenciones Desertadas'}
+                </h2>
+                <p className="text-blue-100 text-sm">Dr. {medicoSeleccionado.nombreCompleto}</p>
+              </div>
+              <button
+                onClick={() => setShowPacientesList(false)}
+                className="p-1 hover:bg-white/20 rounded transition"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+
+            {/* Body */}
+            <div className="p-6">
+              {medicoSeleccionado.atenciones && medicoSeleccionado.atenciones.length > 0 ? (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead className="bg-gray-100 border-b border-gray-300">
+                      <tr>
+                        <th className="px-4 py-3 text-left font-semibold text-gray-700">ID Solicitud</th>
+                        <th className="px-4 py-3 text-left font-semibold text-gray-700">Paciente</th>
+                        <th className="px-4 py-3 text-left font-semibold text-gray-700">Hora</th>
+                        <th className="px-4 py-3 text-left font-semibold text-gray-700">Estado</th>
+                        {filtroEstadoPacientes === 'ATENDIDO' && (
+                          <th className="px-4 py-3 text-left font-semibold text-gray-700">Duración</th>
+                        )}
+                        {filtroEstadoPacientes === 'PENDIENTE' && (
+                          <th className="px-4 py-3 text-left font-semibold text-gray-700">Tiempo Espera</th>
+                        )}
+                        <th className="px-4 py-3 text-left font-semibold text-gray-700">Urgente</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {medicoSeleccionado.atenciones
+                        .filter(atencion => atencion.estado === filtroEstadoPacientes)
+                        .map((atencion, idx) => (
+                          <tr key={idx} className="border-b border-gray-200 hover:bg-gray-50 transition">
+                            <td className="px-4 py-3 text-gray-900 font-semibold">
+                              #{atencion.idSolicitud}
+                            </td>
+                            <td className="px-4 py-3 text-gray-700">
+                              {atencion.paciente}
+                            </td>
+                            <td className="px-4 py-3 text-gray-600">
+                              <Clock className="w-4 h-4 inline mr-2 text-blue-500" />
+                              {atencion.hora || '-'}
+                            </td>
+                            <td className="px-4 py-3">
+                              {atencion.estado === 'ATENDIDO' && (
+                                <span className="inline-block px-3 py-1 bg-emerald-100 text-emerald-700 rounded-full text-xs font-semibold">
+                                  ✅ Completada
+                                </span>
+                              )}
+                              {atencion.estado === 'PENDIENTE' && (
+                                <span className="inline-block px-3 py-1 bg-amber-100 text-amber-700 rounded-full text-xs font-semibold">
+                                  🕐 Pendiente
+                                </span>
+                              )}
+                              {atencion.estado === 'DESERCION' && (
+                                <span className="inline-block px-3 py-1 bg-red-100 text-red-700 rounded-full text-xs font-semibold">
+                                  ❌ Desertada
+                                </span>
+                              )}
+                            </td>
+                            {filtroEstadoPacientes === 'ATENDIDO' && (
+                              <td className="px-4 py-3 text-gray-600">
+                                {atencion.duracion || '-'}
+                              </td>
+                            )}
+                            {filtroEstadoPacientes === 'PENDIENTE' && (
+                              <td className="px-4 py-3">
+                                {atencion.urgente ? (
+                                  <span className="inline-flex items-center gap-1 px-2 py-1 bg-red-100 text-red-700 rounded text-xs font-semibold">
+                                    <AlertTriangle className="w-4 h-4" />
+                                    {atencion.tiempoEspera || '> 45 min'}
+                                  </span>
+                                ) : (
+                                  <span className="text-gray-600">{atencion.tiempoEspera || '< 45 min'}</span>
+                                )}
+                              </td>
+                            )}
+                            <td className="px-4 py-3">
+                              {atencion.urgente ? (
+                                <span className="inline-block w-3 h-3 bg-red-500 rounded-full" title="Urgente"></span>
+                              ) : (
+                                <span className="inline-block w-3 h-3 bg-gray-300 rounded-full" title="No urgente"></span>
+                              )}
+                            </td>
+                          </tr>
+                        ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <div className="py-12 text-center">
+                  <p className="text-gray-500 text-lg">
+                    {filtroEstadoPacientes === 'ATENDIDO' && 'No hay atenciones completadas'}
+                    {filtroEstadoPacientes === 'PENDIENTE' && 'No hay atenciones pendientes'}
+                    {filtroEstadoPacientes === 'DESERCION' && 'No hay atenciones desertadas'}
+                  </p>
+                </div>
+              )}
+            </div>
+
+            {/* Footer */}
+            <div className="mt-6 pt-6 border-t border-gray-200 px-6 py-4 flex gap-3 justify-end bg-gray-50 rounded-b-lg">
+              <button
+                onClick={() => setShowPacientesList(false)}
+                className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 transition font-medium"
+              >
+                Cerrar
+              </button>
             </div>
           </div>
         </div>
