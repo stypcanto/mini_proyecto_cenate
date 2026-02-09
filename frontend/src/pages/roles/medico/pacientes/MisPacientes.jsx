@@ -30,6 +30,55 @@ import toast from 'react-hot-toast';
 import gestionPacientesService from '../../../../services/gestionPacientesService';
 import ipressService from '../../../../services/ipressService';
 
+// Estilos de animaciones personalizadas
+const animationStyles = `
+  @keyframes cardFloatKpi {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-6px); }
+  }
+
+  @keyframes cardGlowKpi {
+    0%, 100% { box-shadow: 0 15px 40px rgba(0, 0, 0, 0.15); }
+    50% { box-shadow: 0 20px 50px rgba(0, 0, 0, 0.25); }
+  }
+
+  @keyframes slideUpKpi {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .kpi-card-hover {
+    transition: all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  .kpi-card-hover:hover {
+    transform: translateY(-10px) scale(1.02);
+    animation: cardGlowKpi 1.5s ease-in-out infinite;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .kpi-card-animate {
+      animation: slideUpKpi 0.6s ease-out forwards;
+    }
+
+    .kpi-card-animate:nth-child(1) {
+      animation-delay: 0s;
+    }
+
+    .kpi-card-animate:nth-child(2) {
+      animation-delay: 0.1s;
+    }
+
+    .kpi-card-animate:nth-child(3) {
+      animation-delay: 0.2s;
+    }
+
+    .kpi-card-animate:nth-child(4) {
+      animation-delay: 0.3s;
+    }
+  }
+`;
+
 export default function MisPacientes() {
   const [pacientes, setPacientes] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -559,6 +608,7 @@ export default function MisPacientes() {
 
   return (
     <div className="min-h-screen bg-gray-50 p-6">
+      <style>{animationStyles}</style>
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="mb-8">
@@ -570,67 +620,79 @@ export default function MisPacientes() {
         </div>
 
         {/* 📊 Estadísticas - Clicables para Filtrar */}
-        <div className="mb-6 grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="mb-6 grid grid-cols-1 md:grid-cols-4 gap-6">
           {/* Total de Pacientes - Clicable para limpiar filtro */}
           <button
             onClick={() => setFiltroEstado('')}
-            className={`text-left rounded-lg p-6 border-2 transition-all duration-200 cursor-pointer transform hover:scale-105 ${
+            className={`kpi-card-animate kpi-card-hover text-left rounded-xl p-7 overflow-hidden relative group ${
               filtroEstado === ''
-                ? 'bg-gradient-to-br from-slate-600 to-slate-700 border-slate-800 text-white shadow-lg'
-                : 'bg-gradient-to-br from-slate-100 to-slate-200 border-slate-400 hover:border-slate-600 text-slate-900'
-            }`}
+                ? 'bg-gradient-to-br from-slate-700 to-slate-900 shadow-xl'
+                : 'bg-gradient-to-br from-slate-500 to-slate-700 shadow-lg hover:from-slate-600 hover:to-slate-800'
+            } text-white border-0 cursor-pointer`}
           >
-            <p className={`text-sm font-medium ${filtroEstado === '' ? 'text-slate-200' : 'text-slate-700'}`}>Total de Pacientes</p>
-            <p className={`text-3xl font-bold mt-2 ${filtroEstado === '' ? 'text-white' : 'text-slate-600'}`}>{pacientes.length}</p>
-            <p className={`text-xs mt-2 ${filtroEstado === '' ? 'text-slate-300' : 'text-slate-600'}`}>Haz clic para limpiar filtro</p>
+            <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16 group-hover:scale-150 transition-transform duration-500"></div>
+            <div className="relative z-10">
+              <p className="text-sm font-semibold text-slate-100">Total de Pacientes</p>
+              <p className="text-4xl font-bold mt-3 text-white">{pacientes.length}</p>
+              <p className="text-xs mt-3 text-slate-300 group-hover:text-white transition-colors">Haz clic para limpiar filtro</p>
+            </div>
           </button>
 
           {/* Atendidos - Clicable */}
           <button
             onClick={() => setFiltroEstado('Atendido')}
-            className={`text-left rounded-lg p-6 border-2 transition-all duration-200 cursor-pointer transform hover:scale-105 ${
+            className={`kpi-card-animate kpi-card-hover text-left rounded-xl p-7 overflow-hidden relative group ${
               filtroEstado === 'Atendido'
-                ? 'bg-gradient-to-br from-teal-600 to-teal-700 border-teal-900 text-white shadow-lg'
-                : 'bg-gradient-to-br from-teal-50 to-teal-100 border-teal-400 hover:border-teal-600 text-teal-900'
-            }`}
+                ? 'bg-gradient-to-br from-emerald-600 to-emerald-800 shadow-xl'
+                : 'bg-gradient-to-br from-emerald-500 to-emerald-700 shadow-lg hover:from-emerald-600 hover:to-emerald-800'
+            } text-white border-0 cursor-pointer`}
           >
-            <p className={`text-sm font-medium ${filtroEstado === 'Atendido' ? 'text-teal-100' : 'text-teal-800'}`}>Atendidos</p>
-            <p className={`text-3xl font-bold mt-2 ${filtroEstado === 'Atendido' ? 'text-white' : 'text-teal-700'}`}>
-              {pacientes.filter(p => p.condicion === 'Atendido').length}
-            </p>
-            <p className={`text-xs mt-2 ${filtroEstado === 'Atendido' ? 'text-teal-100' : 'text-teal-700'}`}>Haz clic para filtrar</p>
+            <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16 group-hover:scale-150 transition-transform duration-500"></div>
+            <div className="relative z-10">
+              <p className="text-sm font-semibold text-emerald-100">Atendidos</p>
+              <p className="text-4xl font-bold mt-3 text-white">
+                {pacientes.filter(p => p.condicion === 'Atendido').length}
+              </p>
+              <p className="text-xs mt-3 text-emerald-200 group-hover:text-white transition-colors">Haz clic para filtrar</p>
+            </div>
           </button>
 
           {/* Pendientes - Clicable */}
           <button
             onClick={() => setFiltroEstado('Pendiente')}
-            className={`text-left rounded-lg p-6 border-2 transition-all duration-200 cursor-pointer transform hover:scale-105 ${
+            className={`kpi-card-animate kpi-card-hover text-left rounded-xl p-7 overflow-hidden relative group ${
               filtroEstado === 'Pendiente'
-                ? 'bg-gradient-to-br from-orange-600 to-orange-700 border-orange-900 text-white shadow-lg'
-                : 'bg-gradient-to-br from-orange-50 to-orange-100 border-orange-400 hover:border-orange-600 text-orange-900'
-            }`}
+                ? 'bg-gradient-to-br from-amber-600 to-amber-800 shadow-xl'
+                : 'bg-gradient-to-br from-amber-500 to-amber-700 shadow-lg hover:from-amber-600 hover:to-amber-800'
+            } text-white border-0 cursor-pointer`}
           >
-            <p className={`text-sm font-medium ${filtroEstado === 'Pendiente' ? 'text-orange-100' : 'text-orange-800'}`}>Pendientes</p>
-            <p className={`text-3xl font-bold mt-2 ${filtroEstado === 'Pendiente' ? 'text-white' : 'text-orange-700'}`}>
-              {pacientes.filter(p => p.condicion === 'Pendiente').length}
-            </p>
-            <p className={`text-xs mt-2 ${filtroEstado === 'Pendiente' ? 'text-orange-100' : 'text-orange-700'}`}>Haz clic para filtrar</p>
+            <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16 group-hover:scale-150 transition-transform duration-500"></div>
+            <div className="relative z-10">
+              <p className="text-sm font-semibold text-amber-100">Pendientes</p>
+              <p className="text-4xl font-bold mt-3 text-white">
+                {pacientes.filter(p => p.condicion === 'Pendiente').length}
+              </p>
+              <p className="text-xs mt-3 text-amber-200 group-hover:text-white transition-colors">Haz clic para filtrar</p>
+            </div>
           </button>
 
           {/* Deserción - Clicable */}
           <button
             onClick={() => setFiltroEstado('Deserción')}
-            className={`text-left rounded-lg p-6 border-2 transition-all duration-200 cursor-pointer transform hover:scale-105 ${
+            className={`kpi-card-animate kpi-card-hover text-left rounded-xl p-7 overflow-hidden relative group ${
               filtroEstado === 'Deserción'
-                ? 'bg-gradient-to-br from-red-600 to-red-700 border-red-900 text-white shadow-lg'
-                : 'bg-gradient-to-br from-red-50 to-red-100 border-red-400 hover:border-red-600 text-red-900'
-            }`}
+                ? 'bg-gradient-to-br from-rose-600 to-rose-800 shadow-xl'
+                : 'bg-gradient-to-br from-rose-500 to-rose-700 shadow-lg hover:from-rose-600 hover:to-rose-800'
+            } text-white border-0 cursor-pointer`}
           >
-            <p className={`text-sm font-medium ${filtroEstado === 'Deserción' ? 'text-red-100' : 'text-red-800'}`}>Deserción</p>
-            <p className={`text-3xl font-bold mt-2 ${filtroEstado === 'Deserción' ? 'text-white' : 'text-red-700'}`}>
-              {pacientes.filter(p => p.condicion === 'Deserción').length}
-            </p>
-            <p className={`text-xs mt-2 ${filtroEstado === 'Deserción' ? 'text-red-100' : 'text-red-700'}`}>Haz clic para filtrar</p>
+            <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16 group-hover:scale-150 transition-transform duration-500"></div>
+            <div className="relative z-10">
+              <p className="text-sm font-semibold text-rose-100">Deserción</p>
+              <p className="text-4xl font-bold mt-3 text-white">
+                {pacientes.filter(p => p.condicion === 'Deserción').length}
+              </p>
+              <p className="text-xs mt-3 text-rose-200 group-hover:text-white transition-colors">Haz clic para filtrar</p>
+            </div>
           </button>
         </div>
 
