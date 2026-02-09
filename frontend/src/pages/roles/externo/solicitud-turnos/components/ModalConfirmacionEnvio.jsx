@@ -59,13 +59,29 @@ const ModalConfirmacionEnvio = ({
                 <span className="text-gray-600">Total Especialidades:</span>
                 <span className="font-bold text-gray-800">{resumenSolicitud?.totalEspecialidades || 0}</span>
               </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600">Turnos Mañana:</span>
-                <span className="font-bold text-orange-600">{resumenSolicitud?.turnosMañana || 0}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600">Turnos Tarde:</span>
-                <span className="font-bold text-purple-600">{resumenSolicitud?.turnosTarde || 0}</span>
+              {resumenSolicitud?.turnosTM > 0 && (
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Turnos Mañana y Tarde:</span>
+                  <span className="font-bold text-blue-600">{resumenSolicitud?.turnosTM || 0}</span>
+                </div>
+              )}
+              {resumenSolicitud?.turnosMañana > 0 && (
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Turnos Solo Mañana:</span>
+                  <span className="font-bold text-orange-600">{resumenSolicitud?.turnosMañana || 0}</span>
+                </div>
+              )}
+              {resumenSolicitud?.turnosTarde > 0 && (
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Turnos Solo Tarde:</span>
+                  <span className="font-bold text-purple-600">{resumenSolicitud?.turnosTarde || 0}</span>
+                </div>
+              )}
+              <div className="border-t border-purple-200 pt-2 mt-3">
+                <div className="flex justify-between font-bold text-gray-800">
+                  <span>Total Turnos:</span>
+                  <span>{resumenSolicitud?.totalTurnos || 0}</span>
+                </div>
               </div>
             </div>
           </div>

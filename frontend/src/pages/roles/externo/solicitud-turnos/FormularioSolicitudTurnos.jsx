@@ -344,6 +344,13 @@ export default function FormularioSolicitudTurnos() {
 
       // EDITAR INICIADO: Cargar detalles de la solicitud
       if (solicitud.detalles && Array.isArray(solicitud.detalles)) {
+        console.log("🔍 ========== CARGA DE DETALLES EXISTENTES ==========");
+        console.log("📋 Detalles del backend:", solicitud.detalles);
+        solicitud.detalles.forEach((det, i) => {
+          console.log(`  ${i+1}. ${det.nombreServicio}: TM=${det.turnoTM || det.turnosTm}, M=${det.turnoManana}, T=${det.turnoTarde}`);
+        });
+        console.log("================================================");
+
         // Agrupar detalles por idServicio para evitar duplicados
         // El backend devuelve múltiples registros (con diferentes idDetalle) para la misma especialidad
         // cuando hay múltiples fechas. Consolidamos todo en un solo registro por especialidad.
@@ -378,6 +385,7 @@ export default function FormularioSolicitudTurnos() {
               idDetalle: det.idDetalle || null, // Tomamos el idDetalle del primer registro
               idServicio: det.idServicio,
 
+              turnoTM: det.turnoTM || det.turnosTm || 0,  // Agregar turnoTM del backend
               turnoManana: det.turnoManana || 0,
               turnoTarde: det.turnoTarde || 0,
               tc: det.tc !== undefined ? det.tc : configDefaults.tc,
@@ -484,14 +492,17 @@ export default function FormularioSolicitudTurnos() {
     const todosLosDetalles = (registros || []).map((r) => {
       const turnoManana = Number(r.turnoManana || 0);
       const turnoTarde = Number(r.turnoTarde || 0);
-      const totalTurnos = turnoManana + turnoTarde;
+      const turnoTM = Number(r.turnoTM || 0);
+      
+      // Calcular total: si hay turnoTM, usarlo; si no, sumar individuales
+      const totalTurnos = turnoTM > 0 ? turnoTM : turnoManana + turnoTarde;
 
       return {
         idServicio: r.idServicio,           // FK a servicio_essi (especialidad)
         idDetalle: r.idDetalle || null,     // si es edición, incluir el id_detalle existente
         requiere: totalTurnos > 0,          // false si el usuario ya no desea esta especialidad
         turnos: totalTurnos,
-        turnoTM: 0,                         // Siempre 0 por defecto
+        turnoTM: turnoTM,                   // Usar valor real del campo turnoTM
         turnoManana: turnoManana,           // Cantidad de turnos mañana (a nivel detalle)
         turnoTarde: turnoTarde,             // Cantidad de turnos tarde (a nivel detalle)
         tc: r.tc !== undefined ? r.tc : false,
@@ -504,8 +515,11 @@ export default function FormularioSolicitudTurnos() {
     console.log("🔍 ========== DEBUG PAYLOAD ==========");
     console.log("📋 TODOS los registros (estado actual):");
     registros.forEach(r => {
-      const total = Number(r.turnoManana || 0) + Number(r.turnoTarde || 0);
-      console.log(`  - idServicio: ${r.idServicio}, idDetalle: ${r.idDetalle}, Mañana: ${r.turnoManana}, Tarde: ${r.turnoTarde}, TOTAL: ${total}`);
+      const turnoTM = Number(r.turnoTM || 0);
+      const turnoManana = Number(r.turnoManana || 0);
+      const turnoTarde = Number(r.turnoTarde || 0);
+      const total = turnoTM > 0 ? turnoTM : turnoManana + turnoTarde;
+      console.log(`  - idServicio: ${r.idServicio}, idDetalle: ${r.idDetalle}, TM: ${turnoTM}, Mañana: ${turnoManana}, Tarde: ${turnoTarde}, TOTAL: ${total}`);
     });
 
     // Separar especialidades según estado de turnos
@@ -562,17 +576,37 @@ export default function FormularioSolicitudTurnos() {
     const registrosConTurnos = registros.filter(r => {
       const turnoManana = Number(r.turnoManana || 0);
       const turnoTarde = Number(r.turnoTarde || 0);
-      return turnoManana + turnoTarde > 0;
+      const turnoTM = Number(r.turnoTM || 0);
+      const total = turnoTM > 0 ? turnoTM : turnoManana + turnoTarde;
+      return total > 0;
     });
 
     const totalEspecialidades = registrosConTurnos.length;
-    const turnosMañana = registrosConTurnos.reduce((sum, r) => sum + Number(r.turnoManana || 0), 0);
-    const turnosTarde = registrosConTurnos.reduce((sum, r) => sum + Number(r.turnoTarde || 0), 0);
+    
+    // Calcular turnos considerando turnoTM
+    let turnosMañana = 0;
+    let turnosTarde = 0;
+    let turnosTM = 0;
+    
+    registrosConTurnos.forEach(r => {
+      const turnoManana = Number(r.turnoManana || 0);
+      const turnoTarde = Number(r.turnoTarde || 0);
+      const turnoTMField = Number(r.turnoTM || 0);
+      
+      if (turnoTMField > 0) {
+        turnosTM += turnoTMField;
+      } else {
+        turnosMañana += turnoManana;
+        turnosTarde += turnoTarde;
+      }
+    });
 
     return {
       totalEspecialidades,
       turnosMañana,
-      turnosTarde
+      turnosTarde,
+      turnosTM,
+      totalTurnos: turnosMañana + turnosTarde + turnosTM
     };
   };
 
@@ -587,14 +621,24 @@ export default function FormularioSolicitudTurnos() {
 
     // Validación adicional: verificar que haya registros con turnos
     const registrosConTurnos = registros.filter(r => {
-      const total = Number(r.turnoManana || 0) + Number(r.turnoTarde || 0);
+      const turnoTM = Number(r.turnoTM || 0);
+      const turnoManana = Number(r.turnoManana || 0);
+      const turnoTarde = Number(r.turnoTarde || 0);
+      const total = turnoTM > 0 ? turnoTM : turnoManana + turnoTarde;
       return total > 0;
     });
 
     console.log("🔍 ========== VALIDACIÓN PREVIA ==========");
     console.log("📋 Total de registros:", registros.length);
     console.log("✅ Registros con turnos:", registrosConTurnos.length);
-    console.log("📊 Registros actuales:", registros);
+    console.log("📊 Registros actuales:");
+    registros.forEach(r => {
+      const turnoTM = Number(r.turnoTM || 0);
+      const turnoManana = Number(r.turnoManana || 0);
+      const turnoTarde = Number(r.turnoTarde || 0);
+      const total = turnoTM > 0 ? turnoTM : turnoManana + turnoTarde;
+      console.log(`  - ${r.nombreServicio}: TM=${turnoTM}, M=${turnoManana}, T=${turnoTarde}, Total=${total}`);
+    });
     console.log("==========================================");
 
     if (registrosConTurnos.length === 0) {

@@ -26,6 +26,16 @@ delete from  solicitud_turno_ipress where id_solicitud  in (110,111,112);
 
 
 
+
+
+
+
+
+
+
+
+
+
 --DROP TABLE IF EXISTS public.solicitud_turno_ipress_teleconsultorio_turno_hora;
 --DROP TABLE IF EXISTS public.solicitud_turno_ipress_teleconsultorio_turno;
 --DROP TABLE IF EXISTS public.solicitud_turno_ipress_teleconsultorio_dia;
