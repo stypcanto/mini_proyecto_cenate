@@ -518,12 +518,8 @@ export default function MisPacientes() {
   };
 
   // ✅ v1.64.0: Renderizar consentimiento informado (EDITABLE en estado Pendiente)
+  // ✅ v1.64.2: El consentimiento informado aplica a TODAS las bolsas, no solo Bolsa 107
   const renderConsentimientoInformado = (paciente) => {
-    // ✅ v1.64.1: Si no es Bolsa 107 (pero no es NULL), mostrar "—"
-    // Si es NULL, tratarlo como Bolsa 107 y mostrar el valor
-    if (paciente.idBolsa !== null && paciente.idBolsa !== undefined && paciente.idBolsa !== 1) {
-      return <span className="text-gray-400 text-xs">—</span>;
-    }
 
     // 🚨 Si está en estado "Deserción" → NO consentimiento (NO EDITABLE)
     if (paciente.condicion === 'Deserción') {
@@ -568,7 +564,7 @@ export default function MisPacientes() {
           </button>
         );
       } else {
-        // ✅ v1.64.1: Por defecto cuando es NULL, mostrar "✗ No" clickeable para que médico pueda cambiar a "✓ Sí"
+        // ✅ v1.64.2: Por defecto cuando es NULL, mostrar "✗ No" clickeable para que médico pueda cambiar a "✓ Sí"
         return (
           <button
             onClick={() => {
@@ -599,7 +595,7 @@ export default function MisPacientes() {
         </span>
       );
     } else {
-      // ✅ v1.64.1: Por defecto cuando es NULL, mostrar "✗ No"
+      // ✅ v1.64.2: Por defecto cuando es NULL, mostrar "✗ No"
       return (
         <span className="inline-block bg-red-100 text-red-700 px-2 py-1 rounded text-xs font-semibold">
           ✗ No
