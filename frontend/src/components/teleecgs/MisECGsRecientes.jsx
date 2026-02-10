@@ -733,8 +733,8 @@ export default function MisECGsRecientes({
                         </h3>
                       </div>
 
-                      {/* Grid de Imágenes - SIMPLIFICADO */}
-                      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                      {/* Grid de Imágenes - COMPACTO */}
+                      <div className="grid grid-cols-3 md:grid-cols-5 lg:grid-cols-6 gap-2">
                         {imagenes.map((_, idx) => (
                         <div
                           key={idx}
@@ -743,13 +743,13 @@ export default function MisECGsRecientes({
                           {/* Placeholder de imagen */}
                           <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100">
                             <div className="text-center">
-                              <CloudUpload className="w-8 h-8 text-gray-400 mx-auto mb-1" />
-                              <p className="text-xs text-gray-600 font-semibold">Imagen {idx + 1}</p>
+                              <CloudUpload className="w-5 h-5 text-gray-400 mx-auto mb-0.5" />
+                              <p className="text-xs text-gray-600 font-semibold">{idx + 1}</p>
                             </div>
                           </div>
 
-                          {/* Botones de acción - SIEMPRE VISIBLES */}
-                          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/50 transition-all duration-200 flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100">
+                          {/* Botones de acción - COMPACTOS */}
+                          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/50 transition-all duration-200 flex items-center justify-center gap-1.5 opacity-0 group-hover:opacity-100">
                             {/* Ver Imagen */}
                             <button
                               onClick={(e) => {
@@ -758,10 +758,10 @@ export default function MisECGsRecientes({
                                 setSelectedImageIndex(idx);
                                 setModalMode('preview');
                               }}
-                              className="p-2.5 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors shadow-lg"
+                              className="p-1.5 bg-blue-500 hover:bg-blue-600 text-white rounded transition-colors shadow-lg"
                               title="Ver imagen"
                             >
-                              <Eye className="w-4 h-4" />
+                              <Eye className="w-3 h-3" />
                             </button>
 
                             {/* Eliminar Imagen */}
@@ -771,10 +771,10 @@ export default function MisECGsRecientes({
                                 setSelectedImageIndex(idx);
                                 setModalMode('delete');
                               }}
-                              className="p-2.5 bg-red-500 hover:bg-red-600 text-white rounded-lg transition-colors shadow-lg"
+                              className="p-1.5 bg-red-500 hover:bg-red-600 text-white rounded transition-colors shadow-lg"
                               title="Eliminar imagen"
                             >
-                              <Trash2 className="w-4 h-4" />
+                              <Trash2 className="w-3 h-3" />
                             </button>
                           </div>
                         </div>
