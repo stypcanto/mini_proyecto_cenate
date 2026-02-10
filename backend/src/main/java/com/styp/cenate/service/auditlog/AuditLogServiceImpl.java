@@ -10,6 +10,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.annotation.Propagation;
 
 import java.time.LocalDateTime;
 import java.util.*;
@@ -70,7 +71,7 @@ public class AuditLogServiceImpl implements AuditLogService {
     // 🧾 REGISTROS GENÉRICOS
     // ============================================================
     @Override
-    @Transactional
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void registrarEvento(String usuario, String action, String modulo, String detalle, String nivel, String estado) {
         AuditLog logEntity = new AuditLog();
         logEntity.setUsuario(usuario);

@@ -1,0 +1,423 @@
+- generic [ref=e157]:
+  - complementary [ref=e158]:
+    - generic [ref=e160]:
+      - generic [ref=e163]:
+        - img "Logo CENATE" [ref=e164]
+        - button "Colapsar menu" [ref=e165] [cursor=pointer]:
+          - img [ref=e166]
+      - navigation [ref=e168]:
+        - generic [ref=e196]:
+          - button "Gestión de Personal Externo" [ref=e197] [cursor=pointer]:
+            - generic [ref=e198]:
+              - img [ref=e199]
+              - generic [ref=e202]: Gestión de Personal Externo
+            - img [ref=e203]
+          - generic [ref=e205]:
+            - link "Bienvenida" [ref=e206] [cursor=pointer]:
+              - /url: /roles/externo/bienvenida
+              - img [ref=e207]
+              - generic [ref=e210]: Bienvenida
+            - link "Formulario de Diagnóstico" [ref=e211] [cursor=pointer]:
+              - /url: /roles/externo/formulario-diagnostico
+              - img [ref=e212]
+              - generic [ref=e215]: Formulario de Diagnóstico
+            - link "Solicitud de Turnos" [ref=e216] [cursor=pointer]:
+              - /url: /roles/externo/solicitud-turnos
+              - img [ref=e217]
+              - generic [ref=e220]: Solicitud de Turnos
+            - link "Gestión de Modalidad de Atención" [ref=e221] [cursor=pointer]:
+              - /url: /roles/externo/gestion-modalidad
+              - img [ref=e222]
+              - generic [ref=e225]: Gestión de Modalidad de Atención
+            - link "Seguimiento de Lecturas Pendientes" [ref=e226] [cursor=pointer]:
+              - /url: /roles/externo/seguimiento-lecturas
+              - img [ref=e227]
+              - generic [ref=e230]: Seguimiento de Lecturas Pendientes
+            - generic [ref=e231]:
+              - button "TELE EKG" [ref=e232] [cursor=pointer]:
+                - generic [ref=e233]:
+                  - img [ref=e234]
+                  - generic [ref=e237]: TELE EKG
+                - img [ref=e328]
+              - generic [ref=e330]:
+                - link "IPRESS Workspace" [active] [ref=e331] [cursor=pointer]:
+                  - /url: /teleekgs/ipress-workspace
+                  - img [ref=e332]
+                  - generic [ref=e335]: IPRESS Workspace
+                - link "Estadísticas" [ref=e336] [cursor=pointer]:
+                  - /url: /teleekgs/dashboard
+                  - img [ref=e337]
+                  - generic [ref=e340]: Estadísticas
+      - paragraph [ref=e171]: v1.37.4
+  - main "Contenido principal" [ref=e172]:
+    - generic [ref=e174]:
+      - button "Notificaciones" [ref=e175] [cursor=pointer]:
+        - img [ref=e176]
+      - button "J Jesus Lopez Silva INSTITUCION_EX" [ref=e180] [cursor=pointer]:
+        - generic [ref=e182]: J
+        - generic [ref=e183]:
+          - generic [ref=e184]: Jesus Lopez Silva
+          - generic [ref=e185]: INSTITUCION_EX
+        - img [ref=e186]
+    - generic [ref=e188]:
+      - generic [ref=e342]:
+        - generic [ref=e343]:
+          - generic [ref=e344]:
+            - heading "📋 Gestión de Electrocardiogramas" [level=1] [ref=e345]
+            - paragraph [ref=e346]: Sube y gestiona tus imágenes ECG desde aquí
+          - generic [ref=e347]:
+            - button "Cargar" [ref=e348] [cursor=pointer]:
+              - img [ref=e349]
+              - text: Cargar
+            - generic "Conectado" [ref=e352]
+        - generic [ref=e353]:
+          - generic [ref=e354]:
+            - generic [ref=e362]:
+              - generic [ref=e363]:
+                - heading "📊 Resumen de Hoy" [level=3] [ref=e364]
+                - button "Refrescar datos" [ref=e365] [cursor=pointer]:
+                  - img [ref=e366]
+              - generic [ref=e371]:
+                - button "15 Total" [ref=e372] [cursor=pointer]:
+                  - generic [ref=e374]:
+                    - img [ref=e377]
+                    - generic [ref=e379]: "15"
+                    - text: Total
+                - button "15 Pendiente" [ref=e380] [cursor=pointer]:
+                  - generic [ref=e382]:
+                    - img [ref=e385]
+                    - generic [ref=e388]: "15"
+                    - text: Pendiente
+                - button "0 Observadas" [ref=e389] [cursor=pointer]:
+                  - generic [ref=e391]:
+                    - img [ref=e394]
+                    - generic [ref=e396]: "0"
+                    - text: Observadas
+                - button "0 Atendidas" [ref=e397] [cursor=pointer]:
+                  - generic [ref=e399]:
+                    - img [ref=e402]
+                    - generic [ref=e405]: "0"
+                    - text: Atendidas
+            - generic [ref=e406]:
+              - generic [ref=e407]:
+                - img [ref=e408]
+                - heading "🔍 Filtrar Cargas Recientes" [level=4] [ref=e411]
+              - generic [ref=e412]:
+                - generic [ref=e413]:
+                  - generic [ref=e414]: 🆔 DNI Paciente
+                  - generic [ref=e415]:
+                    - img [ref=e417]
+                    - textbox "🆔 DNI Paciente" [ref=e420]:
+                      - /placeholder: "12345678"
+                - generic [ref=e421]:
+                  - generic [ref=e422]: 📅 Fecha Carga
+                  - generic [ref=e423]:
+                    - img [ref=e425]
+                    - textbox "📅 Fecha Carga" [ref=e427]
+            - generic [ref=e428]:
+              - heading "📋 Cargas Recientes" [level=3] [ref=e429]
+              - table [ref=e431]:
+                - rowgroup [ref=e432]:
+                  - row "Hora DNI Paciente Perfil Prioridad Estado Cant. Imágenes Acciones" [ref=e433]:
+                    - columnheader "Hora" [ref=e434]
+                    - columnheader "DNI" [ref=e435]
+                    - columnheader "Paciente" [ref=e436]
+                    - columnheader "Perfil" [ref=e437]
+                    - columnheader "Prioridad" [ref=e438]
+                    - columnheader "Estado" [ref=e439]
+                    - columnheader "Cant. Imágenes" [ref=e440]
+                    - columnheader "Acciones" [ref=e441]
+                - rowgroup [ref=e442]:
+                  - row "09/02 - 15:24 10431702 JOSE LEONOR 96 años / M Normal 1" [ref=e443] [cursor=pointer]:
+                    - cell "09/02 - 15:24" [ref=e444]
+                    - cell "10431702" [ref=e445]
+                    - cell "JOSE LEONOR" [ref=e446]:
+                      - generic [ref=e447]: JOSE LEONOR
+                    - cell "96 años / M" [ref=e448]
+                    - cell "Normal" [ref=e449]:
+                      - generic "Normal" [ref=e450]
+                    - cell [ref=e451]
+                    - cell "1" [ref=e453]:
+                      - generic [ref=e454]: "1"
+                    - cell [ref=e455]:
+                      - generic [ref=e456]:
+                        - button "Ver imágenes" [ref=e457]:
+                          - img [ref=e458]
+                        - button "Editar imágenes" [ref=e461]:
+                          - img [ref=e462]
+                        - button "Ver teléfono" [ref=e464]:
+                          - img [ref=e465]
+                  - row "09/02 - 15:24 15683157 CELINDA ADRIANA 85 años / F Normal 1" [ref=e467] [cursor=pointer]:
+                    - cell "09/02 - 15:24" [ref=e468]
+                    - cell "15683157" [ref=e469]
+                    - cell "CELINDA ADRIANA" [ref=e470]:
+                      - generic [ref=e471]: CELINDA ADRIANA
+                    - cell "85 años / F" [ref=e472]
+                    - cell "Normal" [ref=e473]:
+                      - generic "Normal" [ref=e474]
+                    - cell [ref=e475]
+                    - cell "1" [ref=e477]:
+                      - generic [ref=e478]: "1"
+                    - cell [ref=e479]:
+                      - generic [ref=e480]:
+                        - button "Ver imágenes" [ref=e481]:
+                          - img [ref=e482]
+                        - button "Editar imágenes" [ref=e485]:
+                          - img [ref=e486]
+                        - button "Ver teléfono" [ref=e488]:
+                          - img [ref=e489]
+                  - row "09/02 - 15:05 15944278 FEDERICO GUILLERMO 92 años / M Normal 1" [ref=e491] [cursor=pointer]:
+                    - cell "09/02 - 15:05" [ref=e492]
+                    - cell "15944278" [ref=e493]
+                    - cell "FEDERICO GUILLERMO" [ref=e494]:
+                      - generic [ref=e495]: FEDERICO GUILLERMO
+                    - cell "92 años / M" [ref=e496]
+                    - cell "Normal" [ref=e497]:
+                      - generic "Normal" [ref=e498]
+                    - cell [ref=e499]
+                    - cell "1" [ref=e501]:
+                      - generic [ref=e502]: "1"
+                    - cell [ref=e503]:
+                      - generic [ref=e504]:
+                        - button "Ver imágenes" [ref=e505]:
+                          - img [ref=e506]
+                        - button "Editar imágenes" [ref=e509]:
+                          - img [ref=e510]
+                        - button "Ver teléfono" [ref=e512]:
+                          - img [ref=e513]
+                  - row "09/02 - 15:22 15946925 DE PEÑA LEONIDAS 78 años / F Normal 1" [ref=e515] [cursor=pointer]:
+                    - cell "09/02 - 15:22" [ref=e516]
+                    - cell "15946925" [ref=e517]
+                    - cell "DE PEÑA LEONIDAS" [ref=e518]:
+                      - generic [ref=e519]: DE PEÑA LEONIDAS
+                    - cell "78 años / F" [ref=e520]
+                    - cell "Normal" [ref=e521]:
+                      - generic "Normal" [ref=e522]
+                    - cell [ref=e523]
+                    - cell "1" [ref=e525]:
+                      - generic [ref=e526]: "1"
+                    - cell [ref=e527]:
+                      - generic [ref=e528]:
+                        - button "Ver imágenes" [ref=e529]:
+                          - img [ref=e530]
+                        - button "Editar imágenes" [ref=e533]:
+                          - img [ref=e534]
+                        - button "Ver teléfono" [ref=e536]:
+                          - img [ref=e537]
+                  - row "09/02 - 15:26 08240911 LOPEZ 88 años / M Normal 1" [ref=e539] [cursor=pointer]:
+                    - cell "09/02 - 15:26" [ref=e540]
+                    - cell "08240911" [ref=e541]
+                    - cell "LOPEZ" [ref=e542]:
+                      - generic [ref=e543]: LOPEZ
+                    - cell "88 años / M" [ref=e544]
+                    - cell "Normal" [ref=e545]:
+                      - generic "Normal" [ref=e546]
+                    - cell [ref=e547]
+                    - cell "1" [ref=e549]:
+                      - generic [ref=e550]: "1"
+                    - cell [ref=e551]:
+                      - generic [ref=e552]:
+                        - button "Ver imágenes" [ref=e553]:
+                          - img [ref=e554]
+                        - button "Editar imágenes" [ref=e557]:
+                          - img [ref=e558]
+                        - button "Ver teléfono" [ref=e560]:
+                          - img [ref=e561]
+                  - row "09/02 - 15:25 06133340 CAROLINA 92 años / F Normal 1" [ref=e563] [cursor=pointer]:
+                    - cell "09/02 - 15:25" [ref=e564]
+                    - cell "06133340" [ref=e565]
+                    - cell "CAROLINA" [ref=e566]:
+                      - generic [ref=e567]: CAROLINA
+                    - cell "92 años / F" [ref=e568]
+                    - cell "Normal" [ref=e569]:
+                      - generic "Normal" [ref=e570]
+                    - cell [ref=e571]
+                    - cell "1" [ref=e573]:
+                      - generic [ref=e574]: "1"
+                    - cell [ref=e575]:
+                      - generic [ref=e576]:
+                        - button "Ver imágenes" [ref=e577]:
+                          - img [ref=e578]
+                        - button "Editar imágenes" [ref=e581]:
+                          - img [ref=e582]
+                        - button "Ver teléfono" [ref=e584]:
+                          - img [ref=e585]
+                  - row "09/02 - 15:21 07851033 ALICIA IRENE 100 años / F Normal 1" [ref=e587] [cursor=pointer]:
+                    - cell "09/02 - 15:21" [ref=e588]
+                    - cell "07851033" [ref=e589]
+                    - cell "ALICIA IRENE" [ref=e590]:
+                      - generic [ref=e591]: ALICIA IRENE
+                    - cell "100 años / F" [ref=e592]
+                    - cell "Normal" [ref=e593]:
+                      - generic "Normal" [ref=e594]
+                    - cell [ref=e595]
+                    - cell "1" [ref=e597]:
+                      - generic [ref=e598]: "1"
+                    - cell [ref=e599]:
+                      - generic [ref=e600]:
+                        - button "Ver imágenes" [ref=e601]:
+                          - img [ref=e602]
+                        - button "Editar imágenes" [ref=e605]:
+                          - img [ref=e606]
+                        - button "Ver teléfono" [ref=e608]:
+                          - img [ref=e609]
+                  - row "09/02 - 15:20 07187847 LILY ELIZABETH 80 años / F Normal 1" [ref=e611] [cursor=pointer]:
+                    - cell "09/02 - 15:20" [ref=e612]
+                    - cell "07187847" [ref=e613]
+                    - cell "LILY ELIZABETH" [ref=e614]:
+                      - generic [ref=e615]: LILY ELIZABETH
+                    - cell "80 años / F" [ref=e616]
+                    - cell "Normal" [ref=e617]:
+                      - generic "Normal" [ref=e618]
+                    - cell [ref=e619]
+                    - cell "1" [ref=e621]:
+                      - generic [ref=e622]: "1"
+                    - cell [ref=e623]:
+                      - generic [ref=e624]:
+                        - button "Ver imágenes" [ref=e625]:
+                          - img [ref=e626]
+                        - button "Editar imágenes" [ref=e629]:
+                          - img [ref=e630]
+                        - button "Ver teléfono" [ref=e632]:
+                          - img [ref=e633]
+                  - row "09/02 - 15:17 07942547 DE SEVILLANO BLANCA LUISA 91 años / F Normal 1" [ref=e635] [cursor=pointer]:
+                    - cell "09/02 - 15:17" [ref=e636]
+                    - cell "07942547" [ref=e637]
+                    - cell "DE SEVILLANO BLANCA LUISA" [ref=e638]:
+                      - generic [ref=e639]: DE SEVILLANO BLANCA LUISA
+                    - cell "91 años / F" [ref=e640]
+                    - cell "Normal" [ref=e641]:
+                      - generic "Normal" [ref=e642]
+                    - cell [ref=e643]
+                    - cell "1" [ref=e645]:
+                      - generic [ref=e646]: "1"
+                    - cell [ref=e647]:
+                      - generic [ref=e648]:
+                        - button "Ver imágenes" [ref=e649]:
+                          - img [ref=e650]
+                        - button "Editar imágenes" [ref=e653]:
+                          - img [ref=e654]
+                        - button "Ver teléfono" [ref=e656]:
+                          - img [ref=e657]
+                  - row "09/02 - 15:12 06745146 DE ARANDA ROSA AURORA 81 años / F Normal 1" [ref=e659] [cursor=pointer]:
+                    - cell "09/02 - 15:12" [ref=e660]
+                    - cell "06745146" [ref=e661]
+                    - cell "DE ARANDA ROSA AURORA" [ref=e662]:
+                      - generic [ref=e663]: DE ARANDA ROSA AURORA
+                    - cell "81 años / F" [ref=e664]
+                    - cell "Normal" [ref=e665]:
+                      - generic "Normal" [ref=e666]
+                    - cell [ref=e667]
+                    - cell "1" [ref=e669]:
+                      - generic [ref=e670]: "1"
+                    - cell [ref=e671]:
+                      - generic [ref=e672]:
+                        - button "Ver imágenes" [ref=e673]:
+                          - img [ref=e674]
+                        - button "Editar imágenes" [ref=e677]:
+                          - img [ref=e678]
+                        - button "Ver teléfono" [ref=e680]:
+                          - img [ref=e681]
+                  - row "09/02 - 15:11 06704187 TEODORA 95 años / F Normal 1" [ref=e683] [cursor=pointer]:
+                    - cell "09/02 - 15:11" [ref=e684]
+                    - cell "06704187" [ref=e685]
+                    - cell "TEODORA" [ref=e686]:
+                      - generic [ref=e687]: TEODORA
+                    - cell "95 años / F" [ref=e688]
+                    - cell "Normal" [ref=e689]:
+                      - generic "Normal" [ref=e690]
+                    - cell [ref=e691]
+                    - cell "1" [ref=e693]:
+                      - generic [ref=e694]: "1"
+                    - cell [ref=e695]:
+                      - generic [ref=e696]:
+                        - button "Ver imágenes" [ref=e697]:
+                          - img [ref=e698]
+                        - button "Editar imágenes" [ref=e701]:
+                          - img [ref=e702]
+                        - button "Ver teléfono" [ref=e704]:
+                          - img [ref=e705]
+                  - row "09/02 - 15:10 09950203 VICTOR 87 años / M Normal 1" [ref=e707] [cursor=pointer]:
+                    - cell "09/02 - 15:10" [ref=e708]
+                    - cell "09950203" [ref=e709]
+                    - cell "VICTOR" [ref=e710]:
+                      - generic [ref=e711]: VICTOR
+                    - cell "87 años / M" [ref=e712]
+                    - cell "Normal" [ref=e713]:
+                      - generic "Normal" [ref=e714]
+                    - cell [ref=e715]
+                    - cell "1" [ref=e717]:
+                      - generic [ref=e718]: "1"
+                    - cell [ref=e719]:
+                      - generic [ref=e720]:
+                        - button "Ver imágenes" [ref=e721]:
+                          - img [ref=e722]
+                        - button "Editar imágenes" [ref=e725]:
+                          - img [ref=e726]
+                        - button "Ver teléfono" [ref=e728]:
+                          - img [ref=e729]
+                  - row "09/02 - 15:08 07942106 JOSE AURELIO 86 años / M Normal 1" [ref=e731] [cursor=pointer]:
+                    - cell "09/02 - 15:08" [ref=e732]
+                    - cell "07942106" [ref=e733]
+                    - cell "JOSE AURELIO" [ref=e734]:
+                      - generic [ref=e735]: JOSE AURELIO
+                    - cell "86 años / M" [ref=e736]
+                    - cell "Normal" [ref=e737]:
+                      - generic "Normal" [ref=e738]
+                    - cell [ref=e739]
+                    - cell "1" [ref=e741]:
+                      - generic [ref=e742]: "1"
+                    - cell [ref=e743]:
+                      - generic [ref=e744]:
+                        - button "Ver imágenes" [ref=e745]:
+                          - img [ref=e746]
+                        - button "Editar imágenes" [ref=e749]:
+                          - img [ref=e750]
+                        - button "Ver teléfono" [ref=e752]:
+                          - img [ref=e753]
+                  - row "09/02 - 15:02 07916622 CESAR AUGUSTO 64 años / M Normal 1" [ref=e755] [cursor=pointer]:
+                    - cell "09/02 - 15:02" [ref=e756]
+                    - cell "07916622" [ref=e757]
+                    - cell "CESAR AUGUSTO" [ref=e758]:
+                      - generic [ref=e759]: CESAR AUGUSTO
+                    - cell "64 años / M" [ref=e760]
+                    - cell "Normal" [ref=e761]:
+                      - generic "Normal" [ref=e762]
+                    - cell [ref=e763]
+                    - cell "1" [ref=e765]:
+                      - generic [ref=e766]: "1"
+                    - cell [ref=e767]:
+                      - generic [ref=e768]:
+                        - button "Ver imágenes" [ref=e769]:
+                          - img [ref=e770]
+                        - button "Editar imágenes" [ref=e773]:
+                          - img [ref=e774]
+                        - button "Ver teléfono" [ref=e776]:
+                          - img [ref=e777]
+                  - row "09/02 - 15:02 07733314 ENRIQUE 94 años / M Normal 1" [ref=e779] [cursor=pointer]:
+                    - cell "09/02 - 15:02" [ref=e780]
+                    - cell "07733314" [ref=e781]
+                    - cell "ENRIQUE" [ref=e782]:
+                      - generic [ref=e783]: ENRIQUE
+                    - cell "94 años / M" [ref=e784]
+                    - cell "Normal" [ref=e785]:
+                      - generic "Normal" [ref=e786]
+                    - cell [ref=e787]
+                    - cell "1" [ref=e789]:
+                      - generic [ref=e790]: "1"
+                    - cell [ref=e791]:
+                      - generic [ref=e792]:
+                        - button "Ver imágenes" [ref=e793]:
+                          - img [ref=e794]
+                        - button "Editar imágenes" [ref=e797]:
+                          - img [ref=e798]
+                        - button "Ver teléfono" [ref=e800]:
+                          - img [ref=e801]
+          - generic [ref=e803]:
+            - button "← Anterior" [disabled] [ref=e804]
+            - button "1" [ref=e806] [cursor=pointer]
+            - button "Siguiente →" [disabled] [ref=e807]
+            - generic [ref=e808]: Página 1 de 1 (15 total)
+      - generic [ref=e193]:
+        - paragraph [ref=e194]: CENATE - Sistema de Telemedicina - EsSalud 2026
+        - paragraph [ref=e195]: v1.37.4 - Performance Optimization + Deduplicación Automática + Foto Header + SMTP EsSalud

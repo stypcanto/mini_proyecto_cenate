@@ -198,16 +198,21 @@ public class TeleECGService {
             // NO bloquear - si falla creación de bolsa, la imagen ya se guardó
         }
 
-        // 7. Registrar auditoría
-        auditLogService.registrarEvento(
-            "SYSTEM",
-            "UPLOAD_ECG",
-            "TELEEKGS",
-            String.format("Imagen ECG subida - Paciente: %s, Tamaño: %d bytes, SHA256: %s",
-                dto.getNumDocPaciente(), dto.getArchivo().getSize(), sha256),
-            "INFO",
-            "SUCCESS"
-        );
+        // 7. Registrar auditoría (no es crítica - si falla, no cancela la transacción)
+        try {
+            auditLogService.registrarEvento(
+                "SYSTEM",
+                "UPLOAD_ECG",
+                "TELEEKGS",
+                String.format("Imagen ECG subida - Paciente: %s, Tamaño: %d bytes, SHA256: %s",
+                    dto.getNumDocPaciente(), dto.getArchivo().getSize(), sha256),
+                "INFO",
+                "SUCCESS"
+            );
+        } catch (Exception e) {
+            log.warn("⚠️ Error registrando auditoría (no es crítico): {}", e.getMessage());
+            // No lanzar excepción - la imagen ya se guardó exitosamente
+        }
 
         // 8. Enviar email (opcional, no falla si hay error)
         // TODO: Implementar método específico en EmailService para notificación TeleEKG
@@ -491,16 +496,20 @@ public class TeleECGService {
         teleECGImagenRepository.deleteById(idImagen);
 
         // Registrar en log de auditoría general del sistema (no vinculado a imagen)
-        auditLogService.registrarEvento(
-            "USER_ID_" + idUsuario,
-            "DELETE_ECG",
-            "TELEEKGS",
-            metadatosEliminacion,
-            "INFO",
-            "SUCCESS"
-        );
-
-        log.info("✅ Imagen eliminada y auditoría registrada: {}", idImagen);
+        try {
+            auditLogService.registrarEvento(
+                "USER_ID_" + idUsuario,
+                "DELETE_ECG",
+                "TELEEKGS",
+                metadatosEliminacion,
+                "INFO",
+                "SUCCESS"
+            );
+            log.info("✅ Imagen eliminada y auditoría registrada: {}", idImagen);
+        } catch (Exception e) {
+            log.warn("⚠️ Error registrando auditoría de eliminación (no es crítico): {}", e.getMessage());
+            // La imagen ya fue eliminada exitosamente, el error de auditoría no es crítico
+        }
     }
 
     /**
@@ -1016,14 +1025,22 @@ public class TeleECGService {
         try {
             log.info("🆕 Creando bolsa TeleECG para paciente: {}", imagen.getNumDocPaciente());
 
-            // 1. Obtener tipo de bolsa TELEECG
+            // 1. Verificar si ya existe una bolsa activa para este paciente
+            var bolsasExistentes = solicitudBolsaRepository.findByPacienteDniAndActivoTrue(
+                asegurado.getDocPaciente());
+            if (!bolsasExistentes.isEmpty()) {
+                log.info("ℹ️ Bolsa TeleECG ya existe para paciente: {}", imagen.getNumDocPaciente());
+                return;
+            }
+
+            // 2. Obtener tipo de bolsa TELEECG
             TipoBolsa tipoBolsa = tipoBolsaRepository.findByCodTipoBolsa("BOLSA_TELEECG")
                 .orElseThrow(() -> new RuntimeException("Tipo de bolsa TELEECG no encontrado. Ejecutar migración V4_0_0"));
 
-            // 2. Generar número único de solicitud
+            // 3. Generar número único de solicitud
             String numeroSolicitud = "TEL-" + System.currentTimeMillis();
 
-            // 3. Obtener coordinador responsable del IPRESS (si existe)
+            // 4. Obtener coordinador responsable del IPRESS (si existe)
             // TODO v1.61.0: Implementar búsqueda de coordinador por IPRESS cuando esté disponible
             Long responsableGestoraId = null;
             try {
@@ -1033,7 +1050,7 @@ public class TeleECGService {
                 log.warn("⚠️ Error obteniendo coordinador para IPRESS: {}", ipress.getCodIpress());
             }
 
-            // 4. Crear bolsa (estado PENDIENTE)
+            // 5. Crear bolsa (estado PENDIENTE)
             SolicitudBolsa bolsa = SolicitudBolsa.builder()
                 .numeroSolicitud(numeroSolicitud)
                 .pacienteId(asegurado.getPkAsegurado())
@@ -1056,13 +1073,13 @@ public class TeleECGService {
                 .tipoCita("Voluntaria")
                 .build();
 
-            // 5. Guardar referencia a imagen TeleECG (nuevo campo v4.0.0)
+            // 6. Guardar referencia a imagen TeleECG (nuevo campo v4.0.0)
             // bolsa.setIdTeleecgImagen(imagen.getIdImagen()); // Si la columna existe
 
             solicitudBolsaRepository.save(bolsa);
             log.info("✅ Bolsa TeleECG creada: ID={}, DNI={}", bolsa.getIdSolicitud(), imagen.getNumDocPaciente());
 
-            // 6. v1.58.2: Enviar notificación email al coordinador
+            // 7. v1.58.2: Enviar notificación email al coordinador
             // NOTA: Usuario no tiene email en BD, se envía solo log por ahora
             try {
                 if (responsableGestoraId != null) {
@@ -1090,8 +1107,8 @@ public class TeleECGService {
             );
 
         } catch (Exception e) {
-            log.error("❌ Error creando bolsa TeleECG: {}", e.getMessage(), e);
-            throw new RuntimeException("Error creando bolsa automática: " + e.getMessage(), e);
+            // Log the error but don't rethrow - bolsa creation is not critical
+            log.warn("⚠️ Error creando bolsa TeleECG (continuando): {}", e.getMessage());
         }
     }
 

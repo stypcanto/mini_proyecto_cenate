@@ -1,0 +1,38 @@
+- generic [ref=e5]:
+  - generic [ref=e6]:
+    - generic [ref=e7]:
+      - img "Logo EsSalud" [ref=e8]
+      - heading "Inicio de Sesión" [level=1] [ref=e9]
+      - paragraph [ref=e10]: CENATE – Sistema de Telemedicina
+    - generic [ref=e11]:
+      - generic [ref=e12]:
+        - generic [ref=e13]: Usuario
+        - textbox "DNI / Pasaporte / CE" [ref=e14]
+      - generic [ref=e15]:
+        - generic [ref=e16]: Contraseña
+        - generic [ref=e17]:
+          - textbox "Tu contraseña" [ref=e18]
+          - button "Mostrar contraseña" [ref=e19] [cursor=pointer]:
+            - img [ref=e20]
+      - generic [ref=e24] [cursor=pointer]:
+        - checkbox "Recordar usuario" [ref=e25]
+        - text: Recordar usuario
+      - button "Iniciar Sesión" [ref=e26] [cursor=pointer]:
+        - img [ref=e27]
+        - text: Iniciar Sesión
+    - generic [ref=e30]:
+      - link "Crear cuenta" [ref=e31] [cursor=pointer]:
+        - /url: /crear-cuenta
+        - img [ref=e32]
+        - text: Crear cuenta
+      - button "Recuperar contraseña" [ref=e35] [cursor=pointer]:
+        - img [ref=e36]
+        - text: Recuperar contraseña
+      - link "Regresar" [ref=e39] [cursor=pointer]:
+        - /url: /
+        - img [ref=e40]
+        - text: Regresar
+    - generic [ref=e43]:
+      - paragraph [ref=e44]: CENATE – EsSalud 2025
+      - paragraph [ref=e45]: Autenticación segura
+  - generic [ref=e46]: CENATE v1.37.4 – Plataforma institucional

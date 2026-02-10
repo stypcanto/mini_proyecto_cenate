@@ -780,11 +780,18 @@ export default function MisECGsRecientes({
                   ℹ️ Selecciona un archivo EKG (JPG, PNG, PDF) para agregarlo al registro
                 </div>
                 <input
+                  id="fileInputAdd"
                   type="file"
                   accept="image/*,.pdf"
                   onChange={(e) => setArchivoSeleccionado(e.target.files?.[0])}
-                  className="block w-full text-sm text-gray-600 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-green-600 file:text-white hover:file:bg-green-700"
+                  className="hidden"
                 />
+                <button
+                  onClick={() => document.getElementById('fileInputAdd')?.click()}
+                  className="px-6 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold transition-colors w-full"
+                >
+                  Seleccionar Archivo
+                </button>
                 {archivoSeleccionado && (
                   <p className="text-xs text-green-700 font-semibold">
                     ✅ Archivo seleccionado: {archivoSeleccionado.name}
