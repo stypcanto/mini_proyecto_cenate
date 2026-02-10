@@ -812,7 +812,7 @@ export default function TeleEKGRecibidas() {
         </div>
 
         {/* 📋 Tabla de EKGs */}
-        <div className="bg-white rounded-lg shadow-md overflow-hidden">
+        <div className="bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden">
           {loading ? (
             <div className="p-8 text-center">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
@@ -828,30 +828,30 @@ export default function TeleEKGRecibidas() {
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full border-collapse">
-                <thead className="bg-gray-100 border-b-2 border-gray-300">
+                <thead className="bg-slate-50 border-b border-slate-200">
                   <tr>
-                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">
+                    <th className="px-4 py-3 text-left text-sm font-semibold text-slate-700">
                       DNI
                     </th>
-                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">
+                    <th className="px-4 py-3 text-left text-sm font-semibold text-slate-700">
                       Paciente
                     </th>
-                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">
+                    <th className="px-4 py-3 text-left text-sm font-semibold text-slate-700">
                       IPRESS
                     </th>
-                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">
+                    <th className="px-4 py-3 text-left text-sm font-semibold text-slate-700">
                       Fecha Envío
                     </th>
-                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">
+                    <th className="px-4 py-3 text-left text-sm font-semibold text-slate-700">
                       Tamaño
                     </th>
-                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">
+                    <th className="px-4 py-3 text-left text-sm font-semibold text-slate-700">
                       Estado
                     </th>
-                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">
+                    <th className="px-4 py-3 text-left text-sm font-semibold text-slate-700">
                       Evaluación
                     </th>
-                    <th className="px-4 py-3 text-center text-sm font-semibold text-gray-700">
+                    <th className="px-4 py-3 text-center text-sm font-semibold text-slate-700">
                       Acciones
                     </th>
                   </tr>
@@ -860,39 +860,39 @@ export default function TeleEKGRecibidas() {
                   {ecgsFiltrados.map((asegurado, index) => (
                     <tr
                       key={`${asegurado.num_doc_paciente}-${index}`}
-                      className="border-b hover:bg-gray-50 transition-colors"
+                      className="border-b border-slate-200 hover:bg-slate-50 transition-colors"
                     >
-                      <td className="px-4 py-3 text-sm text-gray-900 font-medium">
+                      <td className="px-4 py-3 text-sm text-slate-900 font-medium">
                         {asegurado.num_doc_paciente}
                       </td>
-                      <td className="px-4 py-3 text-sm text-gray-900">
+                      <td className="px-4 py-3 text-sm text-slate-900">
                         <div className="flex items-center gap-2">
                           <div>
-                            <p>{asegurado.nombres_paciente} {asegurado.apellidos_paciente}</p>
-                            <p className="text-xs text-gray-500">📌 {asegurado.total_ecgs} EKGs</p>
+                            <p className="font-medium">{asegurado.nombres_paciente} {asegurado.apellidos_paciente}</p>
+                            <p className="text-xs text-slate-500">📌 {asegurado.total_ecgs} EKGs</p>
                           </div>
                         </div>
                       </td>
-                      <td className="px-4 py-3 text-sm text-gray-900">
-                        <span className="inline-block px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">
+                      <td className="px-4 py-3 text-sm text-slate-900">
+                        <span className="inline-block px-3 py-2 bg-blue-50 text-blue-700 rounded text-xs font-medium border border-blue-100">
                           {asegurado.nombre_ipress || asegurado.codigo_ipress}
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-sm text-gray-900">
+                      <td className="px-4 py-3 text-sm text-slate-900">
                         {formatDate(asegurado.fecha_ultimo_ecg)}
                       </td>
-                      <td className="px-4 py-3 text-sm text-gray-900">
+                      <td className="px-4 py-3 text-sm text-slate-900">
                         <div className="flex flex-col gap-1">
-                          <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded w-fit">
+                          <span className="text-xs bg-yellow-50 text-yellow-700 px-3 py-1.5 rounded font-medium border border-yellow-100 w-fit">
                             📤 {asegurado.ecgs_pendientes || 0} Enviadas
                           </span>
                           {asegurado.ecgs_observadas > 0 && (
-                            <span className="text-xs bg-purple-100 text-purple-800 px-2 py-1 rounded w-fit">
+                            <span className="text-xs bg-purple-50 text-purple-700 px-3 py-1.5 rounded font-medium border border-purple-100 w-fit">
                               ⚠️ {asegurado.ecgs_observadas} Observadas
                             </span>
                           )}
                           {asegurado.ecgs_atendidas > 0 && (
-                            <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded w-fit">
+                            <span className="text-xs bg-green-50 text-green-700 px-3 py-1.5 rounded font-medium border border-green-100 w-fit">
                               ✅ {asegurado.ecgs_atendidas} Atendidas
                             </span>
                           )}
