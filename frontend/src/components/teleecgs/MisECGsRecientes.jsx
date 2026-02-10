@@ -5,7 +5,7 @@
  * v1.55.0 - Diseño médico profesional
  */
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import {
   CheckCircle,
   AlertCircle,
@@ -65,6 +65,7 @@ export default function MisECGsRecientes({
   const [archivoSeleccionado, setArchivoSeleccionado] = useState(null);
   const [cargandoArchivo, setCargandoArchivo] = useState(false);
   const [dragActivo, setDragActivo] = useState(false);  // ✅ Para drag-and-drop
+  const fileInputRef = useRef(null);  // ✅ Referencia segura al input file
 
   // ✅ Sync ultimas3 to datosOriginales on mount and when ultimas3 changes
   useEffect(() => {
@@ -830,7 +831,7 @@ export default function MisECGsRecientes({
                   }`}
                 >
                   <input
-                    id="fileInputAdd"
+                    ref={fileInputRef}
                     type="file"
                     accept="image/*,.pdf"
                     onChange={(e) => {
@@ -871,9 +872,11 @@ export default function MisECGsRecientes({
                       <button
                         onClick={() => {
                           setArchivoSeleccionado(null);
-                          document.getElementById('fileInputAdd').value = '';
+                          if (fileInputRef.current) {
+                            fileInputRef.current.value = '';
+                          }
                         }}
-                        className="text-xs text-green-700 hover:text-green-900 font-semibold underline"
+                        className="text-xs text-green-700 hover:text-green-900 font-semibold underline cursor-pointer"
                       >
                         Cambiar archivo
                       </button>
@@ -891,8 +894,12 @@ export default function MisECGsRecientes({
                         <p className="text-xs text-gray-500 mt-2">JPG, PNG o PDF (máximo 10 MB)</p>
                       </div>
                       <button
-                        onClick={() => document.getElementById('fileInputAdd')?.click()}
-                        className="px-6 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold transition-all"
+                        onClick={() => {
+                          if (fileInputRef.current) {
+                            fileInputRef.current.click();
+                          }
+                        }}
+                        className="px-6 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold transition-all cursor-pointer"
                       >
                         👆 Seleccionar Archivo
                       </button>
@@ -941,7 +948,9 @@ export default function MisECGsRecientes({
                         toast.success('✅ ¡Imagen agregada correctamente!');
                         setModalMode('view');
                         setArchivoSeleccionado(null);
-                        document.getElementById('fileInputAdd').value = '';
+                        if (fileInputRef.current) {
+                          fileInputRef.current.value = '';
+                        }
 
                         // Esperar un poco antes de refrescar
                         setTimeout(() => {
@@ -983,7 +992,9 @@ export default function MisECGsRecientes({
                     onClick={() => {
                       setModalMode('view');
                       setArchivoSeleccionado(null);
-                      document.getElementById('fileInputAdd').value = '';
+                      if (fileInputRef.current) {
+                        fileInputRef.current.value = '';
+                      }
                     }}
                     disabled={cargandoArchivo}
                     className="flex-1 py-3 bg-gray-200 hover:bg-gray-300 disabled:bg-gray-300 text-gray-800 rounded-lg font-bold transition-all"
