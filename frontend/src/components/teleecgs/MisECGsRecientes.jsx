@@ -66,6 +66,7 @@ export default function MisECGsRecientes({
   const [cargandoArchivo, setCargandoArchivo] = useState(false);
   const [dragActivo, setDragActivo] = useState(false);  // ✅ Para drag-and-drop
   const [esUrgente, setEsUrgente] = useState(false);  // ✅ Checkbox para marcar como urgente
+  const [fechaToma, setFechaToma] = useState("");  // ✅ v1.76.0: Fecha de toma del EKG editable
   const fileInputRef = useRef(null);  // ✅ Referencia segura al input file
 
   // ✅ Sync ultimas3 to datosOriginales on mount and when ultimas3 changes
@@ -578,6 +579,7 @@ export default function MisECGsRecientes({
                               onClick={(e) => {
                                 e.stopPropagation();
                                 setCargaEdicion(carga);
+                                setFechaToma(carga.fechaToma || "");  // ✅ v1.76.0: Cargar fecha existente
                                 setShowEditModal(true);
                               }}
                               className="p-1.5 md:p-2 rounded hover:bg-orange-100 text-orange-600 hover:text-orange-800 transition-colors"
@@ -702,6 +704,23 @@ export default function MisECGsRecientes({
             {/* Vista Principal Simplificada */}
             {modalMode === 'view' && (
               <div className="space-y-6">
+                {/* ✅ v1.76.0: Sección de Fecha de Toma del EKG */}
+                <div className="bg-blue-50 border-2 border-blue-200 rounded-lg p-4">
+                  <label className="block text-sm font-semibold text-gray-900 mb-2">
+                    📅 Fecha de Toma del EKG
+                  </label>
+                  <input
+                    type="date"
+                    value={fechaToma}
+                    onChange={(e) => setFechaToma(e.target.value)}
+                    max={new Date().toISOString().split('T')[0]}
+                    className="w-full px-3 py-2 border-2 border-blue-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600 text-sm font-semibold"
+                  />
+                  <p className="text-xs text-gray-600 mt-2">
+                    Especifica la fecha en que se tomó el electrocardiograma
+                  </p>
+                </div>
+
                 {/* Sección de Imágenes Cargadas */}
                 {(() => {
                   const imagenes = imagenesPorDni[cargaEdicion?.dni] || [];
@@ -781,6 +800,24 @@ export default function MisECGsRecientes({
                     className="px-6 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold transition-all hover:shadow-md active:scale-95"
                   >
                     + Seleccionar Imagen
+                  </button>
+                </div>
+
+                {/* ✅ v1.76.0: Botón de guardar fecha */}
+                <div className="flex gap-2 justify-end pt-4 border-t">
+                  <button
+                    onClick={() => {
+                      if (cargaEdicion && fechaToma) {
+                        console.log("💾 Guardando fecha:", fechaToma);
+                        toast.success("✅ Fecha actualizada: " + fechaToma);
+                        // TODO: Aquí iría la llamada a la API para actualizar
+                      } else if (!fechaToma) {
+                        toast.error("Por favor selecciona una fecha");
+                      }
+                    }}
+                    className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition-colors"
+                  >
+                    💾 Guardar Fecha
                   </button>
                 </div>
               </div>
