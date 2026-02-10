@@ -867,43 +867,48 @@ export default function MisECGsRecientes({
                         <p className="text-xs text-gray-500 mt-2">JPG, PNG o PDF (máximo 10 MB)</p>
                       </div>
 
-                      {/* Input File - Completely Hidden */}
-                      <input
-                        ref={fileInputRef}
-                        type="file"
-                        accept="image/*,.pdf"
-                        onChange={(e) => {
-                          const archivo = e.target.files?.[0];
-                          if (archivo) {
-                            // Validar tipo de archivo
-                            const tiposValidos = ['image/jpeg', 'image/png', 'application/pdf'];
-                            if (!tiposValidos.includes(archivo.type)) {
-                              toast.error('❌ Tipo de archivo no válido. Usa JPG, PNG o PDF');
-                              return;
-                            }
-
-                            // Validar tamaño (máximo 10MB)
-                            if (archivo.size > 10 * 1024 * 1024) {
-                              toast.error('❌ Archivo muy grande. Máximo 10 MB');
-                              return;
-                            }
-
-                            setArchivoSeleccionado(archivo);
-                            toast.success('✅ Archivo listo para subir');
-                          }
-                        }}
-                        className="hidden"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => fileInputRef.current?.click()}
-                        className="px-6 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold transition-all cursor-pointer text-center"
-                      >
-                        👆 Seleccionar Archivo
-                      </button>
                     </div>
                   )}
                 </label>
+
+                {/* Input File - Completely Hidden (OUTSIDE label wrapper) */}
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*,.pdf"
+                  onChange={(e) => {
+                    const archivo = e.target.files?.[0];
+                    if (archivo) {
+                      // Validar tipo de archivo
+                      const tiposValidos = ['image/jpeg', 'image/png', 'application/pdf'];
+                      if (!tiposValidos.includes(archivo.type)) {
+                        toast.error('❌ Tipo de archivo no válido. Usa JPG, PNG o PDF');
+                        return;
+                      }
+
+                      // Validar tamaño (máximo 10MB)
+                      if (archivo.size > 10 * 1024 * 1024) {
+                        toast.error('❌ Archivo muy grande. Máximo 10 MB');
+                        return;
+                      }
+
+                      setArchivoSeleccionado(archivo);
+                      toast.success('✅ Archivo listo para subir');
+                    }
+                  }}
+                  className="hidden"
+                />
+
+                {/* Botón Seleccionar - Visible cuando modalMode === 'add' */}
+                {modalMode === 'add' && !archivoSeleccionado && (
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="w-full px-6 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold transition-all cursor-pointer text-center"
+                  >
+                    👆 Seleccionar Archivo
+                  </button>
+                )}
 
                 {/* Botones de Acción */}
                 <div className="flex gap-3 pt-2">
