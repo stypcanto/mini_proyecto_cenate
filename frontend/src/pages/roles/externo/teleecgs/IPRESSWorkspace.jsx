@@ -50,9 +50,9 @@ function formatECGsForRecientes(ecgs, pacientesCache = {}) {
     console.log(`✅ [formatECG] DNI ${dni} - Nombre formateado: ${nombreFormateado}`);
 
     // 🔧 v1.71.0: Obtener esUrgente de la lista de imágenes (donde sí está disponible)
-    // AseguradoConECGsDTO devuelve imagenes[], cada una tiene esUrgente
+    // AseguradoConECGsDTO devuelve imagenes[], cada una tiene es_urgente (snake_case desde backend)
     const imagenesPaciente = porDni[dni] || [];
-    const esUrgente = imagenesPaciente.some(img => img.esUrgente || img.urgente);
+    const esUrgente = imagenesPaciente.some(img => img.es_urgente === true || img.esUrgente === true);
 
     return {
       idImagen: img.idImagen || img.id,  // ✅ NECESARIO para cargar imagen
@@ -251,8 +251,9 @@ export default function IPRESSWorkspace() {
       // 🔧 v1.71.0: Mapear a formato de tabla CON DATOS DISPONIBLES (sin esperar enriquecimiento)
       const ecgsFormateados = Object.entries(deduplicados).map(([dni, img]) => {
         // Extraer esUrgente del array de imágenes (donde sí existe)
+        // ✅ Usar es_urgente (snake_case) como retorna el backend
         const imagenesDni = img.imagenes || [];
-        const esUrgente = imagenesDni.some(imagen => imagen.esUrgente === true);
+        const esUrgente = imagenesDni.some(imagen => imagen.es_urgente === true || imagen.esUrgente === true);
 
         return {
           ...img,
