@@ -950,6 +950,42 @@ public class TeleECGController {
     }
 
     /**
+     * ✅ v1.76.0: Actualizar fecha de toma del EKG
+     * PATCH /api/teleekgs/{id}/fecha-toma?fechaToma=2026-02-04
+     */
+    @PatchMapping("/{id}/fecha-toma")
+    @CheckMBACPermission(recurso = "TELEECG", accion = "EDITAR")
+    public ResponseEntity<ApiResponse<TeleECGImagenDTO>> actualizarFechaToma(
+            @PathVariable Long id,
+            @RequestParam String fechaToma,
+            HttpServletRequest httpRequest) {
+
+        log.info("🗓️ Actualizando fecha de toma - ID: {}, Fecha: {}", id, fechaToma);
+
+        try {
+            TeleECGImagenDTO imagen = teleECGService.actualizarFechaToma(id, fechaToma);
+            return ResponseEntity.ok(new ApiResponse<>(
+                true,
+                "Fecha de toma actualizada exitosamente",
+                "200",
+                imagen
+            ));
+        } catch (ResourceNotFoundException e) {
+            log.warn("❌ Imagen no encontrada: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(new ApiResponse<>(false, e.getMessage(), "404", null));
+        } catch (ValidationException e) {
+            log.warn("⚠️ Error de validación: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(new ApiResponse<>(false, e.getMessage(), "400", null));
+        } catch (Exception e) {
+            log.error("❌ Error actualizando fecha de toma", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(new ApiResponse<>(false, "Error: " + e.getMessage(), "500", null));
+        }
+    }
+
+    /**
      * Método auxiliar: Crear solicitud base temporal si no existe
      */
     private SolicitudBolsa crearSolicitudBase(TeleECGImagenDTO imagen) {

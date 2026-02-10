@@ -806,11 +806,32 @@ export default function MisECGsRecientes({
                 {/* ✅ v1.76.0: Botón de guardar fecha */}
                 <div className="flex gap-2 justify-end pt-4 border-t">
                   <button
-                    onClick={() => {
+                    onClick={async () => {
                       if (cargaEdicion && fechaToma) {
-                        console.log("💾 Guardando fecha:", fechaToma);
-                        toast.success("✅ Fecha actualizada: " + fechaToma);
-                        // TODO: Aquí iría la llamada a la API para actualizar
+                        try {
+                          console.log("💾 Guardando fecha:", fechaToma);
+                          toast.loading("Guardando fecha...");
+
+                          // Llamar al API para actualizar la fecha
+                          const response = await fetch(
+                            `/api/teleekgs/${cargaEdicion.idImagen || cargaEdicion.id}/fecha-toma?fechaToma=${fechaToma}`,
+                            { method: 'PATCH' }
+                          );
+
+                          if (response.ok) {
+                            toast.dismiss();
+                            toast.success("✅ Fecha actualizada: " + fechaToma);
+                            // Refrescar datos
+                            setTimeout(() => window.location.reload(), 1000);
+                          } else {
+                            toast.dismiss();
+                            toast.error("❌ Error al actualizar fecha");
+                          }
+                        } catch (error) {
+                          console.error("❌ Error:", error);
+                          toast.dismiss();
+                          toast.error("Error al guardar fecha");
+                        }
                       } else if (!fechaToma) {
                         toast.error("Por favor selecciona una fecha");
                       }

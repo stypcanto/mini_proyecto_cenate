@@ -673,6 +673,37 @@ public class TeleECGService {
         }
     }
 
+    /**
+     * ✅ v1.76.0: Actualizar fecha de toma del EKG
+     */
+    public TeleECGImagenDTO actualizarFechaToma(Long idImagen, String fechaTomaStr) {
+        log.info("🗓️ Actualizando fecha de toma - ID: {}, Fecha: {}", idImagen, fechaTomaStr);
+
+        TeleECGImagen imagen = teleECGImagenRepository.findById(idImagen)
+            .orElseThrow(() -> new ResourceNotFoundException("Imagen ECG no encontrada: " + idImagen));
+
+        try {
+            // Parsear fecha en formato YYYY-MM-DD
+            LocalDate fechaToma = LocalDate.parse(fechaTomaStr);
+
+            // Validar que no sea fecha futura
+            if (fechaToma.isAfter(LocalDate.now())) {
+                throw new ValidationException("La fecha de toma no puede ser una fecha futura");
+            }
+
+            // Actualizar y guardar
+            imagen.setFechaToma(fechaToma);
+            imagen.setUpdatedAt(LocalDateTime.now());
+            imagen = teleECGImagenRepository.save(imagen);
+
+            log.info("✅ Fecha de toma actualizada correctamente");
+            return convertirADTO(imagen);
+        } catch (Exception e) {
+            log.error("❌ Error al parsear fecha: {}", fechaTomaStr);
+            throw new ValidationException("Formato de fecha inválido. Use YYYY-MM-DD");
+        }
+    }
+
     // ============================================================
     // MÉTODOS HELPER
     // ============================================================
