@@ -504,6 +504,7 @@ export default function IPRESSWorkspace() {
               loading={loading}
               imagenesPorDni={(() => {
                 // ✅ Agrupar imágenes reales por DNI para el modal de edición
+                // ✅ Mapear propiedades del backend (snake_case) a camelCase
                 const agrupadoPorDni = {};
                 ecgs.forEach(img => {
                   const dni = img.numDocPaciente || img.dni;
@@ -511,7 +512,13 @@ export default function IPRESSWorkspace() {
                     if (!agrupadoPorDni[dni]) {
                       agrupadoPorDni[dni] = [];
                     }
-                    agrupadoPorDni[dni].push(img);
+                    // ✅ Mapear id_imagen a idImagen para compatibilidad
+                    const imagenMapeada = {
+                      ...img,
+                      idImagen: img.idImagen || img.id_imagen || img.id,
+                      nombrePaciente: img.paciente_nombre_completo || img.nombrePaciente || 'Sin nombre'
+                    };
+                    agrupadoPorDni[dni].push(imagenMapeada);
                   }
                 });
                 return agrupadoPorDni;
