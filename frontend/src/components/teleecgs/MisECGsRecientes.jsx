@@ -65,6 +65,7 @@ export default function MisECGsRecientes({
   const [archivoSeleccionado, setArchivoSeleccionado] = useState(null);
   const [cargandoArchivo, setCargandoArchivo] = useState(false);
   const [dragActivo, setDragActivo] = useState(false);  // ✅ Para drag-and-drop
+  const [esUrgente, setEsUrgente] = useState(false);  // ✅ Checkbox para marcar como urgente
   const fileInputRef = useRef(null);  // ✅ Referencia segura al input file
 
   // ✅ Sync ultimas3 to datosOriginales on mount and when ultimas3 changes
@@ -671,6 +672,8 @@ export default function MisECGsRecientes({
                   setShowEditModal(false);
                   setModalMode('view');
                   setSelectedImageIndex(null);
+                  setEsUrgente(false);  // Reset urgency checkbox
+                  setArchivoSeleccionado(null);  // Reset selected file
                 }}
                 className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
               >
@@ -906,6 +909,23 @@ export default function MisECGsRecientes({
                   </label>
                 )}
 
+                {/* Checkbox Urgente */}
+                {modalMode === 'add' && archivoSeleccionado && (
+                  <div className="flex items-center gap-3 p-4 bg-red-50 border border-red-200 rounded-lg">
+                    <input
+                      type="checkbox"
+                      id="urgentCheckbox"
+                      checked={esUrgente}
+                      onChange={(e) => setEsUrgente(e.target.checked)}
+                      className="w-5 h-5 text-red-600 cursor-pointer"
+                    />
+                    <label htmlFor="urgentCheckbox" className="flex-1 cursor-pointer">
+                      <p className="font-semibold text-red-900">🚨 Marcar como URGENTE</p>
+                      <p className="text-xs text-red-700 mt-0.5">Se destacará esta imagen con prioridad alta en la lista</p>
+                    </label>
+                  </div>
+                )}
+
                 {/* Botones de Acción */}
                 <div className="flex gap-3 pt-2">
                   <button
@@ -925,7 +945,8 @@ export default function MisECGsRecientes({
                         console.log('📤 Iniciando subida de imagen:', {
                           dni: cargaEdicion.dni,
                           nombreCompleto: cargaEdicion.nombrePaciente,
-                          archivo: archivoSeleccionado.name
+                          archivo: archivoSeleccionado.name,
+                          esUrgente: esUrgente
                         });
 
                         // Extraer nombres y apellidos de forma segura
@@ -940,13 +961,15 @@ export default function MisECGsRecientes({
                           archivoSeleccionado,
                           cargaEdicion.dni,
                           nombres,
-                          apellidos
+                          apellidos,
+                          esUrgente
                         );
 
                         console.log('✅ Respuesta del servidor:', respuesta);
                         toast.success('✅ ¡Imagen agregada correctamente!');
                         setModalMode('view');
                         setArchivoSeleccionado(null);
+                        setEsUrgente(false);  // Reset urgency checkbox
                         if (fileInputRef.current) {
                           fileInputRef.current.value = '';
                         }
@@ -991,6 +1014,7 @@ export default function MisECGsRecientes({
                     onClick={() => {
                       setModalMode('view');
                       setArchivoSeleccionado(null);
+                      setEsUrgente(false);  // Reset urgency checkbox
                       if (fileInputRef.current) {
                         fileInputRef.current.value = '';
                       }

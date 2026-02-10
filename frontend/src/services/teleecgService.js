@@ -48,16 +48,17 @@ const teleecgService = {
    * Subir una imagen ECG
    *
    * El backend espera:
-   * - Query parameters: numDocPaciente, nombresPaciente, apellidosPaciente
+   * - Query parameters: numDocPaciente, nombresPaciente, apellidosPaciente, esUrgente
    * - Multipart form field: archivo (file)
    */
-  subirImagenECG: async (archivo, numDocPaciente, nombres, apellidos) => {
+  subirImagenECG: async (archivo, numDocPaciente, nombres, apellidos, esUrgente = false) => {
     try {
       // 1. Build query parameters
       const params = new URLSearchParams();
       params.append("numDocPaciente", numDocPaciente);
       params.append("nombresPaciente", nombres);
       params.append("apellidosPaciente", apellidos);
+      params.append("esUrgente", esUrgente === true ? "true" : "false");  // ✅ ADD esUrgente param
 
       // 2. Build FormData with file only
       const formData = new FormData();
@@ -72,7 +73,7 @@ const teleecgService = {
 
       // 4. Make the request with proper multipart/form-data handling
       const url = `${API_BASE_URL}/teleekgs/upload?${params.toString()}`;
-      console.log("📤 [UPLOAD ECG]:", url);
+      console.log("📤 [UPLOAD ECG]:", url, "Urgente:", esUrgente);
 
       const response = await fetch(url, {
         method: "POST",
@@ -658,7 +659,7 @@ const teleecgService = {
   /**
    * ✅ v11.5.0: Listar TODAS las imágenes individuales (sin agrupar por paciente)
    * @param {string} estado - Estado a filtrar (TODOS, ENVIADA, OBSERVADA, ATENDIDA)
-   * @returns {Array} Lista de imágenes ECG
+   * @returns {Array} Lista de imágenes ECG APLANADAS (sin anidación)
    */
   listar: async (estado = "TODOS") => {
     try {
@@ -673,8 +674,9 @@ const teleecgService = {
       console.log("🚀 [GET] Listando EKGs:", url);
       const response = await apiClient.get(url, true);
 
-      // El response puede venir como array directo o envuelto en .data
-      const data = Array.isArray(response) ? response : response.data || [];
+      // ✅ FIX: Usar _transformarResponse para aplanar imágenes anidadas
+      const transformedData = teleecgService._transformarResponse(response);
+      const data = transformedData.content || [];
       console.log("✅ EKGs cargadas:", data.length, "imágenes");
       return data;
     } catch (error) {
