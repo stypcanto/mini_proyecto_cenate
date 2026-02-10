@@ -5,11 +5,16 @@ import com.styp.cenate.dto.teleekgs.*;
 import com.styp.cenate.dto.IpressResponse;
 import com.styp.cenate.exception.ResourceNotFoundException;
 import com.styp.cenate.exception.ValidationException;
+import com.styp.cenate.model.Asegurado;
+import com.styp.cenate.model.bolsas.SolicitudBolsa;
 import com.styp.cenate.repository.UsuarioRepository;
+import com.styp.cenate.repository.AseguradoRepository;
+import com.styp.cenate.repository.bolsas.SolicitudBolsaRepository;
 import com.styp.cenate.security.mbac.CheckMBACPermission;
 import com.styp.cenate.service.teleekgs.TeleECGService;
 import com.styp.cenate.service.teleekgs.TeleECGEstadoTransformer;
 import com.styp.cenate.service.ipress.IpressService;
+import com.styp.cenate.service.gestionpaciente.AtenderPacienteService;
 import com.styp.cenate.model.Usuario;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -35,6 +40,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import jakarta.annotation.PostConstruct;
 
@@ -68,6 +74,15 @@ public class TeleECGController {
 
     @Autowired
     private com.styp.cenate.service.storage.FileStorageService fileStorageService;
+
+    @Autowired
+    private SolicitudBolsaRepository solicitudBolsaRepository;
+
+    @Autowired
+    private AseguradoRepository aseguradoRepository;
+
+    @Autowired
+    private AtenderPacienteService atenderPacienteService;
 
     @PostConstruct
     public void init() {
@@ -848,6 +863,129 @@ public class TeleECGController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(new ApiResponse<>(false, e.getMessage(), "500", null));
         }
+    }
+
+    /**
+     * ✅ v11.0.0: Crear bolsa de seguimiento (Recita o Interconsulta) desde TeleECG
+     * Endpoint: POST /api/teleekgs/{idImagen}/crear-bolsa-seguimiento
+     * Reutiliza lógica probada de AtenderPacienteService
+     */
+    @PostMapping("/{idImagen}/crear-bolsa-seguimiento")
+    @CheckMBACPermission(pagina = "/teleekgs/ipress-workspace", accion = "editar")
+    @Operation(summary = "Crear bolsa de Recita o Interconsulta desde TeleECG")
+    public ResponseEntity<ApiResponse<String>> crearBolsaSeguimiento(
+            @PathVariable Long idImagen,
+            @Valid @RequestBody CrearBolsaSeguimientoRequest request,
+            HttpServletRequest httpRequest) {
+
+        log.info("🚀 Creando bolsa de seguimiento - TeleECG ID: {}, Tipo: {}, Especialidad: {}",
+                idImagen, request.getTipo(), request.getEspecialidad());
+
+        try {
+            // 1. Obtener imagen ECG
+            TeleECGImagenDTO imagen = teleECGService.obtenerDetallesImagen(
+                idImagen, getUsuarioActual(), httpRequest.getRemoteAddr()
+            );
+
+            if (imagen == null || imagen.getNumDocPaciente() == null) {
+                throw new ResourceNotFoundException("Imagen ECG no encontrada");
+            }
+
+            // 2. Obtener solicitud de bolsa original (si existe)
+            Optional<SolicitudBolsa> solicitudOpt = solicitudBolsaRepository
+                .findByPacienteDniAndActivoTrue(imagen.getNumDocPaciente())
+                .stream()
+                .findFirst();
+
+            // 3. Si no existe solicitud original, crear una mínima temporal
+            SolicitudBolsa solicitudBase;
+            if (solicitudOpt.isPresent()) {
+                solicitudBase = solicitudOpt.get();
+                log.info("✅ Solicitud base encontrada: {}", solicitudBase.getIdSolicitud());
+            } else {
+                // Crear registro base con datos del asegurado
+                solicitudBase = crearSolicitudBase(imagen);
+                log.info("✅ Solicitud base creada temporalmente");
+            }
+
+            // 4. Crear bolsa(s) según tipo
+            if ("RECITA".equals(request.getTipo())) {
+                atenderPacienteService.crearBolsaRecita(
+                    solicitudBase,
+                    request.getEspecialidad(),
+                    request.getDias() != null ? request.getDias() : 90  // Default 3 meses = 90 días
+                );
+                log.info("✅ Bolsa RECITA creada para especialidad: {}", request.getEspecialidad());
+            } else if ("INTERCONSULTA".equals(request.getTipo())) {
+                atenderPacienteService.crearBolsaInterconsulta(
+                    solicitudBase,
+                    request.getEspecialidad()
+                );
+                log.info("✅ Bolsa INTERCONSULTA creada para especialidad: {}", request.getEspecialidad());
+            } else {
+                throw new ValidationException("Tipo de bolsa inválido: " + request.getTipo() +
+                    ". Debe ser 'RECITA' o 'INTERCONSULTA'");
+            }
+
+            return ResponseEntity.ok(new ApiResponse<>(
+                true,
+                "Bolsa de " + request.getTipo() + " creada exitosamente",
+                "200",
+                "ID Imagen: " + idImagen
+            ));
+
+        } catch (ValidationException e) {
+            log.warn("⚠️ Validación en crear bolsa: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(new ApiResponse<>(false, e.getMessage(), "400", null));
+        } catch (ResourceNotFoundException e) {
+            log.warn("❌ Recurso no encontrado: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(new ApiResponse<>(false, e.getMessage(), "404", null));
+        } catch (Exception e) {
+            log.error("❌ Error creando bolsa de seguimiento", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(new ApiResponse<>(false, "Error: " + e.getMessage(), "500", null));
+        }
+    }
+
+    /**
+     * Método auxiliar: Crear solicitud base temporal si no existe
+     */
+    private SolicitudBolsa crearSolicitudBase(TeleECGImagenDTO imagen) {
+        try {
+            // Obtener asegurado de BD
+            Optional<Asegurado> aseguradoOpt = aseguradoRepository
+                .findByDocPaciente(imagen.getNumDocPaciente());
+
+            if (!aseguradoOpt.isPresent()) {
+                throw new ResourceNotFoundException("Asegurado no encontrado: " + imagen.getNumDocPaciente());
+            }
+
+            Asegurado asegurado = aseguradoOpt.get();
+
+            return SolicitudBolsa.builder()
+                .numeroSolicitud(generarNumeroSolicitud("TELEEKG"))
+                .pacienteDni(imagen.getNumDocPaciente())
+                .pacienteNombre(imagen.getNombresPaciente() + " " + imagen.getApellidosPaciente())
+                .pacienteId(asegurado.getPkAsegurado())
+                .pacienteSexo(asegurado.getSexo())
+                .pacienteTelefono(asegurado.getTelCelular() != null ? asegurado.getTelCelular() : asegurado.getTelFijo())
+                .codigoIpressAdscripcion(imagen.getCodigoIpress())
+                .estado("ATENDIDO")
+                .activo(true)
+                .build();
+        } catch (Exception e) {
+            log.error("❌ Error creando solicitud base: {}", e.getMessage());
+            throw new RuntimeException("No se pudo crear solicitud base: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Generar número de solicitud único con prefijo
+     */
+    private String generarNumeroSolicitud(String prefijo) {
+        return prefijo + "-" + System.currentTimeMillis();
     }
 
     // ============================================================

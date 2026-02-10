@@ -629,11 +629,47 @@ export default function ModalEvaluacionECG({
       const hayInterconsulta = planSeguimiento.interconsulta && planSeguimiento.interconsultaEspecialidades.length > 0;
       if (hayRecitacion || hayInterconsulta) {
         try {
+          // ✅ NUEVO: Guardar en nota clínica (mantener funcionamiento actual)
           await teleecgService.guardarNotaClinica(idImagen, {
             hallazgos: {}, // Ya no se usa, pero se envía vacío para compatibilidad
             observacionesClinicas: "",
             planSeguimiento,
           });
+
+          // 🆕 NUEVO: Crear bolsas en dim_solicitud_bolsa
+          if (hayRecitacion) {
+            try {
+              await teleecgService.crearBolsaSeguimiento(
+                idImagen,
+                "RECITA",
+                planSeguimiento.recitarEspecialidad,
+                90 // 3 meses = 90 días
+              );
+              toast.success(`✅ Bolsa de Recita creada para ${planSeguimiento.recitarEspecialidad}`);
+            } catch (recitaError) {
+              console.error("⚠️ Error creando bolsa de recita:", recitaError);
+              toast.error("⚠️ Recita no se pudo registrar en bolsas");
+            }
+          }
+
+          if (hayInterconsulta) {
+            try {
+              // Crear una bolsa por cada especialidad seleccionada
+              for (const especialidad of planSeguimiento.interconsultaEspecialidades) {
+                await teleecgService.crearBolsaSeguimiento(
+                  idImagen,
+                  "INTERCONSULTA",
+                  especialidad,
+                  null
+                );
+              }
+              toast.success(`✅ ${planSeguimiento.interconsultaEspecialidades.length} Interconsulta(s) creada(s)`);
+            } catch (interconsultaError) {
+              console.error("⚠️ Error creando bolsas de interconsulta:", interconsultaError);
+              toast.error("⚠️ Interconsulta(s) no se pudieron registrar en bolsas");
+            }
+          }
+
           toast.success(`✅ Plan de seguimiento guardado`);
         } catch (notaError) {
           console.error("⚠️ Advertencia: Plan no se guardó:", notaError);

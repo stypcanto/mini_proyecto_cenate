@@ -689,6 +689,39 @@ const teleecgService = {
       throw error;
     }
   },
+
+  /**
+   * ✅ v11.0.0: Crear bolsa de seguimiento (Recita o Interconsulta) desde TeleECG
+   * Reutiliza lógica probada de AtenderPacienteService
+   * @param {number} idImagen - ID de la imagen ECG
+   * @param {string} tipo - Tipo de bolsa: "RECITA" o "INTERCONSULTA"
+   * @param {string} especialidad - Especialidad médica (ej: "Cardiología")
+   * @param {number} dias - Días para recita (ej: 90 para 3 meses). Solo para RECITA
+   */
+  crearBolsaSeguimiento: async (idImagen, tipo, especialidad, dias = null) => {
+    try {
+      const url = `${API_BASE_URL}/teleekgs/${idImagen}/crear-bolsa-seguimiento`;
+      console.log(`📤 [POST] Creando bolsa de seguimiento:`, { idImagen, tipo, especialidad, dias });
+
+      const payload = {
+        tipo,
+        especialidad,
+      };
+
+      // Agregar dias solo si se proporciona
+      if (dias !== null && dias !== undefined) {
+        payload.dias = dias;
+      }
+
+      const response = await apiClient.post(url, payload, true);
+
+      console.log("✅ Bolsa de seguimiento creada:", response);
+      return response;
+    } catch (error) {
+      console.error("❌ Error creando bolsa de seguimiento:", error.message);
+      throw error;
+    }
+  },
 };
 
 export default teleecgService;

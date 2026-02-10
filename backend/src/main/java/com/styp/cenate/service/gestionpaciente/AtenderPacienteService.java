@@ -138,7 +138,7 @@ public class AtenderPacienteService {
     }
 
 
-    private void crearBolsaRecita(SolicitudBolsa solicitudOriginal, String especialidad, Integer dias) {
+    public void crearBolsaRecita(SolicitudBolsa solicitudOriginal, String especialidad, Integer dias) {
         log.info("📋 [v1.47.2] Creando bolsa RECITA para días: {}", dias);
 
         // ✅ v1.47.2: Recita usa especialidad del médico (solicitud original), NO la de Interconsulta
@@ -192,7 +192,7 @@ public class AtenderPacienteService {
                 bolsaRecita.getIdSolicitud(), fechaPreferida, idServicioRecita);
     }
 
-    private void crearBolsaInterconsulta(SolicitudBolsa solicitudOriginal, String especialidad) {
+    public void crearBolsaInterconsulta(SolicitudBolsa solicitudOriginal, String especialidad) {
         log.info("📋 [v1.47.1] Creando bolsa INTERCONSULTA para especialidad: {}", especialidad);
 
         // ✅ v1.47.1: Usar BOLSA_GESTORA (10) en lugar de BOLSA_GENERADA_X_PROFESIONAL (11)
