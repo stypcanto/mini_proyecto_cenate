@@ -873,6 +873,9 @@ export default function TeleEKGRecibidas() {
                       Fecha Envío
                     </th>
                     <th className="px-4 py-3 text-left text-sm font-semibold text-white">
+                      📅 Fecha EKG
+                    </th>
+                    <th className="px-4 py-3 text-left text-sm font-semibold text-white">
                       Tamaño
                     </th>
                     <th className="px-4 py-3 text-left text-sm font-semibold text-white">
@@ -910,6 +913,19 @@ export default function TeleEKGRecibidas() {
                       </td>
                       <td className="px-4 py-3 text-sm text-slate-900">
                         {formatDate(asegurado.fecha_ultimo_ecg)}
+                      </td>
+                      <td className="px-4 py-3 text-sm text-slate-900 font-mono">
+                        {asegurado.fecha_toma ? (
+                          (() => {
+                            const fecha = new Date(asegurado.fecha_toma);
+                            const dia = String(fecha.getDate()).padStart(2, '0');
+                            const mes = String(fecha.getMonth() + 1).padStart(2, '0');
+                            const año = fecha.getFullYear();
+                            return `${dia}/${mes}/${año}`;
+                          })()
+                        ) : (
+                          <span className="text-gray-400">-</span>
+                        )}
                       </td>
                       <td className="px-4 py-3 text-sm text-slate-900">
                         <div className="flex flex-col gap-1">
