@@ -256,7 +256,7 @@ export default function MisECGsRecientes({
 
               {/* Etiqueta */}
               <span className="text-xs font-semibold text-white/90">
-                Pendiente
+                Aseguradoras pendientes a atender
               </span>
             </div>
           </button>
