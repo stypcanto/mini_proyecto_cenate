@@ -196,85 +196,28 @@ export default function IPRESSWorkspace() {
       const response = await teleecgService.listarImagenes();
       const imagenes = response?.content || [];
 
-      // ✅ PRIMERO: Buscar datos de pacientes y enriquecer ECGs directamente
+      // ✅ RÁPIDO: Preparar datos iniciales sin enriquecimiento
       const pacientesUnicos = new Set(imagenes.map((img) => img.dni || img.numDocPaciente).filter(Boolean));
-      const newCache = { ...pacientesCache };
-
-      // Enriquecer imágenes con datos de pacientes
-      const imagenesEnriquecidas = await Promise.all(
-        imagenes.map(async (img) => {
-          const dni = img.dni || img.numDocPaciente;
-
-          // Si ya está en cache, usar directamente
-          if (newCache[dni]) {
-            const cached = newCache[dni];
-            return {
-              ...img,
-              nombreCompleto: `${cached.apellidos}, ${cached.nombres}`.toUpperCase(),
-              apellidosPaciente: cached.apellidos,
-              nombresPaciente: cached.nombres,
-            };
-          }
-
-          // Si no está en cache, buscar en BD
-          try {
-            const datoPaciente = await gestionPacientesService.buscarAseguradoPorDni(dni);
-            console.log(`📋 [DEBUG] Datos obtenidos para DNI ${dni}:`, datoPaciente);
-
-            // Extraer nombre completo - el backend envía "apellidosNombres"
-            const nombreCompleto = datoPaciente?.apellidosNombres ||
-                                  datoPaciente?.nombres ||
-                                  datoPaciente?.nombre ||
-                                  datoPaciente?.nombreCompleto ||
-                                  "";
-
-            if (nombreCompleto) {
-              newCache[dni] = {
-                nombres: nombreCompleto,
-                apellidos: "",
-              };
-              console.log(`✅ [Enriquecimiento] Agregado ${dni}: ${nombreCompleto}`);
-
-              return {
-                ...img,
-                nombreCompleto: nombreCompleto,
-                nombresPaciente: nombreCompleto,
-              };
-            }
-          } catch (err) {
-            console.warn(`⚠️ No se pudo obtener datos del paciente ${dni}:`, err);
-          }
-
-          return img; // Fallback: retornar sin enriquecer
-        })
-      );
-
-      console.log(`💾 [Enriquecimiento Final] ${imagenesEnriquecidas.length} imágenes enriquecidas con nombres completos`);
-
-      // ✅ SEGUNDO: Preparar datos para tabla (deduplicar por DNI, tomar últimas 3)
       const porDni = {};
-      imagenesEnriquecidas.forEach(img => {
+      const deduplicados = {};
+
+      imagenes.forEach(img => {
         const dni = img.dni || img.numDocPaciente;
         if (dni) {
           if (!porDni[dni]) {
             porDni[dni] = [];
           }
           porDni[dni].push(img);
+          if (!deduplicados[dni]) {
+            deduplicados[dni] = img;
+          }
         }
       });
 
-      const deduplicados = {};
-      imagenesEnriquecidas.forEach(img => {
-        const dni = img.dni || img.numDocPaciente;
-        if (dni && !deduplicados[dni]) {
-          deduplicados[dni] = img;
-        }
-      });
-
-      // Mapear a formato de tabla
+      // Mapear a formato de tabla CON DATOS DISPONIBLES (sin esperar enriquecimiento)
       const ecgsFormateados = Object.entries(deduplicados).map(([dni, img]) => ({
         ...img,
-        nombrePaciente: img.nombreCompleto || img.nombresPaciente || img.nombrePaciente || "Sin datos",
+        nombrePaciente: img.nombreCompleto || img.nombresPaciente || img.nombrePaciente || "Cargando...",
         genero: img.generoPaciente || img.genero || img.sexo || "-",
         edad: img.edadPaciente || img.edad || img.ageinyears || "-",
         telefono: img.telefonoPrincipalPaciente || img.telefono || "-",
@@ -282,55 +225,77 @@ export default function IPRESSWorkspace() {
         cantidadImagenes: porDni[dni]?.length || 0,
       }));
 
-      console.log(`✅ [Formatos] ${ecgsFormateados.length} imágenes formateadas. Primera:`, ecgsFormateados[0]?.nombrePaciente);
-
-      // ✅ TERCERO: Actualizar estados
-      setPacientesCache(newCache);
-      setEcgs(ecgsFormateados);
-      setTodasLasImagenes(imagenesEnriquecidas);  // ✅ Guardar TODAS las imágenes para modal
-      setCurrentPage(1);  // ✅ Resetear a página 1 al cargar nuevos datos
-
-      // Calcular estadísticas basadas en pacientes únicos, no en total de imágenes
+      // Calcular estadísticas RÁPIDAMENTE
       const pacientesPendientes = new Set(
-        imagenes
-          .filter((img) => img.estado === "ENVIADA")
-          .map((img) => img.dni)
+        imagenes.filter((img) => img.estado === "ENVIADA").map((img) => img.dni)
       );
       const pacientesObservadas = new Set(
-        imagenes
-          .filter((img) => img.estado === "OBSERVADA")
-          .map((img) => img.dni)
+        imagenes.filter((img) => img.estado === "OBSERVADA").map((img) => img.dni)
       );
       const pacientesAtendidas = new Set(
-        imagenes
-          .filter((img) => img.estado === "ATENDIDA")
-          .map((img) => img.dni)
+        imagenes.filter((img) => img.estado === "ATENDIDA").map((img) => img.dni)
       );
 
       const newStats = {
-        // Para MisECGsRecientes - Pacientes únicos por estado
-        total: pacientesPendientes.size + pacientesObservadas.size + pacientesAtendidas.size,  // Total = Pendiente + Observada + Atendida
-        cargadas: pacientesUnicos.size,        // Pacientes con imágenes cargadas
-        enEvaluacion: pacientesPendientes.size,  // Pacientes PENDIENTES
-        observadas: pacientesObservadas.size,  // Pacientes con observaciones
-        atendidas: pacientesAtendidas.size,    // Pacientes atendidas
-        // Para tablet/mobile stats - Por compatibilidad
-        enviadas: pacientesPendientes.size,  // Pacientes con imágenes en ENVIADA
+        total: pacientesPendientes.size + pacientesObservadas.size + pacientesAtendidas.size,
+        cargadas: pacientesUnicos.size,
+        enEvaluacion: pacientesPendientes.size,
+        observadas: pacientesObservadas.size,
+        atendidas: pacientesAtendidas.size,
+        enviadas: pacientesPendientes.size,
       };
 
-      // 🔍 Debug logging
-      console.log("📊 DEBUG STATS:", {
-        totalImagenes: imagenes.length,
-        pacientesUnicos: Array.from(pacientesUnicos),
-        pacientesUnicosCount: pacientesUnicos.size,
-        newStats
+      // ✅ MOSTRAR DATOS INMEDIATAMENTE (sin esperar enriquecimiento)
+      setEcgs(ecgsFormateados);
+      setTodasLasImagenes(imagenes);
+      setCurrentPage(1);
+      setStats(newStats);
+      setLoading(false);
+
+      // 🔄 ENRIQUECIMIENTO EN BACKGROUND (no bloquea la UI)
+      console.log("⏳ Iniciando enriquecimiento en background...");
+      const newCache = { ...pacientesCache };
+
+      // Hacer las llamadas de enriquecimiento sin esperar
+      imagenes.forEach(async (img) => {
+        const dni = img.dni || img.numDocPaciente;
+        if (!dni || newCache[dni]) return; // Skip si ya está en cache
+
+        try {
+          const datoPaciente = await gestionPacientesService.buscarAseguradoPorDni(dni);
+          const nombreCompleto = datoPaciente?.apellidosNombres ||
+                                datoPaciente?.nombres ||
+                                datoPaciente?.nombre ||
+                                datoPaciente?.nombreCompleto ||
+                                "";
+
+          if (nombreCompleto) {
+            newCache[dni] = {
+              nombres: nombreCompleto,
+              apellidos: "",
+            };
+            console.log(`✅ [Enriquecimiento] ${dni}: ${nombreCompleto}`);
+
+            // Actualizar con el nombre enriquecido
+            setPacientesCache({ ...newCache });
+            setEcgs(prev =>
+              prev.map(ecg => {
+                const ecgDni = ecg.dni || ecg.numDocPaciente;
+                if (ecgDni === dni && ecg.nombrePaciente === "Cargando...") {
+                  return { ...ecg, nombrePaciente: nombreCompleto };
+                }
+                return ecg;
+              })
+            );
+          }
+        } catch (err) {
+          console.warn(`⚠️ Error enriqueciendo ${dni}:`, err);
+        }
       });
 
-      setStats(newStats);
     } catch (error) {
       console.error("❌ Error al cargar EKGs:", error);
       toast.error("Error al cargar las imágenes");
-    } finally {
       setLoading(false);
     }
   };
