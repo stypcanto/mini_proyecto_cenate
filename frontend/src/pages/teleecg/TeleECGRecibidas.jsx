@@ -16,6 +16,7 @@ import {
   Zap,
   Bell,
   Eye,
+  ChevronDown,
 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import teleecgService from "../../services/teleecgService";
@@ -70,6 +71,9 @@ export default function TeleEKGRecibidas() {
 
   // IPRESS disponibles (para el filtro)
   const [ipressOptions, setIpressOptions] = useState([]);
+
+  // ✅ Estado para mostrar/ocultar filtros (accordion)
+  const [filtrosExpandidos, setFiltrosExpandidos] = useState(false);
 
   // ✅ WebSocket & Real-time
   const [wsConnected, setWsConnected] = useState(false);
@@ -701,122 +705,140 @@ export default function TeleEKGRecibidas() {
           </div>
         </div>
 
-        {/* 🎨 Sección de Filtros */}
-        <div className="bg-white rounded-lg shadow-md p-6 mb-8">
-          <div className="flex items-center gap-2 mb-4">
-            <Filter className="w-5 h-5 text-gray-700" />
-            <h2 className="text-lg font-bold text-gray-800">Filtros</h2>
-          </div>
+        {/* 🎨 Sección de Filtros - Accordion Compacto */}
+        <div className="bg-white rounded-lg shadow-sm border border-slate-200 mb-8">
+          {/* Header del Accordion */}
+          <button
+            onClick={() => setFiltrosExpandidos(!filtrosExpandidos)}
+            className="w-full flex items-center justify-between gap-2 p-3 hover:bg-slate-50 transition-colors"
+          >
+            <div className="flex items-center gap-2">
+              <Filter className="w-4 h-4 text-slate-600" />
+              <h2 className="text-sm font-semibold text-slate-800">Filtros</h2>
+            </div>
+            <div className={`transform transition-transform ${filtrosExpandidos ? 'rotate-180' : ''}`}>
+              <ChevronDown className="w-4 h-4 text-slate-600" />
+            </div>
+          </button>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-            {/* Búsqueda */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Buscar (DNI o Nombre)
-              </label>
-              <div className="relative">
-                <Search className="absolute left-3 top-3 w-4 h-4 text-gray-400" />
-                <input
-                  type="text"
-                  placeholder="DNI o nombre del paciente..."
-                  value={filtros.searchTerm}
-                  onChange={(e) =>
-                    setFiltros({ ...filtros, searchTerm: e.target.value })
-                  }
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600"
-                />
+          {/* Contenido del Accordion */}
+          {filtrosExpandidos && (
+            <div className="border-t border-slate-200 p-3 space-y-3">
+              {/* Fila 1: Búsqueda, Estado, IPRESS */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+                {/* Búsqueda */}
+                <div>
+                  <label className="block text-xs font-medium text-slate-700 mb-0.5">
+                    Buscar
+                  </label>
+                  <div className="relative">
+                    <Search className="absolute left-2 top-2 w-3 h-3 text-slate-400" />
+                    <input
+                      type="text"
+                      placeholder="DNI o nombre..."
+                      value={filtros.searchTerm}
+                      onChange={(e) =>
+                        setFiltros({ ...filtros, searchTerm: e.target.value })
+                      }
+                      className="w-full pl-7 pr-2 py-1.5 text-sm border border-slate-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    />
+                  </div>
+                </div>
+
+                {/* Estado */}
+                <div>
+                  <label className="block text-xs font-medium text-slate-700 mb-0.5">
+                    Estado
+                  </label>
+                  <select
+                    value={filtros.estado}
+                    onChange={(e) =>
+                      setFiltros({ ...filtros, estado: e.target.value })
+                    }
+                    className="w-full px-2 py-1.5 text-sm border border-slate-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  >
+                    <option value="TODOS">Todos</option>
+                    <option value="PENDIENTE">Pendientes</option>
+                    <option value="OBSERVADA">Observadas</option>
+                    <option value="ATENDIDA">Atendidas</option>
+                  </select>
+                </div>
+
+                {/* IPRESS */}
+                <div>
+                  <label className="block text-xs font-medium text-slate-700 mb-0.5">
+                    IPRESS
+                  </label>
+                  <select
+                    value={filtros.ipress}
+                    onChange={(e) =>
+                      setFiltros({ ...filtros, ipress: e.target.value })
+                    }
+                    className="w-full px-2 py-1.5 text-sm border border-slate-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  >
+                    <option value="TODOS">Todas</option>
+                    {ipressOptions.map((ipress) => (
+                      <option key={ipress} value={ipress}>
+                        {ipress}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              {/* Fila 2: Fechas y Botones */}
+              <div className="grid grid-cols-1 md:grid-cols-5 gap-2">
+                <div>
+                  <label className="block text-xs font-medium text-slate-700 mb-0.5">
+                    Desde
+                  </label>
+                  <input
+                    type="date"
+                    value={filtros.fechaDesde}
+                    onChange={(e) =>
+                      setFiltros({ ...filtros, fechaDesde: e.target.value })
+                    }
+                    className="w-full px-2 py-1.5 text-xs border border-slate-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-medium text-slate-700 mb-0.5">
+                    Hasta
+                  </label>
+                  <input
+                    type="date"
+                    value={filtros.fechaHasta}
+                    onChange={(e) =>
+                      setFiltros({ ...filtros, fechaHasta: e.target.value })
+                    }
+                    className="w-full px-2 py-1.5 text-xs border border-slate-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  />
+                </div>
+
+                <div className="flex items-end gap-1">
+                  <button
+                    onClick={handleRefresh}
+                    disabled={refreshing}
+                    className="flex-1 flex items-center justify-center gap-1 bg-slate-600 hover:bg-slate-700 disabled:bg-slate-400 text-white px-2 py-1.5 text-xs rounded transition-colors"
+                  >
+                    <RefreshCw className={`w-3 h-3 ${refreshing ? "animate-spin" : ""}`} />
+                    <span className="hidden sm:inline">Refrescar</span>
+                  </button>
+                </div>
+
+                <div className="flex items-end gap-1">
+                  <button
+                    onClick={handleExportar}
+                    className="flex-1 flex items-center justify-center gap-1 bg-emerald-600 hover:bg-emerald-700 text-white px-2 py-1.5 text-xs rounded transition-colors"
+                  >
+                    <FileDown className="w-3 h-3" />
+                    <span className="hidden sm:inline">Exportar</span>
+                  </button>
+                </div>
               </div>
             </div>
-
-            {/* Estado (v3.0.0: Nuevos nombres para CENATE) */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Estado
-              </label>
-              <select
-                value={filtros.estado}
-                onChange={(e) =>
-                  setFiltros({ ...filtros, estado: e.target.value })
-                }
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600"
-              >
-                <option value="TODOS">Todos</option>
-                <option value="PENDIENTE">Pendientes (Enviadas)</option>
-                <option value="OBSERVADA">Observadas (Con problemas)</option>
-                <option value="ATENDIDA">Atendidas (Completadas)</option>
-              </select>
-            </div>
-
-            {/* IPRESS */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                IPRESS
-              </label>
-              <select
-                value={filtros.ipress}
-                onChange={(e) =>
-                  setFiltros({ ...filtros, ipress: e.target.value })
-                }
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600"
-              >
-                <option value="TODOS">Todas</option>
-                {ipressOptions.map((ipress) => (
-                  <option key={ipress} value={ipress}>
-                    {ipress}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-
-          {/* Filtro de fechas */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Desde
-              </label>
-              <input
-                type="date"
-                value={filtros.fechaDesde}
-                onChange={(e) =>
-                  setFiltros({ ...filtros, fechaDesde: e.target.value })
-                }
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Hasta
-              </label>
-              <input
-                type="date"
-                value={filtros.fechaHasta}
-                onChange={(e) =>
-                  setFiltros({ ...filtros, fechaHasta: e.target.value })
-                }
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600"
-              />
-            </div>
-
-            <div className="flex items-end gap-2">
-              <button
-                onClick={handleRefresh}
-                disabled={refreshing}
-                className="flex-1 flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white px-4 py-2 rounded-lg transition-colors"
-              >
-                <RefreshCw className={`w-4 h-4 ${refreshing ? "animate-spin" : ""}`} />
-                <span>Refrescar</span>
-              </button>
-              <button
-                onClick={handleExportar}
-                className="flex-1 flex items-center justify-center gap-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition-colors"
-              >
-                <FileDown className="w-4 h-4" />
-                <span>Exportar</span>
-              </button>
-            </div>
-          </div>
+          )}
         </div>
 
         {/* 📋 Tabla de EKGs */}
