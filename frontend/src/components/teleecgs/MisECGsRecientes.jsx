@@ -223,7 +223,7 @@ export default function MisECGsRecientes({
 
               {/* Etiqueta */}
               <span className="text-xs md:text-sm font-semibold text-white/90">
-                Total EKG a analizar
+                Imágenes EKG a analizar
               </span>
             </div>
           </button>
