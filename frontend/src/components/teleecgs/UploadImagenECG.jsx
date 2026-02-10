@@ -99,6 +99,7 @@ export default function UploadImagenEKG({ onSuccess, onUploadSuccess, isWorkspac
   const [searchingPaciente, setSearchingPaciente] = useState(false);
   const [pacienteEncontrado, setPacienteEncontrado] = useState(false);
   const [esUrgente, setEsUrgente] = useState(false);
+  const [fechaToma, setFechaToma] = useState(""); // ✅ Fecha de toma del EKG
 
   // UI
   const [loading, setLoading] = useState(false);
@@ -159,6 +160,7 @@ export default function UploadImagenEKG({ onSuccess, onUploadSuccess, isWorkspac
             setArchivos(new Array(draft.previews.length).fill(null).map(() => ({ name: "compressed" })));
             setNumDocPaciente(draft.numDocPaciente || "");
             setDatosCompletos(draft.datosCompletos || { apellidos: "", nombres: "", sexo: "", codigo: "", telefono: "", ipress: "", edad: "" });
+            setFechaToma(draft.fechaToma || "");
           }
         }
       } catch (error) {
@@ -176,6 +178,7 @@ export default function UploadImagenEKG({ onSuccess, onUploadSuccess, isWorkspac
           previews,
           numDocPaciente,
           datosCompletos,
+          fechaToma,
           timestamp: new Date().toISOString()
         }));
       } catch (error) {
@@ -183,7 +186,7 @@ export default function UploadImagenEKG({ onSuccess, onUploadSuccess, isWorkspac
       }
     };
     guardarDraft();
-  }, [previews, numDocPaciente, datosCompletos]);
+  }, [previews, numDocPaciente, datosCompletos, fechaToma]);
 
   // Buscar paciente por DNI cuando cambia (con debounce)
   useEffect(() => {
@@ -373,6 +376,11 @@ export default function UploadImagenEKG({ onSuccess, onUploadSuccess, isWorkspac
       return false;
     }
 
+    if (!fechaToma) {
+      toast.error("La fecha de toma del EKG es requerida");
+      return false;
+    }
+
     if (archivos.length < MIN_IMAGENES) {
       toast.error(`Debe seleccionar al menos ${MIN_IMAGENES} imágenes`);
       return false;
@@ -407,6 +415,10 @@ export default function UploadImagenEKG({ onSuccess, onUploadSuccess, isWorkspac
       }
       // ✅ v1.60.7: Enviar indicador de urgencia
       formData.append("esUrgente", esUrgente);
+      // ✅ v1.76.0: Enviar fecha de toma del EKG
+      if (fechaToma) {
+        formData.append("fechaToma", fechaToma);
+      }
 
       // Simular progreso por archivo (10 archivos máx)
       const progressPerFile = 100 / archivos.length;
@@ -477,6 +489,7 @@ export default function UploadImagenEKG({ onSuccess, onUploadSuccess, isWorkspac
     setPacienteEncontrado(false);
     setCarouselIndex(0);
     setEsUrgente(false); // ✅ Limpiar urgencia
+    setFechaToma(""); // ✅ Limpiar fecha de toma
     localStorage.removeItem(STORAGE_KEY);
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
@@ -591,6 +604,20 @@ export default function UploadImagenEKG({ onSuccess, onUploadSuccess, isWorkspac
                     }`}
                   />
                 </button>
+              </div>
+
+              {/* Fecha de Toma del EKG - Input Date */}
+              <div className="mb-1.5">
+                <label className="block text-xs font-bold text-gray-700 mb-1">📅 Fecha de Toma del EKG *</label>
+                <input
+                  type="date"
+                  required
+                  value={fechaToma}
+                  onChange={(e) => setFechaToma(e.target.value)}
+                  max={new Date().toISOString().split('T')[0]} // No permite fechas futuras
+                  className="w-full px-3 py-2 border-2 border-blue-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent text-sm font-semibold text-blue-900 placeholder:text-blue-200 transition-all"
+                />
+                <p className="text-xs text-gray-500 mt-1">Fecha en la que se tomó el electrocardiograma</p>
               </div>
 
               {/* DNI Input */}
