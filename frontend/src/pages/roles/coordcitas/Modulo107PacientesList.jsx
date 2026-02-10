@@ -160,6 +160,15 @@ export default function Modulo107PacientesList() {
       if (filtroDocumento) filtros.pacienteDni = filtroDocumento;
       if (filtroRangoFechas.inicio) filtros.fechaDesde = filtroRangoFechas.inicio;
       if (filtroRangoFechas.fin) filtros.fechaHasta = filtroRangoFechas.fin;
+      
+      // 🆕 Filtros de ubicación geográfica
+      if (filtroMacrorregion !== "todas") filtros.macrorregion = filtroMacrorregion;
+      if (filtroRed !== "todas") filtros.red = filtroRed;
+      if (filtroIpress !== "todas") {
+        const ipressSeleccionada = ipressUnicas.find(i => i.descripcion === filtroIpress);
+        if (ipressSeleccionada) filtros.idIpress = ipressSeleccionada.id;
+      }
+      
       if (filtroDerivacion !== "todas") filtros.derivacionInterna = filtroDerivacion;
       if (filtroCondicionMedica !== "todos") filtros.condicionMedica = filtroCondicionMedica; // 🆕
       if (searchTerm) filtros.searchTerm = searchTerm;

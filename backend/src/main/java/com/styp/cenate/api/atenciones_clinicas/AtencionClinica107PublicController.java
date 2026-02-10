@@ -64,6 +64,8 @@ public class AtencionClinica107PublicController {
         @RequestParam(value = "fechaDesde", required = false) LocalDate fechaDesde,
         @RequestParam(value = "fechaHasta", required = false) LocalDate fechaHasta,
         @RequestParam(value = "idIpress", required = false) Long idIpress,
+        @RequestParam(value = "macrorregion", required = false) String macrorregion,
+        @RequestParam(value = "red", required = false) String red,
         @RequestParam(value = "derivacion", required = false) String derivacion,
         @RequestParam(value = "especialidad", required = false) String especialidad,
         @RequestParam(value = "tipoCita", required = false) String tipoCita,
@@ -74,6 +76,7 @@ public class AtencionClinica107PublicController {
     ) {
         try {
             log.info("📋 [MODULO 107] GET /listar - página {}, tamaño {}, bolsa {}", pageNumber, pageSize, idBolsa);
+            log.info("🔍 [MODULO 107] Filtros ubicación: macrorregion='{}', red='{}', idIpress={}", macrorregion, red, idIpress);
             log.debug("🔍 [MODULO 107] Parámetros recibidos: derivacion='{}', especialidad='{}', idIpress={}", derivacion, especialidad, idIpress);
 
             // Construir DTO con filtros
@@ -86,6 +89,8 @@ public class AtencionClinica107PublicController {
                 .fechaDesde(fechaDesde)
                 .fechaHasta(fechaHasta)
                 .idIpress(idIpress)
+                .macrorregion(macrorregion)
+                .red(red)
                 .derivacionInterna(derivacion)
                 .especialidad(especialidad)
                 .tipoCita(tipoCita)
@@ -95,7 +100,8 @@ public class AtencionClinica107PublicController {
                 .pageSize(pageSize)
                 .build();
 
-            log.debug("📦 [MODULO 107] DTO construido: derivacionInterna='{}'", filtro.getDerivacionInterna());
+            log.debug("📦 [MODULO 107] DTO construido: derivacionInterna='{}', macrorregion='{}', red='{}'", 
+                filtro.getDerivacionInterna(), filtro.getMacrorregion(), filtro.getRed());
 
             // Obtener resultados
             Page<AtencionClinica107DTO> resultado = service.listarConFiltros(filtro);

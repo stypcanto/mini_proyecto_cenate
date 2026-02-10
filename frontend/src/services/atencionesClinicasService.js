@@ -57,6 +57,15 @@ export const atencionesClinicasService = {
         params.append('idIpress', filtros.idIpress);
       }
       
+      // 🆕 Filtros de ubicación geográfica
+      if (filtros.macrorregion && filtros.macrorregion !== "todas") {
+        params.append('macrorregion', filtros.macrorregion);
+      }
+      
+      if (filtros.red && filtros.red !== "todas") {
+        params.append('red', filtros.red);
+      }
+      
       // Derivación Interna (filtro corregido: nombre del parámetro en backend es 'derivacion')
       if (filtros.derivacionInterna && filtros.derivacionInterna !== "todas") {
         params.append('derivacion', filtros.derivacionInterna);

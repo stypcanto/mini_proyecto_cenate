@@ -31,7 +31,7 @@ import java.time.LocalDateTime;
  *   - Manejo de excepciones
  *   - Logging detallado
  * 
- * ⚠️ NOTA: red y macrorregion NO se filtran en BD (dinámico)
+ * ✅ ACTUALIZADO: Agregado soporte completo para filtros de macrorregión y red
  */
 @Service
 @Slf4j
@@ -50,9 +50,9 @@ public class AtencionClinica107ServiceImpl implements AtencionClinica107Service 
     public Page<AtencionClinica107DTO> listarConFiltros(AtencionClinica107FiltroDTO filtro) {
         log.info("🔍 [MODULO 107] Listando atenciones clínicas con filtros");
         log.info("📌 [MODULO 107] Filtro de Bolsa: idBolsa={}", filtro.getIdBolsa());
-        log.debug("Filtros recibidos: estadoGestionCitasId={}, estado={}, tipoDoc={}, documento={}, idIpress={}, derivacion={}, especialidad={}, tipoCita={}, search={}",
+        log.debug("Filtros recibidos: estadoGestionCitasId={}, estado={}, tipoDoc={}, documento={}, idIpress={}, macrorregion={}, red={}, derivacion={}, especialidad={}, tipoCita={}, search={}",
             filtro.getEstadoGestionCitasId(), filtro.getEstado(), filtro.getTipoDocumento(), filtro.getPacienteDni(), 
-            filtro.getIdIpress(), filtro.getDerivacionInterna(), filtro.getEspecialidad(),
+            filtro.getIdIpress(), filtro.getMacrorregion(), filtro.getRed(), filtro.getDerivacionInterna(), filtro.getEspecialidad(),
             filtro.getTipoCita(), filtro.getSearchTerm());
 
         // Parámetros de paginación con ordenamiento ascendente por fecha de solicitud
@@ -76,7 +76,7 @@ public class AtencionClinica107ServiceImpl implements AtencionClinica107Service 
 
             log.debug("Paginación: página={}, tamaño={}", page, size);
 
-            // Construir especificación con todos los filtros (incluyendo idBolsa)
+            // Construir especificación con todos los filtros (incluyendo idBolsa, macrorregión y red)
             var spec = AtencionClinica107Specification.conFiltros(
                 filtro.getIdBolsa(),
                 filtro.getEstadoGestionCitasId(),
@@ -86,6 +86,8 @@ public class AtencionClinica107ServiceImpl implements AtencionClinica107Service 
                 fechaInicio,
                 fechaFin,
                 filtro.getIdIpress(),
+                filtro.getMacrorregion(),
+                filtro.getRed(),
                 filtro.getDerivacionInterna(),
                 filtro.getEspecialidad(),
                 filtro.getTipoCita(),
@@ -93,13 +95,16 @@ public class AtencionClinica107ServiceImpl implements AtencionClinica107Service 
                 filtro.getCondicionMedica()
             );
 
+            log.info("🔧 [MODULO 107] Especificación construida. Filtros aplicados: macrorregion='{}', red='{}'", 
+                filtro.getMacrorregion(), filtro.getRed());
+
             // Ejecutar query
             long inicio = System.currentTimeMillis();
             Page<AtencionClinica107> resultado = repository.findAll(spec, pageable);
             long tiempo = System.currentTimeMillis() - inicio;
 
-            log.info("✅ [MODULO 107] Se encontraron {} atenciones en {} ms", 
-                resultado.getTotalElements(), tiempo);
+            log.info("✅ [MODULO 107] RESULTADO: {} atenciones encontradas en {} ms (página {}/{})", 
+                resultado.getTotalElements(), tiempo, resultado.getNumber(), resultado.getTotalPages());
 
             // Convertir a DTO - inicializar relación antes de convertir
             return resultado.map(atencion -> {

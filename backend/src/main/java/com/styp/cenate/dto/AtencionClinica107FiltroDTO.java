@@ -8,8 +8,7 @@ import java.time.LocalDate;
  * Propósito: Recibe parámetros de filtrado desde el frontend
  * Módulo: 107
  * 
- * ⚠️ NOTA IMPORTANTE: red y macrorregion NO son filtrables en backend (dinámico)
- * Esos datos se muestran en el registro pero no se usan para filtrado en queries
+ * ✅ ACTUALIZADO: Agregado soporte para filtros de macrorregión y red
  */
 @Data
 @NoArgsConstructor
@@ -28,6 +27,10 @@ public class AtencionClinica107FiltroDTO {
     // IPRESS
     private Long idIpress;
     private String codigoIpress;
+    
+    // 🆕 Filtros de ubicación geográfica
+    private String macrorregion;  // Filtro por macrorregión (por descripción)
+    private String red;           // Filtro por red (por descripción)
     
     // Paciente
     private String pacienteDni;
