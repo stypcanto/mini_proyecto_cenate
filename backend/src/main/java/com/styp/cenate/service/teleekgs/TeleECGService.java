@@ -164,8 +164,16 @@ public class TeleECGService {
         // 6. v1.22.0: Crear registro en BD con imagen BYTEA
         TeleECGImagen imagen = new TeleECGImagen();
         imagen.setNumDocPaciente(dto.getNumDocPaciente());
-        imagen.setNombresPaciente(dto.getNombresPaciente());
-        imagen.setApellidosPaciente(dto.getApellidosPaciente());
+
+        // 🔧 v1.71.0: Obtener nombre y apellido REALES del asegurado (no del DTO que puede estar incompleto)
+        String nombreCompleto = aseguradoVerificacion.get().getPaciente() != null
+            ? aseguradoVerificacion.get().getPaciente()
+            : dto.getNombresPaciente() != null
+                ? dto.getNombresPaciente()
+                : "Sin nombre";
+
+        imagen.setNombresPaciente(nombreCompleto);  // Guardar nombre completo real
+        imagen.setApellidosPaciente("");  // Dejar vacío - usamos nombre completo en nombresPaciente
         imagen.setStorageTipo("DATABASE");  // v1.22.0: Almacenamiento en BD
         imagen.setStorageRuta("bytea://" + nombreArchivo);  // Referencia simbólica
         imagen.setContenidoImagen(contenidoImagen);  // v1.22.0: BYTEA content
@@ -678,7 +686,15 @@ public class TeleECGService {
         dto.setNumDocPaciente(imagen.getNumDocPaciente());
         dto.setNombresPaciente(imagen.getNombresPaciente());
         dto.setApellidosPaciente(imagen.getApellidosPaciente());
-        dto.setPacienteNombreCompleto(imagen.getApellidosPaciente() + ", " + imagen.getNombresPaciente());
+
+        // 🔧 v1.71.0: Construir nombre completo correctamente
+        // Si tenemos nombres y apellidos, combinarlos; si no, usar solo el nombre
+        if (imagen.getApellidosPaciente() != null && !imagen.getApellidosPaciente().isEmpty()) {
+            dto.setPacienteNombreCompleto(imagen.getApellidosPaciente() + ", " + imagen.getNombresPaciente());
+        } else {
+            // Si no hay apellidos separados, mostrar solo el nombre (que contiene el completo)
+            dto.setPacienteNombreCompleto(imagen.getNombresPaciente());
+        }
 
         // Obtener datos adicionales del asegurado por número de documento
         try {
