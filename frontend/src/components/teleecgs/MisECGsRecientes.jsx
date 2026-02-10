@@ -64,6 +64,7 @@ export default function MisECGsRecientes({
   const [cargandoImagen, setCargandoImagen] = useState(false);
   const [archivoSeleccionado, setArchivoSeleccionado] = useState(null);
   const [cargandoArchivo, setCargandoArchivo] = useState(false);
+  const [dragActivo, setDragActivo] = useState(false);  // ✅ Para drag-and-drop
 
   // ✅ Sync ultimas3 to datosOriginales on mount and when ultimas3 changes
   useEffect(() => {
@@ -769,43 +770,146 @@ export default function MisECGsRecientes({
               </div>
             )}
 
-            {/* Modo Agregar */}
+            {/* Modo Agregar - Mejorado con Drag & Drop */}
             {modalMode === 'add' && (
               <div className="space-y-4">
                 <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
                   <Plus className="w-5 h-5 text-green-600" />
                   Agregar Nueva Imagen
                 </h3>
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-sm text-blue-800">
-                  ℹ️ Selecciona un archivo EKG (JPG, PNG, PDF) para agregarlo al registro
+
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-sm text-blue-800 flex items-start gap-2">
+                  <Info className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                  <span>Selecciona un archivo EKG (JPG, PNG, PDF) para agregarlo al registro del paciente</span>
                 </div>
-                <input
-                  id="fileInputAdd"
-                  type="file"
-                  accept="image/*,.pdf"
-                  onChange={(e) => setArchivoSeleccionado(e.target.files?.[0])}
-                  className="hidden"
-                />
-                <button
-                  onClick={() => document.getElementById('fileInputAdd')?.click()}
-                  className="px-6 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold transition-colors w-full"
+
+                {/* Zona de Drag & Drop Mejorada */}
+                <div
+                  onDragOver={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setDragActivo(true);
+                  }}
+                  onDragLeave={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setDragActivo(false);
+                  }}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setDragActivo(false);
+
+                    const files = e.dataTransfer.files;
+                    if (files && files.length > 0) {
+                      const archivo = files[0];
+
+                      // Validar tipo de archivo
+                      const tiposValidos = ['image/jpeg', 'image/png', 'application/pdf'];
+                      if (!tiposValidos.includes(archivo.type)) {
+                        toast.error('❌ Tipo de archivo no válido. Usa JPG, PNG o PDF');
+                        return;
+                      }
+
+                      // Validar tamaño (máximo 10MB)
+                      if (archivo.size > 10 * 1024 * 1024) {
+                        toast.error('❌ Archivo muy grande. Máximo 10 MB');
+                        return;
+                      }
+
+                      setArchivoSeleccionado(archivo);
+                      toast.success('✅ Archivo listo para subir');
+                    }
+                  }}
+                  className={`border-2 border-dashed rounded-lg p-8 text-center transition-all cursor-pointer ${
+                    dragActivo
+                      ? 'border-green-500 bg-green-100 scale-105'
+                      : archivoSeleccionado
+                      ? 'border-green-400 bg-green-50'
+                      : 'border-gray-300 bg-gray-50 hover:border-green-400 hover:bg-green-50'
+                  }`}
                 >
-                  Seleccionar Archivo
-                </button>
-                {archivoSeleccionado && (
-                  <p className="text-xs text-green-700 font-semibold">
-                    ✅ Archivo seleccionado: {archivoSeleccionado.name}
-                  </p>
-                )}
-                <div className="flex gap-3">
+                  <input
+                    id="fileInputAdd"
+                    type="file"
+                    accept="image/*,.pdf"
+                    onChange={(e) => {
+                      const archivo = e.target.files?.[0];
+                      if (archivo) {
+                        // Validar tipo de archivo
+                        const tiposValidos = ['image/jpeg', 'image/png', 'application/pdf'];
+                        if (!tiposValidos.includes(archivo.type)) {
+                          toast.error('❌ Tipo de archivo no válido. Usa JPG, PNG o PDF');
+                          return;
+                        }
+
+                        // Validar tamaño (máximo 10MB)
+                        if (archivo.size > 10 * 1024 * 1024) {
+                          toast.error('❌ Archivo muy grande. Máximo 10 MB');
+                          return;
+                        }
+
+                        setArchivoSeleccionado(archivo);
+                        toast.success('✅ Archivo listo para subir');
+                      }
+                    }}
+                    className="hidden"
+                  />
+
+                  {archivoSeleccionado ? (
+                    <div className="space-y-3">
+                      <div className="flex justify-center">
+                        <CheckCircle className="w-12 h-12 text-green-600" />
+                      </div>
+                      <div>
+                        <p className="font-bold text-green-900 text-lg">Archivo Listo</p>
+                        <p className="text-xs text-green-700 mt-1">{archivoSeleccionado.name}</p>
+                        <p className="text-xs text-green-600 mt-1">
+                          {(archivoSeleccionado.size / 1024 / 1024).toFixed(2)} MB
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => {
+                          setArchivoSeleccionado(null);
+                          document.getElementById('fileInputAdd').value = '';
+                        }}
+                        className="text-xs text-green-700 hover:text-green-900 font-semibold underline"
+                      >
+                        Cambiar archivo
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      <div className="flex justify-center">
+                        <CloudUpload className="w-12 h-12 text-gray-400" />
+                      </div>
+                      <div>
+                        <p className="font-bold text-gray-800">
+                          {dragActivo ? '📥 Suelta el archivo aquí' : 'Arrastra un archivo aquí'}
+                        </p>
+                        <p className="text-xs text-gray-600 mt-1">o haz clic para seleccionar</p>
+                        <p className="text-xs text-gray-500 mt-2">JPG, PNG o PDF (máximo 10 MB)</p>
+                      </div>
+                      <button
+                        onClick={() => document.getElementById('fileInputAdd')?.click()}
+                        className="px-6 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold transition-all"
+                      >
+                        👆 Seleccionar Archivo
+                      </button>
+                    </div>
+                  )}
+                </div>
+
+                {/* Botones de Acción */}
+                <div className="flex gap-3 pt-2">
                   <button
                     onClick={async () => {
                       if (!archivoSeleccionado) {
-                        toast.error('Por favor selecciona un archivo');
+                        toast.error('❌ Por favor selecciona un archivo primero');
                         return;
                       }
                       if (!cargaEdicion?.dni) {
-                        toast.error('Error: Falta información del paciente');
+                        toast.error('❌ Error: Falta información del paciente');
                         console.error('❌ cargaEdicion:', cargaEdicion);
                         return;
                       }
@@ -834,9 +938,10 @@ export default function MisECGsRecientes({
                         );
 
                         console.log('✅ Respuesta del servidor:', respuesta);
-                        toast.success('✅ Imagen agregada correctamente');
+                        toast.success('✅ ¡Imagen agregada correctamente!');
                         setModalMode('view');
                         setArchivoSeleccionado(null);
+                        document.getElementById('fileInputAdd').value = '';
 
                         // Esperar un poco antes de refrescar
                         setTimeout(() => {
@@ -846,25 +951,44 @@ export default function MisECGsRecientes({
                         console.error('❌ Error completo al subir imagen:', error);
                         console.error('Mensaje:', error.message);
                         console.error('Detalles:', error.response?.data || error.response || error);
-                        toast.error('❌ Error al subir: ' + (error.message || error));
+
+                        // Mensajes de error más amigables
+                        let mensajeError = 'Error al subir la imagen';
+                        if (error.message?.includes('401')) {
+                          mensajeError = 'No tienes permiso para subir imágenes';
+                        } else if (error.message?.includes('413')) {
+                          mensajeError = 'Archivo muy grande';
+                        } else if (error.message?.includes('Network')) {
+                          mensajeError = 'Error de conexión. Verifica tu internet';
+                        }
+
+                        toast.error('❌ ' + mensajeError);
                       } finally {
                         setCargandoArchivo(false);
                       }
                     }}
                     disabled={cargandoArchivo || !archivoSeleccionado}
-                    className="flex-1 py-2.5 bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white rounded-lg font-semibold transition-colors"
+                    className="flex-1 py-3 bg-green-600 hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white rounded-lg font-bold transition-all text-base"
                   >
-                    {cargandoArchivo ? '📤 Subiendo...' : 'Subir Imagen'}
+                    {cargandoArchivo ? (
+                      <span className="flex items-center justify-center gap-2">
+                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                        Subiendo...
+                      </span>
+                    ) : (
+                      '📤 Subir Imagen'
+                    )}
                   </button>
                   <button
                     onClick={() => {
                       setModalMode('view');
                       setArchivoSeleccionado(null);
+                      document.getElementById('fileInputAdd').value = '';
                     }}
                     disabled={cargandoArchivo}
-                    className="flex-1 py-2.5 bg-gray-200 hover:bg-gray-300 disabled:bg-gray-300 text-gray-800 rounded-lg font-semibold transition-colors"
+                    className="flex-1 py-3 bg-gray-200 hover:bg-gray-300 disabled:bg-gray-300 text-gray-800 rounded-lg font-bold transition-all"
                   >
-                    Cancelar
+                    ✕ Cancelar
                   </button>
                 </div>
               </div>
