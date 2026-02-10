@@ -7,6 +7,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
+import java.time.LocalDate;
 
 /**
  * DTO para respuesta de listado de imágenes ECG
@@ -224,6 +225,16 @@ public class TeleECGImagenDTO {
      */
     @JsonProperty("es_urgente")
     private Boolean esUrgente;
+
+    /**
+     * FECHA DE TOMA DEL EKG (v1.76.0 - Nuevo)
+     * Fecha en que se tomó el electrocardiograma
+     * Proporcionada por la IPRESS al enviar el ECG
+     * Formato: YYYY-MM-DD
+     * NULL si no se proporciona
+     */
+    @JsonProperty("fecha_toma")
+    private LocalDate fechaToma;
 
     /**
      * EVALUACIÓN MÉDICA del ECG (v3.0.0 - ML Dataset)

@@ -5,6 +5,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.web.multipart.MultipartFile;
+import java.time.LocalDate;
 
 /**
  * DTO para la solicitud de carga de electrocardiogramas
@@ -96,6 +97,14 @@ public class SubirImagenECGDTO {
      * Opcional: Default es false
      */
     private Boolean esUrgente = false;
+
+    /**
+     * FECHA DE TOMA DEL EKG (v1.76.0 - Nuevo)
+     * Fecha en que se tomó el electrocardiograma
+     * Formato: YYYY-MM-DD
+     * Opcional: Si no se proporciona será NULL
+     */
+    private LocalDate fechaToma;
 
     /**
      * Validación personalizada post-construcción

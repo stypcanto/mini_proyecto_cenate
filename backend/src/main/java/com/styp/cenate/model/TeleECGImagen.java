@@ -8,6 +8,7 @@ import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
 import java.time.LocalDateTime;
+import java.time.LocalDate;
 
 /**
  * Entidad para almacenar electrocardiogramas enviados por IPRESS externas
@@ -432,6 +433,15 @@ public class TeleECGImagen {
      */
     @Column(name = "es_urgente", nullable = false)
     private Boolean esUrgente = false;
+
+    /**
+     * FECHA DE TOMA DEL EKG (v1.76.0 - Nuevo)
+     * Fecha en que se tomó el electrocardiograma (sin hora)
+     * Proporcionada por la IPRESS que envía el ECG
+     * NULL si no se proporciona
+     */
+    @Column(name = "fecha_toma")
+    private LocalDate fechaToma;
 
     @PrePersist
     protected void onCreate() {

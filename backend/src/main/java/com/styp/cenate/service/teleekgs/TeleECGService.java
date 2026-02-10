@@ -28,6 +28,7 @@ import jakarta.annotation.PostConstruct;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
+import java.time.LocalDate;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -193,6 +194,7 @@ public class TeleECGService {
         imagen.setRutaAcceso("/api/teleekgs/upload");
         imagen.setObservaciones(dto.getObservaciones());
         imagen.setEsUrgente(dto.getEsUrgente() != null ? dto.getEsUrgente() : false);  // v4.0.0: Marcar como urgente si aplica
+        imagen.setFechaToma(dto.getFechaToma());  // v1.76.0: Guardar fecha de toma del EKG
 
         imagen = teleECGImagenRepository.save(imagen);
         log.info("✅ Imagen registrada en BD: ID={}", imagen.getIdImagen());
@@ -775,6 +777,9 @@ public class TeleECGService {
 
         // ✅ v1.60.5: Mapear indicador de urgencia desde la entidad
         dto.setEsUrgente(imagen.getEsUrgente() != null ? imagen.getEsUrgente() : false);
+
+        // ✅ v1.76.0: Mapear fecha de toma del EKG
+        dto.setFechaToma(imagen.getFechaToma());
 
         return dto;
     }
