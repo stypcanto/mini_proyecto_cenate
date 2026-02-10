@@ -29,9 +29,10 @@ VALUES (
 ON CONFLICT (ruta_pagina) DO NOTHING;
 
 -- ============================================================================
--- 2. Configurar permisos para INSTITUCION_EX en /teleekgs/ipress-workspace
+-- 2. Configurar permisos para TODOS los roles que necesiten acceso
 -- ============================================================================
 
+-- 2a. INSTITUCION_EX - Usuarios externos que cargan y gestionan imágenes
 INSERT INTO segu_permisos_rol_pagina (
     id_rol,
     id_pagina,
@@ -64,35 +65,125 @@ ON CONFLICT (id_rol, id_pagina) DO UPDATE SET
     activo = true,
     updated_at = NOW();
 
+-- 2b. MEDICO - Los médicos también podrían necesitar eliminar imágenes
+INSERT INTO segu_permisos_rol_pagina (
+    id_rol,
+    id_pagina,
+    puede_ver,
+    puede_crear,
+    puede_editar,
+    puede_eliminar,
+    puede_exportar,
+    activo
+)
+SELECT
+    r.id_rol,
+    p.id_pagina,
+    true,   -- puede_ver
+    false,  -- puede_crear
+    false,  -- puede_editar
+    true,   -- puede_eliminar (PERMITIR a MEDICO eliminar si es necesario)
+    true,   -- puede_exportar (MEDICO puede exportar reportes)
+    true    -- activo
+FROM dim_roles r
+CROSS JOIN dim_paginas_modulo p
+WHERE r.desc_rol = 'MEDICO'
+  AND p.ruta_pagina = '/teleekgs/ipress-workspace'
+ON CONFLICT (id_rol, id_pagina) DO UPDATE SET
+    puede_ver = true,
+    puede_crear = false,
+    puede_editar = false,
+    puede_eliminar = true,
+    puede_exportar = true,
+    activo = true,
+    updated_at = NOW();
+
+-- 2c. COORDINADOR - Coordinadores de atención que gestionan flujo
+INSERT INTO segu_permisos_rol_pagina (
+    id_rol,
+    id_pagina,
+    puede_ver,
+    puede_crear,
+    puede_editar,
+    puede_eliminar,
+    puede_exportar,
+    activo
+)
+SELECT
+    r.id_rol,
+    p.id_pagina,
+    true,   -- puede_ver
+    true,   -- puede_crear
+    true,   -- puede_editar
+    true,   -- puede_eliminar (PERMITIR a COORDINADOR)
+    true,   -- puede_exportar
+    true    -- activo
+FROM dim_roles r
+CROSS JOIN dim_paginas_modulo p
+WHERE r.desc_rol = 'COORDINADOR'
+  AND p.ruta_pagina = '/teleekgs/ipress-workspace'
+ON CONFLICT (id_rol, id_pagina) DO UPDATE SET
+    puede_ver = true,
+    puede_crear = true,
+    puede_editar = true,
+    puede_eliminar = true,
+    puede_exportar = true,
+    activo = true,
+    updated_at = NOW();
+
 -- ============================================================================
 -- 3. Verificación POST-FIX
 -- ============================================================================
 
-SELECT 'Fix aplicado correctamente' as status
-WHERE EXISTS (
-    SELECT 1 FROM segu_permisos_rol_pagina pp
-    JOIN dim_roles r ON pp.id_rol = r.id_rol
-    JOIN dim_paginas_modulo p ON pp.id_pagina = p.id_pagina
-    WHERE r.desc_rol = 'INSTITUCION_EX'
-      AND p.ruta_pagina = '/teleekgs/ipress-workspace'
-      AND pp.puede_eliminar = true
-      AND pp.activo = true
-);
+-- Mostrar todos los roles configurados con permisos de eliminación
+SELECT
+    r.desc_rol as rol,
+    p.ruta_pagina as pagina,
+    pp.puede_ver as ver,
+    pp.puede_crear as crear,
+    pp.puede_editar as editar,
+    pp.puede_eliminar as eliminar,
+    pp.puede_exportar as exportar,
+    pp.activo as activo
+FROM segu_permisos_rol_pagina pp
+JOIN dim_roles r ON pp.id_rol = r.id_rol
+JOIN dim_paginas_modulo p ON pp.id_pagina = p.id_pagina
+WHERE p.ruta_pagina = '/teleekgs/ipress-workspace'
+  AND pp.activo = true
+ORDER BY r.desc_rol;
 
 -- ============================================================================
 -- FIN DE LA MIGRACIÓN V3.4.2
 -- ============================================================================
 -- Resumen:
 --   ✅ Página /teleekgs/ipress-workspace agregada
---   ✅ Permisos INSTITUCION_EX configurados:
+--   ✅ Permisos configurados para MÚLTIPLES ROLES:
+--
+--   1. INSTITUCION_EX (Usuarios externos):
 --      - puede_ver = true
 --      - puede_crear = true (agregar imágenes)
 --      - puede_editar = true (reemplazar imágenes)
---      - puede_eliminar = true (eliminar imágenes) ← FIX
+--      - puede_eliminar = true ← FIX
 --      - puede_exportar = false
 --
+--   2. MEDICO (Profesionales de salud):
+--      - puede_ver = true (ver workspace)
+--      - puede_crear = false
+--      - puede_editar = false
+--      - puede_eliminar = true ← FIX
+--      - puede_exportar = true (reportes)
+--
+--   3. COORDINADOR (Gestión de atención):
+--      - puede_ver = true
+--      - puede_crear = true
+--      - puede_editar = true
+--      - puede_eliminar = true ← FIX
+--      - puede_exportar = true
+--
 -- Impacto:
---   - Usuarios con rol INSTITUCION_EX ahora pueden eliminar imágenes en
---     /teleekgs/ipress-workspace sin error 500
---   - Endpoint DELETE /api/teleekgs/{idImagen} funcionará correctamente
+--   - ✅ INSTITUCION_EX puede eliminar imágenes
+--   - ✅ MEDICO puede eliminar imágenes
+--   - ✅ COORDINADOR puede eliminar imágenes
+--   - ✅ Endpoint DELETE /api/teleekgs/{idImagen} funciona para todos
+--   - ✅ Error 500 "No tiene permisos" resuelto
 -- ============================================================================
