@@ -199,31 +199,31 @@ export default function MisECGsRecientes({
           {/* Total - Verde SATURADO (Par - Luz) */}
           <button
             onClick={() => setFiltroEstado(null)}
-            className={`relative overflow-hidden rounded-lg bg-gradient-to-br from-emerald-500 to-emerald-600 border p-3 md:p-4 shadow-md hover:shadow-xl transition-all duration-300 hover:scale-105 text-left cursor-pointer ${
+            className={`relative overflow-hidden rounded-lg bg-gradient-to-br from-emerald-500 to-emerald-600 border p-2 sm:p-3 md:p-4 shadow-md hover:shadow-xl transition-all duration-300 hover:scale-105 text-left cursor-pointer ${
               filtroEstado === null ? 'border-white ring-2 ring-white' : 'border-emerald-600'
             }`}
             title="Ver todos"
           >
             {/* Background decorativo */}
-            <div className="absolute top-0 right-0 w-16 h-16 bg-white/10 rounded-full -mr-8 -mt-8" />
+            <div className="absolute top-0 right-0 w-12 sm:w-16 h-12 sm:h-16 bg-white/10 rounded-full -mr-6 sm:-mr-8 -mt-6 sm:-mt-8" />
 
             <div className="relative z-10">
               {/* Icono */}
-              <div className="mb-2">
-                <div className="inline-flex p-2 bg-white/20 rounded-lg">
-                  <BarChart3 className="w-4 h-4 md:w-5 md:h-5 text-white" strokeWidth={2.5} />
+              <div className="mb-1.5 sm:mb-2">
+                <div className="inline-flex p-1.5 sm:p-2 bg-white/20 rounded-lg">
+                  <BarChart3 className="w-3 h-3 sm:w-4 sm:h-4 md:w-5 md:h-5 text-white" strokeWidth={2.5} />
                 </div>
               </div>
 
               {/* Número */}
-              <div className="mb-1">
-                <span className="text-2xl md:text-3xl font-bold text-white">
+              <div className="mb-0.5 sm:mb-1">
+                <span className="text-lg sm:text-2xl md:text-3xl font-bold text-white">
                   {estadisticas.total}
                 </span>
               </div>
 
               {/* Etiqueta */}
-              <span className="text-xs md:text-sm font-semibold text-white/90">
+              <span className="text-xs md:text-sm font-semibold text-white/90 line-clamp-2">
                 Imágenes EKG a analizar
               </span>
             </div>
@@ -232,31 +232,31 @@ export default function MisECGsRecientes({
           {/* Pendiente - Gris Oscuro/Negro SATURADO */}
           <button
             onClick={() => setFiltroEstado('ENVIADA')}
-            className={`relative overflow-hidden rounded-lg bg-gradient-to-br from-slate-700 to-slate-800 border p-3 md:p-4 shadow-md hover:shadow-xl transition-all duration-300 hover:scale-105 text-left cursor-pointer ${
+            className={`relative overflow-hidden rounded-lg bg-gradient-to-br from-slate-700 to-slate-800 border p-2 sm:p-3 md:p-4 shadow-md hover:shadow-xl transition-all duration-300 hover:scale-105 text-left cursor-pointer ${
               filtroEstado === 'ENVIADA' ? 'border-white ring-2 ring-white' : 'border-slate-800'
             }`}
             title="Filtrar por Pendiente"
           >
             {/* Background decorativo */}
-            <div className="absolute top-0 right-0 w-16 h-16 bg-white/10 rounded-full -mr-8 -mt-8" />
+            <div className="absolute top-0 right-0 w-12 sm:w-16 h-12 sm:h-16 bg-white/10 rounded-full -mr-6 sm:-mr-8 -mt-6 sm:-mt-8" />
 
             <div className="relative z-10">
               {/* Icono */}
-              <div className="mb-2.5">
-                <div className="inline-flex p-2 bg-white/20 rounded-lg">
-                  <Eye className="w-5 h-5 text-white" strokeWidth={2.5} />
+              <div className="mb-1.5 sm:mb-2.5">
+                <div className="inline-flex p-1.5 sm:p-2 bg-white/20 rounded-lg">
+                  <Eye className="w-3 h-3 sm:w-4 sm:h-4 md:w-5 md:h-5 text-white" strokeWidth={2.5} />
                 </div>
               </div>
 
               {/* Número */}
-              <div className="mb-1.5">
-                <span className="text-3xl font-bold text-white">
+              <div className="mb-0.5 sm:mb-1.5">
+                <span className="text-lg sm:text-2xl md:text-3xl font-bold text-white">
                   {estadisticas.cargadas}
                 </span>
               </div>
 
               {/* Etiqueta */}
-              <span className="text-xs font-semibold text-white/90">
+              <span className="text-xs md:text-sm font-semibold text-white/90 line-clamp-2">
                 Pacientes pendientes
               </span>
             </div>
@@ -265,31 +265,31 @@ export default function MisECGsRecientes({
           {/* Observadas - Ámbar SATURADO (Impar - Oscuro) */}
           <button
             onClick={() => setFiltroEstado('OBSERVADA')}
-            className={`relative overflow-hidden rounded-lg bg-gradient-to-br from-orange-500 to-orange-600 border p-3 md:p-4 shadow-md hover:shadow-xl transition-all duration-300 hover:scale-105 text-left cursor-pointer ${
+            className={`relative overflow-hidden rounded-lg bg-gradient-to-br from-orange-500 to-orange-600 border p-2 sm:p-3 md:p-4 shadow-md hover:shadow-xl transition-all duration-300 hover:scale-105 text-left cursor-pointer ${
               filtroEstado === 'OBSERVADA' ? 'border-white ring-2 ring-white' : 'border-orange-600'
             }`}
             title="Filtrar por Observadas"
           >
             {/* Background decorativo */}
-            <div className="absolute top-0 right-0 w-16 h-16 bg-white/10 rounded-full -mr-8 -mt-8" />
+            <div className="absolute top-0 right-0 w-12 sm:w-16 h-12 sm:h-16 bg-white/10 rounded-full -mr-6 sm:-mr-8 -mt-6 sm:-mt-8" />
 
             <div className="relative z-10">
               {/* Icono */}
-              <div className="mb-2.5">
-                <div className="inline-flex p-2 bg-white/20 rounded-lg">
-                  <MessageSquare className="w-5 h-5 text-white" strokeWidth={2.5} />
+              <div className="mb-1.5 sm:mb-2.5">
+                <div className="inline-flex p-1.5 sm:p-2 bg-white/20 rounded-lg">
+                  <MessageSquare className="w-3 h-3 sm:w-4 sm:h-4 md:w-5 md:h-5 text-white" strokeWidth={2.5} />
                 </div>
               </div>
 
               {/* Número */}
-              <div className="mb-1.5">
-                <span className="text-3xl font-bold text-white">
+              <div className="mb-0.5 sm:mb-1.5">
+                <span className="text-lg sm:text-2xl md:text-3xl font-bold text-white">
                   {estadisticas.observadas}
                 </span>
               </div>
 
               {/* Etiqueta */}
-              <span className="text-xs font-semibold text-white/90">
+              <span className="text-xs md:text-sm font-semibold text-white/90 line-clamp-2">
                 Observadas
               </span>
             </div>
@@ -298,31 +298,31 @@ export default function MisECGsRecientes({
           {/* Atendidas - Teal CLARO (Par - Luz) */}
           <button
             onClick={() => setFiltroEstado('ATENDIDA')}
-            className={`relative overflow-hidden rounded-lg bg-gradient-to-br from-teal-50 to-teal-100 border p-3 md:p-4 shadow-sm hover:shadow-lg transition-all duration-300 hover:scale-105 text-left cursor-pointer ${
+            className={`relative overflow-hidden rounded-lg bg-gradient-to-br from-teal-50 to-teal-100 border p-2 sm:p-3 md:p-4 shadow-sm hover:shadow-lg transition-all duration-300 hover:scale-105 text-left cursor-pointer ${
               filtroEstado === 'ATENDIDA' ? 'border-teal-700 ring-2 ring-teal-700' : 'border-teal-200'
             }`}
             title="Filtrar por Atendidas"
           >
             {/* Background decorativo */}
-            <div className="absolute top-0 right-0 w-16 h-16 bg-teal-200/30 rounded-full -mr-8 -mt-8" />
+            <div className="absolute top-0 right-0 w-12 sm:w-16 h-12 sm:h-16 bg-teal-200/30 rounded-full -mr-6 sm:-mr-8 -mt-6 sm:-mt-8" />
 
             <div className="relative z-10">
               {/* Icono */}
-              <div className="mb-2.5">
-                <div className="inline-flex p-2 bg-gradient-to-br from-teal-500 to-teal-600 rounded-lg">
-                  <CheckCheck className="w-5 h-5 text-white" strokeWidth={2.5} />
+              <div className="mb-1.5 sm:mb-2.5">
+                <div className="inline-flex p-1.5 sm:p-2 bg-gradient-to-br from-teal-500 to-teal-600 rounded-lg">
+                  <CheckCheck className="w-3 h-3 sm:w-4 sm:h-4 md:w-5 md:h-5 text-white" strokeWidth={2.5} />
                 </div>
               </div>
 
               {/* Número */}
-              <div className="mb-1.5">
-                <span className="text-3xl font-bold text-teal-900">
+              <div className="mb-0.5 sm:mb-1.5">
+                <span className="text-lg sm:text-2xl md:text-3xl font-bold text-teal-900">
                   {estadisticas.atendidas}
                 </span>
               </div>
 
               {/* Etiqueta */}
-              <span className="text-xs font-semibold text-teal-700">
+              <span className="text-xs md:text-sm font-semibold text-teal-700 line-clamp-2">
                 Atendidas
               </span>
             </div>
