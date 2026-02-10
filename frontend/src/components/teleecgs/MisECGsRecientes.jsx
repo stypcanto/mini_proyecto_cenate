@@ -103,7 +103,6 @@ export default function MisECGsRecientes({
               ...respuesta, // Incluye contenidoImagen y tipoContenido
             });
             setCargandoImagen(false);
-            console.log('✅ Imagen cargada correctamente para preview:', imagen.idImagen);
           })
           .catch((error) => {
             console.error('❌ Error cargando imagen:', error);
@@ -741,7 +740,6 @@ export default function MisECGsRecientes({
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
-                                console.log(`👁️ [Ver Imagen] Abriendo imagen ${idx} (mostrada como #${idx + 1})`);
                                 setPreviewImageIndex(idx);
                                 setSelectedImageIndex(idx);
                                 setModalMode('preview');
@@ -798,7 +796,6 @@ export default function MisECGsRecientes({
                       if (cargaEdicion && fechaToma) {
                         try {
                           const idImagen = cargaEdicion.idImagen || cargaEdicion.id;
-                          console.log("💾 Guardando fecha:", fechaToma, "ID:", idImagen);
                           toast.loading("Guardando fecha...");
 
                           // ✅ Usar apiClient POST con JSON body (endpoint v1.77.0)
@@ -998,26 +995,16 @@ export default function MisECGsRecientes({
                       }
                       if (!cargaEdicion?.dni) {
                         toast.error('❌ Error: Falta información del paciente');
-                        console.error('❌ cargaEdicion:', cargaEdicion);
                         return;
                       }
 
                       setCargandoArchivo(true);
                       try {
-                        console.log('📤 Iniciando subida de imagen:', {
-                          dni: cargaEdicion.dni,
-                          nombreCompleto: cargaEdicion.nombrePaciente,
-                          archivo: archivoSeleccionado.name,
-                          esUrgente: esUrgente
-                        });
-
                         // Extraer nombres y apellidos de forma segura
                         const nombreCompleto = cargaEdicion.nombrePaciente || 'Sin nombre';
                         const partes = nombreCompleto.trim().split(/\s+/);
                         const nombres = partes[0] || '';
                         const apellidos = partes.slice(1).join(' ') || '';
-
-                        console.log('✅ Partes del nombre:', { nombres, apellidos });
 
                         const respuesta = await teleecgService.subirImagenECG(
                           archivoSeleccionado,
@@ -1027,7 +1014,6 @@ export default function MisECGsRecientes({
                           esUrgente
                         );
 
-                        console.log('✅ Respuesta del servidor:', respuesta);
                         toast.success('✅ ¡Imagen agregada correctamente!');
                         setModalMode('view');
                         setArchivoSeleccionado(null);
@@ -1125,14 +1111,10 @@ export default function MisECGsRecientes({
 
                       setCargandoArchivo(true);
                       try {
-                        console.log('🔄 Iniciando reemplazo de imagen');
-
                         // Obtener la imagen actual para eliminar
                         const imagenActual = imagenesPorDni[cargaEdicion.dni]?.[selectedImageIndex];
-                        console.log('Imagen actual a eliminar:', imagenActual);
 
                         if (imagenActual?.idImagen) {
-                          console.log('Eliminando imagen:', imagenActual.idImagen);
                           await teleecgService.eliminarImagen(imagenActual.idImagen);
                           toast.info('✅ Imagen antigua eliminada');
                         }
@@ -1144,7 +1126,6 @@ export default function MisECGsRecientes({
                         const apellidos = partes.slice(1).join(' ') || '';
 
                         // Subir la nueva imagen
-                        console.log('Subiendo nueva imagen:', archivoSeleccionado.name);
                         const respuesta = await teleecgService.subirImagenECG(
                           archivoSeleccionado,
                           cargaEdicion.dni,
@@ -1152,7 +1133,6 @@ export default function MisECGsRecientes({
                           apellidos
                         );
 
-                        console.log('✅ Respuesta del servidor:', respuesta);
                         toast.success('🔄 Imagen reemplazada correctamente');
                         setModalMode('view');
                         setSelectedImageIndex(null);
