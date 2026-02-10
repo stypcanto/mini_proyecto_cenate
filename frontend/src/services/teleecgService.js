@@ -132,48 +132,46 @@ const teleecgService = {
 
     // Backend devuelve: Page<AseguradoConECGsDTO>
     // Estructura Spring Data: { content: [ { imagenes: [...], ... }, ... ], totalPages: X, ... }
-    // Necesitamos aplanar los imagenes anidados en un array plano
-    let apiData = response?.data || response || [];
+    let apiData = response?.data || response || {};
 
-    // ✅ IMPORTANTE: Aplanar la estructura anidada de AseguradoConECGsDTO
-    let flattenedImages = [];
-
-    // Detectar si es Page<AseguradoConECGsDTO> (con .content) o bare array
-    const asegurados = Array.isArray(apiData) ? apiData : (apiData.content || []);
-
-    if (asegurados.length > 0 && asegurados[0].imagenes) {
-      // Es AseguradoConECGsDTO con imagenes anidadas - aplanar
-      console.log("🔄 [_transformarResponse] Detectado formato AseguradoConECGsDTO con imagenes anidadas");
-      asegurados.forEach(asegurado => {
-        // Cada asegurado tiene un array de imagenes anidadas
-        const imagenes = asegurado.imagenes || [];
-        imagenes.forEach(imagen => {
-          // Agregar info del paciente a cada imagen para contexto
-          flattenedImages.push({
-            ...imagen,
-            // Asegurar que tenemos info del paciente
-            numDocPaciente: imagen.num_doc_paciente || imagen.numDocPaciente || asegurado.numDocPaciente,
-            nombresPaciente: imagen.nombres_paciente || imagen.nombresPaciente || asegurado.nombresPaciente,
-            apellidosPaciente: imagen.apellidos_paciente || imagen.apellidosPaciente || asegurado.apellidosPaciente,
-            // Copiar género y edad del asegurado (nivel padre)
-            generoPaciente: imagen.genero_paciente || imagen.generoPaciente || asegurado.genero_paciente,
-            edadPaciente: imagen.edad_paciente || imagen.edadPaciente || asegurado.edad_paciente,
-          });
-        });
-      });
-      apiData = { content: flattenedImages };
-    } else if (apiData && Array.isArray(apiData.content)) {
-      // Es una respuesta paginada tradicional sin imagenes anidadas - procesar normalmente
-      console.log("🔄 [_transformarResponse] Detectado formato Page tradicional sin imagenes anidadas");
-      // (keep existing structure)
-    } else if (Array.isArray(apiData)) {
-      // Es un array plano - convertir a formato Page
-      console.log("🔄 [_transformarResponse] Detectado array plano sin imagenes anidadas");
-      apiData = { content: apiData };
-    } else {
-      // Fallback: asegurarse de que content sea array
-      console.log("⚠️ [_transformarResponse] Formato desconocido, usando array vacío");
+    // Asegurar que tenemos un objeto con content
+    if (!apiData || typeof apiData !== 'object') {
       apiData = { content: [] };
+    }
+
+    // Si es un array directo, envolverlo en { content: ... }
+    if (Array.isArray(apiData)) {
+      apiData = { content: apiData };
+    }
+
+    // Aplanar imagenes anidadas si existen
+    if (apiData.content && Array.isArray(apiData.content)) {
+      const flattenedImages = [];
+
+      apiData.content.forEach(item => {
+        if (item && item.imagenes && Array.isArray(item.imagenes)) {
+          // Este item tiene imagenes anidadas - extraerlas
+          item.imagenes.forEach(imagen => {
+            flattenedImages.push({
+              ...imagen,
+              // Heredar datos del asegurado/paciente
+              numDocPaciente: imagen.num_doc_paciente || imagen.numDocPaciente || item.numDocPaciente,
+              nombresPaciente: imagen.nombres_paciente || imagen.nombresPaciente || item.nombresPaciente,
+              apellidosPaciente: imagen.apellidos_paciente || imagen.apellidosPaciente || item.apellidosPaciente,
+              generoPaciente: imagen.genero_paciente || imagen.generoPaciente || item.genero_paciente,
+              edadPaciente: imagen.edad_paciente || imagen.edadPaciente || item.edad_paciente,
+            });
+          });
+        } else {
+          // Item sin imagenes anidadas - mantenerlo como está
+          flattenedImages.push(item);
+        }
+      });
+
+      // Reemplazar content con imagenes aplanadas si encontramos alguno anidado
+      if (flattenedImages.length > 0) {
+        apiData.content = flattenedImages;
+      }
     }
 
     // Transformar propiedades de snake_case a camelCase
