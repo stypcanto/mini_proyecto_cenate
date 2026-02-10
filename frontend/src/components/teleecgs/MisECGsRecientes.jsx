@@ -871,22 +871,45 @@ export default function MisECGsRecientes({
                   )}
                 </label>
 
-                {/* Botón Seleccionar - Visible cuando modalMode === 'add' */}
-                {modalMode === 'add' && !archivoSeleccionado && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (fileInputRef.current) {
-                        // Limpiar el valor anterior para permitir seleccionar el mismo archivo
+                {/* Input File - Off-screen pero visible para accesibilidad */}
+                <input
+                  ref={fileInputRef}
+                  id={`fileInput-${cargaEdicion?.dni || 'default'}`}
+                  type="file"
+                  accept="image/jpeg,image/png,application/pdf"
+                  style={{ position: 'absolute', left: '-9999px' }}
+                  onChange={(e) => {
+                    const archivo = e.target.files?.[0];
+                    if (archivo) {
+                      // Validar tipo de archivo
+                      const tiposValidos = ['image/jpeg', 'image/png', 'application/pdf'];
+                      if (!tiposValidos.includes(archivo.type)) {
+                        toast.error('❌ Tipo de archivo no válido. Usa JPG, PNG o PDF');
                         fileInputRef.current.value = '';
-                        // Disparar el file picker
-                        fileInputRef.current.click();
+                        return;
                       }
-                    }}
-                    className="w-full px-6 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold transition-all cursor-pointer text-center"
+
+                      // Validar tamaño (máximo 10MB)
+                      if (archivo.size > 10 * 1024 * 1024) {
+                        toast.error('❌ Archivo muy grande. Máximo 10 MB');
+                        fileInputRef.current.value = '';
+                        return;
+                      }
+
+                      setArchivoSeleccionado(archivo);
+                      toast.success('✅ Archivo listo para subir');
+                    }
+                  }}
+                />
+
+                {/* Botón Seleccionar - Label asociado al input file */}
+                {modalMode === 'add' && !archivoSeleccionado && (
+                  <label
+                    htmlFor={`fileInput-${cargaEdicion?.dni || 'default'}`}
+                    className="block w-full px-6 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold transition-all cursor-pointer text-center"
                   >
                     👆 Seleccionar Archivo
-                  </button>
+                  </label>
                 )}
 
                 {/* Botones de Acción */}
@@ -1265,34 +1288,6 @@ export default function MisECGsRecientes({
         </div>
       )}
 
-      {/* Input File Permanente - Siempre disponible pero oculto */}
-      <input
-        ref={fileInputRef}
-        id="globalFileInput"
-        type="file"
-        accept="image/jpeg,image/png,application/pdf"
-        style={{ display: 'none' }}
-        onChange={(e) => {
-          const archivo = e.target.files?.[0];
-          if (archivo) {
-            // Validar tipo de archivo
-            const tiposValidos = ['image/jpeg', 'image/png', 'application/pdf'];
-            if (!tiposValidos.includes(archivo.type)) {
-              toast.error('❌ Tipo de archivo no válido. Usa JPG, PNG o PDF');
-              return;
-            }
-
-            // Validar tamaño (máximo 10MB)
-            if (archivo.size > 10 * 1024 * 1024) {
-              toast.error('❌ Archivo muy grande. Máximo 10 MB');
-              return;
-            }
-
-            setArchivoSeleccionado(archivo);
-            toast.success('✅ Archivo listo para subir');
-          }
-        }}
-      />
     </div>
   );
 }
