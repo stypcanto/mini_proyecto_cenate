@@ -248,16 +248,22 @@ export default function IPRESSWorkspace() {
         }
       });
 
-      // Mapear a formato de tabla CON DATOS DISPONIBLES (sin esperar enriquecimiento)
-      const ecgsFormateados = Object.entries(deduplicados).map(([dni, img]) => ({
-        ...img,
-        nombrePaciente: img.nombreCompleto || img.nombresPaciente || img.nombrePaciente || "Cargando...",
-        genero: img.generoPaciente || img.genero || img.sexo || "-",
-        edad: img.edadPaciente || img.edad || img.ageinyears || "-",
-        telefono: img.telefonoPrincipalPaciente || img.telefono || "-",
-        esUrgente: img.esUrgente || img.urgente || false,
-        cantidadImagenes: porDni[dni]?.length || 0,
-      }));
+      // 🔧 v1.71.0: Mapear a formato de tabla CON DATOS DISPONIBLES (sin esperar enriquecimiento)
+      const ecgsFormateados = Object.entries(deduplicados).map(([dni, img]) => {
+        // Extraer esUrgente del array de imágenes (donde sí existe)
+        const imagenesDni = img.imagenes || [];
+        const esUrgente = imagenesDni.some(imagen => imagen.esUrgente === true);
+
+        return {
+          ...img,
+          nombrePaciente: img.nombreCompleto || img.nombresPaciente || img.nombrePaciente || "Cargando...",
+          genero: img.generoPaciente || img.genero || img.sexo || "-",
+          edad: img.edadPaciente || img.edad || img.ageinyears || "-",
+          telefono: img.telefonoPrincipalPaciente || img.telefono || "-",
+          esUrgente: esUrgente,  // ✅ Obtener de la lista de imágenes
+          cantidadImagenes: imagenesDni.length || 0,  // ✅ Usar imagenes reales
+        };
+      });
 
       // ✅ v1.71.0: Calcular estadísticas CONTANDO IMÁGENES, no pacientes
       const imagenesPendientes = imagenes.filter((img) => img.estado === "ENVIADA");
