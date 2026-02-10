@@ -503,10 +503,11 @@ export default function IPRESSWorkspace() {
               onVerImagen={handleVerImagen}
               loading={loading}
               imagenesPorDni={(() => {
-                // ✅ Agrupar imágenes reales por DNI para el modal de edición
+                // ✅ Agrupar TODAS las imágenes (no deduplicadas) por DNI para el modal de edición
+                // ✅ Usar todasLasImagenes en lugar de ecgs (que está deduplicado)
                 // ✅ Mapear propiedades del backend (snake_case) a camelCase
                 const agrupadoPorDni = {};
-                ecgs.forEach(img => {
+                todasLasImagenes.forEach(img => {
                   const dni = img.numDocPaciente || img.dni;
                   if (dni) {
                     if (!agrupadoPorDni[dni]) {

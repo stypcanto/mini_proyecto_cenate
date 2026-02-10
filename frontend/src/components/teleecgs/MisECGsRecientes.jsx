@@ -656,7 +656,7 @@ export default function MisECGsRecientes({
 
       {/* Modal Rediseñado - Simpler UX */}
       {showEditModal && cargaEdicion && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 bg-black/50 z-40 flex items-center justify-center p-4">
           <div className="bg-white rounded-lg shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto p-6">
             {/* Encabezado */}
             <div className="flex items-center justify-between mb-6 sticky top-0 bg-white pb-4 border-b">
@@ -865,13 +865,13 @@ export default function MisECGsRecientes({
                   )}
                 </label>
 
-                {/* Input File - Off-screen pero visible para accesibilidad */}
+                {/* Input File - Hidden pero accesible para file picker */}
                 <input
                   ref={fileInputRef}
                   id={`fileInput-${cargaEdicion?.dni || 'default'}`}
                   type="file"
                   accept="image/jpeg,image/png,application/pdf"
-                  style={{ position: 'absolute', left: '-9999px' }}
+                  style={{ display: 'none' }}
                   onChange={(e) => {
                     const archivo = e.target.files?.[0];
                     if (archivo) {
