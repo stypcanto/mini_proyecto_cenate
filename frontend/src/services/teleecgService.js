@@ -100,13 +100,35 @@ const teleecgService = {
   /**
    * Listar todas las imágenes ECG
    * Convierte snake_case del API a camelCase para el frontend
+   * ✅ v1.71.0: Cargar TODAS automáticamente - Estrategia: múltiples llamadas a backend
    */
-  listarImagenes: async (numDocPaciente = "", page = 0) => {
+  listarImagenes: async (numDocPaciente = "") => {
     const params = new URLSearchParams();
     if (numDocPaciente) params.append("numDocPaciente", numDocPaciente);
-    params.append("page", page);
+    // ✅ SIN parámetros page/size - obtener página 0 (15 items default)
+    // El frontend cargará las páginas siguientes automáticamente
 
     const response = await apiClient.get(`/teleekgs?${params}`, true);
+    return teleecgService._transformarResponse(response);
+  },
+
+  /**
+   * ✅ v1.71.0: Listar imágenes ECG de una página específica
+   * Usado internamente para cargar todas las páginas automáticamente
+   */
+  listarImagenesPage: async (page = 0) => {
+    const params = new URLSearchParams();
+    params.append("page", page);
+    params.append("size", "15");  // Usar el size default del backend
+
+    const response = await apiClient.get(`/teleekgs?${params}`, true);
+    return teleecgService._transformarResponse(response);
+  },
+
+  /**
+   * ✅ v1.71.0: Transformar respuesta del backend a formato esperado
+   */
+  _transformarResponse: (response) => {
 
     // Backend devuelve: Lista de AseguradoConECGsDTO (bare array)
     // Estructura: [ { numDocPaciente, nombresPaciente, imagenes: [...], ... }, ... ]
@@ -148,7 +170,8 @@ const teleecgService = {
       apiData.content = apiData.content.map((ecg, idx) => {
         const numDocPaciente = ecg.num_doc_paciente || ecg.numDocPaciente;
         const nombresPaciente = ecg.nombres_paciente || ecg.nombresPaciente;
-        const fechaEnvio = ecg.fecha_envio || ecg.fechaEnvio;
+        // ✅ v1.70.0: Soportar fechaUltimoEcg del backend (nuevo DTO)
+        const fechaEnvio = ecg.fecha_envio || ecg.fechaEnvio || ecg.fecha_ultimo_ecg || ecg.fechaUltimoEcg;
 
         // 🔍 DEBUG: Log para verificar si es_urgente viene en la respuesta
         if (idx === 0 || ecg.numDocPaciente === '09164101') {
@@ -162,7 +185,7 @@ const teleecgService = {
 
         return {
           // Campos principales con transformación snake_case → camelCase
-          idImagen: ecg.id_imagen || ecg.idImagen,
+          idImagen: ecg.id_imagen || ecg.idImagen || ecg.id,
           numDocPaciente,
           nombresPaciente,
           apellidosPaciente: ecg.apellidos_paciente || ecg.apellidosPaciente,
