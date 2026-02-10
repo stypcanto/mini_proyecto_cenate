@@ -678,7 +678,7 @@ public class TeleECGController {
      * Eliminar una imagen ECG de la base de datos
      */
     @DeleteMapping("/{idImagen}")
-    @CheckMBACPermission(pagina = "/teleekgs/listar", accion = "eliminar")
+    @CheckMBACPermission(pagina = "/teleekgs/ipress-workspace", accion = "eliminar")
     @Operation(summary = "Eliminar imagen ECG")
     public ResponseEntity<ApiResponse<Void>> eliminarImagen(
             @PathVariable Long idImagen,
