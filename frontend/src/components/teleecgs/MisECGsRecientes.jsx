@@ -62,6 +62,8 @@ export default function MisECGsRecientes({
   const [previewImageIndex, setPreviewImageIndex] = useState(null);
   const [imagenPreviewData, setImagenPreviewData] = useState(null);
   const [cargandoImagen, setCargandoImagen] = useState(false);
+  const [archivoSeleccionado, setArchivoSeleccionado] = useState(null);
+  const [cargandoArchivo, setCargandoArchivo] = useState(false);
 
   // ✅ Sync ultimas3 to datosOriginales on mount and when ultimas3 changes
   useEffect(() => {
@@ -780,21 +782,52 @@ export default function MisECGsRecientes({
                 <input
                   type="file"
                   accept="image/*,.pdf"
+                  onChange={(e) => setArchivoSeleccionado(e.target.files?.[0])}
                   className="block w-full text-sm text-gray-600 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-green-600 file:text-white hover:file:bg-green-700"
                 />
+                {archivoSeleccionado && (
+                  <p className="text-xs text-green-700 font-semibold">
+                    ✅ Archivo seleccionado: {archivoSeleccionado.name}
+                  </p>
+                )}
                 <div className="flex gap-3">
                   <button
-                    onClick={() => {
-                      toast.success('✅ Imagen agregada correctamente');
-                      setModalMode('view');
+                    onClick={async () => {
+                      if (!archivoSeleccionado) {
+                        toast.error('Por favor selecciona un archivo');
+                        return;
+                      }
+                      setCargandoArchivo(true);
+                      try {
+                        await teleecgService.subirImagenECG(
+                          archivoSeleccionado,
+                          cargaEdicion.dni,
+                          cargaEdicion.nombrePaciente?.split(' ')[0] || '',
+                          cargaEdicion.nombrePaciente?.split(' ').slice(1).join(' ') || ''
+                        );
+                        toast.success('✅ Imagen agregada correctamente');
+                        setModalMode('view');
+                        setArchivoSeleccionado(null);
+                        onRefrescar?.(); // Refrescar datos si existe la función
+                      } catch (error) {
+                        console.error('Error al subir imagen:', error);
+                        toast.error('❌ Error al subir la imagen: ' + error.message);
+                      } finally {
+                        setCargandoArchivo(false);
+                      }
                     }}
-                    className="flex-1 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold transition-colors"
+                    disabled={cargandoArchivo || !archivoSeleccionado}
+                    className="flex-1 py-2.5 bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white rounded-lg font-semibold transition-colors"
                   >
-                    Subir Imagen
+                    {cargandoArchivo ? '📤 Subiendo...' : 'Subir Imagen'}
                   </button>
                   <button
-                    onClick={() => setModalMode('view')}
-                    className="flex-1 py-2.5 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-lg font-semibold transition-colors"
+                    onClick={() => {
+                      setModalMode('view');
+                      setArchivoSeleccionado(null);
+                    }}
+                    disabled={cargandoArchivo}
+                    className="flex-1 py-2.5 bg-gray-200 hover:bg-gray-300 disabled:bg-gray-300 text-gray-800 rounded-lg font-semibold transition-colors"
                   >
                     Cancelar
                   </button>
@@ -815,25 +848,61 @@ export default function MisECGsRecientes({
                 <input
                   type="file"
                   accept="image/*,.pdf"
+                  onChange={(e) => setArchivoSeleccionado(e.target.files?.[0])}
                   className="block w-full text-sm text-gray-600 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-orange-600 file:text-white hover:file:bg-orange-700"
                 />
+                {archivoSeleccionado && (
+                  <p className="text-xs text-orange-700 font-semibold">
+                    ✅ Archivo seleccionado: {archivoSeleccionado.name}
+                  </p>
+                )}
                 <div className="flex gap-3">
                   <button
-                    onClick={() => {
-                      toast.success('🔄 Imagen reemplazada correctamente');
-                      setModalMode('view');
-                      setSelectedImageIndex(null);
+                    onClick={async () => {
+                      if (!archivoSeleccionado) {
+                        toast.error('Por favor selecciona un archivo');
+                        return;
+                      }
+                      setCargandoArchivo(true);
+                      try {
+                        // Primero eliminar la imagen existente (obtenemos el ID de imagenesPorDni)
+                        const imagenActual = imagenesPorDni[cargaEdicion.dni]?.[selectedImageIndex];
+                        if (imagenActual?.idImagen) {
+                          await teleecgService.eliminarImagen(imagenActual.idImagen);
+                        }
+
+                        // Luego subir la nueva imagen
+                        await teleecgService.subirImagenECG(
+                          archivoSeleccionado,
+                          cargaEdicion.dni,
+                          cargaEdicion.nombrePaciente?.split(' ')[0] || '',
+                          cargaEdicion.nombrePaciente?.split(' ').slice(1).join(' ') || ''
+                        );
+                        toast.success('🔄 Imagen reemplazada correctamente');
+                        setModalMode('view');
+                        setSelectedImageIndex(null);
+                        setArchivoSeleccionado(null);
+                        onRefrescar?.(); // Refrescar datos si existe la función
+                      } catch (error) {
+                        console.error('Error al reemplazar imagen:', error);
+                        toast.error('❌ Error al reemplazar la imagen: ' + error.message);
+                      } finally {
+                        setCargandoArchivo(false);
+                      }
                     }}
-                    className="flex-1 py-2.5 bg-orange-600 hover:bg-orange-700 text-white rounded-lg font-semibold transition-colors"
+                    disabled={cargandoArchivo || !archivoSeleccionado}
+                    className="flex-1 py-2.5 bg-orange-600 hover:bg-orange-700 disabled:bg-gray-400 text-white rounded-lg font-semibold transition-colors"
                   >
-                    Reemplazar
+                    {cargandoArchivo ? '🔄 Reemplazando...' : 'Reemplazar'}
                   </button>
                   <button
                     onClick={() => {
                       setModalMode('view');
                       setSelectedImageIndex(null);
+                      setArchivoSeleccionado(null);
                     }}
-                    className="flex-1 py-2.5 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-lg font-semibold transition-colors"
+                    disabled={cargandoArchivo}
+                    className="flex-1 py-2.5 bg-gray-200 hover:bg-gray-300 disabled:bg-gray-300 text-gray-800 rounded-lg font-semibold transition-colors"
                   >
                     Cancelar
                   </button>
@@ -856,21 +925,38 @@ export default function MisECGsRecientes({
                 </p>
                 <div className="flex gap-3">
                   <button
-                    onClick={() => {
-                      toast.success('🗑️ Imagen eliminada correctamente');
-                      setModalMode('view');
-                      setSelectedImageIndex(null);
+                    onClick={async () => {
+                      setCargandoArchivo(true);
+                      try {
+                        const imagenActual = imagenesPorDni[cargaEdicion.dni]?.[selectedImageIndex];
+                        if (imagenActual?.idImagen) {
+                          await teleecgService.eliminarImagen(imagenActual.idImagen);
+                          toast.success('🗑️ Imagen eliminada correctamente');
+                          setModalMode('view');
+                          setSelectedImageIndex(null);
+                          onRefrescar?.(); // Refrescar datos si existe la función
+                        } else {
+                          toast.error('No se encontró el ID de la imagen');
+                        }
+                      } catch (error) {
+                        console.error('Error al eliminar imagen:', error);
+                        toast.error('❌ Error al eliminar la imagen: ' + error.message);
+                      } finally {
+                        setCargandoArchivo(false);
+                      }
                     }}
-                    className="flex-1 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-lg font-semibold transition-colors"
+                    disabled={cargandoArchivo}
+                    className="flex-1 py-2.5 bg-red-600 hover:bg-red-700 disabled:bg-gray-400 text-white rounded-lg font-semibold transition-colors"
                   >
-                    Sí, Eliminar
+                    {cargandoArchivo ? '⏳ Eliminando...' : 'Sí, Eliminar'}
                   </button>
                   <button
                     onClick={() => {
                       setModalMode('view');
                       setSelectedImageIndex(null);
                     }}
-                    className="flex-1 py-2.5 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-lg font-semibold transition-colors"
+                    disabled={cargandoArchivo}
+                    className="flex-1 py-2.5 bg-gray-200 hover:bg-gray-300 disabled:bg-gray-300 text-gray-800 rounded-lg font-semibold transition-colors"
                   >
                     Cancelar
                   </button>
