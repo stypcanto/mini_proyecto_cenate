@@ -1133,8 +1133,14 @@ export default function MisECGsRecientes({
                         if (imagenActual?.idImagen) {
                           await teleecgService.eliminarImagen(imagenActual.idImagen);
                           toast.success('🗑️ Imagen eliminada correctamente');
+
+                          // ✅ Cerrar modal y resetear estado
                           setModalMode('view');
                           setSelectedImageIndex(null);
+                          setPreviewImageIndex(null);
+
+                          // ✅ Esperar a que se actualicen los datos
+                          await new Promise(resolve => setTimeout(resolve, 800));
                           onRefrescar?.(); // Refrescar datos si existe la función
                         } else {
                           toast.error('No se encontró el ID de la imagen');
