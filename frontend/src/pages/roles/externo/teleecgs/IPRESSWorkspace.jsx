@@ -58,8 +58,9 @@ function formatECGsForRecientes(ecgs, pacientesCache = {}) {
       telefono: img.telefonoPrincipalPaciente || img.telefono || "-",  // ✅ Teléfono del asegurado desde BD
       esUrgente: img.esUrgente || img.urgente || false,  // ✅ Indicador de urgencia
       cantidadImagenes: porDni[dni]?.length || 0,  // ✅ Contar imágenes del paciente
-      fechaEnvio: img.fechaEnvio || img.fechaCarga || null,  // ✅ Fecha real para mostrar en tabla
-      tiempoTranscurrido: img.fechaEnvio || img.fechaCarga
+      // ✅ v1.70.0: Agregar fallback a fechaUltimoEcg (del nuevo DTO paginado)
+      fechaEnvio: img.fechaEnvio || img.fechaCarga || img.fechaUltimoEcg || null,  // ✅ Fecha real para mostrar en tabla
+      tiempoTranscurrido: img.fechaEnvio || img.fechaCarga || img.fechaUltimoEcg
         ? (() => {
             const ahora = new Date();
             const fecha = new Date(img.fechaEnvio || img.fechaCarga);
@@ -145,10 +146,11 @@ export default function IPRESSWorkspace() {
 
   // ✅ PAGINACIÓN - 15 pacientes por página
   const [currentPage, setCurrentPage] = useState(1);
+  const [totalPagesFromBackend, setTotalPagesFromBackend] = useState(1);  // ✅ v1.71.0: Guardar totalPages del backend
   const ITEMS_PER_PAGE = 15;
 
-  // ✅ Calcular datos paginados
-  const totalPages = Math.ceil(ecgs.length / ITEMS_PER_PAGE);
+  // ✅ v1.71.0: Usar totalPages del backend, no calcularlo localmente
+  const totalPages = totalPagesFromBackend;
   const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
   const endIndex = startIndex + ITEMS_PER_PAGE;
   const ecgsPaginados = ecgs.slice(startIndex, endIndex);
@@ -189,12 +191,39 @@ export default function IPRESSWorkspace() {
 
   /**
    * Cargar imágenes desde el servidor y enriquecer con datos de pacientes
+   * ✅ v1.71.0: Cargar TODAS las páginas automáticamente
    */
   const cargarEKGs = async () => {
     try {
       setLoading(true);
+
+      // ✅ Cargar primera página
       const response = await teleecgService.listarImagenes();
-      const imagenes = response?.content || [];
+      let imagenes = response?.content || [];
+      const totalPages = response?.totalPages || 1;
+
+      console.log(`✅ Response del backend página 1:`, response);
+      console.log(`✅ Total de imágenes en página 1: ${imagenes.length}, totalPages: ${totalPages}`);
+
+      // ✅ v1.71.0: Guardar totalPages del backend
+      setTotalPagesFromBackend(totalPages);
+
+      // ✅ Cargar TODAS las páginas siguientes automáticamente
+      if (totalPages > 1) {
+        console.log(`📥 Cargando páginas restantes (${totalPages - 1} más)...`);
+        for (let page = 1; page < totalPages; page++) {
+          try {
+            const pageResponse = await teleecgService.listarImagenesPage(page);
+            const pageImagenes = pageResponse?.content || [];
+            imagenes = imagenes.concat(pageImagenes);
+            console.log(`✅ Página ${page + 1} cargada: ${pageImagenes.length} imágenes`);
+          } catch (err) {
+            console.warn(`⚠️ Error cargando página ${page + 1}:`, err);
+          }
+        }
+      }
+
+      console.log(`✅ TOTAL de imágenes cargadas: ${imagenes.length}`);
 
       // ✅ RÁPIDO: Preparar datos iniciales sin enriquecimiento
       const pacientesUnicos = new Set(imagenes.map((img) => img.dni || img.numDocPaciente).filter(Boolean));
@@ -225,24 +254,23 @@ export default function IPRESSWorkspace() {
         cantidadImagenes: porDni[dni]?.length || 0,
       }));
 
-      // Calcular estadísticas RÁPIDAMENTE
-      const pacientesPendientes = new Set(
-        imagenes.filter((img) => img.estado === "ENVIADA").map((img) => img.dni)
-      );
-      const pacientesObservadas = new Set(
-        imagenes.filter((img) => img.estado === "OBSERVADA").map((img) => img.dni)
-      );
-      const pacientesAtendidas = new Set(
-        imagenes.filter((img) => img.estado === "ATENDIDA").map((img) => img.dni)
-      );
+      // ✅ v1.71.0: Calcular estadísticas CONTANDO IMÁGENES, no pacientes
+      const imagenesPendientes = imagenes.filter((img) => img.estado === "ENVIADA");
+      const imagenesObservadas = imagenes.filter((img) => img.estado === "OBSERVADA");
+      const imagenesAtendidas = imagenes.filter((img) => img.estado === "ATENDIDA");
+
+      // Pacientes únicos para mostrar deduplicados
+      const pacientesPendientes = new Set(imagenesPendientes.map((img) => img.dni || img.numDocPaciente));
+      const pacientesObservadas = new Set(imagenesObservadas.map((img) => img.dni || img.numDocPaciente));
+      const pacientesAtendidas = new Set(imagenesAtendidas.map((img) => img.dni || img.numDocPaciente));
 
       const newStats = {
-        total: pacientesPendientes.size + pacientesObservadas.size + pacientesAtendidas.size,
-        cargadas: pacientesUnicos.size,
-        enEvaluacion: pacientesPendientes.size,
-        observadas: pacientesObservadas.size,
-        atendidas: pacientesAtendidas.size,
-        enviadas: pacientesPendientes.size,
+        total: imagenes.length,  // ✅ TOTAL DE IMÁGENES, no pacientes
+        cargadas: pacientesUnicos.size,  // Pacientes únicos
+        enEvaluacion: imagenesPendientes.length,  // Imágenes pendientes
+        observadas: imagenesObservadas.length,    // Imágenes observadas
+        atendidas: imagenesAtendidas.length,      // Imágenes atendidas
+        enviadas: imagenesPendientes.length,      // Imágenes enviadas
       };
 
       // ✅ MOSTRAR DATOS INMEDIATAMENTE (sin esperar enriquecimiento)
@@ -465,11 +493,11 @@ export default function IPRESSWorkspace() {
             <MisECGsRecientes
               ultimas3={ecgsPaginados}
               estadisticas={{
-                total: stats.cargadas + stats.enEvaluacion + stats.observadas + (stats.atendidas || 0),
-                cargadas: stats.cargadas,
-                enEvaluacion: stats.enEvaluacion,
-                observadas: stats.observadas,
-                atendidas: stats.atendidas || 0,
+                total: stats.total,  // ✅ Total de imágenes (no suma)
+                cargadas: stats.cargadas,  // Pacientes únicos
+                enEvaluacion: stats.enEvaluacion,  // Imágenes en evaluación
+                observadas: stats.observadas,      // Imágenes observadas
+                atendidas: stats.atendidas || 0,   // Imágenes atendidas
               }}
               onRefrescar={handleRefresh}
               onVerImagen={handleVerImagen}
@@ -708,7 +736,7 @@ export default function IPRESSWorkspace() {
                   </button>
 
                   <span className="text-sm font-semibold text-gray-700">
-                    {currentPage} de {totalPages}
+                    Página {currentPage} de {totalPages} ({ecgs.length} imágenes)
                   </span>
                 </div>
               )}
@@ -902,7 +930,7 @@ export default function IPRESSWorkspace() {
                     </div>
 
                     <span className="text-xs font-semibold text-gray-700">
-                      {currentPage} / {totalPages}
+                      Página {currentPage}/{totalPages} ({ecgs.length} imágenes)
                     </span>
                   </div>
                 )}
