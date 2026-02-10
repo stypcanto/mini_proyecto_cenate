@@ -830,33 +830,6 @@ export default function MisECGsRecientes({
                       : 'border-gray-300 bg-gray-50 hover:border-green-400 hover:bg-green-50'
                   }`}
                 >
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept="image/*,.pdf"
-                    onChange={(e) => {
-                      const archivo = e.target.files?.[0];
-                      if (archivo) {
-                        // Validar tipo de archivo
-                        const tiposValidos = ['image/jpeg', 'image/png', 'application/pdf'];
-                        if (!tiposValidos.includes(archivo.type)) {
-                          toast.error('❌ Tipo de archivo no válido. Usa JPG, PNG o PDF');
-                          return;
-                        }
-
-                        // Validar tamaño (máximo 10MB)
-                        if (archivo.size > 10 * 1024 * 1024) {
-                          toast.error('❌ Archivo muy grande. Máximo 10 MB');
-                          return;
-                        }
-
-                        setArchivoSeleccionado(archivo);
-                        toast.success('✅ Archivo listo para subir');
-                      }
-                    }}
-                    className="hidden"
-                  />
-
                   {archivoSeleccionado ? (
                     <div className="space-y-3">
                       <div className="flex justify-center">
@@ -894,39 +867,40 @@ export default function MisECGsRecientes({
                         <p className="text-xs text-gray-500 mt-2">JPG, PNG o PDF (máximo 10 MB)</p>
                       </div>
 
-                      {/* Input File Estilizado como Botón */}
-                      <div className="relative">
-                        <input
-                          ref={fileInputRef}
-                          type="file"
-                          accept="image/*,.pdf"
-                          onChange={(e) => {
-                            const archivo = e.target.files?.[0];
-                            if (archivo) {
-                              // Validar tipo de archivo
-                              const tiposValidos = ['image/jpeg', 'image/png', 'application/pdf'];
-                              if (!tiposValidos.includes(archivo.type)) {
-                                toast.error('❌ Tipo de archivo no válido. Usa JPG, PNG o PDF');
-                                return;
-                              }
-
-                              // Validar tamaño (máximo 10MB)
-                              if (archivo.size > 10 * 1024 * 1024) {
-                                toast.error('❌ Archivo muy grande. Máximo 10 MB');
-                                return;
-                              }
-
-                              setArchivoSeleccionado(archivo);
-                              toast.success('✅ Archivo listo para subir');
+                      {/* Input File - Hidden con Label */}
+                      <input
+                        ref={fileInputRef}
+                        id="fileInputAdd"
+                        type="file"
+                        accept="image/*,.pdf"
+                        onChange={(e) => {
+                          const archivo = e.target.files?.[0];
+                          if (archivo) {
+                            // Validar tipo de archivo
+                            const tiposValidos = ['image/jpeg', 'image/png', 'application/pdf'];
+                            if (!tiposValidos.includes(archivo.type)) {
+                              toast.error('❌ Tipo de archivo no válido. Usa JPG, PNG o PDF');
+                              return;
                             }
-                          }}
-                          className="absolute inset-0 w-full h-full cursor-pointer opacity-0"
-                          style={{ zIndex: 10 }}
-                        />
-                        <div className="px-6 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold transition-all cursor-pointer text-center pointer-events-none">
-                          👆 Seleccionar Archivo
-                        </div>
-                      </div>
+
+                            // Validar tamaño (máximo 10MB)
+                            if (archivo.size > 10 * 1024 * 1024) {
+                              toast.error('❌ Archivo muy grande. Máximo 10 MB');
+                              return;
+                            }
+
+                            setArchivoSeleccionado(archivo);
+                            toast.success('✅ Archivo listo para subir');
+                          }
+                        }}
+                        className="sr-only"
+                      />
+                      <label
+                        htmlFor="fileInputAdd"
+                        className="inline-block px-6 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold transition-all cursor-pointer text-center"
+                      >
+                        👆 Seleccionar Archivo
+                      </label>
                     </div>
                   )}
                 </label>
