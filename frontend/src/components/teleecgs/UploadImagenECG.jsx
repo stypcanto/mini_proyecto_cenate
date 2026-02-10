@@ -188,15 +188,32 @@ export default function UploadImagenEKG({ onSuccess, onUploadSuccess, isWorkspac
     guardarDraft();
   }, [previews, numDocPaciente, datosCompletos, fechaToma]);
 
+  // ✅ v1.77.0: Limpiar imágenes cuando cambia el DNI (nuevo paciente)
+  const [dniBuscadoAnterior, setDniBuscadoAnterior] = useState("");
+
   // Buscar paciente por DNI cuando cambia (con debounce)
   useEffect(() => {
     const timer = setTimeout(() => {
       if (numDocPaciente.length === 8) {
+        // ✅ Si el DNI es diferente al anterior, limpiar las imágenes del paciente anterior
+        if (dniBuscadoAnterior && numDocPaciente !== dniBuscadoAnterior) {
+          console.log(`🔄 DNI cambió de ${dniBuscadoAnterior} a ${numDocPaciente} - Limpiando imágenes`);
+          setArchivos([]);
+          setPreviews([]);
+          setCarouselIndex(0);
+          localStorage.removeItem(STORAGE_KEY);
+        }
+        setDniBuscadoAnterior(numDocPaciente);
         buscarPacientePorDni();
       } else {
         if (numDocPaciente.length === 0) {
           setDatosCompletos({ apellidos: "", nombres: "", sexo: "", codigo: "", telefono: "", ipress: "", edad: "" });
           setPacienteEncontrado(false);
+          setArchivos([]);
+          setPreviews([]);
+          setCarouselIndex(0);
+          localStorage.removeItem(STORAGE_KEY);
+          setDniBuscadoAnterior("");
         }
       }
     }, 200); // 200ms debounce
