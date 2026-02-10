@@ -57,6 +57,15 @@ export const atencionesClinicasService = {
         params.append('idIpress', filtros.idIpress);
       }
       
+      // 🆕 Filtros de ubicación geográfica
+      if (filtros.macrorregion && filtros.macrorregion !== "todas") {
+        params.append('macrorregion', filtros.macrorregion);
+      }
+      
+      if (filtros.red && filtros.red !== "todas") {
+        params.append('red', filtros.red);
+      }
+      
       // Derivación Interna (filtro corregido: nombre del parámetro en backend es 'derivacion')
       if (filtros.derivacionInterna && filtros.derivacionInterna !== "todas") {
         params.append('derivacion', filtros.derivacionInterna);
@@ -72,6 +81,11 @@ export const atencionesClinicasService = {
       
       if (filtros.searchTerm) {
         params.append('searchTerm', filtros.searchTerm);
+      }
+      
+      // 🆕 Condición Médica (Pendiente, Atendido, Deserción)
+      if (filtros.condicionMedica && filtros.condicionMedica !== "todos") {
+        params.append('condicionMedica', filtros.condicionMedica);
       }
       
       const url = `${BASE_URL}/listar?${params.toString()}`;
@@ -92,6 +106,19 @@ export const atencionesClinicasService = {
       return data;
     } catch (error) {
       console.error('Error al obtener estadísticas:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * 🆕 Obtener estadísticas basadas en condición médica (Pendiente, Atendido, Deserción)
+   */
+  obtenerEstadisticasCondicionMedica: async () => {
+    try {
+      const data = await api.get(`${BASE_URL}/estadisticas-condicion-medica`);
+      return data;
+    } catch (error) {
+      console.error('Error al obtener estadísticas de condición médica:', error);
       throw error;
     }
   },
@@ -210,6 +237,76 @@ export const atencionesClinicasService = {
       return data;
     } catch (error) {
       console.error(`Error al obtener comparativo de signos vitales para atención ${idAtencion}:`, error);
+      throw error;
+    }
+  },
+
+  // ========================================================================
+  // 📊 NUEVOS MÉTODOS DE ESTADÍSTICAS AVANZADAS
+  // ========================================================================
+
+  /**
+   * 📈 Obtener estadísticas de resumen general
+   */
+  obtenerEstadisticasResumen: async () => {
+    try {
+      const data = await api.get(`${BASE_URL}/estadisticas-resumen`);
+      return data;
+    } catch (error) {
+      console.error('Error al obtener estadísticas de resumen:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * 📅 Obtener estadísticas mensuales
+   */
+  obtenerEstadisticasMensuales: async () => {
+    try {
+      const data = await api.get(`${BASE_URL}/estadisticas-mensuales`);
+      return data;
+    } catch (error) {
+      console.error('Error al obtener estadísticas mensuales:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * 🏥 Obtener estadísticas por IPRESS (Top N)
+   * @param {number} limit - Número máximo de resultados (opcional, default: 10)
+   */
+  obtenerEstadisticasIpress: async (limit = 10) => {
+    try {
+      const data = await api.get(`${BASE_URL}/estadisticas-ipress?limit=${limit}`);
+      return data;
+    } catch (error) {
+      console.error('Error al obtener estadísticas IPRESS:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * 🩺 Obtener estadísticas por especialidad
+   */
+  obtenerEstadisticasEspecialidad: async () => {
+    try {
+      const data = await api.get(`${BASE_URL}/estadisticas-especialidad`);
+      return data;
+    } catch (error) {
+      console.error('Error al obtener estadísticas especialidad:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * 📞 Obtener estadísticas por tipo de cita
+   */
+  obtenerEstadisticasTipoCita: async () => {
+    try {
+      const data = await api.get(`${BASE_URL}/estadisticas-tipo-cita`);
+      return data;
+    } catch (error) {
+      console.error('Error al obtener estadísticas tipo cita:', error);
       throw error;
     }
   }

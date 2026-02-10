@@ -81,7 +81,7 @@ public class AtencionClinica107 {
      * 🔗 Relación ManyToOne con Ipress
      * Permite acceder al nombre/descripción de la IPRESS
      */
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "id_ipress", insertable = false, updatable = false)
     private Ipress ipress;
 
@@ -142,4 +142,8 @@ public class AtencionClinica107 {
 
     @Column(name = "consentimiento_informado")
     private Boolean consentimientoInformado;
+
+    // 🆕 Condición médica (Pendiente, Atendido, Deserción)
+    @Column(name = "condicion_medica")
+    private String condicionMedica;
 }

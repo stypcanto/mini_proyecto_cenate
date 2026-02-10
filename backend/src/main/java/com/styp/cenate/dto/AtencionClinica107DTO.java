@@ -63,4 +63,7 @@ public class AtencionClinica107DTO {
     // 🆕 Nuevos campos para derivación de atenciones
     private String tiempoInicioSintomas;
     private Boolean consentimientoInformado;
+
+    // 🆕 Condición médica (Pendiente, Atendido, Deserción)
+    private String condicionMedica;
 }

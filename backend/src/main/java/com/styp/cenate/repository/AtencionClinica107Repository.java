@@ -123,4 +123,109 @@ public interface AtencionClinica107Repository
      */
     @Query("SELECT COUNT(DISTINCT a.idSolicitud) FROM AtencionClinica107 a WHERE UPPER(a.estado) = UPPER(:estado) AND a.idBolsa = 1")
     Long contarPorEstadoDescripcion(@Param("estado") String estado);
+
+    // 🆕 ==================== ESTADÍSTICAS POR CONDICIÓN MÉDICA ====================
+    
+    /**
+     * Contar pacientes por condición médica específica (Bolsa 1)
+     */
+    @Query("SELECT COUNT(DISTINCT a.idSolicitud) FROM AtencionClinica107 a WHERE a.condicionMedica = :condicion AND a.idBolsa = 1")
+    Long contarPorCondicionMedica(@Param("condicion") String condicion);
+
+    /**
+     * Contar pacientes pendientes (condicion_medica = 'Pendiente' O NULL) para Bolsa 1
+     */
+    @Query("SELECT COUNT(DISTINCT a.idSolicitud) FROM AtencionClinica107 a WHERE (a.condicionMedica = 'Pendiente' OR a.condicionMedica IS NULL) AND a.idBolsa = 1")
+    Long contarPendientes();
+
+    /**
+     * Contar pacientes atendidos (condicion_medica = 'Atendido') para Bolsa 1
+     */
+    @Query("SELECT COUNT(DISTINCT a.idSolicitud) FROM AtencionClinica107 a WHERE a.condicionMedica = 'Atendido' AND a.idBolsa = 1")
+    Long contarAtendidos();
+
+    /**
+     * Contar deserciones (condicion_medica = 'Deserción') para Bolsa 1
+     */
+    @Query("SELECT COUNT(DISTINCT a.idSolicitud) FROM AtencionClinica107 a WHERE a.condicionMedica = 'Deserción' AND a.idBolsa = 1")
+    Long contarDeserciones();
+
+    // 🆕 ==================== MÉTODOS NUEVOS PARA ESTADÍSTICAS AVANZADAS ====================
+
+    /**
+     * Contar atenciones por bolsa
+     */
+    @Query("SELECT COUNT(DISTINCT a.idSolicitud) FROM AtencionClinica107 a WHERE a.idBolsa = :idBolsa")
+    Long countByIdBolsa(@Param("idBolsa") Long idBolsa);
+
+    /**
+     * Contar por condición médica específica y bolsa
+     */
+    @Query("SELECT COUNT(DISTINCT a.idSolicitud) FROM AtencionClinica107 a WHERE a.condicionMedica = :condicion AND a.idBolsa = :idBolsa")
+    Long countByCondicionMedicaAndIdBolsa(@Param("condicion") String condicion, @Param("idBolsa") Long idBolsa);
+
+    /**
+     * Contar pendientes (condicion_medica IS NULL O = 'Pendiente')
+     */
+    @Query("SELECT COUNT(DISTINCT a.idSolicitud) FROM AtencionClinica107 a " +
+           "WHERE (a.condicionMedica IS NULL OR a.condicionMedica = :pendienteValue) AND a.idBolsa = :idBolsa")
+    Long countByCondicionMedicaNullOrValueAndIdBolsa(@Param("pendienteValue") String pendienteValue, @Param("idBolsa") Long idBolsa);
+
+    /**
+     * Estadísticas mensuales - Atenciones por mes
+     */
+    @Query(value = "SELECT " +
+           "EXTRACT(MONTH FROM fecha_atencion) AS mes, " +
+           "EXTRACT(YEAR FROM fecha_atencion) AS anio, " +
+           "COUNT(id_solicitud) AS total_atenciones, " +
+           "TO_CHAR(fecha_atencion, 'Month YYYY') AS periodo " +
+           "FROM dim_solicitud_bolsa " +
+           "WHERE fecha_atencion IS NOT NULL AND id_bolsa = 1 " +
+           "GROUP BY EXTRACT(MONTH FROM fecha_atencion), EXTRACT(YEAR FROM fecha_atencion), TO_CHAR(fecha_atencion, 'Month YYYY') " +
+           "ORDER BY anio, mes", nativeQuery = true)
+    java.util.List<Object[]> findEstadisticasMensuales();
+
+    /**
+     * Estadísticas IPRESS - Top N con información geográfica
+     */
+    @Query(value = "SELECT " +
+           "dsb.id_ipress, " +
+           "di.desc_ipress AS nombre_ipress, " +
+           "di.cod_ipress AS codigo_ipress, " +
+           "dr.desc_red AS red, " +
+           "dm.desc_macro AS macroregion, " +
+           "COUNT(dsb.id_solicitud) AS total_atenciones " +
+           "FROM dim_solicitud_bolsa dsb " +
+           "LEFT JOIN dim_ipress di ON dsb.id_ipress = di.id_ipress " +
+           "LEFT JOIN dim_red dr ON di.id_red = dr.id_red " +
+           "LEFT JOIN dim_macroregion dm ON dr.id_macro = dm.id_macro " +
+           "WHERE dsb.id_bolsa = 1 " +
+           "GROUP BY dsb.id_ipress, di.desc_ipress, di.cod_ipress, dr.desc_red, dm.desc_macro " +
+           "ORDER BY total_atenciones DESC " +
+           "LIMIT :limit", nativeQuery = true)
+    java.util.List<Object[]> findEstadisticasIpressTopN(@Param("limit") int limit);
+
+    /**
+     * Estadísticas por especialidad (derivación interna)
+     */
+    @Query(value = "SELECT " +
+           "derivacion_interna, " +
+           "COUNT(id_solicitud) AS total_atenciones " +
+           "FROM dim_solicitud_bolsa " +
+           "WHERE id_bolsa = 1 AND derivacion_interna IS NOT NULL " +
+           "GROUP BY derivacion_interna " +
+           "ORDER BY total_atenciones DESC", nativeQuery = true)
+    java.util.List<Object[]> findEstadisticasEspecialidad();
+
+    /**
+     * Estadísticas por tipo de cita
+     */
+    @Query(value = "SELECT " +
+           "tipo_cita, " +
+           "COUNT(id_solicitud) AS total_atenciones " +
+           "FROM dim_solicitud_bolsa " +
+           "WHERE id_bolsa = 1 AND tipo_cita IS NOT NULL " +
+           "GROUP BY tipo_cita " +
+           "ORDER BY total_atenciones DESC", nativeQuery = true)
+    java.util.List<Object[]> findEstadisticasTipoCita();
 }

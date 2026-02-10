@@ -2,6 +2,7 @@ package com.styp.cenate.service.specification;
 
 import com.styp.cenate.model.AtencionClinica107;
 import org.springframework.data.jpa.domain.Specification;
+import jakarta.persistence.criteria.JoinType;
 import java.time.LocalDateTime;
 
 /**
@@ -10,7 +11,7 @@ import java.time.LocalDateTime;
  * Módulo: 107
  * Patrón: Specification Pattern (Spring Data JPA)
  * 
- * ⚠️ NOTA: red y macrorregion NO se usan para filtrado (dinámico)
+ * ✅ ACTUALIZADO: Agregado soporte completo para filtros de macrorregión y red
  */
 public class AtencionClinica107Specification {
 
@@ -79,6 +80,68 @@ public class AtencionClinica107Specification {
     }
 
     /**
+     * 🆕 Filtra por condición médica (Pendiente, Atendido, Deserción)
+     * Nota: NULL se considera como "Pendiente"
+     */
+    public static Specification<AtencionClinica107> conCondicionMedica(String condicion) {
+        return (root, query, cb) -> {
+            if ("Pendiente".equalsIgnoreCase(condicion)) {
+                // Para "Pendiente", incluir tanto 'Pendiente' como NULL
+                return cb.or(
+                    cb.equal(cb.lower(root.get("condicionMedica")), "pendiente"),
+                    cb.isNull(root.get("condicionMedica"))
+                );
+            } else {
+                // Para otros valores, búsqueda exacta
+                return cb.equal(cb.lower(root.get("condicionMedica")), condicion.toLowerCase());
+            }
+        };
+    }
+
+    /**
+     * 🆕 Filtra por macrorregión usando JOIN con dim_ipress -> dim_red -> dim_macroregion
+     */
+    public static Specification<AtencionClinica107> conMacrorregion(String macrorregion) {
+        return (root, query, cb) -> {
+            try {
+                System.out.println("[DEBUG SPEC] Aplicando filtro macrorregión: " + macrorregion);
+                
+                // JOIN: AtencionClinica107 -> dim_ipress -> dim_red -> dim_macroregion
+                var ipressJoin = root.join("ipress", JoinType.INNER);
+                var redJoin = ipressJoin.join("red", JoinType.INNER);
+                var macroJoin = redJoin.join("macroregion", JoinType.INNER);
+                
+                return cb.equal(cb.upper(macroJoin.get("descMacro")), macrorregion.toUpperCase());
+            } catch (Exception e) {
+                System.err.println("[ERROR SPEC] Error en filtro macrorregión: " + e.getMessage());
+                e.printStackTrace();
+                return cb.conjunction(); // Devolver condición vacía en caso de error
+            }
+        };
+    }
+
+    /**
+     * 🆕 Filtra por red usando JOIN con dim_ipress -> dim_red
+     */
+    public static Specification<AtencionClinica107> conRed(String red) {
+        return (root, query, cb) -> {
+            try {
+                System.out.println("[DEBUG SPEC] Aplicando filtro red: " + red);
+                
+                // JOIN: AtencionClinica107 -> dim_ipress -> dim_red
+                var ipressJoin = root.join("ipress", JoinType.INNER);
+                var redJoin = ipressJoin.join("red", JoinType.INNER);
+                
+                return cb.equal(cb.upper(redJoin.get("descripcion")), red.toUpperCase());
+            } catch (Exception e) {
+                System.err.println("[ERROR SPEC] Error en filtro red: " + e.getMessage());
+                e.printStackTrace();
+                return cb.conjunction(); // Devolver condición vacía en caso de error
+            }
+        };
+    }
+
+    /**
      * Filtra por especialidad
      */
     public static Specification<AtencionClinica107> conEspecialidad(String especialidad) {
@@ -106,6 +169,7 @@ public class AtencionClinica107Specification {
     /**
      * Combina múltiples especificaciones en un solo filtro
      * Manejo inteligente: ignora valores null o "todos"
+     * 🆕 Agregado soporte para filtros de macrorregión y red
      */
     public static Specification<AtencionClinica107> conFiltros(
         Long idBolsa,
@@ -116,10 +180,13 @@ public class AtencionClinica107Specification {
         LocalDateTime fechaInicio,
         LocalDateTime fechaFin,
         Long idIpress,
+        String macrorregion,
+        String red,
         String derivacion,
         String especialidad,
         String tipoCita,
-        String search
+        String search,
+        String condicionMedica
     ) {
         Specification<AtencionClinica107> spec = Specification.where(null);
 
@@ -159,6 +226,18 @@ public class AtencionClinica107Specification {
             spec = spec.and(conIdIpress(idIpress));
         }
 
+        // 🆕 Filtro Macrorregión
+        if (macrorregion != null && !macrorregion.isEmpty() && !macrorregion.equals("todas")) {
+            System.out.println("[DEBUG SPEC] Aplicando filtro de macrorregión: " + macrorregion);
+            spec = spec.and(conMacrorregion(macrorregion));
+        }
+
+        // 🆕 Filtro Red
+        if (red != null && !red.isEmpty() && !red.equals("todas")) {
+            System.out.println("[DEBUG SPEC] Aplicando filtro de red: " + red);
+            spec = spec.and(conRed(red));
+        }
+
         // Filtro Derivación
         if (derivacion != null && !derivacion.isEmpty() && !derivacion.equals("todas")) {
             System.out.println("[DEBUG SPEC] Aplicando filtro de derivación: " + derivacion);
@@ -178,6 +257,11 @@ public class AtencionClinica107Specification {
         // Filtro Búsqueda General
         if (search != null && !search.isEmpty()) {
             spec = spec.and(conBusquedaGeneral(search));
+        }
+
+        // 🆕 Filtro Condición Médica (Pendiente, Atendido, Deserción)
+        if (condicionMedica != null && !condicionMedica.isEmpty() && !condicionMedica.equals("todos")) {
+            spec = spec.and(conCondicionMedica(condicionMedica));
         }
 
         return spec;
