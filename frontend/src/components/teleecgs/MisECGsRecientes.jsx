@@ -444,7 +444,7 @@ export default function MisECGsRecientes({
                     <th className="px-3 md:px-4 py-2 md:py-3 text-left font-bold whitespace-nowrap text-xs md:text-sm">Paciente</th>
 
                     {/* Fecha de Toma - Oculto en tablet, visible en desktop */}
-                    <th className="hidden lg:table-cell px-3 md:px-4 py-2 md:py-3 text-left font-bold whitespace-nowrap text-xs md:text-sm">📅 Fecha EKG</th>
+                    <th className="hidden lg:table-cell px-3 md:px-4 py-2 md:py-3 text-left font-bold whitespace-nowrap text-xs md:text-sm">📅 Fecha toma EKG</th>
 
                     {/* Perfil - Oculto en tablet, visible en desktop */}
                     <th className="hidden lg:table-cell px-3 md:px-4 py-2 md:py-3 text-left font-bold whitespace-nowrap text-xs md:text-sm">Perfil</th>
@@ -815,7 +815,7 @@ export default function MisECGsRecientes({
                           // Llamar al API para actualizar la fecha
                           const response = await fetch(
                             `/api/teleekgs/${cargaEdicion.idImagen || cargaEdicion.id}/fecha-toma?fechaToma=${fechaToma}`,
-                            { method: 'PATCH' }
+                            { method: 'POST' }
                           );
 
                           if (response.ok) {
