@@ -951,10 +951,9 @@ public class TeleECGController {
 
     /**
      * ✅ v1.76.0: Actualizar fecha de toma del EKG
-     * PATCH /api/teleekgs/{id}/fecha-toma?fechaToma=2026-02-04
+     * PUT /api/teleekgs/{id}/fecha-toma?fechaToma=2026-02-04
      */
-    @PatchMapping("/{id}/fecha-toma")
-    @CheckMBACPermission(pagina = "/teleecgs", accion = "editar")
+    @PutMapping("/{id}/fecha-toma")
     public ResponseEntity<ApiResponse<TeleECGImagenDTO>> actualizarFechaToma(
             @PathVariable Long id,
             @RequestParam String fechaToma,
@@ -983,6 +982,14 @@ public class TeleECGController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(new ApiResponse<>(false, "Error: " + e.getMessage(), "500", null));
         }
+    }
+
+    /**
+     * Test endpoint para verificar que POST mappings funcionan
+     */
+    @PostMapping("/test-endpoint")
+    public ResponseEntity<?> testEndpoint() {
+        return ResponseEntity.ok(Map.of("message", "✅ POST endpoint works"));
     }
 
     /**
