@@ -442,6 +442,9 @@ export default function MisECGsRecientes({
                     {/* Paciente */}
                     <th className="px-3 md:px-4 py-2 md:py-3 text-left font-bold whitespace-nowrap text-xs md:text-sm">Paciente</th>
 
+                    {/* Fecha de Toma - Oculto en tablet, visible en desktop */}
+                    <th className="hidden lg:table-cell px-3 md:px-4 py-2 md:py-3 text-left font-bold whitespace-nowrap text-xs md:text-sm">📅 Fecha EKG</th>
+
                     {/* Perfil - Oculto en tablet, visible en desktop */}
                     <th className="hidden lg:table-cell px-3 md:px-4 py-2 md:py-3 text-left font-bold whitespace-nowrap text-xs md:text-sm">Perfil</th>
 
@@ -499,6 +502,21 @@ export default function MisECGsRecientes({
                         {/* Paciente - BOLD y destacado */}
                         <td className="px-3 md:px-4 py-2 md:py-3 min-w-max" title={carga.nombrePaciente}>
                           <div className="font-bold text-gray-900 text-xs md:text-sm line-clamp-2">{carga.nombrePaciente}</div>
+                        </td>
+
+                        {/* Fecha de Toma - Oculto en tablet, visible en desktop */}
+                        <td className="hidden lg:table-cell px-3 md:px-4 py-2 md:py-3 text-gray-700 text-xs md:text-sm font-mono">
+                          {carga.fechaToma ? (
+                            (() => {
+                              const fecha = new Date(carga.fechaToma);
+                              const dia = String(fecha.getDate()).padStart(2, '0');
+                              const mes = String(fecha.getMonth() + 1).padStart(2, '0');
+                              const año = fecha.getFullYear();
+                              return `${dia}/${mes}/${año}`;
+                            })()
+                          ) : (
+                            <span className="text-gray-400">-</span>
+                          )}
                         </td>
 
                         {/* Perfil: Edad / Género - Oculto en tablet, visible en desktop */}
