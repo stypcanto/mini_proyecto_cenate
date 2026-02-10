@@ -23,7 +23,9 @@ import com.styp.cenate.repository.segu.RolRepository;
 import com.styp.cenate.repository.view.ModuloViewRepository;
 import com.styp.cenate.repository.view.PermisoActivoViewRepository;
 import com.styp.cenate.service.mbac.PermisosService;
+import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityNotFoundException;
+import jakarta.persistence.Query;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -45,6 +47,7 @@ public class PermisosServiceImpl implements PermisosService {
     private final RolRepository rolRepository;
     private final PermisoRolPaginaRepository permisoRolPaginaRepository;
     private final PaginaRepository paginaRepository;
+    private final EntityManager entityManager;
 
     // ===========================================================
     // 🔹 1. Obtener permisos activos (vista consolidada)
@@ -348,8 +351,9 @@ public class PermisosServiceImpl implements PermisosService {
     // ===========================================================
     @Override
     public boolean tienePermiso(Long idUser, String rutaPagina, String accion) {
+        // ✅ PRIMERO: Consultar permisos basados en ROL (vía vista)
         var permisos = obtenerPermisosPorUsuario(idUser);
-        return permisos.stream()
+        boolean tienePermisoRol = permisos.stream()
                 .filter(p -> rutaPagina.equalsIgnoreCase(p.getRutaPagina()))
                 .anyMatch(p -> switch (accion.toLowerCase()) {
                     case "ver" -> Boolean.TRUE.equals(p.getVer());
@@ -360,6 +364,44 @@ public class PermisosServiceImpl implements PermisosService {
                     case "aprobar" -> Boolean.TRUE.equals(p.getAprobar());
                     default -> false;
                 });
+
+        // ✅ SEGUNDO: Si no tiene permiso por ROL, consultar permisos DIRECTOS de usuario (tabla segu_permisos_usuario_pagina)
+        if (!tienePermisoRol) {
+            log.debug("🔍 Consultando permisos directos de usuario {} para página: {}, acción: {}", idUser, rutaPagina, accion);
+            try {
+                // Consulta SQL nativa a segu_permisos_usuario_pagina
+                String sql = "SELECT COALESCE((" +
+                    "CASE " +
+                    "  WHEN :accion = 'ver' THEN spp.puede_ver " +
+                    "  WHEN :accion = 'crear' THEN spp.puede_crear " +
+                    "  WHEN :accion IN ('editar', 'actualizar', 'asignar') THEN spp.puede_editar " +
+                    "  WHEN :accion = 'eliminar' THEN spp.puede_eliminar " +
+                    "  WHEN :accion = 'exportar' THEN spp.puede_exportar " +
+                    "  WHEN :accion = 'aprobar' THEN spp.puede_aprobar " +
+                    "  ELSE false " +
+                    "END), false) FROM segu_permisos_usuario_pagina spp " +
+                    "JOIN dim_paginas_modulo dpm ON spp.id_pagina = dpm.id_pagina " +
+                    "WHERE spp.id_usuario = :idUsuario " +
+                    "AND LOWER(dpm.ruta_pagina) = LOWER(:rutaPagina) " +
+                    "AND spp.activo = true " +
+                    "LIMIT 1";
+
+                Query query = entityManager.createNativeQuery(sql, Boolean.class);
+                query.setParameter("idUsuario", idUser);
+                query.setParameter("rutaPagina", rutaPagina);
+                query.setParameter("accion", accion.toLowerCase());
+
+                Boolean tienePermisoDirecto = (Boolean) query.getSingleResult();
+                if (tienePermisoDirecto != null && tienePermisoDirecto) {
+                    log.info("✅ Permiso DIRECTO concedido al usuario {} para {}: {}", idUser, rutaPagina, accion);
+                    return true;
+                }
+            } catch (Exception e) {
+                log.warn("⚠️ Error consultando permisos directos: {}", e.getMessage());
+            }
+        }
+
+        return tienePermisoRol;
     }
 
     // ===========================================================

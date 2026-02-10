@@ -675,6 +675,32 @@ public class TeleECGController {
     }
 
     /**
+     * 🔍 ENDPOINT DE DIAGNÓSTICO - Ver permisos del usuario actual
+     */
+    @GetMapping("/debug/permisos")
+    @Operation(summary = "Diagnóstico - Ver permisos del usuario")
+    public ResponseEntity<ApiResponse<Map<String, Object>>> debugPermisos() {
+        try {
+            Long idUsuario = getUsuarioActual();
+            Usuario usuario = obtenerUsuarioActualObjeto();
+
+            Map<String, Object> info = Map.of(
+                "idUsuario", idUsuario,
+                "nombreUsuario", usuario != null ? usuario.getNameUser() : "No encontrado",
+                "mensaje", "Endpoint de diagnóstico - Si ves este mensaje, la autenticación funciona correctamente"
+            );
+
+            log.info("🔍 DIAGNÓSTICO: Usuario ID: {}, Name: {}", idUsuario, usuario != null ? usuario.getNameUser() : "N/A");
+
+            return ResponseEntity.ok(new ApiResponse<>(true, "Diagnóstico exitoso", "200", info));
+        } catch (Exception e) {
+            log.error("❌ Error en diagnóstico", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(new ApiResponse<>(false, "Error: " + e.getMessage(), "500", null));
+        }
+    }
+
+    /**
      * Eliminar una imagen ECG de la base de datos
      */
     @DeleteMapping("/{idImagen}")
