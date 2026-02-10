@@ -49,8 +49,8 @@ function formatECGsForRecientes(ecgs, pacientesCache = {}) {
 
     console.log(`✅ [formatECG] DNI ${dni} - Nombre formateado: ${nombreFormateado}`);
 
-    // 🔧 v1.71.0: Obtener esUrgente de la lista de imágenes (donde sí está disponible)
-    // AseguradoConECGsDTO devuelve imagenes[], cada una tiene es_urgente (snake_case desde backend)
+    // 🔧 v1.71.0: Obtener esUrgente del objeto principal
+    // ✅ El backend retorna es_urgente en el nivel superior del objeto, no anidado en array
     const imagenesPaciente = porDni[dni] || [];
     const esUrgente = imagenesPaciente.some(img => img.es_urgente === true || img.esUrgente === true);
 
@@ -250,10 +250,12 @@ export default function IPRESSWorkspace() {
 
       // 🔧 v1.71.0: Mapear a formato de tabla CON DATOS DISPONIBLES (sin esperar enriquecimiento)
       const ecgsFormateados = Object.entries(deduplicados).map(([dni, img]) => {
-        // Extraer esUrgente del array de imágenes (donde sí existe)
-        // ✅ Usar es_urgente (snake_case) como retorna el backend
-        const imagenesDni = img.imagenes || [];
-        const esUrgente = imagenesDni.some(imagen => imagen.es_urgente === true || imagen.esUrgente === true);
+        // ✅ IMPORTANTE: El backend retorna es_urgente en el nivel superior, NO en array imagenes
+        // Los datos vienen del endpoint /api/teleekgs que devuelve estructuras aplanadas
+        const esUrgente = img.es_urgente === true || img.esUrgente === true;
+
+        // Contar imágenes del mismo paciente en el array por DNI
+        const imagenesDni = porDni[dni] || [];
 
         return {
           ...img,
@@ -261,8 +263,8 @@ export default function IPRESSWorkspace() {
           genero: img.generoPaciente || img.genero || img.sexo || "-",
           edad: img.edadPaciente || img.edad || img.ageinyears || "-",
           telefono: img.telefonoPrincipalPaciente || img.telefono || "-",
-          esUrgente: esUrgente,  // ✅ Obtener de la lista de imágenes
-          cantidadImagenes: imagenesDni.length || 0,  // ✅ Usar imagenes reales
+          esUrgente: esUrgente,  // ✅ Obtener directamente de img.es_urgente
+          cantidadImagenes: imagenesDni.length || 0,  // ✅ Contar del array porDni
         };
       });
 
