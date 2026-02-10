@@ -784,8 +784,8 @@ export default function MisECGsRecientes({
                   <span>Selecciona un archivo EKG (JPG, PNG, PDF) para agregarlo al registro del paciente</span>
                 </div>
 
-                {/* Zona de Drag & Drop Mejorada */}
-                <div
+                {/* Zona de Drag & Drop Mejorada - Usando Label HTML */}
+                <label
                   onDragOver={(e) => {
                     e.preventDefault();
                     e.stopPropagation();
@@ -822,7 +822,7 @@ export default function MisECGsRecientes({
                       toast.success('✅ Archivo listo para subir');
                     }
                   }}
-                  className={`border-2 border-dashed rounded-lg p-8 text-center transition-all cursor-pointer ${
+                  className={`block border-2 border-dashed rounded-lg p-8 text-center transition-all cursor-pointer ${
                     dragActivo
                       ? 'border-green-500 bg-green-100 scale-105'
                       : archivoSeleccionado
@@ -905,7 +905,7 @@ export default function MisECGsRecientes({
                       </button>
                     </div>
                   )}
-                </div>
+                </label>
 
                 {/* Botones de Acción */}
                 <div className="flex gap-3 pt-2">
