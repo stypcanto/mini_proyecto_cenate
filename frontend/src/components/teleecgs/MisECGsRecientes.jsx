@@ -23,7 +23,6 @@ import {
   Calendar,
   BarChart3,
   Download,
-  Info,
   Eye as EyeIcon,
   Edit2,
   Plus,
@@ -602,34 +601,6 @@ export default function MisECGsRecientes({
                               </button>
                             )}
 
-                            {/* Info - Para ver teléfono oculto */}
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                if (carga.telefono && carga.telefono !== '-') {
-                                  toast((t) => (
-                                    <div className="flex items-center gap-3">
-                                      <span>📱 {carga.telefono}</span>
-                                      <a
-                                        href={`https://wa.me/${carga.telefono.replace(/\D/g, '')}`}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="text-green-600 hover:text-green-800 font-bold"
-                                        onClick={() => toast.dismiss(t.id)}
-                                      >
-                                        WhatsApp
-                                      </a>
-                                    </div>
-                                  ), { duration: 4000 });
-                                } else {
-                                  toast.error('No hay teléfono disponible');
-                                }
-                              }}
-                              className="p-1.5 md:p-2 rounded hover:bg-gray-100 text-gray-600 hover:text-gray-800 transition-colors"
-                              title="Ver teléfono"
-                            >
-                              <Info className="w-4 h-4 md:w-5 md:h-5" />
-                            </button>
                           </div>
                         </td>
                       </tr>
@@ -852,10 +823,6 @@ export default function MisECGsRecientes({
                   Agregar Nueva Imagen
                 </h3>
 
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-sm text-blue-800 flex items-start gap-2">
-                  <Info className="w-4 h-4 mt-0.5 flex-shrink-0" />
-                  <span>Selecciona un archivo EKG (JPG, PNG, PDF) para agregarlo al registro del paciente</span>
-                </div>
 
                 {/* Zona de Drag & Drop Mejorada - Usando Label HTML */}
                 <label
