@@ -954,7 +954,7 @@ public class TeleECGController {
      * PATCH /api/teleekgs/{id}/fecha-toma?fechaToma=2026-02-04
      */
     @PatchMapping("/{id}/fecha-toma")
-    @CheckMBACPermission(recurso = "TELEECG", accion = "EDITAR")
+    @CheckMBACPermission(pagina = "/teleecgs", accion = "editar")
     public ResponseEntity<ApiResponse<TeleECGImagenDTO>> actualizarFechaToma(
             @PathVariable Long id,
             @RequestParam String fechaToma,
