@@ -867,10 +867,9 @@ export default function MisECGsRecientes({
                         <p className="text-xs text-gray-500 mt-2">JPG, PNG o PDF (máximo 10 MB)</p>
                       </div>
 
-                      {/* Input File - Hidden con Label */}
+                      {/* Input File - Completely Hidden */}
                       <input
                         ref={fileInputRef}
-                        id="fileInputAdd"
                         type="file"
                         accept="image/*,.pdf"
                         onChange={(e) => {
@@ -893,14 +892,15 @@ export default function MisECGsRecientes({
                             toast.success('✅ Archivo listo para subir');
                           }
                         }}
-                        className="sr-only"
+                        className="hidden"
                       />
-                      <label
-                        htmlFor="fileInputAdd"
-                        className="inline-block px-6 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold transition-all cursor-pointer text-center"
+                      <button
+                        type="button"
+                        onClick={() => fileInputRef.current?.click()}
+                        className="px-6 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold transition-all cursor-pointer text-center"
                       >
                         👆 Seleccionar Archivo
-                      </label>
+                      </button>
                     </div>
                   )}
                 </label>
