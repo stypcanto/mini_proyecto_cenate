@@ -303,6 +303,10 @@ public class SecurityConfig {
                                                 .requestMatchers("/api/catalogo/subactividad-essi/**").permitAll()
                                                 .requestMatchers("/api/catalogo/actividades/**").permitAll()
                                                 
+                                                // =====================================================
+                                                // 📅 SOLICITUD DE TURNOS - PERMITIR TEMPORALMENTE
+                                                // =====================================================
+                                                .requestMatchers("/api/solicitud-turnos/**").permitAll()
                                                 
                                               // FIN SOLO PARA PRUEBAS RAPIDAS
                                               //******************************************************************

@@ -47,6 +47,7 @@ import {
 
 import { periodoSolicitudService } from "../../../../services/periodoSolicitudService";
 import { solicitudTurnoService } from "../../../../services/solicitudTurnoService";
+import teleconsultorioService from "./services/teleconsultorioApi";
 
 // Componentes separados
 import Modal from "./components/Modal";
@@ -411,6 +412,10 @@ export default function FormularioSolicitudTurnos() {
       } else {
         setRegistros([]);
       }
+
+      // Cargar configuración de teleconsultorio existente
+      await cargarConfiguracionTeleconsultorio(rowSolicitud.idSolicitud);
+
     } catch (e) {
       console.error(e);
       setError("No se pudo cargar el detalle de la solicitud.");
@@ -583,11 +588,31 @@ export default function FormularioSolicitudTurnos() {
 
   const confirmarHorarios = (configuracion) => {
     const nuevosHorarios = new Map(horariosConfigurados);
-    // Por ahora guardar horarios generales, más adelante se puede asociar por especialidad
+    // La configuración ya fue guardada en el servidor por el modal
+    // Solo actualizamos el estado local para mostrar en la interfaz
     nuevosHorarios.set('general', configuracion);
     setHorariosConfigurados(nuevosHorarios);
     console.log('✅ Horarios teleconsultorio configurados:', configuracion);
     setShowHorariosModal(false);
+  };
+
+  // Cargar configuración existente de teleconsultorio
+  const cargarConfiguracionTeleconsultorio = async (idSolicitud) => {
+    if (!idSolicitud) return;
+    
+    try {
+      const configuracion = await teleconsultorioService.obtenerConfiguracion(idSolicitud);
+      if (configuracion) {
+        const configFrontend = teleconsultorioService.convertirConfiguracionParaFrontend(configuracion);
+        const nuevosHorarios = new Map(horariosConfigurados);
+        nuevosHorarios.set('general', configFrontend);
+        setHorariosConfigurados(nuevosHorarios);
+        console.log('✅ Configuración teleconsultorio cargada:', configFrontend);
+      }
+    } catch (error) {
+      console.error('Error al cargar configuración de teleconsultorio:', error);
+      // No mostrar error al usuario, simplemente no cargar la configuración
+    }
   };
 
   const tieneEspecialidadesConTeleconsultorio = () => {
@@ -1702,6 +1727,7 @@ export default function FormularioSolicitudTurnos() {
       open={showHorariosModal}
       onClose={() => setShowHorariosModal(false)}
       especialidad="Horarios Generales de Teleconsultorio"
+      idSolicitud={solicitudActual?.idSolicitud}
       horariosIniciales={horariosConfigurados.get('general')}
       onConfirm={confirmarHorarios}
     />
