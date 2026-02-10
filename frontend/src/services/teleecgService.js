@@ -130,16 +130,21 @@ const teleecgService = {
    */
   _transformarResponse: (response) => {
 
-    // Backend devuelve: Lista de AseguradoConECGsDTO (bare array)
-    // Estructura: [ { numDocPaciente, nombresPaciente, imagenes: [...], ... }, ... ]
+    // Backend devuelve: Page<AseguradoConECGsDTO>
+    // Estructura Spring Data: { content: [ { imagenes: [...], ... }, ... ], totalPages: X, ... }
     // Necesitamos aplanar los imagenes anidados en un array plano
     let apiData = response?.data || response || [];
 
-    // ✅ IMPORTANTE: Aplanar la estructura anidada
+    // ✅ IMPORTANTE: Aplanar la estructura anidada de AseguradoConECGsDTO
     let flattenedImages = [];
-    if (Array.isArray(apiData)) {
-      // Es un array de AseguradoConECGsDTO - aplanar imagenes
-      apiData.forEach(asegurado => {
+
+    // Detectar si es Page<AseguradoConECGsDTO> (con .content) o bare array
+    const asegurados = Array.isArray(apiData) ? apiData : (apiData.content || []);
+
+    if (asegurados.length > 0 && asegurados[0].imagenes) {
+      // Es AseguradoConECGsDTO con imagenes anidadas - aplanar
+      console.log("🔄 [_transformarResponse] Detectado formato AseguradoConECGsDTO con imagenes anidadas");
+      asegurados.forEach(asegurado => {
         // Cada asegurado tiene un array de imagenes anidadas
         const imagenes = asegurado.imagenes || [];
         imagenes.forEach(imagen => {
@@ -158,10 +163,16 @@ const teleecgService = {
       });
       apiData = { content: flattenedImages };
     } else if (apiData && Array.isArray(apiData.content)) {
-      // Es una respuesta paginada tradicional - procesar normalmente
+      // Es una respuesta paginada tradicional sin imagenes anidadas - procesar normalmente
+      console.log("🔄 [_transformarResponse] Detectado formato Page tradicional sin imagenes anidadas");
       // (keep existing structure)
+    } else if (Array.isArray(apiData)) {
+      // Es un array plano - convertir a formato Page
+      console.log("🔄 [_transformarResponse] Detectado array plano sin imagenes anidadas");
+      apiData = { content: apiData };
     } else {
       // Fallback: asegurarse de que content sea array
+      console.log("⚠️ [_transformarResponse] Formato desconocido, usando array vacío");
       apiData = { content: [] };
     }
 
