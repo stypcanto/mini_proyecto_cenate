@@ -218,11 +218,11 @@ export default function TeleEKGRecibidas() {
   const cargarEKGs = async () => {
     try {
       setLoading(true);
-      // Usar endpoint que retorna lista de imágenes individuales
-      const response = await teleecgService.listar(filtros.estado);
+      // ✅ FIX: Usar endpoint que retorna AGRUPADO por asegurado (1 fila por paciente)
+      const response = await teleecgService.listarAgrupoPorAsegurado(filtros.searchTerm, filtros.estado);
       const ecgData = Array.isArray(response) ? response : [];
       setEcgs(ecgData);
-      console.log("✅ EKGs individuales cargadas:", ecgData.length, "imágenes");
+      console.log("✅ ECGs agrupadas por asegurado cargadas:", ecgData.length, "pacientes");
     } catch (error) {
       console.error("❌ Error al cargar EKGs:", error);
       setEcgs([]);

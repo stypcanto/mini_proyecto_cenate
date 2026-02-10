@@ -149,27 +149,32 @@ const teleecgService = {
     if (apiData.content && Array.isArray(apiData.content)) {
       const flattenedImages = [];
 
-      apiData.content.forEach(item => {
+      console.log("🔍 [_transformarResponse] Procesando", apiData.content.length, "asegurados");
+
+      apiData.content.forEach((item, idx) => {
         if (item && item.imagenes && Array.isArray(item.imagenes)) {
+          console.log(`  Asegurado ${idx}: ${item.num_doc_paciente} tiene ${item.imagenes.length} imágenes`);
           // Este item tiene imagenes anidadas - extraerlas
           item.imagenes.forEach(imagen => {
             flattenedImages.push({
               ...imagen,
               // Heredar datos del asegurado/paciente
-              numDocPaciente: imagen.num_doc_paciente || imagen.numDocPaciente || item.numDocPaciente,
-              nombresPaciente: imagen.nombres_paciente || imagen.nombresPaciente || item.nombresPaciente,
-              apellidosPaciente: imagen.apellidos_paciente || imagen.apellidosPaciente || item.apellidosPaciente,
+              numDocPaciente: imagen.num_doc_paciente || imagen.numDocPaciente || item.num_doc_paciente,
+              nombresPaciente: imagen.nombres_paciente || imagen.nombresPaciente || item.nombres_paciente,
+              apellidosPaciente: imagen.apellidos_paciente || imagen.apellidosPaciente || item.apellidos_paciente,
               generoPaciente: imagen.genero_paciente || imagen.generoPaciente || item.genero_paciente,
               edadPaciente: imagen.edad_paciente || imagen.edadPaciente || item.edad_paciente,
             });
           });
         } else {
+          console.log(`  Asegurado ${idx}: ${item?.num_doc_paciente} sin imágenes anidadas`);
           // Item sin imagenes anidadas - mantenerlo como está
           flattenedImages.push(item);
         }
       });
 
-      // Reemplazar content con imagenes aplanadas si encontramos alguno anidado
+      // Reemplazar content con imagenes aplanadas
+      console.log(`✅ Total imágenes aplanadas: ${flattenedImages.length}`);
       if (flattenedImages.length > 0) {
         apiData.content = flattenedImages;
       }
