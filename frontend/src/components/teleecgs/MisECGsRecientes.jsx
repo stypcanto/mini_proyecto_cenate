@@ -797,21 +797,49 @@ export default function MisECGsRecientes({
                         toast.error('Por favor selecciona un archivo');
                         return;
                       }
+                      if (!cargaEdicion?.dni) {
+                        toast.error('Error: Falta información del paciente');
+                        console.error('❌ cargaEdicion:', cargaEdicion);
+                        return;
+                      }
+
                       setCargandoArchivo(true);
                       try {
-                        await teleecgService.subirImagenECG(
+                        console.log('📤 Iniciando subida de imagen:', {
+                          dni: cargaEdicion.dni,
+                          nombreCompleto: cargaEdicion.nombrePaciente,
+                          archivo: archivoSeleccionado.name
+                        });
+
+                        // Extraer nombres y apellidos de forma segura
+                        const nombreCompleto = cargaEdicion.nombrePaciente || 'Sin nombre';
+                        const partes = nombreCompleto.trim().split(/\s+/);
+                        const nombres = partes[0] || '';
+                        const apellidos = partes.slice(1).join(' ') || '';
+
+                        console.log('✅ Partes del nombre:', { nombres, apellidos });
+
+                        const respuesta = await teleecgService.subirImagenECG(
                           archivoSeleccionado,
                           cargaEdicion.dni,
-                          cargaEdicion.nombrePaciente?.split(' ')[0] || '',
-                          cargaEdicion.nombrePaciente?.split(' ').slice(1).join(' ') || ''
+                          nombres,
+                          apellidos
                         );
+
+                        console.log('✅ Respuesta del servidor:', respuesta);
                         toast.success('✅ Imagen agregada correctamente');
                         setModalMode('view');
                         setArchivoSeleccionado(null);
-                        onRefrescar?.(); // Refrescar datos si existe la función
+
+                        // Esperar un poco antes de refrescar
+                        setTimeout(() => {
+                          onRefrescar?.();
+                        }, 500);
                       } catch (error) {
-                        console.error('Error al subir imagen:', error);
-                        toast.error('❌ Error al subir la imagen: ' + error.message);
+                        console.error('❌ Error completo al subir imagen:', error);
+                        console.error('Mensaje:', error.message);
+                        console.error('Detalles:', error.response?.data || error.response || error);
+                        toast.error('❌ Error al subir: ' + (error.message || error));
                       } finally {
                         setCargandoArchivo(false);
                       }
@@ -863,29 +891,55 @@ export default function MisECGsRecientes({
                         toast.error('Por favor selecciona un archivo');
                         return;
                       }
+                      if (selectedImageIndex === null) {
+                        toast.error('Error: Selecciona una imagen para reemplazar');
+                        return;
+                      }
+
                       setCargandoArchivo(true);
                       try {
-                        // Primero eliminar la imagen existente (obtenemos el ID de imagenesPorDni)
+                        console.log('🔄 Iniciando reemplazo de imagen');
+
+                        // Obtener la imagen actual para eliminar
                         const imagenActual = imagenesPorDni[cargaEdicion.dni]?.[selectedImageIndex];
+                        console.log('Imagen actual a eliminar:', imagenActual);
+
                         if (imagenActual?.idImagen) {
+                          console.log('Eliminando imagen:', imagenActual.idImagen);
                           await teleecgService.eliminarImagen(imagenActual.idImagen);
+                          toast.info('✅ Imagen antigua eliminada');
                         }
 
-                        // Luego subir la nueva imagen
-                        await teleecgService.subirImagenECG(
+                        // Extraer nombres y apellidos de forma segura
+                        const nombreCompleto = cargaEdicion.nombrePaciente || 'Sin nombre';
+                        const partes = nombreCompleto.trim().split(/\s+/);
+                        const nombres = partes[0] || '';
+                        const apellidos = partes.slice(1).join(' ') || '';
+
+                        // Subir la nueva imagen
+                        console.log('Subiendo nueva imagen:', archivoSeleccionado.name);
+                        const respuesta = await teleecgService.subirImagenECG(
                           archivoSeleccionado,
                           cargaEdicion.dni,
-                          cargaEdicion.nombrePaciente?.split(' ')[0] || '',
-                          cargaEdicion.nombrePaciente?.split(' ').slice(1).join(' ') || ''
+                          nombres,
+                          apellidos
                         );
+
+                        console.log('✅ Respuesta del servidor:', respuesta);
                         toast.success('🔄 Imagen reemplazada correctamente');
                         setModalMode('view');
                         setSelectedImageIndex(null);
                         setArchivoSeleccionado(null);
-                        onRefrescar?.(); // Refrescar datos si existe la función
+
+                        // Esperar un poco antes de refrescar
+                        setTimeout(() => {
+                          onRefrescar?.();
+                        }, 500);
                       } catch (error) {
-                        console.error('Error al reemplazar imagen:', error);
-                        toast.error('❌ Error al reemplazar la imagen: ' + error.message);
+                        console.error('❌ Error completo al reemplazar imagen:', error);
+                        console.error('Mensaje:', error.message);
+                        console.error('Detalles:', error.response?.data || error.response || error);
+                        toast.error('❌ Error al reemplazar: ' + (error.message || error));
                       } finally {
                         setCargandoArchivo(false);
                       }
