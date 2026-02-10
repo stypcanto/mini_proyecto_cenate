@@ -49,6 +49,11 @@ function formatECGsForRecientes(ecgs, pacientesCache = {}) {
 
     console.log(`✅ [formatECG] DNI ${dni} - Nombre formateado: ${nombreFormateado}`);
 
+    // 🔧 v1.71.0: Obtener esUrgente de la lista de imágenes (donde sí está disponible)
+    // AseguradoConECGsDTO devuelve imagenes[], cada una tiene esUrgente
+    const imagenesPaciente = porDni[dni] || [];
+    const esUrgente = imagenesPaciente.some(img => img.esUrgente || img.urgente);
+
     return {
       idImagen: img.idImagen || img.id,  // ✅ NECESARIO para cargar imagen
       nombrePaciente: nombreFormateado,
@@ -56,7 +61,7 @@ function formatECGsForRecientes(ecgs, pacientesCache = {}) {
       genero: img.generoPaciente || img.genero || img.sexo || "-",  // ✅ Backend envía 'generoPaciente' (F/M)
       edad: img.edadPaciente || img.edad || img.ageinyears || "-",  // ✅ Backend envía 'edadPaciente' (años)
       telefono: img.telefonoPrincipalPaciente || img.telefono || "-",  // ✅ Teléfono del asegurado desde BD
-      esUrgente: img.esUrgente || img.urgente || false,  // ✅ Indicador de urgencia
+      esUrgente: esUrgente,  // ✅ Indicador de urgencia (SI ALGUNA imagen es urgente)
       cantidadImagenes: porDni[dni]?.length || 0,  // ✅ Contar imágenes del paciente
       // ✅ v1.70.0: Agregar fallback a fechaUltimoEcg (del nuevo DTO paginado)
       fechaEnvio: img.fechaEnvio || img.fechaCarga || img.fechaUltimoEcg || null,  // ✅ Fecha real para mostrar en tabla
