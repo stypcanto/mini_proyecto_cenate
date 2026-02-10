@@ -1,9 +1,6 @@
 package com.styp.cenate.api.atenciones_clinicas;
 
-import com.styp.cenate.dto.AtencionClinica107DTO;
-import com.styp.cenate.dto.AtencionClinica107FiltroDTO;
-import com.styp.cenate.dto.EstadisticasAtencion107DTO;
-import com.styp.cenate.dto.EstadisticasCondicionMedica107DTO;
+import com.styp.cenate.dto.*;
 import com.styp.cenate.service.atenciones_clinicas.AtencionClinica107Service;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -14,6 +11,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -230,6 +228,142 @@ public class AtencionClinica107PublicController {
             log.error("❌ [MODULO 107] Error al obtener detalle: {}", e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(
                 Map.of("error", "Error al procesar", "mensaje", e.getMessage())
+            );
+        }
+    }
+
+    // ========================================================================
+    // 📊 NUEVOS ENDPOINTS DE ESTADÍSTICAS AVANZADAS
+    // ========================================================================
+
+    /**
+     * GET /api/atenciones-clinicas-107/estadisticas-resumen
+     * Obtener estadísticas de resumen general
+     */
+    @GetMapping("/estadisticas-resumen")
+    public ResponseEntity<Map<String, Object>> estadisticasResumen() {
+        try {
+            log.info("📈 [MODULO 107] GET /estadisticas-resumen");
+
+            EstadisticasResumen107DTO stats = service.obtenerEstadisticasResumen();
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("totalAtenciones", stats.getTotalAtenciones());
+            response.put("totalAtendidos", stats.getTotalAtendidos());
+            response.put("totalPendientes", stats.getTotalPendientes());
+            response.put("totalDeserciones", stats.getTotalDeserciones());
+            response.put("tasaCumplimiento", stats.getTasaCumplimiento());
+            response.put("tasaDesercion", stats.getTasaDesercion());
+
+            return ResponseEntity.ok(response);
+
+        } catch (Exception e) {
+            log.error("❌ [MODULO 107] Error al obtener estadísticas resumen: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(
+                Map.of("error", "Error al obtener estadísticas resumen", "mensaje", e.getMessage())
+            );
+        }
+    }
+
+    /**
+     * GET /api/atenciones-clinicas-107/estadisticas-mensuales
+     * Obtener estadísticas agrupadas por mes/año
+     */
+    @GetMapping("/estadisticas-mensuales")
+    public ResponseEntity<Map<String, Object>> estadisticasMensuales() {
+        try {
+            log.info("📅 [MODULO 107] GET /estadisticas-mensuales");
+
+            List<EstadisticasMensuales107DTO> stats = service.obtenerEstadisticasMensuales();
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("estadisticas", stats);
+            response.put("total", stats.size());
+
+            return ResponseEntity.ok(response);
+
+        } catch (Exception e) {
+            log.error("❌ [MODULO 107] Error al obtener estadísticas mensuales: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(
+                Map.of("error", "Error al obtener estadísticas mensuales", "mensaje", e.getMessage())
+            );
+        }
+    }
+
+    /**
+     * GET /api/atenciones-clinicas-107/estadisticas-ipress
+     * Obtener estadísticas por IPRESS (Top N)
+     * 
+     * @param limit Número máximo de resultados (opcional, default: 10)
+     */
+    @GetMapping("/estadisticas-ipress")
+    public ResponseEntity<Map<String, Object>> estadisticasIpress(@RequestParam(defaultValue = "10") Integer limit) {
+        try {
+            log.info("🏥 [MODULO 107] GET /estadisticas-ipress?limit={}", limit);
+
+            List<EstadisticasIpress107DTO> stats = service.obtenerEstadisticasIpress(limit);
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("estadisticas", stats);
+            response.put("limite", limit);
+            response.put("total", stats.size());
+
+            return ResponseEntity.ok(response);
+
+        } catch (Exception e) {
+            log.error("❌ [MODULO 107] Error al obtener estadísticas IPRESS: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(
+                Map.of("error", "Error al obtener estadísticas IPRESS", "mensaje", e.getMessage())
+            );
+        }
+    }
+
+    /**
+     * GET /api/atenciones-clinicas-107/estadisticas-especialidad
+     * Obtener estadísticas por especialidad (derivación interna)
+     */
+    @GetMapping("/estadisticas-especialidad")
+    public ResponseEntity<Map<String, Object>> estadisticasEspecialidad() {
+        try {
+            log.info("🩺 [MODULO 107] GET /estadisticas-especialidad");
+
+            List<EstadisticasEspecialidad107DTO> stats = service.obtenerEstadisticasEspecialidad();
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("estadisticas", stats);
+            response.put("total", stats.size());
+
+            return ResponseEntity.ok(response);
+
+        } catch (Exception e) {
+            log.error("❌ [MODULO 107] Error al obtener estadísticas especialidad: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(
+                Map.of("error", "Error al obtener estadísticas especialidad", "mensaje", e.getMessage())
+            );
+        }
+    }
+
+    /**
+     * GET /api/atenciones-clinicas-107/estadisticas-tipo-cita
+     * Obtener estadísticas por tipo de cita
+     */
+    @GetMapping("/estadisticas-tipo-cita")
+    public ResponseEntity<Map<String, Object>> estadisticasTipoCita() {
+        try {
+            log.info("📞 [MODULO 107] GET /estadisticas-tipo-cita");
+
+            List<EstadisticasTipoCita107DTO> stats = service.obtenerEstadisticasTipoCita();
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("estadisticas", stats);
+            response.put("total", stats.size());
+
+            return ResponseEntity.ok(response);
+
+        } catch (Exception e) {
+            log.error("❌ [MODULO 107] Error al obtener estadísticas tipo cita: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(
+                Map.of("error", "Error al obtener estadísticas tipo cita", "mensaje", e.getMessage())
             );
         }
     }

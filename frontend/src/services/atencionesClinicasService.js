@@ -239,5 +239,75 @@ export const atencionesClinicasService = {
       console.error(`Error al obtener comparativo de signos vitales para atención ${idAtencion}:`, error);
       throw error;
     }
+  },
+
+  // ========================================================================
+  // 📊 NUEVOS MÉTODOS DE ESTADÍSTICAS AVANZADAS
+  // ========================================================================
+
+  /**
+   * 📈 Obtener estadísticas de resumen general
+   */
+  obtenerEstadisticasResumen: async () => {
+    try {
+      const data = await api.get(`${BASE_URL}/estadisticas-resumen`);
+      return data;
+    } catch (error) {
+      console.error('Error al obtener estadísticas de resumen:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * 📅 Obtener estadísticas mensuales
+   */
+  obtenerEstadisticasMensuales: async () => {
+    try {
+      const data = await api.get(`${BASE_URL}/estadisticas-mensuales`);
+      return data;
+    } catch (error) {
+      console.error('Error al obtener estadísticas mensuales:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * 🏥 Obtener estadísticas por IPRESS (Top N)
+   * @param {number} limit - Número máximo de resultados (opcional, default: 10)
+   */
+  obtenerEstadisticasIpress: async (limit = 10) => {
+    try {
+      const data = await api.get(`${BASE_URL}/estadisticas-ipress?limit=${limit}`);
+      return data;
+    } catch (error) {
+      console.error('Error al obtener estadísticas IPRESS:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * 🩺 Obtener estadísticas por especialidad
+   */
+  obtenerEstadisticasEspecialidad: async () => {
+    try {
+      const data = await api.get(`${BASE_URL}/estadisticas-especialidad`);
+      return data;
+    } catch (error) {
+      console.error('Error al obtener estadísticas especialidad:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * 📞 Obtener estadísticas por tipo de cita
+   */
+  obtenerEstadisticasTipoCita: async () => {
+    try {
+      const data = await api.get(`${BASE_URL}/estadisticas-tipo-cita`);
+      return data;
+    } catch (error) {
+      console.error('Error al obtener estadísticas tipo cita:', error);
+      throw error;
+    }
   }
 };

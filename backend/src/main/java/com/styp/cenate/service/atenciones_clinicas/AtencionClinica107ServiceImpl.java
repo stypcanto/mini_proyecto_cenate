@@ -1,9 +1,6 @@
 package com.styp.cenate.service.atenciones_clinicas;
 
-import com.styp.cenate.dto.AtencionClinica107DTO;
-import com.styp.cenate.dto.AtencionClinica107FiltroDTO;
-import com.styp.cenate.dto.EstadisticasAtencion107DTO;
-import com.styp.cenate.dto.EstadisticasCondicionMedica107DTO;
+import com.styp.cenate.dto.*;
 import com.styp.cenate.model.AtencionClinica107;
 import com.styp.cenate.model.EstadoGestionCita;
 import com.styp.cenate.repository.AtencionClinica107Repository;
@@ -18,7 +15,10 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * 💼 AtencionClinica107ServiceImpl
@@ -300,5 +300,179 @@ public class AtencionClinica107ServiceImpl implements AtencionClinica107Service 
             .condicionMedica(atencion.getCondicionMedica() != null && !atencion.getCondicionMedica().trim().isEmpty() 
                 ? atencion.getCondicionMedica() : "Pendiente") // 🆕 Condición médica con NULL como Pendiente
             .build();
+    }
+
+    // ========================================================================
+    // 📊 IMPLEMENTACIÓN MÉTODOS ESTADÍSTICAS AVANZADAS
+    // ========================================================================
+
+    /**
+     * 📈 Obtener estadísticas de resumen general
+     */
+    @Override
+    public EstadisticasResumen107DTO obtenerEstadisticasResumen() {
+        try {
+            log.info("📊 [ESTADISTICAS 107] Obteniendo estadísticas de resumen");
+
+            // Total de atenciones
+            Long totalAtenciones = repository.countByIdBolsa(1L);
+            
+            // Total por condición médica
+            Long totalAtendidos = repository.countByCondicionMedicaAndIdBolsa("Atendido", 1L);
+            Long totalDeserciones = repository.countByCondicionMedicaAndIdBolsa("Deserción", 1L);
+            
+            // Calcular pendientes (NULL o 'Pendiente')
+            Long totalPendientes = repository.countByCondicionMedicaNullOrValueAndIdBolsa("Pendiente", 1L);
+
+            // Calcular tasas
+            Double tasaCumplimiento = totalAtenciones > 0 ? (totalAtendidos * 100.0 / totalAtenciones) : 0.0;
+            Double tasaDesercion = totalAtenciones > 0 ? (totalDeserciones * 100.0 / totalAtenciones) : 0.0;
+
+            return EstadisticasResumen107DTO.builder()
+                .totalAtenciones(totalAtenciones)
+                .totalAtendidos(totalAtendidos)
+                .totalPendientes(totalPendientes)
+                .totalDeserciones(totalDeserciones)
+                .tasaCumplimiento(Math.round(tasaCumplimiento * 100.0) / 100.0) // 2 decimales
+                .tasaDesercion(Math.round(tasaDesercion * 100.0) / 100.0)
+                .build();
+
+        } catch (Exception e) {
+            log.error("❌ [ESTADISTICAS 107] Error al obtener estadísticas de resumen: {}", e.getMessage(), e);
+            throw new RuntimeException("Error al obtener estadísticas de resumen", e);
+        }
+    }
+
+    /**
+     * 📅 Obtener estadísticas por mes/año
+     */
+    @Override
+    public List<EstadisticasMensuales107DTO> obtenerEstadisticasMensuales() {
+        try {
+            log.info("📅 [ESTADISTICAS 107] Obteniendo estadísticas mensuales");
+            
+            return repository.findEstadisticasMensuales()
+                .stream()
+                .map(result -> {
+                    // ✅ FIX: Usar Number para compatibilidad con Long/BigDecimal/Integer
+                    Integer mes = ((Number) result[0]).intValue();
+                    Integer anio = ((Number) result[1]).intValue(); 
+                    Long totalAtenciones = ((Number) result[2]).longValue();
+                    String periodo = (String) result[3];
+                    
+                    return EstadisticasMensuales107DTO.builder()
+                        .mes(mes)
+                        .anio(anio)
+                        .totalAtenciones(totalAtenciones)
+                        .periodo(periodo)
+                        .build();
+                })
+                .collect(Collectors.toList());
+
+        } catch (Exception e) {
+            log.error("❌ [ESTADISTICAS 107] Error al obtener estadísticas mensuales: {}", e.getMessage(), e);
+            throw new RuntimeException("Error al obtener estadísticas mensuales", e);
+        }
+    }
+
+    /**
+     * 🏥 Obtener estadísticas por IPRESS
+     */
+    @Override
+    public List<EstadisticasIpress107DTO> obtenerEstadisticasIpress(Integer limit) {
+        try {
+            int limiteFinal = (limit != null && limit > 0) ? limit : 10;
+            log.info("🏥 [ESTADISTICAS 107] Obteniendo top {} IPRESS", limiteFinal);
+            
+            return repository.findEstadisticasIpressTopN(limiteFinal)
+                .stream()
+                .map(result -> {
+                    // ✅ FIX: Manejo correcto de tipos desde consulta nativa
+                    Long idIpress = result[0] != null ? ((Number) result[0]).longValue() : null;
+                    String nombreIpress = (String) result[1];
+                    String codigoIpress = (String) result[2];
+                    String red = (String) result[3];
+                    String macroregion = (String) result[4];
+                    Long totalAtenciones = ((Number) result[5]).longValue();
+                    
+                    return EstadisticasIpress107DTO.builder()
+                        .idIpress(idIpress)
+                        .nombreIpress(nombreIpress)
+                        .codigoIpress(codigoIpress)
+                        .red(red)
+                        .macroregion(macroregion)
+                        .totalAtenciones(totalAtenciones)
+                        .build();
+                })
+                .collect(Collectors.toList());
+
+        } catch (Exception e) {
+            log.error("❌ [ESTADISTICAS 107] Error al obtener estadísticas IPRESS: {}", e.getMessage(), e);
+            throw new RuntimeException("Error al obtener estadísticas IPRESS", e);
+        }
+    }
+
+    /**
+     * 🩺 Obtener estadísticas por especialidad (derivación interna)
+     */
+    @Override
+    public List<EstadisticasEspecialidad107DTO> obtenerEstadisticasEspecialidad() {
+        try {
+            log.info("🩺 [ESTADISTICAS 107] Obteniendo estadísticas por especialidad");
+            
+            Long totalGeneral = repository.countByIdBolsa(1L);
+            
+            return repository.findEstadisticasEspecialidad()
+                .stream()
+                .map(result -> {
+                    String derivacionInterna = (String) result[0];
+                    Long totalAtenciones = ((Number) result[1]).longValue();
+                    
+                    Double porcentaje = totalGeneral > 0 ? (totalAtenciones * 100.0 / totalGeneral) : 0.0;
+                    
+                    return EstadisticasEspecialidad107DTO.builder()
+                        .derivacionInterna(derivacionInterna)
+                        .totalAtenciones(totalAtenciones)
+                        .porcentaje(Math.round(porcentaje * 100.0) / 100.0) // 2 decimales
+                        .build();
+                })
+                .collect(Collectors.toList());
+
+        } catch (Exception e) {
+            log.error("❌ [ESTADISTICAS 107] Error al obtener estadísticas especialidad: {}", e.getMessage(), e);
+            throw new RuntimeException("Error al obtener estadísticas especialidad", e);
+        }
+    }
+
+    /**
+     * 📞 Obtener estadísticas por tipo de cita
+     */
+    @Override
+    public List<EstadisticasTipoCita107DTO> obtenerEstadisticasTipoCita() {
+        try {
+            log.info("📞 [ESTADISTICAS 107] Obteniendo estadísticas por tipo de cita");
+            
+            Long totalGeneral = repository.countByIdBolsa(1L);
+            
+            return repository.findEstadisticasTipoCita()
+                .stream()
+                .map(result -> {
+                    String tipoCita = (String) result[0];
+                    Long totalAtenciones = ((Number) result[1]).longValue();
+                    
+                    Double porcentaje = totalGeneral > 0 ? (totalAtenciones * 100.0 / totalGeneral) : 0.0;
+                    
+                    return EstadisticasTipoCita107DTO.builder()
+                        .tipoCita(tipoCita)
+                        .totalAtenciones(totalAtenciones)
+                        .porcentaje(Math.round(porcentaje * 100.0) / 100.0) // 2 decimales
+                        .build();
+                })
+                .collect(Collectors.toList());
+
+        } catch (Exception e) {
+            log.error("❌ [ESTADISTICAS 107] Error al obtener estadísticas tipo cita: {}", e.getMessage(), e);
+            throw new RuntimeException("Error al obtener estadísticas tipo cita", e);
+        }
     }
 }

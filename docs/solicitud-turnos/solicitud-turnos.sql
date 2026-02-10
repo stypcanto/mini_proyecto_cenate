@@ -160,23 +160,104 @@ truncate table solicitud_turno_ipress_teleconsultorio_turno;
 
 
 
+select * from gestion_paciente;
+select * from dim_solicitud_bolsa where id_bolsa =1;
+select count(*) from dim_solicitud_bolsa where id_bolsa =1;
 
 
 
+select * from dim_ipress di ;
+select * from dim_red;
+select * from dim_macroregion dm ;
+
+
+-- =========================================================
+-- CONSULTAS ESTADÍSTICAS - ATENCIONES CLÍNICAS
+-- =========================================================
+
+-- 1. Total de atenciones realizadas (filtrado por estado ATENDIDO)
+SELECT 
+    COUNT(id_solicitud) AS total_atenciones_realizadas
+FROM dim_solicitud_bolsa 
+WHERE condicion_medica = 'Atendido'
+    AND id_bolsa = 1;
+
+-- 2. Atenciones por mes
+SELECT 
+    EXTRACT(MONTH FROM fecha_atencion) AS mes,
+    EXTRACT(YEAR FROM fecha_atencion) AS anio,
+    COUNT(id_solicitud) AS total_atenciones,
+    TO_CHAR(fecha_atencion, 'Month YYYY') AS periodo
+FROM dim_solicitud_bolsa 
+WHERE fecha_atencion IS NOT NULL
+    AND id_bolsa = 1
+GROUP BY EXTRACT(MONTH FROM fecha_atencion), EXTRACT(YEAR FROM fecha_atencion), TO_CHAR(fecha_atencion, 'Month YYYY')
+ORDER BY anio, mes;
+
+-- 3. Atenciones por IPRESS (con información adicional de la IPRESS)
+SELECT 
+    dsb.id_ipress,
+    di.desc_ipress AS nombre_ipress,
+    di.cod_ipress AS codigo_ipress,
+    COUNT(dsb.id_solicitud) AS total_atenciones
+FROM dim_solicitud_bolsa dsb
+LEFT JOIN dim_ipress di ON dsb.id_ipress = di.id_ipress
+WHERE dsb.id_bolsa = 1
+GROUP BY dsb.id_ipress, di.desc_ipress, di.cod_ipress
+ORDER BY total_atenciones DESC;
+
+-- 4. Atenciones por especialidad (servicio)
+SELECT 
+    derivacion_interna,
+    COUNT(id_solicitud) AS total_atenciones
+FROM dim_solicitud_bolsa 
+WHERE id_bolsa = 1
+    AND especialidad IS NOT NULL
+GROUP BY derivacion_interna
+ORDER BY total_atenciones DESC;
+
+-- 5. Atenciones por tipo de cita
+SELECT 
+    tipo_cita,
+    COUNT(id_solicitud) AS total_atenciones,
+    ROUND((COUNT(id_solicitud) * 100.0 / SUM(COUNT(id_solicitud)) OVER()), 2) AS porcentaje
+FROM dim_solicitud_bolsa 
+WHERE id_bolsa = 1
+    AND tipo_cita IS NOT NULL
+GROUP BY tipo_cita
+ORDER BY total_atenciones DESC;
+
+-- =========================================================
+-- CONSULTAS ADICIONALES PARA ANÁLISIS COMPLETO
+-- =========================================================
+
+-- 6. Estadísticas por estado de atención
+SELECT 
+    condicion_medica,
+    COUNT(id_solicitud) AS total,
+    ROUND((COUNT(id_solicitud) * 100.0 / SUM(COUNT(id_solicitud)) OVER()), 2) AS porcentaje
+FROM dim_solicitud_bolsa 
+WHERE id_bolsa = 1
+GROUP BY condicion_medica
+ORDER BY total DESC;
 
 
 
-
-
-
-
-
-
-
-
-
-
-
+-- 8. Top 10 IPRESS con más atenciones
+SELECT 
+    dsb.id_ipress,
+    di.desc_ipress,
+    dr.desc_red AS red,
+    dm.desc_macro AS macroregion,
+    COUNT(dsb.id_solicitud) AS total_atenciones
+FROM dim_solicitud_bolsa dsb
+LEFT JOIN dim_ipress di ON dsb.id_ipress = di.id_ipress
+LEFT JOIN dim_red dr ON di.id_red = dr.id_red
+LEFT JOIN dim_macroregion dm ON dr.id_macro = dm.id_macro
+WHERE dsb.id_bolsa = 1
+GROUP BY dsb.id_ipress, di.desc_ipress, dr.desc_red, dm.desc_macro
+ORDER BY total_atenciones DESC
+LIMIT 10;
 
 
 
