@@ -225,6 +225,13 @@ export default function TeleEKGRecibidas() {
       const ecgData = Array.isArray(response) ? response : [];
       setEcgs(ecgData);
       console.log("✅ ECGs agrupadas por asegurado cargadas:", ecgData.length, "pacientes");
+
+      // ✅ FIX: Extraer opciones IPRESS después de cargar los datos
+      if (ecgData.length > 0) {
+        const ipressUniques = [...new Set(ecgData.map((e) => e.nombre_ipress || e.nombreIpress))].filter(Boolean);
+        setIpressOptions(ipressUniques);
+        console.log("✅ IPRESS Options extraidas:", ipressUniques.length, "opciones");
+      }
     } catch (error) {
       console.error("❌ Error al cargar EKGs:", error);
       setEcgs([]);
@@ -319,14 +326,15 @@ export default function TeleEKGRecibidas() {
   /**
    * Extraer opciones IPRESS únicas de los EKGs
    */
-  const extraerIpressOptions = () => {
-    setTimeout(() => {
-      const ipressUniques = [...new Set(ecgs.map((e) => e.nombreIpress))].filter(
+  const extraerIpressOptions = useCallback(() => {
+    if (ecgs && ecgs.length > 0) {
+      const ipressUniques = [...new Set(ecgs.map((e) => e.nombre_ipress || e.nombreIpress))].filter(
         Boolean
       );
       setIpressOptions(ipressUniques);
-    }, 100);
-  };
+      console.log("✅ IPRESS Options extraidas:", ipressUniques.length, "opciones");
+    }
+  }, [ecgs]);
 
   /**
    * Refrescar todos los datos
@@ -828,30 +836,30 @@ export default function TeleEKGRecibidas() {
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full border-collapse">
-                <thead className="bg-slate-50 border-b border-slate-200">
+                <thead className="bg-gradient-to-r from-slate-950 via-slate-900 to-slate-800 border-b border-slate-700">
                   <tr>
-                    <th className="px-4 py-3 text-left text-sm font-semibold text-slate-700">
+                    <th className="px-4 py-3 text-left text-sm font-semibold text-white">
                       DNI
                     </th>
-                    <th className="px-4 py-3 text-left text-sm font-semibold text-slate-700">
+                    <th className="px-4 py-3 text-left text-sm font-semibold text-white">
                       Paciente
                     </th>
-                    <th className="px-4 py-3 text-left text-sm font-semibold text-slate-700">
+                    <th className="px-4 py-3 text-left text-sm font-semibold text-white">
                       IPRESS
                     </th>
-                    <th className="px-4 py-3 text-left text-sm font-semibold text-slate-700">
+                    <th className="px-4 py-3 text-left text-sm font-semibold text-white">
                       Fecha Envío
                     </th>
-                    <th className="px-4 py-3 text-left text-sm font-semibold text-slate-700">
+                    <th className="px-4 py-3 text-left text-sm font-semibold text-white">
                       Tamaño
                     </th>
-                    <th className="px-4 py-3 text-left text-sm font-semibold text-slate-700">
+                    <th className="px-4 py-3 text-left text-sm font-semibold text-white">
                       Estado
                     </th>
-                    <th className="px-4 py-3 text-left text-sm font-semibold text-slate-700">
+                    <th className="px-4 py-3 text-left text-sm font-semibold text-white">
                       Evaluación
                     </th>
-                    <th className="px-4 py-3 text-center text-sm font-semibold text-slate-700">
+                    <th className="px-4 py-3 text-center text-sm font-semibold text-white">
                       Acciones
                     </th>
                   </tr>
