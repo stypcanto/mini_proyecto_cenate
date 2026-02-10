@@ -15,6 +15,7 @@ import {
   Edit,
   Zap,
   Bell,
+  Eye,
 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import teleecgService from "../../services/teleecgService";
@@ -51,10 +52,11 @@ export default function TeleEKGRecibidas() {
 
   // Estadísticas consolidadas (v3.0.0: CENATE view con nuevos estados)
   const [stats, setStats] = useState({
-    total: 0,
-    pendientes: 0,      // PENDIENTE = ENVIADA en BD
-    observadas: 0,       // OBSERVADA = con observaciones
-    atendidas: 0,        // ATENDIDA = completadas
+    total: 0,                    // Total de imágenes
+    pacientesPendientes: 0,      // Cantidad de pacientes únicos con imágenes pendientes
+    pendientes: 0,               // PENDIENTE = ENVIADA en BD
+    observadas: 0,               // OBSERVADA = con observaciones
+    atendidas: 0,                // ATENDIDA = completadas
   });
 
   // Filtros (inicializar con DNI desde URL si existe)
@@ -246,14 +248,24 @@ export default function TeleEKGRecibidas() {
       const statsData = response?.data || response || {};
 
       // 🔍 El DTO serializa con @JsonProperty en snake_case
+      // Contar pacientes únicos con imágenes pendientes desde ecgs cargados
+      const pacientesConPendientes = new Set();
+      ecgs.forEach((asegurado) => {
+        if (asegurado.ecgs_pendientes && asegurado.ecgs_pendientes > 0) {
+          pacientesConPendientes.add(asegurado.num_doc_paciente);
+        }
+      });
+
       setStats({
         total: statsData.total_imagenes_cargadas || statsData.totalImagenesCargadas || statsData.total || 0,
+        pacientesPendientes: pacientesConPendientes.size,  // Cantidad de pacientes únicos con pendientes
         pendientes: statsData.total_imagenes_pendientes || statsData.totalImagenesPendientes || statsData.totalPendientes || 0,
         observadas: statsData.total_imagenes_rechazadas || statsData.totalImagenesRechazadas || statsData.totalObservadas || 0,
         atendidas: statsData.total_imagenes_procesadas || statsData.totalImagenesProcesadas || statsData.totalAtendidas || 0,
       });
 
       console.log("✅ Estadísticas globales (TODAS las imágenes):", statsData);
+      console.log(`✅ Pacientes con pendientes: ${pacientesConPendientes.size}`);
     } catch (error) {
       console.error("❌ Error al cargar estadísticas globales:", error);
       // Fallback: calcular desde datos cargados si falla API
@@ -263,32 +275,37 @@ export default function TeleEKGRecibidas() {
 
   /**
    * Calcular estadísticas desde EKGs cargados (fallback si API falla)
-   * Cuenta IMÁGENES INDIVIDUALES, no PACIENTES
+   * Cuenta IMÁGENES INDIVIDUALES y PACIENTES ÚNICOS
    */
   const calcularEstadisticasDesdeEKGs = () => {
     let totalEKGs = 0;
     let pendientes = 0;
     let observadas = 0;
     let atendidas = 0;
+    const pacientesConPendientes = new Set();
 
-    // Contar cada IMAGEN individual según su estado
-    ecgs.forEach((imagen) => {
-      totalEKGs++;
-
-      const estado = imagen.estado || imagen.stat_imagen;
-
-      // Mapear estados a categorías
-      if (estado === "ENVIADA" || estado === "PENDIENTE") {
-        pendientes++;
-      } else if (estado === "OBSERVADA") {
-        observadas++;
-      } else if (estado === "ATENDIDA") {
-        atendidas++;
+    // Contar cada PACIENTE y sus IMÁGENES según su estado
+    ecgs.forEach((asegurado) => {
+      // Contar imágenes pendientes por paciente
+      if (asegurado.ecgs_pendientes && asegurado.ecgs_pendientes > 0) {
+        pacientesConPendientes.add(asegurado.num_doc_paciente);
+        pendientes += asegurado.ecgs_pendientes;
       }
+
+      if (asegurado.ecgs_observadas) {
+        observadas += asegurado.ecgs_observadas;
+      }
+
+      if (asegurado.ecgs_atendidas) {
+        atendidas += asegurado.ecgs_atendidas;
+      }
+
+      totalEKGs += (asegurado.total_ecgs || asegurado.ecgs_pendientes + asegurado.ecgs_observadas + asegurado.ecgs_atendidas);
     });
 
     const nuevasStats = {
       total: totalEKGs,
+      pacientesPendientes: pacientesConPendientes.size,
       pendientes: pendientes,
       observadas: observadas,
       atendidas: atendidas,
@@ -296,6 +313,7 @@ export default function TeleEKGRecibidas() {
 
     setStats(nuevasStats);
     console.log("✅ Estadísticas calculadas desde IMÁGENES (fallback):", nuevasStats);
+    console.log(`✅ Pacientes con pendientes: ${pacientesConPendientes.size}`);
   };
 
   /**
@@ -570,53 +588,107 @@ export default function TeleEKGRecibidas() {
         {/* ✅ Breadcrumb de navegación */}
         <TeleEKGBreadcrumb />
 
-        {/* 📊 Tarjetas de Estadísticas */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-          <div className="bg-white rounded-lg shadow-md p-6 border-l-4 border-blue-600">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-gray-600 text-sm font-medium">Total EKGs</p>
-                <p className="text-2xl font-bold text-gray-800">
-                  {stats.total}
-                </p>
-              </div>
-              <Activity className="w-10 h-10 text-blue-600 opacity-20" />
-            </div>
-          </div>
+        {/* 📊 Tarjetas de Estadísticas - Estilo MisECGsRecientes con gradientes */}
+        <div className="mb-8">
+          <h2 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
+            <Activity className="w-5 h-5" />
+            Resumen de Pendientes
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            {/* Imágenes EKG a analizar - Verde SATURADO */}
+            <div className="relative overflow-hidden rounded-lg bg-gradient-to-br from-emerald-500 to-emerald-600 border border-emerald-600 p-3 md:p-4 shadow-md hover:shadow-xl transition-all duration-300 hover:scale-105">
+              <div className="flex items-start gap-3">
+                <div className="flex-1">
+                  {/* Icono */}
+                  <div className="mb-2">
+                    <Activity className="w-6 h-6 text-white" />
+                  </div>
 
-          <div className="bg-white rounded-lg shadow-md p-6 border-l-4 border-yellow-500">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-gray-600 text-sm font-medium">Pendientes</p>
-                <p className="text-2xl font-bold text-yellow-600">
-                  {stats.pendientes}
-                </p>
-              </div>
-              <Clock className="w-10 h-10 text-yellow-500 opacity-20" />
-            </div>
-          </div>
+                  {/* Número */}
+                  <div className="mb-1">
+                    <span className="text-2xl md:text-3xl font-bold text-white">
+                      {stats.total}
+                    </span>
+                  </div>
 
-          <div className="bg-white rounded-lg shadow-md p-6 border-l-4 border-purple-600">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-gray-600 text-sm font-medium">Observadas</p>
-                <p className="text-2xl font-bold text-purple-600">
-                  {stats.observadas}
-                </p>
+                  {/* Etiqueta */}
+                  <span className="text-xs md:text-sm font-semibold text-white/90">
+                    Imágenes EKG a analizar
+                  </span>
+                </div>
               </div>
-              <AlertCircle className="w-10 h-10 text-purple-600 opacity-20" />
             </div>
-          </div>
 
-          <div className="bg-white rounded-lg shadow-md p-6 border-l-4 border-green-600">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-gray-600 text-sm font-medium">Atendidas</p>
-                <p className="text-2xl font-bold text-green-600">
-                  {stats.atendidas}
-                </p>
+            {/* Pacientes pendientes - Gris Oscuro/Negro SATURADO */}
+            <div className="relative overflow-hidden rounded-lg bg-gradient-to-br from-slate-700 to-slate-800 border border-slate-800 p-3 md:p-4 shadow-md hover:shadow-xl transition-all duration-300 hover:scale-105">
+              <div className="flex items-start gap-3">
+                <div className="flex-1">
+                  {/* Icono */}
+                  <div className="mb-2">
+                    <Eye className="w-6 h-6 text-white" />
+                  </div>
+
+                  {/* Número */}
+                  <div className="mb-1.5">
+                    <span className="text-3xl font-bold text-white">
+                      {stats.pacientesPendientes}
+                    </span>
+                  </div>
+
+                  {/* Etiqueta */}
+                  <span className="text-xs font-semibold text-white/90">
+                    Pacientes pendientes
+                  </span>
+                </div>
               </div>
-              <CheckCircle className="w-10 h-10 text-green-600 opacity-20" />
+            </div>
+
+            {/* Observadas - Ámbar SATURADO */}
+            <div className="relative overflow-hidden rounded-lg bg-gradient-to-br from-orange-500 to-orange-600 border border-orange-600 p-3 md:p-4 shadow-md hover:shadow-xl transition-all duration-300 hover:scale-105">
+              <div className="flex items-start gap-3">
+                <div className="flex-1">
+                  {/* Icono */}
+                  <div className="mb-2">
+                    <AlertCircle className="w-6 h-6 text-white" />
+                  </div>
+
+                  {/* Número */}
+                  <div className="mb-1">
+                    <span className="text-2xl md:text-3xl font-bold text-white">
+                      {stats.observadas}
+                    </span>
+                  </div>
+
+                  {/* Etiqueta */}
+                  <span className="text-xs md:text-sm font-semibold text-white/90">
+                    Observadas
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Atendidas - Verde Teal SATURADO */}
+            <div className="relative overflow-hidden rounded-lg bg-gradient-to-br from-teal-500 to-teal-600 border border-teal-600 p-3 md:p-4 shadow-md hover:shadow-xl transition-all duration-300 hover:scale-105">
+              <div className="flex items-start gap-3">
+                <div className="flex-1">
+                  {/* Icono */}
+                  <div className="mb-2">
+                    <CheckCircle className="w-6 h-6 text-white" />
+                  </div>
+
+                  {/* Número */}
+                  <div className="mb-1">
+                    <span className="text-2xl md:text-3xl font-bold text-white">
+                      {stats.atendidas}
+                    </span>
+                  </div>
+
+                  {/* Etiqueta */}
+                  <span className="text-xs md:text-sm font-semibold text-white/90">
+                    Atendidas
+                  </span>
+                </div>
+              </div>
             </div>
           </div>
         </div>
