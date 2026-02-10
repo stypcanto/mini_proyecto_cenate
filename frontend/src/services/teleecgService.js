@@ -217,6 +217,7 @@ const teleecgService = {
           sizeBytes: ecg.size_bytes || ecg.sizeBytes,
           estado: ecg.estado,
           fechaEnvio,
+          fechaToma: ecg.fecha_toma || ecg.fechaToma,  // ✅ v1.76.0: Mapear fechaToma
           fechaRecepcion: ecg.fecha_recepcion || ecg.fechaRecepcion,
           fechaExpiracion: ecg.fecha_expiracion || ecg.fechaExpiracion,
           storageTipo: ecg.storage_tipo || ecg.storageTipo,
