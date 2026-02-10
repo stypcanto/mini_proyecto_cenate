@@ -20,7 +20,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -357,26 +359,32 @@ public class TeleECGController {
      * ✅ v1.52.4: Removido @CheckMBACPermission - lectura permitida para usuarios autenticados
      */
     @GetMapping("")
-    @Operation(summary = "Listar ECGs agrupadas por asegurado (consolidado)")
-    public ResponseEntity<List<AseguradoConECGsDTO>> listarECGsConsolidadas(
-            @Parameter(description = "Estado (TODOS, ENVIADA, OBSERVADA, ATENDIDA)") @RequestParam(required = false, defaultValue = "TODOS") String estado) {
+    @Operation(summary = "Listar ECGs agrupadas por asegurado (consolidado, paginado)")
+    public ResponseEntity<Page<AseguradoConECGsDTO>> listarECGsConsolidadas(
+            @Parameter(description = "Estado (TODOS, ENVIADA, OBSERVADA, ATENDIDA)") @RequestParam(required = false, defaultValue = "TODOS") String estado,
+            @Parameter(description = "Página (0-indexed)") @RequestParam(required = false, defaultValue = "0") int page,
+            @Parameter(description = "Tamaño de página") @RequestParam(required = false, defaultValue = "15") int size) {
 
-        log.info("🚀 Listando ECGs CONSOLIDADAS por asegurado - Estado: {}", estado);
+        log.info("🚀 Listando ECGs CONSOLIDADAS por asegurado - Estado: {}, Página: {}, Tamaño: {}", estado, page, size);
 
         try {
             String estadoFinal = "TODOS".equals(estado) ? null : estado;
 
-            // Usar listarAgrupaPorAsegurado que devuelve datos consolidados
-            List<AseguradoConECGsDTO> resultado = teleECGService.listarAgrupaPorAsegurado(
-                null, estadoFinal, null, null, null
+            // ✅ v1.70.0: Usar Pageable para controlar paginación
+            Pageable pageable = PageRequest.of(page, size, Sort.by("fechaEnvio").descending());
+
+            // Usar listarAgrupaPorAsegurado que devuelve datos consolidados paginados
+            Page<AseguradoConECGsDTO> resultado = teleECGService.listarAgrupaPorAsegurado(
+                null, estadoFinal, null, null, null, pageable
             );
 
-            log.info("✅ Se encontraron {} asegurados con ECGs consolidadas", resultado.size());
+            log.info("✅ Se encontraron {} asegurados con ECGs consolidadas (página {}/{})",
+                resultado.getContent().size(), page, resultado.getTotalPages());
 
             return ResponseEntity.ok(resultado);
         } catch (Exception e) {
             log.error("❌ Error listando ECGs consolidadas:", e);
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(List.of());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new PageImpl<>(List.of()));
         }
     }
 
@@ -405,7 +413,10 @@ public class TeleECGController {
         log.info("📋 Listando ECGs agrupadas por asegurado - DNI: {}, Estado: {}", numDoc, estado);
 
         try {
-            List<AseguradoConECGsDTO> resultado = teleECGService.listarAgrupaPorAsegurado(
+            // ⚠️ DEPRECATED: Este endpoint no tiene paginación
+            // Usar GET /api/teleekgs?page=0&size=15 para versión paginada
+            // Limitando a 1000 registros para no sobrecargar
+            List<AseguradoConECGsDTO> resultado = teleECGService.listarAgrupaPorAseguradoLimitado(
                 numDoc, estado, null, null, null
             );
 

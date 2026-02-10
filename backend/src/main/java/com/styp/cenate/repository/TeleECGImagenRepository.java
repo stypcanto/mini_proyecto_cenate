@@ -333,9 +333,10 @@ public interface TeleECGImagenRepository extends JpaRepository<TeleECGImagen, Lo
     List<Object[]> getEstadisticasCompletas();
 
     /**
-     * Búsqueda flexible sin paginación (v1.21.5)
-     * Retorna todas las imágenes que coincidan con los filtros
-     * Usado para agrupar ECGs por asegurado sin límite de resultados
+     * Búsqueda flexible con paginación (v1.70.0 - OPTIMIZED)
+     * ✅ FIXED: Ahora soporta paginación para evitar cargar todas las imágenes en memoria
+     * Retorna imágenes paginadas (máx 500 por página por defecto)
+     * Usado para agrupar ECGs por asegurado con límite de resultados
      */
     @Query("""
         SELECT DISTINCT t FROM TeleECGImagen t
@@ -348,7 +349,33 @@ public interface TeleECGImagenRepository extends JpaRepository<TeleECGImagen, Lo
           AND t.fechaExpiracion >= CURRENT_TIMESTAMP
         ORDER BY t.fechaEnvio DESC
         """)
-    List<TeleECGImagen> buscarFlexibleSinPaginacion(
+    Page<TeleECGImagen> buscarFlexibleSinPaginacion(
+        @Param("numDoc") String numDoc,
+        @Param("estado") String estado,
+        @Param("idIpress") Long idIpress,
+        @Param("fechaDesde") LocalDateTime fechaDesde,
+        @Param("fechaHasta") LocalDateTime fechaHasta,
+        Pageable pageable
+    );
+
+    /**
+     * Búsqueda flexible sin paginación (v1.21.5) - DEPRECATED en v1.70.0
+     * ⚠️ PARA COMPATIBILIDAD: Se mantiene esta versión con LIMIT 1000
+     * IMPORTANTE: No usar en nuevas funcionalidades, usar buscarFlexibleSinPaginacion con Pageable
+     */
+    @Query(value = """
+        SELECT DISTINCT t FROM TeleECGImagen t
+        WHERE (:numDoc IS NULL OR t.numDocPaciente LIKE %:numDoc%)
+          AND (:estado IS NULL OR t.estado = :estado)
+          AND (:idIpress IS NULL OR t.ipressOrigen.idIpress = :idIpress)
+          AND t.statImagen = 'A'
+          AND t.fechaEnvio >= :fechaDesde
+          AND t.fechaEnvio <= :fechaHasta
+          AND t.fechaExpiracion >= CURRENT_TIMESTAMP
+        ORDER BY t.fechaEnvio DESC
+        LIMIT 1000
+        """, nativeQuery = false)
+    List<TeleECGImagen> buscarFlexibleSinPaginacionLimitado(
         @Param("numDoc") String numDoc,
         @Param("estado") String estado,
         @Param("idIpress") Long idIpress,
