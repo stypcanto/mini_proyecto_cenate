@@ -304,12 +304,14 @@ export default function IPRESSWorkspace() {
             };
             console.log(`✅ [Enriquecimiento] ${dni}: ${nombreCompleto}`);
 
-            // Actualizar con el nombre enriquecido
+            // 🔧 v1.71.0: Actualizar con el nombre enriquecido (SIEMPRE, no solo si es "Cargando...")
+            // Esto asegura que nombres incompletos se actualicen al nombre real del asegurado
             setPacientesCache({ ...newCache });
             setEcgs(prev =>
               prev.map(ecg => {
                 const ecgDni = ecg.dni || ecg.numDocPaciente;
-                if (ecgDni === dni && ecg.nombrePaciente === "Cargando...") {
+                // Actualizar si es el DNI correcto y el nombre actual NO es el nombre real
+                if (ecgDni === dni && ecg.nombrePaciente !== nombreCompleto) {
                   return { ...ecg, nombrePaciente: nombreCompleto };
                 }
                 return ecg;
