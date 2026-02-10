@@ -52,6 +52,7 @@ export default function PacientesDe107() {
     const [filterDerivacion, setFilterDerivacion] = useState("");
     const [filterDepartamento, setFilterDepartamento] = useState("");
     const [filterIpress, setFilterIpress] = useState("");
+    const [filterEstadoAtencion, setFilterEstadoAtencion] = useState("");
     const [filterFechaDesde, setFilterFechaDesde] = useState("");
     const [filterFechaHasta, setFilterFechaHasta] = useState("");
     const [selectedIds, setSelectedIds] = useState([]);
@@ -135,6 +136,7 @@ export default function PacientesDe107() {
             const matchDerivacion = !filterDerivacion || p.derivacion_interna === filterDerivacion;
             const matchDepartamento = !filterDepartamento || p.departamento === filterDepartamento;
             const matchIpress = !filterIpress || p.desc_ipress === filterIpress;
+            const matchEstadoAtencion = !filterEstadoAtencion || p.condicion_medica === filterEstadoAtencion;
 
             // Filtro de rango de fechas
             let matchFecha = true;
@@ -152,7 +154,7 @@ export default function PacientesDe107() {
                 }
             }
 
-            return matchSearch && matchDerivacion && matchDepartamento && matchIpress && matchFecha;
+            return matchSearch && matchDerivacion && matchDepartamento && matchIpress && matchEstadoAtencion && matchFecha;
         })
         .sort((a, b) => {
             // Ordenar por fecha de creación (más antiguo primero)
@@ -678,8 +680,24 @@ export default function PacientesDe107() {
                         </div>
                     </div>
 
-                    {/* Filtros de Fecha */ }
+                    {/* Filtro de Estado de Atención */ }
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-4 pt-4 border-t border-slate-200">
+                        <div className="lg:col-span-1">
+                            <label className="block text-sm font-semibold text-slate-700 mb-2">
+                                Estado de Atención
+                            </label>
+                            <select
+                                value={ filterEstadoAtencion }
+                                onChange={ (e) => setFilterEstadoAtencion(e.target.value) }
+                                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                            >
+                                <option value="">Todos</option>
+                                <option value="Pendiente">Pendiente</option>
+                                <option value="Atendido">Atendido</option>
+                                <option value="Deserción">Deserción</option>
+                            </select>
+                        </div>
+
                         <div className="lg:col-span-1">
                             <label className="block text-sm font-semibold text-slate-700 mb-2">
                                 Fecha Desde
@@ -704,16 +722,17 @@ export default function PacientesDe107() {
                             />
                         </div>
 
-                        { (filterFechaDesde || filterFechaHasta) && (
-                            <div className="lg:col-span-2 flex items-end">
+                        { (filterFechaDesde || filterFechaHasta || filterEstadoAtencion) && (
+                            <div className="lg:col-span-1 flex items-end">
                                 <button
                                     onClick={ () => {
                                         setFilterFechaDesde("");
                                         setFilterFechaHasta("");
+                                        setFilterEstadoAtencion("");
                                     } }
                                     className="w-full px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg font-semibold transition-colors"
                                 >
-                                    Limpiar fechas
+                                    Limpiar filtros
                                 </button>
                             </div>
                         ) }

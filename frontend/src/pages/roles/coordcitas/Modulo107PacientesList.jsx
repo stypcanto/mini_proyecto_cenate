@@ -49,14 +49,14 @@ export default function Modulo107PacientesList() {
   const [filtroRed, setFiltroRed] = useState("todas");
   const [filtroIpress, setFiltroIpress] = useState("todas");
   const [filtroDerivacion, setFiltroDerivacion] = useState("todas");
+  const [filtroCondicionMedica, setFiltroCondicionMedica] = useState("todos"); // 🆕 Pendiente, Atendido, Deserción
 
   // ==================== ESTADÍSTICAS ====================
   const [stats, setStats] = useState({
     total: 0,
-    citado: 0,              // Estado 1: CITADO (Para atender)
-    atendidoIpress: 0,      // Estado 2: ATENDIDO_IPRESS (Completados)
-    pendienteCita: 0,       // Estado 11: PENDIENTE_CITA (Nuevos en bolsa)
-    otros: 0                // Resto de estados (problemas, rechazos, etc.)
+    pendiente: 0,           // Condición médica: Pendiente o NULL
+    atendido: 0,           // Condición médica: Atendido  
+    desercion: 0           // Condición médica: Deserción
   });
 
   // ==================== CATÁLOGOS ====================
@@ -161,6 +161,7 @@ export default function Modulo107PacientesList() {
       if (filtroRangoFechas.inicio) filtros.fechaDesde = filtroRangoFechas.inicio;
       if (filtroRangoFechas.fin) filtros.fechaHasta = filtroRangoFechas.fin;
       if (filtroDerivacion !== "todas") filtros.derivacionInterna = filtroDerivacion;
+      if (filtroCondicionMedica !== "todos") filtros.condicionMedica = filtroCondicionMedica; // 🆕
       if (searchTerm) filtros.searchTerm = searchTerm;
       
       // Llamar al servicio
@@ -173,12 +174,7 @@ export default function Modulo107PacientesList() {
       // Mapear respuesta al formato esperado
       const data = response.content || response || [];
       
-      // Ordenar por fecha de registro descendente (más nuevos primero)
-      data.sort((a, b) => {
-        const fechaA = new Date(a.fechaSolicitud || 0).getTime();
-        const fechaB = new Date(b.fechaSolicitud || 0).getTime();
-        return fechaB - fechaA; // Descendente
-      });
+      // Ya no necesitamos ordenar en frontend - se ordena en backend
       
       // Guardar total de elementos
       setTotalElementos(response.totalElements || data.length);
@@ -187,15 +183,14 @@ export default function Modulo107PacientesList() {
       const tipos = [...new Set(data.map(p => p.tipoDocumento).filter(Boolean))];
       setTiposDocumentoUnicos(tipos);
       
-      // Cargar estadísticas desde API (mismos estados que atenciones-clínicas)
+      // Cargar estadísticas basadas en condición médica
       try {
-        const estatsApi = await atencionesClinicasService.obtenerEstadisticas();
+        const estatsApi = await atencionesClinicasService.obtenerEstadisticasCondicionMedica();
         setStats({
           total: estatsApi.total || 0,
-          citado: estatsApi.citado || 0,
-          atendidoIpress: estatsApi.atendidoIpress || 0,
-          pendienteCita: estatsApi.pendienteCita || 0,
-          otros: estatsApi.otros || 0
+          pendiente: estatsApi.pendiente || 0,
+          atendido: estatsApi.atendido || 0,
+          desercion: estatsApi.desercion || 0
         });
       } catch (error) {
         console.error("Error al cargar estadísticas:", error);
@@ -213,7 +208,7 @@ export default function Modulo107PacientesList() {
     }
   }, [
     filtroEstado, filtroTipoDoc, filtroDocumento, 
-    filtroRangoFechas, filtroDerivacion, searchTerm,
+    filtroRangoFechas, filtroDerivacion, filtroCondicionMedica, searchTerm,
     filtroIpress, ipressUnicas
   ]);
 
@@ -348,6 +343,14 @@ export default function Modulo107PacientesList() {
     return `${dia}/${mes}/${anio}`;
   };
 
+  // 🆕 Función específica para fechas de input (YYYY-MM-DD) sin problemas de zona horaria
+  const formatFechaInput = (fechaString) => {
+    if (!fechaString) return "";
+    // Solo dividir y reorganizar, sin crear objeto Date para evitar problemas de zona horaria
+    const [anio, mes, dia] = fechaString.split("-");
+    return `${dia}/${mes}/${anio}`;
+  };
+
   const formatHora = (hora) => {
     if (!hora) return "";
     // Si viene en formato "HH:mm:ss", extraer solo "HH:mm"
@@ -408,6 +411,36 @@ export default function Modulo107PacientesList() {
     );
   };
 
+  // 🆕 Nueva función para estados de condición médica
+  const getCondicionMedicaBadge = (condicion) => {
+    // Tratar NULL, undefined, empty string como "Pendiente"
+    if (!condicion || condicion.trim() === '' || condicion === '[NULL]' || condicion === 'null') {
+      condicion = "Pendiente";
+    }
+
+    const estilos = {
+      "Pendiente": "bg-yellow-100 text-yellow-800 border-yellow-300",
+      "Atendido": "bg-green-100 text-green-800 border-green-300", 
+      "Deserción": "bg-red-100 text-red-800 border-red-300",
+    };
+
+    const iconos = {
+      "Pendiente": <Clock className="w-3 h-3" />,
+      "Atendido": <CheckCircle2 className="w-3 h-3" />,
+      "Deserción": <AlertCircle className="w-3 h-3" />,
+    };
+
+    const estilo = estilos[condicion] || "bg-gray-100 text-gray-800 border-gray-300";
+    const icono = iconos[condicion] || <Clock className="w-3 h-3" />;
+
+    return (
+      <div className={`px-2 py-0.5 rounded-full text-xs font-semibold border flex items-center gap-1 w-fit ${estilo}`}>
+        {icono}
+        {condicion}
+      </div>
+    );
+  };
+
   // ==================== RENDER ====================
 
   return (
@@ -439,7 +472,7 @@ export default function Modulo107PacientesList() {
         {/* Estadísticas */}
         <div className="mb-8">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Estadísticas de Pacientes</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-3 animate-fade-in">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 animate-fade-in">
             {/* Total */}
             <div className="bg-gradient-to-br from-slate-600 to-slate-700 rounded-lg shadow-lg p-4 text-white transform hover:scale-105 transition-all duration-300 hover:shadow-xl">
               <div className="flex items-center justify-between mb-2">
@@ -449,44 +482,34 @@ export default function Modulo107PacientesList() {
               <div className="text-3xl font-bold">{stats.total}</div>
             </div>
 
-            {/* Citado - Para Atender (Prioritario) */}
-            <div className="bg-gradient-to-br from-blue-600 to-blue-700 rounded-lg shadow-lg p-4 text-white transform hover:scale-105 transition-all duration-300 hover:shadow-xl">
+            {/* Pendiente - Badge amarillo con ícono de reloj */}
+            <div className="bg-gradient-to-br from-yellow-500 to-yellow-600 rounded-lg shadow-lg p-4 text-white transform hover:scale-105 transition-all duration-300 hover:shadow-xl">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-blue-100 text-xs font-semibold">Por Atender</span>
-                <span className="text-2xl">📋</span>
+                <span className="text-yellow-100 text-xs font-semibold">Pendiente</span>
+                <span className="text-2xl">🕐</span>
               </div>
-              <div className="text-3xl font-bold">{stats.citado}</div>
-              <p className="text-blue-200 text-xs mt-1">Citados</p>
+              <div className="text-3xl font-bold">{stats.pendiente}</div>
+              <p className="text-yellow-200 text-xs mt-1">Por atender</p>
             </div>
 
-            {/* Atendido IPRESS - Completados */}
+            {/* Atendido - Badge verde con ícono de check */}
             <div className="bg-gradient-to-br from-green-600 to-green-700 rounded-lg shadow-lg p-4 text-white transform hover:scale-105 transition-all duration-300 hover:shadow-xl">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-green-100 text-xs font-semibold">Completados</span>
+                <span className="text-green-100 text-xs font-semibold">Atendido</span>
                 <span className="text-2xl">✓</span>
               </div>
-              <div className="text-3xl font-bold">{stats.atendidoIpress}</div>
-              <p className="text-green-200 text-xs mt-1">IPRESS</p>
+              <div className="text-3xl font-bold">{stats.atendido}</div>
+              <p className="text-green-200 text-xs mt-1">Completados</p>
             </div>
 
-            {/* Pendientes en Bolsa - Nuevos */}
-            <div className="bg-gradient-to-br from-amber-500 to-amber-600 rounded-lg shadow-lg p-4 text-white transform hover:scale-105 transition-all duration-300 hover:shadow-xl">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-amber-100 text-xs font-semibold">Nuevos</span>
-                <span className="text-2xl">⏱️</span>
-              </div>
-              <div className="text-3xl font-bold">{stats.pendienteCita}</div>
-              <p className="text-amber-200 text-xs mt-1">En la bolsa</p>
-            </div>
-
-            {/* Otros - Problemas/Rechazos */}
+            {/* Deserción - Badge rojo con ícono de alerta */}
             <div className="bg-gradient-to-br from-red-600 to-red-700 rounded-lg shadow-lg p-4 text-white transform hover:scale-105 transition-all duration-300 hover:shadow-xl">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-red-100 text-xs font-semibold">Otros</span>
+                <span className="text-red-100 text-xs font-semibold">Deserción</span>
                 <span className="text-2xl">⚠️</span>
               </div>
-              <div className="text-3xl font-bold">{stats.otros}</div>
-              <p className="text-red-200 text-xs mt-1">Problemas</p>
+              <div className="text-3xl font-bold">{stats.desercion}</div>
+              <p className="text-red-200 text-xs mt-1">No asistieron</p>
             </div>
           </div>
         </div>
@@ -516,95 +539,43 @@ export default function Modulo107PacientesList() {
           <div className={`overflow-hidden transition-all duration-500 ease-in-out ${
             expandFiltros ? "max-h-screen opacity-100" : "max-h-0 opacity-0"
           }`}>
-            <div className="p-3 border-b border-gray-200 bg-gray-50 space-y-2">
-              {/* Búsqueda */}
-              <div>
-                <label className="block text-xs font-semibold text-gray-700 mb-1">Búsqueda General</label>
-                <div className="relative">
-                  <Search className="absolute left-3 top-2 w-4 h-4 text-gray-400" />
-                  <input
-                    type="text"
-                    placeholder="Buscar por nombre o DNI..."
-                    className="w-full pl-10 pr-4 py-1.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-                    value={searchTerm}
-                    onChange={(e) => {
-                      setSearchTerm(e.target.value);
-                      setCurrentPage(1);
-                    }}
-                  />
-                </div>
-              </div>
-
-              {/* Fila 1: Estado, Tipo Doc, Documento */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <div className="p-2 border-b border-gray-200 bg-gray-50 space-y-1.5">
+              {/* Búsqueda General y Rango de Fechas */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {/* Búsqueda General */}
                 <div>
-                  <label className="block text-xs font-semibold text-gray-700 mb-1">Estado</label>
-                  <select
-                    value={filtroEstado}
-                    onChange={(e) => {
-                      setFiltroEstado(e.target.value);
-                      setCurrentPage(1);
-                    }}
-                    className="w-full px-3 py-1.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
-                  >
-                    <option value="todos">Todos los estados</option>
-                    {estadosUnicos.map((estado) => (
-                      <option key={estado.id} value={estado.id}>
-                        {estado.descripcion}
-                      </option>
-                    ))}
-                  </select>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">Búsqueda General</label>
+                  <div className="relative">
+                    <Search className="absolute left-3 top-2 w-4 h-4 text-gray-400" />
+                    <input
+                      type="text"
+                      placeholder="Buscar por nombre o DNI..."
+                      className="w-full pl-10 pr-4 py-1.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                      value={searchTerm}
+                      onChange={(e) => {
+                        setSearchTerm(e.target.value);
+                        setCurrentPage(1);
+                      }}
+                    />
+                  </div>
                 </div>
 
-                <div>
-                  <label className="block text-xs font-semibold text-gray-700 mb-1">Tipo de Documento</label>
-                  <select
-                    value={filtroTipoDoc}
-                    onChange={(e) => {
-                      setFiltroTipoDoc(e.target.value);
-                      setCurrentPage(1);
-                    }}
-                    className="w-full px-3 py-1.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
-                  >
-                    <option value="todos">Todos</option>
-                    {tiposDocumentoUnicos.map(tipo => (
-                      <option key={tipo} value={tipo}>{tipo}</option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-gray-700 mb-1">Documento</label>
-                  <input
-                    type="text"
-                    placeholder="Ingrese número de documento"
-                    className="w-full px-3 py-1.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
-                    value={filtroDocumento}
-                    onChange={(e) => {
-                      setFiltroDocumento(e.target.value);
-                      setCurrentPage(1);
-                    }}
-                  />
-                </div>
-              </div>
-
-              {/* Rango de Fechas */}
-              <div className="grid grid-cols-1 gap-2">
+                {/* Rango de Fechas */}
                 <div className="relative date-picker-container">
-                  <label className="block text-xs font-semibold text-gray-700 mb-1">
-                    Rango de Fechas de Registro
+                  <label className="block text-xs font-medium text-gray-600 mb-1">
+                    Fechas de Registro
                   </label>
                   <div 
-                    className="w-full px-3 py-1.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 cursor-pointer bg-white flex items-center justify-between text-sm"
+                    className="w-full px-3 py-1.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 cursor-pointer bg-white flex items-center justify-between text-sm"
                     onClick={() => setMostrarSelectorFechas(!mostrarSelectorFechas)}
                   >
                     <span className="text-gray-700">
                       {filtroRangoFechas.inicio && filtroRangoFechas.fin
-                        ? `${formatFecha(filtroRangoFechas.inicio)} - ${formatFecha(filtroRangoFechas.fin)}`
+                        ? `${formatFechaInput(filtroRangoFechas.inicio)} - ${formatFechaInput(filtroRangoFechas.fin)}`
                         : filtroRangoFechas.inicio
-                        ? `Desde: ${formatFecha(filtroRangoFechas.inicio)}`
+                        ? `Desde: ${formatFechaInput(filtroRangoFechas.inicio)}`
                         : filtroRangoFechas.fin
-                        ? `Hasta: ${formatFecha(filtroRangoFechas.fin)}`
+                        ? `Hasta: ${formatFechaInput(filtroRangoFechas.fin)}`
                         : "Seleccionar rango de fechas"
                       }
                     </span>
@@ -613,13 +584,13 @@ export default function Modulo107PacientesList() {
                   
                   {/* Panel desplegable para seleccionar fechas */}
                   {mostrarSelectorFechas && (
-                    <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-300 rounded-lg shadow-lg z-10 p-3">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-300 rounded-md shadow-lg z-10 p-2">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                         <div>
                           <label className="block text-xs font-medium text-gray-700 mb-1">Fecha de Inicio</label>
                           <input
                             type="date"
-                            className="w-full px-3 py-1.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
+                            className="w-full px-3 py-1.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 text-sm"
                             value={filtroRangoFechas.inicio}
                             onChange={(e) => {
                               setFiltroRangoFechas(prev => ({ ...prev, inicio: e.target.value }));
@@ -631,7 +602,7 @@ export default function Modulo107PacientesList() {
                           <label className="block text-xs font-medium text-gray-700 mb-1">Fecha de Fin</label>
                           <input
                             type="date"
-                            className="w-full px-3 py-1.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
+                            className="w-full px-3 py-1.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 text-sm"
                             value={filtroRangoFechas.fin}
                             min={filtroRangoFechas.inicio}
                             onChange={(e) => {
@@ -663,17 +634,89 @@ export default function Modulo107PacientesList() {
                 </div>
               </div>
 
-              {/* Macrorregión, Red, IPRESS */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              {/* Fila 1: Tipo Doc, Documento, Estado de Atención */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+                {/* Estado - OCULTO pero funcional */}
+                <div className="hidden">
+                  <label className="block text-xs font-medium text-gray-600 mb-1">Estado</label>
+                  <select
+                    value={filtroEstado}
+                    onChange={(e) => {
+                      setFiltroEstado(e.target.value);
+                      setCurrentPage(1);
+                    }}
+                    className="w-full px-3 py-1.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 text-sm"
+                  >
+                    <option value="todos">Todos los estados</option>
+                    {estadosUnicos.map((estado) => (
+                      <option key={estado.id} value={estado.id}>
+                        {estado.descripcion}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
                 <div>
-                  <label className="block text-xs font-semibold text-gray-700 mb-1">Macrorregión</label>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">Tipo de Documento</label>
+                  <select
+                    value={filtroTipoDoc}
+                    onChange={(e) => {
+                      setFiltroTipoDoc(e.target.value);
+                      setCurrentPage(1);
+                    }}
+                    className="w-full px-3 py-1.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 text-sm"
+                  >
+                    <option value="todos">Todos</option>
+                    {tiposDocumentoUnicos.map(tipo => (
+                      <option key={tipo} value={tipo}>{tipo}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">Documento</label>
+                  <input
+                    type="text"
+                    placeholder="Ingrese número de documento"
+                    className="w-full px-3 py-1.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 text-sm"
+                    value={filtroDocumento}
+                    onChange={(e) => {
+                      setFiltroDocumento(e.target.value);
+                      setCurrentPage(1);
+                    }}
+                  />
+                </div>
+
+                {/* 🆕 Estado de Atención (Condición Médica) */}
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">Estado de Atención</label>
+                  <select
+                    value={filtroCondicionMedica}
+                    onChange={(e) => {
+                      setFiltroCondicionMedica(e.target.value);
+                      setCurrentPage(1);
+                    }}
+                    className="w-full px-3 py-1.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 text-sm"
+                  >
+                    <option value="todos">Todos</option>
+                    <option value="Pendiente">Pendiente</option>
+                    <option value="Atendido">Atendido</option>
+                    <option value="Deserción">Deserción</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Macrorregión, Red, IPRESS, Derivación */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2">
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">Macrorregión</label>
                   <select
                     value={filtroMacrorregion}
                     onChange={(e) => {
                       setFiltroMacrorregion(e.target.value);
                       setCurrentPage(1);
                     }}
-                    className="w-full px-3 py-1.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
+                    className="w-full px-3 py-1.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 text-sm"
                   >
                     <option value="todas">Todas</option>
                     {macrorregionesUnicas.map(macro => (
@@ -683,14 +726,14 @@ export default function Modulo107PacientesList() {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-gray-700 mb-1">Red</label>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">Red</label>
                   <select
                     value={filtroRed}
                     onChange={(e) => {
                       setFiltroRed(e.target.value);
                       setCurrentPage(1);
                     }}
-                    className="w-full px-3 py-1.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
+                    className="w-full px-3 py-1.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 text-sm"
                     disabled={redesUnicas.length === 0}
                   >
                     <option value="todas">Todas</option>
@@ -701,14 +744,14 @@ export default function Modulo107PacientesList() {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-gray-700 mb-1">IPRESS</label>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">IPRESS</label>
                   <select
                     value={filtroIpress}
                     onChange={(e) => {
                       setFiltroIpress(e.target.value);
                       setCurrentPage(1);
                     }}
-                    className="w-full px-3 py-1.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
+                    className="w-full px-3 py-1.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 text-sm"
                     disabled={ipressUnicas.length === 0}
                   >
                     <option value="todas">Todas</option>
@@ -717,19 +760,16 @@ export default function Modulo107PacientesList() {
                     ))}
                   </select>
                 </div>
-              </div>
 
-              {/* Derivación Interna */}
-              <div className="grid grid-cols-1 gap-2">
                 <div>
-                  <label className="block text-xs font-semibold text-gray-700 mb-1">Derivación Interna</label>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">Derivación Interna</label>
                   <select
                     value={filtroDerivacion}
                     onChange={(e) => {
                       setFiltroDerivacion(e.target.value);
                       setCurrentPage(1);
                     }}
-                    className="w-full px-3 py-1.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
+                    className="w-full px-3 py-1.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 text-sm"
                   >
                     <option value="todas">Todas</option>
                     {derivacionesInternas.map(derivacion => (
@@ -740,7 +780,7 @@ export default function Modulo107PacientesList() {
               </div>
 
               {/* Botones de acción */}
-              <div className="flex gap-2">
+              <div className="flex gap-2 pt-1">
                 <button
                   onClick={() => {
                     setSearchTerm("");
@@ -753,6 +793,7 @@ export default function Modulo107PacientesList() {
                     setFiltroRed("todas");
                     setFiltroIpress("todas");
                     setFiltroDerivacion("todas");
+                    setFiltroCondicionMedica("todos"); // 🆕
                     setCurrentPage(1);
                   }}
                   className="px-3 py-1.5 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-lg font-semibold transition-colors text-sm"
@@ -764,7 +805,8 @@ export default function Modulo107PacientesList() {
               {/* Resumen de Filtros Activos */}
               {(filtroEstado !== "todos" || filtroTipoDoc !== "todos" || filtroDocumento || 
                 filtroRangoFechas.inicio || filtroRangoFechas.fin || filtroMacrorregion !== "todas" || 
-                filtroRed !== "todas" || filtroIpress !== "todas" || filtroDerivacion !== "todas" || searchTerm) && (
+                filtroRed !== "todas" || filtroIpress !== "todas" || filtroDerivacion !== "todas" || 
+                filtroCondicionMedica !== "todos" || searchTerm) && (
                 <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
                   <p className="text-sm font-semibold text-blue-900 mb-3">📋 Filtros Activos:</p>
                   <div className="flex flex-wrap gap-2">
@@ -790,12 +832,12 @@ export default function Modulo107PacientesList() {
                     )}
                     {filtroRangoFechas.inicio && (
                       <span className="px-3 py-1 bg-blue-200 text-blue-800 rounded-full text-sm">
-                        Desde: {new Date(filtroRangoFechas.inicio).toLocaleDateString('es-ES')}
+                        Desde: {formatFechaInput(filtroRangoFechas.inicio)}
                       </span>
                     )}
                     {filtroRangoFechas.fin && (
                       <span className="px-3 py-1 bg-blue-200 text-blue-800 rounded-full text-sm">
-                        Hasta: {new Date(filtroRangoFechas.fin).toLocaleDateString('es-ES')}
+                        Hasta: {formatFechaInput(filtroRangoFechas.fin)}
                       </span>
                     )}
                     {filtroMacrorregion !== "todas" && (
@@ -982,7 +1024,7 @@ export default function Modulo107PacientesList() {
                       <td className="px-2 py-1 text-xs text-gray-700">
                         {paciente.idPersonal || "—"}
                       </td>
-                      <td className="px-2 py-1 text-xs">{getEstadoBadge(paciente.estadoDescripcion || "PENDIENTE")}</td>
+                      <td className="px-2 py-1 text-xs">{getCondicionMedicaBadge(paciente.condicionMedica)}</td>
                     </tr>
                   ))
                 ) : (

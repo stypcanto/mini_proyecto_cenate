@@ -123,4 +123,30 @@ public interface AtencionClinica107Repository
      */
     @Query("SELECT COUNT(DISTINCT a.idSolicitud) FROM AtencionClinica107 a WHERE UPPER(a.estado) = UPPER(:estado) AND a.idBolsa = 1")
     Long contarPorEstadoDescripcion(@Param("estado") String estado);
+
+    // 🆕 ==================== ESTADÍSTICAS POR CONDICIÓN MÉDICA ====================
+    
+    /**
+     * Contar pacientes por condición médica específica (Bolsa 1)
+     */
+    @Query("SELECT COUNT(DISTINCT a.idSolicitud) FROM AtencionClinica107 a WHERE a.condicionMedica = :condicion AND a.idBolsa = 1")
+    Long contarPorCondicionMedica(@Param("condicion") String condicion);
+
+    /**
+     * Contar pacientes pendientes (condicion_medica = 'Pendiente' O NULL) para Bolsa 1
+     */
+    @Query("SELECT COUNT(DISTINCT a.idSolicitud) FROM AtencionClinica107 a WHERE (a.condicionMedica = 'Pendiente' OR a.condicionMedica IS NULL) AND a.idBolsa = 1")
+    Long contarPendientes();
+
+    /**
+     * Contar pacientes atendidos (condicion_medica = 'Atendido') para Bolsa 1
+     */
+    @Query("SELECT COUNT(DISTINCT a.idSolicitud) FROM AtencionClinica107 a WHERE a.condicionMedica = 'Atendido' AND a.idBolsa = 1")
+    Long contarAtendidos();
+
+    /**
+     * Contar deserciones (condicion_medica = 'Deserción') para Bolsa 1
+     */
+    @Query("SELECT COUNT(DISTINCT a.idSolicitud) FROM AtencionClinica107 a WHERE a.condicionMedica = 'Deserción' AND a.idBolsa = 1")
+    Long contarDeserciones();
 }

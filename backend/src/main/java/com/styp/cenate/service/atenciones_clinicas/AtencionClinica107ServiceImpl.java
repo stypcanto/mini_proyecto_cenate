@@ -3,6 +3,7 @@ package com.styp.cenate.service.atenciones_clinicas;
 import com.styp.cenate.dto.AtencionClinica107DTO;
 import com.styp.cenate.dto.AtencionClinica107FiltroDTO;
 import com.styp.cenate.dto.EstadisticasAtencion107DTO;
+import com.styp.cenate.dto.EstadisticasCondicionMedica107DTO;
 import com.styp.cenate.model.AtencionClinica107;
 import com.styp.cenate.model.EstadoGestionCita;
 import com.styp.cenate.repository.AtencionClinica107Repository;
@@ -13,6 +14,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -53,10 +55,13 @@ public class AtencionClinica107ServiceImpl implements AtencionClinica107Service 
             filtro.getIdIpress(), filtro.getDerivacionInterna(), filtro.getEspecialidad(),
             filtro.getTipoCita(), filtro.getSearchTerm());
 
-        // Parámetros de paginación
+        // Parámetros de paginación con ordenamiento ascendente por fecha de solicitud
         int page = filtro.getPageNumber() != null ? filtro.getPageNumber() : 0;
         int size = filtro.getPageSize() != null ? filtro.getPageSize() : 25;
-        Pageable pageable = PageRequest.of(page, size);
+        
+        // Establecer ordenamiento ascendente por fecha de solicitud
+        Sort sort = Sort.by(Sort.Direction.ASC, "fechaSolicitud");
+        Pageable pageable = PageRequest.of(page, size, sort);
 
         try {
             // Parsear fechas si existen
@@ -84,7 +89,8 @@ public class AtencionClinica107ServiceImpl implements AtencionClinica107Service 
                 filtro.getDerivacionInterna(),
                 filtro.getEspecialidad(),
                 filtro.getTipoCita(),
-                filtro.getSearchTerm()
+                filtro.getSearchTerm(),
+                filtro.getCondicionMedica()
             );
 
             // Ejecutar query
@@ -159,6 +165,46 @@ public class AtencionClinica107ServiceImpl implements AtencionClinica107Service 
         } catch (Exception e) {
             log.error("❌ [MODULO 107] Error al obtener estadísticas: {}", e.getMessage(), e);
             throw new RuntimeException("Error al obtener estadísticas: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 🆕 Obtener estadísticas basadas en condición médica
+     * Estados de condición médica:
+     *   - Pendiente: condicion_medica = 'Pendiente' O NULL
+     *   - Atendido: condicion_medica = 'Atendido'
+     *   - Deserción: condicion_medica = 'Deserción'
+     */
+    @Override
+    public EstadisticasCondicionMedica107DTO obtenerEstadisticasCondicionMedica() {
+        log.info("📊 [MODULO 107] Obteniendo estadísticas por condición médica (Bolsa = 1)");
+
+        try {
+            long inicio = System.currentTimeMillis();
+
+            // Contar por condición médica
+            Long total = repository.contarTotal();
+            Long pendiente = repository.contarPendientes();   // Incluye NULL
+            Long atendido = repository.contarAtendidos();
+            Long desercion = repository.contarDeserciones();
+
+            long tiempo = System.currentTimeMillis() - inicio;
+
+            EstadisticasCondicionMedica107DTO stats = EstadisticasCondicionMedica107DTO.builder()
+                .total(total != null ? total : 0L)
+                .pendiente(pendiente != null ? pendiente : 0L)
+                .atendido(atendido != null ? atendido : 0L)
+                .desercion(desercion != null ? desercion : 0L)
+                .build();
+
+            log.info("✅ [MODULO 107] Estadísticas Condición Médica: Total={}, Pendiente={}, Atendido={}, Deserción={} ({}ms)",
+                total, pendiente, atendido, desercion, tiempo);
+
+            return stats;
+
+        } catch (Exception e) {
+            log.error("❌ [MODULO 107] Error al obtener estadísticas por condición médica: {}", e.getMessage(), e);
+            throw new RuntimeException("Error al obtener estadísticas por condición médica: " + e.getMessage());
         }
     }
 
@@ -246,6 +292,8 @@ public class AtencionClinica107ServiceImpl implements AtencionClinica107Service 
             .idPersonal(atencion.getIdPersonal()) // 🆕 ID del personal que atiende
             .tiempoInicioSintomas(atencion.getTiempoInicioSintomas()) // 🆕 Tiempo inicio síntomas
             .consentimientoInformado(atencion.getConsentimientoInformado()) // 🆕 Consentimiento informado
+            .condicionMedica(atencion.getCondicionMedica() != null && !atencion.getCondicionMedica().trim().isEmpty() 
+                ? atencion.getCondicionMedica() : "Pendiente") // 🆕 Condición médica con NULL como Pendiente
             .build();
     }
 }

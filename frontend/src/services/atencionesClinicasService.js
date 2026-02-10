@@ -74,6 +74,11 @@ export const atencionesClinicasService = {
         params.append('searchTerm', filtros.searchTerm);
       }
       
+      // 🆕 Condición Médica (Pendiente, Atendido, Deserción)
+      if (filtros.condicionMedica && filtros.condicionMedica !== "todos") {
+        params.append('condicionMedica', filtros.condicionMedica);
+      }
+      
       const url = `${BASE_URL}/listar?${params.toString()}`;
       const data = await api.get(url);
       return data;
@@ -92,6 +97,19 @@ export const atencionesClinicasService = {
       return data;
     } catch (error) {
       console.error('Error al obtener estadísticas:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * 🆕 Obtener estadísticas basadas en condición médica (Pendiente, Atendido, Deserción)
+   */
+  obtenerEstadisticasCondicionMedica: async () => {
+    try {
+      const data = await api.get(`${BASE_URL}/estadisticas-condicion-medica`);
+      return data;
+    } catch (error) {
+      console.error('Error al obtener estadísticas de condición médica:', error);
       throw error;
     }
   },

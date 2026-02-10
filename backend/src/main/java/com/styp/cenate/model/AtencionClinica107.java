@@ -142,4 +142,8 @@ public class AtencionClinica107 {
 
     @Column(name = "consentimiento_informado")
     private Boolean consentimientoInformado;
+
+    // 🆕 Condición médica (Pendiente, Atendido, Deserción)
+    @Column(name = "condicion_medica")
+    private String condicionMedica;
 }

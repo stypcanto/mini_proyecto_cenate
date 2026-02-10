@@ -79,6 +79,25 @@ public class AtencionClinica107Specification {
     }
 
     /**
+     * 🆕 Filtra por condición médica (Pendiente, Atendido, Deserción)
+     * Nota: NULL se considera como "Pendiente"
+     */
+    public static Specification<AtencionClinica107> conCondicionMedica(String condicion) {
+        return (root, query, cb) -> {
+            if ("Pendiente".equalsIgnoreCase(condicion)) {
+                // Para "Pendiente", incluir tanto 'Pendiente' como NULL
+                return cb.or(
+                    cb.equal(cb.lower(root.get("condicionMedica")), "pendiente"),
+                    cb.isNull(root.get("condicionMedica"))
+                );
+            } else {
+                // Para otros valores, búsqueda exacta
+                return cb.equal(cb.lower(root.get("condicionMedica")), condicion.toLowerCase());
+            }
+        };
+    }
+
+    /**
      * Filtra por especialidad
      */
     public static Specification<AtencionClinica107> conEspecialidad(String especialidad) {
@@ -119,7 +138,8 @@ public class AtencionClinica107Specification {
         String derivacion,
         String especialidad,
         String tipoCita,
-        String search
+        String search,
+        String condicionMedica
     ) {
         Specification<AtencionClinica107> spec = Specification.where(null);
 
@@ -178,6 +198,11 @@ public class AtencionClinica107Specification {
         // Filtro Búsqueda General
         if (search != null && !search.isEmpty()) {
             spec = spec.and(conBusquedaGeneral(search));
+        }
+
+        // 🆕 Filtro Condición Médica (Pendiente, Atendido, Deserción)
+        if (condicionMedica != null && !condicionMedica.isEmpty() && !condicionMedica.equals("todos")) {
+            spec = spec.and(conCondicionMedica(condicionMedica));
         }
 
         return spec;

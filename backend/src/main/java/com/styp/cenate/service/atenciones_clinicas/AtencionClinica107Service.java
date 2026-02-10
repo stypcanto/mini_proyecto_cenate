@@ -3,6 +3,7 @@ package com.styp.cenate.service.atenciones_clinicas;
 import com.styp.cenate.dto.AtencionClinica107DTO;
 import com.styp.cenate.dto.AtencionClinica107FiltroDTO;
 import com.styp.cenate.dto.EstadisticasAtencion107DTO;
+import com.styp.cenate.dto.EstadisticasCondicionMedica107DTO;
 import org.springframework.data.domain.Page;
 
 /**
@@ -28,6 +29,12 @@ public interface AtencionClinica107Service {
      * @return DTO con total, pendientes, atendidos
      */
     EstadisticasAtencion107DTO obtenerEstadisticas();
+
+    /**
+     * 🆕 Obtener estadísticas basadas en condición médica
+     * @return DTO con total, pendientes, atendidos, deserciones
+     */
+    EstadisticasCondicionMedica107DTO obtenerEstadisticasCondicionMedica();
 
     /**
      * Obtener detalle completo de una atención

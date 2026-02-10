@@ -38,6 +38,9 @@ public class AtencionClinica107FiltroDTO {
     private Long estadoGestionCitasId;
     private String estado; // PENDIENTE, ATENDIDO
     
+    // 🆕 Condición Médica (Pendiente, Atendido, Deserción)
+    private String condicionMedica;
+    
     // Derivación
     private String derivacionInterna;
     
