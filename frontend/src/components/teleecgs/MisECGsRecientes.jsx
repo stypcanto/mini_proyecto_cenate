@@ -33,6 +33,19 @@ import toast from 'react-hot-toast';
 import teleecgService from '../../services/teleecgService';
 import apiClient from '../../services/apiClient';
 
+// ✅ v1.76.5: Función auxiliar para parsear fechas sin offset de timezone
+const parsearFechaSegura = (fechaStr) => {
+  if (!fechaStr) return null;
+  // Extraer solo la parte de la fecha (YYYY-MM-DD)
+  const partes = fechaStr.split('T')[0].split('-');
+  if (partes.length !== 3) return null;
+  return {
+    año: parseInt(partes[0], 10),
+    mes: parseInt(partes[1], 10),
+    día: parseInt(partes[2], 10),
+  };
+};
+
 export default function MisECGsRecientes({
   ultimas3 = [],
   estadisticas = {
@@ -111,15 +124,16 @@ export default function MisECGsRecientes({
     );
   };
 
-  // ✅ MEJORADO: Usar fechaEnvio directamente (más confiable que parsear tiempoTranscurrido)
+  // ✅ MEJORADO: Usar fechaEnvio directamente con parseo seguro de timezone
   const obtenerFechaUpload = (item) => {
     if (item.fechaEnvio) {
-      // Convertir ISO datetime a YYYY-MM-DD
-      const fecha = new Date(item.fechaEnvio);
-      const año = fecha.getFullYear();
-      const mes = String(fecha.getMonth() + 1).padStart(2, '0');
-      const día = String(fecha.getDate()).padStart(2, '0');
-      return `${año}-${mes}-${día}`;
+      const fechaParts = parsearFechaSegura(item.fechaEnvio);
+      if (fechaParts) {
+        const año = fechaParts.año;
+        const mes = String(fechaParts.mes).padStart(2, '0');
+        const día = String(fechaParts.día).padStart(2, '0');
+        return `${año}-${mes}-${día}`;
+      }
     }
     // Fallback: usar hoy si no hay fechaEnvio
     return new Date().toISOString().split('T')[0];
@@ -466,14 +480,14 @@ export default function MisECGsRecientes({
                 {/* Body */}
                 <tbody>
                   {datosFiltrados.map((carga, idx) => {
-                    // Formato de fecha compacto: "06/02 - 19:37"
+                    // Formato de fecha compacto: "06/02 - 19:37" (SIN offset de timezone)
                     const fechaCompacta = carga.fechaEnvio
                       ? (() => {
                           const fecha = new Date(carga.fechaEnvio);
-                          const dia = String(fecha.getDate()).padStart(2, '0');
-                          const mes = String(fecha.getMonth() + 1).padStart(2, '0');
-                          const hora = String(fecha.getHours()).padStart(2, '0');
-                          const min = String(fecha.getMinutes()).padStart(2, '0');
+                          const dia = String(fecha.getUTCDate()).padStart(2, '0');
+                          const mes = String(fecha.getUTCMonth() + 1).padStart(2, '0');
+                          const hora = String(fecha.getUTCHours()).padStart(2, '0');
+                          const min = String(fecha.getUTCMinutes()).padStart(2, '0');
                           return `${dia}/${mes} - ${hora}:${min}`;
                         })()
                       : '-';
@@ -505,15 +519,16 @@ export default function MisECGsRecientes({
                           <div className="font-bold text-gray-900 text-xs md:text-sm line-clamp-2">{carga.nombrePaciente}</div>
                         </td>
 
-                        {/* Fecha de Toma - Oculto en tablet, visible en desktop */}
+                        {/* Fecha de Toma - Oculto en tablet, visible en desktop (✅ v1.76.5: Sin timezone offset) */}
                         <td className="hidden lg:table-cell px-3 md:px-4 py-2 md:py-3 text-gray-700 text-xs md:text-sm font-mono">
                           {carga.fechaToma ? (
                             (() => {
-                              const fecha = new Date(carga.fechaToma);
-                              const dia = String(fecha.getDate()).padStart(2, '0');
-                              const mes = String(fecha.getMonth() + 1).padStart(2, '0');
-                              const año = fecha.getFullYear();
-                              return `${dia}/${mes}/${año}`;
+                              const fechaParts = parsearFechaSegura(carga.fechaToma);
+                              if (fechaParts) {
+                                const { año, mes, día } = fechaParts;
+                                return `${String(día).padStart(2, '0')}/${String(mes).padStart(2, '0')}/${año}`;
+                              }
+                              return '-';
                             })()
                           ) : (
                             <span className="text-gray-400">-</span>
@@ -726,6 +741,7 @@ export default function MisECGsRecientes({
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
+                                console.log(`👁️ [Ver Imagen] Abriendo imagen ${idx} (mostrada como #${idx + 1})`);
                                 setPreviewImageIndex(idx);
                                 setSelectedImageIndex(idx);
                                 setModalMode('preview');
@@ -785,9 +801,10 @@ export default function MisECGsRecientes({
                           console.log("💾 Guardando fecha:", fechaToma, "ID:", idImagen);
                           toast.loading("Guardando fecha...");
 
-                          // ✅ Usar apiClient para incluir token automáticamente
-                          const response = await apiClient.get(
-                            `/teleekgs/${idImagen}/actualizar-fecha-toma?fechaToma=${fechaToma}`,
+                          // ✅ Usar apiClient POST con JSON body (endpoint v1.77.0)
+                          const response = await apiClient.post(
+                            `/teleekgs/${idImagen}/fecha-toma`,
+                            { fechaToma },
                             true
                           );
 
@@ -1249,10 +1266,10 @@ export default function MisECGsRecientes({
                     <ChevronUp className="w-5 h-5 rotate-180" />
                   </button>
                   <h3 className="text-lg font-bold text-gray-900">
-                    Imagen {previewImageIndex + 1}
+                    Imagen {previewImageIndex !== null ? previewImageIndex + 1 : '?'}
                   </h3>
                   <span className="text-xs bg-blue-100 text-blue-700 px-3 py-1 rounded-full font-semibold">
-                    Vista Previa
+                    Vista Previa (idx={previewImageIndex})
                   </span>
                 </div>
 
