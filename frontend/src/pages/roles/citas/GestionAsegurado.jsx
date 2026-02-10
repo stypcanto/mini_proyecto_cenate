@@ -256,53 +256,68 @@ export default function GestionAsegurado() {
   };
 
   // ============================================================================
-  // 🏥 CARGAR MÉDICOS POR SERVICIO (DINÁMICO)
+  // 🏥 CARGAR MÉDICOS POR SERVICIO (DINÁMICO) - SOPORTA TELEECG
   // ============================================================================
-  const obtenerMedicosPorServicio = async (idServicio) => {
-    // No hacer llamada si idServicio no es válido
-    if (!idServicio || isNaN(idServicio)) {
+  const obtenerMedicosPorServicio = async (idServicio, descTipoBolsa = "") => {
+    // Detectar si es TeleECG
+    const esTeleECG = descTipoBolsa && descTipoBolsa.toUpperCase().includes("TELEECG");
+
+    // Determinar la clave de caché
+    const cacheKey = esTeleECG ? "TELEECG" : idServicio;
+
+    // Si ya tenemos los médicos cacheados, no hacer segunda llamada
+    if (medicosPorServicio[cacheKey]) {
       return;
     }
 
-    // Si ya tenemos los médicos cacheados, no hacer segunda llamada
-    if (medicosPorServicio[idServicio]) {
+    // No hacer llamada si idServicio no es válido y no es TeleECG
+    if (!esTeleECG && (!idServicio || isNaN(idServicio))) {
       return;
     }
 
     setCargandoMedicos(true);
     try {
       const token = getToken();
-      const response = await fetch(
-        `${API_BASE}/atenciones-clinicas/detalle-medico/por-servicio/${idServicio}`,
-        {
-          method: "GET",
-          headers: {
-            "Authorization": `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-        }
-      );
+
+      // Determinar el endpoint según el tipo de bolsa
+      let endpoint;
+      if (esTeleECG) {
+        endpoint = `${API_BASE}/atenciones-clinicas/detalle-medico/para-teleecg`;
+        console.log("📞 Obteniendo médicos para TeleECG (todos disponibles)...");
+      } else {
+        endpoint = `${API_BASE}/atenciones-clinicas/detalle-medico/por-servicio/${idServicio}`;
+        console.log(`📞 Obteniendo médicos para servicio ${idServicio}...`);
+      }
+
+      const response = await fetch(endpoint, {
+        method: "GET",
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
 
       if (response.ok) {
         const data = await response.json();
         const medicos = data.data || [];
-        console.log(`✅ Se obtuvieron ${medicos.length} médicos para servicio ${idServicio}`);
+        console.log(`✅ Se obtuvieron ${medicos.length} médicos para ${esTeleECG ? "TeleECG" : "servicio " + idServicio}`);
 
         setMedicosPorServicio(prev => ({
           ...prev,
-          [idServicio]: medicos
+          [cacheKey]: medicos
         }));
       } else {
         setMedicosPorServicio(prev => ({
           ...prev,
-          [idServicio]: []
+          [cacheKey]: []
         }));
       }
     } catch (error) {
       console.error("❌ Error al obtener médicos:", error);
+      const cacheKey = esTeleECG ? "TELEECG" : idServicio;
       setMedicosPorServicio(prev => ({
         ...prev,
-        [idServicio]: []
+        [cacheKey]: []
       }));
     } finally {
       setCargandoMedicos(false);
@@ -745,10 +760,13 @@ export default function GestionAsegurado() {
     console.log("   - citasAgendadas[id]:", citasAgendadas[paciente.id]);
     console.log("   - idServicio:", paciente.idServicio);
 
-    // ✅ v1.50.2: Cargar médicos si falta idServicio
-    if (paciente.idServicio && !medicosPorServicio[paciente.idServicio]) {
-      console.log("📥 Cargando médicos para servicio:", paciente.idServicio);
-      await obtenerMedicosPorServicio(paciente.idServicio);
+    // ✅ v1.50.2: Cargar médicos si falta idServicio o es TeleECG
+    const esTeleECG = paciente.descTipoBolsa && paciente.descTipoBolsa.toUpperCase().includes("TELEECG");
+    const cacheKey = esTeleECG ? "TELEECG" : paciente.idServicio;
+
+    if ((paciente.idServicio || esTeleECG) && !medicosPorServicio[cacheKey]) {
+      console.log("📥 Cargando médicos para:", esTeleECG ? "TeleECG" : "servicio " + paciente.idServicio);
+      await obtenerMedicosPorServicio(paciente.idServicio, paciente.descTipoBolsa);
     }
 
     // Opción 1: Buscar en citasAgendadas (si el usuario acababa de seleccionar)
@@ -1349,16 +1367,30 @@ CENATE de Essalud`;
     if (pacientesAsignados.length === 0) return;
 
     const serviciosConMedicos = new Set();
-    
-    // Recolectar todos los idServicio únicos que tienen idPersonal guardado
+    let tieneTeleECG = false;
+
+    // Recolectar todos los idServicio únicos y detectar TeleECG
     pacientesAsignados.forEach(paciente => {
-      if (paciente.idPersonal && paciente.idServicio && !serviciosConMedicos.has(paciente.idServicio)) {
+      // Detectar TeleECG
+      const esTeleECG = paciente.descTipoBolsa && paciente.descTipoBolsa.toUpperCase().includes("TELEECG");
+      if (esTeleECG) {
+        tieneTeleECG = true;
+      }
+
+      // Recolectar servicios normales que tienen idPersonal
+      if (paciente.idPersonal && paciente.idServicio && !serviciosConMedicos.has(paciente.idServicio) && !esTeleECG) {
         serviciosConMedicos.add(paciente.idServicio);
         console.log(`👨‍⚕️ Paciente ${paciente.pacienteNombre} tiene idPersonal ${paciente.idPersonal}, cargando médicos del servicio ${paciente.idServicio}`);
       }
     });
 
-    // Cargar médicos para cada servicio
+    // Cargar médicos para TeleECG si existe
+    if (tieneTeleECG && !medicosPorServicio["TELEECG"]) {
+      console.log("📞 Cargando médicos para TeleECG...");
+      obtenerMedicosPorServicio(null, "BOLSA_TELEECG");
+    }
+
+    // Cargar médicos para cada servicio normal
     serviciosConMedicos.forEach(idServicio => {
       if (!medicosPorServicio[idServicio]) {
         console.log(`🔄 Obteniendo médicos del servicio ${idServicio}...`);
@@ -2145,7 +2177,9 @@ CENATE de Essalud`;
                         <td className="px-2 py-1.5 text-slate-600">
                           {(() => {
                             const idServicio = paciente.idServicio;
-                            const medicos = medicosPorServicio[idServicio] || [];
+                            const esTeleECG = paciente.descTipoBolsa && paciente.descTipoBolsa.toUpperCase().includes("TELEECG");
+                            const cacheKey = esTeleECG ? "TELEECG" : idServicio;
+                            const medicos = medicosPorServicio[cacheKey] || [];
                             const seleccionadoId = citasAgendadas[paciente.id]?.especialista;
                             const medicoSeleccionado = medicos.find(m => m.idPers === seleccionadoId);
 
@@ -2160,24 +2194,26 @@ CENATE de Essalud`;
                             // MODO EDICIÓN: Mostrar dropdown editable
                             (() => {
                               const idServicio = paciente.idServicio;
+                              const esTeleECG = paciente.descTipoBolsa && paciente.descTipoBolsa.toUpperCase().includes("TELEECG");
                               const esValidoNumerico = idServicio && !isNaN(idServicio);
-                              
-                              if (esValidoNumerico) {
-                                if (!medicosPorServicio[idServicio] && !cargandoMedicos) {
-                                  obtenerMedicosPorServicio(idServicio);
+                              const cacheKey = esTeleECG ? "TELEECG" : idServicio;
+
+                              if ((esValidoNumerico || esTeleECG)) {
+                                if (!medicosPorServicio[cacheKey] && !cargandoMedicos) {
+                                  obtenerMedicosPorServicio(idServicio, paciente.descTipoBolsa);
                                 }
                               }
 
-                              const medicos = medicosPorServicio[idServicio] || [];
+                              const medicos = medicosPorServicio[cacheKey] || [];
                               const hayMedicos = medicos.length > 0;
                               const seleccionadoId = citasAgendadas[paciente.id]?.especialista;
                               const medicoSeleccionado = medicos.find(m => m.idPers === seleccionadoId);
 
                               return (
                                 <>
-                                  {esValidoNumerico ? (
+                                  {esValidoNumerico || esTeleECG ? (
                                     <div className="space-y-1">
-                                      {cargandoMedicos && !medicosPorServicio[idServicio] ? (
+                                      {cargandoMedicos && !medicosPorServicio[cacheKey] ? (
                                         <div className="text-center py-1">
                                           <span className="text-xs text-blue-600 font-medium">Cargando...</span>
                                         </div>
@@ -2229,10 +2265,12 @@ CENATE de Essalud`;
                             // MODO NORMAL: Mostrar especialista seleccionado como texto
                             (() => {
                               const idServicio = paciente.idServicio;
-                              const medicos = medicosPorServicio[idServicio] || [];
+                              const esTeleECG = paciente.descTipoBolsa && paciente.descTipoBolsa.toUpperCase().includes("TELEECG");
+                              const cacheKey = esTeleECG ? "TELEECG" : idServicio;
+                              const medicos = medicosPorServicio[cacheKey] || [];
                               const seleccionadoId = citasAgendadas[paciente.id]?.especialista;
                               const medicoSeleccionado = medicos.find(m => m.idPers === seleccionadoId);
-                              
+
                               return (
                                 <span className="text-xs text-slate-600">
                                   {medicoSeleccionado ? medicoSeleccionado.nombre : "No seleccionado"}

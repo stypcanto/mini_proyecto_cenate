@@ -52,10 +52,36 @@ public class DetalleMedicoController {
 	}
 
 	/**
+	 * Obtiene TODOS los médicos disponibles para TeleECG
+	 *
+	 * GET /api/atenciones-clinicas/detalle-medico/para-teleecg
+	 *
+	 * @return Lista de todos los médicos disponibles (sin restricción de servicio)
+	 */
+	@GetMapping("/para-teleecg")
+	public ResponseEntity<?> obtenerMedicosPorTeleECG() {
+
+		log.info("📥 Solicitud: Obtener médicos disponibles para TeleECG");
+
+		try {
+			List<DetalleMedicoDTO> medicos = detalleMedicoService.obtenerTodosMedicos();
+
+			log.info("✅ Se retornaron {} médicos para TeleECG", medicos.size());
+
+			return ResponseEntity.ok().body(new ApiResponse("success", "Médicos obtenidos correctamente", medicos));
+
+		} catch (Exception e) {
+			log.error("❌ Error al obtener médicos para TeleECG: {}", e.getMessage(), e);
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+					.body(new ApiResponse("error", "Error al obtener médicos: " + e.getMessage(), null));
+		}
+	}
+
+	/**
 	 * Obtiene detalles de un médico específico
-	 * 
+	 *
 	 * GET /api/atenciones-clinicas/detalle-medico/{idPers}
-	 * 
+	 *
 	 * @param idPers ID del personal médico
 	 * @return DTO con información del médico
 	 */

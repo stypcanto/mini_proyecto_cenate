@@ -17,8 +17,16 @@ public interface DetalleMedicoService {
     List<DetalleMedicoDTO> obtenerMedicosPorServicio(Long idServicio);
 
     /**
+     * Obtiene TODOS los médicos disponibles (sin restricción de servicio)
+     * Utilizado para TeleECG que no tiene especialidad específica
+     *
+     * @return Lista de DTOs con información de todos los médicos
+     */
+    List<DetalleMedicoDTO> obtenerTodosMedicos();
+
+    /**
      * Obtiene información detallada de un médico específico
-     * 
+     *
      * @param idPers ID del personal médico
      * @return DTO con información del médico
      */

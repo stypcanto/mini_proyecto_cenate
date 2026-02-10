@@ -46,21 +46,42 @@ public class DetalleMedicoServiceImpl implements DetalleMedicoService {
     }
 
     @Override
+    public List<DetalleMedicoDTO> obtenerTodosMedicos() {
+        log.info("🔍 Buscando TODOS los médicos disponibles (sin restricción de servicio)");
+
+        try {
+            // Obtener todos los médicos disponibles
+            List<PersonalCnt> medicos = personalCntRepository.findAll();
+
+            log.info("✅ Se encontraron {} médicos disponibles en total", medicos.size());
+
+            // Convertir a DTOs
+            return medicos.stream()
+                    .map(this::convertirADTO)
+                    .collect(Collectors.toList());
+
+        } catch (Exception e) {
+            log.error("❌ Error al obtener todos los médicos: {}", e.getMessage(), e);
+            throw new RuntimeException("Error al obtener todos los médicos: " + e.getMessage(), e);
+        }
+    }
+
+    @Override
     public DetalleMedicoDTO obtenerDetalleMedico(Long idPers) {
         log.info("🔍 Buscando detalles del médico ID: {}", idPers);
-        
+
         try {
             Optional<PersonalCnt> personalOpt = personalCntRepository.findById(idPers);
-            
+
             if (personalOpt.isEmpty()) {
                 log.warn("⚠️ No se encontró el médico con ID: {}", idPers);
                 return null;
             }
-            
+
             DetalleMedicoDTO dto = convertirADTO(personalOpt.get());
             log.info("✅ Detalles del médico obtenidos: {}", idPers);
             return dto;
-            
+
         } catch (Exception e) {
             log.error("❌ Error al obtener detalles del médico ID: {}", idPers, e);
             throw new RuntimeException("Error al obtener detalles del médico: " + e.getMessage(), e);
