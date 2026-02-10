@@ -360,7 +360,7 @@ public class TeleECGController {
      */
     @GetMapping("")
     @Operation(summary = "Listar ECGs agrupadas por asegurado (consolidado, paginado)")
-    public ResponseEntity<Page<AseguradoConECGsDTO>> listarECGsConsolidadas(
+    public ResponseEntity<?> listarECGsConsolidadas(
             @Parameter(description = "Estado (TODOS, ENVIADA, OBSERVADA, ATENDIDA)") @RequestParam(required = false, defaultValue = "TODOS") String estado,
             @Parameter(description = "Página (0-indexed)") @RequestParam(required = false, defaultValue = "0") int page,
             @Parameter(description = "Tamaño de página") @RequestParam(required = false, defaultValue = "15") int size) {
@@ -381,10 +381,18 @@ public class TeleECGController {
             log.info("✅ Se encontraron {} asegurados con ECGs consolidadas (página {}/{})",
                 resultado.getContent().size(), page, resultado.getTotalPages());
 
-            return ResponseEntity.ok(resultado);
+            // ✅ FIX: Retornar Map envuelto para mejor serialización
+            return ResponseEntity.ok(Map.of(
+                "content", resultado.getContent(),
+                "totalPages", resultado.getTotalPages(),
+                "totalElements", resultado.getTotalElements(),
+                "size", resultado.getSize(),
+                "number", resultado.getNumber()
+            ));
         } catch (Exception e) {
             log.error("❌ Error listando ECGs consolidadas:", e);
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new PageImpl<>(List.of()));
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(Map.of("error", e.getMessage()));
         }
     }
 
