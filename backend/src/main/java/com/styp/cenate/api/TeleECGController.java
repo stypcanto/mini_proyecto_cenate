@@ -552,7 +552,7 @@ public class TeleECGController {
      * Procesar imagen
      */
     @PutMapping("/{idImagen}/procesar")
-    @CheckMBACPermission(pagina = "/teleekgs/listar", accion = "editar")
+    @CheckMBACPermission(pagina = "/teleekgs/ipress-workspace", accion = "editar")
     @Operation(summary = "Procesar imagen ECG")
     public ResponseEntity<ApiResponse<TeleECGImagenDTO>> procesarImagen(
             @PathVariable Long idImagen,
@@ -709,7 +709,7 @@ public class TeleECGController {
      * Este endpoint recopila datos para entrenar modelos de ML posteriormente
      */
     @PutMapping("/{idImagen}/evaluar")
-    @CheckMBACPermission(pagina = "/teleekgs/listar", accion = "editar")
+    @CheckMBACPermission(pagina = "/teleekgs/ipress-workspace", accion = "editar")
     @Operation(summary = "Evaluar imagen ECG (NORMAL/ANORMAL)")
     public ResponseEntity<ApiResponse<TeleECGImagenDTO>> evaluarImagen(
             @PathVariable Long idImagen,
@@ -760,7 +760,7 @@ public class TeleECGController {
      * Endpoint para registrar hallazgos clínicos y plan de seguimiento
      */
     @PutMapping("/{idImagen}/nota-clinica")
-    @CheckMBACPermission(pagina = "/teleekgs/listar", accion = "editar")
+    @CheckMBACPermission(pagina = "/teleekgs/ipress-workspace", accion = "editar")
     @Operation(summary = "Guardar nota clínica del ECG (hallazgos y plan de seguimiento)")
     public ResponseEntity<ApiResponse<TeleECGImagenDTO>> guardarNotaClinica(
             @PathVariable Long idImagen,
