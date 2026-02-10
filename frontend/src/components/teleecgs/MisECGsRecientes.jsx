@@ -654,10 +654,10 @@ export default function MisECGsRecientes({
         )}
       </div>
 
-      {/* Modal Profesional de Gestión de Imágenes - Médico Friendly */}
+      {/* Modal Rediseñado - Simpler UX */}
       {showEditModal && cargaEdicion && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-lg shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6">
+          <div className="bg-white rounded-lg shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto p-6">
             {/* Encabezado */}
             <div className="flex items-center justify-between mb-6 sticky top-0 bg-white pb-4 border-b">
               <div>
@@ -678,56 +678,37 @@ export default function MisECGsRecientes({
               </button>
             </div>
 
-            {/* Vista Principal - Imágenes */}
+            {/* Vista Principal Simplificada */}
             {modalMode === 'view' && (
               <div className="space-y-6">
-                {/* Contador de Imágenes */}
-                <div className="grid grid-cols-3 gap-3">
-                  <div className="bg-blue-50 rounded-lg p-4 text-center">
-                    <p className="text-3xl font-bold text-blue-600">
-                      {cargaEdicion.cantidadImagenes || 0}
-                    </p>
-                    <p className="text-xs text-blue-700 font-semibold mt-1">Total de Imágenes</p>
-                  </div>
-                  <div className="bg-green-50 rounded-lg p-4 text-center">
-                    <p className="text-2xl font-bold text-green-600">+</p>
-                    <p className="text-xs text-green-700 font-semibold mt-1">Agregar</p>
-                  </div>
-                  <div className="bg-orange-50 rounded-lg p-4 text-center">
-                    <p className="text-2xl font-bold text-orange-600">⚙️</p>
-                    <p className="text-xs text-orange-700 font-semibold mt-1">Gestionar</p>
-                  </div>
-                </div>
-
-                {/* Grid de Imágenes Simuladas */}
+                {/* Sección de Imágenes Cargadas */}
                 {cargaEdicion.cantidadImagenes && cargaEdicion.cantidadImagenes > 0 ? (
                   <div>
-                    <h3 className="font-bold text-gray-900 mb-3 flex items-center gap-2">
-                      <CloudUpload className="w-4 h-4 text-blue-600" />
-                      Imágenes Disponibles ({cargaEdicion.cantidadImagenes})
-                    </h3>
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                    <div className="flex items-center gap-2 mb-4">
+                      <CloudUpload className="w-5 h-5 text-blue-600" />
+                      <h3 className="text-lg font-bold text-gray-900">
+                        Imágenes Cargadas ({cargaEdicion.cantidadImagenes})
+                      </h3>
+                    </div>
+
+                    {/* Grid de Imágenes - SIMPLIFICADO */}
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                       {Array.from({ length: cargaEdicion.cantidadImagenes || 0 }).map((_, idx) => (
                         <div
                           key={idx}
-                          className="relative group bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg overflow-hidden aspect-square flex items-center justify-center border-2 border-dashed border-blue-300 hover:border-blue-500 transition-all cursor-pointer hover:shadow-lg"
+                          className="relative group bg-gray-100 rounded-lg overflow-hidden aspect-square flex items-center justify-center border border-gray-300 hover:border-blue-500 transition-all hover:shadow-md"
                         >
-                          {/* Click para previsualizas */}
-                          <button
-                            onClick={() => {
-                              setPreviewImageIndex(idx);
-                              setModalMode('preview');
-                            }}
-                            className="absolute inset-0 flex flex-col items-center justify-center text-center hover:bg-blue-100/30 transition-colors"
-                            title="Click para previsualizar"
-                          >
-                            <CloudUpload className="w-8 h-8 text-blue-500 mb-2 group-hover:scale-110 transition-transform" />
-                            <p className="text-xs text-blue-700 font-semibold">Imagen {idx + 1}</p>
-                            <p className="text-xs text-blue-500 mt-1 group-hover:block hidden">Click para ver</p>
-                          </button>
+                          {/* Placeholder de imagen */}
+                          <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100">
+                            <div className="text-center">
+                              <CloudUpload className="w-8 h-8 text-gray-400 mx-auto mb-1" />
+                              <p className="text-xs text-gray-600 font-semibold">Imagen {idx + 1}</p>
+                            </div>
+                          </div>
 
-                          {/* Overlay de acciones rápidas (sin abrir preview) */}
-                          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-all duration-200 flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100">
+                          {/* Botones de acción - SIEMPRE VISIBLES */}
+                          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/50 transition-all duration-200 flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100">
+                            {/* Ver Imagen */}
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
@@ -735,37 +716,47 @@ export default function MisECGsRecientes({
                                 setSelectedImageIndex(idx);
                                 setModalMode('preview');
                               }}
-                              className="p-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors"
-                              title="Ver en grande"
+                              className="p-2.5 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors shadow-lg"
+                              title="Ver imagen"
                             >
                               <Eye className="w-4 h-4" />
+                            </button>
+
+                            {/* Eliminar Imagen */}
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setSelectedImageIndex(idx);
+                                setModalMode('delete');
+                              }}
+                              className="p-2.5 bg-red-500 hover:bg-red-600 text-white rounded-lg transition-colors shadow-lg"
+                              title="Eliminar imagen"
+                            >
+                              <Trash2 className="w-4 h-4" />
                             </button>
                           </div>
                         </div>
                       ))}
                     </div>
-                    <p className="text-xs text-gray-500 mt-3 text-center">
-                      💡 Haz click en una imagen para verla en grande y luego editarla
-                    </p>
                   </div>
                 ) : (
-                  <div className="bg-amber-50 border-2 border-amber-200 rounded-lg p-6 text-center">
-                    <AlertCircle className="w-8 h-8 text-amber-600 mx-auto mb-2" />
-                    <p className="text-amber-900 font-semibold">Sin imágenes aún</p>
-                    <p className="text-xs text-amber-700 mt-1">Agrega la primera imagen para este paciente</p>
+                  <div className="bg-blue-50 border-2 border-blue-200 rounded-lg p-6 text-center">
+                    <CloudUpload className="w-8 h-8 text-blue-600 mx-auto mb-2" />
+                    <p className="text-blue-900 font-semibold">No hay imágenes cargadas</p>
+                    <p className="text-xs text-blue-700 mt-1">Agrega tu primera imagen usando el botón de abajo</p>
                   </div>
                 )}
 
-                {/* Zona de Carga */}
-                <div className="border-2 border-dashed border-green-300 rounded-lg p-8 text-center bg-green-50 hover:bg-green-100 transition-colors">
+                {/* Zona de Agregar Imagen - PROMINENTE */}
+                <div className="border-2 border-dashed border-green-400 rounded-lg p-8 bg-green-50 hover:bg-green-100 transition-all">
                   <Plus className="w-10 h-10 text-green-600 mx-auto mb-3" />
-                  <p className="font-bold text-green-900 mb-2">Agregar Nueva Imagen</p>
-                  <p className="text-xs text-green-700 mb-4">Arrastra una imagen aquí o haz clic para seleccionar</p>
+                  <h4 className="font-bold text-green-900 mb-1 text-lg">Agregar Nueva Imagen</h4>
+                  <p className="text-sm text-green-700 mb-4">Arrastra una imagen aquí o haz clic para seleccionar</p>
                   <button
                     onClick={() => setModalMode('add')}
-                    className="px-6 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold transition-colors"
+                    className="px-6 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold transition-all hover:shadow-md active:scale-95"
                   >
-                    Seleccionar Archivo
+                    + Seleccionar Imagen
                   </button>
                 </div>
               </div>
