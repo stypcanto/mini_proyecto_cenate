@@ -951,9 +951,9 @@ public class TeleECGController {
 
     /**
      * ✅ v1.76.0: Actualizar fecha de toma del EKG
-     * PUT /api/teleekgs/{id}/fecha-toma?fechaToma=2026-02-04
+     * GET /api/teleekgs/{id}/actualizar-fecha-toma?fechaToma=2026-02-04
      */
-    @PutMapping("/{id}/fecha-toma")
+    @GetMapping("/{id}/actualizar-fecha-toma")
     public ResponseEntity<ApiResponse<TeleECGImagenDTO>> actualizarFechaToma(
             @PathVariable Long id,
             @RequestParam String fechaToma,

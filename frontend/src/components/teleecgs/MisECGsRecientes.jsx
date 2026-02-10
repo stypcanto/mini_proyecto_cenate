@@ -786,9 +786,8 @@ export default function MisECGsRecientes({
                           toast.loading("Guardando fecha...");
 
                           // ✅ Usar apiClient para incluir token automáticamente
-                          const response = await apiClient.post(
-                            `/teleekgs/${idImagen}/fecha-toma?fechaToma=${fechaToma}`,
-                            {},
+                          const response = await apiClient.get(
+                            `/teleekgs/${idImagen}/actualizar-fecha-toma?fechaToma=${fechaToma}`,
                             true
                           );
 
