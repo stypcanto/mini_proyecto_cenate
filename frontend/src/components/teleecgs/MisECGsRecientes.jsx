@@ -31,6 +31,7 @@ import {
 import { COLORS, MEDICAL_PALETTE } from '../../config/designSystem';
 import toast from 'react-hot-toast';
 import teleecgService from '../../services/teleecgService';
+import apiClient from '../../services/apiClient';
 
 export default function MisECGsRecientes({
   ultimas3 = [],
@@ -780,28 +781,30 @@ export default function MisECGsRecientes({
                     onClick={async () => {
                       if (cargaEdicion && fechaToma) {
                         try {
-                          console.log("💾 Guardando fecha:", fechaToma);
+                          const idImagen = cargaEdicion.idImagen || cargaEdicion.id;
+                          console.log("💾 Guardando fecha:", fechaToma, "ID:", idImagen);
                           toast.loading("Guardando fecha...");
 
-                          // Llamar al API para actualizar la fecha
-                          const response = await fetch(
-                            `/api/teleekgs/${cargaEdicion.idImagen || cargaEdicion.id}/fecha-toma?fechaToma=${fechaToma}`,
-                            { method: 'POST' }
+                          // ✅ Usar apiClient para incluir token automáticamente
+                          const response = await apiClient.post(
+                            `/teleekgs/${idImagen}/fecha-toma?fechaToma=${fechaToma}`,
+                            {},
+                            true
                           );
 
-                          if (response.ok) {
+                          if (response) {
                             toast.dismiss();
                             toast.success("✅ Fecha actualizada: " + fechaToma);
                             // Refrescar datos
-                            setTimeout(() => window.location.reload(), 1000);
+                            setTimeout(() => window.location.reload(), 1500);
                           } else {
                             toast.dismiss();
                             toast.error("❌ Error al actualizar fecha");
                           }
                         } catch (error) {
-                          console.error("❌ Error:", error);
+                          console.error("❌ Error guardando fecha:", error);
                           toast.dismiss();
-                          toast.error("Error al guardar fecha");
+                          toast.error("❌ Error: " + (error.response?.data?.message || error.message));
                         }
                       } else if (!fechaToma) {
                         toast.error("Por favor selecciona una fecha");
