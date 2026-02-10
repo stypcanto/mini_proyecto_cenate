@@ -682,18 +682,20 @@ export default function MisECGsRecientes({
             {modalMode === 'view' && (
               <div className="space-y-6">
                 {/* Sección de Imágenes Cargadas */}
-                {cargaEdicion.cantidadImagenes && cargaEdicion.cantidadImagenes > 0 ? (
-                  <div>
-                    <div className="flex items-center gap-2 mb-4">
-                      <CloudUpload className="w-5 h-5 text-blue-600" />
-                      <h3 className="text-lg font-bold text-gray-900">
-                        Imágenes Cargadas ({cargaEdicion.cantidadImagenes})
-                      </h3>
-                    </div>
+                {(() => {
+                  const imagenes = imagenesPorDni[cargaEdicion?.dni] || [];
+                  return imagenes.length > 0 ? (
+                    <div>
+                      <div className="flex items-center gap-2 mb-4">
+                        <CloudUpload className="w-5 h-5 text-blue-600" />
+                        <h3 className="text-lg font-bold text-gray-900">
+                          Imágenes Cargadas ({imagenes.length})
+                        </h3>
+                      </div>
 
-                    {/* Grid de Imágenes - SIMPLIFICADO */}
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                      {Array.from({ length: cargaEdicion.cantidadImagenes || 0 }).map((_, idx) => (
+                      {/* Grid de Imágenes - SIMPLIFICADO */}
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                        {imagenes.map((_, idx) => (
                         <div
                           key={idx}
                           className="relative group bg-gray-100 rounded-lg overflow-hidden aspect-square flex items-center justify-center border border-gray-300 hover:border-blue-500 transition-all hover:shadow-md"
@@ -739,13 +741,14 @@ export default function MisECGsRecientes({
                       ))}
                     </div>
                   </div>
-                ) : (
-                  <div className="bg-blue-50 border-2 border-blue-200 rounded-lg p-6 text-center">
-                    <CloudUpload className="w-8 h-8 text-blue-600 mx-auto mb-2" />
-                    <p className="text-blue-900 font-semibold">No hay imágenes cargadas</p>
-                    <p className="text-xs text-blue-700 mt-1">Agrega tu primera imagen usando el botón de abajo</p>
-                  </div>
-                )}
+                    ) : (
+                      <div className="bg-blue-50 border-2 border-blue-200 rounded-lg p-6 text-center">
+                        <CloudUpload className="w-8 h-8 text-blue-600 mx-auto mb-2" />
+                        <p className="text-blue-900 font-semibold">No hay imágenes cargadas</p>
+                        <p className="text-xs text-blue-700 mt-1">Agrega tu primera imagen usando el botón de abajo</p>
+                      </div>
+                    )
+                  })()}
 
                 {/* Zona de Agregar Imagen - PROMINENTE */}
                 <div className="border-2 border-dashed border-green-400 rounded-lg p-8 bg-green-50 hover:bg-green-100 transition-all">
