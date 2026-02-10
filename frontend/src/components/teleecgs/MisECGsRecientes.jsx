@@ -790,14 +790,14 @@ export default function MisECGsRecientes({
                     )
                   })()}
 
-                {/* Zona de Agregar Imagen - PROMINENTE */}
-                <div className="border-2 border-dashed border-green-400 rounded-lg p-8 bg-green-50 hover:bg-green-100 transition-all">
-                  <Plus className="w-10 h-10 text-green-600 mx-auto mb-3" />
-                  <h4 className="font-bold text-green-900 mb-1 text-lg">Agregar Nueva Imagen</h4>
-                  <p className="text-sm text-green-700 mb-4">Arrastra una imagen aquí o haz clic para seleccionar</p>
+                {/* Zona de Agregar Imagen - COMPACTO */}
+                <div className="border-2 border-dashed border-green-400 rounded-lg p-4 bg-green-50 hover:bg-green-100 transition-all">
+                  <Plus className="w-6 h-6 text-green-600 mx-auto mb-2" />
+                  <h4 className="font-bold text-green-900 mb-0.5 text-base">Agregar Nueva Imagen</h4>
+                  <p className="text-xs text-green-700 mb-2">Arrastra o haz clic para seleccionar</p>
                   <button
                     onClick={() => setModalMode('add')}
-                    className="px-6 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold transition-all hover:shadow-md active:scale-95"
+                    className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded font-semibold text-sm transition-all hover:shadow-md active:scale-95"
                   >
                     + Seleccionar Imagen
                   </button>
