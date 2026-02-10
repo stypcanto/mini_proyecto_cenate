@@ -160,9 +160,10 @@ public class TeleECGController {
             @RequestParam(value = "pkAsegurado", required = false) String pkAsegurado,
             @RequestParam("archivo") MultipartFile archivo,
             @RequestParam(value = "esUrgente", required = false, defaultValue = "false") Boolean esUrgente,
+            @RequestParam(value = "fechaToma", required = false) String fechaToma,  // ✅ v1.76.4: Fecha de toma del EKG
             HttpServletRequest request) {
 
-        log.info("📤 Upload ECG - DNI: {}, Urgente: {}", numDocPaciente, esUrgente);
+        log.info("📤 Upload ECG - DNI: {}, Urgente: {}, Fecha Toma: {}", numDocPaciente, esUrgente, fechaToma);
 
         try {
             SubirImagenECGDTO dto = new SubirImagenECGDTO();
@@ -175,6 +176,16 @@ public class TeleECGController {
             }
             dto.setArchivo(archivo);
             dto.setEsUrgente(esUrgente != null ? esUrgente : false);
+            // ✅ v1.76.4: Pasar fechaToma si se proporciona (formato YYYY-MM-DD)
+            if (fechaToma != null && !fechaToma.trim().isEmpty()) {
+                try {
+                    java.time.LocalDate parsedDate = java.time.LocalDate.parse(fechaToma);
+                    dto.setFechaToma(parsedDate);
+                } catch (Exception e) {
+                    log.warn("⚠️ Formato de fecha inválido: {}, ignorando", fechaToma);
+                    // Si la fecha es inválida, se ignora y el campo queda null
+                }
+            }
 
             Long idUsuario = getUsuarioActual();
             String ipCliente = request.getRemoteAddr();
@@ -226,9 +237,10 @@ public class TeleECGController {
             @RequestParam("apellidosPaciente") String apellidosPaciente,
             @RequestParam(value = "pkAsegurado", required = false) String pkAsegurado,
             @RequestParam("archivos") MultipartFile[] archivos,
+            @RequestParam(value = "fechaToma", required = false) String fechaToma,  // ✅ v1.76.4: Fecha de toma del EKG
             HttpServletRequest request) {
 
-        log.info("📤 Upload MÚLTIPLES ECGs - DNI: {} - Cantidad: {}", numDocPaciente, archivos.length);
+        log.info("📤 Upload MÚLTIPLES ECGs - DNI: {} - Cantidad: {}, Fecha Toma: {}", numDocPaciente, archivos.length, fechaToma);
 
         if (archivos == null || archivos.length == 0) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
@@ -317,6 +329,16 @@ public class TeleECGController {
                         dto.setPkAsegurado(pkAsegurado);
                     }
                     dto.setArchivo(archivo);
+                    // ✅ v1.76.4: Pasar fechaToma si se proporciona (formato YYYY-MM-DD)
+                    if (fechaToma != null && !fechaToma.trim().isEmpty()) {
+                        try {
+                            java.time.LocalDate parsedDate = java.time.LocalDate.parse(fechaToma);
+                            dto.setFechaToma(parsedDate);
+                        } catch (Exception e) {
+                            log.warn("⚠️ Formato de fecha inválido: {}, ignorando", fechaToma);
+                            // Si la fecha es inválida, se ignora y el campo queda null
+                        }
+                    }
 
                     TeleECGImagenDTO resultado = teleECGService.subirImagenECG(
                         dto, idIpressActual, idUsuario, ipCliente, navegador
@@ -979,6 +1001,48 @@ public class TeleECGController {
                 .body(new ApiResponse<>(false, e.getMessage(), "400", null));
         } catch (Exception e) {
             log.error("❌ Error actualizando fecha de toma", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(new ApiResponse<>(false, "Error: " + e.getMessage(), "500", null));
+        }
+    }
+
+    /**
+     * ✅ v1.77.0: Actualizar fecha de toma del EKG (POST)
+     * POST /api/teleekgs/{id}/fecha-toma
+     * Body: { "fechaToma": "2026-02-04" }
+     */
+    @PostMapping("/{id}/fecha-toma")
+    public ResponseEntity<ApiResponse<TeleECGImagenDTO>> actualizarFechaTomaPost(
+            @PathVariable Long id,
+            @RequestBody Map<String, String> body,
+            HttpServletRequest httpRequest) {
+
+        log.info("🗓️ Actualizando fecha de toma (POST) - ID: {}, Body: {}", id, body);
+
+        try {
+            String fechaToma = body.get("fechaToma");
+            if (fechaToma == null || fechaToma.isEmpty()) {
+                return ResponseEntity.badRequest()
+                    .body(new ApiResponse<>(false, "fechaToma es requerido", "400", null));
+            }
+
+            TeleECGImagenDTO imagen = teleECGService.actualizarFechaToma(id, fechaToma);
+            return ResponseEntity.ok(new ApiResponse<>(
+                true,
+                "Fecha de toma actualizada exitosamente",
+                "200",
+                imagen
+            ));
+        } catch (ResourceNotFoundException e) {
+            log.warn("❌ Imagen no encontrada: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(new ApiResponse<>(false, e.getMessage(), "404", null));
+        } catch (ValidationException e) {
+            log.warn("⚠️ Error de validación: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(new ApiResponse<>(false, e.getMessage(), "400", null));
+        } catch (Exception e) {
+            log.error("❌ Error actualizando fecha de toma (POST)", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(new ApiResponse<>(false, "Error: " + e.getMessage(), "500", null));
         }
