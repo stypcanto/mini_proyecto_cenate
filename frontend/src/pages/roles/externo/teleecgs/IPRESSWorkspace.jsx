@@ -316,48 +316,65 @@ export default function IPRESSWorkspace() {
       setStats(newStats);
       setLoading(false);
 
-      // 🔄 ENRIQUECIMIENTO EN BACKGROUND (no bloquea la UI)
-      console.log("⏳ Iniciando enriquecimiento en background...");
+      // 🔄 ENRIQUECIMIENTO EN BACKGROUND CON THROTTLING (v1.80.3)
+      // ⚠️ IMPORTANTE: Limitar a 5 llamadas concurrentes para no sobrecargar backend
+      console.log("⏳ Iniciando enriquecimiento en background (batch de 5)...");
       const newCache = { ...pacientesCache };
 
-      // Hacer las llamadas de enriquecimiento sin esperar
-      imagenes.forEach(async (img) => {
-        const dni = img.dni || img.numDocPaciente;
-        if (!dni || newCache[dni]) return; // Skip si ya está en cache
+      // Obtener DNIs únicos que no están en cache
+      const dnisAEnriquecer = Array.from(
+        new Set(imagenes.map(img => img.dni || img.numDocPaciente).filter(Boolean))
+      ).filter(dni => !newCache[dni]);
 
-        try {
-          const datoPaciente = await gestionPacientesService.buscarAseguradoPorDni(dni);
-          const nombreCompleto = datoPaciente?.apellidosNombres ||
-                                datoPaciente?.nombres ||
-                                datoPaciente?.nombre ||
-                                datoPaciente?.nombreCompleto ||
-                                "";
+      console.log(`📊 DNIs a enriquecer: ${dnisAEnriquecer.length}`);
 
-          if (nombreCompleto) {
-            newCache[dni] = {
-              nombres: nombreCompleto,
-              apellidos: "",
-            };
-            console.log(`✅ [Enriquecimiento] ${dni}: ${nombreCompleto}`);
+      // Función para hacer llamadas con concurrencia limitada
+      const enriquecerConLimite = async (dnis, batchSize = 5) => {
+        for (let i = 0; i < dnis.length; i += batchSize) {
+          const batch = dnis.slice(i, i + batchSize);
 
-            // 🔧 v1.71.0: Actualizar con el nombre enriquecido (SIEMPRE, no solo si es "Cargando...")
-            // Esto asegura que nombres incompletos se actualicen al nombre real del asegurado
-            setPacientesCache({ ...newCache });
-            setEcgs(prev =>
-              prev.map(ecg => {
-                const ecgDni = ecg.dni || ecg.numDocPaciente;
-                // Actualizar si es el DNI correcto y el nombre actual NO es el nombre real
-                if (ecgDni === dni && ecg.nombrePaciente !== nombreCompleto) {
-                  return { ...ecg, nombrePaciente: nombreCompleto };
+          // Procesar batch en paralelo
+          await Promise.all(
+            batch.map(async (dni) => {
+              try {
+                const datoPaciente = await gestionPacientesService.buscarAseguradoPorDni(dni);
+                const nombreCompleto = datoPaciente?.apellidosNombres ||
+                                      datoPaciente?.nombres ||
+                                      datoPaciente?.nombre ||
+                                      datoPaciente?.nombreCompleto ||
+                                      "";
+
+                if (nombreCompleto) {
+                  newCache[dni] = {
+                    nombres: nombreCompleto,
+                    apellidos: "",
+                  };
+                  console.log(`✅ [Enriquecimiento] ${dni}: ${nombreCompleto}`);
+
+                  // Actualizar cache y UI (sin bloquear, usando state updates eficientes)
+                  setPacientesCache({ ...newCache });
+                  setEcgs(prev =>
+                    prev.map(ecg => {
+                      const ecgDni = ecg.dni || ecg.numDocPaciente;
+                      if (ecgDni === dni && ecg.nombrePaciente !== nombreCompleto) {
+                        return { ...ecg, nombrePaciente: nombreCompleto };
+                      }
+                      return ecg;
+                    })
+                  );
                 }
-                return ecg;
-              })
-            );
-          }
-        } catch (err) {
-          console.warn(`⚠️ Error enriqueciendo ${dni}:`, err);
+              } catch (err) {
+                console.warn(`⚠️ Error enriqueciendo ${dni}:`, err.message);
+              }
+            })
+          );
         }
-      });
+      };
+
+      // Ejecutar enriquecimiento en background (no esperar)
+      if (dnisAEnriquecer.length > 0) {
+        enriquecerConLimite(dnisAEnriquecer, 5);
+      }
 
     } catch (error) {
       console.error("❌ Error al cargar EKGs:", error);
