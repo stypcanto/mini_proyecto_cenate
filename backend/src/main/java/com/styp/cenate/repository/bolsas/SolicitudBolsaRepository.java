@@ -843,6 +843,15 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
     List<SolicitudBolsa> findByIdPersonalAndActivoTrue(Long idPersonal);
 
     /**
+     * 🔧 v1.78.1: Obtener TODOS los pacientes asignados a un médico (sin filtro activo)
+     * Usado por MisPacientes para mostrar tanto pacientes activos como inactivos/completados
+     *
+     * @param idPersonal ID del personal médico (doctor)
+     * @return lista de TODAS las solicitudes asignadas al médico
+     */
+    List<SolicitudBolsa> findByIdPersonal(Long idPersonal);
+
+    /**
      * ⭐ v1.62.0: Contar pacientes pendientes de un médico específico
      * Optimizado para notificaciones: usa COUNT(*) sin cargar datos
      * Filtra por: id_personal = idPersonal Y condicion_medica = 'Pendiente' Y activo = true

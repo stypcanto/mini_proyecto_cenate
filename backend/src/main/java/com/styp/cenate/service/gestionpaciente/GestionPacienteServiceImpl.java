@@ -329,7 +329,8 @@ public class GestionPacienteServiceImpl implements IGestionPacienteService {
 
             // ✅ v1.45.0: Buscar pacientes asignados directamente en dim_solicitud_bolsa (idPersonal)
             // Esta es la fuente correcta de asignaciones médicas (desde GestionAsegurado)
-            List<SolicitudBolsa> solicitudesBolsa = solicitudBolsaRepository.findByIdPersonalAndActivoTrue(idPers);
+            // 🔧 v1.78.1: Buscar sin filtro activo=true para mostrar TODOS los pacientes asignados
+            List<SolicitudBolsa> solicitudesBolsa = solicitudBolsaRepository.findByIdPersonal(idPers);
             log.info("Se encontraron {} solicitudes en bolsas para el médico {}", solicitudesBolsa.size(), idPers);
 
             // Extraer DNIs únicos de los pacientes de esas solicitudes
