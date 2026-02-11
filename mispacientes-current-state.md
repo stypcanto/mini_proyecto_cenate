@@ -1,0 +1,131 @@
+- generic [ref=e157]:
+  - complementary [ref=e158]:
+    - generic [ref=e160]:
+      - generic [ref=e163]:
+        - img "Logo CENATE" [ref=e164]
+        - button "Colapsar menu" [ref=e165] [cursor=pointer]:
+          - img [ref=e166]
+      - navigation [ref=e168]:
+        - generic [ref=e196]:
+          - button "Panel Médico" [ref=e197] [cursor=pointer]:
+            - generic [ref=e198]:
+              - img [ref=e199]
+              - generic [ref=e203]: Panel Médico
+            - img [ref=e204]
+          - generic [ref=e206]:
+            - link "Bienvenida" [ref=e207] [cursor=pointer]:
+              - /url: /roles/medico/bienvenida
+              - img [ref=e208]
+              - generic [ref=e211]: Bienvenida
+            - link "Producción" [ref=e212] [cursor=pointer]:
+              - /url: /roles/medico/produccion
+              - img [ref=e213]
+              - generic [ref=e217]: Producción
+            - link "Pacientes" [ref=e218] [cursor=pointer]:
+              - /url: /roles/medico/pacientes
+              - img [ref=e219]
+              - generic [ref=e223]: Pacientes
+        - generic [ref=e224]:
+          - button "TeleECG" [ref=e225] [cursor=pointer]:
+            - generic [ref=e226]:
+              - img [ref=e227]
+              - generic [ref=e229]: TeleECG
+            - img [ref=e230]
+          - link "TeleECG Recibidas" [ref=e233] [cursor=pointer]:
+            - /url: /teleecg/recibidas
+            - img [ref=e234]
+            - generic [ref=e237]: TeleECG Recibidas
+      - paragraph [ref=e171]: v1.37.4
+  - main "Contenido principal" [ref=e172]:
+    - generic [ref=e174]:
+      - button "Notificaciones" [ref=e175] [cursor=pointer]:
+        - img [ref=e176]
+      - button "C Carito Lisset Zumaeta Cabrera MEDICO" [ref=e180] [cursor=pointer]:
+        - generic [ref=e182]: C
+        - generic [ref=e183]:
+          - generic [ref=e184]: Carito Lisset Zumaeta Cabrera
+          - generic [ref=e185]: MEDICO
+        - img [ref=e186]
+    - generic [ref=e188]:
+      - generic [ref=e256]:
+        - generic [ref=e257]:
+          - generic [ref=e258]:
+            - img [ref=e259]
+            - heading "👨‍⚕️ Mis Pacientes" [level=1] [ref=e264]
+          - paragraph [ref=e265]: Gestiona tus pacientes asignados
+        - generic [ref=e266]:
+          - button "Total de Pacientes 2 Haz clic para limpiar filtro" [ref=e267] [cursor=pointer]:
+            - generic [ref=e269]:
+              - paragraph [ref=e270]: Total de Pacientes
+              - paragraph [ref=e271]: "2"
+              - paragraph [ref=e272]: Haz clic para limpiar filtro
+          - button "Atendidos 0 Haz clic para filtrar" [ref=e273] [cursor=pointer]:
+            - generic [ref=e275]:
+              - paragraph [ref=e276]: Atendidos
+              - paragraph [ref=e277]: "0"
+              - paragraph [ref=e278]: Haz clic para filtrar
+          - button "Pendientes 2 Haz clic para filtrar" [ref=e279] [cursor=pointer]:
+            - generic [ref=e281]:
+              - paragraph [ref=e282]: Pendientes
+              - paragraph [ref=e283]: "2"
+              - paragraph [ref=e284]: Haz clic para filtrar
+          - button "Deserción 0 Haz clic para filtrar" [ref=e285] [cursor=pointer]:
+            - generic [ref=e287]:
+              - paragraph [ref=e288]: Deserción
+              - paragraph [ref=e289]: "0"
+              - paragraph [ref=e290]: Haz clic para filtrar
+        - generic [ref=e292]:
+          - button "Filtros de Búsqueda Sin filtros activos" [ref=e293] [cursor=pointer]:
+            - img [ref=e295]
+            - generic [ref=e297]:
+              - heading "Filtros de Búsqueda" [level=3] [ref=e298]
+              - paragraph [ref=e299]: Sin filtros activos
+          - img [ref=e301]
+        - table [ref=e305]:
+          - rowgroup [ref=e306]:
+            - row "Paciente Teléfono IPRESS Condición Motivo Fecha Asignación Fecha Atención" [ref=e307]:
+              - columnheader "Paciente" [ref=e308]
+              - columnheader "Teléfono" [ref=e309]
+              - columnheader "IPRESS" [ref=e310]
+              - columnheader "Condición" [ref=e311]
+              - columnheader "Motivo" [ref=e312]
+              - columnheader "Fecha Asignación" [ref=e313]
+              - columnheader "Fecha Atención" [ref=e314]
+          - rowgroup [ref=e315]:
+            - 'row "VERASTEGUI JORGE VICTOR DNI: 09950203 944809150 POL. CHINCHA Pendiente - Hoy, 08:15 a. m. -" [ref=e316]':
+              - 'cell "VERASTEGUI JORGE VICTOR DNI: 09950203" [ref=e317]':
+                - generic [ref=e318]:
+                  - button "Ver detalles del paciente" [ref=e319] [cursor=pointer]:
+                    - img [ref=e320]
+                  - generic [ref=e323]:
+                    - generic [ref=e324]: VERASTEGUI JORGE VICTOR
+                    - generic [ref=e325]: "DNI: 09950203"
+              - cell "944809150" [ref=e326]
+              - cell "POL. CHINCHA" [ref=e327]
+              - cell "Pendiente" [ref=e328]:
+                - button "Pendiente" [ref=e329] [cursor=pointer]:
+                  - generic [ref=e330]: Pendiente
+                  - img [ref=e331]
+              - cell "-" [ref=e333]
+              - cell "Hoy, 08:15 a. m." [ref=e334]
+              - cell "-" [ref=e335]
+            - 'row "CUMPA YAIPEN ROSA FLOR DNI: 16498964 971871179 POL. SAN LUIS Pendiente - 10/02/26 09:41 a. m. -" [ref=e336]':
+              - 'cell "CUMPA YAIPEN ROSA FLOR DNI: 16498964" [ref=e337]':
+                - generic [ref=e338]:
+                  - button "Ver detalles del paciente" [ref=e339] [cursor=pointer]:
+                    - img [ref=e340]
+                  - generic [ref=e343]:
+                    - generic [ref=e344]: CUMPA YAIPEN ROSA FLOR
+                    - generic [ref=e345]: "DNI: 16498964"
+              - cell "971871179" [ref=e346]
+              - cell "POL. SAN LUIS" [ref=e347]
+              - cell "Pendiente" [ref=e348]:
+                - button "Pendiente" [ref=e349] [cursor=pointer]:
+                  - generic [ref=e350]: Pendiente
+                  - img [ref=e351]
+              - cell "-" [ref=e353]
+              - cell "10/02/26 09:41 a. m." [ref=e354]
+              - cell "-" [ref=e355]
+      - generic [ref=e193]:
+        - paragraph [ref=e194]: CENATE - Sistema de Telemedicina - EsSalud 2026
+        - paragraph [ref=e195]: v1.37.4 - Performance Optimization + Deduplicación Automática + Foto Header + SMTP EsSalud

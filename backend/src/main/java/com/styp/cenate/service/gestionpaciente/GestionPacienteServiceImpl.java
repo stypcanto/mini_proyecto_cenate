@@ -6,6 +6,7 @@ import com.styp.cenate.model.Asegurado;
 import com.styp.cenate.model.GestionPaciente;
 import com.styp.cenate.model.Ipress;
 import com.styp.cenate.model.PersonalCnt;
+import com.styp.cenate.model.TeleECGImagen;
 import com.styp.cenate.model.Usuario;
 import com.styp.cenate.model.bolsas.SolicitudBolsa;
 import com.styp.cenate.model.chatbot.SolicitudCita;
@@ -13,11 +14,14 @@ import com.styp.cenate.repository.AseguradoRepository;
 import com.styp.cenate.repository.GestionPacienteRepository;
 import com.styp.cenate.repository.IpressRepository;
 import com.styp.cenate.repository.PersonalCntRepository;
+import com.styp.cenate.repository.TeleECGImagenRepository;
 import com.styp.cenate.repository.UsuarioRepository;
 import com.styp.cenate.repository.bolsas.SolicitudBolsaRepository;
 import com.styp.cenate.repository.chatbot.SolicitudCitaRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.EmptyResultDataAccessException;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -46,6 +50,8 @@ public class GestionPacienteServiceImpl implements IGestionPacienteService {
     private final PersonalCntRepository personalCntRepository;
     private final SolicitudCitaRepository solicitudCitaRepository;
     private final SolicitudBolsaRepository solicitudBolsaRepository;
+    private final TeleECGImagenRepository teleECGImagenRepository;
+    private final JdbcTemplate jdbcTemplate;  // ✅ v1.78.0: Para consultas directas de especialidad
 
     @Override
     @Transactional
@@ -555,6 +561,60 @@ public class GestionPacienteServiceImpl implements IGestionPacienteService {
             consentimiento = false;
         }
 
+        // ✅ v1.76.0: Obtener datos del ECG más reciente
+        LocalDate fechaTomaEKG = null;
+        Boolean esUrgente = false;
+        String especialidadMedico = null;
+
+        try {
+            String dni = bolsa.getPacienteDni();
+            if (dni != null && !dni.isEmpty()) {
+                List<TeleECGImagen> ecgs = teleECGImagenRepository
+                    .findByNumDocPacienteAndStatImagenOrderByFechaEnvioDesc(dni, "A");
+
+                if (!ecgs.isEmpty()) {
+                    TeleECGImagen ecgMasReciente = ecgs.get(0);  // El primero es el más reciente
+                    fechaTomaEKG = ecgMasReciente.getFechaToma();
+                    esUrgente = ecgMasReciente.getEsUrgente() != null ? ecgMasReciente.getEsUrgente() : false;
+
+                    log.debug("ECG más reciente para paciente {}: fechaToma={}, esUrgente={}",
+                        dni, fechaTomaEKG, esUrgente);
+                }
+            }
+        } catch (Exception e) {
+            log.warn("No se pudo obtener datos del ECG para paciente {}: {}", bolsa.getPacienteDni(), e.getMessage());
+        }
+
+        // ✅ v1.78.0: Obtener especialidad desde el personal asignado (NO desde bolsa que contiene datos corruptos)
+        try {
+            if (bolsa.getIdPersonal() != null) {
+                // Obtener la especialidad del doctor asignado usando JDBC
+                String sqlEspecialidad = "SELECT COALESCE(de.id_especialidad::TEXT, NULL) " +
+                    "FROM public.dim_personal dp " +
+                    "LEFT JOIN public.dim_especialidad de ON dp.id_especialidad = de.id_especialidad " +
+                    "WHERE dp.id = ? " +
+                    "LIMIT 1";
+                try {
+                    especialidadMedico = jdbcTemplate.queryForObject(sqlEspecialidad, String.class, bolsa.getIdPersonal());
+                    if (especialidadMedico != null && !especialidadMedico.equals("null")) {
+                        log.debug("✅ v1.78.0: Especialidad del doctor asignado (ID: {}): {}", bolsa.getIdPersonal(), especialidadMedico);
+                    } else {
+                        especialidadMedico = null;
+                        log.warn("⚠️ v1.78.0: Doctor sin especialidad asignada (ID: {})", bolsa.getIdPersonal());
+                    }
+                } catch (EmptyResultDataAccessException e) {
+                    log.warn("⚠️ v1.78.0: No se encontró especialidad para doctor ID: {}", bolsa.getIdPersonal());
+                    especialidadMedico = null;
+                }
+            } else {
+                log.warn("⚠️ v1.78.0: Bolsa sin doctor asignado (idPersonal es null)");
+                especialidadMedico = null;
+            }
+        } catch (Exception e) {
+            log.warn("❌ v1.78.0: Error obteniendo especialidad: {}", e.getMessage());
+            especialidadMedico = null;
+        }
+
         return GestionPacienteDTO.builder()
             .idSolicitudBolsa(bolsa.getIdSolicitud())  // ✅ v1.46.0: Incluir ID de bolsa
             .idBolsa(bolsa.getIdBolsa())  // ✅ v1.63.0: Tipo de bolsa (107, Dengue, etc.)
@@ -571,6 +631,9 @@ public class GestionPacienteServiceImpl implements IGestionPacienteService {
             .enfermedadCronica(enfermedadesCronicas)  // ✅ v1.50.0: Incluir enfermedades crónicas
             .tiempoInicioSintomas(tiempoSintomas)  // ✅ v1.64.0: Con valor por defecto "> 72 hrs."
             .consentimientoInformado(consentimiento)  // ✅ v1.64.0: Con valores por defecto según condición
+            .fechaTomaEKG(fechaTomaEKG)  // ✅ v1.76.0: Fecha de toma del ECG más reciente
+            .esUrgente(esUrgente)  // ✅ v1.76.0: Flag de urgencia del ECG más reciente
+            .especialidadMedico(especialidadMedico)  // ✅ v1.76.0: Especialidad del médico asignado
             .build();
     }
 

@@ -1,0 +1,9845 @@
+- generic [ref=e157]:
+  - complementary [ref=e158]:
+    - generic [ref=e160]:
+      - generic [ref=e163]:
+        - img "Logo CENATE" [ref=e164]
+        - button "Colapsar menu" [ref=e165] [cursor=pointer]:
+          - img [ref=e166]
+      - navigation [ref=e168]:
+        - generic [ref=e196]:
+          - button "Bolsas de Pacientes" [ref=e197] [cursor=pointer]:
+            - generic [ref=e198]:
+              - img [ref=e199]
+              - generic [ref=e203]: Bolsas de Pacientes
+            - img [ref=e204]
+          - generic [ref=e206]:
+            - link "Solicitudes de Bolsa - Asignación a Gestoras" [ref=e207] [cursor=pointer]:
+              - /url: /modulos/bolsas/solicitudes
+              - img [ref=e208]
+              - generic [ref=e211]: Solicitudes de Bolsa - Asignación a Gestoras
+            - link "Cargar desde Excel" [ref=e212] [cursor=pointer]:
+              - /url: /bolsas/cargar-excel
+              - img [ref=e213]
+              - generic [ref=e217]: Cargar desde Excel
+            - link "Solicitudes" [ref=e218] [cursor=pointer]:
+              - /url: /bolsas/solicitudes
+              - img [ref=e219]
+              - generic [ref=e222]: Solicitudes
+            - button "Módulo 107" [ref=e224] [cursor=pointer]:
+              - generic [ref=e225]:
+                - img [ref=e226]
+                - generic [ref=e230]: Módulo 107
+              - img [ref=e231]
+        - generic [ref=e233]:
+          - button "Gestión de Citas" [ref=e234] [cursor=pointer]:
+            - generic [ref=e235]:
+              - img [ref=e236]
+              - generic [ref=e239]: Gestión de Citas
+            - img [ref=e240]
+          - generic [ref=e242]:
+            - link "Bienvenida" [ref=e243] [cursor=pointer]:
+              - /url: /citas/bienvenida
+              - img [ref=e244]
+              - generic [ref=e247]: Bienvenida
+            - link "Dashboard Citas" [ref=e248] [cursor=pointer]:
+              - /url: /citas/dashboard
+              - img [ref=e249]
+              - generic [ref=e254]: Dashboard Citas
+            - link "Gestionar Citas" [active] [ref=e255] [cursor=pointer]:
+              - /url: /citas/gestion-asegurado
+              - img [ref=e256]
+              - generic [ref=e259]: Gestionar Citas
+            - link "Bolsa de Pacientes Asignados" [ref=e260] [cursor=pointer]:
+              - /url: /citas/bolsa-pacientes
+              - img [ref=e261]
+              - generic [ref=e264]: Bolsa de Pacientes Asignados
+      - paragraph [ref=e171]: v1.37.4
+  - main "Contenido principal" [ref=e172]:
+    - generic [ref=e174]:
+      - button "Notificaciones" [ref=e175] [cursor=pointer]:
+        - img [ref=e176]
+      - button "S Susy Test Test Test SOPORTE_TI" [ref=e180] [cursor=pointer]:
+        - generic [ref=e182]: S
+        - generic [ref=e183]:
+          - generic [ref=e184]: Susy Test Test Test
+          - generic [ref=e185]: SOPORTE_TI
+        - img [ref=e186]
+    - generic [ref=e188]:
+      - generic [ref=e307]:
+        - generic [ref=e310]:
+          - generic [ref=e311]: S
+          - generic [ref=e312]:
+            - heading "Bienvenid(a), Susy" [level=1] [ref=e313]
+            - paragraph [ref=e314]: Gestor de Citas - Gestión de Pacientes Asignados
+            - generic [ref=e315]:
+              - generic [ref=e316]: "Rol: GESTOR DE CITAS"
+              - generic [ref=e317]: 📅 miércoles, 11 de febrero de 2026
+        - generic [ref=e318]:
+          - heading "Estadísticas" [level=3] [ref=e319]
+          - generic [ref=e320]:
+            - generic [ref=e321]:
+              - generic [ref=e322]:
+                - generic [ref=e323]: Total
+                - img [ref=e324]
+              - generic [ref=e329]: "259"
+            - generic [ref=e330]:
+              - generic [ref=e331]:
+                - generic [ref=e332]: Por Atender
+                - img [ref=e333]
+              - generic [ref=e336]: "66"
+            - generic [ref=e337]:
+              - generic [ref=e338]:
+                - generic [ref=e339]: Completados
+                - img [ref=e340]
+              - generic [ref=e343]: "0"
+            - generic [ref=e344]:
+              - generic [ref=e345]:
+                - generic [ref=e346]: Nuevos
+                - img [ref=e347]
+              - generic [ref=e349]: "192"
+            - generic [ref=e350]:
+              - generic [ref=e351]:
+                - generic [ref=e352]: Otros
+                - img [ref=e353]
+              - generic [ref=e355]: "1"
+        - generic [ref=e356]:
+          - generic [ref=e358]:
+            - generic [ref=e359]:
+              - heading "Mi Bandeja de Pacientes" [level=2] [ref=e360]
+              - paragraph [ref=e361]: Pacientes asignados desde el módulo de Bolsas de Pacientes
+            - generic [ref=e362]:
+              - button "Importar Paciente" [ref=e363] [cursor=pointer]:
+                - img [ref=e364]
+                - text: Importar Paciente
+              - button "Actualizar" [ref=e367] [cursor=pointer]:
+                - img [ref=e368]
+                - text: Actualizar
+              - button "🔄✓ Auto" [ref=e373] [cursor=pointer]
+              - generic [ref=e374]: 6:14:28
+          - generic [ref=e375]:
+            - generic [ref=e377]:
+              - generic [ref=e378]:
+                - img [ref=e379]
+                - text: FILTROS
+              - generic [ref=e382]:
+                - textbox "Buscar por DNI..." [ref=e383]
+                - img [ref=e384]
+              - combobox [ref=e388]:
+                - option "Todas las bolsas" [selected]
+                - option "Bolsa 107 - Importación de pacientes masiva"
+                - option "Bolsa Dengue - Control epidemiológico"
+                - option "Bolsa de recita/interconsulta"
+                - option "Bolsa Gestores Territorial - Gestión territorial"
+                - option "Bolsa para el servicio de gineco-oncología"
+                - option "Bolsa que capta la gestora"
+                - option "Bolsas Enfermería - Atenciones de enfermería"
+                - option "Bolsas Explotación de Datos - Análisis y reportes"
+                - option "Bolsas IVR - Sistema interactivo de respuesta de voz"
+                - option "Bolsas Reprogramación - Citas reprogramadas"
+                - option "Bolsa TeleECG - Electrocardiogramas remotos"
+                - option "Paciente derivados de PADOMI"
+              - combobox [ref=e390]:
+                - option "Todas (259)" [selected]
+                - option "H.I JUANJUI"
+                - option "P.M. BELLAVISTA"
+                - option "P.M. LAMAS"
+                - option "P.M. SAPOSOA"
+                - option "C.M. MORALES"
+                - option "C.M. METROPOLITANO TARAPOTO"
+                - option "H.I EL BUEN SAMARITANO"
+                - option "H.I HEROES DEL CENEPA"
+                - option "H.I HIGOS URCO"
+                - option "CAP I LAMUD"
+                - option "CAP I LONYA GRANDE"
+                - option "CAP I OCALLI"
+                - option "CAP I PEDRO RUIZ GALLO"
+                - option "CAP II RODRIGUEZ DE MENDOZA"
+                - option "CAP II SANTA MARIA DE NIEVA"
+                - option "CAP I IMAZA"
+                - option "H.III CHIMBOTE"
+                - option "C.M. CASMA"
+                - option "C.M. COISHCO"
+                - option "H.I CONO SUR"
+                - option "C.M. HUARMEY"
+                - option "C.M. SIHUAS"
+                - option "P.M. CABANA"
+                - option "P.M. CONCHUCOS"
+                - option "P.M. PAMPAS - ANCASH"
+                - option "CAP II SAN JACINTO"
+                - option "P.M. PALLASCA"
+                - option "POLICLINICO C.C. VICTOR PANTA RODRIGUEZ"
+                - option "H.II ABANCAY"
+                - option "H.I ANDAHUAYLAS"
+                - option "P.M. CURAHUASI"
+                - option "CAP II CHALHUANCA"
+                - option "P.M. CHUQUIBAMBILLA"
+                - option "H.I ALTO MAYO"
+                - option "CENTRO NACIONAL DE TELEMEDICINA"
+                - option "H.N. GUILLERMO ALMENARA IRIGOYEN"
+                - option "H.I RIOJA"
+                - option "POL. FRANCISCO PIZARRO"
+                - option "H.II VITARTE"
+                - option "POL. CHOSICA"
+                - option "POL. SAN LUIS"
+                - option "H.II RAMON CASTILLA"
+                - option "C.M. ANCIJE"
+                - option "C.M. CASAPALCA"
+                - option "P.M. CONSTRUCCION CIVIL"
+                - option "H.II SAN ISIDRO LABRADOR"
+                - option "CAP III ALFREDO PIAZZA ROBERTS"
+                - option "H.I JORGE VOTO BERNALES CORPANCHO"
+                - option "CAP III EL AGUSTINO"
+                - option "CAP III HUAYCAN"
+                - option "POLICLINICO SAN CARLOS"
+                - option "CAP III SAN BORJA"
+                - option "CAP III INDEPENDENCIA"
+                - option "H.III HOSPITAL DE EMERGENCIAS GRAU"
+                - option "CAP II CHINCHEROS"
+                - option "CAP II COTABAMBAS"
+                - option "H.N. CARLOS ALBERTO SEGUIN ESCOBEDO"
+                - option "H.II MANUEL DE TORRES MUÑOZ"
+                - option "H.I SAMUEL PASTOR"
+                - option "H.III YANAHUARA"
+                - option "H.I EDMUNDO ESCOMEL"
+                - option "CAP III MELITON SALAS TEJADA"
+                - option "P.M. ACARI"
+                - option "C.M. APLAO"
+                - option "P.M. ATICO"
+                - option "P.M. CARAVELI"
+                - option "P.M. CHALA"
+                - option "CAP I CHIVAY"
+                - option "P.M. CHUCARAPI"
+                - option "P.M. CHUQUIBAMBA"
+                - option "P.M. CONO NORTE"
+                - option "P.M. CORIRE"
+                - option "P.M. COTAHUASI"
+                - option "CAP II HUNTER"
+                - option "P.M. LA JOYA"
+                - option "P.M. MATARANI"
+                - option "CAP I EL PEDREGAL"
+                - option "P.M. SANTA RITA"
+                - option "P.M. VITOR"
+                - option "CAP I YURA"
+                - option "CAP III PAUCARPATA"
+                - option "CAP III ALTO SELVA ALEGRE"
+                - option "CAP III MIRAFLORES"
+                - option "CENTRO DE COMPLEJIDAD CRECIENTE CERRO COLORADO"
+                - option "H.II CAJAMARCA"
+                - option "C.M. CAJABAMBA"
+                - option "C.M. CELENDIN"
+                - option "P.M. BAMBAMARCA"
+                - option "P.M. CONTUMAZA"
+                - option "P.M. HUALGAYOC"
+                - option "P.M. SAN MARCOS"
+                - option "P.M. SAN MIGUEL - CAJAMARCA"
+                - option "P.M. SAN PABLO"
+                - option "P.M. TEMBLADERA"
+                - option "P.M. BOLIVAR"
+                - option "CAP II BAÑOS DEL INCA"
+                - option "H.N. ADOLFO GUEVARA VELASCO"
+                - option "H.I ESPINAR"
+                - option "H.I QUILLABAMBA"
+                - option "POLICLINICO METROPOLITANO AREQUIPA"
+                - option "H.II HUAMANGA"
+                - option "CAP II HUANTA"
+                - option "P.M. SAN MIGUEL - AYACUCHO"
+                - option "P.M. CANGALLO"
+                - option "P.M. SAN FRANCISCO"
+                - option "P.M. VILCASHUAMAN"
+                - option "P.M. QUEROBAMBA"
+                - option "P.M. HUANCAPI"
+                - option "CAP III METROPOLITANO AYACUCHO"
+                - option "H.I URUBAMBA"
+                - option "HOSPITAL GENERAL SICUANI"
+                - option "C.M. ACOMAYO"
+                - option "C.M. CALCA"
+                - option "C.M. URCOS"
+                - option "CAP II HUYRO"
+                - option "C.M. MACHU PICCHU"
+                - option "C.M. PAUCARTAMBO"
+                - option "POL. SAN SEBASTIAN"
+                - option "P.M. SALVACION"
+                - option "C.M. SAN FRANCISCO"
+                - option "C.M. METROPOLITANO CUSCO"
+                - option "CAP I SANTO TOMAS"
+                - option "CAP I ECHARATE"
+                - option "C.M. PICHARI"
+                - option "H.II HUANCAVELICA"
+                - option "P.M. ACOBAMBA"
+                - option "P.M. CASTROVIRREYNA"
+                - option "CAP I CHURCAMPA"
+                - option "CAP I HUAYTARA"
+                - option "C.M. LIRCAY"
+                - option "C.M. PAMPAS - HUANCAVELICA"
+                - option "P.M. TOCACHE"
+                - option "CAP I UCHIZA"
+                - option "H.II HUANUCO"
+                - option "H.I TINGO MARIA"
+                - option "C.M. LEONCIO PRADO"
+                - option "P.M. AUCAYACU"
+                - option "P.M. BAÑOS"
+                - option "P.M. SUNGARO"
+                - option "P.M. LA UNION"
+                - option "P.M. LLATA"
+                - option "P.M. PANAO"
+                - option "P.M. SANTA LUCIA"
+                - option "CAP III METROPOLITANO HUANUCO"
+                - option "H.I FELIX TORREALVA GUTIERREZ"
+                - option "H.II RENE TOCHE GROPPO"
+                - option "H.I MARIA REICHE NEWMAN"
+                - option "H.I ANTONIO SKRABONJA ANTONCICH"
+                - option "CAP I CHAVALINA"
+                - option "CAP II MACACONA"
+                - option "CAP II NAZCA"
+                - option "CAP I PALPA"
+                - option "CAP II PUQUIO"
+                - option "CAP I SAN CLEMENTE"
+                - option "CAP II SANTA MARGARITA"
+                - option "CAP I TAMBO DE MORA"
+                - option "CAP I VILLA TUPAC AMARU"
+                - option "CAP II LA TINGUIÑA"
+                - option "CAP I CORACORA"
+                - option "C.M. CARAZ"
+                - option "C.M. HUARI"
+                - option "P.M. PISCOBAMBA"
+                - option "CAP II POMABAMBA"
+                - option "P.M. YUNGAY"
+                - option "CAP III AMARILIS - PILLCO MARCA"
+                - option "CAP II PUEBLO NUEVO"
+                - option "H.IV AUGUSTO HERNANDEZ MENDOZA"
+                - option "H.II JAEN"
+                - option "P.M. PUCARA"
+                - option "CAP II SAN IGNACIO"
+                - option "H.III JULIACA"
+                - option "H.I LAMPA"
+                - option "C.M. AYAVIRI"
+                - option "POL. AZANGARO"
+                - option "P.M. HUANCANE"
+                - option "P.M. SAN RAFAEL"
+                - option "P.M. SANDIA"
+                - option "POL. JULIACA"
+                - option "P.M. SAN GABAN"
+                - option "CAP I ASILLO"
+                - option "CAP II CABANILLAS"
+                - option "CAP III ENRIQUE ENCINAS FRANCO"
+                - option "H.N. RAMIRO PRIALE PRIALE"
+                - option "H.II ALBERTO HURTADO ABADIA"
+                - option "H.I RIO NEGRO-SATIPO"
+                - option "H.I TARMA"
+                - option "POL. JAUJA"
+                - option "C.M. CONCEPCION"
+                - option "H.I DE LA SELVA CENT. Y ENF. TROPICALES"
+                - option "P.M. ANDAYCHAGUA"
+                - option "P.M. COBRIZA"
+                - option "P.M. CORPACANCHA"
+                - option "CAP II JUNIN"
+                - option "P.M. MARH TUNEL"
+                - option "CAP II MOROCOCHA"
+                - option "P.M. PACHACAYO"
+                - option "P.M. SAN CRISTOBAL"
+                - option "P.M. YAURICOCHA"
+                - option "P.M. SAN PEDRO DE CAJAS"
+                - option "POL. METROPOLITANO HUANCAYO"
+                - option "CAP II CHILCA"
+                - option "CAP I PICHANAQUI"
+                - option "CAP III MANTARO"
+                - option "CAP II CHUPACA"
+                - option "HG HOSPITAL BICENTENARIO JAUJA"
+                - option "H.IV VICTOR LAZARTE ECHEGARAY"
+                - option "H.II CHOCOPE"
+                - option "H.I ALBRECHT"
+                - option "H.I PACASMAYO"
+                - option "C.M. ASCOPE"
+                - option "POL. EL PORVENIR"
+                - option "H.I FLORENCIA DE MORA"
+                - option "H.I LA ESPERANZA"
+                - option "H.I MOCHE"
+                - option "P.M. CARTAVIO"
+                - option "CAP I CASCAS"
+                - option "CAP I CHICAMA"
+                - option "CAP II GUADALUPE"
+                - option "CAP II HUAMACHUCO"
+                - option "P.M. JEQUETEPEQUE"
+                - option "CAP II LAREDO"
+                - option "P.M. LIMONCARRO"
+                - option "CAP I MALABRIGO"
+                - option "CAP II OTUZCO"
+                - option "P.M. QUIRUVILCA"
+                - option "CAP I SALAVERRY"
+                - option "P.M. SAN JOSE"
+                - option "CAP I SAN PEDRO DE LLOC"
+                - option "P.M. SANTIAGO DE CHUCO"
+                - option "P.M. SAUSAL"
+                - option "CAP II SOLEDAD"
+                - option "CAP II TAYABAMBA"
+                - option "H.I VICTOR SOLES GARCIA"
+                - option "C.M. ESPECIALIZADO CASA GRANDE"
+                - option "P.M. PAIJAN"
+                - option "P.M. SANTIAGO DE CAO"
+                - option "C.M. HUANCHACO"
+                - option "POL. VICTOR LARCO HERRERA"
+                - option "P.M. CHAO"
+                - option "CAP III METROPOLITANO TRUJILLO"
+                - option "HOSP.ALT.COMPLEJIDAD VIRGEN DE LA PUERTA"
+                - option "C.M. CHOTA"
+                - option "C.M. CUTERVO"
+                - option "H.I AGUSTIN ARBULU NEYRA"
+                - option "C.M. CAYALTI"
+                - option "H.I CHEPEN"
+                - option "CAP III MANUEL MANRIQUE NEVADO"
+                - option "CAP II CHONGOYAPE"
+                - option "C.M. JUAN AITA VALLE"
+                - option "CAP II JAYANCA"
+                - option "CAP II MOTUPE"
+                - option "P.M. OLMOS"
+                - option "P.M. OYOTUN"
+                - option "P.M. SANTA CRUZ"
+                - option "P.M. TUCUME"
+                - option "P.M. UCUPE"
+                - option "POL. CHICLAYO OESTE"
+                - option "CAP III CARLOS CASTAÑEDA IPARRAGUIRRE"
+                - option "POL. AGUSTIN GAVIDIA SALCEDO"
+                - option "H.I NAYLAMP"
+                - option "CAP II PATAPO"
+                - option "H.II LUIS E. HEYSEN INCHAUSTEGUI"
+                - option "H.II CLINICO TUMAN"
+                - option "POL. DE COMPLEJIDAD CRECIENTE CUTERVO"
+                - option "HG HMBIC. CHOTA GILBERTO VILLENA ARROBAS"
+                - option "H.I VICTOR ALFREDO LAZO PERALTA"
+                - option "P.M. IBERIA"
+                - option "P.M. MAZUCO"
+                - option "H.II ILO"
+                - option "CAP I SAN ANTONIO DEL ESTRECHO"
+                - option "CAP II CABALLOCOCHA"
+                - option "CAP II NAUTA"
+                - option "CAP II REQUENA"
+                - option "CAP III IQUITOS"
+                - option "H.III IQUITOS"
+                - option "CAP II SAN JUAN BAUTISTA"
+                - option "CAP III PUNCHANA"
+                - option "H.II MOQUEGUA"
+                - option "P.M. OMATE"
+                - option "CAP II TORATA"
+                - option "POR DEFINIR"
+                - option "C.M. PAMPA INALAMBRICA"
+                - option "H.II CERRO DE PASCO"
+                - option "H.I HUARIACA"
+                - option "P.M. CHICRIN"
+                - option "P.M. COLQUIJIRCA"
+                - option "P.M. HUARON"
+                - option "CAP II HUAYLLAY"
+                - option "P.M. MILPO"
+                - option "H.I OXAPAMPA"
+                - option "P.M. PAUCARTAMBO"
+                - option "P.M. POZUZO"
+                - option "P.M. PUERTO BERMUDEZ"
+                - option "C.M. SAN JUAN"
+                - option "CAP II VILLA RICA"
+                - option "CAP II YANAHUANCA"
+                - option "H.III CAYETANO HEREDIA"
+                - option "H.I MIGUEL CRUZADO VERA"
+                - option "H.I SULLANA"
+                - option "H.II TALARA"
+                - option "H.II JORGE REATEGUI DELGADO"
+                - option "CAP III CASTILLA"
+                - option "P.M. AYABACA"
+                - option "P.M. CANCHAQUE"
+                - option "CAP II CHULUCANAS"
+                - option "P.M. HUANCABAMBA"
+                - option "P.M. IGNACIO ESCUDERO"
+                - option "C.M. LEONCIO AMAYA TUME"
+                - option "P.M. LOS ORGANOS"
+                - option "P.M. MORROPON"
+                - option "P.M. NEGRITOS"
+                - option "P.M. SECHURA"
+                - option "C.M. TAMBO GRANDE"
+                - option "C.M. EL ALTO"
+                - option "INSTITUTO PERUANO DE OFTALMOLOGIA"
+                - option "CAP III CATACAOS"
+                - option "CAP III METROPOLITANO DE PIURA"
+                - option "HOSPITAL PRIVADO DEL PERU"
+                - option "CENTRO SALUD ES HOSPITAL UNIVERSITARIO"
+                - option "IPRESS CLINICA INMACULADA"
+                - option "H.III PUNO"
+                - option "P.M. JULI"
+                - option "P.M. YUNGUYO"
+                - option "POL. ILAVE"
+                - option "CAP III METROPOLITANO DE PUNO"
+                - option "H.I CLINICA UNIVERSITARIA UNA-ESSALUD"
+                - option "CAP I DESAGUADERO"
+                - option "CAP II ACORA"
+                - option "CAP I LARAQUERI"
+                - option "H.III SUAREZ-ANGAMOS"
+                - option "POL. PROCERES"
+                - option "POL. PABLO BERMUDEZ"
+                - option "POL. CHINCHA"
+                - option "H.III DANIEL ALCIDES CARRION"
+                - option "CAP II LUIS PALZA LEVANO"
+                - option "P.M. LOCUMBA"
+                - option "CAP I TARATA"
+                - option "CAP III METROPOLITANO TACNA"
+                - option "CAP I ITE"
+                - option "CAP I YLABAYA"
+                - option "CAP II OSCAR FERNANDEZ DAVILA VELEZ"
+                - option "H.I CARLOS ALBERTO CORTEZ JIMENEZ"
+                - option "P.M. LA CRUZ"
+                - option "P.M. ZORRITOS"
+                - option "P.M. ZARUMILLA"
+                - option "P.M. AGUAYTIA"
+                - option "H.II CAÑETE"
+                - option "C.M. MALA"
+                - option "H.I ULDARICO ROCCA FERNANDEZ"
+                - option "POL. JUAN JOSE RODRIGUEZ LAZO"
+                - option "H.I CARLOS ALCANTARA BUTTERFIELD"
+                - option "POL. CLINICA CENTRAL DE PREVENCION"
+                - option "POL. SANTA CRUZ"
+                - option "CAP II LURIN"
+                - option "CAP III SAN JUAN DE MIRAFLORES"
+                - option "CENT.ATEN.INT.DE DIABETES E HIPERTENSION"
+                - option "HOSP.ESP.QUIR. SAN JUAN DE MIRAFLORES"
+                - option "P.M. HUMAYA"
+                - option "ONCOLOGIA S.A.C."
+                - option "H.N. ALBERTO SABOGAL SOLOGUREN"
+                - option "POL. FIORI"
+                - option "H.II LIMA NORTE - CALLAO L. NEGREIROS V."
+                - option "H.II GUSTAVO LANATTA LUJAN"
+                - option "CAP III PEDRO REYES BARBOZA"
+                - option "CAP II PARAMONGA"
+                - option "H.M. LOS OLIVOS"
+                - option "CAP II CHANCAY"
+                - option "P.M. RAURA"
+                - option "CAP II SAYAN"
+                - option "P.M. OYON"
+                - option "CAP III HNA. MARIA DONROSE SUTMOLLER"
+                - option "H.I MARINO MOLINA SCIPPA"
+                - option "H.I OCTAVIO MONGRUT MUÑOZ"
+                - option "CAP III PUENTE PIEDRA"
+                - option "CAP III CARABAYLLO"
+                - option "CAP III METROPOLITANO CALLAO"
+                - option "CAP III LUIS NEGREIROS VEGA"
+                - option "HE HOSP. ESPEC. QUIRURGICAS CANTA CALLAO"
+                - option "IPRESS PROLIMA - LOS OLIVOS"
+                - option "IPRESS VILLASOL - LOS OLIVOS"
+                - option "IPRESS TREBOL - LOS OLIVOS"
+                - option "IPRESS SAN MARTIN DE PORRES"
+                - option "POL. COMPLEJIDAD CRECIENTE SAN NICOLAS"
+                - option "CAP III SAN ISIDRO"
+                - option "P.M. ALAMEDA"
+                - option "P.M. ATALAYA"
+                - option "P.M. CONTAMANA"
+                - option "CAP I CAMPO VERDE"
+                - option "CAP I MANANTAY"
+                - option "H.I CONTINGENCIAL MOQUEGUA"
+                - option "CAP III BELLAVISTA"
+                - option "POLICLINICO BAYOVAR"
+                - option "INSTITUTO NACIONAL CARDIOVASCULAR"
+                - option "POL.- APP - ALBERTO LEOPOLDO BARTON T."
+                - option "IPRESS CLINICA SAN PEDRO"
+                - option "CENTRO NACIONAL DE SALUD RENAL"
+                - option "H.II HUARAZ"
+                - option "C.M. CARHUAZ"
+                - option "H.I YURIMAGUAS"
+                - option "CAP I ANTABAMBA"
+                - option "RETABLO - COMAS"
+                - option "CAP I HUANCASANCOS"
+                - option "SEDE CENTRAL"
+                - option "H.N. ALMANZOR AGUINAGA ASENJO"
+                - option "H.II TARAPOTO"
+                - option "H.II PUCALLPA"
+                - option "H.I AURELIO DIAZ-UFANO Y PERAL"
+                - option "H.N. EDGARDO REBAGLIATI MARTINS"
+                - option "CAP III SURQUILLO"
+                - option "UBAP JESUS MARIA"
+                - option "POL.- APP - GUILLERMO KAELIN DE LA F."
+                - option "PROGRAMA DE ATENCION DOMICILIARIA-PADOMI"
+                - option "CAP III HUARAL"
+              - generic [ref=e391] [cursor=pointer]:
+                - checkbox "Solo Pendientes (193)" [ref=e392]
+                - generic [ref=e393]: Solo Pendientes (193)
+              - button "Más filtros" [ref=e394] [cursor=pointer]:
+                - text: Más filtros
+                - img [ref=e395]
+            - table [ref=e398]:
+              - rowgroup [ref=e399]:
+                - row "Seleccionar todo Bolsa F. Asign. DNI Paciente Edad Gén. Especialidad DNI Méd. Especialista Fecha/Hora Cita IPRESS Tipo Cita Tel. 1 Tel. 2 Estado F. Cambio Usuario Acc." [ref=e400]:
+                  - columnheader "Seleccionar todo" [ref=e401]:
+                    - checkbox "Seleccionar todo" [ref=e402] [cursor=pointer]
+                  - columnheader "Bolsa" [ref=e403]
+                  - columnheader "F. Asign." [ref=e404]
+                  - columnheader "DNI" [ref=e405]
+                  - columnheader "Paciente" [ref=e406]
+                  - columnheader "Edad" [ref=e407]
+                  - columnheader "Gén." [ref=e408]
+                  - columnheader "Especialidad" [ref=e409]
+                  - columnheader "DNI Méd." [ref=e410]
+                  - columnheader "Especialista" [ref=e411]
+                  - columnheader "Fecha/Hora Cita" [ref=e412]
+                  - columnheader "IPRESS" [ref=e413]
+                  - columnheader "Tipo Cita" [ref=e414]
+                  - columnheader "Tel. 1" [ref=e415]
+                  - columnheader "Tel. 2" [ref=e416]
+                  - columnheader "Estado" [ref=e417]
+                  - columnheader "F. Cambio" [ref=e418]
+                  - columnheader "Usuario" [ref=e419]
+                  - columnheader "Acc." [ref=e420]
+              - rowgroup [ref=e421]:
+                - row "Bolsa 107 - Importación de pacientes masiva Hace 17 horas 45593929 SANDOVAL RAMIREZ CINTHYA ROSSMERY 38 F MEDICINA GENERAL - No seleccionado No seleccionado POL. CHINCHA - 922612097 - Pendiente Citar Hace 17 horas —" [ref=e422]:
+                  - cell [ref=e423]:
+                    - checkbox [ref=e424] [cursor=pointer]
+                  - cell "Bolsa 107 - Importación de pacientes masiva" [ref=e425]
+                  - cell "Hace 17 horas" [ref=e426]
+                  - cell "45593929" [ref=e427]
+                  - cell "SANDOVAL RAMIREZ CINTHYA ROSSMERY" [ref=e428]
+                  - cell "38" [ref=e429]
+                  - cell "F" [ref=e430]
+                  - cell "MEDICINA GENERAL" [ref=e431]
+                  - cell "-" [ref=e432]
+                  - cell "No seleccionado" [ref=e433]
+                  - cell "No seleccionado" [ref=e434]
+                  - cell "POL. CHINCHA" [ref=e435]
+                  - cell "-" [ref=e436]
+                  - cell "922612097" [ref=e437]:
+                    - link "922612097" [ref=e438] [cursor=pointer]:
+                      - /url: https://wa.me/922612097
+                      - img [ref=e439]
+                      - text: "922612097"
+                  - cell "-" [ref=e441]:
+                    - link "-" [ref=e442] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e443]
+                      - text: "-"
+                  - cell "Pendiente Citar" [ref=e445]:
+                    - generic [ref=e446]: Pendiente Citar
+                  - cell "Hace 17 horas" [ref=e447]
+                  - cell "—" [ref=e448]
+                  - cell [ref=e449]:
+                    - generic [ref=e450]:
+                      - button "Editar estado y cita" [ref=e451] [cursor=pointer]:
+                        - img [ref=e452]
+                      - button "Actualizar teléfono" [ref=e454] [cursor=pointer]:
+                        - img [ref=e455]
+                - row "Bolsa 107 - Importación de pacientes masiva Hace 18 horas 70049082 CORDOVA RAMOS CARLOS JOSETH 26 M MEDICINA GENERAL - No seleccionado No seleccionado - - 959793552 - Pendiente Citar Hace 18 horas —" [ref=e457]:
+                  - cell [ref=e458]:
+                    - checkbox [ref=e459] [cursor=pointer]
+                  - cell "Bolsa 107 - Importación de pacientes masiva" [ref=e460]
+                  - cell "Hace 18 horas" [ref=e461]
+                  - cell "70049082" [ref=e462]
+                  - cell "CORDOVA RAMOS CARLOS JOSETH" [ref=e463]
+                  - cell "26" [ref=e464]
+                  - cell "M" [ref=e465]
+                  - cell "MEDICINA GENERAL" [ref=e466]
+                  - cell "-" [ref=e467]
+                  - cell "No seleccionado" [ref=e468]
+                  - cell "No seleccionado" [ref=e469]
+                  - cell "-" [ref=e470]
+                  - cell "-" [ref=e471]
+                  - cell "959793552" [ref=e472]:
+                    - link "959793552" [ref=e473] [cursor=pointer]:
+                      - /url: https://wa.me/959793552
+                      - img [ref=e474]
+                      - text: "959793552"
+                  - cell "-" [ref=e476]:
+                    - link "-" [ref=e477] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e478]
+                      - text: "-"
+                  - cell "Pendiente Citar" [ref=e480]:
+                    - generic [ref=e481]: Pendiente Citar
+                  - cell "Hace 18 horas" [ref=e482]
+                  - cell "—" [ref=e483]
+                  - cell [ref=e484]:
+                    - generic [ref=e485]:
+                      - button "Editar estado y cita" [ref=e486] [cursor=pointer]:
+                        - img [ref=e487]
+                      - button "Actualizar teléfono" [ref=e489] [cursor=pointer]:
+                        - img [ref=e490]
+                - row "Bolsa 107 - Importación de pacientes masiva Hace 21 horas 09776185 TORRES PACHECO ENRIQUETA 70 F MEDICINA GENERAL 46822868 Steffi Angie Ruiz De Paz 10/02/2026 09:15:00 CAP III EL AGUSTINO - 980124816 - Citado Hace 21 horas —" [ref=e492]:
+                  - cell [ref=e493]:
+                    - checkbox [ref=e494] [cursor=pointer]
+                  - cell "Bolsa 107 - Importación de pacientes masiva" [ref=e495]
+                  - cell "Hace 21 horas" [ref=e496]
+                  - cell "09776185" [ref=e497]
+                  - cell "TORRES PACHECO ENRIQUETA" [ref=e498]
+                  - cell "70" [ref=e499]
+                  - cell "F" [ref=e500]
+                  - cell "MEDICINA GENERAL" [ref=e501]
+                  - cell "46822868" [ref=e502]
+                  - cell "Steffi Angie Ruiz De Paz" [ref=e503]
+                  - cell "10/02/2026 09:15:00" [ref=e504]:
+                    - generic [ref=e505]: 10/02/2026 09:15:00
+                  - cell "CAP III EL AGUSTINO" [ref=e506]
+                  - cell "-" [ref=e507]
+                  - cell "980124816" [ref=e508]:
+                    - link "980124816" [ref=e509] [cursor=pointer]:
+                      - /url: https://wa.me/980124816
+                      - img [ref=e510]
+                      - text: "980124816"
+                  - cell "-" [ref=e512]:
+                    - link "-" [ref=e513] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e514]
+                      - text: "-"
+                  - cell "Citado" [ref=e516]:
+                    - generic [ref=e517]: Citado
+                  - cell "Hace 21 horas" [ref=e518]
+                  - cell "—" [ref=e519]
+                  - cell [ref=e520]:
+                    - generic [ref=e521]:
+                      - button "Editar estado y cita" [ref=e522] [cursor=pointer]:
+                        - img [ref=e523]
+                      - button "Actualizar teléfono" [ref=e525] [cursor=pointer]:
+                        - img [ref=e526]
+                      - button "Enviar mensaje de cita formateado" [ref=e528] [cursor=pointer]:
+                        - img [ref=e529]
+                - row "Bolsa 107 - Importación de pacientes masiva Hace 18 horas 10030569 PEZO HERRERA WALTER ARMANDO 50 M MEDICINA GENERAL - No seleccionado No seleccionado - - 963803291 - Pendiente Citar Hace 1 día —" [ref=e531]:
+                  - cell [ref=e532]:
+                    - checkbox [ref=e533] [cursor=pointer]
+                  - cell "Bolsa 107 - Importación de pacientes masiva" [ref=e534]
+                  - cell "Hace 18 horas" [ref=e535]
+                  - cell "10030569" [ref=e536]
+                  - cell "PEZO HERRERA WALTER ARMANDO" [ref=e537]
+                  - cell "50" [ref=e538]
+                  - cell "M" [ref=e539]
+                  - cell "MEDICINA GENERAL" [ref=e540]
+                  - cell "-" [ref=e541]
+                  - cell "No seleccionado" [ref=e542]
+                  - cell "No seleccionado" [ref=e543]
+                  - cell "-" [ref=e544]
+                  - cell "-" [ref=e545]
+                  - cell "963803291" [ref=e546]:
+                    - link "963803291" [ref=e547] [cursor=pointer]:
+                      - /url: https://wa.me/963803291
+                      - img [ref=e548]
+                      - text: "963803291"
+                  - cell "-" [ref=e550]:
+                    - link "-" [ref=e551] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e552]
+                      - text: "-"
+                  - cell "Pendiente Citar" [ref=e554]:
+                    - generic [ref=e555]: Pendiente Citar
+                  - cell "Hace 1 día" [ref=e556]
+                  - cell "—" [ref=e557]
+                  - cell [ref=e558]:
+                    - generic [ref=e559]:
+                      - button "Editar estado y cita" [ref=e560] [cursor=pointer]:
+                        - img [ref=e561]
+                      - button "Actualizar teléfono" [ref=e563] [cursor=pointer]:
+                        - img [ref=e564]
+                - row "Bolsa 107 - Importación de pacientes masiva Hace 22 horas 06780297 LETICH ALVA GERMAN PAUL 54 M MEDICINA GENERAL - No seleccionado No seleccionado - - 982798966 - Pendiente Citar Hace 1 día —" [ref=e9743]:
+                  - cell [ref=e567]:
+                    - checkbox [ref=e568] [cursor=pointer]
+                  - cell "Bolsa 107 - Importación de pacientes masiva" [ref=e569]
+                  - cell "Hace 22 horas" [ref=e9744]
+                  - cell "06780297" [ref=e571]
+                  - cell "LETICH ALVA GERMAN PAUL" [ref=e572]
+                  - cell "54" [ref=e573]
+                  - cell "M" [ref=e574]
+                  - cell "MEDICINA GENERAL" [ref=e575]
+                  - cell "-" [ref=e576]
+                  - cell "No seleccionado" [ref=e577]
+                  - cell "No seleccionado" [ref=e578]
+                  - cell "-" [ref=e579]
+                  - cell "-" [ref=e580]
+                  - cell "982798966" [ref=e581]:
+                    - link "982798966" [ref=e582] [cursor=pointer]:
+                      - /url: https://wa.me/982798966
+                      - img [ref=e583]
+                      - text: "982798966"
+                  - cell "-" [ref=e585]:
+                    - link "-" [ref=e586] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e587]
+                      - text: "-"
+                  - cell "Pendiente Citar" [ref=e589]:
+                    - generic [ref=e590]: Pendiente Citar
+                  - cell "Hace 1 día" [ref=e591]
+                  - cell "—" [ref=e592]
+                  - cell [ref=e593]:
+                    - generic [ref=e594]:
+                      - button "Editar estado y cita" [ref=e595] [cursor=pointer]:
+                        - img [ref=e596]
+                      - button "Actualizar teléfono" [ref=e598] [cursor=pointer]:
+                        - img [ref=e599]
+                - row "Bolsa 107 - Importación de pacientes masiva Hace 1 día 43077300 CHIU ZEGARRRA ELIZABETH ROSE 41 F MEDICINA GENERAL 47747123 Vanessa Daphne Zegarra Inchausti 09/02/2026 08:00:00 POL. PABLO BERMUDEZ - 903031397 - Citado Hace 1 día —" [ref=e601]:
+                  - cell [ref=e602]:
+                    - checkbox [ref=e603] [cursor=pointer]
+                  - cell "Bolsa 107 - Importación de pacientes masiva" [ref=e604]
+                  - cell "Hace 1 día" [ref=e605]
+                  - cell "43077300" [ref=e606]
+                  - cell "CHIU ZEGARRRA ELIZABETH ROSE" [ref=e607]
+                  - cell "41" [ref=e608]
+                  - cell "F" [ref=e609]
+                  - cell "MEDICINA GENERAL" [ref=e610]
+                  - cell "47747123" [ref=e611]
+                  - cell "Vanessa Daphne Zegarra Inchausti" [ref=e612]
+                  - cell "09/02/2026 08:00:00" [ref=e613]:
+                    - generic [ref=e614]: 09/02/2026 08:00:00
+                  - cell "POL. PABLO BERMUDEZ" [ref=e615]
+                  - cell "-" [ref=e616]
+                  - cell "903031397" [ref=e617]:
+                    - link "903031397" [ref=e618] [cursor=pointer]:
+                      - /url: https://wa.me/903031397
+                      - img [ref=e619]
+                      - text: "903031397"
+                  - cell "-" [ref=e621]:
+                    - link "-" [ref=e622] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e623]
+                      - text: "-"
+                  - cell "Citado" [ref=e625]:
+                    - generic [ref=e626]: Citado
+                  - cell "Hace 1 día" [ref=e627]
+                  - cell "—" [ref=e628]
+                  - cell [ref=e629]:
+                    - generic [ref=e630]:
+                      - button "Editar estado y cita" [ref=e631] [cursor=pointer]:
+                        - img [ref=e632]
+                      - button "Actualizar teléfono" [ref=e634] [cursor=pointer]:
+                        - img [ref=e635]
+                      - button "Enviar mensaje de cita formateado" [ref=e637] [cursor=pointer]:
+                        - img [ref=e638]
+                - row "Bolsa 107 - Importación de pacientes masiva Hace 1 día 42905817 MOSCOSO MONTOYA PAUL FRANCISCO 42 M MEDICINA GENERAL - No seleccionado No seleccionado POL. PROCERES - 966505253 - Pendiente Citar Hace 1 día —" [ref=e640]:
+                  - cell [ref=e641]:
+                    - checkbox [ref=e642] [cursor=pointer]
+                  - cell "Bolsa 107 - Importación de pacientes masiva" [ref=e643]
+                  - cell "Hace 1 día" [ref=e644]
+                  - cell "42905817" [ref=e645]
+                  - cell "MOSCOSO MONTOYA PAUL FRANCISCO" [ref=e646]
+                  - cell "42" [ref=e647]
+                  - cell "M" [ref=e648]
+                  - cell "MEDICINA GENERAL" [ref=e649]
+                  - cell "-" [ref=e650]
+                  - cell "No seleccionado" [ref=e651]
+                  - cell "No seleccionado" [ref=e652]
+                  - cell "POL. PROCERES" [ref=e653]
+                  - cell "-" [ref=e654]
+                  - cell "966505253" [ref=e655]:
+                    - link "966505253" [ref=e656] [cursor=pointer]:
+                      - /url: https://wa.me/966505253
+                      - img [ref=e657]
+                      - text: "966505253"
+                  - cell "-" [ref=e659]:
+                    - link "-" [ref=e660] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e661]
+                      - text: "-"
+                  - cell "Pendiente Citar" [ref=e663]:
+                    - generic [ref=e664]: Pendiente Citar
+                  - cell "Hace 1 día" [ref=e665]
+                  - cell "—" [ref=e666]
+                  - cell [ref=e667]:
+                    - generic [ref=e668]:
+                      - button "Editar estado y cita" [ref=e669] [cursor=pointer]:
+                        - img [ref=e670]
+                      - button "Actualizar teléfono" [ref=e672] [cursor=pointer]:
+                        - img [ref=e673]
+                - row "Bolsa que capta la gestora Hace 1 día 34567803 Carlos Alberto Fernández Pérez N/D M MEDICINA GENERAL 33333333 Medico Test Test Test No seleccionado - TELECONSULTA 989876543 989876543 Citado — —" [ref=e675]:
+                  - cell [ref=e676]:
+                    - checkbox [ref=e677] [cursor=pointer]
+                  - cell "Bolsa que capta la gestora" [ref=e678]
+                  - cell "Hace 1 día" [ref=e679]
+                  - cell "34567803" [ref=e680]
+                  - cell "Carlos Alberto Fernández Pérez" [ref=e681]
+                  - cell "N/D" [ref=e682]
+                  - cell "M" [ref=e683]
+                  - cell "MEDICINA GENERAL" [ref=e684]
+                  - cell "33333333" [ref=e685]
+                  - cell "Medico Test Test Test" [ref=e686]
+                  - cell "No seleccionado" [ref=e687]
+                  - cell "-" [ref=e688]
+                  - cell "TELECONSULTA" [ref=e689]
+                  - cell "989876543" [ref=e690]:
+                    - link "989876543" [ref=e691] [cursor=pointer]:
+                      - /url: https://wa.me/989876543
+                      - img [ref=e692]
+                      - text: "989876543"
+                  - cell "989876543" [ref=e694]:
+                    - link "989876543" [ref=e695] [cursor=pointer]:
+                      - /url: https://wa.me/989876543
+                      - img [ref=e696]
+                      - text: "989876543"
+                  - cell "Citado" [ref=e698]:
+                    - generic [ref=e699]: Citado
+                  - cell "—" [ref=e700]
+                  - cell "—" [ref=e701]
+                  - cell [ref=e702]:
+                    - generic [ref=e703]:
+                      - button "Editar estado y cita" [ref=e704] [cursor=pointer]:
+                        - img [ref=e705]
+                      - button "Actualizar teléfono" [ref=e707] [cursor=pointer]:
+                        - img [ref=e708]
+                - row "Bolsa 107 - Importación de pacientes masiva Hace 1 día 08004566 BUSTILLOS GAMARRA DE QUISPE LUZMILA ENEDINA 68 F MEDICINA GENERAL - No seleccionado No seleccionado POL. FRANCISCO PIZARRO - 945035252 - Pendiente Citar Hace 1 día —" [ref=e710]:
+                  - cell [ref=e711]:
+                    - checkbox [ref=e712] [cursor=pointer]
+                  - cell "Bolsa 107 - Importación de pacientes masiva" [ref=e713]
+                  - cell "Hace 1 día" [ref=e714]
+                  - cell "08004566" [ref=e715]
+                  - cell "BUSTILLOS GAMARRA DE QUISPE LUZMILA ENEDINA" [ref=e716]
+                  - cell "68" [ref=e717]
+                  - cell "F" [ref=e718]
+                  - cell "MEDICINA GENERAL" [ref=e719]
+                  - cell "-" [ref=e720]
+                  - cell "No seleccionado" [ref=e721]
+                  - cell "No seleccionado" [ref=e722]
+                  - cell "POL. FRANCISCO PIZARRO" [ref=e723]
+                  - cell "-" [ref=e724]
+                  - cell "945035252" [ref=e725]:
+                    - link "945035252" [ref=e726] [cursor=pointer]:
+                      - /url: https://wa.me/945035252
+                      - img [ref=e727]
+                      - text: "945035252"
+                  - cell "-" [ref=e729]:
+                    - link "-" [ref=e730] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e731]
+                      - text: "-"
+                  - cell "Pendiente Citar" [ref=e733]:
+                    - generic [ref=e734]: Pendiente Citar
+                  - cell "Hace 1 día" [ref=e735]
+                  - cell "—" [ref=e736]
+                  - cell [ref=e737]:
+                    - generic [ref=e738]:
+                      - button "Editar estado y cita" [ref=e739] [cursor=pointer]:
+                        - img [ref=e740]
+                      - button "Actualizar teléfono" [ref=e742] [cursor=pointer]:
+                        - img [ref=e743]
+                - row "Bolsa que capta la gestora Hace 1 día 09156678 BARRON VARGAS JULIO DANTE N/D M MEDICINA GENERAL 47747123 Vanessa Daphne Zegarra Inchausti No seleccionado - TELECONSULTA 974039301 974039301 Citado — —" [ref=e745]:
+                  - cell [ref=e746]:
+                    - checkbox [ref=e747] [cursor=pointer]
+                  - cell "Bolsa que capta la gestora" [ref=e748]
+                  - cell "Hace 1 día" [ref=e749]
+                  - cell "09156678" [ref=e750]
+                  - cell "BARRON VARGAS JULIO DANTE" [ref=e751]
+                  - cell "N/D" [ref=e752]
+                  - cell "M" [ref=e753]
+                  - cell "MEDICINA GENERAL" [ref=e754]
+                  - cell "47747123" [ref=e755]
+                  - cell "Vanessa Daphne Zegarra Inchausti" [ref=e756]
+                  - cell "No seleccionado" [ref=e757]
+                  - cell "-" [ref=e758]
+                  - cell "TELECONSULTA" [ref=e759]
+                  - cell "974039301" [ref=e760]:
+                    - link "974039301" [ref=e761] [cursor=pointer]:
+                      - /url: https://wa.me/974039301
+                      - img [ref=e762]
+                      - text: "974039301"
+                  - cell "974039301" [ref=e764]:
+                    - link "974039301" [ref=e765] [cursor=pointer]:
+                      - /url: https://wa.me/974039301
+                      - img [ref=e766]
+                      - text: "974039301"
+                  - cell "Citado" [ref=e768]:
+                    - generic [ref=e769]: Citado
+                  - cell "—" [ref=e770]
+                  - cell "—" [ref=e771]
+                  - cell [ref=e772]:
+                    - generic [ref=e773]:
+                      - button "Editar estado y cita" [ref=e774] [cursor=pointer]:
+                        - img [ref=e775]
+                      - button "Actualizar teléfono" [ref=e777] [cursor=pointer]:
+                        - img [ref=e778]
+                - row "Bolsa 107 - Importación de pacientes masiva Hace 1 día 08417261 ECHAVARRIA ROJAS MARY 90 F MEDICINA GENERAL - No seleccionado No seleccionado CAP III LUIS NEGREIROS VEGA - 990315389 - Pendiente Citar Hace 1 día —" [ref=e780]:
+                  - cell [ref=e781]:
+                    - checkbox [ref=e782] [cursor=pointer]
+                  - cell "Bolsa 107 - Importación de pacientes masiva" [ref=e783]
+                  - cell "Hace 1 día" [ref=e784]
+                  - cell "08417261" [ref=e785]
+                  - cell "ECHAVARRIA ROJAS MARY" [ref=e786]
+                  - cell "90" [ref=e787]
+                  - cell "F" [ref=e788]
+                  - cell "MEDICINA GENERAL" [ref=e789]
+                  - cell "-" [ref=e790]
+                  - cell "No seleccionado" [ref=e791]
+                  - cell "No seleccionado" [ref=e792]
+                  - cell "CAP III LUIS NEGREIROS VEGA" [ref=e793]
+                  - cell "-" [ref=e794]
+                  - cell "990315389" [ref=e795]:
+                    - link "990315389" [ref=e796] [cursor=pointer]:
+                      - /url: https://wa.me/990315389
+                      - img [ref=e797]
+                      - text: "990315389"
+                  - cell "-" [ref=e799]:
+                    - link "-" [ref=e800] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e801]
+                      - text: "-"
+                  - cell "Pendiente Citar" [ref=e803]:
+                    - generic [ref=e804]: Pendiente Citar
+                  - cell "Hace 1 día" [ref=e805]
+                  - cell "—" [ref=e806]
+                  - cell [ref=e807]:
+                    - generic [ref=e808]:
+                      - button "Editar estado y cita" [ref=e809] [cursor=pointer]:
+                        - img [ref=e810]
+                      - button "Actualizar teléfono" [ref=e812] [cursor=pointer]:
+                        - img [ref=e813]
+                - row "Bolsa 107 - Importación de pacientes masiva Hace 1 día 06729116 REVATTA FLORES ROSALINA 80 F MEDICINA GENERAL - No seleccionado No seleccionado POL. CHINCHA - 994677961 - Pendiente Citar Hace 1 día —" [ref=e815]:
+                  - cell [ref=e816]:
+                    - checkbox [ref=e817] [cursor=pointer]
+                  - cell "Bolsa 107 - Importación de pacientes masiva" [ref=e818]
+                  - cell "Hace 1 día" [ref=e819]
+                  - cell "06729116" [ref=e820]
+                  - cell "REVATTA FLORES ROSALINA" [ref=e821]
+                  - cell "80" [ref=e822]
+                  - cell "F" [ref=e823]
+                  - cell "MEDICINA GENERAL" [ref=e824]
+                  - cell "-" [ref=e825]
+                  - cell "No seleccionado" [ref=e826]
+                  - cell "No seleccionado" [ref=e827]
+                  - cell "POL. CHINCHA" [ref=e828]
+                  - cell "-" [ref=e829]
+                  - cell "994677961" [ref=e830]:
+                    - link "994677961" [ref=e831] [cursor=pointer]:
+                      - /url: https://wa.me/994677961
+                      - img [ref=e832]
+                      - text: "994677961"
+                  - cell "-" [ref=e834]:
+                    - link "-" [ref=e835] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e836]
+                      - text: "-"
+                  - cell "Pendiente Citar" [ref=e838]:
+                    - generic [ref=e839]: Pendiente Citar
+                  - cell "Hace 1 día" [ref=e840]
+                  - cell "—" [ref=e841]
+                  - cell [ref=e842]:
+                    - generic [ref=e843]:
+                      - button "Editar estado y cita" [ref=e844] [cursor=pointer]:
+                        - img [ref=e845]
+                      - button "Actualizar teléfono" [ref=e847] [cursor=pointer]:
+                        - img [ref=e848]
+                - row "Bolsa 107 - Importación de pacientes masiva Hace 1 día 09156678 BARRON VARGAS JULIO DANTE 77 M MEDICINA GENERAL - No seleccionado No seleccionado POL. PABLO BERMUDEZ - 974039301 - Pendiente Citar Hace 1 día —" [ref=e850]:
+                  - cell [ref=e851]:
+                    - checkbox [ref=e852] [cursor=pointer]
+                  - cell "Bolsa 107 - Importación de pacientes masiva" [ref=e853]
+                  - cell "Hace 1 día" [ref=e854]
+                  - cell "09156678" [ref=e855]
+                  - cell "BARRON VARGAS JULIO DANTE" [ref=e856]
+                  - cell "77" [ref=e857]
+                  - cell "M" [ref=e858]
+                  - cell "MEDICINA GENERAL" [ref=e859]
+                  - cell "-" [ref=e860]
+                  - cell "No seleccionado" [ref=e861]
+                  - cell "No seleccionado" [ref=e862]
+                  - cell "POL. PABLO BERMUDEZ" [ref=e863]
+                  - cell "-" [ref=e864]
+                  - cell "974039301" [ref=e865]:
+                    - link "974039301" [ref=e866] [cursor=pointer]:
+                      - /url: https://wa.me/974039301
+                      - img [ref=e867]
+                      - text: "974039301"
+                  - cell "-" [ref=e869]:
+                    - link "-" [ref=e870] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e871]
+                      - text: "-"
+                  - cell "Pendiente Citar" [ref=e873]:
+                    - generic [ref=e874]: Pendiente Citar
+                  - cell "Hace 1 día" [ref=e875]
+                  - cell "—" [ref=e876]
+                  - cell [ref=e877]:
+                    - generic [ref=e878]:
+                      - button "Editar estado y cita" [ref=e879] [cursor=pointer]:
+                        - img [ref=e880]
+                      - button "Actualizar teléfono" [ref=e882] [cursor=pointer]:
+                        - img [ref=e883]
+                - row "Bolsa 107 - Importación de pacientes masiva Hace 21 horas 08026442 QUISPE CHIRINOS MARIA ELENA 76 F MEDICINA GENERAL - No seleccionado No seleccionado H.II RAMON CASTILLA - 978211202 - Pendiente Citar Hace 1 día —" [ref=e885]:
+                  - cell [ref=e886]:
+                    - checkbox [ref=e887] [cursor=pointer]
+                  - cell "Bolsa 107 - Importación de pacientes masiva" [ref=e888]
+                  - cell "Hace 21 horas" [ref=e889]
+                  - cell "08026442" [ref=e890]
+                  - cell "QUISPE CHIRINOS MARIA ELENA" [ref=e891]
+                  - cell "76" [ref=e892]
+                  - cell "F" [ref=e893]
+                  - cell "MEDICINA GENERAL" [ref=e894]
+                  - cell "-" [ref=e895]
+                  - cell "No seleccionado" [ref=e896]
+                  - cell "No seleccionado" [ref=e897]
+                  - cell "H.II RAMON CASTILLA" [ref=e898]
+                  - cell "-" [ref=e899]
+                  - cell "978211202" [ref=e900]:
+                    - link "978211202" [ref=e901] [cursor=pointer]:
+                      - /url: https://wa.me/978211202
+                      - img [ref=e902]
+                      - text: "978211202"
+                  - cell "-" [ref=e904]:
+                    - link "-" [ref=e905] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e906]
+                      - text: "-"
+                  - cell "Pendiente Citar" [ref=e908]:
+                    - generic [ref=e909]: Pendiente Citar
+                  - cell "Hace 1 día" [ref=e910]
+                  - cell "—" [ref=e911]
+                  - cell [ref=e912]:
+                    - generic [ref=e913]:
+                      - button "Editar estado y cita" [ref=e914] [cursor=pointer]:
+                        - img [ref=e915]
+                      - button "Actualizar teléfono" [ref=e917] [cursor=pointer]:
+                        - img [ref=e918]
+                - row "Bolsa 107 - Importación de pacientes masiva Hace 1 día 08007415 CARDEL ALCANTARA MAXIMILIANO 91 M MEDICINA GENERAL - No seleccionado No seleccionado POL. FRANCISCO PIZARRO - 996642003 - Pendiente Citar Hace 1 día —" [ref=e920]:
+                  - cell [ref=e921]:
+                    - checkbox [ref=e922] [cursor=pointer]
+                  - cell "Bolsa 107 - Importación de pacientes masiva" [ref=e923]
+                  - cell "Hace 1 día" [ref=e924]
+                  - cell "08007415" [ref=e925]
+                  - cell "CARDEL ALCANTARA MAXIMILIANO" [ref=e926]
+                  - cell "91" [ref=e927]
+                  - cell "M" [ref=e928]
+                  - cell "MEDICINA GENERAL" [ref=e929]
+                  - cell "-" [ref=e930]
+                  - cell "No seleccionado" [ref=e931]
+                  - cell "No seleccionado" [ref=e932]
+                  - cell "POL. FRANCISCO PIZARRO" [ref=e933]
+                  - cell "-" [ref=e934]
+                  - cell "996642003" [ref=e935]:
+                    - link "996642003" [ref=e936] [cursor=pointer]:
+                      - /url: https://wa.me/996642003
+                      - img [ref=e937]
+                      - text: "996642003"
+                  - cell "-" [ref=e939]:
+                    - link "-" [ref=e940] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e941]
+                      - text: "-"
+                  - cell "Pendiente Citar" [ref=e943]:
+                    - generic [ref=e944]: Pendiente Citar
+                  - cell "Hace 1 día" [ref=e945]
+                  - cell "—" [ref=e946]
+                  - cell [ref=e947]:
+                    - generic [ref=e948]:
+                      - button "Editar estado y cita" [ref=e949] [cursor=pointer]:
+                        - img [ref=e950]
+                      - button "Actualizar teléfono" [ref=e952] [cursor=pointer]:
+                        - img [ref=e953]
+                - row "Bolsa 107 - Importación de pacientes masiva Hace 1 día 06659549 ALFARO QUISPE DE MAGAN MARIA TERESA 74 F MEDICINA GENERAL - No seleccionado No seleccionado H.III SUAREZ-ANGAMOS - 947038239 - Pendiente Citar Hace 1 día —" [ref=e955]:
+                  - cell [ref=e956]:
+                    - checkbox [ref=e957] [cursor=pointer]
+                  - cell "Bolsa 107 - Importación de pacientes masiva" [ref=e958]
+                  - cell "Hace 1 día" [ref=e959]
+                  - cell "06659549" [ref=e960]
+                  - cell "ALFARO QUISPE DE MAGAN MARIA TERESA" [ref=e961]
+                  - cell "74" [ref=e962]
+                  - cell "F" [ref=e963]
+                  - cell "MEDICINA GENERAL" [ref=e964]
+                  - cell "-" [ref=e965]
+                  - cell "No seleccionado" [ref=e966]
+                  - cell "No seleccionado" [ref=e967]
+                  - cell "H.III SUAREZ-ANGAMOS" [ref=e968]
+                  - cell "-" [ref=e969]
+                  - cell "947038239" [ref=e970]:
+                    - link "947038239" [ref=e971] [cursor=pointer]:
+                      - /url: https://wa.me/947038239
+                      - img [ref=e972]
+                      - text: "947038239"
+                  - cell "-" [ref=e974]:
+                    - link "-" [ref=e975] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e976]
+                      - text: "-"
+                  - cell "Pendiente Citar" [ref=e978]:
+                    - generic [ref=e979]: Pendiente Citar
+                  - cell "Hace 1 día" [ref=e980]
+                  - cell "—" [ref=e981]
+                  - cell [ref=e982]:
+                    - generic [ref=e983]:
+                      - button "Editar estado y cita" [ref=e984] [cursor=pointer]:
+                        - img [ref=e985]
+                      - button "Actualizar teléfono" [ref=e987] [cursor=pointer]:
+                        - img [ref=e988]
+                - row "Bolsa 107 - Importación de pacientes masiva Hace 1 día 07308179 GUZMAN CARDENAS DE GUTIERREZ ISABEL ANTONIETA 73 F MEDICINA GENERAL - No seleccionado No seleccionado CAP III ALFREDO PIAZZA ROBERTS - 997804052 - Pendiente Citar Hace 1 día —" [ref=e990]:
+                  - cell [ref=e991]:
+                    - checkbox [ref=e992] [cursor=pointer]
+                  - cell "Bolsa 107 - Importación de pacientes masiva" [ref=e993]
+                  - cell "Hace 1 día" [ref=e994]
+                  - cell "07308179" [ref=e995]
+                  - cell "GUZMAN CARDENAS DE GUTIERREZ ISABEL ANTONIETA" [ref=e996]
+                  - cell "73" [ref=e997]
+                  - cell "F" [ref=e998]
+                  - cell "MEDICINA GENERAL" [ref=e999]
+                  - cell "-" [ref=e1000]
+                  - cell "No seleccionado" [ref=e1001]
+                  - cell "No seleccionado" [ref=e1002]
+                  - cell "CAP III ALFREDO PIAZZA ROBERTS" [ref=e1003]
+                  - cell "-" [ref=e1004]
+                  - cell "997804052" [ref=e1005]:
+                    - link "997804052" [ref=e1006] [cursor=pointer]:
+                      - /url: https://wa.me/997804052
+                      - img [ref=e1007]
+                      - text: "997804052"
+                  - cell "-" [ref=e1009]:
+                    - link "-" [ref=e1010] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e1011]
+                      - text: "-"
+                  - cell "Pendiente Citar" [ref=e1013]:
+                    - generic [ref=e1014]: Pendiente Citar
+                  - cell "Hace 1 día" [ref=e1015]
+                  - cell "—" [ref=e1016]
+                  - cell [ref=e1017]:
+                    - generic [ref=e1018]:
+                      - button "Editar estado y cita" [ref=e1019] [cursor=pointer]:
+                        - img [ref=e1020]
+                      - button "Actualizar teléfono" [ref=e1022] [cursor=pointer]:
+                        - img [ref=e1023]
+                - row "Bolsa 107 - Importación de pacientes masiva Hace 1 día 43679197 VALDIVIA CASTRO ANA CECILIA 45 M MEDICINA GENERAL - No seleccionado No seleccionado POL. CHINCHA - 989989239 - Pendiente Citar Hace 1 día —" [ref=e1025]:
+                  - cell [ref=e1026]:
+                    - checkbox [ref=e1027] [cursor=pointer]
+                  - cell "Bolsa 107 - Importación de pacientes masiva" [ref=e1028]
+                  - cell "Hace 1 día" [ref=e1029]
+                  - cell "43679197" [ref=e1030]
+                  - cell "VALDIVIA CASTRO ANA CECILIA" [ref=e1031]
+                  - cell "45" [ref=e1032]
+                  - cell "M" [ref=e1033]
+                  - cell "MEDICINA GENERAL" [ref=e1034]
+                  - cell "-" [ref=e1035]
+                  - cell "No seleccionado" [ref=e1036]
+                  - cell "No seleccionado" [ref=e1037]
+                  - cell "POL. CHINCHA" [ref=e1038]
+                  - cell "-" [ref=e1039]
+                  - cell "989989239" [ref=e1040]:
+                    - link "989989239" [ref=e1041] [cursor=pointer]:
+                      - /url: https://wa.me/989989239
+                      - img [ref=e1042]
+                      - text: "989989239"
+                  - cell "-" [ref=e1044]:
+                    - link "-" [ref=e1045] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e1046]
+                      - text: "-"
+                  - cell "Pendiente Citar" [ref=e1048]:
+                    - generic [ref=e1049]: Pendiente Citar
+                  - cell "Hace 1 día" [ref=e1050]
+                  - cell "—" [ref=e1051]
+                  - cell [ref=e1052]:
+                    - generic [ref=e1053]:
+                      - button "Editar estado y cita" [ref=e1054] [cursor=pointer]:
+                        - img [ref=e1055]
+                      - button "Actualizar teléfono" [ref=e1057] [cursor=pointer]:
+                        - img [ref=e1058]
+                - row "Bolsa 107 - Importación de pacientes masiva Hace 1 día 70364580 YALAN NORIEGA ERIKA MARIA 36 F MEDICINA GENERAL - No seleccionado No seleccionado - - 996128413 - Pendiente Citar Hace 1 día —" [ref=e1060]:
+                  - cell [ref=e1061]:
+                    - checkbox [ref=e1062] [cursor=pointer]
+                  - cell "Bolsa 107 - Importación de pacientes masiva" [ref=e1063]
+                  - cell "Hace 1 día" [ref=e1064]
+                  - cell "70364580" [ref=e1065]
+                  - cell "YALAN NORIEGA ERIKA MARIA" [ref=e1066]
+                  - cell "36" [ref=e1067]
+                  - cell "F" [ref=e1068]
+                  - cell "MEDICINA GENERAL" [ref=e1069]
+                  - cell "-" [ref=e1070]
+                  - cell "No seleccionado" [ref=e1071]
+                  - cell "No seleccionado" [ref=e1072]
+                  - cell "-" [ref=e1073]
+                  - cell "-" [ref=e1074]
+                  - cell "996128413" [ref=e1075]:
+                    - link "996128413" [ref=e1076] [cursor=pointer]:
+                      - /url: https://wa.me/996128413
+                      - img [ref=e1077]
+                      - text: "996128413"
+                  - cell "-" [ref=e1079]:
+                    - link "-" [ref=e1080] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e1081]
+                      - text: "-"
+                  - cell "Pendiente Citar" [ref=e1083]:
+                    - generic [ref=e1084]: Pendiente Citar
+                  - cell "Hace 1 día" [ref=e1085]
+                  - cell "—" [ref=e1086]
+                  - cell [ref=e1087]:
+                    - generic [ref=e1088]:
+                      - button "Editar estado y cita" [ref=e1089] [cursor=pointer]:
+                        - img [ref=e1090]
+                      - button "Actualizar teléfono" [ref=e1092] [cursor=pointer]:
+                        - img [ref=e1093]
+                - row "Bolsa 107 - Importación de pacientes masiva Hace 1 día 43917802 ESCARSENA GUILLEN KATY GRACIELA 40 F MEDICINA GENERAL - No seleccionado No seleccionado - - 967207954 - Pendiente Citar Hace 1 día —" [ref=e1095]:
+                  - cell [ref=e1096]:
+                    - checkbox [ref=e1097] [cursor=pointer]
+                  - cell "Bolsa 107 - Importación de pacientes masiva" [ref=e1098]
+                  - cell "Hace 1 día" [ref=e1099]
+                  - cell "43917802" [ref=e1100]
+                  - cell "ESCARSENA GUILLEN KATY GRACIELA" [ref=e1101]
+                  - cell "40" [ref=e1102]
+                  - cell "F" [ref=e1103]
+                  - cell "MEDICINA GENERAL" [ref=e1104]
+                  - cell "-" [ref=e1105]
+                  - cell "No seleccionado" [ref=e1106]
+                  - cell "No seleccionado" [ref=e1107]
+                  - cell "-" [ref=e1108]
+                  - cell "-" [ref=e1109]
+                  - cell "967207954" [ref=e1110]:
+                    - link "967207954" [ref=e1111] [cursor=pointer]:
+                      - /url: https://wa.me/967207954
+                      - img [ref=e1112]
+                      - text: "967207954"
+                  - cell "-" [ref=e1114]:
+                    - link "-" [ref=e1115] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e1116]
+                      - text: "-"
+                  - cell "Pendiente Citar" [ref=e1118]:
+                    - generic [ref=e1119]: Pendiente Citar
+                  - cell "Hace 1 día" [ref=e1120]
+                  - cell "—" [ref=e1121]
+                  - cell [ref=e1122]:
+                    - generic [ref=e1123]:
+                      - button "Editar estado y cita" [ref=e1124] [cursor=pointer]:
+                        - img [ref=e1125]
+                      - button "Actualizar teléfono" [ref=e1127] [cursor=pointer]:
+                        - img [ref=e1128]
+                - row "Bolsa 107 - Importación de pacientes masiva Hace 1 día 08244925 FERREYRA GONZALES ELDA 78 F MEDICINA GENERAL - No seleccionado No seleccionado H.I CARLOS ALCANTARA BUTTERFIELD - 993578172 - Pendiente Citar Hace 1 día —" [ref=e1130]:
+                  - cell [ref=e1131]:
+                    - checkbox [ref=e1132] [cursor=pointer]
+                  - cell "Bolsa 107 - Importación de pacientes masiva" [ref=e1133]
+                  - cell "Hace 1 día" [ref=e1134]
+                  - cell "08244925" [ref=e1135]
+                  - cell "FERREYRA GONZALES ELDA" [ref=e1136]
+                  - cell "78" [ref=e1137]
+                  - cell "F" [ref=e1138]
+                  - cell "MEDICINA GENERAL" [ref=e1139]
+                  - cell "-" [ref=e1140]
+                  - cell "No seleccionado" [ref=e1141]
+                  - cell "No seleccionado" [ref=e1142]
+                  - cell "H.I CARLOS ALCANTARA BUTTERFIELD" [ref=e1143]
+                  - cell "-" [ref=e1144]
+                  - cell "993578172" [ref=e1145]:
+                    - link "993578172" [ref=e1146] [cursor=pointer]:
+                      - /url: https://wa.me/993578172
+                      - img [ref=e1147]
+                      - text: "993578172"
+                  - cell "-" [ref=e1149]:
+                    - link "-" [ref=e1150] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e1151]
+                      - text: "-"
+                  - cell "Pendiente Citar" [ref=e1153]:
+                    - generic [ref=e1154]: Pendiente Citar
+                  - cell "Hace 1 día" [ref=e1155]
+                  - cell "—" [ref=e1156]
+                  - cell [ref=e1157]:
+                    - generic [ref=e1158]:
+                      - button "Editar estado y cita" [ref=e1159] [cursor=pointer]:
+                        - img [ref=e1160]
+                      - button "Actualizar teléfono" [ref=e1162] [cursor=pointer]:
+                        - img [ref=e1163]
+                - row "Bolsa 107 - Importación de pacientes masiva Hace 1 día 60717683 ORDOÑEZ VARGAS MERY CRIS ELEN 18 F MEDICINA GENERAL - No seleccionado No seleccionado CAP III SAN JUAN DE MIRAFLORES - 977796675 - Pendiente Citar Hace 1 día —" [ref=e1165]:
+                  - cell [ref=e1166]:
+                    - checkbox [ref=e1167] [cursor=pointer]
+                  - cell "Bolsa 107 - Importación de pacientes masiva" [ref=e1168]
+                  - cell "Hace 1 día" [ref=e1169]
+                  - cell "60717683" [ref=e1170]
+                  - cell "ORDOÑEZ VARGAS MERY CRIS ELEN" [ref=e1171]
+                  - cell "18" [ref=e1172]
+                  - cell "F" [ref=e1173]
+                  - cell "MEDICINA GENERAL" [ref=e1174]
+                  - cell "-" [ref=e1175]
+                  - cell "No seleccionado" [ref=e1176]
+                  - cell "No seleccionado" [ref=e1177]
+                  - cell "CAP III SAN JUAN DE MIRAFLORES" [ref=e1178]
+                  - cell "-" [ref=e1179]
+                  - cell "977796675" [ref=e1180]:
+                    - link "977796675" [ref=e1181] [cursor=pointer]:
+                      - /url: https://wa.me/977796675
+                      - img [ref=e1182]
+                      - text: "977796675"
+                  - cell "-" [ref=e1184]:
+                    - link "-" [ref=e1185] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e1186]
+                      - text: "-"
+                  - cell "Pendiente Citar" [ref=e1188]:
+                    - generic [ref=e1189]: Pendiente Citar
+                  - cell "Hace 1 día" [ref=e1190]
+                  - cell "—" [ref=e1191]
+                  - cell [ref=e1192]:
+                    - generic [ref=e1193]:
+                      - button "Editar estado y cita" [ref=e1194] [cursor=pointer]:
+                        - img [ref=e1195]
+                      - button "Actualizar teléfono" [ref=e1197] [cursor=pointer]:
+                        - img [ref=e1198]
+                - row "Bolsa 107 - Importación de pacientes masiva Hace 1 día 40530713 CASTRO TAMAYO BEATRIZ VERONICA 46 F MEDICINA GENERAL - No seleccionado No seleccionado CAP III SURQUILLO - 929091541 - Pendiente Citar Hace 1 día —" [ref=e1200]:
+                  - cell [ref=e1201]:
+                    - checkbox [ref=e1202] [cursor=pointer]
+                  - cell "Bolsa 107 - Importación de pacientes masiva" [ref=e1203]
+                  - cell "Hace 1 día" [ref=e1204]
+                  - cell "40530713" [ref=e1205]
+                  - cell "CASTRO TAMAYO BEATRIZ VERONICA" [ref=e1206]
+                  - cell "46" [ref=e1207]
+                  - cell "F" [ref=e1208]
+                  - cell "MEDICINA GENERAL" [ref=e1209]
+                  - cell "-" [ref=e1210]
+                  - cell "No seleccionado" [ref=e1211]
+                  - cell "No seleccionado" [ref=e1212]
+                  - cell "CAP III SURQUILLO" [ref=e1213]
+                  - cell "-" [ref=e1214]
+                  - cell "929091541" [ref=e1215]:
+                    - link "929091541" [ref=e1216] [cursor=pointer]:
+                      - /url: https://wa.me/929091541
+                      - img [ref=e1217]
+                      - text: "929091541"
+                  - cell "-" [ref=e1219]:
+                    - link "-" [ref=e1220] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e1221]
+                      - text: "-"
+                  - cell "Pendiente Citar" [ref=e1223]:
+                    - generic [ref=e1224]: Pendiente Citar
+                  - cell "Hace 1 día" [ref=e1225]
+                  - cell "—" [ref=e1226]
+                  - cell [ref=e1227]:
+                    - generic [ref=e1228]:
+                      - button "Editar estado y cita" [ref=e1229] [cursor=pointer]:
+                        - img [ref=e1230]
+                      - button "Actualizar teléfono" [ref=e1232] [cursor=pointer]:
+                        - img [ref=e1233]
+                - row "Bolsa 107 - Importación de pacientes masiva Hace 1 día 08775442 alarcon vda de mnorales elsa manuela 89 F MEDICINA GENERAL - No seleccionado No seleccionado H.I CARLOS ALCANTARA BUTTERFIELD - 987777663 - Pendiente Citar Hace 1 día —" [ref=e1235]:
+                  - cell [ref=e1236]:
+                    - checkbox [ref=e1237] [cursor=pointer]
+                  - cell "Bolsa 107 - Importación de pacientes masiva" [ref=e1238]
+                  - cell "Hace 1 día" [ref=e1239]
+                  - cell "08775442" [ref=e1240]
+                  - cell "alarcon vda de mnorales elsa manuela" [ref=e1241]
+                  - cell "89" [ref=e1242]
+                  - cell "F" [ref=e1243]
+                  - cell "MEDICINA GENERAL" [ref=e1244]
+                  - cell "-" [ref=e1245]
+                  - cell "No seleccionado" [ref=e1246]
+                  - cell "No seleccionado" [ref=e1247]
+                  - cell "H.I CARLOS ALCANTARA BUTTERFIELD" [ref=e1248]
+                  - cell "-" [ref=e1249]
+                  - cell "987777663" [ref=e1250]:
+                    - link "987777663" [ref=e1251] [cursor=pointer]:
+                      - /url: https://wa.me/987777663
+                      - img [ref=e1252]
+                      - text: "987777663"
+                  - cell "-" [ref=e1254]:
+                    - link "-" [ref=e1255] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e1256]
+                      - text: "-"
+                  - cell "Pendiente Citar" [ref=e1258]:
+                    - generic [ref=e1259]: Pendiente Citar
+                  - cell "Hace 1 día" [ref=e1260]
+                  - cell "—" [ref=e1261]
+                  - cell [ref=e1262]:
+                    - generic [ref=e1263]:
+                      - button "Editar estado y cita" [ref=e1264] [cursor=pointer]:
+                        - img [ref=e1265]
+                      - button "Actualizar teléfono" [ref=e1267] [cursor=pointer]:
+                        - img [ref=e1268]
+                - row "Bolsa 107 - Importación de pacientes masiva Hace 1 día 07194992 ROSA LIDUVINA HUARANGA PUZZA 91 F MEDICINA GENERAL - No seleccionado No seleccionado POL. PABLO BERMUDEZ - 996568880 - Pendiente Citar Hace 1 día —" [ref=e1270]:
+                  - cell [ref=e1271]:
+                    - checkbox [ref=e1272] [cursor=pointer]
+                  - cell "Bolsa 107 - Importación de pacientes masiva" [ref=e1273]
+                  - cell "Hace 1 día" [ref=e1274]
+                  - cell "07194992" [ref=e1275]
+                  - cell "ROSA LIDUVINA HUARANGA PUZZA" [ref=e1276]
+                  - cell "91" [ref=e1277]
+                  - cell "F" [ref=e1278]
+                  - cell "MEDICINA GENERAL" [ref=e1279]
+                  - cell "-" [ref=e1280]
+                  - cell "No seleccionado" [ref=e1281]
+                  - cell "No seleccionado" [ref=e1282]
+                  - cell "POL. PABLO BERMUDEZ" [ref=e1283]
+                  - cell "-" [ref=e1284]
+                  - cell "996568880" [ref=e1285]:
+                    - link "996568880" [ref=e1286] [cursor=pointer]:
+                      - /url: https://wa.me/996568880
+                      - img [ref=e1287]
+                      - text: "996568880"
+                  - cell "-" [ref=e1289]:
+                    - link "-" [ref=e1290] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e1291]
+                      - text: "-"
+                  - cell "Pendiente Citar" [ref=e1293]:
+                    - generic [ref=e1294]: Pendiente Citar
+                  - cell "Hace 1 día" [ref=e1295]
+                  - cell "—" [ref=e1296]
+                  - cell [ref=e1297]:
+                    - generic [ref=e1298]:
+                      - button "Editar estado y cita" [ref=e1299] [cursor=pointer]:
+                        - img [ref=e1300]
+                      - button "Actualizar teléfono" [ref=e1302] [cursor=pointer]:
+                        - img [ref=e1303]
+                - row "Bolsa 107 - Importación de pacientes masiva Hace 1 día 08819592 ARZAPALO DE PALOMINO MARIA LUZ 70 F MEDICINA GENERAL - No seleccionado No seleccionado POL.- APP - GUILLERMO KAELIN DE LA F. - 953796268 - Pendiente Citar Hace 1 día —" [ref=e1305]:
+                  - cell [ref=e1306]:
+                    - checkbox [ref=e1307] [cursor=pointer]
+                  - cell "Bolsa 107 - Importación de pacientes masiva" [ref=e1308]
+                  - cell "Hace 1 día" [ref=e1309]
+                  - cell "08819592" [ref=e1310]
+                  - cell "ARZAPALO DE PALOMINO MARIA LUZ" [ref=e1311]
+                  - cell "70" [ref=e1312]
+                  - cell "F" [ref=e1313]
+                  - cell "MEDICINA GENERAL" [ref=e1314]
+                  - cell "-" [ref=e1315]
+                  - cell "No seleccionado" [ref=e1316]
+                  - cell "No seleccionado" [ref=e1317]
+                  - cell "POL.- APP - GUILLERMO KAELIN DE LA F." [ref=e1318]
+                  - cell "-" [ref=e1319]
+                  - cell "953796268" [ref=e1320]:
+                    - link "953796268" [ref=e1321] [cursor=pointer]:
+                      - /url: https://wa.me/953796268
+                      - img [ref=e1322]
+                      - text: "953796268"
+                  - cell "-" [ref=e1324]:
+                    - link "-" [ref=e1325] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e1326]
+                      - text: "-"
+                  - cell "Pendiente Citar" [ref=e1328]:
+                    - generic [ref=e1329]: Pendiente Citar
+                  - cell "Hace 1 día" [ref=e1330]
+                  - cell "—" [ref=e1331]
+                  - cell [ref=e1332]:
+                    - generic [ref=e1333]:
+                      - button "Editar estado y cita" [ref=e1334] [cursor=pointer]:
+                        - img [ref=e1335]
+                      - button "Actualizar teléfono" [ref=e1337] [cursor=pointer]:
+                        - img [ref=e1338]
+                - row "Bolsa 107 - Importación de pacientes masiva Hace 1 día 70352600 LEVANO OBREGON FELIX EDUARDO 35 M MEDICINA GENERAL - No seleccionado No seleccionado POL. PABLO BERMUDEZ - 995820896 - Pendiente Citar Hace 1 día —" [ref=e1340]:
+                  - cell [ref=e1341]:
+                    - checkbox [ref=e1342] [cursor=pointer]
+                  - cell "Bolsa 107 - Importación de pacientes masiva" [ref=e1343]
+                  - cell "Hace 1 día" [ref=e1344]
+                  - cell "70352600" [ref=e1345]
+                  - cell "LEVANO OBREGON FELIX EDUARDO" [ref=e1346]
+                  - cell "35" [ref=e1347]
+                  - cell "M" [ref=e1348]
+                  - cell "MEDICINA GENERAL" [ref=e1349]
+                  - cell "-" [ref=e1350]
+                  - cell "No seleccionado" [ref=e1351]
+                  - cell "No seleccionado" [ref=e1352]
+                  - cell "POL. PABLO BERMUDEZ" [ref=e1353]
+                  - cell "-" [ref=e1354]
+                  - cell "995820896" [ref=e1355]:
+                    - link "995820896" [ref=e1356] [cursor=pointer]:
+                      - /url: https://wa.me/995820896
+                      - img [ref=e1357]
+                      - text: "995820896"
+                  - cell "-" [ref=e1359]:
+                    - link "-" [ref=e1360] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e1361]
+                      - text: "-"
+                  - cell "Pendiente Citar" [ref=e1363]:
+                    - generic [ref=e1364]: Pendiente Citar
+                  - cell "Hace 1 día" [ref=e1365]
+                  - cell "—" [ref=e1366]
+                  - cell [ref=e1367]:
+                    - generic [ref=e1368]:
+                      - button "Editar estado y cita" [ref=e1369] [cursor=pointer]:
+                        - img [ref=e1370]
+                      - button "Actualizar teléfono" [ref=e1372] [cursor=pointer]:
+                        - img [ref=e1373]
+                - row "Bolsa 107 - Importación de pacientes masiva Hace 1 día 08380678 EMILIANA JUANA VILLEGAS PEVE 74 F MEDICINA GENERAL - No seleccionado No seleccionado H.III SUAREZ-ANGAMOS - 998998189 - Pendiente Citar Hace 1 día —" [ref=e1375]:
+                  - cell [ref=e1376]:
+                    - checkbox [ref=e1377] [cursor=pointer]
+                  - cell "Bolsa 107 - Importación de pacientes masiva" [ref=e1378]
+                  - cell "Hace 1 día" [ref=e1379]
+                  - cell "08380678" [ref=e1380]
+                  - cell "EMILIANA JUANA VILLEGAS PEVE" [ref=e1381]
+                  - cell "74" [ref=e1382]
+                  - cell "F" [ref=e1383]
+                  - cell "MEDICINA GENERAL" [ref=e1384]
+                  - cell "-" [ref=e1385]
+                  - cell "No seleccionado" [ref=e1386]
+                  - cell "No seleccionado" [ref=e1387]
+                  - cell "H.III SUAREZ-ANGAMOS" [ref=e1388]
+                  - cell "-" [ref=e1389]
+                  - cell "998998189" [ref=e1390]:
+                    - link "998998189" [ref=e1391] [cursor=pointer]:
+                      - /url: https://wa.me/998998189
+                      - img [ref=e1392]
+                      - text: "998998189"
+                  - cell "-" [ref=e1394]:
+                    - link "-" [ref=e1395] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e1396]
+                      - text: "-"
+                  - cell "Pendiente Citar" [ref=e1398]:
+                    - generic [ref=e1399]: Pendiente Citar
+                  - cell "Hace 1 día" [ref=e1400]
+                  - cell "—" [ref=e1401]
+                  - cell [ref=e1402]:
+                    - generic [ref=e1403]:
+                      - button "Editar estado y cita" [ref=e1404] [cursor=pointer]:
+                        - img [ref=e1405]
+                      - button "Actualizar teléfono" [ref=e1407] [cursor=pointer]:
+                        - img [ref=e1408]
+                - row "Bolsa 107 - Importación de pacientes masiva Hace 1 día 25699228 lidia rosa cuadrado romero vda de arana reyes 98 F MEDICINA GENERAL - No seleccionado No seleccionado - - 924019474 - Pendiente Citar Hace 1 día —" [ref=e1410]:
+                  - cell [ref=e1411]:
+                    - checkbox [ref=e1412] [cursor=pointer]
+                  - cell "Bolsa 107 - Importación de pacientes masiva" [ref=e1413]
+                  - cell "Hace 1 día" [ref=e1414]
+                  - cell "25699228" [ref=e1415]
+                  - cell "lidia rosa cuadrado romero vda de arana reyes" [ref=e1416]
+                  - cell "98" [ref=e1417]
+                  - cell "F" [ref=e1418]
+                  - cell "MEDICINA GENERAL" [ref=e1419]
+                  - cell "-" [ref=e1420]
+                  - cell "No seleccionado" [ref=e1421]
+                  - cell "No seleccionado" [ref=e1422]
+                  - cell "-" [ref=e1423]
+                  - cell "-" [ref=e1424]
+                  - cell "924019474" [ref=e1425]:
+                    - link "924019474" [ref=e1426] [cursor=pointer]:
+                      - /url: https://wa.me/924019474
+                      - img [ref=e1427]
+                      - text: "924019474"
+                  - cell "-" [ref=e1429]:
+                    - link "-" [ref=e1430] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e1431]
+                      - text: "-"
+                  - cell "Pendiente Citar" [ref=e1433]:
+                    - generic [ref=e1434]: Pendiente Citar
+                  - cell "Hace 1 día" [ref=e1435]
+                  - cell "—" [ref=e1436]
+                  - cell [ref=e1437]:
+                    - generic [ref=e1438]:
+                      - button "Editar estado y cita" [ref=e1439] [cursor=pointer]:
+                        - img [ref=e1440]
+                      - button "Actualizar teléfono" [ref=e1442] [cursor=pointer]:
+                        - img [ref=e1443]
+                - row "Bolsa 107 - Importación de pacientes masiva Hace 1 día 07488604 CHOI VIDAL DE MEDINA NANCY 53 F MEDICINA GENERAL - No seleccionado No seleccionado CAP III ALFREDO PIAZZA ROBERTS - 998763638 - Pendiente Citar Hace 1 día —" [ref=e1445]:
+                  - cell [ref=e1446]:
+                    - checkbox [ref=e1447] [cursor=pointer]
+                  - cell "Bolsa 107 - Importación de pacientes masiva" [ref=e1448]
+                  - cell "Hace 1 día" [ref=e1449]
+                  - cell "07488604" [ref=e1450]
+                  - cell "CHOI VIDAL DE MEDINA NANCY" [ref=e1451]
+                  - cell "53" [ref=e1452]
+                  - cell "F" [ref=e1453]
+                  - cell "MEDICINA GENERAL" [ref=e1454]
+                  - cell "-" [ref=e1455]
+                  - cell "No seleccionado" [ref=e1456]
+                  - cell "No seleccionado" [ref=e1457]
+                  - cell "CAP III ALFREDO PIAZZA ROBERTS" [ref=e1458]
+                  - cell "-" [ref=e1459]
+                  - cell "998763638" [ref=e1460]:
+                    - link "998763638" [ref=e1461] [cursor=pointer]:
+                      - /url: https://wa.me/998763638
+                      - img [ref=e1462]
+                      - text: "998763638"
+                  - cell "-" [ref=e1464]:
+                    - link "-" [ref=e1465] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e1466]
+                      - text: "-"
+                  - cell "Pendiente Citar" [ref=e1468]:
+                    - generic [ref=e1469]: Pendiente Citar
+                  - cell "Hace 1 día" [ref=e1470]
+                  - cell "—" [ref=e1471]
+                  - cell [ref=e1472]:
+                    - generic [ref=e1473]:
+                      - button "Editar estado y cita" [ref=e1474] [cursor=pointer]:
+                        - img [ref=e1475]
+                      - button "Actualizar teléfono" [ref=e1477] [cursor=pointer]:
+                        - img [ref=e1478]
+                - row "Bolsa 107 - Importación de pacientes masiva Hace 1 día 21449737 zavala yañez daniel alcides 66 M MEDICINA GENERAL - No seleccionado No seleccionado POL. JUAN JOSE RODRIGUEZ LAZO - 955905902 - Pendiente Citar Hace 1 día —" [ref=e1480]:
+                  - cell [ref=e1481]:
+                    - checkbox [ref=e1482] [cursor=pointer]
+                  - cell "Bolsa 107 - Importación de pacientes masiva" [ref=e1483]
+                  - cell "Hace 1 día" [ref=e1484]
+                  - cell "21449737" [ref=e1485]
+                  - cell "zavala yañez daniel alcides" [ref=e1486]
+                  - cell "66" [ref=e1487]
+                  - cell "M" [ref=e1488]
+                  - cell "MEDICINA GENERAL" [ref=e1489]
+                  - cell "-" [ref=e1490]
+                  - cell "No seleccionado" [ref=e1491]
+                  - cell "No seleccionado" [ref=e1492]
+                  - cell "POL. JUAN JOSE RODRIGUEZ LAZO" [ref=e1493]
+                  - cell "-" [ref=e1494]
+                  - cell "955905902" [ref=e1495]:
+                    - link "955905902" [ref=e1496] [cursor=pointer]:
+                      - /url: https://wa.me/955905902
+                      - img [ref=e1497]
+                      - text: "955905902"
+                  - cell "-" [ref=e1499]:
+                    - link "-" [ref=e1500] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e1501]
+                      - text: "-"
+                  - cell "Pendiente Citar" [ref=e1503]:
+                    - generic [ref=e1504]: Pendiente Citar
+                  - cell "Hace 1 día" [ref=e1505]
+                  - cell "—" [ref=e1506]
+                  - cell [ref=e1507]:
+                    - generic [ref=e1508]:
+                      - button "Editar estado y cita" [ref=e1509] [cursor=pointer]:
+                        - img [ref=e1510]
+                      - button "Actualizar teléfono" [ref=e1512] [cursor=pointer]:
+                        - img [ref=e1513]
+                - row "Bolsa 107 - Importación de pacientes masiva Hace 1 día 09335479 RIBEIRO LORA PABLO ALEJANDRO 78 M MEDICINA GENERAL - No seleccionado No seleccionado POL. PROCERES - 974887653 - Pendiente Citar Hace 1 día —" [ref=e1515]:
+                  - cell [ref=e1516]:
+                    - checkbox [ref=e1517] [cursor=pointer]
+                  - cell "Bolsa 107 - Importación de pacientes masiva" [ref=e1518]
+                  - cell "Hace 1 día" [ref=e1519]
+                  - cell "09335479" [ref=e1520]
+                  - cell "RIBEIRO LORA PABLO ALEJANDRO" [ref=e1521]
+                  - cell "78" [ref=e1522]
+                  - cell "M" [ref=e1523]
+                  - cell "MEDICINA GENERAL" [ref=e1524]
+                  - cell "-" [ref=e1525]
+                  - cell "No seleccionado" [ref=e1526]
+                  - cell "No seleccionado" [ref=e1527]
+                  - cell "POL. PROCERES" [ref=e1528]
+                  - cell "-" [ref=e1529]
+                  - cell "974887653" [ref=e1530]:
+                    - link "974887653" [ref=e1531] [cursor=pointer]:
+                      - /url: https://wa.me/974887653
+                      - img [ref=e1532]
+                      - text: "974887653"
+                  - cell "-" [ref=e1534]:
+                    - link "-" [ref=e1535] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e1536]
+                      - text: "-"
+                  - cell "Pendiente Citar" [ref=e1538]:
+                    - generic [ref=e1539]: Pendiente Citar
+                  - cell "Hace 1 día" [ref=e1540]
+                  - cell "—" [ref=e1541]
+                  - cell [ref=e1542]:
+                    - generic [ref=e1543]:
+                      - button "Editar estado y cita" [ref=e1544] [cursor=pointer]:
+                        - img [ref=e1545]
+                      - button "Actualizar teléfono" [ref=e1547] [cursor=pointer]:
+                        - img [ref=e1548]
+                - row "Bolsa 107 - Importación de pacientes masiva Hace 1 día 07912221 HILDA PILAR CEPERO FELIPE 75 F MEDICINA GENERAL - No seleccionado No seleccionado CAP III SAN ISIDRO - 999988667 - Pendiente Citar Hace 1 día —" [ref=e1550]:
+                  - cell [ref=e1551]:
+                    - checkbox [ref=e1552] [cursor=pointer]
+                  - cell "Bolsa 107 - Importación de pacientes masiva" [ref=e1553]
+                  - cell "Hace 1 día" [ref=e1554]
+                  - cell "07912221" [ref=e1555]
+                  - cell "HILDA PILAR CEPERO FELIPE" [ref=e1556]
+                  - cell "75" [ref=e1557]
+                  - cell "F" [ref=e1558]
+                  - cell "MEDICINA GENERAL" [ref=e1559]
+                  - cell "-" [ref=e1560]
+                  - cell "No seleccionado" [ref=e1561]
+                  - cell "No seleccionado" [ref=e1562]
+                  - cell "CAP III SAN ISIDRO" [ref=e1563]
+                  - cell "-" [ref=e1564]
+                  - cell "999988667" [ref=e1565]:
+                    - link "999988667" [ref=e1566] [cursor=pointer]:
+                      - /url: https://wa.me/999988667
+                      - img [ref=e1567]
+                      - text: "999988667"
+                  - cell "-" [ref=e1569]:
+                    - link "-" [ref=e1570] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e1571]
+                      - text: "-"
+                  - cell "Pendiente Citar" [ref=e1573]:
+                    - generic [ref=e1574]: Pendiente Citar
+                  - cell "Hace 1 día" [ref=e1575]
+                  - cell "—" [ref=e1576]
+                  - cell [ref=e1577]:
+                    - generic [ref=e1578]:
+                      - button "Editar estado y cita" [ref=e1579] [cursor=pointer]:
+                        - img [ref=e1580]
+                      - button "Actualizar teléfono" [ref=e1582] [cursor=pointer]:
+                        - img [ref=e1583]
+                - row "Bolsa 107 - Importación de pacientes masiva Hace 1 día 06757457 CHAVEZ QUISPE GLORIA MARIA 70 F MEDICINA GENERAL - No seleccionado No seleccionado POL. CHINCHA - 964447258 - Pendiente Citar Hace 1 día —" [ref=e1585]:
+                  - cell [ref=e1586]:
+                    - checkbox [ref=e1587] [cursor=pointer]
+                  - cell "Bolsa 107 - Importación de pacientes masiva" [ref=e1588]
+                  - cell "Hace 1 día" [ref=e1589]
+                  - cell "06757457" [ref=e1590]
+                  - cell "CHAVEZ QUISPE GLORIA MARIA" [ref=e1591]
+                  - cell "70" [ref=e1592]
+                  - cell "F" [ref=e1593]
+                  - cell "MEDICINA GENERAL" [ref=e1594]
+                  - cell "-" [ref=e1595]
+                  - cell "No seleccionado" [ref=e1596]
+                  - cell "No seleccionado" [ref=e1597]
+                  - cell "POL. CHINCHA" [ref=e1598]
+                  - cell "-" [ref=e1599]
+                  - cell "964447258" [ref=e1600]:
+                    - link "964447258" [ref=e1601] [cursor=pointer]:
+                      - /url: https://wa.me/964447258
+                      - img [ref=e1602]
+                      - text: "964447258"
+                  - cell "-" [ref=e1604]:
+                    - link "-" [ref=e1605] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e1606]
+                      - text: "-"
+                  - cell "Pendiente Citar" [ref=e1608]:
+                    - generic [ref=e1609]: Pendiente Citar
+                  - cell "Hace 1 día" [ref=e1610]
+                  - cell "—" [ref=e1611]
+                  - cell [ref=e1612]:
+                    - generic [ref=e1613]:
+                      - button "Editar estado y cita" [ref=e1614] [cursor=pointer]:
+                        - img [ref=e1615]
+                      - button "Actualizar teléfono" [ref=e1617] [cursor=pointer]:
+                        - img [ref=e1618]
+                - row "Bolsa 107 - Importación de pacientes masiva Hace 1 día 09405151 LIBERATO ARRIAGA EVA LUZ 59 F MEDICINA GENERAL - No seleccionado No seleccionado POL. JUAN JOSE RODRIGUEZ LAZO - 961183636 - Pendiente Citar Hace 1 día —" [ref=e1620]:
+                  - cell [ref=e1621]:
+                    - checkbox [ref=e1622] [cursor=pointer]
+                  - cell "Bolsa 107 - Importación de pacientes masiva" [ref=e1623]
+                  - cell "Hace 1 día" [ref=e1624]
+                  - cell "09405151" [ref=e1625]
+                  - cell "LIBERATO ARRIAGA EVA LUZ" [ref=e1626]
+                  - cell "59" [ref=e1627]
+                  - cell "F" [ref=e1628]
+                  - cell "MEDICINA GENERAL" [ref=e1629]
+                  - cell "-" [ref=e1630]
+                  - cell "No seleccionado" [ref=e1631]
+                  - cell "No seleccionado" [ref=e1632]
+                  - cell "POL. JUAN JOSE RODRIGUEZ LAZO" [ref=e1633]
+                  - cell "-" [ref=e1634]
+                  - cell "961183636" [ref=e1635]:
+                    - link "961183636" [ref=e1636] [cursor=pointer]:
+                      - /url: https://wa.me/961183636
+                      - img [ref=e1637]
+                      - text: "961183636"
+                  - cell "-" [ref=e1639]:
+                    - link "-" [ref=e1640] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e1641]
+                      - text: "-"
+                  - cell "Pendiente Citar" [ref=e1643]:
+                    - generic [ref=e1644]: Pendiente Citar
+                  - cell "Hace 1 día" [ref=e1645]
+                  - cell "—" [ref=e1646]
+                  - cell [ref=e1647]:
+                    - generic [ref=e1648]:
+                      - button "Editar estado y cita" [ref=e1649] [cursor=pointer]:
+                        - img [ref=e1650]
+                      - button "Actualizar teléfono" [ref=e1652] [cursor=pointer]:
+                        - img [ref=e1653]
+                - row "Bolsa 107 - Importación de pacientes masiva Hace 1 día 06832592 CHAVEZ REYES DE PONCE MARIA 80 F MEDICINA GENERAL - No seleccionado No seleccionado CAP III CARABAYLLO - 964385809 - Pendiente Citar Hace 1 día —" [ref=e1655]:
+                  - cell [ref=e1656]:
+                    - checkbox [ref=e1657] [cursor=pointer]
+                  - cell "Bolsa 107 - Importación de pacientes masiva" [ref=e1658]
+                  - cell "Hace 1 día" [ref=e1659]
+                  - cell "06832592" [ref=e1660]
+                  - cell "CHAVEZ REYES DE PONCE MARIA" [ref=e1661]
+                  - cell "80" [ref=e1662]
+                  - cell "F" [ref=e1663]
+                  - cell "MEDICINA GENERAL" [ref=e1664]
+                  - cell "-" [ref=e1665]
+                  - cell "No seleccionado" [ref=e1666]
+                  - cell "No seleccionado" [ref=e1667]
+                  - cell "CAP III CARABAYLLO" [ref=e1668]
+                  - cell "-" [ref=e1669]
+                  - cell "964385809" [ref=e1670]:
+                    - link "964385809" [ref=e1671] [cursor=pointer]:
+                      - /url: https://wa.me/964385809
+                      - img [ref=e1672]
+                      - text: "964385809"
+                  - cell "-" [ref=e1674]:
+                    - link "-" [ref=e1675] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e1676]
+                      - text: "-"
+                  - cell "Pendiente Citar" [ref=e1678]:
+                    - generic [ref=e1679]: Pendiente Citar
+                  - cell "Hace 1 día" [ref=e1680]
+                  - cell "—" [ref=e1681]
+                  - cell [ref=e1682]:
+                    - generic [ref=e1683]:
+                      - button "Editar estado y cita" [ref=e1684] [cursor=pointer]:
+                        - img [ref=e1685]
+                      - button "Actualizar teléfono" [ref=e1687] [cursor=pointer]:
+                        - img [ref=e1688]
+                - row "Bolsa 107 - Importación de pacientes masiva Hace 1 día 45886068 FIORI CELESTE TECO BOCANEGRA 37 F MEDICINA GENERAL - No seleccionado No seleccionado H.I CARLOS ALCANTARA BUTTERFIELD - 946439454 - Pendiente Citar Hace 1 día —" [ref=e1690]:
+                  - cell [ref=e1691]:
+                    - checkbox [ref=e1692] [cursor=pointer]
+                  - cell "Bolsa 107 - Importación de pacientes masiva" [ref=e1693]
+                  - cell "Hace 1 día" [ref=e1694]
+                  - cell "45886068" [ref=e1695]
+                  - cell "FIORI CELESTE TECO BOCANEGRA" [ref=e1696]
+                  - cell "37" [ref=e1697]
+                  - cell "F" [ref=e1698]
+                  - cell "MEDICINA GENERAL" [ref=e1699]
+                  - cell "-" [ref=e1700]
+                  - cell "No seleccionado" [ref=e1701]
+                  - cell "No seleccionado" [ref=e1702]
+                  - cell "H.I CARLOS ALCANTARA BUTTERFIELD" [ref=e1703]
+                  - cell "-" [ref=e1704]
+                  - cell "946439454" [ref=e1705]:
+                    - link "946439454" [ref=e1706] [cursor=pointer]:
+                      - /url: https://wa.me/946439454
+                      - img [ref=e1707]
+                      - text: "946439454"
+                  - cell "-" [ref=e1709]:
+                    - link "-" [ref=e1710] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e1711]
+                      - text: "-"
+                  - cell "Pendiente Citar" [ref=e1713]:
+                    - generic [ref=e1714]: Pendiente Citar
+                  - cell "Hace 1 día" [ref=e1715]
+                  - cell "—" [ref=e1716]
+                  - cell [ref=e1717]:
+                    - generic [ref=e1718]:
+                      - button "Editar estado y cita" [ref=e1719] [cursor=pointer]:
+                        - img [ref=e1720]
+                      - button "Actualizar teléfono" [ref=e1722] [cursor=pointer]:
+                        - img [ref=e1723]
+                - row "Bolsa TeleECG - Electrocardiogramas remotos Hace 20 horas 16498964 CUMPA YAIPEN ROSA FLOR 91 F - 72945564 Carito Lisset Zumaeta Cabrera No seleccionado PROGRAMA DE ATENCION DOMICILIARIA-PADOMI Voluntaria 971871179 - Pendiente Citar Hace 8 minutos —" [ref=e9745]:
+                  - cell [ref=e1726]:
+                    - checkbox [ref=e1727] [cursor=pointer]
+                  - cell "Bolsa TeleECG - Electrocardiogramas remotos" [ref=e1728]
+                  - cell "Hace 20 horas" [ref=e1729]
+                  - cell "16498964" [ref=e1730]
+                  - cell "CUMPA YAIPEN ROSA FLOR" [ref=e1731]
+                  - cell "91" [ref=e1732]
+                  - cell "F" [ref=e1733]
+                  - cell "-" [ref=e1734]
+                  - cell "72945564" [ref=e1735]
+                  - cell "Carito Lisset Zumaeta Cabrera" [ref=e1736]
+                  - cell "No seleccionado" [ref=e1737]
+                  - cell "PROGRAMA DE ATENCION DOMICILIARIA-PADOMI" [ref=e1738]
+                  - cell "Voluntaria" [ref=e1739]
+                  - cell "971871179" [ref=e1740]:
+                    - link "971871179" [ref=e1741] [cursor=pointer]:
+                      - /url: https://wa.me/971871179
+                      - img [ref=e1742]
+                      - text: "971871179"
+                  - cell "-" [ref=e1744]:
+                    - link "-" [ref=e1745] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e1746]
+                      - text: "-"
+                  - cell "Pendiente Citar" [ref=e1748]:
+                    - generic [ref=e1749]: Pendiente Citar
+                  - cell "Hace 8 minutos" [ref=e9746]
+                  - cell "—" [ref=e1751]
+                  - cell [ref=e1752]:
+                    - generic [ref=e1753]:
+                      - button "Editar estado y cita" [ref=e1754] [cursor=pointer]:
+                        - img [ref=e1755]
+                      - button "Actualizar teléfono" [ref=e1757] [cursor=pointer]:
+                        - img [ref=e1758]
+                - row "Bolsa 107 - Importación de pacientes masiva Hace 1 día 46226558 MAUTINO BRAVO FLOR MARLENI 36 F MEDICINA GENERAL - No seleccionado No seleccionado CAP III CARABAYLLO - 920427921 - Pendiente Citar Hace 1 día —" [ref=e1760]:
+                  - cell [ref=e1761]:
+                    - checkbox [ref=e1762] [cursor=pointer]
+                  - cell "Bolsa 107 - Importación de pacientes masiva" [ref=e1763]
+                  - cell "Hace 1 día" [ref=e1764]
+                  - cell "46226558" [ref=e1765]
+                  - cell "MAUTINO BRAVO FLOR MARLENI" [ref=e1766]
+                  - cell "36" [ref=e1767]
+                  - cell "F" [ref=e1768]
+                  - cell "MEDICINA GENERAL" [ref=e1769]
+                  - cell "-" [ref=e1770]
+                  - cell "No seleccionado" [ref=e1771]
+                  - cell "No seleccionado" [ref=e1772]
+                  - cell "CAP III CARABAYLLO" [ref=e1773]
+                  - cell "-" [ref=e1774]
+                  - cell "920427921" [ref=e1775]:
+                    - link "920427921" [ref=e1776] [cursor=pointer]:
+                      - /url: https://wa.me/920427921
+                      - img [ref=e1777]
+                      - text: "920427921"
+                  - cell "-" [ref=e1779]:
+                    - link "-" [ref=e1780] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e1781]
+                      - text: "-"
+                  - cell "Pendiente Citar" [ref=e1783]:
+                    - generic [ref=e1784]: Pendiente Citar
+                  - cell "Hace 1 día" [ref=e1785]
+                  - cell "—" [ref=e1786]
+                  - cell [ref=e1787]:
+                    - generic [ref=e1788]:
+                      - button "Editar estado y cita" [ref=e1789] [cursor=pointer]:
+                        - img [ref=e1790]
+                      - button "Actualizar teléfono" [ref=e1792] [cursor=pointer]:
+                        - img [ref=e1793]
+                - row "Bolsa 107 - Importación de pacientes masiva Hace 1 día 09240414 PRADO ORE CESAR ENRIQUE 74 M MEDICINA GENERAL - No seleccionado No seleccionado H.III HOSPITAL DE EMERGENCIAS GRAU - 945941371 - Pendiente Citar Hace 1 día —" [ref=e1795]:
+                  - cell [ref=e1796]:
+                    - checkbox [ref=e1797] [cursor=pointer]
+                  - cell "Bolsa 107 - Importación de pacientes masiva" [ref=e1798]
+                  - cell "Hace 1 día" [ref=e1799]
+                  - cell "09240414" [ref=e1800]
+                  - cell "PRADO ORE CESAR ENRIQUE" [ref=e1801]
+                  - cell "74" [ref=e1802]
+                  - cell "M" [ref=e1803]
+                  - cell "MEDICINA GENERAL" [ref=e1804]
+                  - cell "-" [ref=e1805]
+                  - cell "No seleccionado" [ref=e1806]
+                  - cell "No seleccionado" [ref=e1807]
+                  - cell "H.III HOSPITAL DE EMERGENCIAS GRAU" [ref=e1808]
+                  - cell "-" [ref=e1809]
+                  - cell "945941371" [ref=e1810]:
+                    - link "945941371" [ref=e1811] [cursor=pointer]:
+                      - /url: https://wa.me/945941371
+                      - img [ref=e1812]
+                      - text: "945941371"
+                  - cell "-" [ref=e1814]:
+                    - link "-" [ref=e1815] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e1816]
+                      - text: "-"
+                  - cell "Pendiente Citar" [ref=e1818]:
+                    - generic [ref=e1819]: Pendiente Citar
+                  - cell "Hace 1 día" [ref=e1820]
+                  - cell "—" [ref=e1821]
+                  - cell [ref=e1822]:
+                    - generic [ref=e1823]:
+                      - button "Editar estado y cita" [ref=e1824] [cursor=pointer]:
+                        - img [ref=e1825]
+                      - button "Actualizar teléfono" [ref=e1827] [cursor=pointer]:
+                        - img [ref=e1828]
+                - row "Bolsa 107 - Importación de pacientes masiva Hace 1 día 25420256 HUAPAYA GRAU JUAN MANUEL 76 M MEDICINA GENERAL - No seleccionado No seleccionado POL. PABLO BERMUDEZ - 980134606 - Pendiente Citar Hace 1 día —" [ref=e1830]:
+                  - cell [ref=e1831]:
+                    - checkbox [ref=e1832] [cursor=pointer]
+                  - cell "Bolsa 107 - Importación de pacientes masiva" [ref=e1833]
+                  - cell "Hace 1 día" [ref=e1834]
+                  - cell "25420256" [ref=e1835]
+                  - cell "HUAPAYA GRAU JUAN MANUEL" [ref=e1836]
+                  - cell "76" [ref=e1837]
+                  - cell "M" [ref=e1838]
+                  - cell "MEDICINA GENERAL" [ref=e1839]
+                  - cell "-" [ref=e1840]
+                  - cell "No seleccionado" [ref=e1841]
+                  - cell "No seleccionado" [ref=e1842]
+                  - cell "POL. PABLO BERMUDEZ" [ref=e1843]
+                  - cell "-" [ref=e1844]
+                  - cell "980134606" [ref=e1845]:
+                    - link "980134606" [ref=e1846] [cursor=pointer]:
+                      - /url: https://wa.me/980134606
+                      - img [ref=e1847]
+                      - text: "980134606"
+                  - cell "-" [ref=e1849]:
+                    - link "-" [ref=e1850] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e1851]
+                      - text: "-"
+                  - cell "Pendiente Citar" [ref=e1853]:
+                    - generic [ref=e1854]: Pendiente Citar
+                  - cell "Hace 1 día" [ref=e1855]
+                  - cell "—" [ref=e1856]
+                  - cell [ref=e1857]:
+                    - generic [ref=e1858]:
+                      - button "Editar estado y cita" [ref=e1859] [cursor=pointer]:
+                        - img [ref=e1860]
+                      - button "Actualizar teléfono" [ref=e1862] [cursor=pointer]:
+                        - img [ref=e1863]
+                - row "Bolsa 107 - Importación de pacientes masiva Hace 1 día 08692995 PACHECO ROQUE ROSA GRABRIELA 56 F MEDICINA GENERAL - No seleccionado No seleccionado H.II CAÑETE - 965454544 - Pendiente Citar Hace 1 día —" [ref=e1865]:
+                  - cell [ref=e1866]:
+                    - checkbox [ref=e1867] [cursor=pointer]
+                  - cell "Bolsa 107 - Importación de pacientes masiva" [ref=e1868]
+                  - cell "Hace 1 día" [ref=e1869]
+                  - cell "08692995" [ref=e1870]
+                  - cell "PACHECO ROQUE ROSA GRABRIELA" [ref=e1871]
+                  - cell "56" [ref=e1872]
+                  - cell "F" [ref=e1873]
+                  - cell "MEDICINA GENERAL" [ref=e1874]
+                  - cell "-" [ref=e1875]
+                  - cell "No seleccionado" [ref=e1876]
+                  - cell "No seleccionado" [ref=e1877]
+                  - cell "H.II CAÑETE" [ref=e1878]
+                  - cell "-" [ref=e1879]
+                  - cell "965454544" [ref=e1880]:
+                    - link "965454544" [ref=e1881] [cursor=pointer]:
+                      - /url: https://wa.me/965454544
+                      - img [ref=e1882]
+                      - text: "965454544"
+                  - cell "-" [ref=e1884]:
+                    - link "-" [ref=e1885] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e1886]
+                      - text: "-"
+                  - cell "Pendiente Citar" [ref=e1888]:
+                    - generic [ref=e1889]: Pendiente Citar
+                  - cell "Hace 1 día" [ref=e1890]
+                  - cell "—" [ref=e1891]
+                  - cell [ref=e1892]:
+                    - generic [ref=e1893]:
+                      - button "Editar estado y cita" [ref=e1894] [cursor=pointer]:
+                        - img [ref=e1895]
+                      - button "Actualizar teléfono" [ref=e1897] [cursor=pointer]:
+                        - img [ref=e1898]
+                - row "Bolsa 107 - Importación de pacientes masiva Hace 1 día 08096272 VASQUEZ CARRILLO JORGE AUGUSTO 60 M MEDICINA GENERAL - No seleccionado No seleccionado POL. SANTA CRUZ - 998790515 - Pendiente Citar Hace 1 día —" [ref=e1900]:
+                  - cell [ref=e1901]:
+                    - checkbox [ref=e1902] [cursor=pointer]
+                  - cell "Bolsa 107 - Importación de pacientes masiva" [ref=e1903]
+                  - cell "Hace 1 día" [ref=e1904]
+                  - cell "08096272" [ref=e1905]
+                  - cell "VASQUEZ CARRILLO JORGE AUGUSTO" [ref=e1906]
+                  - cell "60" [ref=e1907]
+                  - cell "M" [ref=e1908]
+                  - cell "MEDICINA GENERAL" [ref=e1909]
+                  - cell "-" [ref=e1910]
+                  - cell "No seleccionado" [ref=e1911]
+                  - cell "No seleccionado" [ref=e1912]
+                  - cell "POL. SANTA CRUZ" [ref=e1913]
+                  - cell "-" [ref=e1914]
+                  - cell "998790515" [ref=e1915]:
+                    - link "998790515" [ref=e1916] [cursor=pointer]:
+                      - /url: https://wa.me/998790515
+                      - img [ref=e1917]
+                      - text: "998790515"
+                  - cell "-" [ref=e1919]:
+                    - link "-" [ref=e1920] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e1921]
+                      - text: "-"
+                  - cell "Pendiente Citar" [ref=e1923]:
+                    - generic [ref=e1924]: Pendiente Citar
+                  - cell "Hace 1 día" [ref=e1925]
+                  - cell "—" [ref=e1926]
+                  - cell [ref=e1927]:
+                    - generic [ref=e1928]:
+                      - button "Editar estado y cita" [ref=e1929] [cursor=pointer]:
+                        - img [ref=e1930]
+                      - button "Actualizar teléfono" [ref=e1932] [cursor=pointer]:
+                        - img [ref=e1933]
+                - row "Bolsa 107 - Importación de pacientes masiva Hace 1 día 09361760 MALPARTIDA RARAZ LAURA 57 F MEDICINA GENERAL - No seleccionado No seleccionado H.II VITARTE - 920674928 - Pendiente Citar Hace 1 día —" [ref=e1935]:
+                  - cell [ref=e1936]:
+                    - checkbox [ref=e1937] [cursor=pointer]
+                  - cell "Bolsa 107 - Importación de pacientes masiva" [ref=e1938]
+                  - cell "Hace 1 día" [ref=e1939]
+                  - cell "09361760" [ref=e1940]
+                  - cell "MALPARTIDA RARAZ LAURA" [ref=e1941]
+                  - cell "57" [ref=e1942]
+                  - cell "F" [ref=e1943]
+                  - cell "MEDICINA GENERAL" [ref=e1944]
+                  - cell "-" [ref=e1945]
+                  - cell "No seleccionado" [ref=e1946]
+                  - cell "No seleccionado" [ref=e1947]
+                  - cell "H.II VITARTE" [ref=e1948]
+                  - cell "-" [ref=e1949]
+                  - cell "920674928" [ref=e1950]:
+                    - link "920674928" [ref=e1951] [cursor=pointer]:
+                      - /url: https://wa.me/920674928
+                      - img [ref=e1952]
+                      - text: "920674928"
+                  - cell "-" [ref=e1954]:
+                    - link "-" [ref=e1955] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e1956]
+                      - text: "-"
+                  - cell "Pendiente Citar" [ref=e1958]:
+                    - generic [ref=e1959]: Pendiente Citar
+                  - cell "Hace 1 día" [ref=e1960]
+                  - cell "—" [ref=e1961]
+                  - cell [ref=e1962]:
+                    - generic [ref=e1963]:
+                      - button "Editar estado y cita" [ref=e1964] [cursor=pointer]:
+                        - img [ref=e1965]
+                      - button "Actualizar teléfono" [ref=e1967] [cursor=pointer]:
+                        - img [ref=e1968]
+                - row "Bolsa 107 - Importación de pacientes masiva Hace 1 día 08095218 RAMOS PANTA MARICIA 75 F MEDICINA GENERAL - No seleccionado No seleccionado - - 991581132 - Pendiente Citar Hace 1 día —" [ref=e1970]:
+                  - cell [ref=e1971]:
+                    - checkbox [ref=e1972] [cursor=pointer]
+                  - cell "Bolsa 107 - Importación de pacientes masiva" [ref=e1973]
+                  - cell "Hace 1 día" [ref=e1974]
+                  - cell "08095218" [ref=e1975]
+                  - cell "RAMOS PANTA MARICIA" [ref=e1976]
+                  - cell "75" [ref=e1977]
+                  - cell "F" [ref=e1978]
+                  - cell "MEDICINA GENERAL" [ref=e1979]
+                  - cell "-" [ref=e1980]
+                  - cell "No seleccionado" [ref=e1981]
+                  - cell "No seleccionado" [ref=e1982]
+                  - cell "-" [ref=e1983]
+                  - cell "-" [ref=e1984]
+                  - cell "991581132" [ref=e1985]:
+                    - link "991581132" [ref=e1986] [cursor=pointer]:
+                      - /url: https://wa.me/991581132
+                      - img [ref=e1987]
+                      - text: "991581132"
+                  - cell "-" [ref=e1989]:
+                    - link "-" [ref=e1990] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e1991]
+                      - text: "-"
+                  - cell "Pendiente Citar" [ref=e1993]:
+                    - generic [ref=e1994]: Pendiente Citar
+                  - cell "Hace 1 día" [ref=e1995]
+                  - cell "—" [ref=e1996]
+                  - cell [ref=e1997]:
+                    - generic [ref=e1998]:
+                      - button "Editar estado y cita" [ref=e1999] [cursor=pointer]:
+                        - img [ref=e2000]
+                      - button "Actualizar teléfono" [ref=e2002] [cursor=pointer]:
+                        - img [ref=e2003]
+                - row "Bolsa 107 - Importación de pacientes masiva Hace 1 día 06757744 POLANCO NALVARTE CONSUELO MARIA 64 F MEDICINA GENERAL - No seleccionado No seleccionado POL. CHINCHA - 997324166 - Pendiente Citar Hace 1 día —" [ref=e2005]:
+                  - cell [ref=e2006]:
+                    - checkbox [ref=e2007] [cursor=pointer]
+                  - cell "Bolsa 107 - Importación de pacientes masiva" [ref=e2008]
+                  - cell "Hace 1 día" [ref=e2009]
+                  - cell "06757744" [ref=e2010]
+                  - cell "POLANCO NALVARTE CONSUELO MARIA" [ref=e2011]
+                  - cell "64" [ref=e2012]
+                  - cell "F" [ref=e2013]
+                  - cell "MEDICINA GENERAL" [ref=e2014]
+                  - cell "-" [ref=e2015]
+                  - cell "No seleccionado" [ref=e2016]
+                  - cell "No seleccionado" [ref=e2017]
+                  - cell "POL. CHINCHA" [ref=e2018]
+                  - cell "-" [ref=e2019]
+                  - cell "997324166" [ref=e2020]:
+                    - link "997324166" [ref=e2021] [cursor=pointer]:
+                      - /url: https://wa.me/997324166
+                      - img [ref=e2022]
+                      - text: "997324166"
+                  - cell "-" [ref=e2024]:
+                    - link "-" [ref=e2025] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e2026]
+                      - text: "-"
+                  - cell "Pendiente Citar" [ref=e2028]:
+                    - generic [ref=e2029]: Pendiente Citar
+                  - cell "Hace 1 día" [ref=e2030]
+                  - cell "—" [ref=e2031]
+                  - cell [ref=e2032]:
+                    - generic [ref=e2033]:
+                      - button "Editar estado y cita" [ref=e2034] [cursor=pointer]:
+                        - img [ref=e2035]
+                      - button "Actualizar teléfono" [ref=e2037] [cursor=pointer]:
+                        - img [ref=e2038]
+                - row "Bolsa 107 - Importación de pacientes masiva Hace 1 día 06848497 ARANGO SANCHEZ 60 F MEDICINA GENERAL - No seleccionado No seleccionado RETABLO - COMAS - 016204663 - Pendiente Citar Hace 1 día —" [ref=e2040]:
+                  - cell [ref=e2041]:
+                    - checkbox [ref=e2042] [cursor=pointer]
+                  - cell "Bolsa 107 - Importación de pacientes masiva" [ref=e2043]
+                  - cell "Hace 1 día" [ref=e2044]
+                  - cell "06848497" [ref=e2045]
+                  - cell "ARANGO SANCHEZ" [ref=e2046]
+                  - cell "60" [ref=e2047]
+                  - cell "F" [ref=e2048]
+                  - cell "MEDICINA GENERAL" [ref=e2049]
+                  - cell "-" [ref=e2050]
+                  - cell "No seleccionado" [ref=e2051]
+                  - cell "No seleccionado" [ref=e2052]
+                  - cell "RETABLO - COMAS" [ref=e2053]
+                  - cell "-" [ref=e2054]
+                  - cell "016204663" [ref=e2055]:
+                    - link "016204663" [ref=e2056] [cursor=pointer]:
+                      - /url: https://wa.me/016204663
+                      - img [ref=e2057]
+                      - text: "016204663"
+                  - cell "-" [ref=e2059]:
+                    - link "-" [ref=e2060] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e2061]
+                      - text: "-"
+                  - cell "Pendiente Citar" [ref=e2063]:
+                    - generic [ref=e2064]: Pendiente Citar
+                  - cell "Hace 1 día" [ref=e2065]
+                  - cell "—" [ref=e2066]
+                  - cell [ref=e2067]:
+                    - generic [ref=e2068]:
+                      - button "Editar estado y cita" [ref=e2069] [cursor=pointer]:
+                        - img [ref=e2070]
+                      - button "Actualizar teléfono" [ref=e2072] [cursor=pointer]:
+                        - img [ref=e2073]
+                - row "Bolsa 107 - Importación de pacientes masiva Hace 1 día 46874043 FLOR DE MARIA FERNANDEZ JIHUALLANCCA 36 F MEDICINA GENERAL - No seleccionado No seleccionado - - 951829168 - Pendiente Citar Hace 1 día —" [ref=e2075]:
+                  - cell [ref=e2076]:
+                    - checkbox [ref=e2077] [cursor=pointer]
+                  - cell "Bolsa 107 - Importación de pacientes masiva" [ref=e2078]
+                  - cell "Hace 1 día" [ref=e2079]
+                  - cell "46874043" [ref=e2080]
+                  - cell "FLOR DE MARIA FERNANDEZ JIHUALLANCCA" [ref=e2081]
+                  - cell "36" [ref=e2082]
+                  - cell "F" [ref=e2083]
+                  - cell "MEDICINA GENERAL" [ref=e2084]
+                  - cell "-" [ref=e2085]
+                  - cell "No seleccionado" [ref=e2086]
+                  - cell "No seleccionado" [ref=e2087]
+                  - cell "-" [ref=e2088]
+                  - cell "-" [ref=e2089]
+                  - cell "951829168" [ref=e2090]:
+                    - link "951829168" [ref=e2091] [cursor=pointer]:
+                      - /url: https://wa.me/951829168
+                      - img [ref=e2092]
+                      - text: "951829168"
+                  - cell "-" [ref=e2094]:
+                    - link "-" [ref=e2095] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e2096]
+                      - text: "-"
+                  - cell "Pendiente Citar" [ref=e2098]:
+                    - generic [ref=e2099]: Pendiente Citar
+                  - cell "Hace 1 día" [ref=e2100]
+                  - cell "—" [ref=e2101]
+                  - cell [ref=e2102]:
+                    - generic [ref=e2103]:
+                      - button "Editar estado y cita" [ref=e2104] [cursor=pointer]:
+                        - img [ref=e2105]
+                      - button "Actualizar teléfono" [ref=e2107] [cursor=pointer]:
+                        - img [ref=e2108]
+                - row "Bolsa 107 - Importación de pacientes masiva Hace 1 día 09904332 LOARTE VALVERDE JOSE 89 M MEDICINA GENERAL - No seleccionado No seleccionado POL. FIORI - 923517954 - Pendiente Citar Hace 1 día —" [ref=e2110]:
+                  - cell [ref=e2111]:
+                    - checkbox [ref=e2112] [cursor=pointer]
+                  - cell "Bolsa 107 - Importación de pacientes masiva" [ref=e2113]
+                  - cell "Hace 1 día" [ref=e2114]
+                  - cell "09904332" [ref=e2115]
+                  - cell "LOARTE VALVERDE JOSE" [ref=e2116]
+                  - cell "89" [ref=e2117]
+                  - cell "M" [ref=e2118]
+                  - cell "MEDICINA GENERAL" [ref=e2119]
+                  - cell "-" [ref=e2120]
+                  - cell "No seleccionado" [ref=e2121]
+                  - cell "No seleccionado" [ref=e2122]
+                  - cell "POL. FIORI" [ref=e2123]
+                  - cell "-" [ref=e2124]
+                  - cell "923517954" [ref=e2125]:
+                    - link "923517954" [ref=e2126] [cursor=pointer]:
+                      - /url: https://wa.me/923517954
+                      - img [ref=e2127]
+                      - text: "923517954"
+                  - cell "-" [ref=e2129]:
+                    - link "-" [ref=e2130] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e2131]
+                      - text: "-"
+                  - cell "Pendiente Citar" [ref=e2133]:
+                    - generic [ref=e2134]: Pendiente Citar
+                  - cell "Hace 1 día" [ref=e2135]
+                  - cell "—" [ref=e2136]
+                  - cell [ref=e2137]:
+                    - generic [ref=e2138]:
+                      - button "Editar estado y cita" [ref=e2139] [cursor=pointer]:
+                        - img [ref=e2140]
+                      - button "Actualizar teléfono" [ref=e2142] [cursor=pointer]:
+                        - img [ref=e2143]
+                - row "Bolsa de recita/interconsulta Hace 4 días 34567803 Carlos Alberto Fernández Pérez N/D M MEDICINA GENERAL - No seleccionado No seleccionado - RECITA 989876543 - Pendiente Citar Hace 4 días —" [ref=e2145]:
+                  - cell [ref=e2146]:
+                    - checkbox [ref=e2147] [cursor=pointer]
+                  - cell "Bolsa de recita/interconsulta" [ref=e2148]
+                  - cell "Hace 4 días" [ref=e2149]
+                  - cell "34567803" [ref=e2150]
+                  - cell "Carlos Alberto Fernández Pérez" [ref=e2151]
+                  - cell "N/D" [ref=e2152]
+                  - cell "M" [ref=e2153]
+                  - cell "MEDICINA GENERAL" [ref=e2154]
+                  - cell "-" [ref=e2155]
+                  - cell "No seleccionado" [ref=e2156]
+                  - cell "No seleccionado" [ref=e2157]
+                  - cell "-" [ref=e2158]
+                  - cell "RECITA" [ref=e2159]
+                  - cell "989876543" [ref=e2160]:
+                    - link "989876543" [ref=e2161] [cursor=pointer]:
+                      - /url: https://wa.me/989876543
+                      - img [ref=e2162]
+                      - text: "989876543"
+                  - cell "-" [ref=e2164]:
+                    - link "-" [ref=e2165] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e2166]
+                      - text: "-"
+                  - cell "Pendiente Citar" [ref=e2168]:
+                    - generic [ref=e2169]: Pendiente Citar
+                  - cell "Hace 4 días" [ref=e2170]
+                  - cell "—" [ref=e2171]
+                  - cell [ref=e2172]:
+                    - generic [ref=e2173]:
+                      - button "Editar estado y cita" [ref=e2174] [cursor=pointer]:
+                        - img [ref=e2175]
+                      - button "Actualizar teléfono" [ref=e2177] [cursor=pointer]:
+                        - img [ref=e2178]
+                - row "Bolsas Reprogramación - Citas reprogramadas Hace 5 días 07033885 VERA HUAMANI JORGE MAXIMO 68 M PSIQUIATRIA - No seleccionado No seleccionado POL. JUAN JOSE RODRIGUEZ LAZO Voluntaria - - Apagado — —" [ref=e2180]:
+                  - cell [ref=e2181]:
+                    - checkbox [ref=e2182] [cursor=pointer]
+                  - cell "Bolsas Reprogramación - Citas reprogramadas" [ref=e2183]
+                  - cell "Hace 5 días" [ref=e2184]
+                  - cell "07033885" [ref=e2185]
+                  - cell "VERA HUAMANI JORGE MAXIMO" [ref=e2186]
+                  - cell "68" [ref=e2187]
+                  - cell "M" [ref=e2188]
+                  - cell "PSIQUIATRIA" [ref=e2189]
+                  - cell "-" [ref=e2190]
+                  - cell "No seleccionado" [ref=e2191]
+                  - cell "No seleccionado" [ref=e2192]
+                  - cell "POL. JUAN JOSE RODRIGUEZ LAZO" [ref=e2193]
+                  - cell "Voluntaria" [ref=e2194]
+                  - cell "-" [ref=e2195]:
+                    - link "-" [ref=e2196] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e2197]
+                      - text: "-"
+                  - cell "-" [ref=e2199]:
+                    - link "-" [ref=e2200] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e2201]
+                      - text: "-"
+                  - cell "Apagado" [ref=e2203]:
+                    - generic [ref=e2204]: Apagado
+                  - cell "—" [ref=e2205]
+                  - cell "—" [ref=e2206]
+                  - cell [ref=e2207]:
+                    - generic [ref=e2208]:
+                      - button "Editar estado y cita" [ref=e2209] [cursor=pointer]:
+                        - img [ref=e2210]
+                      - button "Actualizar teléfono" [ref=e2212] [cursor=pointer]:
+                        - img [ref=e2213]
+                - row "Bolsa 107 - Importación de pacientes masiva Hace 5 días 10867085 GINA PATRICIA PANIZO PIMENTEL 71 F MEDICINA GENERAL 45433320 Ivan Yhersino Panduro Arroyo 06/02/2026 08:36:00 H.III SUAREZ-ANGAMOS Voluntaria 987421370 - Citado Hace 4 días —" [ref=e2215]:
+                  - cell [ref=e2216]:
+                    - checkbox [ref=e2217] [cursor=pointer]
+                  - cell "Bolsa 107 - Importación de pacientes masiva" [ref=e2218]
+                  - cell "Hace 5 días" [ref=e2219]
+                  - cell "10867085" [ref=e2220]
+                  - cell "GINA PATRICIA PANIZO PIMENTEL" [ref=e2221]
+                  - cell "71" [ref=e2222]
+                  - cell "F" [ref=e2223]
+                  - cell "MEDICINA GENERAL" [ref=e2224]
+                  - cell "45433320" [ref=e2225]
+                  - cell "Ivan Yhersino Panduro Arroyo" [ref=e2226]
+                  - cell "06/02/2026 08:36:00" [ref=e2227]:
+                    - generic [ref=e2228]: 06/02/2026 08:36:00
+                  - cell "H.III SUAREZ-ANGAMOS" [ref=e2229]
+                  - cell "Voluntaria" [ref=e2230]
+                  - cell "987421370" [ref=e2231]:
+                    - link "987421370" [ref=e2232] [cursor=pointer]:
+                      - /url: https://wa.me/987421370
+                      - img [ref=e2233]
+                      - text: "987421370"
+                  - cell "-" [ref=e2235]:
+                    - link "-" [ref=e2236] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e2237]
+                      - text: "-"
+                  - cell "Citado" [ref=e2239]:
+                    - generic [ref=e2240]: Citado
+                  - cell "Hace 4 días" [ref=e2241]
+                  - cell "—" [ref=e2242]
+                  - cell [ref=e2243]:
+                    - generic [ref=e2244]:
+                      - button "Editar estado y cita" [ref=e2245] [cursor=pointer]:
+                        - img [ref=e2246]
+                      - button "Actualizar teléfono" [ref=e2248] [cursor=pointer]:
+                        - img [ref=e2249]
+                      - button "Enviar mensaje de cita formateado" [ref=e2251] [cursor=pointer]:
+                        - img [ref=e2252]
+                - row "Bolsa 107 - Importación de pacientes masiva Hace 5 días 07246345 QUINECHE CAICHO GLADYS EUGENIA 79 F MEDICINA GENERAL 45433320 Ivan Yhersino Panduro Arroyo 06/02/2026 08:48:00 POL. PABLO BERMUDEZ Voluntaria 928382110 - Citado Hace 4 días —" [ref=e2254]:
+                  - cell [ref=e2255]:
+                    - checkbox [ref=e2256] [cursor=pointer]
+                  - cell "Bolsa 107 - Importación de pacientes masiva" [ref=e2257]
+                  - cell "Hace 5 días" [ref=e2258]
+                  - cell "07246345" [ref=e2259]
+                  - cell "QUINECHE CAICHO GLADYS EUGENIA" [ref=e2260]
+                  - cell "79" [ref=e2261]
+                  - cell "F" [ref=e2262]
+                  - cell "MEDICINA GENERAL" [ref=e2263]
+                  - cell "45433320" [ref=e2264]
+                  - cell "Ivan Yhersino Panduro Arroyo" [ref=e2265]
+                  - cell "06/02/2026 08:48:00" [ref=e2266]:
+                    - generic [ref=e2267]: 06/02/2026 08:48:00
+                  - cell "POL. PABLO BERMUDEZ" [ref=e2268]
+                  - cell "Voluntaria" [ref=e2269]
+                  - cell "928382110" [ref=e2270]:
+                    - link "928382110" [ref=e2271] [cursor=pointer]:
+                      - /url: https://wa.me/928382110
+                      - img [ref=e2272]
+                      - text: "928382110"
+                  - cell "-" [ref=e2274]:
+                    - link "-" [ref=e2275] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e2276]
+                      - text: "-"
+                  - cell "Citado" [ref=e2278]:
+                    - generic [ref=e2279]: Citado
+                  - cell "Hace 4 días" [ref=e2280]
+                  - cell "—" [ref=e2281]
+                  - cell [ref=e2282]:
+                    - generic [ref=e2283]:
+                      - button "Editar estado y cita" [ref=e2284] [cursor=pointer]:
+                        - img [ref=e2285]
+                      - button "Actualizar teléfono" [ref=e2287] [cursor=pointer]:
+                        - img [ref=e2288]
+                      - button "Enviar mensaje de cita formateado" [ref=e2290] [cursor=pointer]:
+                        - img [ref=e2291]
+                - row "Bolsa 107 - Importación de pacientes masiva Hace 5 días 08729213 PRIETO ELGUERA SARA GREDYS 76 F MEDICINA GENERAL 45433320 Ivan Yhersino Panduro Arroyo 06/02/2026 09:00:00 H.I OCTAVIO MONGRUT MUÑOZ Voluntaria 994162042 - Citado Hace 4 días —" [ref=e2293]:
+                  - cell [ref=e2294]:
+                    - checkbox [ref=e2295] [cursor=pointer]
+                  - cell "Bolsa 107 - Importación de pacientes masiva" [ref=e2296]
+                  - cell "Hace 5 días" [ref=e2297]
+                  - cell "08729213" [ref=e2298]
+                  - cell "PRIETO ELGUERA SARA GREDYS" [ref=e2299]
+                  - cell "76" [ref=e2300]
+                  - cell "F" [ref=e2301]
+                  - cell "MEDICINA GENERAL" [ref=e2302]
+                  - cell "45433320" [ref=e2303]
+                  - cell "Ivan Yhersino Panduro Arroyo" [ref=e2304]
+                  - cell "06/02/2026 09:00:00" [ref=e2305]:
+                    - generic [ref=e2306]: 06/02/2026 09:00:00
+                  - cell "H.I OCTAVIO MONGRUT MUÑOZ" [ref=e2307]
+                  - cell "Voluntaria" [ref=e2308]
+                  - cell "994162042" [ref=e2309]:
+                    - link "994162042" [ref=e2310] [cursor=pointer]:
+                      - /url: https://wa.me/994162042
+                      - img [ref=e2311]
+                      - text: "994162042"
+                  - cell "-" [ref=e2313]:
+                    - link "-" [ref=e2314] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e2315]
+                      - text: "-"
+                  - cell "Citado" [ref=e2317]:
+                    - generic [ref=e2318]: Citado
+                  - cell "Hace 4 días" [ref=e2319]
+                  - cell "—" [ref=e2320]
+                  - cell [ref=e2321]:
+                    - generic [ref=e2322]:
+                      - button "Editar estado y cita" [ref=e2323] [cursor=pointer]:
+                        - img [ref=e2324]
+                      - button "Actualizar teléfono" [ref=e2326] [cursor=pointer]:
+                        - img [ref=e2327]
+                      - button "Enviar mensaje de cita formateado" [ref=e2329] [cursor=pointer]:
+                        - img [ref=e2330]
+                - row "Bolsa 107 - Importación de pacientes masiva Hace 5 días 41754587 NOLASCO LOPEZ MARIA PAOLA 44 F MEDICINA GENERAL 45433320 Ivan Yhersino Panduro Arroyo 06/02/2026 09:12:00 CAP III LUIS NEGREIROS VEGA Voluntaria 923365767 - Citado Hace 4 días —" [ref=e2332]:
+                  - cell [ref=e2333]:
+                    - checkbox [ref=e2334] [cursor=pointer]
+                  - cell "Bolsa 107 - Importación de pacientes masiva" [ref=e2335]
+                  - cell "Hace 5 días" [ref=e2336]
+                  - cell "41754587" [ref=e2337]
+                  - cell "NOLASCO LOPEZ MARIA PAOLA" [ref=e2338]
+                  - cell "44" [ref=e2339]
+                  - cell "F" [ref=e2340]
+                  - cell "MEDICINA GENERAL" [ref=e2341]
+                  - cell "45433320" [ref=e2342]
+                  - cell "Ivan Yhersino Panduro Arroyo" [ref=e2343]
+                  - cell "06/02/2026 09:12:00" [ref=e2344]:
+                    - generic [ref=e2345]: 06/02/2026 09:12:00
+                  - cell "CAP III LUIS NEGREIROS VEGA" [ref=e2346]
+                  - cell "Voluntaria" [ref=e2347]
+                  - cell "923365767" [ref=e2348]:
+                    - link "923365767" [ref=e2349] [cursor=pointer]:
+                      - /url: https://wa.me/923365767
+                      - img [ref=e2350]
+                      - text: "923365767"
+                  - cell "-" [ref=e2352]:
+                    - link "-" [ref=e2353] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e2354]
+                      - text: "-"
+                  - cell "Citado" [ref=e2356]:
+                    - generic [ref=e2357]: Citado
+                  - cell "Hace 4 días" [ref=e2358]
+                  - cell "—" [ref=e2359]
+                  - cell [ref=e2360]:
+                    - generic [ref=e2361]:
+                      - button "Editar estado y cita" [ref=e2362] [cursor=pointer]:
+                        - img [ref=e2363]
+                      - button "Actualizar teléfono" [ref=e2365] [cursor=pointer]:
+                        - img [ref=e2366]
+                      - button "Enviar mensaje de cita formateado" [ref=e2368] [cursor=pointer]:
+                        - img [ref=e2369]
+                - row "Bolsa 107 - Importación de pacientes masiva Hace 5 días 74018126 ORTECHO MENDOZA TRAECY LUHANA 26 F MEDICINA GENERAL 45433320 Ivan Yhersino Panduro Arroyo 06/02/2026 09:24:00 H.I ALBRECHT Voluntaria 904273012 - Citado Hace 4 días —" [ref=e2371]:
+                  - cell [ref=e2372]:
+                    - checkbox [ref=e2373] [cursor=pointer]
+                  - cell "Bolsa 107 - Importación de pacientes masiva" [ref=e2374]
+                  - cell "Hace 5 días" [ref=e2375]
+                  - cell "74018126" [ref=e2376]
+                  - cell "ORTECHO MENDOZA TRAECY LUHANA" [ref=e2377]
+                  - cell "26" [ref=e2378]
+                  - cell "F" [ref=e2379]
+                  - cell "MEDICINA GENERAL" [ref=e2380]
+                  - cell "45433320" [ref=e2381]
+                  - cell "Ivan Yhersino Panduro Arroyo" [ref=e2382]
+                  - cell "06/02/2026 09:24:00" [ref=e2383]:
+                    - generic [ref=e2384]: 06/02/2026 09:24:00
+                  - cell "H.I ALBRECHT" [ref=e2385]
+                  - cell "Voluntaria" [ref=e2386]
+                  - cell "904273012" [ref=e2387]:
+                    - link "904273012" [ref=e2388] [cursor=pointer]:
+                      - /url: https://wa.me/904273012
+                      - img [ref=e2389]
+                      - text: "904273012"
+                  - cell "-" [ref=e2391]:
+                    - link "-" [ref=e2392] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e2393]
+                      - text: "-"
+                  - cell "Citado" [ref=e2395]:
+                    - generic [ref=e2396]: Citado
+                  - cell "Hace 4 días" [ref=e2397]
+                  - cell "—" [ref=e2398]
+                  - cell [ref=e2399]:
+                    - generic [ref=e2400]:
+                      - button "Editar estado y cita" [ref=e2401] [cursor=pointer]:
+                        - img [ref=e2402]
+                      - button "Actualizar teléfono" [ref=e2404] [cursor=pointer]:
+                        - img [ref=e2405]
+                      - button "Enviar mensaje de cita formateado" [ref=e2407] [cursor=pointer]:
+                        - img [ref=e2408]
+                - row "Bolsa 107 - Importación de pacientes masiva Hace 5 días 07823965 GIANOTTI MORENO DE MOSCOSO MARIA ELENA 81 F MEDICINA GENERAL 45433320 Ivan Yhersino Panduro Arroyo 06/02/2026 09:36:00 POL. PROCERES Voluntaria 999952822 - Citado Hace 4 días —" [ref=e2410]:
+                  - cell [ref=e2411]:
+                    - checkbox [ref=e2412] [cursor=pointer]
+                  - cell "Bolsa 107 - Importación de pacientes masiva" [ref=e2413]
+                  - cell "Hace 5 días" [ref=e2414]
+                  - cell "07823965" [ref=e2415]
+                  - cell "GIANOTTI MORENO DE MOSCOSO MARIA ELENA" [ref=e2416]
+                  - cell "81" [ref=e2417]
+                  - cell "F" [ref=e2418]
+                  - cell "MEDICINA GENERAL" [ref=e2419]
+                  - cell "45433320" [ref=e2420]
+                  - cell "Ivan Yhersino Panduro Arroyo" [ref=e2421]
+                  - cell "06/02/2026 09:36:00" [ref=e2422]:
+                    - generic [ref=e2423]: 06/02/2026 09:36:00
+                  - cell "POL. PROCERES" [ref=e2424]
+                  - cell "Voluntaria" [ref=e2425]
+                  - cell "999952822" [ref=e2426]:
+                    - link "999952822" [ref=e2427] [cursor=pointer]:
+                      - /url: https://wa.me/999952822
+                      - img [ref=e2428]
+                      - text: "999952822"
+                  - cell "-" [ref=e2430]:
+                    - link "-" [ref=e2431] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e2432]
+                      - text: "-"
+                  - cell "Citado" [ref=e2434]:
+                    - generic [ref=e2435]: Citado
+                  - cell "Hace 4 días" [ref=e2436]
+                  - cell "—" [ref=e2437]
+                  - cell [ref=e2438]:
+                    - generic [ref=e2439]:
+                      - button "Editar estado y cita" [ref=e2440] [cursor=pointer]:
+                        - img [ref=e2441]
+                      - button "Actualizar teléfono" [ref=e2443] [cursor=pointer]:
+                        - img [ref=e2444]
+                      - button "Enviar mensaje de cita formateado" [ref=e2446] [cursor=pointer]:
+                        - img [ref=e2447]
+                - row "Bolsa 107 - Importación de pacientes masiva Hace 5 días 73928291 CASTRO ARREDONDO MABEL ARIANA 17 F MEDICINA GENERAL 45433320 Ivan Yhersino Panduro Arroyo 06/02/2026 09:48:00 - Voluntaria 983041805 - Citado Hace 4 días —" [ref=e2449]:
+                  - cell [ref=e2450]:
+                    - checkbox [ref=e2451] [cursor=pointer]
+                  - cell "Bolsa 107 - Importación de pacientes masiva" [ref=e2452]
+                  - cell "Hace 5 días" [ref=e2453]
+                  - cell "73928291" [ref=e2454]
+                  - cell "CASTRO ARREDONDO MABEL ARIANA" [ref=e2455]
+                  - cell "17" [ref=e2456]
+                  - cell "F" [ref=e2457]
+                  - cell "MEDICINA GENERAL" [ref=e2458]
+                  - cell "45433320" [ref=e2459]
+                  - cell "Ivan Yhersino Panduro Arroyo" [ref=e2460]
+                  - cell "06/02/2026 09:48:00" [ref=e2461]:
+                    - generic [ref=e2462]: 06/02/2026 09:48:00
+                  - cell "-" [ref=e2463]
+                  - cell "Voluntaria" [ref=e2464]
+                  - cell "983041805" [ref=e2465]:
+                    - link "983041805" [ref=e2466] [cursor=pointer]:
+                      - /url: https://wa.me/983041805
+                      - img [ref=e2467]
+                      - text: "983041805"
+                  - cell "-" [ref=e2469]:
+                    - link "-" [ref=e2470] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e2471]
+                      - text: "-"
+                  - cell "Citado" [ref=e2473]:
+                    - generic [ref=e2474]: Citado
+                  - cell "Hace 4 días" [ref=e2475]
+                  - cell "—" [ref=e2476]
+                  - cell [ref=e2477]:
+                    - generic [ref=e2478]:
+                      - button "Editar estado y cita" [ref=e2479] [cursor=pointer]:
+                        - img [ref=e2480]
+                      - button "Actualizar teléfono" [ref=e2482] [cursor=pointer]:
+                        - img [ref=e2483]
+                      - button "Enviar mensaje de cita formateado" [ref=e2485] [cursor=pointer]:
+                        - img [ref=e2486]
+                - row "Bolsa 107 - Importación de pacientes masiva Hace 5 días 21085293 INGARUCA RIVERA EDERMIDA JUSTINA 61 F MEDICINA GENERAL 45433320 Ivan Yhersino Panduro Arroyo 06/02/2026 10:00:00 - Voluntaria 972712020 - Citado Hace 4 días —" [ref=e2488]:
+                  - cell [ref=e2489]:
+                    - checkbox [ref=e2490] [cursor=pointer]
+                  - cell "Bolsa 107 - Importación de pacientes masiva" [ref=e2491]
+                  - cell "Hace 5 días" [ref=e2492]
+                  - cell "21085293" [ref=e2493]
+                  - cell "INGARUCA RIVERA EDERMIDA JUSTINA" [ref=e2494]
+                  - cell "61" [ref=e2495]
+                  - cell "F" [ref=e2496]
+                  - cell "MEDICINA GENERAL" [ref=e2497]
+                  - cell "45433320" [ref=e2498]
+                  - cell "Ivan Yhersino Panduro Arroyo" [ref=e2499]
+                  - cell "06/02/2026 10:00:00" [ref=e2500]:
+                    - generic [ref=e2501]: 06/02/2026 10:00:00
+                  - cell "-" [ref=e2502]
+                  - cell "Voluntaria" [ref=e2503]
+                  - cell "972712020" [ref=e2504]:
+                    - link "972712020" [ref=e2505] [cursor=pointer]:
+                      - /url: https://wa.me/972712020
+                      - img [ref=e2506]
+                      - text: "972712020"
+                  - cell "-" [ref=e2508]:
+                    - link "-" [ref=e2509] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e2510]
+                      - text: "-"
+                  - cell "Citado" [ref=e2512]:
+                    - generic [ref=e2513]: Citado
+                  - cell "Hace 4 días" [ref=e2514]
+                  - cell "—" [ref=e2515]
+                  - cell [ref=e2516]:
+                    - generic [ref=e2517]:
+                      - button "Editar estado y cita" [ref=e2518] [cursor=pointer]:
+                        - img [ref=e2519]
+                      - button "Actualizar teléfono" [ref=e2521] [cursor=pointer]:
+                        - img [ref=e2522]
+                      - button "Enviar mensaje de cita formateado" [ref=e2524] [cursor=pointer]:
+                        - img [ref=e2525]
+                - row "Bolsa 107 - Importación de pacientes masiva Hace 5 días 07250712 PALOMINO LOBATON ARMANDO BERNARDO 59 M MEDICINA GENERAL 45433320 Ivan Yhersino Panduro Arroyo 06/02/2026 10:12:00 POL. PABLO BERMUDEZ Voluntaria 951744779 - Citado Hace 4 días —" [ref=e2527]:
+                  - cell [ref=e2528]:
+                    - checkbox [ref=e2529] [cursor=pointer]
+                  - cell "Bolsa 107 - Importación de pacientes masiva" [ref=e2530]
+                  - cell "Hace 5 días" [ref=e2531]
+                  - cell "07250712" [ref=e2532]
+                  - cell "PALOMINO LOBATON ARMANDO BERNARDO" [ref=e2533]
+                  - cell "59" [ref=e2534]
+                  - cell "M" [ref=e2535]
+                  - cell "MEDICINA GENERAL" [ref=e2536]
+                  - cell "45433320" [ref=e2537]
+                  - cell "Ivan Yhersino Panduro Arroyo" [ref=e2538]
+                  - cell "06/02/2026 10:12:00" [ref=e2539]:
+                    - generic [ref=e2540]: 06/02/2026 10:12:00
+                  - cell "POL. PABLO BERMUDEZ" [ref=e2541]
+                  - cell "Voluntaria" [ref=e2542]
+                  - cell "951744779" [ref=e2543]:
+                    - link "951744779" [ref=e2544] [cursor=pointer]:
+                      - /url: https://wa.me/951744779
+                      - img [ref=e2545]
+                      - text: "951744779"
+                  - cell "-" [ref=e2547]:
+                    - link "-" [ref=e2548] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e2549]
+                      - text: "-"
+                  - cell "Citado" [ref=e2551]:
+                    - generic [ref=e2552]: Citado
+                  - cell "Hace 4 días" [ref=e2553]
+                  - cell "—" [ref=e2554]
+                  - cell [ref=e2555]:
+                    - generic [ref=e2556]:
+                      - button "Editar estado y cita" [ref=e2557] [cursor=pointer]:
+                        - img [ref=e2558]
+                      - button "Actualizar teléfono" [ref=e2560] [cursor=pointer]:
+                        - img [ref=e2561]
+                      - button "Enviar mensaje de cita formateado" [ref=e2563] [cursor=pointer]:
+                        - img [ref=e2564]
+                - row "Bolsa 107 - Importación de pacientes masiva Hace 5 días 06213550 ARDILES VILLEGAS MARIA CONSUELO 62 F MEDICINA GENERAL 45433320 Ivan Yhersino Panduro Arroyo 06/02/2026 10:36:00 H.I AURELIO DIAZ-UFANO Y PERAL Voluntaria 954425053 - Citado Hace 4 días —" [ref=e2566]:
+                  - cell [ref=e2567]:
+                    - checkbox [ref=e2568] [cursor=pointer]
+                  - cell "Bolsa 107 - Importación de pacientes masiva" [ref=e2569]
+                  - cell "Hace 5 días" [ref=e2570]
+                  - cell "06213550" [ref=e2571]
+                  - cell "ARDILES VILLEGAS MARIA CONSUELO" [ref=e2572]
+                  - cell "62" [ref=e2573]
+                  - cell "F" [ref=e2574]
+                  - cell "MEDICINA GENERAL" [ref=e2575]
+                  - cell "45433320" [ref=e2576]
+                  - cell "Ivan Yhersino Panduro Arroyo" [ref=e2577]
+                  - cell "06/02/2026 10:36:00" [ref=e2578]:
+                    - generic [ref=e2579]: 06/02/2026 10:36:00
+                  - cell "H.I AURELIO DIAZ-UFANO Y PERAL" [ref=e2580]
+                  - cell "Voluntaria" [ref=e2581]
+                  - cell "954425053" [ref=e2582]:
+                    - link "954425053" [ref=e2583] [cursor=pointer]:
+                      - /url: https://wa.me/954425053
+                      - img [ref=e2584]
+                      - text: "954425053"
+                  - cell "-" [ref=e2586]:
+                    - link "-" [ref=e2587] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e2588]
+                      - text: "-"
+                  - cell "Citado" [ref=e2590]:
+                    - generic [ref=e2591]: Citado
+                  - cell "Hace 4 días" [ref=e2592]
+                  - cell "—" [ref=e2593]
+                  - cell [ref=e2594]:
+                    - generic [ref=e2595]:
+                      - button "Editar estado y cita" [ref=e2596] [cursor=pointer]:
+                        - img [ref=e2597]
+                      - button "Actualizar teléfono" [ref=e2599] [cursor=pointer]:
+                        - img [ref=e2600]
+                      - button "Enviar mensaje de cita formateado" [ref=e2602] [cursor=pointer]:
+                        - img [ref=e2603]
+                - row "Bolsa 107 - Importación de pacientes masiva Hace 5 días 08187977 GALVEZ VALLE JOSE LUIS 80 M MEDICINA GENERAL 45433320 Ivan Yhersino Panduro Arroyo 06/02/2026 10:48:00 H.I CARLOS ALCANTARA BUTTERFIELD Voluntaria 975353030 - Citado Hace 4 días —" [ref=e2605]:
+                  - cell [ref=e2606]:
+                    - checkbox [ref=e2607] [cursor=pointer]
+                  - cell "Bolsa 107 - Importación de pacientes masiva" [ref=e2608]
+                  - cell "Hace 5 días" [ref=e2609]
+                  - cell "08187977" [ref=e2610]
+                  - cell "GALVEZ VALLE JOSE LUIS" [ref=e2611]
+                  - cell "80" [ref=e2612]
+                  - cell "M" [ref=e2613]
+                  - cell "MEDICINA GENERAL" [ref=e2614]
+                  - cell "45433320" [ref=e2615]
+                  - cell "Ivan Yhersino Panduro Arroyo" [ref=e2616]
+                  - cell "06/02/2026 10:48:00" [ref=e2617]:
+                    - generic [ref=e2618]: 06/02/2026 10:48:00
+                  - cell "H.I CARLOS ALCANTARA BUTTERFIELD" [ref=e2619]
+                  - cell "Voluntaria" [ref=e2620]
+                  - cell "975353030" [ref=e2621]:
+                    - link "975353030" [ref=e2622] [cursor=pointer]:
+                      - /url: https://wa.me/975353030
+                      - img [ref=e2623]
+                      - text: "975353030"
+                  - cell "-" [ref=e2625]:
+                    - link "-" [ref=e2626] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e2627]
+                      - text: "-"
+                  - cell "Citado" [ref=e2629]:
+                    - generic [ref=e2630]: Citado
+                  - cell "Hace 4 días" [ref=e2631]
+                  - cell "—" [ref=e2632]
+                  - cell [ref=e2633]:
+                    - generic [ref=e2634]:
+                      - button "Editar estado y cita" [ref=e2635] [cursor=pointer]:
+                        - img [ref=e2636]
+                      - button "Actualizar teléfono" [ref=e2638] [cursor=pointer]:
+                        - img [ref=e2639]
+                      - button "Enviar mensaje de cita formateado" [ref=e2641] [cursor=pointer]:
+                        - img [ref=e2642]
+                - row "Bolsa 107 - Importación de pacientes masiva Hace 5 días 10552540 VELOZ CASTRO DE POMA DIOSDA 76 F MEDICINA GENERAL 45433320 Ivan Yhersino Panduro Arroyo 06/02/2026 11:00:00 H.I CARLOS ALCANTARA BUTTERFIELD Voluntaria 983467025 - Citado Hace 4 días —" [ref=e2644]:
+                  - cell [ref=e2645]:
+                    - checkbox [ref=e2646] [cursor=pointer]
+                  - cell "Bolsa 107 - Importación de pacientes masiva" [ref=e2647]
+                  - cell "Hace 5 días" [ref=e2648]
+                  - cell "10552540" [ref=e2649]
+                  - cell "VELOZ CASTRO DE POMA DIOSDA" [ref=e2650]
+                  - cell "76" [ref=e2651]
+                  - cell "F" [ref=e2652]
+                  - cell "MEDICINA GENERAL" [ref=e2653]
+                  - cell "45433320" [ref=e2654]
+                  - cell "Ivan Yhersino Panduro Arroyo" [ref=e2655]
+                  - cell "06/02/2026 11:00:00" [ref=e2656]:
+                    - generic [ref=e2657]: 06/02/2026 11:00:00
+                  - cell "H.I CARLOS ALCANTARA BUTTERFIELD" [ref=e2658]
+                  - cell "Voluntaria" [ref=e2659]
+                  - cell "983467025" [ref=e2660]:
+                    - link "983467025" [ref=e2661] [cursor=pointer]:
+                      - /url: https://wa.me/983467025
+                      - img [ref=e2662]
+                      - text: "983467025"
+                  - cell "-" [ref=e2664]:
+                    - link "-" [ref=e2665] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e2666]
+                      - text: "-"
+                  - cell "Citado" [ref=e2668]:
+                    - generic [ref=e2669]: Citado
+                  - cell "Hace 4 días" [ref=e2670]
+                  - cell "—" [ref=e2671]
+                  - cell [ref=e2672]:
+                    - generic [ref=e2673]:
+                      - button "Editar estado y cita" [ref=e2674] [cursor=pointer]:
+                        - img [ref=e2675]
+                      - button "Actualizar teléfono" [ref=e2677] [cursor=pointer]:
+                        - img [ref=e2678]
+                      - button "Enviar mensaje de cita formateado" [ref=e2680] [cursor=pointer]:
+                        - img [ref=e2681]
+                - row "Bolsa 107 - Importación de pacientes masiva Hace 5 días 07604531 OTINIANO CABELLO CARLOS 80 M MEDICINA GENERAL 45433320 Ivan Yhersino Panduro Arroyo 06/02/2026 11:12:00 POL. PABLO BERMUDEZ Voluntaria 983412330 - Citado Hace 4 días —" [ref=e2683]:
+                  - cell [ref=e2684]:
+                    - checkbox [ref=e2685] [cursor=pointer]
+                  - cell "Bolsa 107 - Importación de pacientes masiva" [ref=e2686]
+                  - cell "Hace 5 días" [ref=e2687]
+                  - cell "07604531" [ref=e2688]
+                  - cell "OTINIANO CABELLO CARLOS" [ref=e2689]
+                  - cell "80" [ref=e2690]
+                  - cell "M" [ref=e2691]
+                  - cell "MEDICINA GENERAL" [ref=e2692]
+                  - cell "45433320" [ref=e2693]
+                  - cell "Ivan Yhersino Panduro Arroyo" [ref=e2694]
+                  - cell "06/02/2026 11:12:00" [ref=e2695]:
+                    - generic [ref=e2696]: 06/02/2026 11:12:00
+                  - cell "POL. PABLO BERMUDEZ" [ref=e2697]
+                  - cell "Voluntaria" [ref=e2698]
+                  - cell "983412330" [ref=e2699]:
+                    - link "983412330" [ref=e2700] [cursor=pointer]:
+                      - /url: https://wa.me/983412330
+                      - img [ref=e2701]
+                      - text: "983412330"
+                  - cell "-" [ref=e2703]:
+                    - link "-" [ref=e2704] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e2705]
+                      - text: "-"
+                  - cell "Citado" [ref=e2707]:
+                    - generic [ref=e2708]: Citado
+                  - cell "Hace 4 días" [ref=e2709]
+                  - cell "—" [ref=e2710]
+                  - cell [ref=e2711]:
+                    - generic [ref=e2712]:
+                      - button "Editar estado y cita" [ref=e2713] [cursor=pointer]:
+                        - img [ref=e2714]
+                      - button "Actualizar teléfono" [ref=e2716] [cursor=pointer]:
+                        - img [ref=e2717]
+                      - button "Enviar mensaje de cita formateado" [ref=e2719] [cursor=pointer]:
+                        - img [ref=e2720]
+                - row "Bolsa 107 - Importación de pacientes masiva Hace 5 días 06159397 VELIZ VERANO FELICITA JUDITH 67 F MEDICINA GENERAL 45433320 Ivan Yhersino Panduro Arroyo 06/02/2026 11:24:00 H.I CARLOS ALCANTARA BUTTERFIELD Voluntaria 997512208 - Citado Hace 4 días —" [ref=e2722]:
+                  - cell [ref=e2723]:
+                    - checkbox [ref=e2724] [cursor=pointer]
+                  - cell "Bolsa 107 - Importación de pacientes masiva" [ref=e2725]
+                  - cell "Hace 5 días" [ref=e2726]
+                  - cell "06159397" [ref=e2727]
+                  - cell "VELIZ VERANO FELICITA JUDITH" [ref=e2728]
+                  - cell "67" [ref=e2729]
+                  - cell "F" [ref=e2730]
+                  - cell "MEDICINA GENERAL" [ref=e2731]
+                  - cell "45433320" [ref=e2732]
+                  - cell "Ivan Yhersino Panduro Arroyo" [ref=e2733]
+                  - cell "06/02/2026 11:24:00" [ref=e2734]:
+                    - generic [ref=e2735]: 06/02/2026 11:24:00
+                  - cell "H.I CARLOS ALCANTARA BUTTERFIELD" [ref=e2736]
+                  - cell "Voluntaria" [ref=e2737]
+                  - cell "997512208" [ref=e2738]:
+                    - link "997512208" [ref=e2739] [cursor=pointer]:
+                      - /url: https://wa.me/997512208
+                      - img [ref=e2740]
+                      - text: "997512208"
+                  - cell "-" [ref=e2742]:
+                    - link "-" [ref=e2743] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e2744]
+                      - text: "-"
+                  - cell "Citado" [ref=e2746]:
+                    - generic [ref=e2747]: Citado
+                  - cell "Hace 4 días" [ref=e2748]
+                  - cell "—" [ref=e2749]
+                  - cell [ref=e2750]:
+                    - generic [ref=e2751]:
+                      - button "Editar estado y cita" [ref=e2752] [cursor=pointer]:
+                        - img [ref=e2753]
+                      - button "Actualizar teléfono" [ref=e2755] [cursor=pointer]:
+                        - img [ref=e2756]
+                      - button "Enviar mensaje de cita formateado" [ref=e2758] [cursor=pointer]:
+                        - img [ref=e2759]
+                - row "Bolsa 107 - Importación de pacientes masiva Hace 5 días 10279663 SILVA LOPEZ YSABEL 51 F MEDICINA GENERAL 45433320 Ivan Yhersino Panduro Arroyo 06/02/2026 11:36:00 POL. CHINCHA Voluntaria 953537690 - Citado Hace 4 días —" [ref=e2761]:
+                  - cell [ref=e2762]:
+                    - checkbox [ref=e2763] [cursor=pointer]
+                  - cell "Bolsa 107 - Importación de pacientes masiva" [ref=e2764]
+                  - cell "Hace 5 días" [ref=e2765]
+                  - cell "10279663" [ref=e2766]
+                  - cell "SILVA LOPEZ YSABEL" [ref=e2767]
+                  - cell "51" [ref=e2768]
+                  - cell "F" [ref=e2769]
+                  - cell "MEDICINA GENERAL" [ref=e2770]
+                  - cell "45433320" [ref=e2771]
+                  - cell "Ivan Yhersino Panduro Arroyo" [ref=e2772]
+                  - cell "06/02/2026 11:36:00" [ref=e2773]:
+                    - generic [ref=e2774]: 06/02/2026 11:36:00
+                  - cell "POL. CHINCHA" [ref=e2775]
+                  - cell "Voluntaria" [ref=e2776]
+                  - cell "953537690" [ref=e2777]:
+                    - link "953537690" [ref=e2778] [cursor=pointer]:
+                      - /url: https://wa.me/953537690
+                      - img [ref=e2779]
+                      - text: "953537690"
+                  - cell "-" [ref=e2781]:
+                    - link "-" [ref=e2782] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e2783]
+                      - text: "-"
+                  - cell "Citado" [ref=e2785]:
+                    - generic [ref=e2786]: Citado
+                  - cell "Hace 4 días" [ref=e2787]
+                  - cell "—" [ref=e2788]
+                  - cell [ref=e2789]:
+                    - generic [ref=e2790]:
+                      - button "Editar estado y cita" [ref=e2791] [cursor=pointer]:
+                        - img [ref=e2792]
+                      - button "Actualizar teléfono" [ref=e2794] [cursor=pointer]:
+                        - img [ref=e2795]
+                      - button "Enviar mensaje de cita formateado" [ref=e2797] [cursor=pointer]:
+                        - img [ref=e2798]
+                - row "Bolsa 107 - Importación de pacientes masiva Hace 4 días 47169231 TACAYAMA DELGADO ELIZABETH 46 F MEDICINA GENERAL 45433320 Ivan Yhersino Panduro Arroyo 06/02/2026 14:00:00 CAP III INDEPENDENCIA Voluntaria 924819781 - Citado Hace 4 días —" [ref=e2800]:
+                  - cell [ref=e2801]:
+                    - checkbox [ref=e2802] [cursor=pointer]
+                  - cell "Bolsa 107 - Importación de pacientes masiva" [ref=e2803]
+                  - cell "Hace 4 días" [ref=e2804]
+                  - cell "47169231" [ref=e2805]
+                  - cell "TACAYAMA DELGADO ELIZABETH" [ref=e2806]
+                  - cell "46" [ref=e2807]
+                  - cell "F" [ref=e2808]
+                  - cell "MEDICINA GENERAL" [ref=e2809]
+                  - cell "45433320" [ref=e2810]
+                  - cell "Ivan Yhersino Panduro Arroyo" [ref=e2811]
+                  - cell "06/02/2026 14:00:00" [ref=e2812]:
+                    - generic [ref=e2813]: 06/02/2026 14:00:00
+                  - cell "CAP III INDEPENDENCIA" [ref=e2814]
+                  - cell "Voluntaria" [ref=e2815]
+                  - cell "924819781" [ref=e2816]:
+                    - link "924819781" [ref=e2817] [cursor=pointer]:
+                      - /url: https://wa.me/924819781
+                      - img [ref=e2818]
+                      - text: "924819781"
+                  - cell "-" [ref=e2820]:
+                    - link "-" [ref=e2821] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e2822]
+                      - text: "-"
+                  - cell "Citado" [ref=e2824]:
+                    - generic [ref=e2825]: Citado
+                  - cell "Hace 4 días" [ref=e2826]
+                  - cell "—" [ref=e2827]
+                  - cell [ref=e2828]:
+                    - generic [ref=e2829]:
+                      - button "Editar estado y cita" [ref=e2830] [cursor=pointer]:
+                        - img [ref=e2831]
+                      - button "Actualizar teléfono" [ref=e2833] [cursor=pointer]:
+                        - img [ref=e2834]
+                      - button "Enviar mensaje de cita formateado" [ref=e2836] [cursor=pointer]:
+                        - img [ref=e2837]
+                - row "Bolsa 107 - Importación de pacientes masiva Hace 4 días 44372035 PACHECO LARA ELIZABETH ROSA 39 F MEDICINA GENERAL 45433320 Ivan Yhersino Panduro Arroyo 06/02/2026 14:05:00 CAP III HUAYCAN Voluntaria 901621554 - Citado Hace 4 días —" [ref=e2839]:
+                  - cell [ref=e2840]:
+                    - checkbox [ref=e2841] [cursor=pointer]
+                  - cell "Bolsa 107 - Importación de pacientes masiva" [ref=e2842]
+                  - cell "Hace 4 días" [ref=e2843]
+                  - cell "44372035" [ref=e2844]
+                  - cell "PACHECO LARA ELIZABETH ROSA" [ref=e2845]
+                  - cell "39" [ref=e2846]
+                  - cell "F" [ref=e2847]
+                  - cell "MEDICINA GENERAL" [ref=e2848]
+                  - cell "45433320" [ref=e2849]
+                  - cell "Ivan Yhersino Panduro Arroyo" [ref=e2850]
+                  - cell "06/02/2026 14:05:00" [ref=e2851]:
+                    - generic [ref=e2852]: 06/02/2026 14:05:00
+                  - cell "CAP III HUAYCAN" [ref=e2853]
+                  - cell "Voluntaria" [ref=e2854]
+                  - cell "901621554" [ref=e2855]:
+                    - link "901621554" [ref=e2856] [cursor=pointer]:
+                      - /url: https://wa.me/901621554
+                      - img [ref=e2857]
+                      - text: "901621554"
+                  - cell "-" [ref=e2859]:
+                    - link "-" [ref=e2860] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e2861]
+                      - text: "-"
+                  - cell "Citado" [ref=e2863]:
+                    - generic [ref=e2864]: Citado
+                  - cell "Hace 4 días" [ref=e2865]
+                  - cell "—" [ref=e2866]
+                  - cell [ref=e2867]:
+                    - generic [ref=e2868]:
+                      - button "Editar estado y cita" [ref=e2869] [cursor=pointer]:
+                        - img [ref=e2870]
+                      - button "Actualizar teléfono" [ref=e2872] [cursor=pointer]:
+                        - img [ref=e2873]
+                      - button "Enviar mensaje de cita formateado" [ref=e2875] [cursor=pointer]:
+                        - img [ref=e2876]
+                - row "Bolsa 107 - Importación de pacientes masiva Hace 4 días 77567604 GARCIA YAMUJAR JEFFERSON JESUS 31 M MEDICINA GENERAL 45433320 Ivan Yhersino Panduro Arroyo 06/02/2026 14:10:00 - Voluntaria 981283109 - Citado Hace 4 días —" [ref=e2878]:
+                  - cell [ref=e2879]:
+                    - checkbox [ref=e2880] [cursor=pointer]
+                  - cell "Bolsa 107 - Importación de pacientes masiva" [ref=e2881]
+                  - cell "Hace 4 días" [ref=e2882]
+                  - cell "77567604" [ref=e2883]
+                  - cell "GARCIA YAMUJAR JEFFERSON JESUS" [ref=e2884]
+                  - cell "31" [ref=e2885]
+                  - cell "M" [ref=e2886]
+                  - cell "MEDICINA GENERAL" [ref=e2887]
+                  - cell "45433320" [ref=e2888]
+                  - cell "Ivan Yhersino Panduro Arroyo" [ref=e2889]
+                  - cell "06/02/2026 14:10:00" [ref=e2890]:
+                    - generic [ref=e2891]: 06/02/2026 14:10:00
+                  - cell "-" [ref=e2892]
+                  - cell "Voluntaria" [ref=e2893]
+                  - cell "981283109" [ref=e2894]:
+                    - link "981283109" [ref=e2895] [cursor=pointer]:
+                      - /url: https://wa.me/981283109
+                      - img [ref=e2896]
+                      - text: "981283109"
+                  - cell "-" [ref=e2898]:
+                    - link "-" [ref=e2899] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e2900]
+                      - text: "-"
+                  - cell "Citado" [ref=e2902]:
+                    - generic [ref=e2903]: Citado
+                  - cell "Hace 4 días" [ref=e2904]
+                  - cell "—" [ref=e2905]
+                  - cell [ref=e2906]:
+                    - generic [ref=e2907]:
+                      - button "Editar estado y cita" [ref=e2908] [cursor=pointer]:
+                        - img [ref=e2909]
+                      - button "Actualizar teléfono" [ref=e2911] [cursor=pointer]:
+                        - img [ref=e2912]
+                      - button "Enviar mensaje de cita formateado" [ref=e2914] [cursor=pointer]:
+                        - img [ref=e2915]
+                - row "Bolsa 107 - Importación de pacientes masiva Hace 4 días 07613042 CASTILLO LAZO ALBERTO JUAN 71 M MEDICINA GENERAL 45433320 Ivan Yhersino Panduro Arroyo 06/02/2026 14:15:00 H.I CARLOS ALCANTARA BUTTERFIELD Voluntaria 982785998 - Citado Hace 4 días —" [ref=e2917]:
+                  - cell [ref=e2918]:
+                    - checkbox [ref=e2919] [cursor=pointer]
+                  - cell "Bolsa 107 - Importación de pacientes masiva" [ref=e2920]
+                  - cell "Hace 4 días" [ref=e2921]
+                  - cell "07613042" [ref=e2922]
+                  - cell "CASTILLO LAZO ALBERTO JUAN" [ref=e2923]
+                  - cell "71" [ref=e2924]
+                  - cell "M" [ref=e2925]
+                  - cell "MEDICINA GENERAL" [ref=e2926]
+                  - cell "45433320" [ref=e2927]
+                  - cell "Ivan Yhersino Panduro Arroyo" [ref=e2928]
+                  - cell "06/02/2026 14:15:00" [ref=e2929]:
+                    - generic [ref=e2930]: 06/02/2026 14:15:00
+                  - cell "H.I CARLOS ALCANTARA BUTTERFIELD" [ref=e2931]
+                  - cell "Voluntaria" [ref=e2932]
+                  - cell "982785998" [ref=e2933]:
+                    - link "982785998" [ref=e2934] [cursor=pointer]:
+                      - /url: https://wa.me/982785998
+                      - img [ref=e2935]
+                      - text: "982785998"
+                  - cell "-" [ref=e2937]:
+                    - link "-" [ref=e2938] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e2939]
+                      - text: "-"
+                  - cell "Citado" [ref=e2941]:
+                    - generic [ref=e2942]: Citado
+                  - cell "Hace 4 días" [ref=e2943]
+                  - cell "—" [ref=e2944]
+                  - cell [ref=e2945]:
+                    - generic [ref=e2946]:
+                      - button "Editar estado y cita" [ref=e2947] [cursor=pointer]:
+                        - img [ref=e2948]
+                      - button "Actualizar teléfono" [ref=e2950] [cursor=pointer]:
+                        - img [ref=e2951]
+                      - button "Enviar mensaje de cita formateado" [ref=e2953] [cursor=pointer]:
+                        - img [ref=e2954]
+                - row "Bolsa 107 - Importación de pacientes masiva Hace 4 días 29661921 MARLOW GOMEZ MARIA TERESA 54 F MEDICINA GENERAL 45433320 Ivan Yhersino Panduro Arroyo 06/02/2026 14:20:00 H.I CARLOS ALCANTARA BUTTERFIELD Voluntaria 016761891 - Citado Hace 4 días —" [ref=e2956]:
+                  - cell [ref=e2957]:
+                    - checkbox [ref=e2958] [cursor=pointer]
+                  - cell "Bolsa 107 - Importación de pacientes masiva" [ref=e2959]
+                  - cell "Hace 4 días" [ref=e2960]
+                  - cell "29661921" [ref=e2961]
+                  - cell "MARLOW GOMEZ MARIA TERESA" [ref=e2962]
+                  - cell "54" [ref=e2963]
+                  - cell "F" [ref=e2964]
+                  - cell "MEDICINA GENERAL" [ref=e2965]
+                  - cell "45433320" [ref=e2966]
+                  - cell "Ivan Yhersino Panduro Arroyo" [ref=e2967]
+                  - cell "06/02/2026 14:20:00" [ref=e2968]:
+                    - generic [ref=e2969]: 06/02/2026 14:20:00
+                  - cell "H.I CARLOS ALCANTARA BUTTERFIELD" [ref=e2970]
+                  - cell "Voluntaria" [ref=e2971]
+                  - cell "016761891" [ref=e2972]:
+                    - link "016761891" [ref=e2973] [cursor=pointer]:
+                      - /url: https://wa.me/016761891
+                      - img [ref=e2974]
+                      - text: "016761891"
+                  - cell "-" [ref=e2976]:
+                    - link "-" [ref=e2977] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e2978]
+                      - text: "-"
+                  - cell "Citado" [ref=e2980]:
+                    - generic [ref=e2981]: Citado
+                  - cell "Hace 4 días" [ref=e2982]
+                  - cell "—" [ref=e2983]
+                  - cell [ref=e2984]:
+                    - generic [ref=e2985]:
+                      - button "Editar estado y cita" [ref=e2986] [cursor=pointer]:
+                        - img [ref=e2987]
+                      - button "Actualizar teléfono" [ref=e2989] [cursor=pointer]:
+                        - img [ref=e2990]
+                      - button "Enviar mensaje de cita formateado" [ref=e2992] [cursor=pointer]:
+                        - img [ref=e2993]
+                - row "Bolsa 107 - Importación de pacientes masiva Hace 4 días 07640924 ACOSTA GALINDO LUIS VICENTE 79 M MEDICINA GENERAL 45433320 Ivan Yhersino Panduro Arroyo 06/02/2026 14:25:00 CAP III SAN ISIDRO Voluntaria 958633828 - Citado Hace 4 días —" [ref=e2995]:
+                  - cell [ref=e2996]:
+                    - checkbox [ref=e2997] [cursor=pointer]
+                  - cell "Bolsa 107 - Importación de pacientes masiva" [ref=e2998]
+                  - cell "Hace 4 días" [ref=e2999]
+                  - cell "07640924" [ref=e3000]
+                  - cell "ACOSTA GALINDO LUIS VICENTE" [ref=e3001]
+                  - cell "79" [ref=e3002]
+                  - cell "M" [ref=e3003]
+                  - cell "MEDICINA GENERAL" [ref=e3004]
+                  - cell "45433320" [ref=e3005]
+                  - cell "Ivan Yhersino Panduro Arroyo" [ref=e3006]
+                  - cell "06/02/2026 14:25:00" [ref=e3007]:
+                    - generic [ref=e3008]: 06/02/2026 14:25:00
+                  - cell "CAP III SAN ISIDRO" [ref=e3009]
+                  - cell "Voluntaria" [ref=e3010]
+                  - cell "958633828" [ref=e3011]:
+                    - link "958633828" [ref=e3012] [cursor=pointer]:
+                      - /url: https://wa.me/958633828
+                      - img [ref=e3013]
+                      - text: "958633828"
+                  - cell "-" [ref=e3015]:
+                    - link "-" [ref=e3016] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e3017]
+                      - text: "-"
+                  - cell "Citado" [ref=e3019]:
+                    - generic [ref=e3020]: Citado
+                  - cell "Hace 4 días" [ref=e3021]
+                  - cell "—" [ref=e3022]
+                  - cell [ref=e3023]:
+                    - generic [ref=e3024]:
+                      - button "Editar estado y cita" [ref=e3025] [cursor=pointer]:
+                        - img [ref=e3026]
+                      - button "Actualizar teléfono" [ref=e3028] [cursor=pointer]:
+                        - img [ref=e3029]
+                      - button "Enviar mensaje de cita formateado" [ref=e3031] [cursor=pointer]:
+                        - img [ref=e3032]
+                - row "Bolsa 107 - Importación de pacientes masiva Hace 4 días 40334562 MELO ROMERO ELSA ANTONIA 47 F MEDICINA GENERAL 45433320 Ivan Yhersino Panduro Arroyo 06/02/2026 14:30:00 H.II RAMON CASTILLA Voluntaria 970413168 - Citado Hace 4 días —" [ref=e3034]:
+                  - cell [ref=e3035]:
+                    - checkbox [ref=e3036] [cursor=pointer]
+                  - cell "Bolsa 107 - Importación de pacientes masiva" [ref=e3037]
+                  - cell "Hace 4 días" [ref=e3038]
+                  - cell "40334562" [ref=e3039]
+                  - cell "MELO ROMERO ELSA ANTONIA" [ref=e3040]
+                  - cell "47" [ref=e3041]
+                  - cell "F" [ref=e3042]
+                  - cell "MEDICINA GENERAL" [ref=e3043]
+                  - cell "45433320" [ref=e3044]
+                  - cell "Ivan Yhersino Panduro Arroyo" [ref=e3045]
+                  - cell "06/02/2026 14:30:00" [ref=e3046]:
+                    - generic [ref=e3047]: 06/02/2026 14:30:00
+                  - cell "H.II RAMON CASTILLA" [ref=e3048]
+                  - cell "Voluntaria" [ref=e3049]
+                  - cell "970413168" [ref=e3050]:
+                    - link "970413168" [ref=e3051] [cursor=pointer]:
+                      - /url: https://wa.me/970413168
+                      - img [ref=e3052]
+                      - text: "970413168"
+                  - cell "-" [ref=e3054]:
+                    - link "-" [ref=e3055] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e3056]
+                      - text: "-"
+                  - cell "Citado" [ref=e3058]:
+                    - generic [ref=e3059]: Citado
+                  - cell "Hace 4 días" [ref=e3060]
+                  - cell "—" [ref=e3061]
+                  - cell [ref=e3062]:
+                    - generic [ref=e3063]:
+                      - button "Editar estado y cita" [ref=e3064] [cursor=pointer]:
+                        - img [ref=e3065]
+                      - button "Actualizar teléfono" [ref=e3067] [cursor=pointer]:
+                        - img [ref=e3068]
+                      - button "Enviar mensaje de cita formateado" [ref=e3070] [cursor=pointer]:
+                        - img [ref=e3071]
+                - row "Bolsa 107 - Importación de pacientes masiva Hace 4 días 09110799 ABARCA ANDRADE LUCIA LEONOR 60 F MEDICINA GENERAL 45433320 Ivan Yhersino Panduro Arroyo 09/02/2026 14:35:00 H.I CARLOS ALCANTARA BUTTERFIELD Voluntaria 993818610 - Citado Hace 4 días —" [ref=e3073]:
+                  - cell [ref=e3074]:
+                    - checkbox [ref=e3075] [cursor=pointer]
+                  - cell "Bolsa 107 - Importación de pacientes masiva" [ref=e3076]
+                  - cell "Hace 4 días" [ref=e3077]
+                  - cell "09110799" [ref=e3078]
+                  - cell "ABARCA ANDRADE LUCIA LEONOR" [ref=e3079]
+                  - cell "60" [ref=e3080]
+                  - cell "F" [ref=e3081]
+                  - cell "MEDICINA GENERAL" [ref=e3082]
+                  - cell "45433320" [ref=e3083]
+                  - cell "Ivan Yhersino Panduro Arroyo" [ref=e3084]
+                  - cell "09/02/2026 14:35:00" [ref=e3085]:
+                    - generic [ref=e3086]: 09/02/2026 14:35:00
+                  - cell "H.I CARLOS ALCANTARA BUTTERFIELD" [ref=e3087]
+                  - cell "Voluntaria" [ref=e3088]
+                  - cell "993818610" [ref=e3089]:
+                    - link "993818610" [ref=e3090] [cursor=pointer]:
+                      - /url: https://wa.me/993818610
+                      - img [ref=e3091]
+                      - text: "993818610"
+                  - cell "-" [ref=e3093]:
+                    - link "-" [ref=e3094] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e3095]
+                      - text: "-"
+                  - cell "Citado" [ref=e3097]:
+                    - generic [ref=e3098]: Citado
+                  - cell "Hace 4 días" [ref=e3099]
+                  - cell "—" [ref=e3100]
+                  - cell [ref=e3101]:
+                    - generic [ref=e3102]:
+                      - button "Editar estado y cita" [ref=e3103] [cursor=pointer]:
+                        - img [ref=e3104]
+                      - button "Actualizar teléfono" [ref=e3106] [cursor=pointer]:
+                        - img [ref=e3107]
+                      - button "Enviar mensaje de cita formateado" [ref=e3109] [cursor=pointer]:
+                        - img [ref=e3110]
+                - row "Bolsa 107 - Importación de pacientes masiva Hace 4 días 44542386 GARCIA GARCIA MILAGROS ANGELA 39 F MEDICINA GENERAL 45433320 Ivan Yhersino Panduro Arroyo 06/02/2026 14:40:00 - Voluntaria 981568395 - Citado Hace 4 días —" [ref=e3112]:
+                  - cell [ref=e3113]:
+                    - checkbox [ref=e3114] [cursor=pointer]
+                  - cell "Bolsa 107 - Importación de pacientes masiva" [ref=e3115]
+                  - cell "Hace 4 días" [ref=e3116]
+                  - cell "44542386" [ref=e3117]
+                  - cell "GARCIA GARCIA MILAGROS ANGELA" [ref=e3118]
+                  - cell "39" [ref=e3119]
+                  - cell "F" [ref=e3120]
+                  - cell "MEDICINA GENERAL" [ref=e3121]
+                  - cell "45433320" [ref=e3122]
+                  - cell "Ivan Yhersino Panduro Arroyo" [ref=e3123]
+                  - cell "06/02/2026 14:40:00" [ref=e3124]:
+                    - generic [ref=e3125]: 06/02/2026 14:40:00
+                  - cell "-" [ref=e3126]
+                  - cell "Voluntaria" [ref=e3127]
+                  - cell "981568395" [ref=e3128]:
+                    - link "981568395" [ref=e3129] [cursor=pointer]:
+                      - /url: https://wa.me/981568395
+                      - img [ref=e3130]
+                      - text: "981568395"
+                  - cell "-" [ref=e3132]:
+                    - link "-" [ref=e3133] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e3134]
+                      - text: "-"
+                  - cell "Citado" [ref=e3136]:
+                    - generic [ref=e3137]: Citado
+                  - cell "Hace 4 días" [ref=e3138]
+                  - cell "—" [ref=e3139]
+                  - cell [ref=e3140]:
+                    - generic [ref=e3141]:
+                      - button "Editar estado y cita" [ref=e3142] [cursor=pointer]:
+                        - img [ref=e3143]
+                      - button "Actualizar teléfono" [ref=e3145] [cursor=pointer]:
+                        - img [ref=e3146]
+                      - button "Enviar mensaje de cita formateado" [ref=e3148] [cursor=pointer]:
+                        - img [ref=e3149]
+                - row "Bolsa 107 - Importación de pacientes masiva Hace 4 días 09800109 CAYCHO RUIZ MARIA ISABEL 54 F MEDICINA GENERAL 45433320 Ivan Yhersino Panduro Arroyo 06/02/2026 14:45:00 H.II RAMON CASTILLA Voluntaria 902130780 - Citado Hace 4 días —" [ref=e3151]:
+                  - cell [ref=e3152]:
+                    - checkbox [ref=e3153] [cursor=pointer]
+                  - cell "Bolsa 107 - Importación de pacientes masiva" [ref=e3154]
+                  - cell "Hace 4 días" [ref=e3155]
+                  - cell "09800109" [ref=e3156]
+                  - cell "CAYCHO RUIZ MARIA ISABEL" [ref=e3157]
+                  - cell "54" [ref=e3158]
+                  - cell "F" [ref=e3159]
+                  - cell "MEDICINA GENERAL" [ref=e3160]
+                  - cell "45433320" [ref=e3161]
+                  - cell "Ivan Yhersino Panduro Arroyo" [ref=e3162]
+                  - cell "06/02/2026 14:45:00" [ref=e3163]:
+                    - generic [ref=e3164]: 06/02/2026 14:45:00
+                  - cell "H.II RAMON CASTILLA" [ref=e3165]
+                  - cell "Voluntaria" [ref=e3166]
+                  - cell "902130780" [ref=e3167]:
+                    - link "902130780" [ref=e3168] [cursor=pointer]:
+                      - /url: https://wa.me/902130780
+                      - img [ref=e3169]
+                      - text: "902130780"
+                  - cell "-" [ref=e3171]:
+                    - link "-" [ref=e3172] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e3173]
+                      - text: "-"
+                  - cell "Citado" [ref=e3175]:
+                    - generic [ref=e3176]: Citado
+                  - cell "Hace 4 días" [ref=e3177]
+                  - cell "—" [ref=e3178]
+                  - cell [ref=e3179]:
+                    - generic [ref=e3180]:
+                      - button "Editar estado y cita" [ref=e3181] [cursor=pointer]:
+                        - img [ref=e3182]
+                      - button "Actualizar teléfono" [ref=e3184] [cursor=pointer]:
+                        - img [ref=e3185]
+                      - button "Enviar mensaje de cita formateado" [ref=e3187] [cursor=pointer]:
+                        - img [ref=e3188]
+                - row "Bolsa 107 - Importación de pacientes masiva Hace 4 días 09906428 AQUINO ASTO FREDDY RONALD 52 M MEDICINA GENERAL 45433320 Ivan Yhersino Panduro Arroyo 06/02/2026 14:55:00 POL. FIORI Voluntaria 994743681 - Citado Hace 4 días —" [ref=e3190]:
+                  - cell [ref=e3191]:
+                    - checkbox [ref=e3192] [cursor=pointer]
+                  - cell "Bolsa 107 - Importación de pacientes masiva" [ref=e3193]
+                  - cell "Hace 4 días" [ref=e3194]
+                  - cell "09906428" [ref=e3195]
+                  - cell "AQUINO ASTO FREDDY RONALD" [ref=e3196]
+                  - cell "52" [ref=e3197]
+                  - cell "M" [ref=e3198]
+                  - cell "MEDICINA GENERAL" [ref=e3199]
+                  - cell "45433320" [ref=e3200]
+                  - cell "Ivan Yhersino Panduro Arroyo" [ref=e3201]
+                  - cell "06/02/2026 14:55:00" [ref=e3202]:
+                    - generic [ref=e3203]: 06/02/2026 14:55:00
+                  - cell "POL. FIORI" [ref=e3204]
+                  - cell "Voluntaria" [ref=e3205]
+                  - cell "994743681" [ref=e3206]:
+                    - link "994743681" [ref=e3207] [cursor=pointer]:
+                      - /url: https://wa.me/994743681
+                      - img [ref=e3208]
+                      - text: "994743681"
+                  - cell "-" [ref=e3210]:
+                    - link "-" [ref=e3211] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e3212]
+                      - text: "-"
+                  - cell "Citado" [ref=e3214]:
+                    - generic [ref=e3215]: Citado
+                  - cell "Hace 4 días" [ref=e3216]
+                  - cell "—" [ref=e3217]
+                  - cell [ref=e3218]:
+                    - generic [ref=e3219]:
+                      - button "Editar estado y cita" [ref=e3220] [cursor=pointer]:
+                        - img [ref=e3221]
+                      - button "Actualizar teléfono" [ref=e3223] [cursor=pointer]:
+                        - img [ref=e3224]
+                      - button "Enviar mensaje de cita formateado" [ref=e3226] [cursor=pointer]:
+                        - img [ref=e3227]
+                - row "Bolsa 107 - Importación de pacientes masiva Hace 4 días 08243921 VALVERDE LOZANO DE MEDINA ANA MARIA 78 F MEDICINA GENERAL 45433320 Ivan Yhersino Panduro Arroyo 06/02/2026 15:00:00 CAP III SAN ISIDRO Voluntaria 965811365 - Citado Hace 4 días —" [ref=e3229]:
+                  - cell [ref=e3230]:
+                    - checkbox [ref=e3231] [cursor=pointer]
+                  - cell "Bolsa 107 - Importación de pacientes masiva" [ref=e3232]
+                  - cell "Hace 4 días" [ref=e3233]
+                  - cell "08243921" [ref=e3234]
+                  - cell "VALVERDE LOZANO DE MEDINA ANA MARIA" [ref=e3235]
+                  - cell "78" [ref=e3236]
+                  - cell "F" [ref=e3237]
+                  - cell "MEDICINA GENERAL" [ref=e3238]
+                  - cell "45433320" [ref=e3239]
+                  - cell "Ivan Yhersino Panduro Arroyo" [ref=e3240]
+                  - cell "06/02/2026 15:00:00" [ref=e3241]:
+                    - generic [ref=e3242]: 06/02/2026 15:00:00
+                  - cell "CAP III SAN ISIDRO" [ref=e3243]
+                  - cell "Voluntaria" [ref=e3244]
+                  - cell "965811365" [ref=e3245]:
+                    - link "965811365" [ref=e3246] [cursor=pointer]:
+                      - /url: https://wa.me/965811365
+                      - img [ref=e3247]
+                      - text: "965811365"
+                  - cell "-" [ref=e3249]:
+                    - link "-" [ref=e3250] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e3251]
+                      - text: "-"
+                  - cell "Citado" [ref=e3253]:
+                    - generic [ref=e3254]: Citado
+                  - cell "Hace 4 días" [ref=e3255]
+                  - cell "—" [ref=e3256]
+                  - cell [ref=e3257]:
+                    - generic [ref=e3258]:
+                      - button "Editar estado y cita" [ref=e3259] [cursor=pointer]:
+                        - img [ref=e3260]
+                      - button "Actualizar teléfono" [ref=e3262] [cursor=pointer]:
+                        - img [ref=e3263]
+                      - button "Enviar mensaje de cita formateado" [ref=e3265] [cursor=pointer]:
+                        - img [ref=e3266]
+                - row "Bolsa 107 - Importación de pacientes masiva Hace 4 días 06811575 FLORES PONTE VILMA MODESTA 49 F MEDICINA GENERAL 45433320 Ivan Yhersino Panduro Arroyo 06/02/2026 15:05:00 POL. CHOSICA Voluntaria 958235527 - Citado Hace 4 días —" [ref=e3268]:
+                  - cell [ref=e3269]:
+                    - checkbox [ref=e3270] [cursor=pointer]
+                  - cell "Bolsa 107 - Importación de pacientes masiva" [ref=e3271]
+                  - cell "Hace 4 días" [ref=e3272]
+                  - cell "06811575" [ref=e3273]
+                  - cell "FLORES PONTE VILMA MODESTA" [ref=e3274]
+                  - cell "49" [ref=e3275]
+                  - cell "F" [ref=e3276]
+                  - cell "MEDICINA GENERAL" [ref=e3277]
+                  - cell "45433320" [ref=e3278]
+                  - cell "Ivan Yhersino Panduro Arroyo" [ref=e3279]
+                  - cell "06/02/2026 15:05:00" [ref=e3280]:
+                    - generic [ref=e3281]: 06/02/2026 15:05:00
+                  - cell "POL. CHOSICA" [ref=e3282]
+                  - cell "Voluntaria" [ref=e3283]
+                  - cell "958235527" [ref=e3284]:
+                    - link "958235527" [ref=e3285] [cursor=pointer]:
+                      - /url: https://wa.me/958235527
+                      - img [ref=e3286]
+                      - text: "958235527"
+                  - cell "-" [ref=e3288]:
+                    - link "-" [ref=e3289] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e3290]
+                      - text: "-"
+                  - cell "Citado" [ref=e3292]:
+                    - generic [ref=e3293]: Citado
+                  - cell "Hace 4 días" [ref=e3294]
+                  - cell "—" [ref=e3295]
+                  - cell [ref=e3296]:
+                    - generic [ref=e3297]:
+                      - button "Editar estado y cita" [ref=e3298] [cursor=pointer]:
+                        - img [ref=e3299]
+                      - button "Actualizar teléfono" [ref=e3301] [cursor=pointer]:
+                        - img [ref=e3302]
+                      - button "Enviar mensaje de cita formateado" [ref=e3304] [cursor=pointer]:
+                        - img [ref=e3305]
+                - row "Bolsa 107 - Importación de pacientes masiva Hace 4 días 09090648 HUARACA RUBIO NELIDA MAGDALENA 61 F MEDICINA GENERAL 45433320 Ivan Yhersino Panduro Arroyo 06/02/2026 15:10:00 H.I AURELIO DIAZ-UFANO Y PERAL Voluntaria 962309379 - Citado Hace 4 días —" [ref=e3307]:
+                  - cell [ref=e3308]:
+                    - checkbox [ref=e3309] [cursor=pointer]
+                  - cell "Bolsa 107 - Importación de pacientes masiva" [ref=e3310]
+                  - cell "Hace 4 días" [ref=e3311]
+                  - cell "09090648" [ref=e3312]
+                  - cell "HUARACA RUBIO NELIDA MAGDALENA" [ref=e3313]
+                  - cell "61" [ref=e3314]
+                  - cell "F" [ref=e3315]
+                  - cell "MEDICINA GENERAL" [ref=e3316]
+                  - cell "45433320" [ref=e3317]
+                  - cell "Ivan Yhersino Panduro Arroyo" [ref=e3318]
+                  - cell "06/02/2026 15:10:00" [ref=e3319]:
+                    - generic [ref=e3320]: 06/02/2026 15:10:00
+                  - cell "H.I AURELIO DIAZ-UFANO Y PERAL" [ref=e3321]
+                  - cell "Voluntaria" [ref=e3322]
+                  - cell "962309379" [ref=e3323]:
+                    - link "962309379" [ref=e3324] [cursor=pointer]:
+                      - /url: https://wa.me/962309379
+                      - img [ref=e3325]
+                      - text: "962309379"
+                  - cell "-" [ref=e3327]:
+                    - link "-" [ref=e3328] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e3329]
+                      - text: "-"
+                  - cell "Citado" [ref=e3331]:
+                    - generic [ref=e3332]: Citado
+                  - cell "Hace 4 días" [ref=e3333]
+                  - cell "—" [ref=e3334]
+                  - cell [ref=e3335]:
+                    - generic [ref=e3336]:
+                      - button "Editar estado y cita" [ref=e3337] [cursor=pointer]:
+                        - img [ref=e3338]
+                      - button "Actualizar teléfono" [ref=e3340] [cursor=pointer]:
+                        - img [ref=e3341]
+                      - button "Enviar mensaje de cita formateado" [ref=e3343] [cursor=pointer]:
+                        - img [ref=e3344]
+                - row "Bolsa 107 - Importación de pacientes masiva Hace 4 días 07906644 TORRES NUÑEZ GUSTAVO JUAN 84 M MEDICINA GENERAL 45433320 Ivan Yhersino Panduro Arroyo 06/02/2026 15:15:00 POL. PROCERES Voluntaria 985519413 - Citado Hace 4 días —" [ref=e3346]:
+                  - cell [ref=e3347]:
+                    - checkbox [ref=e3348] [cursor=pointer]
+                  - cell "Bolsa 107 - Importación de pacientes masiva" [ref=e3349]
+                  - cell "Hace 4 días" [ref=e3350]
+                  - cell "07906644" [ref=e3351]
+                  - cell "TORRES NUÑEZ GUSTAVO JUAN" [ref=e3352]
+                  - cell "84" [ref=e3353]
+                  - cell "M" [ref=e3354]
+                  - cell "MEDICINA GENERAL" [ref=e3355]
+                  - cell "45433320" [ref=e3356]
+                  - cell "Ivan Yhersino Panduro Arroyo" [ref=e3357]
+                  - cell "06/02/2026 15:15:00" [ref=e3358]:
+                    - generic [ref=e3359]: 06/02/2026 15:15:00
+                  - cell "POL. PROCERES" [ref=e3360]
+                  - cell "Voluntaria" [ref=e3361]
+                  - cell "985519413" [ref=e3362]:
+                    - link "985519413" [ref=e3363] [cursor=pointer]:
+                      - /url: https://wa.me/985519413
+                      - img [ref=e3364]
+                      - text: "985519413"
+                  - cell "-" [ref=e3366]:
+                    - link "-" [ref=e3367] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e3368]
+                      - text: "-"
+                  - cell "Citado" [ref=e3370]:
+                    - generic [ref=e3371]: Citado
+                  - cell "Hace 4 días" [ref=e3372]
+                  - cell "—" [ref=e3373]
+                  - cell [ref=e3374]:
+                    - generic [ref=e3375]:
+                      - button "Editar estado y cita" [ref=e3376] [cursor=pointer]:
+                        - img [ref=e3377]
+                      - button "Actualizar teléfono" [ref=e3379] [cursor=pointer]:
+                        - img [ref=e3380]
+                      - button "Enviar mensaje de cita formateado" [ref=e3382] [cursor=pointer]:
+                        - img [ref=e3383]
+                - row "Bolsa 107 - Importación de pacientes masiva Hace 4 días 07902841 OLIVA THAIS GLADYS FELICIA 84 F MEDICINA GENERAL 45433320 Ivan Yhersino Panduro Arroyo 06/02/2026 15:20:00 POL. CHINCHA Voluntaria 014624963 - Citado Hace 4 días —" [ref=e3385]:
+                  - cell [ref=e3386]:
+                    - checkbox [ref=e3387] [cursor=pointer]
+                  - cell "Bolsa 107 - Importación de pacientes masiva" [ref=e3388]
+                  - cell "Hace 4 días" [ref=e3389]
+                  - cell "07902841" [ref=e3390]
+                  - cell "OLIVA THAIS GLADYS FELICIA" [ref=e3391]
+                  - cell "84" [ref=e3392]
+                  - cell "F" [ref=e3393]
+                  - cell "MEDICINA GENERAL" [ref=e3394]
+                  - cell "45433320" [ref=e3395]
+                  - cell "Ivan Yhersino Panduro Arroyo" [ref=e3396]
+                  - cell "06/02/2026 15:20:00" [ref=e3397]:
+                    - generic [ref=e3398]: 06/02/2026 15:20:00
+                  - cell "POL. CHINCHA" [ref=e3399]
+                  - cell "Voluntaria" [ref=e3400]
+                  - cell "014624963" [ref=e3401]:
+                    - link "014624963" [ref=e3402] [cursor=pointer]:
+                      - /url: https://wa.me/014624963
+                      - img [ref=e3403]
+                      - text: "014624963"
+                  - cell "-" [ref=e3405]:
+                    - link "-" [ref=e3406] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e3407]
+                      - text: "-"
+                  - cell "Citado" [ref=e3409]:
+                    - generic [ref=e3410]: Citado
+                  - cell "Hace 4 días" [ref=e3411]
+                  - cell "—" [ref=e3412]
+                  - cell [ref=e3413]:
+                    - generic [ref=e3414]:
+                      - button "Editar estado y cita" [ref=e3415] [cursor=pointer]:
+                        - img [ref=e3416]
+                      - button "Actualizar teléfono" [ref=e3418] [cursor=pointer]:
+                        - img [ref=e3419]
+                      - button "Enviar mensaje de cita formateado" [ref=e3421] [cursor=pointer]:
+                        - img [ref=e3422]
+                - row "Bolsa 107 - Importación de pacientes masiva Hace 4 días 60976798 TINEO CALLA MARCO ANTONIO 23 M MEDICINA GENERAL 45433320 Ivan Yhersino Panduro Arroyo 06/02/2026 15:25:00 - Voluntaria 940735050 - Citado Hace 4 días —" [ref=e3424]:
+                  - cell [ref=e3425]:
+                    - checkbox [ref=e3426] [cursor=pointer]
+                  - cell "Bolsa 107 - Importación de pacientes masiva" [ref=e3427]
+                  - cell "Hace 4 días" [ref=e3428]
+                  - cell "60976798" [ref=e3429]
+                  - cell "TINEO CALLA MARCO ANTONIO" [ref=e3430]
+                  - cell "23" [ref=e3431]
+                  - cell "M" [ref=e3432]
+                  - cell "MEDICINA GENERAL" [ref=e3433]
+                  - cell "45433320" [ref=e3434]
+                  - cell "Ivan Yhersino Panduro Arroyo" [ref=e3435]
+                  - cell "06/02/2026 15:25:00" [ref=e3436]:
+                    - generic [ref=e3437]: 06/02/2026 15:25:00
+                  - cell "-" [ref=e3438]
+                  - cell "Voluntaria" [ref=e3439]
+                  - cell "940735050" [ref=e3440]:
+                    - link "940735050" [ref=e3441] [cursor=pointer]:
+                      - /url: https://wa.me/940735050
+                      - img [ref=e3442]
+                      - text: "940735050"
+                  - cell "-" [ref=e3444]:
+                    - link "-" [ref=e3445] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e3446]
+                      - text: "-"
+                  - cell "Citado" [ref=e3448]:
+                    - generic [ref=e3449]: Citado
+                  - cell "Hace 4 días" [ref=e3450]
+                  - cell "—" [ref=e3451]
+                  - cell [ref=e3452]:
+                    - generic [ref=e3453]:
+                      - button "Editar estado y cita" [ref=e3454] [cursor=pointer]:
+                        - img [ref=e3455]
+                      - button "Actualizar teléfono" [ref=e3457] [cursor=pointer]:
+                        - img [ref=e3458]
+                      - button "Enviar mensaje de cita formateado" [ref=e3460] [cursor=pointer]:
+                        - img [ref=e3461]
+                - row "Bolsa 107 - Importación de pacientes masiva Hace 4 días 09148945 SEPERAK GONZALES ROSA AURORA 89 F MEDICINA GENERAL 45433320 Ivan Yhersino Panduro Arroyo 06/02/2026 15:30:00 POL. PROCERES Voluntaria 017261195 - Citado Hace 4 días —" [ref=e3463]:
+                  - cell [ref=e3464]:
+                    - checkbox [ref=e3465] [cursor=pointer]
+                  - cell "Bolsa 107 - Importación de pacientes masiva" [ref=e3466]
+                  - cell "Hace 4 días" [ref=e3467]
+                  - cell "09148945" [ref=e3468]
+                  - cell "SEPERAK GONZALES ROSA AURORA" [ref=e3469]
+                  - cell "89" [ref=e3470]
+                  - cell "F" [ref=e3471]
+                  - cell "MEDICINA GENERAL" [ref=e3472]
+                  - cell "45433320" [ref=e3473]
+                  - cell "Ivan Yhersino Panduro Arroyo" [ref=e3474]
+                  - cell "06/02/2026 15:30:00" [ref=e3475]:
+                    - generic [ref=e3476]: 06/02/2026 15:30:00
+                  - cell "POL. PROCERES" [ref=e3477]
+                  - cell "Voluntaria" [ref=e3478]
+                  - cell "017261195" [ref=e3479]:
+                    - link "017261195" [ref=e3480] [cursor=pointer]:
+                      - /url: https://wa.me/017261195
+                      - img [ref=e3481]
+                      - text: "017261195"
+                  - cell "-" [ref=e3483]:
+                    - link "-" [ref=e3484] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e3485]
+                      - text: "-"
+                  - cell "Citado" [ref=e3487]:
+                    - generic [ref=e3488]: Citado
+                  - cell "Hace 4 días" [ref=e3489]
+                  - cell "—" [ref=e3490]
+                  - cell [ref=e3491]:
+                    - generic [ref=e3492]:
+                      - button "Editar estado y cita" [ref=e3493] [cursor=pointer]:
+                        - img [ref=e3494]
+                      - button "Actualizar teléfono" [ref=e3496] [cursor=pointer]:
+                        - img [ref=e3497]
+                      - button "Enviar mensaje de cita formateado" [ref=e3499] [cursor=pointer]:
+                        - img [ref=e3500]
+                - row "Bolsa 107 - Importación de pacientes masiva Hace 4 días 06117066 Roberto YOSIKAWA TANAKA 68 M MEDICINA GENERAL 45433320 Ivan Yhersino Panduro Arroyo 06/02/2026 13:45:00 - Voluntaria 993189315 - Citado Hace 4 días —" [ref=e3502]:
+                  - cell [ref=e3503]:
+                    - checkbox [ref=e3504] [cursor=pointer]
+                  - cell "Bolsa 107 - Importación de pacientes masiva" [ref=e3505]
+                  - cell "Hace 4 días" [ref=e3506]
+                  - cell "06117066" [ref=e3507]
+                  - cell "Roberto YOSIKAWA TANAKA" [ref=e3508]
+                  - cell "68" [ref=e3509]
+                  - cell "M" [ref=e3510]
+                  - cell "MEDICINA GENERAL" [ref=e3511]
+                  - cell "45433320" [ref=e3512]
+                  - cell "Ivan Yhersino Panduro Arroyo" [ref=e3513]
+                  - cell "06/02/2026 13:45:00" [ref=e3514]:
+                    - generic [ref=e3515]: 06/02/2026 13:45:00
+                  - cell "-" [ref=e3516]
+                  - cell "Voluntaria" [ref=e3517]
+                  - cell "993189315" [ref=e3518]:
+                    - link "993189315" [ref=e3519] [cursor=pointer]:
+                      - /url: https://wa.me/993189315
+                      - img [ref=e3520]
+                      - text: "993189315"
+                  - cell "-" [ref=e3522]:
+                    - link "-" [ref=e3523] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e3524]
+                      - text: "-"
+                  - cell "Citado" [ref=e3526]:
+                    - generic [ref=e3527]: Citado
+                  - cell "Hace 4 días" [ref=e3528]
+                  - cell "—" [ref=e3529]
+                  - cell [ref=e3530]:
+                    - generic [ref=e3531]:
+                      - button "Editar estado y cita" [ref=e3532] [cursor=pointer]:
+                        - img [ref=e3533]
+                      - button "Actualizar teléfono" [ref=e3535] [cursor=pointer]:
+                        - img [ref=e3536]
+                      - button "Enviar mensaje de cita formateado" [ref=e3538] [cursor=pointer]:
+                        - img [ref=e3539]
+                - row "Bolsa 107 - Importación de pacientes masiva Hace 4 días 07596136 ESPINOZA ALVARADO JUSTA TERESA 79 F MEDICINA GENERAL 45433320 Ivan Yhersino Panduro Arroyo 06/02/2026 15:40:00 POL. PABLO BERMUDEZ Voluntaria 944876904 - Citado Hace 4 días —" [ref=e3541]:
+                  - cell [ref=e3542]:
+                    - checkbox [ref=e3543] [cursor=pointer]
+                  - cell "Bolsa 107 - Importación de pacientes masiva" [ref=e3544]
+                  - cell "Hace 4 días" [ref=e3545]
+                  - cell "07596136" [ref=e3546]
+                  - cell "ESPINOZA ALVARADO JUSTA TERESA" [ref=e3547]
+                  - cell "79" [ref=e3548]
+                  - cell "F" [ref=e3549]
+                  - cell "MEDICINA GENERAL" [ref=e3550]
+                  - cell "45433320" [ref=e3551]
+                  - cell "Ivan Yhersino Panduro Arroyo" [ref=e3552]
+                  - cell "06/02/2026 15:40:00" [ref=e3553]:
+                    - generic [ref=e3554]: 06/02/2026 15:40:00
+                  - cell "POL. PABLO BERMUDEZ" [ref=e3555]
+                  - cell "Voluntaria" [ref=e3556]
+                  - cell "944876904" [ref=e3557]:
+                    - link "944876904" [ref=e3558] [cursor=pointer]:
+                      - /url: https://wa.me/944876904
+                      - img [ref=e3559]
+                      - text: "944876904"
+                  - cell "-" [ref=e3561]:
+                    - link "-" [ref=e3562] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e3563]
+                      - text: "-"
+                  - cell "Citado" [ref=e3565]:
+                    - generic [ref=e3566]: Citado
+                  - cell "Hace 4 días" [ref=e3567]
+                  - cell "—" [ref=e3568]
+                  - cell [ref=e3569]:
+                    - generic [ref=e3570]:
+                      - button "Editar estado y cita" [ref=e3571] [cursor=pointer]:
+                        - img [ref=e3572]
+                      - button "Actualizar teléfono" [ref=e3574] [cursor=pointer]:
+                        - img [ref=e3575]
+                      - button "Enviar mensaje de cita formateado" [ref=e3577] [cursor=pointer]:
+                        - img [ref=e3578]
+                - row "Bolsa 107 - Importación de pacientes masiva Hace 4 días 07210564 MEDINA OCAMPO MARIA ELENA 61 F MEDICINA GENERAL 45433320 Ivan Yhersino Panduro Arroyo 06/02/2026 15:45:00 POL. PABLO BERMUDEZ Voluntaria 980478879 - Citado Hace 4 días —" [ref=e3580]:
+                  - cell [ref=e3581]:
+                    - checkbox [ref=e3582] [cursor=pointer]
+                  - cell "Bolsa 107 - Importación de pacientes masiva" [ref=e3583]
+                  - cell "Hace 4 días" [ref=e3584]
+                  - cell "07210564" [ref=e3585]
+                  - cell "MEDINA OCAMPO MARIA ELENA" [ref=e3586]
+                  - cell "61" [ref=e3587]
+                  - cell "F" [ref=e3588]
+                  - cell "MEDICINA GENERAL" [ref=e3589]
+                  - cell "45433320" [ref=e3590]
+                  - cell "Ivan Yhersino Panduro Arroyo" [ref=e3591]
+                  - cell "06/02/2026 15:45:00" [ref=e3592]:
+                    - generic [ref=e3593]: 06/02/2026 15:45:00
+                  - cell "POL. PABLO BERMUDEZ" [ref=e3594]
+                  - cell "Voluntaria" [ref=e3595]
+                  - cell "980478879" [ref=e3596]:
+                    - link "980478879" [ref=e3597] [cursor=pointer]:
+                      - /url: https://wa.me/980478879
+                      - img [ref=e3598]
+                      - text: "980478879"
+                  - cell "-" [ref=e3600]:
+                    - link "-" [ref=e3601] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e3602]
+                      - text: "-"
+                  - cell "Citado" [ref=e3604]:
+                    - generic [ref=e3605]: Citado
+                  - cell "Hace 4 días" [ref=e3606]
+                  - cell "—" [ref=e3607]
+                  - cell [ref=e3608]:
+                    - generic [ref=e3609]:
+                      - button "Editar estado y cita" [ref=e3610] [cursor=pointer]:
+                        - img [ref=e3611]
+                      - button "Actualizar teléfono" [ref=e3613] [cursor=pointer]:
+                        - img [ref=e3614]
+                      - button "Enviar mensaje de cita formateado" [ref=e3616] [cursor=pointer]:
+                        - img [ref=e3617]
+                - row "Bolsa 107 - Importación de pacientes masiva Hace 5 días 45263815 MOQUILLAZA OLIVA MILUSKA GIAHAYRA 38 F MEDICINA GENERAL 45433320 Ivan Yhersino Panduro Arroyo 06/02/2026 07:36:00 H.II RAMON CASTILLA Voluntaria 982312447 - Citado Hace 4 días —" [ref=e3619]:
+                  - cell [ref=e3620]:
+                    - checkbox [ref=e3621] [cursor=pointer]
+                  - cell "Bolsa 107 - Importación de pacientes masiva" [ref=e3622]
+                  - cell "Hace 5 días" [ref=e3623]
+                  - cell "45263815" [ref=e3624]
+                  - cell "MOQUILLAZA OLIVA MILUSKA GIAHAYRA" [ref=e3625]
+                  - cell "38" [ref=e3626]
+                  - cell "F" [ref=e3627]
+                  - cell "MEDICINA GENERAL" [ref=e3628]
+                  - cell "45433320" [ref=e3629]
+                  - cell "Ivan Yhersino Panduro Arroyo" [ref=e3630]
+                  - cell "06/02/2026 07:36:00" [ref=e3631]:
+                    - generic [ref=e3632]: 06/02/2026 07:36:00
+                  - cell "H.II RAMON CASTILLA" [ref=e3633]
+                  - cell "Voluntaria" [ref=e3634]
+                  - cell "982312447" [ref=e3635]:
+                    - link "982312447" [ref=e3636] [cursor=pointer]:
+                      - /url: https://wa.me/982312447
+                      - img [ref=e3637]
+                      - text: "982312447"
+                  - cell "-" [ref=e3639]:
+                    - link "-" [ref=e3640] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e3641]
+                      - text: "-"
+                  - cell "Citado" [ref=e3643]:
+                    - generic [ref=e3644]: Citado
+                  - cell "Hace 4 días" [ref=e3645]
+                  - cell "—" [ref=e3646]
+                  - cell [ref=e3647]:
+                    - generic [ref=e3648]:
+                      - button "Editar estado y cita" [ref=e3649] [cursor=pointer]:
+                        - img [ref=e3650]
+                      - button "Actualizar teléfono" [ref=e3652] [cursor=pointer]:
+                        - img [ref=e3653]
+                      - button "Enviar mensaje de cita formateado" [ref=e3655] [cursor=pointer]:
+                        - img [ref=e3656]
+                - row "Bolsa 107 - Importación de pacientes masiva Hace 5 días 06222142 EMMA CLARA URBIZAGASTEGUI BRIONES 75 F MEDICINA GENERAL 45433320 Ivan Yhersino Panduro Arroyo 06/02/2026 10:24:00 POL. PABLO BERMUDEZ Voluntaria 013333976 - Citado Hace 4 días —" [ref=e3658]:
+                  - cell [ref=e3659]:
+                    - checkbox [ref=e3660] [cursor=pointer]
+                  - cell "Bolsa 107 - Importación de pacientes masiva" [ref=e3661]
+                  - cell "Hace 5 días" [ref=e3662]
+                  - cell "06222142" [ref=e3663]
+                  - cell "EMMA CLARA URBIZAGASTEGUI BRIONES" [ref=e3664]
+                  - cell "75" [ref=e3665]
+                  - cell "F" [ref=e3666]
+                  - cell "MEDICINA GENERAL" [ref=e3667]
+                  - cell "45433320" [ref=e3668]
+                  - cell "Ivan Yhersino Panduro Arroyo" [ref=e3669]
+                  - cell "06/02/2026 10:24:00" [ref=e3670]:
+                    - generic [ref=e3671]: 06/02/2026 10:24:00
+                  - cell "POL. PABLO BERMUDEZ" [ref=e3672]
+                  - cell "Voluntaria" [ref=e3673]
+                  - cell "013333976" [ref=e3674]:
+                    - link "013333976" [ref=e3675] [cursor=pointer]:
+                      - /url: https://wa.me/013333976
+                      - img [ref=e3676]
+                      - text: "013333976"
+                  - cell "-" [ref=e3678]:
+                    - link "-" [ref=e3679] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e3680]
+                      - text: "-"
+                  - cell "Citado" [ref=e3682]:
+                    - generic [ref=e3683]: Citado
+                  - cell "Hace 4 días" [ref=e3684]
+                  - cell "—" [ref=e3685]
+                  - cell [ref=e3686]:
+                    - generic [ref=e3687]:
+                      - button "Editar estado y cita" [ref=e3688] [cursor=pointer]:
+                        - img [ref=e3689]
+                      - button "Actualizar teléfono" [ref=e3691] [cursor=pointer]:
+                        - img [ref=e3692]
+                      - button "Enviar mensaje de cita formateado" [ref=e3694] [cursor=pointer]:
+                        - img [ref=e3695]
+                - row "Bolsa 107 - Importación de pacientes masiva Hace 4 días 10300368 TORREBLANCA CRUZATTI RICARDO RAUL 75 M MEDICINA GENERAL 45433320 Ivan Yhersino Panduro Arroyo 06/02/2026 14:50:00 H.I CARLOS ALCANTARA BUTTERFIELD Voluntaria 996472854 - Citado Hace 4 días —" [ref=e3697]:
+                  - cell [ref=e3698]:
+                    - checkbox [ref=e3699] [cursor=pointer]
+                  - cell "Bolsa 107 - Importación de pacientes masiva" [ref=e3700]
+                  - cell "Hace 4 días" [ref=e3701]
+                  - cell "10300368" [ref=e3702]
+                  - cell "TORREBLANCA CRUZATTI RICARDO RAUL" [ref=e3703]
+                  - cell "75" [ref=e3704]
+                  - cell "M" [ref=e3705]
+                  - cell "MEDICINA GENERAL" [ref=e3706]
+                  - cell "45433320" [ref=e3707]
+                  - cell "Ivan Yhersino Panduro Arroyo" [ref=e3708]
+                  - cell "06/02/2026 14:50:00" [ref=e3709]:
+                    - generic [ref=e3710]: 06/02/2026 14:50:00
+                  - cell "H.I CARLOS ALCANTARA BUTTERFIELD" [ref=e3711]
+                  - cell "Voluntaria" [ref=e3712]
+                  - cell "996472854" [ref=e3713]:
+                    - link "996472854" [ref=e3714] [cursor=pointer]:
+                      - /url: https://wa.me/996472854
+                      - img [ref=e3715]
+                      - text: "996472854"
+                  - cell "-" [ref=e3717]:
+                    - link "-" [ref=e3718] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e3719]
+                      - text: "-"
+                  - cell "Citado" [ref=e3721]:
+                    - generic [ref=e3722]: Citado
+                  - cell "Hace 4 días" [ref=e3723]
+                  - cell "—" [ref=e3724]
+                  - cell [ref=e3725]:
+                    - generic [ref=e3726]:
+                      - button "Editar estado y cita" [ref=e3727] [cursor=pointer]:
+                        - img [ref=e3728]
+                      - button "Actualizar teléfono" [ref=e3730] [cursor=pointer]:
+                        - img [ref=e3731]
+                      - button "Enviar mensaje de cita formateado" [ref=e3733] [cursor=pointer]:
+                        - img [ref=e3734]
+                - row "Bolsa 107 - Importación de pacientes masiva Hace 4 días 01156747 MESIA MOLINA CLAUDIA MARIA 50 F MEDICINA GENERAL 45433320 Ivan Yhersino Panduro Arroyo 06/02/2026 15:50:00 POL. CHINCHA Voluntaria 945080220 - Citado Hace 4 días —" [ref=e3736]:
+                  - cell [ref=e3737]:
+                    - checkbox [ref=e3738] [cursor=pointer]
+                  - cell "Bolsa 107 - Importación de pacientes masiva" [ref=e3739]
+                  - cell "Hace 4 días" [ref=e3740]
+                  - cell "01156747" [ref=e3741]
+                  - cell "MESIA MOLINA CLAUDIA MARIA" [ref=e3742]
+                  - cell "50" [ref=e3743]
+                  - cell "F" [ref=e3744]
+                  - cell "MEDICINA GENERAL" [ref=e3745]
+                  - cell "45433320" [ref=e3746]
+                  - cell "Ivan Yhersino Panduro Arroyo" [ref=e3747]
+                  - cell "06/02/2026 15:50:00" [ref=e3748]:
+                    - generic [ref=e3749]: 06/02/2026 15:50:00
+                  - cell "POL. CHINCHA" [ref=e3750]
+                  - cell "Voluntaria" [ref=e3751]
+                  - cell "945080220" [ref=e3752]:
+                    - link "945080220" [ref=e3753] [cursor=pointer]:
+                      - /url: https://wa.me/945080220
+                      - img [ref=e3754]
+                      - text: "945080220"
+                  - cell "-" [ref=e3756]:
+                    - link "-" [ref=e3757] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e3758]
+                      - text: "-"
+                  - cell "Citado" [ref=e3760]:
+                    - generic [ref=e3761]: Citado
+                  - cell "Hace 4 días" [ref=e3762]
+                  - cell "—" [ref=e3763]
+                  - cell [ref=e3764]:
+                    - generic [ref=e3765]:
+                      - button "Editar estado y cita" [ref=e3766] [cursor=pointer]:
+                        - img [ref=e3767]
+                      - button "Actualizar teléfono" [ref=e3769] [cursor=pointer]:
+                        - img [ref=e3770]
+                      - button "Enviar mensaje de cita formateado" [ref=e3772] [cursor=pointer]:
+                        - img [ref=e3773]
+                - row "Bolsa 107 - Importación de pacientes masiva Hace 4 días 25688712 ITURRIZAGA DE CABRERA LUISA ROSA 71 F MEDICINA GENERAL 45433320 Ivan Yhersino Panduro Arroyo 06/02/2026 17:00:00 CAP III LUIS NEGREIROS VEGA Voluntaria 969258212 - Citado Hace 4 días —" [ref=e3775]:
+                  - cell [ref=e3776]:
+                    - checkbox [ref=e3777] [cursor=pointer]
+                  - cell "Bolsa 107 - Importación de pacientes masiva" [ref=e3778]
+                  - cell "Hace 4 días" [ref=e3779]
+                  - cell "25688712" [ref=e3780]
+                  - cell "ITURRIZAGA DE CABRERA LUISA ROSA" [ref=e3781]
+                  - cell "71" [ref=e3782]
+                  - cell "F" [ref=e3783]
+                  - cell "MEDICINA GENERAL" [ref=e3784]
+                  - cell "45433320" [ref=e3785]
+                  - cell "Ivan Yhersino Panduro Arroyo" [ref=e3786]
+                  - cell "06/02/2026 17:00:00" [ref=e3787]:
+                    - generic [ref=e3788]: 06/02/2026 17:00:00
+                  - cell "CAP III LUIS NEGREIROS VEGA" [ref=e3789]
+                  - cell "Voluntaria" [ref=e3790]
+                  - cell "969258212" [ref=e3791]:
+                    - link "969258212" [ref=e3792] [cursor=pointer]:
+                      - /url: https://wa.me/969258212
+                      - img [ref=e3793]
+                      - text: "969258212"
+                  - cell "-" [ref=e3795]:
+                    - link "-" [ref=e3796] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e3797]
+                      - text: "-"
+                  - cell "Citado" [ref=e3799]:
+                    - generic [ref=e3800]: Citado
+                  - cell "Hace 4 días" [ref=e3801]
+                  - cell "—" [ref=e3802]
+                  - cell [ref=e3803]:
+                    - generic [ref=e3804]:
+                      - button "Editar estado y cita" [ref=e3805] [cursor=pointer]:
+                        - img [ref=e3806]
+                      - button "Actualizar teléfono" [ref=e3808] [cursor=pointer]:
+                        - img [ref=e3809]
+                      - button "Enviar mensaje de cita formateado" [ref=e3811] [cursor=pointer]:
+                        - img [ref=e3812]
+                - row "Paciente derivados de PADOMI Hace 11 horas 07888772 ARIAS CUBILLAS MARIA 91 F CARDIOLOGIA 99999999 Doctor Test 1 12/02/2026 17:00:00 CAP II LURIN Voluntaria 962942164 - Citado Hace 5 días —" [ref=e3814]:
+                  - cell [ref=e3815]:
+                    - checkbox [ref=e3816] [cursor=pointer]
+                  - cell "Paciente derivados de PADOMI" [ref=e3817]
+                  - cell "Hace 11 horas" [ref=e3818]
+                  - cell "07888772" [ref=e3819]
+                  - cell "ARIAS CUBILLAS MARIA" [ref=e3820]
+                  - cell "91" [ref=e3821]
+                  - cell "F" [ref=e3822]
+                  - cell "CARDIOLOGIA" [ref=e3823]
+                  - cell "99999999" [ref=e3824]
+                  - cell "Doctor Test 1" [ref=e3825]
+                  - cell "12/02/2026 17:00:00" [ref=e3826]:
+                    - generic [ref=e3827]: 12/02/2026 17:00:00
+                  - cell "CAP II LURIN" [ref=e3828]
+                  - cell "Voluntaria" [ref=e3829]
+                  - cell "962942164" [ref=e3830]:
+                    - link "962942164" [ref=e3831] [cursor=pointer]:
+                      - /url: https://wa.me/962942164
+                      - img [ref=e3832]
+                      - text: "962942164"
+                  - cell "-" [ref=e3834]:
+                    - link "-" [ref=e3835] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e3836]
+                      - text: "-"
+                  - cell "Citado" [ref=e3838]:
+                    - generic [ref=e3839]: Citado
+                  - cell "Hace 5 días" [ref=e3840]
+                  - cell "—" [ref=e3841]
+                  - cell [ref=e3842]:
+                    - generic [ref=e3843]:
+                      - button "Editar estado y cita" [ref=e3844] [cursor=pointer]:
+                        - img [ref=e3845]
+                      - button "Actualizar teléfono" [ref=e3847] [cursor=pointer]:
+                        - img [ref=e3848]
+                      - button "Enviar mensaje de cita formateado" [ref=e3850] [cursor=pointer]:
+                        - img [ref=e3851]
+                - row "Paciente derivados de PADOMI Hace 11 horas 07887379 LA ROSA DE ARIAS SATURNINA 86 F CARDIOLOGIA 99999999 Doctor Test 1 27/02/2026 18:24:00 CAP II LURIN Voluntaria 958071514 - Citado Hace 5 días —" [ref=e3853]:
+                  - cell [ref=e3854]:
+                    - checkbox [ref=e3855] [cursor=pointer]
+                  - cell "Paciente derivados de PADOMI" [ref=e3856]
+                  - cell "Hace 11 horas" [ref=e3857]
+                  - cell "07887379" [ref=e3858]
+                  - cell "LA ROSA DE ARIAS SATURNINA" [ref=e3859]
+                  - cell "86" [ref=e3860]
+                  - cell "F" [ref=e3861]
+                  - cell "CARDIOLOGIA" [ref=e3862]
+                  - cell "99999999" [ref=e3863]
+                  - cell "Doctor Test 1" [ref=e3864]
+                  - cell "27/02/2026 18:24:00" [ref=e3865]:
+                    - generic [ref=e3866]: 27/02/2026 18:24:00
+                  - cell "CAP II LURIN" [ref=e3867]
+                  - cell "Voluntaria" [ref=e3868]
+                  - cell "958071514" [ref=e3869]:
+                    - link "958071514" [ref=e3870] [cursor=pointer]:
+                      - /url: https://wa.me/958071514
+                      - img [ref=e3871]
+                      - text: "958071514"
+                  - cell "-" [ref=e3873]:
+                    - link "-" [ref=e3874] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e3875]
+                      - text: "-"
+                  - cell "Citado" [ref=e3877]:
+                    - generic [ref=e3878]: Citado
+                  - cell "Hace 5 días" [ref=e3879]
+                  - cell "—" [ref=e3880]
+                  - cell [ref=e3881]:
+                    - generic [ref=e3882]:
+                      - button "Editar estado y cita" [ref=e3883] [cursor=pointer]:
+                        - img [ref=e3884]
+                      - button "Actualizar teléfono" [ref=e3886] [cursor=pointer]:
+                        - img [ref=e3887]
+                      - button "Enviar mensaje de cita formateado" [ref=e3889] [cursor=pointer]:
+                        - img [ref=e3890]
+                - row "Paciente derivados de PADOMI Hace 11 horas 06964006 FARFAN GONZALES DE CONTRERA MARIA CLOTILDE 88 F CARDIOLOGIA - No seleccionado No seleccionado POL. CHOSICA Voluntaria 986043629 - Pendiente Citar Hace 9 días —" [ref=e3892]:
+                  - cell [ref=e3893]:
+                    - checkbox [ref=e3894] [cursor=pointer]
+                  - cell "Paciente derivados de PADOMI" [ref=e3895]
+                  - cell "Hace 11 horas" [ref=e3896]
+                  - cell "06964006" [ref=e3897]
+                  - cell "FARFAN GONZALES DE CONTRERA MARIA CLOTILDE" [ref=e3898]
+                  - cell "88" [ref=e3899]
+                  - cell "F" [ref=e3900]
+                  - cell "CARDIOLOGIA" [ref=e3901]
+                  - cell "-" [ref=e3902]
+                  - cell "No seleccionado" [ref=e3903]
+                  - cell "No seleccionado" [ref=e3904]
+                  - cell "POL. CHOSICA" [ref=e3905]
+                  - cell "Voluntaria" [ref=e3906]
+                  - cell "986043629" [ref=e3907]:
+                    - link "986043629" [ref=e3908] [cursor=pointer]:
+                      - /url: https://wa.me/986043629
+                      - img [ref=e3909]
+                      - text: "986043629"
+                  - cell "-" [ref=e3911]:
+                    - link "-" [ref=e3912] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e3913]
+                      - text: "-"
+                  - cell "Pendiente Citar" [ref=e3915]:
+                    - generic [ref=e3916]: Pendiente Citar
+                  - cell "Hace 9 días" [ref=e3917]
+                  - cell "—" [ref=e3918]
+                  - cell [ref=e3919]:
+                    - generic [ref=e3920]:
+                      - button "Editar estado y cita" [ref=e3921] [cursor=pointer]:
+                        - img [ref=e3922]
+                      - button "Actualizar teléfono" [ref=e3924] [cursor=pointer]:
+                        - img [ref=e3925]
+                - row "Paciente derivados de PADOMI Hace 11 horas 07889805 POPPE ARIAS ELIAS 97 M CARDIOLOGIA - No seleccionado No seleccionado CAP II LURIN Voluntaria 976047272 - Pendiente Citar Hace 9 días —" [ref=e3927]:
+                  - cell [ref=e3928]:
+                    - checkbox [ref=e3929] [cursor=pointer]
+                  - cell "Paciente derivados de PADOMI" [ref=e3930]
+                  - cell "Hace 11 horas" [ref=e3931]
+                  - cell "07889805" [ref=e3932]
+                  - cell "POPPE ARIAS ELIAS" [ref=e3933]
+                  - cell "97" [ref=e3934]
+                  - cell "M" [ref=e3935]
+                  - cell "CARDIOLOGIA" [ref=e3936]
+                  - cell "-" [ref=e3937]
+                  - cell "No seleccionado" [ref=e3938]
+                  - cell "No seleccionado" [ref=e3939]
+                  - cell "CAP II LURIN" [ref=e3940]
+                  - cell "Voluntaria" [ref=e3941]
+                  - cell "976047272" [ref=e3942]:
+                    - link "976047272" [ref=e3943] [cursor=pointer]:
+                      - /url: https://wa.me/976047272
+                      - img [ref=e3944]
+                      - text: "976047272"
+                  - cell "-" [ref=e3946]:
+                    - link "-" [ref=e3947] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e3948]
+                      - text: "-"
+                  - cell "Pendiente Citar" [ref=e3950]:
+                    - generic [ref=e3951]: Pendiente Citar
+                  - cell "Hace 9 días" [ref=e3952]
+                  - cell "—" [ref=e3953]
+                  - cell [ref=e3954]:
+                    - generic [ref=e3955]:
+                      - button "Editar estado y cita" [ref=e3956] [cursor=pointer]:
+                        - img [ref=e3957]
+                      - button "Actualizar teléfono" [ref=e3959] [cursor=pointer]:
+                        - img [ref=e3960]
+                - row "Paciente derivados de PADOMI Hace 11 horas 07890883 MARTINEZ ABAD DE JIMENEZ BERTHA GUILLERMIN 79 F CARDIOLOGIA - No seleccionado No seleccionado CAP II LURIN Voluntaria 995118528 - Pendiente Citar Hace 9 días —" [ref=e3962]:
+                  - cell [ref=e3963]:
+                    - checkbox [ref=e3964] [cursor=pointer]
+                  - cell "Paciente derivados de PADOMI" [ref=e3965]
+                  - cell "Hace 11 horas" [ref=e3966]
+                  - cell "07890883" [ref=e3967]
+                  - cell "MARTINEZ ABAD DE JIMENEZ BERTHA GUILLERMIN" [ref=e3968]
+                  - cell "79" [ref=e3969]
+                  - cell "F" [ref=e3970]
+                  - cell "CARDIOLOGIA" [ref=e3971]
+                  - cell "-" [ref=e3972]
+                  - cell "No seleccionado" [ref=e3973]
+                  - cell "No seleccionado" [ref=e3974]
+                  - cell "CAP II LURIN" [ref=e3975]
+                  - cell "Voluntaria" [ref=e3976]
+                  - cell "995118528" [ref=e3977]:
+                    - link "995118528" [ref=e3978] [cursor=pointer]:
+                      - /url: https://wa.me/995118528
+                      - img [ref=e3979]
+                      - text: "995118528"
+                  - cell "-" [ref=e3981]:
+                    - link "-" [ref=e3982] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e3983]
+                      - text: "-"
+                  - cell "Pendiente Citar" [ref=e3985]:
+                    - generic [ref=e3986]: Pendiente Citar
+                  - cell "Hace 9 días" [ref=e3987]
+                  - cell "—" [ref=e3988]
+                  - cell [ref=e3989]:
+                    - generic [ref=e3990]:
+                      - button "Editar estado y cita" [ref=e3991] [cursor=pointer]:
+                        - img [ref=e3992]
+                      - button "Actualizar teléfono" [ref=e3994] [cursor=pointer]:
+                        - img [ref=e3995]
+                - row "Paciente derivados de PADOMI Hace 11 horas 07892472 BELLEZA RUIZ ANTONIO WILMER 55 M CARDIOLOGIA - No seleccionado No seleccionado CAP II LURIN Voluntaria 986229108 - Pendiente Citar Hace 9 días —" [ref=e3997]:
+                  - cell [ref=e3998]:
+                    - checkbox [ref=e3999] [cursor=pointer]
+                  - cell "Paciente derivados de PADOMI" [ref=e4000]
+                  - cell "Hace 11 horas" [ref=e4001]
+                  - cell "07892472" [ref=e4002]
+                  - cell "BELLEZA RUIZ ANTONIO WILMER" [ref=e4003]
+                  - cell "55" [ref=e4004]
+                  - cell "M" [ref=e4005]
+                  - cell "CARDIOLOGIA" [ref=e4006]
+                  - cell "-" [ref=e4007]
+                  - cell "No seleccionado" [ref=e4008]
+                  - cell "No seleccionado" [ref=e4009]
+                  - cell "CAP II LURIN" [ref=e4010]
+                  - cell "Voluntaria" [ref=e4011]
+                  - cell "986229108" [ref=e4012]:
+                    - link "986229108" [ref=e4013] [cursor=pointer]:
+                      - /url: https://wa.me/986229108
+                      - img [ref=e4014]
+                      - text: "986229108"
+                  - cell "-" [ref=e4016]:
+                    - link "-" [ref=e4017] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e4018]
+                      - text: "-"
+                  - cell "Pendiente Citar" [ref=e4020]:
+                    - generic [ref=e4021]: Pendiente Citar
+                  - cell "Hace 9 días" [ref=e4022]
+                  - cell "—" [ref=e4023]
+                  - cell [ref=e4024]:
+                    - generic [ref=e4025]:
+                      - button "Editar estado y cita" [ref=e4026] [cursor=pointer]:
+                        - img [ref=e4027]
+                      - button "Actualizar teléfono" [ref=e4029] [cursor=pointer]:
+                        - img [ref=e4030]
+                - row "Paciente derivados de PADOMI Hace 11 horas 10498301 ESPINOZA ALMONTE VDA DE VALDI FILOMENA RINA BETTI 85 F CARDIOLOGIA - No seleccionado No seleccionado CAP II LURIN Voluntaria 923062980 - Pendiente Citar Hace 9 días —" [ref=e4032]:
+                  - cell [ref=e4033]:
+                    - checkbox [ref=e4034] [cursor=pointer]
+                  - cell "Paciente derivados de PADOMI" [ref=e4035]
+                  - cell "Hace 11 horas" [ref=e4036]
+                  - cell "10498301" [ref=e4037]
+                  - cell "ESPINOZA ALMONTE VDA DE VALDI FILOMENA RINA BETTI" [ref=e4038]
+                  - cell "85" [ref=e4039]
+                  - cell "F" [ref=e4040]
+                  - cell "CARDIOLOGIA" [ref=e4041]
+                  - cell "-" [ref=e4042]
+                  - cell "No seleccionado" [ref=e4043]
+                  - cell "No seleccionado" [ref=e4044]
+                  - cell "CAP II LURIN" [ref=e4045]
+                  - cell "Voluntaria" [ref=e4046]
+                  - cell "923062980" [ref=e4047]:
+                    - link "923062980" [ref=e4048] [cursor=pointer]:
+                      - /url: https://wa.me/923062980
+                      - img [ref=e4049]
+                      - text: "923062980"
+                  - cell "-" [ref=e4051]:
+                    - link "-" [ref=e4052] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e4053]
+                      - text: "-"
+                  - cell "Pendiente Citar" [ref=e4055]:
+                    - generic [ref=e4056]: Pendiente Citar
+                  - cell "Hace 9 días" [ref=e4057]
+                  - cell "—" [ref=e4058]
+                  - cell [ref=e4059]:
+                    - generic [ref=e4060]:
+                      - button "Editar estado y cita" [ref=e4061] [cursor=pointer]:
+                        - img [ref=e4062]
+                      - button "Actualizar teléfono" [ref=e4064] [cursor=pointer]:
+                        - img [ref=e4065]
+                - row "Paciente derivados de PADOMI Hace 11 horas 07692445 ALEGRE ANGELES ALEJANDRO JESUS 81 M CARDIOLOGIA - No seleccionado No seleccionado CAP II LURIN Voluntaria 977419031 - Pendiente Citar Hace 9 días —" [ref=e4067]:
+                  - cell [ref=e4068]:
+                    - checkbox [ref=e4069] [cursor=pointer]
+                  - cell "Paciente derivados de PADOMI" [ref=e4070]
+                  - cell "Hace 11 horas" [ref=e4071]
+                  - cell "07692445" [ref=e4072]
+                  - cell "ALEGRE ANGELES ALEJANDRO JESUS" [ref=e4073]
+                  - cell "81" [ref=e4074]
+                  - cell "M" [ref=e4075]
+                  - cell "CARDIOLOGIA" [ref=e4076]
+                  - cell "-" [ref=e4077]
+                  - cell "No seleccionado" [ref=e4078]
+                  - cell "No seleccionado" [ref=e4079]
+                  - cell "CAP II LURIN" [ref=e4080]
+                  - cell "Voluntaria" [ref=e4081]
+                  - cell "977419031" [ref=e4082]:
+                    - link "977419031" [ref=e4083] [cursor=pointer]:
+                      - /url: https://wa.me/977419031
+                      - img [ref=e4084]
+                      - text: "977419031"
+                  - cell "-" [ref=e4086]:
+                    - link "-" [ref=e4087] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e4088]
+                      - text: "-"
+                  - cell "Pendiente Citar" [ref=e4090]:
+                    - generic [ref=e4091]: Pendiente Citar
+                  - cell "Hace 9 días" [ref=e4092]
+                  - cell "—" [ref=e4093]
+                  - cell [ref=e4094]:
+                    - generic [ref=e4095]:
+                      - button "Editar estado y cita" [ref=e4096] [cursor=pointer]:
+                        - img [ref=e4097]
+                      - button "Actualizar teléfono" [ref=e4099] [cursor=pointer]:
+                        - img [ref=e4100]
+                - row "Paciente derivados de PADOMI Hace 11 horas 07244113 ESCUDERO TORRES JOSE 92 M CARDIOLOGIA - No seleccionado No seleccionado CAP III SURQUILLO Voluntaria 993836084 - Pendiente Citar Hace 9 días —" [ref=e4102]:
+                  - cell [ref=e4103]:
+                    - checkbox [ref=e4104] [cursor=pointer]
+                  - cell "Paciente derivados de PADOMI" [ref=e4105]
+                  - cell "Hace 11 horas" [ref=e4106]
+                  - cell "07244113" [ref=e4107]
+                  - cell "ESCUDERO TORRES JOSE" [ref=e4108]
+                  - cell "92" [ref=e4109]
+                  - cell "M" [ref=e4110]
+                  - cell "CARDIOLOGIA" [ref=e4111]
+                  - cell "-" [ref=e4112]
+                  - cell "No seleccionado" [ref=e4113]
+                  - cell "No seleccionado" [ref=e4114]
+                  - cell "CAP III SURQUILLO" [ref=e4115]
+                  - cell "Voluntaria" [ref=e4116]
+                  - cell "993836084" [ref=e4117]:
+                    - link "993836084" [ref=e4118] [cursor=pointer]:
+                      - /url: https://wa.me/993836084
+                      - img [ref=e4119]
+                      - text: "993836084"
+                  - cell "-" [ref=e4121]:
+                    - link "-" [ref=e4122] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e4123]
+                      - text: "-"
+                  - cell "Pendiente Citar" [ref=e4125]:
+                    - generic [ref=e4126]: Pendiente Citar
+                  - cell "Hace 9 días" [ref=e4127]
+                  - cell "—" [ref=e4128]
+                  - cell [ref=e4129]:
+                    - generic [ref=e4130]:
+                      - button "Editar estado y cita" [ref=e4131] [cursor=pointer]:
+                        - img [ref=e4132]
+                      - button "Actualizar teléfono" [ref=e4134] [cursor=pointer]:
+                        - img [ref=e4135]
+                - row "Paciente derivados de PADOMI Hace 11 horas 16143015 QUITO OCHOA VICTORIA 88 F CARDIOLOGIA - No seleccionado No seleccionado POL. CHOSICA Voluntaria 997074190 - Pendiente Citar Hace 9 días —" [ref=e4137]:
+                  - cell [ref=e4138]:
+                    - checkbox [ref=e4139] [cursor=pointer]
+                  - cell "Paciente derivados de PADOMI" [ref=e4140]
+                  - cell "Hace 11 horas" [ref=e4141]
+                  - cell "16143015" [ref=e4142]
+                  - cell "QUITO OCHOA VICTORIA" [ref=e4143]
+                  - cell "88" [ref=e4144]
+                  - cell "F" [ref=e4145]
+                  - cell "CARDIOLOGIA" [ref=e4146]
+                  - cell "-" [ref=e4147]
+                  - cell "No seleccionado" [ref=e4148]
+                  - cell "No seleccionado" [ref=e4149]
+                  - cell "POL. CHOSICA" [ref=e4150]
+                  - cell "Voluntaria" [ref=e4151]
+                  - cell "997074190" [ref=e4152]:
+                    - link "997074190" [ref=e4153] [cursor=pointer]:
+                      - /url: https://wa.me/997074190
+                      - img [ref=e4154]
+                      - text: "997074190"
+                  - cell "-" [ref=e4156]:
+                    - link "-" [ref=e4157] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e4158]
+                      - text: "-"
+                  - cell "Pendiente Citar" [ref=e4160]:
+                    - generic [ref=e4161]: Pendiente Citar
+                  - cell "Hace 9 días" [ref=e4162]
+                  - cell "—" [ref=e4163]
+                  - cell [ref=e4164]:
+                    - generic [ref=e4165]:
+                      - button "Editar estado y cita" [ref=e4166] [cursor=pointer]:
+                        - img [ref=e4167]
+                      - button "Actualizar teléfono" [ref=e4169] [cursor=pointer]:
+                        - img [ref=e4170]
+                - row "Paciente derivados de PADOMI Hace 11 horas 07888858 CAMPOS MORAN CLEMENTE 99 M CARDIOLOGIA - No seleccionado No seleccionado CAP II LURIN Voluntaria 976389432 - Pendiente Citar Hace 9 días —" [ref=e4172]:
+                  - cell [ref=e4173]:
+                    - checkbox [ref=e4174] [cursor=pointer]
+                  - cell "Paciente derivados de PADOMI" [ref=e4175]
+                  - cell "Hace 11 horas" [ref=e4176]
+                  - cell "07888858" [ref=e4177]
+                  - cell "CAMPOS MORAN CLEMENTE" [ref=e4178]
+                  - cell "99" [ref=e4179]
+                  - cell "M" [ref=e4180]
+                  - cell "CARDIOLOGIA" [ref=e4181]
+                  - cell "-" [ref=e4182]
+                  - cell "No seleccionado" [ref=e4183]
+                  - cell "No seleccionado" [ref=e4184]
+                  - cell "CAP II LURIN" [ref=e4185]
+                  - cell "Voluntaria" [ref=e4186]
+                  - cell "976389432" [ref=e4187]:
+                    - link "976389432" [ref=e4188] [cursor=pointer]:
+                      - /url: https://wa.me/976389432
+                      - img [ref=e4189]
+                      - text: "976389432"
+                  - cell "-" [ref=e4191]:
+                    - link "-" [ref=e4192] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e4193]
+                      - text: "-"
+                  - cell "Pendiente Citar" [ref=e4195]:
+                    - generic [ref=e4196]: Pendiente Citar
+                  - cell "Hace 9 días" [ref=e4197]
+                  - cell "—" [ref=e4198]
+                  - cell [ref=e4199]:
+                    - generic [ref=e4200]:
+                      - button "Editar estado y cita" [ref=e4201] [cursor=pointer]:
+                        - img [ref=e4202]
+                      - button "Actualizar teléfono" [ref=e4204] [cursor=pointer]:
+                        - img [ref=e4205]
+                - row "Paciente derivados de PADOMI Hace 11 horas 07667578 MORALES BRAVO VDA DE GALDOS ANTONIA 85 F CARDIOLOGIA - No seleccionado No seleccionado POL. CHOSICA Voluntaria 969208647 - Pendiente Citar Hace 9 días —" [ref=e4207]:
+                  - cell [ref=e4208]:
+                    - checkbox [ref=e4209] [cursor=pointer]
+                  - cell "Paciente derivados de PADOMI" [ref=e4210]
+                  - cell "Hace 11 horas" [ref=e4211]
+                  - cell "07667578" [ref=e4212]
+                  - cell "MORALES BRAVO VDA DE GALDOS ANTONIA" [ref=e4213]
+                  - cell "85" [ref=e4214]
+                  - cell "F" [ref=e4215]
+                  - cell "CARDIOLOGIA" [ref=e4216]
+                  - cell "-" [ref=e4217]
+                  - cell "No seleccionado" [ref=e4218]
+                  - cell "No seleccionado" [ref=e4219]
+                  - cell "POL. CHOSICA" [ref=e4220]
+                  - cell "Voluntaria" [ref=e4221]
+                  - cell "969208647" [ref=e4222]:
+                    - link "969208647" [ref=e4223] [cursor=pointer]:
+                      - /url: https://wa.me/969208647
+                      - img [ref=e4224]
+                      - text: "969208647"
+                  - cell "-" [ref=e4226]:
+                    - link "-" [ref=e4227] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e4228]
+                      - text: "-"
+                  - cell "Pendiente Citar" [ref=e4230]:
+                    - generic [ref=e4231]: Pendiente Citar
+                  - cell "Hace 9 días" [ref=e4232]
+                  - cell "—" [ref=e4233]
+                  - cell [ref=e4234]:
+                    - generic [ref=e4235]:
+                      - button "Editar estado y cita" [ref=e4236] [cursor=pointer]:
+                        - img [ref=e4237]
+                      - button "Actualizar teléfono" [ref=e4239] [cursor=pointer]:
+                        - img [ref=e4240]
+                - row "Paciente derivados de PADOMI Hace 11 horas 07888510 VARGAS CARTOLIN DOMINGO 87 M CARDIOLOGIA - No seleccionado No seleccionado CAP II LURIN Voluntaria 959234936 - Pendiente Citar Hace 9 días —" [ref=e4242]:
+                  - cell [ref=e4243]:
+                    - checkbox [ref=e4244] [cursor=pointer]
+                  - cell "Paciente derivados de PADOMI" [ref=e4245]
+                  - cell "Hace 11 horas" [ref=e4246]
+                  - cell "07888510" [ref=e4247]
+                  - cell "VARGAS CARTOLIN DOMINGO" [ref=e4248]
+                  - cell "87" [ref=e4249]
+                  - cell "M" [ref=e4250]
+                  - cell "CARDIOLOGIA" [ref=e4251]
+                  - cell "-" [ref=e4252]
+                  - cell "No seleccionado" [ref=e4253]
+                  - cell "No seleccionado" [ref=e4254]
+                  - cell "CAP II LURIN" [ref=e4255]
+                  - cell "Voluntaria" [ref=e4256]
+                  - cell "959234936" [ref=e4257]:
+                    - link "959234936" [ref=e4258] [cursor=pointer]:
+                      - /url: https://wa.me/959234936
+                      - img [ref=e4259]
+                      - text: "959234936"
+                  - cell "-" [ref=e4261]:
+                    - link "-" [ref=e4262] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e4263]
+                      - text: "-"
+                  - cell "Pendiente Citar" [ref=e4265]:
+                    - generic [ref=e4266]: Pendiente Citar
+                  - cell "Hace 9 días" [ref=e4267]
+                  - cell "—" [ref=e4268]
+                  - cell [ref=e4269]:
+                    - generic [ref=e4270]:
+                      - button "Editar estado y cita" [ref=e4271] [cursor=pointer]:
+                        - img [ref=e4272]
+                      - button "Actualizar teléfono" [ref=e4274] [cursor=pointer]:
+                        - img [ref=e4275]
+                - row "Paciente derivados de PADOMI Hace 11 horas 07887683 CASTRO LESCANO MARIA CELIA 80 F CARDIOLOGIA - No seleccionado No seleccionado CAP II LURIN Voluntaria 992380161 - Pendiente Citar Hace 9 días —" [ref=e4277]:
+                  - cell [ref=e4278]:
+                    - checkbox [ref=e4279] [cursor=pointer]
+                  - cell "Paciente derivados de PADOMI" [ref=e4280]
+                  - cell "Hace 11 horas" [ref=e4281]
+                  - cell "07887683" [ref=e4282]
+                  - cell "CASTRO LESCANO MARIA CELIA" [ref=e4283]
+                  - cell "80" [ref=e4284]
+                  - cell "F" [ref=e4285]
+                  - cell "CARDIOLOGIA" [ref=e4286]
+                  - cell "-" [ref=e4287]
+                  - cell "No seleccionado" [ref=e4288]
+                  - cell "No seleccionado" [ref=e4289]
+                  - cell "CAP II LURIN" [ref=e4290]
+                  - cell "Voluntaria" [ref=e4291]
+                  - cell "992380161" [ref=e4292]:
+                    - link "992380161" [ref=e4293] [cursor=pointer]:
+                      - /url: https://wa.me/992380161
+                      - img [ref=e4294]
+                      - text: "992380161"
+                  - cell "-" [ref=e4296]:
+                    - link "-" [ref=e4297] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e4298]
+                      - text: "-"
+                  - cell "Pendiente Citar" [ref=e4300]:
+                    - generic [ref=e4301]: Pendiente Citar
+                  - cell "Hace 9 días" [ref=e4302]
+                  - cell "—" [ref=e4303]
+                  - cell [ref=e4304]:
+                    - generic [ref=e4305]:
+                      - button "Editar estado y cita" [ref=e4306] [cursor=pointer]:
+                        - img [ref=e4307]
+                      - button "Actualizar teléfono" [ref=e4309] [cursor=pointer]:
+                        - img [ref=e4310]
+                - row "Paciente derivados de PADOMI Hace 11 horas 06819618 HUERTAS VARGAS VDA DE URBINA YSABEL LAURA 93 F CARDIOLOGIA - No seleccionado No seleccionado CAP III CARABAYLLO Voluntaria 945370195 - Pendiente Citar Hace 9 días —" [ref=e4312]:
+                  - cell [ref=e4313]:
+                    - checkbox [ref=e4314] [cursor=pointer]
+                  - cell "Paciente derivados de PADOMI" [ref=e4315]
+                  - cell "Hace 11 horas" [ref=e4316]
+                  - cell "06819618" [ref=e4317]
+                  - cell "HUERTAS VARGAS VDA DE URBINA YSABEL LAURA" [ref=e4318]
+                  - cell "93" [ref=e4319]
+                  - cell "F" [ref=e4320]
+                  - cell "CARDIOLOGIA" [ref=e4321]
+                  - cell "-" [ref=e4322]
+                  - cell "No seleccionado" [ref=e4323]
+                  - cell "No seleccionado" [ref=e4324]
+                  - cell "CAP III CARABAYLLO" [ref=e4325]
+                  - cell "Voluntaria" [ref=e4326]
+                  - cell "945370195" [ref=e4327]:
+                    - link "945370195" [ref=e4328] [cursor=pointer]:
+                      - /url: https://wa.me/945370195
+                      - img [ref=e4329]
+                      - text: "945370195"
+                  - cell "-" [ref=e4331]:
+                    - link "-" [ref=e4332] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e4333]
+                      - text: "-"
+                  - cell "Pendiente Citar" [ref=e4335]:
+                    - generic [ref=e4336]: Pendiente Citar
+                  - cell "Hace 9 días" [ref=e4337]
+                  - cell "—" [ref=e4338]
+                  - cell [ref=e4339]:
+                    - generic [ref=e4340]:
+                      - button "Editar estado y cita" [ref=e4341] [cursor=pointer]:
+                        - img [ref=e4342]
+                      - button "Actualizar teléfono" [ref=e4344] [cursor=pointer]:
+                        - img [ref=e4345]
+                - row "Paciente derivados de PADOMI Hace 11 horas 06961499 OLIVOS VINCES LUIS MARIANO 87 M CARDIOLOGIA - No seleccionado No seleccionado POL. CHOSICA Voluntaria 926279459 - Pendiente Citar Hace 9 días —" [ref=e4347]:
+                  - cell [ref=e4348]:
+                    - checkbox [ref=e4349] [cursor=pointer]
+                  - cell "Paciente derivados de PADOMI" [ref=e4350]
+                  - cell "Hace 11 horas" [ref=e4351]
+                  - cell "06961499" [ref=e4352]
+                  - cell "OLIVOS VINCES LUIS MARIANO" [ref=e4353]
+                  - cell "87" [ref=e4354]
+                  - cell "M" [ref=e4355]
+                  - cell "CARDIOLOGIA" [ref=e4356]
+                  - cell "-" [ref=e4357]
+                  - cell "No seleccionado" [ref=e4358]
+                  - cell "No seleccionado" [ref=e4359]
+                  - cell "POL. CHOSICA" [ref=e4360]
+                  - cell "Voluntaria" [ref=e4361]
+                  - cell "926279459" [ref=e4362]:
+                    - link "926279459" [ref=e4363] [cursor=pointer]:
+                      - /url: https://wa.me/926279459
+                      - img [ref=e4364]
+                      - text: "926279459"
+                  - cell "-" [ref=e4366]:
+                    - link "-" [ref=e4367] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e4368]
+                      - text: "-"
+                  - cell "Pendiente Citar" [ref=e4370]:
+                    - generic [ref=e4371]: Pendiente Citar
+                  - cell "Hace 9 días" [ref=e4372]
+                  - cell "—" [ref=e4373]
+                  - cell [ref=e4374]:
+                    - generic [ref=e4375]:
+                      - button "Editar estado y cita" [ref=e4376] [cursor=pointer]:
+                        - img [ref=e4377]
+                      - button "Actualizar teléfono" [ref=e4379] [cursor=pointer]:
+                        - img [ref=e4380]
+                - row "Paciente derivados de PADOMI Hace 11 horas 06973471 RODRIGUEZ BRAVO DE HUACHO YOLANDA 88 F CARDIOLOGIA - No seleccionado No seleccionado POL. CHOSICA Voluntaria 941081353 - Pendiente Citar Hace 9 días —" [ref=e4382]:
+                  - cell [ref=e4383]:
+                    - checkbox [ref=e4384] [cursor=pointer]
+                  - cell "Paciente derivados de PADOMI" [ref=e4385]
+                  - cell "Hace 11 horas" [ref=e4386]
+                  - cell "06973471" [ref=e4387]
+                  - cell "RODRIGUEZ BRAVO DE HUACHO YOLANDA" [ref=e4388]
+                  - cell "88" [ref=e4389]
+                  - cell "F" [ref=e4390]
+                  - cell "CARDIOLOGIA" [ref=e4391]
+                  - cell "-" [ref=e4392]
+                  - cell "No seleccionado" [ref=e4393]
+                  - cell "No seleccionado" [ref=e4394]
+                  - cell "POL. CHOSICA" [ref=e4395]
+                  - cell "Voluntaria" [ref=e4396]
+                  - cell "941081353" [ref=e4397]:
+                    - link "941081353" [ref=e4398] [cursor=pointer]:
+                      - /url: https://wa.me/941081353
+                      - img [ref=e4399]
+                      - text: "941081353"
+                  - cell "-" [ref=e4401]:
+                    - link "-" [ref=e4402] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e4403]
+                      - text: "-"
+                  - cell "Pendiente Citar" [ref=e4405]:
+                    - generic [ref=e4406]: Pendiente Citar
+                  - cell "Hace 9 días" [ref=e4407]
+                  - cell "—" [ref=e4408]
+                  - cell [ref=e4409]:
+                    - generic [ref=e4410]:
+                      - button "Editar estado y cita" [ref=e4411] [cursor=pointer]:
+                        - img [ref=e4412]
+                      - button "Actualizar teléfono" [ref=e4414] [cursor=pointer]:
+                        - img [ref=e4415]
+                - row "Paciente derivados de PADOMI Hace 11 horas 07227561 RIOS LLERENA VDA DE GONZA HIPOLITA 85 F CARDIOLOGIA - No seleccionado No seleccionado POL. PROCERES Voluntaria 993596065 - Pendiente Citar Hace 9 días —" [ref=e4417]:
+                  - cell [ref=e4418]:
+                    - checkbox [ref=e4419] [cursor=pointer]
+                  - cell "Paciente derivados de PADOMI" [ref=e4420]
+                  - cell "Hace 11 horas" [ref=e4421]
+                  - cell "07227561" [ref=e4422]
+                  - cell "RIOS LLERENA VDA DE GONZA HIPOLITA" [ref=e4423]
+                  - cell "85" [ref=e4424]
+                  - cell "F" [ref=e4425]
+                  - cell "CARDIOLOGIA" [ref=e4426]
+                  - cell "-" [ref=e4427]
+                  - cell "No seleccionado" [ref=e4428]
+                  - cell "No seleccionado" [ref=e4429]
+                  - cell "POL. PROCERES" [ref=e4430]
+                  - cell "Voluntaria" [ref=e4431]
+                  - cell "993596065" [ref=e4432]:
+                    - link "993596065" [ref=e4433] [cursor=pointer]:
+                      - /url: https://wa.me/993596065
+                      - img [ref=e4434]
+                      - text: "993596065"
+                  - cell "-" [ref=e4436]:
+                    - link "-" [ref=e4437] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e4438]
+                      - text: "-"
+                  - cell "Pendiente Citar" [ref=e4440]:
+                    - generic [ref=e4441]: Pendiente Citar
+                  - cell "Hace 9 días" [ref=e4442]
+                  - cell "—" [ref=e4443]
+                  - cell [ref=e4444]:
+                    - generic [ref=e4445]:
+                      - button "Editar estado y cita" [ref=e4446] [cursor=pointer]:
+                        - img [ref=e4447]
+                      - button "Actualizar teléfono" [ref=e4449] [cursor=pointer]:
+                        - img [ref=e4450]
+                - row "Paciente derivados de PADOMI Hace 11 horas 06216257 CAMPOS APOLAYA DE SIGUAS LEANDRA DELIA 80 F CARDIOLOGIA - No seleccionado No seleccionado CAP II LURIN Voluntaria 922587521 - Pendiente Citar Hace 9 días —" [ref=e4452]:
+                  - cell [ref=e4453]:
+                    - checkbox [ref=e4454] [cursor=pointer]
+                  - cell "Paciente derivados de PADOMI" [ref=e4455]
+                  - cell "Hace 11 horas" [ref=e4456]
+                  - cell "06216257" [ref=e4457]
+                  - cell "CAMPOS APOLAYA DE SIGUAS LEANDRA DELIA" [ref=e4458]
+                  - cell "80" [ref=e4459]
+                  - cell "F" [ref=e4460]
+                  - cell "CARDIOLOGIA" [ref=e4461]
+                  - cell "-" [ref=e4462]
+                  - cell "No seleccionado" [ref=e4463]
+                  - cell "No seleccionado" [ref=e4464]
+                  - cell "CAP II LURIN" [ref=e4465]
+                  - cell "Voluntaria" [ref=e4466]
+                  - cell "922587521" [ref=e4467]:
+                    - link "922587521" [ref=e4468] [cursor=pointer]:
+                      - /url: https://wa.me/922587521
+                      - img [ref=e4469]
+                      - text: "922587521"
+                  - cell "-" [ref=e4471]:
+                    - link "-" [ref=e4472] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e4473]
+                      - text: "-"
+                  - cell "Pendiente Citar" [ref=e4475]:
+                    - generic [ref=e4476]: Pendiente Citar
+                  - cell "Hace 9 días" [ref=e4477]
+                  - cell "—" [ref=e4478]
+                  - cell [ref=e4479]:
+                    - generic [ref=e4480]:
+                      - button "Editar estado y cita" [ref=e4481] [cursor=pointer]:
+                        - img [ref=e4482]
+                      - button "Actualizar teléfono" [ref=e4484] [cursor=pointer]:
+                        - img [ref=e4485]
+                - row "Paciente derivados de PADOMI Hace 11 horas 08114409 MORALES URRESTI DE MAZUELOS JULIA VIOLETA 80 F CARDIOLOGIA - No seleccionado No seleccionado POL. SAN LUIS Voluntaria 951204568 - Pendiente Citar Hace 9 días —" [ref=e4487]:
+                  - cell [ref=e4488]:
+                    - checkbox [ref=e4489] [cursor=pointer]
+                  - cell "Paciente derivados de PADOMI" [ref=e4490]
+                  - cell "Hace 11 horas" [ref=e4491]
+                  - cell "08114409" [ref=e4492]
+                  - cell "MORALES URRESTI DE MAZUELOS JULIA VIOLETA" [ref=e4493]
+                  - cell "80" [ref=e4494]
+                  - cell "F" [ref=e4495]
+                  - cell "CARDIOLOGIA" [ref=e4496]
+                  - cell "-" [ref=e4497]
+                  - cell "No seleccionado" [ref=e4498]
+                  - cell "No seleccionado" [ref=e4499]
+                  - cell "POL. SAN LUIS" [ref=e4500]
+                  - cell "Voluntaria" [ref=e4501]
+                  - cell "951204568" [ref=e4502]:
+                    - link "951204568" [ref=e4503] [cursor=pointer]:
+                      - /url: https://wa.me/951204568
+                      - img [ref=e4504]
+                      - text: "951204568"
+                  - cell "-" [ref=e4506]:
+                    - link "-" [ref=e4507] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e4508]
+                      - text: "-"
+                  - cell "Pendiente Citar" [ref=e4510]:
+                    - generic [ref=e4511]: Pendiente Citar
+                  - cell "Hace 9 días" [ref=e4512]
+                  - cell "—" [ref=e4513]
+                  - cell [ref=e4514]:
+                    - generic [ref=e4515]:
+                      - button "Editar estado y cita" [ref=e4516] [cursor=pointer]:
+                        - img [ref=e4517]
+                      - button "Actualizar teléfono" [ref=e4519] [cursor=pointer]:
+                        - img [ref=e4520]
+                - row "Paciente derivados de PADOMI Hace 11 horas 07660812 RAMIREZ VARGAS GUILLERMO 93 M CARDIOLOGIA - No seleccionado No seleccionado POL. CHOSICA Voluntaria 991787790 - Pendiente Citar Hace 9 días —" [ref=e4522]:
+                  - cell [ref=e4523]:
+                    - checkbox [ref=e4524] [cursor=pointer]
+                  - cell "Paciente derivados de PADOMI" [ref=e4525]
+                  - cell "Hace 11 horas" [ref=e4526]
+                  - cell "07660812" [ref=e4527]
+                  - cell "RAMIREZ VARGAS GUILLERMO" [ref=e4528]
+                  - cell "93" [ref=e4529]
+                  - cell "M" [ref=e4530]
+                  - cell "CARDIOLOGIA" [ref=e4531]
+                  - cell "-" [ref=e4532]
+                  - cell "No seleccionado" [ref=e4533]
+                  - cell "No seleccionado" [ref=e4534]
+                  - cell "POL. CHOSICA" [ref=e4535]
+                  - cell "Voluntaria" [ref=e4536]
+                  - cell "991787790" [ref=e4537]:
+                    - link "991787790" [ref=e4538] [cursor=pointer]:
+                      - /url: https://wa.me/991787790
+                      - img [ref=e4539]
+                      - text: "991787790"
+                  - cell "-" [ref=e4541]:
+                    - link "-" [ref=e4542] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e4543]
+                      - text: "-"
+                  - cell "Pendiente Citar" [ref=e4545]:
+                    - generic [ref=e4546]: Pendiente Citar
+                  - cell "Hace 9 días" [ref=e4547]
+                  - cell "—" [ref=e4548]
+                  - cell [ref=e4549]:
+                    - generic [ref=e4550]:
+                      - button "Editar estado y cita" [ref=e4551] [cursor=pointer]:
+                        - img [ref=e4552]
+                      - button "Actualizar teléfono" [ref=e4554] [cursor=pointer]:
+                        - img [ref=e4555]
+                - row "Paciente derivados de PADOMI Hace 11 horas 07675355 STROBBE ZANUSO DE RAMIREZ CECILIA 89 F CARDIOLOGIA - No seleccionado No seleccionado POL. CHOSICA Voluntaria 995647375 - Pendiente Citar Hace 9 días —" [ref=e4557]:
+                  - cell [ref=e4558]:
+                    - checkbox [ref=e4559] [cursor=pointer]
+                  - cell "Paciente derivados de PADOMI" [ref=e4560]
+                  - cell "Hace 11 horas" [ref=e4561]
+                  - cell "07675355" [ref=e4562]
+                  - cell "STROBBE ZANUSO DE RAMIREZ CECILIA" [ref=e4563]
+                  - cell "89" [ref=e4564]
+                  - cell "F" [ref=e4565]
+                  - cell "CARDIOLOGIA" [ref=e4566]
+                  - cell "-" [ref=e4567]
+                  - cell "No seleccionado" [ref=e4568]
+                  - cell "No seleccionado" [ref=e4569]
+                  - cell "POL. CHOSICA" [ref=e4570]
+                  - cell "Voluntaria" [ref=e4571]
+                  - cell "995647375" [ref=e4572]:
+                    - link "995647375" [ref=e4573] [cursor=pointer]:
+                      - /url: https://wa.me/995647375
+                      - img [ref=e4574]
+                      - text: "995647375"
+                  - cell "-" [ref=e4576]:
+                    - link "-" [ref=e4577] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e4578]
+                      - text: "-"
+                  - cell "Pendiente Citar" [ref=e4580]:
+                    - generic [ref=e4581]: Pendiente Citar
+                  - cell "Hace 9 días" [ref=e4582]
+                  - cell "—" [ref=e4583]
+                  - cell [ref=e4584]:
+                    - generic [ref=e4585]:
+                      - button "Editar estado y cita" [ref=e4586] [cursor=pointer]:
+                        - img [ref=e4587]
+                      - button "Actualizar teléfono" [ref=e4589] [cursor=pointer]:
+                        - img [ref=e4590]
+                - row "Paciente derivados de PADOMI Hace 11 horas 06541281 NAVARRO MOGOLLON DE CAVERO MARINA 93 F CARDIOLOGIA - No seleccionado No seleccionado CAP III PUENTE PIEDRA Voluntaria 981934579 - Pendiente Citar Hace 9 días —" [ref=e4592]:
+                  - cell [ref=e4593]:
+                    - checkbox [ref=e4594] [cursor=pointer]
+                  - cell "Paciente derivados de PADOMI" [ref=e4595]
+                  - cell "Hace 11 horas" [ref=e4596]
+                  - cell "06541281" [ref=e4597]
+                  - cell "NAVARRO MOGOLLON DE CAVERO MARINA" [ref=e4598]
+                  - cell "93" [ref=e4599]
+                  - cell "F" [ref=e4600]
+                  - cell "CARDIOLOGIA" [ref=e4601]
+                  - cell "-" [ref=e4602]
+                  - cell "No seleccionado" [ref=e4603]
+                  - cell "No seleccionado" [ref=e4604]
+                  - cell "CAP III PUENTE PIEDRA" [ref=e4605]
+                  - cell "Voluntaria" [ref=e4606]
+                  - cell "981934579" [ref=e4607]:
+                    - link "981934579" [ref=e4608] [cursor=pointer]:
+                      - /url: https://wa.me/981934579
+                      - img [ref=e4609]
+                      - text: "981934579"
+                  - cell "-" [ref=e4611]:
+                    - link "-" [ref=e4612] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e4613]
+                      - text: "-"
+                  - cell "Pendiente Citar" [ref=e4615]:
+                    - generic [ref=e4616]: Pendiente Citar
+                  - cell "Hace 9 días" [ref=e4617]
+                  - cell "—" [ref=e4618]
+                  - cell [ref=e4619]:
+                    - generic [ref=e4620]:
+                      - button "Editar estado y cita" [ref=e4621] [cursor=pointer]:
+                        - img [ref=e4622]
+                      - button "Actualizar teléfono" [ref=e4624] [cursor=pointer]:
+                        - img [ref=e4625]
+                - row "Paciente derivados de PADOMI Hace 11 horas 08425351 ROSALES LAURENTE JULIO ZENON 88 M CARDIOLOGIA - No seleccionado No seleccionado H.II VITARTE Voluntaria 992122181 - Pendiente Citar Hace 9 días —" [ref=e4627]:
+                  - cell [ref=e4628]:
+                    - checkbox [ref=e4629] [cursor=pointer]
+                  - cell "Paciente derivados de PADOMI" [ref=e4630]
+                  - cell "Hace 11 horas" [ref=e4631]
+                  - cell "08425351" [ref=e4632]
+                  - cell "ROSALES LAURENTE JULIO ZENON" [ref=e4633]
+                  - cell "88" [ref=e4634]
+                  - cell "M" [ref=e4635]
+                  - cell "CARDIOLOGIA" [ref=e4636]
+                  - cell "-" [ref=e4637]
+                  - cell "No seleccionado" [ref=e4638]
+                  - cell "No seleccionado" [ref=e4639]
+                  - cell "H.II VITARTE" [ref=e4640]
+                  - cell "Voluntaria" [ref=e4641]
+                  - cell "992122181" [ref=e4642]:
+                    - link "992122181" [ref=e4643] [cursor=pointer]:
+                      - /url: https://wa.me/992122181
+                      - img [ref=e4644]
+                      - text: "992122181"
+                  - cell "-" [ref=e4646]:
+                    - link "-" [ref=e4647] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e4648]
+                      - text: "-"
+                  - cell "Pendiente Citar" [ref=e4650]:
+                    - generic [ref=e4651]: Pendiente Citar
+                  - cell "Hace 9 días" [ref=e4652]
+                  - cell "—" [ref=e4653]
+                  - cell [ref=e4654]:
+                    - generic [ref=e4655]:
+                      - button "Editar estado y cita" [ref=e4656] [cursor=pointer]:
+                        - img [ref=e4657]
+                      - button "Actualizar teléfono" [ref=e4659] [cursor=pointer]:
+                        - img [ref=e4660]
+                - row "Paciente derivados de PADOMI Hace 11 horas 07342021 QUISPE CONTRERAS MARIA MAGDALENA 91 F CARDIOLOGIA - No seleccionado No seleccionado POL. CHOSICA Voluntaria 941569063 - Pendiente Citar Hace 9 días —" [ref=e4662]:
+                  - cell [ref=e4663]:
+                    - checkbox [ref=e4664] [cursor=pointer]
+                  - cell "Paciente derivados de PADOMI" [ref=e4665]
+                  - cell "Hace 11 horas" [ref=e4666]
+                  - cell "07342021" [ref=e4667]
+                  - cell "QUISPE CONTRERAS MARIA MAGDALENA" [ref=e4668]
+                  - cell "91" [ref=e4669]
+                  - cell "F" [ref=e4670]
+                  - cell "CARDIOLOGIA" [ref=e4671]
+                  - cell "-" [ref=e4672]
+                  - cell "No seleccionado" [ref=e4673]
+                  - cell "No seleccionado" [ref=e4674]
+                  - cell "POL. CHOSICA" [ref=e4675]
+                  - cell "Voluntaria" [ref=e4676]
+                  - cell "941569063" [ref=e4677]:
+                    - link "941569063" [ref=e4678] [cursor=pointer]:
+                      - /url: https://wa.me/941569063
+                      - img [ref=e4679]
+                      - text: "941569063"
+                  - cell "-" [ref=e4681]:
+                    - link "-" [ref=e4682] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e4683]
+                      - text: "-"
+                  - cell "Pendiente Citar" [ref=e4685]:
+                    - generic [ref=e4686]: Pendiente Citar
+                  - cell "Hace 9 días" [ref=e4687]
+                  - cell "—" [ref=e4688]
+                  - cell [ref=e4689]:
+                    - generic [ref=e4690]:
+                      - button "Editar estado y cita" [ref=e4691] [cursor=pointer]:
+                        - img [ref=e4692]
+                      - button "Actualizar teléfono" [ref=e4694] [cursor=pointer]:
+                        - img [ref=e4695]
+                - row "Paciente derivados de PADOMI Hace 11 horas 06966948 GARCIA SERDAN LOURDES 87 F CARDIOLOGIA - No seleccionado No seleccionado POL. CHOSICA Voluntaria 926279327 - Pendiente Citar Hace 9 días —" [ref=e4697]:
+                  - cell [ref=e4698]:
+                    - checkbox [ref=e4699] [cursor=pointer]
+                  - cell "Paciente derivados de PADOMI" [ref=e4700]
+                  - cell "Hace 11 horas" [ref=e4701]
+                  - cell "06966948" [ref=e4702]
+                  - cell "GARCIA SERDAN LOURDES" [ref=e4703]
+                  - cell "87" [ref=e4704]
+                  - cell "F" [ref=e4705]
+                  - cell "CARDIOLOGIA" [ref=e4706]
+                  - cell "-" [ref=e4707]
+                  - cell "No seleccionado" [ref=e4708]
+                  - cell "No seleccionado" [ref=e4709]
+                  - cell "POL. CHOSICA" [ref=e4710]
+                  - cell "Voluntaria" [ref=e4711]
+                  - cell "926279327" [ref=e4712]:
+                    - link "926279327" [ref=e4713] [cursor=pointer]:
+                      - /url: https://wa.me/926279327
+                      - img [ref=e4714]
+                      - text: "926279327"
+                  - cell "-" [ref=e4716]:
+                    - link "-" [ref=e4717] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e4718]
+                      - text: "-"
+                  - cell "Pendiente Citar" [ref=e4720]:
+                    - generic [ref=e4721]: Pendiente Citar
+                  - cell "Hace 9 días" [ref=e4722]
+                  - cell "—" [ref=e4723]
+                  - cell [ref=e4724]:
+                    - generic [ref=e4725]:
+                      - button "Editar estado y cita" [ref=e4726] [cursor=pointer]:
+                        - img [ref=e4727]
+                      - button "Actualizar teléfono" [ref=e4729] [cursor=pointer]:
+                        - img [ref=e4730]
+                - row "Paciente derivados de PADOMI Hace 11 horas 08499991 NUREÑA ALVA SANTOS HELI 83 M CARDIOLOGIA - No seleccionado No seleccionado CAP III CARABAYLLO Voluntaria 990289747 - Pendiente Citar Hace 9 días —" [ref=e4732]:
+                  - cell [ref=e4733]:
+                    - checkbox [ref=e4734] [cursor=pointer]
+                  - cell "Paciente derivados de PADOMI" [ref=e4735]
+                  - cell "Hace 11 horas" [ref=e4736]
+                  - cell "08499991" [ref=e4737]
+                  - cell "NUREÑA ALVA SANTOS HELI" [ref=e4738]
+                  - cell "83" [ref=e4739]
+                  - cell "M" [ref=e4740]
+                  - cell "CARDIOLOGIA" [ref=e4741]
+                  - cell "-" [ref=e4742]
+                  - cell "No seleccionado" [ref=e4743]
+                  - cell "No seleccionado" [ref=e4744]
+                  - cell "CAP III CARABAYLLO" [ref=e4745]
+                  - cell "Voluntaria" [ref=e4746]
+                  - cell "990289747" [ref=e4747]:
+                    - link "990289747" [ref=e4748] [cursor=pointer]:
+                      - /url: https://wa.me/990289747
+                      - img [ref=e4749]
+                      - text: "990289747"
+                  - cell "-" [ref=e4751]:
+                    - link "-" [ref=e4752] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e4753]
+                      - text: "-"
+                  - cell "Pendiente Citar" [ref=e4755]:
+                    - generic [ref=e4756]: Pendiente Citar
+                  - cell "Hace 9 días" [ref=e4757]
+                  - cell "—" [ref=e4758]
+                  - cell [ref=e4759]:
+                    - generic [ref=e4760]:
+                      - button "Editar estado y cita" [ref=e4761] [cursor=pointer]:
+                        - img [ref=e4762]
+                      - button "Actualizar teléfono" [ref=e4764] [cursor=pointer]:
+                        - img [ref=e4765]
+                - row "Paciente derivados de PADOMI Hace 11 horas 06818735 ALIAGA ESTRELLA VDA DE GUER LUCILA 89 F CARDIOLOGIA - No seleccionado No seleccionado CAP III CARABAYLLO Voluntaria 968626504 - Pendiente Citar Hace 9 días —" [ref=e4767]:
+                  - cell [ref=e4768]:
+                    - checkbox [ref=e4769] [cursor=pointer]
+                  - cell "Paciente derivados de PADOMI" [ref=e4770]
+                  - cell "Hace 11 horas" [ref=e4771]
+                  - cell "06818735" [ref=e4772]
+                  - cell "ALIAGA ESTRELLA VDA DE GUER LUCILA" [ref=e4773]
+                  - cell "89" [ref=e4774]
+                  - cell "F" [ref=e4775]
+                  - cell "CARDIOLOGIA" [ref=e4776]
+                  - cell "-" [ref=e4777]
+                  - cell "No seleccionado" [ref=e4778]
+                  - cell "No seleccionado" [ref=e4779]
+                  - cell "CAP III CARABAYLLO" [ref=e4780]
+                  - cell "Voluntaria" [ref=e4781]
+                  - cell "968626504" [ref=e4782]:
+                    - link "968626504" [ref=e4783] [cursor=pointer]:
+                      - /url: https://wa.me/968626504
+                      - img [ref=e4784]
+                      - text: "968626504"
+                  - cell "-" [ref=e4786]:
+                    - link "-" [ref=e4787] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e4788]
+                      - text: "-"
+                  - cell "Pendiente Citar" [ref=e4790]:
+                    - generic [ref=e4791]: Pendiente Citar
+                  - cell "Hace 9 días" [ref=e4792]
+                  - cell "—" [ref=e4793]
+                  - cell [ref=e4794]:
+                    - generic [ref=e4795]:
+                      - button "Editar estado y cita" [ref=e4796] [cursor=pointer]:
+                        - img [ref=e4797]
+                      - button "Actualizar teléfono" [ref=e4799] [cursor=pointer]:
+                        - img [ref=e4800]
+                - row "Paciente derivados de PADOMI Hace 11 horas 07651462 AUQUI CABRERA VDA DE FIGU PRUDENCIA 94 F CARDIOLOGIA - No seleccionado No seleccionado POL. CHOSICA Voluntaria 953501248 - Pendiente Citar Hace 9 días —" [ref=e4802]:
+                  - cell [ref=e4803]:
+                    - checkbox [ref=e4804] [cursor=pointer]
+                  - cell "Paciente derivados de PADOMI" [ref=e4805]
+                  - cell "Hace 11 horas" [ref=e4806]
+                  - cell "07651462" [ref=e4807]
+                  - cell "AUQUI CABRERA VDA DE FIGU PRUDENCIA" [ref=e4808]
+                  - cell "94" [ref=e4809]
+                  - cell "F" [ref=e4810]
+                  - cell "CARDIOLOGIA" [ref=e4811]
+                  - cell "-" [ref=e4812]
+                  - cell "No seleccionado" [ref=e4813]
+                  - cell "No seleccionado" [ref=e4814]
+                  - cell "POL. CHOSICA" [ref=e4815]
+                  - cell "Voluntaria" [ref=e4816]
+                  - cell "953501248" [ref=e4817]:
+                    - link "953501248" [ref=e4818] [cursor=pointer]:
+                      - /url: https://wa.me/953501248
+                      - img [ref=e4819]
+                      - text: "953501248"
+                  - cell "-" [ref=e4821]:
+                    - link "-" [ref=e4822] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e4823]
+                      - text: "-"
+                  - cell "Pendiente Citar" [ref=e4825]:
+                    - generic [ref=e4826]: Pendiente Citar
+                  - cell "Hace 9 días" [ref=e4827]
+                  - cell "—" [ref=e4828]
+                  - cell [ref=e4829]:
+                    - generic [ref=e4830]:
+                      - button "Editar estado y cita" [ref=e4831] [cursor=pointer]:
+                        - img [ref=e4832]
+                      - button "Actualizar teléfono" [ref=e4834] [cursor=pointer]:
+                        - img [ref=e4835]
+                - row "Paciente derivados de PADOMI Hace 11 horas 10212930 MORI GARCIA VDA DE GONZAL OLGA LEONOR 90 F CARDIOLOGIA - No seleccionado No seleccionado CAP III CARABAYLLO Voluntaria 959245705 - Pendiente Citar Hace 9 días —" [ref=e4837]:
+                  - cell [ref=e4838]:
+                    - checkbox [ref=e4839] [cursor=pointer]
+                  - cell "Paciente derivados de PADOMI" [ref=e4840]
+                  - cell "Hace 11 horas" [ref=e4841]
+                  - cell "10212930" [ref=e4842]
+                  - cell "MORI GARCIA VDA DE GONZAL OLGA LEONOR" [ref=e4843]
+                  - cell "90" [ref=e4844]
+                  - cell "F" [ref=e4845]
+                  - cell "CARDIOLOGIA" [ref=e4846]
+                  - cell "-" [ref=e4847]
+                  - cell "No seleccionado" [ref=e4848]
+                  - cell "No seleccionado" [ref=e4849]
+                  - cell "CAP III CARABAYLLO" [ref=e4850]
+                  - cell "Voluntaria" [ref=e4851]
+                  - cell "959245705" [ref=e4852]:
+                    - link "959245705" [ref=e4853] [cursor=pointer]:
+                      - /url: https://wa.me/959245705
+                      - img [ref=e4854]
+                      - text: "959245705"
+                  - cell "-" [ref=e4856]:
+                    - link "-" [ref=e4857] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e4858]
+                      - text: "-"
+                  - cell "Pendiente Citar" [ref=e4860]:
+                    - generic [ref=e4861]: Pendiente Citar
+                  - cell "Hace 9 días" [ref=e4862]
+                  - cell "—" [ref=e4863]
+                  - cell [ref=e4864]:
+                    - generic [ref=e4865]:
+                      - button "Editar estado y cita" [ref=e4866] [cursor=pointer]:
+                        - img [ref=e4867]
+                      - button "Actualizar teléfono" [ref=e4869] [cursor=pointer]:
+                        - img [ref=e4870]
+                - row "Paciente derivados de PADOMI Hace 11 horas 06656128 EVANGELISTA NAVARRETE WALTER 83 M CARDIOLOGIA - No seleccionado No seleccionado CAP III CARABAYLLO Voluntaria 989830585 - Pendiente Citar Hace 9 días —" [ref=e4872]:
+                  - cell [ref=e4873]:
+                    - checkbox [ref=e4874] [cursor=pointer]
+                  - cell "Paciente derivados de PADOMI" [ref=e4875]
+                  - cell "Hace 11 horas" [ref=e4876]
+                  - cell "06656128" [ref=e4877]
+                  - cell "EVANGELISTA NAVARRETE WALTER" [ref=e4878]
+                  - cell "83" [ref=e4879]
+                  - cell "M" [ref=e4880]
+                  - cell "CARDIOLOGIA" [ref=e4881]
+                  - cell "-" [ref=e4882]
+                  - cell "No seleccionado" [ref=e4883]
+                  - cell "No seleccionado" [ref=e4884]
+                  - cell "CAP III CARABAYLLO" [ref=e4885]
+                  - cell "Voluntaria" [ref=e4886]
+                  - cell "989830585" [ref=e4887]:
+                    - link "989830585" [ref=e4888] [cursor=pointer]:
+                      - /url: https://wa.me/989830585
+                      - img [ref=e4889]
+                      - text: "989830585"
+                  - cell "-" [ref=e4891]:
+                    - link "-" [ref=e4892] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e4893]
+                      - text: "-"
+                  - cell "Pendiente Citar" [ref=e4895]:
+                    - generic [ref=e4896]: Pendiente Citar
+                  - cell "Hace 9 días" [ref=e4897]
+                  - cell "—" [ref=e4898]
+                  - cell [ref=e4899]:
+                    - generic [ref=e4900]:
+                      - button "Editar estado y cita" [ref=e4901] [cursor=pointer]:
+                        - img [ref=e4902]
+                      - button "Actualizar teléfono" [ref=e4904] [cursor=pointer]:
+                        - img [ref=e4905]
+                - row "Paciente derivados de PADOMI Hace 11 horas 07653308 FLORES LANDEO AMANCIO 97 M CARDIOLOGIA - No seleccionado No seleccionado POL. CHOSICA Voluntaria 994768912 - Pendiente Citar Hace 9 días —" [ref=e4907]:
+                  - cell [ref=e4908]:
+                    - checkbox [ref=e4909] [cursor=pointer]
+                  - cell "Paciente derivados de PADOMI" [ref=e4910]
+                  - cell "Hace 11 horas" [ref=e4911]
+                  - cell "07653308" [ref=e4912]
+                  - cell "FLORES LANDEO AMANCIO" [ref=e4913]
+                  - cell "97" [ref=e4914]
+                  - cell "M" [ref=e4915]
+                  - cell "CARDIOLOGIA" [ref=e4916]
+                  - cell "-" [ref=e4917]
+                  - cell "No seleccionado" [ref=e4918]
+                  - cell "No seleccionado" [ref=e4919]
+                  - cell "POL. CHOSICA" [ref=e4920]
+                  - cell "Voluntaria" [ref=e4921]
+                  - cell "994768912" [ref=e4922]:
+                    - link "994768912" [ref=e4923] [cursor=pointer]:
+                      - /url: https://wa.me/994768912
+                      - img [ref=e4924]
+                      - text: "994768912"
+                  - cell "-" [ref=e4926]:
+                    - link "-" [ref=e4927] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e4928]
+                      - text: "-"
+                  - cell "Pendiente Citar" [ref=e4930]:
+                    - generic [ref=e4931]: Pendiente Citar
+                  - cell "Hace 9 días" [ref=e4932]
+                  - cell "—" [ref=e4933]
+                  - cell [ref=e4934]:
+                    - generic [ref=e4935]:
+                      - button "Editar estado y cita" [ref=e4936] [cursor=pointer]:
+                        - img [ref=e4937]
+                      - button "Actualizar teléfono" [ref=e4939] [cursor=pointer]:
+                        - img [ref=e4940]
+                - row "Paciente derivados de PADOMI Hace 11 horas 06966747 MARCA GUILARDE VDA DE AMES EMMA MARIA 88 F CARDIOLOGIA - No seleccionado No seleccionado H.II VITARTE Voluntaria 989472436 - Pendiente Citar Hace 9 días —" [ref=e4942]:
+                  - cell [ref=e4943]:
+                    - checkbox [ref=e4944] [cursor=pointer]
+                  - cell "Paciente derivados de PADOMI" [ref=e4945]
+                  - cell "Hace 11 horas" [ref=e4946]
+                  - cell "06966747" [ref=e4947]
+                  - cell "MARCA GUILARDE VDA DE AMES EMMA MARIA" [ref=e4948]
+                  - cell "88" [ref=e4949]
+                  - cell "F" [ref=e4950]
+                  - cell "CARDIOLOGIA" [ref=e4951]
+                  - cell "-" [ref=e4952]
+                  - cell "No seleccionado" [ref=e4953]
+                  - cell "No seleccionado" [ref=e4954]
+                  - cell "H.II VITARTE" [ref=e4955]
+                  - cell "Voluntaria" [ref=e4956]
+                  - cell "989472436" [ref=e4957]:
+                    - link "989472436" [ref=e4958] [cursor=pointer]:
+                      - /url: https://wa.me/989472436
+                      - img [ref=e4959]
+                      - text: "989472436"
+                  - cell "-" [ref=e4961]:
+                    - link "-" [ref=e4962] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e4963]
+                      - text: "-"
+                  - cell "Pendiente Citar" [ref=e4965]:
+                    - generic [ref=e4966]: Pendiente Citar
+                  - cell "Hace 9 días" [ref=e4967]
+                  - cell "—" [ref=e4968]
+                  - cell [ref=e4969]:
+                    - generic [ref=e4970]:
+                      - button "Editar estado y cita" [ref=e4971] [cursor=pointer]:
+                        - img [ref=e4972]
+                      - button "Actualizar teléfono" [ref=e4974] [cursor=pointer]:
+                        - img [ref=e4975]
+                - row "Paciente derivados de PADOMI Hace 11 horas 07649308 CUBA HIDALGO CARLOS ALEJANDRO 81 M CARDIOLOGIA - No seleccionado No seleccionado POL. CHOSICA Voluntaria 997891959 - Pendiente Citar Hace 9 días —" [ref=e4977]:
+                  - cell [ref=e4978]:
+                    - checkbox [ref=e4979] [cursor=pointer]
+                  - cell "Paciente derivados de PADOMI" [ref=e4980]
+                  - cell "Hace 11 horas" [ref=e4981]
+                  - cell "07649308" [ref=e4982]
+                  - cell "CUBA HIDALGO CARLOS ALEJANDRO" [ref=e4983]
+                  - cell "81" [ref=e4984]
+                  - cell "M" [ref=e4985]
+                  - cell "CARDIOLOGIA" [ref=e4986]
+                  - cell "-" [ref=e4987]
+                  - cell "No seleccionado" [ref=e4988]
+                  - cell "No seleccionado" [ref=e4989]
+                  - cell "POL. CHOSICA" [ref=e4990]
+                  - cell "Voluntaria" [ref=e4991]
+                  - cell "997891959" [ref=e4992]:
+                    - link "997891959" [ref=e4993] [cursor=pointer]:
+                      - /url: https://wa.me/997891959
+                      - img [ref=e4994]
+                      - text: "997891959"
+                  - cell "-" [ref=e4996]:
+                    - link "-" [ref=e4997] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e4998]
+                      - text: "-"
+                  - cell "Pendiente Citar" [ref=e5000]:
+                    - generic [ref=e5001]: Pendiente Citar
+                  - cell "Hace 9 días" [ref=e5002]
+                  - cell "—" [ref=e5003]
+                  - cell [ref=e5004]:
+                    - generic [ref=e5005]:
+                      - button "Editar estado y cita" [ref=e5006] [cursor=pointer]:
+                        - img [ref=e5007]
+                      - button "Actualizar teléfono" [ref=e5009] [cursor=pointer]:
+                        - img [ref=e5010]
+                - row "Paciente derivados de PADOMI Hace 11 horas 15959313 PEZO DE QUICHIZ DE QUICHI CARMEN ROSA 75 F CARDIOLOGIA - No seleccionado No seleccionado POL. SAN LUIS Voluntaria 920838866 - Pendiente Citar Hace 9 días —" [ref=e5012]:
+                  - cell [ref=e5013]:
+                    - checkbox [ref=e5014] [cursor=pointer]
+                  - cell "Paciente derivados de PADOMI" [ref=e5015]
+                  - cell "Hace 11 horas" [ref=e5016]
+                  - cell "15959313" [ref=e5017]
+                  - cell "PEZO DE QUICHIZ DE QUICHI CARMEN ROSA" [ref=e5018]
+                  - cell "75" [ref=e5019]
+                  - cell "F" [ref=e5020]
+                  - cell "CARDIOLOGIA" [ref=e5021]
+                  - cell "-" [ref=e5022]
+                  - cell "No seleccionado" [ref=e5023]
+                  - cell "No seleccionado" [ref=e5024]
+                  - cell "POL. SAN LUIS" [ref=e5025]
+                  - cell "Voluntaria" [ref=e5026]
+                  - cell "920838866" [ref=e5027]:
+                    - link "920838866" [ref=e5028] [cursor=pointer]:
+                      - /url: https://wa.me/920838866
+                      - img [ref=e5029]
+                      - text: "920838866"
+                  - cell "-" [ref=e5031]:
+                    - link "-" [ref=e5032] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e5033]
+                      - text: "-"
+                  - cell "Pendiente Citar" [ref=e5035]:
+                    - generic [ref=e5036]: Pendiente Citar
+                  - cell "Hace 9 días" [ref=e5037]
+                  - cell "—" [ref=e5038]
+                  - cell [ref=e5039]:
+                    - generic [ref=e5040]:
+                      - button "Editar estado y cita" [ref=e5041] [cursor=pointer]:
+                        - img [ref=e5042]
+                      - button "Actualizar teléfono" [ref=e5044] [cursor=pointer]:
+                        - img [ref=e5045]
+                - row "Paciente derivados de PADOMI Hace 11 horas 10297806 CORDOVA VARGAS DE CUTIPA FLO GAUDENCIA DELIA 82 F CARDIOLOGIA - No seleccionado No seleccionado POL. CHOSICA Voluntaria 997840747 - Pendiente Citar Hace 9 días —" [ref=e5047]:
+                  - cell [ref=e5048]:
+                    - checkbox [ref=e5049] [cursor=pointer]
+                  - cell "Paciente derivados de PADOMI" [ref=e5050]
+                  - cell "Hace 11 horas" [ref=e5051]
+                  - cell "10297806" [ref=e5052]
+                  - cell "CORDOVA VARGAS DE CUTIPA FLO GAUDENCIA DELIA" [ref=e5053]
+                  - cell "82" [ref=e5054]
+                  - cell "F" [ref=e5055]
+                  - cell "CARDIOLOGIA" [ref=e5056]
+                  - cell "-" [ref=e5057]
+                  - cell "No seleccionado" [ref=e5058]
+                  - cell "No seleccionado" [ref=e5059]
+                  - cell "POL. CHOSICA" [ref=e5060]
+                  - cell "Voluntaria" [ref=e5061]
+                  - cell "997840747" [ref=e5062]:
+                    - link "997840747" [ref=e5063] [cursor=pointer]:
+                      - /url: https://wa.me/997840747
+                      - img [ref=e5064]
+                      - text: "997840747"
+                  - cell "-" [ref=e5066]:
+                    - link "-" [ref=e5067] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e5068]
+                      - text: "-"
+                  - cell "Pendiente Citar" [ref=e5070]:
+                    - generic [ref=e5071]: Pendiente Citar
+                  - cell "Hace 9 días" [ref=e5072]
+                  - cell "—" [ref=e5073]
+                  - cell [ref=e5074]:
+                    - generic [ref=e5075]:
+                      - button "Editar estado y cita" [ref=e5076] [cursor=pointer]:
+                        - img [ref=e5077]
+                      - button "Actualizar teléfono" [ref=e5079] [cursor=pointer]:
+                        - img [ref=e5080]
+                - row "Paciente derivados de PADOMI Hace 11 horas 07840200 GUZMAN GUZMAN NATIVIDAD ADELINA 87 F CARDIOLOGIA - No seleccionado No seleccionado CAP III SAN ISIDRO Voluntaria 923535708 - Pendiente Citar Hace 9 días —" [ref=e5082]:
+                  - cell [ref=e5083]:
+                    - checkbox [ref=e5084] [cursor=pointer]
+                  - cell "Paciente derivados de PADOMI" [ref=e5085]
+                  - cell "Hace 11 horas" [ref=e5086]
+                  - cell "07840200" [ref=e5087]
+                  - cell "GUZMAN GUZMAN NATIVIDAD ADELINA" [ref=e5088]
+                  - cell "87" [ref=e5089]
+                  - cell "F" [ref=e5090]
+                  - cell "CARDIOLOGIA" [ref=e5091]
+                  - cell "-" [ref=e5092]
+                  - cell "No seleccionado" [ref=e5093]
+                  - cell "No seleccionado" [ref=e5094]
+                  - cell "CAP III SAN ISIDRO" [ref=e5095]
+                  - cell "Voluntaria" [ref=e5096]
+                  - cell "923535708" [ref=e5097]:
+                    - link "923535708" [ref=e5098] [cursor=pointer]:
+                      - /url: https://wa.me/923535708
+                      - img [ref=e5099]
+                      - text: "923535708"
+                  - cell "-" [ref=e5101]:
+                    - link "-" [ref=e5102] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e5103]
+                      - text: "-"
+                  - cell "Pendiente Citar" [ref=e5105]:
+                    - generic [ref=e5106]: Pendiente Citar
+                  - cell "Hace 9 días" [ref=e5107]
+                  - cell "—" [ref=e5108]
+                  - cell [ref=e5109]:
+                    - generic [ref=e5110]:
+                      - button "Editar estado y cita" [ref=e5111] [cursor=pointer]:
+                        - img [ref=e5112]
+                      - button "Actualizar teléfono" [ref=e5114] [cursor=pointer]:
+                        - img [ref=e5115]
+                - row "Paciente derivados de PADOMI Hace 11 horas 06822253 CARBAJAL FLORES VDA DE TRUJIL MAXIMILIAN 79 F CARDIOLOGIA - No seleccionado No seleccionado CAP III CARABAYLLO Voluntaria 992466258 - Pendiente Citar Hace 9 días —" [ref=e5117]:
+                  - cell [ref=e5118]:
+                    - checkbox [ref=e5119] [cursor=pointer]
+                  - cell "Paciente derivados de PADOMI" [ref=e5120]
+                  - cell "Hace 11 horas" [ref=e5121]
+                  - cell "06822253" [ref=e5122]
+                  - cell "CARBAJAL FLORES VDA DE TRUJIL MAXIMILIAN" [ref=e5123]
+                  - cell "79" [ref=e5124]
+                  - cell "F" [ref=e5125]
+                  - cell "CARDIOLOGIA" [ref=e5126]
+                  - cell "-" [ref=e5127]
+                  - cell "No seleccionado" [ref=e5128]
+                  - cell "No seleccionado" [ref=e5129]
+                  - cell "CAP III CARABAYLLO" [ref=e5130]
+                  - cell "Voluntaria" [ref=e5131]
+                  - cell "992466258" [ref=e5132]:
+                    - link "992466258" [ref=e5133] [cursor=pointer]:
+                      - /url: https://wa.me/992466258
+                      - img [ref=e5134]
+                      - text: "992466258"
+                  - cell "-" [ref=e5136]:
+                    - link "-" [ref=e5137] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e5138]
+                      - text: "-"
+                  - cell "Pendiente Citar" [ref=e5140]:
+                    - generic [ref=e5141]: Pendiente Citar
+                  - cell "Hace 9 días" [ref=e5142]
+                  - cell "—" [ref=e5143]
+                  - cell [ref=e5144]:
+                    - generic [ref=e5145]:
+                      - button "Editar estado y cita" [ref=e5146] [cursor=pointer]:
+                        - img [ref=e5147]
+                      - button "Actualizar teléfono" [ref=e5149] [cursor=pointer]:
+                        - img [ref=e5150]
+                - row "Paciente derivados de PADOMI Hace 11 horas 09221981 BENAVENTE MENDOZA CELIA FAUSTINA 82 F CARDIOLOGIA - No seleccionado No seleccionado H.I CARLOS ALCANTARA BUTTERFIELD Voluntaria 4798338 - Pendiente Citar Hace 9 días —" [ref=e5152]:
+                  - cell [ref=e5153]:
+                    - checkbox [ref=e5154] [cursor=pointer]
+                  - cell "Paciente derivados de PADOMI" [ref=e5155]
+                  - cell "Hace 11 horas" [ref=e5156]
+                  - cell "09221981" [ref=e5157]
+                  - cell "BENAVENTE MENDOZA CELIA FAUSTINA" [ref=e5158]
+                  - cell "82" [ref=e5159]
+                  - cell "F" [ref=e5160]
+                  - cell "CARDIOLOGIA" [ref=e5161]
+                  - cell "-" [ref=e5162]
+                  - cell "No seleccionado" [ref=e5163]
+                  - cell "No seleccionado" [ref=e5164]
+                  - cell "H.I CARLOS ALCANTARA BUTTERFIELD" [ref=e5165]
+                  - cell "Voluntaria" [ref=e5166]
+                  - cell "4798338" [ref=e5167]:
+                    - link "4798338" [ref=e5168] [cursor=pointer]:
+                      - /url: https://wa.me/4798338
+                      - img [ref=e5169]
+                      - text: "4798338"
+                  - cell "-" [ref=e5171]:
+                    - link "-" [ref=e5172] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e5173]
+                      - text: "-"
+                  - cell "Pendiente Citar" [ref=e5175]:
+                    - generic [ref=e5176]: Pendiente Citar
+                  - cell "Hace 9 días" [ref=e5177]
+                  - cell "—" [ref=e5178]
+                  - cell [ref=e5179]:
+                    - generic [ref=e5180]:
+                      - button "Editar estado y cita" [ref=e5181] [cursor=pointer]:
+                        - img [ref=e5182]
+                      - button "Actualizar teléfono" [ref=e5184] [cursor=pointer]:
+                        - img [ref=e5185]
+                - row "Paciente derivados de PADOMI Hace 11 horas 08176465 BEZADA XXX VDA DE CAMACHO TEODORA 85 F CARDIOLOGIA - No seleccionado No seleccionado H.II RAMON CASTILLA Voluntaria 949354081 - Pendiente Citar Hace 9 días —" [ref=e5187]:
+                  - cell [ref=e5188]:
+                    - checkbox [ref=e5189] [cursor=pointer]
+                  - cell "Paciente derivados de PADOMI" [ref=e5190]
+                  - cell "Hace 11 horas" [ref=e5191]
+                  - cell "08176465" [ref=e5192]
+                  - cell "BEZADA XXX VDA DE CAMACHO TEODORA" [ref=e5193]
+                  - cell "85" [ref=e5194]
+                  - cell "F" [ref=e5195]
+                  - cell "CARDIOLOGIA" [ref=e5196]
+                  - cell "-" [ref=e5197]
+                  - cell "No seleccionado" [ref=e5198]
+                  - cell "No seleccionado" [ref=e5199]
+                  - cell "H.II RAMON CASTILLA" [ref=e5200]
+                  - cell "Voluntaria" [ref=e5201]
+                  - cell "949354081" [ref=e5202]:
+                    - link "949354081" [ref=e5203] [cursor=pointer]:
+                      - /url: https://wa.me/949354081
+                      - img [ref=e5204]
+                      - text: "949354081"
+                  - cell "-" [ref=e5206]:
+                    - link "-" [ref=e5207] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e5208]
+                      - text: "-"
+                  - cell "Pendiente Citar" [ref=e5210]:
+                    - generic [ref=e5211]: Pendiente Citar
+                  - cell "Hace 9 días" [ref=e5212]
+                  - cell "—" [ref=e5213]
+                  - cell [ref=e5214]:
+                    - generic [ref=e5215]:
+                      - button "Editar estado y cita" [ref=e5216] [cursor=pointer]:
+                        - img [ref=e5217]
+                      - button "Actualizar teléfono" [ref=e5219] [cursor=pointer]:
+                        - img [ref=e5220]
+                - row "Paciente derivados de PADOMI Hace 11 horas 07986371 PEREZ CONTRERAS PEDRO 85 M CARDIOLOGIA - No seleccionado No seleccionado CAP III PUENTE PIEDRA Voluntaria 959951812 - Pendiente Citar Hace 9 días —" [ref=e5222]:
+                  - cell [ref=e5223]:
+                    - checkbox [ref=e5224] [cursor=pointer]
+                  - cell "Paciente derivados de PADOMI" [ref=e5225]
+                  - cell "Hace 11 horas" [ref=e5226]
+                  - cell "07986371" [ref=e5227]
+                  - cell "PEREZ CONTRERAS PEDRO" [ref=e5228]
+                  - cell "85" [ref=e5229]
+                  - cell "M" [ref=e5230]
+                  - cell "CARDIOLOGIA" [ref=e5231]
+                  - cell "-" [ref=e5232]
+                  - cell "No seleccionado" [ref=e5233]
+                  - cell "No seleccionado" [ref=e5234]
+                  - cell "CAP III PUENTE PIEDRA" [ref=e5235]
+                  - cell "Voluntaria" [ref=e5236]
+                  - cell "959951812" [ref=e5237]:
+                    - link "959951812" [ref=e5238] [cursor=pointer]:
+                      - /url: https://wa.me/959951812
+                      - img [ref=e5239]
+                      - text: "959951812"
+                  - cell "-" [ref=e5241]:
+                    - link "-" [ref=e5242] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e5243]
+                      - text: "-"
+                  - cell "Pendiente Citar" [ref=e5245]:
+                    - generic [ref=e5246]: Pendiente Citar
+                  - cell "Hace 9 días" [ref=e5247]
+                  - cell "—" [ref=e5248]
+                  - cell [ref=e5249]:
+                    - generic [ref=e5250]:
+                      - button "Editar estado y cita" [ref=e5251] [cursor=pointer]:
+                        - img [ref=e5252]
+                      - button "Actualizar teléfono" [ref=e5254] [cursor=pointer]:
+                        - img [ref=e5255]
+                - row "Paciente derivados de PADOMI Hace 11 horas 09229078 CAMPOS BARCENES JULIO CESAR 84 M CARDIOLOGIA - No seleccionado No seleccionado CAP III CARABAYLLO Voluntaria 992531949 - Pendiente Citar Hace 9 días —" [ref=e5257]:
+                  - cell [ref=e5258]:
+                    - checkbox [ref=e5259] [cursor=pointer]
+                  - cell "Paciente derivados de PADOMI" [ref=e5260]
+                  - cell "Hace 11 horas" [ref=e5261]
+                  - cell "09229078" [ref=e5262]
+                  - cell "CAMPOS BARCENES JULIO CESAR" [ref=e5263]
+                  - cell "84" [ref=e5264]
+                  - cell "M" [ref=e5265]
+                  - cell "CARDIOLOGIA" [ref=e5266]
+                  - cell "-" [ref=e5267]
+                  - cell "No seleccionado" [ref=e5268]
+                  - cell "No seleccionado" [ref=e5269]
+                  - cell "CAP III CARABAYLLO" [ref=e5270]
+                  - cell "Voluntaria" [ref=e5271]
+                  - cell "992531949" [ref=e5272]:
+                    - link "992531949" [ref=e5273] [cursor=pointer]:
+                      - /url: https://wa.me/992531949
+                      - img [ref=e5274]
+                      - text: "992531949"
+                  - cell "-" [ref=e5276]:
+                    - link "-" [ref=e5277] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e5278]
+                      - text: "-"
+                  - cell "Pendiente Citar" [ref=e5280]:
+                    - generic [ref=e5281]: Pendiente Citar
+                  - cell "Hace 9 días" [ref=e5282]
+                  - cell "—" [ref=e5283]
+                  - cell [ref=e5284]:
+                    - generic [ref=e5285]:
+                      - button "Editar estado y cita" [ref=e5286] [cursor=pointer]:
+                        - img [ref=e5287]
+                      - button "Actualizar teléfono" [ref=e5289] [cursor=pointer]:
+                        - img [ref=e5290]
+                - row "Paciente derivados de PADOMI Hace 11 horas 07649498 BRAVO ESCUVILCA MARCELA 86 F CARDIOLOGIA - No seleccionado No seleccionado POL. CHOSICA Voluntaria 992929343 - Pendiente Citar Hace 9 días —" [ref=e5292]:
+                  - cell [ref=e5293]:
+                    - checkbox [ref=e5294] [cursor=pointer]
+                  - cell "Paciente derivados de PADOMI" [ref=e5295]
+                  - cell "Hace 11 horas" [ref=e5296]
+                  - cell "07649498" [ref=e5297]
+                  - cell "BRAVO ESCUVILCA MARCELA" [ref=e5298]
+                  - cell "86" [ref=e5299]
+                  - cell "F" [ref=e5300]
+                  - cell "CARDIOLOGIA" [ref=e5301]
+                  - cell "-" [ref=e5302]
+                  - cell "No seleccionado" [ref=e5303]
+                  - cell "No seleccionado" [ref=e5304]
+                  - cell "POL. CHOSICA" [ref=e5305]
+                  - cell "Voluntaria" [ref=e5306]
+                  - cell "992929343" [ref=e5307]:
+                    - link "992929343" [ref=e5308] [cursor=pointer]:
+                      - /url: https://wa.me/992929343
+                      - img [ref=e5309]
+                      - text: "992929343"
+                  - cell "-" [ref=e5311]:
+                    - link "-" [ref=e5312] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e5313]
+                      - text: "-"
+                  - cell "Pendiente Citar" [ref=e5315]:
+                    - generic [ref=e5316]: Pendiente Citar
+                  - cell "Hace 9 días" [ref=e5317]
+                  - cell "—" [ref=e5318]
+                  - cell [ref=e5319]:
+                    - generic [ref=e5320]:
+                      - button "Editar estado y cita" [ref=e5321] [cursor=pointer]:
+                        - img [ref=e5322]
+                      - button "Actualizar teléfono" [ref=e5324] [cursor=pointer]:
+                        - img [ref=e5325]
+                - row "Paciente derivados de PADOMI Hace 11 horas 08225736 RUILOBA PEREZ GODOY JUANA 89 F CARDIOLOGIA - No seleccionado No seleccionado CAP III SAN ISIDRO Voluntaria 902017917 - Pendiente Citar Hace 9 días —" [ref=e5327]:
+                  - cell [ref=e5328]:
+                    - checkbox [ref=e5329] [cursor=pointer]
+                  - cell "Paciente derivados de PADOMI" [ref=e5330]
+                  - cell "Hace 11 horas" [ref=e5331]
+                  - cell "08225736" [ref=e5332]
+                  - cell "RUILOBA PEREZ GODOY JUANA" [ref=e5333]
+                  - cell "89" [ref=e5334]
+                  - cell "F" [ref=e5335]
+                  - cell "CARDIOLOGIA" [ref=e5336]
+                  - cell "-" [ref=e5337]
+                  - cell "No seleccionado" [ref=e5338]
+                  - cell "No seleccionado" [ref=e5339]
+                  - cell "CAP III SAN ISIDRO" [ref=e5340]
+                  - cell "Voluntaria" [ref=e5341]
+                  - cell "902017917" [ref=e5342]:
+                    - link "902017917" [ref=e5343] [cursor=pointer]:
+                      - /url: https://wa.me/902017917
+                      - img [ref=e5344]
+                      - text: "902017917"
+                  - cell "-" [ref=e5346]:
+                    - link "-" [ref=e5347] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e5348]
+                      - text: "-"
+                  - cell "Pendiente Citar" [ref=e5350]:
+                    - generic [ref=e5351]: Pendiente Citar
+                  - cell "Hace 9 días" [ref=e5352]
+                  - cell "—" [ref=e5353]
+                  - cell [ref=e5354]:
+                    - generic [ref=e5355]:
+                      - button "Editar estado y cita" [ref=e5356] [cursor=pointer]:
+                        - img [ref=e5357]
+                      - button "Actualizar teléfono" [ref=e5359] [cursor=pointer]:
+                        - img [ref=e5360]
+                - row "Paciente derivados de PADOMI Hace 11 horas 08203307 MANRIQUE UGARTE SHIRLEY ROSA VICTO 86 F CARDIOLOGIA - No seleccionado No seleccionado H.I CARLOS ALCANTARA BUTTERFIELD Voluntaria 913780521 - Pendiente Citar Hace 9 días —" [ref=e5362]:
+                  - cell [ref=e5363]:
+                    - checkbox [ref=e5364] [cursor=pointer]
+                  - cell "Paciente derivados de PADOMI" [ref=e5365]
+                  - cell "Hace 11 horas" [ref=e5366]
+                  - cell "08203307" [ref=e5367]
+                  - cell "MANRIQUE UGARTE SHIRLEY ROSA VICTO" [ref=e5368]
+                  - cell "86" [ref=e5369]
+                  - cell "F" [ref=e5370]
+                  - cell "CARDIOLOGIA" [ref=e5371]
+                  - cell "-" [ref=e5372]
+                  - cell "No seleccionado" [ref=e5373]
+                  - cell "No seleccionado" [ref=e5374]
+                  - cell "H.I CARLOS ALCANTARA BUTTERFIELD" [ref=e5375]
+                  - cell "Voluntaria" [ref=e5376]
+                  - cell "913780521" [ref=e5377]:
+                    - link "913780521" [ref=e5378] [cursor=pointer]:
+                      - /url: https://wa.me/913780521
+                      - img [ref=e5379]
+                      - text: "913780521"
+                  - cell "-" [ref=e5381]:
+                    - link "-" [ref=e5382] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e5383]
+                      - text: "-"
+                  - cell "Pendiente Citar" [ref=e5385]:
+                    - generic [ref=e5386]: Pendiente Citar
+                  - cell "Hace 9 días" [ref=e5387]
+                  - cell "—" [ref=e5388]
+                  - cell [ref=e5389]:
+                    - generic [ref=e5390]:
+                      - button "Editar estado y cita" [ref=e5391] [cursor=pointer]:
+                        - img [ref=e5392]
+                      - button "Actualizar teléfono" [ref=e5394] [cursor=pointer]:
+                        - img [ref=e5395]
+                - row "Paciente derivados de PADOMI Hace 11 horas 43436059 PAUCAR MALCA OCTAVILA 89 F CARDIOLOGIA - No seleccionado No seleccionado CAP III ALFREDO PIAZZA ROBERTS Voluntaria 903031066 - Pendiente Citar Hace 9 días —" [ref=e5397]:
+                  - cell [ref=e5398]:
+                    - checkbox [ref=e5399] [cursor=pointer]
+                  - cell "Paciente derivados de PADOMI" [ref=e5400]
+                  - cell "Hace 11 horas" [ref=e5401]
+                  - cell "43436059" [ref=e5402]
+                  - cell "PAUCAR MALCA OCTAVILA" [ref=e5403]
+                  - cell "89" [ref=e5404]
+                  - cell "F" [ref=e5405]
+                  - cell "CARDIOLOGIA" [ref=e5406]
+                  - cell "-" [ref=e5407]
+                  - cell "No seleccionado" [ref=e5408]
+                  - cell "No seleccionado" [ref=e5409]
+                  - cell "CAP III ALFREDO PIAZZA ROBERTS" [ref=e5410]
+                  - cell "Voluntaria" [ref=e5411]
+                  - cell "903031066" [ref=e5412]:
+                    - link "903031066" [ref=e5413] [cursor=pointer]:
+                      - /url: https://wa.me/903031066
+                      - img [ref=e5414]
+                      - text: "903031066"
+                  - cell "-" [ref=e5416]:
+                    - link "-" [ref=e5417] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e5418]
+                      - text: "-"
+                  - cell "Pendiente Citar" [ref=e5420]:
+                    - generic [ref=e5421]: Pendiente Citar
+                  - cell "Hace 9 días" [ref=e5422]
+                  - cell "—" [ref=e5423]
+                  - cell [ref=e5424]:
+                    - generic [ref=e5425]:
+                      - button "Editar estado y cita" [ref=e5426] [cursor=pointer]:
+                        - img [ref=e5427]
+                      - button "Actualizar teléfono" [ref=e5429] [cursor=pointer]:
+                        - img [ref=e5430]
+                - row "Paciente derivados de PADOMI Hace 11 horas 06969020 GUERRERO MERINO MARIA CECILIA 79 F CARDIOLOGIA - No seleccionado No seleccionado POL. CHOSICA Voluntaria 937523413 - Pendiente Citar Hace 9 días —" [ref=e5432]:
+                  - cell [ref=e5433]:
+                    - checkbox [ref=e5434] [cursor=pointer]
+                  - cell "Paciente derivados de PADOMI" [ref=e5435]
+                  - cell "Hace 11 horas" [ref=e5436]
+                  - cell "06969020" [ref=e5437]
+                  - cell "GUERRERO MERINO MARIA CECILIA" [ref=e5438]
+                  - cell "79" [ref=e5439]
+                  - cell "F" [ref=e5440]
+                  - cell "CARDIOLOGIA" [ref=e5441]
+                  - cell "-" [ref=e5442]
+                  - cell "No seleccionado" [ref=e5443]
+                  - cell "No seleccionado" [ref=e5444]
+                  - cell "POL. CHOSICA" [ref=e5445]
+                  - cell "Voluntaria" [ref=e5446]
+                  - cell "937523413" [ref=e5447]:
+                    - link "937523413" [ref=e5448] [cursor=pointer]:
+                      - /url: https://wa.me/937523413
+                      - img [ref=e5449]
+                      - text: "937523413"
+                  - cell "-" [ref=e5451]:
+                    - link "-" [ref=e5452] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e5453]
+                      - text: "-"
+                  - cell "Pendiente Citar" [ref=e5455]:
+                    - generic [ref=e5456]: Pendiente Citar
+                  - cell "Hace 9 días" [ref=e5457]
+                  - cell "—" [ref=e5458]
+                  - cell [ref=e5459]:
+                    - generic [ref=e5460]:
+                      - button "Editar estado y cita" [ref=e5461] [cursor=pointer]:
+                        - img [ref=e5462]
+                      - button "Actualizar teléfono" [ref=e5464] [cursor=pointer]:
+                        - img [ref=e5465]
+                - row "Paciente derivados de PADOMI Hace 11 horas 06824235 JIMENEZ GONZALES CESAR 88 M CARDIOLOGIA - No seleccionado No seleccionado CAP III CARABAYLLO Voluntaria 966788722 - Pendiente Citar Hace 9 días —" [ref=e5467]:
+                  - cell [ref=e5468]:
+                    - checkbox [ref=e5469] [cursor=pointer]
+                  - cell "Paciente derivados de PADOMI" [ref=e5470]
+                  - cell "Hace 11 horas" [ref=e5471]
+                  - cell "06824235" [ref=e5472]
+                  - cell "JIMENEZ GONZALES CESAR" [ref=e5473]
+                  - cell "88" [ref=e5474]
+                  - cell "M" [ref=e5475]
+                  - cell "CARDIOLOGIA" [ref=e5476]
+                  - cell "-" [ref=e5477]
+                  - cell "No seleccionado" [ref=e5478]
+                  - cell "No seleccionado" [ref=e5479]
+                  - cell "CAP III CARABAYLLO" [ref=e5480]
+                  - cell "Voluntaria" [ref=e5481]
+                  - cell "966788722" [ref=e5482]:
+                    - link "966788722" [ref=e5483] [cursor=pointer]:
+                      - /url: https://wa.me/966788722
+                      - img [ref=e5484]
+                      - text: "966788722"
+                  - cell "-" [ref=e5486]:
+                    - link "-" [ref=e5487] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e5488]
+                      - text: "-"
+                  - cell "Pendiente Citar" [ref=e5490]:
+                    - generic [ref=e5491]: Pendiente Citar
+                  - cell "Hace 9 días" [ref=e5492]
+                  - cell "—" [ref=e5493]
+                  - cell [ref=e5494]:
+                    - generic [ref=e5495]:
+                      - button "Editar estado y cita" [ref=e5496] [cursor=pointer]:
+                        - img [ref=e5497]
+                      - button "Actualizar teléfono" [ref=e5499] [cursor=pointer]:
+                        - img [ref=e5500]
+                - row "Paciente derivados de PADOMI Hace 11 horas 06825080 MENDOZA NAVARRO TERESA 63 F CARDIOLOGIA - No seleccionado No seleccionado CAP III CARABAYLLO Voluntaria 978737152 - Pendiente Citar Hace 9 días —" [ref=e5502]:
+                  - cell [ref=e5503]:
+                    - checkbox [ref=e5504] [cursor=pointer]
+                  - cell "Paciente derivados de PADOMI" [ref=e5505]
+                  - cell "Hace 11 horas" [ref=e5506]
+                  - cell "06825080" [ref=e5507]
+                  - cell "MENDOZA NAVARRO TERESA" [ref=e5508]
+                  - cell "63" [ref=e5509]
+                  - cell "F" [ref=e5510]
+                  - cell "CARDIOLOGIA" [ref=e5511]
+                  - cell "-" [ref=e5512]
+                  - cell "No seleccionado" [ref=e5513]
+                  - cell "No seleccionado" [ref=e5514]
+                  - cell "CAP III CARABAYLLO" [ref=e5515]
+                  - cell "Voluntaria" [ref=e5516]
+                  - cell "978737152" [ref=e5517]:
+                    - link "978737152" [ref=e5518] [cursor=pointer]:
+                      - /url: https://wa.me/978737152
+                      - img [ref=e5519]
+                      - text: "978737152"
+                  - cell "-" [ref=e5521]:
+                    - link "-" [ref=e5522] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e5523]
+                      - text: "-"
+                  - cell "Pendiente Citar" [ref=e5525]:
+                    - generic [ref=e5526]: Pendiente Citar
+                  - cell "Hace 9 días" [ref=e5527]
+                  - cell "—" [ref=e5528]
+                  - cell [ref=e5529]:
+                    - generic [ref=e5530]:
+                      - button "Editar estado y cita" [ref=e5531] [cursor=pointer]:
+                        - img [ref=e5532]
+                      - button "Actualizar teléfono" [ref=e5534] [cursor=pointer]:
+                        - img [ref=e5535]
+                - row "Paciente derivados de PADOMI Hace 11 horas 07954064 ROBLES PADILLA DE BURGOS RUTH A 90 F CARDIOLOGIA - No seleccionado No seleccionado POL. COMPLEJIDAD CRECIENTE SAN NICOLAS Voluntaria 989289482 - Pendiente Citar Hace 9 días —" [ref=e5537]:
+                  - cell [ref=e5538]:
+                    - checkbox [ref=e5539] [cursor=pointer]
+                  - cell "Paciente derivados de PADOMI" [ref=e5540]
+                  - cell "Hace 11 horas" [ref=e5541]
+                  - cell "07954064" [ref=e5542]
+                  - cell "ROBLES PADILLA DE BURGOS RUTH A" [ref=e5543]
+                  - cell "90" [ref=e5544]
+                  - cell "F" [ref=e5545]
+                  - cell "CARDIOLOGIA" [ref=e5546]
+                  - cell "-" [ref=e5547]
+                  - cell "No seleccionado" [ref=e5548]
+                  - cell "No seleccionado" [ref=e5549]
+                  - cell "POL. COMPLEJIDAD CRECIENTE SAN NICOLAS" [ref=e5550]
+                  - cell "Voluntaria" [ref=e5551]
+                  - cell "989289482" [ref=e5552]:
+                    - link "989289482" [ref=e5553] [cursor=pointer]:
+                      - /url: https://wa.me/989289482
+                      - img [ref=e5554]
+                      - text: "989289482"
+                  - cell "-" [ref=e5556]:
+                    - link "-" [ref=e5557] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e5558]
+                      - text: "-"
+                  - cell "Pendiente Citar" [ref=e5560]:
+                    - generic [ref=e5561]: Pendiente Citar
+                  - cell "Hace 9 días" [ref=e5562]
+                  - cell "—" [ref=e5563]
+                  - cell [ref=e5564]:
+                    - generic [ref=e5565]:
+                      - button "Editar estado y cita" [ref=e5566] [cursor=pointer]:
+                        - img [ref=e5567]
+                      - button "Actualizar teléfono" [ref=e5569] [cursor=pointer]:
+                        - img [ref=e5570]
+                - row "Paciente derivados de PADOMI Hace 11 horas 09181630 JAVIER LY LUIS EDIL 73 M CARDIOLOGIA - No seleccionado No seleccionado H.III HOSPITAL DE EMERGENCIAS GRAU Voluntaria 916705592 - Pendiente Citar Hace 9 días —" [ref=e5572]:
+                  - cell [ref=e5573]:
+                    - checkbox [ref=e5574] [cursor=pointer]
+                  - cell "Paciente derivados de PADOMI" [ref=e5575]
+                  - cell "Hace 11 horas" [ref=e5576]
+                  - cell "09181630" [ref=e5577]
+                  - cell "JAVIER LY LUIS EDIL" [ref=e5578]
+                  - cell "73" [ref=e5579]
+                  - cell "M" [ref=e5580]
+                  - cell "CARDIOLOGIA" [ref=e5581]
+                  - cell "-" [ref=e5582]
+                  - cell "No seleccionado" [ref=e5583]
+                  - cell "No seleccionado" [ref=e5584]
+                  - cell "H.III HOSPITAL DE EMERGENCIAS GRAU" [ref=e5585]
+                  - cell "Voluntaria" [ref=e5586]
+                  - cell "916705592" [ref=e5587]:
+                    - link "916705592" [ref=e5588] [cursor=pointer]:
+                      - /url: https://wa.me/916705592
+                      - img [ref=e5589]
+                      - text: "916705592"
+                  - cell "-" [ref=e5591]:
+                    - link "-" [ref=e5592] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e5593]
+                      - text: "-"
+                  - cell "Pendiente Citar" [ref=e5595]:
+                    - generic [ref=e5596]: Pendiente Citar
+                  - cell "Hace 9 días" [ref=e5597]
+                  - cell "—" [ref=e5598]
+                  - cell [ref=e5599]:
+                    - generic [ref=e5600]:
+                      - button "Editar estado y cita" [ref=e5601] [cursor=pointer]:
+                        - img [ref=e5602]
+                      - button "Actualizar teléfono" [ref=e5604] [cursor=pointer]:
+                        - img [ref=e5605]
+                - row "Paciente derivados de PADOMI Hace 11 horas 06541766 HANDABAKA VEGA GERMAN ORLANDO 92 M CARDIOLOGIA - No seleccionado No seleccionado H.II RAMON CASTILLA Voluntaria 998166518 - Pendiente Citar Hace 9 días —" [ref=e5607]:
+                  - cell [ref=e5608]:
+                    - checkbox [ref=e5609] [cursor=pointer]
+                  - cell "Paciente derivados de PADOMI" [ref=e5610]
+                  - cell "Hace 11 horas" [ref=e5611]
+                  - cell "06541766" [ref=e5612]
+                  - cell "HANDABAKA VEGA GERMAN ORLANDO" [ref=e5613]
+                  - cell "92" [ref=e5614]
+                  - cell "M" [ref=e5615]
+                  - cell "CARDIOLOGIA" [ref=e5616]
+                  - cell "-" [ref=e5617]
+                  - cell "No seleccionado" [ref=e5618]
+                  - cell "No seleccionado" [ref=e5619]
+                  - cell "H.II RAMON CASTILLA" [ref=e5620]
+                  - cell "Voluntaria" [ref=e5621]
+                  - cell "998166518" [ref=e5622]:
+                    - link "998166518" [ref=e5623] [cursor=pointer]:
+                      - /url: https://wa.me/998166518
+                      - img [ref=e5624]
+                      - text: "998166518"
+                  - cell "-" [ref=e5626]:
+                    - link "-" [ref=e5627] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e5628]
+                      - text: "-"
+                  - cell "Pendiente Citar" [ref=e5630]:
+                    - generic [ref=e5631]: Pendiente Citar
+                  - cell "Hace 9 días" [ref=e5632]
+                  - cell "—" [ref=e5633]
+                  - cell [ref=e5634]:
+                    - generic [ref=e5635]:
+                      - button "Editar estado y cita" [ref=e5636] [cursor=pointer]:
+                        - img [ref=e5637]
+                      - button "Actualizar teléfono" [ref=e5639] [cursor=pointer]:
+                        - img [ref=e5640]
+                - row "Paciente derivados de PADOMI Hace 11 horas 08189282 CASANOVA LENTI ELEODORO SIMON 99 M CARDIOLOGIA - No seleccionado No seleccionado CAP III SAN ISIDRO Voluntaria 999646262 - Pendiente Citar Hace 9 días —" [ref=e5642]:
+                  - cell [ref=e5643]:
+                    - checkbox [ref=e5644] [cursor=pointer]
+                  - cell "Paciente derivados de PADOMI" [ref=e5645]
+                  - cell "Hace 11 horas" [ref=e5646]
+                  - cell "08189282" [ref=e5647]
+                  - cell "CASANOVA LENTI ELEODORO SIMON" [ref=e5648]
+                  - cell "99" [ref=e5649]
+                  - cell "M" [ref=e5650]
+                  - cell "CARDIOLOGIA" [ref=e5651]
+                  - cell "-" [ref=e5652]
+                  - cell "No seleccionado" [ref=e5653]
+                  - cell "No seleccionado" [ref=e5654]
+                  - cell "CAP III SAN ISIDRO" [ref=e5655]
+                  - cell "Voluntaria" [ref=e5656]
+                  - cell "999646262" [ref=e5657]:
+                    - link "999646262" [ref=e5658] [cursor=pointer]:
+                      - /url: https://wa.me/999646262
+                      - img [ref=e5659]
+                      - text: "999646262"
+                  - cell "-" [ref=e5661]:
+                    - link "-" [ref=e5662] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e5663]
+                      - text: "-"
+                  - cell "Pendiente Citar" [ref=e5665]:
+                    - generic [ref=e5666]: Pendiente Citar
+                  - cell "Hace 9 días" [ref=e5667]
+                  - cell "—" [ref=e5668]
+                  - cell [ref=e5669]:
+                    - generic [ref=e5670]:
+                      - button "Editar estado y cita" [ref=e5671] [cursor=pointer]:
+                        - img [ref=e5672]
+                      - button "Actualizar teléfono" [ref=e5674] [cursor=pointer]:
+                        - img [ref=e5675]
+                - row "Paciente derivados de PADOMI Hace 11 horas 09323880 ROJAS HUAROC EFRASINA 75 F CARDIOLOGIA - No seleccionado No seleccionado H.III HOSPITAL DE EMERGENCIAS GRAU Voluntaria 924790494 - Pendiente Citar Hace 9 días —" [ref=e5677]:
+                  - cell [ref=e5678]:
+                    - checkbox [ref=e5679] [cursor=pointer]
+                  - cell "Paciente derivados de PADOMI" [ref=e5680]
+                  - cell "Hace 11 horas" [ref=e5681]
+                  - cell "09323880" [ref=e5682]
+                  - cell "ROJAS HUAROC EFRASINA" [ref=e5683]
+                  - cell "75" [ref=e5684]
+                  - cell "F" [ref=e5685]
+                  - cell "CARDIOLOGIA" [ref=e5686]
+                  - cell "-" [ref=e5687]
+                  - cell "No seleccionado" [ref=e5688]
+                  - cell "No seleccionado" [ref=e5689]
+                  - cell "H.III HOSPITAL DE EMERGENCIAS GRAU" [ref=e5690]
+                  - cell "Voluntaria" [ref=e5691]
+                  - cell "924790494" [ref=e5692]:
+                    - link "924790494" [ref=e5693] [cursor=pointer]:
+                      - /url: https://wa.me/924790494
+                      - img [ref=e5694]
+                      - text: "924790494"
+                  - cell "-" [ref=e5696]:
+                    - link "-" [ref=e5697] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e5698]
+                      - text: "-"
+                  - cell "Pendiente Citar" [ref=e5700]:
+                    - generic [ref=e5701]: Pendiente Citar
+                  - cell "Hace 9 días" [ref=e5702]
+                  - cell "—" [ref=e5703]
+                  - cell [ref=e5704]:
+                    - generic [ref=e5705]:
+                      - button "Editar estado y cita" [ref=e5706] [cursor=pointer]:
+                        - img [ref=e5707]
+                      - button "Actualizar teléfono" [ref=e5709] [cursor=pointer]:
+                        - img [ref=e5710]
+                - row "Paciente derivados de PADOMI Hace 11 horas 07670278 CAMACHO ABANTO DE MURILLO TERESA 87 F CARDIOLOGIA - No seleccionado No seleccionado POL. CHOSICA Voluntaria 985305859 - Pendiente Citar Hace 9 días —" [ref=e5712]:
+                  - cell [ref=e5713]:
+                    - checkbox [ref=e5714] [cursor=pointer]
+                  - cell "Paciente derivados de PADOMI" [ref=e5715]
+                  - cell "Hace 11 horas" [ref=e5716]
+                  - cell "07670278" [ref=e5717]
+                  - cell "CAMACHO ABANTO DE MURILLO TERESA" [ref=e5718]
+                  - cell "87" [ref=e5719]
+                  - cell "F" [ref=e5720]
+                  - cell "CARDIOLOGIA" [ref=e5721]
+                  - cell "-" [ref=e5722]
+                  - cell "No seleccionado" [ref=e5723]
+                  - cell "No seleccionado" [ref=e5724]
+                  - cell "POL. CHOSICA" [ref=e5725]
+                  - cell "Voluntaria" [ref=e5726]
+                  - cell "985305859" [ref=e5727]:
+                    - link "985305859" [ref=e5728] [cursor=pointer]:
+                      - /url: https://wa.me/985305859
+                      - img [ref=e5729]
+                      - text: "985305859"
+                  - cell "-" [ref=e5731]:
+                    - link "-" [ref=e5732] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e5733]
+                      - text: "-"
+                  - cell "Pendiente Citar" [ref=e5735]:
+                    - generic [ref=e5736]: Pendiente Citar
+                  - cell "Hace 9 días" [ref=e5737]
+                  - cell "—" [ref=e5738]
+                  - cell [ref=e5739]:
+                    - generic [ref=e5740]:
+                      - button "Editar estado y cita" [ref=e5741] [cursor=pointer]:
+                        - img [ref=e5742]
+                      - button "Actualizar teléfono" [ref=e5744] [cursor=pointer]:
+                        - img [ref=e5745]
+                - row "Paciente derivados de PADOMI Hace 11 horas 06834560 OTERO RAMIREZ DE CACERES PRISCA ELVIRA 92 F CARDIOLOGIA - No seleccionado No seleccionado CAP III CARABAYLLO Voluntaria 968388463 - Pendiente Citar Hace 9 días —" [ref=e5747]:
+                  - cell [ref=e5748]:
+                    - checkbox [ref=e5749] [cursor=pointer]
+                  - cell "Paciente derivados de PADOMI" [ref=e5750]
+                  - cell "Hace 11 horas" [ref=e5751]
+                  - cell "06834560" [ref=e5752]
+                  - cell "OTERO RAMIREZ DE CACERES PRISCA ELVIRA" [ref=e5753]
+                  - cell "92" [ref=e5754]
+                  - cell "F" [ref=e5755]
+                  - cell "CARDIOLOGIA" [ref=e5756]
+                  - cell "-" [ref=e5757]
+                  - cell "No seleccionado" [ref=e5758]
+                  - cell "No seleccionado" [ref=e5759]
+                  - cell "CAP III CARABAYLLO" [ref=e5760]
+                  - cell "Voluntaria" [ref=e5761]
+                  - cell "968388463" [ref=e5762]:
+                    - link "968388463" [ref=e5763] [cursor=pointer]:
+                      - /url: https://wa.me/968388463
+                      - img [ref=e5764]
+                      - text: "968388463"
+                  - cell "-" [ref=e5766]:
+                    - link "-" [ref=e5767] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e5768]
+                      - text: "-"
+                  - cell "Pendiente Citar" [ref=e5770]:
+                    - generic [ref=e5771]: Pendiente Citar
+                  - cell "Hace 9 días" [ref=e5772]
+                  - cell "—" [ref=e5773]
+                  - cell [ref=e5774]:
+                    - generic [ref=e5775]:
+                      - button "Editar estado y cita" [ref=e5776] [cursor=pointer]:
+                        - img [ref=e5777]
+                      - button "Actualizar teléfono" [ref=e5779] [cursor=pointer]:
+                        - img [ref=e5780]
+                - row "Paciente derivados de PADOMI Hace 11 horas 06848733 AGURTO VALDIVIEZO SUSANA 82 F CARDIOLOGIA - No seleccionado No seleccionado POL. PROCERES Voluntaria 960813841 - Pendiente Citar Hace 9 días —" [ref=e5782]:
+                  - cell [ref=e5783]:
+                    - checkbox [ref=e5784] [cursor=pointer]
+                  - cell "Paciente derivados de PADOMI" [ref=e5785]
+                  - cell "Hace 11 horas" [ref=e5786]
+                  - cell "06848733" [ref=e5787]
+                  - cell "AGURTO VALDIVIEZO SUSANA" [ref=e5788]
+                  - cell "82" [ref=e5789]
+                  - cell "F" [ref=e5790]
+                  - cell "CARDIOLOGIA" [ref=e5791]
+                  - cell "-" [ref=e5792]
+                  - cell "No seleccionado" [ref=e5793]
+                  - cell "No seleccionado" [ref=e5794]
+                  - cell "POL. PROCERES" [ref=e5795]
+                  - cell "Voluntaria" [ref=e5796]
+                  - cell "960813841" [ref=e5797]:
+                    - link "960813841" [ref=e5798] [cursor=pointer]:
+                      - /url: https://wa.me/960813841
+                      - img [ref=e5799]
+                      - text: "960813841"
+                  - cell "-" [ref=e5801]:
+                    - link "-" [ref=e5802] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e5803]
+                      - text: "-"
+                  - cell "Pendiente Citar" [ref=e5805]:
+                    - generic [ref=e5806]: Pendiente Citar
+                  - cell "Hace 9 días" [ref=e5807]
+                  - cell "—" [ref=e5808]
+                  - cell [ref=e5809]:
+                    - generic [ref=e5810]:
+                      - button "Editar estado y cita" [ref=e5811] [cursor=pointer]:
+                        - img [ref=e5812]
+                      - button "Actualizar teléfono" [ref=e5814] [cursor=pointer]:
+                        - img [ref=e5815]
+                - row "Paciente derivados de PADOMI Hace 11 horas 06966505 COBEÑAS CALLIRGOS ALEJANDRIN 74 F CARDIOLOGIA - No seleccionado No seleccionado POL. CHOSICA Voluntaria 921598102 - Pendiente Citar Hace 9 días —" [ref=e5817]:
+                  - cell [ref=e5818]:
+                    - checkbox [ref=e5819] [cursor=pointer]
+                  - cell "Paciente derivados de PADOMI" [ref=e5820]
+                  - cell "Hace 11 horas" [ref=e5821]
+                  - cell "06966505" [ref=e5822]
+                  - cell "COBEÑAS CALLIRGOS ALEJANDRIN" [ref=e5823]
+                  - cell "74" [ref=e5824]
+                  - cell "F" [ref=e5825]
+                  - cell "CARDIOLOGIA" [ref=e5826]
+                  - cell "-" [ref=e5827]
+                  - cell "No seleccionado" [ref=e5828]
+                  - cell "No seleccionado" [ref=e5829]
+                  - cell "POL. CHOSICA" [ref=e5830]
+                  - cell "Voluntaria" [ref=e5831]
+                  - cell "921598102" [ref=e5832]:
+                    - link "921598102" [ref=e5833] [cursor=pointer]:
+                      - /url: https://wa.me/921598102
+                      - img [ref=e5834]
+                      - text: "921598102"
+                  - cell "-" [ref=e5836]:
+                    - link "-" [ref=e5837] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e5838]
+                      - text: "-"
+                  - cell "Pendiente Citar" [ref=e5840]:
+                    - generic [ref=e5841]: Pendiente Citar
+                  - cell "Hace 9 días" [ref=e5842]
+                  - cell "—" [ref=e5843]
+                  - cell [ref=e5844]:
+                    - generic [ref=e5845]:
+                      - button "Editar estado y cita" [ref=e5846] [cursor=pointer]:
+                        - img [ref=e5847]
+                      - button "Actualizar teléfono" [ref=e5849] [cursor=pointer]:
+                        - img [ref=e5850]
+                - row "Paciente derivados de PADOMI Hace 11 horas 06192816 DAVILA PARIONA ANGEL 97 M CARDIOLOGIA - No seleccionado No seleccionado H.II VITARTE Voluntaria 917356736 - Pendiente Citar Hace 9 días —" [ref=e5852]:
+                  - cell [ref=e5853]:
+                    - checkbox [ref=e5854] [cursor=pointer]
+                  - cell "Paciente derivados de PADOMI" [ref=e5855]
+                  - cell "Hace 11 horas" [ref=e5856]
+                  - cell "06192816" [ref=e5857]
+                  - cell "DAVILA PARIONA ANGEL" [ref=e5858]
+                  - cell "97" [ref=e5859]
+                  - cell "M" [ref=e5860]
+                  - cell "CARDIOLOGIA" [ref=e5861]
+                  - cell "-" [ref=e5862]
+                  - cell "No seleccionado" [ref=e5863]
+                  - cell "No seleccionado" [ref=e5864]
+                  - cell "H.II VITARTE" [ref=e5865]
+                  - cell "Voluntaria" [ref=e5866]
+                  - cell "917356736" [ref=e5867]:
+                    - link "917356736" [ref=e5868] [cursor=pointer]:
+                      - /url: https://wa.me/917356736
+                      - img [ref=e5869]
+                      - text: "917356736"
+                  - cell "-" [ref=e5871]:
+                    - link "-" [ref=e5872] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e5873]
+                      - text: "-"
+                  - cell "Pendiente Citar" [ref=e5875]:
+                    - generic [ref=e5876]: Pendiente Citar
+                  - cell "Hace 9 días" [ref=e5877]
+                  - cell "—" [ref=e5878]
+                  - cell [ref=e5879]:
+                    - generic [ref=e5880]:
+                      - button "Editar estado y cita" [ref=e5881] [cursor=pointer]:
+                        - img [ref=e5882]
+                      - button "Actualizar teléfono" [ref=e5884] [cursor=pointer]:
+                        - img [ref=e5885]
+                - row "Paciente derivados de PADOMI Hace 11 horas 08586200 ROMERO COLQUI DE ALAMA MARIA 89 F CARDIOLOGIA - No seleccionado No seleccionado POL. CHOSICA Voluntaria 933784780 - Pendiente Citar Hace 9 días —" [ref=e5887]:
+                  - cell [ref=e5888]:
+                    - checkbox [ref=e5889] [cursor=pointer]
+                  - cell "Paciente derivados de PADOMI" [ref=e5890]
+                  - cell "Hace 11 horas" [ref=e5891]
+                  - cell "08586200" [ref=e5892]
+                  - cell "ROMERO COLQUI DE ALAMA MARIA" [ref=e5893]
+                  - cell "89" [ref=e5894]
+                  - cell "F" [ref=e5895]
+                  - cell "CARDIOLOGIA" [ref=e5896]
+                  - cell "-" [ref=e5897]
+                  - cell "No seleccionado" [ref=e5898]
+                  - cell "No seleccionado" [ref=e5899]
+                  - cell "POL. CHOSICA" [ref=e5900]
+                  - cell "Voluntaria" [ref=e5901]
+                  - cell "933784780" [ref=e5902]:
+                    - link "933784780" [ref=e5903] [cursor=pointer]:
+                      - /url: https://wa.me/933784780
+                      - img [ref=e5904]
+                      - text: "933784780"
+                  - cell "-" [ref=e5906]:
+                    - link "-" [ref=e5907] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e5908]
+                      - text: "-"
+                  - cell "Pendiente Citar" [ref=e5910]:
+                    - generic [ref=e5911]: Pendiente Citar
+                  - cell "Hace 9 días" [ref=e5912]
+                  - cell "—" [ref=e5913]
+                  - cell [ref=e5914]:
+                    - generic [ref=e5915]:
+                      - button "Editar estado y cita" [ref=e5916] [cursor=pointer]:
+                        - img [ref=e5917]
+                      - button "Actualizar teléfono" [ref=e5919] [cursor=pointer]:
+                        - img [ref=e5920]
+                - row "Paciente derivados de PADOMI Hace 11 horas 06960194 VILLANUEVA CUETO DE GUTIERREZ MERCEDES 96 F CARDIOLOGIA - No seleccionado No seleccionado POL. CHOSICA Voluntaria 946449539 - Pendiente Citar Hace 9 días —" [ref=e5922]:
+                  - cell [ref=e5923]:
+                    - checkbox [ref=e5924] [cursor=pointer]
+                  - cell "Paciente derivados de PADOMI" [ref=e5925]
+                  - cell "Hace 11 horas" [ref=e5926]
+                  - cell "06960194" [ref=e5927]
+                  - cell "VILLANUEVA CUETO DE GUTIERREZ MERCEDES" [ref=e5928]
+                  - cell "96" [ref=e5929]
+                  - cell "F" [ref=e5930]
+                  - cell "CARDIOLOGIA" [ref=e5931]
+                  - cell "-" [ref=e5932]
+                  - cell "No seleccionado" [ref=e5933]
+                  - cell "No seleccionado" [ref=e5934]
+                  - cell "POL. CHOSICA" [ref=e5935]
+                  - cell "Voluntaria" [ref=e5936]
+                  - cell "946449539" [ref=e5937]:
+                    - link "946449539" [ref=e5938] [cursor=pointer]:
+                      - /url: https://wa.me/946449539
+                      - img [ref=e5939]
+                      - text: "946449539"
+                  - cell "-" [ref=e5941]:
+                    - link "-" [ref=e5942] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e5943]
+                      - text: "-"
+                  - cell "Pendiente Citar" [ref=e5945]:
+                    - generic [ref=e5946]: Pendiente Citar
+                  - cell "Hace 9 días" [ref=e5947]
+                  - cell "—" [ref=e5948]
+                  - cell [ref=e5949]:
+                    - generic [ref=e5950]:
+                      - button "Editar estado y cita" [ref=e5951] [cursor=pointer]:
+                        - img [ref=e5952]
+                      - button "Actualizar teléfono" [ref=e5954] [cursor=pointer]:
+                        - img [ref=e5955]
+                - row "Paciente derivados de PADOMI Hace 11 horas 06886663 GAMA TORRES ROSA NAUTICA 80 F CARDIOLOGIA 71101955 Luis Gianfranco Nizama Raymundo 10/02/2026 17:45:00 CAP III CARABAYLLO Voluntaria 994895076 - Citado Hace 11 horas —" [ref=e5957]:
+                  - cell [ref=e5958]:
+                    - checkbox [ref=e5959] [cursor=pointer]
+                  - cell "Paciente derivados de PADOMI" [ref=e5960]
+                  - cell "Hace 11 horas" [ref=e5961]
+                  - cell "06886663" [ref=e5962]
+                  - cell "GAMA TORRES ROSA NAUTICA" [ref=e5963]
+                  - cell "80" [ref=e5964]
+                  - cell "F" [ref=e5965]
+                  - cell "CARDIOLOGIA" [ref=e5966]
+                  - cell "71101955" [ref=e5967]
+                  - cell "Luis Gianfranco Nizama Raymundo" [ref=e5968]
+                  - cell "10/02/2026 17:45:00" [ref=e5969]:
+                    - generic [ref=e5970]: 10/02/2026 17:45:00
+                  - cell "CAP III CARABAYLLO" [ref=e5971]
+                  - cell "Voluntaria" [ref=e5972]
+                  - cell "994895076" [ref=e5973]:
+                    - link "994895076" [ref=e5974] [cursor=pointer]:
+                      - /url: https://wa.me/994895076
+                      - img [ref=e5975]
+                      - text: "994895076"
+                  - cell "-" [ref=e5977]:
+                    - link "-" [ref=e5978] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e5979]
+                      - text: "-"
+                  - cell "Citado" [ref=e5981]:
+                    - generic [ref=e5982]: Citado
+                  - cell "Hace 11 horas" [ref=e5983]
+                  - cell "—" [ref=e5984]
+                  - cell [ref=e5985]:
+                    - generic [ref=e5986]:
+                      - button "Editar estado y cita" [ref=e5987] [cursor=pointer]:
+                        - img [ref=e5988]
+                      - button "Actualizar teléfono" [ref=e5990] [cursor=pointer]:
+                        - img [ref=e5991]
+                      - button "Enviar mensaje de cita formateado" [ref=e5993] [cursor=pointer]:
+                        - img [ref=e5994]
+                - row "Paciente derivados de PADOMI Hace 11 horas 80351121 COLLAZOS ALIAGA MARIA ANGELA 89 F CARDIOLOGIA 71101955 Luis Gianfranco Nizama Raymundo 10/02/2026 17:45:00 H.I CARLOS ALCANTARA BUTTERFIELD Voluntaria 970489868 - Citado Hace 11 horas —" [ref=e5996]:
+                  - cell [ref=e5997]:
+                    - checkbox [ref=e5998] [cursor=pointer]
+                  - cell "Paciente derivados de PADOMI" [ref=e5999]
+                  - cell "Hace 11 horas" [ref=e6000]
+                  - cell "80351121" [ref=e6001]
+                  - cell "COLLAZOS ALIAGA MARIA ANGELA" [ref=e6002]
+                  - cell "89" [ref=e6003]
+                  - cell "F" [ref=e6004]
+                  - cell "CARDIOLOGIA" [ref=e6005]
+                  - cell "71101955" [ref=e6006]
+                  - cell "Luis Gianfranco Nizama Raymundo" [ref=e6007]
+                  - cell "10/02/2026 17:45:00" [ref=e6008]:
+                    - generic [ref=e6009]: 10/02/2026 17:45:00
+                  - cell "H.I CARLOS ALCANTARA BUTTERFIELD" [ref=e6010]
+                  - cell "Voluntaria" [ref=e6011]
+                  - cell "970489868" [ref=e6012]:
+                    - link "970489868" [ref=e6013] [cursor=pointer]:
+                      - /url: https://wa.me/970489868
+                      - img [ref=e6014]
+                      - text: "970489868"
+                  - cell "-" [ref=e6016]:
+                    - link "-" [ref=e6017] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e6018]
+                      - text: "-"
+                  - cell "Citado" [ref=e6020]:
+                    - generic [ref=e6021]: Citado
+                  - cell "Hace 11 horas" [ref=e6022]
+                  - cell "—" [ref=e6023]
+                  - cell [ref=e6024]:
+                    - generic [ref=e6025]:
+                      - button "Editar estado y cita" [ref=e6026] [cursor=pointer]:
+                        - img [ref=e6027]
+                      - button "Actualizar teléfono" [ref=e6029] [cursor=pointer]:
+                        - img [ref=e6030]
+                      - button "Enviar mensaje de cita formateado" [ref=e6032] [cursor=pointer]:
+                        - img [ref=e6033]
+                - row "Paciente derivados de PADOMI Hace 11 horas 17884427 PAZ XXX VDA DE FAVARATO CARMEN DEL PILAR 83 F CARDIOLOGIA 71101955 Luis Gianfranco Nizama Raymundo 10/02/2026 17:45:00 POL. CHOSICA Voluntaria 915192801 - Citado Hace 11 horas —" [ref=e6035]:
+                  - cell [ref=e6036]:
+                    - checkbox [ref=e6037] [cursor=pointer]
+                  - cell "Paciente derivados de PADOMI" [ref=e6038]
+                  - cell "Hace 11 horas" [ref=e6039]
+                  - cell "17884427" [ref=e6040]
+                  - cell "PAZ XXX VDA DE FAVARATO CARMEN DEL PILAR" [ref=e6041]
+                  - cell "83" [ref=e6042]
+                  - cell "F" [ref=e6043]
+                  - cell "CARDIOLOGIA" [ref=e6044]
+                  - cell "71101955" [ref=e6045]
+                  - cell "Luis Gianfranco Nizama Raymundo" [ref=e6046]
+                  - cell "10/02/2026 17:45:00" [ref=e6047]:
+                    - generic [ref=e6048]: 10/02/2026 17:45:00
+                  - cell "POL. CHOSICA" [ref=e6049]
+                  - cell "Voluntaria" [ref=e6050]
+                  - cell "915192801" [ref=e6051]:
+                    - link "915192801" [ref=e6052] [cursor=pointer]:
+                      - /url: https://wa.me/915192801
+                      - img [ref=e6053]
+                      - text: "915192801"
+                  - cell "-" [ref=e6055]:
+                    - link "-" [ref=e6056] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e6057]
+                      - text: "-"
+                  - cell "Citado" [ref=e6059]:
+                    - generic [ref=e6060]: Citado
+                  - cell "Hace 11 horas" [ref=e6061]
+                  - cell "—" [ref=e6062]
+                  - cell [ref=e6063]:
+                    - generic [ref=e6064]:
+                      - button "Editar estado y cita" [ref=e6065] [cursor=pointer]:
+                        - img [ref=e6066]
+                      - button "Actualizar teléfono" [ref=e6068] [cursor=pointer]:
+                        - img [ref=e6069]
+                      - button "Enviar mensaje de cita formateado" [ref=e6071] [cursor=pointer]:
+                        - img [ref=e6072]
+                - row "Paciente derivados de PADOMI Hace 11 horas 22086792 QUISPE MARAS HONORATO 80 M CARDIOLOGIA 71101955 Luis Gianfranco Nizama Raymundo 10/02/2026 17:45:00 CAP III CARABAYLLO Voluntaria 958032893 - Citado Hace 11 horas —" [ref=e6074]:
+                  - cell [ref=e6075]:
+                    - checkbox [ref=e6076] [cursor=pointer]
+                  - cell "Paciente derivados de PADOMI" [ref=e6077]
+                  - cell "Hace 11 horas" [ref=e6078]
+                  - cell "22086792" [ref=e6079]
+                  - cell "QUISPE MARAS HONORATO" [ref=e6080]
+                  - cell "80" [ref=e6081]
+                  - cell "M" [ref=e6082]
+                  - cell "CARDIOLOGIA" [ref=e6083]
+                  - cell "71101955" [ref=e6084]
+                  - cell "Luis Gianfranco Nizama Raymundo" [ref=e6085]
+                  - cell "10/02/2026 17:45:00" [ref=e6086]:
+                    - generic [ref=e6087]: 10/02/2026 17:45:00
+                  - cell "CAP III CARABAYLLO" [ref=e6088]
+                  - cell "Voluntaria" [ref=e6089]
+                  - cell "958032893" [ref=e6090]:
+                    - link "958032893" [ref=e6091] [cursor=pointer]:
+                      - /url: https://wa.me/958032893
+                      - img [ref=e6092]
+                      - text: "958032893"
+                  - cell "-" [ref=e6094]:
+                    - link "-" [ref=e6095] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e6096]
+                      - text: "-"
+                  - cell "Citado" [ref=e6098]:
+                    - generic [ref=e6099]: Citado
+                  - cell "Hace 11 horas" [ref=e6100]
+                  - cell "—" [ref=e6101]
+                  - cell [ref=e6102]:
+                    - generic [ref=e6103]:
+                      - button "Editar estado y cita" [ref=e6104] [cursor=pointer]:
+                        - img [ref=e6105]
+                      - button "Actualizar teléfono" [ref=e6107] [cursor=pointer]:
+                        - img [ref=e6108]
+                      - button "Enviar mensaje de cita formateado" [ref=e6110] [cursor=pointer]:
+                        - img [ref=e6111]
+                - row "Paciente derivados de PADOMI Hace 11 horas 06824290 IBAÑEZ VALERA ERNESTO 84 M CARDIOLOGIA - No seleccionado No seleccionado CAP III CARABAYLLO Voluntaria 993218339 - Pendiente Citar Hace 9 días —" [ref=e6113]:
+                  - cell [ref=e6114]:
+                    - checkbox [ref=e6115] [cursor=pointer]
+                  - cell "Paciente derivados de PADOMI" [ref=e6116]
+                  - cell "Hace 11 horas" [ref=e6117]
+                  - cell "06824290" [ref=e6118]
+                  - cell "IBAÑEZ VALERA ERNESTO" [ref=e6119]
+                  - cell "84" [ref=e6120]
+                  - cell "M" [ref=e6121]
+                  - cell "CARDIOLOGIA" [ref=e6122]
+                  - cell "-" [ref=e6123]
+                  - cell "No seleccionado" [ref=e6124]
+                  - cell "No seleccionado" [ref=e6125]
+                  - cell "CAP III CARABAYLLO" [ref=e6126]
+                  - cell "Voluntaria" [ref=e6127]
+                  - cell "993218339" [ref=e6128]:
+                    - link "993218339" [ref=e6129] [cursor=pointer]:
+                      - /url: https://wa.me/993218339
+                      - img [ref=e6130]
+                      - text: "993218339"
+                  - cell "-" [ref=e6132]:
+                    - link "-" [ref=e6133] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e6134]
+                      - text: "-"
+                  - cell "Pendiente Citar" [ref=e6136]:
+                    - generic [ref=e6137]: Pendiente Citar
+                  - cell "Hace 9 días" [ref=e6138]
+                  - cell "—" [ref=e6139]
+                  - cell [ref=e6140]:
+                    - generic [ref=e6141]:
+                      - button "Editar estado y cita" [ref=e6142] [cursor=pointer]:
+                        - img [ref=e6143]
+                      - button "Actualizar teléfono" [ref=e6145] [cursor=pointer]:
+                        - img [ref=e6146]
+                - row "Paciente derivados de PADOMI Hace 11 horas 06825931 VELASQUEZ ERAZO VICENTE 90 M CARDIOLOGIA - No seleccionado No seleccionado CAP III CARABAYLLO Voluntaria 947267116 - Pendiente Citar Hace 9 días —" [ref=e6148]:
+                  - cell [ref=e6149]:
+                    - checkbox [ref=e6150] [cursor=pointer]
+                  - cell "Paciente derivados de PADOMI" [ref=e6151]
+                  - cell "Hace 11 horas" [ref=e6152]
+                  - cell "06825931" [ref=e6153]
+                  - cell "VELASQUEZ ERAZO VICENTE" [ref=e6154]
+                  - cell "90" [ref=e6155]
+                  - cell "M" [ref=e6156]
+                  - cell "CARDIOLOGIA" [ref=e6157]
+                  - cell "-" [ref=e6158]
+                  - cell "No seleccionado" [ref=e6159]
+                  - cell "No seleccionado" [ref=e6160]
+                  - cell "CAP III CARABAYLLO" [ref=e6161]
+                  - cell "Voluntaria" [ref=e6162]
+                  - cell "947267116" [ref=e6163]:
+                    - link "947267116" [ref=e6164] [cursor=pointer]:
+                      - /url: https://wa.me/947267116
+                      - img [ref=e6165]
+                      - text: "947267116"
+                  - cell "-" [ref=e6167]:
+                    - link "-" [ref=e6168] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e6169]
+                      - text: "-"
+                  - cell "Pendiente Citar" [ref=e6171]:
+                    - generic [ref=e6172]: Pendiente Citar
+                  - cell "Hace 9 días" [ref=e6173]
+                  - cell "—" [ref=e6174]
+                  - cell [ref=e6175]:
+                    - generic [ref=e6176]:
+                      - button "Editar estado y cita" [ref=e6177] [cursor=pointer]:
+                        - img [ref=e6178]
+                      - button "Actualizar teléfono" [ref=e6180] [cursor=pointer]:
+                        - img [ref=e6181]
+                - row "Paciente derivados de PADOMI Hace 11 horas 22716950 SALAZAR SALCEDO RODOLFO 101 M CARDIOLOGIA - No seleccionado No seleccionado H.III HOSPITAL DE EMERGENCIAS GRAU Voluntaria 961358625 - Pendiente Citar Hace 9 días —" [ref=e6183]:
+                  - cell [ref=e6184]:
+                    - checkbox [ref=e6185] [cursor=pointer]
+                  - cell "Paciente derivados de PADOMI" [ref=e6186]
+                  - cell "Hace 11 horas" [ref=e6187]
+                  - cell "22716950" [ref=e6188]
+                  - cell "SALAZAR SALCEDO RODOLFO" [ref=e6189]
+                  - cell "101" [ref=e6190]
+                  - cell "M" [ref=e6191]
+                  - cell "CARDIOLOGIA" [ref=e6192]
+                  - cell "-" [ref=e6193]
+                  - cell "No seleccionado" [ref=e6194]
+                  - cell "No seleccionado" [ref=e6195]
+                  - cell "H.III HOSPITAL DE EMERGENCIAS GRAU" [ref=e6196]
+                  - cell "Voluntaria" [ref=e6197]
+                  - cell "961358625" [ref=e6198]:
+                    - link "961358625" [ref=e6199] [cursor=pointer]:
+                      - /url: https://wa.me/961358625
+                      - img [ref=e6200]
+                      - text: "961358625"
+                  - cell "-" [ref=e6202]:
+                    - link "-" [ref=e6203] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e6204]
+                      - text: "-"
+                  - cell "Pendiente Citar" [ref=e6206]:
+                    - generic [ref=e6207]: Pendiente Citar
+                  - cell "Hace 9 días" [ref=e6208]
+                  - cell "—" [ref=e6209]
+                  - cell [ref=e6210]:
+                    - generic [ref=e6211]:
+                      - button "Editar estado y cita" [ref=e6212] [cursor=pointer]:
+                        - img [ref=e6213]
+                      - button "Actualizar teléfono" [ref=e6215] [cursor=pointer]:
+                        - img [ref=e6216]
+                - row "Paciente derivados de PADOMI Hace 11 horas 09764150 FRANCO CASTRO JUAN CARLOS 61 M CARDIOLOGIA 71101955 Luis Gianfranco Nizama Raymundo 10/02/2026 17:45:00 H.II VITARTE Voluntaria 998908748 - Citado Hace 11 horas —" [ref=e6218]:
+                  - cell [ref=e6219]:
+                    - checkbox [ref=e6220] [cursor=pointer]
+                  - cell "Paciente derivados de PADOMI" [ref=e6221]
+                  - cell "Hace 11 horas" [ref=e6222]
+                  - cell "09764150" [ref=e6223]
+                  - cell "FRANCO CASTRO JUAN CARLOS" [ref=e6224]
+                  - cell "61" [ref=e6225]
+                  - cell "M" [ref=e6226]
+                  - cell "CARDIOLOGIA" [ref=e6227]
+                  - cell "71101955" [ref=e6228]
+                  - cell "Luis Gianfranco Nizama Raymundo" [ref=e6229]
+                  - cell "10/02/2026 17:45:00" [ref=e6230]:
+                    - generic [ref=e6231]: 10/02/2026 17:45:00
+                  - cell "H.II VITARTE" [ref=e6232]
+                  - cell "Voluntaria" [ref=e6233]
+                  - cell "998908748" [ref=e6234]:
+                    - link "998908748" [ref=e6235] [cursor=pointer]:
+                      - /url: https://wa.me/998908748
+                      - img [ref=e6236]
+                      - text: "998908748"
+                  - cell "-" [ref=e6238]:
+                    - link "-" [ref=e6239] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e6240]
+                      - text: "-"
+                  - cell "Citado" [ref=e6242]:
+                    - generic [ref=e6243]: Citado
+                  - cell "Hace 11 horas" [ref=e6244]
+                  - cell "—" [ref=e6245]
+                  - cell [ref=e6246]:
+                    - generic [ref=e6247]:
+                      - button "Editar estado y cita" [ref=e6248] [cursor=pointer]:
+                        - img [ref=e6249]
+                      - button "Actualizar teléfono" [ref=e6251] [cursor=pointer]:
+                        - img [ref=e6252]
+                      - button "Enviar mensaje de cita formateado" [ref=e6254] [cursor=pointer]:
+                        - img [ref=e6255]
+                - row "Paciente derivados de PADOMI Hace 11 horas 06574649 MISAICO MONTES TEODORA 71 F CARDIOLOGIA 71101955 Luis Gianfranco Nizama Raymundo 10/02/2026 17:45:00 POL. CHOSICA Voluntaria 977246942 - Citado Hace 11 horas —" [ref=e6257]:
+                  - cell [ref=e6258]:
+                    - checkbox [ref=e6259] [cursor=pointer]
+                  - cell "Paciente derivados de PADOMI" [ref=e6260]
+                  - cell "Hace 11 horas" [ref=e6261]
+                  - cell "06574649" [ref=e6262]
+                  - cell "MISAICO MONTES TEODORA" [ref=e6263]
+                  - cell "71" [ref=e6264]
+                  - cell "F" [ref=e6265]
+                  - cell "CARDIOLOGIA" [ref=e6266]
+                  - cell "71101955" [ref=e6267]
+                  - cell "Luis Gianfranco Nizama Raymundo" [ref=e6268]
+                  - cell "10/02/2026 17:45:00" [ref=e6269]:
+                    - generic [ref=e6270]: 10/02/2026 17:45:00
+                  - cell "POL. CHOSICA" [ref=e6271]
+                  - cell "Voluntaria" [ref=e6272]
+                  - cell "977246942" [ref=e6273]:
+                    - link "977246942" [ref=e6274] [cursor=pointer]:
+                      - /url: https://wa.me/977246942
+                      - img [ref=e6275]
+                      - text: "977246942"
+                  - cell "-" [ref=e6277]:
+                    - link "-" [ref=e6278] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e6279]
+                      - text: "-"
+                  - cell "Citado" [ref=e6281]:
+                    - generic [ref=e6282]: Citado
+                  - cell "Hace 11 horas" [ref=e6283]
+                  - cell "—" [ref=e6284]
+                  - cell [ref=e6285]:
+                    - generic [ref=e6286]:
+                      - button "Editar estado y cita" [ref=e6287] [cursor=pointer]:
+                        - img [ref=e6288]
+                      - button "Actualizar teléfono" [ref=e6290] [cursor=pointer]:
+                        - img [ref=e6291]
+                      - button "Enviar mensaje de cita formateado" [ref=e6293] [cursor=pointer]:
+                        - img [ref=e6294]
+                - row "Paciente derivados de PADOMI Hace 11 horas 07951109 QUISPE DE VELASQUEZ BEATRIZ 85 F CARDIOLOGIA - No seleccionado No seleccionado CAP III CARABAYLLO Voluntaria 989105898 - Pendiente Citar Hace 9 días —" [ref=e6296]:
+                  - cell [ref=e6297]:
+                    - checkbox [ref=e6298] [cursor=pointer]
+                  - cell "Paciente derivados de PADOMI" [ref=e6299]
+                  - cell "Hace 11 horas" [ref=e6300]
+                  - cell "07951109" [ref=e6301]
+                  - cell "QUISPE DE VELASQUEZ BEATRIZ" [ref=e6302]
+                  - cell "85" [ref=e6303]
+                  - cell "F" [ref=e6304]
+                  - cell "CARDIOLOGIA" [ref=e6305]
+                  - cell "-" [ref=e6306]
+                  - cell "No seleccionado" [ref=e6307]
+                  - cell "No seleccionado" [ref=e6308]
+                  - cell "CAP III CARABAYLLO" [ref=e6309]
+                  - cell "Voluntaria" [ref=e6310]
+                  - cell "989105898" [ref=e6311]:
+                    - link "989105898" [ref=e6312] [cursor=pointer]:
+                      - /url: https://wa.me/989105898
+                      - img [ref=e6313]
+                      - text: "989105898"
+                  - cell "-" [ref=e6315]:
+                    - link "-" [ref=e6316] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e6317]
+                      - text: "-"
+                  - cell "Pendiente Citar" [ref=e6319]:
+                    - generic [ref=e6320]: Pendiente Citar
+                  - cell "Hace 9 días" [ref=e6321]
+                  - cell "—" [ref=e6322]
+                  - cell [ref=e6323]:
+                    - generic [ref=e6324]:
+                      - button "Editar estado y cita" [ref=e6325] [cursor=pointer]:
+                        - img [ref=e6326]
+                      - button "Actualizar teléfono" [ref=e6328] [cursor=pointer]:
+                        - img [ref=e6329]
+                - row "Paciente derivados de PADOMI Hace 11 horas 07141107 LOZADA DE MARTINEZ BERTHA FLOR 71 F CARDIOLOGIA 71101955 Luis Gianfranco Nizama Raymundo 10/02/2026 17:45:00 CAP III INDEPENDENCIA Voluntaria 992787593 - Citado Hace 11 horas —" [ref=e6331]:
+                  - cell [ref=e6332]:
+                    - checkbox [ref=e6333] [cursor=pointer]
+                  - cell "Paciente derivados de PADOMI" [ref=e6334]
+                  - cell "Hace 11 horas" [ref=e6335]
+                  - cell "07141107" [ref=e6336]
+                  - cell "LOZADA DE MARTINEZ BERTHA FLOR" [ref=e6337]
+                  - cell "71" [ref=e6338]
+                  - cell "F" [ref=e6339]
+                  - cell "CARDIOLOGIA" [ref=e6340]
+                  - cell "71101955" [ref=e6341]
+                  - cell "Luis Gianfranco Nizama Raymundo" [ref=e6342]
+                  - cell "10/02/2026 17:45:00" [ref=e6343]:
+                    - generic [ref=e6344]: 10/02/2026 17:45:00
+                  - cell "CAP III INDEPENDENCIA" [ref=e6345]
+                  - cell "Voluntaria" [ref=e6346]
+                  - cell "992787593" [ref=e6347]:
+                    - link "992787593" [ref=e6348] [cursor=pointer]:
+                      - /url: https://wa.me/992787593
+                      - img [ref=e6349]
+                      - text: "992787593"
+                  - cell "-" [ref=e6351]:
+                    - link "-" [ref=e6352] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e6353]
+                      - text: "-"
+                  - cell "Citado" [ref=e6355]:
+                    - generic [ref=e6356]: Citado
+                  - cell "Hace 11 horas" [ref=e6357]
+                  - cell "—" [ref=e6358]
+                  - cell [ref=e6359]:
+                    - generic [ref=e6360]:
+                      - button "Editar estado y cita" [ref=e6361] [cursor=pointer]:
+                        - img [ref=e6362]
+                      - button "Actualizar teléfono" [ref=e6364] [cursor=pointer]:
+                        - img [ref=e6365]
+                      - button "Enviar mensaje de cita formateado" [ref=e6367] [cursor=pointer]:
+                        - img [ref=e6368]
+                - row "Paciente derivados de PADOMI Hace 11 horas 08080854 MOLINA DE LA BARRERA DE GOT CLARA DORIS 101 F CARDIOLOGIA - No seleccionado No seleccionado POL. FRANCISCO PIZARRO Voluntaria 999435242 - Pendiente Citar Hace 9 días —" [ref=e6370]:
+                  - cell [ref=e6371]:
+                    - checkbox [ref=e6372] [cursor=pointer]
+                  - cell "Paciente derivados de PADOMI" [ref=e6373]
+                  - cell "Hace 11 horas" [ref=e6374]
+                  - cell "08080854" [ref=e6375]
+                  - cell "MOLINA DE LA BARRERA DE GOT CLARA DORIS" [ref=e6376]
+                  - cell "101" [ref=e6377]
+                  - cell "F" [ref=e6378]
+                  - cell "CARDIOLOGIA" [ref=e6379]
+                  - cell "-" [ref=e6380]
+                  - cell "No seleccionado" [ref=e6381]
+                  - cell "No seleccionado" [ref=e6382]
+                  - cell "POL. FRANCISCO PIZARRO" [ref=e6383]
+                  - cell "Voluntaria" [ref=e6384]
+                  - cell "999435242" [ref=e6385]:
+                    - link "999435242" [ref=e6386] [cursor=pointer]:
+                      - /url: https://wa.me/999435242
+                      - img [ref=e6387]
+                      - text: "999435242"
+                  - cell "-" [ref=e6389]:
+                    - link "-" [ref=e6390] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e6391]
+                      - text: "-"
+                  - cell "Pendiente Citar" [ref=e6393]:
+                    - generic [ref=e6394]: Pendiente Citar
+                  - cell "Hace 9 días" [ref=e6395]
+                  - cell "—" [ref=e6396]
+                  - cell [ref=e6397]:
+                    - generic [ref=e6398]:
+                      - button "Editar estado y cita" [ref=e6399] [cursor=pointer]:
+                        - img [ref=e6400]
+                      - button "Actualizar teléfono" [ref=e6402] [cursor=pointer]:
+                        - img [ref=e6403]
+                - row "Paciente derivados de PADOMI Hace 11 horas 08180145 CABALLERO DE AMORIN CEPRIANA 93 F CARDIOLOGIA 71101955 Luis Gianfranco Nizama Raymundo 10/02/2026 17:45:00 POL. PROCERES Voluntaria 953720174 - Citado Hace 11 horas —" [ref=e6405]:
+                  - cell [ref=e6406]:
+                    - checkbox [ref=e6407] [cursor=pointer]
+                  - cell "Paciente derivados de PADOMI" [ref=e6408]
+                  - cell "Hace 11 horas" [ref=e6409]
+                  - cell "08180145" [ref=e6410]
+                  - cell "CABALLERO DE AMORIN CEPRIANA" [ref=e6411]
+                  - cell "93" [ref=e6412]
+                  - cell "F" [ref=e6413]
+                  - cell "CARDIOLOGIA" [ref=e6414]
+                  - cell "71101955" [ref=e6415]
+                  - cell "Luis Gianfranco Nizama Raymundo" [ref=e6416]
+                  - cell "10/02/2026 17:45:00" [ref=e6417]:
+                    - generic [ref=e6418]: 10/02/2026 17:45:00
+                  - cell "POL. PROCERES" [ref=e6419]
+                  - cell "Voluntaria" [ref=e6420]
+                  - cell "953720174" [ref=e6421]:
+                    - link "953720174" [ref=e6422] [cursor=pointer]:
+                      - /url: https://wa.me/953720174
+                      - img [ref=e6423]
+                      - text: "953720174"
+                  - cell "-" [ref=e6425]:
+                    - link "-" [ref=e6426] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e6427]
+                      - text: "-"
+                  - cell "Citado" [ref=e6429]:
+                    - generic [ref=e6430]: Citado
+                  - cell "Hace 11 horas" [ref=e6431]
+                  - cell "—" [ref=e6432]
+                  - cell [ref=e6433]:
+                    - generic [ref=e6434]:
+                      - button "Editar estado y cita" [ref=e6435] [cursor=pointer]:
+                        - img [ref=e6436]
+                      - button "Actualizar teléfono" [ref=e6438] [cursor=pointer]:
+                        - img [ref=e6439]
+                      - button "Enviar mensaje de cita formateado" [ref=e6441] [cursor=pointer]:
+                        - img [ref=e6442]
+                - row "Paciente derivados de PADOMI Hace 11 horas 06824179 QUEZADA CHAPILLIQUEN JACINTO ELEUTERIO 94 M CARDIOLOGIA 71101955 Luis Gianfranco Nizama Raymundo 10/02/2026 17:45:00 CAP III CARABAYLLO Voluntaria 979756278 - Citado Hace 11 horas —" [ref=e6444]:
+                  - cell [ref=e6445]:
+                    - checkbox [ref=e6446] [cursor=pointer]
+                  - cell "Paciente derivados de PADOMI" [ref=e6447]
+                  - cell "Hace 11 horas" [ref=e6448]
+                  - cell "06824179" [ref=e6449]
+                  - cell "QUEZADA CHAPILLIQUEN JACINTO ELEUTERIO" [ref=e6450]
+                  - cell "94" [ref=e6451]
+                  - cell "M" [ref=e6452]
+                  - cell "CARDIOLOGIA" [ref=e6453]
+                  - cell "71101955" [ref=e6454]
+                  - cell "Luis Gianfranco Nizama Raymundo" [ref=e6455]
+                  - cell "10/02/2026 17:45:00" [ref=e6456]:
+                    - generic [ref=e6457]: 10/02/2026 17:45:00
+                  - cell "CAP III CARABAYLLO" [ref=e6458]
+                  - cell "Voluntaria" [ref=e6459]
+                  - cell "979756278" [ref=e6460]:
+                    - link "979756278" [ref=e6461] [cursor=pointer]:
+                      - /url: https://wa.me/979756278
+                      - img [ref=e6462]
+                      - text: "979756278"
+                  - cell "-" [ref=e6464]:
+                    - link "-" [ref=e6465] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e6466]
+                      - text: "-"
+                  - cell "Citado" [ref=e6468]:
+                    - generic [ref=e6469]: Citado
+                  - cell "Hace 11 horas" [ref=e6470]
+                  - cell "—" [ref=e6471]
+                  - cell [ref=e6472]:
+                    - generic [ref=e6473]:
+                      - button "Editar estado y cita" [ref=e6474] [cursor=pointer]:
+                        - img [ref=e6475]
+                      - button "Actualizar teléfono" [ref=e6477] [cursor=pointer]:
+                        - img [ref=e6478]
+                      - button "Enviar mensaje de cita formateado" [ref=e6480] [cursor=pointer]:
+                        - img [ref=e6481]
+                - row "Paciente derivados de PADOMI Hace 11 horas 08191913 SERPA CALDERON PEDRO ALFONSO 85 M CARDIOLOGIA 71101955 Luis Gianfranco Nizama Raymundo 10/02/2026 17:30:00 H.I CARLOS ALCANTARA BUTTERFIELD Voluntaria 999087455 - Citado Hace 11 horas —" [ref=e6483]:
+                  - cell [ref=e6484]:
+                    - checkbox [ref=e6485] [cursor=pointer]
+                  - cell "Paciente derivados de PADOMI" [ref=e6486]
+                  - cell "Hace 11 horas" [ref=e6487]
+                  - cell "08191913" [ref=e6488]
+                  - cell "SERPA CALDERON PEDRO ALFONSO" [ref=e6489]
+                  - cell "85" [ref=e6490]
+                  - cell "M" [ref=e6491]
+                  - cell "CARDIOLOGIA" [ref=e6492]
+                  - cell "71101955" [ref=e6493]
+                  - cell "Luis Gianfranco Nizama Raymundo" [ref=e6494]
+                  - cell "10/02/2026 17:30:00" [ref=e6495]:
+                    - generic [ref=e6496]: 10/02/2026 17:30:00
+                  - cell "H.I CARLOS ALCANTARA BUTTERFIELD" [ref=e6497]
+                  - cell "Voluntaria" [ref=e6498]
+                  - cell "999087455" [ref=e6499]:
+                    - link "999087455" [ref=e6500] [cursor=pointer]:
+                      - /url: https://wa.me/999087455
+                      - img [ref=e6501]
+                      - text: "999087455"
+                  - cell "-" [ref=e6503]:
+                    - link "-" [ref=e6504] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e6505]
+                      - text: "-"
+                  - cell "Citado" [ref=e6507]:
+                    - generic [ref=e6508]: Citado
+                  - cell "Hace 11 horas" [ref=e6509]
+                  - cell "—" [ref=e6510]
+                  - cell [ref=e6511]:
+                    - generic [ref=e6512]:
+                      - button "Editar estado y cita" [ref=e6513] [cursor=pointer]:
+                        - img [ref=e6514]
+                      - button "Actualizar teléfono" [ref=e6516] [cursor=pointer]:
+                        - img [ref=e6517]
+                      - button "Enviar mensaje de cita formateado" [ref=e6519] [cursor=pointer]:
+                        - img [ref=e6520]
+                - row "Paciente derivados de PADOMI Hace 11 horas 09531728 EGUSQUIZA MARCELO FIDEL 82 M CARDIOLOGIA 71101955 Luis Gianfranco Nizama Raymundo 10/02/2026 17:45:00 POL. PROCERES Voluntaria 986732507 - Citado Hace 11 horas —" [ref=e6522]:
+                  - cell [ref=e6523]:
+                    - checkbox [ref=e6524] [cursor=pointer]
+                  - cell "Paciente derivados de PADOMI" [ref=e6525]
+                  - cell "Hace 11 horas" [ref=e6526]
+                  - cell "09531728" [ref=e6527]
+                  - cell "EGUSQUIZA MARCELO FIDEL" [ref=e6528]
+                  - cell "82" [ref=e6529]
+                  - cell "M" [ref=e6530]
+                  - cell "CARDIOLOGIA" [ref=e6531]
+                  - cell "71101955" [ref=e6532]
+                  - cell "Luis Gianfranco Nizama Raymundo" [ref=e6533]
+                  - cell "10/02/2026 17:45:00" [ref=e6534]:
+                    - generic [ref=e6535]: 10/02/2026 17:45:00
+                  - cell "POL. PROCERES" [ref=e6536]
+                  - cell "Voluntaria" [ref=e6537]
+                  - cell "986732507" [ref=e6538]:
+                    - link "986732507" [ref=e6539] [cursor=pointer]:
+                      - /url: https://wa.me/986732507
+                      - img [ref=e6540]
+                      - text: "986732507"
+                  - cell "-" [ref=e6542]:
+                    - link "-" [ref=e6543] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e6544]
+                      - text: "-"
+                  - cell "Citado" [ref=e6546]:
+                    - generic [ref=e6547]: Citado
+                  - cell "Hace 11 horas" [ref=e6548]
+                  - cell "—" [ref=e6549]
+                  - cell [ref=e6550]:
+                    - generic [ref=e6551]:
+                      - button "Editar estado y cita" [ref=e6552] [cursor=pointer]:
+                        - img [ref=e6553]
+                      - button "Actualizar teléfono" [ref=e6555] [cursor=pointer]:
+                        - img [ref=e6556]
+                      - button "Enviar mensaje de cita formateado" [ref=e6558] [cursor=pointer]:
+                        - img [ref=e6559]
+                - row "Paciente derivados de PADOMI Hace 11 horas 29433646 SONCCO HANCCO JULIA 74 F CARDIOLOGIA 71101955 Luis Gianfranco Nizama Raymundo 10/02/2026 17:15:00 CAP III CARABAYLLO Voluntaria 993057990 - Citado Hace 11 horas —" [ref=e6561]:
+                  - cell [ref=e6562]:
+                    - checkbox [ref=e6563] [cursor=pointer]
+                  - cell "Paciente derivados de PADOMI" [ref=e6564]
+                  - cell "Hace 11 horas" [ref=e6565]
+                  - cell "29433646" [ref=e6566]
+                  - cell "SONCCO HANCCO JULIA" [ref=e6567]
+                  - cell "74" [ref=e6568]
+                  - cell "F" [ref=e6569]
+                  - cell "CARDIOLOGIA" [ref=e6570]
+                  - cell "71101955" [ref=e6571]
+                  - cell "Luis Gianfranco Nizama Raymundo" [ref=e6572]
+                  - cell "10/02/2026 17:15:00" [ref=e6573]:
+                    - generic [ref=e6574]: 10/02/2026 17:15:00
+                  - cell "CAP III CARABAYLLO" [ref=e6575]
+                  - cell "Voluntaria" [ref=e6576]
+                  - cell "993057990" [ref=e6577]:
+                    - link "993057990" [ref=e6578] [cursor=pointer]:
+                      - /url: https://wa.me/993057990
+                      - img [ref=e6579]
+                      - text: "993057990"
+                  - cell "-" [ref=e6581]:
+                    - link "-" [ref=e6582] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e6583]
+                      - text: "-"
+                  - cell "Citado" [ref=e6585]:
+                    - generic [ref=e6586]: Citado
+                  - cell "Hace 11 horas" [ref=e6587]
+                  - cell "—" [ref=e6588]
+                  - cell [ref=e6589]:
+                    - generic [ref=e6590]:
+                      - button "Editar estado y cita" [ref=e6591] [cursor=pointer]:
+                        - img [ref=e6592]
+                      - button "Actualizar teléfono" [ref=e6594] [cursor=pointer]:
+                        - img [ref=e6595]
+                      - button "Enviar mensaje de cita formateado" [ref=e6597] [cursor=pointer]:
+                        - img [ref=e6598]
+                - row "Paciente derivados de PADOMI Hace 11 horas 07845700 VARGAS IRRARAZABAL CONSUELO 83 F CARDIOLOGIA 71101955 Luis Gianfranco Nizama Raymundo 10/02/2026 17:00:00 H.III SUAREZ-ANGAMOS Voluntaria 997197823 - Citado Hace 11 horas —" [ref=e6600]:
+                  - cell [ref=e6601]:
+                    - checkbox [ref=e6602] [cursor=pointer]
+                  - cell "Paciente derivados de PADOMI" [ref=e6603]
+                  - cell "Hace 11 horas" [ref=e6604]
+                  - cell "07845700" [ref=e6605]
+                  - cell "VARGAS IRRARAZABAL CONSUELO" [ref=e6606]
+                  - cell "83" [ref=e6607]
+                  - cell "F" [ref=e6608]
+                  - cell "CARDIOLOGIA" [ref=e6609]
+                  - cell "71101955" [ref=e6610]
+                  - cell "Luis Gianfranco Nizama Raymundo" [ref=e6611]
+                  - cell "10/02/2026 17:00:00" [ref=e6612]:
+                    - generic [ref=e6613]: 10/02/2026 17:00:00
+                  - cell "H.III SUAREZ-ANGAMOS" [ref=e6614]
+                  - cell "Voluntaria" [ref=e6615]
+                  - cell "997197823" [ref=e6616]:
+                    - link "997197823" [ref=e6617] [cursor=pointer]:
+                      - /url: https://wa.me/997197823
+                      - img [ref=e6618]
+                      - text: "997197823"
+                  - cell "-" [ref=e6620]:
+                    - link "-" [ref=e6621] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e6622]
+                      - text: "-"
+                  - cell "Citado" [ref=e6624]:
+                    - generic [ref=e6625]: Citado
+                  - cell "Hace 11 horas" [ref=e6626]
+                  - cell "—" [ref=e6627]
+                  - cell [ref=e6628]:
+                    - generic [ref=e6629]:
+                      - button "Editar estado y cita" [ref=e6630] [cursor=pointer]:
+                        - img [ref=e6631]
+                      - button "Actualizar teléfono" [ref=e6633] [cursor=pointer]:
+                        - img [ref=e6634]
+                      - button "Enviar mensaje de cita formateado" [ref=e6636] [cursor=pointer]:
+                        - img [ref=e6637]
+                - row "Paciente derivados de PADOMI Hace 11 horas 25508254 MARQUEZ BERDEJO SANTIAGO EDUARDO 86 M CARDIOLOGIA 71101955 Luis Gianfranco Nizama Raymundo 10/02/2026 16:45:00 H.III HOSPITAL DE EMERGENCIAS GRAU Voluntaria 995116954 - Citado Hace 11 horas —" [ref=e6639]:
+                  - cell [ref=e6640]:
+                    - checkbox [ref=e6641] [cursor=pointer]
+                  - cell "Paciente derivados de PADOMI" [ref=e6642]
+                  - cell "Hace 11 horas" [ref=e6643]
+                  - cell "25508254" [ref=e6644]
+                  - cell "MARQUEZ BERDEJO SANTIAGO EDUARDO" [ref=e6645]
+                  - cell "86" [ref=e6646]
+                  - cell "M" [ref=e6647]
+                  - cell "CARDIOLOGIA" [ref=e6648]
+                  - cell "71101955" [ref=e6649]
+                  - cell "Luis Gianfranco Nizama Raymundo" [ref=e6650]
+                  - cell "10/02/2026 16:45:00" [ref=e6651]:
+                    - generic [ref=e6652]: 10/02/2026 16:45:00
+                  - cell "H.III HOSPITAL DE EMERGENCIAS GRAU" [ref=e6653]
+                  - cell "Voluntaria" [ref=e6654]
+                  - cell "995116954" [ref=e6655]:
+                    - link "995116954" [ref=e6656] [cursor=pointer]:
+                      - /url: https://wa.me/995116954
+                      - img [ref=e6657]
+                      - text: "995116954"
+                  - cell "-" [ref=e6659]:
+                    - link "-" [ref=e6660] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e6661]
+                      - text: "-"
+                  - cell "Citado" [ref=e6663]:
+                    - generic [ref=e6664]: Citado
+                  - cell "Hace 11 horas" [ref=e6665]
+                  - cell "—" [ref=e6666]
+                  - cell [ref=e6667]:
+                    - generic [ref=e6668]:
+                      - button "Editar estado y cita" [ref=e6669] [cursor=pointer]:
+                        - img [ref=e6670]
+                      - button "Actualizar teléfono" [ref=e6672] [cursor=pointer]:
+                        - img [ref=e6673]
+                      - button "Enviar mensaje de cita formateado" [ref=e6675] [cursor=pointer]:
+                        - img [ref=e6676]
+                - row "Paciente derivados de PADOMI Hace 11 horas 40157810 AGUILAR VARGAS MACHUCA PEDRO ARTURO 82 M CARDIOLOGIA 71101955 Luis Gianfranco Nizama Raymundo 10/02/2026 16:30:00 POL. PROCERES Voluntaria 992247882 - Citado Hace 11 horas —" [ref=e6678]:
+                  - cell [ref=e6679]:
+                    - checkbox [ref=e6680] [cursor=pointer]
+                  - cell "Paciente derivados de PADOMI" [ref=e6681]
+                  - cell "Hace 11 horas" [ref=e6682]
+                  - cell "40157810" [ref=e6683]
+                  - cell "AGUILAR VARGAS MACHUCA PEDRO ARTURO" [ref=e6684]
+                  - cell "82" [ref=e6685]
+                  - cell "M" [ref=e6686]
+                  - cell "CARDIOLOGIA" [ref=e6687]
+                  - cell "71101955" [ref=e6688]
+                  - cell "Luis Gianfranco Nizama Raymundo" [ref=e6689]
+                  - cell "10/02/2026 16:30:00" [ref=e6690]:
+                    - generic [ref=e6691]: 10/02/2026 16:30:00
+                  - cell "POL. PROCERES" [ref=e6692]
+                  - cell "Voluntaria" [ref=e6693]
+                  - cell "992247882" [ref=e6694]:
+                    - link "992247882" [ref=e6695] [cursor=pointer]:
+                      - /url: https://wa.me/992247882
+                      - img [ref=e6696]
+                      - text: "992247882"
+                  - cell "-" [ref=e6698]:
+                    - link "-" [ref=e6699] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e6700]
+                      - text: "-"
+                  - cell "Citado" [ref=e6702]:
+                    - generic [ref=e6703]: Citado
+                  - cell "Hace 11 horas" [ref=e6704]
+                  - cell "—" [ref=e6705]
+                  - cell [ref=e6706]:
+                    - generic [ref=e6707]:
+                      - button "Editar estado y cita" [ref=e6708] [cursor=pointer]:
+                        - img [ref=e6709]
+                      - button "Actualizar teléfono" [ref=e6711] [cursor=pointer]:
+                        - img [ref=e6712]
+                      - button "Enviar mensaje de cita formateado" [ref=e6714] [cursor=pointer]:
+                        - img [ref=e6715]
+                - row "Paciente derivados de PADOMI Hace 11 horas 09404579 SUAREZ ALACOTE VICTOR ENRIQUE 59 M CARDIOLOGIA 71101955 Luis Gianfranco Nizama Raymundo 10/02/2026 16:00:00 CAP III CARABAYLLO Voluntaria 913153752 - Citado Hace 11 horas —" [ref=e6717]:
+                  - cell [ref=e6718]:
+                    - checkbox [ref=e6719] [cursor=pointer]
+                  - cell "Paciente derivados de PADOMI" [ref=e6720]
+                  - cell "Hace 11 horas" [ref=e6721]
+                  - cell "09404579" [ref=e6722]
+                  - cell "SUAREZ ALACOTE VICTOR ENRIQUE" [ref=e6723]
+                  - cell "59" [ref=e6724]
+                  - cell "M" [ref=e6725]
+                  - cell "CARDIOLOGIA" [ref=e6726]
+                  - cell "71101955" [ref=e6727]
+                  - cell "Luis Gianfranco Nizama Raymundo" [ref=e6728]
+                  - cell "10/02/2026 16:00:00" [ref=e6729]:
+                    - generic [ref=e6730]: 10/02/2026 16:00:00
+                  - cell "CAP III CARABAYLLO" [ref=e6731]
+                  - cell "Voluntaria" [ref=e6732]
+                  - cell "913153752" [ref=e6733]:
+                    - link "913153752" [ref=e6734] [cursor=pointer]:
+                      - /url: https://wa.me/913153752
+                      - img [ref=e6735]
+                      - text: "913153752"
+                  - cell "-" [ref=e6737]:
+                    - link "-" [ref=e6738] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e6739]
+                      - text: "-"
+                  - cell "Citado" [ref=e6741]:
+                    - generic [ref=e6742]: Citado
+                  - cell "Hace 11 horas" [ref=e6743]
+                  - cell "—" [ref=e6744]
+                  - cell [ref=e6745]:
+                    - generic [ref=e6746]:
+                      - button "Editar estado y cita" [ref=e6747] [cursor=pointer]:
+                        - img [ref=e6748]
+                      - button "Actualizar teléfono" [ref=e6750] [cursor=pointer]:
+                        - img [ref=e6751]
+                      - button "Enviar mensaje de cita formateado" [ref=e6753] [cursor=pointer]:
+                        - img [ref=e6754]
+                - row "Paciente derivados de PADOMI Hace 11 horas 08041624 MENDOZA GUTIERREZ VICTOR 89 M CARDIOLOGIA 71101955 Luis Gianfranco Nizama Raymundo 10/02/2026 15:30:00 H.I CARLOS ALCANTARA BUTTERFIELD Voluntaria 944000802 - Citado Hace 11 horas —" [ref=e6756]:
+                  - cell [ref=e6757]:
+                    - checkbox [ref=e6758] [cursor=pointer]
+                  - cell "Paciente derivados de PADOMI" [ref=e6759]
+                  - cell "Hace 11 horas" [ref=e6760]
+                  - cell "08041624" [ref=e6761]
+                  - cell "MENDOZA GUTIERREZ VICTOR" [ref=e6762]
+                  - cell "89" [ref=e6763]
+                  - cell "M" [ref=e6764]
+                  - cell "CARDIOLOGIA" [ref=e6765]
+                  - cell "71101955" [ref=e6766]
+                  - cell "Luis Gianfranco Nizama Raymundo" [ref=e6767]
+                  - cell "10/02/2026 15:30:00" [ref=e6768]:
+                    - generic [ref=e6769]: 10/02/2026 15:30:00
+                  - cell "H.I CARLOS ALCANTARA BUTTERFIELD" [ref=e6770]
+                  - cell "Voluntaria" [ref=e6771]
+                  - cell "944000802" [ref=e6772]:
+                    - link "944000802" [ref=e6773] [cursor=pointer]:
+                      - /url: https://wa.me/944000802
+                      - img [ref=e6774]
+                      - text: "944000802"
+                  - cell "-" [ref=e6776]:
+                    - link "-" [ref=e6777] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e6778]
+                      - text: "-"
+                  - cell "Citado" [ref=e6780]:
+                    - generic [ref=e6781]: Citado
+                  - cell "Hace 11 horas" [ref=e6782]
+                  - cell "—" [ref=e6783]
+                  - cell [ref=e6784]:
+                    - generic [ref=e6785]:
+                      - button "Editar estado y cita" [ref=e6786] [cursor=pointer]:
+                        - img [ref=e6787]
+                      - button "Actualizar teléfono" [ref=e6789] [cursor=pointer]:
+                        - img [ref=e6790]
+                      - button "Enviar mensaje de cita formateado" [ref=e6792] [cursor=pointer]:
+                        - img [ref=e6793]
+                - row "Paciente derivados de PADOMI Hace 11 horas 06973920 CARDENAS IRIARTE EVELIA OLINDA 98 F CARDIOLOGIA - No seleccionado No seleccionado POL. CHOSICA Voluntaria 355-3529 - Pendiente Citar Hace 9 días —" [ref=e6795]:
+                  - cell [ref=e6796]:
+                    - checkbox [ref=e6797] [cursor=pointer]
+                  - cell "Paciente derivados de PADOMI" [ref=e6798]
+                  - cell "Hace 11 horas" [ref=e6799]
+                  - cell "06973920" [ref=e6800]
+                  - cell "CARDENAS IRIARTE EVELIA OLINDA" [ref=e6801]
+                  - cell "98" [ref=e6802]
+                  - cell "F" [ref=e6803]
+                  - cell "CARDIOLOGIA" [ref=e6804]
+                  - cell "-" [ref=e6805]
+                  - cell "No seleccionado" [ref=e6806]
+                  - cell "No seleccionado" [ref=e6807]
+                  - cell "POL. CHOSICA" [ref=e6808]
+                  - cell "Voluntaria" [ref=e6809]
+                  - cell "355-3529" [ref=e6810]:
+                    - link "355-3529" [ref=e6811] [cursor=pointer]:
+                      - /url: https://wa.me/3553529
+                      - img [ref=e6812]
+                      - text: 355-3529
+                  - cell "-" [ref=e6814]:
+                    - link "-" [ref=e6815] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e6816]
+                      - text: "-"
+                  - cell "Pendiente Citar" [ref=e6818]:
+                    - generic [ref=e6819]: Pendiente Citar
+                  - cell "Hace 9 días" [ref=e6820]
+                  - cell "—" [ref=e6821]
+                  - cell [ref=e6822]:
+                    - generic [ref=e6823]:
+                      - button "Editar estado y cita" [ref=e6824] [cursor=pointer]:
+                        - img [ref=e6825]
+                      - button "Actualizar teléfono" [ref=e6827] [cursor=pointer]:
+                        - img [ref=e6828]
+                - row "Paciente derivados de PADOMI Hace 11 horas 06887673 MORALES VEGA DE CAMPOS JUANA GRACIELA 77 F CARDIOLOGIA 71101955 Luis Gianfranco Nizama Raymundo 10/02/2026 15:15:00 CAP III CARABAYLLO Voluntaria 930216079 - Citado Hace 11 horas —" [ref=e6830]:
+                  - cell [ref=e6831]:
+                    - checkbox [ref=e6832] [cursor=pointer]
+                  - cell "Paciente derivados de PADOMI" [ref=e6833]
+                  - cell "Hace 11 horas" [ref=e6834]
+                  - cell "06887673" [ref=e6835]
+                  - cell "MORALES VEGA DE CAMPOS JUANA GRACIELA" [ref=e6836]
+                  - cell "77" [ref=e6837]
+                  - cell "F" [ref=e6838]
+                  - cell "CARDIOLOGIA" [ref=e6839]
+                  - cell "71101955" [ref=e6840]
+                  - cell "Luis Gianfranco Nizama Raymundo" [ref=e6841]
+                  - cell "10/02/2026 15:15:00" [ref=e6842]:
+                    - generic [ref=e6843]: 10/02/2026 15:15:00
+                  - cell "CAP III CARABAYLLO" [ref=e6844]
+                  - cell "Voluntaria" [ref=e6845]
+                  - cell "930216079" [ref=e6846]:
+                    - link "930216079" [ref=e6847] [cursor=pointer]:
+                      - /url: https://wa.me/930216079
+                      - img [ref=e6848]
+                      - text: "930216079"
+                  - cell "-" [ref=e6850]:
+                    - link "-" [ref=e6851] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e6852]
+                      - text: "-"
+                  - cell "Citado" [ref=e6854]:
+                    - generic [ref=e6855]: Citado
+                  - cell "Hace 11 horas" [ref=e6856]
+                  - cell "—" [ref=e6857]
+                  - cell [ref=e6858]:
+                    - generic [ref=e6859]:
+                      - button "Editar estado y cita" [ref=e6860] [cursor=pointer]:
+                        - img [ref=e6861]
+                      - button "Actualizar teléfono" [ref=e6863] [cursor=pointer]:
+                        - img [ref=e6864]
+                      - button "Enviar mensaje de cita formateado" [ref=e6866] [cursor=pointer]:
+                        - img [ref=e6867]
+                - row "Paciente derivados de PADOMI Hace 11 horas 08785156 DOOR JIMENO DELIA CARMEN 81 F CARDIOLOGIA - No seleccionado No seleccionado POL. PABLO BERMUDEZ Voluntaria 941947849 - Pendiente Citar Hace 9 días —" [ref=e6869]:
+                  - cell [ref=e6870]:
+                    - checkbox [ref=e6871] [cursor=pointer]
+                  - cell "Paciente derivados de PADOMI" [ref=e6872]
+                  - cell "Hace 11 horas" [ref=e6873]
+                  - cell "08785156" [ref=e6874]
+                  - cell "DOOR JIMENO DELIA CARMEN" [ref=e6875]
+                  - cell "81" [ref=e6876]
+                  - cell "F" [ref=e6877]
+                  - cell "CARDIOLOGIA" [ref=e6878]
+                  - cell "-" [ref=e6879]
+                  - cell "No seleccionado" [ref=e6880]
+                  - cell "No seleccionado" [ref=e6881]
+                  - cell "POL. PABLO BERMUDEZ" [ref=e6882]
+                  - cell "Voluntaria" [ref=e6883]
+                  - cell "941947849" [ref=e6884]:
+                    - link "941947849" [ref=e6885] [cursor=pointer]:
+                      - /url: https://wa.me/941947849
+                      - img [ref=e6886]
+                      - text: "941947849"
+                  - cell "-" [ref=e6888]:
+                    - link "-" [ref=e6889] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e6890]
+                      - text: "-"
+                  - cell "Pendiente Citar" [ref=e6892]:
+                    - generic [ref=e6893]: Pendiente Citar
+                  - cell "Hace 9 días" [ref=e6894]
+                  - cell "—" [ref=e6895]
+                  - cell [ref=e6896]:
+                    - generic [ref=e6897]:
+                      - button "Editar estado y cita" [ref=e6898] [cursor=pointer]:
+                        - img [ref=e6899]
+                      - button "Actualizar teléfono" [ref=e6901] [cursor=pointer]:
+                        - img [ref=e6902]
+                - row "Paciente derivados de PADOMI Hace 11 horas 07391358 VELASQUEZ TALLEDO JUANA NERIDA 81 F CARDIOLOGIA 71101955 Luis Gianfranco Nizama Raymundo 10/02/2026 15:00:00 CAP III CARABAYLLO Voluntaria 917429386 - Citado Hace 11 horas —" [ref=e6904]:
+                  - cell [ref=e6905]:
+                    - checkbox [ref=e6906] [cursor=pointer]
+                  - cell "Paciente derivados de PADOMI" [ref=e6907]
+                  - cell "Hace 11 horas" [ref=e6908]
+                  - cell "07391358" [ref=e6909]
+                  - cell "VELASQUEZ TALLEDO JUANA NERIDA" [ref=e6910]
+                  - cell "81" [ref=e6911]
+                  - cell "F" [ref=e6912]
+                  - cell "CARDIOLOGIA" [ref=e6913]
+                  - cell "71101955" [ref=e6914]
+                  - cell "Luis Gianfranco Nizama Raymundo" [ref=e6915]
+                  - cell "10/02/2026 15:00:00" [ref=e6916]:
+                    - generic [ref=e6917]: 10/02/2026 15:00:00
+                  - cell "CAP III CARABAYLLO" [ref=e6918]
+                  - cell "Voluntaria" [ref=e6919]
+                  - cell "917429386" [ref=e6920]:
+                    - link "917429386" [ref=e6921] [cursor=pointer]:
+                      - /url: https://wa.me/917429386
+                      - img [ref=e6922]
+                      - text: "917429386"
+                  - cell "-" [ref=e6924]:
+                    - link "-" [ref=e6925] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e6926]
+                      - text: "-"
+                  - cell "Citado" [ref=e6928]:
+                    - generic [ref=e6929]: Citado
+                  - cell "Hace 11 horas" [ref=e6930]
+                  - cell "—" [ref=e6931]
+                  - cell [ref=e6932]:
+                    - generic [ref=e6933]:
+                      - button "Editar estado y cita" [ref=e6934] [cursor=pointer]:
+                        - img [ref=e6935]
+                      - button "Actualizar teléfono" [ref=e6937] [cursor=pointer]:
+                        - img [ref=e6938]
+                      - button "Enviar mensaje de cita formateado" [ref=e6940] [cursor=pointer]:
+                        - img [ref=e6941]
+                - row "Paciente derivados de PADOMI Hace 11 horas 06679025 ROSALES LOPEZ IRMA 91 F CARDIOLOGIA - No seleccionado No seleccionado POL. CHINCHA Voluntaria 969373637 - Pendiente Citar Hace 9 días —" [ref=e6943]:
+                  - cell [ref=e6944]:
+                    - checkbox [ref=e6945] [cursor=pointer]
+                  - cell "Paciente derivados de PADOMI" [ref=e6946]
+                  - cell "Hace 11 horas" [ref=e6947]
+                  - cell "06679025" [ref=e6948]
+                  - cell "ROSALES LOPEZ IRMA" [ref=e6949]
+                  - cell "91" [ref=e6950]
+                  - cell "F" [ref=e6951]
+                  - cell "CARDIOLOGIA" [ref=e6952]
+                  - cell "-" [ref=e6953]
+                  - cell "No seleccionado" [ref=e6954]
+                  - cell "No seleccionado" [ref=e6955]
+                  - cell "POL. CHINCHA" [ref=e6956]
+                  - cell "Voluntaria" [ref=e6957]
+                  - cell "969373637" [ref=e6958]:
+                    - link "969373637" [ref=e6959] [cursor=pointer]:
+                      - /url: https://wa.me/969373637
+                      - img [ref=e6960]
+                      - text: "969373637"
+                  - cell "-" [ref=e6962]:
+                    - link "-" [ref=e6963] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e6964]
+                      - text: "-"
+                  - cell "Pendiente Citar" [ref=e6966]:
+                    - generic [ref=e6967]: Pendiente Citar
+                  - cell "Hace 9 días" [ref=e6968]
+                  - cell "—" [ref=e6969]
+                  - cell [ref=e6970]:
+                    - generic [ref=e6971]:
+                      - button "Editar estado y cita" [ref=e6972] [cursor=pointer]:
+                        - img [ref=e6973]
+                      - button "Actualizar teléfono" [ref=e6975] [cursor=pointer]:
+                        - img [ref=e6976]
+                - row "Paciente derivados de PADOMI Hace 11 horas 10211200 ARIAS DE ARAUJO ADRIANA SUSANA 84 F CARDIOLOGIA - No seleccionado No seleccionado POL. PROCERES Voluntaria 996692732 - Pendiente Citar Hace 9 días —" [ref=e6978]:
+                  - cell [ref=e6979]:
+                    - checkbox [ref=e6980] [cursor=pointer]
+                  - cell "Paciente derivados de PADOMI" [ref=e6981]
+                  - cell "Hace 11 horas" [ref=e6982]
+                  - cell "10211200" [ref=e6983]
+                  - cell "ARIAS DE ARAUJO ADRIANA SUSANA" [ref=e6984]
+                  - cell "84" [ref=e6985]
+                  - cell "F" [ref=e6986]
+                  - cell "CARDIOLOGIA" [ref=e6987]
+                  - cell "-" [ref=e6988]
+                  - cell "No seleccionado" [ref=e6989]
+                  - cell "No seleccionado" [ref=e6990]
+                  - cell "POL. PROCERES" [ref=e6991]
+                  - cell "Voluntaria" [ref=e6992]
+                  - cell "996692732" [ref=e6993]:
+                    - link "996692732" [ref=e6994] [cursor=pointer]:
+                      - /url: https://wa.me/996692732
+                      - img [ref=e6995]
+                      - text: "996692732"
+                  - cell "-" [ref=e6997]:
+                    - link "-" [ref=e6998] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e6999]
+                      - text: "-"
+                  - cell "Pendiente Citar" [ref=e7001]:
+                    - generic [ref=e7002]: Pendiente Citar
+                  - cell "Hace 9 días" [ref=e7003]
+                  - cell "—" [ref=e7004]
+                  - cell [ref=e7005]:
+                    - generic [ref=e7006]:
+                      - button "Editar estado y cita" [ref=e7007] [cursor=pointer]:
+                        - img [ref=e7008]
+                      - button "Actualizar teléfono" [ref=e7010] [cursor=pointer]:
+                        - img [ref=e7011]
+                - row "Paciente derivados de PADOMI Hace 11 horas 06915486 TOCTO TICLIAHUANCA MARIA 82 F CARDIOLOGIA - No seleccionado No seleccionado RETABLO - COMAS Voluntaria 992979249 - Pendiente Citar Hace 9 días —" [ref=e7013]:
+                  - cell [ref=e7014]:
+                    - checkbox [ref=e7015] [cursor=pointer]
+                  - cell "Paciente derivados de PADOMI" [ref=e7016]
+                  - cell "Hace 11 horas" [ref=e7017]
+                  - cell "06915486" [ref=e7018]
+                  - cell "TOCTO TICLIAHUANCA MARIA" [ref=e7019]
+                  - cell "82" [ref=e7020]
+                  - cell "F" [ref=e7021]
+                  - cell "CARDIOLOGIA" [ref=e7022]
+                  - cell "-" [ref=e7023]
+                  - cell "No seleccionado" [ref=e7024]
+                  - cell "No seleccionado" [ref=e7025]
+                  - cell "RETABLO - COMAS" [ref=e7026]
+                  - cell "Voluntaria" [ref=e7027]
+                  - cell "992979249" [ref=e7028]:
+                    - link "992979249" [ref=e7029] [cursor=pointer]:
+                      - /url: https://wa.me/992979249
+                      - img [ref=e7030]
+                      - text: "992979249"
+                  - cell "-" [ref=e7032]:
+                    - link "-" [ref=e7033] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e7034]
+                      - text: "-"
+                  - cell "Pendiente Citar" [ref=e7036]:
+                    - generic [ref=e7037]: Pendiente Citar
+                  - cell "Hace 9 días" [ref=e7038]
+                  - cell "—" [ref=e7039]
+                  - cell [ref=e7040]:
+                    - generic [ref=e7041]:
+                      - button "Editar estado y cita" [ref=e7042] [cursor=pointer]:
+                        - img [ref=e7043]
+                      - button "Actualizar teléfono" [ref=e7045] [cursor=pointer]:
+                        - img [ref=e7046]
+                - row "Paciente derivados de PADOMI Hace 11 horas 07998649 NISHIHIRA HIFUME JESUS ESTHER A 89 F CARDIOLOGIA - No seleccionado No seleccionado POL. PROCERES Voluntaria 958081776 - Pendiente Citar Hace 9 días —" [ref=e7048]:
+                  - cell [ref=e7049]:
+                    - checkbox [ref=e7050] [cursor=pointer]
+                  - cell "Paciente derivados de PADOMI" [ref=e7051]
+                  - cell "Hace 11 horas" [ref=e7052]
+                  - cell "07998649" [ref=e7053]
+                  - cell "NISHIHIRA HIFUME JESUS ESTHER A" [ref=e7054]
+                  - cell "89" [ref=e7055]
+                  - cell "F" [ref=e7056]
+                  - cell "CARDIOLOGIA" [ref=e7057]
+                  - cell "-" [ref=e7058]
+                  - cell "No seleccionado" [ref=e7059]
+                  - cell "No seleccionado" [ref=e7060]
+                  - cell "POL. PROCERES" [ref=e7061]
+                  - cell "Voluntaria" [ref=e7062]
+                  - cell "958081776" [ref=e7063]:
+                    - link "958081776" [ref=e7064] [cursor=pointer]:
+                      - /url: https://wa.me/958081776
+                      - img [ref=e7065]
+                      - text: "958081776"
+                  - cell "-" [ref=e7067]:
+                    - link "-" [ref=e7068] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e7069]
+                      - text: "-"
+                  - cell "Pendiente Citar" [ref=e7071]:
+                    - generic [ref=e7072]: Pendiente Citar
+                  - cell "Hace 9 días" [ref=e7073]
+                  - cell "—" [ref=e7074]
+                  - cell [ref=e7075]:
+                    - generic [ref=e7076]:
+                      - button "Editar estado y cita" [ref=e7077] [cursor=pointer]:
+                        - img [ref=e7078]
+                      - button "Actualizar teléfono" [ref=e7080] [cursor=pointer]:
+                        - img [ref=e7081]
+                - row "Paciente derivados de PADOMI Hace 11 horas 09248209 GOLA HERRERA JULIO ANTONIO 80 M CARDIOLOGIA - No seleccionado No seleccionado CAP III CARABAYLLO Voluntaria 953112835 - Pendiente Citar Hace 9 días —" [ref=e7083]:
+                  - cell [ref=e7084]:
+                    - checkbox [ref=e7085] [cursor=pointer]
+                  - cell "Paciente derivados de PADOMI" [ref=e7086]
+                  - cell "Hace 11 horas" [ref=e7087]
+                  - cell "09248209" [ref=e7088]
+                  - cell "GOLA HERRERA JULIO ANTONIO" [ref=e7089]
+                  - cell "80" [ref=e7090]
+                  - cell "M" [ref=e7091]
+                  - cell "CARDIOLOGIA" [ref=e7092]
+                  - cell "-" [ref=e7093]
+                  - cell "No seleccionado" [ref=e7094]
+                  - cell "No seleccionado" [ref=e7095]
+                  - cell "CAP III CARABAYLLO" [ref=e7096]
+                  - cell "Voluntaria" [ref=e7097]
+                  - cell "953112835" [ref=e7098]:
+                    - link "953112835" [ref=e7099] [cursor=pointer]:
+                      - /url: https://wa.me/953112835
+                      - img [ref=e7100]
+                      - text: "953112835"
+                  - cell "-" [ref=e7102]:
+                    - link "-" [ref=e7103] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e7104]
+                      - text: "-"
+                  - cell "Pendiente Citar" [ref=e7106]:
+                    - generic [ref=e7107]: Pendiente Citar
+                  - cell "Hace 9 días" [ref=e7108]
+                  - cell "—" [ref=e7109]
+                  - cell [ref=e7110]:
+                    - generic [ref=e7111]:
+                      - button "Editar estado y cita" [ref=e7112] [cursor=pointer]:
+                        - img [ref=e7113]
+                      - button "Actualizar teléfono" [ref=e7115] [cursor=pointer]:
+                        - img [ref=e7116]
+                - row "Paciente derivados de PADOMI Hace 11 horas 07696162 FLOREZ ARNAO DE BERROCAL MARIA ANGELINA 89 F CARDIOLOGIA - No seleccionado No seleccionado CAP II LURIN Voluntaria 961537831 - Pendiente Citar Hace 9 días —" [ref=e7118]:
+                  - cell [ref=e7119]:
+                    - checkbox [ref=e7120] [cursor=pointer]
+                  - cell "Paciente derivados de PADOMI" [ref=e7121]
+                  - cell "Hace 11 horas" [ref=e7122]
+                  - cell "07696162" [ref=e7123]
+                  - cell "FLOREZ ARNAO DE BERROCAL MARIA ANGELINA" [ref=e7124]
+                  - cell "89" [ref=e7125]
+                  - cell "F" [ref=e7126]
+                  - cell "CARDIOLOGIA" [ref=e7127]
+                  - cell "-" [ref=e7128]
+                  - cell "No seleccionado" [ref=e7129]
+                  - cell "No seleccionado" [ref=e7130]
+                  - cell "CAP II LURIN" [ref=e7131]
+                  - cell "Voluntaria" [ref=e7132]
+                  - cell "961537831" [ref=e7133]:
+                    - link "961537831" [ref=e7134] [cursor=pointer]:
+                      - /url: https://wa.me/961537831
+                      - img [ref=e7135]
+                      - text: "961537831"
+                  - cell "-" [ref=e7137]:
+                    - link "-" [ref=e7138] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e7139]
+                      - text: "-"
+                  - cell "Pendiente Citar" [ref=e7141]:
+                    - generic [ref=e7142]: Pendiente Citar
+                  - cell "Hace 9 días" [ref=e7143]
+                  - cell "—" [ref=e7144]
+                  - cell [ref=e7145]:
+                    - generic [ref=e7146]:
+                      - button "Editar estado y cita" [ref=e7147] [cursor=pointer]:
+                        - img [ref=e7148]
+                      - button "Actualizar teléfono" [ref=e7150] [cursor=pointer]:
+                        - img [ref=e7151]
+                - row "Paciente derivados de PADOMI Hace 11 horas 70330524 ZAMALLOA VILLA DANIEL LEONARDO 39 M CARDIOLOGIA - No seleccionado No seleccionado H.I CARLOS ALCANTARA BUTTERFIELD Voluntaria 949968663 - Pendiente Citar Hace 9 días —" [ref=e7153]:
+                  - cell [ref=e7154]:
+                    - checkbox [ref=e7155] [cursor=pointer]
+                  - cell "Paciente derivados de PADOMI" [ref=e7156]
+                  - cell "Hace 11 horas" [ref=e7157]
+                  - cell "70330524" [ref=e7158]
+                  - cell "ZAMALLOA VILLA DANIEL LEONARDO" [ref=e7159]
+                  - cell "39" [ref=e7160]
+                  - cell "M" [ref=e7161]
+                  - cell "CARDIOLOGIA" [ref=e7162]
+                  - cell "-" [ref=e7163]
+                  - cell "No seleccionado" [ref=e7164]
+                  - cell "No seleccionado" [ref=e7165]
+                  - cell "H.I CARLOS ALCANTARA BUTTERFIELD" [ref=e7166]
+                  - cell "Voluntaria" [ref=e7167]
+                  - cell "949968663" [ref=e7168]:
+                    - link "949968663" [ref=e7169] [cursor=pointer]:
+                      - /url: https://wa.me/949968663
+                      - img [ref=e7170]
+                      - text: "949968663"
+                  - cell "-" [ref=e7172]:
+                    - link "-" [ref=e7173] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e7174]
+                      - text: "-"
+                  - cell "Pendiente Citar" [ref=e7176]:
+                    - generic [ref=e7177]: Pendiente Citar
+                  - cell "Hace 9 días" [ref=e7178]
+                  - cell "—" [ref=e7179]
+                  - cell [ref=e7180]:
+                    - generic [ref=e7181]:
+                      - button "Editar estado y cita" [ref=e7182] [cursor=pointer]:
+                        - img [ref=e7183]
+                      - button "Actualizar teléfono" [ref=e7185] [cursor=pointer]:
+                        - img [ref=e7186]
+                - row "Paciente derivados de PADOMI Hace 11 horas 16502586 ALARCON BARON LILA HILDELIZA 89 F CARDIOLOGIA - No seleccionado No seleccionado POL. CHINCHA Voluntaria 970310188 - Pendiente Citar Hace 9 días —" [ref=e7188]:
+                  - cell [ref=e7189]:
+                    - checkbox [ref=e7190] [cursor=pointer]
+                  - cell "Paciente derivados de PADOMI" [ref=e7191]
+                  - cell "Hace 11 horas" [ref=e7192]
+                  - cell "16502586" [ref=e7193]
+                  - cell "ALARCON BARON LILA HILDELIZA" [ref=e7194]
+                  - cell "89" [ref=e7195]
+                  - cell "F" [ref=e7196]
+                  - cell "CARDIOLOGIA" [ref=e7197]
+                  - cell "-" [ref=e7198]
+                  - cell "No seleccionado" [ref=e7199]
+                  - cell "No seleccionado" [ref=e7200]
+                  - cell "POL. CHINCHA" [ref=e7201]
+                  - cell "Voluntaria" [ref=e7202]
+                  - cell "970310188" [ref=e7203]:
+                    - link "970310188" [ref=e7204] [cursor=pointer]:
+                      - /url: https://wa.me/970310188
+                      - img [ref=e7205]
+                      - text: "970310188"
+                  - cell "-" [ref=e7207]:
+                    - link "-" [ref=e7208] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e7209]
+                      - text: "-"
+                  - cell "Pendiente Citar" [ref=e7211]:
+                    - generic [ref=e7212]: Pendiente Citar
+                  - cell "Hace 9 días" [ref=e7213]
+                  - cell "—" [ref=e7214]
+                  - cell [ref=e7215]:
+                    - generic [ref=e7216]:
+                      - button "Editar estado y cita" [ref=e7217] [cursor=pointer]:
+                        - img [ref=e7218]
+                      - button "Actualizar teléfono" [ref=e7220] [cursor=pointer]:
+                        - img [ref=e7221]
+                - row "Paciente derivados de PADOMI Hace 11 horas 06960696 CARBONEL VICENTE DE CERNA CARMEN 83 F CARDIOLOGIA - No seleccionado No seleccionado POL. CHOSICA Voluntaria 982089151 - Pendiente Citar Hace 9 días —" [ref=e7223]:
+                  - cell [ref=e7224]:
+                    - checkbox [ref=e7225] [cursor=pointer]
+                  - cell "Paciente derivados de PADOMI" [ref=e7226]
+                  - cell "Hace 11 horas" [ref=e7227]
+                  - cell "06960696" [ref=e7228]
+                  - cell "CARBONEL VICENTE DE CERNA CARMEN" [ref=e7229]
+                  - cell "83" [ref=e7230]
+                  - cell "F" [ref=e7231]
+                  - cell "CARDIOLOGIA" [ref=e7232]
+                  - cell "-" [ref=e7233]
+                  - cell "No seleccionado" [ref=e7234]
+                  - cell "No seleccionado" [ref=e7235]
+                  - cell "POL. CHOSICA" [ref=e7236]
+                  - cell "Voluntaria" [ref=e7237]
+                  - cell "982089151" [ref=e7238]:
+                    - link "982089151" [ref=e7239] [cursor=pointer]:
+                      - /url: https://wa.me/982089151
+                      - img [ref=e7240]
+                      - text: "982089151"
+                  - cell "-" [ref=e7242]:
+                    - link "-" [ref=e7243] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e7244]
+                      - text: "-"
+                  - cell "Pendiente Citar" [ref=e7246]:
+                    - generic [ref=e7247]: Pendiente Citar
+                  - cell "Hace 9 días" [ref=e7248]
+                  - cell "—" [ref=e7249]
+                  - cell [ref=e7250]:
+                    - generic [ref=e7251]:
+                      - button "Editar estado y cita" [ref=e7252] [cursor=pointer]:
+                        - img [ref=e7253]
+                      - button "Actualizar teléfono" [ref=e7255] [cursor=pointer]:
+                        - img [ref=e7256]
+                - row "Paciente derivados de PADOMI Hace 11 horas 06974443 GUTIERREZ ARANGOITIA VDA DE RI EUDOCIA 90 F CARDIOLOGIA - No seleccionado No seleccionado POL. CHOSICA Voluntaria 940516236 - Pendiente Citar Hace 9 días —" [ref=e7258]:
+                  - cell [ref=e7259]:
+                    - checkbox [ref=e7260] [cursor=pointer]
+                  - cell "Paciente derivados de PADOMI" [ref=e7261]
+                  - cell "Hace 11 horas" [ref=e7262]
+                  - cell "06974443" [ref=e7263]
+                  - cell "GUTIERREZ ARANGOITIA VDA DE RI EUDOCIA" [ref=e7264]
+                  - cell "90" [ref=e7265]
+                  - cell "F" [ref=e7266]
+                  - cell "CARDIOLOGIA" [ref=e7267]
+                  - cell "-" [ref=e7268]
+                  - cell "No seleccionado" [ref=e7269]
+                  - cell "No seleccionado" [ref=e7270]
+                  - cell "POL. CHOSICA" [ref=e7271]
+                  - cell "Voluntaria" [ref=e7272]
+                  - cell "940516236" [ref=e7273]:
+                    - link "940516236" [ref=e7274] [cursor=pointer]:
+                      - /url: https://wa.me/940516236
+                      - img [ref=e7275]
+                      - text: "940516236"
+                  - cell "-" [ref=e7277]:
+                    - link "-" [ref=e7278] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e7279]
+                      - text: "-"
+                  - cell "Pendiente Citar" [ref=e7281]:
+                    - generic [ref=e7282]: Pendiente Citar
+                  - cell "Hace 9 días" [ref=e7283]
+                  - cell "—" [ref=e7284]
+                  - cell [ref=e7285]:
+                    - generic [ref=e7286]:
+                      - button "Editar estado y cita" [ref=e7287] [cursor=pointer]:
+                        - img [ref=e7288]
+                      - button "Actualizar teléfono" [ref=e7290] [cursor=pointer]:
+                        - img [ref=e7291]
+                - row "Paciente derivados de PADOMI Hace 11 horas 06833639 YAÑEZ CONSTANTINI DE MO VIOLETA ESTHER 81 F CARDIOLOGIA - No seleccionado No seleccionado POL. PABLO BERMUDEZ Voluntaria 916594434 - Pendiente Citar Hace 9 días —" [ref=e7293]:
+                  - cell [ref=e7294]:
+                    - checkbox [ref=e7295] [cursor=pointer]
+                  - cell "Paciente derivados de PADOMI" [ref=e7296]
+                  - cell "Hace 11 horas" [ref=e7297]
+                  - cell "06833639" [ref=e7298]
+                  - cell "YAÑEZ CONSTANTINI DE MO VIOLETA ESTHER" [ref=e7299]
+                  - cell "81" [ref=e7300]
+                  - cell "F" [ref=e7301]
+                  - cell "CARDIOLOGIA" [ref=e7302]
+                  - cell "-" [ref=e7303]
+                  - cell "No seleccionado" [ref=e7304]
+                  - cell "No seleccionado" [ref=e7305]
+                  - cell "POL. PABLO BERMUDEZ" [ref=e7306]
+                  - cell "Voluntaria" [ref=e7307]
+                  - cell "916594434" [ref=e7308]:
+                    - link "916594434" [ref=e7309] [cursor=pointer]:
+                      - /url: https://wa.me/916594434
+                      - img [ref=e7310]
+                      - text: "916594434"
+                  - cell "-" [ref=e7312]:
+                    - link "-" [ref=e7313] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e7314]
+                      - text: "-"
+                  - cell "Pendiente Citar" [ref=e7316]:
+                    - generic [ref=e7317]: Pendiente Citar
+                  - cell "Hace 9 días" [ref=e7318]
+                  - cell "—" [ref=e7319]
+                  - cell [ref=e7320]:
+                    - generic [ref=e7321]:
+                      - button "Editar estado y cita" [ref=e7322] [cursor=pointer]:
+                        - img [ref=e7323]
+                      - button "Actualizar teléfono" [ref=e7325] [cursor=pointer]:
+                        - img [ref=e7326]
+                - row "Paciente derivados de PADOMI Hace 11 horas 06571240 CAVERO ZEGARRA JUANA ESPERANZA 90 F CARDIOLOGIA - No seleccionado No seleccionado H.II VITARTE Voluntaria 941851014 - Pendiente Citar Hace 9 días —" [ref=e7328]:
+                  - cell [ref=e7329]:
+                    - checkbox [ref=e7330] [cursor=pointer]
+                  - cell "Paciente derivados de PADOMI" [ref=e7331]
+                  - cell "Hace 11 horas" [ref=e7332]
+                  - cell "06571240" [ref=e7333]
+                  - cell "CAVERO ZEGARRA JUANA ESPERANZA" [ref=e7334]
+                  - cell "90" [ref=e7335]
+                  - cell "F" [ref=e7336]
+                  - cell "CARDIOLOGIA" [ref=e7337]
+                  - cell "-" [ref=e7338]
+                  - cell "No seleccionado" [ref=e7339]
+                  - cell "No seleccionado" [ref=e7340]
+                  - cell "H.II VITARTE" [ref=e7341]
+                  - cell "Voluntaria" [ref=e7342]
+                  - cell "941851014" [ref=e7343]:
+                    - link "941851014" [ref=e7344] [cursor=pointer]:
+                      - /url: https://wa.me/941851014
+                      - img [ref=e7345]
+                      - text: "941851014"
+                  - cell "-" [ref=e7347]:
+                    - link "-" [ref=e7348] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e7349]
+                      - text: "-"
+                  - cell "Pendiente Citar" [ref=e7351]:
+                    - generic [ref=e7352]: Pendiente Citar
+                  - cell "Hace 9 días" [ref=e7353]
+                  - cell "—" [ref=e7354]
+                  - cell [ref=e7355]:
+                    - generic [ref=e7356]:
+                      - button "Editar estado y cita" [ref=e7357] [cursor=pointer]:
+                        - img [ref=e7358]
+                      - button "Actualizar teléfono" [ref=e7360] [cursor=pointer]:
+                        - img [ref=e7361]
+                - row "Paciente derivados de PADOMI Hace 11 horas 06682995 QUINTANA ALCALDE SEGUNDO JULIO 87 M CARDIOLOGIA - No seleccionado No seleccionado CAP III CARABAYLLO Voluntaria 934855883 - Pendiente Citar Hace 9 días —" [ref=e7363]:
+                  - cell [ref=e7364]:
+                    - checkbox [ref=e7365] [cursor=pointer]
+                  - cell "Paciente derivados de PADOMI" [ref=e7366]
+                  - cell "Hace 11 horas" [ref=e7367]
+                  - cell "06682995" [ref=e7368]
+                  - cell "QUINTANA ALCALDE SEGUNDO JULIO" [ref=e7369]
+                  - cell "87" [ref=e7370]
+                  - cell "M" [ref=e7371]
+                  - cell "CARDIOLOGIA" [ref=e7372]
+                  - cell "-" [ref=e7373]
+                  - cell "No seleccionado" [ref=e7374]
+                  - cell "No seleccionado" [ref=e7375]
+                  - cell "CAP III CARABAYLLO" [ref=e7376]
+                  - cell "Voluntaria" [ref=e7377]
+                  - cell "934855883" [ref=e7378]:
+                    - link "934855883" [ref=e7379] [cursor=pointer]:
+                      - /url: https://wa.me/934855883
+                      - img [ref=e7380]
+                      - text: "934855883"
+                  - cell "-" [ref=e7382]:
+                    - link "-" [ref=e7383] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e7384]
+                      - text: "-"
+                  - cell "Pendiente Citar" [ref=e7386]:
+                    - generic [ref=e7387]: Pendiente Citar
+                  - cell "Hace 9 días" [ref=e7388]
+                  - cell "—" [ref=e7389]
+                  - cell [ref=e7390]:
+                    - generic [ref=e7391]:
+                      - button "Editar estado y cita" [ref=e7392] [cursor=pointer]:
+                        - img [ref=e7393]
+                      - button "Actualizar teléfono" [ref=e7395] [cursor=pointer]:
+                        - img [ref=e7396]
+                - row "Paciente derivados de PADOMI Hace 11 horas 09220148 VALDEZ GALLEGOS JULIO JUAN 87 M CARDIOLOGIA - No seleccionado No seleccionado H.I CARLOS ALCANTARA BUTTERFIELD Voluntaria 479-8338 - Pendiente Citar Hace 9 días —" [ref=e7398]:
+                  - cell [ref=e7399]:
+                    - checkbox [ref=e7400] [cursor=pointer]
+                  - cell "Paciente derivados de PADOMI" [ref=e7401]
+                  - cell "Hace 11 horas" [ref=e7402]
+                  - cell "09220148" [ref=e7403]
+                  - cell "VALDEZ GALLEGOS JULIO JUAN" [ref=e7404]
+                  - cell "87" [ref=e7405]
+                  - cell "M" [ref=e7406]
+                  - cell "CARDIOLOGIA" [ref=e7407]
+                  - cell "-" [ref=e7408]
+                  - cell "No seleccionado" [ref=e7409]
+                  - cell "No seleccionado" [ref=e7410]
+                  - cell "H.I CARLOS ALCANTARA BUTTERFIELD" [ref=e7411]
+                  - cell "Voluntaria" [ref=e7412]
+                  - cell "479-8338" [ref=e7413]:
+                    - link "479-8338" [ref=e7414] [cursor=pointer]:
+                      - /url: https://wa.me/4798338
+                      - img [ref=e7415]
+                      - text: 479-8338
+                  - cell "-" [ref=e7417]:
+                    - link "-" [ref=e7418] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e7419]
+                      - text: "-"
+                  - cell "Pendiente Citar" [ref=e7421]:
+                    - generic [ref=e7422]: Pendiente Citar
+                  - cell "Hace 9 días" [ref=e7423]
+                  - cell "—" [ref=e7424]
+                  - cell [ref=e7425]:
+                    - generic [ref=e7426]:
+                      - button "Editar estado y cita" [ref=e7427] [cursor=pointer]:
+                        - img [ref=e7428]
+                      - button "Actualizar teléfono" [ref=e7430] [cursor=pointer]:
+                        - img [ref=e7431]
+                - row "Paciente derivados de PADOMI Hace 11 horas 09178609 MARIN TOVAR CARMEN DORA 84 F CARDIOLOGIA - No seleccionado No seleccionado H.I CARLOS ALCANTARA BUTTERFIELD Voluntaria 989120616 - Pendiente Citar Hace 9 días —" [ref=e7433]:
+                  - cell [ref=e7434]:
+                    - checkbox [ref=e7435] [cursor=pointer]
+                  - cell "Paciente derivados de PADOMI" [ref=e7436]
+                  - cell "Hace 11 horas" [ref=e7437]
+                  - cell "09178609" [ref=e7438]
+                  - cell "MARIN TOVAR CARMEN DORA" [ref=e7439]
+                  - cell "84" [ref=e7440]
+                  - cell "F" [ref=e7441]
+                  - cell "CARDIOLOGIA" [ref=e7442]
+                  - cell "-" [ref=e7443]
+                  - cell "No seleccionado" [ref=e7444]
+                  - cell "No seleccionado" [ref=e7445]
+                  - cell "H.I CARLOS ALCANTARA BUTTERFIELD" [ref=e7446]
+                  - cell "Voluntaria" [ref=e7447]
+                  - cell "989120616" [ref=e7448]:
+                    - link "989120616" [ref=e7449] [cursor=pointer]:
+                      - /url: https://wa.me/989120616
+                      - img [ref=e7450]
+                      - text: "989120616"
+                  - cell "-" [ref=e7452]:
+                    - link "-" [ref=e7453] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e7454]
+                      - text: "-"
+                  - cell "Pendiente Citar" [ref=e7456]:
+                    - generic [ref=e7457]: Pendiente Citar
+                  - cell "Hace 9 días" [ref=e7458]
+                  - cell "—" [ref=e7459]
+                  - cell [ref=e7460]:
+                    - generic [ref=e7461]:
+                      - button "Editar estado y cita" [ref=e7462] [cursor=pointer]:
+                        - img [ref=e7463]
+                      - button "Actualizar teléfono" [ref=e7465] [cursor=pointer]:
+                        - img [ref=e7466]
+                - row "Paciente derivados de PADOMI Hace 11 horas 09220397 ESCOBEDO LARA DE ROMERO MARILU 72 F CARDIOLOGIA - No seleccionado No seleccionado H.I CARLOS ALCANTARA BUTTERFIELD Voluntaria 950814523 - Pendiente Citar Hace 9 días —" [ref=e7468]:
+                  - cell [ref=e7469]:
+                    - checkbox [ref=e7470] [cursor=pointer]
+                  - cell "Paciente derivados de PADOMI" [ref=e7471]
+                  - cell "Hace 11 horas" [ref=e7472]
+                  - cell "09220397" [ref=e7473]
+                  - cell "ESCOBEDO LARA DE ROMERO MARILU" [ref=e7474]
+                  - cell "72" [ref=e7475]
+                  - cell "F" [ref=e7476]
+                  - cell "CARDIOLOGIA" [ref=e7477]
+                  - cell "-" [ref=e7478]
+                  - cell "No seleccionado" [ref=e7479]
+                  - cell "No seleccionado" [ref=e7480]
+                  - cell "H.I CARLOS ALCANTARA BUTTERFIELD" [ref=e7481]
+                  - cell "Voluntaria" [ref=e7482]
+                  - cell "950814523" [ref=e7483]:
+                    - link "950814523" [ref=e7484] [cursor=pointer]:
+                      - /url: https://wa.me/950814523
+                      - img [ref=e7485]
+                      - text: "950814523"
+                  - cell "-" [ref=e7487]:
+                    - link "-" [ref=e7488] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e7489]
+                      - text: "-"
+                  - cell "Pendiente Citar" [ref=e7491]:
+                    - generic [ref=e7492]: Pendiente Citar
+                  - cell "Hace 9 días" [ref=e7493]
+                  - cell "—" [ref=e7494]
+                  - cell [ref=e7495]:
+                    - generic [ref=e7496]:
+                      - button "Editar estado y cita" [ref=e7497] [cursor=pointer]:
+                        - img [ref=e7498]
+                      - button "Actualizar teléfono" [ref=e7500] [cursor=pointer]:
+                        - img [ref=e7501]
+                - row "Paciente derivados de PADOMI Hace 11 horas 08838553 TOBIES LOPEZ YOLANDA RUTH 87 F CARDIOLOGIA - No seleccionado No seleccionado CAP III SURQUILLO Voluntaria 988104070 - Pendiente Citar Hace 9 días —" [ref=e7503]:
+                  - cell [ref=e7504]:
+                    - checkbox [ref=e7505] [cursor=pointer]
+                  - cell "Paciente derivados de PADOMI" [ref=e7506]
+                  - cell "Hace 11 horas" [ref=e7507]
+                  - cell "08838553" [ref=e7508]
+                  - cell "TOBIES LOPEZ YOLANDA RUTH" [ref=e7509]
+                  - cell "87" [ref=e7510]
+                  - cell "F" [ref=e7511]
+                  - cell "CARDIOLOGIA" [ref=e7512]
+                  - cell "-" [ref=e7513]
+                  - cell "No seleccionado" [ref=e7514]
+                  - cell "No seleccionado" [ref=e7515]
+                  - cell "CAP III SURQUILLO" [ref=e7516]
+                  - cell "Voluntaria" [ref=e7517]
+                  - cell "988104070" [ref=e7518]:
+                    - link "988104070" [ref=e7519] [cursor=pointer]:
+                      - /url: https://wa.me/988104070
+                      - img [ref=e7520]
+                      - text: "988104070"
+                  - cell "-" [ref=e7522]:
+                    - link "-" [ref=e7523] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e7524]
+                      - text: "-"
+                  - cell "Pendiente Citar" [ref=e7526]:
+                    - generic [ref=e7527]: Pendiente Citar
+                  - cell "Hace 9 días" [ref=e7528]
+                  - cell "—" [ref=e7529]
+                  - cell [ref=e7530]:
+                    - generic [ref=e7531]:
+                      - button "Editar estado y cita" [ref=e7532] [cursor=pointer]:
+                        - img [ref=e7533]
+                      - button "Actualizar teléfono" [ref=e7535] [cursor=pointer]:
+                        - img [ref=e7536]
+                - row "Paciente derivados de PADOMI Hace 11 horas 21503667 MILACHAY VIUDA DE HUAMAN IRMA FILOMENA 92 F CARDIOLOGIA - No seleccionado No seleccionado POL. PABLO BERMUDEZ Voluntaria 942765030 - Pendiente Citar Hace 9 días —" [ref=e7538]:
+                  - cell [ref=e7539]:
+                    - checkbox [ref=e7540] [cursor=pointer]
+                  - cell "Paciente derivados de PADOMI" [ref=e7541]
+                  - cell "Hace 11 horas" [ref=e7542]
+                  - cell "21503667" [ref=e7543]
+                  - cell "MILACHAY VIUDA DE HUAMAN IRMA FILOMENA" [ref=e7544]
+                  - cell "92" [ref=e7545]
+                  - cell "F" [ref=e7546]
+                  - cell "CARDIOLOGIA" [ref=e7547]
+                  - cell "-" [ref=e7548]
+                  - cell "No seleccionado" [ref=e7549]
+                  - cell "No seleccionado" [ref=e7550]
+                  - cell "POL. PABLO BERMUDEZ" [ref=e7551]
+                  - cell "Voluntaria" [ref=e7552]
+                  - cell "942765030" [ref=e7553]:
+                    - link "942765030" [ref=e7554] [cursor=pointer]:
+                      - /url: https://wa.me/942765030
+                      - img [ref=e7555]
+                      - text: "942765030"
+                  - cell "-" [ref=e7557]:
+                    - link "-" [ref=e7558] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e7559]
+                      - text: "-"
+                  - cell "Pendiente Citar" [ref=e7561]:
+                    - generic [ref=e7562]: Pendiente Citar
+                  - cell "Hace 9 días" [ref=e7563]
+                  - cell "—" [ref=e7564]
+                  - cell [ref=e7565]:
+                    - generic [ref=e7566]:
+                      - button "Editar estado y cita" [ref=e7567] [cursor=pointer]:
+                        - img [ref=e7568]
+                      - button "Actualizar teléfono" [ref=e7570] [cursor=pointer]:
+                        - img [ref=e7571]
+                - row "Paciente derivados de PADOMI Hace 11 horas 06968550 LARA RIVAS PURIFICACI 86 F CARDIOLOGIA - No seleccionado No seleccionado POL. CHOSICA Voluntaria 958386971 - Pendiente Citar Hace 9 días —" [ref=e7573]:
+                  - cell [ref=e7574]:
+                    - checkbox [ref=e7575] [cursor=pointer]
+                  - cell "Paciente derivados de PADOMI" [ref=e7576]
+                  - cell "Hace 11 horas" [ref=e7577]
+                  - cell "06968550" [ref=e7578]
+                  - cell "LARA RIVAS PURIFICACI" [ref=e7579]
+                  - cell "86" [ref=e7580]
+                  - cell "F" [ref=e7581]
+                  - cell "CARDIOLOGIA" [ref=e7582]
+                  - cell "-" [ref=e7583]
+                  - cell "No seleccionado" [ref=e7584]
+                  - cell "No seleccionado" [ref=e7585]
+                  - cell "POL. CHOSICA" [ref=e7586]
+                  - cell "Voluntaria" [ref=e7587]
+                  - cell "958386971" [ref=e7588]:
+                    - link "958386971" [ref=e7589] [cursor=pointer]:
+                      - /url: https://wa.me/958386971
+                      - img [ref=e7590]
+                      - text: "958386971"
+                  - cell "-" [ref=e7592]:
+                    - link "-" [ref=e7593] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e7594]
+                      - text: "-"
+                  - cell "Pendiente Citar" [ref=e7596]:
+                    - generic [ref=e7597]: Pendiente Citar
+                  - cell "Hace 9 días" [ref=e7598]
+                  - cell "—" [ref=e7599]
+                  - cell [ref=e7600]:
+                    - generic [ref=e7601]:
+                      - button "Editar estado y cita" [ref=e7602] [cursor=pointer]:
+                        - img [ref=e7603]
+                      - button "Actualizar teléfono" [ref=e7605] [cursor=pointer]:
+                        - img [ref=e7606]
+                - row "Paciente derivados de PADOMI Hace 11 horas 07659901 PACHECO BENDEZU DE ROBLES GUILLERMIN 97 F CARDIOLOGIA - No seleccionado No seleccionado POL. CHOSICA Voluntaria 938623363 - Pendiente Citar Hace 9 días —" [ref=e7608]:
+                  - cell [ref=e7609]:
+                    - checkbox [ref=e7610] [cursor=pointer]
+                  - cell "Paciente derivados de PADOMI" [ref=e7611]
+                  - cell "Hace 11 horas" [ref=e7612]
+                  - cell "07659901" [ref=e7613]
+                  - cell "PACHECO BENDEZU DE ROBLES GUILLERMIN" [ref=e7614]
+                  - cell "97" [ref=e7615]
+                  - cell "F" [ref=e7616]
+                  - cell "CARDIOLOGIA" [ref=e7617]
+                  - cell "-" [ref=e7618]
+                  - cell "No seleccionado" [ref=e7619]
+                  - cell "No seleccionado" [ref=e7620]
+                  - cell "POL. CHOSICA" [ref=e7621]
+                  - cell "Voluntaria" [ref=e7622]
+                  - cell "938623363" [ref=e7623]:
+                    - link "938623363" [ref=e7624] [cursor=pointer]:
+                      - /url: https://wa.me/938623363
+                      - img [ref=e7625]
+                      - text: "938623363"
+                  - cell "-" [ref=e7627]:
+                    - link "-" [ref=e7628] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e7629]
+                      - text: "-"
+                  - cell "Pendiente Citar" [ref=e7631]:
+                    - generic [ref=e7632]: Pendiente Citar
+                  - cell "Hace 9 días" [ref=e7633]
+                  - cell "—" [ref=e7634]
+                  - cell [ref=e7635]:
+                    - generic [ref=e7636]:
+                      - button "Editar estado y cita" [ref=e7637] [cursor=pointer]:
+                        - img [ref=e7638]
+                      - button "Actualizar teléfono" [ref=e7640] [cursor=pointer]:
+                        - img [ref=e7641]
+                - row "Paciente derivados de PADOMI Hace 11 horas 07226200 VEGA RIOJA RENE MARINA 89 F CARDIOLOGIA - No seleccionado No seleccionado POL. PABLO BERMUDEZ Voluntaria 902409558 - Pendiente Citar Hace 9 días —" [ref=e7643]:
+                  - cell [ref=e7644]:
+                    - checkbox [ref=e7645] [cursor=pointer]
+                  - cell "Paciente derivados de PADOMI" [ref=e7646]
+                  - cell "Hace 11 horas" [ref=e7647]
+                  - cell "07226200" [ref=e7648]
+                  - cell "VEGA RIOJA RENE MARINA" [ref=e7649]
+                  - cell "89" [ref=e7650]
+                  - cell "F" [ref=e7651]
+                  - cell "CARDIOLOGIA" [ref=e7652]
+                  - cell "-" [ref=e7653]
+                  - cell "No seleccionado" [ref=e7654]
+                  - cell "No seleccionado" [ref=e7655]
+                  - cell "POL. PABLO BERMUDEZ" [ref=e7656]
+                  - cell "Voluntaria" [ref=e7657]
+                  - cell "902409558" [ref=e7658]:
+                    - link "902409558" [ref=e7659] [cursor=pointer]:
+                      - /url: https://wa.me/902409558
+                      - img [ref=e7660]
+                      - text: "902409558"
+                  - cell "-" [ref=e7662]:
+                    - link "-" [ref=e7663] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e7664]
+                      - text: "-"
+                  - cell "Pendiente Citar" [ref=e7666]:
+                    - generic [ref=e7667]: Pendiente Citar
+                  - cell "Hace 9 días" [ref=e7668]
+                  - cell "—" [ref=e7669]
+                  - cell [ref=e7670]:
+                    - generic [ref=e7671]:
+                      - button "Editar estado y cita" [ref=e7672] [cursor=pointer]:
+                        - img [ref=e7673]
+                      - button "Actualizar teléfono" [ref=e7675] [cursor=pointer]:
+                        - img [ref=e7676]
+                - row "Paciente derivados de PADOMI Hace 11 horas 09222559 GUILLEN SULLUCHUCO DE MARIÑO FELICITA 87 F CARDIOLOGIA - No seleccionado No seleccionado POL. CHOSICA Voluntaria 997321288 - Pendiente Citar Hace 9 días —" [ref=e7678]:
+                  - cell [ref=e7679]:
+                    - checkbox [ref=e7680] [cursor=pointer]
+                  - cell "Paciente derivados de PADOMI" [ref=e7681]
+                  - cell "Hace 11 horas" [ref=e7682]
+                  - cell "09222559" [ref=e7683]
+                  - cell "GUILLEN SULLUCHUCO DE MARIÑO FELICITA" [ref=e7684]
+                  - cell "87" [ref=e7685]
+                  - cell "F" [ref=e7686]
+                  - cell "CARDIOLOGIA" [ref=e7687]
+                  - cell "-" [ref=e7688]
+                  - cell "No seleccionado" [ref=e7689]
+                  - cell "No seleccionado" [ref=e7690]
+                  - cell "POL. CHOSICA" [ref=e7691]
+                  - cell "Voluntaria" [ref=e7692]
+                  - cell "997321288" [ref=e7693]:
+                    - link "997321288" [ref=e7694] [cursor=pointer]:
+                      - /url: https://wa.me/997321288
+                      - img [ref=e7695]
+                      - text: "997321288"
+                  - cell "-" [ref=e7697]:
+                    - link "-" [ref=e7698] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e7699]
+                      - text: "-"
+                  - cell "Pendiente Citar" [ref=e7701]:
+                    - generic [ref=e7702]: Pendiente Citar
+                  - cell "Hace 9 días" [ref=e7703]
+                  - cell "—" [ref=e7704]
+                  - cell [ref=e7705]:
+                    - generic [ref=e7706]:
+                      - button "Editar estado y cita" [ref=e7707] [cursor=pointer]:
+                        - img [ref=e7708]
+                      - button "Actualizar teléfono" [ref=e7710] [cursor=pointer]:
+                        - img [ref=e7711]
+                - row "Paciente derivados de PADOMI Hace 11 horas 06603278 POMAR RAMOS DE ALARCO NANCY EDDY 87 F CARDIOLOGIA - No seleccionado No seleccionado H.II VITARTE Voluntaria 997523519 - Pendiente Citar Hace 9 días —" [ref=e7713]:
+                  - cell [ref=e7714]:
+                    - checkbox [ref=e7715] [cursor=pointer]
+                  - cell "Paciente derivados de PADOMI" [ref=e7716]
+                  - cell "Hace 11 horas" [ref=e7717]
+                  - cell "06603278" [ref=e7718]
+                  - cell "POMAR RAMOS DE ALARCO NANCY EDDY" [ref=e7719]
+                  - cell "87" [ref=e7720]
+                  - cell "F" [ref=e7721]
+                  - cell "CARDIOLOGIA" [ref=e7722]
+                  - cell "-" [ref=e7723]
+                  - cell "No seleccionado" [ref=e7724]
+                  - cell "No seleccionado" [ref=e7725]
+                  - cell "H.II VITARTE" [ref=e7726]
+                  - cell "Voluntaria" [ref=e7727]
+                  - cell "997523519" [ref=e7728]:
+                    - link "997523519" [ref=e7729] [cursor=pointer]:
+                      - /url: https://wa.me/997523519
+                      - img [ref=e7730]
+                      - text: "997523519"
+                  - cell "-" [ref=e7732]:
+                    - link "-" [ref=e7733] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e7734]
+                      - text: "-"
+                  - cell "Pendiente Citar" [ref=e7736]:
+                    - generic [ref=e7737]: Pendiente Citar
+                  - cell "Hace 9 días" [ref=e7738]
+                  - cell "—" [ref=e7739]
+                  - cell [ref=e7740]:
+                    - generic [ref=e7741]:
+                      - button "Editar estado y cita" [ref=e7742] [cursor=pointer]:
+                        - img [ref=e7743]
+                      - button "Actualizar teléfono" [ref=e7745] [cursor=pointer]:
+                        - img [ref=e7746]
+                - row "Paciente derivados de PADOMI Hace 11 horas 06599979 ALARCO SUAREZ JESUS BERNARDO 94 M CARDIOLOGIA - No seleccionado No seleccionado POL. SAN LUIS Voluntaria 997523519 - Pendiente Citar Hace 9 días —" [ref=e7748]:
+                  - cell [ref=e7749]:
+                    - checkbox [ref=e7750] [cursor=pointer]
+                  - cell "Paciente derivados de PADOMI" [ref=e7751]
+                  - cell "Hace 11 horas" [ref=e7752]
+                  - cell "06599979" [ref=e7753]
+                  - cell "ALARCO SUAREZ JESUS BERNARDO" [ref=e7754]
+                  - cell "94" [ref=e7755]
+                  - cell "M" [ref=e7756]
+                  - cell "CARDIOLOGIA" [ref=e7757]
+                  - cell "-" [ref=e7758]
+                  - cell "No seleccionado" [ref=e7759]
+                  - cell "No seleccionado" [ref=e7760]
+                  - cell "POL. SAN LUIS" [ref=e7761]
+                  - cell "Voluntaria" [ref=e7762]
+                  - cell "997523519" [ref=e7763]:
+                    - link "997523519" [ref=e7764] [cursor=pointer]:
+                      - /url: https://wa.me/997523519
+                      - img [ref=e7765]
+                      - text: "997523519"
+                  - cell "-" [ref=e7767]:
+                    - link "-" [ref=e7768] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e7769]
+                      - text: "-"
+                  - cell "Pendiente Citar" [ref=e7771]:
+                    - generic [ref=e7772]: Pendiente Citar
+                  - cell "Hace 9 días" [ref=e7773]
+                  - cell "—" [ref=e7774]
+                  - cell [ref=e7775]:
+                    - generic [ref=e7776]:
+                      - button "Editar estado y cita" [ref=e7777] [cursor=pointer]:
+                        - img [ref=e7778]
+                      - button "Actualizar teléfono" [ref=e7780] [cursor=pointer]:
+                        - img [ref=e7781]
+                - row "Paciente derivados de PADOMI Hace 11 horas 06967053 CARDENAS AQUICE MARCELINA 84 F CARDIOLOGIA - No seleccionado No seleccionado POL. CHOSICA Voluntaria 962259171 - Pendiente Citar Hace 9 días —" [ref=e7783]:
+                  - cell [ref=e7784]:
+                    - checkbox [ref=e7785] [cursor=pointer]
+                  - cell "Paciente derivados de PADOMI" [ref=e7786]
+                  - cell "Hace 11 horas" [ref=e7787]
+                  - cell "06967053" [ref=e7788]
+                  - cell "CARDENAS AQUICE MARCELINA" [ref=e7789]
+                  - cell "84" [ref=e7790]
+                  - cell "F" [ref=e7791]
+                  - cell "CARDIOLOGIA" [ref=e7792]
+                  - cell "-" [ref=e7793]
+                  - cell "No seleccionado" [ref=e7794]
+                  - cell "No seleccionado" [ref=e7795]
+                  - cell "POL. CHOSICA" [ref=e7796]
+                  - cell "Voluntaria" [ref=e7797]
+                  - cell "962259171" [ref=e7798]:
+                    - link "962259171" [ref=e7799] [cursor=pointer]:
+                      - /url: https://wa.me/962259171
+                      - img [ref=e7800]
+                      - text: "962259171"
+                  - cell "-" [ref=e7802]:
+                    - link "-" [ref=e7803] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e7804]
+                      - text: "-"
+                  - cell "Pendiente Citar" [ref=e7806]:
+                    - generic [ref=e7807]: Pendiente Citar
+                  - cell "Hace 9 días" [ref=e7808]
+                  - cell "—" [ref=e7809]
+                  - cell [ref=e7810]:
+                    - generic [ref=e7811]:
+                      - button "Editar estado y cita" [ref=e7812] [cursor=pointer]:
+                        - img [ref=e7813]
+                      - button "Actualizar teléfono" [ref=e7815] [cursor=pointer]:
+                        - img [ref=e7816]
+                - row "Paciente derivados de PADOMI Hace 11 horas 06974447 CARDENAS DIAZ MARTIN 97 M CARDIOLOGIA - No seleccionado No seleccionado POL. CHOSICA Voluntaria 917808234 - Pendiente Citar Hace 9 días —" [ref=e7818]:
+                  - cell [ref=e7819]:
+                    - checkbox [ref=e7820] [cursor=pointer]
+                  - cell "Paciente derivados de PADOMI" [ref=e7821]
+                  - cell "Hace 11 horas" [ref=e7822]
+                  - cell "06974447" [ref=e7823]
+                  - cell "CARDENAS DIAZ MARTIN" [ref=e7824]
+                  - cell "97" [ref=e7825]
+                  - cell "M" [ref=e7826]
+                  - cell "CARDIOLOGIA" [ref=e7827]
+                  - cell "-" [ref=e7828]
+                  - cell "No seleccionado" [ref=e7829]
+                  - cell "No seleccionado" [ref=e7830]
+                  - cell "POL. CHOSICA" [ref=e7831]
+                  - cell "Voluntaria" [ref=e7832]
+                  - cell "917808234" [ref=e7833]:
+                    - link "917808234" [ref=e7834] [cursor=pointer]:
+                      - /url: https://wa.me/917808234
+                      - img [ref=e7835]
+                      - text: "917808234"
+                  - cell "-" [ref=e7837]:
+                    - link "-" [ref=e7838] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e7839]
+                      - text: "-"
+                  - cell "Pendiente Citar" [ref=e7841]:
+                    - generic [ref=e7842]: Pendiente Citar
+                  - cell "Hace 9 días" [ref=e7843]
+                  - cell "—" [ref=e7844]
+                  - cell [ref=e7845]:
+                    - generic [ref=e7846]:
+                      - button "Editar estado y cita" [ref=e7847] [cursor=pointer]:
+                        - img [ref=e7848]
+                      - button "Actualizar teléfono" [ref=e7850] [cursor=pointer]:
+                        - img [ref=e7851]
+                - row "Paciente derivados de PADOMI Hace 11 horas 07678066 MOYA CARDICH HILDA 93 F CARDIOLOGIA - No seleccionado No seleccionado POL. CHOSICA Voluntaria 984245786 - Pendiente Citar Hace 9 días —" [ref=e7853]:
+                  - cell [ref=e7854]:
+                    - checkbox [ref=e7855] [cursor=pointer]
+                  - cell "Paciente derivados de PADOMI" [ref=e7856]
+                  - cell "Hace 11 horas" [ref=e7857]
+                  - cell "07678066" [ref=e7858]
+                  - cell "MOYA CARDICH HILDA" [ref=e7859]
+                  - cell "93" [ref=e7860]
+                  - cell "F" [ref=e7861]
+                  - cell "CARDIOLOGIA" [ref=e7862]
+                  - cell "-" [ref=e7863]
+                  - cell "No seleccionado" [ref=e7864]
+                  - cell "No seleccionado" [ref=e7865]
+                  - cell "POL. CHOSICA" [ref=e7866]
+                  - cell "Voluntaria" [ref=e7867]
+                  - cell "984245786" [ref=e7868]:
+                    - link "984245786" [ref=e7869] [cursor=pointer]:
+                      - /url: https://wa.me/984245786
+                      - img [ref=e7870]
+                      - text: "984245786"
+                  - cell "-" [ref=e7872]:
+                    - link "-" [ref=e7873] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e7874]
+                      - text: "-"
+                  - cell "Pendiente Citar" [ref=e7876]:
+                    - generic [ref=e7877]: Pendiente Citar
+                  - cell "Hace 9 días" [ref=e7878]
+                  - cell "—" [ref=e7879]
+                  - cell [ref=e7880]:
+                    - generic [ref=e7881]:
+                      - button "Editar estado y cita" [ref=e7882] [cursor=pointer]:
+                        - img [ref=e7883]
+                      - button "Actualizar teléfono" [ref=e7885] [cursor=pointer]:
+                        - img [ref=e7886]
+                - row "Paciente derivados de PADOMI Hace 11 horas 07672798 TRILLO ARTEAGA REGINA 81 F CARDIOLOGIA - No seleccionado No seleccionado POL. CHOSICA Voluntaria 937517613 - Pendiente Citar Hace 9 días —" [ref=e7888]:
+                  - cell [ref=e7889]:
+                    - checkbox [ref=e7890] [cursor=pointer]
+                  - cell "Paciente derivados de PADOMI" [ref=e7891]
+                  - cell "Hace 11 horas" [ref=e7892]
+                  - cell "07672798" [ref=e7893]
+                  - cell "TRILLO ARTEAGA REGINA" [ref=e7894]
+                  - cell "81" [ref=e7895]
+                  - cell "F" [ref=e7896]
+                  - cell "CARDIOLOGIA" [ref=e7897]
+                  - cell "-" [ref=e7898]
+                  - cell "No seleccionado" [ref=e7899]
+                  - cell "No seleccionado" [ref=e7900]
+                  - cell "POL. CHOSICA" [ref=e7901]
+                  - cell "Voluntaria" [ref=e7902]
+                  - cell "937517613" [ref=e7903]:
+                    - link "937517613" [ref=e7904] [cursor=pointer]:
+                      - /url: https://wa.me/937517613
+                      - img [ref=e7905]
+                      - text: "937517613"
+                  - cell "-" [ref=e7907]:
+                    - link "-" [ref=e7908] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e7909]
+                      - text: "-"
+                  - cell "Pendiente Citar" [ref=e7911]:
+                    - generic [ref=e7912]: Pendiente Citar
+                  - cell "Hace 9 días" [ref=e7913]
+                  - cell "—" [ref=e7914]
+                  - cell [ref=e7915]:
+                    - generic [ref=e7916]:
+                      - button "Editar estado y cita" [ref=e7917] [cursor=pointer]:
+                        - img [ref=e7918]
+                      - button "Actualizar teléfono" [ref=e7920] [cursor=pointer]:
+                        - img [ref=e7921]
+                - row "Paciente derivados de PADOMI Hace 11 horas 18005110 PONCE DE ZAVALETA MARIA SIMONA 86 F CARDIOLOGIA - No seleccionado No seleccionado POL. CHOSICA Voluntaria 923648880 - Pendiente Citar Hace 9 días —" [ref=e7923]:
+                  - cell [ref=e7924]:
+                    - checkbox [ref=e7925] [cursor=pointer]
+                  - cell "Paciente derivados de PADOMI" [ref=e7926]
+                  - cell "Hace 11 horas" [ref=e7927]
+                  - cell "18005110" [ref=e7928]
+                  - cell "PONCE DE ZAVALETA MARIA SIMONA" [ref=e7929]
+                  - cell "86" [ref=e7930]
+                  - cell "F" [ref=e7931]
+                  - cell "CARDIOLOGIA" [ref=e7932]
+                  - cell "-" [ref=e7933]
+                  - cell "No seleccionado" [ref=e7934]
+                  - cell "No seleccionado" [ref=e7935]
+                  - cell "POL. CHOSICA" [ref=e7936]
+                  - cell "Voluntaria" [ref=e7937]
+                  - cell "923648880" [ref=e7938]:
+                    - link "923648880" [ref=e7939] [cursor=pointer]:
+                      - /url: https://wa.me/923648880
+                      - img [ref=e7940]
+                      - text: "923648880"
+                  - cell "-" [ref=e7942]:
+                    - link "-" [ref=e7943] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e7944]
+                      - text: "-"
+                  - cell "Pendiente Citar" [ref=e7946]:
+                    - generic [ref=e7947]: Pendiente Citar
+                  - cell "Hace 9 días" [ref=e7948]
+                  - cell "—" [ref=e7949]
+                  - cell [ref=e7950]:
+                    - generic [ref=e7951]:
+                      - button "Editar estado y cita" [ref=e7952] [cursor=pointer]:
+                        - img [ref=e7953]
+                      - button "Actualizar teléfono" [ref=e7955] [cursor=pointer]:
+                        - img [ref=e7956]
+                - row "Paciente derivados de PADOMI Hace 11 horas 08457698 BARRUETO ROBLES JOSE SANTOS 92 M CARDIOLOGIA - No seleccionado No seleccionado POL. CHOSICA Voluntaria 963350293 - Pendiente Citar Hace 9 días —" [ref=e7958]:
+                  - cell [ref=e7959]:
+                    - checkbox [ref=e7960] [cursor=pointer]
+                  - cell "Paciente derivados de PADOMI" [ref=e7961]
+                  - cell "Hace 11 horas" [ref=e7962]
+                  - cell "08457698" [ref=e7963]
+                  - cell "BARRUETO ROBLES JOSE SANTOS" [ref=e7964]
+                  - cell "92" [ref=e7965]
+                  - cell "M" [ref=e7966]
+                  - cell "CARDIOLOGIA" [ref=e7967]
+                  - cell "-" [ref=e7968]
+                  - cell "No seleccionado" [ref=e7969]
+                  - cell "No seleccionado" [ref=e7970]
+                  - cell "POL. CHOSICA" [ref=e7971]
+                  - cell "Voluntaria" [ref=e7972]
+                  - cell "963350293" [ref=e7973]:
+                    - link "963350293" [ref=e7974] [cursor=pointer]:
+                      - /url: https://wa.me/963350293
+                      - img [ref=e7975]
+                      - text: "963350293"
+                  - cell "-" [ref=e7977]:
+                    - link "-" [ref=e7978] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e7979]
+                      - text: "-"
+                  - cell "Pendiente Citar" [ref=e7981]:
+                    - generic [ref=e7982]: Pendiente Citar
+                  - cell "Hace 9 días" [ref=e7983]
+                  - cell "—" [ref=e7984]
+                  - cell [ref=e7985]:
+                    - generic [ref=e7986]:
+                      - button "Editar estado y cita" [ref=e7987] [cursor=pointer]:
+                        - img [ref=e7988]
+                      - button "Actualizar teléfono" [ref=e7990] [cursor=pointer]:
+                        - img [ref=e7991]
+                - row "Paciente derivados de PADOMI Hace 11 horas 08456453 NAUPARI ALVAREZ DELIA 90 F CARDIOLOGIA - No seleccionado No seleccionado POL. CHOSICA Voluntaria 963350293 - Pendiente Citar Hace 9 días —" [ref=e7993]:
+                  - cell [ref=e7994]:
+                    - checkbox [ref=e7995] [cursor=pointer]
+                  - cell "Paciente derivados de PADOMI" [ref=e7996]
+                  - cell "Hace 11 horas" [ref=e7997]
+                  - cell "08456453" [ref=e7998]
+                  - cell "NAUPARI ALVAREZ DELIA" [ref=e7999]
+                  - cell "90" [ref=e8000]
+                  - cell "F" [ref=e8001]
+                  - cell "CARDIOLOGIA" [ref=e8002]
+                  - cell "-" [ref=e8003]
+                  - cell "No seleccionado" [ref=e8004]
+                  - cell "No seleccionado" [ref=e8005]
+                  - cell "POL. CHOSICA" [ref=e8006]
+                  - cell "Voluntaria" [ref=e8007]
+                  - cell "963350293" [ref=e8008]:
+                    - link "963350293" [ref=e8009] [cursor=pointer]:
+                      - /url: https://wa.me/963350293
+                      - img [ref=e8010]
+                      - text: "963350293"
+                  - cell "-" [ref=e8012]:
+                    - link "-" [ref=e8013] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e8014]
+                      - text: "-"
+                  - cell "Pendiente Citar" [ref=e8016]:
+                    - generic [ref=e8017]: Pendiente Citar
+                  - cell "Hace 9 días" [ref=e8018]
+                  - cell "—" [ref=e8019]
+                  - cell [ref=e8020]:
+                    - generic [ref=e8021]:
+                      - button "Editar estado y cita" [ref=e8022] [cursor=pointer]:
+                        - img [ref=e8023]
+                      - button "Actualizar teléfono" [ref=e8025] [cursor=pointer]:
+                        - img [ref=e8026]
+                - row "Paciente derivados de PADOMI Hace 11 horas 06964375 CALERO BRONCANO LORENZO PEDRO 76 M CARDIOLOGIA - No seleccionado No seleccionado POL. CHOSICA Voluntaria 926516113 - Pendiente Citar Hace 9 días —" [ref=e8028]:
+                  - cell [ref=e8029]:
+                    - checkbox [ref=e8030] [cursor=pointer]
+                  - cell "Paciente derivados de PADOMI" [ref=e8031]
+                  - cell "Hace 11 horas" [ref=e8032]
+                  - cell "06964375" [ref=e8033]
+                  - cell "CALERO BRONCANO LORENZO PEDRO" [ref=e8034]
+                  - cell "76" [ref=e8035]
+                  - cell "M" [ref=e8036]
+                  - cell "CARDIOLOGIA" [ref=e8037]
+                  - cell "-" [ref=e8038]
+                  - cell "No seleccionado" [ref=e8039]
+                  - cell "No seleccionado" [ref=e8040]
+                  - cell "POL. CHOSICA" [ref=e8041]
+                  - cell "Voluntaria" [ref=e8042]
+                  - cell "926516113" [ref=e8043]:
+                    - link "926516113" [ref=e8044] [cursor=pointer]:
+                      - /url: https://wa.me/926516113
+                      - img [ref=e8045]
+                      - text: "926516113"
+                  - cell "-" [ref=e8047]:
+                    - link "-" [ref=e8048] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e8049]
+                      - text: "-"
+                  - cell "Pendiente Citar" [ref=e8051]:
+                    - generic [ref=e8052]: Pendiente Citar
+                  - cell "Hace 9 días" [ref=e8053]
+                  - cell "—" [ref=e8054]
+                  - cell [ref=e8055]:
+                    - generic [ref=e8056]:
+                      - button "Editar estado y cita" [ref=e8057] [cursor=pointer]:
+                        - img [ref=e8058]
+                      - button "Actualizar teléfono" [ref=e8060] [cursor=pointer]:
+                        - img [ref=e8061]
+                - row "Paciente derivados de PADOMI Hace 11 horas 10169268 ALVITES GRADOS GERMAN 99 M CARDIOLOGIA - No seleccionado No seleccionado POL. CHOSICA Voluntaria 990941957 - Pendiente Citar Hace 9 días —" [ref=e8063]:
+                  - cell [ref=e8064]:
+                    - checkbox [ref=e8065] [cursor=pointer]
+                  - cell "Paciente derivados de PADOMI" [ref=e8066]
+                  - cell "Hace 11 horas" [ref=e8067]
+                  - cell "10169268" [ref=e8068]
+                  - cell "ALVITES GRADOS GERMAN" [ref=e8069]
+                  - cell "99" [ref=e8070]
+                  - cell "M" [ref=e8071]
+                  - cell "CARDIOLOGIA" [ref=e8072]
+                  - cell "-" [ref=e8073]
+                  - cell "No seleccionado" [ref=e8074]
+                  - cell "No seleccionado" [ref=e8075]
+                  - cell "POL. CHOSICA" [ref=e8076]
+                  - cell "Voluntaria" [ref=e8077]
+                  - cell "990941957" [ref=e8078]:
+                    - link "990941957" [ref=e8079] [cursor=pointer]:
+                      - /url: https://wa.me/990941957
+                      - img [ref=e8080]
+                      - text: "990941957"
+                  - cell "-" [ref=e8082]:
+                    - link "-" [ref=e8083] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e8084]
+                      - text: "-"
+                  - cell "Pendiente Citar" [ref=e8086]:
+                    - generic [ref=e8087]: Pendiente Citar
+                  - cell "Hace 9 días" [ref=e8088]
+                  - cell "—" [ref=e8089]
+                  - cell [ref=e8090]:
+                    - generic [ref=e8091]:
+                      - button "Editar estado y cita" [ref=e8092] [cursor=pointer]:
+                        - img [ref=e8093]
+                      - button "Actualizar teléfono" [ref=e8095] [cursor=pointer]:
+                        - img [ref=e8096]
+                - row "Paciente derivados de PADOMI Hace 11 horas 10310140 CASTREJON REYES VIRGINIA TERESA 89 F CARDIOLOGIA - No seleccionado No seleccionado POL. PROCERES Voluntaria 995805731 - Pendiente Citar Hace 9 días —" [ref=e8098]:
+                  - cell [ref=e8099]:
+                    - checkbox [ref=e8100] [cursor=pointer]
+                  - cell "Paciente derivados de PADOMI" [ref=e8101]
+                  - cell "Hace 11 horas" [ref=e8102]
+                  - cell "10310140" [ref=e8103]
+                  - cell "CASTREJON REYES VIRGINIA TERESA" [ref=e8104]
+                  - cell "89" [ref=e8105]
+                  - cell "F" [ref=e8106]
+                  - cell "CARDIOLOGIA" [ref=e8107]
+                  - cell "-" [ref=e8108]
+                  - cell "No seleccionado" [ref=e8109]
+                  - cell "No seleccionado" [ref=e8110]
+                  - cell "POL. PROCERES" [ref=e8111]
+                  - cell "Voluntaria" [ref=e8112]
+                  - cell "995805731" [ref=e8113]:
+                    - link "995805731" [ref=e8114] [cursor=pointer]:
+                      - /url: https://wa.me/995805731
+                      - img [ref=e8115]
+                      - text: "995805731"
+                  - cell "-" [ref=e8117]:
+                    - link "-" [ref=e8118] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e8119]
+                      - text: "-"
+                  - cell "Pendiente Citar" [ref=e8121]:
+                    - generic [ref=e8122]: Pendiente Citar
+                  - cell "Hace 9 días" [ref=e8123]
+                  - cell "—" [ref=e8124]
+                  - cell [ref=e8125]:
+                    - generic [ref=e8126]:
+                      - button "Editar estado y cita" [ref=e8127] [cursor=pointer]:
+                        - img [ref=e8128]
+                      - button "Actualizar teléfono" [ref=e8130] [cursor=pointer]:
+                        - img [ref=e8131]
+                - row "Paciente derivados de PADOMI Hace 11 horas 23871774 ZAMALLOA ZAPATA DELIA MATILDE 90 F CARDIOLOGIA - No seleccionado No seleccionado POL. CHOSICA Voluntaria 949351433 - Pendiente Citar Hace 9 días —" [ref=e8133]:
+                  - cell [ref=e8134]:
+                    - checkbox [ref=e8135] [cursor=pointer]
+                  - cell "Paciente derivados de PADOMI" [ref=e8136]
+                  - cell "Hace 11 horas" [ref=e8137]
+                  - cell "23871774" [ref=e8138]
+                  - cell "ZAMALLOA ZAPATA DELIA MATILDE" [ref=e8139]
+                  - cell "90" [ref=e8140]
+                  - cell "F" [ref=e8141]
+                  - cell "CARDIOLOGIA" [ref=e8142]
+                  - cell "-" [ref=e8143]
+                  - cell "No seleccionado" [ref=e8144]
+                  - cell "No seleccionado" [ref=e8145]
+                  - cell "POL. CHOSICA" [ref=e8146]
+                  - cell "Voluntaria" [ref=e8147]
+                  - cell "949351433" [ref=e8148]:
+                    - link "949351433" [ref=e8149] [cursor=pointer]:
+                      - /url: https://wa.me/949351433
+                      - img [ref=e8150]
+                      - text: "949351433"
+                  - cell "-" [ref=e8152]:
+                    - link "-" [ref=e8153] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e8154]
+                      - text: "-"
+                  - cell "Pendiente Citar" [ref=e8156]:
+                    - generic [ref=e8157]: Pendiente Citar
+                  - cell "Hace 9 días" [ref=e8158]
+                  - cell "—" [ref=e8159]
+                  - cell [ref=e8160]:
+                    - generic [ref=e8161]:
+                      - button "Editar estado y cita" [ref=e8162] [cursor=pointer]:
+                        - img [ref=e8163]
+                      - button "Actualizar teléfono" [ref=e8165] [cursor=pointer]:
+                        - img [ref=e8166]
+                - row "Paciente derivados de PADOMI Hace 11 horas 03098061 CASTILLO CORDOVA ENMA 96 F CARDIOLOGIA - No seleccionado No seleccionado CAP III CARABAYLLO Voluntaria 986182271 - Pendiente Citar Hace 9 días —" [ref=e8168]:
+                  - cell [ref=e8169]:
+                    - checkbox [ref=e8170] [cursor=pointer]
+                  - cell "Paciente derivados de PADOMI" [ref=e8171]
+                  - cell "Hace 11 horas" [ref=e8172]
+                  - cell "03098061" [ref=e8173]
+                  - cell "CASTILLO CORDOVA ENMA" [ref=e8174]
+                  - cell "96" [ref=e8175]
+                  - cell "F" [ref=e8176]
+                  - cell "CARDIOLOGIA" [ref=e8177]
+                  - cell "-" [ref=e8178]
+                  - cell "No seleccionado" [ref=e8179]
+                  - cell "No seleccionado" [ref=e8180]
+                  - cell "CAP III CARABAYLLO" [ref=e8181]
+                  - cell "Voluntaria" [ref=e8182]
+                  - cell "986182271" [ref=e8183]:
+                    - link "986182271" [ref=e8184] [cursor=pointer]:
+                      - /url: https://wa.me/986182271
+                      - img [ref=e8185]
+                      - text: "986182271"
+                  - cell "-" [ref=e8187]:
+                    - link "-" [ref=e8188] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e8189]
+                      - text: "-"
+                  - cell "Pendiente Citar" [ref=e8191]:
+                    - generic [ref=e8192]: Pendiente Citar
+                  - cell "Hace 9 días" [ref=e8193]
+                  - cell "—" [ref=e8194]
+                  - cell [ref=e8195]:
+                    - generic [ref=e8196]:
+                      - button "Editar estado y cita" [ref=e8197] [cursor=pointer]:
+                        - img [ref=e8198]
+                      - button "Actualizar teléfono" [ref=e8200] [cursor=pointer]:
+                        - img [ref=e8201]
+                - row "Paciente derivados de PADOMI Hace 11 horas 32224600 ALIAGA DE VERGARAY LUZ ROSARIO 86 F CARDIOLOGIA - No seleccionado No seleccionado H.I AURELIO DIAZ-UFANO Y PERAL Voluntaria 988370430 - Pendiente Citar Hace 9 días —" [ref=e8203]:
+                  - cell [ref=e8204]:
+                    - checkbox [ref=e8205] [cursor=pointer]
+                  - cell "Paciente derivados de PADOMI" [ref=e8206]
+                  - cell "Hace 11 horas" [ref=e8207]
+                  - cell "32224600" [ref=e8208]
+                  - cell "ALIAGA DE VERGARAY LUZ ROSARIO" [ref=e8209]
+                  - cell "86" [ref=e8210]
+                  - cell "F" [ref=e8211]
+                  - cell "CARDIOLOGIA" [ref=e8212]
+                  - cell "-" [ref=e8213]
+                  - cell "No seleccionado" [ref=e8214]
+                  - cell "No seleccionado" [ref=e8215]
+                  - cell "H.I AURELIO DIAZ-UFANO Y PERAL" [ref=e8216]
+                  - cell "Voluntaria" [ref=e8217]
+                  - cell "988370430" [ref=e8218]:
+                    - link "988370430" [ref=e8219] [cursor=pointer]:
+                      - /url: https://wa.me/988370430
+                      - img [ref=e8220]
+                      - text: "988370430"
+                  - cell "-" [ref=e8222]:
+                    - link "-" [ref=e8223] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e8224]
+                      - text: "-"
+                  - cell "Pendiente Citar" [ref=e8226]:
+                    - generic [ref=e8227]: Pendiente Citar
+                  - cell "Hace 9 días" [ref=e8228]
+                  - cell "—" [ref=e8229]
+                  - cell [ref=e8230]:
+                    - generic [ref=e8231]:
+                      - button "Editar estado y cita" [ref=e8232] [cursor=pointer]:
+                        - img [ref=e8233]
+                      - button "Actualizar teléfono" [ref=e8235] [cursor=pointer]:
+                        - img [ref=e8236]
+                - row "Paciente derivados de PADOMI Hace 11 horas 10173980 PUENTE BERMUDEZ MODESTO 86 M CARDIOLOGIA - No seleccionado No seleccionado H.II VITARTE Voluntaria 928764007 - Pendiente Citar Hace 9 días —" [ref=e8238]:
+                  - cell [ref=e8239]:
+                    - checkbox [ref=e8240] [cursor=pointer]
+                  - cell "Paciente derivados de PADOMI" [ref=e8241]
+                  - cell "Hace 11 horas" [ref=e8242]
+                  - cell "10173980" [ref=e8243]
+                  - cell "PUENTE BERMUDEZ MODESTO" [ref=e8244]
+                  - cell "86" [ref=e8245]
+                  - cell "M" [ref=e8246]
+                  - cell "CARDIOLOGIA" [ref=e8247]
+                  - cell "-" [ref=e8248]
+                  - cell "No seleccionado" [ref=e8249]
+                  - cell "No seleccionado" [ref=e8250]
+                  - cell "H.II VITARTE" [ref=e8251]
+                  - cell "Voluntaria" [ref=e8252]
+                  - cell "928764007" [ref=e8253]:
+                    - link "928764007" [ref=e8254] [cursor=pointer]:
+                      - /url: https://wa.me/928764007
+                      - img [ref=e8255]
+                      - text: "928764007"
+                  - cell "-" [ref=e8257]:
+                    - link "-" [ref=e8258] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e8259]
+                      - text: "-"
+                  - cell "Pendiente Citar" [ref=e8261]:
+                    - generic [ref=e8262]: Pendiente Citar
+                  - cell "Hace 9 días" [ref=e8263]
+                  - cell "—" [ref=e8264]
+                  - cell [ref=e8265]:
+                    - generic [ref=e8266]:
+                      - button "Editar estado y cita" [ref=e8267] [cursor=pointer]:
+                        - img [ref=e8268]
+                      - button "Actualizar teléfono" [ref=e8270] [cursor=pointer]:
+                        - img [ref=e8271]
+                - row "Paciente derivados de PADOMI Hace 11 horas 08070601 NAVARRO RAVINA DE OLIVA FELICIA ELBA 88 F CARDIOLOGIA - No seleccionado No seleccionado POL. FRANCISCO PIZARRO Voluntaria 925824351 - Pendiente Citar Hace 9 días —" [ref=e8273]:
+                  - cell [ref=e8274]:
+                    - checkbox [ref=e8275] [cursor=pointer]
+                  - cell "Paciente derivados de PADOMI" [ref=e8276]
+                  - cell "Hace 11 horas" [ref=e8277]
+                  - cell "08070601" [ref=e8278]
+                  - cell "NAVARRO RAVINA DE OLIVA FELICIA ELBA" [ref=e8279]
+                  - cell "88" [ref=e8280]
+                  - cell "F" [ref=e8281]
+                  - cell "CARDIOLOGIA" [ref=e8282]
+                  - cell "-" [ref=e8283]
+                  - cell "No seleccionado" [ref=e8284]
+                  - cell "No seleccionado" [ref=e8285]
+                  - cell "POL. FRANCISCO PIZARRO" [ref=e8286]
+                  - cell "Voluntaria" [ref=e8287]
+                  - cell "925824351" [ref=e8288]:
+                    - link "925824351" [ref=e8289] [cursor=pointer]:
+                      - /url: https://wa.me/925824351
+                      - img [ref=e8290]
+                      - text: "925824351"
+                  - cell "-" [ref=e8292]:
+                    - link "-" [ref=e8293] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e8294]
+                      - text: "-"
+                  - cell "Pendiente Citar" [ref=e8296]:
+                    - generic [ref=e8297]: Pendiente Citar
+                  - cell "Hace 9 días" [ref=e8298]
+                  - cell "—" [ref=e8299]
+                  - cell [ref=e8300]:
+                    - generic [ref=e8301]:
+                      - button "Editar estado y cita" [ref=e8302] [cursor=pointer]:
+                        - img [ref=e8303]
+                      - button "Actualizar teléfono" [ref=e8305] [cursor=pointer]:
+                        - img [ref=e8306]
+                - row "Paciente derivados de PADOMI Hace 11 horas 07888988 HUAPAYA ARIAS CLOTILDE 82 F CARDIOLOGIA - No seleccionado No seleccionado CAP II LURIN Voluntaria 986240969 - Pendiente Citar Hace 9 días —" [ref=e8308]:
+                  - cell [ref=e8309]:
+                    - checkbox [ref=e8310] [cursor=pointer]
+                  - cell "Paciente derivados de PADOMI" [ref=e8311]
+                  - cell "Hace 11 horas" [ref=e8312]
+                  - cell "07888988" [ref=e8313]
+                  - cell "HUAPAYA ARIAS CLOTILDE" [ref=e8314]
+                  - cell "82" [ref=e8315]
+                  - cell "F" [ref=e8316]
+                  - cell "CARDIOLOGIA" [ref=e8317]
+                  - cell "-" [ref=e8318]
+                  - cell "No seleccionado" [ref=e8319]
+                  - cell "No seleccionado" [ref=e8320]
+                  - cell "CAP II LURIN" [ref=e8321]
+                  - cell "Voluntaria" [ref=e8322]
+                  - cell "986240969" [ref=e8323]:
+                    - link "986240969" [ref=e8324] [cursor=pointer]:
+                      - /url: https://wa.me/986240969
+                      - img [ref=e8325]
+                      - text: "986240969"
+                  - cell "-" [ref=e8327]:
+                    - link "-" [ref=e8328] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e8329]
+                      - text: "-"
+                  - cell "Pendiente Citar" [ref=e8331]:
+                    - generic [ref=e8332]: Pendiente Citar
+                  - cell "Hace 9 días" [ref=e8333]
+                  - cell "—" [ref=e8334]
+                  - cell [ref=e8335]:
+                    - generic [ref=e8336]:
+                      - button "Editar estado y cita" [ref=e8337] [cursor=pointer]:
+                        - img [ref=e8338]
+                      - button "Actualizar teléfono" [ref=e8340] [cursor=pointer]:
+                        - img [ref=e8341]
+                - row "Paciente derivados de PADOMI Hace 11 horas 06973714 PIMENTEL GUTIERRES GUILLERMO MAXIMILIAN 92 M CARDIOLOGIA - No seleccionado No seleccionado H.II VITARTE Voluntaria 944228226 - Pendiente Citar Hace 9 días —" [ref=e8343]:
+                  - cell [ref=e8344]:
+                    - checkbox [ref=e8345] [cursor=pointer]
+                  - cell "Paciente derivados de PADOMI" [ref=e8346]
+                  - cell "Hace 11 horas" [ref=e8347]
+                  - cell "06973714" [ref=e8348]
+                  - cell "PIMENTEL GUTIERRES GUILLERMO MAXIMILIAN" [ref=e8349]
+                  - cell "92" [ref=e8350]
+                  - cell "M" [ref=e8351]
+                  - cell "CARDIOLOGIA" [ref=e8352]
+                  - cell "-" [ref=e8353]
+                  - cell "No seleccionado" [ref=e8354]
+                  - cell "No seleccionado" [ref=e8355]
+                  - cell "H.II VITARTE" [ref=e8356]
+                  - cell "Voluntaria" [ref=e8357]
+                  - cell "944228226" [ref=e8358]:
+                    - link "944228226" [ref=e8359] [cursor=pointer]:
+                      - /url: https://wa.me/944228226
+                      - img [ref=e8360]
+                      - text: "944228226"
+                  - cell "-" [ref=e8362]:
+                    - link "-" [ref=e8363] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e8364]
+                      - text: "-"
+                  - cell "Pendiente Citar" [ref=e8366]:
+                    - generic [ref=e8367]: Pendiente Citar
+                  - cell "Hace 9 días" [ref=e8368]
+                  - cell "—" [ref=e8369]
+                  - cell [ref=e8370]:
+                    - generic [ref=e8371]:
+                      - button "Editar estado y cita" [ref=e8372] [cursor=pointer]:
+                        - img [ref=e8373]
+                      - button "Actualizar teléfono" [ref=e8375] [cursor=pointer]:
+                        - img [ref=e8376]
+                - row "Paciente derivados de PADOMI Hace 11 horas 04016972 CASTILLO CAMPOS FELICIA 103 F CARDIOLOGIA - No seleccionado No seleccionado RETABLO - COMAS Voluntaria 998337653 - Pendiente Citar Hace 9 días —" [ref=e8378]:
+                  - cell [ref=e8379]:
+                    - checkbox [ref=e8380] [cursor=pointer]
+                  - cell "Paciente derivados de PADOMI" [ref=e8381]
+                  - cell "Hace 11 horas" [ref=e8382]
+                  - cell "04016972" [ref=e8383]
+                  - cell "CASTILLO CAMPOS FELICIA" [ref=e8384]
+                  - cell "103" [ref=e8385]
+                  - cell "F" [ref=e8386]
+                  - cell "CARDIOLOGIA" [ref=e8387]
+                  - cell "-" [ref=e8388]
+                  - cell "No seleccionado" [ref=e8389]
+                  - cell "No seleccionado" [ref=e8390]
+                  - cell "RETABLO - COMAS" [ref=e8391]
+                  - cell "Voluntaria" [ref=e8392]
+                  - cell "998337653" [ref=e8393]:
+                    - link "998337653" [ref=e8394] [cursor=pointer]:
+                      - /url: https://wa.me/998337653
+                      - img [ref=e8395]
+                      - text: "998337653"
+                  - cell "-" [ref=e8397]:
+                    - link "-" [ref=e8398] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e8399]
+                      - text: "-"
+                  - cell "Pendiente Citar" [ref=e8401]:
+                    - generic [ref=e8402]: Pendiente Citar
+                  - cell "Hace 9 días" [ref=e8403]
+                  - cell "—" [ref=e8404]
+                  - cell [ref=e8405]:
+                    - generic [ref=e8406]:
+                      - button "Editar estado y cita" [ref=e8407] [cursor=pointer]:
+                        - img [ref=e8408]
+                      - button "Actualizar teléfono" [ref=e8410] [cursor=pointer]:
+                        - img [ref=e8411]
+                - row "Paciente derivados de PADOMI Hace 11 horas 07665685 ORE SANTA CRUZ JULIA N 93 F CARDIOLOGIA - No seleccionado No seleccionado POL. CHOSICA Voluntaria 940024614 - Pendiente Citar Hace 9 días —" [ref=e8413]:
+                  - cell [ref=e8414]:
+                    - checkbox [ref=e8415] [cursor=pointer]
+                  - cell "Paciente derivados de PADOMI" [ref=e8416]
+                  - cell "Hace 11 horas" [ref=e8417]
+                  - cell "07665685" [ref=e8418]
+                  - cell "ORE SANTA CRUZ JULIA N" [ref=e8419]
+                  - cell "93" [ref=e8420]
+                  - cell "F" [ref=e8421]
+                  - cell "CARDIOLOGIA" [ref=e8422]
+                  - cell "-" [ref=e8423]
+                  - cell "No seleccionado" [ref=e8424]
+                  - cell "No seleccionado" [ref=e8425]
+                  - cell "POL. CHOSICA" [ref=e8426]
+                  - cell "Voluntaria" [ref=e8427]
+                  - cell "940024614" [ref=e8428]:
+                    - link "940024614" [ref=e8429] [cursor=pointer]:
+                      - /url: https://wa.me/940024614
+                      - img [ref=e8430]
+                      - text: "940024614"
+                  - cell "-" [ref=e8432]:
+                    - link "-" [ref=e8433] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e8434]
+                      - text: "-"
+                  - cell "Pendiente Citar" [ref=e8436]:
+                    - generic [ref=e8437]: Pendiente Citar
+                  - cell "Hace 9 días" [ref=e8438]
+                  - cell "—" [ref=e8439]
+                  - cell [ref=e8440]:
+                    - generic [ref=e8441]:
+                      - button "Editar estado y cita" [ref=e8442] [cursor=pointer]:
+                        - img [ref=e8443]
+                      - button "Actualizar teléfono" [ref=e8445] [cursor=pointer]:
+                        - img [ref=e8446]
+                - row "Paciente derivados de PADOMI Hace 11 horas 06560377 VENEGAS SERNA OSCAR 87 M CARDIOLOGIA - No seleccionado No seleccionado H.II VITARTE Voluntaria 997891959 - Pendiente Citar Hace 9 días —" [ref=e8448]:
+                  - cell [ref=e8449]:
+                    - checkbox [ref=e8450] [cursor=pointer]
+                  - cell "Paciente derivados de PADOMI" [ref=e8451]
+                  - cell "Hace 11 horas" [ref=e8452]
+                  - cell "06560377" [ref=e8453]
+                  - cell "VENEGAS SERNA OSCAR" [ref=e8454]
+                  - cell "87" [ref=e8455]
+                  - cell "M" [ref=e8456]
+                  - cell "CARDIOLOGIA" [ref=e8457]
+                  - cell "-" [ref=e8458]
+                  - cell "No seleccionado" [ref=e8459]
+                  - cell "No seleccionado" [ref=e8460]
+                  - cell "H.II VITARTE" [ref=e8461]
+                  - cell "Voluntaria" [ref=e8462]
+                  - cell "997891959" [ref=e8463]:
+                    - link "997891959" [ref=e8464] [cursor=pointer]:
+                      - /url: https://wa.me/997891959
+                      - img [ref=e8465]
+                      - text: "997891959"
+                  - cell "-" [ref=e8467]:
+                    - link "-" [ref=e8468] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e8469]
+                      - text: "-"
+                  - cell "Pendiente Citar" [ref=e8471]:
+                    - generic [ref=e8472]: Pendiente Citar
+                  - cell "Hace 9 días" [ref=e8473]
+                  - cell "—" [ref=e8474]
+                  - cell [ref=e8475]:
+                    - generic [ref=e8476]:
+                      - button "Editar estado y cita" [ref=e8477] [cursor=pointer]:
+                        - img [ref=e8478]
+                      - button "Actualizar teléfono" [ref=e8480] [cursor=pointer]:
+                        - img [ref=e8481]
+                - row "Paciente derivados de PADOMI Hace 11 horas 07313812 GUTIERREZ VELARDE YOLANDA 90 F CARDIOLOGIA - No seleccionado No seleccionado H.I CARLOS ALCANTARA BUTTERFIELD Voluntaria 971108800 - Pendiente Citar Hace 9 días —" [ref=e8483]:
+                  - cell [ref=e8484]:
+                    - checkbox [ref=e8485] [cursor=pointer]
+                  - cell "Paciente derivados de PADOMI" [ref=e8486]
+                  - cell "Hace 11 horas" [ref=e8487]
+                  - cell "07313812" [ref=e8488]
+                  - cell "GUTIERREZ VELARDE YOLANDA" [ref=e8489]
+                  - cell "90" [ref=e8490]
+                  - cell "F" [ref=e8491]
+                  - cell "CARDIOLOGIA" [ref=e8492]
+                  - cell "-" [ref=e8493]
+                  - cell "No seleccionado" [ref=e8494]
+                  - cell "No seleccionado" [ref=e8495]
+                  - cell "H.I CARLOS ALCANTARA BUTTERFIELD" [ref=e8496]
+                  - cell "Voluntaria" [ref=e8497]
+                  - cell "971108800" [ref=e8498]:
+                    - link "971108800" [ref=e8499] [cursor=pointer]:
+                      - /url: https://wa.me/971108800
+                      - img [ref=e8500]
+                      - text: "971108800"
+                  - cell "-" [ref=e8502]:
+                    - link "-" [ref=e8503] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e8504]
+                      - text: "-"
+                  - cell "Pendiente Citar" [ref=e8506]:
+                    - generic [ref=e8507]: Pendiente Citar
+                  - cell "Hace 9 días" [ref=e8508]
+                  - cell "—" [ref=e8509]
+                  - cell [ref=e8510]:
+                    - generic [ref=e8511]:
+                      - button "Editar estado y cita" [ref=e8512] [cursor=pointer]:
+                        - img [ref=e8513]
+                      - button "Actualizar teléfono" [ref=e8515] [cursor=pointer]:
+                        - img [ref=e8516]
+                - row "Paciente derivados de PADOMI Hace 11 horas 06094485 ROMAN CACERES HERNAN 95 M CARDIOLOGIA - No seleccionado No seleccionado POL. CHINCHA Voluntaria 995202384 - Pendiente Citar Hace 9 días —" [ref=e8518]:
+                  - cell [ref=e8519]:
+                    - checkbox [ref=e8520] [cursor=pointer]
+                  - cell "Paciente derivados de PADOMI" [ref=e8521]
+                  - cell "Hace 11 horas" [ref=e8522]
+                  - cell "06094485" [ref=e8523]
+                  - cell "ROMAN CACERES HERNAN" [ref=e8524]
+                  - cell "95" [ref=e8525]
+                  - cell "M" [ref=e8526]
+                  - cell "CARDIOLOGIA" [ref=e8527]
+                  - cell "-" [ref=e8528]
+                  - cell "No seleccionado" [ref=e8529]
+                  - cell "No seleccionado" [ref=e8530]
+                  - cell "POL. CHINCHA" [ref=e8531]
+                  - cell "Voluntaria" [ref=e8532]
+                  - cell "995202384" [ref=e8533]:
+                    - link "995202384" [ref=e8534] [cursor=pointer]:
+                      - /url: https://wa.me/995202384
+                      - img [ref=e8535]
+                      - text: "995202384"
+                  - cell "-" [ref=e8537]:
+                    - link "-" [ref=e8538] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e8539]
+                      - text: "-"
+                  - cell "Pendiente Citar" [ref=e8541]:
+                    - generic [ref=e8542]: Pendiente Citar
+                  - cell "Hace 9 días" [ref=e8543]
+                  - cell "—" [ref=e8544]
+                  - cell [ref=e8545]:
+                    - generic [ref=e8546]:
+                      - button "Editar estado y cita" [ref=e8547] [cursor=pointer]:
+                        - img [ref=e8548]
+                      - button "Actualizar teléfono" [ref=e8550] [cursor=pointer]:
+                        - img [ref=e8551]
+                - row "Paciente derivados de PADOMI Hace 11 horas 07610045 LOO SAMANEZ ISABEL CONSUELO 97 F CARDIOLOGIA - No seleccionado No seleccionado POL. PABLO BERMUDEZ Voluntaria 973121687 - Pendiente Citar Hace 9 días —" [ref=e8553]:
+                  - cell [ref=e8554]:
+                    - checkbox [ref=e8555] [cursor=pointer]
+                  - cell "Paciente derivados de PADOMI" [ref=e8556]
+                  - cell "Hace 11 horas" [ref=e8557]
+                  - cell "07610045" [ref=e8558]
+                  - cell "LOO SAMANEZ ISABEL CONSUELO" [ref=e8559]
+                  - cell "97" [ref=e8560]
+                  - cell "F" [ref=e8561]
+                  - cell "CARDIOLOGIA" [ref=e8562]
+                  - cell "-" [ref=e8563]
+                  - cell "No seleccionado" [ref=e8564]
+                  - cell "No seleccionado" [ref=e8565]
+                  - cell "POL. PABLO BERMUDEZ" [ref=e8566]
+                  - cell "Voluntaria" [ref=e8567]
+                  - cell "973121687" [ref=e8568]:
+                    - link "973121687" [ref=e8569] [cursor=pointer]:
+                      - /url: https://wa.me/973121687
+                      - img [ref=e8570]
+                      - text: "973121687"
+                  - cell "-" [ref=e8572]:
+                    - link "-" [ref=e8573] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e8574]
+                      - text: "-"
+                  - cell "Pendiente Citar" [ref=e8576]:
+                    - generic [ref=e8577]: Pendiente Citar
+                  - cell "Hace 9 días" [ref=e8578]
+                  - cell "—" [ref=e8579]
+                  - cell [ref=e8580]:
+                    - generic [ref=e8581]:
+                      - button "Editar estado y cita" [ref=e8582] [cursor=pointer]:
+                        - img [ref=e8583]
+                      - button "Actualizar teléfono" [ref=e8585] [cursor=pointer]:
+                        - img [ref=e8586]
+                - row "Paciente derivados de PADOMI Hace 11 horas 10171019 MAURICIO DAVILA DOMINGO JULIO 85 M CARDIOLOGIA - No seleccionado No seleccionado POL. CHOSICA Voluntaria 908797866 - Pendiente Citar Hace 9 días —" [ref=e8588]:
+                  - cell [ref=e8589]:
+                    - checkbox [ref=e8590] [cursor=pointer]
+                  - cell "Paciente derivados de PADOMI" [ref=e8591]
+                  - cell "Hace 11 horas" [ref=e8592]
+                  - cell "10171019" [ref=e8593]
+                  - cell "MAURICIO DAVILA DOMINGO JULIO" [ref=e8594]
+                  - cell "85" [ref=e8595]
+                  - cell "M" [ref=e8596]
+                  - cell "CARDIOLOGIA" [ref=e8597]
+                  - cell "-" [ref=e8598]
+                  - cell "No seleccionado" [ref=e8599]
+                  - cell "No seleccionado" [ref=e8600]
+                  - cell "POL. CHOSICA" [ref=e8601]
+                  - cell "Voluntaria" [ref=e8602]
+                  - cell "908797866" [ref=e8603]:
+                    - link "908797866" [ref=e8604] [cursor=pointer]:
+                      - /url: https://wa.me/908797866
+                      - img [ref=e8605]
+                      - text: "908797866"
+                  - cell "-" [ref=e8607]:
+                    - link "-" [ref=e8608] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e8609]
+                      - text: "-"
+                  - cell "Pendiente Citar" [ref=e8611]:
+                    - generic [ref=e8612]: Pendiente Citar
+                  - cell "Hace 9 días" [ref=e8613]
+                  - cell "—" [ref=e8614]
+                  - cell [ref=e8615]:
+                    - generic [ref=e8616]:
+                      - button "Editar estado y cita" [ref=e8617] [cursor=pointer]:
+                        - img [ref=e8618]
+                      - button "Actualizar teléfono" [ref=e8620] [cursor=pointer]:
+                        - img [ref=e8621]
+                - row "Paciente derivados de PADOMI Hace 11 horas 06969217 SAENZ LUNA DE VIGO ELVIRA GRACIELA 74 F CARDIOLOGIA - No seleccionado No seleccionado H.II VITARTE Voluntaria 982059715 - Pendiente Citar Hace 9 días —" [ref=e8623]:
+                  - cell [ref=e8624]:
+                    - checkbox [ref=e8625] [cursor=pointer]
+                  - cell "Paciente derivados de PADOMI" [ref=e8626]
+                  - cell "Hace 11 horas" [ref=e8627]
+                  - cell "06969217" [ref=e8628]
+                  - cell "SAENZ LUNA DE VIGO ELVIRA GRACIELA" [ref=e8629]
+                  - cell "74" [ref=e8630]
+                  - cell "F" [ref=e8631]
+                  - cell "CARDIOLOGIA" [ref=e8632]
+                  - cell "-" [ref=e8633]
+                  - cell "No seleccionado" [ref=e8634]
+                  - cell "No seleccionado" [ref=e8635]
+                  - cell "H.II VITARTE" [ref=e8636]
+                  - cell "Voluntaria" [ref=e8637]
+                  - cell "982059715" [ref=e8638]:
+                    - link "982059715" [ref=e8639] [cursor=pointer]:
+                      - /url: https://wa.me/982059715
+                      - img [ref=e8640]
+                      - text: "982059715"
+                  - cell "-" [ref=e8642]:
+                    - link "-" [ref=e8643] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e8644]
+                      - text: "-"
+                  - cell "Pendiente Citar" [ref=e8646]:
+                    - generic [ref=e8647]: Pendiente Citar
+                  - cell "Hace 9 días" [ref=e8648]
+                  - cell "—" [ref=e8649]
+                  - cell [ref=e8650]:
+                    - generic [ref=e8651]:
+                      - button "Editar estado y cita" [ref=e8652] [cursor=pointer]:
+                        - img [ref=e8653]
+                      - button "Actualizar teléfono" [ref=e8655] [cursor=pointer]:
+                        - img [ref=e8656]
+                - row "Paciente derivados de PADOMI Hace 11 horas 07073150 VILLEGAS VALDIVIA DE MERCADO OLGA 94 F CARDIOLOGIA - No seleccionado No seleccionado H.I JORGE VOTO BERNALES CORPANCHO Voluntaria 913207642 - Pendiente Citar Hace 9 días —" [ref=e8658]:
+                  - cell [ref=e8659]:
+                    - checkbox [ref=e8660] [cursor=pointer]
+                  - cell "Paciente derivados de PADOMI" [ref=e8661]
+                  - cell "Hace 11 horas" [ref=e8662]
+                  - cell "07073150" [ref=e8663]
+                  - cell "VILLEGAS VALDIVIA DE MERCADO OLGA" [ref=e8664]
+                  - cell "94" [ref=e8665]
+                  - cell "F" [ref=e8666]
+                  - cell "CARDIOLOGIA" [ref=e8667]
+                  - cell "-" [ref=e8668]
+                  - cell "No seleccionado" [ref=e8669]
+                  - cell "No seleccionado" [ref=e8670]
+                  - cell "H.I JORGE VOTO BERNALES CORPANCHO" [ref=e8671]
+                  - cell "Voluntaria" [ref=e8672]
+                  - cell "913207642" [ref=e8673]:
+                    - link "913207642" [ref=e8674] [cursor=pointer]:
+                      - /url: https://wa.me/913207642
+                      - img [ref=e8675]
+                      - text: "913207642"
+                  - cell "-" [ref=e8677]:
+                    - link "-" [ref=e8678] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e8679]
+                      - text: "-"
+                  - cell "Pendiente Citar" [ref=e8681]:
+                    - generic [ref=e8682]: Pendiente Citar
+                  - cell "Hace 9 días" [ref=e8683]
+                  - cell "—" [ref=e8684]
+                  - cell [ref=e8685]:
+                    - generic [ref=e8686]:
+                      - button "Editar estado y cita" [ref=e8687] [cursor=pointer]:
+                        - img [ref=e8688]
+                      - button "Actualizar teléfono" [ref=e8690] [cursor=pointer]:
+                        - img [ref=e8691]
+                - row "Paciente derivados de PADOMI Hace 11 horas 04049386 ROJAS DE TORIBIO ANA ANTONIA 88 F CARDIOLOGIA - No seleccionado No seleccionado POL. CHOSICA Voluntaria 910132964 - Pendiente Citar Hace 9 días —" [ref=e8693]:
+                  - cell [ref=e8694]:
+                    - checkbox [ref=e8695] [cursor=pointer]
+                  - cell "Paciente derivados de PADOMI" [ref=e8696]
+                  - cell "Hace 11 horas" [ref=e8697]
+                  - cell "04049386" [ref=e8698]
+                  - cell "ROJAS DE TORIBIO ANA ANTONIA" [ref=e8699]
+                  - cell "88" [ref=e8700]
+                  - cell "F" [ref=e8701]
+                  - cell "CARDIOLOGIA" [ref=e8702]
+                  - cell "-" [ref=e8703]
+                  - cell "No seleccionado" [ref=e8704]
+                  - cell "No seleccionado" [ref=e8705]
+                  - cell "POL. CHOSICA" [ref=e8706]
+                  - cell "Voluntaria" [ref=e8707]
+                  - cell "910132964" [ref=e8708]:
+                    - link "910132964" [ref=e8709] [cursor=pointer]:
+                      - /url: https://wa.me/910132964
+                      - img [ref=e8710]
+                      - text: "910132964"
+                  - cell "-" [ref=e8712]:
+                    - link "-" [ref=e8713] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e8714]
+                      - text: "-"
+                  - cell "Pendiente Citar" [ref=e8716]:
+                    - generic [ref=e8717]: Pendiente Citar
+                  - cell "Hace 9 días" [ref=e8718]
+                  - cell "—" [ref=e8719]
+                  - cell [ref=e8720]:
+                    - generic [ref=e8721]:
+                      - button "Editar estado y cita" [ref=e8722] [cursor=pointer]:
+                        - img [ref=e8723]
+                      - button "Actualizar teléfono" [ref=e8725] [cursor=pointer]:
+                        - img [ref=e8726]
+                - row "Paciente derivados de PADOMI Hace 11 horas 07889571 HUAPAYA GAMARRA VDA DE MONTO GUILLERMIN 91 F CARDIOLOGIA - No seleccionado No seleccionado CAP II LURIN Voluntaria 904420072 - Pendiente Citar Hace 9 días —" [ref=e8728]:
+                  - cell [ref=e8729]:
+                    - checkbox [ref=e8730] [cursor=pointer]
+                  - cell "Paciente derivados de PADOMI" [ref=e8731]
+                  - cell "Hace 11 horas" [ref=e8732]
+                  - cell "07889571" [ref=e8733]
+                  - cell "HUAPAYA GAMARRA VDA DE MONTO GUILLERMIN" [ref=e8734]
+                  - cell "91" [ref=e8735]
+                  - cell "F" [ref=e8736]
+                  - cell "CARDIOLOGIA" [ref=e8737]
+                  - cell "-" [ref=e8738]
+                  - cell "No seleccionado" [ref=e8739]
+                  - cell "No seleccionado" [ref=e8740]
+                  - cell "CAP II LURIN" [ref=e8741]
+                  - cell "Voluntaria" [ref=e8742]
+                  - cell "904420072" [ref=e8743]:
+                    - link "904420072" [ref=e8744] [cursor=pointer]:
+                      - /url: https://wa.me/904420072
+                      - img [ref=e8745]
+                      - text: "904420072"
+                  - cell "-" [ref=e8747]:
+                    - link "-" [ref=e8748] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e8749]
+                      - text: "-"
+                  - cell "Pendiente Citar" [ref=e8751]:
+                    - generic [ref=e8752]: Pendiente Citar
+                  - cell "Hace 9 días" [ref=e8753]
+                  - cell "—" [ref=e8754]
+                  - cell [ref=e8755]:
+                    - generic [ref=e8756]:
+                      - button "Editar estado y cita" [ref=e8757] [cursor=pointer]:
+                        - img [ref=e8758]
+                      - button "Actualizar teléfono" [ref=e8760] [cursor=pointer]:
+                        - img [ref=e8761]
+                - row "Paciente derivados de PADOMI Hace 11 horas 06521050 ACOSTA MORENO GRACIELA 87 F CARDIOLOGIA - No seleccionado No seleccionado POL. CHOSICA Voluntaria 933620907 - Pendiente Citar Hace 9 días —" [ref=e8763]:
+                  - cell [ref=e8764]:
+                    - checkbox [ref=e8765] [cursor=pointer]
+                  - cell "Paciente derivados de PADOMI" [ref=e8766]
+                  - cell "Hace 11 horas" [ref=e8767]
+                  - cell "06521050" [ref=e8768]
+                  - cell "ACOSTA MORENO GRACIELA" [ref=e8769]
+                  - cell "87" [ref=e8770]
+                  - cell "F" [ref=e8771]
+                  - cell "CARDIOLOGIA" [ref=e8772]
+                  - cell "-" [ref=e8773]
+                  - cell "No seleccionado" [ref=e8774]
+                  - cell "No seleccionado" [ref=e8775]
+                  - cell "POL. CHOSICA" [ref=e8776]
+                  - cell "Voluntaria" [ref=e8777]
+                  - cell "933620907" [ref=e8778]:
+                    - link "933620907" [ref=e8779] [cursor=pointer]:
+                      - /url: https://wa.me/933620907
+                      - img [ref=e8780]
+                      - text: "933620907"
+                  - cell "-" [ref=e8782]:
+                    - link "-" [ref=e8783] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e8784]
+                      - text: "-"
+                  - cell "Pendiente Citar" [ref=e8786]:
+                    - generic [ref=e8787]: Pendiente Citar
+                  - cell "Hace 9 días" [ref=e8788]
+                  - cell "—" [ref=e8789]
+                  - cell [ref=e8790]:
+                    - generic [ref=e8791]:
+                      - button "Editar estado y cita" [ref=e8792] [cursor=pointer]:
+                        - img [ref=e8793]
+                      - button "Actualizar teléfono" [ref=e8795] [cursor=pointer]:
+                        - img [ref=e8796]
+                - row "Paciente derivados de PADOMI Hace 11 horas 07888940 CHACA ARRONES GRIMALDO SAUL 90 M CARDIOLOGIA - No seleccionado No seleccionado CAP II LURIN Voluntaria 971136111 - Pendiente Citar Hace 9 días —" [ref=e8798]:
+                  - cell [ref=e8799]:
+                    - checkbox [ref=e8800] [cursor=pointer]
+                  - cell "Paciente derivados de PADOMI" [ref=e8801]
+                  - cell "Hace 11 horas" [ref=e8802]
+                  - cell "07888940" [ref=e8803]
+                  - cell "CHACA ARRONES GRIMALDO SAUL" [ref=e8804]
+                  - cell "90" [ref=e8805]
+                  - cell "M" [ref=e8806]
+                  - cell "CARDIOLOGIA" [ref=e8807]
+                  - cell "-" [ref=e8808]
+                  - cell "No seleccionado" [ref=e8809]
+                  - cell "No seleccionado" [ref=e8810]
+                  - cell "CAP II LURIN" [ref=e8811]
+                  - cell "Voluntaria" [ref=e8812]
+                  - cell "971136111" [ref=e8813]:
+                    - link "971136111" [ref=e8814] [cursor=pointer]:
+                      - /url: https://wa.me/971136111
+                      - img [ref=e8815]
+                      - text: "971136111"
+                  - cell "-" [ref=e8817]:
+                    - link "-" [ref=e8818] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e8819]
+                      - text: "-"
+                  - cell "Pendiente Citar" [ref=e8821]:
+                    - generic [ref=e8822]: Pendiente Citar
+                  - cell "Hace 9 días" [ref=e8823]
+                  - cell "—" [ref=e8824]
+                  - cell [ref=e8825]:
+                    - generic [ref=e8826]:
+                      - button "Editar estado y cita" [ref=e8827] [cursor=pointer]:
+                        - img [ref=e8828]
+                      - button "Actualizar teléfono" [ref=e8830] [cursor=pointer]:
+                        - img [ref=e8831]
+                - row "Paciente derivados de PADOMI Hace 11 horas 06964064 VELASQUEZ DURAN JOSE ANTONIO 87 M CARDIOLOGIA - No seleccionado No seleccionado POL. CHOSICA Voluntaria 907516184 - Pendiente Citar Hace 9 días —" [ref=e8833]:
+                  - cell [ref=e8834]:
+                    - checkbox [ref=e8835] [cursor=pointer]
+                  - cell "Paciente derivados de PADOMI" [ref=e8836]
+                  - cell "Hace 11 horas" [ref=e8837]
+                  - cell "06964064" [ref=e8838]
+                  - cell "VELASQUEZ DURAN JOSE ANTONIO" [ref=e8839]
+                  - cell "87" [ref=e8840]
+                  - cell "M" [ref=e8841]
+                  - cell "CARDIOLOGIA" [ref=e8842]
+                  - cell "-" [ref=e8843]
+                  - cell "No seleccionado" [ref=e8844]
+                  - cell "No seleccionado" [ref=e8845]
+                  - cell "POL. CHOSICA" [ref=e8846]
+                  - cell "Voluntaria" [ref=e8847]
+                  - cell "907516184" [ref=e8848]:
+                    - link "907516184" [ref=e8849] [cursor=pointer]:
+                      - /url: https://wa.me/907516184
+                      - img [ref=e8850]
+                      - text: "907516184"
+                  - cell "-" [ref=e8852]:
+                    - link "-" [ref=e8853] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e8854]
+                      - text: "-"
+                  - cell "Pendiente Citar" [ref=e8856]:
+                    - generic [ref=e8857]: Pendiente Citar
+                  - cell "Hace 9 días" [ref=e8858]
+                  - cell "—" [ref=e8859]
+                  - cell [ref=e8860]:
+                    - generic [ref=e8861]:
+                      - button "Editar estado y cita" [ref=e8862] [cursor=pointer]:
+                        - img [ref=e8863]
+                      - button "Actualizar teléfono" [ref=e8865] [cursor=pointer]:
+                        - img [ref=e8866]
+                - row "Paciente derivados de PADOMI Hace 11 horas 07569578 VENEGAS RIVERA DONATO 88 M CARDIOLOGIA - No seleccionado No seleccionado POL. PABLO BERMUDEZ Voluntaria 963835890 - Pendiente Citar Hace 9 días —" [ref=e8868]:
+                  - cell [ref=e8869]:
+                    - checkbox [ref=e8870] [cursor=pointer]
+                  - cell "Paciente derivados de PADOMI" [ref=e8871]
+                  - cell "Hace 11 horas" [ref=e8872]
+                  - cell "07569578" [ref=e8873]
+                  - cell "VENEGAS RIVERA DONATO" [ref=e8874]
+                  - cell "88" [ref=e8875]
+                  - cell "M" [ref=e8876]
+                  - cell "CARDIOLOGIA" [ref=e8877]
+                  - cell "-" [ref=e8878]
+                  - cell "No seleccionado" [ref=e8879]
+                  - cell "No seleccionado" [ref=e8880]
+                  - cell "POL. PABLO BERMUDEZ" [ref=e8881]
+                  - cell "Voluntaria" [ref=e8882]
+                  - cell "963835890" [ref=e8883]:
+                    - link "963835890" [ref=e8884] [cursor=pointer]:
+                      - /url: https://wa.me/963835890
+                      - img [ref=e8885]
+                      - text: "963835890"
+                  - cell "-" [ref=e8887]:
+                    - link "-" [ref=e8888] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e8889]
+                      - text: "-"
+                  - cell "Pendiente Citar" [ref=e8891]:
+                    - generic [ref=e8892]: Pendiente Citar
+                  - cell "Hace 9 días" [ref=e8893]
+                  - cell "—" [ref=e8894]
+                  - cell [ref=e8895]:
+                    - generic [ref=e8896]:
+                      - button "Editar estado y cita" [ref=e8897] [cursor=pointer]:
+                        - img [ref=e8898]
+                      - button "Actualizar teléfono" [ref=e8900] [cursor=pointer]:
+                        - img [ref=e8901]
+                - row "Paciente derivados de PADOMI Hace 11 horas 10495036 MENDIZABAL DE SOSA ELENA SARA 83 F CARDIOLOGIA - No seleccionado No seleccionado H.I CARLOS ALCANTARA BUTTERFIELD Voluntaria 979310867 - Pendiente Citar Hace 9 días —" [ref=e8903]:
+                  - cell [ref=e8904]:
+                    - checkbox [ref=e8905] [cursor=pointer]
+                  - cell "Paciente derivados de PADOMI" [ref=e8906]
+                  - cell "Hace 11 horas" [ref=e8907]
+                  - cell "10495036" [ref=e8908]
+                  - cell "MENDIZABAL DE SOSA ELENA SARA" [ref=e8909]
+                  - cell "83" [ref=e8910]
+                  - cell "F" [ref=e8911]
+                  - cell "CARDIOLOGIA" [ref=e8912]
+                  - cell "-" [ref=e8913]
+                  - cell "No seleccionado" [ref=e8914]
+                  - cell "No seleccionado" [ref=e8915]
+                  - cell "H.I CARLOS ALCANTARA BUTTERFIELD" [ref=e8916]
+                  - cell "Voluntaria" [ref=e8917]
+                  - cell "979310867" [ref=e8918]:
+                    - link "979310867" [ref=e8919] [cursor=pointer]:
+                      - /url: https://wa.me/979310867
+                      - img [ref=e8920]
+                      - text: "979310867"
+                  - cell "-" [ref=e8922]:
+                    - link "-" [ref=e8923] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e8924]
+                      - text: "-"
+                  - cell "Pendiente Citar" [ref=e8926]:
+                    - generic [ref=e8927]: Pendiente Citar
+                  - cell "Hace 9 días" [ref=e8928]
+                  - cell "—" [ref=e8929]
+                  - cell [ref=e8930]:
+                    - generic [ref=e8931]:
+                      - button "Editar estado y cita" [ref=e8932] [cursor=pointer]:
+                        - img [ref=e8933]
+                      - button "Actualizar teléfono" [ref=e8935] [cursor=pointer]:
+                        - img [ref=e8936]
+                - row "Paciente derivados de PADOMI Hace 11 horas 07702744 CALVO RABINES JOSE LUIS 88 M CARDIOLOGIA - No seleccionado No seleccionado POL. PABLO BERMUDEZ Voluntaria 989089467 - Pendiente Citar Hace 9 días —" [ref=e8938]:
+                  - cell [ref=e8939]:
+                    - checkbox [ref=e8940] [cursor=pointer]
+                  - cell "Paciente derivados de PADOMI" [ref=e8941]
+                  - cell "Hace 11 horas" [ref=e8942]
+                  - cell "07702744" [ref=e8943]
+                  - cell "CALVO RABINES JOSE LUIS" [ref=e8944]
+                  - cell "88" [ref=e8945]
+                  - cell "M" [ref=e8946]
+                  - cell "CARDIOLOGIA" [ref=e8947]
+                  - cell "-" [ref=e8948]
+                  - cell "No seleccionado" [ref=e8949]
+                  - cell "No seleccionado" [ref=e8950]
+                  - cell "POL. PABLO BERMUDEZ" [ref=e8951]
+                  - cell "Voluntaria" [ref=e8952]
+                  - cell "989089467" [ref=e8953]:
+                    - link "989089467" [ref=e8954] [cursor=pointer]:
+                      - /url: https://wa.me/989089467
+                      - img [ref=e8955]
+                      - text: "989089467"
+                  - cell "-" [ref=e8957]:
+                    - link "-" [ref=e8958] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e8959]
+                      - text: "-"
+                  - cell "Pendiente Citar" [ref=e8961]:
+                    - generic [ref=e8962]: Pendiente Citar
+                  - cell "Hace 9 días" [ref=e8963]
+                  - cell "—" [ref=e8964]
+                  - cell [ref=e8965]:
+                    - generic [ref=e8966]:
+                      - button "Editar estado y cita" [ref=e8967] [cursor=pointer]:
+                        - img [ref=e8968]
+                      - button "Actualizar teléfono" [ref=e8970] [cursor=pointer]:
+                        - img [ref=e8971]
+                - row "Paciente derivados de PADOMI Hace 11 horas 07307328 AYLLON ANGULO DE SIRVAS MARIA LUZ 100 F CARDIOLOGIA - No seleccionado No seleccionado POL. CHOSICA Voluntaria 922251018 - Pendiente Citar Hace 9 días —" [ref=e8973]:
+                  - cell [ref=e8974]:
+                    - checkbox [ref=e8975] [cursor=pointer]
+                  - cell "Paciente derivados de PADOMI" [ref=e8976]
+                  - cell "Hace 11 horas" [ref=e8977]
+                  - cell "07307328" [ref=e8978]
+                  - cell "AYLLON ANGULO DE SIRVAS MARIA LUZ" [ref=e8979]
+                  - cell "100" [ref=e8980]
+                  - cell "F" [ref=e8981]
+                  - cell "CARDIOLOGIA" [ref=e8982]
+                  - cell "-" [ref=e8983]
+                  - cell "No seleccionado" [ref=e8984]
+                  - cell "No seleccionado" [ref=e8985]
+                  - cell "POL. CHOSICA" [ref=e8986]
+                  - cell "Voluntaria" [ref=e8987]
+                  - cell "922251018" [ref=e8988]:
+                    - link "922251018" [ref=e8989] [cursor=pointer]:
+                      - /url: https://wa.me/922251018
+                      - img [ref=e8990]
+                      - text: "922251018"
+                  - cell "-" [ref=e8992]:
+                    - link "-" [ref=e8993] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e8994]
+                      - text: "-"
+                  - cell "Pendiente Citar" [ref=e8996]:
+                    - generic [ref=e8997]: Pendiente Citar
+                  - cell "Hace 9 días" [ref=e8998]
+                  - cell "—" [ref=e8999]
+                  - cell [ref=e9000]:
+                    - generic [ref=e9001]:
+                      - button "Editar estado y cita" [ref=e9002] [cursor=pointer]:
+                        - img [ref=e9003]
+                      - button "Actualizar teléfono" [ref=e9005] [cursor=pointer]:
+                        - img [ref=e9006]
+                - row "Paciente derivados de PADOMI Hace 11 horas 07671210 ORTIZ MENDOZA TEOFILO 92 M CARDIOLOGIA - No seleccionado No seleccionado POL. CHOSICA Voluntaria 984211798 - Pendiente Citar Hace 9 días —" [ref=e9008]:
+                  - cell [ref=e9009]:
+                    - checkbox [ref=e9010] [cursor=pointer]
+                  - cell "Paciente derivados de PADOMI" [ref=e9011]
+                  - cell "Hace 11 horas" [ref=e9012]
+                  - cell "07671210" [ref=e9013]
+                  - cell "ORTIZ MENDOZA TEOFILO" [ref=e9014]
+                  - cell "92" [ref=e9015]
+                  - cell "M" [ref=e9016]
+                  - cell "CARDIOLOGIA" [ref=e9017]
+                  - cell "-" [ref=e9018]
+                  - cell "No seleccionado" [ref=e9019]
+                  - cell "No seleccionado" [ref=e9020]
+                  - cell "POL. CHOSICA" [ref=e9021]
+                  - cell "Voluntaria" [ref=e9022]
+                  - cell "984211798" [ref=e9023]:
+                    - link "984211798" [ref=e9024] [cursor=pointer]:
+                      - /url: https://wa.me/984211798
+                      - img [ref=e9025]
+                      - text: "984211798"
+                  - cell "-" [ref=e9027]:
+                    - link "-" [ref=e9028] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e9029]
+                      - text: "-"
+                  - cell "Pendiente Citar" [ref=e9031]:
+                    - generic [ref=e9032]: Pendiente Citar
+                  - cell "Hace 9 días" [ref=e9033]
+                  - cell "—" [ref=e9034]
+                  - cell [ref=e9035]:
+                    - generic [ref=e9036]:
+                      - button "Editar estado y cita" [ref=e9037] [cursor=pointer]:
+                        - img [ref=e9038]
+                      - button "Actualizar teléfono" [ref=e9040] [cursor=pointer]:
+                        - img [ref=e9041]
+                - row "Paciente derivados de PADOMI Hace 11 horas 17861901 PEREZ PEREZ JUAN 87 M CARDIOLOGIA - No seleccionado No seleccionado POL. CHINCHA Voluntaria 948250969 - Pendiente Citar Hace 9 días —" [ref=e9043]:
+                  - cell [ref=e9044]:
+                    - checkbox [ref=e9045] [cursor=pointer]
+                  - cell "Paciente derivados de PADOMI" [ref=e9046]
+                  - cell "Hace 11 horas" [ref=e9047]
+                  - cell "17861901" [ref=e9048]
+                  - cell "PEREZ PEREZ JUAN" [ref=e9049]
+                  - cell "87" [ref=e9050]
+                  - cell "M" [ref=e9051]
+                  - cell "CARDIOLOGIA" [ref=e9052]
+                  - cell "-" [ref=e9053]
+                  - cell "No seleccionado" [ref=e9054]
+                  - cell "No seleccionado" [ref=e9055]
+                  - cell "POL. CHINCHA" [ref=e9056]
+                  - cell "Voluntaria" [ref=e9057]
+                  - cell "948250969" [ref=e9058]:
+                    - link "948250969" [ref=e9059] [cursor=pointer]:
+                      - /url: https://wa.me/948250969
+                      - img [ref=e9060]
+                      - text: "948250969"
+                  - cell "-" [ref=e9062]:
+                    - link "-" [ref=e9063] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e9064]
+                      - text: "-"
+                  - cell "Pendiente Citar" [ref=e9066]:
+                    - generic [ref=e9067]: Pendiente Citar
+                  - cell "Hace 9 días" [ref=e9068]
+                  - cell "—" [ref=e9069]
+                  - cell [ref=e9070]:
+                    - generic [ref=e9071]:
+                      - button "Editar estado y cita" [ref=e9072] [cursor=pointer]:
+                        - img [ref=e9073]
+                      - button "Actualizar teléfono" [ref=e9075] [cursor=pointer]:
+                        - img [ref=e9076]
+                - row "Paciente derivados de PADOMI Hace 11 horas 09189345 FIGUEROA SEVILLANO VICTOR LIZARDO 83 M CARDIOLOGIA - No seleccionado No seleccionado POL. SAN LUIS Voluntaria 929552529 - Pendiente Citar Hace 9 días —" [ref=e9078]:
+                  - cell [ref=e9079]:
+                    - checkbox [ref=e9080] [cursor=pointer]
+                  - cell "Paciente derivados de PADOMI" [ref=e9081]
+                  - cell "Hace 11 horas" [ref=e9082]
+                  - cell "09189345" [ref=e9083]
+                  - cell "FIGUEROA SEVILLANO VICTOR LIZARDO" [ref=e9084]
+                  - cell "83" [ref=e9085]
+                  - cell "M" [ref=e9086]
+                  - cell "CARDIOLOGIA" [ref=e9087]
+                  - cell "-" [ref=e9088]
+                  - cell "No seleccionado" [ref=e9089]
+                  - cell "No seleccionado" [ref=e9090]
+                  - cell "POL. SAN LUIS" [ref=e9091]
+                  - cell "Voluntaria" [ref=e9092]
+                  - cell "929552529" [ref=e9093]:
+                    - link "929552529" [ref=e9094] [cursor=pointer]:
+                      - /url: https://wa.me/929552529
+                      - img [ref=e9095]
+                      - text: "929552529"
+                  - cell "-" [ref=e9097]:
+                    - link "-" [ref=e9098] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e9099]
+                      - text: "-"
+                  - cell "Pendiente Citar" [ref=e9101]:
+                    - generic [ref=e9102]: Pendiente Citar
+                  - cell "Hace 9 días" [ref=e9103]
+                  - cell "—" [ref=e9104]
+                  - cell [ref=e9105]:
+                    - generic [ref=e9106]:
+                      - button "Editar estado y cita" [ref=e9107] [cursor=pointer]:
+                        - img [ref=e9108]
+                      - button "Actualizar teléfono" [ref=e9110] [cursor=pointer]:
+                        - img [ref=e9111]
+                - row "Paciente derivados de PADOMI Hace 11 horas 07250145 MENDOZA ROJAS DE JUROS DEYANIRA MAXIMINA 85 F CARDIOLOGIA - No seleccionado No seleccionado H.I CARLOS ALCANTARA BUTTERFIELD Voluntaria 976733730 - Pendiente Citar Hace 9 días —" [ref=e9113]:
+                  - cell [ref=e9114]:
+                    - checkbox [ref=e9115] [cursor=pointer]
+                  - cell "Paciente derivados de PADOMI" [ref=e9116]
+                  - cell "Hace 11 horas" [ref=e9117]
+                  - cell "07250145" [ref=e9118]
+                  - cell "MENDOZA ROJAS DE JUROS DEYANIRA MAXIMINA" [ref=e9119]
+                  - cell "85" [ref=e9120]
+                  - cell "F" [ref=e9121]
+                  - cell "CARDIOLOGIA" [ref=e9122]
+                  - cell "-" [ref=e9123]
+                  - cell "No seleccionado" [ref=e9124]
+                  - cell "No seleccionado" [ref=e9125]
+                  - cell "H.I CARLOS ALCANTARA BUTTERFIELD" [ref=e9126]
+                  - cell "Voluntaria" [ref=e9127]
+                  - cell "976733730" [ref=e9128]:
+                    - link "976733730" [ref=e9129] [cursor=pointer]:
+                      - /url: https://wa.me/976733730
+                      - img [ref=e9130]
+                      - text: "976733730"
+                  - cell "-" [ref=e9132]:
+                    - link "-" [ref=e9133] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e9134]
+                      - text: "-"
+                  - cell "Pendiente Citar" [ref=e9136]:
+                    - generic [ref=e9137]: Pendiente Citar
+                  - cell "Hace 9 días" [ref=e9138]
+                  - cell "—" [ref=e9139]
+                  - cell [ref=e9140]:
+                    - generic [ref=e9141]:
+                      - button "Editar estado y cita" [ref=e9142] [cursor=pointer]:
+                        - img [ref=e9143]
+                      - button "Actualizar teléfono" [ref=e9145] [cursor=pointer]:
+                        - img [ref=e9146]
+                - row "Paciente derivados de PADOMI Hace 11 horas 09483863 VELASQUEZ LOBATON DORALIZA 86 F CARDIOLOGIA - No seleccionado No seleccionado RETABLO - COMAS Voluntaria 982489904 - Pendiente Citar Hace 9 días —" [ref=e9148]:
+                  - cell [ref=e9149]:
+                    - checkbox [ref=e9150] [cursor=pointer]
+                  - cell "Paciente derivados de PADOMI" [ref=e9151]
+                  - cell "Hace 11 horas" [ref=e9152]
+                  - cell "09483863" [ref=e9153]
+                  - cell "VELASQUEZ LOBATON DORALIZA" [ref=e9154]
+                  - cell "86" [ref=e9155]
+                  - cell "F" [ref=e9156]
+                  - cell "CARDIOLOGIA" [ref=e9157]
+                  - cell "-" [ref=e9158]
+                  - cell "No seleccionado" [ref=e9159]
+                  - cell "No seleccionado" [ref=e9160]
+                  - cell "RETABLO - COMAS" [ref=e9161]
+                  - cell "Voluntaria" [ref=e9162]
+                  - cell "982489904" [ref=e9163]:
+                    - link "982489904" [ref=e9164] [cursor=pointer]:
+                      - /url: https://wa.me/982489904
+                      - img [ref=e9165]
+                      - text: "982489904"
+                  - cell "-" [ref=e9167]:
+                    - link "-" [ref=e9168] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e9169]
+                      - text: "-"
+                  - cell "Pendiente Citar" [ref=e9171]:
+                    - generic [ref=e9172]: Pendiente Citar
+                  - cell "Hace 9 días" [ref=e9173]
+                  - cell "—" [ref=e9174]
+                  - cell [ref=e9175]:
+                    - generic [ref=e9176]:
+                      - button "Editar estado y cita" [ref=e9177] [cursor=pointer]:
+                        - img [ref=e9178]
+                      - button "Actualizar teléfono" [ref=e9180] [cursor=pointer]:
+                        - img [ref=e9181]
+                - row "Paciente derivados de PADOMI Hace 11 horas 06962053 UGARTE MIRANDA DE ALIAGA LUZMILA 94 F CARDIOLOGIA - No seleccionado No seleccionado POL. CHOSICA Voluntaria 990919181 - Pendiente Citar Hace 9 días —" [ref=e9183]:
+                  - cell [ref=e9184]:
+                    - checkbox [ref=e9185] [cursor=pointer]
+                  - cell "Paciente derivados de PADOMI" [ref=e9186]
+                  - cell "Hace 11 horas" [ref=e9187]
+                  - cell "06962053" [ref=e9188]
+                  - cell "UGARTE MIRANDA DE ALIAGA LUZMILA" [ref=e9189]
+                  - cell "94" [ref=e9190]
+                  - cell "F" [ref=e9191]
+                  - cell "CARDIOLOGIA" [ref=e9192]
+                  - cell "-" [ref=e9193]
+                  - cell "No seleccionado" [ref=e9194]
+                  - cell "No seleccionado" [ref=e9195]
+                  - cell "POL. CHOSICA" [ref=e9196]
+                  - cell "Voluntaria" [ref=e9197]
+                  - cell "990919181" [ref=e9198]:
+                    - link "990919181" [ref=e9199] [cursor=pointer]:
+                      - /url: https://wa.me/990919181
+                      - img [ref=e9200]
+                      - text: "990919181"
+                  - cell "-" [ref=e9202]:
+                    - link "-" [ref=e9203] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e9204]
+                      - text: "-"
+                  - cell "Pendiente Citar" [ref=e9206]:
+                    - generic [ref=e9207]: Pendiente Citar
+                  - cell "Hace 9 días" [ref=e9208]
+                  - cell "—" [ref=e9209]
+                  - cell [ref=e9210]:
+                    - generic [ref=e9211]:
+                      - button "Editar estado y cita" [ref=e9212] [cursor=pointer]:
+                        - img [ref=e9213]
+                      - button "Actualizar teléfono" [ref=e9215] [cursor=pointer]:
+                        - img [ref=e9216]
+                - row "Paciente derivados de PADOMI Hace 11 horas 06758736 ROJAS ESTEVES DE FERNANDIN JESUS EMPERATRIZ 100 F CARDIOLOGIA - No seleccionado No seleccionado POL. CHOSICA Voluntaria 922680929 - Pendiente Citar Hace 9 días —" [ref=e9218]:
+                  - cell [ref=e9219]:
+                    - checkbox [ref=e9220] [cursor=pointer]
+                  - cell "Paciente derivados de PADOMI" [ref=e9221]
+                  - cell "Hace 11 horas" [ref=e9222]
+                  - cell "06758736" [ref=e9223]
+                  - cell "ROJAS ESTEVES DE FERNANDIN JESUS EMPERATRIZ" [ref=e9224]
+                  - cell "100" [ref=e9225]
+                  - cell "F" [ref=e9226]
+                  - cell "CARDIOLOGIA" [ref=e9227]
+                  - cell "-" [ref=e9228]
+                  - cell "No seleccionado" [ref=e9229]
+                  - cell "No seleccionado" [ref=e9230]
+                  - cell "POL. CHOSICA" [ref=e9231]
+                  - cell "Voluntaria" [ref=e9232]
+                  - cell "922680929" [ref=e9233]:
+                    - link "922680929" [ref=e9234] [cursor=pointer]:
+                      - /url: https://wa.me/922680929
+                      - img [ref=e9235]
+                      - text: "922680929"
+                  - cell "-" [ref=e9237]:
+                    - link "-" [ref=e9238] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e9239]
+                      - text: "-"
+                  - cell "Pendiente Citar" [ref=e9241]:
+                    - generic [ref=e9242]: Pendiente Citar
+                  - cell "Hace 9 días" [ref=e9243]
+                  - cell "—" [ref=e9244]
+                  - cell [ref=e9245]:
+                    - generic [ref=e9246]:
+                      - button "Editar estado y cita" [ref=e9247] [cursor=pointer]:
+                        - img [ref=e9248]
+                      - button "Actualizar teléfono" [ref=e9250] [cursor=pointer]:
+                        - img [ref=e9251]
+                - row "Paciente derivados de PADOMI Hace 11 horas 06973149 FALCON AGUIRRE ISAAC MANUEL 83 M CARDIOLOGIA - No seleccionado No seleccionado POL. CHOSICA Voluntaria 940789176 - Pendiente Citar Hace 9 días —" [ref=e9253]:
+                  - cell [ref=e9254]:
+                    - checkbox [ref=e9255] [cursor=pointer]
+                  - cell "Paciente derivados de PADOMI" [ref=e9256]
+                  - cell "Hace 11 horas" [ref=e9257]
+                  - cell "06973149" [ref=e9258]
+                  - cell "FALCON AGUIRRE ISAAC MANUEL" [ref=e9259]
+                  - cell "83" [ref=e9260]
+                  - cell "M" [ref=e9261]
+                  - cell "CARDIOLOGIA" [ref=e9262]
+                  - cell "-" [ref=e9263]
+                  - cell "No seleccionado" [ref=e9264]
+                  - cell "No seleccionado" [ref=e9265]
+                  - cell "POL. CHOSICA" [ref=e9266]
+                  - cell "Voluntaria" [ref=e9267]
+                  - cell "940789176" [ref=e9268]:
+                    - link "940789176" [ref=e9269] [cursor=pointer]:
+                      - /url: https://wa.me/940789176
+                      - img [ref=e9270]
+                      - text: "940789176"
+                  - cell "-" [ref=e9272]:
+                    - link "-" [ref=e9273] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e9274]
+                      - text: "-"
+                  - cell "Pendiente Citar" [ref=e9276]:
+                    - generic [ref=e9277]: Pendiente Citar
+                  - cell "Hace 9 días" [ref=e9278]
+                  - cell "—" [ref=e9279]
+                  - cell [ref=e9280]:
+                    - generic [ref=e9281]:
+                      - button "Editar estado y cita" [ref=e9282] [cursor=pointer]:
+                        - img [ref=e9283]
+                      - button "Actualizar teléfono" [ref=e9285] [cursor=pointer]:
+                        - img [ref=e9286]
+                - row "Paciente derivados de PADOMI Hace 11 horas 07650199 ALCARRAZ OJEDA MAURO 93 M CARDIOLOGIA - No seleccionado No seleccionado POL. CHOSICA Voluntaria 984245786 - Pendiente Citar Hace 9 días —" [ref=e9288]:
+                  - cell [ref=e9289]:
+                    - checkbox [ref=e9290] [cursor=pointer]
+                  - cell "Paciente derivados de PADOMI" [ref=e9291]
+                  - cell "Hace 11 horas" [ref=e9292]
+                  - cell "07650199" [ref=e9293]
+                  - cell "ALCARRAZ OJEDA MAURO" [ref=e9294]
+                  - cell "93" [ref=e9295]
+                  - cell "M" [ref=e9296]
+                  - cell "CARDIOLOGIA" [ref=e9297]
+                  - cell "-" [ref=e9298]
+                  - cell "No seleccionado" [ref=e9299]
+                  - cell "No seleccionado" [ref=e9300]
+                  - cell "POL. CHOSICA" [ref=e9301]
+                  - cell "Voluntaria" [ref=e9302]
+                  - cell "984245786" [ref=e9303]:
+                    - link "984245786" [ref=e9304] [cursor=pointer]:
+                      - /url: https://wa.me/984245786
+                      - img [ref=e9305]
+                      - text: "984245786"
+                  - cell "-" [ref=e9307]:
+                    - link "-" [ref=e9308] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e9309]
+                      - text: "-"
+                  - cell "Pendiente Citar" [ref=e9311]:
+                    - generic [ref=e9312]: Pendiente Citar
+                  - cell "Hace 9 días" [ref=e9313]
+                  - cell "—" [ref=e9314]
+                  - cell [ref=e9315]:
+                    - generic [ref=e9316]:
+                      - button "Editar estado y cita" [ref=e9317] [cursor=pointer]:
+                        - img [ref=e9318]
+                      - button "Actualizar teléfono" [ref=e9320] [cursor=pointer]:
+                        - img [ref=e9321]
+                - row "Paciente derivados de PADOMI Hace 11 horas 07887063 RUEDA RETES VICENTE DE PAUL 87 M CARDIOLOGIA - No seleccionado No seleccionado CAP II LURIN Voluntaria 963973939 - Pendiente Citar Hace 9 días —" [ref=e9323]:
+                  - cell [ref=e9324]:
+                    - checkbox [ref=e9325] [cursor=pointer]
+                  - cell "Paciente derivados de PADOMI" [ref=e9326]
+                  - cell "Hace 11 horas" [ref=e9327]
+                  - cell "07887063" [ref=e9328]
+                  - cell "RUEDA RETES VICENTE DE PAUL" [ref=e9329]
+                  - cell "87" [ref=e9330]
+                  - cell "M" [ref=e9331]
+                  - cell "CARDIOLOGIA" [ref=e9332]
+                  - cell "-" [ref=e9333]
+                  - cell "No seleccionado" [ref=e9334]
+                  - cell "No seleccionado" [ref=e9335]
+                  - cell "CAP II LURIN" [ref=e9336]
+                  - cell "Voluntaria" [ref=e9337]
+                  - cell "963973939" [ref=e9338]:
+                    - link "963973939" [ref=e9339] [cursor=pointer]:
+                      - /url: https://wa.me/963973939
+                      - img [ref=e9340]
+                      - text: "963973939"
+                  - cell "-" [ref=e9342]:
+                    - link "-" [ref=e9343] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e9344]
+                      - text: "-"
+                  - cell "Pendiente Citar" [ref=e9346]:
+                    - generic [ref=e9347]: Pendiente Citar
+                  - cell "Hace 9 días" [ref=e9348]
+                  - cell "—" [ref=e9349]
+                  - cell [ref=e9350]:
+                    - generic [ref=e9351]:
+                      - button "Editar estado y cita" [ref=e9352] [cursor=pointer]:
+                        - img [ref=e9353]
+                      - button "Actualizar teléfono" [ref=e9355] [cursor=pointer]:
+                        - img [ref=e9356]
+                - row "Paciente derivados de PADOMI Hace 11 horas 07888808 MONTOYA GARCIA CLAUDIO OSCAR 89 M CARDIOLOGIA - No seleccionado No seleccionado CAP II LURIN Voluntaria 955420372 - Pendiente Citar Hace 9 días —" [ref=e9358]:
+                  - cell [ref=e9359]:
+                    - checkbox [ref=e9360] [cursor=pointer]
+                  - cell "Paciente derivados de PADOMI" [ref=e9361]
+                  - cell "Hace 11 horas" [ref=e9362]
+                  - cell "07888808" [ref=e9363]
+                  - cell "MONTOYA GARCIA CLAUDIO OSCAR" [ref=e9364]
+                  - cell "89" [ref=e9365]
+                  - cell "M" [ref=e9366]
+                  - cell "CARDIOLOGIA" [ref=e9367]
+                  - cell "-" [ref=e9368]
+                  - cell "No seleccionado" [ref=e9369]
+                  - cell "No seleccionado" [ref=e9370]
+                  - cell "CAP II LURIN" [ref=e9371]
+                  - cell "Voluntaria" [ref=e9372]
+                  - cell "955420372" [ref=e9373]:
+                    - link "955420372" [ref=e9374] [cursor=pointer]:
+                      - /url: https://wa.me/955420372
+                      - img [ref=e9375]
+                      - text: "955420372"
+                  - cell "-" [ref=e9377]:
+                    - link "-" [ref=e9378] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e9379]
+                      - text: "-"
+                  - cell "Pendiente Citar" [ref=e9381]:
+                    - generic [ref=e9382]: Pendiente Citar
+                  - cell "Hace 9 días" [ref=e9383]
+                  - cell "—" [ref=e9384]
+                  - cell [ref=e9385]:
+                    - generic [ref=e9386]:
+                      - button "Editar estado y cita" [ref=e9387] [cursor=pointer]:
+                        - img [ref=e9388]
+                      - button "Actualizar teléfono" [ref=e9390] [cursor=pointer]:
+                        - img [ref=e9391]
+                - row "Paciente derivados de PADOMI Hace 11 horas 07695793 LAOS PAREDES EMILIO ALFONSO 76 M CARDIOLOGIA - No seleccionado No seleccionado CAP II LURIN Voluntaria 997955758 - Pendiente Citar Hace 9 días —" [ref=e9393]:
+                  - cell [ref=e9394]:
+                    - checkbox [ref=e9395] [cursor=pointer]
+                  - cell "Paciente derivados de PADOMI" [ref=e9396]
+                  - cell "Hace 11 horas" [ref=e9397]
+                  - cell "07695793" [ref=e9398]
+                  - cell "LAOS PAREDES EMILIO ALFONSO" [ref=e9399]
+                  - cell "76" [ref=e9400]
+                  - cell "M" [ref=e9401]
+                  - cell "CARDIOLOGIA" [ref=e9402]
+                  - cell "-" [ref=e9403]
+                  - cell "No seleccionado" [ref=e9404]
+                  - cell "No seleccionado" [ref=e9405]
+                  - cell "CAP II LURIN" [ref=e9406]
+                  - cell "Voluntaria" [ref=e9407]
+                  - cell "997955758" [ref=e9408]:
+                    - link "997955758" [ref=e9409] [cursor=pointer]:
+                      - /url: https://wa.me/997955758
+                      - img [ref=e9410]
+                      - text: "997955758"
+                  - cell "-" [ref=e9412]:
+                    - link "-" [ref=e9413] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e9414]
+                      - text: "-"
+                  - cell "Pendiente Citar" [ref=e9416]:
+                    - generic [ref=e9417]: Pendiente Citar
+                  - cell "Hace 9 días" [ref=e9418]
+                  - cell "—" [ref=e9419]
+                  - cell [ref=e9420]:
+                    - generic [ref=e9421]:
+                      - button "Editar estado y cita" [ref=e9422] [cursor=pointer]:
+                        - img [ref=e9423]
+                      - button "Actualizar teléfono" [ref=e9425] [cursor=pointer]:
+                        - img [ref=e9426]
+                - row "Paciente derivados de PADOMI Hace 11 horas 07890690 CASAS GAMARRA ERNESTO 91 M CARDIOLOGIA - No seleccionado No seleccionado CAP II LURIN Voluntaria 983258362 - Pendiente Citar Hace 9 días —" [ref=e9428]:
+                  - cell [ref=e9429]:
+                    - checkbox [ref=e9430] [cursor=pointer]
+                  - cell "Paciente derivados de PADOMI" [ref=e9431]
+                  - cell "Hace 11 horas" [ref=e9432]
+                  - cell "07890690" [ref=e9433]
+                  - cell "CASAS GAMARRA ERNESTO" [ref=e9434]
+                  - cell "91" [ref=e9435]
+                  - cell "M" [ref=e9436]
+                  - cell "CARDIOLOGIA" [ref=e9437]
+                  - cell "-" [ref=e9438]
+                  - cell "No seleccionado" [ref=e9439]
+                  - cell "No seleccionado" [ref=e9440]
+                  - cell "CAP II LURIN" [ref=e9441]
+                  - cell "Voluntaria" [ref=e9442]
+                  - cell "983258362" [ref=e9443]:
+                    - link "983258362" [ref=e9444] [cursor=pointer]:
+                      - /url: https://wa.me/983258362
+                      - img [ref=e9445]
+                      - text: "983258362"
+                  - cell "-" [ref=e9447]:
+                    - link "-" [ref=e9448] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e9449]
+                      - text: "-"
+                  - cell "Pendiente Citar" [ref=e9451]:
+                    - generic [ref=e9452]: Pendiente Citar
+                  - cell "Hace 9 días" [ref=e9453]
+                  - cell "—" [ref=e9454]
+                  - cell [ref=e9455]:
+                    - generic [ref=e9456]:
+                      - button "Editar estado y cita" [ref=e9457] [cursor=pointer]:
+                        - img [ref=e9458]
+                      - button "Actualizar teléfono" [ref=e9460] [cursor=pointer]:
+                        - img [ref=e9461]
+                - row "Paciente derivados de PADOMI Hace 11 horas 06969176 ANCASI HUACOTO JULIA R 93 F CARDIOLOGIA - No seleccionado No seleccionado POL. CHOSICA Voluntaria 915370919 - Pendiente Citar Hace 9 días —" [ref=e9463]:
+                  - cell [ref=e9464]:
+                    - checkbox [ref=e9465] [cursor=pointer]
+                  - cell "Paciente derivados de PADOMI" [ref=e9466]
+                  - cell "Hace 11 horas" [ref=e9467]
+                  - cell "06969176" [ref=e9468]
+                  - cell "ANCASI HUACOTO JULIA R" [ref=e9469]
+                  - cell "93" [ref=e9470]
+                  - cell "F" [ref=e9471]
+                  - cell "CARDIOLOGIA" [ref=e9472]
+                  - cell "-" [ref=e9473]
+                  - cell "No seleccionado" [ref=e9474]
+                  - cell "No seleccionado" [ref=e9475]
+                  - cell "POL. CHOSICA" [ref=e9476]
+                  - cell "Voluntaria" [ref=e9477]
+                  - cell "915370919" [ref=e9478]:
+                    - link "915370919" [ref=e9479] [cursor=pointer]:
+                      - /url: https://wa.me/915370919
+                      - img [ref=e9480]
+                      - text: "915370919"
+                  - cell "-" [ref=e9482]:
+                    - link "-" [ref=e9483] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e9484]
+                      - text: "-"
+                  - cell "Pendiente Citar" [ref=e9486]:
+                    - generic [ref=e9487]: Pendiente Citar
+                  - cell "Hace 9 días" [ref=e9488]
+                  - cell "—" [ref=e9489]
+                  - cell [ref=e9490]:
+                    - generic [ref=e9491]:
+                      - button "Editar estado y cita" [ref=e9492] [cursor=pointer]:
+                        - img [ref=e9493]
+                      - button "Actualizar teléfono" [ref=e9495] [cursor=pointer]:
+                        - img [ref=e9496]
+                - row "Paciente derivados de PADOMI Hace 11 horas 07669701 RAMIREZ MUÑOZ DE ORELLANA MARGARITA 96 F CARDIOLOGIA - No seleccionado No seleccionado POL. CHOSICA Voluntaria 995785705 - Pendiente Citar Hace 9 días —" [ref=e9498]:
+                  - cell [ref=e9499]:
+                    - checkbox [ref=e9500] [cursor=pointer]
+                  - cell "Paciente derivados de PADOMI" [ref=e9501]
+                  - cell "Hace 11 horas" [ref=e9502]
+                  - cell "07669701" [ref=e9503]
+                  - cell "RAMIREZ MUÑOZ DE ORELLANA MARGARITA" [ref=e9504]
+                  - cell "96" [ref=e9505]
+                  - cell "F" [ref=e9506]
+                  - cell "CARDIOLOGIA" [ref=e9507]
+                  - cell "-" [ref=e9508]
+                  - cell "No seleccionado" [ref=e9509]
+                  - cell "No seleccionado" [ref=e9510]
+                  - cell "POL. CHOSICA" [ref=e9511]
+                  - cell "Voluntaria" [ref=e9512]
+                  - cell "995785705" [ref=e9513]:
+                    - link "995785705" [ref=e9514] [cursor=pointer]:
+                      - /url: https://wa.me/995785705
+                      - img [ref=e9515]
+                      - text: "995785705"
+                  - cell "-" [ref=e9517]:
+                    - link "-" [ref=e9518] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e9519]
+                      - text: "-"
+                  - cell "Pendiente Citar" [ref=e9521]:
+                    - generic [ref=e9522]: Pendiente Citar
+                  - cell "Hace 9 días" [ref=e9523]
+                  - cell "—" [ref=e9524]
+                  - cell [ref=e9525]:
+                    - generic [ref=e9526]:
+                      - button "Editar estado y cita" [ref=e9527] [cursor=pointer]:
+                        - img [ref=e9528]
+                      - button "Actualizar teléfono" [ref=e9530] [cursor=pointer]:
+                        - img [ref=e9531]
+                - row "Paciente derivados de PADOMI Hace 11 horas 07667008 QUISPE POMA MANUEL MARCELINO 79 M CARDIOLOGIA - No seleccionado No seleccionado POL. CHOSICA Voluntaria 952467542 - Pendiente Citar Hace 9 días —" [ref=e9533]:
+                  - cell [ref=e9534]:
+                    - checkbox [ref=e9535] [cursor=pointer]
+                  - cell "Paciente derivados de PADOMI" [ref=e9536]
+                  - cell "Hace 11 horas" [ref=e9537]
+                  - cell "07667008" [ref=e9538]
+                  - cell "QUISPE POMA MANUEL MARCELINO" [ref=e9539]
+                  - cell "79" [ref=e9540]
+                  - cell "M" [ref=e9541]
+                  - cell "CARDIOLOGIA" [ref=e9542]
+                  - cell "-" [ref=e9543]
+                  - cell "No seleccionado" [ref=e9544]
+                  - cell "No seleccionado" [ref=e9545]
+                  - cell "POL. CHOSICA" [ref=e9546]
+                  - cell "Voluntaria" [ref=e9547]
+                  - cell "952467542" [ref=e9548]:
+                    - link "952467542" [ref=e9549] [cursor=pointer]:
+                      - /url: https://wa.me/952467542
+                      - img [ref=e9550]
+                      - text: "952467542"
+                  - cell "-" [ref=e9552]:
+                    - link "-" [ref=e9553] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e9554]
+                      - text: "-"
+                  - cell "Pendiente Citar" [ref=e9556]:
+                    - generic [ref=e9557]: Pendiente Citar
+                  - cell "Hace 9 días" [ref=e9558]
+                  - cell "—" [ref=e9559]
+                  - cell [ref=e9560]:
+                    - generic [ref=e9561]:
+                      - button "Editar estado y cita" [ref=e9562] [cursor=pointer]:
+                        - img [ref=e9563]
+                      - button "Actualizar teléfono" [ref=e9565] [cursor=pointer]:
+                        - img [ref=e9566]
+                - row "Paciente derivados de PADOMI Hace 11 horas 07657292 SANDOVAL MELENDEZ VDA DE GOME ELSA ANGELICA 89 F CARDIOLOGIA - No seleccionado No seleccionado POL. CHOSICA Voluntaria 928388285 - Pendiente Citar Hace 9 días —" [ref=e9568]:
+                  - cell [ref=e9569]:
+                    - checkbox [ref=e9570] [cursor=pointer]
+                  - cell "Paciente derivados de PADOMI" [ref=e9571]
+                  - cell "Hace 11 horas" [ref=e9572]
+                  - cell "07657292" [ref=e9573]
+                  - cell "SANDOVAL MELENDEZ VDA DE GOME ELSA ANGELICA" [ref=e9574]
+                  - cell "89" [ref=e9575]
+                  - cell "F" [ref=e9576]
+                  - cell "CARDIOLOGIA" [ref=e9577]
+                  - cell "-" [ref=e9578]
+                  - cell "No seleccionado" [ref=e9579]
+                  - cell "No seleccionado" [ref=e9580]
+                  - cell "POL. CHOSICA" [ref=e9581]
+                  - cell "Voluntaria" [ref=e9582]
+                  - cell "928388285" [ref=e9583]:
+                    - link "928388285" [ref=e9584] [cursor=pointer]:
+                      - /url: https://wa.me/928388285
+                      - img [ref=e9585]
+                      - text: "928388285"
+                  - cell "-" [ref=e9587]:
+                    - link "-" [ref=e9588] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e9589]
+                      - text: "-"
+                  - cell "Pendiente Citar" [ref=e9591]:
+                    - generic [ref=e9592]: Pendiente Citar
+                  - cell "Hace 9 días" [ref=e9593]
+                  - cell "—" [ref=e9594]
+                  - cell [ref=e9595]:
+                    - generic [ref=e9596]:
+                      - button "Editar estado y cita" [ref=e9597] [cursor=pointer]:
+                        - img [ref=e9598]
+                      - button "Actualizar teléfono" [ref=e9600] [cursor=pointer]:
+                        - img [ref=e9601]
+                - row "Paciente derivados de PADOMI Hace 11 horas 06973516 TORRIN SANTA CRUZ NICASIA 89 F CARDIOLOGIA - No seleccionado No seleccionado POL. CHOSICA Voluntaria 913371165 - Pendiente Citar Hace 9 días —" [ref=e9603]:
+                  - cell [ref=e9604]:
+                    - checkbox [ref=e9605] [cursor=pointer]
+                  - cell "Paciente derivados de PADOMI" [ref=e9606]
+                  - cell "Hace 11 horas" [ref=e9607]
+                  - cell "06973516" [ref=e9608]
+                  - cell "TORRIN SANTA CRUZ NICASIA" [ref=e9609]
+                  - cell "89" [ref=e9610]
+                  - cell "F" [ref=e9611]
+                  - cell "CARDIOLOGIA" [ref=e9612]
+                  - cell "-" [ref=e9613]
+                  - cell "No seleccionado" [ref=e9614]
+                  - cell "No seleccionado" [ref=e9615]
+                  - cell "POL. CHOSICA" [ref=e9616]
+                  - cell "Voluntaria" [ref=e9617]
+                  - cell "913371165" [ref=e9618]:
+                    - link "913371165" [ref=e9619] [cursor=pointer]:
+                      - /url: https://wa.me/913371165
+                      - img [ref=e9620]
+                      - text: "913371165"
+                  - cell "-" [ref=e9622]:
+                    - link "-" [ref=e9623] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e9624]
+                      - text: "-"
+                  - cell "Pendiente Citar" [ref=e9626]:
+                    - generic [ref=e9627]: Pendiente Citar
+                  - cell "Hace 9 días" [ref=e9628]
+                  - cell "—" [ref=e9629]
+                  - cell [ref=e9630]:
+                    - generic [ref=e9631]:
+                      - button "Editar estado y cita" [ref=e9632] [cursor=pointer]:
+                        - img [ref=e9633]
+                      - button "Actualizar teléfono" [ref=e9635] [cursor=pointer]:
+                        - img [ref=e9636]
+                - row "Paciente derivados de PADOMI Hace 11 horas 06967679 SALGUERO MENDEZ DE ARIAS ADRIANA 95 F CARDIOLOGIA - No seleccionado No seleccionado POL. CHOSICA Voluntaria 929087163 - Pendiente Citar Hace 9 días —" [ref=e9638]:
+                  - cell [ref=e9639]:
+                    - checkbox [ref=e9640] [cursor=pointer]
+                  - cell "Paciente derivados de PADOMI" [ref=e9641]
+                  - cell "Hace 11 horas" [ref=e9642]
+                  - cell "06967679" [ref=e9643]
+                  - cell "SALGUERO MENDEZ DE ARIAS ADRIANA" [ref=e9644]
+                  - cell "95" [ref=e9645]
+                  - cell "F" [ref=e9646]
+                  - cell "CARDIOLOGIA" [ref=e9647]
+                  - cell "-" [ref=e9648]
+                  - cell "No seleccionado" [ref=e9649]
+                  - cell "No seleccionado" [ref=e9650]
+                  - cell "POL. CHOSICA" [ref=e9651]
+                  - cell "Voluntaria" [ref=e9652]
+                  - cell "929087163" [ref=e9653]:
+                    - link "929087163" [ref=e9654] [cursor=pointer]:
+                      - /url: https://wa.me/929087163
+                      - img [ref=e9655]
+                      - text: "929087163"
+                  - cell "-" [ref=e9657]:
+                    - link "-" [ref=e9658] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e9659]
+                      - text: "-"
+                  - cell "Pendiente Citar" [ref=e9661]:
+                    - generic [ref=e9662]: Pendiente Citar
+                  - cell "Hace 9 días" [ref=e9663]
+                  - cell "—" [ref=e9664]
+                  - cell [ref=e9665]:
+                    - generic [ref=e9666]:
+                      - button "Editar estado y cita" [ref=e9667] [cursor=pointer]:
+                        - img [ref=e9668]
+                      - button "Actualizar teléfono" [ref=e9670] [cursor=pointer]:
+                        - img [ref=e9671]
+                - row "Paciente derivados de PADOMI Hace 11 horas 06970239 HERRERA FERNANDEZ DAVILA RAFAEL RAIMUNDO 91 M CARDIOLOGIA - No seleccionado No seleccionado POL. PABLO BERMUDEZ Voluntaria 952404943 - Pendiente Citar Hace 9 días —" [ref=e9673]:
+                  - cell [ref=e9674]:
+                    - checkbox [ref=e9675] [cursor=pointer]
+                  - cell "Paciente derivados de PADOMI" [ref=e9676]
+                  - cell "Hace 11 horas" [ref=e9677]
+                  - cell "06970239" [ref=e9678]
+                  - cell "HERRERA FERNANDEZ DAVILA RAFAEL RAIMUNDO" [ref=e9679]
+                  - cell "91" [ref=e9680]
+                  - cell "M" [ref=e9681]
+                  - cell "CARDIOLOGIA" [ref=e9682]
+                  - cell "-" [ref=e9683]
+                  - cell "No seleccionado" [ref=e9684]
+                  - cell "No seleccionado" [ref=e9685]
+                  - cell "POL. PABLO BERMUDEZ" [ref=e9686]
+                  - cell "Voluntaria" [ref=e9687]
+                  - cell "952404943" [ref=e9688]:
+                    - link "952404943" [ref=e9689] [cursor=pointer]:
+                      - /url: https://wa.me/952404943
+                      - img [ref=e9690]
+                      - text: "952404943"
+                  - cell "-" [ref=e9692]:
+                    - link "-" [ref=e9693] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e9694]
+                      - text: "-"
+                  - cell "Pendiente Citar" [ref=e9696]:
+                    - generic [ref=e9697]: Pendiente Citar
+                  - cell "Hace 9 días" [ref=e9698]
+                  - cell "—" [ref=e9699]
+                  - cell [ref=e9700]:
+                    - generic [ref=e9701]:
+                      - button "Editar estado y cita" [ref=e9702] [cursor=pointer]:
+                        - img [ref=e9703]
+                      - button "Actualizar teléfono" [ref=e9705] [cursor=pointer]:
+                        - img [ref=e9706]
+                - row "Paciente derivados de PADOMI Hace 11 horas 16762781 ROMERO DE MALAVER JOSEFA 92 F CARDIOLOGIA - No seleccionado No seleccionado POL. CHOSICA Voluntaria 969615597 - Pendiente Citar Hace 9 días —" [ref=e9708]:
+                  - cell [ref=e9709]:
+                    - checkbox [ref=e9710] [cursor=pointer]
+                  - cell "Paciente derivados de PADOMI" [ref=e9711]
+                  - cell "Hace 11 horas" [ref=e9712]
+                  - cell "16762781" [ref=e9713]
+                  - cell "ROMERO DE MALAVER JOSEFA" [ref=e9714]
+                  - cell "92" [ref=e9715]
+                  - cell "F" [ref=e9716]
+                  - cell "CARDIOLOGIA" [ref=e9717]
+                  - cell "-" [ref=e9718]
+                  - cell "No seleccionado" [ref=e9719]
+                  - cell "No seleccionado" [ref=e9720]
+                  - cell "POL. CHOSICA" [ref=e9721]
+                  - cell "Voluntaria" [ref=e9722]
+                  - cell "969615597" [ref=e9723]:
+                    - link "969615597" [ref=e9724] [cursor=pointer]:
+                      - /url: https://wa.me/969615597
+                      - img [ref=e9725]
+                      - text: "969615597"
+                  - cell "-" [ref=e9727]:
+                    - link "-" [ref=e9728] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e9729]
+                      - text: "-"
+                  - cell "Pendiente Citar" [ref=e9731]:
+                    - generic [ref=e9732]: Pendiente Citar
+                  - cell "Hace 9 días" [ref=e9733]
+                  - cell "—" [ref=e9734]
+                  - cell [ref=e9735]:
+                    - generic [ref=e9736]:
+                      - button "Editar estado y cita" [ref=e9737] [cursor=pointer]:
+                        - img [ref=e9738]
+                      - button "Actualizar teléfono" [ref=e9740] [cursor=pointer]:
+                        - img [ref=e9741]
+      - generic [ref=e193]:
+        - paragraph [ref=e194]: CENATE - Sistema de Telemedicina - EsSalud 2026
+        - paragraph [ref=e195]: v1.37.4 - Performance Optimization + Deduplicación Automática + Foto Header + SMTP EsSalud

@@ -1,0 +1,880 @@
+- generic [ref=e1]:
+  - generic [ref=e3]:
+    - complementary [ref=e4]:
+      - generic [ref=e6]:
+        - generic [ref=e9]:
+          - img "Logo CENATE" [ref=e10]
+          - button "Colapsar menu" [ref=e11] [cursor=pointer]:
+            - img [ref=e12]
+        - navigation [ref=e14]:
+          - generic [ref=e15]:
+            - button "Bolsas de Pacientes" [ref=e16] [cursor=pointer]:
+              - generic [ref=e17]:
+                - img [ref=e18]
+                - generic [ref=e22]: Bolsas de Pacientes
+              - img [ref=e23]
+            - generic [ref=e25]:
+              - link "Solicitudes de Bolsa - Asignación a Gestoras" [ref=e26] [cursor=pointer]:
+                - /url: /modulos/bolsas/solicitudes
+                - img [ref=e27]
+                - generic [ref=e30]: Solicitudes de Bolsa - Asignación a Gestoras
+              - link "Cargar desde Excel" [ref=e31] [cursor=pointer]:
+                - /url: /bolsas/cargar-excel
+                - img [ref=e32]
+                - generic [ref=e36]: Cargar desde Excel
+              - link "Solicitudes" [ref=e37] [cursor=pointer]:
+                - /url: /bolsas/solicitudes
+                - img [ref=e38]
+                - generic [ref=e41]: Solicitudes
+              - button "Módulo 107" [ref=e43] [cursor=pointer]:
+                - generic [ref=e44]:
+                  - img [ref=e45]
+                  - generic [ref=e49]: Módulo 107
+                - img [ref=e50]
+          - generic [ref=e52]:
+            - button "Gestión de Citas" [ref=e53] [cursor=pointer]:
+              - generic [ref=e54]:
+                - img [ref=e55]
+                - generic [ref=e58]: Gestión de Citas
+              - img [ref=e59]
+            - generic [ref=e61]:
+              - link "Bienvenida" [ref=e62] [cursor=pointer]:
+                - /url: /citas/bienvenida
+                - img [ref=e63]
+                - generic [ref=e66]: Bienvenida
+              - link "Dashboard Citas" [ref=e67] [cursor=pointer]:
+                - /url: /citas/dashboard
+                - img [ref=e68]
+                - generic [ref=e73]: Dashboard Citas
+              - link "Gestionar Citas" [ref=e74] [cursor=pointer]:
+                - /url: /citas/gestion-asegurado
+                - img [ref=e75]
+                - generic [ref=e78]: Gestionar Citas
+              - link "Bolsa de Pacientes Asignados" [ref=e79] [cursor=pointer]:
+                - /url: /citas/bolsa-pacientes
+                - img [ref=e80]
+                - generic [ref=e83]: Bolsa de Pacientes Asignados
+        - paragraph [ref=e85]: v1.37.4
+    - main "Contenido principal" [ref=e86]:
+      - generic [ref=e88]:
+        - button "Notificaciones" [ref=e89] [cursor=pointer]:
+          - img [ref=e90]
+        - button "S Susy Test Test Test SOPORTE_TI" [ref=e94] [cursor=pointer]:
+          - generic [ref=e96]: S
+          - generic [ref=e97]:
+            - generic [ref=e98]: Susy Test Test Test
+            - generic [ref=e99]: SOPORTE_TI
+          - img [ref=e100]
+      - generic [ref=e102]:
+        - generic [ref=e104]:
+          - generic [ref=e107]:
+            - generic [ref=e108]: S
+            - generic [ref=e109]:
+              - heading "Bienvenid(a), Susy" [level=1] [ref=e110]
+              - paragraph [ref=e111]: Gestor de Citas - Gestión de Pacientes Asignados
+              - generic [ref=e112]:
+                - generic [ref=e113]: "Rol: GESTOR DE CITAS"
+                - generic [ref=e114]: 📅 miércoles, 11 de febrero de 2026
+          - generic [ref=e115]:
+            - heading "Estadísticas" [level=3] [ref=e116]
+            - generic [ref=e117]:
+              - generic [ref=e118]:
+                - generic [ref=e119]:
+                  - generic [ref=e120]: Total
+                  - img [ref=e121]
+                - generic [ref=e126]: "259"
+              - generic [ref=e127]:
+                - generic [ref=e128]:
+                  - generic [ref=e129]: Por Atender
+                  - img [ref=e130]
+                - generic [ref=e133]: "66"
+              - generic [ref=e134]:
+                - generic [ref=e135]:
+                  - generic [ref=e136]: Completados
+                  - img [ref=e137]
+                - generic [ref=e140]: "0"
+              - generic [ref=e141]:
+                - generic [ref=e142]:
+                  - generic [ref=e143]: Nuevos
+                  - img [ref=e144]
+                - generic [ref=e146]: "192"
+              - generic [ref=e147]:
+                - generic [ref=e148]:
+                  - generic [ref=e149]: Otros
+                  - img [ref=e150]
+                - generic [ref=e152]: "1"
+          - generic [ref=e153]:
+            - generic [ref=e155]:
+              - generic [ref=e156]:
+                - heading "Mi Bandeja de Pacientes" [level=2] [ref=e157]
+                - paragraph [ref=e158]: Pacientes asignados desde el módulo de Bolsas de Pacientes
+              - generic [ref=e159]:
+                - button "Importar Paciente" [ref=e160] [cursor=pointer]:
+                  - img [ref=e161]
+                  - text: Importar Paciente
+                - button "Actualizar" [ref=e164] [cursor=pointer]:
+                  - img [ref=e165]
+                  - text: Actualizar
+                - button "🔄✓ Auto" [ref=e170] [cursor=pointer]
+                - generic [ref=e171]: 6:03:32
+            - generic [ref=e172]:
+              - generic [ref=e174]:
+                - generic [ref=e175]:
+                  - img [ref=e176]
+                  - text: FILTROS
+                - generic [ref=e179]:
+                  - textbox "Buscar por DNI..." [ref=e180]
+                  - img [ref=e181]
+                - combobox [ref=e185]:
+                  - option "Todas las bolsas"
+                  - option "Bolsa 107 - Importación de pacientes masiva"
+                  - option "Bolsa Dengue - Control epidemiológico"
+                  - option "Bolsa de recita/interconsulta"
+                  - option "Bolsa Gestores Territorial - Gestión territorial"
+                  - option "Bolsa para el servicio de gineco-oncología"
+                  - option "Bolsa que capta la gestora"
+                  - option "Bolsas Enfermería - Atenciones de enfermería"
+                  - option "Bolsas Explotación de Datos - Análisis y reportes"
+                  - option "Bolsas IVR - Sistema interactivo de respuesta de voz"
+                  - option "Bolsas Reprogramación - Citas reprogramadas"
+                  - option "Bolsa TeleECG - Electrocardiogramas remotos" [selected]
+                  - option "Paciente derivados de PADOMI"
+                - combobox [ref=e187]:
+                  - option "Todas (1)" [selected]
+                  - option "H.I JUANJUI"
+                  - option "P.M. BELLAVISTA"
+                  - option "P.M. LAMAS"
+                  - option "P.M. SAPOSOA"
+                  - option "C.M. MORALES"
+                  - option "C.M. METROPOLITANO TARAPOTO"
+                  - option "H.I EL BUEN SAMARITANO"
+                  - option "H.I HEROES DEL CENEPA"
+                  - option "H.I HIGOS URCO"
+                  - option "CAP I LAMUD"
+                  - option "CAP I LONYA GRANDE"
+                  - option "CAP I OCALLI"
+                  - option "CAP I PEDRO RUIZ GALLO"
+                  - option "CAP II RODRIGUEZ DE MENDOZA"
+                  - option "CAP II SANTA MARIA DE NIEVA"
+                  - option "CAP I IMAZA"
+                  - option "H.III CHIMBOTE"
+                  - option "C.M. CASMA"
+                  - option "C.M. COISHCO"
+                  - option "H.I CONO SUR"
+                  - option "C.M. HUARMEY"
+                  - option "C.M. SIHUAS"
+                  - option "P.M. CABANA"
+                  - option "P.M. CONCHUCOS"
+                  - option "P.M. PAMPAS - ANCASH"
+                  - option "CAP II SAN JACINTO"
+                  - option "P.M. PALLASCA"
+                  - option "POLICLINICO C.C. VICTOR PANTA RODRIGUEZ"
+                  - option "H.II ABANCAY"
+                  - option "H.I ANDAHUAYLAS"
+                  - option "P.M. CURAHUASI"
+                  - option "CAP II CHALHUANCA"
+                  - option "P.M. CHUQUIBAMBILLA"
+                  - option "H.I ALTO MAYO"
+                  - option "CENTRO NACIONAL DE TELEMEDICINA"
+                  - option "H.N. GUILLERMO ALMENARA IRIGOYEN"
+                  - option "H.I RIOJA"
+                  - option "POL. FRANCISCO PIZARRO"
+                  - option "H.II VITARTE"
+                  - option "POL. CHOSICA"
+                  - option "POL. SAN LUIS"
+                  - option "H.II RAMON CASTILLA"
+                  - option "C.M. ANCIJE"
+                  - option "C.M. CASAPALCA"
+                  - option "P.M. CONSTRUCCION CIVIL"
+                  - option "H.II SAN ISIDRO LABRADOR"
+                  - option "CAP III ALFREDO PIAZZA ROBERTS"
+                  - option "H.I JORGE VOTO BERNALES CORPANCHO"
+                  - option "CAP III EL AGUSTINO"
+                  - option "CAP III HUAYCAN"
+                  - option "POLICLINICO SAN CARLOS"
+                  - option "CAP III SAN BORJA"
+                  - option "CAP III INDEPENDENCIA"
+                  - option "H.III HOSPITAL DE EMERGENCIAS GRAU"
+                  - option "CAP II CHINCHEROS"
+                  - option "CAP II COTABAMBAS"
+                  - option "H.N. CARLOS ALBERTO SEGUIN ESCOBEDO"
+                  - option "H.II MANUEL DE TORRES MUÑOZ"
+                  - option "H.I SAMUEL PASTOR"
+                  - option "H.III YANAHUARA"
+                  - option "H.I EDMUNDO ESCOMEL"
+                  - option "CAP III MELITON SALAS TEJADA"
+                  - option "P.M. ACARI"
+                  - option "C.M. APLAO"
+                  - option "P.M. ATICO"
+                  - option "P.M. CARAVELI"
+                  - option "P.M. CHALA"
+                  - option "CAP I CHIVAY"
+                  - option "P.M. CHUCARAPI"
+                  - option "P.M. CHUQUIBAMBA"
+                  - option "P.M. CONO NORTE"
+                  - option "P.M. CORIRE"
+                  - option "P.M. COTAHUASI"
+                  - option "CAP II HUNTER"
+                  - option "P.M. LA JOYA"
+                  - option "P.M. MATARANI"
+                  - option "CAP I EL PEDREGAL"
+                  - option "P.M. SANTA RITA"
+                  - option "P.M. VITOR"
+                  - option "CAP I YURA"
+                  - option "CAP III PAUCARPATA"
+                  - option "CAP III ALTO SELVA ALEGRE"
+                  - option "CAP III MIRAFLORES"
+                  - option "CENTRO DE COMPLEJIDAD CRECIENTE CERRO COLORADO"
+                  - option "H.II CAJAMARCA"
+                  - option "C.M. CAJABAMBA"
+                  - option "C.M. CELENDIN"
+                  - option "P.M. BAMBAMARCA"
+                  - option "P.M. CONTUMAZA"
+                  - option "P.M. HUALGAYOC"
+                  - option "P.M. SAN MARCOS"
+                  - option "P.M. SAN MIGUEL - CAJAMARCA"
+                  - option "P.M. SAN PABLO"
+                  - option "P.M. TEMBLADERA"
+                  - option "P.M. BOLIVAR"
+                  - option "CAP II BAÑOS DEL INCA"
+                  - option "H.N. ADOLFO GUEVARA VELASCO"
+                  - option "H.I ESPINAR"
+                  - option "H.I QUILLABAMBA"
+                  - option "POLICLINICO METROPOLITANO AREQUIPA"
+                  - option "H.II HUAMANGA"
+                  - option "CAP II HUANTA"
+                  - option "P.M. SAN MIGUEL - AYACUCHO"
+                  - option "P.M. CANGALLO"
+                  - option "P.M. SAN FRANCISCO"
+                  - option "P.M. VILCASHUAMAN"
+                  - option "P.M. QUEROBAMBA"
+                  - option "P.M. HUANCAPI"
+                  - option "CAP III METROPOLITANO AYACUCHO"
+                  - option "H.I URUBAMBA"
+                  - option "HOSPITAL GENERAL SICUANI"
+                  - option "C.M. ACOMAYO"
+                  - option "C.M. CALCA"
+                  - option "C.M. URCOS"
+                  - option "CAP II HUYRO"
+                  - option "C.M. MACHU PICCHU"
+                  - option "C.M. PAUCARTAMBO"
+                  - option "POL. SAN SEBASTIAN"
+                  - option "P.M. SALVACION"
+                  - option "C.M. SAN FRANCISCO"
+                  - option "C.M. METROPOLITANO CUSCO"
+                  - option "CAP I SANTO TOMAS"
+                  - option "CAP I ECHARATE"
+                  - option "C.M. PICHARI"
+                  - option "H.II HUANCAVELICA"
+                  - option "P.M. ACOBAMBA"
+                  - option "P.M. CASTROVIRREYNA"
+                  - option "CAP I CHURCAMPA"
+                  - option "CAP I HUAYTARA"
+                  - option "C.M. LIRCAY"
+                  - option "C.M. PAMPAS - HUANCAVELICA"
+                  - option "P.M. TOCACHE"
+                  - option "CAP I UCHIZA"
+                  - option "H.II HUANUCO"
+                  - option "H.I TINGO MARIA"
+                  - option "C.M. LEONCIO PRADO"
+                  - option "P.M. AUCAYACU"
+                  - option "P.M. BAÑOS"
+                  - option "P.M. SUNGARO"
+                  - option "P.M. LA UNION"
+                  - option "P.M. LLATA"
+                  - option "P.M. PANAO"
+                  - option "P.M. SANTA LUCIA"
+                  - option "CAP III METROPOLITANO HUANUCO"
+                  - option "H.I FELIX TORREALVA GUTIERREZ"
+                  - option "H.II RENE TOCHE GROPPO"
+                  - option "H.I MARIA REICHE NEWMAN"
+                  - option "H.I ANTONIO SKRABONJA ANTONCICH"
+                  - option "CAP I CHAVALINA"
+                  - option "CAP II MACACONA"
+                  - option "CAP II NAZCA"
+                  - option "CAP I PALPA"
+                  - option "CAP II PUQUIO"
+                  - option "CAP I SAN CLEMENTE"
+                  - option "CAP II SANTA MARGARITA"
+                  - option "CAP I TAMBO DE MORA"
+                  - option "CAP I VILLA TUPAC AMARU"
+                  - option "CAP II LA TINGUIÑA"
+                  - option "CAP I CORACORA"
+                  - option "C.M. CARAZ"
+                  - option "C.M. HUARI"
+                  - option "P.M. PISCOBAMBA"
+                  - option "CAP II POMABAMBA"
+                  - option "P.M. YUNGAY"
+                  - option "CAP III AMARILIS - PILLCO MARCA"
+                  - option "CAP II PUEBLO NUEVO"
+                  - option "H.IV AUGUSTO HERNANDEZ MENDOZA"
+                  - option "H.II JAEN"
+                  - option "P.M. PUCARA"
+                  - option "CAP II SAN IGNACIO"
+                  - option "H.III JULIACA"
+                  - option "H.I LAMPA"
+                  - option "C.M. AYAVIRI"
+                  - option "POL. AZANGARO"
+                  - option "P.M. HUANCANE"
+                  - option "P.M. SAN RAFAEL"
+                  - option "P.M. SANDIA"
+                  - option "POL. JULIACA"
+                  - option "P.M. SAN GABAN"
+                  - option "CAP I ASILLO"
+                  - option "CAP II CABANILLAS"
+                  - option "CAP III ENRIQUE ENCINAS FRANCO"
+                  - option "H.N. RAMIRO PRIALE PRIALE"
+                  - option "H.II ALBERTO HURTADO ABADIA"
+                  - option "H.I RIO NEGRO-SATIPO"
+                  - option "H.I TARMA"
+                  - option "POL. JAUJA"
+                  - option "C.M. CONCEPCION"
+                  - option "H.I DE LA SELVA CENT. Y ENF. TROPICALES"
+                  - option "P.M. ANDAYCHAGUA"
+                  - option "P.M. COBRIZA"
+                  - option "P.M. CORPACANCHA"
+                  - option "CAP II JUNIN"
+                  - option "P.M. MARH TUNEL"
+                  - option "CAP II MOROCOCHA"
+                  - option "P.M. PACHACAYO"
+                  - option "P.M. SAN CRISTOBAL"
+                  - option "P.M. YAURICOCHA"
+                  - option "P.M. SAN PEDRO DE CAJAS"
+                  - option "POL. METROPOLITANO HUANCAYO"
+                  - option "CAP II CHILCA"
+                  - option "CAP I PICHANAQUI"
+                  - option "CAP III MANTARO"
+                  - option "CAP II CHUPACA"
+                  - option "HG HOSPITAL BICENTENARIO JAUJA"
+                  - option "H.IV VICTOR LAZARTE ECHEGARAY"
+                  - option "H.II CHOCOPE"
+                  - option "H.I ALBRECHT"
+                  - option "H.I PACASMAYO"
+                  - option "C.M. ASCOPE"
+                  - option "POL. EL PORVENIR"
+                  - option "H.I FLORENCIA DE MORA"
+                  - option "H.I LA ESPERANZA"
+                  - option "H.I MOCHE"
+                  - option "P.M. CARTAVIO"
+                  - option "CAP I CASCAS"
+                  - option "CAP I CHICAMA"
+                  - option "CAP II GUADALUPE"
+                  - option "CAP II HUAMACHUCO"
+                  - option "P.M. JEQUETEPEQUE"
+                  - option "CAP II LAREDO"
+                  - option "P.M. LIMONCARRO"
+                  - option "CAP I MALABRIGO"
+                  - option "CAP II OTUZCO"
+                  - option "P.M. QUIRUVILCA"
+                  - option "CAP I SALAVERRY"
+                  - option "P.M. SAN JOSE"
+                  - option "CAP I SAN PEDRO DE LLOC"
+                  - option "P.M. SANTIAGO DE CHUCO"
+                  - option "P.M. SAUSAL"
+                  - option "CAP II SOLEDAD"
+                  - option "CAP II TAYABAMBA"
+                  - option "H.I VICTOR SOLES GARCIA"
+                  - option "C.M. ESPECIALIZADO CASA GRANDE"
+                  - option "P.M. PAIJAN"
+                  - option "P.M. SANTIAGO DE CAO"
+                  - option "C.M. HUANCHACO"
+                  - option "POL. VICTOR LARCO HERRERA"
+                  - option "P.M. CHAO"
+                  - option "CAP III METROPOLITANO TRUJILLO"
+                  - option "HOSP.ALT.COMPLEJIDAD VIRGEN DE LA PUERTA"
+                  - option "C.M. CHOTA"
+                  - option "C.M. CUTERVO"
+                  - option "H.I AGUSTIN ARBULU NEYRA"
+                  - option "C.M. CAYALTI"
+                  - option "H.I CHEPEN"
+                  - option "CAP III MANUEL MANRIQUE NEVADO"
+                  - option "CAP II CHONGOYAPE"
+                  - option "C.M. JUAN AITA VALLE"
+                  - option "CAP II JAYANCA"
+                  - option "CAP II MOTUPE"
+                  - option "P.M. OLMOS"
+                  - option "P.M. OYOTUN"
+                  - option "P.M. SANTA CRUZ"
+                  - option "P.M. TUCUME"
+                  - option "P.M. UCUPE"
+                  - option "POL. CHICLAYO OESTE"
+                  - option "CAP III CARLOS CASTAÑEDA IPARRAGUIRRE"
+                  - option "POL. AGUSTIN GAVIDIA SALCEDO"
+                  - option "H.I NAYLAMP"
+                  - option "CAP II PATAPO"
+                  - option "H.II LUIS E. HEYSEN INCHAUSTEGUI"
+                  - option "H.II CLINICO TUMAN"
+                  - option "POL. DE COMPLEJIDAD CRECIENTE CUTERVO"
+                  - option "HG HMBIC. CHOTA GILBERTO VILLENA ARROBAS"
+                  - option "H.I VICTOR ALFREDO LAZO PERALTA"
+                  - option "P.M. IBERIA"
+                  - option "P.M. MAZUCO"
+                  - option "H.II ILO"
+                  - option "CAP I SAN ANTONIO DEL ESTRECHO"
+                  - option "CAP II CABALLOCOCHA"
+                  - option "CAP II NAUTA"
+                  - option "CAP II REQUENA"
+                  - option "CAP III IQUITOS"
+                  - option "H.III IQUITOS"
+                  - option "CAP II SAN JUAN BAUTISTA"
+                  - option "CAP III PUNCHANA"
+                  - option "H.II MOQUEGUA"
+                  - option "P.M. OMATE"
+                  - option "CAP II TORATA"
+                  - option "POR DEFINIR"
+                  - option "C.M. PAMPA INALAMBRICA"
+                  - option "H.II CERRO DE PASCO"
+                  - option "H.I HUARIACA"
+                  - option "P.M. CHICRIN"
+                  - option "P.M. COLQUIJIRCA"
+                  - option "P.M. HUARON"
+                  - option "CAP II HUAYLLAY"
+                  - option "P.M. MILPO"
+                  - option "H.I OXAPAMPA"
+                  - option "P.M. PAUCARTAMBO"
+                  - option "P.M. POZUZO"
+                  - option "P.M. PUERTO BERMUDEZ"
+                  - option "C.M. SAN JUAN"
+                  - option "CAP II VILLA RICA"
+                  - option "CAP II YANAHUANCA"
+                  - option "H.III CAYETANO HEREDIA"
+                  - option "H.I MIGUEL CRUZADO VERA"
+                  - option "H.I SULLANA"
+                  - option "H.II TALARA"
+                  - option "H.II JORGE REATEGUI DELGADO"
+                  - option "CAP III CASTILLA"
+                  - option "P.M. AYABACA"
+                  - option "P.M. CANCHAQUE"
+                  - option "CAP II CHULUCANAS"
+                  - option "P.M. HUANCABAMBA"
+                  - option "P.M. IGNACIO ESCUDERO"
+                  - option "C.M. LEONCIO AMAYA TUME"
+                  - option "P.M. LOS ORGANOS"
+                  - option "P.M. MORROPON"
+                  - option "P.M. NEGRITOS"
+                  - option "P.M. SECHURA"
+                  - option "C.M. TAMBO GRANDE"
+                  - option "C.M. EL ALTO"
+                  - option "INSTITUTO PERUANO DE OFTALMOLOGIA"
+                  - option "CAP III CATACAOS"
+                  - option "CAP III METROPOLITANO DE PIURA"
+                  - option "HOSPITAL PRIVADO DEL PERU"
+                  - option "CENTRO SALUD ES HOSPITAL UNIVERSITARIO"
+                  - option "IPRESS CLINICA INMACULADA"
+                  - option "H.III PUNO"
+                  - option "P.M. JULI"
+                  - option "P.M. YUNGUYO"
+                  - option "POL. ILAVE"
+                  - option "CAP III METROPOLITANO DE PUNO"
+                  - option "H.I CLINICA UNIVERSITARIA UNA-ESSALUD"
+                  - option "CAP I DESAGUADERO"
+                  - option "CAP II ACORA"
+                  - option "CAP I LARAQUERI"
+                  - option "H.III SUAREZ-ANGAMOS"
+                  - option "POL. PROCERES"
+                  - option "POL. PABLO BERMUDEZ"
+                  - option "POL. CHINCHA"
+                  - option "H.III DANIEL ALCIDES CARRION"
+                  - option "CAP II LUIS PALZA LEVANO"
+                  - option "P.M. LOCUMBA"
+                  - option "CAP I TARATA"
+                  - option "CAP III METROPOLITANO TACNA"
+                  - option "CAP I ITE"
+                  - option "CAP I YLABAYA"
+                  - option "CAP II OSCAR FERNANDEZ DAVILA VELEZ"
+                  - option "H.I CARLOS ALBERTO CORTEZ JIMENEZ"
+                  - option "P.M. LA CRUZ"
+                  - option "P.M. ZORRITOS"
+                  - option "P.M. ZARUMILLA"
+                  - option "P.M. AGUAYTIA"
+                  - option "H.II CAÑETE"
+                  - option "C.M. MALA"
+                  - option "H.I ULDARICO ROCCA FERNANDEZ"
+                  - option "POL. JUAN JOSE RODRIGUEZ LAZO"
+                  - option "H.I CARLOS ALCANTARA BUTTERFIELD"
+                  - option "POL. CLINICA CENTRAL DE PREVENCION"
+                  - option "POL. SANTA CRUZ"
+                  - option "CAP II LURIN"
+                  - option "CAP III SAN JUAN DE MIRAFLORES"
+                  - option "CENT.ATEN.INT.DE DIABETES E HIPERTENSION"
+                  - option "HOSP.ESP.QUIR. SAN JUAN DE MIRAFLORES"
+                  - option "P.M. HUMAYA"
+                  - option "ONCOLOGIA S.A.C."
+                  - option "H.N. ALBERTO SABOGAL SOLOGUREN"
+                  - option "POL. FIORI"
+                  - option "H.II LIMA NORTE - CALLAO L. NEGREIROS V."
+                  - option "H.II GUSTAVO LANATTA LUJAN"
+                  - option "CAP III PEDRO REYES BARBOZA"
+                  - option "CAP II PARAMONGA"
+                  - option "H.M. LOS OLIVOS"
+                  - option "CAP II CHANCAY"
+                  - option "P.M. RAURA"
+                  - option "CAP II SAYAN"
+                  - option "P.M. OYON"
+                  - option "CAP III HNA. MARIA DONROSE SUTMOLLER"
+                  - option "H.I MARINO MOLINA SCIPPA"
+                  - option "H.I OCTAVIO MONGRUT MUÑOZ"
+                  - option "CAP III PUENTE PIEDRA"
+                  - option "CAP III CARABAYLLO"
+                  - option "CAP III METROPOLITANO CALLAO"
+                  - option "CAP III LUIS NEGREIROS VEGA"
+                  - option "HE HOSP. ESPEC. QUIRURGICAS CANTA CALLAO"
+                  - option "IPRESS PROLIMA - LOS OLIVOS"
+                  - option "IPRESS VILLASOL - LOS OLIVOS"
+                  - option "IPRESS TREBOL - LOS OLIVOS"
+                  - option "IPRESS SAN MARTIN DE PORRES"
+                  - option "POL. COMPLEJIDAD CRECIENTE SAN NICOLAS"
+                  - option "CAP III SAN ISIDRO"
+                  - option "P.M. ALAMEDA"
+                  - option "P.M. ATALAYA"
+                  - option "P.M. CONTAMANA"
+                  - option "CAP I CAMPO VERDE"
+                  - option "CAP I MANANTAY"
+                  - option "H.I CONTINGENCIAL MOQUEGUA"
+                  - option "CAP III BELLAVISTA"
+                  - option "POLICLINICO BAYOVAR"
+                  - option "INSTITUTO NACIONAL CARDIOVASCULAR"
+                  - option "POL.- APP - ALBERTO LEOPOLDO BARTON T."
+                  - option "IPRESS CLINICA SAN PEDRO"
+                  - option "CENTRO NACIONAL DE SALUD RENAL"
+                  - option "H.II HUARAZ"
+                  - option "C.M. CARHUAZ"
+                  - option "H.I YURIMAGUAS"
+                  - option "CAP I ANTABAMBA"
+                  - option "RETABLO - COMAS"
+                  - option "CAP I HUANCASANCOS"
+                  - option "SEDE CENTRAL"
+                  - option "H.N. ALMANZOR AGUINAGA ASENJO"
+                  - option "H.II TARAPOTO"
+                  - option "H.II PUCALLPA"
+                  - option "H.I AURELIO DIAZ-UFANO Y PERAL"
+                  - option "H.N. EDGARDO REBAGLIATI MARTINS"
+                  - option "CAP III SURQUILLO"
+                  - option "UBAP JESUS MARIA"
+                  - option "POL.- APP - GUILLERMO KAELIN DE LA F."
+                  - option "PROGRAMA DE ATENCION DOMICILIARIA-PADOMI"
+                  - option "CAP III HUARAL"
+                - generic [ref=e188] [cursor=pointer]:
+                  - checkbox "Solo Pendientes (1)" [ref=e189]
+                  - generic [ref=e190]: Solo Pendientes (1)
+                - button "Más filtros" [ref=e191] [cursor=pointer]:
+                  - text: Más filtros
+                  - img [ref=e192]
+              - table [ref=e195]:
+                - rowgroup [ref=e196]:
+                  - row "Seleccionar todo Bolsa F. Asign. DNI Paciente Edad Gén. Especialidad DNI Méd. Especialista Fecha/Hora Cita IPRESS Tipo Cita Tel. 1 Tel. 2 Estado F. Cambio Usuario Acc." [ref=e197]:
+                    - columnheader "Seleccionar todo" [ref=e198]:
+                      - checkbox "Seleccionar todo" [ref=e199] [cursor=pointer]
+                    - columnheader "Bolsa" [ref=e200]
+                    - columnheader "F. Asign." [ref=e201]
+                    - columnheader "DNI" [ref=e202]
+                    - columnheader "Paciente" [ref=e203]
+                    - columnheader "Edad" [ref=e204]
+                    - columnheader "Gén." [ref=e205]
+                    - columnheader "Especialidad" [ref=e206]
+                    - columnheader "DNI Méd." [ref=e207]
+                    - columnheader "Especialista" [ref=e208]
+                    - columnheader "Fecha/Hora Cita" [ref=e209]
+                    - columnheader "IPRESS" [ref=e210]
+                    - columnheader "Tipo Cita" [ref=e211]
+                    - columnheader "Tel. 1" [ref=e212]
+                    - columnheader "Tel. 2" [ref=e213]
+                    - columnheader "Estado" [ref=e214]
+                    - columnheader "F. Cambio" [ref=e215]
+                    - columnheader "Usuario" [ref=e216]
+                    - columnheader "Acc." [ref=e217]
+                - rowgroup [ref=e218]:
+                  - row "Bolsa TeleECG - Electrocardiogramas remotos Hace 20 horas 16498964 CUMPA YAIPEN ROSA FLOR 91 F CARDIOLOGIA 72945564 Carito Lisset Zumaeta Cabrera (87016) Carito Lisset Zumaeta Cabrera --:-- PROGRAMA DE ATENCION DOMICILIARIA-PADOMI Voluntaria 971871179 - Pendiente Citar ℹ️ Para este estado, médico y fecha son opcionales Hace 44 minutos — Guardar Cancelar" [ref=e219]:
+                    - cell [ref=e220]:
+                      - checkbox [ref=e221] [cursor=pointer]
+                    - cell "Bolsa TeleECG - Electrocardiogramas remotos" [ref=e222]
+                    - cell "Hace 20 horas" [ref=e223]
+                    - cell "16498964" [ref=e224]
+                    - cell "CUMPA YAIPEN ROSA FLOR" [ref=e225]
+                    - cell "91" [ref=e226]
+                    - cell "F" [ref=e227]
+                    - cell "CARDIOLOGIA" [ref=e228]
+                    - cell "72945564" [ref=e229]
+                    - cell "Carito Lisset Zumaeta Cabrera (87016) Carito Lisset Zumaeta Cabrera" [ref=e230]:
+                      - generic [ref=e231]:
+                        - combobox "Puedes asignar un médico independientemente del estado" [ref=e232] [cursor=pointer]:
+                          - option "Seleccionar médico..."
+                          - option "Abel Augusto Ladron De Guevara Cámara (11902)"
+                          - option "Aidee Infantas Castro (42760)"
+                          - option "Andrea Lucia Gálvez Gastelú (070444)"
+                          - option "Ángel Eduardo Villareal Giraldo (077527)"
+                          - option "Angela Mercedes Veliz Franco (73770)"
+                          - option "Anghelly Celestina Diaz Matias (32273)"
+                          - option "Annie Rocio Leon Villar (072095)"
+                          - option "Armando Camasca Garcia (029119)"
+                          - option "Axel Paolo Mora Ramirez"
+                          - option "Aymee Irasema Mamani Lopez (21157)"
+                          - option "Brian Milton Romero Aponte (80366)"
+                          - option "Bryam Canales Vásquez (77228)"
+                          - option "Carito Lisset Zumaeta Cabrera (87016)" [selected]
+                          - option "Carlos Alberto Muñoz Cardenas (53334)"
+                          - option "Carlos Enrique Cesar Mensala Quispe (63038)"
+                          - option "Carlos Enrique Peña Diaz (56192)"
+                          - option "Carmen Rosa Meza Luis (051792)"
+                          - option "Carmen Rosa Zuloaga Salas (76924)"
+                          - option "Carolina Alvarez Mejía (054345)"
+                          - option "Cecilia Roxana Salinas Salas (033975)"
+                          - option "Cecilia Victoria Agapito Tito (53999)"
+                          - option "Ceida Goñas Sopla (93285)"
+                          - option "Christian Teodoro Llancachagua Maita (47393)"
+                          - option "Climaco Marco Antonio Boggiano Tacuche (8967)"
+                          - option "Cristian Emanuel Quinto Aleman (79088)"
+                          - option "Daniel Zarak Lemor (70846)"
+                          - option "Danna Lorena Llanos Gonzales (61411)"
+                          - option "David Eduardo Bravo Espinoza (48298646)"
+                          - option "Dayhan Jennifer Aquino Grande (98375)"
+                          - option "Dency Luz Mendoza Contreras (64970)"
+                          - option "Deyvi Ronald Ayala Nunura (71669)"
+                          - option "Dhalia Del Rocio Machuca Bazan (68406)"
+                          - option "Diana Alisson Mayo Arpi (93075)"
+                          - option "Diana Emperatriz Laban Leiva (95631)"
+                          - option "Diana Evelyn Pantoja Cabrera (74008)"
+                          - option "Diego Alonso Montufar Huasasquiche (13544)"
+                          - option "Diego Renzo Oria Terrazo (13075)"
+                          - option "Doctor Test 1 (1234)"
+                          - option "Dyana Laura Puente De La Vega Rocca (79838)"
+                          - option "Edmundo Roberto Alegria Valdivia (45891)"
+                          - option "Eduardo Añanca Ochante (092059)"
+                          - option "Edwin Rogelio Atencio Mauricio (70263)"
+                          - option "Elena Milagros Cecinario Lopez (93543)"
+                          - option "Elena Rosaura Pérez Domingez (059197)"
+                          - option "Elizabeth Jackeline Cieza Huisa (89115)"
+                          - option "Elmer Edgardo Santiani Puican (50018)"
+                          - option "Ennifer Karina García Marcano (83575)"
+                          - option "Erika Ponce Robles (59397)"
+                          - option "Erika Roxana Diaz Tumay (40752)"
+                          - option "Estrella Lizbeth Llerena Ochoa (70393)"
+                          - option "Eulalia Raquel Mendoza Sanchez (42358)"
+                          - option "Evelin Erika Hinostroza Albino (52488)"
+                          - option "Evelyn Paola Bastidas Ramos (99115)"
+                          - option "Flavia Andrea Alatrista Valdez (88417)"
+                          - option "Flor De María Rojas Tenorio (081624)"
+                          - option "Florisabel Ventura Perales (52593)"
+                          - option "Franz Teofilo Gago Simeón (56509)"
+                          - option "Gabriela Zavaleta Camacho (86843)"
+                          - option "Gerardo Contreras Montoya (077152)"
+                          - option "Gladys Gianini Peña Delgado (94516)"
+                          - option "Henry Lowell Allpas Gomez (53197)"
+                          - option "Ilda Caceres Valdez (99382)"
+                          - option "Ivan José Rivero Márquez (87258)"
+                          - option "Ivan Yhersino Panduro Arroyo (077567)"
+                          - option "Ivette Marilyn Tinajeros Vega (85706)"
+                          - option "Ivette Stphanie Leon Jimenez (72429)"
+                          - option "Javier Willy Marreros Lara (077444)"
+                          - option "Jean Pierre Antonio Cano Ramirez (76713)"
+                          - option "Jenifer Erika Rivera Bernal (060994)"
+                          - option "Jennifer Flora Romero Moquillaza (90342)"
+                          - option "Jennifer Karla Díaz Moreno (89980)"
+                          - option "Jhonnathan Ciro Ascarza Saldaña (82220)"
+                          - option "Jhony Puerta Ramos (46971)"
+                          - option "Johana Kristel Valdivia Mamani (67095)"
+                          - option "John Huamanquisope Quintana (52462)"
+                          - option "Jorge Luis Iparraguirre Cherre (4510)"
+                          - option "Jorge Ramiro Medina Leiva (17863)"
+                          - option "Jorge Raúl Vela Delgado (049472)"
+                          - option "José Luis Becerra Otiniano (69958)"
+                          - option "Jose Manuel Mendoza Garcia (84207)"
+                          - option "Juan Carlos Laura De La Cruz (49925)"
+                          - option "Juan Mendoza Saldaña (98533)"
+                          - option "Julissa Fanny Begazo Guevara (38000)"
+                          - option "Julissa Mogollon Lavi (76657)"
+                          - option "Karelym Mercedes Vargas Salazar (090410)"
+                          - option "Karen Leon Reque (9917)"
+                          - option "Karen Orbegoso Meza (75165)"
+                          - option "Karin Milagritos Sebastian Andrade (067813)"
+                          - option "Karla Betsabe Casique Carbajal (91317)"
+                          - option "Karlen Jhamily Huanca Rios (77601)"
+                          - option "Kelly Gabriela Arteaga Villogas (58187)"
+                          - option "Ketty Ofelia Zuñiga Monsalve (82463)"
+                          - option "Keyla Isabel Huamán Llanos (85245)"
+                          - option "Laura Nathalie Mamani Chura (077984)"
+                          - option "Leesley Yamali Cabanillas Tanta (78354)"
+                          - option "Leonardo Rafael Ricra Fernandez (080425)"
+                          - option "Leslie Milagros Mescua Espinoza (094054)"
+                          - option "Liliana Denisse Quispe Perez (54611)"
+                          - option "Lillian Marlies Gonzales Peña (48914)"
+                          - option "Lissteh Melissa Jara Collantes (8434)"
+                          - option "Liz Mayda Arela Quispe (49515)"
+                          - option "Lorena Yarida Sernaque Huaman (84548)"
+                          - option "Lourdes Pamela Alva Alva (078263)"
+                          - option "Lucero Del Carmen Espinoza Lévano (013520)"
+                          - option "Lucia Mariel Tume Jara (73571)"
+                          - option "Luis Alberto Morante Briceño (061129)"
+                          - option "Luis Alfredo Garcia Reyna (53069)"
+                          - option "Luis Felipe Elias Lazo (15901)"
+                          - option "Luis Gianfranco Nizama Raymundo (82148)"
+                          - option "Luisser Dainner Saavedra Cordova (084585)"
+                          - option "Luz Milagros Rodriguez Huaman (082096)"
+                          - option "Magaly Eva Janett Sanchez Granados (57307)"
+                          - option "Marco Antonio Cornejo Agama (85870)"
+                          - option "Margarita Nuñez Baca (33730)"
+                          - option "Maria Cecilia Quiroz Cabrera (062176)"
+                          - option "Maria Cristina Sanchez Godoy (83072)"
+                          - option "Maria Del Cármen Hernández Bendezú (49367)"
+                          - option "Maria Fe Albujar Pereira (075257)"
+                          - option "Maria Quispe Evangelista (104956)"
+                          - option "Marisol Stefanie Mamani Apaza (078579)"
+                          - option "Maritza Contreras Surco (46743)"
+                          - option "Marixandra Rodríguez Bravo (90482)"
+                          - option "Marvin Barreto Mostacero (48774)"
+                          - option "Mary Marcela Araujo Chumacero (086015)"
+                          - option "Medico Test Test Test (123456)"
+                          - option "Melany Ramirez Marocho (60925)"
+                          - option "Miguel Angel Isasi Zamalloa (80990)"
+                          - option "Miguel Enrique Matute Correa (11516)"
+                          - option "Milagros Cusipaucar Supo (68357)"
+                          - option "Milagros Santiago Espinoza (061520)"
+                          - option "Mirelli Michell Cañamero Huarcaya"
+                          - option "Miriam Pacheco Peña (47391)"
+                          - option "Mirian Liz Oscco Huancahuari (68938)"
+                          - option "Mirian Rojas Ramirez (12555)"
+                          - option "Miryam Natali Lobe Solis (034367)"
+                          - option "Myrian Lizbeth Cueva Rodriguez (66945)"
+                          - option "Nathaly Medina Lopez (96713)"
+                          - option "Nelly Rosa Alcantara Velezmoro (59556)"
+                          - option "Odalis Pilar Tinoco Torres (38343)"
+                          - option "Ofelia Amalia Valderrama Guillén (27929)"
+                          - option "Oscar Alfredo Trujillo Pinazo (059566)"
+                          - option "Patricia Julia Barzola Zacarias (55756)"
+                          - option "Patricia Mirey Castro Monsefu (052126)"
+                          - option "Raiza Fiorella Atoccsa Rojas (93120)"
+                          - option "Rajhendra Suzetti Montaño Riquelme (059667)"
+                          - option "Ramsés Jesús Jara Dávila (53286)"
+                          - option "Raquel Johanna Cueva Lopez (77965)"
+                          - option "Renato Antonio Torres Calle (10559)"
+                          - option "Reynaldo Lovon Bautista (060702)"
+                          - option "Rocio Vasquez Venancino (104381)"
+                          - option "Ronald Salazar Olazábal (52397)"
+                          - option "Rosa Lilia Dulanto Alvarez (60992)"
+                          - option "Rosa Margarita Laimes Yañez (34124)"
+                          - option "Rosa Mirella Coronado Lopez (6802)"
+                          - option "Rossa Paola Rojas Sagástegui (078729)"
+                          - option "Roxana Laura Guerra Rivera (86429)"
+                          - option "Roxana Leonardo Gonzales (85179)"
+                          - option "Rubi Sofia Condori Vargas (49307)"
+                          - option "Rubi Xiomara Bustamante Chávez (77716)"
+                          - option "Ruth Elizabeth Juárez Calero (059048)"
+                          - option "Samuel César Augusto Lopez Rojas (62987)"
+                          - option "Sandra Anali Vadillo Saravia (073593)"
+                          - option "Sandra Rocio Orellana Gutierrez (91814)"
+                          - option "Shirley Rosalynn Ibarra Vera (085359)"
+                          - option "Silvia Isabel Diaz Garcia (82252)"
+                          - option "Sindy Romina Herrera Moncada (87330)"
+                          - option "Steane Fernando Andres Burga Mongrut (31146)"
+                          - option "Steffi Angie Ruiz De Paz (84566)"
+                          - option "Tania Baquero Rodriguez (70602)"
+                          - option "Tatiana Emperatriz Avalos Cruz (049200)"
+                          - option "Teresa Isabel Ramirez Tanaka (024363)"
+                          - option "Vanessa Daphne Zegarra Inchausti (86642)"
+                          - option "Vanessa Katherin Córdova Fuentes (68928)"
+                          - option "Vanessa Martinez Cartagena (17458)"
+                          - option "Vannya Cecilia Herrera Enriquez (88110)"
+                          - option "Veronica Milagritos Tupayachi Carrasco (046762)"
+                          - option "Vicky Esther Aguilar Paredes (31147)"
+                          - option "Walter Alberto Flores Asenjo (084208)"
+                          - option "Walter Arturo Román Meneses (49668)"
+                          - option "Walther Aurelio Vasquez Ortega (073385)"
+                          - option "Ximena Jimenez Tornero (97746)"
+                          - option "Xiomara Alexandra Acosta Hurtado (89565)"
+                          - option "Yanet Maribel Coila Coaquira (063773)"
+                          - option "Yanina Katiuska Negron Nuñez (041606)"
+                          - option "Yesenia Lisseth Torres Pecho (53392)"
+                          - option "Yoice Rosario Revollar Ramirez (035879)"
+                          - option "Yosilú Visabel Aguilar Cruces (060283)"
+                        - paragraph [ref=e233]: Carito Lisset Zumaeta Cabrera
+                    - cell "--:--" [ref=e234]:
+                      - generic [ref=e236]:
+                        - textbox "DD/MM/AAAA" [active] [ref=e238]
+                        - button "--:--" [disabled] [ref=e241]:
+                          - img [ref=e242]
+                          - generic [ref=e245]: "--:--"
+                    - cell "PROGRAMA DE ATENCION DOMICILIARIA-PADOMI" [ref=e246]
+                    - cell "Voluntaria" [ref=e247]
+                    - cell "971871179" [ref=e248]:
+                      - link "971871179" [ref=e249] [cursor=pointer]:
+                        - /url: https://wa.me/971871179
+                        - img [ref=e250]
+                        - text: "971871179"
+                    - cell "-" [ref=e252]:
+                      - link "-" [ref=e253] [cursor=pointer]:
+                        - /url: https://wa.me/
+                        - img [ref=e254]
+                        - text: "-"
+                    - cell "Pendiente Citar ℹ️ Para este estado, médico y fecha son opcionales" [ref=e256]:
+                      - generic [ref=e257]:
+                        - combobox [ref=e258]:
+                          - option "Seleccionar estado..."
+                          - option "Pendiente Citar" [selected]
+                          - option "Citado"
+                          - option "Atendido por IPRESS"
+                          - option "No contesta"
+                          - option "No desea"
+                          - option "Apagado"
+                          - option "Teléfono sin servicio"
+                          - option "Número no existe"
+                          - option "Sin vigencia de Seguro"
+                          - option "Historia clínica bloqueada"
+                          - option "Reprogramación Fallida"
+                        - paragraph [ref=e259]: ℹ️ Para este estado, médico y fecha son opcionales
+                    - cell "Hace 44 minutos" [ref=e260]
+                    - cell "—" [ref=e261]
+                    - cell "Guardar Cancelar" [ref=e262]:
+                      - generic [ref=e263]:
+                        - button "Guardar" [ref=e264] [cursor=pointer]:
+                          - img [ref=e265]
+                          - text: Guardar
+                        - button "Cancelar" [ref=e267] [cursor=pointer]:
+                          - img [ref=e268]
+                          - text: Cancelar
+        - generic [ref=e271]:
+          - paragraph [ref=e272]: CENATE - Sistema de Telemedicina - EsSalud 2026
+          - paragraph [ref=e273]: v1.37.4 - Performance Optimization + Deduplicación Automática + Foto Header + SMTP EsSalud
+  - generic [ref=e274]:
+    - generic [ref=e275]:
+      - button [ref=e276] [cursor=pointer]:
+        - img [ref=e277]
+      - heading "febrero de 2026" [level=3] [ref=e279]
+      - button [ref=e280] [cursor=pointer]:
+        - img [ref=e281]
+    - generic [ref=e283]:
+      - generic [ref=e284]: Do
+      - generic [ref=e285]: Lu
+      - generic [ref=e286]: Ma
+      - generic [ref=e287]: Mi
+      - generic [ref=e288]: Ju
+      - generic [ref=e289]: Vi
+      - generic [ref=e290]: Sa
+    - generic [ref=e291]:
+      - button "1" [disabled] [ref=e292]
+      - button "2" [disabled] [ref=e293]
+      - button "3" [disabled] [ref=e294]
+      - button "4" [disabled] [ref=e295]
+      - button "5" [disabled] [ref=e296]
+      - button "6" [disabled] [ref=e297]
+      - button "7" [disabled] [ref=e298]
+      - button "8" [disabled] [ref=e299]
+      - button "9" [disabled] [ref=e300]
+      - button "10" [disabled] [ref=e301]
+      - button "11" [ref=e302] [cursor=pointer]
+      - button "12" [ref=e303] [cursor=pointer]
+      - button "13" [ref=e304] [cursor=pointer]
+      - button "14" [ref=e305] [cursor=pointer]
+      - button "15" [ref=e306] [cursor=pointer]
+      - button "16" [ref=e307] [cursor=pointer]
+      - button "17" [ref=e308] [cursor=pointer]
+      - button "18" [ref=e309] [cursor=pointer]
+      - button "19" [ref=e310] [cursor=pointer]
+      - button "20" [ref=e311] [cursor=pointer]
+      - button "21" [ref=e312] [cursor=pointer]
+      - button "22" [ref=e313] [cursor=pointer]
+      - button "23" [ref=e314] [cursor=pointer]
+      - button "24" [ref=e315] [cursor=pointer]
+      - button "25" [ref=e316] [cursor=pointer]
+      - button "26" [ref=e317] [cursor=pointer]
+      - button "27" [ref=e318] [cursor=pointer]
+      - button "28" [ref=e319] [cursor=pointer]

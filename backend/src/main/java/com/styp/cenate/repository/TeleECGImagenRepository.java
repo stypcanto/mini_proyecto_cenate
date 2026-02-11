@@ -382,4 +382,41 @@ public interface TeleECGImagenRepository extends JpaRepository<TeleECGImagen, Lo
         @Param("fechaDesde") LocalDateTime fechaDesde,
         @Param("fechaHasta") LocalDateTime fechaHasta
     );
+
+    /**
+     * Obtiene ECGs para análisis de métricas (v1.72.0)
+     * Usado por: Dashboard analítico con filtros
+     *
+     * Retorna todas las imágenes que coincidan con los criterios:
+     * - Rango de fechas: fechaDesde a fechaHasta
+     * - IPRESS específica (opcional)
+     * - Tipo de evaluación: NORMAL/ANORMAL/SIN_EVALUAR (opcional)
+     * - Urgencia (opcional)
+     * - Estado activo y no vencido
+     *
+     * @param fechaDesde Fecha y hora inicial
+     * @param fechaHasta Fecha y hora final
+     * @param idIpress ID de IPRESS (NULL = todas)
+     * @param evaluacion NORMAL/ANORMAL/SIN_EVALUAR (NULL = todas)
+     * @param esUrgente true/false (NULL = ambas)
+     * @return Lista de ECGs que cumplen criterios (sin paginación, para agregaciones)
+     */
+    @Query("""
+        SELECT t FROM TeleECGImagen t
+        WHERE t.fechaEnvio >= :fechaDesde
+          AND t.fechaEnvio <= :fechaHasta
+          AND (:idIpress IS NULL OR t.ipressOrigen.idIpress = :idIpress)
+          AND (:evaluacion IS NULL OR t.evaluacion = :evaluacion)
+          AND (:esUrgente IS NULL OR t.esUrgente = :esUrgente)
+          AND t.statImagen = 'A'
+          AND t.fechaExpiracion >= CURRENT_TIMESTAMP
+        ORDER BY t.fechaEnvio DESC
+        """)
+    List<TeleECGImagen> buscarParaAnalytics(
+        @Param("fechaDesde") LocalDateTime fechaDesde,
+        @Param("fechaHasta") LocalDateTime fechaHasta,
+        @Param("idIpress") Long idIpress,
+        @Param("evaluacion") String evaluacion,
+        @Param("esUrgente") Boolean esUrgente
+    );
 }

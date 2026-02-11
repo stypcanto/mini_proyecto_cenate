@@ -1201,4 +1201,57 @@ public class TeleECGController {
             mensaje
         ));
     }
+
+    /**
+     * 📊 GET Analytics filtrado (v1.73.0 - Nuevo)
+     * Endpoint: GET /api/teleecg/analytics?fechaDesde=2026-02-01&fechaHasta=2026-02-28&idIpress=...&evaluacion=...&esUrgente=...
+     *
+     * Retorna KPIs, distribuciones y comparativas con período anterior
+     */
+    @GetMapping("/analytics")
+    @Operation(summary = "Obtener analytics de TeleECG filtrado")
+    public ResponseEntity<ApiResponse<TeleECGAnalyticsDTO>> getAnalytics(
+            @Parameter(description = "Fecha desde (YYYY-MM-DD)")
+            @RequestParam(required = false, defaultValue = "2026-01-01") String fechaDesde,
+
+            @Parameter(description = "Fecha hasta (YYYY-MM-DD)")
+            @RequestParam(required = false) String fechaHasta,
+
+            @Parameter(description = "ID IPRESS opcional")
+            @RequestParam(required = false) Long idIpress,
+
+            @Parameter(description = "Evaluación (NORMAL, ANORMAL, SIN_EVALUAR)")
+            @RequestParam(required = false) String evaluacion,
+
+            @Parameter(description = "Es urgente")
+            @RequestParam(required = false) Boolean esUrgente) {
+
+        log.info("📊 GET Analytics - Desde: {}, Hasta: {}, IPRESS: {}, Evaluación: {}, Urgente: {}",
+                fechaDesde, fechaHasta, idIpress, evaluacion, esUrgente);
+
+        try {
+            // Si no se proporciona fechaHasta, usar hoy
+            String fechaHastaFinal = fechaHasta != null ? fechaHasta : java.time.LocalDate.now().toString();
+
+            TeleECGAnalyticsDTO analytics = teleECGService.obtenerAnalytics(
+                    fechaDesde,
+                    fechaHastaFinal,
+                    idIpress,
+                    evaluacion,
+                    esUrgente
+            );
+
+            return ResponseEntity.ok(new ApiResponse<>(
+                    true,
+                    "Analytics obtenido exitosamente",
+                    "200",
+                    analytics
+            ));
+
+        } catch (Exception e) {
+            log.error("❌ Error obteniendo analytics", e);
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(new ApiResponse<>(false, "Error: " + e.getMessage(), "400", null));
+        }
+    }
 }

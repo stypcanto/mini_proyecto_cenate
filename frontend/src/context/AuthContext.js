@@ -80,6 +80,7 @@ export const AuthProvider = ({ children }) => {
             nombreCompleto: payload.nombre_completo || payload.name || payload.username || payload.sub || "",
             foto: payload.foto || null,  // 📷 Foto restaurada del JWT
             requiereCambioPassword: payload.requiereCambioPassword || false,
+            especialidad: payload.especialidad || null,  // ✅ v1.77.0: Especialidad del médico
             token
           };
 
@@ -161,6 +162,7 @@ export const AuthProvider = ({ children }) => {
       nombreCompleto: data.nombreCompleto || data.nombre_completo || payload.nombre_completo,
       foto: data.foto || payload.foto || null,  // 📷 URL de la foto del usuario
       requiereCambioPassword: data.requiereCambioPassword || false,
+      especialidad: data.especialidad || payload.especialidad || null,  // ✅ v1.77.0: Especialidad del médico
       token: jwt
     };
 

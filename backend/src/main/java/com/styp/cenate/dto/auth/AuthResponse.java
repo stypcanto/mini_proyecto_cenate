@@ -21,4 +21,5 @@ public class AuthResponse {
     private Boolean requiereCambioPassword; // 🔑 Debe cambiar contraseña y actualizar datos
     private String sessionId;  // 🆕 ID de la sesión activa
     private String message;
+    private String especialidad;  // ✅ v1.77.0: Especialidad del médico (Cardiología, etc.)
 }

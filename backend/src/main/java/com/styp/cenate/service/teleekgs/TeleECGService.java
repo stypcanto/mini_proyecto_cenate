@@ -1202,4 +1202,160 @@ public class TeleECGService {
             log.warn("⚠️ Error registrando auditoría", e);
         }
     }
+
+    /**
+     * 📊 Calcular analytics filtrado por fecha, IPRESS, evaluación, urgencia
+     * v1.73.0 - Nuevo endpoint
+     */
+    public TeleECGAnalyticsDTO obtenerAnalytics(
+            String fechaDesde,
+            String fechaHasta,
+            Long idIpress,
+            String evaluacion,
+            Boolean esUrgente) {
+
+        log.info("📊 Calculando analytics - Desde: {}, Hasta: {}, IPRESS: {}", fechaDesde, fechaHasta, idIpress);
+
+        try {
+            // Convertir fechas
+            LocalDate desde = LocalDate.parse(fechaDesde);
+            LocalDate hasta = LocalDate.parse(fechaHasta);
+
+            // Obtener todas las imágenes
+            List<TeleECGImagen> imagenes = teleECGImagenRepository.findAll();
+
+            // Filtrar por fecha
+            List<TeleECGImagen> filtradas = imagenes.stream()
+                    .filter(img -> img.getFechaEnvio() != null &&
+                            img.getFechaEnvio().toLocalDate().compareTo(desde) >= 0 &&
+                            img.getFechaEnvio().toLocalDate().compareTo(hasta) <= 0)
+                    .collect(Collectors.toList());
+
+            // Filtrar por IPRESS si se proporciona
+            if (idIpress != null) {
+                filtradas = filtradas.stream()
+                        .filter(img -> img.getCodigoIpress() != null &&
+                                img.getCodigoIpress().equals(idIpress.toString()))
+                        .collect(Collectors.toList());
+            }
+
+            // Filtrar por evaluación si se proporciona
+            if (evaluacion != null && !evaluacion.isEmpty()) {
+                filtradas = filtradas.stream()
+                        .filter(img -> evaluacion.equals(img.getEvaluacion()))
+                        .collect(Collectors.toList());
+            }
+
+            // Filtrar por urgencia si se proporciona
+            if (esUrgente != null) {
+                filtradas = filtradas.stream()
+                        .filter(img -> esUrgente.equals(img.getEsUrgente()))
+                        .collect(Collectors.toList());
+            }
+
+            // Calcular KPIs
+            int totalEcgs = filtradas.size();
+            int ecgsNormales = (int) filtradas.stream().filter(i -> "NORMAL".equals(i.getEvaluacion())).count();
+            int ecgsAnormales = (int) filtradas.stream().filter(i -> "ANORMAL".equals(i.getEvaluacion())).count();
+            int ecgsSinEvaluar = totalEcgs - ecgsNormales - ecgsAnormales;
+
+            double tatPromedioMinutos = filtradas.stream()
+                    .filter(img -> img.getFechaEnvio() != null && img.getFechaEvaluacion() != null)
+                    .mapToLong(img -> java.time.temporal.ChronoUnit.MINUTES.between(
+                            img.getFechaEnvio(),
+                            img.getFechaEvaluacion()))
+                    .average()
+                    .orElse(0);
+
+            double tasaRechazoPorcentaje = totalEcgs > 0 ?
+                    ((double) filtradas.stream().filter(i -> "RECHAZADA".equals(i.getEstado())).count() / totalEcgs) * 100 : 0;
+
+            // SLA: asumimos 90 minutos como objetivo
+            double slaCumplimientoPorcentaje = filtradas.stream()
+                    .filter(img -> img.getFechaEnvio() != null && img.getFechaEvaluacion() != null)
+                    .filter(img -> java.time.temporal.ChronoUnit.MINUTES.between(
+                            img.getFechaEnvio(),
+                            img.getFechaEvaluacion()) <= 90)
+                    .count() * 100.0 / Math.max(1, filtradas.size());
+
+            // Distribuciones
+            Map<String, Integer> distribucionGenero = new HashMap<>();
+            distribucionGenero.put("M", (int) filtradas.stream()
+                    .filter(i -> "M".equals(i.getGeneroPaciente())).count());
+            distribucionGenero.put("F", (int) filtradas.stream()
+                    .filter(i -> "F".equals(i.getGeneroPaciente())).count());
+            distribucionGenero.put("Otro", (int) filtradas.stream()
+                    .filter(i -> !"M".equals(i.getGeneroPaciente()) && !"F".equals(i.getGeneroPaciente())).count());
+
+            Map<String, Integer> distribucionEstado = new HashMap<>();
+            distribucionEstado.put("ENVIADA", (int) filtradas.stream()
+                    .filter(i -> "ENVIADA".equals(i.getEstado())).count());
+            distribucionEstado.put("OBSERVADA", (int) filtradas.stream()
+                    .filter(i -> "OBSERVADA".equals(i.getEstado())).count());
+            distribucionEstado.put("ATENDIDA", (int) filtradas.stream()
+                    .filter(i -> "ATENDIDA".equals(i.getEstado())).count());
+
+            Map<String, Integer> distribucionEvaluacion = new HashMap<>();
+            distribucionEvaluacion.put("NORMAL", ecgsNormales);
+            distribucionEvaluacion.put("ANORMAL", ecgsAnormales);
+            distribucionEvaluacion.put("SIN_EVALUAR", ecgsSinEvaluar);
+
+            // Comparativa (período anterior = 30 días antes)
+            LocalDate desdeAnterior = desde.minusDays(30);
+            LocalDate hastaAnterior = desde.minusDays(1);
+
+            List<TeleECGImagen> imagenesAnterior = imagenes.stream()
+                    .filter(img -> img.getFechaEnvio() != null &&
+                            img.getFechaEnvio().toLocalDate().compareTo(desdeAnterior) >= 0 &&
+                            img.getFechaEnvio().toLocalDate().compareTo(hastaAnterior) <= 0)
+                    .collect(Collectors.toList());
+
+            double cambioVolumen = imagenesAnterior.isEmpty() ? 0 :
+                    ((totalEcgs - imagenesAnterior.size()) * 100.0 / imagenesAnterior.size());
+
+            double tatAnterior = imagenesAnterior.stream()
+                    .filter(img -> img.getFechaEnvio() != null && img.getFechaEvaluacion() != null)
+                    .mapToLong(img -> java.time.temporal.ChronoUnit.MINUTES.between(
+                            img.getFechaEnvio(),
+                            img.getFechaEvaluacion()))
+                    .average()
+                    .orElse(0);
+
+            double cambioTat = tatAnterior > 0 ? ((tatAnterior - tatPromedioMinutos) * 100.0 / tatAnterior) : 0;
+
+            TeleECGAnalyticsDTO.ComparativaDTO comparativa = TeleECGAnalyticsDTO.ComparativaDTO.builder()
+                    .cambioVolumenPorcentaje(cambioVolumen)
+                    .cambioTatPorcentaje(cambioTat)
+                    .cambioRechazosPorcentaje(0.0) // Placeholder
+                    .build();
+
+            TeleECGAnalyticsDTO resultado = TeleECGAnalyticsDTO.builder()
+                    .totalEcgs(totalEcgs)
+                    .ecgsNormales(ecgsNormales)
+                    .ecgsAnormales(ecgsAnormales)
+                    .ecgsSinEvaluar(ecgsSinEvaluar)
+                    .tatPromedioMinutos(tatPromedioMinutos)
+                    .slaCumplimientoPorcentaje(slaCumplimientoPorcentaje)
+                    .tasaRechazoPorcentaje(tasaRechazoPorcentaje)
+                    .distribucionPorGenero(distribucionGenero)
+                    .distribucionPorEstado(distribucionEstado)
+                    .distribucionPorEvaluacion(distribucionEvaluacion)
+                    .comparacion(comparativa)
+                    .fechaDesde(fechaDesde)
+                    .fechaHasta(fechaHasta)
+                    .idIpress(idIpress)
+                    .evaluacionFiltro(evaluacion)
+                    .esUrgenteFiltro(esUrgente)
+                    .build();
+
+            log.info("✅ Analytics calculado: {} ECGs, TAT: {:.0f}min, SLA: {:.1f}%",
+                    totalEcgs, tatPromedioMinutos, slaCumplimientoPorcentaje);
+
+            return resultado;
+
+        } catch (Exception e) {
+            log.error("❌ Error calculando analytics", e);
+            throw new RuntimeException("Error calculando analytics: " + e.getMessage());
+        }
+    }
 }

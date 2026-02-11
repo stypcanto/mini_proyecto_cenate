@@ -723,6 +723,67 @@ const teleecgService = {
       throw error;
     }
   },
+
+  /**
+   * 📊 Obtener analytics médicos del dashboard (v1.72.0)
+   * Calcula métricas analíticas para gestión clínica:
+   * - Distribución por hallazgos (NORMAL/ANORMAL/SIN_EVALUAR)
+   * - TAT promedio (general, urgentes, no urgentes)
+   * - SLA cumplimiento (meta 15 min)
+   * - Tasa de rechazo por IPRESS
+   * - Tendencias comparativas (↑↓%)
+   *
+   * @param {string} fechaDesde - Fecha inicio (YYYY-MM-DD)
+   * @param {string} fechaHasta - Fecha fin (YYYY-MM-DD)
+   * @param {number} idIpress - ID IPRESS (opcional)
+   * @param {string} evaluacion - NORMAL/ANORMAL/SIN_EVALUAR (opcional)
+   * @param {boolean} esUrgente - true/false (opcional)
+   * @returns {Promise<TeleECGAnalyticsDTO>} DTO con todas las métricas
+   */
+  getAnalytics: async (params) => {
+    try {
+      const queryParams = new URLSearchParams();
+
+      if (params.fechaDesde) queryParams.append("fechaDesde", params.fechaDesde);
+      if (params.fechaHasta) queryParams.append("fechaHasta", params.fechaHasta);
+      if (params.idIpress) queryParams.append("idIpress", params.idIpress);
+      if (params.evaluacion) queryParams.append("evaluacion", params.evaluacion);
+      if (params.esUrgente !== undefined && params.esUrgente !== null) {
+        queryParams.append("esUrgente", params.esUrgente);
+      }
+
+      const url = `${API_BASE_URL}/teleecg/analytics?${queryParams}`;
+      console.log("📊 [GET Analytics]:", url);
+
+      const token = getToken();
+      const headers = {
+        "Content-Type": "application/json",
+      };
+      if (token) {
+        headers["Authorization"] = `Bearer ${token}`;
+      }
+
+      const response = await fetch(url, {
+        method: "GET",
+        headers,
+        credentials: "include",
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        const errorMessage = errorData.message || errorData.error || `HTTP ${response.status}`;
+        console.error("❌ [Analytics Error]:", errorMessage);
+        throw new Error(errorMessage);
+      }
+
+      const data = await response.json();
+      console.log("✅ [Analytics Success]:", data);
+      return data;
+    } catch (error) {
+      console.error("❌ [Analytics Exception]:", error.message);
+      throw error;
+    }
+  },
 };
 
 export default teleecgService;

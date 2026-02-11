@@ -1,0 +1,200 @@
+Total messages: 122 (Errors: 7, Warnings: 3)
+
+[ERROR] ❌ [Network Error] en GET http://localhost:8080/api/gestion-pacientes/medico/asignados: Failed to fetch @ http://localhost:3000/static/js/bundle.js:59823
+[ERROR] ❌ [Network Error] en GET http://localhost:8080/api/gestion-pacientes/medico/asignados: Failed to fetch @ http://localhost:3000/static/js/bundle.js:59823
+[ERROR] Error cargando permisos: Failed to fetch @ http://localhost:3000/static/js/bundle.js:55315
+[ERROR] Error cargando permisos: Failed to fetch @ http://localhost:3000/static/js/bundle.js:55315
+[ERROR] Error cargando pacientes: TypeError: Failed to fetch
+    at apiRequest (http://localhost:3000/static/js/bundle.js:59821:28)
+    at Object.get (http://localhost:3000/static/js/bundle.js:59836:12)
+    at Object.obtenerPacientesMedico (http://localhost:3000/static/js/src_pages_roles_medico_pacientes_MisPacientes_jsx.chunk.js:3580:69)
+    at cargarPacientes (http://localhost:3000/static/js/src_pages_roles_medico_pacientes_MisPacientes_jsx.chunk.js:431:101)
+    at http://localhost:3000/static/js/src_pages_roles_medico_pacientes_MisPacientes_jsx.chunk.js:373:5
+    at Object.react_stack_bottom_frame (http://localhost:3000/static/js/bundle.js:29922:18)
+    at runWithFiberInDEV (http://localhost:3000/static/js/bundle.js:17209:68)
+    at commitHookEffectListMount (http://localhost:3000/static/js/bundle.js:23213:157)
+    at commitHookPassiveMountEffects (http://localhost:3000/static/js/bundle.js:23250:56)
+    at reconnectPassiveEffects (http://localhost:3000/static/js/bundle.js:24354:9) @ http://localhost:3000/static/js/src_pages_roles_medico_pacientes_MisPacientes_jsx.chunk.js:473
+[ERROR] Error cargando pacientes: TypeError: Failed to fetch
+    at apiRequest (http://localhost:3000/static/js/bundle.js:59821:28)
+    at Object.get (http://localhost:3000/static/js/bundle.js:59836:12)
+    at Object.obtenerPacientesMedico (http://localhost:3000/static/js/src_pages_roles_medico_pacientes_MisPacientes_jsx.chunk.js:3580:69)
+    at cargarPacientes (http://localhost:3000/static/js/src_pages_roles_medico_pacientes_MisPacientes_jsx.chunk.js:431:101)
+    at http://localhost:3000/static/js/src_pages_roles_medico_pacientes_MisPacientes_jsx.chunk.js:373:5
+    at Object.react_stack_bottom_frame (http://localhost:3000/static/js/bundle.js:29922:18)
+    at runWithFiberInDEV (http://localhost:3000/static/js/bundle.js:17209:68)
+    at commitHookEffectListMount (http://localhost:3000/static/js/bundle.js:23213:157)
+    at commitHookPassiveMountEffects (http://localhost:3000/static/js/bundle.js:23250:56)
+    at reconnectPassiveEffects (http://localhost:3000/static/js/bundle.js:24354:9) @ http://localhost:3000/static/js/src_pages_roles_medico_pacientes_MisPacientes_jsx.chunk.js:473
+[WARNING] Error with Feature-Policy header: Unrecognized feature: 'ambient-light-sensor'. @ :0
+[WARNING] Error with Feature-Policy header: Some features are specified in both Feature-Policy and Permissions-Policy header: microphone, camera, geolocation, display-capture, accelerometer, gyroscope, magnetometer, usb, payment. Values defined in Permissions-Policy header will be used. @ :0
+[WARNING] Error with Permissions-Policy header: Unrecognized feature: 'ambient-light-sensor'. @ :0
+[INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://localhost:3000/static/js/bundle.js:31620
+[INFO] 🌐 [API Base URL]: http://localhost:8080/api @ http://localhost:3000/static/js/bundle.js:55814
+[INFO] 🔧 [Environment]: No configurado @ http://localhost:3000/static/js/bundle.js:55815
+[INFO] 🔑 Token detectado: Sí @ http://localhost:3000/static/js/bundle.js:55816
+[LOG] 🌐 [API Base URL]: http://localhost:8080/api @ http://localhost:3000/static/js/bundle.js:59717
+[LOG] 🔧 [REACT_APP_API_URL]: No configurado - usando detección automática @ http://localhost:3000/static/js/bundle.js:59718
+[LOG] 📍 [Window Location]: http://localhost:3000/ @ http://localhost:3000/static/js/bundle.js:59719
+[LOG] Permisos cargados desde cache @ http://localhost:3000/static/js/bundle.js:54744
+[LOG] Permisos cargados desde cache @ http://localhost:3000/static/js/bundle.js:54744
+[ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ https://wabi-south-central-us-api.analysis.windows.net/public/reports/d22afaa1-ba03-4a9f-aea5-fd97b6eab64d/modelsAndExploration?preferReadOnlySession=true:0
+[VERBOSE] [DOM] Input elements should have autocomplete attributes (suggested: "current-password"): (More info: https://goo.gl/9p2vKq) %o @ http://localhost:3000/login:0
+[LOG] 🚀 [POST] http://localhost:8080/api/auth/login {username: 72945564, password: @Cenate2026+1} @ http://localhost:3000/static/js/bundle.js:55732
+[LOG] 📥 [Response] 200  @ http://localhost:3000/static/js/bundle.js:55679
+[LOG] ✅ [Response Data]: {token: eyJhbGciOiJIUzI1NiJ9.eyJub21icmVfY29tcGxldG8iOiJDY…yODN9._45zMFQ04kO-QGvMKnfMzxJxNjkshuAkJ0GnLNQhIeQ, id_user: 630, username: 72945564, nombreCompleto: Carito Lisset Zumaeta Cabrera, foto: null} @ http://localhost:3000/static/js/bundle.js:55700
+[LOG] 📦 Respuesta del backend en login: {token: eyJhbGciOiJIUzI1NiJ9.eyJub21icmVfY29tcGxldG8iOiJDY…yODN9._45zMFQ04kO-QGvMKnfMzxJxNjkshuAkJ0GnLNQhIeQ, id_user: 630, username: 72945564, nombreCompleto: Carito Lisset Zumaeta Cabrera, foto: null} @ http://localhost:3000/static/js/bundle.js:54424
+[LOG] 🔐 JWT Payload en login: {nombre_completo: Carito Lisset Zumaeta Cabrera, roles: Array(1), id_user: 630, sub: 72945564, iat: 1770819083} @ http://localhost:3000/static/js/bundle.js:54428
+[LOG] 🆔 User ID en login: 630 Tipo: number @ http://localhost:3000/static/js/bundle.js:54430
+[LOG] 📷 Foto del usuario desde backend: null @ http://localhost:3000/static/js/bundle.js:54452
+[LOG] 👤 userData completo: {id: 630, username: 72945564, roles: Array(1), permisos: Array(0), nombreCompleto: Carito Lisset Zumaeta Cabrera} @ http://localhost:3000/static/js/bundle.js:54453
+[LOG] 🖼️ [UserMenu] user.foto: null @ http://localhost:3000/static/js/bundle.js:51141
+[LOG] 👤 [UserMenu] user completo: {id: 630, username: 72945564, roles: Array(1), permisos: Array(0), nombreCompleto: Carito Lisset Zumaeta Cabrera} @ http://localhost:3000/static/js/bundle.js:51142
+[LOG] 🖼️ [UserMenu] user.foto: null @ http://localhost:3000/static/js/bundle.js:51141
+[LOG] 👤 [UserMenu] user completo: {id: 630, username: 72945564, roles: Array(1), permisos: Array(0), nombreCompleto: Carito Lisset Zumaeta Cabrera} @ http://localhost:3000/static/js/bundle.js:51142
+[LOG] Cargando permisos para usuario ID: 630 @ http://localhost:3000/static/js/bundle.js:55309
+[LOG] 🚀 [GET] http://localhost:8080/api/menu-usuario/usuario/630 @ http://localhost:3000/static/js/bundle.js:55724
+[LOG] 🔐 Token agregado al request @ http://localhost:3000/static/js/bundle.js:55712
+[LOG] Cargando permisos para usuario ID: 630 @ http://localhost:3000/static/js/bundle.js:55309
+[LOG] 🚀 [GET] http://localhost:8080/api/menu-usuario/usuario/630 @ http://localhost:3000/static/js/bundle.js:55724
+[LOG] 🔐 Token agregado al request @ http://localhost:3000/static/js/bundle.js:55712
+[LOG] 🚀 [GET] http://localhost:8080/api/gestion-pacientes/medico/asignados @ http://localhost:3000/static/js/bundle.js:59795
+[LOG] 🔑 Token detectado: Sí @ http://localhost:3000/static/js/bundle.js:59726
+[LOG] 🔐 Token añadido a la petición @ http://localhost:3000/static/js/bundle.js:59805
+[LOG] 🚀 [GET] http://localhost:8080/api/gestion-pacientes/medico/asignados @ http://localhost:3000/static/js/bundle.js:59795
+[LOG] 🔑 Token detectado: Sí @ http://localhost:3000/static/js/bundle.js:59726
+[LOG] 🔐 Token añadido a la petición @ http://localhost:3000/static/js/bundle.js:59805
+[LOG] 📥 [Response] 200  @ http://localhost:3000/static/js/bundle.js:55679
+[LOG] ✅ [Response Data]: [Object, Object] @ http://localhost:3000/static/js/bundle.js:55700
+[LOG] Permisos cargados: 2 @ http://localhost:3000/static/js/bundle.js:55311
+[LOG] 🖼️ [UserMenu] user.foto: null @ http://localhost:3000/static/js/bundle.js:51141
+[LOG] 👤 [UserMenu] user completo: {id: 630, username: 72945564, roles: Array(1), permisos: Array(0), nombreCompleto: Carito Lisset Zumaeta Cabrera} @ http://localhost:3000/static/js/bundle.js:51142
+[LOG] 🖼️ [UserMenu] user.foto: null @ http://localhost:3000/static/js/bundle.js:51141
+[LOG] 👤 [UserMenu] user completo: {id: 630, username: 72945564, roles: Array(1), permisos: Array(0), nombreCompleto: Carito Lisset Zumaeta Cabrera} @ http://localhost:3000/static/js/bundle.js:51142
+[LOG] 🖼️ [UserMenu] user.foto: null @ http://localhost:3000/static/js/bundle.js:51141
+[LOG] 👤 [UserMenu] user completo: {id: 630, username: 72945564, roles: Array(1), permisos: Array(0), nombreCompleto: Carito Lisset Zumaeta Cabrera} @ http://localhost:3000/static/js/bundle.js:51142
+[LOG] 🖼️ [UserMenu] user.foto: null @ http://localhost:3000/static/js/bundle.js:51141
+[LOG] 👤 [UserMenu] user completo: {id: 630, username: 72945564, roles: Array(1), permisos: Array(0), nombreCompleto: Carito Lisset Zumaeta Cabrera} @ http://localhost:3000/static/js/bundle.js:51142
+[LOG] ⚠️ v1.78.0: No se detectó especialidad @ http://localhost:3000/static/js/src_pages_roles_medico_pacientes_MisPacientes_jsx.chunk.js:269
+[LOG] ⚠️ v1.78.0: No se detectó especialidad @ http://localhost:3000/static/js/src_pages_roles_medico_pacientes_MisPacientes_jsx.chunk.js:269
+[LOG] 🚀 [GET] http://localhost:8080/api/gestion-pacientes/medico/asignados @ http://localhost:3000/static/js/bundle.js:59795
+[LOG] 🔑 Token detectado: Sí @ http://localhost:3000/static/js/bundle.js:59726
+[LOG] 🔐 Token añadido a la petición @ http://localhost:3000/static/js/bundle.js:59805
+[LOG] 🚀 [GET] http://localhost:8080/api/gestion-pacientes/especialidades @ http://localhost:3000/static/js/bundle.js:59795
+[LOG] 🔑 Token detectado: Sí @ http://localhost:3000/static/js/bundle.js:59726
+[LOG] 🔐 Token añadido a la petición @ http://localhost:3000/static/js/bundle.js:59805
+[LOG] 📅 Fechas de atención disponibles para estado "TODOS": 0 fechas [] @ http://localhost:3000/static/js/src_pages_roles_medico_pacientes_MisPacientes_jsx.chunk.js:1151
+[LOG] 🚀 [GET] http://localhost:8080/api/gestion-pacientes/medico/asignados @ http://localhost:3000/static/js/bundle.js:59795
+[LOG] 🔑 Token detectado: Sí @ http://localhost:3000/static/js/bundle.js:59726
+[LOG] 🔐 Token añadido a la petición @ http://localhost:3000/static/js/bundle.js:59805
+[LOG] 🚀 [GET] http://localhost:8080/api/gestion-pacientes/especialidades @ http://localhost:3000/static/js/bundle.js:59795
+[LOG] 🔑 Token detectado: Sí @ http://localhost:3000/static/js/bundle.js:59726
+[LOG] 🔐 Token añadido a la petición @ http://localhost:3000/static/js/bundle.js:59805
+[LOG] 📅 Fechas de atención disponibles para estado "TODOS": 0 fechas [] @ http://localhost:3000/static/js/src_pages_roles_medico_pacientes_MisPacientes_jsx.chunk.js:1151
+[LOG] 📥 [Response] 200  @ http://localhost:3000/static/js/bundle.js:55679
+[LOG] ✅ [Response Data]: [Object, Object] @ http://localhost:3000/static/js/bundle.js:55700
+[LOG] Permisos cargados: 2 @ http://localhost:3000/static/js/bundle.js:55311
+[LOG] 📥 [Response Status]: 200  @ http://localhost:3000/static/js/bundle.js:59734
+[LOG] ✅ [Response Data]: [Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object] @ http://localhost:3000/static/js/bundle.js:59743
+[LOG] ✅ v1.78.0: Especialidades cargadas: [Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object] @ http://localhost:3000/static/js/src_pages_roles_medico_pacientes_MisPacientes_jsx.chunk.js:387
+[LOG] 📥 [Response Status]: 200  @ http://localhost:3000/static/js/bundle.js:59734
+[LOG] ✅ [Response Data]: [Object, Object] @ http://localhost:3000/static/js/bundle.js:59743
+[LOG] 🚀 [GET] http://localhost:8080/api/gestion-pacientes/medico/contador-pendientes @ http://localhost:3000/static/js/bundle.js:59795
+[LOG] 🔑 Token detectado: Sí @ http://localhost:3000/static/js/bundle.js:59726
+[LOG] 🔐 Token añadido a la petición @ http://localhost:3000/static/js/bundle.js:59805
+[LOG] 📥 [Response Status]: 200  @ http://localhost:3000/static/js/bundle.js:59734
+[LOG] ✅ [Response Data]: [Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object] @ http://localhost:3000/static/js/bundle.js:59743
+[LOG] ✅ v1.78.0: Especialidades cargadas: [Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object] @ http://localhost:3000/static/js/src_pages_roles_medico_pacientes_MisPacientes_jsx.chunk.js:387
+[LOG] 📥 [Response Status]: 200  @ http://localhost:3000/static/js/bundle.js:59734
+[LOG] ✅ [Response Data]: {pendientes: 0} @ http://localhost:3000/static/js/bundle.js:59743
+[LOG] 📥 [Response Status]: 200  @ http://localhost:3000/static/js/bundle.js:59734
+[LOG] ✅ [Response Data]: [Object, Object] @ http://localhost:3000/static/js/bundle.js:59743
+[LOG] 🚀 [GET] http://localhost:8080/api/gestion-pacientes/medico/contador-pendientes @ http://localhost:3000/static/js/bundle.js:59795
+[LOG] 🔑 Token detectado: Sí @ http://localhost:3000/static/js/bundle.js:59726
+[LOG] 🔐 Token añadido a la petición @ http://localhost:3000/static/js/bundle.js:59805
+[LOG] 📥 [Response Status]: 200  @ http://localhost:3000/static/js/bundle.js:59734
+[LOG] ✅ [Response Data]: {pendientes: 0} @ http://localhost:3000/static/js/bundle.js:59743
+[LOG] 📥 [Response Status]: 200  @ http://localhost:3000/static/js/bundle.js:59734
+[LOG] ✅ [Response Data]: [Object, Object] @ http://localhost:3000/static/js/bundle.js:59743
+[LOG] 🔍 [DEBUG] Datos del API: [Object, Object] @ http://localhost:3000/static/js/src_pages_roles_medico_pacientes_MisPacientes_jsx.chunk.js:431
+[LOG] 🔍 [DEBUG] Primer paciente estructura: {idGestion: null, idSolicitudBolsa: 43484, pkAsegurado: null, numDoc: 09950203, apellidosNombres: VERASTEGUI JORGE VICTOR} @ http://localhost:3000/static/js/src_pages_roles_medico_pacientes_MisPacientes_jsx.chunk.js:433
+[LOG] 🔍 [DEBUG] Campos disponibles: [idGestion, idSolicitudBolsa, pkAsegurado, numDoc, apellidosNombres, sexo, edad, telefono, tipoPaciente, tipoSeguro, condicion, gestora, observaciones, origen, seleccionadoTelemedicina, fechaCreacion, fechaActualizacion, enfermedadCronica, idBolsa, tiempoInicioSintomas, consentimientoInformado, ipress, fechaAsignacion, fechaAtencion, fechaTomaEKG, esUrgente, especialidadMedico] @ http://localhost:3000/static/js/src_pages_roles_medico_pacientes_MisPacientes_jsx.chunk.js:434
+[LOG] 🔍 [DEBUG] ipress: POL. CHINCHA @ http://localhost:3000/static/js/src_pages_roles_medico_pacientes_MisPacientes_jsx.chunk.js:435
+[LOG] 🔍 [DEBUG] fechaAsignacion: 2026-02-11T13:15:24.795Z @ http://localhost:3000/static/js/src_pages_roles_medico_pacientes_MisPacientes_jsx.chunk.js:436
+[LOG] 🔍 [DEBUG] TODOS LOS CAMPOS: {
+  "idGestion": null,
+  "idSolicitudBolsa": 43484,
+  "pkAsegurado": null,
+  "numDoc": "09950203",
+  "apellidosNombres": "VERASTEGUI JORGE VICTOR",
+  "sexo": "M",
+  "edad": 87,
+  "telefono": "944809150",
+  "tipoPaciente": null,
+  "tipoSeguro": null,
+  "condicion": "Pendiente",
+  "gestora": null,
+  "observaciones": null,
+  "origen": null,
+  "seleccionadoTelemedicina": null,
+  "fechaCreacion": null,
+  "fechaActualizacion": null,
+  "enfermedadCronica": null,
+  "idBolsa": 12,
+  "tiempoInicioSintomas": "> 72 hrs.",
+  "consentimientoInformado": false,
+  "ipress": "POL. CHINCHA",
+  "fechaAsignacion": "2026-02-11T13:15:24.795Z",
+  "fechaAtencion": null,
+  "fechaTomaEKG": "2026-02-09",
+  "esUrgente": false,
+  "especialidadMedico": "202602"
+} @ http://localhost:3000/static/js/src_pages_roles_medico_pacientes_MisPacientes_jsx.chunk.js:437
+[LOG] 🔍 Bolsas detectadas del médico: [12] @ http://localhost:3000/static/js/src_pages_roles_medico_pacientes_MisPacientes_jsx.chunk.js:362
+[LOG] ✅ Cargando todas las bolsas por defecto (sin filtro automático) @ http://localhost:3000/static/js/src_pages_roles_medico_pacientes_MisPacientes_jsx.chunk.js:367
+[LOG] 🚀 [GET] http://localhost:8080/api/ipress/activas @ http://localhost:3000/static/js/bundle.js:55724
+[LOG] 🔐 Token agregado al request @ http://localhost:3000/static/js/bundle.js:55712
+[LOG] 📅 Fechas de atención disponibles para estado "TODOS": 0 fechas [] @ http://localhost:3000/static/js/src_pages_roles_medico_pacientes_MisPacientes_jsx.chunk.js:1151
+[LOG] 📥 [Response] 200  @ http://localhost:3000/static/js/bundle.js:55679
+[LOG] ✅ [Response Data]: [Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object] @ http://localhost:3000/static/js/bundle.js:55700
+[LOG] 📥 [Response Status]: 200  @ http://localhost:3000/static/js/bundle.js:59734
+[LOG] ✅ [Response Data]: [Object, Object] @ http://localhost:3000/static/js/bundle.js:59743
+[LOG] 🔍 [DEBUG] Datos del API: [Object, Object] @ http://localhost:3000/static/js/src_pages_roles_medico_pacientes_MisPacientes_jsx.chunk.js:431
+[LOG] 🔍 [DEBUG] Primer paciente estructura: {idGestion: null, idSolicitudBolsa: 43484, pkAsegurado: null, numDoc: 09950203, apellidosNombres: VERASTEGUI JORGE VICTOR} @ http://localhost:3000/static/js/src_pages_roles_medico_pacientes_MisPacientes_jsx.chunk.js:433
+[LOG] 🔍 [DEBUG] Campos disponibles: [idGestion, idSolicitudBolsa, pkAsegurado, numDoc, apellidosNombres, sexo, edad, telefono, tipoPaciente, tipoSeguro, condicion, gestora, observaciones, origen, seleccionadoTelemedicina, fechaCreacion, fechaActualizacion, enfermedadCronica, idBolsa, tiempoInicioSintomas, consentimientoInformado, ipress, fechaAsignacion, fechaAtencion, fechaTomaEKG, esUrgente, especialidadMedico] @ http://localhost:3000/static/js/src_pages_roles_medico_pacientes_MisPacientes_jsx.chunk.js:434
+[LOG] 🔍 [DEBUG] ipress: POL. CHINCHA @ http://localhost:3000/static/js/src_pages_roles_medico_pacientes_MisPacientes_jsx.chunk.js:435
+[LOG] 🔍 [DEBUG] fechaAsignacion: 2026-02-11T13:15:24.795Z @ http://localhost:3000/static/js/src_pages_roles_medico_pacientes_MisPacientes_jsx.chunk.js:436
+[LOG] 🔍 [DEBUG] TODOS LOS CAMPOS: {
+  "idGestion": null,
+  "idSolicitudBolsa": 43484,
+  "pkAsegurado": null,
+  "numDoc": "09950203",
+  "apellidosNombres": "VERASTEGUI JORGE VICTOR",
+  "sexo": "M",
+  "edad": 87,
+  "telefono": "944809150",
+  "tipoPaciente": null,
+  "tipoSeguro": null,
+  "condicion": "Pendiente",
+  "gestora": null,
+  "observaciones": null,
+  "origen": null,
+  "seleccionadoTelemedicina": null,
+  "fechaCreacion": null,
+  "fechaActualizacion": null,
+  "enfermedadCronica": null,
+  "idBolsa": 12,
+  "tiempoInicioSintomas": "> 72 hrs.",
+  "consentimientoInformado": false,
+  "ipress": "POL. CHINCHA",
+  "fechaAsignacion": "2026-02-11T13:15:24.795Z",
+  "fechaAtencion": null,
+  "fechaTomaEKG": "2026-02-09",
+  "esUrgente": false,
+  "especialidadMedico": "202602"
+} @ http://localhost:3000/static/js/src_pages_roles_medico_pacientes_MisPacientes_jsx.chunk.js:437
+[LOG] 🚀 [GET] http://localhost:8080/api/ipress/activas @ http://localhost:3000/static/js/bundle.js:55724
+[LOG] 🔐 Token agregado al request @ http://localhost:3000/static/js/bundle.js:55712
+[LOG] 📅 Fechas de atención disponibles para estado "TODOS": 0 fechas [] @ http://localhost:3000/static/js/src_pages_roles_medico_pacientes_MisPacientes_jsx.chunk.js:1151
+[LOG] 📥 [Response] 200  @ http://localhost:3000/static/js/bundle.js:55679
+[LOG] ✅ [Response Data]: [Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object] @ http://localhost:3000/static/js/bundle.js:55700

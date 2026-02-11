@@ -9,6 +9,7 @@ import com.styp.cenate.exception.WeakPasswordException;
 import com.styp.cenate.model.Rol;
 import com.styp.cenate.model.Usuario;
 import com.styp.cenate.repository.UsuarioRepository;
+import com.styp.cenate.repository.bolsas.SolicitudBolsaRepository;
 import com.styp.cenate.security.service.JwtService;
 import com.styp.cenate.service.auditlog.AuditLogService;
 import com.styp.cenate.service.mbac.PermisosService;
@@ -43,6 +44,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     private final com.styp.cenate.service.session.SessionService sessionService;
     private final com.styp.cenate.util.RequestContextUtil requestContextUtil;
     private final org.springframework.jdbc.core.JdbcTemplate jdbcTemplate;
+    private final SolicitudBolsaRepository solicitudBolsaRepository;
 
     // =========================================================
     // 🔐 LOGIN MBAC
@@ -102,11 +104,36 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         // Obtener foto del usuario (desde personal_cnt o personal_externo)
         String fotoUrl = obtenerFotoUsuario(user.getIdUser());
 
+        // ✅ v1.77.0: Obtener especialidad del médico desde PersonalCnt
+        String especialidad = null;
+        try {
+            // Obtener desde la tabla dim_personal basado en el id_user
+            // personalCnt tiene relación 1:1 con Usuario usando id_user
+            String sql = "SELECT COALESCE(de.desc_especialidad, 'MEDICO') " +
+                         "FROM public.dim_personal dp " +
+                         "LEFT JOIN public.dim_especialidad de ON dp.id_especialidad = de.id_especialidad " +
+                         "WHERE dp.id_user = ? " +
+                         "LIMIT 1";
+            especialidad = jdbcTemplate.queryForObject(sql, String.class, user.getIdUser());
+
+            if (especialidad != null && !especialidad.equals("MEDICO")) {
+                log.info("✅ Especialidad obtenida para usuario {}: {}", user.getNameUser(), especialidad);
+            } else {
+                especialidad = null;
+            }
+        } catch (Exception e) {
+            log.warn("⚠️ No se pudo obtener especialidad para usuario {}: {}", user.getNameUser(), e.getMessage());
+            especialidad = null;
+        }
+
         Map<String, Object> claims = new HashMap<>();
         claims.put("id_user", user.getIdUser());  // 🆕 CRITICO: ID en el JWT para persistencia
         claims.put("roles", roles);
         claims.put("permisos", null);
         claims.put("nombre_completo", user.getNombreCompleto());  // ✅ Nombre y apellido
+        if (especialidad != null) {
+            claims.put("especialidad", especialidad);  // ✅ v1.77.0: Especialidad del médico
+        }
 
         String token = jwtService.generateToken(claims, userDetails);
 
@@ -152,6 +179,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                 .permisos(null)
                 .requiereCambioPassword(user.getRequiereCambioPassword() != null ? user.getRequiereCambioPassword() : false)  // 🔑 Flag de primer acceso
                 .sessionId(sessionId)  // 🆕 ID de sesión para tracking
+                .especialidad(especialidad)  // ✅ v1.77.0: Especialidad del médico
                 .message("Inicio de sesión exitoso")
                 .build();
     }

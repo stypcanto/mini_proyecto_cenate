@@ -242,6 +242,20 @@ public class GestionPacienteController {
     }
 
     /**
+     * ⭐ v1.76.0: Obtener datos del médico logueado (nombre + especialidad)
+     * Utilizado por frontend para mostrar especialidad y determinar si mostrar columna de ECG
+     *
+     * @return JSON con nombre y especialidad del médico actual
+     */
+    @GetMapping("/medico/info")
+    @CheckMBACPermission(pagina = "/roles/medico/pacientes", accion = "ver", mensajeDenegado = "No tiene permiso")
+    public ResponseEntity<Map<String, String>> obtenerInfoMedicoActual() {
+        log.info("👨‍⚕️ GET /api/gestion-pacientes/medico/info - Obteniendo info del médico actual");
+        Map<String, String> info = servicio.obtenerInfoMedicoActual();
+        return ResponseEntity.ok(info);
+    }
+
+    /**
      * ⭐ Dashboard Coordinador: Obtener médicos de Teleurgencias con estadísticas
      * Retorna lista de médicos en el área de Teleurgencias con conteo de atenciones
      * @return Lista de MedicoTeleurgenciasDTO con estadísticas de atenciones

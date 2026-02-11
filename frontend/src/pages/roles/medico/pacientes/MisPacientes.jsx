@@ -33,6 +33,33 @@ import gestionPacientesService from '../../../../services/gestionPacientesServic
 import ipressService from '../../../../services/ipressService';
 import ModalEvaluacionECG from '../../../../components/teleecgs/ModalEvaluacionECG';
 import teleecgService from '../../../../services/teleecgService';
+import { useAuth } from '../../../../context/AuthContext';
+
+// ✅ v1.78.0: Sistema Genérico de Especialidades
+// Define qué funcionalidades tiene cada tipo de especialidad
+const SPECIALTY_FEATURES = {
+  CARDIOLOGIA: {
+    keywords: ['cardio', 'corazón'],
+    features: ['EKG_COLUMNS', 'EKG_ACTION'],
+    name: 'Cardiología'
+  },
+  ENDOCRINOLOGIA: {
+    keywords: ['endocrin', 'diabetes'],
+    features: ['GLUCOSE_MONITORING'],
+    name: 'Endocrinología'
+  },
+  TERAPIA_LENGUAJE: {
+    keywords: ['lenguaje', 'fonoaudiol', 'terapia del habla', 'speech'],
+    features: ['SPEECH_THERAPY_NOTES'],
+    name: 'Terapia del Lenguaje'
+  },
+  MEDICINA_GENERAL: {
+    keywords: ['general', 'médico'],
+    features: [],
+    name: 'Medicina General'
+  }
+  // Agregar más especialidades según sea necesario
+};
 
 // Estilos de animaciones personalizadas
 const animationStyles = `
@@ -84,20 +111,71 @@ const animationStyles = `
 `;
 
 export default function MisPacientes() {
-  // ✅ v1.66.4: Obtener información del médico autenticado desde localStorage
-  const esCardiologo = useMemo(() => {
-    try {
-      const userData = localStorage.getItem('user');
-      if (!userData) return false;
+  // ✅ v1.78.0: Obtener información del médico autenticado desde AuthContext + localStorage + pacientes
+  const { user: authUser } = useAuth();
 
-      const user = JSON.parse(userData);
-      const especialidad = user.especialidad || user.especialidadNombre || '';
-      return especialidad.toUpperCase().includes('CARDIO');
-    } catch (error) {
-      console.error('Error al verificar especialidad:', error);
-      return false;
+  // Estado para rastrear la especialidad del médico (se actualiza cuando carguen los pacientes)
+  const [userSpecialty, setUserSpecialty] = useState(null);
+
+  // Función auxiliar para detectar la especialidad basada en palabras clave
+  const detectSpecialtyByKeywords = (text) => {
+    if (!text) return null;
+    const textLower = text.toLowerCase();
+    for (const [key, config] of Object.entries(SPECIALTY_FEATURES)) {
+      if (config.keywords.some(keyword => textLower.includes(keyword))) {
+        return key;
+      }
     }
-  }, []);
+    return null;
+  };
+
+  // ✅ v1.78.0: Sistema genérico para detectar especialidad y sus características
+  const specialtyConfig = useMemo(() => {
+    try {
+      let detectedSpecialty = null;
+
+      // 1. Intentar desde AuthContext
+      if (authUser?.especialidad) {
+        detectedSpecialty = detectSpecialtyByKeywords(authUser.especialidad);
+        if (detectedSpecialty) {
+          console.log('✅ v1.78.0: Especialidad detectada desde AuthContext:', detectedSpecialty, 'Nombre:', authUser.especialidad);
+          return SPECIALTY_FEATURES[detectedSpecialty];
+        }
+      }
+
+      // 2. Intentar desde localStorage
+      const userData = localStorage.getItem('user');
+      if (userData) {
+        const user = JSON.parse(userData);
+        const especialidad = user.especialidad || user.especialidadNombre || '';
+        detectedSpecialty = detectSpecialtyByKeywords(especialidad);
+        if (detectedSpecialty) {
+          console.log('✅ v1.78.0: Especialidad detectada desde localStorage:', detectedSpecialty, 'Nombre:', especialidad);
+          return SPECIALTY_FEATURES[detectedSpecialty];
+        }
+      }
+
+      // 3. Si se detectó desde pacientes, usar ese valor
+      if (userSpecialty) {
+        console.log('✅ v1.78.0: Especialidad detectada desde pacientes:', userSpecialty);
+        return SPECIALTY_FEATURES[userSpecialty];
+      }
+
+      console.log('⚠️ v1.78.0: No se detectó especialidad');
+      return null;
+    } catch (error) {
+      console.error('Error al detectar especialidad:', error);
+      return null;
+    }
+  }, [authUser, userSpecialty]);
+
+  // Helper para verificar si la especialidad actual tiene una característica
+  const hasFeature = (feature) => {
+    return specialtyConfig?.features?.includes(feature) || false;
+  };
+
+  // Alias para mantener compatibilidad con código existente
+  const esCardiologo = hasFeature('EKG_COLUMNS');
 
   const [pacientes, setPacientes] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -188,15 +266,32 @@ export default function MisPacientes() {
     }
   }, [pacientes]);
 
+  // ✅ v1.78.0: Cargar especialidades PRIMERO, luego pacientes (evita race condition)
   useEffect(() => {
-    cargarPacientes();
     cargarEspecialidades();
   }, []);
+
+  // Esperar a que las especialidades carguen antes de cargar pacientes
+  useEffect(() => {
+    if (especialidades.length > 0) {
+      console.log('✅ v1.78.0: Especialidades cargadas, ahora cargando pacientes...');
+      cargarPacientes();
+    }
+  }, [especialidades.length]);
+
+  // ✅ v1.78.0: Cargar ECGs cuando se detecta que es cardiólogo
+  useEffect(() => {
+    if (esCardiologo && pacientes.length > 0) {
+      console.log('✅ v1.78.0: Cargando conteos de ECG para cardiólogo...');
+      cargarConteosECG(pacientes);
+    }
+  }, [esCardiologo]);
 
   const cargarEspecialidades = async () => {
     try {
       const data = await gestionPacientesService.obtenerEspecialidades();
       setEspecialidades(Array.isArray(data) ? data : []);
+      console.log('✅ v1.78.0: Especialidades cargadas:', data);
     } catch (error) {
       console.error('Error cargando especialidades:', error);
     }
@@ -259,12 +354,39 @@ export default function MisPacientes() {
         console.log('🔍 [DEBUG] TODOS LOS CAMPOS:', JSON.stringify(data[0], null, 2));
       }
       setPacientes(Array.isArray(data) ? data : []);
-      // ✅ v1.66.4: Cargar conteos de ECG solo si es cardiólogo
-      if (data?.length > 0) {
-        if (esCardiologo) {
-          cargarConteosECG(data);
+
+      // ✅ v1.78.0: Detectar especialidad desde el primer paciente si no está en contexto
+      if (data?.length > 0 && !authUser?.especialidad && especialidades.length > 0) {
+        const primerPaciente = data[0];
+        let especialidadDetectada = null;
+
+        // El especialidadMedico viene del backend como ID (número)
+        if (primerPaciente?.especialidadMedico) {
+          const especIdMedico = parseInt(primerPaciente.especialidadMedico);
+
+          // ✅ FIX v1.78.0: Usar descServicio en lugar de nombre (bug encontrado)
+          const especialidadEncontrada = especialidades.find(esp => esp.id === especIdMedico);
+
+          if (especialidadEncontrada?.descServicio) {
+            especialidadDetectada = detectSpecialtyByKeywords(especialidadEncontrada.descServicio);
+            console.log('✅ v1.78.0: Especialidad encontrada en backend:', especialidadEncontrada.descServicio);
+            console.log('✅ v1.78.0: Especialidad mapeada a:', especialidadDetectada);
+
+            if (especialidadDetectada) {
+              setUserSpecialty(especialidadDetectada);
+              console.log('✅ v1.78.0: Sistema de especialidades activado para:', especialidadDetectada);
+            }
+          } else {
+            console.warn('⚠️ v1.78.0: No se encontró especialidad con ID:', especIdMedico);
+            console.warn('⚠️ v1.78.0: IDs disponibles:', especialidades.map(e => e.id).join(', '));
+          }
         }
+      }
+
+      // ✅ v1.78.0: Mostrar notificación de carga
+      if (data?.length > 0) {
         toast.success(`${data.length} pacientes cargados`);
+        // Los ECGs se cargarán automáticamente en el useEffect cuando se detecte la especialidad
       }
     } catch (error) {
       console.error('Error cargando pacientes:', error);

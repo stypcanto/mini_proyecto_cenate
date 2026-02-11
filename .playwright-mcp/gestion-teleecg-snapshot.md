@@ -1,0 +1,623 @@
+- generic [ref=e157]:
+  - complementary [ref=e158]:
+    - generic [ref=e160]:
+      - generic [ref=e163]:
+        - img "Logo CENATE" [ref=e164]
+        - button "Colapsar menu" [ref=e165] [cursor=pointer]:
+          - img [ref=e166]
+      - navigation [ref=e168]:
+        - generic [ref=e196]:
+          - button "Bolsas de Pacientes" [ref=e197] [cursor=pointer]:
+            - generic [ref=e198]:
+              - img [ref=e199]
+              - generic [ref=e203]: Bolsas de Pacientes
+            - img [ref=e204]
+          - generic [ref=e206]:
+            - link "Solicitudes de Bolsa - Asignación a Gestoras" [ref=e207] [cursor=pointer]:
+              - /url: /modulos/bolsas/solicitudes
+              - img [ref=e208]
+              - generic [ref=e211]: Solicitudes de Bolsa - Asignación a Gestoras
+            - link "Cargar desde Excel" [ref=e212] [cursor=pointer]:
+              - /url: /bolsas/cargar-excel
+              - img [ref=e213]
+              - generic [ref=e217]: Cargar desde Excel
+            - link "Solicitudes" [ref=e218] [cursor=pointer]:
+              - /url: /bolsas/solicitudes
+              - img [ref=e219]
+              - generic [ref=e222]: Solicitudes
+            - button "Módulo 107" [ref=e224] [cursor=pointer]:
+              - generic [ref=e225]:
+                - img [ref=e226]
+                - generic [ref=e230]: Módulo 107
+              - img [ref=e231]
+        - generic [ref=e233]:
+          - button "Gestión de Citas" [ref=e234] [cursor=pointer]:
+            - generic [ref=e235]:
+              - img [ref=e236]
+              - generic [ref=e239]: Gestión de Citas
+            - img [ref=e240]
+          - generic [ref=e242]:
+            - link "Bienvenida" [ref=e243] [cursor=pointer]:
+              - /url: /citas/bienvenida
+              - img [ref=e244]
+              - generic [ref=e247]: Bienvenida
+            - link "Dashboard Citas" [ref=e248] [cursor=pointer]:
+              - /url: /citas/dashboard
+              - img [ref=e249]
+              - generic [ref=e254]: Dashboard Citas
+            - link "Gestionar Citas" [ref=e255] [cursor=pointer]:
+              - /url: /citas/gestion-asegurado
+              - img [ref=e256]
+              - generic [ref=e259]: Gestionar Citas
+            - link "Bolsa de Pacientes Asignados" [ref=e260] [cursor=pointer]:
+              - /url: /citas/bolsa-pacientes
+              - img [ref=e261]
+              - generic [ref=e264]: Bolsa de Pacientes Asignados
+      - paragraph [ref=e171]: v1.37.4
+  - main "Contenido principal" [ref=e172]:
+    - generic [ref=e174]:
+      - button "Notificaciones" [ref=e175] [cursor=pointer]:
+        - img [ref=e176]
+      - button "S Susy Test Test Test SOPORTE_TI" [ref=e180] [cursor=pointer]:
+        - generic [ref=e182]: S
+        - generic [ref=e183]:
+          - generic [ref=e184]: Susy Test Test Test
+          - generic [ref=e185]: SOPORTE_TI
+        - img [ref=e186]
+    - generic [ref=e188]:
+      - generic [ref=e307]:
+        - generic [ref=e310]:
+          - generic [ref=e311]: S
+          - generic [ref=e312]:
+            - heading "Bienvenid(a), Susy" [level=1] [ref=e313]
+            - paragraph [ref=e314]: Gestor de Citas - Gestión de Pacientes Asignados
+            - generic [ref=e315]:
+              - generic [ref=e316]: "Rol: GESTOR DE CITAS"
+              - generic [ref=e317]: 📅 miércoles, 11 de febrero de 2026
+        - generic [ref=e318]:
+          - heading "Estadísticas" [level=3] [ref=e319]
+          - generic [ref=e320]:
+            - generic [ref=e321]:
+              - generic [ref=e322]:
+                - generic [ref=e323]: Total
+                - img [ref=e324]
+              - generic [ref=e329]: "259"
+            - generic [ref=e330]:
+              - generic [ref=e331]:
+                - generic [ref=e332]: Por Atender
+                - img [ref=e333]
+              - generic [ref=e336]: "66"
+            - generic [ref=e337]:
+              - generic [ref=e338]:
+                - generic [ref=e339]: Completados
+                - img [ref=e340]
+              - generic [ref=e343]: "0"
+            - generic [ref=e344]:
+              - generic [ref=e345]:
+                - generic [ref=e346]: Nuevos
+                - img [ref=e347]
+              - generic [ref=e349]: "192"
+            - generic [ref=e350]:
+              - generic [ref=e351]:
+                - generic [ref=e352]: Otros
+                - img [ref=e353]
+              - generic [ref=e355]: "1"
+        - generic [ref=e356]:
+          - generic [ref=e358]:
+            - generic [ref=e359]:
+              - heading "Mi Bandeja de Pacientes" [level=2] [ref=e360]
+              - paragraph [ref=e361]: Pacientes asignados desde el módulo de Bolsas de Pacientes
+            - generic [ref=e362]:
+              - button "Importar Paciente" [ref=e363] [cursor=pointer]:
+                - img [ref=e364]
+                - text: Importar Paciente
+              - button "Actualizar" [ref=e367] [cursor=pointer]:
+                - img [ref=e368]
+                - text: Actualizar
+              - button "🔄✓ Auto" [ref=e373] [cursor=pointer]
+              - generic [ref=e374]: 6:15:27
+          - generic [ref=e375]:
+            - generic [ref=e377]:
+              - generic [ref=e378]:
+                - img [ref=e379]
+                - text: FILTROS
+              - generic [ref=e382]:
+                - textbox "Buscar por DNI..." [ref=e383]
+                - img [ref=e384]
+              - combobox [ref=e388]:
+                - option "Todas las bolsas"
+                - option "Bolsa 107 - Importación de pacientes masiva"
+                - option "Bolsa Dengue - Control epidemiológico"
+                - option "Bolsa de recita/interconsulta"
+                - option "Bolsa Gestores Territorial - Gestión territorial"
+                - option "Bolsa para el servicio de gineco-oncología"
+                - option "Bolsa que capta la gestora"
+                - option "Bolsas Enfermería - Atenciones de enfermería"
+                - option "Bolsas Explotación de Datos - Análisis y reportes"
+                - option "Bolsas IVR - Sistema interactivo de respuesta de voz"
+                - option "Bolsas Reprogramación - Citas reprogramadas"
+                - option "Bolsa TeleECG - Electrocardiogramas remotos" [selected]
+                - option "Paciente derivados de PADOMI"
+              - combobox [ref=e390]:
+                - option "Todas (1)" [selected]
+                - option "H.I JUANJUI"
+                - option "P.M. BELLAVISTA"
+                - option "P.M. LAMAS"
+                - option "P.M. SAPOSOA"
+                - option "C.M. MORALES"
+                - option "C.M. METROPOLITANO TARAPOTO"
+                - option "H.I EL BUEN SAMARITANO"
+                - option "H.I HEROES DEL CENEPA"
+                - option "H.I HIGOS URCO"
+                - option "CAP I LAMUD"
+                - option "CAP I LONYA GRANDE"
+                - option "CAP I OCALLI"
+                - option "CAP I PEDRO RUIZ GALLO"
+                - option "CAP II RODRIGUEZ DE MENDOZA"
+                - option "CAP II SANTA MARIA DE NIEVA"
+                - option "CAP I IMAZA"
+                - option "H.III CHIMBOTE"
+                - option "C.M. CASMA"
+                - option "C.M. COISHCO"
+                - option "H.I CONO SUR"
+                - option "C.M. HUARMEY"
+                - option "C.M. SIHUAS"
+                - option "P.M. CABANA"
+                - option "P.M. CONCHUCOS"
+                - option "P.M. PAMPAS - ANCASH"
+                - option "CAP II SAN JACINTO"
+                - option "P.M. PALLASCA"
+                - option "POLICLINICO C.C. VICTOR PANTA RODRIGUEZ"
+                - option "H.II ABANCAY"
+                - option "H.I ANDAHUAYLAS"
+                - option "P.M. CURAHUASI"
+                - option "CAP II CHALHUANCA"
+                - option "P.M. CHUQUIBAMBILLA"
+                - option "H.I ALTO MAYO"
+                - option "CENTRO NACIONAL DE TELEMEDICINA"
+                - option "H.N. GUILLERMO ALMENARA IRIGOYEN"
+                - option "H.I RIOJA"
+                - option "POL. FRANCISCO PIZARRO"
+                - option "H.II VITARTE"
+                - option "POL. CHOSICA"
+                - option "POL. SAN LUIS"
+                - option "H.II RAMON CASTILLA"
+                - option "C.M. ANCIJE"
+                - option "C.M. CASAPALCA"
+                - option "P.M. CONSTRUCCION CIVIL"
+                - option "H.II SAN ISIDRO LABRADOR"
+                - option "CAP III ALFREDO PIAZZA ROBERTS"
+                - option "H.I JORGE VOTO BERNALES CORPANCHO"
+                - option "CAP III EL AGUSTINO"
+                - option "CAP III HUAYCAN"
+                - option "POLICLINICO SAN CARLOS"
+                - option "CAP III SAN BORJA"
+                - option "CAP III INDEPENDENCIA"
+                - option "H.III HOSPITAL DE EMERGENCIAS GRAU"
+                - option "CAP II CHINCHEROS"
+                - option "CAP II COTABAMBAS"
+                - option "H.N. CARLOS ALBERTO SEGUIN ESCOBEDO"
+                - option "H.II MANUEL DE TORRES MUÑOZ"
+                - option "H.I SAMUEL PASTOR"
+                - option "H.III YANAHUARA"
+                - option "H.I EDMUNDO ESCOMEL"
+                - option "CAP III MELITON SALAS TEJADA"
+                - option "P.M. ACARI"
+                - option "C.M. APLAO"
+                - option "P.M. ATICO"
+                - option "P.M. CARAVELI"
+                - option "P.M. CHALA"
+                - option "CAP I CHIVAY"
+                - option "P.M. CHUCARAPI"
+                - option "P.M. CHUQUIBAMBA"
+                - option "P.M. CONO NORTE"
+                - option "P.M. CORIRE"
+                - option "P.M. COTAHUASI"
+                - option "CAP II HUNTER"
+                - option "P.M. LA JOYA"
+                - option "P.M. MATARANI"
+                - option "CAP I EL PEDREGAL"
+                - option "P.M. SANTA RITA"
+                - option "P.M. VITOR"
+                - option "CAP I YURA"
+                - option "CAP III PAUCARPATA"
+                - option "CAP III ALTO SELVA ALEGRE"
+                - option "CAP III MIRAFLORES"
+                - option "CENTRO DE COMPLEJIDAD CRECIENTE CERRO COLORADO"
+                - option "H.II CAJAMARCA"
+                - option "C.M. CAJABAMBA"
+                - option "C.M. CELENDIN"
+                - option "P.M. BAMBAMARCA"
+                - option "P.M. CONTUMAZA"
+                - option "P.M. HUALGAYOC"
+                - option "P.M. SAN MARCOS"
+                - option "P.M. SAN MIGUEL - CAJAMARCA"
+                - option "P.M. SAN PABLO"
+                - option "P.M. TEMBLADERA"
+                - option "P.M. BOLIVAR"
+                - option "CAP II BAÑOS DEL INCA"
+                - option "H.N. ADOLFO GUEVARA VELASCO"
+                - option "H.I ESPINAR"
+                - option "H.I QUILLABAMBA"
+                - option "POLICLINICO METROPOLITANO AREQUIPA"
+                - option "H.II HUAMANGA"
+                - option "CAP II HUANTA"
+                - option "P.M. SAN MIGUEL - AYACUCHO"
+                - option "P.M. CANGALLO"
+                - option "P.M. SAN FRANCISCO"
+                - option "P.M. VILCASHUAMAN"
+                - option "P.M. QUEROBAMBA"
+                - option "P.M. HUANCAPI"
+                - option "CAP III METROPOLITANO AYACUCHO"
+                - option "H.I URUBAMBA"
+                - option "HOSPITAL GENERAL SICUANI"
+                - option "C.M. ACOMAYO"
+                - option "C.M. CALCA"
+                - option "C.M. URCOS"
+                - option "CAP II HUYRO"
+                - option "C.M. MACHU PICCHU"
+                - option "C.M. PAUCARTAMBO"
+                - option "POL. SAN SEBASTIAN"
+                - option "P.M. SALVACION"
+                - option "C.M. SAN FRANCISCO"
+                - option "C.M. METROPOLITANO CUSCO"
+                - option "CAP I SANTO TOMAS"
+                - option "CAP I ECHARATE"
+                - option "C.M. PICHARI"
+                - option "H.II HUANCAVELICA"
+                - option "P.M. ACOBAMBA"
+                - option "P.M. CASTROVIRREYNA"
+                - option "CAP I CHURCAMPA"
+                - option "CAP I HUAYTARA"
+                - option "C.M. LIRCAY"
+                - option "C.M. PAMPAS - HUANCAVELICA"
+                - option "P.M. TOCACHE"
+                - option "CAP I UCHIZA"
+                - option "H.II HUANUCO"
+                - option "H.I TINGO MARIA"
+                - option "C.M. LEONCIO PRADO"
+                - option "P.M. AUCAYACU"
+                - option "P.M. BAÑOS"
+                - option "P.M. SUNGARO"
+                - option "P.M. LA UNION"
+                - option "P.M. LLATA"
+                - option "P.M. PANAO"
+                - option "P.M. SANTA LUCIA"
+                - option "CAP III METROPOLITANO HUANUCO"
+                - option "H.I FELIX TORREALVA GUTIERREZ"
+                - option "H.II RENE TOCHE GROPPO"
+                - option "H.I MARIA REICHE NEWMAN"
+                - option "H.I ANTONIO SKRABONJA ANTONCICH"
+                - option "CAP I CHAVALINA"
+                - option "CAP II MACACONA"
+                - option "CAP II NAZCA"
+                - option "CAP I PALPA"
+                - option "CAP II PUQUIO"
+                - option "CAP I SAN CLEMENTE"
+                - option "CAP II SANTA MARGARITA"
+                - option "CAP I TAMBO DE MORA"
+                - option "CAP I VILLA TUPAC AMARU"
+                - option "CAP II LA TINGUIÑA"
+                - option "CAP I CORACORA"
+                - option "C.M. CARAZ"
+                - option "C.M. HUARI"
+                - option "P.M. PISCOBAMBA"
+                - option "CAP II POMABAMBA"
+                - option "P.M. YUNGAY"
+                - option "CAP III AMARILIS - PILLCO MARCA"
+                - option "CAP II PUEBLO NUEVO"
+                - option "H.IV AUGUSTO HERNANDEZ MENDOZA"
+                - option "H.II JAEN"
+                - option "P.M. PUCARA"
+                - option "CAP II SAN IGNACIO"
+                - option "H.III JULIACA"
+                - option "H.I LAMPA"
+                - option "C.M. AYAVIRI"
+                - option "POL. AZANGARO"
+                - option "P.M. HUANCANE"
+                - option "P.M. SAN RAFAEL"
+                - option "P.M. SANDIA"
+                - option "POL. JULIACA"
+                - option "P.M. SAN GABAN"
+                - option "CAP I ASILLO"
+                - option "CAP II CABANILLAS"
+                - option "CAP III ENRIQUE ENCINAS FRANCO"
+                - option "H.N. RAMIRO PRIALE PRIALE"
+                - option "H.II ALBERTO HURTADO ABADIA"
+                - option "H.I RIO NEGRO-SATIPO"
+                - option "H.I TARMA"
+                - option "POL. JAUJA"
+                - option "C.M. CONCEPCION"
+                - option "H.I DE LA SELVA CENT. Y ENF. TROPICALES"
+                - option "P.M. ANDAYCHAGUA"
+                - option "P.M. COBRIZA"
+                - option "P.M. CORPACANCHA"
+                - option "CAP II JUNIN"
+                - option "P.M. MARH TUNEL"
+                - option "CAP II MOROCOCHA"
+                - option "P.M. PACHACAYO"
+                - option "P.M. SAN CRISTOBAL"
+                - option "P.M. YAURICOCHA"
+                - option "P.M. SAN PEDRO DE CAJAS"
+                - option "POL. METROPOLITANO HUANCAYO"
+                - option "CAP II CHILCA"
+                - option "CAP I PICHANAQUI"
+                - option "CAP III MANTARO"
+                - option "CAP II CHUPACA"
+                - option "HG HOSPITAL BICENTENARIO JAUJA"
+                - option "H.IV VICTOR LAZARTE ECHEGARAY"
+                - option "H.II CHOCOPE"
+                - option "H.I ALBRECHT"
+                - option "H.I PACASMAYO"
+                - option "C.M. ASCOPE"
+                - option "POL. EL PORVENIR"
+                - option "H.I FLORENCIA DE MORA"
+                - option "H.I LA ESPERANZA"
+                - option "H.I MOCHE"
+                - option "P.M. CARTAVIO"
+                - option "CAP I CASCAS"
+                - option "CAP I CHICAMA"
+                - option "CAP II GUADALUPE"
+                - option "CAP II HUAMACHUCO"
+                - option "P.M. JEQUETEPEQUE"
+                - option "CAP II LAREDO"
+                - option "P.M. LIMONCARRO"
+                - option "CAP I MALABRIGO"
+                - option "CAP II OTUZCO"
+                - option "P.M. QUIRUVILCA"
+                - option "CAP I SALAVERRY"
+                - option "P.M. SAN JOSE"
+                - option "CAP I SAN PEDRO DE LLOC"
+                - option "P.M. SANTIAGO DE CHUCO"
+                - option "P.M. SAUSAL"
+                - option "CAP II SOLEDAD"
+                - option "CAP II TAYABAMBA"
+                - option "H.I VICTOR SOLES GARCIA"
+                - option "C.M. ESPECIALIZADO CASA GRANDE"
+                - option "P.M. PAIJAN"
+                - option "P.M. SANTIAGO DE CAO"
+                - option "C.M. HUANCHACO"
+                - option "POL. VICTOR LARCO HERRERA"
+                - option "P.M. CHAO"
+                - option "CAP III METROPOLITANO TRUJILLO"
+                - option "HOSP.ALT.COMPLEJIDAD VIRGEN DE LA PUERTA"
+                - option "C.M. CHOTA"
+                - option "C.M. CUTERVO"
+                - option "H.I AGUSTIN ARBULU NEYRA"
+                - option "C.M. CAYALTI"
+                - option "H.I CHEPEN"
+                - option "CAP III MANUEL MANRIQUE NEVADO"
+                - option "CAP II CHONGOYAPE"
+                - option "C.M. JUAN AITA VALLE"
+                - option "CAP II JAYANCA"
+                - option "CAP II MOTUPE"
+                - option "P.M. OLMOS"
+                - option "P.M. OYOTUN"
+                - option "P.M. SANTA CRUZ"
+                - option "P.M. TUCUME"
+                - option "P.M. UCUPE"
+                - option "POL. CHICLAYO OESTE"
+                - option "CAP III CARLOS CASTAÑEDA IPARRAGUIRRE"
+                - option "POL. AGUSTIN GAVIDIA SALCEDO"
+                - option "H.I NAYLAMP"
+                - option "CAP II PATAPO"
+                - option "H.II LUIS E. HEYSEN INCHAUSTEGUI"
+                - option "H.II CLINICO TUMAN"
+                - option "POL. DE COMPLEJIDAD CRECIENTE CUTERVO"
+                - option "HG HMBIC. CHOTA GILBERTO VILLENA ARROBAS"
+                - option "H.I VICTOR ALFREDO LAZO PERALTA"
+                - option "P.M. IBERIA"
+                - option "P.M. MAZUCO"
+                - option "H.II ILO"
+                - option "CAP I SAN ANTONIO DEL ESTRECHO"
+                - option "CAP II CABALLOCOCHA"
+                - option "CAP II NAUTA"
+                - option "CAP II REQUENA"
+                - option "CAP III IQUITOS"
+                - option "H.III IQUITOS"
+                - option "CAP II SAN JUAN BAUTISTA"
+                - option "CAP III PUNCHANA"
+                - option "H.II MOQUEGUA"
+                - option "P.M. OMATE"
+                - option "CAP II TORATA"
+                - option "POR DEFINIR"
+                - option "C.M. PAMPA INALAMBRICA"
+                - option "H.II CERRO DE PASCO"
+                - option "H.I HUARIACA"
+                - option "P.M. CHICRIN"
+                - option "P.M. COLQUIJIRCA"
+                - option "P.M. HUARON"
+                - option "CAP II HUAYLLAY"
+                - option "P.M. MILPO"
+                - option "H.I OXAPAMPA"
+                - option "P.M. PAUCARTAMBO"
+                - option "P.M. POZUZO"
+                - option "P.M. PUERTO BERMUDEZ"
+                - option "C.M. SAN JUAN"
+                - option "CAP II VILLA RICA"
+                - option "CAP II YANAHUANCA"
+                - option "H.III CAYETANO HEREDIA"
+                - option "H.I MIGUEL CRUZADO VERA"
+                - option "H.I SULLANA"
+                - option "H.II TALARA"
+                - option "H.II JORGE REATEGUI DELGADO"
+                - option "CAP III CASTILLA"
+                - option "P.M. AYABACA"
+                - option "P.M. CANCHAQUE"
+                - option "CAP II CHULUCANAS"
+                - option "P.M. HUANCABAMBA"
+                - option "P.M. IGNACIO ESCUDERO"
+                - option "C.M. LEONCIO AMAYA TUME"
+                - option "P.M. LOS ORGANOS"
+                - option "P.M. MORROPON"
+                - option "P.M. NEGRITOS"
+                - option "P.M. SECHURA"
+                - option "C.M. TAMBO GRANDE"
+                - option "C.M. EL ALTO"
+                - option "INSTITUTO PERUANO DE OFTALMOLOGIA"
+                - option "CAP III CATACAOS"
+                - option "CAP III METROPOLITANO DE PIURA"
+                - option "HOSPITAL PRIVADO DEL PERU"
+                - option "CENTRO SALUD ES HOSPITAL UNIVERSITARIO"
+                - option "IPRESS CLINICA INMACULADA"
+                - option "H.III PUNO"
+                - option "P.M. JULI"
+                - option "P.M. YUNGUYO"
+                - option "POL. ILAVE"
+                - option "CAP III METROPOLITANO DE PUNO"
+                - option "H.I CLINICA UNIVERSITARIA UNA-ESSALUD"
+                - option "CAP I DESAGUADERO"
+                - option "CAP II ACORA"
+                - option "CAP I LARAQUERI"
+                - option "H.III SUAREZ-ANGAMOS"
+                - option "POL. PROCERES"
+                - option "POL. PABLO BERMUDEZ"
+                - option "POL. CHINCHA"
+                - option "H.III DANIEL ALCIDES CARRION"
+                - option "CAP II LUIS PALZA LEVANO"
+                - option "P.M. LOCUMBA"
+                - option "CAP I TARATA"
+                - option "CAP III METROPOLITANO TACNA"
+                - option "CAP I ITE"
+                - option "CAP I YLABAYA"
+                - option "CAP II OSCAR FERNANDEZ DAVILA VELEZ"
+                - option "H.I CARLOS ALBERTO CORTEZ JIMENEZ"
+                - option "P.M. LA CRUZ"
+                - option "P.M. ZORRITOS"
+                - option "P.M. ZARUMILLA"
+                - option "P.M. AGUAYTIA"
+                - option "H.II CAÑETE"
+                - option "C.M. MALA"
+                - option "H.I ULDARICO ROCCA FERNANDEZ"
+                - option "POL. JUAN JOSE RODRIGUEZ LAZO"
+                - option "H.I CARLOS ALCANTARA BUTTERFIELD"
+                - option "POL. CLINICA CENTRAL DE PREVENCION"
+                - option "POL. SANTA CRUZ"
+                - option "CAP II LURIN"
+                - option "CAP III SAN JUAN DE MIRAFLORES"
+                - option "CENT.ATEN.INT.DE DIABETES E HIPERTENSION"
+                - option "HOSP.ESP.QUIR. SAN JUAN DE MIRAFLORES"
+                - option "P.M. HUMAYA"
+                - option "ONCOLOGIA S.A.C."
+                - option "H.N. ALBERTO SABOGAL SOLOGUREN"
+                - option "POL. FIORI"
+                - option "H.II LIMA NORTE - CALLAO L. NEGREIROS V."
+                - option "H.II GUSTAVO LANATTA LUJAN"
+                - option "CAP III PEDRO REYES BARBOZA"
+                - option "CAP II PARAMONGA"
+                - option "H.M. LOS OLIVOS"
+                - option "CAP II CHANCAY"
+                - option "P.M. RAURA"
+                - option "CAP II SAYAN"
+                - option "P.M. OYON"
+                - option "CAP III HNA. MARIA DONROSE SUTMOLLER"
+                - option "H.I MARINO MOLINA SCIPPA"
+                - option "H.I OCTAVIO MONGRUT MUÑOZ"
+                - option "CAP III PUENTE PIEDRA"
+                - option "CAP III CARABAYLLO"
+                - option "CAP III METROPOLITANO CALLAO"
+                - option "CAP III LUIS NEGREIROS VEGA"
+                - option "HE HOSP. ESPEC. QUIRURGICAS CANTA CALLAO"
+                - option "IPRESS PROLIMA - LOS OLIVOS"
+                - option "IPRESS VILLASOL - LOS OLIVOS"
+                - option "IPRESS TREBOL - LOS OLIVOS"
+                - option "IPRESS SAN MARTIN DE PORRES"
+                - option "POL. COMPLEJIDAD CRECIENTE SAN NICOLAS"
+                - option "CAP III SAN ISIDRO"
+                - option "P.M. ALAMEDA"
+                - option "P.M. ATALAYA"
+                - option "P.M. CONTAMANA"
+                - option "CAP I CAMPO VERDE"
+                - option "CAP I MANANTAY"
+                - option "H.I CONTINGENCIAL MOQUEGUA"
+                - option "CAP III BELLAVISTA"
+                - option "POLICLINICO BAYOVAR"
+                - option "INSTITUTO NACIONAL CARDIOVASCULAR"
+                - option "POL.- APP - ALBERTO LEOPOLDO BARTON T."
+                - option "IPRESS CLINICA SAN PEDRO"
+                - option "CENTRO NACIONAL DE SALUD RENAL"
+                - option "H.II HUARAZ"
+                - option "C.M. CARHUAZ"
+                - option "H.I YURIMAGUAS"
+                - option "CAP I ANTABAMBA"
+                - option "RETABLO - COMAS"
+                - option "CAP I HUANCASANCOS"
+                - option "SEDE CENTRAL"
+                - option "H.N. ALMANZOR AGUINAGA ASENJO"
+                - option "H.II TARAPOTO"
+                - option "H.II PUCALLPA"
+                - option "H.I AURELIO DIAZ-UFANO Y PERAL"
+                - option "H.N. EDGARDO REBAGLIATI MARTINS"
+                - option "CAP III SURQUILLO"
+                - option "UBAP JESUS MARIA"
+                - option "POL.- APP - GUILLERMO KAELIN DE LA F."
+                - option "PROGRAMA DE ATENCION DOMICILIARIA-PADOMI"
+                - option "CAP III HUARAL"
+              - generic [ref=e391] [cursor=pointer]:
+                - checkbox "Solo Pendientes (1)" [ref=e9747]
+                - generic [ref=e393]: Solo Pendientes (1)
+              - button "Más filtros" [ref=e394] [cursor=pointer]:
+                - text: Más filtros
+                - img [ref=e395]
+            - table [ref=e398]:
+              - rowgroup [ref=e399]:
+                - row "Seleccionar todo Bolsa F. Asign. DNI Paciente Edad Gén. Especialidad DNI Méd. Especialista Fecha/Hora Cita IPRESS Tipo Cita Tel. 1 Tel. 2 Estado F. Cambio Usuario Acc." [ref=e400]:
+                  - columnheader "Seleccionar todo" [ref=e401]:
+                    - checkbox "Seleccionar todo" [ref=e402] [cursor=pointer]
+                  - columnheader "Bolsa" [ref=e403]
+                  - columnheader "F. Asign." [ref=e404]
+                  - columnheader "DNI" [ref=e405]
+                  - columnheader "Paciente" [ref=e406]
+                  - columnheader "Edad" [ref=e407]
+                  - columnheader "Gén." [ref=e408]
+                  - columnheader "Especialidad" [ref=e409]
+                  - columnheader "DNI Méd." [ref=e410]
+                  - columnheader "Especialista" [ref=e411]
+                  - columnheader "Fecha/Hora Cita" [ref=e412]
+                  - columnheader "IPRESS" [ref=e413]
+                  - columnheader "Tipo Cita" [ref=e414]
+                  - columnheader "Tel. 1" [ref=e415]
+                  - columnheader "Tel. 2" [ref=e416]
+                  - columnheader "Estado" [ref=e417]
+                  - columnheader "F. Cambio" [ref=e418]
+                  - columnheader "Usuario" [ref=e419]
+                  - columnheader "Acc." [ref=e420]
+              - rowgroup [ref=e421]:
+                - row "Bolsa TeleECG - Electrocardiogramas remotos Hace 20 horas 16498964 CUMPA YAIPEN ROSA FLOR 91 F - 72945564 Carito Lisset Zumaeta Cabrera No seleccionado PROGRAMA DE ATENCION DOMICILIARIA-PADOMI Voluntaria 971871179 - Pendiente Citar Hace 9 minutos —" [ref=e9748]:
+                  - cell [ref=e1726]:
+                    - checkbox [ref=e1727] [cursor=pointer]
+                  - cell "Bolsa TeleECG - Electrocardiogramas remotos" [ref=e1728]
+                  - cell "Hace 20 horas" [ref=e1729]
+                  - cell "16498964" [ref=e1730]
+                  - cell "CUMPA YAIPEN ROSA FLOR" [ref=e1731]
+                  - cell "91" [ref=e1732]
+                  - cell "F" [ref=e1733]
+                  - cell "-" [ref=e1734]
+                  - cell "72945564" [ref=e1735]
+                  - cell "Carito Lisset Zumaeta Cabrera" [ref=e1736]
+                  - cell "No seleccionado" [ref=e1737]
+                  - cell "PROGRAMA DE ATENCION DOMICILIARIA-PADOMI" [ref=e1738]
+                  - cell "Voluntaria" [ref=e1739]
+                  - cell "971871179" [ref=e1740]:
+                    - link "971871179" [ref=e1741] [cursor=pointer]:
+                      - /url: https://wa.me/971871179
+                      - img [ref=e1742]
+                      - text: "971871179"
+                  - cell "-" [ref=e1744]:
+                    - link "-" [ref=e1745] [cursor=pointer]:
+                      - /url: https://wa.me/
+                      - img [ref=e1746]
+                      - text: "-"
+                  - cell "Pendiente Citar" [ref=e1748]:
+                    - generic [ref=e1749]: Pendiente Citar
+                  - cell "Hace 9 minutos" [ref=e9749]
+                  - cell "—" [ref=e1751]
+                  - cell [ref=e1752]:
+                    - generic [ref=e1753]:
+                      - button "Editar estado y cita" [ref=e1754] [cursor=pointer]:
+                        - img [ref=e1755]
+                      - button "Actualizar teléfono" [ref=e1757] [cursor=pointer]:
+                        - img [ref=e1758]
+      - generic [ref=e193]:
+        - paragraph [ref=e194]: CENATE - Sistema de Telemedicina - EsSalud 2026
+        - paragraph [ref=e195]: v1.37.4 - Performance Optimization + Deduplicación Automática + Foto Header + SMTP EsSalud
