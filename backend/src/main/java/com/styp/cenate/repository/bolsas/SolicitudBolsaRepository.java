@@ -849,7 +849,8 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
      * @param idPersonal ID del personal médico (doctor)
      * @return lista de TODAS las solicitudes asignadas al médico
      */
-    List<SolicitudBolsa> findByIdPersonal(Long idPersonal);
+    @Query("SELECT s FROM SolicitudBolsa s WHERE s.idPersonal = :idPersonal")
+    List<SolicitudBolsa> findByIdPersonal(@org.springframework.data.repository.query.Param("idPersonal") Long idPersonal);
 
     /**
      * ⭐ v1.62.0: Contar pacientes pendientes de un médico específico
