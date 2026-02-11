@@ -202,7 +202,44 @@ export default function IPRESSWorkspace() {
     try {
       setLoading(true);
 
-      // ✅ v1.81.1: Cargar máximo 10 páginas (500 registros) - no todas
+      // ✅ v1.82.0: SI hay búsqueda, enviar al backend. SI no, cargar normalmente
+      const tieneBusqueda = numDocBusqueda && numDocBusqueda.trim() !== "";
+      console.log(`🔍 cargarEKGs - Búsqueda: "${numDocBusqueda}" (tiene búsqueda: ${tieneBusqueda})`);
+
+      // ✅ OPCIÓN 1: Con búsqueda → Pasar DNI al backend (RÁPIDO)
+      if (tieneBusqueda) {
+        console.log(`🔎 Buscando en backend por DNI: ${numDocBusqueda}`);
+        const response = await teleecgService.listarImagenes(numDocBusqueda);
+        let imagenes = response?.content || [];
+        console.log(`✅ Backend retornó ${imagenes.length} imágenes para DNI ${numDocBusqueda}`);
+
+        // Procesar datos
+        const deduplicados = {};
+        imagenes.forEach(img => {
+          const dni = img.dni || img.numDocPaciente;
+          if (dni && !deduplicados[dni]) {
+            deduplicados[dni] = img;
+          }
+        });
+
+        const ecgsFormateados = Object.values(deduplicados).map(img => ({
+          ...img,
+          nombrePaciente: img.nombreCompleto || img.nombresPaciente || img.nombrePaciente || "Cargando...",
+          genero: img.generoPaciente || img.genero || img.sexo || "-",
+          edad: img.edadPaciente || img.edad || img.ageinyears || "-",
+          telefono: img.telefonoPrincipalPaciente || img.telefono || "-",
+          esUrgente: img.es_urgente === true || img.esUrgente === true,
+          cantidadImagenes: imagenes.filter(i => (i.dni || i.numDocPaciente) === (img.dni || img.numDocPaciente)).length,
+        }));
+
+        setEcgs(ecgsFormateados);
+        setTotalPagesFromBackend(response?.totalPages || 1);
+        setCurrentPage(1);
+        setLoading(false);
+        return;
+      }
+
+      // ✅ OPCIÓN 2: Sin búsqueda → Cargar primeras 10 páginas en paralelo (NORMAL)
       const response = await teleecgService.listarImagenes("");
       let imagenes = response?.content || [];
       const totalPages = Math.min(response?.totalPages || 1, 10);  // MAX 10 páginas
@@ -237,22 +274,6 @@ export default function IPRESSWorkspace() {
             imagenes = imagenes.concat(result.content);
           }
         });
-      }
-
-      // ✅ v1.81.0: Filtrar client-side - soportar DNIs con/sin ceros iniciales
-      if (numDocBusqueda && numDocBusqueda.trim() !== "") {
-        console.log(`🔍 Filtrando client-side por DNI: ${numDocBusqueda}`);
-
-        // Crear variantes del DNI para buscar (con y sin ceros iniciales)
-        const dniOriginal = numDocBusqueda.trim();
-        const dniSinCeros = numDocBusqueda.trim().replace(/^0+/, "");  // Remover ceros iniciales
-
-        imagenes = imagenes.filter(img => {
-          const dni = (img.dni || img.numDocPaciente || "").toString();
-          // Buscar tanto el DNI exacto como sin ceros iniciales
-          return dni.includes(dniOriginal) || dni.includes(dniSinCeros) || dniOriginal.includes(dni);
-        });
-        console.log(`✅ Encontradas ${imagenes.length} imágenes para DNI ${dniOriginal} (o ${dniSinCeros})`);
       }
 
       console.log(`✅ TOTAL de imágenes cargadas: ${imagenes.length}`);
@@ -313,22 +334,6 @@ export default function IPRESSWorkspace() {
         atendidas: imagenesAtendidas.length,      // Imágenes atendidas
         enviadas: imagenesPendientes.length,      // Imágenes enviadas
       };
-
-      // ✅ v1.81.5: Filtrar client-side si el usuario buscó algo
-      if (numDocBusqueda && numDocBusqueda.trim() !== "") {
-        console.log(`🔍 Filtrando client-side por DNI: ${numDocBusqueda}`);
-
-        // Crear variantes del DNI para buscar (con y sin ceros iniciales)
-        const dniOriginal = numDocBusqueda.trim();
-        const dniSinCeros = numDocBusqueda.trim().replace(/^0+/, "");
-
-        imagenes = imagenes.filter(img => {
-          const dni = (img.dni || img.numDocPaciente || "").toString();
-          // Buscar tanto el DNI exacto como sin ceros iniciales
-          return dni.includes(dniOriginal) || dni.includes(dniSinCeros) || dniOriginal.includes(dni);
-        });
-        console.log(`✅ Encontradas ${imagenes.length} imágenes para DNI ${dniOriginal} (o ${dniSinCeros})`);
-      }
 
       // ✅ MOSTRAR DATOS INMEDIATAMENTE (sin esperar enriquecimiento)
       setEcgs(Object.entries(imagenes.length > 0 ?
