@@ -316,7 +316,7 @@ export const componentRegistry = {
   },
 
   '/teleekgs/dashboard': {
-    component: lazy(() => import('../pages/roles/externo/teleecgs/TeleECGEstadisticas')),
+    component: lazy(() => import('../pages/roles/externo/teleecgs/TeleECGDashboard')),
     requiredAction: 'ver',
   },
 
