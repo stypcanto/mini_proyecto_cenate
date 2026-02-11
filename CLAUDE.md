@@ -1,9 +1,9 @@
 # CLAUDE.md - Proyecto CENATE
 
 > **Sistema de Telemedicina - EsSalud Perú**
-> **Versión:** v1.62.0 (2026-02-08) 🚀
-> **Última Feature:** v1.62.0 - Notificaciones de Pacientes Pendientes ✅ (2026-02-08)
-> **Última Feature Base:** v1.58.0 - Módulo de Requerimiento de Especialidades ✅ (2026-02-08)
+> **Versión:** v1.63.2 (2026-02-11) 🚀
+> **Última Feature:** v1.63.2 - Fix: Pacientes No Visibles en Mis Pacientes ✅ (2026-02-11)
+> **Última Feature Base:** v1.62.0 - Notificaciones de Pacientes Pendientes ✅ (2026-02-08)
 > **Status:** ✅ Production Ready
 
 ---

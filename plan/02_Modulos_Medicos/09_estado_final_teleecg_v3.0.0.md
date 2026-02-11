@@ -1665,6 +1665,35 @@ VALUES
 
 ## Troubleshooting
 
+### ❌ Problema: Médico no ve pacientes recién asignados en "Mis Pacientes"
+
+**Causa (SOLUCIONADO en v1.63.2)**: El filtro de rango de fechas estaba configurado por defecto a `'hoy'` (solo mostrar pacientes asignados hoy), pero cuando el coordinador asignaba un paciente en un día anterior, el médico no lo veía al ingresar al día siguiente.
+
+**Histórico**:
+- **v1.63.1**: Se reportó el problema (Dra. Zumaeta no veía pacientes asignados el día anterior)
+- **v1.63.2**: ✅ **SOLUCIONADO**
+
+**Solución implementada** (MisPacientes.jsx línea 122):
+
+```javascript
+// ANTES (v1.63.1)
+const [filtroRangoFecha, setFiltroRangoFecha] = useState('hoy');
+
+// DESPUÉS (v1.63.2 ✅)
+const [filtroRangoFecha, setFiltroRangoFecha] = useState('todos');
+```
+
+**Impacto**:
+- ✅ Médicos ahora ven TODOS los pacientes asignados al cargar la página
+- ✅ Pueden filtrar por fecha manualmente si desean
+- ✅ Pacientes asignados ayer/días anteriores son visibles inmediatamente
+- ✅ KPI cards siempre coinciden con la tabla mostrada
+
+**Componentes afectados**:
+- `frontend/src/pages/roles/medico/pacientes/MisPacientes.jsx` (línea 122)
+
+---
+
 ### ❌ Problema: "Imagen de baja calidad" pero usuario EXTERNO no ve el mensaje
 
 **Causa**: CENATE rechazó (OBSERVAR) pero EXTERNO no ve observaciones en rechazo

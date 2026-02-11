@@ -1,10 +1,48 @@
 # CHANGELOG - HISTORIAL DE VERSIONES CENATE
 
-**Última actualización:** 2026-02-08
+**Última actualización:** 2026-02-11
 
 ---
 
 ## 📊 VERSIONES PRINCIPALES
+
+### ✅ v1.63.2 - Fix: Pacientes No Visibles en "Mis Pacientes" (2026-02-11) 🐛 BUG FIX
+✅ **Filtro de Fecha Corregido** - Cambio de default 'hoy' a 'todos'
+✅ **Médicos Ven Todos Sus Pacientes** - Asignaciones previas ahora visibles
+✅ **KPI Cards Coinciden** - Conteos siempre sincronizados con tabla
+
+**Problema:**
+- Médicos no veían pacientes asignados en días anteriores
+- El filtro `filtroRangoFecha` estaba por defecto en 'hoy'
+- Si un paciente era asignado el 2026-02-10, el médico ingresaba el 2026-02-11 y no lo veía
+
+**Solución:**
+```javascript
+// ANTES (v1.63.1)
+const [filtroRangoFecha, setFiltroRangoFecha] = useState('hoy');
+
+// DESPUÉS (v1.63.2 ✅)
+const [filtroRangoFecha, setFiltroRangoFecha] = useState('todos');
+```
+
+**Archivos modificados:**
+- `frontend/src/pages/roles/medico/pacientes/MisPacientes.jsx` (línea 122)
+
+**Testing:**
+```bash
+# Caso de prueba:
+1. Coordinador asigna paciente en 2026-02-10
+2. Médico abre /roles/medico/pacientes en 2026-02-11
+3. ✅ Paciente ahora visible en tabla
+4. ✅ KPI "Total de Pacientes" = 1
+5. ✅ KPI "Pendientes" = 1
+6. Médico puede cambiar filtro a 'hoy' para ver solo asignaciones de hoy
+```
+
+**Documentación actualizada:**
+- `plan/02_Modulos_Medicos/09_estado_final_teleecg_v3.0.0.md` - Troubleshooting section
+
+---
 
 ### ✅ v1.62.0 - Notificaciones de Pacientes Pendientes para Médicos (2026-02-08) 🎉 NUEVA FEATURE
 ✅ **Contador de Pacientes Pendientes** - Muestra número de pacientes en estado "Pendiente"

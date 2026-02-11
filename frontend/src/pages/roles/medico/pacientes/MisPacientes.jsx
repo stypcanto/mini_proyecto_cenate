@@ -119,7 +119,7 @@ export default function MisPacientes() {
 
   // ============ v1.49.0: FILTROS AVANZADOS ============
   const [filtroIpress, setFiltroIpress] = useState('');
-  const [filtroRangoFecha, setFiltroRangoFecha] = useState('hoy');
+  const [filtroRangoFecha, setFiltroRangoFecha] = useState('todos');
   const [fechaDesde, setFechaDesde] = useState('');
   const [fechaHasta, setFechaHasta] = useState('');
   const [ipressDisponibles, setIpressDisponibles] = useState([]);

@@ -394,12 +394,14 @@ export default function GestionAsegurado() {
         const estadoObj = estadosDisponibles.find(e => e.codigo === codigoEstado);
         const descEstadoFinal = estadoObj ? estadoObj.descripcion : codigoEstado;
 
+        const edadAsignada = solicitud.paciente_edad || solicitud.pacienteEdad || "-";
+
         return {
           id: solicitud.id_solicitud || solicitud.idSolicitud || idx,
           numeroSolicitud: solicitud.numero_solicitud || solicitud.numeroSolicitud || "-",
           pacienteDni: solicitud.paciente_dni || solicitud.pacienteDni || "-",
           pacienteNombre: solicitud.paciente_nombre || solicitud.pacienteNombre || "-",
-          pacienteEdad: solicitud.paciente_edad || solicitud.pacienteEdad || "-",
+          pacienteEdad: edadAsignada,
           pacienteSexo: solicitud.paciente_sexo || solicitud.pacienteSexo || "-",
           pacienteTelefono: solicitud.paciente_telefono || solicitud.pacienteTelefono || "-",
           pacienteTelefonoAlterno: solicitud.paciente_telefono_alterno || solicitud.pacienteTelefonoAlterno || "-",
@@ -1689,7 +1691,7 @@ CENATE de Essalud`;
         </div>
 
         {/* Sección Principal: Pacientes Asignados */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-visible">
           <div className="bg-gradient-to-r from-blue-600 to-teal-600 p-6 text-white">
             <div className="flex items-center justify-between">
               <div>
@@ -2171,7 +2173,9 @@ CENATE de Essalud`;
                           </td>
                         )}
                         <td className="px-2 py-1.5 text-slate-600">
-                          {paciente.especialidad}
+                          {pacienteEditandoEstado === paciente.id
+                            ? citasAgendadas[paciente.id]?.especialidad || "Seleccionar médico"
+                            : paciente.especialidad}
                         </td>
                         {/* DNI MÉDICO - COLUMNA SEPARADA */}
                         <td className="px-2 py-1.5 text-slate-600">
@@ -2222,13 +2226,29 @@ CENATE de Essalud`;
                                           value={seleccionadoId || ""}
                                           onChange={(e) => {
                                             const idPers = e.target.value ? parseInt(e.target.value) : "";
+
+                                            // Buscar el médico seleccionado para obtener su especialidad
+                                            const medicoElegido = medicos.find(m => m.idPers === idPers);
+                                            console.log(`👨‍⚕️ Médico seleccionado:`, medicoElegido);
+                                            console.log(`📊 Campos disponibles: especialidad=${medicoElegido?.especialidad}, descArea=${medicoElegido?.descArea}, perPers=${medicoElegido?.perPers}`);
+
+                                            // Extraer especialidad: especialidad (del backend) > descArea > "SIN ESPECIALIDAD"
+                                            const especialidadMedico = medicoElegido?.especialidad ||
+                                                                      medicoElegido?.descArea ||
+                                                                      "SIN ESPECIALIDAD";
+
+                                            console.log(`📋 Especialidad final cargada: ${especialidadMedico}`);
+
                                             setCitasAgendadas(prev => ({
                                               ...prev,
                                               [paciente.id]: {
                                                 ...prev[paciente.id],
-                                                especialista: idPers
+                                                especialista: idPers,
+                                                especialidad: especialidadMedico  // ✅ Cargar especialidad automáticamente
                                               }
                                             }));
+
+                                            console.log(`✅ Estado actualizado para paciente ${paciente.id}`);
                                           }}
                                           className={`w-full px-2 py-1.5 border rounded-lg text-xs focus:outline-none focus:ring-2 cursor-pointer ${
                                             nuevoEstadoSeleccionado === "CITADO"
@@ -2238,11 +2258,13 @@ CENATE de Essalud`;
                                           title="Puedes asignar un médico independientemente del estado"
                                         >
                                           <option value="">Seleccionar médico...</option>
-                                          {medicos.map((medico) => (
-                                            <option key={medico.idPers} value={medico.idPers}>
-                                              {medico.nombre} {medico.colegPers ? `(${medico.colegPers})` : ""}
-                                            </option>
-                                          ))}
+                                          {medicos
+                                            .sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'))
+                                            .map((medico) => (
+                                              <option key={medico.idPers} value={medico.idPers}>
+                                                {medico.nombre} {medico.colegPers ? `(${medico.colegPers})` : ""}
+                                              </option>
+                                            ))}
                                         </select>
                                       ) : (
                                         <div className="text-center py-1">
@@ -2283,24 +2305,35 @@ CENATE de Essalud`;
                         <td className="px-2 py-1.5 text-slate-600">
                           {pacienteEditandoEstado === paciente.id ? (
                             // MODO EDICIÓN: DateTimePickerCita profesional
-                            <DateTimePickerCita
-                              value={citasAgendadas[paciente.id]?.fecha || ""}
-                              onChange={(fecha) => {
-                                setCitasAgendadas(prev => ({
-                                  ...prev,
-                                  [paciente.id]: {
-                                    ...prev[paciente.id],
-                                    fecha: fecha
-                                  }
-                                }));
-                              }}
-                              disabled={nuevoEstadoSeleccionado !== "CITADO"}
-                              idMedico={citasAgendadas[paciente.id]?.especialista}
-                              onValidationChange={(esValido) => {
-                                // Actualizar estado de validación si es necesario
-                                console.log(`Validación de cita: ${esValido ? "✅" : "❌"}`);
-                              }}
-                            />
+                            (() => {
+                              const especialistaId = citasAgendadas[paciente.id]?.especialista;
+                              const estaDisabled = !especialistaId;
+                              console.log(`📅 DateTimePickerCita para paciente ${paciente.id}:`, {
+                                especialistaId,
+                                estaDisabled,
+                                citasAgendadas: citasAgendadas[paciente.id]
+                              });
+                              return (
+                                <DateTimePickerCita
+                                  value={citasAgendadas[paciente.id]?.fecha || ""}
+                                  onChange={(fecha) => {
+                                    console.log(`📝 Fecha seleccionada: ${fecha}`);
+                                    setCitasAgendadas(prev => ({
+                                      ...prev,
+                                      [paciente.id]: {
+                                        ...prev[paciente.id],
+                                        fecha: fecha
+                                      }
+                                    }));
+                                  }}
+                                  disabled={estaDisabled}
+                                  idMedico={especialistaId}
+                                  onValidationChange={(esValido) => {
+                                    console.log(`Validación de cita: ${esValido ? "✅" : "❌"}`);
+                                  }}
+                                />
+                              );
+                            })()
                           ) : (
                             // MODO NORMAL: Mostrar como texto
                             (() => {
