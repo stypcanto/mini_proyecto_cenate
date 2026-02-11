@@ -777,6 +777,45 @@ export default function MisPacientes() {
   };
 
   // ✅ v1.48.0: Formato humanizado sin segundos (para tabla)
+  // ✅ v1.80.6: Formatear SOLO fecha sin hora (para FECHA TOMA EKG)
+  const formatearSoloFecha = (fecha) => {
+    if (!fecha) return '-';
+
+    try {
+      let año, mes, día;
+
+      // Manejar fechas DATE simples (YYYY-MM-DD)
+      const dateOnlyMatch = fecha.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+      if (dateOnlyMatch) {
+        año = dateOnlyMatch[1];
+        mes = dateOnlyMatch[2];
+        día = dateOnlyMatch[3];
+      } else if (fecha.endsWith('Z')) {
+        const date = new Date(fecha);
+        let peruDate = new Date(date.getTime() - (5 * 60 * 60 * 1000));
+        año = String(peruDate.getUTCFullYear());
+        mes = String(peruDate.getUTCMonth() + 1).padStart(2, '0');
+        día = String(peruDate.getUTCDate()).padStart(2, '0');
+      } else {
+        const isoMatch = fecha.match(/(\d{4})-(\d{2})-(\d{2})/);
+        if (!isoMatch) return '-';
+        año = isoMatch[1];
+        mes = isoMatch[2];
+        día = isoMatch[3];
+      }
+
+      const d = parseInt(día);
+      const mo = parseInt(mes);
+      const y = parseInt(año);
+
+      // Retornar solo la fecha en formato DD/MM/YY
+      return `${String(d).padStart(2, '0')}/${String(mo).padStart(2, '0')}/${String(y).slice(-2)}`;
+    } catch (e) {
+      console.error('Error formateando solo fecha:', fecha, e);
+      return '-';
+    }
+  };
+
   const formatearFechaHumana = (fecha) => {
     if (!fecha) return '-';
 
@@ -1818,7 +1857,7 @@ export default function MisPacientes() {
                       {/* ✅ v1.76.0: Fecha toma EKG - SOLO para Cardiología */}
                       {esCardiologo && (
                         <td className="px-4 py-3 text-gray-600 text-xs whitespace-nowrap">
-                          {paciente.fechaTomaEKG ? formatearFechaHumana(paciente.fechaTomaEKG) : '-'}
+                          {paciente.fechaTomaEKG ? formatearSoloFecha(paciente.fechaTomaEKG) : '-'}
                         </td>
                       )}
 
