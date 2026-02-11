@@ -293,6 +293,28 @@ public class GestionPacienteServiceImpl implements IGestionPacienteService {
 
             SolicitudBolsa updated = solicitudBolsaRepository.save(existing);
             log.info("✅ Condición actualizada en tabla dim_solicitud_bolsa: {}", id);
+
+            // ✅ v1.80.18: Sincronizar estado a tele_ecg_imagenes cuando se marca ATENDIDO
+            if ("Atendido".equalsIgnoreCase(condicion)) {
+                try {
+                    String pacienteDni = existing.getPacienteDni();
+                    if (pacienteDni != null && !pacienteDni.isEmpty()) {
+                        List<TeleECGImagen> ecgs = teleECGImagenRepository
+                            .findByNumDocPacienteOrderByFechaEnvioDesc(pacienteDni);
+
+                        for (TeleECGImagen ecg : ecgs) {
+                            if ("ENVIADA".equalsIgnoreCase(ecg.getEstado())) {
+                                ecg.setEstado("ATENDIDA");
+                                teleECGImagenRepository.save(ecg);
+                                log.info("✅ ECG actualizado a ATENDIDA para paciente {}: ID {}", pacienteDni, ecg.getIdImagen());
+                            }
+                        }
+                    }
+                } catch (Exception e) {
+                    log.warn("⚠️ Error sincronizando estado a tele_ecg_imagenes: {}", e.getMessage());
+                }
+            }
+
             return bolsaToGestionDTO(updated);
         }
 
