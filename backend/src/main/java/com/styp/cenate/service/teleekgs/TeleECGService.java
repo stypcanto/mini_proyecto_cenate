@@ -556,6 +556,7 @@ public class TeleECGService {
         imagen.setEvaluacion(evaluacion);
         imagen.setDescripcionEvaluacion(descripcion != null ? descripcion.trim() : "");
         imagen.setFechaEvaluacion(LocalDateTime.now());
+        imagen.setIdUsuarioEvaluador(idUsuarioEvaluador);
 
         // Guardar
         teleECGImagenRepository.save(imagen);
@@ -567,6 +568,7 @@ public class TeleECGService {
         dto.setIdImagen(idImagen);
         dto.setEvaluacion(evaluacion);
         dto.setFechaEvaluacion(LocalDateTime.now());
+        dto.setIdUsuarioEvaluador(idUsuarioEvaluador);
         return dto;
     }
 
