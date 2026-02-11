@@ -33,7 +33,6 @@ import gestionPacientesService from '../../../../services/gestionPacientesServic
 import ipressService from '../../../../services/ipressService';
 import ModalEvaluacionECG from '../../../../components/teleecgs/ModalEvaluacionECG';
 import teleecgService from '../../../../services/teleecgService';
-import useAuth from '../../../../hooks/useAuth';
 
 // Estilos de animaciones personalizadas
 const animationStyles = `
@@ -85,15 +84,20 @@ const animationStyles = `
 `;
 
 export default function MisPacientes() {
-  // ✅ v1.66.4: Obtener información del médico autenticado
-  const { user } = useAuth();
-
-  // ✅ v1.66.4: Verificar si el médico es cardiólogo
+  // ✅ v1.66.4: Obtener información del médico autenticado desde localStorage
   const esCardiologo = useMemo(() => {
-    if (!user) return false;
-    const especialidad = user.especialidad || user.especialidadNombre || '';
-    return especialidad.toUpperCase().includes('CARDIO');
-  }, [user]);
+    try {
+      const userData = localStorage.getItem('user');
+      if (!userData) return false;
+
+      const user = JSON.parse(userData);
+      const especialidad = user.especialidad || user.especialidadNombre || '';
+      return especialidad.toUpperCase().includes('CARDIO');
+    } catch (error) {
+      console.error('Error al verificar especialidad:', error);
+      return false;
+    }
+  }, []);
 
   const [pacientes, setPacientes] = useState([]);
   const [loading, setLoading] = useState(true);
