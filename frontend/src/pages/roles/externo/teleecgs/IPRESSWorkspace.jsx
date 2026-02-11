@@ -333,7 +333,8 @@ export default function IPRESSWorkspace() {
       setTodasLasImagenes(imagenes);
       setTotalPagesFromBackend(totalPages);
       setCurrentPage(1);
-      setStats(newStats);
+      // ⚠️ v1.87.10: NO hacer setStats() aquí - esperar a que carguen TODAS las páginas
+      // setStats() se ejecutará cuando terminen de cargar páginas 2-5 en background
       setLoading(false);  // ✅ LOADING FALSE AQUÍ - UI lista después de página 1
 
       console.log(`✅ UI actualizada con página 1. Cargando páginas 2-5 en BACKGROUND...`);
