@@ -1123,16 +1123,21 @@ export default function MisPacientes() {
         return;
       }
 
+      // ✅ IMPORTANTE: Extraer SOLO las observaciones clínicas (no el texto completo con hallazgos)
+      // El backend valida que descripcion tenga máximo 1000 caracteres
+      // evaluacionCompleta contiene hallazgos + observaciones + contexto, puede exceder 1000
+      const observacionesClínicas = evaluacionCompleta.split('OBSERVACIONES CLÍNICAS:\n')[1]?.trim() || '';
+
       // Preparar payload para el API
       const payload = {
         evaluacion: tipoEvaluacion,
-        descripcion: evaluacionCompleta
+        descripcion: observacionesClínicas
       };
 
       console.log('📤 Enviando evaluación al backend:', payload);
 
       // Llamar al API para guardar evaluación
-      const response = await teleecgService.evaluarImagen(idImagen, tipoEvaluacion, evaluacionCompleta);
+      const response = await teleecgService.evaluarImagen(idImagen, tipoEvaluacion, observacionesClínicas);
 
       console.log('✅ Respuesta del backend:', response);
 
