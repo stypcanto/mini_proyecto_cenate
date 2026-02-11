@@ -545,6 +545,54 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
             // Convertir fechas SQL a LocalDate/OffsetDateTime
             java.time.LocalDate fechaPreferida = convertToLocalDate(row[6]); // fecha_preferida_no_atendida
             java.time.LocalDate fechaNacimiento = convertToLocalDate(row[8]); // fecha_nacimiento
+
+            // Extraer IPRESS (antes de enriquecimiento)
+            String descIpress = (String) row[26];
+            String pacienteDni = (String) row[4];
+
+            // 🔍 DEBUG: Loguear cuándo descIpress está en blanco
+            if (isBlank(descIpress)) {
+                log.warn("🔍 [ENRIQUECIMIENTO] ID {} DNI {} - descIpress ESTÁ EN BLANCO, buscando en asegurados",
+                    row[0], pacienteDni);
+            }
+
+            // ✅ v1.68.0 - Enriquecimiento extendido: Si falta fecha_nacimiento o IPRESS, buscar en asegurados por DNI
+            if ((fechaNacimiento == null || isBlank(descIpress)) && !isBlank(pacienteDni)) {
+                try {
+                    Optional<Asegurado> aseguradoOpt = aseguradoRepository.findByDocPaciente(pacienteDni);
+                    if (aseguradoOpt.isPresent()) {
+                        Asegurado asegurado = aseguradoOpt.get();
+
+                        // Si no hay fecha_nacimiento en BD de solicitud, usar la del asegurado
+                        if (fechaNacimiento == null && asegurado.getFecnacimpaciente() != null) {
+                            fechaNacimiento = asegurado.getFecnacimpaciente();
+                            log.info("✅ v1.68.0 - Fecha nacimiento completada desde tabla asegurados para DNI: {}", pacienteDni);
+                        }
+
+                        // Si no hay IPRESS, usar casAdscripcion del asegurado y buscar descripción
+                        if (isBlank(descIpress) && !isBlank(asegurado.getCasAdscripcion())) {
+                            String codigoIpress = asegurado.getCasAdscripcion().trim();
+                            // Buscar IPRESS por código en dim_ipress
+                            try {
+                                Optional<Ipress> ipressOpt = ipressRepository.findByCodIpress(codigoIpress);
+                                if (ipressOpt.isPresent()) {
+                                    descIpress = ipressOpt.get().getDescIpress();
+                                    log.info("✅ v1.68.0 - IPRESS completada desde asegurados (código: {}) -> descripción: {}", codigoIpress, descIpress);
+                                } else {
+                                    descIpress = codigoIpress; // Fallback al código
+                                    log.warn("⚠️ v1.68.0 - No se encontró descripción para código IPRESS: {}", codigoIpress);
+                                }
+                            } catch (Exception e) {
+                                log.warn("⚠️ Error buscando descripción de IPRESS para código {}: {}", codigoIpress, e.getMessage());
+                                descIpress = codigoIpress; // Fallback al código
+                            }
+                        }
+                    }
+                } catch (Exception e) {
+                    log.error("❌ Error enriqueciendo fecha_nacimiento/IPRESS para DNI {}: {}", pacienteDni, e.getMessage());
+                }
+            }
+
             Integer edad = calcularEdad(fechaNacimiento);
 
             java.time.OffsetDateTime fechaSolicitud = convertToOffsetDateTime(row[22]); // fecha_solicitud (ajustado a 22)
@@ -556,7 +604,7 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
             String pacienteTelefono = (String) row[10];
             String pacienteTelefonoAlterno = (String) row[11];
             String pacienteEmail = (String) row[12];
-            String pacienteDni = (String) row[4];
+            // pacienteDni ya fue extraído línea 551
 
             // Si falta teléfono o correo, buscar en tabla de asegurados por DNI
             boolean necesitaEnriquecimiento = (isBlank(pacienteTelefono) || isBlank(pacienteTelefonoAlterno) || isBlank(pacienteEmail)) && !isBlank(pacienteDni);
@@ -637,7 +685,7 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
                     .fechaActualizacion(fechaActualizacion)
                     .estadoGestionCitasId(toLongSafe("estado_gestion_citas_id", row[24])) // ajustado a 24
                     .activo((Boolean) row[25])             // ajustado a 25
-                    .descIpress((String) row[26])          // desc_ipress desde JOIN (ajustado a 26)
+                    .descIpress(descIpress)                // desc_ipress enriquecida (v1.68.0: completada desde asegurados si es necesario)
                     .descRed((String) row[27])             // desc_red desde JOIN (ajustado a 27)
                     .descMacroregion((String) row[28])     // desc_macro desde JOIN (ajustado a 28)
                     .responsableGestoraId(row.length > 29 ? toLongSafe("responsable_gestora_id", row[29]) : null) // NEW v2.4.0 (ajustado a 29)
@@ -2424,8 +2472,49 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
      * Método auxiliar para obtenerSolicitudesAsignadasAGestora()
      */
     private SolicitudBolsaDTO mapSolicitudBolsaToDTO(SolicitudBolsa solicitud) {
-        // Enriquecer con descripción de IPRESS si existe
+        // ✅ v1.69.0 - Enriquecimiento extendido: Si falta fecha_nacimiento o IPRESS, buscar en asegurados por DNI
+        java.time.LocalDate fechaNacimiento = solicitud.getFechaNacimiento();
         String descIpress = null;
+
+        String pacienteDni = solicitud.getPacienteDni();
+        if ((fechaNacimiento == null || solicitud.getIdIpress() == null) && !isBlank(pacienteDni)) {
+            try {
+                Optional<Asegurado> aseguradoOpt = aseguradoRepository.findByDocPaciente(pacienteDni);
+                if (aseguradoOpt.isPresent()) {
+                    Asegurado asegurado = aseguradoOpt.get();
+
+                    // Si no hay fecha_nacimiento, usar la del asegurado
+                    if (fechaNacimiento == null && asegurado.getFecnacimpaciente() != null) {
+                        fechaNacimiento = asegurado.getFecnacimpaciente();
+                        log.info("✅ v1.69.0 - Fecha nacimiento completada desde tabla asegurados para DNI: {}", pacienteDni);
+                    }
+
+                    // Si no hay IPRESS, usar casAdscripcion del asegurado y buscar descripción
+                    if (solicitud.getIdIpress() == null && !isBlank(asegurado.getCasAdscripcion())) {
+                        String codigoIpress = asegurado.getCasAdscripcion().trim();
+                        // Buscar IPRESS por código en dim_ipress
+                        try {
+                            Optional<Ipress> ipressOpt = ipressRepository.findByCodIpress(codigoIpress);
+                            if (ipressOpt.isPresent()) {
+                                descIpress = ipressOpt.get().getDescIpress();
+                                log.info("✅ v1.69.0 - IPRESS completada desde asegurados (código: {}) -> descripción: {}", codigoIpress, descIpress);
+                            } else {
+                                // Si no encuentra por código, usar el código como fallback
+                                descIpress = codigoIpress;
+                                log.warn("⚠️ v1.69.0 - No se encontró descripción para código IPRESS: {}", codigoIpress);
+                            }
+                        } catch (Exception e) {
+                            log.warn("⚠️ Error buscando descripción de IPRESS para código {}: {}", codigoIpress, e.getMessage());
+                            descIpress = codigoIpress; // Fallback al código
+                        }
+                    }
+                }
+            } catch (Exception e) {
+                log.error("❌ Error enriqueciendo en mapSolicitudBolsaToDTO para DNI {}: {}", pacienteDni, e.getMessage());
+            }
+        }
+
+        // Enriquecer con descripción de IPRESS si existe (después de enriquecimiento)
         if (solicitud.getIdIpress() != null) {
             try {
                 Ipress ipress = ipressRepository.findById(solicitud.getIdIpress()).orElse(null);
@@ -2465,12 +2554,12 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
             .especialidad(solicitud.getEspecialidad())
             .fechaPreferidaNoAtendida(solicitud.getFechaPreferidaNoAtendida())
             .tipoDocumento(solicitud.getTipoDocumento())
-            .fechaNacimiento(solicitud.getFechaNacimiento())
+            .fechaNacimiento(fechaNacimiento)
             .pacienteSexo(solicitud.getPacienteSexo())
             .pacienteTelefono(solicitud.getPacienteTelefono())
             .pacienteTelefonoAlterno(solicitud.getPacienteTelefonoAlterno())
             .pacienteEmail(solicitud.getPacienteEmail())
-            .pacienteEdad(calcularEdad(solicitud.getFechaNacimiento()))
+            .pacienteEdad(calcularEdad(fechaNacimiento))
             .codigoIpressAdscripcion(solicitud.getCodigoIpressAdscripcion())
             .tipoCita(solicitud.getTipoCita())
             .tiempoInicioSintomas(solicitud.getTiempoInicioSintomas())
