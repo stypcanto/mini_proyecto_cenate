@@ -138,8 +138,10 @@ export default function MisECGsRecientes({
         clearTimeout(debounceTimerRef.current);
       }
     };
-  // ✅ v1.87.1: AMBAS dependencias - ahora seguro porque cargarEKGs está memoizado
-  }, [filtroDNI, onBuscarPorDNI]);
+  // ✅ v1.87.2: SOLO filtroDNI en dependencias
+  // onBuscarPorDNI se captura en el closure del setTimeout, eso está bien
+  // Reaccionar SOLO a cambios en filtroDNI para evitar infinite loops
+  }, [filtroDNI]);
 
   // ✅ v1.81.3: Búsqueda manual (sin useEffect infinito)
   // El usuario presiona Enter o hace clic en botón para buscar
