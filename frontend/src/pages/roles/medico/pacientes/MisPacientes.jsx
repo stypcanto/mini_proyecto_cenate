@@ -1147,8 +1147,8 @@ export default function MisPacientes() {
       // El modal se cierra cuando el usuario hace clic en "Atendido"
       // después de revisar los detalles con el botón "Ver Detalles"
 
-      // Recargar datos de pacientes si es necesario
-      // cargarPacientes();
+      // ✅ v1.86.2: Recargar datos para mostrar estetoscopio azul actualizado
+      cargarPacientes();
     } catch (error) {
       console.error('❌ Error guardando evaluación:', error);
       toast.error('❌ Error al guardar la evaluación: ' + (error.message || 'Error desconocido'));

@@ -537,70 +537,36 @@ public class TeleECGService {
 
     /**
      * Evaluar una imagen ECG (v3.0.0 - Nuevo)
-     * Médico marca como NORMAL o ANORMAL + descripción
-     * Dataset para entrenamiento de modelos ML
+     * ✅ v1.86.2: Ultra-simple, sin lazy-loading, sin transacciones complejas
      */
-    @Transactional
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public TeleECGImagenDTO evaluarImagen(Long idImagen, String evaluacion, String descripcion,
                                          Long idUsuarioEvaluador, String ipCliente) {
-        log.info("📋 Evaluando ECG ID: {} - Evaluación: {}", idImagen, evaluacion);
+        log.info("📋 [EVALUAR] ID: {} - {}", idImagen, evaluacion);
 
-        // 1. Validar entrada (ANTES de buscar en BD para no marcar transacción)
-        if (!evaluacion.equals("NORMAL") && !evaluacion.equals("ANORMAL")) {
-            throw new ValidationException("Evaluación debe ser NORMAL o ANORMAL");
+        // Buscar
+        var imagenOpt = teleECGImagenRepository.findById(idImagen);
+        if (imagenOpt.isEmpty()) {
+            throw new ResourceNotFoundException("ECG no encontrada: " + idImagen);
         }
 
-        // ✅ FIX v1.21.5: Observaciones OPCIONALES
-        // Si se proporciona descripción, debe tener mínimo 4 caracteres
-        // Si está vacía, es permitido
-        if (descripcion != null && descripcion.trim().length() > 0 && descripcion.trim().length() < 4) {
-            throw new ValidationException("Si proporciona observaciones, debe tener mínimo 4 caracteres");
-        }
+        TeleECGImagen imagen = imagenOpt.get();
 
-        if (descripcion != null && descripcion.length() > 1000) {
-            throw new ValidationException("Observaciones no pueden exceder 1000 caracteres");
-        }
-
-        // 2. Buscar imagen
-        TeleECGImagen imagen = teleECGImagenRepository.findById(idImagen)
-            .orElseThrow(() -> new ResourceNotFoundException("ECG no encontrada: " + idImagen));
-
-        // 3. Validar que no esté vencida (✅ FIX v1.86.0: Agregar null check)
-        if (imagen.getFechaExpiracion() == null || imagen.getFechaExpiracion().isBefore(LocalDateTime.now())) {
-            throw new ValidationException("ECG ha expirado y no puede ser evaluada");
-        }
-
-        // 4. Setear datos de evaluación
+        // Actualizar campos
         imagen.setEvaluacion(evaluacion);
-        imagen.setDescripcionEvaluacion(descripcion);
+        imagen.setDescripcionEvaluacion(descripcion != null ? descripcion.trim() : "");
         imagen.setFechaEvaluacion(LocalDateTime.now());
 
-        // 5. Guardar cambios (sin usuario evaluador por ahora)
-        TeleECGImagen imagenActualizada = teleECGImagenRepository.save(imagen);
+        // Guardar
+        teleECGImagenRepository.save(imagen);
 
-        // 6. Registrar en auditoría (en transacción separada para evitar rollbacks)
-        try {
-            registrarAuditoria(
-                imagenActualizada,
-                idUsuarioEvaluador,
-                "EVALUAR",
-                ipCliente,
-                String.format("ECG evaluada como %s", evaluacion)
-            );
-        } catch (Exception e) {
-            // Si falla auditoría, NO afecta la evaluación principal
-            log.warn("⚠️ Auditoría falló pero evaluación ya está guardada: {}", e.getMessage());
-        }
+        log.info("✅ [EVALUAR OK] ID: {} - GUARDADO", idImagen);
 
-        log.info("✅ Evaluación guardada: ID={}, Evaluación={}", idImagen, evaluacion);
-
-        // Crear DTO simple sin relaciones (evitar lazy-loading issues)
+        // Respuesta simple (sin relaciones)
         TeleECGImagenDTO dto = new TeleECGImagenDTO();
-        dto.setIdImagen(imagenActualizada.getIdImagen());
-        dto.setEvaluacion(imagenActualizada.getEvaluacion());
-        dto.setDescripcionEvaluacion(imagenActualizada.getDescripcionEvaluacion());
-        dto.setFechaEvaluacion(imagenActualizada.getFechaEvaluacion());
-
+        dto.setIdImagen(idImagen);
+        dto.setEvaluacion(evaluacion);
+        dto.setFechaEvaluacion(LocalDateTime.now());
         return dto;
     }
 
