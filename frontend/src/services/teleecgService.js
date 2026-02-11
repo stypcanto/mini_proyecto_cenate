@@ -102,13 +102,14 @@ const teleecgService = {
    * Listar todas las imágenes ECG
    * Convierte snake_case del API a camelCase para el frontend
    * ✅ v1.80.4: Soporta búsqueda por numDoc (DNI) en el backend
+   * ✅ v1.85.2: Reducido a 20 para carga más rápida (VPN)
    */
   listarImagenes: async (numDoc = "") => {
     const params = new URLSearchParams();
     if (numDoc) params.append("numDoc", numDoc);  // ✅ v1.80.4: Pasar numDoc (no numDocPaciente)
-    // ✅ v1.80.2: Obtener página 0 con 50 items (aumentado de 15)
+    // ✅ v1.85.2: Reducido a 20 items para carga inicial más rápida
     params.append("page", "0");
-    params.append("size", "50");  // ⚡ v1.80.2: Aumentado de 15 a 50
+    params.append("size", "20");  // ⚡ v1.85.2: Reducido de 50 a 20 (más rápido con VPN)
     // El frontend cargará las páginas siguientes automáticamente
 
     const response = await apiClient.get(`/teleekgs?${params}`, true);
@@ -119,12 +120,13 @@ const teleecgService = {
    * ✅ v1.80.4: Listar imágenes ECG de una página específica con soporte de búsqueda
    * Usado internamente para cargar todas las páginas automáticamente
    * Soporta búsqueda por DNI (numDoc) para persistir filtro al cargar páginas
+   * ✅ v1.85.2: Reducido a 20 para carga más rápida
    */
   listarImagenesPage: async (page = 0, numDoc = "") => {
     const params = new URLSearchParams();
     if (numDoc) params.append("numDoc", numDoc);  // ✅ v1.80.4: Persistir búsqueda al cambiar página
     params.append("page", page);
-    params.append("size", "50");  // ⚡ v1.80.2: Aumentado de 15 a 50 para mejor eficiencia
+    params.append("size", "20");  // ⚡ v1.85.2: Reducido de 50 a 20 (más rápido con VPN)
 
     const response = await apiClient.get(`/teleekgs?${params}`, true);
     return teleecgService._transformarResponse(response);
