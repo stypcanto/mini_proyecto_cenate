@@ -1923,7 +1923,7 @@ export default function MisPacientes() {
                               }
                               className={`relative inline-flex items-center justify-center gap-2 px-4 py-3 rounded-lg font-semibold text-sm transition-all ${
                                 evaluacionesEstados[paciente.numDoc]?.estado === 'EVALUADO'
-                                  ? 'bg-blue-100 text-blue-700 border border-blue-400 hover:bg-blue-200'
+                                  ? 'bg-green-600 text-white border border-green-700 hover:bg-green-700'
                                   : cargandoECG
                                   ? 'bg-gray-100 text-gray-400 cursor-not-allowed opacity-50 border border-gray-200'
                                   : 'bg-red-100 text-red-700 hover:bg-red-200 cursor-pointer border border-red-400 ecg-button-pulse'
@@ -1932,7 +1932,7 @@ export default function MisPacientes() {
                               <Stethoscope
                                 className={`w-6 h-6 ${
                                   evaluacionesEstados[paciente.numDoc]?.estado === 'EVALUADO'
-                                    ? 'text-blue-700'
+                                    ? 'text-white'
                                     : 'text-current'
                                 }`}
                                 strokeWidth={2}
