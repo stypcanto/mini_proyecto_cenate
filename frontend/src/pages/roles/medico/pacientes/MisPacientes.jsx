@@ -1401,7 +1401,7 @@ export default function MisPacientes() {
                     <th className="px-4 py-3 text-left">Fecha Asignación</th>
                     <th className="px-4 py-3 text-left">Fecha Atención</th>
                     {/* ✅ v1.66.0: Columna final para visualizar ECGs */}
-                    <th className="px-4 py-3 text-center">Imágenes ECG</th>
+                    <th className="px-4 py-3 text-center">Atender Lectura EKG</th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
