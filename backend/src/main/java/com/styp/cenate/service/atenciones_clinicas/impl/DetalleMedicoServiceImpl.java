@@ -47,22 +47,40 @@ public class DetalleMedicoServiceImpl implements DetalleMedicoService {
 
     @Override
     public List<DetalleMedicoDTO> obtenerTodosMedicos() {
-        log.info("🔍 Buscando TODOS los médicos disponibles (sin restricción de servicio)");
+        System.out.println("🔍 [obtenerTodosMedicos] Iniciando búsqueda de TODOS los médicos para TeleECG");
+        log.info("🔍 Buscando TODOS los médicos disponibles (sin restricción de servicio) - TeleECG");
 
         try {
-            // Obtener todos los médicos disponibles
+            // Obtener todos los médicos activos disponibles
+            // Para TeleECG, retornar todos los médicos sin restricción de servicio
             List<PersonalCnt> medicos = personalCntRepository.findAll();
 
-            log.info("✅ Se encontraron {} médicos disponibles en total", medicos.size());
+            System.out.println("📊 [obtenerTodosMedicos] Total de médicos en BD: " + medicos.size());
+            log.info("📊 Total de médicos en BD: {}", medicos.size());
 
-            // Convertir a DTOs
-            return medicos.stream()
+            if (medicos.isEmpty()) {
+                System.out.println("⚠️ [obtenerTodosMedicos] No se encontraron médicos");
+                log.warn("⚠️ No se encontraron médicos en la BD");
+                return new java.util.ArrayList<>();
+            }
+
+            // Filtrar por estado activo y convertir a DTOs
+            List<DetalleMedicoDTO> medicosActivos = medicos.stream()
+                    .filter(p -> p.getStatPers() != null && p.getStatPers().equals("A"))
                     .map(this::convertirADTO)
                     .collect(Collectors.toList());
 
+            System.out.println("✅ [obtenerTodosMedicos] Se encontraron " + medicosActivos.size() + " médicos ACTIVOS");
+            log.info("✅ Se encontraron {} médicos ACTIVOS disponibles para TeleECG", medicosActivos.size());
+
+            return medicosActivos;
+
         } catch (Exception e) {
-            log.error("❌ Error al obtener todos los médicos: {}", e.getMessage(), e);
-            throw new RuntimeException("Error al obtener todos los médicos: " + e.getMessage(), e);
+            System.out.println("❌ [obtenerTodosMedicos] Error: " + e.getMessage());
+            e.printStackTrace();
+            log.error("❌ Error al obtener todos los médicos para TeleECG: {}", e.getMessage(), e);
+            // Retornar lista vacía en lugar de lanzar excepción
+            return new java.util.ArrayList<>();
         }
     }
 
