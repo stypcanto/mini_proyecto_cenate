@@ -1144,6 +1144,33 @@ export default function ModalEvaluacionECG({
                             </p>
                           </div>
                         )}
+
+                        {/* ✅ v1.89.0: CLASIFICACIÓN DE URGENCIA (REQUERIDO PARA ANORMAL) */}
+                        {tipoEvaluacion === "ANORMAL" && (
+                          <div className="mt-3 bg-red-50 p-3 rounded-lg border-2 border-red-400">
+                            <label className="block text-xs font-bold text-red-900 mb-2">
+                              🚨 REQUERIDO: Clasificar URGENCIA MÉDICA
+                            </label>
+                            <div className="space-y-2">
+                              {URGENCIAS.map(u => (
+                                <label key={u.key} className={`flex items-center gap-2 cursor-pointer p-2 rounded transition-all text-xs ${
+                                  urgencia === u.key
+                                    ? `bg-${u.color}-200 border-2 border-${u.color}-600 ring-2 ring-${u.color}-300`
+                                    : "bg-white border border-gray-200 hover:bg-gray-50"
+                                }`}>
+                                  <input
+                                    type="radio"
+                                    checked={urgencia === u.key}
+                                    onChange={() => setUrgencia(u.key)}
+                                    className="w-4 h-4"
+                                  />
+                                  <span className="font-bold">{u.label}</span>
+                                  <span className="text-gray-600">({u.desc})</span>
+                                </label>
+                              ))}
+                            </div>
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>

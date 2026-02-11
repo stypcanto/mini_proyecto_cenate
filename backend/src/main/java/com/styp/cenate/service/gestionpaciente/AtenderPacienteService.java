@@ -6,7 +6,10 @@ import com.styp.cenate.model.bolsas.SolicitudBolsa;
 import com.styp.cenate.repository.AseguradoRepository;
 import com.styp.cenate.repository.bolsas.SolicitudBolsaRepository;
 import com.styp.cenate.repository.DimServicioEssiRepository;
+import com.styp.cenate.service.trazabilidad.TrazabilidadClinicaService;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import jakarta.persistence.EntityManager;
@@ -25,23 +28,14 @@ import java.util.List;
  */
 @Slf4j
 @Service
+@RequiredArgsConstructor
 public class AtenderPacienteService {
 
     private final SolicitudBolsaRepository solicitudBolsaRepository;
     private final AseguradoRepository aseguradoRepository;
     private final EntityManager entityManager;
     private final DimServicioEssiRepository servicioEssiRepository;
-
-    public AtenderPacienteService(
-            SolicitudBolsaRepository solicitudBolsaRepository,
-            AseguradoRepository aseguradoRepository,
-            EntityManager entityManager,
-            com.styp.cenate.repository.DimServicioEssiRepository servicioEssiRepository) {
-        this.solicitudBolsaRepository = solicitudBolsaRepository;
-        this.aseguradoRepository = aseguradoRepository;
-        this.entityManager = entityManager;
-        this.servicioEssiRepository = servicioEssiRepository;
-    }
+    private final TrazabilidadClinicaService trazabilidadClinicaService;  // ✅ v1.81.0
 
     @Transactional
     public void atenderPaciente(Long idSolicitudBolsa, String especialidadActual, AtenderPacienteRequest request) {
@@ -82,6 +76,19 @@ public class AtenderPacienteService {
         solicitudOriginal.setCondicionMedica("Atendido");
         solicitudBolsaRepository.save(solicitudOriginal);
         log.info("✅ Solicitud original marcada como Atendido");
+
+        // ✅ v1.81.0: Registrar atención en historial centralizado
+        try {
+            Long idMedicoActual = obtenerIdMedicoActual();
+            trazabilidadClinicaService.registrarDesdeMisPacientes(
+                idSolicitudBolsa,
+                request.getObservaciones(),
+                idMedicoActual
+            );
+            log.info("✅ [v1.81.0] Atención registrada en historial centralizado");
+        } catch (Exception e) {
+            log.warn("⚠️ [v1.81.0] Error registrando en historial: {}", e.getMessage());
+        }
 
         // 3. Crear bolsa Recita si aplica
         // ✅ v1.47.0: La Recita es una NUEVA SOLICITUD de seguimiento para la gestora

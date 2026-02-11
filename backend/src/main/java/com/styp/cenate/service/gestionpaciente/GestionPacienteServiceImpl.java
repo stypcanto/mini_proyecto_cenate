@@ -18,6 +18,7 @@ import com.styp.cenate.repository.TeleECGImagenRepository;
 import com.styp.cenate.repository.UsuarioRepository;
 import com.styp.cenate.repository.bolsas.SolicitudBolsaRepository;
 import com.styp.cenate.repository.chatbot.SolicitudCitaRepository;
+import com.styp.cenate.service.trazabilidad.TrazabilidadClinicaService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.EmptyResultDataAccessException;
@@ -57,6 +58,7 @@ public class GestionPacienteServiceImpl implements IGestionPacienteService {
     private final SolicitudBolsaRepository solicitudBolsaRepository;
     private final TeleECGImagenRepository teleECGImagenRepository;
     private final JdbcTemplate jdbcTemplate;  // ✅ v1.78.0: Para consultas directas de especialidad
+    private final TrazabilidadClinicaService trazabilidadClinicaService;  // ✅ v1.81.0: Para registrar en historial centralizado
 
     @Override
     @Transactional
@@ -294,24 +296,28 @@ public class GestionPacienteServiceImpl implements IGestionPacienteService {
             SolicitudBolsa updated = solicitudBolsaRepository.save(existing);
             log.info("✅ Condición actualizada en tabla dim_solicitud_bolsa: {}", id);
 
-            // ✅ v1.80.18: Sincronizar estado a tele_ecg_imagenes cuando se marca ATENDIDO
+            // ✅ v1.81.0: Registrar atención en historial centralizado cuando se marca ATENDIDO
             if ("Atendido".equalsIgnoreCase(condicion)) {
                 try {
+                    // Obtener ID del médico actual
+                    Long idMedicoActual = obtenerIdMedicoActual();
+
+                    // Registrar atención desde MisPacientes
+                    trazabilidadClinicaService.registrarDesdeMisPacientes(
+                        id,
+                        observacionesLimpias,
+                        idMedicoActual
+                    );
+
+                    // Sincronizar y registrar ECG si existe
                     String pacienteDni = existing.getPacienteDni();
                     if (pacienteDni != null && !pacienteDni.isEmpty()) {
-                        List<TeleECGImagen> ecgs = teleECGImagenRepository
-                            .findByNumDocPacienteOrderByFechaEnvioDesc(pacienteDni);
-
-                        for (TeleECGImagen ecg : ecgs) {
-                            if ("ENVIADA".equalsIgnoreCase(ecg.getEstado())) {
-                                ecg.setEstado("ATENDIDA");
-                                teleECGImagenRepository.save(ecg);
-                                log.info("✅ ECG actualizado a ATENDIDA para paciente {}: ID {}", pacienteDni, ecg.getIdImagen());
-                            }
-                        }
+                        trazabilidadClinicaService.registrarDesdeTeleECG(pacienteDni, idMedicoActual);
                     }
+
+                    log.info("✅ [v1.81.0] Atención registrada en historial centralizado - Solicitud: {}", id);
                 } catch (Exception e) {
-                    log.warn("⚠️ Error sincronizando estado a tele_ecg_imagenes: {}", e.getMessage());
+                    log.warn("⚠️ [v1.81.0] Error en trazabilidad - Solicitud {}: {}", id, e.getMessage());
                 }
             }
 
@@ -913,5 +919,34 @@ public class GestionPacienteServiceImpl implements IGestionPacienteService {
         log.info("📤 [EKG] Retornando para DNI {}: fechaToma={}", dni, fechaTomaEKG);
 
         return resultado;
+    }
+
+    // =====================================================================
+    // ✅ v1.81.0: HELPER PARA OBTENER ID DEL MÉDICO ACTUAL
+    // =====================================================================
+
+    /**
+     * ✅ v1.81.0: Obtiene el ID del médico (PersonalCnt) actualmente autenticado
+     *
+     * @return ID del médico, null si no se encuentra
+     */
+    private Long obtenerIdMedicoActual() {
+        try {
+            String username = SecurityContextHolder.getContext().getAuthentication().getName();
+            Usuario usuario = usuarioRepository.findByNameUserWithFullDetails(username)
+                .orElse(null);
+
+            if (usuario != null && usuario.getPersonalCnt() != null) {
+                Long idPers = usuario.getPersonalCnt().getIdPers();
+                log.debug("✅ [v1.81.0] Médico actual: {} (ID: {})", username, idPers);
+                return idPers;
+            }
+
+            log.warn("⚠️ [v1.81.0] No se pudo obtener ID del médico para usuario: {}", username);
+            return null;
+        } catch (Exception e) {
+            log.error("❌ [v1.81.0] Error obteniendo ID del médico actual", e);
+            return null;
+        }
     }
 }
