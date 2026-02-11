@@ -385,6 +385,29 @@ export default function IPRESSWorkspace() {
 
             console.log(`✅ [BACKGROUND] Total acumulado: ${imagenesAcumuladas.length} registros`);
             setTodasLasImagenes(imagenesAcumuladas);
+
+            // ✅ v1.87.7: Recalcular STATS GLOBALES con TODOS los datos (no solo página 1)
+            // Esto hace que el card negro muestre el TOTAL real de pacientes pendientes en toda la BD
+            const imagenesGlobalPendientes = imagenesAcumuladas.filter((img) => img.estado === "ENVIADA");
+            const imagenesGlobalObservadas = imagenesAcumuladas.filter((img) => img.estado === "OBSERVADA");
+            const imagenesGlobalAtendidas = imagenesAcumuladas.filter((img) => img.estado === "ATENDIDA");
+
+            const pacientesGlobalPendientes = new Set(imagenesGlobalPendientes.map(img => img.dni || img.numDocPaciente)).size;
+            const pacientesGlobalObservadas = new Set(imagenesGlobalObservadas.map(img => img.dni || img.numDocPaciente)).size;
+            const pacientesGlobalAtendidas = new Set(imagenesGlobalAtendidas.map(img => img.dni || img.numDocPaciente)).size;
+            const pacientesGlobalUnicos = new Set(imagenesAcumuladas.map(img => img.dni || img.numDocPaciente)).size;
+
+            const globalStats = {
+              total: imagenesAcumuladas.length,
+              cargadas: pacientesGlobalUnicos,  // Total de pacientes en toda la BD
+              enEvaluacion: pacientesGlobalPendientes,  // Total de pacientes con imágenes pendientes
+              observadas: pacientesGlobalObservadas,
+              atendidas: pacientesGlobalAtendidas,
+              enviadas: pacientesGlobalPendientes,
+            };
+
+            console.log(`✅ [BACKGROUND] Stats globales actualizados:`, globalStats);
+            setStats(globalStats);  // ✅ Actualizar cards con totales reales
           } catch (err) {
             console.error("❌ Error cargando páginas en background:", err);
           }
