@@ -47,16 +47,16 @@ public class DetalleMedicoServiceImpl implements DetalleMedicoService {
 
     @Override
     public List<DetalleMedicoDTO> obtenerTodosMedicos() {
-        log.info("🔍 Buscando TODOS los médicos activos disponibles para TeleECG");
+        log.info("🔍 Buscando médicos ASISTENCIALES activos disponibles para TeleECG");
 
         try {
-            // Obtener todos los médicos activos usando el método específico del repositorio
-            List<PersonalCnt> medicos = personalCntRepository.findByStatPers("A");
+            // Obtener solo los médicos con Tipo de Profesional = ASISTENCIAL
+            List<PersonalCnt> medicos = personalCntRepository.findAsistencialesActivos();
 
-            log.info("📊 Se encontraron {} médicos ACTIVOS en BD", medicos.size());
+            log.info("📊 Se encontraron {} médicos ASISTENCIALES ACTIVOS en BD", medicos.size());
 
             if (medicos.isEmpty()) {
-                log.warn("⚠️ No se encontraron médicos activos en la BD");
+                log.warn("⚠️ No se encontraron médicos ASISTENCIALES activos en la BD");
                 return new java.util.ArrayList<>();
             }
 
@@ -65,12 +65,12 @@ public class DetalleMedicoServiceImpl implements DetalleMedicoService {
                     .map(this::convertirADTO)
                     .collect(Collectors.toList());
 
-            log.info("✅ Se retornarán {} médicos ACTIVOS para TeleECG", medicosActivos.size());
+            log.info("✅ Se retornarán {} médicos ASISTENCIALES para TeleECG", medicosActivos.size());
 
             return medicosActivos;
 
         } catch (Exception e) {
-            log.error("❌ Error al obtener todos los médicos para TeleECG: {}", e.getMessage(), e);
+            log.error("❌ Error al obtener médicos ASISTENCIALES para TeleECG: {}", e.getMessage(), e);
             return new java.util.ArrayList<>();
         }
     }

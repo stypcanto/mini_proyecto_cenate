@@ -119,11 +119,31 @@ public interface PersonalCntRepository extends JpaRepository<PersonalCnt, Long> 
 
 	/**
 	 * Obtiene todos los médicos asociados a un servicio (especialidad) específico.
-	 * 
+	 *
 	 * @param idServicio identificador del servicio ESSI
 	 * @return lista de personal CNT asociado al servicio
 	 */
 	List<PersonalCnt> findByServicioEssi_IdServicio(Long idServicio);
+
+	/**
+	 * Obtiene todos los médicos asistenciales activos (sin especialidad específica)
+	 * Utilizado para TeleECG que no tiene especialidad asignada
+	 *
+	 * Filtra por:
+	 * - Estado activo (stat_pers = 'A')
+	 * - Tipo de profesional = 'ASISTENCIAL'
+	 *
+	 * @return lista de personal ASISTENCIAL activo
+	 */
+	@Query("SELECT DISTINCT p FROM PersonalCnt p " +
+	       "LEFT JOIN FETCH p.tipos pt " +
+	       "LEFT JOIN FETCH pt.tipoPersonal dtp " +
+	       "WHERE p.statPers = 'A' " +
+	       "AND EXISTS (SELECT 1 FROM p.tipos pt2 " +
+	       "            LEFT JOIN pt2.tipoPersonal dtp2 " +
+	       "            WHERE dtp2.descTipPers = 'ASISTENCIAL' " +
+	       "            AND dtp2.statTipPers = 'A')")
+	List<PersonalCnt> findAsistencialesActivos();
 
 	/**
 	 * Obtiene todo el personal asistencial de CENATE (CAS y 728) con servicioEssi y profesiones cargados.
