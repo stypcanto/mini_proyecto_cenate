@@ -202,26 +202,21 @@ export default function IPRESSWorkspace() {
     try {
       setLoading(true);
 
-      // ✅ Cargar primera página (con búsqueda si se proporciona DNI)
-      const response = await teleecgService.listarImagenes(numDocBusqueda);
+      // ✅ v1.81.0: SIEMPRE cargar TODOS los datos sin filtro (filtrar client-side)
+      const response = await teleecgService.listarImagenes("");  // NO pasar filtro
       let imagenes = response?.content || [];
       const totalPages = response?.totalPages || 1;
 
-      console.log(`✅ Response del backend página 1:`, response);
       console.log(`✅ Total de imágenes en página 1: ${imagenes.length}, totalPages: ${totalPages}`);
 
-      // ✅ v1.71.0: Guardar totalPages del backend
-      setTotalPagesFromBackend(totalPages);
-
-      // ✅ v1.80.4: Cargar TODAS las páginas EN PARALELO (con soporte de búsqueda)
+      // Cargar TODAS las páginas en paralelo (sin filtro)
       if (totalPages > 1) {
-        console.log(`📥 Cargando ${totalPages - 1} páginas en paralelo... (búsqueda: ${numDocBusqueda || "TODAS"})`);
+        console.log(`📥 Cargando ${totalPages - 1} páginas en paralelo...`);
 
-        // Crear array de promesas para todas las páginas
         const pagePromises = [];
         for (let page = 1; page < totalPages; page++) {
           pagePromises.push(
-            teleecgService.listarImagenesPage(page, numDocBusqueda)  // ✅ v1.80.4: Pasar DNI búsqueda
+            teleecgService.listarImagenesPage(page, "")  // Sin filtro
               .then(pageResponse => ({
                 success: true,
                 pageNum: page + 1,
@@ -236,18 +231,29 @@ export default function IPRESSWorkspace() {
           );
         }
 
-        // Esperar todas las promesas en paralelo
         const pageResults = await Promise.all(pagePromises);
-
-        // Procesar resultados
         pageResults.forEach(result => {
           if (result.success) {
             imagenes = imagenes.concat(result.content);
             console.log(`✅ Página ${result.pageNum} cargada: ${result.content.length} imágenes`);
-          } else {
-            console.warn(`⚠️ Error cargando página ${result.pageNum}:`, result.error?.message);
           }
         });
+      }
+
+      // ✅ v1.81.0: Filtrar client-side - soportar DNIs con/sin ceros iniciales
+      if (numDocBusqueda && numDocBusqueda.trim() !== "") {
+        console.log(`🔍 Filtrando client-side por DNI: ${numDocBusqueda}`);
+
+        // Crear variantes del DNI para buscar (con y sin ceros iniciales)
+        const dniOriginal = numDocBusqueda.trim();
+        const dniSinCeros = numDocBusqueda.trim().replace(/^0+/, "");  // Remover ceros iniciales
+
+        imagenes = imagenes.filter(img => {
+          const dni = (img.dni || img.numDocPaciente || "").toString();
+          // Buscar tanto el DNI exacto como sin ceros iniciales
+          return dni.includes(dniOriginal) || dni.includes(dniSinCeros) || dniOriginal.includes(dni);
+        });
+        console.log(`✅ Encontradas ${imagenes.length} imágenes para DNI ${dniOriginal} (o ${dniSinCeros})`);
       }
 
       console.log(`✅ TOTAL de imágenes cargadas: ${imagenes.length}`);
