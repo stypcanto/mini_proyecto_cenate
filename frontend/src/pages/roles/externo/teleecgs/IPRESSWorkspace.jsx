@@ -202,21 +202,21 @@ export default function IPRESSWorkspace() {
     try {
       setLoading(true);
 
-      // ✅ v1.81.0: SIEMPRE cargar TODOS los datos sin filtro (filtrar client-side)
-      const response = await teleecgService.listarImagenes("");  // NO pasar filtro
+      // ✅ v1.81.1: Cargar máximo 10 páginas (500 registros) - no todas
+      const response = await teleecgService.listarImagenes("");
       let imagenes = response?.content || [];
-      const totalPages = response?.totalPages || 1;
+      const totalPages = Math.min(response?.totalPages || 1, 10);  // MAX 10 páginas
 
       console.log(`✅ Total de imágenes en página 1: ${imagenes.length}, totalPages: ${totalPages}`);
 
-      // Cargar TODAS las páginas en paralelo (sin filtro)
+      // Cargar hasta 10 páginas en paralelo
       if (totalPages > 1) {
-        console.log(`📥 Cargando ${totalPages - 1} páginas en paralelo...`);
+        console.log(`📥 Cargando ${totalPages - 1} páginas en paralelo (máx 10)...`);
 
         const pagePromises = [];
         for (let page = 1; page < totalPages; page++) {
           pagePromises.push(
-            teleecgService.listarImagenesPage(page, "")  // Sin filtro
+            teleecgService.listarImagenesPage(page, "")
               .then(pageResponse => ({
                 success: true,
                 pageNum: page + 1,
@@ -235,7 +235,6 @@ export default function IPRESSWorkspace() {
         pageResults.forEach(result => {
           if (result.success) {
             imagenes = imagenes.concat(result.content);
-            console.log(`✅ Página ${result.pageNum} cargada: ${result.content.length} imágenes`);
           }
         });
       }
