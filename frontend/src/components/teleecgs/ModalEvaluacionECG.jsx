@@ -700,6 +700,13 @@ export default function ModalEvaluacionECG({
     }
   };
 
+  // ✅ v1.80.0: Cerrar modal después de marcar como atendido
+  useEffect(() => {
+    if (mostrarDetallesEvaluacion === false && evaluacionGuardada === true) {
+      // No hacer nada especial, mantener el modal abierto con botones de acción
+    }
+  }, [mostrarDetallesEvaluacion, evaluacionGuardada]);
+
   // ✅ v1.80.0: Marcar EKG como atendido en el workspace
   const handleMarcarAtendido = async () => {
     try {

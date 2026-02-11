@@ -1022,12 +1022,18 @@ export default function MisPacientes() {
     try {
       console.log('✅ Evaluación ECG confirmada:', evaluacionData);
 
+      // ✅ v1.80.0: No cerrar el modal automáticamente
+      // El modal se cierra cuando el usuario hace clic en "Atendido"
+      // después de revisar los detalles con el botón "Ver Detalles"
+
       // Aquí se guardaría la evaluación en el backend si es necesario
-      // Por ahora solo cerramos el modal y mostramos éxito
+      // Por ahora solo mostramos éxito
 
       toast.success('Evaluación del ECG guardada correctamente');
-      setShowECGModal(false);
-      setEcgActual(null);
+
+      // ✅ v1.80.0: REMOVER cierre automático - permitir que el usuario vea botones de acción
+      // setShowECGModal(false);
+      // setEcgActual(null);
 
       // Recargar datos de pacientes si es necesario
       // cargarPacientes();
