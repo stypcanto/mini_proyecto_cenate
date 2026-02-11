@@ -69,7 +69,7 @@ export default function ModalEvaluacionECG({
   const [showReferencia, setShowReferencia] = useState(false);
 
   // ✅ v9.2.0: 5️⃣ CUADRÍCULA PROPORCIONAL - Zoom con grid preservado
-  const [showGrid, setShowGrid] = useState(true);
+  const [showGrid, setShowGrid] = useState(false);  // ✅ v1.79.2: Desactivada por defecto
   const [gridZoomLevel, setGridZoomLevel] = useState(100);
 
   // ════════════════════════════════════════
@@ -1069,109 +1069,7 @@ export default function ModalEvaluacionECG({
                     )}
                   </div>
 
-                  {/* PLAN DE SEGUIMIENTO (v11.0.0 - Recitación + Interconsulta) */}
-                  <div className="bg-purple-50 p-2.5 rounded-lg border border-purple-200 space-y-3">
-                    <p className="font-semibold text-purple-900 text-xs">📋 Plan de Seguimiento</p>
-
-                    {/* SECCIÓN 1: RECITACIÓN */}
-                    <div className="bg-white p-2 rounded border border-purple-200">
-                      <label className="flex items-center gap-2 cursor-pointer text-xs mb-2">
-                        <input
-                          type="checkbox"
-                          checked={planSeguimiento.recitarEnTresMeses}
-                          onChange={(e) => setPlanSeguimiento({...planSeguimiento, recitarEnTresMeses: e.target.checked})}
-                          className="w-4 h-4"
-                        />
-                        <span className="font-medium text-purple-900">🔄 Recitar en 3 meses</span>
-                      </label>
-
-                      {planSeguimiento.recitarEnTresMeses && (
-                        <div className="ml-4">
-                          <input
-                            type="text"
-                            placeholder="Especialidad para recitación (ej: Cardiología)"
-                            value={planSeguimiento.recitarEspecialidad}
-                            onChange={(e) => setPlanSeguimiento({...planSeguimiento, recitarEspecialidad: e.target.value})}
-                            className="w-full px-2 py-1.5 text-xs border rounded focus:outline-none focus:ring-2 focus:ring-purple-500"
-                          />
-                        </div>
-                      )}
-                    </div>
-
-                    {/* SECCIÓN 2: INTERCONSULTA */}
-                    <div className="bg-white p-2 rounded border border-purple-200">
-                      <label className="flex items-center gap-2 cursor-pointer text-xs mb-2">
-                        <input
-                          type="checkbox"
-                          checked={planSeguimiento.interconsulta}
-                          onChange={(e) => setPlanSeguimiento({...planSeguimiento, interconsulta: e.target.checked})}
-                          className="w-4 h-4"
-                        />
-                        <span className="font-medium text-purple-900">🏥 Interconsulta a especialista</span>
-                      </label>
-
-                      {planSeguimiento.interconsulta && (
-                        <div className="ml-4 space-y-2">
-                          <div className="flex gap-2">
-                            <input
-                              type="text"
-                              placeholder="Especialidad (ej: Cardiología)"
-                              value={interconsultaBusqueda}
-                              onChange={(e) => setInterconsultaBusqueda(e.target.value)}
-                              onKeyDown={(e) => {
-                                if (e.key === 'Enter' && interconsultaBusqueda.trim()) {
-                                  if (!planSeguimiento.interconsultaEspecialidades.includes(interconsultaBusqueda.trim())) {
-                                    setPlanSeguimiento({
-                                      ...planSeguimiento,
-                                      interconsultaEspecialidades: [...planSeguimiento.interconsultaEspecialidades, interconsultaBusqueda.trim()],
-                                    });
-                                  }
-                                  setInterconsultaBusqueda("");
-                                }
-                              }}
-                              className="flex-1 px-2 py-1.5 text-xs border rounded focus:outline-none focus:ring-2 focus:ring-purple-500"
-                            />
-                            <button
-                              onClick={() => {
-                                if (interconsultaBusqueda.trim() && !planSeguimiento.interconsultaEspecialidades.includes(interconsultaBusqueda.trim())) {
-                                  setPlanSeguimiento({
-                                    ...planSeguimiento,
-                                    interconsultaEspecialidades: [...planSeguimiento.interconsultaEspecialidades, interconsultaBusqueda.trim()],
-                                  });
-                                  setInterconsultaBusqueda("");
-                                }
-                              }}
-                              className="px-2 py-1.5 text-xs bg-purple-600 text-white rounded hover:bg-purple-700 font-semibold"
-                            >
-                              Agregar
-                            </button>
-                          </div>
-
-                          {planSeguimiento.interconsultaEspecialidades.length > 0 && (
-                            <div className="flex flex-wrap gap-1">
-                              {planSeguimiento.interconsultaEspecialidades.map((esp) => (
-                                <div
-                                  key={esp}
-                                  className="inline-flex items-center gap-1 bg-purple-200 text-purple-900 px-2 py-1 rounded text-xs font-medium"
-                                >
-                                  {esp}
-                                  <button
-                                    onClick={() => handleRemoveInterconsultaEspecialidad(esp)}
-                                    className="ml-1 hover:text-purple-700 font-bold"
-                                  >
-                                    ✕
-                                  </button>
-                                </div>
-                              ))}
-                            </div>
-                          )}
-                          {planSeguimiento.interconsultaEspecialidades.length === 0 && (
-                            <p className="text-xs text-gray-500 italic">Sin especialidades seleccionadas</p>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  </div>
+                  {/* ✅ v1.79.2: Sección de Plan de Seguimiento removida por solicitud del usuario */}
                 </>
               )}
             </div>

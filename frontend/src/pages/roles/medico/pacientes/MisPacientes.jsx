@@ -26,7 +26,8 @@ import {
   Heart,
   Calendar,
   Eye,
-  Activity
+  Activity,
+  Stethoscope
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import gestionPacientesService from '../../../../services/gestionPacientesService';
@@ -76,6 +77,21 @@ const animationStyles = `
   @keyframes slideUpKpi {
     from { opacity: 0; transform: translateY(20px); }
     to { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes pulseGreen {
+    0%, 100% {
+      box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.4);
+      transform: scale(1);
+    }
+    50% {
+      box-shadow: 0 0 0 4px rgba(34, 197, 94, 0);
+      transform: scale(1.02);
+    }
+  }
+
+  .ecg-button-pulse {
+    animation: pulseGreen 2s infinite;
   }
 
   .kpi-card-hover {
@@ -628,7 +644,15 @@ export default function MisPacientes() {
     try {
       let año, mes, día, hora, minuto;
 
-      if (fecha.endsWith('Z')) {
+      // ✅ v1.79.0: Manejar fechas DATE simples (YYYY-MM-DD) sin hora
+      const dateOnlyMatch = fecha.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+      if (dateOnlyMatch) {
+        año = dateOnlyMatch[1];
+        mes = dateOnlyMatch[2];
+        día = dateOnlyMatch[3];
+        hora = '00';
+        minuto = '00';
+      } else if (fecha.endsWith('Z')) {
         const date = new Date(fecha);
         let peruDate = new Date(date.getTime() - (5 * 60 * 60 * 1000));
 
@@ -852,16 +876,23 @@ export default function MisPacientes() {
     setMostrarDetalles(true);
   };
 
-  // ✅ v1.66.1: Abrir modal de evaluación de ECG para un paciente
+  // ✅ v1.79.3: Abrir modal de evaluación de ECG - OPTIMIZADO para rapidez
   const abrirCarruselECG = async (paciente) => {
     try {
       setCargandoECG(true);
 
-      const resultado = await teleecgService.listarAgrupoPorAsegurado(paciente.numDoc, '');
+      // ⚡ OPTIMIZACIÓN: Abrir modal INMEDIATAMENTE (sin esperar imagen)
+      setShowECGModal(true);
+
+      // ⚡ Cargar datos en paralelo (Promise.all para mayor velocidad)
+      const [resultado] = await Promise.all([
+        teleecgService.listarAgrupoPorAsegurado(paciente.numDoc, ''),
+      ]);
 
       if (resultado.length === 0 || !resultado[0].imagenes || resultado[0].imagenes.length === 0) {
         toast.error('No se encontraron imágenes ECG para este paciente');
         setCargandoECG(false);
+        setShowECGModal(false);
         return;
       }
 
@@ -869,27 +900,34 @@ export default function MisPacientes() {
       const primerECG = resultado[0].imagenes[0];
       const idImagen = primerECG.id_imagen || primerECG.idImagen;
 
-      // Cargar contenido de la imagen (base64)
-      const imagenConContenido = await teleecgService.verPreview(idImagen);
+      // ⚡ Cargar imagen en paralelo (no bloquea la apertura del modal)
+      teleecgService.verPreview(idImagen)
+        .then(imagenConContenido => {
+          // Preparar objeto ECG para el modal
+          const ecgParaModal = {
+            ...primerECG,
+            ...imagenConContenido,
+            paciente: {
+              numDoc: paciente.numDoc,
+              nombres: paciente.apellidosNombres,
+              ipress: paciente.ipress,
+            },
+          };
 
-      // Preparar objeto ECG para el modal
-      const ecgParaModal = {
-        ...primerECG,
-        ...imagenConContenido,
-        paciente: {
-          numDoc: paciente.numDoc,
-          nombres: paciente.apellidosNombres,
-          ipress: paciente.ipress,
-        },
-      };
+          setEcgActual(ecgParaModal);
+          setCargandoECG(false);
+        })
+        .catch(error => {
+          console.error('Error cargando preview:', error);
+          // Aún así mostrar el modal sin la imagen
+          setCargandoECG(false);
+        });
 
-      setEcgActual(ecgParaModal);
-      setShowECGModal(true);
-      setCargandoECG(false);
     } catch (error) {
       console.error('Error cargando ECG:', error);
       toast.error('Error al cargar la imagen ECG');
       setCargandoECG(false);
+      setShowECGModal(false);
     }
   };
 
@@ -1664,24 +1702,20 @@ export default function MisPacientes() {
                         {formatearFechaHumana(paciente.fechaAtencion)}
                       </td>
 
-                      {/* ✅ v1.66.4: Columna final - Ver imágenes ECG (SOLO CARDIÓLOGOS) */}
+                      {/* ✅ v1.79.1: Columna final - Ver imágenes ECG (SOLO CARDIÓLOGOS) */}
                       {esCardiologo && (
                         <td className="px-4 py-3 text-center">
                           <button
                             onClick={() => abrirCarruselECG(paciente)}
-                            disabled={cargandoECG || !ecgCounts[paciente.numDoc] || ecgCounts[paciente.numDoc] === 0}
-                            title={
-                              ecgCounts[paciente.numDoc] > 0
-                                ? `Ver ${ecgCounts[paciente.numDoc]} ECG(s)`
-                                : 'Sin ECGs disponibles'
-                            }
-                            className={`relative inline-flex items-center justify-center gap-2 px-3 py-2 rounded-lg font-semibold text-sm transition-all ${
-                              ecgCounts[paciente.numDoc] > 0
-                                ? 'bg-red-100 text-red-700 hover:bg-red-200 cursor-pointer border border-red-300'
-                                : 'bg-gray-100 text-gray-400 cursor-not-allowed opacity-50 border border-gray-200'
+                            disabled={cargandoECG}
+                            title="Atender lectura de ECG"
+                            className={`relative inline-flex items-center justify-center gap-2 px-4 py-3 rounded-lg font-semibold text-sm transition-all ${
+                              cargandoECG
+                                ? 'bg-gray-100 text-gray-400 cursor-not-allowed opacity-50 border border-gray-200'
+                                : 'bg-green-100 text-green-700 hover:bg-green-200 cursor-pointer border border-green-400 ecg-button-pulse'
                             }`}
                           >
-                            <Activity className="w-4 h-4" strokeWidth={2} />
+                            <Stethoscope className="w-6 h-6" strokeWidth={2} />
                             {ecgCounts[paciente.numDoc] > 0 && (
                               <span className="font-bold">{ecgCounts[paciente.numDoc]}</span>
                             )}
