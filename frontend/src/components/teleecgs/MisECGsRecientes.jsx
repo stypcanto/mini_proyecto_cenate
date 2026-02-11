@@ -97,13 +97,8 @@ export default function MisECGsRecientes({
     }
   }, [filtroDNI]);
 
-  // ✅ v1.80.4: Cuando el usuario termina de tipear DNI, disparar búsqueda en backend
-  useEffect(() => {
-    if (filtroDNI && filtroDNI.trim() !== '') {
-      console.log(`🔍 Buscando en backend: DNI ${filtroDNI}`);
-      onBuscarPorDNI(filtroDNI);  // Llamar al backend con búsqueda
-    }
-  }, [filtroDNI, onBuscarPorDNI]);
+  // ✅ v1.81.3: Búsqueda manual (sin useEffect infinito)
+  // El usuario presiona Enter o hace clic en botón para buscar
 
   // ✅ Cargar imagen cuando se abre preview
   useEffect(() => {
@@ -389,6 +384,11 @@ export default function MisECGsRecientes({
                 placeholder="12345678"
                 value={filtroDNI}
                 onChange={(e) => setFiltroDNI(e.target.value)}
+                onKeyPress={(e) => {
+                  if (e.key === 'Enter' && filtroDNI.trim() !== '') {
+                    onBuscarPorDNI(filtroDNI);  // ✅ v1.81.3: Buscar al presionar Enter
+                  }
+                }}
                 maxLength="8"
                 className="w-full pl-8 pr-8 py-2 border border-blue-300 rounded-lg text-xs bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
               />
