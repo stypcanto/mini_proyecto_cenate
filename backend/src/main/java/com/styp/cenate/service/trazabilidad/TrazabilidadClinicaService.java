@@ -116,14 +116,20 @@ public class TrazabilidadClinicaService {
      *
      * @param idSolicitud ID de solicitud en dim_solicitud_bolsa
      * @param observaciones Observaciones adicionales
-     * @param idMedico ID del médico que atiende
+     * @param idMedico ID del médico que atiende (puede ser null)
      */
     public void registrarDesdeMisPacientes(Long idSolicitud, String observaciones, Long idMedico) {
-        log.info("🔍 [v1.81.0] Registrando atención desde MisPacientes - Solicitud: {}", idSolicitud);
+        log.warn("🔍 [v1.89.5] registrarDesdeMisPacientes - Solicitud: {}, idMedico: {}", idSolicitud, idMedico);
 
         try {
             SolicitudBolsa solicitud = solicitudBolsaRepository.findById(idSolicitud)
                     .orElseThrow(() -> new RuntimeException("Solicitud no encontrada: " + idSolicitud));
+
+            // ⚠️ v1.89.5: Si idMedico es null, NO registrar en historial para evitar constraint violation
+            if (idMedico == null) {
+                log.warn("⚠️ [v1.89.5] idMedico es NULL para solicitud {}, saltando registroAtencionEnHistorial", idSolicitud);
+                return;
+            }
 
             RegistroAtencionDTO registro = RegistroAtencionDTO.builder()
                     .dniAsegurado(solicitud.getPacienteDni())
@@ -152,10 +158,15 @@ public class TrazabilidadClinicaService {
      * ADEMÁS sincroniza estado a ATENDIDA en tele_ecg_imagenes
      *
      * @param dniPaciente DNI del paciente (puede tener ceros iniciales)
-     * @param idMedico ID del cardiólogo que evalúa
+     * @param idMedico ID del cardiólogo que evalúa (puede ser null)
      */
     public void registrarDesdeTeleECG(String dniPaciente, Long idMedico) {
-        log.info("🔍 [v1.81.0] Registrando y sincronizando TeleECG - DNI: {}", dniPaciente);
+        log.warn("🔍 [v1.89.5] registrarDesdeTeleECG - DNI: {}, idMedico: {}", dniPaciente, idMedico);
+
+        // ⚠️ v1.89.5: Si idMedico es null, no registrar en historial pero sí actualizar estado del ECG
+        if (idMedico == null) {
+            log.warn("⚠️ [v1.89.5] idMedico es NULL en registrarDesdeTeleECG - solo actualizará estado del ECG sin registrar atención");
+        }
 
         try {
             // 1. Normalizar DNI (remover ceros iniciales)
@@ -193,21 +204,25 @@ public class TrazabilidadClinicaService {
 
                     log.info("✅ [v1.81.0] ECG {} actualizado: ENVIADA → ATENDIDA", ecg.getIdImagen());
 
-                    // 4. Registrar en historial centralizado
-                    RegistroAtencionDTO registro = RegistroAtencionDTO.builder()
-                            .dniAsegurado(ecg.getNumDocPaciente())
-                            .origenModulo("TELEECG_IPRESS")
-                            .idReferenciaOrigen(ecg.getIdImagen())
-                            .fechaAtencion(OffsetDateTime.now())
-                            .idIpress(ecg.getIpressOrigen() != null ? ecg.getIpressOrigen().getIdIpress() : null)
-                            .idMedico(idMedico)
-                            .motivoConsulta("Evaluación de electrocardiograma")
-                            .diagnostico(ecg.getDescripcionEvaluacion())
-                            .tratamiento(ecg.getNotaClinicaPlanSeguimiento())
-                            .observacionesGenerales(construirObservacionesECG(ecg))
-                            .build();
+                    // 4. Registrar en historial centralizado SOLO si idMedico NO es null
+                    if (idMedico != null) {
+                        RegistroAtencionDTO registro = RegistroAtencionDTO.builder()
+                                .dniAsegurado(ecg.getNumDocPaciente())
+                                .origenModulo("TELEECG_IPRESS")
+                                .idReferenciaOrigen(ecg.getIdImagen())
+                                .fechaAtencion(OffsetDateTime.now())
+                                .idIpress(ecg.getIpressOrigen() != null ? ecg.getIpressOrigen().getIdIpress() : null)
+                                .idMedico(idMedico)
+                                .motivoConsulta("Evaluación de electrocardiograma")
+                                .diagnostico(ecg.getDescripcionEvaluacion())
+                                .tratamiento(ecg.getNotaClinicaPlanSeguimiento())
+                                .observacionesGenerales(construirObservacionesECG(ecg))
+                                .build();
 
-                    registrarAtencionEnHistorial(registro);
+                        registrarAtencionEnHistorial(registro);
+                    } else {
+                        log.warn("⚠️ [v1.89.5] No se registró atención en historial para ECG {} (idMedico es null)", ecg.getIdImagen());
+                    }
                 }
             }
 

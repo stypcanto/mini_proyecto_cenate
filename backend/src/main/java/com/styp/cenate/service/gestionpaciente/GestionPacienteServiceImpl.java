@@ -300,7 +300,9 @@ public class GestionPacienteServiceImpl implements IGestionPacienteService {
             if ("Atendido".equalsIgnoreCase(condicion)) {
                 try {
                     // Obtener ID del médico actual
+                    log.warn("🚀 [v1.89.4] ANTES de obtenerIdMedicoActual() - solicitando ID del médico");
                     Long idMedicoActual = obtenerIdMedicoActual();
+                    log.warn("⚠️ [v1.89.4] DESPUES de obtenerIdMedicoActual() - resultado: {}", idMedicoActual);
 
                     // Registrar atención desde MisPacientes
                     trazabilidadClinicaService.registrarDesdeMisPacientes(
@@ -932,11 +934,12 @@ public class GestionPacienteServiceImpl implements IGestionPacienteService {
      */
     private Long obtenerIdMedicoActual() {
         try {
-            // ✅ v1.89.2: Obtener el usuario autenticado desde SecurityContext
+            // ✅ v1.89.4: Obtener el usuario autenticado desde SecurityContext
             String username = SecurityContextHolder.getContext().getAuthentication().getName();
+            log.warn("🔍 [v1.89.4] Username del SecurityContext: {}", username);
 
             if (username == null) {
-                log.warn("⚠️ [v1.89.2] No se pudo obtener el usuario autenticado");
+                log.warn("⚠️ [v1.89.4] No se pudo obtener el usuario autenticado");
                 return null;
             }
 
@@ -944,16 +947,31 @@ public class GestionPacienteServiceImpl implements IGestionPacienteService {
             Usuario usuario = usuarioRepository.findByNameUserWithFullDetails(username)
                 .orElse(null);
 
-            if (usuario != null && usuario.getPersonalCnt() != null) {
-                Long idPers = usuario.getPersonalCnt().getIdPers();
-                log.debug("✅ [v1.89.2] Médico actual: {} → ID PersonalCnt: {}", username, idPers);
+            log.warn("🔍 [v1.89.4] Usuario encontrado en BD: {}", usuario != null);
+
+            if (usuario == null) {
+                log.warn("⚠️ [v1.89.4] Usuario '{}' NO EXISTE en base de datos", username);
+                return null;
+            }
+
+            log.warn("✅ [v1.89.4] Usuario encontrado: id={}, nameUser={}", usuario.getIdUser(), usuario.getNameUser());
+
+            PersonalCnt personalCnt = usuario.getPersonalCnt();
+            log.warn("🔍 [v1.89.4] PersonalCnt: {} (null? {})", personalCnt, personalCnt == null);
+
+            if (personalCnt != null && personalCnt.getIdPers() != null) {
+                Long idPers = personalCnt.getIdPers();
+                log.warn("✅ [v1.89.4] OBTENIDO idPersonalCreador: {} para usuario: {}", idPers, username);
                 return idPers;
             }
 
-            log.warn("⚠️ [v1.89.2] Usuario {} no tiene datos de PersonalCnt", username);
+            log.warn("❌ [v1.89.4] Usuario '{}' NO TIENE PersonalCnt o idPers es null", username);
+            if (usuario.getPersonalExterno() != null) {
+                log.warn("⚠️ [v1.89.4] Usuario {} tiene PersonalExterno en lugar de PersonalCnt", username);
+            }
             return null;
         } catch (Exception e) {
-            log.error("❌ [v1.89.2] Error obteniendo ID del médico actual", e);
+            log.error("❌ [v1.89.4] Exception en obtenerIdMedicoActual: {}", e.getMessage(), e);
             return null;
         }
     }
