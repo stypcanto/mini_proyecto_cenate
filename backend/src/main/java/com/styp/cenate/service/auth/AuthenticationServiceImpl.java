@@ -105,26 +105,8 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         String fotoUrl = obtenerFotoUsuario(user.getIdUser());
 
         // ✅ v1.77.0: Obtener especialidad del médico desde PersonalCnt
+        // 🔧 DISABLED: Tabla dim_personal no existe, deshabilitando para permitir login
         String especialidad = null;
-        try {
-            // Obtener desde la tabla dim_personal basado en el id_user
-            // personalCnt tiene relación 1:1 con Usuario usando id_user
-            String sql = "SELECT COALESCE(de.desc_especialidad, 'MEDICO') " +
-                         "FROM public.dim_personal dp " +
-                         "LEFT JOIN public.dim_especialidad de ON dp.id_especialidad = de.id_especialidad " +
-                         "WHERE dp.id_user = ? " +
-                         "LIMIT 1";
-            especialidad = jdbcTemplate.queryForObject(sql, String.class, user.getIdUser());
-
-            if (especialidad != null && !especialidad.equals("MEDICO")) {
-                log.info("✅ Especialidad obtenida para usuario {}: {}", user.getNameUser(), especialidad);
-            } else {
-                especialidad = null;
-            }
-        } catch (Exception e) {
-            log.warn("⚠️ No se pudo obtener especialidad para usuario {}: {}", user.getNameUser(), e.getMessage());
-            especialidad = null;
-        }
 
         Map<String, Object> claims = new HashMap<>();
         claims.put("id_user", user.getIdUser());  // 🆕 CRITICO: ID en el JWT para persistencia

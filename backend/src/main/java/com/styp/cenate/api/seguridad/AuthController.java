@@ -223,7 +223,7 @@ public class AuthController {
             String username = request.get("username");
             String password = request.get("password");
 
-            Usuario user = usuarioRepository.findByNameUser(username).orElse(null);
+            Usuario user = usuarioService.findByUsername(username);
             if (user == null) {
                 return ResponseEntity.ok(Map.of(
                     "valido", false,
