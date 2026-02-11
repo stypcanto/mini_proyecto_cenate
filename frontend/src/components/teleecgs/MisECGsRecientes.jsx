@@ -506,7 +506,17 @@ export default function MisECGsRecientes({
         </h3>
 
         {ultimas3.length > 0 ? (
-          datosFiltrados.length > 0 ? (
+          buscandoPorDNI ? (
+            // ✅ v1.85.0: Loader circular elegante mientras busca
+            <div className="flex items-center justify-center py-12 bg-blue-50 rounded-lg border-2 border-blue-200">
+              <div className="text-center">
+                <div className="inline-block">
+                  <div className="w-12 h-12 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin"></div>
+                </div>
+                <p className="mt-4 text-blue-700 font-semibold text-sm">Buscando DNI {filtroDNI}...</p>
+              </div>
+            </div>
+          ) : datosFiltrados.length > 0 ? (
             <div className="overflow-x-auto rounded-lg border border-gray-200 shadow-sm">
               <table className="w-full text-sm md:text-base">
                 {/* Header */}
