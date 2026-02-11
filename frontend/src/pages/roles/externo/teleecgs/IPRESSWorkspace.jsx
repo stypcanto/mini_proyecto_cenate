@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { Upload, List, BarChart3, Wifi, WifiOff, CloudUpload, X } from "lucide-react";
 import toast from "react-hot-toast";
 import { useOnlineStatus } from "../../../../hooks/useOnlineStatus";
@@ -197,8 +197,9 @@ export default function IPRESSWorkspace() {
   /**
    * Cargar imágenes desde el servidor y enriquecer con datos de pacientes
    * ✅ v1.71.0: Cargar TODAS las páginas automáticamente
+   * ✅ v1.87.1: Memoizado con useCallback para evitar infinite loops en MisECGsRecientes
    */
-  const cargarEKGs = async (numDocBusqueda = "") => {
+  const cargarEKGs = useCallback(async (numDocBusqueda = "") => {
     try {
       setLoading(true);
 
@@ -369,7 +370,7 @@ export default function IPRESSWorkspace() {
       toast.error("Error al cargar las imágenes");
       setLoading(false);
     }
-  };
+  }, []);  // ✅ v1.87.1: Memoizar con dependencias vacías - cargarEKGs nunca cambia
 
   /**
    * Callback cuando upload es exitoso

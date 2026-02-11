@@ -138,6 +138,7 @@ export default function MisECGsRecientes({
         clearTimeout(debounceTimerRef.current);
       }
     };
+  // ✅ v1.87.1: AMBAS dependencias - ahora seguro porque cargarEKGs está memoizado
   }, [filtroDNI, onBuscarPorDNI]);
 
   // ✅ v1.81.3: Búsqueda manual (sin useEffect infinito)
