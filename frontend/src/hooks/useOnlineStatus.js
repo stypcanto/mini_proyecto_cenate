@@ -8,7 +8,7 @@ import { useState, useEffect } from 'react';
  * const isOnline = useOnlineStatus();
  * {isOnline ? "Conectado" : "Sin conexión"}
  */
-export function useOnlineStatus() {
+export const useOnlineStatus = () => {
   const [isOnline, setIsOnline] = useState(navigator.onLine);
 
   useEffect(() => {
@@ -25,4 +25,6 @@ export function useOnlineStatus() {
   }, []);
 
   return isOnline;
-}
+};
+
+export default useOnlineStatus;
