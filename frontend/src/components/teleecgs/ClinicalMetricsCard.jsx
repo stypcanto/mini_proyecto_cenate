@@ -17,14 +17,59 @@ import {
 } from "lucide-react";
 import { calcularNivelRiesgo } from "./MedicalRiskIndicator";
 
-export default function ClinicalMetricsCard({ estadisticas = {} }) {
+export default function ClinicalMetricsCard({ estadisticas = {}, ecgs = [] }) {
   const { total = 0, enviadas = 0, observadas = 0, atendidas = 0 } = estadisticas;
 
-  // Calcular riesgos estimados basados en envíadas (pacientes pendientes)
-  const criticosEstimados = Math.round(total * 0.15); // 15% críticos
-  const urgentesEstimados = Math.round(total * 0.25); // 25% urgentes
-  const moderadosEstimados = Math.round(total * 0.35); // 35% moderados
-  const rutinasEstimados = Math.round(total * 0.25); // 25% rutina
+  // Calcular riesgos REALES basados en datos del EKG
+  let criticosReales = 0;
+  let urgentesReales = 0;
+  let moderadosReales = 0;
+  let rutinasReales = 0;
+
+  if (ecgs && ecgs.length > 0) {
+    ecgs.forEach((ecg) => {
+      // Calcular minutos de espera
+      let tiempoMinutos = 0;
+      if (ecg.tiempoTranscurrido) {
+        if (typeof ecg.tiempoTranscurrido === "string") {
+          if (ecg.tiempoTranscurrido.includes("d")) {
+            tiempoMinutos = parseInt(ecg.tiempoTranscurrido) * 1440;
+          } else if (ecg.tiempoTranscurrido.includes("h")) {
+            tiempoMinutos = parseInt(ecg.tiempoTranscurrido) * 60;
+          } else if (ecg.tiempoTranscurrido.includes("m")) {
+            tiempoMinutos = parseInt(ecg.tiempoTranscurrido);
+          }
+        }
+      }
+
+      // Clasificar por riesgo real
+      if (ecg.esUrgente || tiempoMinutos >= 60) {
+        criticosReales++;
+      } else if (tiempoMinutos >= 30) {
+        urgentesReales++;
+      } else if (tiempoMinutos >= 15) {
+        moderadosReales++;
+      } else {
+        rutinasReales++;
+      }
+    });
+  } else {
+    // Fallback a estimados si no hay datos
+    criticosReales = Math.round(total * 0.15);
+    urgentesReales = Math.round(total * 0.25);
+    moderadosReales = Math.round(total * 0.35);
+    rutinasReales = Math.round(total * 0.25);
+  }
+
+  // Usar valores reales o estimados
+  const criticosEstimados = criticosReales;
+  const urgentesEstimados = urgentesReales;
+  const moderadosEstimados = moderadosReales;
+  const rutinasEstimados = rutinasReales;
+
+  // Calcular porcentajes correctamente
+  const totalPacientes = criticosEstimados + urgentesEstimados + moderadosEstimados + rutinasEstimados;
+  const denominador = Math.max(totalPacientes, 1);
 
   const tarjetas = [
     {
@@ -35,7 +80,7 @@ export default function ClinicalMetricsCard({ estadisticas = {} }) {
       bg: "bg-red-50",
       border: "border-red-300",
       icono: AlertOctagon,
-      tendencia: Math.round((criticosEstimados / Math.max(total, 1)) * 100),
+      tendencia: Math.round((criticosEstimados / denominador) * 100),
     },
     {
       titulo: "🟠 Urgentes",
@@ -45,7 +90,7 @@ export default function ClinicalMetricsCard({ estadisticas = {} }) {
       bg: "bg-orange-50",
       border: "border-orange-300",
       icono: AlertTriangle,
-      tendencia: Math.round((urgentesEstimados / Math.max(total, 1)) * 100),
+      tendencia: Math.round((urgentesEstimados / denominador) * 100),
     },
     {
       titulo: "🟡 Moderados",
@@ -55,7 +100,7 @@ export default function ClinicalMetricsCard({ estadisticas = {} }) {
       bg: "bg-yellow-50",
       border: "border-yellow-300",
       icono: AlertCircle,
-      tendencia: Math.round((moderadosEstimados / Math.max(total, 1)) * 100),
+      tendencia: Math.round((moderadosEstimados / denominador) * 100),
     },
     {
       titulo: "🟢 Rutina",
@@ -65,7 +110,7 @@ export default function ClinicalMetricsCard({ estadisticas = {} }) {
       bg: "bg-green-50",
       border: "border-green-300",
       icono: Clock,
-      tendencia: Math.round((rutinasEstimados / Math.max(total, 1)) * 100),
+      tendencia: Math.round((rutinasEstimados / denominador) * 100),
     },
   ];
 
@@ -160,7 +205,7 @@ export default function ClinicalMetricsCard({ estadisticas = {} }) {
           <div>
             <h3 className="font-semibold text-red-900">⚠️ Acción Requerida</h3>
             <p className="text-sm text-red-800 mt-1">
-              Hay <strong>{criticosEstimados} pacientes</strong> que requieren evaluación inmediata.
+              Hay <strong>{criticosEstimados} {criticosEstimados === 1 ? "paciente" : "pacientes"}</strong> que requieren evaluación inmediata.
               Respuesta esperada: &lt;30 minutos.
             </p>
           </div>

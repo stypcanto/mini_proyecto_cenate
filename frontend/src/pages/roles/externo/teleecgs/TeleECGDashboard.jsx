@@ -241,7 +241,7 @@ export default function TeleEKGDashboard() {
               Desglose automático de pacientes por nivel de urgencia clínica
             </p>
           </div>
-          <ClinicalMetricsCard estadisticas={stats} />
+          <ClinicalMetricsCard estadisticas={stats} ecgs={pacientesAgrupados} />
         </div>
 
         {/* 📊 Tarjetas de Estadísticas (Legacy - Mantener) */}
