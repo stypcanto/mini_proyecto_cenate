@@ -7,7 +7,7 @@
  * - Generar Interconsulta
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   Users,
   Search,
@@ -33,6 +33,7 @@ import gestionPacientesService from '../../../../services/gestionPacientesServic
 import ipressService from '../../../../services/ipressService';
 import ModalEvaluacionECG from '../../../../components/teleecgs/ModalEvaluacionECG';
 import teleecgService from '../../../../services/teleecgService';
+import useAuth from '../../../../hooks/useAuth';
 
 // Estilos de animaciones personalizadas
 const animationStyles = `
@@ -84,6 +85,16 @@ const animationStyles = `
 `;
 
 export default function MisPacientes() {
+  // ✅ v1.66.4: Obtener información del médico autenticado
+  const { user } = useAuth();
+
+  // ✅ v1.66.4: Verificar si el médico es cardiólogo
+  const esCardiologo = useMemo(() => {
+    if (!user) return false;
+    const especialidad = user.especialidad || user.especialidadNombre || '';
+    return especialidad.toUpperCase().includes('CARDIO');
+  }, [user]);
+
   const [pacientes, setPacientes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [busqueda, setBusqueda] = useState('');
@@ -244,9 +255,11 @@ export default function MisPacientes() {
         console.log('🔍 [DEBUG] TODOS LOS CAMPOS:', JSON.stringify(data[0], null, 2));
       }
       setPacientes(Array.isArray(data) ? data : []);
-      // ✅ v1.66.0: Cargar conteos de ECG después de cargar pacientes
+      // ✅ v1.66.4: Cargar conteos de ECG solo si es cardiólogo
       if (data?.length > 0) {
-        cargarConteosECG(data);
+        if (esCardiologo) {
+          cargarConteosECG(data);
+        }
         toast.success(`${data.length} pacientes cargados`);
       }
     } catch (error) {
@@ -1386,7 +1399,11 @@ export default function MisPacientes() {
                     <th className="px-4 py-3 text-left">Paciente</th>
                     <th className="px-4 py-3 text-left">Teléfono</th>
                     <th className="px-4 py-3 text-left">IPRESS</th>
-                    <th className="px-4 py-3 text-left">📅 Fecha toma EKG</th>
+
+                    {/* ✅ v1.76.0: Columna de Fecha toma EKG SOLO para Cardiología */}
+                    {pacientesFiltradosPorFecha.some(p => p.especialidadMedico && p.especialidadMedico.toLowerCase().includes('cardiología')) && (
+                      <th className="px-4 py-3 text-left">📅 Fecha toma EKG</th>
+                    )}
 
                     {/* ✅ v1.63.0: Columnas condicionales SOLO para Bolsa 107 (idBolsa = 1) */}
                     {pacientesFiltradosPorFecha.some(p => p.idBolsa === 1) && (
@@ -1400,8 +1417,10 @@ export default function MisPacientes() {
                     <th className="px-4 py-3 text-left">Motivo</th>
                     <th className="px-4 py-3 text-left">Fecha Asignación</th>
                     <th className="px-4 py-3 text-left">Fecha Atención</th>
-                    {/* ✅ v1.66.0: Columna final para visualizar ECGs */}
-                    <th className="px-4 py-3 text-center">Atender Lectura EKG</th>
+                    {/* ✅ v1.66.4: Columna final para visualizar ECGs (SOLO CARDIÓLOGOS) */}
+                    {esCardiologo && (
+                      <th className="px-4 py-3 text-center">Atender Lectura EKG</th>
+                    )}
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
@@ -1431,10 +1450,12 @@ export default function MisPacientes() {
                       <td className="px-4 py-3 text-gray-600">{paciente.telefono || '-'}</td>
                       <td className="px-4 py-3 text-gray-600">{paciente.ipress || '-'}</td>
 
-                      {/* ✅ v1.76.0: Fecha toma EKG */}
-                      <td className="px-4 py-3 text-gray-600 text-xs whitespace-nowrap">
-                        {paciente.fechaTomaEKG ? formatearFechaHumana(paciente.fechaTomaEKG) : '-'}
-                      </td>
+                      {/* ✅ v1.76.0: Fecha toma EKG - SOLO para Cardiología */}
+                      {pacientesFiltradosPorFecha.some(p => p.especialidadMedico && p.especialidadMedico.toLowerCase().includes('cardiología')) && (
+                        <td className="px-4 py-3 text-gray-600 text-xs whitespace-nowrap">
+                          {paciente.fechaTomaEKG ? formatearFechaHumana(paciente.fechaTomaEKG) : '-'}
+                        </td>
+                      )}
 
                       {/* ✅ v1.63.0: TIEMPO INICIO SÍNTOMAS (solo si hay pacientes de Bolsa 107) */}
                       {pacientesFiltradosPorFecha.some(p => p.idBolsa === 1) && (
@@ -1476,28 +1497,30 @@ export default function MisPacientes() {
                         {formatearFechaHumana(paciente.fechaAtencion)}
                       </td>
 
-                      {/* ✅ v1.66.0: Columna final - Ver imágenes ECG con badge notorio */}
-                      <td className="px-4 py-3 text-center">
-                        <button
-                          onClick={() => abrirCarruselECG(paciente)}
-                          disabled={cargandoECG || !ecgCounts[paciente.numDoc] || ecgCounts[paciente.numDoc] === 0}
-                          title={
-                            ecgCounts[paciente.numDoc] > 0
-                              ? `Ver ${ecgCounts[paciente.numDoc]} ECG(s)`
-                              : 'Sin ECGs disponibles'
-                          }
-                          className={`relative inline-flex items-center justify-center gap-2 px-3 py-2 rounded-lg font-semibold text-sm transition-all ${
-                            ecgCounts[paciente.numDoc] > 0
-                              ? 'bg-red-100 text-red-700 hover:bg-red-200 cursor-pointer border border-red-300'
-                              : 'bg-gray-100 text-gray-400 cursor-not-allowed opacity-50 border border-gray-200'
-                          }`}
-                        >
-                          <Activity className="w-4 h-4" strokeWidth={2} />
-                          {ecgCounts[paciente.numDoc] > 0 && (
-                            <span className="font-bold">{ecgCounts[paciente.numDoc]}</span>
-                          )}
-                        </button>
-                      </td>
+                      {/* ✅ v1.66.4: Columna final - Ver imágenes ECG (SOLO CARDIÓLOGOS) */}
+                      {esCardiologo && (
+                        <td className="px-4 py-3 text-center">
+                          <button
+                            onClick={() => abrirCarruselECG(paciente)}
+                            disabled={cargandoECG || !ecgCounts[paciente.numDoc] || ecgCounts[paciente.numDoc] === 0}
+                            title={
+                              ecgCounts[paciente.numDoc] > 0
+                                ? `Ver ${ecgCounts[paciente.numDoc]} ECG(s)`
+                                : 'Sin ECGs disponibles'
+                            }
+                            className={`relative inline-flex items-center justify-center gap-2 px-3 py-2 rounded-lg font-semibold text-sm transition-all ${
+                              ecgCounts[paciente.numDoc] > 0
+                                ? 'bg-red-100 text-red-700 hover:bg-red-200 cursor-pointer border border-red-300'
+                                : 'bg-gray-100 text-gray-400 cursor-not-allowed opacity-50 border border-gray-200'
+                            }`}
+                          >
+                            <Activity className="w-4 h-4" strokeWidth={2} />
+                            {ecgCounts[paciente.numDoc] > 0 && (
+                              <span className="font-bold">{ecgCounts[paciente.numDoc]}</span>
+                            )}
+                          </button>
+                        </td>
+                      )}
                     </tr>
                   ))}
                 </tbody>
