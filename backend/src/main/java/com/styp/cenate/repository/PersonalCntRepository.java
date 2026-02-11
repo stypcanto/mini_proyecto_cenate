@@ -138,6 +138,8 @@ public interface PersonalCntRepository extends JpaRepository<PersonalCnt, Long> 
 	@Query("SELECT DISTINCT p FROM PersonalCnt p " +
 	       "LEFT JOIN FETCH p.tipos pt " +
 	       "LEFT JOIN FETCH pt.tipoPersonal dtp " +
+	       "LEFT JOIN FETCH p.servicioEssi " +
+	       "LEFT JOIN FETCH p.area " +
 	       "WHERE p.statPers = 'A' " +
 	       "AND EXISTS (SELECT 1 FROM p.tipos pt2 " +
 	       "            LEFT JOIN pt2.tipoPersonal dtp2 " +

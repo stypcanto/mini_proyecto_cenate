@@ -98,6 +98,13 @@ public class GestionPacienteDTO {
     private String tiempoInicioSintomas;  // "< 24 hrs", "24 - 72 hrs", "> 72 hrs" o null
     private Boolean consentimientoInformado;  // true/false/null
 
+    // ✅ v1.76.0: Datos de ECG
+    @JsonProperty("fechaTomaEKG")
+    private LocalDate fechaTomaEKG;  // Fecha en que se tomó el ECG (del registro más reciente)
+
+    @JsonProperty("esUrgente")
+    private Boolean esUrgente;  // true = paciente urgente, false = normal
+
     /**
      * Calcula la edad a partir de la fecha de nacimiento
      */

@@ -159,6 +159,12 @@ export default function DateTimePickerCita({
     // ✅ ABRIR SELECTOR DE HORAS automáticamente
     setMostrarHoras(true);
 
+    // ✅ NOTIFICAR AL PADRE que se seleccionó fecha (aunque no haya hora aún)
+    // Formato: YYYY-MM-DDTHH:mm (usando hora actual si no hay seleccionada)
+    const horaActual = horaSeleccionada || "08:00";
+    onChange(`${año}-${mes}-${día_str}T${horaActual}`);
+    console.log(`📅 Fecha seleccionada y notificada: ${año}-${mes}-${día_str}T${horaActual}`);
+
     // Si hay hora seleccionada, validar disponibilidad
     if (horaSeleccionada) {
       await validarDisponibilidad(`${año}-${mes}-${día_str}`, horaSeleccionada);
@@ -218,11 +224,11 @@ export default function DateTimePickerCita({
   const esHoy = fecha && fecha.toDateString() === new Date().toDateString();
 
   return (
-    <div ref={containerRef} className="relative">
+    <div ref={containerRef} className="relative overflow-visible">
       {/* MENSAJE INFORMATIVO si está deshabilitado */}
       {disabled && (
         <div className="text-xs text-amber-600 mb-2 flex items-center gap-1">
-          ℹ️ <strong>Selecciona estado "CITADO"</strong> para agendar fecha/hora
+          ℹ️ <strong>Selecciona un médico primero</strong> para agendar fecha/hora
         </div>
       )}
 
@@ -306,7 +312,7 @@ export default function DateTimePickerCita({
       {mostrarCalendario && !disabled && (
         <div
           ref={calendarRef}
-          className="absolute top-12 left-0 bg-white border border-gray-200 rounded-lg shadow-xl p-4 z-50"
+          className="absolute top-12 left-0 bg-white border-2 border-blue-400 rounded-lg shadow-2xl p-4 z-[9999]"
           style={{ minWidth: "320px" }}
         >
           {/* Header */}
@@ -379,7 +385,7 @@ export default function DateTimePickerCita({
 
       {/* Selector de Horas */}
       {mostrarHoras && !disabled && fecha && (
-        <div className="absolute top-12 right-0 bg-white border border-gray-200 rounded-lg shadow-xl p-3 z-50" style={{ maxWidth: "200px" }}>
+        <div className="absolute top-12 right-0 bg-white border-2 border-blue-400 rounded-lg shadow-2xl p-3 z-[9999]" style={{ maxWidth: "200px" }}>
           <h4 className="text-xs font-bold text-gray-700 mb-2">Intervalos de 15 min</h4>
           <div className="grid grid-cols-2 gap-2 max-h-64 overflow-y-auto">
             {HORAS.map((hora) => (

@@ -1369,12 +1369,14 @@ export default function MisPacientes() {
                     <th className="px-4 py-3 text-left">Motivo</th>
                     <th className="px-4 py-3 text-left">Fecha Asignación</th>
                     <th className="px-4 py-3 text-left">Fecha Atención</th>
+                    {/* ✅ v1.66.0: Columna final para visualizar ECGs */}
+                    <th className="px-4 py-3 text-center">Imágenes ECG</th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
                   {pacientesFiltradosPorFecha.map((paciente, idx) => (
                     <tr key={idx} className={`hover:bg-gray-50 transition-colors duration-150 ${paciente.condicion === 'Atendido' ? 'bg-emerald-50/30' : 'bg-white'} ${idx % 2 === 0 ? '' : 'bg-opacity-50'}`}>
-                      {/* Paciente: Nombre en bold + DNI abajo en gris + Ojo para ver detalles + ECG badge */}
+                      {/* Paciente: Nombre en bold + DNI abajo en gris + Ojo para ver detalles */}
                       <td className="px-4 py-3">
                         <div className="flex items-start gap-2">
                           {/* Ojo - icono para detalles */}
@@ -1384,31 +1386,6 @@ export default function MisPacientes() {
                             className="flex-shrink-0 mt-0.5 text-gray-400 hover:text-[#0A5BA9] transition-colors duration-150"
                           >
                             <Eye className="w-4 h-4" strokeWidth={2} />
-                          </button>
-
-                          {/* ✅ v1.66.0: ECG Icon - Ver imágenes */}
-                          <button
-                            onClick={() => abrirCarruselECG(paciente)}
-                            disabled={cargandoECG || !ecgCounts[paciente.numDoc] || ecgCounts[paciente.numDoc] === 0}
-                            title={
-                              ecgCounts[paciente.numDoc] > 0
-                                ? `Ver ${ecgCounts[paciente.numDoc]} ECG(s)`
-                                : 'Sin ECGs disponibles'
-                            }
-                            className={`relative flex-shrink-0 mt-0.5 transition-colors duration-150 ${
-                              ecgCounts[paciente.numDoc] > 0
-                                ? 'text-red-500 hover:text-red-700 cursor-pointer'
-                                : 'text-gray-300 cursor-not-allowed opacity-50'
-                            }`}
-                          >
-                            <Activity className="w-4 h-4" strokeWidth={2} />
-
-                            {/* Badge con conteo */}
-                            {ecgCounts[paciente.numDoc] > 0 && (
-                              <span className="absolute -top-1 -right-1 flex items-center justify-center w-3.5 h-3.5 text-[9px] font-bold text-white bg-red-600 rounded-full border border-white">
-                                {ecgCounts[paciente.numDoc]}
-                              </span>
-                            )}
                           </button>
 
                           {/* Nombre y DNI */}
@@ -1459,6 +1436,29 @@ export default function MisPacientes() {
                       </td>
                       <td className="px-4 py-3 text-gray-600 text-xs whitespace-nowrap">
                         {formatearFechaHumana(paciente.fechaAtencion)}
+                      </td>
+
+                      {/* ✅ v1.66.0: Columna final - Ver imágenes ECG con badge notorio */}
+                      <td className="px-4 py-3 text-center">
+                        <button
+                          onClick={() => abrirCarruselECG(paciente)}
+                          disabled={cargandoECG || !ecgCounts[paciente.numDoc] || ecgCounts[paciente.numDoc] === 0}
+                          title={
+                            ecgCounts[paciente.numDoc] > 0
+                              ? `Ver ${ecgCounts[paciente.numDoc]} ECG(s)`
+                              : 'Sin ECGs disponibles'
+                          }
+                          className={`relative inline-flex items-center justify-center gap-2 px-3 py-2 rounded-lg font-semibold text-sm transition-all ${
+                            ecgCounts[paciente.numDoc] > 0
+                              ? 'bg-red-100 text-red-700 hover:bg-red-200 cursor-pointer border border-red-300'
+                              : 'bg-gray-100 text-gray-400 cursor-not-allowed opacity-50 border border-gray-200'
+                          }`}
+                        >
+                          <Activity className="w-4 h-4" strokeWidth={2} />
+                          {ecgCounts[paciente.numDoc] > 0 && (
+                            <span className="font-bold">{ecgCounts[paciente.numDoc]}</span>
+                          )}
+                        </button>
                       </td>
                     </tr>
                   ))}

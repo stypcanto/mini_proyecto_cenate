@@ -1,5 +1,6 @@
 package com.styp.cenate.dto;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -12,6 +13,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class DetalleMedicoDTO {
 
     // Datos del personal médico
@@ -37,4 +39,7 @@ public class DetalleMedicoDTO {
     // Datos profesionales
     private String colegPers; // Colegiatura
     private String perPers; // Especialidad/Perito
+
+    // Especialidad desde servicio ESSI
+    private String especialidad; // Nombre descriptivo de la especialidad (ej: Cardiología)
 }

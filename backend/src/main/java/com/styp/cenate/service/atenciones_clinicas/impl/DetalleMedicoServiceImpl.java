@@ -101,6 +101,41 @@ public class DetalleMedicoServiceImpl implements DetalleMedicoService {
      * Convierte una entidad PersonalCnt a DetalleMedicoDTO
      */
     private DetalleMedicoDTO convertirADTO(PersonalCnt personal) {
+        log.debug("🔍 Convertiendo PersonalCnt ID: {} - Nombre: {}", personal.getIdPers(), personal.getNombreCompleto());
+
+        // Obtener especialidad con prioridad: servicioEssi > perPers > descArea > SIN ESPECIALIDAD
+        String especialidadFinal;
+        if (personal.getServicioEssi() != null && personal.getServicioEssi().getDescServicio() != null) {
+            String desc = personal.getServicioEssi().getDescServicio().trim();
+            // ✅ Validar que no sea numérico (datos incorrectos en BD)
+            if (!desc.matches("^[0-9]+$") && !desc.isEmpty()) {
+                especialidadFinal = desc;
+                log.debug("✅ Especialidad desde servicioEssi: {}", especialidadFinal);
+            } else {
+                // Fallback si descServicio es numérico o vacío
+                log.debug("⚠️ servicioEssi.descServicio es numérico/vacío: '{}' - usando fallback", desc);
+                if (personal.getPerPers() != null && !personal.getPerPers().isBlank()) {
+                    especialidadFinal = personal.getPerPers();
+                    log.debug("✅ Especialidad desde perPers (fallback): {}", especialidadFinal);
+                } else if (personal.getArea() != null && personal.getArea().getDescArea() != null) {
+                    especialidadFinal = personal.getArea().getDescArea();
+                    log.debug("✅ Especialidad desde descArea (fallback): {}", especialidadFinal);
+                } else {
+                    especialidadFinal = "SIN ESPECIALIDAD";
+                    log.debug("⚠️ No se encontró especialidad válida para: {}", personal.getNombreCompleto());
+                }
+            }
+        } else if (personal.getPerPers() != null && !personal.getPerPers().isBlank()) {
+            especialidadFinal = personal.getPerPers();
+            log.debug("✅ Especialidad desde perPers: {}", especialidadFinal);
+        } else if (personal.getArea() != null && personal.getArea().getDescArea() != null) {
+            especialidadFinal = personal.getArea().getDescArea();
+            log.debug("✅ Especialidad desde descArea: {}", especialidadFinal);
+        } else {
+            especialidadFinal = "SIN ESPECIALIDAD";
+            log.debug("⚠️ No se encontró especialidad para: {}", personal.getNombreCompleto());
+        }
+
         return DetalleMedicoDTO.builder()
                 // Datos del personal médico
                 .idPers(personal.getIdPers())
@@ -110,22 +145,25 @@ public class DetalleMedicoServiceImpl implements DetalleMedicoService {
                 .emailCorpPers(personal.getEmailCorpPers())
                 .movilPers(personal.getMovilPers())
                 .genPers(personal.getGenPers())
-                
+
                 // Datos del área
                 .idArea(personal.getArea() != null ? personal.getArea().getIdArea() : null)
                 .descArea(personal.getArea() != null ? personal.getArea().getDescArea() : null)
-                
+
                 // Datos del régimen laboral
                 .idRegimenLaboral(personal.getRegimenLaboral() != null ? personal.getRegimenLaboral().getIdRegLab() : null)
                 .descRegimenLaboral(personal.getRegimenLaboral() != null ? personal.getRegimenLaboral().getDescRegLab() : null)
-                
+
                 // Estado del personal
                 .statPers(personal.getStatPers())
-                
+
                 // Datos profesionales
                 .colegPers(personal.getColegPers())
                 .perPers(personal.getPerPers())
-                
+
+                // ✅ Especialidad (con prioridad: servicioEssi > perPers > descArea > SIN ESPECIALIDAD)
+                .especialidad(especialidadFinal)
+
                 .build();
     }
 }
