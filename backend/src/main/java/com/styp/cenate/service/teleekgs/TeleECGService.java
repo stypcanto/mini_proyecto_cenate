@@ -566,19 +566,13 @@ public class TeleECGService {
         }
 
         // Guardar
-        teleECGImagenRepository.save(imagen);
+        TeleECGImagen imagenGuardada = teleECGImagenRepository.save(imagen);
 
         log.info("✅ [EVALUAR OK] ID: {} - GUARDADO", idImagen);
 
-        // Respuesta simple (sin relaciones)
-        TeleECGImagenDTO dto = new TeleECGImagenDTO();
-        dto.setIdImagen(idImagen);
-        dto.setEvaluacion(evaluacion);
-        dto.setFechaEvaluacion(LocalDateTime.now());
-        if (imagen.getUsuarioEvaluador() != null) {
-            dto.setUsuarioEvaluadorNombre(imagen.getUsuarioEvaluador().getNameUser());
-        }
-        return dto;
+        // ✅ v1.89.1: Devolver DTO completo (incluyendo descripcionEvaluacion)
+        // Esto permite que el frontend muestre hallazgos + observaciones después de guardar
+        return convertirADTO(imagenGuardada);
     }
 
     /**
