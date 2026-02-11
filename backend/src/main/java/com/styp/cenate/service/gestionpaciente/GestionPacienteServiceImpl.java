@@ -306,7 +306,7 @@ public class GestionPacienteServiceImpl implements IGestionPacienteService {
     }
 
     @Override
-    @Transactional(readOnly = true)
+    @Transactional
     public List<GestionPacienteDTO> obtenerPacientesDelMedicoActual() {
         try {
             // Obtener el usuario autenticado
