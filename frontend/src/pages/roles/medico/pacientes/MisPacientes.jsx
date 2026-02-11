@@ -601,13 +601,39 @@ export default function MisPacientes() {
     }
   };
 
+  // ✅ v1.89.0: Parsear texto de evaluación para extraer secciones
+  const parsearEvaluacionCompleta = (descripcion) => {
+    if (!descripcion) return { hallazgos: '', observacionesClinicas: '' };
+
+    // Extraer HALLAZGOS (pueden ser NORMALES o ANORMALES)
+    let hallazgos = '';
+    if (descripcion.includes('HALLAZGOS NORMALES:')) {
+      hallazgos = descripcion.split('HALLAZGOS NORMALES:')[1]?.split('OBSERVACIONES CLÍNICAS:')[0]?.trim() || '';
+    } else if (descripcion.includes('HALLAZGOS ANORMALES:')) {
+      hallazgos = descripcion.split('HALLAZGOS ANORMALES:')[1]?.split('OBSERVACIONES CLÍNICAS:')[0]?.trim() || '';
+    }
+
+    // Extraer OBSERVACIONES CLÍNICAS
+    const observacionesClinicas = descripcion.split('OBSERVACIONES CLÍNICAS:')[1]?.trim() || '';
+
+    return {
+      hallazgos: hallazgos ? hallazgos.split('\n').filter(h => h.trim().startsWith('-')).map(h => h.replace(/^-\s*/, '').trim()).join('\n') : '',
+      observacionesClinicas
+    };
+  };
+
   // ✅ v1.80.0: Función para abrir modal de resultados
   const abrirResultadosEvaluacion = (paciente) => {
     const estado = evaluacionesEstados[paciente.numDoc];
     if (estado?.datos) {
+      // ✅ v1.89.0: Parsear descripción completa para extraer hallazgos y observaciones
+      const { hallazgos, observacionesClinicas } = parsearEvaluacionCompleta(estado.datos.descripcion);
+
       setResultadosActuales({
         paciente,
-        ...estado.datos
+        ...estado.datos,
+        hallazgos: hallazgos || estado.datos.hallazgos,
+        observacionesClinicas: observacionesClinicas || estado.datos.observacionesClinicas
       });
       setShowResultadosModal(true);
     } else {
@@ -1123,21 +1149,21 @@ export default function MisPacientes() {
         return;
       }
 
-      // ✅ IMPORTANTE: Extraer SOLO las observaciones clínicas (no el texto completo con hallazgos)
-      // El backend valida que descripcion tenga máximo 1000 caracteres
-      // evaluacionCompleta contiene hallazgos + observaciones + contexto, puede exceder 1000
-      const observacionesClínicas = evaluacionCompleta.split('OBSERVACIONES CLÍNICAS:\n')[1]?.trim() || '';
+      // ✅ v1.89.0: ENVIAR TEXTO COMPLETO con hallazgos + observaciones
+      // El backend almacena en descripcion_evaluacion toda la información
+      // Esto permite ver hallazgos + comentarios cuando se abre "Ver Detalles"
+      const descripcionCompleta = evaluacionCompleta;
 
       // Preparar payload para el API
       const payload = {
         evaluacion: tipoEvaluacion,
-        descripcion: observacionesClínicas
+        descripcion: descripcionCompleta
       };
 
-      console.log('📤 Enviando evaluación al backend:', payload);
+      console.log('📤 Enviando evaluación COMPLETA al backend:', payload);
 
       // Llamar al API para guardar evaluación
-      const response = await teleecgService.evaluarImagen(idImagen, tipoEvaluacion, observacionesClínicas);
+      const response = await teleecgService.evaluarImagen(idImagen, tipoEvaluacion, descripcionCompleta);
 
       console.log('✅ Respuesta del backend:', response);
 
