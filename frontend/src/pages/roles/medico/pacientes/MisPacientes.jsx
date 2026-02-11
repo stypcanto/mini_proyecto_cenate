@@ -333,7 +333,7 @@ export default function MisPacientes() {
       // ✅ v1.80.0: Cargar estados de evaluación de ECGs
       cargarEstadosEvaluacion(pacientes);
     }
-  }, [esCardiologo]);
+  }, [esCardiologo, pacientes]);
 
   const cargarEspecialidades = async () => {
     try {
@@ -1914,9 +1914,13 @@ export default function MisPacientes() {
                             <button
                               onClick={() => abrirCarruselECG(paciente)}
                               disabled={cargandoECG}
-                              title={evaluacionesEstados[paciente.numDoc]?.estado === 'EVALUADO'
-                                ? 'ECG ya evaluado'
-                                : 'Atender lectura de ECG'}
+                              title={
+                                cargandoECG
+                                  ? 'Cargando ECG...'
+                                  : evaluacionesEstados[paciente.numDoc]?.estado === 'EVALUADO'
+                                  ? 'ECG ya evaluado'
+                                  : 'Pendiente de atender'
+                              }
                               className={`relative inline-flex items-center justify-center gap-2 px-4 py-3 rounded-lg font-semibold text-sm transition-all ${
                                 evaluacionesEstados[paciente.numDoc]?.estado === 'EVALUADO'
                                   ? 'bg-blue-100 text-blue-700 border border-blue-400 hover:bg-blue-200'
