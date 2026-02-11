@@ -213,21 +213,40 @@ public class AuthController {
     }
 
     /**
-     * 🔐 DEBUG - Generar hash BCrypt para una contraseña
-     * USAR PARA RESETEAR CONTRASEÑA DEL USUARIO 84151616
-     * Endpoint: GET /api/auth/debug/hash-password?password=MiContraseña
+     * 🔐 DEBUG - Validar si contraseña es correcta
+     * Endpoint: POST /api/auth/debug/validate-password
+     * Body: {"username": "84151616", "password": "@Prueba654321"}
      */
-    @GetMapping("/debug/hash-password")
-    public ResponseEntity<?> debugHashPassword(@RequestParam String password) {
+    @PostMapping("/debug/validate-password")
+    public ResponseEntity<?> debugValidatePassword(@RequestBody Map<String, String> request) {
         try {
-            String hashedPassword = new org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder(12).encode(password);
-            log.info("🔐 Hash BCrypt generado para password de {} caracteres", password.length());
+            String username = request.get("username");
+            String password = request.get("password");
+
+            Usuario user = usuarioRepository.findByNameUser(username).orElse(null);
+            if (user == null) {
+                return ResponseEntity.ok(Map.of(
+                    "valido", false,
+                    "razon", "Usuario no encontrado"
+                ));
+            }
+
+            org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder encoder =
+                new org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder(12);
+            boolean matches = encoder.matches(password, user.getPassUser());
+
+            log.info("🔐 Validación contraseña - Usuario: {}, Coincide: {}", username, matches);
+            log.info("   Password ingresada: {} caracteres", password.length());
+            log.info("   Hash en BD: {}", user.getPassUser().substring(0, 30) + "...");
+
             return ResponseEntity.ok(Map.of(
-                "password", password,
-                "hash", hashedPassword,
-                "instrucciones", "Copiar el hash y ejecutar UPDATE en BD: UPDATE dim_usuarios SET pass_user = 'HASH_AQUI' WHERE name_user = '84151616';"
+                "usuario", username,
+                "valido", matches,
+                "passwordIngresada", password.length() + " caracteres",
+                "hashEnBD", user.getPassUser().substring(0, 30) + "..."
             ));
         } catch (Exception e) {
+            log.error("Error en validación:", e);
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
     }
