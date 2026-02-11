@@ -591,6 +591,24 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
                 }
             }
 
+            // ✅ Extraer detalles de cita agendada (NEW v3.4.0 - indices 34, 35, 36)
+            java.time.LocalDate fechaAtencion = row.length > 34 ? convertToLocalDate(row[34]) : null;
+            java.time.LocalTime horaAtencion = null;
+            if (row.length > 35 && row[35] != null) {
+                try {
+                    if (row[35] instanceof java.time.LocalTime) {
+                        horaAtencion = (java.time.LocalTime) row[35];
+                    } else if (row[35] instanceof java.sql.Time) {
+                        horaAtencion = ((java.sql.Time) row[35]).toLocalTime();
+                    } else if (row[35] instanceof String) {
+                        horaAtencion = java.time.LocalTime.parse((String) row[35]);
+                    }
+                } catch (Exception e) {
+                    log.warn("⚠️ Error parsing horaAtencion: {}", e.getMessage());
+                }
+            }
+            Long idPersonal = row.length > 36 ? toLongSafe("id_personal", row[36]) : null;
+
             return SolicitudBolsaDTO.builder()
                     .idSolicitud(toLongSafe("id_solicitud", row[0]))
                     .numeroSolicitud((String) row[1])
@@ -627,6 +645,9 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
                     .fechaCambioEstado(fechaCambioEstado)  // NEW v3.3.1 (ajustado a 31)
                     .usuarioCambioEstadoId(row.length > 32 ? toLongSafe("usuario_cambio_estado_id", row[32]) : null) // NEW v3.3.1 (ajustado a 32)
                     .nombreUsuarioCambioEstado(row.length > 33 ? (String) row[33] : null) // NEW v3.3.1 (ajustado a 33)
+                    .fechaAtencion(fechaAtencion)          // NEW v3.4.0 - fecha_atencion (índice 34)
+                    .horaAtencion(horaAtencion)            // NEW v3.4.0 - hora_atencion (índice 35)
+                    .idPersonal(idPersonal)                // NEW v3.4.0 - id_personal (índice 36)
                     .build();
         } catch (Exception e) {
             log.error("Error mapeando resultado SQL en índice. Error: {}", e.getMessage(), e);
