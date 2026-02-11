@@ -655,6 +655,20 @@ public class SolicitudBolsaController {
                 log.info("👨‍⚕️ Guardando personal/médico: {}", dto.getIdPersonal());
                 solicitud.setIdPersonal(dto.getIdPersonal());
 
+                // ✅ v1.63.1: Cuando se asigna un médico, obtener y guardar su especialidad
+                try {
+                    DetalleMedicoDTO detalleMedico = detalleMedicoService.obtenerDetalleMedico(dto.getIdPersonal());
+                    if (detalleMedico != null && detalleMedico.getEspecialidad() != null) {
+                        String especialidadMedico = detalleMedico.getEspecialidad();
+                        solicitud.setEspecialidad(especialidadMedico);
+                        log.info("✅ Especialidad del médico guardada: {}", especialidadMedico);
+                    } else {
+                        log.warn("⚠️ No se encontró especialidad para el médico ID: {}", dto.getIdPersonal());
+                    }
+                } catch (Exception e) {
+                    log.error("❌ Error obteniendo especialidad del médico: {}", e.getMessage());
+                }
+
                 // ✅ v1.47.0: Cuando se asigna un médico desde Gestión de Citas,
                 // también asignar la gestora actual para que aparezca en "Mi Bandeja"
                 String username = SecurityContextHolder.getContext().getAuthentication().getName();
