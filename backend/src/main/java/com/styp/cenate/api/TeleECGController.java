@@ -403,21 +403,26 @@ public class TeleECGController {
             @Parameter(description = "Página (0-indexed)") @RequestParam(required = false, defaultValue = "0") int page,
             @Parameter(description = "Tamaño de página") @RequestParam(required = false, defaultValue = "15") int size) {
 
-        log.info("🚀 Listando ECGs CONSOLIDADAS por asegurado - DNI: {}, Estado: {}, Página: {}, Tamaño: {}", numDoc, estado, page, size);
+        log.info("🚀 Listando ECGs CONSOLIDADAS - DNI: {}, Estado: {}, Página: {}, Tamaño: {}", numDoc, estado, page, size);
 
         try {
             String estadoFinal = "TODOS".equals(estado) ? null : estado;
 
-            // ✅ v1.70.0: Usar Pageable para controlar paginación
-            Pageable pageable = PageRequest.of(page, size, Sort.by("fechaEnvio").descending());
+            // ✅ v1.80.5: Usar size del frontend (50) en lugar de default (15)
+            int finalSize = size > 0 ? size : 50;  // Si no especifica, usar 50
+            Pageable pageable = PageRequest.of(page, finalSize, Sort.by("fechaEnvio").descending());
+
+            log.debug("🔎 Búsqueda: numDoc={}, estado={}, pageable={}",
+                numDoc != null ? numDoc : "ALL", estadoFinal != null ? estadoFinal : "ALL",
+                pageable);
 
             // Usar listarAgrupaPorAsegurado que devuelve datos consolidados paginados
             Page<AseguradoConECGsDTO> resultado = teleECGService.listarAgrupaPorAsegurado(
                 numDoc, estadoFinal, null, null, null, pageable
             );
 
-            log.info("✅ Se encontraron {} asegurados con ECGs consolidadas (página {}/{})",
-                resultado.getContent().size(), page, resultado.getTotalPages());
+            log.info("✅ Búsqueda completada: {} asegurados encontrados (página {}/{})",
+                resultado.getContent().size(), resultado.getNumber() + 1, resultado.getTotalPages());
 
             // ✅ FIX: Retornar Map envuelto para mejor serialización
             return ResponseEntity.ok(Map.of(
@@ -734,6 +739,41 @@ public class TeleECGController {
     /**
      * 🔍 ENDPOINT DE DIAGNÓSTICO - Ver permisos del usuario actual
      */
+    /**
+     * ✅ v1.80.5: Debug endpoint para verificar búsqueda por DNI
+     */
+    @GetMapping("/debug/buscar-dni")
+    @Operation(summary = "Debug: Buscar paciente por DNI exacto")
+    public ResponseEntity<?> debugBuscarDNI(
+            @Parameter(description = "DNI del paciente") @RequestParam String dni) {
+        try {
+            log.info("🔍 DEBUG: Buscando DNI exacto: {}", dni);
+
+            // Limitar búsqueda a 10 resultados
+            Pageable pageable = PageRequest.of(0, 10);
+
+            Page<AseguradoConECGsDTO> resultado = teleECGService.listarAgrupaPorAsegurado(
+                dni, null, null, null, null, pageable
+            );
+
+            log.info("✅ DEBUG: Encontrados {} registros para DNI {}",
+                resultado.getTotalElements(), dni);
+
+            return ResponseEntity.ok(Map.of(
+                "dni", dni,
+                "totalEncontrados", resultado.getTotalElements(),
+                "registros", resultado.getContent(),
+                "mensaje", resultado.getContent().isEmpty() ?
+                    "❌ No encontrado en BD" :
+                    "✅ Encontrado en BD"
+            ));
+        } catch (Exception e) {
+            log.error("❌ Error en debug búsqueda:", e);
+            return ResponseEntity.badRequest()
+                .body(Map.of("error", e.getMessage()));
+        }
+    }
+
     @GetMapping("/debug/permisos")
     @Operation(summary = "Diagnóstico - Ver permisos del usuario")
     public ResponseEntity<ApiResponse<Map<String, Object>>> debugPermisos() {
