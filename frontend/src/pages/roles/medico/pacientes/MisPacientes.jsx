@@ -1913,16 +1913,20 @@ export default function MisPacientes() {
                             {/* ✅ v1.80.0: Botón para atender/evaluar ECG */}
                             <button
                               onClick={() => abrirCarruselECG(paciente)}
-                              disabled={cargandoECG}
+                              disabled={cargandoECG || paciente.condicion === 'Atendido'}
                               title={
                                 cargandoECG
                                   ? 'Cargando ECG...'
+                                  : paciente.condicion === 'Atendido'
+                                  ? 'Paciente ya atendido'
                                   : evaluacionesEstados[paciente.numDoc]?.estado === 'EVALUADO'
                                   ? 'ECG ya evaluado'
                                   : 'Pendiente de atender'
                               }
                               className={`relative inline-flex items-center justify-center gap-2 px-4 py-3 rounded-lg font-semibold text-sm transition-all ${
-                                evaluacionesEstados[paciente.numDoc]?.estado === 'EVALUADO'
+                                paciente.condicion === 'Atendido'
+                                  ? 'bg-green-600 text-white border border-green-700 hover:bg-green-700'
+                                  : evaluacionesEstados[paciente.numDoc]?.estado === 'EVALUADO'
                                   ? 'bg-green-600 text-white border border-green-700 hover:bg-green-700'
                                   : cargandoECG
                                   ? 'bg-gray-100 text-gray-400 cursor-not-allowed opacity-50 border border-gray-200'
