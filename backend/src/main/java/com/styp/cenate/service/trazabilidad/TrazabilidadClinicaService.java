@@ -132,7 +132,7 @@ public class TrazabilidadClinicaService {
                     .fechaAtencion(OffsetDateTime.now())
                     .idIpress(solicitud.getIdIpress())
                     .idMedico(idMedico)
-                    .motivoConsulta("Atención programada desde Mis Pacientes - " + solicitud.getTipoBolsa())
+                    .motivoConsulta("Atención programada desde Mis Pacientes - " + solicitud.getTipoCita())
                     .diagnostico(solicitud.getCondicionMedica())
                     .observacionesGenerales(observaciones != null ? observaciones : solicitud.getObservacionesMedicas())
                     .build();
@@ -185,8 +185,9 @@ public class TrazabilidadClinicaService {
                 if ("ENVIADA".equalsIgnoreCase(ecg.getEstado())) {
                     // 3. Actualizar estado a ATENDIDA
                     ecg.setEstado("ATENDIDA");
-                    ecg.setIdUsuarioEvaluador(idMedico);
-                    ecg.setFechaEvaluacion(OffsetDateTime.now());
+                    // Nota: El usuarioEvaluador se asigna como relación, no por ID
+                    // Para este caso, solo actualizamos el estado (compatible con versión anterior)
+                    ecg.setFechaEvaluacion(java.time.LocalDateTime.now());
                     teleECGImagenRepository.save(ecg);
                     actualizados++;
 
@@ -202,7 +203,7 @@ public class TrazabilidadClinicaService {
                             .idMedico(idMedico)
                             .motivoConsulta("Evaluación de electrocardiograma")
                             .diagnostico(ecg.getDescripcionEvaluacion())
-                            .tratamiento(ecg.getNotaClinicaPlan())
+                            .tratamiento(ecg.getNotaClinicaPlanSeguimiento())
                             .observacionesGenerales(construirObservacionesECG(ecg))
                             .build();
 
@@ -286,11 +287,11 @@ public class TrazabilidadClinicaService {
         }
 
         if (signos.getFrecuenciaCardiaca() != null) {
-            atencion.setFrecuenciaCardiaca(signos.getFrecuenciaCardiaca().longValue());
+            atencion.setFrecuenciaCardiaca(signos.getFrecuenciaCardiaca());
         }
 
         if (signos.getSaturacionO2() != null) {
-            atencion.setSaturacionO2(signos.getSaturacionO2().longValue());
+            atencion.setSaturacionO2(signos.getSaturacionO2());
         }
     }
 }

@@ -82,7 +82,7 @@ public class AtenderPacienteService {
             Long idMedicoActual = obtenerIdMedicoActual();
             trazabilidadClinicaService.registrarDesdeMisPacientes(
                 idSolicitudBolsa,
-                request.getObservaciones(),
+                null,  // No hay observaciones en AtenderPacienteRequest
                 idMedicoActual
             );
             log.info("✅ [v1.81.0] Atención registrada en historial centralizado");
