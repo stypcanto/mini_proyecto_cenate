@@ -348,9 +348,7 @@ public interface TeleECGImagenRepository extends JpaRepository<TeleECGImagen, Lo
      */
     @Query("""
         SELECT DISTINCT t FROM TeleECGImagen t
-        WHERE (:numDoc IS NULL OR
-               CAST(t.numDocPaciente AS VARCHAR) LIKE %:numDoc% OR
-               CAST(t.numDocPaciente AS VARCHAR) LIKE %:numDocSinCeros%)
+        WHERE (:numDoc IS NULL OR t.numDocPaciente LIKE %:numDoc%)
           AND (:estado IS NULL OR t.estado = :estado)
           AND (:idIpress IS NULL OR t.ipressOrigen.idIpress = :idIpress)
           AND t.statImagen = 'A'
