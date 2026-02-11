@@ -8,6 +8,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import jakarta.annotation.PostConstruct;
 import java.util.List;
 
 /**
@@ -23,6 +24,12 @@ import java.util.List;
 public class DetalleMedicoController {
 
 	private final DetalleMedicoService detalleMedicoService;
+
+	@PostConstruct
+	public void init() {
+		log.info("✅ DetalleMedicoController inicializado correctamente");
+		System.out.println("✅✅✅ DetalleMedicoController inicializado correctamente ✅✅✅");
+	}
 
 	/**
 	 * Obtiene TODOS los médicos disponibles para TeleECG

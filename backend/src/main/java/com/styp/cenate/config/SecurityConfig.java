@@ -307,12 +307,17 @@ public class SecurityConfig {
                                                 // 📅 SOLICITUD DE TURNOS - PERMITIR TEMPORALMENTE
                                                 // =====================================================
                                                 .requestMatchers("/api/solicitud-turnos/**").permitAll()
-                                                
+
+                                                // =====================================================
+                                                // 👨‍⚕️ ATENCIONES CLÍNICAS - DETALLES MÉDICOS (Solo autenticados)
+                                                // =====================================================
+                                                .requestMatchers("/api/atenciones-clinicas/**").authenticated()
+
                                               // FIN SOLO PARA PRUEBAS RAPIDAS
                                               //******************************************************************
                                               //******************************************************************
                                               //******************************************************************
-                                                
+
                                                 // =====================================================
                                                 // 🔒 Cualquier otro endpoint requiere autenticación
                                                 // =====================================================
