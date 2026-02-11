@@ -1835,7 +1835,7 @@ export default function MisPacientes() {
                 <tbody className="bg-white divide-y divide-gray-200">
                   {pacientesFiltradosPorFecha.map((paciente, idx) => (
                     <tr key={idx} className={`hover:transition-colors duration-150 ${
-                      paciente.esUrgente ? 'bg-red-100 hover:bg-red-200' : paciente.condicion === 'Atendido' ? 'bg-emerald-50/30 hover:bg-gray-50' : 'bg-white hover:bg-gray-50'
+                      paciente.esUrgente ? 'bg-red-100 hover:bg-red-200' : paciente.condicion === 'Atendido' ? 'bg-emerald-200 hover:bg-emerald-300' : 'bg-white hover:bg-gray-50'
                     } ${idx % 2 === 0 ? '' : 'bg-opacity-50'}`}>
                       {/* Paciente: Nombre en bold + DNI abajo en gris + Ojo para ver detalles */}
                       <td className="px-4 py-3">
