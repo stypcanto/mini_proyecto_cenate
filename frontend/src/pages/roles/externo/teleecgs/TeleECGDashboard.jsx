@@ -15,6 +15,8 @@ import UploadImagenECG from "../../../../components/teleecgs/UploadImagenECG";
 import ListaECGsPacientes from "../../../../components/teleecgs/ListaECGsPacientes";
 import VisorECGModal from "../../../../components/teleecgs/VisorECGModal";
 import TeleEKGBreadcrumb from "../../../../components/teleecgs/TeleEKGBreadcrumb";
+import ClinicalMetricsCard from "../../../../components/teleecgs/ClinicalMetricsCard";
+import ImprovedECGTable from "../../../../components/teleecgs/ImprovedECGTable";
 
 /**
  * 🫀 TeleEKGDashboard - Página principal de envío de electrocardiogramas
@@ -229,7 +231,20 @@ export default function TeleEKGDashboard() {
         {/* ✅ Breadcrumb de navegación */}
         <TeleEKGBreadcrumb />
 
-        {/* 📊 Tarjetas de Estadísticas */}
+        {/* 🏥 NUEVO: Resumen Clínico Médico Mejorado */}
+        <div className="mb-8">
+          <div className="mb-4">
+            <h2 className="text-xl font-bold text-gray-900 mb-1">
+              📊 Resumen Clínico - Priorización por Riesgo
+            </h2>
+            <p className="text-gray-600 text-sm">
+              Desglose automático de pacientes por nivel de urgencia clínica
+            </p>
+          </div>
+          <ClinicalMetricsCard estadisticas={stats} />
+        </div>
+
+        {/* 📊 Tarjetas de Estadísticas (Legacy - Mantener) */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
           <div className="bg-white rounded-lg shadow-md p-6 border-l-4 border-blue-600">
             <div className="flex items-center justify-between">
@@ -310,12 +325,17 @@ export default function TeleEKGDashboard() {
           </div>
         </div>
 
-        {/* 📋 Lista de EKGs */}
-        <div className="bg-white rounded-lg shadow-md overflow-hidden">
+        {/* 📋 Lista de EKGs - MEJORADA CON PERSPECTIVA CLÍNICA */}
+        <div className="bg-white rounded-lg shadow-md p-6">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+            <Eye className="w-5 h-5 text-blue-600" />
+            EKGs por Evaluar (Ordenado por Riesgo Clínico)
+          </h3>
+
           {loading ? (
             <div className="p-8 text-center">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-              <p className="text-gray-600 mt-4">Cargando EKGs...</p>
+              <p className="text-gray-600 mt-4">Cargando datos clínicos...</p>
             </div>
           ) : ecgsFiltrados.length === 0 ? (
             <div className="p-8 text-center">
@@ -325,17 +345,16 @@ export default function TeleEKGDashboard() {
               </p>
             </div>
           ) : (
-            <ListaECGsPacientes
-              ecgs={ecgsFiltrados}
-              onVer={abrirVisor}
-              onDescargar={manejarDescargar}
-              onEliminar={manejarEliminar}
-              onProcesar={manejarProcesar}
-              onRechazar={manejarRechazar}
-              accionando={accionando}
-              imagenEnAccion={imagenEnAccion}
-              onRefresh={cargarEKGs}
-            />
+            <>
+              {/* Tabla Mejorada con Filtros Clínicos */}
+              <ImprovedECGTable
+                ecgs={ecgsFiltrados}
+                loading={loading}
+                onVer={abrirVisor}
+                onDescargar={manejarDescargar}
+                onEliminar={manejarEliminar}
+              />
+            </>
           )}
         </div>
       </div>
