@@ -202,7 +202,7 @@ export default function IPRESSWorkspace() {
     try {
       setLoading(true);
 
-      // ✅ v1.83.0: SI hay búsqueda, enviar al backend. SI no, carga progresiva
+      // ✅ v1.82.0: SI hay búsqueda, enviar al backend. SI no, cargar normalmente
       const tieneBusqueda = numDocBusqueda && numDocBusqueda.trim() !== "";
       console.log(`🔍 cargarEKGs - Búsqueda: "${numDocBusqueda}" (tiene búsqueda: ${tieneBusqueda})`);
 
@@ -239,57 +239,16 @@ export default function IPRESSWorkspace() {
         return;
       }
 
-      // ✅ OPCIÓN 2: Sin búsqueda → Carga progresiva (RÁPIDO + eficiente)
-      // v1.83.0: Mostrar datos RÁPIDAMENTE (1 página) luego cargar más en background
-      console.log(`📥 Carga progresiva: mostrando primero 1 página...`);
+      // ✅ OPCIÓN 2: Sin búsqueda → Cargar primeras 10 páginas en paralelo (NORMAL)
       const response = await teleecgService.listarImagenes("");
       let imagenes = response?.content || [];
       const totalPages = Math.min(response?.totalPages || 1, 10);  // MAX 10 páginas
 
-      console.log(`⚡ Página 1 lista: ${imagenes.length} imágenes`);
+      console.log(`✅ Total de imágenes en página 1: ${imagenes.length}, totalPages: ${totalPages}`);
 
-      // ✅ MOSTRAR DATOS INMEDIATAMENTE con la primera página
-      const pacientesUnicos = new Set(imagenes.map((img) => img.dni || img.numDocPaciente).filter(Boolean));
-      const porDni = {};
-      const deduplicados = {};
-
-      imagenes.forEach(img => {
-        const dni = img.dni || img.numDocPaciente;
-        if (dni) {
-          if (!porDni[dni]) {
-            porDni[dni] = [];
-          }
-          porDni[dni].push(img);
-          if (!deduplicados[dni]) {
-            deduplicados[dni] = img;
-          }
-        }
-      });
-
-      const ecgsFormateados = Object.entries(deduplicados).map(([dni, img]) => {
-        const esUrgente = img.es_urgente === true || img.esUrgente === true;
-        const imagenesDni = porDni[dni] || [];
-
-        return {
-          ...img,
-          nombrePaciente: img.nombreCompleto || img.nombresPaciente || img.nombrePaciente || "Cargando...",
-          genero: img.generoPaciente || img.genero || img.sexo || "-",
-          edad: img.edadPaciente || img.edad || img.ageinyears || "-",
-          telefono: img.telefonoPrincipalPaciente || img.telefono || "-",
-          esUrgente: esUrgente,
-          cantidadImagenes: imagenesDni.length || 0,
-        };
-      });
-
-      setEcgs(ecgsFormateados);
-      setTodasLasImagenes(imagenes);
-      setTotalPagesFromBackend(totalPages);
-      setCurrentPage(1);
-      setLoading(false);
-
-      // ✅ CARGAR RESTO EN BACKGROUND (no bloquea la UI)
+      // Cargar hasta 10 páginas en paralelo
       if (totalPages > 1) {
-        console.log(`📥 Cargando páginas 2-${totalPages} en background...`);
+        console.log(`📥 Cargando ${totalPages - 1} páginas en paralelo (máx 10)...`);
 
         const pagePromises = [];
         for (let page = 1; page < totalPages; page++) {
@@ -309,37 +268,95 @@ export default function IPRESSWorkspace() {
           );
         }
 
-        // Ejecutar en background sin await - UI ya está actualizada
-        Promise.all(pagePromises).then(pageResults => {
-          let imagenesAcumuladas = imagenes;
-          pageResults.forEach(result => {
-            if (result.success) {
-              imagenesAcumuladas = imagenesAcumuladas.concat(result.content);
-            }
-          });
-
-          console.log(`✅ Background: ${imagenesAcumuladas.length} imágenes totales cargadas`);
-          setTodasLasImagenes(imagenesAcumuladas);
-        }).catch(err => {
-          console.error("❌ Error cargando páginas en background:", err);
+        const pageResults = await Promise.all(pagePromises);
+        pageResults.forEach(result => {
+          if (result.success) {
+            imagenes = imagenes.concat(result.content);
+          }
         });
       }
 
-      // ✅ v1.83.0: Calcular estadísticas con datos de la primera página
+      console.log(`✅ TOTAL de imágenes cargadas: ${imagenes.length}`);
+
+      // ✅ RÁPIDO: Preparar datos iniciales sin enriquecimiento
+      const pacientesUnicos = new Set(imagenes.map((img) => img.dni || img.numDocPaciente).filter(Boolean));
+      const porDni = {};
+      const deduplicados = {};
+
+      imagenes.forEach(img => {
+        const dni = img.dni || img.numDocPaciente;
+        if (dni) {
+          if (!porDni[dni]) {
+            porDni[dni] = [];
+          }
+          porDni[dni].push(img);
+          if (!deduplicados[dni]) {
+            deduplicados[dni] = img;
+          }
+        }
+      });
+
+      // 🔧 v1.71.0: Mapear a formato de tabla CON DATOS DISPONIBLES (sin esperar enriquecimiento)
+      const ecgsFormateados = Object.entries(deduplicados).map(([dni, img]) => {
+        // ✅ IMPORTANTE: El backend retorna es_urgente en el nivel superior, NO en array imagenes
+        // Los datos vienen del endpoint /api/teleekgs que devuelve estructuras aplanadas
+        const esUrgente = img.es_urgente === true || img.esUrgente === true;
+
+        // Contar imágenes del mismo paciente en el array por DNI
+        const imagenesDni = porDni[dni] || [];
+
+        return {
+          ...img,
+          nombrePaciente: img.nombreCompleto || img.nombresPaciente || img.nombrePaciente || "Cargando...",
+          genero: img.generoPaciente || img.genero || img.sexo || "-",
+          edad: img.edadPaciente || img.edad || img.ageinyears || "-",
+          telefono: img.telefonoPrincipalPaciente || img.telefono || "-",
+          esUrgente: esUrgente,  // ✅ Obtener directamente de img.es_urgente
+          cantidadImagenes: imagenesDni.length || 0,  // ✅ Contar del array porDni
+        };
+      });
+
+      // ✅ v1.71.0: Calcular estadísticas CONTANDO IMÁGENES, no pacientes
       const imagenesPendientes = imagenes.filter((img) => img.estado === "ENVIADA");
       const imagenesObservadas = imagenes.filter((img) => img.estado === "OBSERVADA");
       const imagenesAtendidas = imagenes.filter((img) => img.estado === "ATENDIDA");
 
+      // Pacientes únicos para mostrar deduplicados
+      const pacientesPendientes = new Set(imagenesPendientes.map((img) => img.dni || img.numDocPaciente));
+      const pacientesObservadas = new Set(imagenesObservadas.map((img) => img.dni || img.numDocPaciente));
+      const pacientesAtendidas = new Set(imagenesAtendidas.map((img) => img.dni || img.numDocPaciente));
+
       const newStats = {
-        total: imagenes.length,
-        cargadas: pacientesUnicos.size,
-        enEvaluacion: imagenesPendientes.length,
-        observadas: imagenesObservadas.length,
-        atendidas: imagenesAtendidas.length,
-        enviadas: imagenesPendientes.length,
+        total: imagenes.length,  // ✅ TOTAL DE IMÁGENES, no pacientes
+        cargadas: pacientesUnicos.size,  // Pacientes únicos
+        enEvaluacion: imagenesPendientes.length,  // Imágenes pendientes
+        observadas: imagenesObservadas.length,    // Imágenes observadas
+        atendidas: imagenesAtendidas.length,      // Imágenes atendidas
+        enviadas: imagenesPendientes.length,      // Imágenes enviadas
       };
 
+      // ✅ MOSTRAR DATOS INMEDIATAMENTE (sin esperar enriquecimiento)
+      setEcgs(Object.entries(imagenes.length > 0 ?
+        imagenes.reduce((acc, img) => {
+          const dni = img.numDocPaciente || img.dni;
+          if (!acc[dni]) acc[dni] = img;
+          return acc;
+        }, {}) :
+        {}
+      ).map(([dni, img]) => ({
+        ...img,
+        nombrePaciente: img.nombreCompleto || img.nombresPaciente || img.nombrePaciente || "Sin nombre",
+        genero: img.generoPaciente || img.genero || img.sexo || "-",
+        edad: img.edadPaciente || img.edad || img.ageinyears || "-",
+        telefono: img.telefonoPrincipalPaciente || img.telefono || "-",
+        esUrgente: img.es_urgente === true || img.esUrgente === true,
+        cantidadImagenes: imagenes.filter(i => (i.dni || i.numDocPaciente) === dni).length,
+      })));
+
+      setTodasLasImagenes(imagenes);
+      setCurrentPage(1);
       setStats(newStats);
+      setLoading(false);
 
     } catch (error) {
       console.error("❌ Error al cargar EKGs:", error);
