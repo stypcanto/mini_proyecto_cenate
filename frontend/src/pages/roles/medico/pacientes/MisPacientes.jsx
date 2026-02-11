@@ -481,7 +481,7 @@ export default function MisPacientes() {
     }
   };
 
-  // ✅ v1.80.0: Cargar estados de evaluación ECG para todos los pacientes
+  // ✅ v1.80.0: Cargar estados de evaluación ECG (en background, sin bloquear UI)
   const cargarEstadosEvaluacion = async (pacientesActuales) => {
     try {
       const dnis = [...new Set(pacientesActuales.map(p => p.numDoc).filter(Boolean))];
@@ -489,31 +489,56 @@ export default function MisPacientes() {
 
       const estados = {};
 
-      // Procesar cada DNI
-      for (const dni of dnis) {
-        try {
-          const resultado = await teleecgService.listarAgrupoPorAsegurado(dni, '');
-          if (resultado.length > 0 && resultado[0].imagenes) {
-            // Obtener el estado de la última evaluación
-            const evaluaciones = resultado[0].imagenes
-              .filter(img => img.evaluacion && img.evaluacion !== 'SIN_EVALUAR')
-              .map(img => ({
-                evaluacion: img.evaluacion,
-                descripcion: img.descripcionEvaluacion,
-                fecha: img.fechaEvaluacion,
-                hallazgos: img.hallazgos,
-                observacionesClinicas: img.observacionesClinicas
-              }));
+      // ✅ Procesar en paralelo pero en chunks de 5 para no saturar el backend
+      const chunks = [];
+      for (let i = 0; i < dnis.length; i += 5) {
+        chunks.push(dnis.slice(i, i + 5));
+      }
 
-            estados[dni] = evaluaciones.length > 0
-              ? { estado: 'EVALUADO', datos: evaluaciones[0] }
-              : { estado: 'PENDIENTE' };
-          } else {
-            estados[dni] = { estado: 'SIN_IMAGENES' };
-          }
-        } catch (error) {
-          console.error(`Error cargando estado evaluación para DNI ${dni}:`, error);
-          estados[dni] = { estado: 'ERROR' };
+      for (const chunk of chunks) {
+        try {
+          await Promise.all(
+            chunk.map(async (dni) => {
+              try {
+                const resultado = await teleecgService.listarAgrupoPorAsegurado(dni, '');
+
+                if (resultado && Array.isArray(resultado) && resultado.length > 0) {
+                  const imagenes = resultado[0]?.imagenes;
+                  if (imagenes && Array.isArray(imagenes)) {
+                    // Obtener la última evaluación
+                    const evaluadas = imagenes.filter(
+                      img => img && img.evaluacion && img.evaluacion !== 'SIN_EVALUAR'
+                    );
+
+                    if (evaluadas.length > 0) {
+                      const ultima = evaluadas[evaluadas.length - 1];
+                      estados[dni] = {
+                        estado: 'EVALUADO',
+                        datos: {
+                          evaluacion: ultima.evaluacion || '',
+                          descripcion: ultima.descripcionEvaluacion || '',
+                          fecha: ultima.fechaEvaluacion || '',
+                          hallazgos: ultima.hallazgos || '',
+                          observacionesClinicas: ultima.observacionesClinicas || ''
+                        }
+                      };
+                    } else {
+                      estados[dni] = { estado: 'PENDIENTE' };
+                    }
+                  } else {
+                    estados[dni] = { estado: 'SIN_IMAGENES' };
+                  }
+                } else {
+                  estados[dni] = { estado: 'SIN_IMAGENES' };
+                }
+              } catch (err) {
+                console.warn(`⚠️ No se pudo cargar estado para DNI ${dni}:`, err.message);
+                estados[dni] = { estado: 'PENDIENTE' };
+              }
+            })
+          );
+        } catch (err) {
+          console.warn('⚠️ Error en chunk de evaluaciones:', err.message);
         }
       }
 
