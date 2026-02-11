@@ -603,11 +603,11 @@ export default function ModalEvaluacionECG({
       return;
     }
 
-    // ✅ v9.1.0: 4️⃣ VALIDACIÓN CARDIOLÓGICA - Si es ANORMAL, DEBE tener urgencia + contexto
-    if (tipoEvaluacion === "ANORMAL" && !urgencia) {
-      toast.error("🚨 CRÍTICO: Si es ANORMAL debes clasificar la URGENCIA (normal/cambios_inespecíficos/patológico/emergencia)");
-      return;
-    }
+    // ✅ v1.89.0: URGENCIA COMENTADA POR AHORA - Se agregará en siguiente versión
+    // if (tipoEvaluacion === "ANORMAL" && !urgencia) {
+    //   toast.error("🚨 CRÍTICO: Si es ANORMAL debes clasificar la URGENCIA");
+    //   return;
+    // }
 
     // ✅ v9.1.0: 5️⃣ Si tiene dolor de pecho, avisar si urgencia no es EMERGENCIA
     if (contextoClinico.presentacionClinica.includes('doloPecho') && urgencia !== 'EMERGENCIA') {
@@ -1145,32 +1145,7 @@ export default function ModalEvaluacionECG({
                           </div>
                         )}
 
-                        {/* ✅ v1.89.0: CLASIFICACIÓN DE URGENCIA (REQUERIDO PARA ANORMAL) */}
-                        {tipoEvaluacion === "ANORMAL" && (
-                          <div className="mt-3 bg-red-50 p-3 rounded-lg border-2 border-red-400">
-                            <label className="block text-xs font-bold text-red-900 mb-2">
-                              🚨 REQUERIDO: Clasificar URGENCIA MÉDICA
-                            </label>
-                            <div className="space-y-2">
-                              {URGENCIAS.map(u => (
-                                <label key={u.key} className={`flex items-center gap-2 cursor-pointer p-2 rounded transition-all text-xs ${
-                                  urgencia === u.key
-                                    ? `bg-${u.color}-200 border-2 border-${u.color}-600 ring-2 ring-${u.color}-300`
-                                    : "bg-white border border-gray-200 hover:bg-gray-50"
-                                }`}>
-                                  <input
-                                    type="radio"
-                                    checked={urgencia === u.key}
-                                    onChange={() => setUrgencia(u.key)}
-                                    className="w-4 h-4"
-                                  />
-                                  <span className="font-bold">{u.label}</span>
-                                  <span className="text-gray-600">({u.desc})</span>
-                                </label>
-                              ))}
-                            </div>
-                          </div>
-                        )}
+                        {/* ✅ v1.89.0: URGENCIA COMENTADA - Se agregará en siguiente versión */}
                       </div>
                     )}
                   </div>

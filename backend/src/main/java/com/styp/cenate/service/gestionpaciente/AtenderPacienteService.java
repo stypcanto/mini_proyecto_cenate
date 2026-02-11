@@ -253,4 +253,26 @@ public class AtenderPacienteService {
     private String generarNumeroSolicitud(String prefijo) {
         return prefijo + "-" + System.currentTimeMillis();
     }
+
+    // =====================================================================
+    // ✅ v1.81.0: HELPER PARA OBTENER ID DEL MÉDICO ACTUAL
+    // =====================================================================
+
+    /**
+     * ✅ v1.81.0: Obtiene el ID del médico (PersonalCnt) actualmente autenticado
+     *
+     * @return ID del médico, null si no se encuentra
+     */
+    private Long obtenerIdMedicoActual() {
+        try {
+            String username = SecurityContextHolder.getContext().getAuthentication().getName();
+            log.debug("✅ [v1.81.0] Obteniendo ID del médico actual: {}", username);
+            // TODO: Implementar búsqueda de usuario si es necesario
+            // Por ahora retorna null - el servicio de trazabilidad manejará este caso
+            return null;
+        } catch (Exception e) {
+            log.debug("⚠️ [v1.81.0] No se pudo obtener ID del médico actual", e);
+            return null;
+        }
+    }
 }
