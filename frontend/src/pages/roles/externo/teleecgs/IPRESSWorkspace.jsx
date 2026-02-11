@@ -213,25 +213,40 @@ export default function IPRESSWorkspace() {
         let imagenes = response?.content || [];
         console.log(`✅ Backend retornó ${imagenes.length} imágenes para DNI ${numDocBusqueda}`);
 
+        // 🔍 DEBUG: Log primer item para ver estructura real
+        if (imagenes.length > 0) {
+          console.log(`🔍 [SEARCH] Primer item estructura:`, imagenes[0]);
+          console.log(`🔍 [SEARCH] Fields: dni="${imagenes[0].dni}", numDocPaciente="${imagenes[0].numDocPaciente}", idImagen="${imagenes[0].idImagen}"`);
+        }
+
         // Procesar datos
         const deduplicados = {};
-        imagenes.forEach(img => {
+        imagenes.forEach((img, idx) => {
           const dni = img.dni || img.numDocPaciente;
           if (dni && !deduplicados[dni]) {
             deduplicados[dni] = img;
           }
+          if (idx === 0) console.log(`🔍 [SEARCH] Processing img ${idx}: dni="${dni}"`);
         });
 
-        const ecgsFormateados = Object.values(deduplicados).map(img => ({
-          ...img,
-          nombrePaciente: img.nombreCompleto || img.nombresPaciente || img.nombrePaciente || "Cargando...",
-          genero: img.generoPaciente || img.genero || img.sexo || "-",
-          edad: img.edadPaciente || img.edad || img.ageinyears || "-",
-          telefono: img.telefonoPrincipalPaciente || img.telefono || "-",
-          esUrgente: img.es_urgente === true || img.esUrgente === true,
-          cantidadImagenes: imagenes.filter(i => (i.dni || i.numDocPaciente) === (img.dni || img.numDocPaciente)).length,
-        }));
+        const ecgsFormateados = Object.values(deduplicados).map((img, idx) => {
+          const dniValue = img.dni || img.numDocPaciente;
+          const formatted = {
+            ...img,
+            // ✅ v1.87.0: EXPLÍCITAMENTE asegurar que dni está set para el filtro en MisECGsRecientes
+            dni: dniValue,
+            nombrePaciente: img.nombreCompleto || img.nombresPaciente || img.nombrePaciente || "Cargando...",
+            genero: img.generoPaciente || img.genero || img.sexo || "-",
+            edad: img.edadPaciente || img.edad || img.ageinyears || "-",
+            telefono: img.telefonoPrincipalPaciente || img.telefono || "-",
+            esUrgente: img.es_urgente === true || img.esUrgente === true,
+            cantidadImagenes: imagenes.filter(i => (i.dni || i.numDocPaciente) === dniValue).length,
+          };
+          if (idx === 0) console.log(`🔍 [SEARCH] Formatted item: dni="${formatted.dni}", nombrePaciente="${formatted.nombrePaciente}", has numDocPaciente="${img.numDocPaciente}"`);
+          return formatted;
+        });
 
+        console.log(`✅ [SEARCH] Total ecgsFormateados: ${ecgsFormateados.length}`);
         setEcgs(ecgsFormateados);
         setTotalPagesFromBackend(response?.totalPages || 1);
         setCurrentPage(1);
@@ -266,12 +281,14 @@ export default function IPRESSWorkspace() {
         }
       });
 
-      const ecgsFormateados = Object.entries(deduplicados).map(([dni, img]) => {
+      const ecgsFormateados = Object.entries(deduplicados).map(([dniKey, img]) => {
         const esUrgente = img.es_urgente === true || img.esUrgente === true;
-        const imagenesDni = porDni[dni] || [];
+        const imagenesDni = porDni[dniKey] || [];
 
         return {
           ...img,
+          // ✅ v1.87.0: EXPLÍCITAMENTE asegurar que dni está set para el filtro en MisECGsRecientes
+          dni: dniKey,
           nombrePaciente: img.nombreCompleto || img.nombresPaciente || img.nombrePaciente || "Cargando...",
           genero: img.generoPaciente || img.genero || img.sexo || "-",
           edad: img.edadPaciente || img.edad || img.ageinyears || "-",
