@@ -247,7 +247,24 @@ export default function IPRESSWorkspace() {
         });
 
         console.log(`✅ [SEARCH] Total ecgsFormateados: ${ecgsFormateados.length}`);
+
+        // ✅ v1.87.5: Actualizar STATS también cuando se busca (no solo tabla)
+        const imagenesPendientes = imagenes.filter((img) => img.estado === "ENVIADA");
+        const imagenesObservadas = imagenes.filter((img) => img.estado === "OBSERVADA");
+        const imagenesAtendidas = imagenes.filter((img) => img.estado === "ATENDIDA");
+
+        const searchStats = {
+          total: imagenes.length,
+          cargadas: Object.keys(deduplicados).length,  // Pacientes únicos encontrados
+          enEvaluacion: imagenesPendientes.length,
+          observadas: imagenesObservadas.length,
+          atendidas: imagenesAtendidas.length,
+          enviadas: imagenesPendientes.length,
+        };
+
         setEcgs(ecgsFormateados);
+        setStats(searchStats);  // ✅ IMPORTANTE: Actualizar stats para búsqueda
+        setTodasLasImagenes(imagenes);  // Para modal de edición
         setTotalPagesFromBackend(response?.totalPages || 1);
         setCurrentPage(1);
         setLoading(false);
