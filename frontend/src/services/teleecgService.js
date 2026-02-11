@@ -728,6 +728,33 @@ const teleecgService = {
   },
 
   /**
+   * ✅ v1.80.0: Marcar EKG como ATENDIDO en el workspace
+   * Indica que el EKG ya fue evaluado y procesado
+   * @param {number} idImagen - ID de la imagen ECG
+   * @returns {Promise<Response>} Respuesta del servidor
+   */
+  marcarEKGAtendido: async (idImagen) => {
+    try {
+      console.log("✅ [MARCAR ATENDIDO]:", idImagen);
+
+      const response = await apiClient.put(
+        `/teleekgs/${idImagen}/procesar`,
+        {
+          accion: "ATENDER",
+          observaciones: "Evaluación completada",
+        },
+        true
+      );
+
+      console.log("✅ [EKG Marcado como Atendido]:", response);
+      return response;
+    } catch (error) {
+      console.error("❌ Error al marcar como atendido:", error.message);
+      throw error;
+    }
+  },
+
+  /**
    * 📊 Obtener analytics médicos del dashboard (v1.72.0)
    * Calcula métricas analíticas para gestión clínica:
    * - Distribución por hallazgos (NORMAL/ANORMAL/SIN_EVALUAR)

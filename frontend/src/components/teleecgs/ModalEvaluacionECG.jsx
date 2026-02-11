@@ -12,6 +12,8 @@ import {
   Maximize2,
   Save,
   Ruler, // ✅ v9.2.0: Icono para Calipers
+  Stethoscope, // ✅ v1.80.0: Icono estetoscopio azul para evaluar
+  Eye, // ✅ v1.80.0: Icono ojo para ver detalles
 } from "lucide-react";
 import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
 import toast from "react-hot-toast";
@@ -60,6 +62,8 @@ export default function ModalEvaluacionECG({
   const [showFilterControls, setShowFilterControls] = useState(false);
   const [showFullscreen, setShowFullscreen] = useState(false);
   const [showPacienteDetalles, setShowPacienteDetalles] = useState(false); // ✅ v11.5.0: Modal con información completa del paciente
+  const [evaluacionGuardada, setEvaluacionGuardada] = useState(false); // ✅ v1.80.0: Flag para mostrar botones de acción
+  const [mostrarDetallesEvaluacion, setMostrarDetallesEvaluacion] = useState(false); // ✅ v1.80.0: Mostrar review de evaluación
 
   // ✅ v9.2.0: 3️⃣ CALIPERS - Herramienta de medición de intervalos
   const [showCalipers, setShowCalipers] = useState(false);
@@ -677,11 +681,15 @@ export default function ModalEvaluacionECG({
         }
       }
 
-      // Esperar a que se muestre el toast antes de cerrar
-      await new Promise(resolve => setTimeout(resolve, 800));
+      // ✅ v1.80.0: Marcar evaluación como guardada (para mostrar botones de acción)
+      setEvaluacionGuardada(true);
+      toast.success(`✅ Evaluación guardada - ${tipoEvaluacion}`, {
+        duration: 2000,
+        icon: '🩺',
+      });
 
-      limpiarFormulario();
-      onClose();
+      // Esperar a que se muestre el toast antes de cerrar (pero no cerrar, mostrar botones de acción)
+      await new Promise(resolve => setTimeout(resolve, 1200));
     } catch (error) {
       console.error("❌ Error al guardar:", error);
       toast.error("❌ Error al guardar evaluación. Por favor, intenta nuevamente.", {
@@ -689,6 +697,38 @@ export default function ModalEvaluacionECG({
       });
     } finally {
       setGuardando(false);
+    }
+  };
+
+  // ✅ v1.80.0: Marcar EKG como atendido en el workspace
+  const handleMarcarAtendido = async () => {
+    try {
+      const imagenActual = imagenesActuales[indiceImagen];
+      const idImagen = imagenActual?.id_imagen || imagenActual?.idImagen;
+
+      if (!idImagen) {
+        toast.error("❌ No se pudo obtener el ID de la imagen");
+        return;
+      }
+
+      console.log("✅ Marcando EKG como atendido:", idImagen);
+
+      // Llamar al servicio para marcar como atendido
+      await teleecgService.marcarEKGAtendido(idImagen);
+
+      toast.success("✅ EKG marcado como atendido en el workspace", {
+        duration: 2000,
+        icon: '✔️',
+      });
+
+      // Limpiar y cerrar
+      await new Promise(resolve => setTimeout(resolve, 800));
+      limpiarFormulario();
+      setEvaluacionGuardada(false);
+      onClose();
+    } catch (error) {
+      console.error("❌ Error al marcar como atendido:", error);
+      toast.error("Error al marcar como atendido. Por favor intenta nuevamente.");
     }
   };
 
@@ -1072,9 +1112,111 @@ export default function ModalEvaluacionECG({
                   {/* ✅ v1.79.2: Sección de Plan de Seguimiento removida por solicitud del usuario */}
                 </>
               )}
+
+              {/* ✅ v1.80.0: PANEL DE REVISIÓN - Ver detalles de la evaluación guardada */}
+              {mostrarDetallesEvaluacion && evaluacionGuardada && (
+                <div className="bg-blue-50 p-3 rounded-lg border-2 border-blue-400 space-y-2">
+                  <div className="flex items-center justify-between mb-2">
+                    <h4 className="font-bold text-blue-900 flex items-center gap-2">
+                      <Eye size={16} /> Evaluación Guardada
+                    </h4>
+                    <button
+                      onClick={() => setMostrarDetallesEvaluacion(false)}
+                      className="text-gray-500 hover:text-gray-700 text-xs font-bold px-2"
+                    >
+                      ✕ Cerrar
+                    </button>
+                  </div>
+
+                  {/* TIPO DE EVALUACIÓN */}
+                  <div className="bg-white p-2 rounded border border-blue-200">
+                    <p className="text-xs font-bold text-gray-700">Tipo de Evaluación:</p>
+                    <p className={`text-sm font-bold mt-1 ${
+                      tipoEvaluacion === "NORMAL" ? "text-green-700" :
+                      tipoEvaluacion === "ANORMAL" ? "text-orange-700" :
+                      "text-gray-700"
+                    }`}>
+                      {tipoEvaluacion === "NORMAL" ? "✓ Normal" :
+                       tipoEvaluacion === "ANORMAL" ? "⚠️ ANORMAL" :
+                       tipoEvaluacion === "NO_DIAGNOSTICO" ? "❔ No Diagnóstico" :
+                       "Desconocido"}
+                    </p>
+                  </div>
+
+                  {/* HALLAZGOS SELECCIONADOS */}
+                  {(tipoEvaluacion === "NORMAL" || tipoEvaluacion === "ANORMAL") && (
+                    <div className="bg-white p-2 rounded border border-blue-200">
+                      <p className="text-xs font-bold text-gray-700">Hallazgos Clínicos:</p>
+                      <ul className="text-xs mt-1 space-y-1 text-gray-700">
+                        {tipoEvaluacion === "NORMAL" &&
+                          RAZONES_NORMAL.filter(r => razonesNormal[r.key]).map(r => (
+                            <li key={r.key} className="flex items-start gap-2">
+                              <span className="text-green-600 font-bold">✓</span>
+                              <span>{r.label}</span>
+                            </li>
+                          ))
+                        }
+                        {tipoEvaluacion === "ANORMAL" &&
+                          RAZONES_ANORMAL.filter(r => razonesAnormal[r.key]).map(r => (
+                            <li key={r.key} className="flex items-start gap-2">
+                              <span className="text-orange-600 font-bold">⚠</span>
+                              <span>{r.label}</span>
+                            </li>
+                          ))
+                        }
+                      </ul>
+                    </div>
+                  )}
+
+                  {/* OBSERVACIONES */}
+                  <div className="bg-white p-2 rounded border border-blue-200">
+                    <p className="text-xs font-bold text-gray-700">Observaciones Clínicas:</p>
+                    <p className="text-xs mt-1 text-gray-700 italic">{observacionesEval}</p>
+                  </div>
+
+                  {/* URGENCIA (si es ANORMAL) */}
+                  {tipoEvaluacion === "ANORMAL" && urgencia && (
+                    <div className="bg-white p-2 rounded border border-blue-200">
+                      <p className="text-xs font-bold text-gray-700">Urgencia Clasificada:</p>
+                      <p className="text-xs mt-1 font-semibold text-orange-700">{urgencia}</p>
+                    </div>
+                  )}
+
+                  {/* MOTIVO NO DIAGNÓSTICO (si aplica) */}
+                  {tipoEvaluacion === "NO_DIAGNOSTICO" && motivoNoDiagnostico && (
+                    <div className="bg-white p-2 rounded border border-blue-200">
+                      <p className="text-xs font-bold text-gray-700">Motivo de No Diagnóstico:</p>
+                      <p className="text-xs mt-1 text-gray-700 italic">{motivoNoDiagnostico}</p>
+                    </div>
+                  )}
+
+                  {/* CONTEXTO CLÍNICO (si hay datos) */}
+                  {(contextoClinico.presentacionClinica.length > 0 || contextoClinico.antecedentesRelevantes) && (
+                    <div className="bg-white p-2 rounded border border-blue-200">
+                      <p className="text-xs font-bold text-gray-700">Contexto Clínico:</p>
+                      {contextoClinico.presentacionClinica.length > 0 && (
+                        <div className="text-xs mt-1">
+                          <p className="font-semibold text-gray-600">Presentación:</p>
+                          <p className="text-gray-700">{contextoClinico.presentacionClinica.join(", ")}</p>
+                        </div>
+                      )}
+                      {contextoClinico.antecedentesRelevantes && (
+                        <div className="text-xs mt-1">
+                          <p className="font-semibold text-gray-600">Antecedentes:</p>
+                          <p className="text-gray-700">{contextoClinico.antecedentesRelevantes}</p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  <div className="bg-green-100 p-2 rounded border border-green-400 text-center">
+                    <p className="text-xs font-bold text-green-700">✅ Evaluación Guardada Exitosamente</p>
+                  </div>
+                </div>
+              )}
             </div>
 
-            {/* ✅ v9.0.0: BOTONES CON LOADING STATE */}
+            {/* ✅ v1.80.0: BOTONES CON ACCIONES (Estetoscopio + Ojo + Marcar Atendido) */}
             <div className="p-4 border-t flex gap-2 bg-gray-50">
               <button
                 onClick={onClose}
@@ -1092,7 +1234,7 @@ export default function ModalEvaluacionECG({
                   <AlertCircle size={16} /> Rechazar
                 </button>
               )}
-              {imagenValida === true && (
+              {imagenValida === true && !evaluacionGuardada && (
                 <button
                   onClick={handleGuardar}
                   disabled={!puedeGuardar() || guardando}
@@ -1101,6 +1243,7 @@ export default function ModalEvaluacionECG({
                       ? 'bg-blue-600 hover:bg-blue-700 text-white cursor-pointer'
                       : 'bg-gray-300 text-gray-600 cursor-not-allowed'
                   }`}
+                  title="Evaluar y guardar (Ctrl+Enter)"
                 >
                   {guardando ? (
                     <>
@@ -1109,9 +1252,31 @@ export default function ModalEvaluacionECG({
                     </>
                   ) : (
                     <>
-                      <Save size={16} /> Guardar Evaluación
+                      <Stethoscope size={18} /> Evaluar
                     </>
                   )}
+                </button>
+              )}
+
+              {/* ✅ v1.80.0: Botón OJO para ver detalles de la evaluación */}
+              {imagenValida === true && evaluacionGuardada && !mostrarDetallesEvaluacion && (
+                <button
+                  onClick={() => setMostrarDetallesEvaluacion(true)}
+                  className="flex-1 px-3 py-2 text-sm bg-purple-600 hover:bg-purple-700 text-white rounded flex items-center justify-center gap-2 font-semibold transition-colors"
+                  title="Ver detalles de la evaluación guardada"
+                >
+                  <Eye size={18} /> Ver Detalles
+                </button>
+              )}
+
+              {/* ✅ v1.80.0: Botón para marcar como ATENDIDO en workspace */}
+              {imagenValida === true && evaluacionGuardada && !mostrarDetallesEvaluacion && (
+                <button
+                  onClick={handleMarcarAtendido}
+                  className="flex-1 px-3 py-2 text-sm bg-green-600 hover:bg-green-700 text-white rounded flex items-center justify-center gap-2 font-semibold transition-colors"
+                  title="Marcar como atendido y cerrar"
+                >
+                  <CheckCircle size={18} /> Atendido
                 </button>
               )}
             </div>
