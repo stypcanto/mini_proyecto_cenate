@@ -213,19 +213,41 @@ export default function IPRESSWorkspace() {
       // ✅ v1.71.0: Guardar totalPages del backend
       setTotalPagesFromBackend(totalPages);
 
-      // ✅ Cargar TODAS las páginas siguientes automáticamente
+      // ✅ v1.80.1: Cargar TODAS las páginas EN PARALELO (no secuencial)
       if (totalPages > 1) {
-        console.log(`📥 Cargando páginas restantes (${totalPages - 1} más)...`);
+        console.log(`📥 Cargando ${totalPages - 1} páginas en paralelo...`);
+
+        // Crear array de promesas para todas las páginas
+        const pagePromises = [];
         for (let page = 1; page < totalPages; page++) {
-          try {
-            const pageResponse = await teleecgService.listarImagenesPage(page);
-            const pageImagenes = pageResponse?.content || [];
-            imagenes = imagenes.concat(pageImagenes);
-            console.log(`✅ Página ${page + 1} cargada: ${pageImagenes.length} imágenes`);
-          } catch (err) {
-            console.warn(`⚠️ Error cargando página ${page + 1}:`, err);
-          }
+          pagePromises.push(
+            teleecgService.listarImagenesPage(page)
+              .then(pageResponse => ({
+                success: true,
+                pageNum: page + 1,
+                content: pageResponse?.content || []
+              }))
+              .catch(err => ({
+                success: false,
+                pageNum: page + 1,
+                content: [],
+                error: err
+              }))
+          );
         }
+
+        // Esperar todas las promesas en paralelo
+        const pageResults = await Promise.all(pagePromises);
+
+        // Procesar resultados
+        pageResults.forEach(result => {
+          if (result.success) {
+            imagenes = imagenes.concat(result.content);
+            console.log(`✅ Página ${result.pageNum} cargada: ${result.content.length} imágenes`);
+          } else {
+            console.warn(`⚠️ Error cargando página ${result.pageNum}:`, result.error?.message);
+          }
+        });
       }
 
       console.log(`✅ TOTAL de imágenes cargadas: ${imagenes.length}`);
