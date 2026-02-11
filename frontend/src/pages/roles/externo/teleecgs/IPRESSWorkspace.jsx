@@ -239,10 +239,10 @@ export default function IPRESSWorkspace() {
         return;
       }
 
-      // ✅ OPCIÓN 2: Sin búsqueda → Cargar primeras 10 páginas en paralelo (NORMAL)
+      // ✅ OPCIÓN 2: Sin búsqueda → Cargar primeras 3 páginas (150 registros, mucho más rápido)
       const response = await teleecgService.listarImagenes("");
       let imagenes = response?.content || [];
-      const totalPages = Math.min(response?.totalPages || 1, 10);  // MAX 10 páginas
+      const totalPages = Math.min(response?.totalPages || 1, 3);  // MAX 3 páginas = 150 registros
 
       console.log(`✅ Total de imágenes en página 1: ${imagenes.length}, totalPages: ${totalPages}`);
 
