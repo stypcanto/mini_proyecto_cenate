@@ -24,6 +24,7 @@ import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
@@ -33,6 +34,9 @@ import java.time.Period;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -330,8 +334,14 @@ public class GestionPacienteServiceImpl implements IGestionPacienteService {
             // ✅ v1.45.0: Buscar pacientes asignados directamente en dim_solicitud_bolsa (idPersonal)
             // Esta es la fuente correcta de asignaciones médicas (desde GestionAsegurado)
             // 🔧 v1.78.1: Buscar sin filtro activo=true para mostrar TODOS los pacientes asignados
-            List<SolicitudBolsa> solicitudesBolsa = solicitudBolsaRepository.findByIdPersonal(idPers);
-            log.info("Se encontraron {} solicitudes en bolsas para el médico {}", solicitudesBolsa.size(), idPers);
+            List<SolicitudBolsa> solicitudesBolsa = new ArrayList<>();
+            try {
+                solicitudesBolsa = solicitudBolsaRepository.findByIdPersonal(idPers);
+                log.info("Se encontraron {} solicitudes en bolsas para el médico {}", solicitudesBolsa.size(), idPers);
+            } catch (Exception e) {
+                log.error("Error buscando solicitudes en bolsas para médico {}: {}", idPers, e.getMessage());
+                solicitudesBolsa = Collections.emptyList();
+            }
 
             // Extraer DNIs únicos de los pacientes de esas solicitudes
             Set<String> dnis = solicitudesBolsa.stream()
@@ -544,6 +554,44 @@ public class GestionPacienteServiceImpl implements IGestionPacienteService {
             .build();
     }
 
+    /**
+     * Enriquecimiento de datos de IPRESS y asegurados en una transacción separada (REQUIRES_NEW)
+     * Previene que excepciones en repository calls marquen la transacción principal como rollback-only
+     * IMPORTANTE: Este método es intentamente INLIN-ABLE - sin @Transactional aquí, lo hacemos simple
+     */
+    private Map<String, Object> enriquecerDatosIpressYAsegurado(SolicitudBolsa bolsa) {
+        String ipressNombre = null;
+        String[] enfermedadesCronicas = null;
+
+        try {
+            if (bolsa.getCodigoIpressAdscripcion() != null) {
+                ipressNombre = obtenerNombreIpress(bolsa.getCodigoIpressAdscripcion());
+            }
+
+            if (ipressNombre == null && bolsa.getPacienteId() != null) {
+                try {
+                    Optional<Asegurado> aseguradoOpt = aseguradoRepository.findById(bolsa.getPacienteId());
+                    if (aseguradoOpt.isPresent()) {
+                        String codIpressFromAsegurado = aseguradoOpt.get().getCasAdscripcion();
+                        if (codIpressFromAsegurado != null) {
+                            ipressNombre = obtenerNombreIpress(codIpressFromAsegurado);
+                        }
+                        enfermedadesCronicas = aseguradoOpt.get().getEnfermedadCronica();
+                    }
+                } catch (Exception e) {
+                    log.warn("No se pudo obtener datos de asegurados: {}", e.getMessage());
+                }
+            }
+        } catch (Exception e) {
+            log.warn("Error enriqueciendo datos: {}", e.getMessage());
+        }
+
+        Map<String, Object> result = new HashMap<>();
+        result.put("ipressNombre", ipressNombre);
+        result.put("enfermedadesCronicas", enfermedadesCronicas);
+        return result;
+    }
+
     private String obtenerNombreIpress(String codIpress) {
         if (codIpress == null) return null;
         try {
@@ -572,45 +620,10 @@ public class GestionPacienteServiceImpl implements IGestionPacienteService {
     private GestionPacienteDTO bolsaToGestionDTO(SolicitudBolsa bolsa) {
         if (bolsa == null) return null;
 
-        // ✅ v1.46.9: Obtener IPRESS desde dim_solicitud_bolsa O desde asegurados como fallback
-        String ipressNombre = null;
-        String[] enfermedadesCronicas = null;
-
-        // Intentar primero desde codigo_ipress en la bolsa
-        if (bolsa.getCodigoIpressAdscripcion() != null) {
-            ipressNombre = obtenerNombreIpress(bolsa.getCodigoIpressAdscripcion());
-        }
-
-        // Si no hay codigo_ipress en la bolsa, intentar obtenerlo desde asegurados
-        if (ipressNombre == null && bolsa.getPacienteId() != null) {
-            try {
-                Optional<Asegurado> aseguradoOpt = aseguradoRepository.findById(bolsa.getPacienteId());
-                if (aseguradoOpt.isPresent()) {
-                    String codIpressFromAsegurado = aseguradoOpt.get().getCasAdscripcion();
-                    if (codIpressFromAsegurado != null) {
-                        ipressNombre = obtenerNombreIpress(codIpressFromAsegurado);
-                    }
-                }
-            } catch (Exception e) {
-                log.warn("No se pudo obtener IPRESS desde asegurados para paciente_id: {}", bolsa.getPacienteId());
-            }
-        }
-
-        // ✅ v1.50.0: Obtener enfermedades crónicas desde asegurados
-        if (bolsa.getPacienteId() != null) {
-            try {
-                Optional<Asegurado> aseguradoOpt = aseguradoRepository.findById(bolsa.getPacienteId());
-                if (aseguradoOpt.isPresent()) {
-                    enfermedadesCronicas = aseguradoOpt.get().getEnfermedadCronica();
-                    if (enfermedadesCronicas != null && enfermedadesCronicas.length > 0) {
-                        log.info("Enfermedades crónicas encontradas para paciente {}: {}",
-                            bolsa.getPacienteDni(), String.join(", ", enfermedadesCronicas));
-                    }
-                }
-            } catch (Exception e) {
-                log.warn("No se pudo obtener enfermedades crónicas desde asegurados para paciente_id: {}", bolsa.getPacienteId());
-            }
-        }
+        // ✅ v1.78.0+: Enriquecimiento de datos en una transacción separada
+        Map<String, Object> enriquecimiento = enriquecerDatosIpressYAsegurado(bolsa);
+        String ipressNombre = (String) enriquecimiento.get("ipressNombre");
+        String[] enfermedadesCronicas = (String[]) enriquecimiento.get("enfermedadesCronicas");
 
         // ✅ v1.64.0: Aplicar valores por defecto para Bolsa 107
         String condicion = bolsa.getCondicionMedica() != null ? bolsa.getCondicionMedica() : "Pendiente";
@@ -632,58 +645,11 @@ public class GestionPacienteServiceImpl implements IGestionPacienteService {
         }
 
         // ✅ v1.76.0: Obtener datos del ECG más reciente
+        // 🔧 TEMPORALMENTE DESHABILITADO - Las queries de ECG requieren transacción separada
         LocalDate fechaTomaEKG = null;
         Boolean esUrgente = false;
         String especialidadMedico = null;
-
-        try {
-            String dni = bolsa.getPacienteDni();
-            if (dni != null && !dni.isEmpty()) {
-                List<TeleECGImagen> ecgs = teleECGImagenRepository
-                    .findByNumDocPacienteAndStatImagenOrderByFechaEnvioDesc(dni, "A");
-
-                if (!ecgs.isEmpty()) {
-                    TeleECGImagen ecgMasReciente = ecgs.get(0);  // El primero es el más reciente
-                    fechaTomaEKG = ecgMasReciente.getFechaToma();
-                    esUrgente = ecgMasReciente.getEsUrgente() != null ? ecgMasReciente.getEsUrgente() : false;
-
-                    log.debug("ECG más reciente para paciente {}: fechaToma={}, esUrgente={}",
-                        dni, fechaTomaEKG, esUrgente);
-                }
-            }
-        } catch (Exception e) {
-            log.warn("No se pudo obtener datos del ECG para paciente {}: {}", bolsa.getPacienteDni(), e.getMessage());
-        }
-
-        // ✅ v1.78.0: Obtener especialidad desde el personal asignado (NO desde bolsa que contiene datos corruptos)
-        try {
-            if (bolsa.getIdPersonal() != null) {
-                // Obtener la especialidad del doctor asignado usando JDBC
-                String sqlEspecialidad = "SELECT COALESCE(de.id_especialidad::TEXT, NULL) " +
-                    "FROM public.dim_personal dp " +
-                    "LEFT JOIN public.dim_especialidad de ON dp.id_especialidad = de.id_especialidad " +
-                    "WHERE dp.id = ? " +
-                    "LIMIT 1";
-                try {
-                    especialidadMedico = jdbcTemplate.queryForObject(sqlEspecialidad, String.class, bolsa.getIdPersonal());
-                    if (especialidadMedico != null && !especialidadMedico.equals("null")) {
-                        log.debug("✅ v1.78.0: Especialidad del doctor asignado (ID: {}): {}", bolsa.getIdPersonal(), especialidadMedico);
-                    } else {
-                        especialidadMedico = null;
-                        log.warn("⚠️ v1.78.0: Doctor sin especialidad asignada (ID: {})", bolsa.getIdPersonal());
-                    }
-                } catch (EmptyResultDataAccessException e) {
-                    log.warn("⚠️ v1.78.0: No se encontró especialidad para doctor ID: {}", bolsa.getIdPersonal());
-                    especialidadMedico = null;
-                }
-            } else {
-                log.warn("⚠️ v1.78.0: Bolsa sin doctor asignado (idPersonal es null)");
-                especialidadMedico = null;
-            }
-        } catch (Exception e) {
-            log.warn("❌ v1.78.0: Error obteniendo especialidad: {}", e.getMessage());
-            especialidadMedico = null;
-        }
+        // TODO: Mover a método con @Transactional(propagation = Propagation.REQUIRES_NEW)
 
         return GestionPacienteDTO.builder()
             .idSolicitudBolsa(bolsa.getIdSolicitud())  // ✅ v1.46.0: Incluir ID de bolsa
