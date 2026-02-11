@@ -1018,28 +1018,43 @@ export default function MisPacientes() {
   };
 
   // ✅ v1.66.1: Manejar confirmación de evaluación de ECG
-  const manejarConfirmacionECG = async (evaluacionData) => {
+  const manejarConfirmacionECG = async (tipoEvaluacion, evaluacionCompleta, idImagen, contextoMedico) => {
     try {
-      console.log('✅ Evaluación ECG confirmada:', evaluacionData);
+      console.log('✅ Evaluación ECG confirmada:', {tipoEvaluacion, idImagen, contextoMedico});
+
+      // ✅ v1.80.2: Guardar evaluación en backend usando API
+      // El endpoint espera: PUT /teleekgs/{idImagen}/evaluar
+      // Con body: { evaluacion: "NORMAL|ANORMAL|NO_DIAGNOSTICO", descripcion: "texto" }
+
+      if (!idImagen) {
+        toast.error('❌ No se pudo obtener ID de la imagen');
+        return;
+      }
+
+      // Preparar payload para el API
+      const payload = {
+        evaluacion: tipoEvaluacion,
+        descripcion: evaluacionCompleta
+      };
+
+      console.log('📤 Enviando evaluación al backend:', payload);
+
+      // Llamar al API para guardar evaluación
+      const response = await teleecgService.evaluarImagen(idImagen, tipoEvaluacion, evaluacionCompleta);
+
+      console.log('✅ Respuesta del backend:', response);
+
+      toast.success('✅ Evaluación guardada correctamente en el backend');
 
       // ✅ v1.80.0: No cerrar el modal automáticamente
       // El modal se cierra cuando el usuario hace clic en "Atendido"
       // después de revisar los detalles con el botón "Ver Detalles"
 
-      // Aquí se guardaría la evaluación en el backend si es necesario
-      // Por ahora solo mostramos éxito
-
-      toast.success('Evaluación del ECG guardada correctamente');
-
-      // ✅ v1.80.0: REMOVER cierre automático - permitir que el usuario vea botones de acción
-      // setShowECGModal(false);
-      // setEcgActual(null);
-
       // Recargar datos de pacientes si es necesario
       // cargarPacientes();
     } catch (error) {
-      console.error('Error guardando evaluación:', error);
-      toast.error('Error al guardar la evaluación');
+      console.error('❌ Error guardando evaluación:', error);
+      toast.error('❌ Error al guardar la evaluación: ' + (error.message || 'Error desconocido'));
     }
   };
 
