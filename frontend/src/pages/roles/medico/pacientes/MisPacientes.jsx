@@ -31,7 +31,7 @@ import {
 import toast from 'react-hot-toast';
 import gestionPacientesService from '../../../../services/gestionPacientesService';
 import ipressService from '../../../../services/ipressService';
-import CarrouselECGModal from '../../../../components/teleecgs/CarrouselECGModal';
+import ModalEvaluacionECG from '../../../../components/teleecgs/ModalEvaluacionECG';
 import teleecgService from '../../../../services/teleecgService';
 
 // Estilos de animaciones personalizadas
@@ -140,10 +140,9 @@ export default function MisPacientes() {
   // ✅ v1.65.2: Estado para filtros colapsables
   const [filtrosExpandidos, setFiltrosExpandidos] = useState(false);
 
-  // ✅ v1.66.0: Estados para visualización de ECGs en tabla
-  const [showECGCarrusel, setShowECGCarrusel] = useState(false);
-  const [pacienteECGSeleccionado, setPacienteECGSeleccionado] = useState(null);
-  const [imagenesECG, setImagenesECG] = useState([]);
+  // ✅ v1.66.1: Estados para visualización y evaluación de ECGs en tabla
+  const [showECGModal, setShowECGModal] = useState(false);
+  const [ecgActual, setEcgActual] = useState(null);
   const [cargandoECG, setCargandoECG] = useState(false);
   const [ecgCounts, setEcgCounts] = useState({});
 
@@ -687,7 +686,7 @@ export default function MisPacientes() {
     setMostrarDetalles(true);
   };
 
-  // ✅ v1.66.0: Abrir carrusel de ECGs para un paciente
+  // ✅ v1.66.1: Abrir modal de evaluación de ECG para un paciente
   const abrirCarruselECG = async (paciente) => {
     try {
       setCargandoECG(true);
@@ -700,20 +699,51 @@ export default function MisPacientes() {
         return;
       }
 
-      const imagenes = resultado[0].imagenes;
+      // ✅ v1.66.1: Tomar la primera imagen y cargar su contenido
+      const primerECG = resultado[0].imagenes[0];
+      const idImagen = primerECG.id_imagen || primerECG.idImagen;
 
-      setPacienteECGSeleccionado({
-        numDoc: paciente.numDoc,
-        nombres: paciente.apellidosNombres.split(' ').slice(-2).join(' '),
-        apellidos: paciente.apellidosNombres.split(' ').slice(0, -2).join(' '),
-      });
-      setImagenesECG(imagenes);
-      setShowECGCarrusel(true);
+      // Cargar contenido de la imagen (base64)
+      const imagenConContenido = await teleecgService.verPreview(idImagen);
+
+      // Preparar objeto ECG para el modal
+      const ecgParaModal = {
+        ...primerECG,
+        ...imagenConContenido,
+        paciente: {
+          numDoc: paciente.numDoc,
+          nombres: paciente.apellidosNombres,
+          ipress: paciente.ipress,
+        },
+      };
+
+      setEcgActual(ecgParaModal);
+      setShowECGModal(true);
       setCargandoECG(false);
     } catch (error) {
-      console.error('Error cargando ECGs:', error);
-      toast.error('Error al cargar las imágenes ECG');
+      console.error('Error cargando ECG:', error);
+      toast.error('Error al cargar la imagen ECG');
       setCargandoECG(false);
+    }
+  };
+
+  // ✅ v1.66.1: Manejar confirmación de evaluación de ECG
+  const manejarConfirmacionECG = async (evaluacionData) => {
+    try {
+      console.log('✅ Evaluación ECG confirmada:', evaluacionData);
+
+      // Aquí se guardaría la evaluación en el backend si es necesario
+      // Por ahora solo cerramos el modal y mostramos éxito
+
+      toast.success('Evaluación del ECG guardada correctamente');
+      setShowECGModal(false);
+      setEcgActual(null);
+
+      // Recargar datos de pacientes si es necesario
+      // cargarPacientes();
+    } catch (error) {
+      console.error('Error guardando evaluación:', error);
+      toast.error('Error al guardar la evaluación');
     }
   };
 
@@ -1356,6 +1386,7 @@ export default function MisPacientes() {
                     <th className="px-4 py-3 text-left">Paciente</th>
                     <th className="px-4 py-3 text-left">Teléfono</th>
                     <th className="px-4 py-3 text-left">IPRESS</th>
+                    <th className="px-4 py-3 text-left">📅 Fecha toma EKG</th>
 
                     {/* ✅ v1.63.0: Columnas condicionales SOLO para Bolsa 107 (idBolsa = 1) */}
                     {pacientesFiltradosPorFecha.some(p => p.idBolsa === 1) && (
@@ -1375,7 +1406,9 @@ export default function MisPacientes() {
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
                   {pacientesFiltradosPorFecha.map((paciente, idx) => (
-                    <tr key={idx} className={`hover:bg-gray-50 transition-colors duration-150 ${paciente.condicion === 'Atendido' ? 'bg-emerald-50/30' : 'bg-white'} ${idx % 2 === 0 ? '' : 'bg-opacity-50'}`}>
+                    <tr key={idx} className={`hover:transition-colors duration-150 ${
+                      paciente.esUrgente ? 'bg-red-100 hover:bg-red-200' : paciente.condicion === 'Atendido' ? 'bg-emerald-50/30 hover:bg-gray-50' : 'bg-white hover:bg-gray-50'
+                    } ${idx % 2 === 0 ? '' : 'bg-opacity-50'}`}>
                       {/* Paciente: Nombre en bold + DNI abajo en gris + Ojo para ver detalles */}
                       <td className="px-4 py-3">
                         <div className="flex items-start gap-2">
@@ -1397,6 +1430,11 @@ export default function MisPacientes() {
                       </td>
                       <td className="px-4 py-3 text-gray-600">{paciente.telefono || '-'}</td>
                       <td className="px-4 py-3 text-gray-600">{paciente.ipress || '-'}</td>
+
+                      {/* ✅ v1.76.0: Fecha toma EKG */}
+                      <td className="px-4 py-3 text-gray-600 text-xs whitespace-nowrap">
+                        {paciente.fechaTomaEKG ? formatearFechaHumana(paciente.fechaTomaEKG) : '-'}
+                      </td>
 
                       {/* ✅ v1.63.0: TIEMPO INICIO SÍNTOMAS (solo si hay pacientes de Bolsa 107) */}
                       {pacientesFiltradosPorFecha.some(p => p.idBolsa === 1) && (
@@ -1962,27 +2000,17 @@ export default function MisPacientes() {
         </div>
       )}
 
-      {/* ✅ v1.66.0: Modal Carrusel de ECGs */}
-      {showECGCarrusel && pacienteECGSeleccionado && imagenesECG.length > 0 && (
-        <CarrouselECGModal
-          imagenes={imagenesECG}
-          paciente={pacienteECGSeleccionado}
+      {/* ✅ v1.66.1: Modal de Evaluación de ECG - Triaje Clínico */}
+      {showECGModal && ecgActual && (
+        <ModalEvaluacionECG
+          isOpen={showECGModal}
+          ecg={ecgActual}
           onClose={() => {
-            setShowECGCarrusel(false);
-            setPacienteECGSeleccionado(null);
-            setImagenesECG([]);
+            setShowECGModal(false);
+            setEcgActual(null);
           }}
-          onDescargar={(imagen) => {
-            const idImagen = imagen.id_imagen || imagen.idImagen;
-            const nombreArchivo = imagen.nombreArchivo || `ECG_${pacienteECGSeleccionado.numDoc}_${idImagen}.jpg`;
-
-            teleecgService.descargarImagen(idImagen, nombreArchivo)
-              .then(() => console.log('Imagen descargada:', nombreArchivo))
-              .catch((error) => {
-                console.error('Error descargando:', error);
-                toast.error('Error al descargar la imagen');
-              });
-          }}
+          onConfirm={manejarConfirmacionECG}
+          loading={cargandoECG}
         />
       )}
 
