@@ -253,13 +253,18 @@ export default function IPRESSWorkspace() {
         const imagenesObservadas = imagenes.filter((img) => img.estado === "OBSERVADA");
         const imagenesAtendidas = imagenes.filter((img) => img.estado === "ATENDIDA");
 
+        // ✅ v1.87.6: Contar PACIENTES ÚNICOS, no imágenes duplicadas
+        const pacientesPendientes = new Set(imagenesPendientes.map(img => img.dni || img.numDocPaciente)).size;
+        const pacientesObservadas = new Set(imagenesObservadas.map(img => img.dni || img.numDocPaciente)).size;
+        const pacientesAtendidas = new Set(imagenesAtendidas.map(img => img.dni || img.numDocPaciente)).size;
+
         const searchStats = {
           total: imagenes.length,
           cargadas: Object.keys(deduplicados).length,  // Pacientes únicos encontrados
-          enEvaluacion: imagenesPendientes.length,
-          observadas: imagenesObservadas.length,
-          atendidas: imagenesAtendidas.length,
-          enviadas: imagenesPendientes.length,
+          enEvaluacion: pacientesPendientes,  // Pacientes con imágenes pendientes (no imágenes)
+          observadas: pacientesObservadas,    // Pacientes con imágenes observadas
+          atendidas: pacientesAtendidas,      // Pacientes con imágenes atendidas
+          enviadas: pacientesPendientes,
         };
 
         setEcgs(ecgsFormateados);
@@ -315,18 +320,23 @@ export default function IPRESSWorkspace() {
         };
       });
 
-      // Calcular estadísticas
+      // Calcular estadísticas (PÁGINA 1 SOLAMENTE)
       const imagenesPendientes = imagenes.filter((img) => img.estado === "ENVIADA");
       const imagenesObservadas = imagenes.filter((img) => img.estado === "OBSERVADA");
       const imagenesAtendidas = imagenes.filter((img) => img.estado === "ATENDIDA");
 
+      // ✅ v1.87.6: Contar PACIENTES ÚNICOS, no imágenes duplicadas
+      const pacientesPendientes = new Set(imagenesPendientes.map(img => img.dni || img.numDocPaciente)).size;
+      const pacientesObservadas = new Set(imagenesObservadas.map(img => img.dni || img.numDocPaciente)).size;
+      const pacientesAtendidas = new Set(imagenesAtendidas.map(img => img.dni || img.numDocPaciente)).size;
+
       const newStats = {
         total: imagenes.length,
         cargadas: pacientesUnicos.size,
-        enEvaluacion: imagenesPendientes.length,
-        observadas: imagenesObservadas.length,
-        atendidas: imagenesAtendidas.length,
-        enviadas: imagenesPendientes.length,
+        enEvaluacion: pacientesPendientes,  // Pacientes con imágenes pendientes (no imágenes)
+        observadas: pacientesObservadas,    // Pacientes con imágenes observadas
+        atendidas: pacientesAtendidas,      // Pacientes con imágenes atendidas
+        enviadas: pacientesPendientes,
       };
 
       // 🎯 MOSTRAR DATOS INMEDIATAMENTE - UI responde rápido
