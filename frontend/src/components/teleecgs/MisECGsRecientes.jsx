@@ -199,13 +199,13 @@ export default function MisECGsRecientes({
     onBuscarPorDNI('');  // ✅ v1.80.4: Recargar sin filtros
   };
 
-  // ✅ Mostrar loader mientras carga la primera vez
-  if (loading && ultimas3.length === 0) {
+  // ✅ Mostrar loader SOLO si NO hay datos (cambio real de cargas)
+  // NO mostrar durante enriquecimiento si ya hay datos
+  if (loading && datosOriginales.length === 0) {
     return (
       <div className="bg-white rounded-lg shadow-lg p-12 border border-gray-100 h-fit flex flex-col items-center justify-center">
         <RefreshCw className="w-14 h-14 text-blue-600 animate-spin mb-4" />
         <p className="text-gray-700 font-semibold text-lg">Cargando cargas recientes...</p>
-        <p className="text-sm text-gray-500 mt-2">Enriqueciendo datos de pacientes con información completa</p>
       </div>
     );
   }
