@@ -106,7 +106,9 @@ const teleecgService = {
   listarImagenes: async (numDocPaciente = "") => {
     const params = new URLSearchParams();
     if (numDocPaciente) params.append("numDocPaciente", numDocPaciente);
-    // ✅ SIN parámetros page/size - obtener página 0 (15 items default)
+    // ✅ v1.80.2: Obtener página 0 con 50 items (aumentado de 15)
+    params.append("page", "0");
+    params.append("size", "50");  // ⚡ v1.80.2: Aumentado de 15 a 50
     // El frontend cargará las páginas siguientes automáticamente
 
     const response = await apiClient.get(`/teleekgs?${params}`, true);
@@ -114,13 +116,14 @@ const teleecgService = {
   },
 
   /**
-   * ✅ v1.71.0: Listar imágenes ECG de una página específica
+   * ✅ v1.80.2: Listar imágenes ECG de una página específica
    * Usado internamente para cargar todas las páginas automáticamente
+   * ⚡ Cambio: 15 → 50 items por página para reducir número de páginas
    */
   listarImagenesPage: async (page = 0) => {
     const params = new URLSearchParams();
     params.append("page", page);
-    params.append("size", "15");  // Usar el size default del backend
+    params.append("size", "50");  // ⚡ v1.80.2: Aumentado de 15 a 50 para mejor eficiencia
 
     const response = await apiClient.get(`/teleekgs?${params}`, true);
     return teleecgService._transformarResponse(response);
