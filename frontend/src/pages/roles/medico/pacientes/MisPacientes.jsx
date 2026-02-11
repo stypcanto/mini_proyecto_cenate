@@ -1405,7 +1405,7 @@ export default function MisPacientes() {
                     <th className="px-4 py-3 text-left">IPRESS</th>
 
                     {/* ✅ v1.76.0: Columna de Fecha toma EKG SOLO para Cardiología */}
-                    {pacientesFiltradosPorFecha.some(p => p.especialidadMedico && p.especialidadMedico.toLowerCase().includes('cardiología')) && (
+                    {esCardiologo && (
                       <th className="px-4 py-3 text-left">📅 Fecha toma EKG</th>
                     )}
 
@@ -1455,7 +1455,7 @@ export default function MisPacientes() {
                       <td className="px-4 py-3 text-gray-600">{paciente.ipress || '-'}</td>
 
                       {/* ✅ v1.76.0: Fecha toma EKG - SOLO para Cardiología */}
-                      {pacientesFiltradosPorFecha.some(p => p.especialidadMedico && p.especialidadMedico.toLowerCase().includes('cardiología')) && (
+                      {esCardiologo && (
                         <td className="px-4 py-3 text-gray-600 text-xs whitespace-nowrap">
                           {paciente.fechaTomaEKG ? formatearFechaHumana(paciente.fechaTomaEKG) : '-'}
                         </td>

@@ -105,6 +105,10 @@ public class GestionPacienteDTO {
     @JsonProperty("esUrgente")
     private Boolean esUrgente;  // true = paciente urgente, false = normal
 
+    // ✅ v1.76.0: Especialidad del médico asignado (para filtrar columna por especialidad)
+    @JsonProperty("especialidadMedico")
+    private String especialidadMedico;  // Ej: "Cardiología", "Medicina General", etc.
+
     /**
      * Calcula la edad a partir de la fecha de nacimiento
      */
