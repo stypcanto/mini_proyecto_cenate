@@ -348,7 +348,9 @@ public interface TeleECGImagenRepository extends JpaRepository<TeleECGImagen, Lo
      */
     @Query("""
         SELECT DISTINCT t FROM TeleECGImagen t
-        WHERE (:numDoc IS NULL OR t.numDocPaciente LIKE %:numDoc%)
+        WHERE ((:numDoc IS NULL AND :numDocSinCeros IS NULL)
+               OR t.numDocPaciente LIKE %:numDoc%
+               OR (:numDocSinCeros IS NOT NULL AND t.numDocPaciente LIKE %:numDocSinCeros%))
           AND (:estado IS NULL OR t.estado = :estado)
           AND (:idIpress IS NULL OR t.ipressOrigen.idIpress = :idIpress)
           AND t.statImagen = 'A'
@@ -371,6 +373,7 @@ public interface TeleECGImagenRepository extends JpaRepository<TeleECGImagen, Lo
      * Búsqueda flexible sin paginación (v1.21.5) - DEPRECATED en v1.70.0
      * ⚠️ PARA COMPATIBILIDAD: Se mantiene esta versión con LIMIT 1000
      * IMPORTANTE: No usar en nuevas funcionalidades, usar buscarFlexibleSinPaginacion con Pageable
+     * ✅ v1.87.4: Ahora busca TODA la tabla con paginación real (profesional)
      */
     @Query(value = """
         SELECT DISTINCT t FROM TeleECGImagen t
