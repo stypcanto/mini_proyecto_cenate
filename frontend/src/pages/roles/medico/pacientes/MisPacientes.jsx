@@ -266,6 +266,9 @@ export default function MisPacientes() {
   const [ecgActual, setEcgActual] = useState(null);
   const [cargandoECG, setCargandoECG] = useState(false);
   const [ecgCounts, setEcgCounts] = useState({});
+  const [evaluacionesEstados, setEvaluacionesEstados] = useState({}); // ✅ Rastrear estado de evaluación por DNI
+  const [showResultadosModal, setShowResultadosModal] = useState(false); // ✅ Modal para ver resultados
+  const [resultadosActuales, setResultadosActuales] = useState(null); // ✅ Resultados a mostrar
 
   const bolsasDisponibles = [
     { id: 1, nombre: 'Bolsa 107 (Módulo 107)' },
@@ -327,6 +330,8 @@ export default function MisPacientes() {
     if (esCardiologo && pacientes.length > 0) {
       console.log('✅ v1.78.0: Cargando conteos de ECG para cardiólogo...');
       cargarConteosECG(pacientes);
+      // ✅ v1.80.0: Cargar estados de evaluación de ECGs
+      cargarEstadosEvaluacion(pacientes);
     }
   }, [esCardiologo]);
 
@@ -473,6 +478,62 @@ export default function MisPacientes() {
       console.log('✅ [ECG COUNTS] Conteos cargados:', counts);
     } catch (error) {
       console.error('Error cargando conteos ECG:', error);
+    }
+  };
+
+  // ✅ v1.80.0: Cargar estados de evaluación ECG para todos los pacientes
+  const cargarEstadosEvaluacion = async (pacientesActuales) => {
+    try {
+      const dnis = [...new Set(pacientesActuales.map(p => p.numDoc).filter(Boolean))];
+      if (dnis.length === 0) return;
+
+      const estados = {};
+
+      // Procesar cada DNI
+      for (const dni of dnis) {
+        try {
+          const resultado = await teleecgService.listarAgrupoPorAsegurado(dni, '');
+          if (resultado.length > 0 && resultado[0].imagenes) {
+            // Obtener el estado de la última evaluación
+            const evaluaciones = resultado[0].imagenes
+              .filter(img => img.evaluacion && img.evaluacion !== 'SIN_EVALUAR')
+              .map(img => ({
+                evaluacion: img.evaluacion,
+                descripcion: img.descripcionEvaluacion,
+                fecha: img.fechaEvaluacion,
+                hallazgos: img.hallazgos,
+                observacionesClinicas: img.observacionesClinicas
+              }));
+
+            estados[dni] = evaluaciones.length > 0
+              ? { estado: 'EVALUADO', datos: evaluaciones[0] }
+              : { estado: 'PENDIENTE' };
+          } else {
+            estados[dni] = { estado: 'SIN_IMAGENES' };
+          }
+        } catch (error) {
+          console.error(`Error cargando estado evaluación para DNI ${dni}:`, error);
+          estados[dni] = { estado: 'ERROR' };
+        }
+      }
+
+      setEvaluacionesEstados(estados);
+    } catch (error) {
+      console.error('Error cargando estados evaluación:', error);
+    }
+  };
+
+  // ✅ v1.80.0: Función para abrir modal de resultados
+  const abrirResultadosEvaluacion = (paciente) => {
+    const estado = evaluacionesEstados[paciente.numDoc];
+    if (estado?.datos) {
+      setResultadosActuales({
+        paciente,
+        ...estado.datos
+      });
+      setShowResultadosModal(true);
+    } else {
+      toast.info('No hay evaluación disponible para este paciente');
     }
   };
 
@@ -1702,24 +1763,49 @@ export default function MisPacientes() {
                         {formatearFechaHumana(paciente.fechaAtencion)}
                       </td>
 
-                      {/* ✅ v1.79.1: Columna final - Ver imágenes ECG (SOLO CARDIÓLOGOS) */}
+                      {/* ✅ v1.80.0: Columna final - Ver imágenes ECG (SOLO CARDIÓLOGOS) + Estados */}
                       {esCardiologo && (
                         <td className="px-4 py-3 text-center">
-                          <button
-                            onClick={() => abrirCarruselECG(paciente)}
-                            disabled={cargandoECG}
-                            title="Atender lectura de ECG"
-                            className={`relative inline-flex items-center justify-center gap-2 px-4 py-3 rounded-lg font-semibold text-sm transition-all ${
-                              cargandoECG
-                                ? 'bg-gray-100 text-gray-400 cursor-not-allowed opacity-50 border border-gray-200'
-                                : 'bg-green-100 text-green-700 hover:bg-green-200 cursor-pointer border border-green-400 ecg-button-pulse'
-                            }`}
-                          >
-                            <Stethoscope className="w-6 h-6" strokeWidth={2} />
-                            {ecgCounts[paciente.numDoc] > 0 && (
-                              <span className="font-bold">{ecgCounts[paciente.numDoc]}</span>
+                          <div className="flex items-center justify-center gap-2">
+                            {/* ✅ v1.80.0: Botón para atender/evaluar ECG */}
+                            <button
+                              onClick={() => abrirCarruselECG(paciente)}
+                              disabled={cargandoECG}
+                              title={evaluacionesEstados[paciente.numDoc]?.estado === 'EVALUADO'
+                                ? 'ECG ya evaluado'
+                                : 'Atender lectura de ECG'}
+                              className={`relative inline-flex items-center justify-center gap-2 px-4 py-3 rounded-lg font-semibold text-sm transition-all ${
+                                evaluacionesEstados[paciente.numDoc]?.estado === 'EVALUADO'
+                                  ? 'bg-blue-100 text-blue-700 border border-blue-400 hover:bg-blue-200'
+                                  : cargandoECG
+                                  ? 'bg-gray-100 text-gray-400 cursor-not-allowed opacity-50 border border-gray-200'
+                                  : 'bg-green-100 text-green-700 hover:bg-green-200 cursor-pointer border border-green-400 ecg-button-pulse'
+                              }`}
+                            >
+                              <Stethoscope
+                                className={`w-6 h-6 ${
+                                  evaluacionesEstados[paciente.numDoc]?.estado === 'EVALUADO'
+                                    ? 'text-blue-700'
+                                    : 'text-current'
+                                }`}
+                                strokeWidth={2}
+                              />
+                              {ecgCounts[paciente.numDoc] > 0 && (
+                                <span className="font-bold">{ecgCounts[paciente.numDoc]}</span>
+                              )}
+                            </button>
+
+                            {/* ✅ v1.80.0: Botón para ver resultados (si fue evaluado) */}
+                            {evaluacionesEstados[paciente.numDoc]?.estado === 'EVALUADO' && (
+                              <button
+                                onClick={() => abrirResultadosEvaluacion(paciente)}
+                                title="Ver resultados de evaluación"
+                                className="inline-flex items-center justify-center p-2 rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-300 transition-all"
+                              >
+                                <Eye className="w-5 h-5" strokeWidth={2} />
+                              </button>
                             )}
-                          </button>
+                          </div>
                         </td>
                       )}
                     </tr>
@@ -2236,6 +2322,107 @@ export default function MisPacientes() {
           onConfirm={manejarConfirmacionECG}
           loading={cargandoECG}
         />
+      )}
+
+      {/* ✅ v1.80.0: Modal para ver resultados de evaluación guardada */}
+      {showResultadosModal && resultadosActuales && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            {/* Header */}
+            <div className="px-6 py-5 bg-gradient-to-r from-blue-600 to-blue-700 rounded-t-lg border-b border-blue-200">
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <h2 className="text-2xl font-bold text-white mb-2">
+                    📋 Resultados de Evaluación ECG
+                  </h2>
+                  <p className="text-blue-100 text-sm">
+                    {resultadosActuales.paciente?.apellidosNombres} (DNI: {resultadosActuales.paciente?.numDoc})
+                  </p>
+                </div>
+                <button
+                  onClick={() => setShowResultadosModal(false)}
+                  className="text-white hover:bg-white/20 p-2 rounded-full transition-colors"
+                  title="Cerrar"
+                >
+                  <X className="w-6 h-6" strokeWidth={2} />
+                </button>
+              </div>
+            </div>
+
+            {/* Contenido */}
+            <div className="p-8 space-y-6">
+              {/* Evaluación General */}
+              <div className="border-l-4 border-blue-500 bg-blue-50 p-4 rounded">
+                <h3 className="text-lg font-bold text-blue-900 mb-2">
+                  🔍 Evaluación: {resultadosActuales.evaluacion === 'NORMAL' ? '✅ NORMAL' : '⚠️ ANORMAL'}
+                </h3>
+                <p className="text-blue-700 font-medium">
+                  Estado: {resultadosActuales.evaluacion}
+                </p>
+                {resultadosActuales.fecha && (
+                  <p className="text-blue-600 text-sm mt-1">
+                    Evaluado el: {new Date(resultadosActuales.fecha).toLocaleDateString('es-ES', {
+                      year: 'numeric',
+                      month: 'long',
+                      day: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit'
+                    })}
+                  </p>
+                )}
+              </div>
+
+              {/* Hallazgos */}
+              {resultadosActuales.hallazgos && (
+                <div className="border-l-4 border-green-500 bg-green-50 p-4 rounded">
+                  <h3 className="text-lg font-bold text-green-900 mb-3">✅ Hallazgos</h3>
+                  <ul className="space-y-2">
+                    {Array.isArray(resultadosActuales.hallazgos) ? (
+                      resultadosActuales.hallazgos.map((h, i) => (
+                        <li key={i} className="text-green-700 flex items-start gap-2">
+                          <CheckCircle className="w-5 h-5 flex-shrink-0 mt-0.5" strokeWidth={2} />
+                          <span>{h}</span>
+                        </li>
+                      ))
+                    ) : (
+                      <li className="text-green-700">{resultadosActuales.hallazgos}</li>
+                    )}
+                  </ul>
+                </div>
+              )}
+
+              {/* Observaciones Clínicas */}
+              {resultadosActuales.observacionesClinicas && (
+                <div className="border-l-4 border-purple-500 bg-purple-50 p-4 rounded">
+                  <h3 className="text-lg font-bold text-purple-900 mb-3">📝 Observaciones Clínicas</h3>
+                  <p className="text-purple-700 leading-relaxed">
+                    {resultadosActuales.observacionesClinicas}
+                  </p>
+                </div>
+              )}
+
+              {/* Descripción de Evaluación */}
+              {resultadosActuales.descripcion && (
+                <div className="border-l-4 border-amber-500 bg-amber-50 p-4 rounded">
+                  <h3 className="text-lg font-bold text-amber-900 mb-3">📌 Descripción</h3>
+                  <p className="text-amber-700 leading-relaxed">
+                    {resultadosActuales.descripcion}
+                  </p>
+                </div>
+              )}
+            </div>
+
+            {/* Footer */}
+            <div className="px-6 py-4 bg-gray-50 border-t rounded-b-lg flex justify-end gap-3">
+              <button
+                onClick={() => setShowResultadosModal(false)}
+                className="px-6 py-2 bg-gray-300 text-gray-800 rounded-lg font-semibold hover:bg-gray-400 transition-colors"
+              >
+                Cerrar
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
     </div>
