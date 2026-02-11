@@ -1080,7 +1080,7 @@ export default function MisPacientes() {
     setMostrarDetalles(true);
   };
 
-  // ✅ v1.79.3: Abrir modal de evaluación de ECG - OPTIMIZADO para rapidez
+  // ✅ v1.90.0: Abrir modal de evaluación de ECG - AHORA CON TODAS LAS IMÁGENES
   const abrirCarruselECG = async (paciente) => {
     try {
       setCargandoECG(true);
@@ -1100,36 +1100,43 @@ export default function MisPacientes() {
         return;
       }
 
-      // ✅ v1.66.1: Tomar la primera imagen y cargar su contenido
-      const primerECG = resultado[0].imagenes[0];
-      const idImagen = primerECG.id_imagen || primerECG.idImagen;
+      // ✅ v1.90.0: Obtener TODAS las imágenes (no solo la primera)
+      const todasLasImagenes = resultado[0].imagenes;
 
-      // ⚡ Cargar imagen en paralelo (no bloquea la apertura del modal)
-      teleecgService.verPreview(idImagen)
-        .then(imagenConContenido => {
-          // Preparar objeto ECG para el modal
-          const ecgParaModal = {
-            ...primerECG,
-            ...imagenConContenido,
-            paciente: {
-              numDoc: paciente.numDoc,
-              nombres: paciente.apellidosNombres,
-              ipress: paciente.ipress,
-            },
-          };
-
-          setEcgActual(ecgParaModal);
-          setCargandoECG(false);
+      // ⚡ Cargar TODAS las imágenes en paralelo
+      const imagenesConContenido = await Promise.all(
+        todasLasImagenes.map(async (ecg) => {
+          try {
+            const idImagen = ecg.id_imagen || ecg.idImagen;
+            const preview = await teleecgService.verPreview(idImagen);
+            return {
+              ...ecg,
+              ...preview,
+            };
+          } catch (error) {
+            console.error('Error cargando preview para imagen:', error);
+            // Retornar la imagen sin contenido en lugar de fallar
+            return ecg;
+          }
         })
-        .catch(error => {
-          console.error('Error cargando preview:', error);
-          // Aún así mostrar el modal sin la imagen
-          setCargandoECG(false);
-        });
+      );
+
+      // Preparar objeto ECG para el modal CON TODAS LAS IMÁGENES
+      const ecgParaModal = {
+        imagenes: imagenesConContenido,  // ✅ ARRAY DE TODAS LAS IMÁGENES
+        paciente: {
+          numDoc: paciente.numDoc,
+          nombres: paciente.apellidosNombres,
+          ipress: paciente.ipress,
+        },
+      };
+
+      setEcgActual(ecgParaModal);
+      setCargandoECG(false);
 
     } catch (error) {
       console.error('Error cargando ECG:', error);
-      toast.error('Error al cargar la imagen ECG');
+      toast.error('Error al cargar las imágenes ECG');
       setCargandoECG(false);
       setShowECGModal(false);
     }
