@@ -81,11 +81,11 @@ const animationStyles = `
 
   @keyframes pulseRed {
     0%, 100% {
-      box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4);
+      box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.4);
       transform: scale(1);
     }
     50% {
-      box-shadow: 0 0 0 4px rgba(239, 68, 68, 0);
+      box-shadow: 0 0 0 4px rgba(220, 38, 38, 0);
       transform: scale(1.02);
     }
   }
@@ -1926,7 +1926,7 @@ export default function MisPacientes() {
                                   ? 'bg-green-600 text-white border border-green-700 hover:bg-green-700'
                                   : cargandoECG
                                   ? 'bg-gray-100 text-gray-400 cursor-not-allowed opacity-50 border border-gray-200'
-                                  : 'bg-red-100 text-red-700 hover:bg-red-200 cursor-pointer border border-red-400 ecg-button-pulse'
+                                  : 'bg-red-600 text-white hover:bg-red-700 cursor-pointer border border-red-700 ecg-button-pulse'
                               }`}
                             >
                               <Stethoscope
