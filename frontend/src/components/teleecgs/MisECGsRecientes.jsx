@@ -97,6 +97,32 @@ export default function MisECGsRecientes({
     }
   }, [filtroDNI]);
 
+  // ✅ v1.84.0: Autocompletado con debounce (busca mientras escribes)
+  const debounceTimerRef = useRef(null);
+
+  useEffect(() => {
+    // Si el usuario escribió algo
+    if (filtroDNI && filtroDNI.trim() !== '') {
+      // Limpiar el timer anterior
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+
+      // Establecer un nuevo timer: buscar después de 800ms sin escribir
+      debounceTimerRef.current = setTimeout(() => {
+        console.log(`🔍 Autocompletado: buscando DNI "${filtroDNI}" después de debounce`);
+        onBuscarPorDNI(filtroDNI);
+      }, 800);  // 800ms debounce
+    }
+
+    // Cleanup: limpiar timer cuando el componente se desmonta o cuando filtroDNI cambia
+    return () => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+    };
+  }, [filtroDNI, onBuscarPorDNI]);
+
   // ✅ v1.81.3: Búsqueda manual (sin useEffect infinito)
   // El usuario presiona Enter o hace clic en botón para buscar
 
