@@ -569,7 +569,7 @@ export default function MisPacientes() {
                         estado: 'EVALUADO',
                         datos: {
                           evaluacion: ultima.evaluacion || '',
-                          descripcion: ultima.descripcionEvaluacion || '',
+                          descripcion: ultima.descripcion_evaluacion || ultima.descripcionEvaluacion || '',
                           fecha: ultima.fechaEvaluacion || '',
                           hallazgos: ultima.hallazgos || '',
                           observacionesClinicas: ultima.observacionesClinicas || ''
