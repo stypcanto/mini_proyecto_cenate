@@ -35,11 +35,12 @@ public class EvaluacionECGDTO {
      * Ejemplo: "Anormal: taquicardia sinusal, cambios isquémicos"
      *
      * ✅ v1.21.5: Ahora OPCIONAL - Si se proporciona, mínimo 4 caracteres
+     * ✅ v1.89.1: Permitir texto multilinea (con hallazgos + observaciones)
      * Requerido: No
-     * Máximo: 1000 caracteres
+     * Máximo: 5000 caracteres
      *
-     * Validación: Permite cadena vacía O cadenas con 4-1000 caracteres
+     * Validación: Permite cadena vacía O cadenas con 4-5000 caracteres (incluyendo saltos de línea)
      */
-    @Pattern(regexp = "^$|^.{4,1000}$", message = "Observaciones: déjelo vacío o proporcione entre 4 y 1000 caracteres")
+    @Pattern(regexp = "^$|^[\\s\\S]{4,5000}$", message = "Observaciones: déjelo vacío o proporcione entre 4 y 5000 caracteres")
     private String descripcion;
 }
