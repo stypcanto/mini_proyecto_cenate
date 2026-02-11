@@ -657,16 +657,28 @@ public class SolicitudBolsaController {
 
                 // ✅ v1.63.1: Cuando se asigna un médico, obtener y guardar su especialidad
                 try {
+                    log.info("🔍 Buscando especialidad para médico ID: {}", dto.getIdPersonal());
                     DetalleMedicoDTO detalleMedico = detalleMedicoService.obtenerDetalleMedico(dto.getIdPersonal());
+
+                    log.info("📋 Resultado de obtenerDetalleMedico: detalleMedico={}, es null? {}",
+                        detalleMedico != null ? "Encontrado" : "NULL", detalleMedico == null);
+
+                    if (detalleMedico != null) {
+                        log.info("📋 Campos del médico: nombre={}, especialidad={}, idPers={}",
+                            detalleMedico.getNombre(), detalleMedico.getEspecialidad(), detalleMedico.getIdPers());
+                    }
+
                     if (detalleMedico != null && detalleMedico.getEspecialidad() != null) {
                         String especialidadMedico = detalleMedico.getEspecialidad();
                         solicitud.setEspecialidad(especialidadMedico);
-                        log.info("✅ Especialidad del médico guardada: {}", especialidadMedico);
+                        log.warn("✅✅✅ ESPECIALIDAD DEL MÉDICO GUARDADA: {}", especialidadMedico);
                     } else {
-                        log.warn("⚠️ No se encontró especialidad para el médico ID: {}", dto.getIdPersonal());
+                        log.warn("⚠️ No se encontró especialidad para el médico ID: {} (detalleMedico={})",
+                            dto.getIdPersonal(), detalleMedico);
                     }
                 } catch (Exception e) {
-                    log.error("❌ Error obteniendo especialidad del médico: {}", e.getMessage());
+                    log.error("❌ ERROR CRITICO obteniendo especialidad del médico ID: {}", dto.getIdPersonal(), e);
+                    log.error("❌ Stack trace completo: ", e);
                 }
 
                 // ✅ v1.47.0: Cuando se asigna un médico desde Gestión de Citas,
