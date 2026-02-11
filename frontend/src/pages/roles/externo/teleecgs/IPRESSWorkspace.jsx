@@ -180,11 +180,13 @@ export default function IPRESSWorkspace() {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  // Auto-refresh cada 30 segundos
+  // ✅ v1.87.8: Auto-refresh cada 5 MINUTOS (en lugar de 30s)
+  // Mantiene los stats estables y no fluctúan constantemente
+  // El usuario puede presionar el botón Refrescar si quiere actualizar antes
   useEffect(() => {
     const interval = setInterval(() => {
       cargarEKGs();
-    }, 30000);
+    }, 300000);  // 5 minutos = 300000ms (en lugar de 30000ms)
 
     return () => clearInterval(interval);
   }, []);
