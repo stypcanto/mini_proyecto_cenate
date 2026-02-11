@@ -1844,9 +1844,9 @@ export default function MisPacientes() {
                           <button
                             onClick={() => abrirDetallesPaciente(paciente)}
                             title="Ver detalles del paciente"
-                            className="flex-shrink-0 mt-0.5 text-emerald-600 hover:text-emerald-700 transition-colors duration-150"
+                            className="flex-shrink-0 inline-flex items-center justify-center w-9 h-9 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 transition-colors duration-150"
                           >
-                            <Eye className="w-4 h-4" strokeWidth={2} />
+                            <Eye className="w-5 h-5" strokeWidth={2} />
                           </button>
 
                           {/* Nombre y DNI */}
