@@ -101,11 +101,11 @@ const teleecgService = {
   /**
    * Listar todas las imágenes ECG
    * Convierte snake_case del API a camelCase para el frontend
-   * ✅ v1.71.0: Cargar TODAS automáticamente - Estrategia: múltiples llamadas a backend
+   * ✅ v1.80.4: Soporta búsqueda por numDoc (DNI) en el backend
    */
-  listarImagenes: async (numDocPaciente = "") => {
+  listarImagenes: async (numDoc = "") => {
     const params = new URLSearchParams();
-    if (numDocPaciente) params.append("numDocPaciente", numDocPaciente);
+    if (numDoc) params.append("numDoc", numDoc);  // ✅ v1.80.4: Pasar numDoc (no numDocPaciente)
     // ✅ v1.80.2: Obtener página 0 con 50 items (aumentado de 15)
     params.append("page", "0");
     params.append("size", "50");  // ⚡ v1.80.2: Aumentado de 15 a 50
@@ -116,12 +116,13 @@ const teleecgService = {
   },
 
   /**
-   * ✅ v1.80.2: Listar imágenes ECG de una página específica
+   * ✅ v1.80.4: Listar imágenes ECG de una página específica con soporte de búsqueda
    * Usado internamente para cargar todas las páginas automáticamente
-   * ⚡ Cambio: 15 → 50 items por página para reducir número de páginas
+   * Soporta búsqueda por DNI (numDoc) para persistir filtro al cargar páginas
    */
-  listarImagenesPage: async (page = 0) => {
+  listarImagenesPage: async (page = 0, numDoc = "") => {
     const params = new URLSearchParams();
+    if (numDoc) params.append("numDoc", numDoc);  // ✅ v1.80.4: Persistir búsqueda al cambiar página
     params.append("page", page);
     params.append("size", "50");  // ⚡ v1.80.2: Aumentado de 15 a 50 para mejor eficiencia
 

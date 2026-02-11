@@ -198,12 +198,12 @@ export default function IPRESSWorkspace() {
    * Cargar imágenes desde el servidor y enriquecer con datos de pacientes
    * ✅ v1.71.0: Cargar TODAS las páginas automáticamente
    */
-  const cargarEKGs = async () => {
+  const cargarEKGs = async (numDocBusqueda = "") => {
     try {
       setLoading(true);
 
-      // ✅ Cargar primera página
-      const response = await teleecgService.listarImagenes();
+      // ✅ Cargar primera página (con búsqueda si se proporciona DNI)
+      const response = await teleecgService.listarImagenes(numDocBusqueda);
       let imagenes = response?.content || [];
       const totalPages = response?.totalPages || 1;
 
@@ -213,15 +213,15 @@ export default function IPRESSWorkspace() {
       // ✅ v1.71.0: Guardar totalPages del backend
       setTotalPagesFromBackend(totalPages);
 
-      // ✅ v1.80.1: Cargar TODAS las páginas EN PARALELO (no secuencial)
+      // ✅ v1.80.4: Cargar TODAS las páginas EN PARALELO (con soporte de búsqueda)
       if (totalPages > 1) {
-        console.log(`📥 Cargando ${totalPages - 1} páginas en paralelo...`);
+        console.log(`📥 Cargando ${totalPages - 1} páginas en paralelo... (búsqueda: ${numDocBusqueda || "TODAS"})`);
 
         // Crear array de promesas para todas las páginas
         const pagePromises = [];
         for (let page = 1; page < totalPages; page++) {
           pagePromises.push(
-            teleecgService.listarImagenesPage(page)
+            teleecgService.listarImagenesPage(page, numDocBusqueda)  // ✅ v1.80.4: Pasar DNI búsqueda
               .then(pageResponse => ({
                 success: true,
                 pageNum: page + 1,
@@ -556,6 +556,7 @@ export default function IPRESSWorkspace() {
               }}
               onRefrescar={handleRefresh}
               onVerImagen={handleVerImagen}
+              onBuscarPorDNI={(dni) => cargarEKGs(dni)}  // ✅ v1.80.4: Buscar en backend
               loading={loading}
               imagenesPorDni={(() => {
                 // ✅ Agrupar TODAS las imágenes (no deduplicadas) por DNI para el modal de edición

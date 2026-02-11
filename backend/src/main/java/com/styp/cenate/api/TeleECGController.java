@@ -398,11 +398,12 @@ public class TeleECGController {
     @GetMapping("")
     @Operation(summary = "Listar ECGs agrupadas por asegurado (consolidado, paginado)")
     public ResponseEntity<?> listarECGsConsolidadas(
+            @Parameter(description = "Número de documento del paciente (búsqueda)") @RequestParam(required = false) String numDoc,
             @Parameter(description = "Estado (TODOS, ENVIADA, OBSERVADA, ATENDIDA)") @RequestParam(required = false, defaultValue = "TODOS") String estado,
             @Parameter(description = "Página (0-indexed)") @RequestParam(required = false, defaultValue = "0") int page,
             @Parameter(description = "Tamaño de página") @RequestParam(required = false, defaultValue = "15") int size) {
 
-        log.info("🚀 Listando ECGs CONSOLIDADAS por asegurado - Estado: {}, Página: {}, Tamaño: {}", estado, page, size);
+        log.info("🚀 Listando ECGs CONSOLIDADAS por asegurado - DNI: {}, Estado: {}, Página: {}, Tamaño: {}", numDoc, estado, page, size);
 
         try {
             String estadoFinal = "TODOS".equals(estado) ? null : estado;
@@ -412,7 +413,7 @@ public class TeleECGController {
 
             // Usar listarAgrupaPorAsegurado que devuelve datos consolidados paginados
             Page<AseguradoConECGsDTO> resultado = teleECGService.listarAgrupaPorAsegurado(
-                null, estadoFinal, null, null, null, pageable
+                numDoc, estadoFinal, null, null, null, pageable
             );
 
             log.info("✅ Se encontraron {} asegurados con ECGs consolidadas (página {}/{})",

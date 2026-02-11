@@ -56,6 +56,7 @@ export default function MisECGsRecientes({
   },
   onRefrescar = () => {},
   onVerImagen = () => {},
+  onBuscarPorDNI = () => {},  // ✅ v1.80.4: Callback para búsqueda en backend
   loading = false,
   imagenesPorDni = {}, // ✅ NEW: Pasar imágenes reales por DNI
 }) {
@@ -95,6 +96,14 @@ export default function MisECGsRecientes({
       setFiltroFecha('');
     }
   }, [filtroDNI]);
+
+  // ✅ v1.80.4: Cuando el usuario termina de tipear DNI, disparar búsqueda en backend
+  useEffect(() => {
+    if (filtroDNI && filtroDNI.trim() !== '') {
+      console.log(`🔍 Buscando en backend: DNI ${filtroDNI}`);
+      onBuscarPorDNI(filtroDNI);  // Llamar al backend con búsqueda
+    }
+  }, [filtroDNI, onBuscarPorDNI]);
 
   // ✅ Cargar imagen cuando se abre preview
   useEffect(() => {
@@ -177,13 +186,17 @@ export default function MisECGsRecientes({
   const hayFiltrosActivos = filtroDNI !== '' || filtroFecha !== '';
 
   // ✅ Clear individual filters
-  const limpiarFiltroDNI = () => setFiltroDNI('');
+  const limpiarFiltroDNI = () => {
+    setFiltroDNI('');
+    onBuscarPorDNI('');  // ✅ v1.80.4: Recargar sin filtro
+  };
   const limpiarFiltroFecha = () => setFiltroFecha('');
 
   // ✅ Clear all filters
   const limpiarTodosFiltros = () => {
     setFiltroDNI('');
     setFiltroFecha('');
+    onBuscarPorDNI('');  // ✅ v1.80.4: Recargar sin filtros
   };
 
   // ✅ Mostrar loader mientras carga la primera vez
