@@ -1879,7 +1879,7 @@ export default function MisPacientes() {
                             title="Ver detalles del paciente"
                             className="flex-shrink-0 inline-flex items-center justify-center w-9 h-9 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 transition-colors duration-150"
                           >
-                            <Check className="w-5 h-5" strokeWidth={2} />
+                            <Eye className="w-5 h-5" strokeWidth={2} />
                           </button>
 
                           {/* Nombre y DNI */}
