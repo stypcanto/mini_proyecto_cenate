@@ -67,6 +67,7 @@ export default function MisECGsRecientes({
   const [filtroDNI, setFiltroDNI] = useState('');
   const [filtroFecha, setFiltroFecha] = useState('');
   const [datosOriginales, setDatosOriginales] = useState([]);
+  const [buscandoPorDNI, setBuscandoPorDNI] = useState(false);  // ✅ v1.84.1: Loader durante búsqueda
 
   // ✅ NEW: Modal de edición de imágenes
   const [showEditModal, setShowEditModal] = useState(false);
@@ -107,6 +108,7 @@ export default function MisECGsRecientes({
         clearTimeout(debounceTimerRef.current);
       }
       console.log('🔄 DNI vacío, reseteando búsqueda');
+      setBuscandoPorDNI(false);
       onBuscarPorDNI('');  // Resetear inmediatamente
       return;
     }
@@ -116,9 +118,13 @@ export default function MisECGsRecientes({
       clearTimeout(debounceTimerRef.current);
     }
 
+    // ✅ v1.84.1: Mostrar loader mientras espera el debounce
+    setBuscandoPorDNI(true);
+
     debounceTimerRef.current = setTimeout(() => {
       console.log(`🔍 Autocompletado: buscando DNI "${filtroDNI}" después de debounce`);
       onBuscarPorDNI(filtroDNI);
+      setBuscandoPorDNI(false);  // Loader desaparece cuando termina búsqueda
     }, 800);  // 800ms debounce
 
     return () => {
@@ -471,14 +477,20 @@ export default function MisECGsRecientes({
 
         {/* Filter Status Info */}
         {hayFiltrosActivos && (
-          <div className="mt-3 text-xs text-blue-700 bg-blue-100/50 border border-blue-200 rounded px-2.5 py-1.5">
-            {filtroDNI && filtroFecha && (
+          <div className="mt-3 text-xs text-blue-700 bg-blue-100/50 border border-blue-200 rounded px-2.5 py-1.5 flex items-center gap-2">
+            {buscandoPorDNI && (
+              <>
+                <div className="animate-spin">⏳</div>
+                <span>🔍 Buscando DNI <strong>{filtroDNI}</strong>...</span>
+              </>
+            )}
+            {!buscandoPorDNI && filtroDNI && filtroFecha && (
               <span>📊 Mostrando resultados para DNI <strong>{filtroDNI}</strong> en <strong>{filtroFecha}</strong> ({datosFiltrados.length} encontrada{datosFiltrados.length !== 1 ? 's' : ''})</span>
             )}
-            {filtroDNI && !filtroFecha && (
+            {!buscandoPorDNI && filtroDNI && !filtroFecha && (
               <span>📊 Mostrando resultados para DNI <strong>{filtroDNI}</strong> ({datosFiltrados.length} encontrada{datosFiltrados.length !== 1 ? 's' : ''})</span>
             )}
-            {!filtroDNI && filtroFecha && (
+            {!buscandoPorDNI && !filtroDNI && filtroFecha && (
               <span>📊 Mostrando cargas de <strong>{filtroFecha}</strong> ({datosFiltrados.length} encontrada{datosFiltrados.length !== 1 ? 's' : ''})</span>
             )}
           </div>
