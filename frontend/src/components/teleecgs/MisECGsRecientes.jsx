@@ -87,6 +87,15 @@ export default function MisECGsRecientes({
     setDatosOriginales(ultimas3);
   }, [ultimas3]);
 
+  // ✅ v1.76.0: Cuando el usuario busca por DNI, limpiar automáticamente el filtro de fecha
+  // Esto evita que se combinen filtros (DNI + Fecha) y muestren 0 resultados confusos
+  useEffect(() => {
+    if (filtroDNI && filtroDNI.trim() !== '' && filtroFecha !== '') {
+      console.log('🔍 DNI ingresado, limpiando filtro de fecha para mejorar UX');
+      setFiltroFecha('');
+    }
+  }, [filtroDNI]);
+
   // ✅ Cargar imagen cuando se abre preview
   useEffect(() => {
     if (modalMode === 'preview' && previewImageIndex !== null && imagenesPorDni[cargaEdicion?.dni]) {
