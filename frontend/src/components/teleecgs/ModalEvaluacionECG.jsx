@@ -211,6 +211,8 @@ export default function ModalEvaluacionECG({
       console.log("📋 Objeto EKG recibido en Modal:", ecg);
       cargarImagenes();
       cargarEspecialidades();
+      // ✅ v1.89.0: Precargaer evaluación anterior si existe
+      precargarEvaluacionAnterior();
     }
   }, [isOpen, ecg]);
 
@@ -226,6 +228,36 @@ export default function ModalEvaluacionECG({
     } catch (error) {
       console.error("❌ Error cargando especialidades:", error);
       setEspecialidades([]);
+    }
+  };
+
+  // ✅ v1.89.0: Precargaer evaluación anterior si existe (para editar)
+  const precargarEvaluacionAnterior = () => {
+    if (!ecg || ecg.evaluacion === 'SIN_EVALUAR') {
+      // Si no hay evaluación anterior, resetear
+      setTipoEvaluacion("");
+      setObservacionesEval("");
+      return;
+    }
+
+    console.log("📝 v1.89.0 - Precargando evaluación anterior:", {
+      evaluacion: ecg.evaluacion,
+      descripcion: ecg.descripcion_evaluacion,
+      fecha: ecg.fecha_evaluacion
+    });
+
+    // Precargaer tipo de evaluación
+    if (ecg.evaluacion === 'NORMAL') {
+      setTipoEvaluacion('NORMAL');
+    } else if (ecg.evaluacion === 'ANORMAL') {
+      setTipoEvaluacion('ANORMAL');
+    } else if (ecg.evaluacion === 'NO_DIAGNOSTICO') {
+      setTipoEvaluacion('NO_DIAGNOSTICO');
+    }
+
+    // Precargaer observaciones
+    if (ecg.descripcion_evaluacion) {
+      setObservacionesEval(ecg.descripcion_evaluacion);
     }
   };
 

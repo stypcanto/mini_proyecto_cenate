@@ -1913,23 +1913,19 @@ export default function MisPacientes() {
                             {/* ✅ v1.80.0: Botón para atender/evaluar ECG */}
                             <button
                               onClick={() => abrirCarruselECG(paciente)}
-                              disabled={cargandoECG || paciente.condicion === 'Atendido'}
+                              disabled={cargandoECG}
                               title={
                                 cargandoECG
                                   ? 'Cargando ECG...'
-                                  : paciente.condicion === 'Atendido'
-                                  ? 'Paciente ya atendido'
                                   : evaluacionesEstados[paciente.numDoc]?.estado === 'EVALUADO'
-                                  ? 'ECG ya evaluado'
-                                  : 'Pendiente de atender'
+                                  ? '✏️ Editar evaluación ECG (ya evaluado)'
+                                  : 'Evaluar ECG (Pendiente)'
                               }
                               className={`relative inline-flex items-center justify-center gap-2 px-4 py-3 rounded-lg font-semibold text-sm transition-all ${
-                                paciente.condicion === 'Atendido'
-                                  ? 'bg-green-600 text-white border border-green-700 hover:bg-green-700'
-                                  : evaluacionesEstados[paciente.numDoc]?.estado === 'EVALUADO'
-                                  ? 'bg-green-600 text-white border border-green-700 hover:bg-green-700'
-                                  : cargandoECG
+                                cargandoECG
                                   ? 'bg-gray-100 text-gray-400 cursor-not-allowed opacity-50 border border-gray-200'
+                                  : evaluacionesEstados[paciente.numDoc]?.estado === 'EVALUADO'
+                                  ? 'bg-green-600 text-white border border-green-700 hover:bg-green-700 cursor-pointer'
                                   : 'bg-red-600 text-white hover:bg-red-700 cursor-pointer border border-red-700 ecg-button-pulse'
                               }`}
                             >
