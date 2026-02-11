@@ -477,7 +477,7 @@ export default function ModalEvaluacionECG({
   // Validar si puede guardar
   const puedeGuardar = () => {
     if (!tipoEvaluacion) return false;
-    if (!observacionesEval.trim() || observacionesEval.trim().length < 10) return false;
+    if (!observacionesEval.trim() || observacionesEval.trim().length < 4) return false;
 
     if (tipoEvaluacion === "NORMAL") {
       return Object.values(razonesNormal).some(v => v === true);
@@ -565,9 +565,9 @@ export default function ModalEvaluacionECG({
       }
     }
 
-    // 3️⃣ Validar observaciones clínicas (mínimo 10 caracteres)
-    if (!observacionesEval.trim() || observacionesEval.trim().length < 10) {
-      toast.error("❌ Las observaciones clínicas deben tener al menos 10 caracteres");
+    // 3️⃣ Validar observaciones clínicas (mínimo 4 caracteres)
+    if (!observacionesEval.trim() || observacionesEval.trim().length < 4) {
+      toast.error("❌ Las observaciones clínicas deben tener al menos 4 caracteres");
       return;
     }
 
@@ -1086,9 +1086,9 @@ export default function ModalEvaluacionECG({
                           }`}
                         />
                         <p className={`text-xs mt-1 ${
-                          observacionesEval.trim().length >= 10 ? "text-green-600 font-semibold" : "text-gray-500"
+                          observacionesEval.trim().length >= 4 ? "text-green-600 font-semibold" : "text-gray-500"
                         }`}>
-                          {observacionesEval.trim().length}/10 caracteres mínimos
+                          {observacionesEval.trim().length}/4 caracteres mínimos
                         </p>
 
                         {/* ✅ v9.2.0: 8️⃣ CAMPO OBLIGATORIO PARA NO_DIAGNOSTICO */}

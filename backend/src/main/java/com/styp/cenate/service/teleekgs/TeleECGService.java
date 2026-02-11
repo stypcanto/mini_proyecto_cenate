@@ -549,10 +549,10 @@ public class TeleECGService {
         }
 
         // ✅ FIX v1.21.5: Observaciones OPCIONALES
-        // Si se proporciona descripción, debe tener mínimo 10 caracteres
+        // Si se proporciona descripción, debe tener mínimo 4 caracteres
         // Si está vacía, es permitido
-        if (descripcion != null && descripcion.trim().length() > 0 && descripcion.trim().length() < 10) {
-            throw new ValidationException("Si proporciona observaciones, debe tener mínimo 10 caracteres");
+        if (descripcion != null && descripcion.trim().length() > 0 && descripcion.trim().length() < 4) {
+            throw new ValidationException("Si proporciona observaciones, debe tener mínimo 4 caracteres");
         }
 
         if (descripcion != null && descripcion.length() > 1000) {
@@ -856,9 +856,12 @@ public class TeleECGService {
         LocalDateTime desde = fechaDesde != null ? fechaDesde : LocalDateTime.of(1900, 1, 1, 0, 0);
         LocalDateTime hasta = fechaHasta != null ? fechaHasta : LocalDateTime.of(2999, 12, 31, 23, 59);
 
+        // ✅ v1.81.2: Soportar DNIs con/sin ceros iniciales
+        String numDocSinCeros = numDoc != null ? numDoc.replaceAll("^0+", "") : null;
+
         // ✅ v1.70.0: Obtener imágenes con paginación (máx pageSize registros)
         Page<TeleECGImagen> imagenesPaginadas = teleECGImagenRepository.buscarFlexibleSinPaginacion(
-            numDoc, estado, idIpress, desde, hasta, pageable
+            numDoc, numDocSinCeros, estado, idIpress, desde, hasta, pageable
         );
 
         // Agrupar por DNI del paciente (solo contenido de la página actual)

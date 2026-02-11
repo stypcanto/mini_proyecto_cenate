@@ -348,7 +348,9 @@ public interface TeleECGImagenRepository extends JpaRepository<TeleECGImagen, Lo
      */
     @Query("""
         SELECT DISTINCT t FROM TeleECGImagen t
-        WHERE (:numDoc IS NULL OR t.numDocPaciente LIKE %:numDoc%)
+        WHERE (:numDoc IS NULL OR
+               CAST(t.numDocPaciente AS VARCHAR) LIKE %:numDoc% OR
+               CAST(t.numDocPaciente AS VARCHAR) LIKE %:numDocSinCeros%)
           AND (:estado IS NULL OR t.estado = :estado)
           AND (:idIpress IS NULL OR t.ipressOrigen.idIpress = :idIpress)
           AND t.statImagen = 'A'
@@ -359,6 +361,7 @@ public interface TeleECGImagenRepository extends JpaRepository<TeleECGImagen, Lo
         """)
     Page<TeleECGImagen> buscarFlexibleSinPaginacion(
         @Param("numDoc") String numDoc,
+        @Param("numDocSinCeros") String numDocSinCeros,
         @Param("estado") String estado,
         @Param("idIpress") Long idIpress,
         @Param("fechaDesde") LocalDateTime fechaDesde,

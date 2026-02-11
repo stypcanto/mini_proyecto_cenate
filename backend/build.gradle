@@ -199,10 +199,10 @@ tasks.javadoc {
     destinationDir = file("$buildDir/docs/javadoc")
 }
 
-// Si quieres que `./gradlew build` también genere javadoc:
-tasks.build {
-    dependsOn tasks.javadoc
-}
+// Deshabilitar javadoc (v1.80.7 - errores en build)
+// tasks.build {
+//     dependsOn tasks.javadoc
+// }
 
 
 

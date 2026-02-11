@@ -34,12 +34,12 @@ public class EvaluacionECGDTO {
      * Ejemplo: "Normal: ritmo sinusal regular, sin arritmias"
      * Ejemplo: "Anormal: taquicardia sinusal, cambios isquémicos"
      *
-     * ✅ v1.21.5: Ahora OPCIONAL - Si se proporciona, mínimo 10 caracteres
+     * ✅ v1.21.5: Ahora OPCIONAL - Si se proporciona, mínimo 4 caracteres
      * Requerido: No
      * Máximo: 1000 caracteres
      *
-     * Validación: Permite cadena vacía O cadenas con 10-1000 caracteres
+     * Validación: Permite cadena vacía O cadenas con 4-1000 caracteres
      */
-    @Pattern(regexp = "^$|^.{10,1000}$", message = "Observaciones: déjelo vacío o proporcione entre 10 y 1000 caracteres")
+    @Pattern(regexp = "^$|^.{4,1000}$", message = "Observaciones: déjelo vacío o proporcione entre 4 y 1000 caracteres")
     private String descripcion;
 }
