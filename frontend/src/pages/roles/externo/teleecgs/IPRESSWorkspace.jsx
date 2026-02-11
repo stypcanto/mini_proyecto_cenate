@@ -314,16 +314,44 @@ export default function IPRESSWorkspace() {
         enviadas: imagenesPendientes.length,      // Imágenes enviadas
       };
 
+      // ✅ v1.81.5: Filtrar client-side si el usuario buscó algo
+      if (numDocBusqueda && numDocBusqueda.trim() !== "") {
+        console.log(`🔍 Filtrando client-side por DNI: ${numDocBusqueda}`);
+
+        // Crear variantes del DNI para buscar (con y sin ceros iniciales)
+        const dniOriginal = numDocBusqueda.trim();
+        const dniSinCeros = numDocBusqueda.trim().replace(/^0+/, "");
+
+        imagenes = imagenes.filter(img => {
+          const dni = (img.dni || img.numDocPaciente || "").toString();
+          // Buscar tanto el DNI exacto como sin ceros iniciales
+          return dni.includes(dniOriginal) || dni.includes(dniSinCeros) || dniOriginal.includes(dni);
+        });
+        console.log(`✅ Encontradas ${imagenes.length} imágenes para DNI ${dniOriginal} (o ${dniSinCeros})`);
+      }
+
       // ✅ MOSTRAR DATOS INMEDIATAMENTE (sin esperar enriquecimiento)
-      setEcgs(ecgsFormateados);
+      setEcgs(Object.entries(imagenes.length > 0 ?
+        imagenes.reduce((acc, img) => {
+          const dni = img.numDocPaciente || img.dni;
+          if (!acc[dni]) acc[dni] = img;
+          return acc;
+        }, {}) :
+        {}
+      ).map(([dni, img]) => ({
+        ...img,
+        nombrePaciente: img.nombreCompleto || img.nombresPaciente || img.nombrePaciente || "Sin nombre",
+        genero: img.generoPaciente || img.genero || img.sexo || "-",
+        edad: img.edadPaciente || img.edad || img.ageinyears || "-",
+        telefono: img.telefonoPrincipalPaciente || img.telefono || "-",
+        esUrgente: img.es_urgente === true || img.esUrgente === true,
+        cantidadImagenes: imagenes.filter(i => (i.dni || i.numDocPaciente) === dni).length,
+      })));
+
       setTodasLasImagenes(imagenes);
       setCurrentPage(1);
       setStats(newStats);
       setLoading(false);
-
-      // ✅ v1.81.4: DESHABILITAR enriquecimiento (era muy lento)
-      // Los nombres básicos del backend son suficientes
-      // El enriquecimiento se puede hacer bajo demanda si es necesario
 
     } catch (error) {
       console.error("❌ Error al cargar EKGs:", error);
