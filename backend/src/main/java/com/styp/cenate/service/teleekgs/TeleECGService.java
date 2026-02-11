@@ -556,7 +556,14 @@ public class TeleECGService {
         imagen.setEvaluacion(evaluacion);
         imagen.setDescripcionEvaluacion(descripcion != null ? descripcion.trim() : "");
         imagen.setFechaEvaluacion(LocalDateTime.now());
-        imagen.setIdUsuarioEvaluador(idUsuarioEvaluador);
+
+        // Asignar usuario evaluador si se proporciona
+        if (idUsuarioEvaluador != null) {
+            var usuarioOpt = usuarioRepository.findById(idUsuarioEvaluador);
+            if (usuarioOpt.isPresent()) {
+                imagen.setUsuarioEvaluador(usuarioOpt.get());
+            }
+        }
 
         // Guardar
         teleECGImagenRepository.save(imagen);
@@ -568,7 +575,9 @@ public class TeleECGService {
         dto.setIdImagen(idImagen);
         dto.setEvaluacion(evaluacion);
         dto.setFechaEvaluacion(LocalDateTime.now());
-        dto.setIdUsuarioEvaluador(idUsuarioEvaluador);
+        if (imagen.getUsuarioEvaluador() != null) {
+            dto.setUsuarioEvaluadorNombre(imagen.getUsuarioEvaluador().getNameUser());
+        }
         return dto;
     }
 
