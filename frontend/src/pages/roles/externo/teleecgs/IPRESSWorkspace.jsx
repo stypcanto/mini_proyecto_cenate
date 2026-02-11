@@ -250,27 +250,14 @@ export default function IPRESSWorkspace() {
 
         console.log(`✅ [SEARCH] Total ecgsFormateados: ${ecgsFormateados.length}`);
 
-        // ✅ v1.87.5: Actualizar STATS también cuando se busca (no solo tabla)
-        const imagenesPendientes = imagenes.filter((img) => img.estado === "ENVIADA");
-        const imagenesObservadas = imagenes.filter((img) => img.estado === "OBSERVADA");
-        const imagenesAtendidas = imagenes.filter((img) => img.estado === "ATENDIDA");
-
-        // ✅ v1.87.6: Contar PACIENTES ÚNICOS, no imágenes duplicadas
-        const pacientesPendientes = new Set(imagenesPendientes.map(img => img.dni || img.numDocPaciente)).size;
-        const pacientesObservadas = new Set(imagenesObservadas.map(img => img.dni || img.numDocPaciente)).size;
-        const pacientesAtendidas = new Set(imagenesAtendidas.map(img => img.dni || img.numDocPaciente)).size;
-
-        const searchStats = {
-          total: imagenes.length,
-          cargadas: Object.keys(deduplicados).length,  // Pacientes únicos encontrados
-          enEvaluacion: pacientesPendientes,  // Pacientes con imágenes pendientes (no imágenes)
-          observadas: pacientesObservadas,    // Pacientes con imágenes observadas
-          atendidas: pacientesAtendidas,      // Pacientes con imágenes atendidas
-          enviadas: pacientesPendientes,
-        };
+          // ✅ v1.87.9: NO actualizar stats cuando se busca
+        // Los cards SIEMPRE deben mostrar el TOTAL de la BD, no los resultados filtrados
+        // Solo actualizar la tabla con los resultados de búsqueda
+        console.log(`✅ [SEARCH] Búsqueda completada: ${ecgsFormateados.length} pacientes encontrados`);
+        console.log(`✅ [SEARCH] Stats GLOBALES se mantienen (no se actualizan con búsqueda)`);
 
         setEcgs(ecgsFormateados);
-        setStats(searchStats);  // ✅ IMPORTANTE: Actualizar stats para búsqueda
+        // ⚠️ NO hacer setStats() aquí - mantener los stats globales
         setTodasLasImagenes(imagenes);  // Para modal de edición
         setTotalPagesFromBackend(response?.totalPages || 1);
         setCurrentPage(1);
