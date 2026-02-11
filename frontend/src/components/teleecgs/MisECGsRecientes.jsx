@@ -102,31 +102,37 @@ export default function MisECGsRecientes({
   const debounceTimerRef = useRef(null);
 
   useEffect(() => {
-    // Si el usuario borró todo el DNI, resetear inmediatamente
-    if (filtroDNI === '' || filtroDNI.trim() === '') {
+    // ✅ v1.85.1: Si el usuario borró todo el DNI, resetear INMEDIATAMENTE sin debounce
+    if (!filtroDNI || filtroDNI.trim() === '') {
+      // Limpiar timer si existe
       if (debounceTimerRef.current) {
         clearTimeout(debounceTimerRef.current);
+        debounceTimerRef.current = null;
       }
-      console.log('🔄 DNI vacío, reseteando búsqueda');
+
+      console.log('🔄 DNI vacío, reseteando búsqueda INMEDIATAMENTE');
       setBuscandoPorDNI(false);
-      onBuscarPorDNI('');  // Resetear inmediatamente
-      return;
+      onBuscarPorDNI('');  // Resetear completamente
+      return; // Salir del effect
     }
 
-    // Si el usuario escribió algo, usar debounce
+    // Si el usuario escribió algo, usar debounce (800ms)
+    // Limpiar timer anterior si existe
     if (debounceTimerRef.current) {
       clearTimeout(debounceTimerRef.current);
     }
 
-    // ✅ v1.84.1: Mostrar loader mientras espera el debounce
+    // Mostrar loader mientras espera el debounce
     setBuscandoPorDNI(true);
+    console.log(`⏳ Debounce iniciado para DNI: "${filtroDNI}"`);
 
     debounceTimerRef.current = setTimeout(() => {
-      console.log(`🔍 Autocompletado: buscando DNI "${filtroDNI}" después de debounce`);
+      console.log(`🔍 Autocompletado: buscando DNI "${filtroDNI}" después de 800ms`);
       onBuscarPorDNI(filtroDNI);
       setBuscandoPorDNI(false);  // Loader desaparece cuando termina búsqueda
     }, 800);  // 800ms debounce
 
+    // Cleanup: limpiar timer cuando component se desmonta o filtroDNI cambia
     return () => {
       if (debounceTimerRef.current) {
         clearTimeout(debounceTimerRef.current);
