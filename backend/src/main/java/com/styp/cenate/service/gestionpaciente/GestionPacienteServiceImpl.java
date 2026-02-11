@@ -645,11 +645,11 @@ public class GestionPacienteServiceImpl implements IGestionPacienteService {
         }
 
         // ✅ v1.76.0: Obtener datos del ECG más reciente
-        // 🔧 TEMPORALMENTE DESHABILITADO - Las queries de ECG requieren transacción separada
+        // 🔧 v1.78.2: Deshabilitado para no afectar módulo tele-ekg
+        // Las queries de ECG se hacen desde endpoint separado /api/gestion-pacientes/paciente/{dni}/ekg
         LocalDate fechaTomaEKG = null;
         Boolean esUrgente = false;
         String especialidadMedico = null;
-        // TODO: Mover a método con @Transactional(propagation = Propagation.REQUIRES_NEW)
 
         return GestionPacienteDTO.builder()
             .idSolicitudBolsa(bolsa.getIdSolicitud())  // ✅ v1.46.0: Incluir ID de bolsa
@@ -823,5 +823,45 @@ public class GestionPacienteServiceImpl implements IGestionPacienteService {
             log.error("❌ Error al actualizar valores por defecto de Bolsa 107: ", e);
             throw new RuntimeException("Error actualizando valores por defecto: " + e.getMessage());
         }
+    }
+
+    /**
+     * ✅ v1.78.2: Obtener datos de EKG para un paciente en transacción separada
+     * Esto permite que el frontend cargue datos básicos primero, luego los datos de EKG en paralelo
+     * Sin afectar la transacción principal ni el módulo de tele-ekg
+     */
+    @Override
+    @Transactional(propagation = Propagation.REQUIRES_NEW, readOnly = true)
+    public Map<String, Object> obtenerDatosEKGPaciente(String dni) {
+        Map<String, Object> resultado = new HashMap<>();
+        LocalDate fechaTomaEKG = null;
+        Boolean esUrgente = false;
+
+        try {
+            if (dni != null && !dni.isEmpty()) {
+                try {
+                    List<TeleECGImagen> ecgs = teleECGImagenRepository
+                        .findByNumDocPacienteAndStatImagenOrderByFechaEnvioDesc(dni, "A");
+
+                    if (!ecgs.isEmpty()) {
+                        TeleECGImagen ecgMasReciente = ecgs.get(0);
+                        fechaTomaEKG = ecgMasReciente.getFechaToma();
+                        esUrgente = ecgMasReciente.getEsUrgente() != null ? ecgMasReciente.getEsUrgente() : false;
+
+                        log.info("ECG encontrado para paciente {}: fechaToma={}, esUrgente={}",
+                            dni, fechaTomaEKG, esUrgente);
+                    }
+                } catch (Exception e) {
+                    log.warn("Error obteniendo ECG para paciente {}: {}", dni, e.getMessage());
+                }
+            }
+        } catch (Exception e) {
+            log.warn("Error en obtenerDatosEKGPaciente: {}", e.getMessage());
+        }
+
+        resultado.put("dni", dni);
+        resultado.put("fechaTomaEKG", fechaTomaEKG);
+        resultado.put("esUrgente", esUrgente);
+        return resultado;
     }
 }

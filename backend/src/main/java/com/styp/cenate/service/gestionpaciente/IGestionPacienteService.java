@@ -47,4 +47,7 @@ public interface IGestionPacienteService {
 
     // ✅ v1.64.0: Actualizar valores por defecto para Bolsa 107
     void actualizarValoresPorDefectoBlsa107();
+
+    // ✅ v1.78.2: Obtener datos de EKG para un paciente (endpoint separado, sin afectar transacción principal)
+    Map<String, Object> obtenerDatosEKGPaciente(String dni);
 }

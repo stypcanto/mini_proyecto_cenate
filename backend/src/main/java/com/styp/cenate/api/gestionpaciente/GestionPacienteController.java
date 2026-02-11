@@ -412,4 +412,22 @@ public class GestionPacienteController {
             ));
         }
     }
+
+    // ✅ v1.78.2: Endpoint separado para cargar EKG sin afectar transacción principal
+    @GetMapping("/paciente/{dni}/ekg")
+    @CheckMBACPermission(pagina = "/roles/medico/pacientes", accion = "ver")
+    public ResponseEntity<Map<String, Object>> obtenerDatosEKG(@PathVariable String dni) {
+        try {
+            log.info("GET /api/gestion-pacientes/paciente/{}/ekg - Obteniendo datos EKG", dni);
+            Map<String, Object> datosEKG = servicio.obtenerDatosEKGPaciente(dni);
+            return ResponseEntity.ok(datosEKG);
+        } catch (Exception e) {
+            log.warn("No se pudieron obtener datos EKG para paciente {}: {}", dni, e.getMessage());
+            return ResponseEntity.ok(Map.of(
+                "fechaTomaEKG", null,
+                "esUrgente", false,
+                "error", e.getMessage()
+            ));
+        }
+    }
 }
