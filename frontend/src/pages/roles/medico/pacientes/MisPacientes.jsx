@@ -460,35 +460,41 @@ export default function MisPacientes() {
         chunks.push(dnis.slice(i, i + 10));
       }
 
-      // Actualizar pacientes con datos de EKG
-      let pacientesActualizados = [...pacientesActuales];
+      // Recolectar todos los updates antes de hacer setState
+      const updates = {};
 
       for (const chunk of chunks) {
         await Promise.all(
           chunk.map(async (dni) => {
             try {
               const datosEKG = await gestionPacientesService.obtenerDatosEKGPaciente(dni);
+              console.log(`📅 [EKG ${dni}] Respuesta del servidor:`, datosEKG);
 
-              if (datosEKG && datosEKG.fechaTomaEKG) {
-                // Actualizar los pacientes con la fecha de toma del EKG
-                pacientesActualizados = pacientesActualizados.map(p =>
-                  p.numDoc === dni
-                    ? { ...p, fechaTomaEKG: datosEKG.fechaTomaEKG }
-                    : p
-                );
+              // Siempre actualizar, aunque sea null
+              if (datosEKG) {
+                updates[dni] = datosEKG.fechaTomaEKG;
+                console.log(`✅ [EKG ${dni}] Fecha actualizada a:`, datosEKG.fechaTomaEKG);
               }
             } catch (error) {
-              console.warn(`Error cargando fecha EKG para DNI ${dni}:`, error);
+              console.warn(`❌ Error cargando fecha EKG para DNI ${dni}:`, error);
+              updates[dni] = null;
             }
           })
         );
       }
 
       // Aplicar todas las actualizaciones de una vez
+      const pacientesActualizados = pacientesActuales.map(p => {
+        if (updates.hasOwnProperty(p.numDoc)) {
+          return { ...p, fechaTomaEKG: updates[p.numDoc] };
+        }
+        return p;
+      });
+
       setPacientes(pacientesActualizados);
-      console.log('✅ [FECHA TOMA EKG] Fechas cargadas para todos los pacientes');
+      console.log('✅ [FECHA TOMA EKG] Fechas cargadas para todos los pacientes', updates);
     } catch (error) {
-      console.error('Error cargando fechas de toma EKG:', error);
+      console.error('❌ Error cargando fechas de toma EKG:', error);
     }
   };
 

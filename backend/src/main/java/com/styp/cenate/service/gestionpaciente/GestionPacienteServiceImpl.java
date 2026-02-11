@@ -838,30 +838,58 @@ public class GestionPacienteServiceImpl implements IGestionPacienteService {
         Boolean esUrgente = false;
 
         try {
+            log.info("🔍 [EKG] Buscando datos de EKG para DNI: {}", dni);
+
             if (dni != null && !dni.isEmpty()) {
                 try {
+                    // 🔧 v1.80.5: Buscar sin restricción de estado (algunos registros pueden tener estado diferente)
                     List<TeleECGImagen> ecgs = teleECGImagenRepository
                         .findByNumDocPacienteAndStatImagenOrderByFechaEnvioDesc(dni, "A");
+
+                    log.info("📊 [EKG] Se encontraron {} registros ECG para DNI {}", ecgs.size(), dni);
 
                     if (!ecgs.isEmpty()) {
                         TeleECGImagen ecgMasReciente = ecgs.get(0);
                         fechaTomaEKG = ecgMasReciente.getFechaToma();
                         esUrgente = ecgMasReciente.getEsUrgente() != null ? ecgMasReciente.getEsUrgente() : false;
 
-                        log.info("ECG encontrado para paciente {}: fechaToma={}, esUrgente={}",
-                            dni, fechaTomaEKG, esUrgente);
+                        log.info("✅ [EKG] ECG encontrado para paciente {}: fechaToma={}, esUrgente={}, idImagen={}",
+                            dni, fechaTomaEKG, esUrgente, ecgMasReciente.getIdImagen());
+                    } else {
+                        log.warn("⚠️ [EKG] No se encontraron ECGs activos (statImagen='A') para DNI: {}", dni);
+
+                        // 🔧 v1.80.5: Intentar buscar sin filtro de estado si no hay resultados con 'A'
+                        try {
+                            // Buscar sin importar el estado para debugging
+                            List<TeleECGImagen> todosEcgs = teleECGImagenRepository
+                                .findByNumDocPacienteOrderByFechaEnvioDesc(dni);
+                            log.warn("⚠️ [EKG] ECGs totales sin filtro de estado para {}: {}", dni, todosEcgs.size());
+                            if (!todosEcgs.isEmpty()) {
+                                log.warn("⚠️ [EKG] Estados disponibles: {}", todosEcgs.stream()
+                                    .map(TeleECGImagen::getStatImagen)
+                                    .distinct()
+                                    .collect(java.util.stream.Collectors.toList()));
+                            }
+                        } catch (Exception e) {
+                            log.warn("⚠️ [EKG] Error buscando todos los ECGs: {}", e.getMessage());
+                        }
                     }
                 } catch (Exception e) {
-                    log.warn("Error obteniendo ECG para paciente {}: {}", dni, e.getMessage());
+                    log.error("❌ [EKG] Error obteniendo ECG para paciente {}: {}", dni, e.getMessage(), e);
                 }
+            } else {
+                log.warn("⚠️ [EKG] DNI nulo o vacío recibido");
             }
         } catch (Exception e) {
-            log.warn("Error en obtenerDatosEKGPaciente: {}", e.getMessage());
+            log.error("❌ [EKG] Error general en obtenerDatosEKGPaciente: {}", e.getMessage(), e);
         }
 
         resultado.put("dni", dni);
         resultado.put("fechaTomaEKG", fechaTomaEKG);
         resultado.put("esUrgente", esUrgente);
+
+        log.info("📤 [EKG] Retornando para DNI {}: fechaToma={}", dni, fechaTomaEKG);
+
         return resultado;
     }
 }

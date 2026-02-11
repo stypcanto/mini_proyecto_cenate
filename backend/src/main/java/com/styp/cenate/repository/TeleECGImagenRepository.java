@@ -49,6 +49,14 @@ public interface TeleECGImagenRepository extends JpaRepository<TeleECGImagen, Lo
     );
 
     /**
+     * ✅ v1.80.5: Busca TODAS las imágenes por DNI sin filtro de estado
+     * Útil para debugging cuando no se encuentran con estado 'A'
+     */
+    List<TeleECGImagen> findByNumDocPacienteOrderByFechaEnvioDesc(
+        String numDocPaciente
+    );
+
+    /**
      * Busca todas las imágenes en estado PENDIENTE (sin procesar)
      * Usado por: Personal CENATE para ver trabajo pendiente
      */
