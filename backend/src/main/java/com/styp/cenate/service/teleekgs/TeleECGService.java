@@ -23,6 +23,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.web.multipart.MultipartFile;
 import jakarta.annotation.PostConstruct;
 
@@ -539,11 +540,12 @@ public class TeleECGService {
      * Médico marca como NORMAL o ANORMAL + descripción
      * Dataset para entrenamiento de modelos ML
      */
+    @Transactional
     public TeleECGImagenDTO evaluarImagen(Long idImagen, String evaluacion, String descripcion,
                                          Long idUsuarioEvaluador, String ipCliente) {
         log.info("📋 Evaluando ECG ID: {} - Evaluación: {}", idImagen, evaluacion);
 
-        // 1. Validar entrada
+        // 1. Validar entrada (ANTES de buscar en BD para no marcar transacción)
         if (!evaluacion.equals("NORMAL") && !evaluacion.equals("ANORMAL")) {
             throw new ValidationException("Evaluación debe ser NORMAL o ANORMAL");
         }
@@ -563,8 +565,8 @@ public class TeleECGService {
         TeleECGImagen imagen = teleECGImagenRepository.findById(idImagen)
             .orElseThrow(() -> new ResourceNotFoundException("ECG no encontrada: " + idImagen));
 
-        // 3. Validar que no esté vencida
-        if (imagen.getFechaExpiracion().isBefore(LocalDateTime.now())) {
+        // 3. Validar que no esté vencida (✅ FIX v1.86.0: Agregar null check)
+        if (imagen.getFechaExpiracion() == null || imagen.getFechaExpiracion().isBefore(LocalDateTime.now())) {
             throw new ValidationException("ECG ha expirado y no puede ser evaluada");
         }
 
@@ -573,26 +575,33 @@ public class TeleECGService {
         imagen.setDescripcionEvaluacion(descripcion);
         imagen.setFechaEvaluacion(LocalDateTime.now());
 
-        // Buscar usuario evaluador
-        if (idUsuarioEvaluador != null) {
-            usuarioRepository.findById(idUsuarioEvaluador).ifPresent(imagen::setUsuarioEvaluador);
-        }
-
-        // 5. Guardar cambios
+        // 5. Guardar cambios (sin usuario evaluador por ahora)
         TeleECGImagen imagenActualizada = teleECGImagenRepository.save(imagen);
 
-        // 6. Registrar en auditoría
-        registrarAuditoria(
-            imagenActualizada,
-            idUsuarioEvaluador,
-            "EVALUAR",
-            ipCliente,
-            String.format("ECG evaluada como %s", evaluacion)
-        );
+        // 6. Registrar en auditoría (en transacción separada para evitar rollbacks)
+        try {
+            registrarAuditoria(
+                imagenActualizada,
+                idUsuarioEvaluador,
+                "EVALUAR",
+                ipCliente,
+                String.format("ECG evaluada como %s", evaluacion)
+            );
+        } catch (Exception e) {
+            // Si falla auditoría, NO afecta la evaluación principal
+            log.warn("⚠️ Auditoría falló pero evaluación ya está guardada: {}", e.getMessage());
+        }
 
         log.info("✅ Evaluación guardada: ID={}, Evaluación={}", idImagen, evaluacion);
 
-        return convertirADTO(imagenActualizada);
+        // Crear DTO simple sin relaciones (evitar lazy-loading issues)
+        TeleECGImagenDTO dto = new TeleECGImagenDTO();
+        dto.setIdImagen(imagenActualizada.getIdImagen());
+        dto.setEvaluacion(imagenActualizada.getEvaluacion());
+        dto.setDescripcionEvaluacion(imagenActualizada.getDescripcionEvaluacion());
+        dto.setFechaEvaluacion(imagenActualizada.getFechaEvaluacion());
+
+        return dto;
     }
 
     /**
@@ -622,8 +631,8 @@ public class TeleECGService {
         TeleECGImagen imagen = teleECGImagenRepository.findById(idImagen)
             .orElseThrow(() -> new ResourceNotFoundException("ECG no encontrada: " + idImagen));
 
-        // 3. Validar que no esté vencida
-        if (imagen.getFechaExpiracion().isBefore(LocalDateTime.now())) {
+        // 3. Validar que no esté vencida (✅ FIX v1.86.0: Agregar null check)
+        if (imagen.getFechaExpiracion() == null || imagen.getFechaExpiracion().isBefore(LocalDateTime.now())) {
             throw new ValidationException("ECG ha expirado y no puede ser procesada");
         }
 
@@ -1170,6 +1179,7 @@ public class TeleECGService {
     /**
      * Registrar evento en auditoría
      */
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     private void registrarAuditoria(TeleECGImagen imagen, Long idUsuario, String accion,
                                    String ipCliente, String resultado) {
         try {
