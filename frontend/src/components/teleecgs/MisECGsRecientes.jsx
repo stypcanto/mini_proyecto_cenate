@@ -86,6 +86,11 @@ export default function MisECGsRecientes({
 
   // ✅ Sync ultimas3 to datosOriginales on mount and when ultimas3 changes
   useEffect(() => {
+    console.log(`📊 [MisECGsRecientes] ultimas3 actualizado, length=${ultimas3.length}`);
+    if (ultimas3.length > 0) {
+      console.log(`📊 [MisECGsRecientes] Primer item:`, ultimas3[0]);
+      console.log(`📊 [MisECGsRecientes] Primer item.dni="${ultimas3[0].dni}", numDocPaciente="${ultimas3[0].numDocPaciente}"`);
+    }
     setDatosOriginales(ultimas3);
   }, [ultimas3]);
 
@@ -177,9 +182,25 @@ export default function MisECGsRecientes({
   // ✅ Filter Functions
   const filtrarPorDNI = (datos, dniBusqueda) => {
     if (!dniBusqueda || dniBusqueda.trim() === '') return datos;
-    return datos.filter(
-      item => item.dni && item.dni.toString().includes(dniBusqueda)
+
+    // 🔍 v1.87.3: DEBUG - Log para ver qué está pasando en el filtro
+    console.log(`🔍 [filtrarPorDNI] dniBusqueda="${dniBusqueda}", datos.length=${datos.length}`);
+    if (datos.length > 0) {
+      console.log(`🔍 [filtrarPorDNI] Primer item:`, datos[0]);
+      console.log(`🔍 [filtrarPorDNI] Primer item.dni="${datos[0].dni}", tipo=${typeof datos[0].dni}`);
+    }
+
+    const resultado = datos.filter(
+      item => {
+        const matches = item.dni && item.dni.toString().includes(dniBusqueda);
+        if (!matches && item.dni) {
+          console.log(`❌ [filtrarPorDNI] Item DNI="${item.dni}" NO coincide con "${dniBusqueda}"`);
+        }
+        return matches;
+      }
     );
+    console.log(`✅ [filtrarPorDNI] Resultado: ${resultado.length} items encontrados`);
+    return resultado;
   };
 
   // ✅ MEJORADO: Usar fechaEnvio directamente con parseo seguro de timezone
