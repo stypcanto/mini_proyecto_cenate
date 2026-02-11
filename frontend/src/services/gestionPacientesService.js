@@ -186,6 +186,24 @@ const gestionPacientesService = {
     },
 
     // ========================================================================
+    // ✅ v1.78.3: Datos de EKG (endpoint separado sin afectar transacción)
+    // ========================================================================
+
+    /**
+     * Obtener datos de EKG para un paciente (transacción separada)
+     * Permite cargar datos básicos primero, luego EKG en paralelo
+     * Sin afectar la transacción principal ni el módulo de tele-ekg
+     */
+    obtenerDatosEKGPaciente: async (dni) => {
+        try {
+            return await apiClient.get(`${BASE_ENDPOINT}/paciente/${dni}/ekg`);
+        } catch (error) {
+            console.warn(`Error obteniendo datos EKG para DNI ${dni}:`, error);
+            return { fechaTomaEKG: null, esUrgente: false };
+        }
+    },
+
+    // ========================================================================
     // Generar enlace de WhatsApp
     // ========================================================================
 
