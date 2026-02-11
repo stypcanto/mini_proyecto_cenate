@@ -211,4 +211,24 @@ public class AuthController {
             return ResponseEntity.internalServerError().body(Map.of("error", "Error al cerrar sesion"));
         }
     }
+
+    /**
+     * 🔐 DEBUG - Generar hash BCrypt para una contraseña
+     * USAR PARA RESETEAR CONTRASEÑA DEL USUARIO 84151616
+     * Endpoint: GET /api/auth/debug/hash-password?password=MiContraseña
+     */
+    @GetMapping("/debug/hash-password")
+    public ResponseEntity<?> debugHashPassword(@RequestParam String password) {
+        try {
+            String hashedPassword = new org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder(12).encode(password);
+            log.info("🔐 Hash BCrypt generado para password de {} caracteres", password.length());
+            return ResponseEntity.ok(Map.of(
+                "password", password,
+                "hash", hashedPassword,
+                "instrucciones", "Copiar el hash y ejecutar UPDATE en BD: UPDATE dim_usuarios SET pass_user = 'HASH_AQUI' WHERE name_user = '84151616';"
+            ));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
 }

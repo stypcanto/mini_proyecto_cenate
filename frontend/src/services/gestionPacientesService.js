@@ -36,6 +36,14 @@ const gestionPacientesService = {
     },
 
     /**
+     * ⭐ v1.78.0: Obtener información del médico logueado (nombre + especialidad)
+     * Retorna Map con "nombre" y "especialidad" del doctor autenticado
+     */
+    obtenerInfoMedicoActual: async () => {
+        return await apiClient.get(`${BASE_ENDPOINT}/medico/info`);
+    },
+
+    /**
      * Obtener paciente por ID
      */
     obtenerPorId: async (id) => {

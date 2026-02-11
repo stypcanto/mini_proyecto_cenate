@@ -4,6 +4,7 @@ import com.styp.cenate.dto.GestionPacienteDTO;
 import com.styp.cenate.dto.MedicoTeleurgenciasDTO;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 public interface IGestionPacienteService {
@@ -37,6 +38,9 @@ public interface IGestionPacienteService {
 
     // ⭐ v1.62.0: Contar pacientes pendientes (para notificaciones)
     long contarPacientesPendientesDelMedicoActual();
+
+    // ⭐ v1.76.0: Obtener información del médico logueado (nombre + especialidad)
+    Map<String, String> obtenerInfoMedicoActual();
 
     // ⭐ Dashboard Coordinador: Obtener médicos de Teleurgencias con estadísticas
     List<MedicoTeleurgenciasDTO> obtenerMedicosTeleurgenciasConEstadisticas();

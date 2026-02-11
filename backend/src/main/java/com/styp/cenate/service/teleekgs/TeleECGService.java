@@ -1279,13 +1279,11 @@ public class TeleECGService {
                     .count() * 100.0 / Math.max(1, filtradas.size());
 
             // Distribuciones
+            // ⚠️ Nota: TeleECGImagen no tiene campo de género, por eso se deja vacío
             Map<String, Integer> distribucionGenero = new HashMap<>();
-            distribucionGenero.put("M", (int) filtradas.stream()
-                    .filter(i -> "M".equals(i.getGeneroPaciente())).count());
-            distribucionGenero.put("F", (int) filtradas.stream()
-                    .filter(i -> "F".equals(i.getGeneroPaciente())).count());
-            distribucionGenero.put("Otro", (int) filtradas.stream()
-                    .filter(i -> !"M".equals(i.getGeneroPaciente()) && !"F".equals(i.getGeneroPaciente())).count());
+            distribucionGenero.put("M", 0);
+            distribucionGenero.put("F", 0);
+            distribucionGenero.put("Otro", 0);
 
             Map<String, Integer> distribucionEstado = new HashMap<>();
             distribucionEstado.put("ENVIADA", (int) filtradas.stream()

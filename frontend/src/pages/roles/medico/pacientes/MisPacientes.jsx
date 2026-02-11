@@ -114,6 +114,9 @@ export default function MisPacientes() {
   // ✅ v1.78.0: Obtener información del médico autenticado desde AuthContext + localStorage + pacientes
   const { user: authUser } = useAuth();
 
+  // ✅ v1.78.0: Estado para información del médico logueado (nombre + especialidad desde backend)
+  const [doctorInfo, setDoctorInfo] = useState(null);
+
   // Estado para rastrear la especialidad del médico (se actualiza cuando carguen los pacientes)
   const [userSpecialty, setUserSpecialty] = useState(null);
 
@@ -134,7 +137,16 @@ export default function MisPacientes() {
     try {
       let detectedSpecialty = null;
 
-      // 1. Intentar desde AuthContext
+      // 1. ⭐ PRIORIDAD: Desde API endpoint (especialidad del MÉDICO LOGUEADO)
+      if (doctorInfo?.especialidad) {
+        detectedSpecialty = detectSpecialtyByKeywords(doctorInfo.especialidad);
+        if (detectedSpecialty) {
+          console.log('✅ v1.78.0: Especialidad desde API (doctor logueado):', detectedSpecialty, 'Nombre:', doctorInfo.especialidad);
+          return SPECIALTY_FEATURES[detectedSpecialty];
+        }
+      }
+
+      // 2. Fallback: Intentar desde AuthContext
       if (authUser?.especialidad) {
         detectedSpecialty = detectSpecialtyByKeywords(authUser.especialidad);
         if (detectedSpecialty) {
@@ -143,7 +155,7 @@ export default function MisPacientes() {
         }
       }
 
-      // 2. Intentar desde localStorage
+      // 3. Fallback: Intentar desde localStorage
       const userData = localStorage.getItem('user');
       if (userData) {
         const user = JSON.parse(userData);
@@ -155,7 +167,7 @@ export default function MisPacientes() {
         }
       }
 
-      // 3. Si se detectó desde pacientes, usar ese valor
+      // 4. Si se detectó desde pacientes, usar ese valor
       if (userSpecialty) {
         console.log('✅ v1.78.0: Especialidad detectada desde pacientes:', userSpecialty);
         return SPECIALTY_FEATURES[userSpecialty];
@@ -167,7 +179,7 @@ export default function MisPacientes() {
       console.error('Error al detectar especialidad:', error);
       return null;
     }
-  }, [authUser, userSpecialty]);
+  }, [doctorInfo, authUser, userSpecialty]);
 
   // Helper para verificar si la especialidad actual tiene una característica
   const hasFeature = (feature) => {
@@ -265,6 +277,21 @@ export default function MisPacientes() {
       filtroAutoAplicado.current = true;
     }
   }, [pacientes]);
+
+  // ✅ v1.78.0: Cargar información del médico logueado (especialidad)
+  useEffect(() => {
+    const cargarInfoMedico = async () => {
+      try {
+        const info = await gestionPacientesService.obtenerInfoMedicoActual();
+        console.log('✅ v1.78.0: Información del doctor cargada:', info);
+        setDoctorInfo(info);
+      } catch (error) {
+        console.error('⚠️ v1.78.0: Error al cargar información del doctor:', error);
+        // No es crítico, continuará con fallback
+      }
+    };
+    cargarInfoMedico();
+  }, []);
 
   // ✅ v1.78.0: Cargar especialidades PRIMERO, luego pacientes (evita race condition)
   useEffect(() => {
@@ -1139,7 +1166,21 @@ export default function MisPacientes() {
             <Users className="w-8 h-8 text-[#0A5BA9]" />
             <h1 className="text-3xl font-bold text-gray-900">👨‍⚕️ Mis Pacientes</h1>
           </div>
-          <p className="text-gray-600 font-medium">Gestiona tus pacientes asignados</p>
+          <div className="space-y-1">
+            <p className="text-gray-600 font-medium">Gestiona tus pacientes asignados</p>
+            {/* ✅ v1.78.0: Mostrar nombre y especialidad del médico logueado */}
+            {(doctorInfo?.nombre || authUser?.nombre) && (
+              <div className="flex items-center gap-4 mt-3 pt-3 border-t border-gray-200">
+                <div className="flex flex-col gap-0.5">
+                  <span className="text-sm text-gray-500">MÉDICO</span>
+                  <p className="font-semibold text-gray-900">{doctorInfo?.nombre || authUser?.nombre}</p>
+                  {doctorInfo?.especialidad && (
+                    <p className="text-xs text-[#0A5BA9] font-medium">{doctorInfo.especialidad}</p>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* 📊 Estadísticas - Clicables para Filtrar */}

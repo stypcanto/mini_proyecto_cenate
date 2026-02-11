@@ -35,10 +35,8 @@ export default function PasswordRecovery() {
       setMsgType("info");
       setAssistantMsg("🔍 Enviando solicitud de recuperación...");
 
-      // Aquí puedes conectar al backend real:
-      // const res = await apiClient.post("/admin/recuperacion/solicitar", { username });
-      // Simulación temporal
-      await new Promise((res) => setTimeout(res, 1000));
+      // ✅ Conectar al backend real para solicitar recuperación
+      const res = await apiClient.post("/api/admin/recuperacion/solicitar", { username });
 
       setMsgType("success");
       setAssistantMsg(
