@@ -933,24 +933,24 @@ public class GestionPacienteServiceImpl implements IGestionPacienteService {
     private Long obtenerIdMedicoActual() {
         try {
             // ✅ v1.89.2: Obtener el usuario autenticado desde SecurityContext
-            Long idUsuario = obtenerIdUsuarioActual();
+            String username = SecurityContextHolder.getContext().getAuthentication().getName();
 
-            if (idUsuario == null) {
-                log.warn("⚠️ [v1.89.2] No se pudo obtener ID del usuario autenticado");
+            if (username == null) {
+                log.warn("⚠️ [v1.89.2] No se pudo obtener el usuario autenticado");
                 return null;
             }
 
             // Buscar el usuario con todos los detalles incluyendo PersonalCnt
-            Usuario usuario = usuarioRepository.findByIdWithFullDetails(idUsuario)
+            Usuario usuario = usuarioRepository.findByNameUserWithFullDetails(username)
                 .orElse(null);
 
             if (usuario != null && usuario.getPersonalCnt() != null) {
                 Long idPers = usuario.getPersonalCnt().getIdPers();
-                log.debug("✅ [v1.89.2] Médico actual: ID Usuario {} → ID PersonalCnt: {}", idUsuario, idPers);
+                log.debug("✅ [v1.89.2] Médico actual: {} → ID PersonalCnt: {}", username, idPers);
                 return idPers;
             }
 
-            log.warn("⚠️ [v1.89.2] Usuario {} no tiene datos de PersonalCnt", idUsuario);
+            log.warn("⚠️ [v1.89.2] Usuario {} no tiene datos de PersonalCnt", username);
             return null;
         } catch (Exception e) {
             log.error("❌ [v1.89.2] Error obteniendo ID del médico actual", e);
