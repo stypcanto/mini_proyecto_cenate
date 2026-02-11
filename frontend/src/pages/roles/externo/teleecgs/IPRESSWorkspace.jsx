@@ -8,8 +8,6 @@ import MisECGsRecientes from "../../../../components/teleecgs/MisECGsRecientes";
 import VisorEKGModal from "../../../../components/teleecgs/VisorECGModal";
 import RegistroPacientes from "./RegistroPacientes";
 import TeleECGEstadisticas from "./TeleECGEstadisticas";
-import ClinicalMetricsCard from "../../../../components/teleecgs/ClinicalMetricsCard";
-import ImprovedECGTable from "../../../../components/teleecgs/ImprovedECGTable";
 import teleecgService from "../../../../services/teleecgService";
 import gestionPacientesService from "../../../../services/gestionPacientesService";
 import { getEstadoClasses } from "../../../../config/designSystem";
@@ -506,19 +504,6 @@ export default function IPRESSWorkspace() {
             </div>
           </div>
 
-          {/* 🏥 NUEVA SECCIÓN: Métricas Clínicas Mejoradas */}
-          <div className="w-full mb-8">
-            <div className="mb-6">
-              <h2 className="text-xl font-bold text-gray-900 mb-1">
-                📊 Resumen Clínico de EKGs
-              </h2>
-              <p className="text-gray-600 text-sm">
-                Dashboard médico con priorización por riesgo clínico
-              </p>
-            </div>
-            <ClinicalMetricsCard estadisticas={stats} />
-          </div>
-
           {/* Dashboard Full-Width */}
           <div className="w-full">
             <MisECGsRecientes
@@ -681,32 +666,7 @@ export default function IPRESSWorkspace() {
               />
             </div>
 
-            {/* Section 2: Métricas Clínicas Mejoradas */}
-            <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg shadow-lg p-6">
-              <h2 className="text-lg font-semibold text-slate-900 mb-4">
-                📊 Resumen Clínico de EKGs
-              </h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                <div className="bg-white rounded-lg p-4 border-l-4 border-red-600">
-                  <p className="text-gray-600 text-sm font-medium">Críticos (Respuesta &lt;30 min)</p>
-                  <p className="text-3xl font-bold text-red-600">{Math.round(stats.total * 0.15)}</p>
-                </div>
-                <div className="bg-white rounded-lg p-4 border-l-4 border-orange-500">
-                  <p className="text-gray-600 text-sm font-medium">Urgentes (30-60 min)</p>
-                  <p className="text-3xl font-bold text-orange-600">{Math.round(stats.total * 0.25)}</p>
-                </div>
-                <div className="bg-white rounded-lg p-4 border-l-4 border-yellow-500">
-                  <p className="text-gray-600 text-sm font-medium">Moderados (&lt;2 horas)</p>
-                  <p className="text-3xl font-bold text-yellow-600">{Math.round(stats.total * 0.35)}</p>
-                </div>
-                <div className="bg-white rounded-lg p-4 border-l-4 border-green-600">
-                  <p className="text-gray-600 text-sm font-medium">Rutina (Puede esperar)</p>
-                  <p className="text-3xl font-bold text-green-600">{Math.round(stats.total * 0.25)}</p>
-                </div>
-              </div>
-            </div>
-
-            {/* Section 2b: Mis EKGs Subidos */}
+            {/* Section 2: Mis EKGs Subidos */}
             <div className="bg-white rounded-lg shadow-lg p-6">
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-lg font-semibold text-slate-900">
