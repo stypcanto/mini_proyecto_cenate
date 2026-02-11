@@ -25,11 +25,14 @@ import {
   Share2,
   Heart,
   Calendar,
-  Eye
+  Eye,
+  Activity
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import gestionPacientesService from '../../../../services/gestionPacientesService';
 import ipressService from '../../../../services/ipressService';
+import CarrouselECGModal from '../../../../components/teleecgs/CarrouselECGModal';
+import teleecgService from '../../../../services/teleecgService';
 
 // Estilos de animaciones personalizadas
 const animationStyles = `
@@ -137,6 +140,13 @@ export default function MisPacientes() {
   // ✅ v1.65.2: Estado para filtros colapsables
   const [filtrosExpandidos, setFiltrosExpandidos] = useState(false);
 
+  // ✅ v1.66.0: Estados para visualización de ECGs en tabla
+  const [showECGCarrusel, setShowECGCarrusel] = useState(false);
+  const [pacienteECGSeleccionado, setPacienteECGSeleccionado] = useState(null);
+  const [imagenesECG, setImagenesECG] = useState([]);
+  const [cargandoECG, setCargandoECG] = useState(false);
+  const [ecgCounts, setEcgCounts] = useState({});
+
   const bolsasDisponibles = [
     { id: 1, nombre: 'Bolsa 107 (Módulo 107)' },
     { id: 2, nombre: 'Dengue' },
@@ -235,7 +245,9 @@ export default function MisPacientes() {
         console.log('🔍 [DEBUG] TODOS LOS CAMPOS:', JSON.stringify(data[0], null, 2));
       }
       setPacientes(Array.isArray(data) ? data : []);
+      // ✅ v1.66.0: Cargar conteos de ECG después de cargar pacientes
       if (data?.length > 0) {
+        cargarConteosECG(data);
         toast.success(`${data.length} pacientes cargados`);
       }
     } catch (error) {
@@ -244,6 +256,42 @@ export default function MisPacientes() {
       setPacientes([]);
     } finally {
       setLoading(false);
+    }
+  };
+
+  // ✅ v1.66.0: Cargar conteos de ECG para todos los pacientes (en lotes de 10)
+  const cargarConteosECG = async (pacientesActuales) => {
+    try {
+      const dnis = [...new Set(pacientesActuales.map(p => p.numDoc).filter(Boolean))];
+      if (dnis.length === 0) return;
+
+      const counts = {};
+      const chunks = [];
+
+      // Dividir en chunks de 10 DNIs
+      for (let i = 0; i < dnis.length; i += 10) {
+        chunks.push(dnis.slice(i, i + 10));
+      }
+
+      // Procesar cada chunk en paralelo
+      for (const chunk of chunks) {
+        await Promise.all(
+          chunk.map(async (dni) => {
+            try {
+              const resultado = await teleecgService.listarAgrupoPorAsegurado(dni, '');
+              counts[dni] = resultado.length > 0 && resultado[0].imagenes ? resultado[0].imagenes.length : 0;
+            } catch (error) {
+              console.error(`Error cargando ECG count para DNI ${dni}:`, error);
+              counts[dni] = 0;
+            }
+          })
+        );
+      }
+
+      setEcgCounts(counts);
+      console.log('✅ [ECG COUNTS] Conteos cargados:', counts);
+    } catch (error) {
+      console.error('Error cargando conteos ECG:', error);
     }
   };
 
@@ -637,6 +685,36 @@ export default function MisPacientes() {
   const abrirDetallesPaciente = (paciente) => {
     setPacienteDetalles(paciente);
     setMostrarDetalles(true);
+  };
+
+  // ✅ v1.66.0: Abrir carrusel de ECGs para un paciente
+  const abrirCarruselECG = async (paciente) => {
+    try {
+      setCargandoECG(true);
+
+      const resultado = await teleecgService.listarAgrupoPorAsegurado(paciente.numDoc, '');
+
+      if (resultado.length === 0 || !resultado[0].imagenes || resultado[0].imagenes.length === 0) {
+        toast.error('No se encontraron imágenes ECG para este paciente');
+        setCargandoECG(false);
+        return;
+      }
+
+      const imagenes = resultado[0].imagenes;
+
+      setPacienteECGSeleccionado({
+        numDoc: paciente.numDoc,
+        nombres: paciente.apellidosNombres.split(' ').slice(-2).join(' '),
+        apellidos: paciente.apellidosNombres.split(' ').slice(0, -2).join(' '),
+      });
+      setImagenesECG(imagenes);
+      setShowECGCarrusel(true);
+      setCargandoECG(false);
+    } catch (error) {
+      console.error('Error cargando ECGs:', error);
+      toast.error('Error al cargar las imágenes ECG');
+      setCargandoECG(false);
+    }
   };
 
   const procesarAccion = async () => {
@@ -1296,10 +1374,10 @@ export default function MisPacientes() {
                 <tbody className="bg-white divide-y divide-gray-200">
                   {pacientesFiltradosPorFecha.map((paciente, idx) => (
                     <tr key={idx} className={`hover:bg-gray-50 transition-colors duration-150 ${paciente.condicion === 'Atendido' ? 'bg-emerald-50/30' : 'bg-white'} ${idx % 2 === 0 ? '' : 'bg-opacity-50'}`}>
-                      {/* Paciente: Nombre en bold + DNI abajo en gris + Ojo para ver detalles */}
+                      {/* Paciente: Nombre en bold + DNI abajo en gris + Ojo para ver detalles + ECG badge */}
                       <td className="px-4 py-3">
-                        <div className="flex items-start gap-3">
-                          {/* Ojo - icono interactivo */}
+                        <div className="flex items-start gap-2">
+                          {/* Ojo - icono para detalles */}
                           <button
                             onClick={() => abrirDetallesPaciente(paciente)}
                             title="Ver detalles del paciente"
@@ -1307,6 +1385,32 @@ export default function MisPacientes() {
                           >
                             <Eye className="w-4 h-4" strokeWidth={2} />
                           </button>
+
+                          {/* ✅ v1.66.0: ECG Icon - Ver imágenes */}
+                          <button
+                            onClick={() => abrirCarruselECG(paciente)}
+                            disabled={cargandoECG || !ecgCounts[paciente.numDoc] || ecgCounts[paciente.numDoc] === 0}
+                            title={
+                              ecgCounts[paciente.numDoc] > 0
+                                ? `Ver ${ecgCounts[paciente.numDoc]} ECG(s)`
+                                : 'Sin ECGs disponibles'
+                            }
+                            className={`relative flex-shrink-0 mt-0.5 transition-colors duration-150 ${
+                              ecgCounts[paciente.numDoc] > 0
+                                ? 'text-red-500 hover:text-red-700 cursor-pointer'
+                                : 'text-gray-300 cursor-not-allowed opacity-50'
+                            }`}
+                          >
+                            <Activity className="w-4 h-4" strokeWidth={2} />
+
+                            {/* Badge con conteo */}
+                            {ecgCounts[paciente.numDoc] > 0 && (
+                              <span className="absolute -top-1 -right-1 flex items-center justify-center w-3.5 h-3.5 text-[9px] font-bold text-white bg-red-600 rounded-full border border-white">
+                                {ecgCounts[paciente.numDoc]}
+                              </span>
+                            )}
+                          </button>
+
                           {/* Nombre y DNI */}
                           <div className="flex flex-col gap-0.5 min-w-0">
                             <div className="font-bold text-gray-900 text-sm">{paciente.apellidosNombres}</div>
@@ -1856,6 +1960,30 @@ export default function MisPacientes() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* ✅ v1.66.0: Modal Carrusel de ECGs */}
+      {showECGCarrusel && pacienteECGSeleccionado && imagenesECG.length > 0 && (
+        <CarrouselECGModal
+          imagenes={imagenesECG}
+          paciente={pacienteECGSeleccionado}
+          onClose={() => {
+            setShowECGCarrusel(false);
+            setPacienteECGSeleccionado(null);
+            setImagenesECG([]);
+          }}
+          onDescargar={(imagen) => {
+            const idImagen = imagen.id_imagen || imagen.idImagen;
+            const nombreArchivo = imagen.nombreArchivo || `ECG_${pacienteECGSeleccionado.numDoc}_${idImagen}.jpg`;
+
+            teleecgService.descargarImagen(idImagen, nombreArchivo)
+              .then(() => console.log('Imagen descargada:', nombreArchivo))
+              .catch((error) => {
+                console.error('Error descargando:', error);
+                toast.error('Error al descargar la imagen');
+              });
+          }}
+        />
       )}
 
     </div>
