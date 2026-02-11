@@ -1844,7 +1844,7 @@ export default function MisPacientes() {
                           <button
                             onClick={() => abrirDetallesPaciente(paciente)}
                             title="Ver detalles del paciente"
-                            className="flex-shrink-0 mt-0.5 text-gray-400 hover:text-[#0A5BA9] transition-colors duration-150"
+                            className="flex-shrink-0 mt-0.5 text-emerald-600 hover:text-emerald-700 transition-colors duration-150"
                           >
                             <Eye className="w-4 h-4" strokeWidth={2} />
                           </button>
