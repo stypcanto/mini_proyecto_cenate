@@ -740,7 +740,46 @@ public class TeleECGController {
      * 🔍 ENDPOINT DE DIAGNÓSTICO - Ver permisos del usuario actual
      */
     /**
-     * ✅ v1.80.5: Debug endpoint para verificar búsqueda por DNI
+     * ✅ v1.80.6: Debug - Listar TODOS los DNIs en tabla
+     */
+    @GetMapping("/debug/todos-dnis")
+    @Operation(summary = "Debug: Listar todos los DNIs con ECGs")
+    public ResponseEntity<?> debugTodosDNIs() {
+        try {
+            log.info("🔍 DEBUG: Listando TODOS los DNIs con ECGs...");
+
+            // Cargar TODOS sin filtro
+            Pageable pageable = PageRequest.of(0, 1000);
+            Page<AseguradoConECGsDTO> resultado = teleECGService.listarAgrupaPorAsegurado(
+                null, null, null, null, null, pageable
+            );
+
+            List<String> dnis = resultado.getContent().stream()
+                .map(dto -> {
+                    // Extraer DNI de las imagenes
+                    return dto.getImagenes() != null && !dto.getImagenes().isEmpty() ?
+                        dto.getImagenes().get(0).getNumDocPaciente() : "UNKNOWN";
+                })
+                .distinct()
+                .sorted()
+                .limit(100)  // Mostrar máximo 100
+                .toList();
+
+            return ResponseEntity.ok(Map.of(
+                "totalAsegurados", resultado.getTotalElements(),
+                "dnisMostrados", dnis.size(),
+                "dnis", dnis,
+                "nota", "Si 09950203 no está aquí, no existe en tabla teleecg_imagen"
+            ));
+        } catch (Exception e) {
+            log.error("❌ Error listando DNIs:", e);
+            return ResponseEntity.badRequest()
+                .body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    /**
+     * ✅ v1.80.6: Debug endpoint para verificar búsqueda por DNI
      */
     @GetMapping("/debug/buscar-dni")
     @Operation(summary = "Debug: Buscar paciente por DNI exacto")
