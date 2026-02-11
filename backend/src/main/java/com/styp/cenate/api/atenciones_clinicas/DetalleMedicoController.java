@@ -25,34 +25,8 @@ public class DetalleMedicoController {
 	private final DetalleMedicoService detalleMedicoService;
 
 	/**
-	 * Obtiene todos los médicos asociados a un servicio (especialidad)
-	 * 
-	 * GET /api/atenciones-clinicas/detalle-medico/por-servicio/{idServicio}
-	 * 
-	 * @param idServicio ID del servicio/especialidad
-	 * @return Lista de DTOs con información de los médicos
-	 */
-	@GetMapping("/por-servicio/{idServicio}")
-	public ResponseEntity<?> obtenerMedicosPorServicio(@PathVariable Long idServicio) {
-
-		log.info("📥 Solicitud: Obtener médicos para el servicio ID: {}", idServicio);
-
-		try {
-			List<DetalleMedicoDTO> medicos = detalleMedicoService.obtenerMedicosPorServicio(idServicio);
-
-			log.info("✅ Se retornaron {} médicos para el servicio ID: {}", medicos.size(), idServicio);
-
-			return ResponseEntity.ok().body(new ApiResponse("success", "Médicos obtenidos correctamente", medicos));
-
-		} catch (Exception e) {
-			log.error("❌ Error al obtener médicos: {}", e.getMessage(), e);
-			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-					.body(new ApiResponse("error", "Error al obtener médicos: " + e.getMessage(), null));
-		}
-	}
-
-	/**
 	 * Obtiene TODOS los médicos disponibles para TeleECG
+	 * IMPORTANTE: Este endpoint debe estar ANTES de /{idPers} para evitar ambigüedad en routing
 	 *
 	 * GET /api/atenciones-clinicas/detalle-medico/para-teleecg
 	 *
@@ -72,6 +46,33 @@ public class DetalleMedicoController {
 
 		} catch (Exception e) {
 			log.error("❌ Error al obtener médicos para TeleECG: {}", e.getMessage(), e);
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+					.body(new ApiResponse("error", "Error al obtener médicos: " + e.getMessage(), null));
+		}
+	}
+
+	/**
+	 * Obtiene todos los médicos asociados a un servicio (especialidad)
+	 *
+	 * GET /api/atenciones-clinicas/detalle-medico/por-servicio/{idServicio}
+	 *
+	 * @param idServicio ID del servicio/especialidad
+	 * @return Lista de DTOs con información de los médicos
+	 */
+	@GetMapping("/por-servicio/{idServicio}")
+	public ResponseEntity<?> obtenerMedicosPorServicio(@PathVariable Long idServicio) {
+
+		log.info("📥 Solicitud: Obtener médicos para el servicio ID: {}", idServicio);
+
+		try {
+			List<DetalleMedicoDTO> medicos = detalleMedicoService.obtenerMedicosPorServicio(idServicio);
+
+			log.info("✅ Se retornaron {} médicos para el servicio ID: {}", medicos.size(), idServicio);
+
+			return ResponseEntity.ok().body(new ApiResponse("success", "Médicos obtenidos correctamente", medicos));
+
+		} catch (Exception e) {
+			log.error("❌ Error al obtener médicos: {}", e.getMessage(), e);
 			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
 					.body(new ApiResponse("error", "Error al obtener médicos: " + e.getMessage(), null));
 		}
