@@ -432,9 +432,18 @@ export default function IPRESSWorkspace() {
             console.log(`✅ [BACKGROUND] Total acumulado: ${imagenesAcumuladas.length} registros`);
             setTodasLasImagenes(imagenesAcumuladas);
 
-            // ✅ v1.96.3: CRÍTICO - También actualizar ecgs para que la paginación tenga los datos
-            // Si no lo hacemos, cuando el usuario navega a página 2, todasLasImagenes aún está vacío
-            setEcgs(imagenesAcumuladas);
+            // ✅ v1.96.4: Deduplicar por PACIENTE (DNI), no mostrar una fila por imagen
+            // El usuario debe ver UNA FILA POR PACIENTE, no múltiples filas del mismo paciente
+            const deduplicados = {};
+            imagenesAcumuladas.forEach(img => {
+              const dni = img.dni || img.numDocPaciente;
+              if (dni && !deduplicados[dni]) {
+                deduplicados[dni] = img;
+              }
+            });
+            const ecgsDeduplicados = Object.values(deduplicados);
+            console.log(`✅ [BACKGROUND] Después de deduplicar por paciente: ${ecgsDeduplicados.length} pacientes únicos`);
+            setEcgs(ecgsDeduplicados);
 
             // ✅ v1.87.7: Recalcular STATS GLOBALES con TODOS los datos (no solo página 1)
             // Esto hace que el card negro muestre el TOTAL real de pacientes pendientes en toda la BD
