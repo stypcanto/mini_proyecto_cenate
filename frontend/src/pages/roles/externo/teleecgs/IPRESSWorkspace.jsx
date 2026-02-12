@@ -310,21 +310,9 @@ export default function IPRESSWorkspace() {
       });
 
       // Calcular estadísticas (PÁGINA 1 SOLAMENTE)
-      // ✅ v1.93.0: Usar estadoTransformado (estado según rol del usuario)
-      // - Para EXTERNO: OBSERVADA → RECHAZADA, ENVIADA → ENVIADA, ATENDIDA → ATENDIDA
-      // - Para CENATE: ENVIADA → PENDIENTE, OBSERVADA → OBSERVADA, ATENDIDA → ATENDIDA
-      const imagenesPendientes = imagenes.filter((img) => {
-        const estado = img.estadoTransformado || img.estado;
-        return estado === "ENVIADA" || estado === "PENDIENTE";
-      });
-      const imagenesObservadas = imagenes.filter((img) => {
-        const estado = img.estadoTransformado || img.estado;
-        return estado === "OBSERVADA" || estado === "RECHAZADA";
-      });
-      const imagenesAtendidas = imagenes.filter((img) => {
-        const estado = img.estadoTransformado || img.estado;
-        return estado === "ATENDIDA";
-      });
+      const imagenesPendientes = imagenes.filter((img) => img.estado === "ENVIADA");
+      const imagenesObservadas = imagenes.filter((img) => img.estado === "OBSERVADA");
+      const imagenesAtendidas = imagenes.filter((img) => img.estado === "ATENDIDA");
 
       // ✅ v1.87.6: Contar PACIENTES ÚNICOS, no imágenes duplicadas
       const pacientesPendientes = new Set(imagenesPendientes.map(img => img.dni || img.numDocPaciente)).size;
@@ -388,20 +376,11 @@ export default function IPRESSWorkspace() {
             console.log(`✅ [BACKGROUND] Total acumulado: ${imagenesAcumuladas.length} registros`);
             setTodasLasImagenes(imagenesAcumuladas);
 
-            // ✅ v1.93.0: Recalcular STATS GLOBALES con TODOS los datos usando estadoTransformado
-            // Esto hace que el card muestre el TOTAL real considerando la transformación de estados
-            const imagenesGlobalPendientes = imagenesAcumuladas.filter((img) => {
-              const estado = img.estadoTransformado || img.estado;
-              return estado === "ENVIADA" || estado === "PENDIENTE";
-            });
-            const imagenesGlobalObservadas = imagenesAcumuladas.filter((img) => {
-              const estado = img.estadoTransformado || img.estado;
-              return estado === "OBSERVADA" || estado === "RECHAZADA";
-            });
-            const imagenesGlobalAtendidas = imagenesAcumuladas.filter((img) => {
-              const estado = img.estadoTransformado || img.estado;
-              return estado === "ATENDIDA";
-            });
+            // ✅ v1.87.7: Recalcular STATS GLOBALES con TODOS los datos (no solo página 1)
+            // Esto hace que el card negro muestre el TOTAL real de pacientes pendientes en toda la BD
+            const imagenesGlobalPendientes = imagenesAcumuladas.filter((img) => img.estado === "ENVIADA");
+            const imagenesGlobalObservadas = imagenesAcumuladas.filter((img) => img.estado === "OBSERVADA");
+            const imagenesGlobalAtendidas = imagenesAcumuladas.filter((img) => img.estado === "ATENDIDA");
 
             const pacientesGlobalPendientes = new Set(imagenesGlobalPendientes.map(img => img.dni || img.numDocPaciente)).size;
             const pacientesGlobalObservadas = new Set(imagenesGlobalObservadas.map(img => img.dni || img.numDocPaciente)).size;

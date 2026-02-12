@@ -764,6 +764,10 @@ public class TeleECGService {
         dto.setEvaluacion(imagen.getEvaluacion());
         dto.setDescripcionEvaluacion(imagen.getDescripcionEvaluacion());
 
+        // ✅ v1.90.0: Mapear hallazgos y observaciones clínicas
+        dto.setNotaClinicaHallazgos(imagen.getNotaClinicaHallazgos());
+        dto.setNotaClinicaObservaciones(imagen.getNotaClinicaObservaciones());
+
         // Obtener nombre del usuario evaluador si existe
         if (imagen.getUsuarioEvaluador() != null) {
             usuarioRepository.findById(imagen.getUsuarioEvaluador().getIdUser()).ifPresent(usuario -> {

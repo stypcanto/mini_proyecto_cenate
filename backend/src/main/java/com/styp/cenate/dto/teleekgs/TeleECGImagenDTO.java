@@ -254,6 +254,22 @@ public class TeleECGImagenDTO {
     private String descripcionEvaluacion;
 
     /**
+     * ✅ v1.90.0: HALLAZGOS del ECG
+     * Descripción detallada de los hallazgos encontrados
+     * Ejemplo: "Ritmo sinusal normal Frecuencia cardíaca adecuada..."
+     */
+    @JsonProperty("nota_clinica_hallazgos")
+    private String notaClinicaHallazgos;
+
+    /**
+     * ✅ v1.90.0: OBSERVACIONES CLÍNICAS del ECG
+     * Notas clínicas adicionales y observaciones del evaluador
+     * Ejemplo: "ECG: Ritmo sinusal, FC: 66/bpm, onda P: 80ms..."
+     */
+    @JsonProperty("nota_clinica_observaciones")
+    private String notaClinicaObservaciones;
+
+    /**
      * USUARIO EVALUADOR (v3.0.0 - ML Dataset)
      * Nombre del médico que realizó la evaluación
      */

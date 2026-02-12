@@ -11,6 +11,8 @@ import {
   RefreshCw,
   X,
   List,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import teleeckgService from "../../../../services/teleecgService";
@@ -24,6 +26,9 @@ import { getEstadoClasses } from "../../../../config/designSystem";
  * Puede usarse de dos formas:
  * 1. Standalone (/teleekgs/listar) - Carga datos del servidor
  * 2. En IPRESSWorkspace - Recibe datos como props desde parent
+ *
+ * ✅ v1.90.0: Agrega columna expandible con detalles de evaluación ECG
+ * - Hallazgos, Observaciones Clínicas, Descripción
  */
 export default function RegistroPacientes({
   ecgs: propsEcgs,
@@ -42,6 +47,9 @@ export default function RegistroPacientes({
   const [selectedEKG, setSelectedEKG] = useState(null);
   const [selectedPaciente, setSelectedPaciente] = useState(null);
   const [showVisor, setShowVisor] = useState(false);
+
+  // ✅ v1.90.0: Estado para expandir/contraer detalles de evaluación
+  const [expandedPaciente, setExpandedPaciente] = useState(null);
 
   // Si es workspace, usar props; si no, usar state local
   const currentEcgs = isWorkspace ? propsEcgs : ecgs;
@@ -317,6 +325,7 @@ export default function RegistroPacientes({
                 <table className="w-full table-fixed">
                   <thead className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white sticky top-0 z-10">
                     <tr>
+                      <th className="px-4 py-3 text-left text-xs font-semibold w-[40px]"></th>
                       <th className="px-4 py-3 text-left text-xs font-semibold w-[120px]">Fecha</th>
                       <th className="px-4 py-3 text-left text-xs font-semibold w-[100px]">DNI</th>
                       <th className="px-4 py-3 text-left text-xs font-semibold w-auto">Paciente</th>
@@ -330,13 +339,28 @@ export default function RegistroPacientes({
                   </thead>
                   <tbody className="divide-y divide-gray-200">
                     {filteredEcgs.map((paciente) => (
-                      <tr key={paciente.numDocPaciente} className="hover:bg-blue-50 transition-colors border-l-4" style={{borderColor: getEstadoBadge(paciente.estado).badge.includes('yellow') ? '#fbbf24' : getEstadoBadge(paciente.estado).badge.includes('green') ? '#34d399' : getEstadoBadge(paciente.estado).badge.includes('red') ? '#f87171' : '#60a5fa'}}>
-                        <td className="px-4 py-3 text-xs text-gray-700">
-                          <div className="flex items-center gap-2">
-                            <Calendar className="w-4 h-4 text-gray-400" />
-                            {formatearFecha(paciente.fechaPrimera)}
-                          </div>
-                        </td>
+                      <React.Fragment key={paciente.numDocPaciente}>
+                        <tr className="hover:bg-blue-50 transition-colors border-l-4" style={{borderColor: getEstadoBadge(paciente.estado).badge.includes('yellow') ? '#fbbf24' : getEstadoBadge(paciente.estado).badge.includes('green') ? '#34d399' : getEstadoBadge(paciente.estado).badge.includes('red') ? '#f87171' : '#60a5fa'}}>
+                          {/* ✅ Botón expandir/contraer detalles */}
+                          <td className="px-4 py-3 text-center">
+                            <button
+                              onClick={() => setExpandedPaciente(expandedPaciente === paciente.numDocPaciente ? null : paciente.numDocPaciente)}
+                              className="inline-flex items-center justify-center w-6 h-6 text-blue-600 hover:bg-blue-100 rounded transition-colors"
+                              title="Expandir detalles de evaluación"
+                            >
+                              {expandedPaciente === paciente.numDocPaciente ? (
+                                <ChevronUp className="w-4 h-4" />
+                              ) : (
+                                <ChevronDown className="w-4 h-4" />
+                              )}
+                            </button>
+                          </td>
+                          <td className="px-4 py-3 text-xs text-gray-700">
+                            <div className="flex items-center gap-2">
+                              <Calendar className="w-4 h-4 text-gray-400" />
+                              {formatearFecha(paciente.fechaPrimera)}
+                            </div>
+                          </td>
                         <td className="px-4 py-3 text-xs font-semibold text-gray-900 font-mono truncate">
                           {paciente.numDocPaciente}
                         </td>
@@ -448,6 +472,79 @@ export default function RegistroPacientes({
                           </div>
                         </td>
                       </tr>
+
+                      {/* ✅ v1.90.0: Fila expandida con detalles de evaluación */}
+                      {expandedPaciente === paciente.numDocPaciente && (
+                        <tr className="bg-gradient-to-r from-blue-50 to-indigo-50 border-l-4" style={{borderColor: '#3b82f6'}}>
+                          <td colSpan="10" className="px-6 py-4">
+                            <div className="space-y-4">
+                              {/* Evaluación */}
+                              {paciente.imagenes[0]?.evaluacion && (
+                                <div className="border-b border-blue-200 pb-3">
+                                  <h4 className="text-sm font-semibold text-blue-900 mb-2 flex items-center gap-2">
+                                    ✅ Evaluación ECG
+                                  </h4>
+                                  <p className={`text-sm font-bold px-3 py-1.5 rounded-full inline-block ${
+                                    paciente.imagenes[0].evaluacion === 'NORMAL'
+                                      ? 'bg-green-100 text-green-800 border border-green-300'
+                                      : paciente.imagenes[0].evaluacion === 'ANORMAL'
+                                      ? 'bg-red-100 text-red-800 border border-red-300'
+                                      : 'bg-gray-100 text-gray-800 border border-gray-300'
+                                  }`}>
+                                    {paciente.imagenes[0].evaluacion}
+                                  </p>
+                                </div>
+                              )}
+
+                              {/* Hallazgos */}
+                              {paciente.imagenes[0]?.notaClinicaHallazgos && (
+                                <div className="border-b border-blue-200 pb-3">
+                                  <h4 className="text-sm font-semibold text-green-700 mb-2 flex items-center gap-2">
+                                    <span>✔️</span> Hallazgos
+                                  </h4>
+                                  <p className="text-sm text-gray-700 bg-green-50 rounded px-3 py-2 border border-green-200">
+                                    {paciente.imagenes[0].notaClinicaHallazgos}
+                                  </p>
+                                </div>
+                              )}
+
+                              {/* Observaciones Clínicas */}
+                              {paciente.imagenes[0]?.notaClinicaObservaciones && (
+                                <div className="border-b border-blue-200 pb-3">
+                                  <h4 className="text-sm font-semibold text-purple-700 mb-2 flex items-center gap-2">
+                                    <span>💬</span> Observaciones Clínicas
+                                  </h4>
+                                  <p className="text-sm text-gray-700 bg-purple-50 rounded px-3 py-2 border border-purple-200">
+                                    {paciente.imagenes[0].notaClinicaObservaciones}
+                                  </p>
+                                </div>
+                              )}
+
+                              {/* Descripción de Evaluación */}
+                              {paciente.imagenes[0]?.descripcionEvaluacion && (
+                                <div>
+                                  <h4 className="text-sm font-semibold text-orange-700 mb-2 flex items-center gap-2">
+                                    <span>📝</span> Descripción
+                                  </h4>
+                                  <p className="text-sm text-gray-700 bg-orange-50 rounded px-3 py-2 border border-orange-200">
+                                    {paciente.imagenes[0].descripcionEvaluacion}
+                                  </p>
+                                </div>
+                              )}
+
+                              {/* Mensaje si no hay detalles */}
+                              {!paciente.imagenes[0]?.notaClinicaHallazgos &&
+                               !paciente.imagenes[0]?.notaClinicaObservaciones &&
+                               !paciente.imagenes[0]?.descripcionEvaluacion && (
+                                <p className="text-sm text-gray-500 italic">
+                                  No hay detalles de evaluación disponibles aún
+                                </p>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      )}
+                    </React.Fragment>
                     ))}
                   </tbody>
                 </table>

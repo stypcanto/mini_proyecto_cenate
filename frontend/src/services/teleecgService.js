@@ -237,6 +237,12 @@ const teleecgService = {
           vigencia: ecg.vigencia,
           esUrgente: ecg.es_urgente || ecg.esUrgente || false,  // ✅ Indicador de urgencia para MisECGsRecientes
 
+          // ✅ v1.90.0: Campos de detalles de evaluación ECG
+          evaluacion: ecg.evaluacion || null,  // NORMAL / ANORMAL
+          notaClinicaHallazgos: ecg.nota_clinica_hallazgos || ecg.notaClinicaHallazgos || null,
+          notaClinicaObservaciones: ecg.nota_clinica_observaciones || ecg.notaClinicaObservaciones || null,
+          descripcionEvaluacion: ecg.descripcion_evaluacion || ecg.descripcionEvaluacion || null,
+
           // ✅ ALIASES para componentes que esperan nombres diferentes
           dni: numDocPaciente,  // MisECGsRecientes espera 'dni'
           nombrePaciente: nombresPaciente,  // MisECGsRecientes espera 'nombrePaciente' (singular)
