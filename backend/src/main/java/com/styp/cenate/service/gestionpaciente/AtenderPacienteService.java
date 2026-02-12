@@ -2,8 +2,11 @@ package com.styp.cenate.service.gestionpaciente;
 
 import com.styp.cenate.dto.AtenderPacienteRequest;
 import com.styp.cenate.model.Asegurado;
+import com.styp.cenate.model.PersonalCnt;
+import com.styp.cenate.model.Usuario;
 import com.styp.cenate.model.bolsas.SolicitudBolsa;
 import com.styp.cenate.repository.AseguradoRepository;
+import com.styp.cenate.repository.UsuarioRepository;
 import com.styp.cenate.repository.bolsas.SolicitudBolsaRepository;
 import com.styp.cenate.repository.DimServicioEssiRepository;
 import com.styp.cenate.service.trazabilidad.TrazabilidadClinicaService;
@@ -33,6 +36,7 @@ public class AtenderPacienteService {
 
     private final SolicitudBolsaRepository solicitudBolsaRepository;
     private final AseguradoRepository aseguradoRepository;
+    private final UsuarioRepository usuarioRepository;
     private final EntityManager entityManager;
     private final DimServicioEssiRepository servicioEssiRepository;
     private final TrazabilidadClinicaService trazabilidadClinicaService;  // ✅ v1.81.0
@@ -259,19 +263,51 @@ public class AtenderPacienteService {
     // =====================================================================
 
     /**
-     * ✅ v1.81.0: Obtiene el ID del médico (PersonalCnt) actualmente autenticado
+     * ✅ v1.89.7: Obtiene el ID del médico (PersonalCnt) actualmente autenticado
+     * ✅ Ahora implementa búsqueda proper del usuario como en GestionPacienteServiceImpl
      *
      * @return ID del médico, null si no se encuentra
      */
     private Long obtenerIdMedicoActual() {
         try {
+            // Obtener el usuario autenticado desde SecurityContext
             String username = SecurityContextHolder.getContext().getAuthentication().getName();
-            log.debug("✅ [v1.81.0] Obteniendo ID del médico actual: {}", username);
-            // TODO: Implementar búsqueda de usuario si es necesario
-            // Por ahora retorna null - el servicio de trazabilidad manejará este caso
+            log.warn("🔍 [v1.89.7] Username del SecurityContext: {}", username);
+
+            if (username == null) {
+                log.warn("⚠️ [v1.89.7] No se pudo obtener el usuario autenticado");
+                return null;
+            }
+
+            // Buscar el usuario con todos los detalles incluyendo PersonalCnt
+            Usuario usuario = usuarioRepository.findByNameUserWithFullDetails(username)
+                    .orElse(null);
+
+            log.warn("🔍 [v1.89.7] Usuario encontrado en BD: {}", usuario != null);
+
+            if (usuario == null) {
+                log.warn("⚠️ [v1.89.7] Usuario '{}' NO EXISTE en base de datos", username);
+                return null;
+            }
+
+            log.warn("✅ [v1.89.7] Usuario encontrado: id={}, nameUser={}", usuario.getIdUser(), usuario.getNameUser());
+
+            PersonalCnt personalCnt = usuario.getPersonalCnt();
+            log.warn("🔍 [v1.89.7] PersonalCnt: {} (null? {})", personalCnt, personalCnt == null);
+
+            if (personalCnt != null && personalCnt.getIdPers() != null) {
+                Long idPers = personalCnt.getIdPers();
+                log.warn("✅ [v1.89.7] OBTENIDO idPersonalCreador: {} para usuario: {}", idPers, username);
+                return idPers;
+            }
+
+            log.warn("❌ [v1.89.7] Usuario '{}' NO TIENE PersonalCnt o idPers es null", username);
+            if (usuario.getPersonalExterno() != null) {
+                log.warn("⚠️ [v1.89.7] Usuario {} tiene PersonalExterno en lugar de PersonalCnt", username);
+            }
             return null;
         } catch (Exception e) {
-            log.debug("⚠️ [v1.81.0] No se pudo obtener ID del médico actual", e);
+            log.error("❌ [v1.89.7] Exception en obtenerIdMedicoActual: {}", e.getMessage(), e);
             return null;
         }
     }
