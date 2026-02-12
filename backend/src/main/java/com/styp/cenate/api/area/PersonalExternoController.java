@@ -1,5 +1,4 @@
 package com.styp.cenate.api.area;
-import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 
 import jakarta.validation.Valid;
@@ -27,7 +26,6 @@ import java.util.List;
         "http://localhost:5173",
         "http://10.0.89.239:5173"
 })
-@Data
 public class PersonalExternoController {
 
     private final PersonalExternoService personalExternoService;

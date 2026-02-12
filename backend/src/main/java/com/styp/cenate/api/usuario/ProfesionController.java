@@ -1,5 +1,4 @@
 package com.styp.cenate.api.usuario;
-import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 
 import com.styp.cenate.dto.ProfesionResponse;
@@ -26,7 +25,6 @@ import java.util.List;
 @RequestMapping("/api/profesiones")
 @RequiredArgsConstructor
 @Slf4j
-@Data
 @CrossOrigin(origins = {
         "http://localhost:3000",
         "http://localhost:5173",

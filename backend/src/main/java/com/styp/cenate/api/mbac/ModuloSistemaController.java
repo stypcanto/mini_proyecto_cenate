@@ -22,7 +22,6 @@ import com.styp.cenate.dto.segu.PermisoRolPaginaViewDTO;
 import com.styp.cenate.dto.segu.RolDTO;
 import com.styp.cenate.service.mbac.ModuloSistemaService;
 
-import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -39,7 +38,6 @@ import lombok.extern.slf4j.Slf4j;
 @RequestMapping("/api/mbac")
 @CrossOrigin(origins = { "http://localhost:3000", "http://localhost:5173", "http://10.0.89.239:5173" })
 @Slf4j
-@Data
 public class ModuloSistemaController {
 
 	private final ModuloSistemaService mbacService;

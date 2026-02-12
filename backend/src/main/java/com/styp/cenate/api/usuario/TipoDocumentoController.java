@@ -1,6 +1,5 @@
 package com.styp.cenate.api.usuario;
 
-import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -31,7 +30,6 @@ import java.util.Map;
         },
         allowCredentials = "true"
 )
-@Data
 public class TipoDocumentoController {
 
     private final TipoDocumentoService tipoDocumentoService;

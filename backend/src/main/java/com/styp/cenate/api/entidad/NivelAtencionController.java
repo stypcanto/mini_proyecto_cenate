@@ -1,5 +1,4 @@
 package com.styp.cenate.api.entidad;
-import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 
 import lombok.RequiredArgsConstructor;
@@ -16,7 +15,6 @@ import java.util.List;
 @RequestMapping("/api/niveles-atencion")
 @RequiredArgsConstructor
 @Slf4j
-@Data
 public class NivelAtencionController {
 
     private final NivelAtencionService service;

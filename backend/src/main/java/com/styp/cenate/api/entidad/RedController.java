@@ -1,6 +1,5 @@
 package com.styp.cenate.api.entidad;
 
-import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -20,7 +19,6 @@ import java.util.stream.Collectors;
 @RequestMapping("/api/redes")
 @RequiredArgsConstructor
 @Slf4j
-@Data
 @CrossOrigin(origins = { "http://localhost:3000", "http://localhost:5173" })
 public class RedController {
 

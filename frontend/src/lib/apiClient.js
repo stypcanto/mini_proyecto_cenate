@@ -19,7 +19,10 @@ function getToken() {
 
 // ✅ v1.97.5: Asegurar que API_BASE_URL siempre incluya /api
 const getApiBaseUrl = () => {
-  let url = process.env.REACT_APP_API_URL || 'http://localhost:8080';
+  let url = process.env.REACT_APP_API_URL || 'http://127.0.0.1:8080';
+
+  // Reemplazar localhost con 127.0.0.1 para compatibilidad con navegadores en contextos aislados
+  url = url.replace(/http:\/\/localhost/, 'http://127.0.0.1');
 
   // Si no termina con /api, agregarlo
   if (!url.endsWith('/api')) {

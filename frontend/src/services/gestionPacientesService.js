@@ -22,7 +22,7 @@ const gestionPacientesService = {
      * Obtener pacientes asignados al médico actual
      */
     obtenerPacientesMedico: async () => {
-        return await apiClient.get(`${BASE_ENDPOINT}/medico/asignados`);
+        return await apiClient.get(`${BASE_ENDPOINT}/medico/asignados`, true);
     },
 
     /**
@@ -31,7 +31,7 @@ const gestionPacientesService = {
      * Polling cada 60 segundos
      */
     obtenerContadorPendientes: async () => {
-        const response = await apiClient.get(`${BASE_ENDPOINT}/medico/contador-pendientes`);
+        const response = await apiClient.get(`${BASE_ENDPOINT}/medico/contador-pendientes`, true);
         return response?.pendientes || 0;
     },
 
@@ -40,7 +40,7 @@ const gestionPacientesService = {
      * Retorna Map con "nombre" y "especialidad" del doctor autenticado
      */
     obtenerInfoMedicoActual: async () => {
-        return await apiClient.get(`${BASE_ENDPOINT}/medico/info`);
+        return await apiClient.get(`${BASE_ENDPOINT}/medico/info`, true);
     },
 
     /**
@@ -175,14 +175,14 @@ const gestionPacientesService = {
      * Obtener especialidades disponibles para interconsulta
      */
     obtenerEspecialidades: async () => {
-        return await apiClient.get(`${BASE_ENDPOINT}/especialidades`);
+        return await apiClient.get(`${BASE_ENDPOINT}/especialidades`, true);
     },
 
     /**
      * Registrar atención médica completa (Recita + Interconsulta + Crónico)
      */
     atenderPaciente: async (id, atenderPacienteRequest) => {
-        return await apiClient.post(`${BASE_ENDPOINT}/${id}/atendido`, atenderPacienteRequest);
+        return await apiClient.post(`${BASE_ENDPOINT}/${id}/atendido`, atenderPacienteRequest, true);
     },
 
     // ========================================================================
@@ -196,7 +196,7 @@ const gestionPacientesService = {
      */
     obtenerDatosEKGPaciente: async (dni) => {
         try {
-            return await apiClient.get(`${BASE_ENDPOINT}/paciente/${dni}/ekg`);
+            return await apiClient.get(`${BASE_ENDPOINT}/paciente/${dni}/ekg`, true);
         } catch (error) {
             console.warn(`Error obteniendo datos EKG para DNI ${dni}:`, error);
             return { fechaTomaEKG: null, esUrgente: false };
@@ -216,7 +216,7 @@ const gestionPacientesService = {
     obtenerECGsBatch: async () => {
         try {
             console.log('🚀 [v1.89.8] Obteniendo ECGs en BATCH...');
-            const response = await apiClient.get(`${BASE_ENDPOINT}/medico/ecgs-batch`);
+            const response = await apiClient.get(`${BASE_ENDPOINT}/medico/ecgs-batch`, true);
             console.log('✅ [v1.89.8] Batch retornado:', Object.keys(response).length, 'pacientes');
             return response || {};
         } catch (error) {
