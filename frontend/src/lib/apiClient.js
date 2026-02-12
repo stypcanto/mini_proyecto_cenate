@@ -17,9 +17,23 @@ function getToken() {
   );
 }
 
-// ✅ CORREGIDO: Ya incluye /api en REACT_APP_API_URL
-const API_BASE_URL = process.env.REACT_APP_API_URL || 
-                     'http://localhost:8080/api';
+// ✅ v1.97.5: Asegurar que API_BASE_URL siempre incluya /api
+const getApiBaseUrl = () => {
+  let url = process.env.REACT_APP_API_URL || 'http://localhost:8080';
+
+  // Si no termina con /api, agregarlo
+  if (!url.endsWith('/api')) {
+    url = url.endsWith('/') ? url + 'api' : url + '/api';
+  }
+
+  return url;
+};
+
+const API_BASE_URL = getApiBaseUrl();
+
+// ✅ v1.97.5: Debug logging
+console.log('🌐 [apiClient v1.97.5] REACT_APP_API_URL:', process.env.REACT_APP_API_URL || 'undefined');
+console.log('🌐 [apiClient v1.97.5] API_BASE_URL final:', API_BASE_URL);
 
 // Construye URL final - NO agregar /api de nuevo
 const buildUrl = (endpoint) => {
