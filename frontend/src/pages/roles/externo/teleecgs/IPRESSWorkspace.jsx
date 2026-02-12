@@ -80,7 +80,7 @@ function formatECGsForRecientes(ecgs, pacientesCache = {}) {
             return "Ahora";
           })()
         : "Desconocido",
-      estado: img.estadoTransformado || img.estado || "DESCONOCIDA",
+      estado: img.estado_transformado || img.estado || "DESCONOCIDA",
       observacion: img.observacion || null,
       contenidoImagen: img.contenidoImagen || null,  // ✅ Para imágenes precargadas
       nombreArchivo: img.nombreArchivo || null,
@@ -198,14 +198,14 @@ export default function IPRESSWorkspace() {
 
   /**
    * ✅ v1.96.0: Helper para obtener el estado real de una imagen
-   * Prioriza estadoTransformado, luego estado original
+   * Prioriza estado_transformado, luego estado original
    * Normaliza a mayúsculas y elimina espacios
    * FIX: Maneja caso donde backend envía "undefined" como string
    */
   const obtenerEstadoReal = (img) => {
     if (!img) return null;
     // ✅ v1.96.0: Filtrar valores inválidos (null, undefined, "undefined" string)
-    let estado = img.estadoTransformado || img.estado;
+    let estado = img.estado_transformado || img.estado;
     if (!estado || estado === "undefined" || estado === "null") {
       return null;
     }
@@ -335,9 +335,9 @@ export default function IPRESSWorkspace() {
         for (let i = 0; i < Math.min(3, imagenes.length); i++) {
           const img = imagenes[i];
           const st = obtenerEstadoReal(img);
-          const isUndefinedString = img.estadoTransformado === "undefined";
+          const isUndefinedString = img.estado_transformado === "undefined";
           if (isUndefinedString) undefinedStringCount++;
-          console.log(`  [IMG ${i}] DNI: ${img.dni}, Estado RAW: "${img.estado}", Estado TRANS: ${img.estadoTransformado}${isUndefinedString ? ' ⚠️[STRING "undefined"]' : ''}, Estado FINAL: "${st}"`);
+          console.log(`  [IMG ${i}] DNI: ${img.dni}, Estado RAW: "${img.estado}", Estado TRANS: ${img.estado_transformado}${isUndefinedString ? ' ⚠️[STRING "undefined"]' : ''}, Estado FINAL: "${st}"`);
         }
 
         // Debug: contar imágenes por estado en página 1

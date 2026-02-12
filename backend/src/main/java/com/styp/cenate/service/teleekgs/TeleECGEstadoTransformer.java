@@ -68,12 +68,21 @@ public class TeleECGEstadoTransformer {
      */
     public String transformarEstado(TeleECGImagenDTO dto, Usuario usuario) {
         if (dto == null || dto.getEstado() == null) {
+            log.warn("⚠️ [TRANSFORMER] DTO nulo o estado nulo - DTO: {}, Estado: {}",
+                dto != null ? "present" : "null",
+                dto != null && dto.getEstado() != null ? dto.getEstado() : "null");
             return "DESCONOCIDO";
         }
 
         boolean esUsuarioExterno = usuario != null && esExterno(usuario);
+        String resultado = transformarEstado(dto.getEstado(), esUsuarioExterno);
 
-        return transformarEstado(dto.getEstado(), esUsuarioExterno);
+        log.debug("🔄 [TRANSFORMER] Estado transformado - Entrada: {}, Usuario Externo: {}, Salida: {}",
+            dto.getEstado(),
+            esUsuarioExterno,
+            resultado);
+
+        return resultado;
     }
 
     /**
