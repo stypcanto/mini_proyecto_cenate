@@ -149,18 +149,20 @@ export default function IPRESSWorkspace() {
   // ✅ TODOS LAS IMÁGENES (para poder filtrar cuando clickea el ojo)
   const [todasLasImagenes, setTodasLasImagenes] = useState([]);
 
-  // ✅ PAGINACIÓN - 15 pacientes por página
+  // ✅ PAGINACIÓN - Usar TODAS las imágenes cargadas (página 1 + páginas en background)
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPagesFromBackend, setTotalPagesFromBackend] = useState(1);  // ✅ v1.71.0: Guardar totalPages del backend
-  const ITEMS_PER_PAGE = 15;
+
+  // ✅ v1.96.2: Cambiar ITEMS_PER_PAGE a 20 para coincidir con backend
+  // Backend retorna 20 items/página, frontend debe coincidir
+  const ITEMS_PER_PAGE = 20;
 
   // ✅ v1.71.0: Usar totalPages del backend, no calcularlo localmente
   const totalPages = totalPagesFromBackend;
   const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
   const endIndex = startIndex + ITEMS_PER_PAGE;
 
-  // ✅ v1.96.1: Usar todasLasImagenes para paginación (incluye todas las páginas cargadas)
-  // No usar ecgs que solo tiene página 1 hasta que termine carga en background
+  // ✅ v1.96.2: Usar todasLasImagenes (se actualiza cuando cargan páginas en background)
   const ecgsPaginados = todasLasImagenes.slice(startIndex, endIndex);
 
   // =======================================
