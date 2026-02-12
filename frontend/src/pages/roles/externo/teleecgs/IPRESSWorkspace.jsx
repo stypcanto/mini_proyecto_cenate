@@ -10,6 +10,7 @@ import RegistroPacientes from "./RegistroPacientes";
 import TeleECGEstadisticas from "./TeleECGEstadisticas";
 import teleecgService from "../../../../services/teleecgService";
 import gestionPacientesService from "../../../../services/gestionPacientesService";
+import apiClient from "../../../../lib/apiClient";
 import { getEstadoClasses } from "../../../../config/designSystem";
 
 /**
@@ -232,62 +233,36 @@ export default function IPRESSWorkspace() {
     return () => clearInterval(interval);
   }, []);
 
-  // ✅ v1.97.4: Cargar estadísticas GLOBALES de toda la BD (sin paginación)
-  // Incluye mejor manejo de errores, validación de respuesta y logging detallado
+  // ✅ v1.97.6: Cargar estadísticas GLOBALES de toda la BD (sin paginación)
+  // FIX: Usar apiClient en lugar de fetch() para que vaya a puerto 8080
   useEffect(() => {
     const cargarStatsGlobales = async () => {
       try {
-        console.log("📊 [v1.97.4] Cargando estadísticas globales de toda la BD...");
+        console.log("📊 [v1.97.6] Cargando estadísticas globales de toda la BD...");
 
-        // Obtener token del localStorage
-        const token = localStorage.getItem('token');
-        if (!token) {
-          console.warn("⚠️ [v1.97.4] No hay token en localStorage, saltando carga de stats globales");
-          return;
-        }
+        const response = await apiClient.get('/teleekgs/estadisticas-globales', true);
 
-        const headers = {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        };
-
-        const response = await fetch('/api/teleekgs/estadisticas-globales', {
-          headers,
-          method: 'GET'
-        });
-
-        console.log("📡 [v1.97.4] Response status:", response.status);
-
-        if (!response.ok) {
-          console.warn(`⚠️ [v1.97.4] Response status ${response.status}:`, response.statusText);
-          return;
-        }
-
-        const data = await response.json();
-
-        console.log("📦 [v1.97.4] Response data structure:", JSON.stringify(data).substring(0, 300));
+        console.log("📡 [v1.97.6] Response status: 200 (apiClient maneja errores)");
 
         // Validar que la respuesta tiene la estructura correcta
-        if (data?.data && typeof data.data === 'object') {
-          console.log("✅ [v1.97.4] Stats globales cargadas exitosamente:", {
-            totalPacientes: data.data.totalPacientes,
-            pacientesPendientes: data.data.pacientesPendientes,
-            pacientesObservados: data.data.pacientesObservados,
-            pacientesAtendidos: data.data.pacientesAtendidos,
-            totalImagenes: data.data.totalImagenes,
+        if (response?.data && typeof response.data === 'object') {
+          console.log("✅ [v1.97.6] Stats globales cargadas exitosamente:", {
+            totalPacientes: response.data.totalPacientes,
+            pacientesPendientes: response.data.pacientesPendientes,
+            pacientesObservados: response.data.pacientesObservados,
+            pacientesAtendidos: response.data.pacientesAtendidos,
+            totalImagenes: response.data.totalImagenes,
           });
 
           // ✅ IMPORTANTE: Actualizar el estado con los datos globales
-          setStatsGlobales(data.data);
+          setStatsGlobales(response.data);
 
-          console.log("💾 [v1.97.4] statsGlobales actualizado en estado - Componente se re-renderizará");
-        } else if (data?.success === false) {
-          console.warn("⚠️ [v1.97.4] Respuesta exitosa pero datos inválidos:", data);
+          console.log("💾 [v1.97.6] statsGlobales actualizado en estado - Componente se re-renderizará");
         } else {
-          console.warn("⚠️ [v1.97.4] Response sin estructura esperada:", data);
+          console.warn("⚠️ [v1.97.6] Response sin estructura esperada:", response);
         }
       } catch (error) {
-        console.error("❌ [v1.97.4] Error cargando stats globales:", error.message);
+        console.error("❌ [v1.97.6] Error cargando stats globales:", error.message);
         console.error("   Stack trace:", error.stack?.substring(0, 200));
       }
     };
