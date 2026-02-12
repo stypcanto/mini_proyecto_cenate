@@ -432,6 +432,10 @@ export default function IPRESSWorkspace() {
             console.log(`✅ [BACKGROUND] Total acumulado: ${imagenesAcumuladas.length} registros`);
             setTodasLasImagenes(imagenesAcumuladas);
 
+            // ✅ v1.96.3: CRÍTICO - También actualizar ecgs para que la paginación tenga los datos
+            // Si no lo hacemos, cuando el usuario navega a página 2, todasLasImagenes aún está vacío
+            setEcgs(imagenesAcumuladas);
+
             // ✅ v1.87.7: Recalcular STATS GLOBALES con TODOS los datos (no solo página 1)
             // Esto hace que el card negro muestre el TOTAL real de pacientes pendientes en toda la BD
             // ✅ v1.94.0: Usar helper obtenerEstadoReal para robustez
