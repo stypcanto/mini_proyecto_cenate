@@ -333,6 +333,16 @@ ORDER BY edad_minima;
 
 
 
+select * from dim_estados_gestion_citas degc ;
+
+
+-- SOLICITADO POR DANIELA ROJAS - CENATE
+insert into dim_estados_gestion_citas (cod_estado_cita, desc_estado_cita, stat_estado_cita)
+values ('NO_GRUPO_ETARIO', 'No pertenece a rango etario', 'A');
+
+
+insert into dim_estados_gestion_citas (cod_estado_cita, desc_estado_cita, stat_estado_cita)
+values ('NO_IPRESS_CENATE', 'Pertenece a otra Ipress', 'A');
 
 
 
