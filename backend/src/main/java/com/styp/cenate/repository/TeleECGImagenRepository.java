@@ -356,7 +356,7 @@ public interface TeleECGImagenRepository extends JpaRepository<TeleECGImagen, Lo
           AND t.statImagen = 'A'
           AND t.fechaEnvio >= :fechaDesde
           AND t.fechaEnvio <= :fechaHasta
-          AND t.fechaExpiracion >= CURRENT_TIMESTAMP
+          AND (t.fechaExpiracion >= CURRENT_TIMESTAMP OR t.estado = 'ATENDIDA')
         ORDER BY t.fechaEnvio DESC
         """)
     Page<TeleECGImagen> buscarFlexibleSinPaginacion(
