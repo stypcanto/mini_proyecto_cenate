@@ -309,6 +309,16 @@ export default function IPRESSWorkspace() {
         };
       });
 
+      // ✅ v1.93.1: DEBUG - Ver estructura real de datos
+      if (imagenes.length > 0) {
+        console.log("📊 [DEBUG] Primera imagen estructura:", {
+          estado: imagenes[0].estado,
+          estadoTransformado: imagenes[0].estadoTransformado,
+          nombrePaciente: imagenes[0].nombrePaciente,
+          todosLosCampos: Object.keys(imagenes[0])
+        });
+      }
+
       // Calcular estadísticas (PÁGINA 1 SOLAMENTE)
       const imagenesPendientes = imagenes.filter((img) => img.estado === "ENVIADA");
       const imagenesObservadas = imagenes.filter((img) => img.estado === "OBSERVADA");
