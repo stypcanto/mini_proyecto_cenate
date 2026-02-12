@@ -89,7 +89,7 @@ export const atencionesClinicasService = {
       }
       
       const url = `${BASE_URL}/listar?${params.toString()}`;
-      const data = await api.get(url);
+      const data = await api.get(url, true);
       return data;
     } catch (error) {
       console.error('Error al listar atenciones clínicas con filtros:', error);
@@ -102,7 +102,7 @@ export const atencionesClinicasService = {
    */
   obtenerEstadisticas: async () => {
     try {
-      const data = await api.get(`${BASE_URL}/estadisticas`);
+      const data = await api.get(`${BASE_URL}/estadisticas`, true);
       return data;
     } catch (error) {
       console.error('Error al obtener estadísticas:', error);
@@ -115,7 +115,7 @@ export const atencionesClinicasService = {
    */
   obtenerEstadisticasCondicionMedica: async () => {
     try {
-      const data = await api.get(`${BASE_URL}/estadisticas-condicion-medica`);
+      const data = await api.get(`${BASE_URL}/estadisticas-condicion-medica`, true);
       return data;
     } catch (error) {
       console.error('Error al obtener estadísticas de condición médica:', error);
@@ -131,7 +131,7 @@ export const atencionesClinicasService = {
    */
   obtenerPorAsegurado: async (pkAsegurado, page = 0, size = 20) => {
     try {
-      const data = await api.get(`${BASE_URL}/asegurado/${pkAsegurado}?page=${page}&size=${size}`);
+      const data = await api.get(`${BASE_URL}/asegurado/${pkAsegurado}?page=${page}&size=${size}`, true);
       return data;
     } catch (error) {
       console.error(`Error al obtener atenciones del asegurado ${pkAsegurado}:`, error);
@@ -145,7 +145,7 @@ export const atencionesClinicasService = {
    */
   obtenerDetalle: async (idAtencion) => {
     try {
-      const data = await api.get(`${BASE_URL}/${idAtencion}`);
+      const data = await api.get(`${BASE_URL}/${idAtencion}`, true);
       return data;
     } catch (error) {
       console.error(`Error al obtener detalle de atención ${idAtencion}:`, error);
@@ -160,7 +160,7 @@ export const atencionesClinicasService = {
    */
   obtenerMisAtenciones: async (page = 0, size = 20) => {
     try {
-      const data = await api.get(`${BASE_URL}/mis-atenciones?page=${page}&size=${size}`);
+      const data = await api.get(`${BASE_URL}/mis-atenciones?page=${page}&size=${size}`, true);
       return data;
     } catch (error) {
       console.error('Error al obtener mis atenciones:', error);
@@ -174,7 +174,7 @@ export const atencionesClinicasService = {
    */
   crear: async (atencionData) => {
     try {
-      const data = await api.post(BASE_URL, atencionData);
+      const data = await api.post(BASE_URL, atencionData, true);
       return data;
     } catch (error) {
       console.error('Error al crear atención clínica:', error);
@@ -189,7 +189,7 @@ export const atencionesClinicasService = {
    */
   actualizar: async (idAtencion, atencionData) => {
     try {
-      const data = await api.put(`${BASE_URL}/${idAtencion}`, atencionData);
+      const data = await api.put(`${BASE_URL}/${idAtencion}`, atencionData, true);
       return data;
     } catch (error) {
       console.error(`Error al actualizar atención ${idAtencion}:`, error);
@@ -204,7 +204,7 @@ export const atencionesClinicasService = {
    */
   agregarObservacionEnfermeria: async (idAtencion, observacionData) => {
     try {
-      const data = await api.put(`${BASE_URL}/${idAtencion}/observacion-enfermeria`, observacionData);
+      const data = await api.put(`${BASE_URL}/${idAtencion}/observacion-enfermeria`, observacionData, true);
       return data;
     } catch (error) {
       console.error(`Error al agregar observación de enfermería a atención ${idAtencion}:`, error);
@@ -218,7 +218,7 @@ export const atencionesClinicasService = {
    */
   eliminar: async (idAtencion) => {
     try {
-      const data = await api.delete(`${BASE_URL}/${idAtencion}`);
+      const data = await api.delete(`${BASE_URL}/${idAtencion}`, true);
       return data;
     } catch (error) {
       console.error(`Error al eliminar atención ${idAtencion}:`, error);
@@ -233,7 +233,7 @@ export const atencionesClinicasService = {
    */
   obtenerComparativoSignosVitales: async (idAtencion) => {
     try {
-      const data = await api.get(`${BASE_URL}/${idAtencion}/comparativo-signos-vitales`);
+      const data = await api.get(`${BASE_URL}/${idAtencion}/comparativo-signos-vitales`, true);
       return data;
     } catch (error) {
       console.error(`Error al obtener comparativo de signos vitales para atención ${idAtencion}:`, error);
@@ -250,7 +250,7 @@ export const atencionesClinicasService = {
    */
   obtenerEstadisticasResumen: async () => {
     try {
-      const data = await api.get(`${BASE_URL}/estadisticas-resumen`);
+      const data = await api.get(`${BASE_URL}/estadisticas-resumen`, true);
       return data;
     } catch (error) {
       console.error('Error al obtener estadísticas de resumen:', error);
@@ -263,7 +263,7 @@ export const atencionesClinicasService = {
    */
   obtenerEstadisticasMensuales: async () => {
     try {
-      const data = await api.get(`${BASE_URL}/estadisticas-mensuales`);
+      const data = await api.get(`${BASE_URL}/estadisticas-mensuales`, true);
       return data;
     } catch (error) {
       console.error('Error al obtener estadísticas mensuales:', error);
@@ -277,7 +277,7 @@ export const atencionesClinicasService = {
    */
   obtenerEstadisticasIpress: async (limit = 10) => {
     try {
-      const data = await api.get(`${BASE_URL}/estadisticas-ipress?limit=${limit}`);
+      const data = await api.get(`${BASE_URL}/estadisticas-ipress?limit=${limit}`, true);
       return data;
     } catch (error) {
       console.error('Error al obtener estadísticas IPRESS:', error);
@@ -290,7 +290,7 @@ export const atencionesClinicasService = {
    */
   obtenerEstadisticasEspecialidad: async () => {
     try {
-      const data = await api.get(`${BASE_URL}/estadisticas-especialidad`);
+      const data = await api.get(`${BASE_URL}/estadisticas-especialidad`, true);
       return data;
     } catch (error) {
       console.error('Error al obtener estadísticas especialidad:', error);
@@ -303,7 +303,7 @@ export const atencionesClinicasService = {
    */
   obtenerEstadisticasTipoCita: async () => {
     try {
-      const data = await api.get(`${BASE_URL}/estadisticas-tipo-cita`);
+      const data = await api.get(`${BASE_URL}/estadisticas-tipo-cita`, true);
       return data;
     } catch (error) {
       console.error('Error al obtener estadísticas tipo cita:', error);
