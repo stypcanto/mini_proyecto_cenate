@@ -84,6 +84,17 @@ export default function MisECGsRecientes({
   const [fechaToma, setFechaToma] = useState("");  // ✅ v1.76.0: Fecha de toma del EKG editable
   const fileInputRef = useRef(null);  // ✅ Referencia segura al input file
 
+  // ✅ v1.97.4: Log estadísticas cuando cambien para debugging
+  useEffect(() => {
+    console.log(`📊 [MisECGsRecientes v1.97.4] estadisticas actualizado:`, {
+      total: estadisticas?.total,
+      cargadas: estadisticas?.cargadas,
+      enEvaluacion: estadisticas?.enEvaluacion,
+      observadas: estadisticas?.observadas,
+      atendidas: estadisticas?.atendidas,
+    });
+  }, [estadisticas]);
+
   // ✅ Sync ultimas3 to datosOriginales on mount and when ultimas3 changes
   useEffect(() => {
     console.log(`📊 [MisECGsRecientes] ultimas3 actualizado, length=${ultimas3.length}`);

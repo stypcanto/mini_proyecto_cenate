@@ -232,43 +232,76 @@ export default function IPRESSWorkspace() {
     return () => clearInterval(interval);
   }, []);
 
-  // ✅ v1.97.2: Cargar estadísticas GLOBALES de toda la BD (sin paginación)
+  // ✅ v1.97.4: Cargar estadísticas GLOBALES de toda la BD (sin paginación)
+  // Incluye mejor manejo de errores, validación de respuesta y logging detallado
   useEffect(() => {
     const cargarStatsGlobales = async () => {
       try {
-        console.log("📊 [v1.97.2] Cargando estadísticas globales de toda la BD...");
+        console.log("📊 [v1.97.4] Cargando estadísticas globales de toda la BD...");
 
         // Obtener token del localStorage
         const token = localStorage.getItem('token');
+        if (!token) {
+          console.warn("⚠️ [v1.97.4] No hay token en localStorage, saltando carga de stats globales");
+          return;
+        }
+
         const headers = {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
         };
-        if (token) {
-          headers['Authorization'] = `Bearer ${token}`;
+
+        const response = await fetch('/api/teleekgs/estadisticas-globales', {
+          headers,
+          method: 'GET'
+        });
+
+        console.log("📡 [v1.97.4] Response status:", response.status);
+
+        if (!response.ok) {
+          console.warn(`⚠️ [v1.97.4] Response status ${response.status}:`, response.statusText);
+          return;
         }
 
-        const response = await fetch('/api/teleekgs/estadisticas-globales', { headers });
         const data = await response.json();
 
-        if (data?.data) {
-          console.log("✅ [v1.97.2] Stats globales cargadas:", data.data);
-          console.log("   Total Pacientes: ", data.data.totalPacientes);
-          console.log("   Pacientes Pendientes: ", data.data.pacientesPendientes);
-          console.log("   Pacientes Atendidos: ", data.data.pacientesAtendidos);
+        console.log("📦 [v1.97.4] Response data structure:", JSON.stringify(data).substring(0, 300));
+
+        // Validar que la respuesta tiene la estructura correcta
+        if (data?.data && typeof data.data === 'object') {
+          console.log("✅ [v1.97.4] Stats globales cargadas exitosamente:", {
+            totalPacientes: data.data.totalPacientes,
+            pacientesPendientes: data.data.pacientesPendientes,
+            pacientesObservados: data.data.pacientesObservados,
+            pacientesAtendidos: data.data.pacientesAtendidos,
+            totalImagenes: data.data.totalImagenes,
+          });
+
+          // ✅ IMPORTANTE: Actualizar el estado con los datos globales
           setStatsGlobales(data.data);
+
+          console.log("💾 [v1.97.4] statsGlobales actualizado en estado - Componente se re-renderizará");
+        } else if (data?.success === false) {
+          console.warn("⚠️ [v1.97.4] Respuesta exitosa pero datos inválidos:", data);
         } else {
-          console.warn("⚠️ [v1.97.2] Response sin datos:", data);
+          console.warn("⚠️ [v1.97.4] Response sin estructura esperada:", data);
         }
       } catch (error) {
-        console.error("❌ [v1.97.2] Error cargando stats globales:", error);
+        console.error("❌ [v1.97.4] Error cargando stats globales:", error.message);
+        console.error("   Stack trace:", error.stack?.substring(0, 200));
       }
     };
 
-    cargarStatsGlobales();
+    // Cargar INMEDIATAMENTE en el siguiente tick para evitar race conditions
+    const timeoutId = setTimeout(cargarStatsGlobales, 100);
 
     // Recargar stats globales cada 5 minutos
-    const interval = setInterval(cargarStatsGlobales, 300000);
-    return () => clearInterval(interval);
+    const intervalId = setInterval(cargarStatsGlobales, 300000);
+
+    return () => {
+      clearTimeout(timeoutId);
+      clearInterval(intervalId);
+    };
   }, []);
 
 
@@ -736,6 +769,28 @@ export default function IPRESSWorkspace() {
 
           {/* Dashboard Full-Width */}
           <div className="w-full">
+            {(() => {
+              // ✅ v1.97.4: Debug - verificar qué valores se pasan a las tarjetas
+              const estadisticasFinales = {
+                total: statsGlobales?.totalImagenes || stats.total,
+                cargadas: statsGlobales?.totalPacientes || stats.cargadas,
+                enEvaluacion: statsGlobales?.pacientesPendientes || stats.enEvaluacion,
+                observadas: statsGlobales?.pacientesObservados || stats.observadas,
+                atendidas: (statsGlobales?.pacientesAtendidos || stats.atendidas || 0),
+              };
+              console.log("🎨 [v1.97.4] RENDER - Estadísticas pasadas a MisECGsRecientes:", {
+                statsGlobalesPresente: !!statsGlobales,
+                statsGlobales: statsGlobales ? {
+                  totalPacientes: statsGlobales.totalPacientes,
+                  pacientesPendientes: statsGlobales.pacientesPendientes,
+                  pacientesObservados: statsGlobales.pacientesObservados,
+                  pacientesAtendidos: statsGlobales.pacientesAtendidos,
+                } : null,
+                statsLocal: stats,
+                estadisticasFinales: estadisticasFinales,
+              });
+              return null;
+            })()}
             <MisECGsRecientes
               ultimas3={ecgsPaginadosDeduplicados}
               estadisticas={{
