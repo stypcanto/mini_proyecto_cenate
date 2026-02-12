@@ -236,7 +236,7 @@ public interface TeleECGImagenRepository extends JpaRepository<TeleECGImagen, Lo
           AND t.statImagen = 'A'
           AND t.fechaEnvio >= :fechaDesde
           AND t.fechaEnvio <= :fechaHasta
-          AND t.fechaExpiracion >= CURRENT_TIMESTAMP
+          AND (t.fechaExpiracion >= CURRENT_TIMESTAMP OR t.estado = 'ATENDIDA')
         ORDER BY t.fechaEnvio DESC
         """)
     Page<TeleECGImagen> buscarFlexible(
@@ -336,7 +336,7 @@ public interface TeleECGImagenRepository extends JpaRepository<TeleECGImagen, Lo
             SUM(CASE WHEN t.estado = 'ATENDIDA' THEN 1 ELSE 0 END)
         FROM TeleECGImagen t
         WHERE t.statImagen = 'A'
-          AND t.fechaExpiracion >= CURRENT_TIMESTAMP
+          AND (t.fechaExpiracion >= CURRENT_TIMESTAMP OR t.estado = 'ATENDIDA')
         """)
     List<Object[]> getEstadisticasCompletas();
 
@@ -356,7 +356,7 @@ public interface TeleECGImagenRepository extends JpaRepository<TeleECGImagen, Lo
           AND t.statImagen = 'A'
           AND t.fechaEnvio >= :fechaDesde
           AND t.fechaEnvio <= :fechaHasta
-          AND t.fechaExpiracion >= CURRENT_TIMESTAMP
+          AND (t.fechaExpiracion >= CURRENT_TIMESTAMP OR t.estado = 'ATENDIDA')
         ORDER BY t.fechaEnvio DESC
         """)
     Page<TeleECGImagen> buscarFlexibleSinPaginacion(
@@ -383,7 +383,7 @@ public interface TeleECGImagenRepository extends JpaRepository<TeleECGImagen, Lo
           AND t.statImagen = 'A'
           AND t.fechaEnvio >= :fechaDesde
           AND t.fechaEnvio <= :fechaHasta
-          AND t.fechaExpiracion >= CURRENT_TIMESTAMP
+          AND (t.fechaExpiracion >= CURRENT_TIMESTAMP OR t.estado = 'ATENDIDA')
         ORDER BY t.fechaEnvio DESC
         LIMIT 1000
         """, nativeQuery = false)
@@ -421,7 +421,7 @@ public interface TeleECGImagenRepository extends JpaRepository<TeleECGImagen, Lo
           AND (:evaluacion IS NULL OR t.evaluacion = :evaluacion)
           AND (:esUrgente IS NULL OR t.esUrgente = :esUrgente)
           AND t.statImagen = 'A'
-          AND t.fechaExpiracion >= CURRENT_TIMESTAMP
+          AND (t.fechaExpiracion >= CURRENT_TIMESTAMP OR t.estado = 'ATENDIDA')
         ORDER BY t.fechaEnvio DESC
         """)
     List<TeleECGImagen> buscarParaAnalytics(
