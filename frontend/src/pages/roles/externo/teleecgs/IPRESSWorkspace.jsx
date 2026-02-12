@@ -379,7 +379,9 @@ export default function IPRESSWorkspace() {
       // Más efectivo que lazy loading - usuario ve todos los datos sin esperar background
       const response = await teleecgService.listarImagenes("");
       let imagenes = response?.content || [];
-      const totalPages = Math.min(response?.totalPages || 1, 5);  // MAX 5 páginas disponibles
+      // ✅ v1.100.3: Aumentar límite de 5 a 50 páginas para mostrar TODOS los pacientes (99+)
+      // Con 20 items/página: 50 × 20 = 1000 imágenes, suficiente para 99 pacientes con múltiples ECGs
+      const totalPages = Math.min(response?.totalPages || 1, 50);  // MAX 50 páginas disponibles
 
       console.log(`⚡ [v1.97.8] Página 1 cargada: ${imagenes.length} registros (totalPages: ${totalPages})`);
 
