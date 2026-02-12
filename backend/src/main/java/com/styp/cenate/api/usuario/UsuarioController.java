@@ -546,7 +546,7 @@ public class UsuarioController {
 	 * @param rol Nombre del rol a buscar (ej: "GESTOR DE CITAS", "ADMISION", etc.)
 	 * @return Lista de usuarios con ese rol
 	 */
-
+	@GetMapping("/por-rol-generico")
 	@PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'COORDINADOR')")
 	public ResponseEntity<List<UsuarioResponse>> listarUsuariosPorRol(@RequestParam("rol") String rol) {
 		log.info("👥 Listando usuarios con rol: {}", rol);
