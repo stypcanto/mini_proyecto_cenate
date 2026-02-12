@@ -2,6 +2,7 @@ package com.styp.cenate.service.gestionpaciente;
 
 import com.styp.cenate.dto.GestionPacienteDTO;
 import com.styp.cenate.dto.MedicoTeleurgenciasDTO;
+import com.styp.cenate.dto.teleekgs.TeleECGImagenDTO;
 
 import java.util.List;
 import java.util.Map;
@@ -50,4 +51,8 @@ public interface IGestionPacienteService {
 
     // ✅ v1.78.2: Obtener datos de EKG para un paciente (endpoint separado, sin afectar transacción principal)
     Map<String, Object> obtenerDatosEKGPaciente(String dni);
+
+    // ✅ v1.89.8: BATCH endpoint - Obtener TODOS los ECGs del médico en UNA SOLA llamada
+    // Retorna Map<DNI, List<TeleECGImagenDTO>> para optimizar performance (reduce 21 llamadas → 1)
+    Map<String, List<TeleECGImagenDTO>> obtenerECGsBatchDelMedicoActual();
 }

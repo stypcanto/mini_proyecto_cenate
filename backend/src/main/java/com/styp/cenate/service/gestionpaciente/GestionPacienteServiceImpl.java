@@ -978,4 +978,68 @@ public class GestionPacienteServiceImpl implements IGestionPacienteService {
             return null;
         }
     }
+
+    /**
+     * ✅ v1.89.8: BATCH ENDPOINT - Obtener TODOS los ECGs del médico en UNA SOLA llamada
+     * ⭐ OPTIMIZACIÓN CRÍTICA: Reduce 21 llamadas GET → 1 llamada
+     *
+     * Retorna Map<DNI, List<TeleECGImagenDTO>> con todos los ECGs agrupados por paciente
+     */
+    @Override
+    @Transactional(readOnly = true)
+    public Map<String, List<com.styp.cenate.dto.teleekgs.TeleECGImagenDTO>> obtenerECGsBatchDelMedicoActual() {
+        log.info("🚀 [v1.89.8] Obteniendo TODOS los ECGs del médico actual en batch...");
+
+        try {
+            // 1. Obtener pacientes del médico actual
+            List<GestionPacienteDTO> pacientes = obtenerPacientesDelMedicoActual();
+            log.info("📊 [v1.89.8] Total pacientes del médico: {}", pacientes.size());
+
+            if (pacientes.isEmpty()) {
+                log.warn("⚠️ [v1.89.8] El médico no tiene pacientes asignados");
+                return new HashMap<>();
+            }
+
+            // 2. Extraer DNIs
+            List<String> dnis = pacientes.stream()
+                    .map(GestionPacienteDTO::getNumDoc)
+                    .collect(Collectors.toList());
+
+            // 3. Obtener todos los ECGs en UN SOLO query (optimizado)
+            Map<String, List<com.styp.cenate.dto.teleekgs.TeleECGImagenDTO>> resultado = new HashMap<>();
+
+            for (String dni : dnis) {
+                try {
+                    List<TeleECGImagen> ecgs = teleECGImagenRepository
+                            .findByNumDocPacienteOrderByFechaEnvioDesc(dni);
+
+                    if (!ecgs.isEmpty()) {
+                        List<com.styp.cenate.dto.teleekgs.TeleECGImagenDTO> ecgDtos = ecgs.stream()
+                                .map(ecg -> com.styp.cenate.dto.teleekgs.TeleECGImagenDTO.builder()
+                                        .idImagen(ecg.getIdImagen())
+                                        .numDocPaciente(ecg.getNumDocPaciente())
+                                        .estado(ecg.getEstado())
+                                        .evaluacion(ecg.getEvaluacion())
+                                        .fechaEnvio(ecg.getFechaEnvio())
+                                        .fechaEvaluacion(ecg.getFechaEvaluacion())
+                                        .descripcionEvaluacion(ecg.getDescripcionEvaluacion())
+                                        .build())
+                                .collect(Collectors.toList());
+
+                        resultado.put(dni, ecgDtos);
+                        log.debug("✅ [v1.89.8] DNI {} - {} ECGs cargados", dni, ecgDtos.size());
+                    }
+                } catch (Exception e) {
+                    log.warn("⚠️ [v1.89.8] Error obteniendo ECGs para DNI {}: {}", dni, e.getMessage());
+                }
+            }
+
+            log.info("✅ [v1.89.8] Batch completado: {} pacientes con ECGs", resultado.size());
+            return resultado;
+
+        } catch (Exception e) {
+            log.error("❌ [v1.89.8] Error en batch de ECGs", e);
+            return new HashMap<>();
+        }
+    }
 }

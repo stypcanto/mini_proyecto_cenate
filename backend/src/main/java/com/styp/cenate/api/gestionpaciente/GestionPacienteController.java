@@ -227,6 +227,27 @@ public class GestionPacienteController {
     }
 
     /**
+     * ✅ v1.89.8: BATCH ENDPOINT - Obtener ECGs de TODOS los pacientes del médico en UNA SOLA llamada
+     * ⭐ OPTIMIZACIÓN CRÍTICA: Reduce 21 llamadas → 1 llamada
+     *
+     * Retorna: {
+     *   "07326045": [ {idImagen, evaluacion, fecha, ...}, ... ],
+     *   "08290773": [ {idImagen, evaluacion, fecha, ...}, ... ],
+     *   ...
+     * }
+     *
+     * @return Map<DNI, List<ECGs>> agrupado por paciente
+     */
+    @GetMapping("/medico/ecgs-batch")
+    @CheckMBACPermission(pagina = "/roles/medico/pacientes", accion = "ver", mensajeDenegado = "No tiene permiso para obtener ECGs")
+    public ResponseEntity<Map<String, List<TeleECGImagenDTO>>> obtenerECGsBatchDelMedico() {
+        log.info("🚀 [v1.89.8] GET /api/gestion-pacientes/medico/ecgs-batch - Obteniendo TODOS los ECGs en batch");
+        Map<String, List<TeleECGImagenDTO>> ecgsPorPaciente = servicio.obtenerECGsBatchDelMedicoActual();
+        log.info("✅ [v1.89.8] Batch retornado: {} pacientes con ECGs", ecgsPorPaciente.size());
+        return ResponseEntity.ok(ecgsPorPaciente);
+    }
+
+    /**
      * ⭐ v1.62.0: Contar pacientes pendientes del médico actual
      * Utilizado por notificaciones para mostrar campanita con contador
      * Polling cada 60 segundos desde frontend
