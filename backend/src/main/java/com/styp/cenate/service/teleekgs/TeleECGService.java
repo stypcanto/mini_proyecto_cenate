@@ -130,6 +130,24 @@ public class TeleECGService {
         }
         log.info("✅ Asegurado validado correctamente");
 
+        // ✅ v1.100.4: VALIDACIÓN: Verificar si el paciente está INACTIVO (archivado)
+        boolean pacienteInactivo = teleECGImagenRepository
+            .findByNumDocPacienteAndStatImagenEquals(dto.getNumDocPaciente(), "I")
+            .stream()
+            .findAny()
+            .isPresent();
+
+        if (pacienteInactivo) {
+            log.warn("⚠️ Paciente marcado como INACTIVO - DNI: {}", dto.getNumDocPaciente());
+            throw new ValidationException(
+                "❌ No se puede cargar ECG para este paciente.\n\n" +
+                "📋 Razón: El paciente ha sido marcado como INACTIVO o ARCHIVADO en el sistema.\n\n" +
+                "✅ Solución: Contacta con el administrador del sistema para reactivar al paciente " +
+                "si deseas cargar nuevos ECGs.\n\n" +
+                "📞 Soporte técnico disponible en CENATE."
+            );
+        }
+
         // 1. Obtener IPRESS
         Ipress ipressOrigen = ipressRepository.findById(idIpressOrigen)
             .orElseThrow(() -> new RuntimeException("IPRESS no encontrada: " + idIpressOrigen));
