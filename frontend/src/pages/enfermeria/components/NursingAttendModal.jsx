@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { X, Save, Activity, FileText, Share2, AlertCircle, ChevronRight, ChevronLeft, History, User, Building2, ClipboardList, Video, Calendar } from "lucide-react";
 import toast from "react-hot-toast";
-import apiClient from "../../../services/apiClient";
+import apiClient from '../../lib/apiClient';
 import TrazabilidadClinicaTabs from "../../../components/trazabilidad/TrazabilidadClinicaTabs";
 import { useAuth } from "../../../context/AuthContext";
 import EstrategiaService from "../../../services/estrategiaService";

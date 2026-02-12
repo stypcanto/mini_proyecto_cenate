@@ -6,7 +6,7 @@
 // Controller: PeriodoMedicoDisponibilidadController
 // ========================================================================
 
-import apiClient from './apiClient';
+import apiClient from '../lib/apiClient';
 
 const BASE_URL = '/periodos-medicos-disponibilidad';
 

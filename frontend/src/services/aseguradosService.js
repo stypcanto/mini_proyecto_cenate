@@ -4,7 +4,7 @@
 // Servicio para interactuar con endpoints de asegurados
 // ========================================================================
 
-import apiClient from './apiClient';
+import apiClient from '../lib/apiClient';
 
 const aseguradosService = {
   /**

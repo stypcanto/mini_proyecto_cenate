@@ -32,7 +32,7 @@ import {
   MoreVertical,
   GraduationCap
 } from 'lucide-react';
-import api from '../../services/apiClient';
+import api from '../../lib/apiClient';
 import ProfesionCRUD from './components/ProfesionCRUD';
 import AreasCRUD from './components/AreasCRUD';
 

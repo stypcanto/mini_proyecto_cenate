@@ -17,7 +17,7 @@ import {
   Eye, UserCheck, Building2, Settings, Trash2, Edit,
   CheckCircle, Hospital, Stethoscope
 } from 'lucide-react';
-import api from '../../../services/apiClient';
+import api from '../../lib/apiClient';
 
 // ========================================================================
 // 📚 Constantes para turnos y tipos de consultorio

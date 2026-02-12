@@ -37,7 +37,7 @@ import {
   RefreshCw,
 } from "lucide-react";
 import toast from "react-hot-toast";
-import api from "../../services/apiClient";
+import api from '../../lib/apiClient';
 
 export default function UserDetail() {
   const { user: authUser } = useAuth();
