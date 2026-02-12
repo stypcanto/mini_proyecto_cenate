@@ -99,36 +99,72 @@ const teleecgService = {
   },
 
   /**
-   * Listar todas las imágenes ECG
-   * Convierte snake_case del API a camelCase para el frontend
-   * ✅ v1.80.4: Soporta búsqueda por numDoc (DNI) en el backend
-   * ✅ v1.85.2: Reducido a 20 para carga más rápida (VPN)
+   * ✅ v1.103.0: Listar imágenes ECG con filtros reactivos
+   * Soporta: DNI, Estado, FechaDesde/Hasta, Paginación
+   * @param {Object} filtros - { numDoc, estado, fechaDesde, fechaHasta, page, size }
    */
-  listarImagenes: async (numDoc = "") => {
+  listarImagenes: async (filtros = {}) => {
     const params = new URLSearchParams();
-    if (numDoc) params.append("numDoc", numDoc);  // ✅ v1.80.4: Pasar numDoc (no numDocPaciente)
-    // ✅ v1.85.2: Reducido a 20 items para carga inicial más rápida
-    params.append("page", "0");
-    params.append("size", "20");  // ⚡ v1.85.2: Reducido de 50 a 20 (más rápido con VPN)
-    // El frontend cargará las páginas siguientes automáticamente
 
-    const response = await apiClient.get(`/teleekgs?${params}`, true);
+    // Paginación
+    params.append("page", filtros.page?.toString() || "0");
+    params.append("size", filtros.size?.toString() || "50");  // ✅ v1.103.0: Aumentado a 50
+
+    // Filtros opcionales - solo enviar si tienen valor
+    if (filtros.numDoc && filtros.numDoc.trim() !== '') {
+      params.append("numDoc", filtros.numDoc);
+    }
+
+    if (filtros.estado && filtros.estado !== 'TODOS') {
+      params.append("estado", filtros.estado);
+    }
+
+    if (filtros.fechaDesde) {
+      params.append("fechaDesde", filtros.fechaDesde);
+    }
+
+    if (filtros.fechaHasta) {
+      params.append("fechaHasta", filtros.fechaHasta);
+    }
+
+    console.log(`📋 [listarImagenes v1.103.0] Parámetros:`, params.toString());
+
+    const response = await apiClient.get(`/teleekgs?${params.toString()}`, true);
     return teleecgService._transformarResponse(response);
   },
 
   /**
-   * ✅ v1.80.4: Listar imágenes ECG de una página específica con soporte de búsqueda
-   * Usado internamente para cargar todas las páginas automáticamente
-   * Soporta búsqueda por DNI (numDoc) para persistir filtro al cargar páginas
-   * ✅ v1.85.2: Reducido a 20 para carga más rápida
+   * ✅ v1.103.0: Listar imágenes ECG de una página específica con soporte de filtros
+   * Usado internamente para cargar más páginas incrementalmente
+   * @param {Object} filtros - { numDoc, estado, fechaDesde, fechaHasta, page, size }
    */
-  listarImagenesPage: async (page = 0, numDoc = "") => {
+  listarImagenesPage: async (filtros = {}) => {
     const params = new URLSearchParams();
-    if (numDoc) params.append("numDoc", numDoc);  // ✅ v1.80.4: Persistir búsqueda al cambiar página
-    params.append("page", page);
-    params.append("size", "20");  // ⚡ v1.85.2: Reducido de 50 a 20 (más rápido con VPN)
 
-    const response = await apiClient.get(`/teleekgs?${params}`, true);
+    // Paginación
+    params.append("page", filtros.page?.toString() || "0");
+    params.append("size", filtros.size?.toString() || "50");
+
+    // Filtros opcionales - solo enviar si tienen valor
+    if (filtros.numDoc && filtros.numDoc.trim() !== '') {
+      params.append("numDoc", filtros.numDoc);
+    }
+
+    if (filtros.estado && filtros.estado !== 'TODOS') {
+      params.append("estado", filtros.estado);
+    }
+
+    if (filtros.fechaDesde) {
+      params.append("fechaDesde", filtros.fechaDesde);
+    }
+
+    if (filtros.fechaHasta) {
+      params.append("fechaHasta", filtros.fechaHasta);
+    }
+
+    console.log(`📄 [listarImagenesPage v1.103.0] Página ${filtros.page}, Parámetros:`, params.toString());
+
+    const response = await apiClient.get(`/teleekgs?${params.toString()}`, true);
     return teleecgService._transformarResponse(response);
   },
 

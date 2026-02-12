@@ -150,14 +150,28 @@ export default function IPRESSWorkspace() {
   // ✅ TODOS LAS IMÁGENES (para poder filtrar cuando clickea el ojo)
   const [todasLasImagenes, setTodasLasImagenes] = useState([]);
 
+  // ✅ v1.103.0: FILTROS REACTIVOS CENTRALIZADOS
+  const [filtros, setFiltros] = useState({
+    dni: '',
+    estado: 'TODOS',
+    fechaDesde: '',
+    fechaHasta: '',
+  });
+
+  // ✅ v1.103.0: PAGINACIÓN INCREMENTAL
+  const [paginaActual, setPaginaActual] = useState(0);  // Página actual del backend
+  const [hayMasPaginas, setHayMasPaginas] = useState(true);
+  const [cargandoMas, setCargandoMas] = useState(false);
+  const [totalElementos, setTotalElementos] = useState(0);  // Total de registros en BD
+
   // ✅ PAGINACIÓN - Usar TODAS las imágenes cargadas (página 1 + páginas en background)
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPagesFromBackend, setTotalPagesFromBackend] = useState(1);  // ✅ v1.71.0: Guardar totalPages del backend
   const [statsGlobales, setStatsGlobales] = useState(null);  // ✅ v1.97.2: Stats GLOBALES de toda la BD
 
-  // ✅ v1.97.8: Cambiar ITEMS_PER_PAGE a 100 para mostrar TODOS los 93 casos sin paginación
-  // Más efectivo: muestra toda la data de una vez
-  const ITEMS_PER_PAGE = 100;
+  // ✅ v1.103.0: ITEMS_PER_PAGE aumentado a 50 (carga 100 iniciales)
+  const ITEMS_PER_PAGE = 50;
+  const MAX_PAGES_INITIAL = 2;  // Cargar 2 páginas iniciales = 100 registros
 
   // ✅ v1.97.8: Calcular páginas REALES basado en items cargados, no en backend
   // Si hay 100 imágenes con ITEMS_PER_PAGE=100, debería ser 1 página real, no 5
@@ -208,7 +222,7 @@ export default function IPRESSWorkspace() {
   // =======================================
   useEffect(() => {
     // Cargar imágenes al montar
-    cargarEKGs();
+    cargarEKGs(filtros, true);
 
     // Detectar cambios de tamaño de pantalla
     const handleResize = () => {
@@ -222,6 +236,12 @@ export default function IPRESSWorkspace() {
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, []);
+
+  // ✅ v1.103.0: Reaccionar a cambios en filtros
+  useEffect(() => {
+    console.log(`🔄 [filtrosEffect] Filtros cambiaron:`, filtros);
+    cargarEKGs(filtros, true);  // true = reset de paginación
+  }, [filtros]);
 
   // ✅ v1.87.8: Auto-refresh cada 5 MINUTOS (en lugar de 30s)
   // Mantiene los stats estables y no fluctúan constantemente
@@ -307,314 +327,166 @@ export default function IPRESSWorkspace() {
   };
 
   /**
-   * Cargar imágenes desde el servidor y enriquecer con datos de pacientes
-   * ✅ v1.71.0: Cargar TODAS las páginas automáticamente
+   * ✅ v1.103.0: Cargar imágenes con FILTROS REACTIVOS y paginación incremental
+   * Soporta: DNI, Estado, Fecha desde/hasta
+   * Carga página inicial + 1 página en background
    */
-  const cargarEKGs = async (numDocBusqueda = "") => {
+  const cargarEKGs = async (filtrosActuales = filtros, reset = true) => {
     try {
       setLoading(true);
 
-      // ✅ v1.82.0: SI hay búsqueda, enviar al backend. SI no, cargar normalmente
-      const tieneBusqueda = numDocBusqueda && numDocBusqueda.trim() !== "";
-      console.log(`🔍 cargarEKGs - Búsqueda: "${numDocBusqueda}" (tiene búsqueda: ${tieneBusqueda})`);
-
-      // ✅ OPCIÓN 1: Con búsqueda → Pasar DNI al backend (RÁPIDO)
-      if (tieneBusqueda) {
-        console.log(`🔎 Buscando en backend por DNI: ${numDocBusqueda}`);
-        const response = await teleecgService.listarImagenes(numDocBusqueda);
-        let imagenes = response?.content || [];
-        console.log(`✅ Backend retornó ${imagenes.length} imágenes para DNI ${numDocBusqueda}`);
-
-        // 🔍 DEBUG: Log primer item para ver estructura real
-        if (imagenes.length > 0) {
-          console.log(`🔍 [SEARCH] Primer item estructura:`, imagenes[0]);
-          console.log(`🔍 [SEARCH] Fields: dni="${imagenes[0].dni}", numDocPaciente="${imagenes[0].numDocPaciente}", idImagen="${imagenes[0].idImagen}"`);
-        }
-
-        // Procesar datos
-        const deduplicados = {};
-        imagenes.forEach((img, idx) => {
-          const dni = img.dni || img.numDocPaciente;
-          if (dni && !deduplicados[dni]) {
-            deduplicados[dni] = img;
-          }
-          if (idx === 0) console.log(`🔍 [SEARCH] Processing img ${idx}: dni="${dni}"`);
-        });
-
-        const ecgsFormateados = Object.values(deduplicados).map((img, idx) => {
-          const dniValue = img.dni || img.numDocPaciente;
-          const formatted = {
-            ...img,
-            // ✅ v1.87.0: EXPLÍCITAMENTE asegurar que dni está set para el filtro en MisECGsRecientes
-            dni: dniValue,
-            nombrePaciente: img.nombreCompleto || img.nombresPaciente || img.nombrePaciente || "Cargando...",
-            genero: img.generoPaciente || img.genero || img.sexo || "-",
-            edad: img.edadPaciente || img.edad || img.ageinyears || "-",
-            telefono: img.telefonoPrincipalPaciente || img.telefono || "-",
-            esUrgente: img.es_urgente === true || img.esUrgente === true,
-            cantidadImagenes: imagenes.filter(i => (i.dni || i.numDocPaciente) === dniValue).length,
-          };
-          if (idx === 0) console.log(`🔍 [SEARCH] Formatted item: dni="${formatted.dni}", nombrePaciente="${formatted.nombrePaciente}", has numDocPaciente="${img.numDocPaciente}"`);
-          return formatted;
-        });
-
-        console.log(`✅ [SEARCH] Total ecgsFormateados: ${ecgsFormateados.length}`);
-
-          // ✅ v1.87.9: NO actualizar stats cuando se busca
-        // Los cards SIEMPRE deben mostrar el TOTAL de la BD, no los resultados filtrados
-        // Solo actualizar la tabla con los resultados de búsqueda
-        console.log(`✅ [SEARCH] Búsqueda completada: ${ecgsFormateados.length} pacientes encontrados`);
-        console.log(`✅ [SEARCH] Stats GLOBALES se mantienen (no se actualizan con búsqueda)`);
-
-        setEcgs(ecgsFormateados);
-        // ⚠️ NO hacer setStats() aquí - mantener los stats globales
-        setTodasLasImagenes(imagenes);  // Para modal de edición
-        setTotalPagesFromBackend(response?.totalPages || 1);
-        setCurrentPage(1);
-        setLoading(false);
-        return;
+      if (reset) {
+        setPaginaActual(0);
+        setTodasLasImagenes([]);
+        setEcgs([]);
       }
 
-      // ✅ v1.97.8: Cargar TODAS las páginas de una vez para mostrar TODOS los 93 registros
-      // Más efectivo que lazy loading - usuario ve todos los datos sin esperar background
-      const response = await teleecgService.listarImagenes("");
+      console.log(`🔍 [cargarEKGs v1.103.0] Filtros:`, {
+        dni: filtrosActuales.dni,
+        estado: filtrosActuales.estado,
+        fechaDesde: filtrosActuales.fechaDesde,
+        fechaHasta: filtrosActuales.fechaHasta,
+      });
+
+      // ✅ Cargar PÁGINA INICIAL (página 0)
+      const response = await teleecgService.listarImagenes({
+        numDoc: filtrosActuales.dni,
+        estado: filtrosActuales.estado !== 'TODOS' ? filtrosActuales.estado : null,
+        fechaDesde: filtrosActuales.fechaDesde || null,
+        fechaHasta: filtrosActuales.fechaHasta || null,
+        page: 0,
+        size: ITEMS_PER_PAGE,
+      });
+
       let imagenes = response?.content || [];
-      // ✅ v1.100.3: Aumentar límite de 5 a 50 páginas para mostrar TODOS los pacientes (99+)
-      // Con 20 items/página: 50 × 20 = 1000 imágenes, suficiente para 99 pacientes con múltiples ECGs
-      const totalPages = Math.min(response?.totalPages || 1, 50);  // MAX 50 páginas disponibles
+      console.log(`✅ Página 0 cargada: ${imagenes.length} registros (totalElements: ${response?.totalElements}, totalPages: ${response?.totalPages})`);
 
-      console.log(`⚡ [v1.97.8] Página 1 cargada: ${imagenes.length} registros (totalPages: ${totalPages})`);
+      setTotalElementos(response?.totalElements || 0);
+      setHayMasPaginas(response?.totalPages > 1);
+      setPaginaActual(0);
 
-      // ✅ v1.97.8: CARGAR TODAS LAS PÁGINAS SINCRONAMENTE ANTES DE MOSTRAR
-      if (totalPages > 1) {
-        console.log(`🚀 [v1.97.8] Cargando páginas 1-${totalPages} ANTES de mostrar...`);
-        for (let page = 1; page < totalPages; page++) {
-          try {
-            const pageResponse = await teleecgService.listarImagenesPage(page, "");
-            const pageContent = pageResponse?.content || [];
-            imagenes = imagenes.concat(pageContent);
-            console.log(`✅ [v1.97.8] Página ${page + 1} cargada: +${pageContent.length} registros (total: ${imagenes.length})`);
-          } catch (err) {
-            console.error(`❌ [v1.97.8] Error cargando página ${page}:`, err);
-          }
-        }
+      // ✅ Cargar PÁGINA 1 en background (sin esperar)
+      if (response?.totalPages > 1) {
+        console.log(`📥 Cargando página 1 en background...`);
+        teleecgService.listarImagenesPage({
+          numDoc: filtrosActuales.dni,
+          estado: filtrosActuales.estado !== 'TODOS' ? filtrosActuales.estado : null,
+          fechaDesde: filtrosActuales.fechaDesde || null,
+          fechaHasta: filtrosActuales.fechaHasta || null,
+          page: 1,
+          size: ITEMS_PER_PAGE,
+        })
+          .then(page1Response => {
+            const page1Content = page1Response?.content || [];
+            imagenes = imagenes.concat(page1Content);
+            setPaginaActual(1);
+            setTodasLasImagenes(imagenes);
+            console.log(`✅ Página 1 cargada en background: +${page1Content.length} (total: ${imagenes.length})`);
+          })
+          .catch(err => console.error('❌ Error cargando página 1:', err));
       }
 
-      console.log(`✅ [v1.97.8] TODAS las páginas cargadas - Total: ${imagenes.length} registros`);
-
-      // ✅ PASO 2: Procesar TODOS los datos
-      // Esto hace que la UI muestre TODOS los 93 casos de una vez
-      const pacientesUnicos = new Set(imagenes.map((img) => img.dni || img.numDocPaciente).filter(Boolean));
-      const porDni = {};
-      const deduplicados = {};
-
-      imagenes.forEach(img => {
-        const dni = img.dni || img.numDocPaciente;
-        if (dni) {
-          if (!porDni[dni]) {
-            porDni[dni] = [];
-          }
-          porDni[dni].push(img);
-          if (!deduplicados[dni]) {
-            deduplicados[dni] = img;
-          }
-        }
-      });
-
-      const ecgsFormateados = Object.entries(deduplicados).map(([dniKey, img]) => {
-        const esUrgente = img.es_urgente === true || img.esUrgente === true;
-        const imagenesDni = porDni[dniKey] || [];
-
-        return {
-          ...img,
-          // ✅ v1.87.0: EXPLÍCITAMENTE asegurar que dni está set para el filtro en MisECGsRecientes
-          dni: dniKey,
-          nombrePaciente: img.nombreCompleto || img.nombresPaciente || img.nombrePaciente || "Cargando...",
-          genero: img.generoPaciente || img.genero || img.sexo || "-",
-          edad: img.edadPaciente || img.edad || img.ageinyears || "-",
-          telefono: img.telefonoPrincipalPaciente || img.telefono || "-",
-          esUrgente: esUrgente,
-          cantidadImagenes: imagenesDni.length || 0,
-        };
-      });
-
-      // ✅ v1.96.0: DEBUG MEJORADO - Ver estructura real con detección de "undefined" string
-      if (imagenes.length > 0) {
-        console.log("📊 [DEBUG v1.96.0] === ANÁLISIS DETALLADO DE PÁGINA 1 ===");
-        console.log(`Total imágenes en página 1: ${imagenes.length}`);
-
-        // Inspeccionar primeras 3 imágenes
-        let undefinedStringCount = 0;
-        for (let i = 0; i < Math.min(3, imagenes.length); i++) {
-          const img = imagenes[i];
-          const st = obtenerEstadoReal(img);
-          const isUndefinedString = img.estado_transformado === "undefined";
-          if (isUndefinedString) undefinedStringCount++;
-          console.log(`  [IMG ${i}] DNI: ${img.dni}, Estado RAW: "${img.estado}", Estado TRANS: ${img.estado_transformado}${isUndefinedString ? ' ⚠️[STRING "undefined"]' : ''}, Estado FINAL: "${st}"`);
-        }
-
-        // Debug: contar imágenes por estado en página 1
-        const conteoEstados = {};
-        imagenes.forEach(img => {
-          const st = obtenerEstadoReal(img);
-          conteoEstados[st] = (conteoEstados[st] || 0) + 1;
-        });
-
-        // Log EXPANDIDO del conteo
-        console.log("🔍 [DEBUG v1.96.0] Conteo de estados en página 1:");
-        Object.entries(conteoEstados).forEach(([estado, count]) => {
-          console.log(`   → ${estado}: ${count} imágenes`);
-        });
-
-        if (undefinedStringCount > 0) {
-          console.warn(`⚠️⚠️ DETECTADO: ${undefinedStringCount} imágenes tienen estado_transformado="undefined" (STRING). Backend necesita fix.`);
-        }
-      }
-
-      // Calcular estadísticas (PÁGINA 1 SOLAMENTE)
-      const imagenesPendientes = imagenes.filter((img) => obtenerEstadoReal(img) === "ENVIADA" || obtenerEstadoReal(img) === "PENDIENTE");
-      const imagenesObservadas = imagenes.filter((img) => obtenerEstadoReal(img) === "OBSERVADA");
-      const imagenesAtendidas = imagenes.filter((img) => obtenerEstadoReal(img) === "ATENDIDA");
-
-      console.log(`📋 [Página 1] Pendientes: ${imagenesPendientes.length}, Observadas: ${imagenesObservadas.length}, Atendidas: ${imagenesAtendidas.length}`);
-
-      // ✅ v1.87.6: Contar PACIENTES ÚNICOS, no imágenes duplicadas
-      const pacientesPendientes = new Set(imagenesPendientes.map(img => img.dni || img.numDocPaciente)).size;
-      const pacientesObservadas = new Set(imagenesObservadas.map(img => img.dni || img.numDocPaciente)).size;
-      const pacientesAtendidas = new Set(imagenesAtendidas.map(img => img.dni || img.numDocPaciente)).size;
-
-      const newStats = {
-        total: imagenes.length,
-        cargadas: pacientesUnicos.size,
-        enEvaluacion: pacientesPendientes,  // Pacientes con imágenes pendientes (no imágenes)
-        observadas: pacientesObservadas,    // Pacientes con imágenes observadas
-        atendidas: pacientesAtendidas,      // Pacientes con imágenes atendidas
-        enviadas: pacientesPendientes,
-      };
-
-      // 🎯 MOSTRAR DATOS INMEDIATAMENTE - UI responde rápido
-      setEcgs(ecgsFormateados);
       setTodasLasImagenes(imagenes);
-      setTotalPagesFromBackend(totalPages);
-      setCurrentPage(1);
-      setLoading(false);  // ✅ v1.97.8: LOADING FALSE - TODAS las páginas ya cargadas
-
-      console.log(`✅ [v1.97.8] UI actualizada con TODAS las páginas (${imagenes.length} registros)`);
-
-      // ✅ v1.97.8: Ya tenemos TODOS los datos, actualizar stats inmediatamente
-      // NO necesitamos background loading
-      // (Código anterior removido - ahora todo se carga sincronamente)
-      if (false) {
-        // Código legacy removido - placeholder para mantener estructura
-        setTimeout(async () => {
-          console.log(`📥 [BACKGROUND] Cargando páginas 2-${totalPages} en background...`);
-
-          const pagePromises = [];
-          for (let page = 1; page < totalPages; page++) {
-            pagePromises.push(
-              teleecgService.listarImagenesPage(page, "")
-                .then(pageResponse => ({
-                  success: true,
-                  pageNum: page + 1,
-                  content: pageResponse?.content || []
-                }))
-                .catch(err => ({
-                  success: false,
-                  pageNum: page + 1,
-                  content: [],
-                  error: err
-                }))
-            );
-          }
-
-          try {
-            const pageResults = await Promise.all(pagePromises);
-            let imagenesAcumuladas = imagenes;
-            pageResults.forEach(result => {
-              if (result.success) {
-                imagenesAcumuladas = imagenesAcumuladas.concat(result.content);
-              }
-            });
-
-            console.log(`✅ [BACKGROUND] Total acumulado: ${imagenesAcumuladas.length} registros`);
-            setTodasLasImagenes(imagenesAcumuladas);
-
-            // ✅ v1.96.4: Deduplicar por PACIENTE (DNI), no mostrar una fila por imagen
-            // El usuario debe ver UNA FILA POR PACIENTE, no múltiples filas del mismo paciente
-            const deduplicados = {};
-            imagenesAcumuladas.forEach(img => {
-              const dni = img.dni || img.numDocPaciente;
-              if (dni && !deduplicados[dni]) {
-                deduplicados[dni] = img;
-              }
-            });
-            const ecgsDeduplicados = Object.values(deduplicados);
-            console.log(`✅ [BACKGROUND] Después de deduplicar por paciente: ${ecgsDeduplicados.length} pacientes únicos`);
-            setEcgs(ecgsDeduplicados);
-
-            // ✅ v1.87.7: Recalcular STATS GLOBALES con TODOS los datos (no solo página 1)
-            // Esto hace que el card negro muestre el TOTAL real de pacientes pendientes en toda la BD
-            // ✅ v1.94.0: Usar helper obtenerEstadoReal para robustez
-            const imagenesGlobalPendientes = imagenesAcumuladas.filter((img) =>
-              obtenerEstadoReal(img) === "ENVIADA" || obtenerEstadoReal(img) === "PENDIENTE"
-            );
-            const imagenesGlobalObservadas = imagenesAcumuladas.filter((img) => obtenerEstadoReal(img) === "OBSERVADA");
-            const imagenesGlobalAtendidas = imagenesAcumuladas.filter((img) => obtenerEstadoReal(img) === "ATENDIDA");
-
-            const pacientesGlobalPendientes = new Set(imagenesGlobalPendientes.map(img => img.dni || img.numDocPaciente)).size;
-            const pacientesGlobalObservadas = new Set(imagenesGlobalObservadas.map(img => img.dni || img.numDocPaciente)).size;
-            const pacientesGlobalAtendidas = new Set(imagenesGlobalAtendidas.map(img => img.dni || img.numDocPaciente)).size;
-            const pacientesGlobalUnicos = new Set(imagenesAcumuladas.map(img => img.dni || img.numDocPaciente)).size;
-
-            const globalStats = {
-              total: imagenesAcumuladas.length,
-              cargadas: pacientesGlobalUnicos,  // Total de pacientes en toda la BD
-              enEvaluacion: pacientesGlobalPendientes,  // Total de pacientes con imágenes pendientes
-              observadas: pacientesGlobalObservadas,
-              atendidas: pacientesGlobalAtendidas,
-              enviadas: pacientesGlobalPendientes,
-            };
-
-            // ✅ v1.95.0: Debug logging detallado CON VALORES EXPANDIDOS
-            console.log(`✅ [BACKGROUND] === CONTEO FINAL GLOBAL ===`);
-            console.log(`   Total Imágenes: ${imagenesAcumuladas.length}`);
-            console.log(`   Imágenes Pendientes (ENVIADA/PENDIENTE): ${imagenesGlobalPendientes.length}`);
-            console.log(`   Imágenes Observadas: ${imagenesGlobalObservadas.length}`);
-            console.log(`   Imágenes Atendidas: ${imagenesGlobalAtendidas.length}`);
-            console.log(`   Pacientes Total: ${pacientesGlobalUnicos}`);
-            console.log(`   Pacientes Pendientes: ${pacientesGlobalPendientes}`);
-            console.log(`   Pacientes Observadas: ${pacientesGlobalObservadas}`);
-            console.log(`   Pacientes Atendidas: ${pacientesGlobalAtendidas}`);
-            console.log(`✅ [BACKGROUND] Stats finales:`, {
-              total: globalStats.total,
-              cargadas: globalStats.cargadas,
-              enEvaluacion: globalStats.enEvaluacion,
-              observadas: globalStats.observadas,
-              atendidas: globalStats.atendidas,
-            });
-            setStats(globalStats);  // ✅ Actualizar cards con totales reales
-          } catch (err) {
-            console.error("❌ Error cargando páginas en background:", err);
-          }
-        }, 0);  // Ejecutar después del render actual
-      }
+      procesarYMostrarDatos(imagenes);
+      setLoading(false);
 
     } catch (error) {
-      console.error("❌ Error al cargar EKGs:", error);
+      console.error("❌ Error cargando EKGs:", error);
       toast.error("Error al cargar las imágenes");
       setLoading(false);
     }
   };
 
   /**
-   * Callback cuando upload es exitoso
+   * ✅ v1.103.0: Cargar más páginas incrementalmente
+   * Llamada cuando el usuario hace clic en "Cargar más"
+   */
+  const cargarMasPaginas = async () => {
+    if (cargandoMas || !hayMasPaginas) return;
+
+    try {
+      setCargandoMas(true);
+      const siguientePagina = paginaActual + 1;
+
+      console.log(`📄 [cargarMasPaginas] Cargando página ${siguientePagina}...`);
+
+      const response = await teleecgService.listarImagenesPage({
+        numDoc: filtros.dni,
+        estado: filtros.estado !== 'TODOS' ? filtros.estado : null,
+        fechaDesde: filtros.fechaDesde || null,
+        fechaHasta: filtros.fechaHasta || null,
+        page: siguientePagina,
+        size: ITEMS_PER_PAGE,
+      });
+
+      const nuevasImagenes = response?.content || [];
+      const imagenesActualizadas = [...todasLasImagenes, ...nuevasImagenes];
+
+      setTodasLasImagenes(imagenesActualizadas);
+      procesarYMostrarDatos(imagenesActualizadas);
+      setPaginaActual(siguientePagina);
+      setHayMasPaginas(siguientePagina < response?.totalPages - 1);
+
+      console.log(`✅ Página ${siguientePagina} cargada: +${nuevasImagenes.length} (total: ${imagenesActualizadas.length})`);
+
+      setCargandoMas(false);
+    } catch (error) {
+      console.error("❌ Error cargando más:", error);
+      toast.error("Error al cargar más imágenes");
+      setCargandoMas(false);
+    }
+  };
+
+  /**
+   * ✅ v1.103.0: Procesar y mostrar datos en tabla
+   * Deduplicar por paciente y formatear
+   */
+  const procesarYMostrarDatos = (imagenesData) => {
+    const porDni = {};
+    const deduplicados = {};
+
+    imagenesData.forEach(img => {
+      const dni = img.numDocPaciente || img.dni;
+      if (dni) {
+        if (!porDni[dni]) {
+          porDni[dni] = [];
+        }
+        porDni[dni].push(img);
+        if (!deduplicados[dni]) {
+          deduplicados[dni] = img;
+        }
+      }
+    });
+
+    const ecgsFormateados = Object.entries(deduplicados).map(([dniKey, img]) => {
+      const imagenesDni = porDni[dniKey] || [];
+      const esUrgente = img.es_urgente === true || img.esUrgente === true;
+
+      return {
+        ...img,
+        dni: dniKey,
+        nombrePaciente: img.nombreCompleto || img.nombresPaciente || img.nombrePaciente || "Cargando...",
+        genero: img.generoPaciente || img.genero || img.sexo || "-",
+        edad: img.edadPaciente || img.edad || img.ageinyears || "-",
+        telefono: img.telefonoPrincipalPaciente || img.telefono || "-",
+        esUrgente: esUrgente,
+        cantidadImagenes: imagenesDni.length || 0,
+      };
+    });
+
+    console.log(`✅ [procesarYMostrarDatos] ${ecgsFormateados.length} pacientes únicos`);
+    setEcgs(ecgsFormateados);
+  };
+
+  /**
+   * ✅ v1.103.0: Callback cuando upload es exitoso
    * - Agrega nuevas imágenes a la tabla
    * - Muestra toast de éxito
    * - Auto-switch a "Mis EKGs" en mobile
    */
   const handleUploadSuccess = (nuevasImagenes) => {
     // Recargar lista completa para asegurar sincronización
-    cargarEKGs();
+    cargarEKGs(filtros, true);
 
     // En mobile, cambiar automáticamente a la pestaña de listado
     if (deviceSize === "mobile") {
@@ -628,10 +500,11 @@ export default function IPRESSWorkspace() {
   };
 
   /**
-   * Callback para refrescar tabla manualmente
+   * ✅ v1.103.0: Callback para refrescar tabla manualmente
+   * Mantiene los filtros actuales
    */
   const handleRefresh = async () => {
-    await cargarEKGs();
+    await cargarEKGs(filtros, true);
     toast.success("✅ Datos actualizados");
   };
 
@@ -802,6 +675,15 @@ export default function IPRESSWorkspace() {
               onRefrescar={handleRefresh}
               onVerImagen={handleVerImagen}
               onBuscarPorDNI={(dni) => cargarEKGs(dni)}  // ✅ v1.80.4: Buscar en backend
+              // ✅ v1.103.0: NUEVOS PROPS PARA FILTROS REACTIVOS
+              filtrosActuales={filtros}
+              onFiltrosChange={(nuevosFiltros) => setFiltros(nuevosFiltros)}
+              onLimpiarFiltros={() => setFiltros({ dni: '', estado: 'TODOS', fechaDesde: '', fechaHasta: '' })}
+              // ✅ v1.103.0: NUEVOS PROPS PARA PAGINACIÓN INCREMENTAL
+              totalElementos={totalElementos}
+              hayMasPaginas={hayMasPaginas}
+              cargandoMas={cargandoMas}
+              onCargarMas={cargarMasPaginas}
               loading={loading}
               imagenesPorDni={(() => {
                 // ✅ Agrupar TODAS las imágenes (no deduplicadas) por DNI para el modal de edición
