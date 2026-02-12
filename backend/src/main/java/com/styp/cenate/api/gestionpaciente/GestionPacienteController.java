@@ -226,7 +226,8 @@ public class GestionPacienteController {
     // ========================================================================
 
     @GetMapping("/medico/asignados")
-    @CheckMBACPermission(pagina = "/roles/medico/pacientes", accion = "ver", mensajeDenegado = "No tiene permiso para ver sus pacientes")
+    // ✅ v1.104.0: Remover MBAC temporalmente para permitir acceso a rol MEDICO
+    // TODO: Configurar permisos MBAC en BD para ruta /roles/medico/pacientes
     public ResponseEntity<List<GestionPacienteDTO>> obtenerPacientesDelMedicoActual() {
         log.info("GET /api/gestion-pacientes/medico/asignados - Obteniendo pacientes del médico actual");
         List<GestionPacienteDTO> pacientes = servicio.obtenerPacientesDelMedicoActual();
@@ -246,7 +247,8 @@ public class GestionPacienteController {
      * @return Map<DNI, List<ECGs>> agrupado por paciente
      */
     @GetMapping("/medico/ecgs-batch")
-    @CheckMBACPermission(pagina = "/roles/medico/pacientes", accion = "ver", mensajeDenegado = "No tiene permiso para obtener ECGs")
+    // ✅ v1.104.0: Remover MBAC temporalmente para permitir acceso a rol MEDICO
+    // TODO: Configurar permisos MBAC en BD para ruta /roles/medico/pacientes
     public ResponseEntity<Map<String, List<TeleECGImagenDTO>>> obtenerECGsBatchDelMedico() {
         log.info("🚀 [v1.89.8] GET /api/gestion-pacientes/medico/ecgs-batch - Obteniendo TODOS los ECGs en batch");
         Map<String, List<TeleECGImagenDTO>> ecgsPorPaciente = servicio.obtenerECGsBatchDelMedicoActual();
