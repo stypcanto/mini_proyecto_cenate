@@ -558,8 +558,8 @@ export default function MisECGsRecientes({
         {/* Botón Limpiar + Indicador de registros */}
         <div className="mt-4 flex items-center justify-between gap-4">
           <p className="text-sm text-blue-800 font-semibold">
-            📊 Mostrando <span className="font-bold text-blue-900">{ultimas3.length}</span> de{' '}
-            <span className="font-bold text-blue-900">{totalElementos}</span> pacientes
+            📊 Mostrando <span className="font-bold text-blue-900">{ultimas3.length}</span> pacientes de{' '}
+            <span className="font-bold text-blue-900">{totalElementos}</span> imágenes ECG
           </p>
           <button
             onClick={() => {
