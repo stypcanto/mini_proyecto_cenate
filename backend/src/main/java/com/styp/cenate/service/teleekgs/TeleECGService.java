@@ -251,8 +251,12 @@ public class TeleECGService {
         LocalDateTime desde = fechaDesde != null ? fechaDesde : LocalDateTime.of(1900, 1, 1, 0, 0);
         LocalDateTime hasta = fechaHasta != null ? fechaHasta : LocalDateTime.of(2999, 12, 31, 23, 59);
 
+        // ✅ v1.100.3: Convertir idIpress (Long) a codigoIpress (String) si es necesario
+        String codigoIpress = null;
+        // TODO: Si idIpress viene como parámetro, convertir a codigo_ipress
+
         Page<TeleECGImagen> pagina = teleECGImagenRepository.buscarFlexible(
-            numDoc, estado, idIpress, desde, hasta, pageable
+            numDoc, estado, codigoIpress, desde, hasta, pageable
         );
 
         return pagina.map(this::convertirADTO);
@@ -467,20 +471,19 @@ public class TeleECGService {
      * Esto es lo que debe mostrarse en los cards del frontend
      */
     public Map<String, Object> obtenerEstadisticasGlobalesPorPaciente() {
-        log.info("📊 [v1.97.2] Generando estadísticas GLOBALES de pacientes");
+        log.info("📊 [v1.97.8] Generando estadísticas GLOBALES de pacientes - SIN filtro de estado");
 
         try {
-            // Obtener TODAS las imágenes activas (sin límite de página)
+            // ✅ v1.97.8: Obtener TODAS las imágenes (sin filtro de estado para coincidir con tabla)
             List<TeleECGImagen> todasLasImagenes = teleECGImagenRepository.findAll();
 
-            log.info("📋 [v1.97.2] Total de imágenes en BD: {}", todasLasImagenes.size());
+            log.info("📋 [v1.97.8] Total de imágenes en BD: {}", todasLasImagenes.size());
 
-            // Filtrar por estado = 'A' (activas)
-            List<TeleECGImagen> imagenesActivas = todasLasImagenes.stream()
-                .filter(img -> "A".equals(img.getStatImagen()))
-                .collect(Collectors.toList());
+            // ✅ v1.97.8: NO filtrar por estado - contar TODAS las imágenes
+            // Esto hace que las estadísticas coincidan con lo que muestra la tabla
+            List<TeleECGImagen> imagenesActivas = todasLasImagenes;
 
-            log.info("📋 [v1.97.2] Imágenes activas: {}", imagenesActivas.size());
+            log.info("📋 [v1.97.8] Imágenes a procesar: {} (SIN filtro de estado)", imagenesActivas.size());
 
             // Contar PACIENTES únicos por estado
             Set<String> pacientesUnicos = new HashSet<>();
@@ -919,8 +922,12 @@ public class TeleECGService {
         String numDocSinCeros = numDoc != null ? numDoc.replaceAll("^0+", "") : null;
 
         // ✅ v1.70.0: Obtener imágenes con paginación (máx pageSize registros)
+        // ✅ v1.100.3: Convertir idIpress a codigoIpress
+        String codigoIpress = null;
+        // TODO: Si idIpress viene como parámetro, convertir a codigo_ipress
+
         Page<TeleECGImagen> imagenesPaginadas = teleECGImagenRepository.buscarFlexibleSinPaginacion(
-            numDoc, numDocSinCeros, estado, idIpress, desde, hasta, pageable
+            numDoc, numDocSinCeros, estado, codigoIpress, desde, hasta, pageable
         );
 
         // Agrupar por DNI del paciente (solo contenido de la página actual)
@@ -1049,8 +1056,12 @@ public class TeleECGService {
         LocalDateTime hasta = fechaHasta != null ? fechaHasta : LocalDateTime.of(2999, 12, 31, 23, 59);
 
         // ✅ v1.70.0: Obtener imágenes con LIMIT 1000 para evitar sobrecargar memoria
+        // ✅ v1.100.3: Convertir idIpress a codigoIpress
+        String codigoIpress = null;
+        // TODO: Si idIpress viene como parámetro, convertir a codigo_ipress
+
         List<TeleECGImagen> imagenes = teleECGImagenRepository.buscarFlexibleSinPaginacionLimitado(
-            numDoc, estado, idIpress, desde, hasta
+            numDoc, estado, codigoIpress, desde, hasta
         );
 
         // Agrupar por DNI del paciente

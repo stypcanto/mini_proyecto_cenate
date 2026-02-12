@@ -78,10 +78,14 @@ public class TeleECGAnalyticsService {
         long inicioCálculo = System.currentTimeMillis();
 
         // 1. Obtener datos filtrados
+        // ✅ v1.100.3: Convertir idIpress a codigoIpress si es necesario
+        String codigoIpress = null;
+        // TODO: Si idIpress viene como parámetro, convertir a codigo_ipress
+
         List<TeleECGImagen> imagenes = repository.buscarParaAnalytics(
                 fechaDesde.atStartOfDay(),
                 fechaHasta.atTime(23, 59, 59),
-                idIpress,
+                codigoIpress,
                 evaluacion,
                 esUrgente
         );
@@ -343,11 +347,15 @@ public class TeleECGAnalyticsService {
         LocalDate inicioPeriodoAnterior = fechaDesde.minusDays(diasEnPeriodo + 1);
         LocalDate finPeriodoAnterior = fechaDesde.minusDays(1);
 
+        // ✅ v1.100.3: Convertir idIpress a codigoIpress
+        String codigoIpress = null;
+        // TODO: Si idIpress viene como parámetro, convertir a codigo_ipress
+
         // Obtener datos período anterior
         List<TeleECGImagen> imagenesAnteriores = repository.buscarParaAnalytics(
                 inicioPeriodoAnterior.atStartOfDay(),
                 finPeriodoAnterior.atTime(23, 59, 59),
-                idIpress,
+                codigoIpress,
                 evaluacion,
                 esUrgente
         );
@@ -356,7 +364,7 @@ public class TeleECGAnalyticsService {
         List<TeleECGImagen> imageneActuales = repository.buscarParaAnalytics(
                 fechaDesde.atStartOfDay(),
                 fechaHasta.atTime(23, 59, 59),
-                idIpress,
+                codigoIpress,
                 evaluacion,
                 esUrgente
         );

@@ -740,6 +740,7 @@ public class TeleECGController {
      * ✅ v1.97.2: Obtener estadísticas GLOBALES por PACIENTES (no imágenes)
      * Cuenta pacientes únicos en TODA la BD, sin límite de página
      * Este es el endpoint que debe usarse en el frontend para los cards
+     * ✅ v1.52.4: Removido @CheckMBACPermission - lectura permitida para usuarios autenticados
      */
     @GetMapping("/estadisticas-globales")
     @Operation(summary = "Obtener estadísticas globales por pacientes")

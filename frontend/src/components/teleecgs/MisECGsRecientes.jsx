@@ -558,7 +558,7 @@ export default function MisECGsRecientes({
               </div>
             </div>
           ) : datosFiltrados.length > 0 ? (
-            <div className="overflow-x-auto rounded-lg border border-gray-200 shadow-sm">
+            <div className="overflow-x-auto overflow-y-auto max-h-[800px] rounded-lg border border-gray-200 shadow-sm">
               <table className="w-full text-sm md:text-base">
                 {/* Header */}
                 <thead className="bg-gradient-to-r from-slate-700 to-slate-800 text-white">

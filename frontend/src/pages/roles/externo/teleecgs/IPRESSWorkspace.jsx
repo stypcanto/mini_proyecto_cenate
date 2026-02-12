@@ -155,12 +155,13 @@ export default function IPRESSWorkspace() {
   const [totalPagesFromBackend, setTotalPagesFromBackend] = useState(1);  // ✅ v1.71.0: Guardar totalPages del backend
   const [statsGlobales, setStatsGlobales] = useState(null);  // ✅ v1.97.2: Stats GLOBALES de toda la BD
 
-  // ✅ v1.96.2: Cambiar ITEMS_PER_PAGE a 20 para coincidir con backend
-  // Backend retorna 20 items/página, frontend debe coincidir
-  const ITEMS_PER_PAGE = 20;
+  // ✅ v1.97.8: Cambiar ITEMS_PER_PAGE a 100 para mostrar TODOS los 93 casos sin paginación
+  // Más efectivo: muestra toda la data de una vez
+  const ITEMS_PER_PAGE = 100;
 
-  // ✅ v1.71.0: Usar totalPages del backend, no calcularlo localmente
-  const totalPages = totalPagesFromBackend;
+  // ✅ v1.97.8: Calcular páginas REALES basado en items cargados, no en backend
+  // Si hay 100 imágenes con ITEMS_PER_PAGE=100, debería ser 1 página real, no 5
+  const totalPages = Math.ceil(todasLasImagenes.length / ITEMS_PER_PAGE) || 1;
   const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
   const endIndex = startIndex + ITEMS_PER_PAGE;
 
@@ -245,8 +246,9 @@ export default function IPRESSWorkspace() {
         console.log("📡 [v1.97.6] Response status: 200 (apiClient maneja errores)");
 
         // Validar que la respuesta tiene la estructura correcta
-        if (response?.data && typeof response.data === 'object') {
-          console.log("✅ [v1.97.6] Stats globales cargadas exitosamente:", {
+        // ✅ v1.97.7: FIX - Los datos ya están directamente en response.data (apiClient ya desempacar)
+        if (response?.data && response.data.totalPacientes && typeof response.data === 'object') {
+          console.log("✅ [v1.97.7] Stats globales cargadas exitosamente:", {
             totalPacientes: response.data.totalPacientes,
             pacientesPendientes: response.data.pacientesPendientes,
             pacientesObservados: response.data.pacientesObservados,
@@ -259,7 +261,11 @@ export default function IPRESSWorkspace() {
 
           console.log("💾 [v1.97.6] statsGlobales actualizado en estado - Componente se re-renderizará");
         } else {
-          console.warn("⚠️ [v1.97.6] Response sin estructura esperada:", response);
+          console.warn("⚠️ [v1.97.7] Response sin estructura esperada:");
+          console.warn("   response:", response);
+          console.warn("   response.data:", response?.data);
+          console.warn("   response.data.data:", response?.data?.data);
+          console.warn("   response.data.data tipo:", typeof response?.data?.data);
         }
       } catch (error) {
         console.error("❌ [v1.97.6] Error cargando stats globales:", error.message);
@@ -369,16 +375,33 @@ export default function IPRESSWorkspace() {
         return;
       }
 
-      // ✅ v1.86.0: LAZY LOADING - Primera carga RÁPIDA, páginas adicionales en BACKGROUND
-      // PASO 1: Cargar solo página 1 (20 registros)
+      // ✅ v1.97.8: Cargar TODAS las páginas de una vez para mostrar TODOS los 93 registros
+      // Más efectivo que lazy loading - usuario ve todos los datos sin esperar background
       const response = await teleecgService.listarImagenes("");
       let imagenes = response?.content || [];
       const totalPages = Math.min(response?.totalPages || 1, 5);  // MAX 5 páginas disponibles
 
-      console.log(`⚡ Página 1 cargada: ${imagenes.length} registros (totalPages: ${totalPages})`);
+      console.log(`⚡ [v1.97.8] Página 1 cargada: ${imagenes.length} registros (totalPages: ${totalPages})`);
 
-      // ✅ PASO 2: Mostrar INMEDIATAMENTE con página 1 (NO ESPERAR MÁS)
-      // Esto hace que la UI responda en <1 segundo
+      // ✅ v1.97.8: CARGAR TODAS LAS PÁGINAS SINCRONAMENTE ANTES DE MOSTRAR
+      if (totalPages > 1) {
+        console.log(`🚀 [v1.97.8] Cargando páginas 1-${totalPages} ANTES de mostrar...`);
+        for (let page = 1; page < totalPages; page++) {
+          try {
+            const pageResponse = await teleecgService.listarImagenesPage(page, "");
+            const pageContent = pageResponse?.content || [];
+            imagenes = imagenes.concat(pageContent);
+            console.log(`✅ [v1.97.8] Página ${page + 1} cargada: +${pageContent.length} registros (total: ${imagenes.length})`);
+          } catch (err) {
+            console.error(`❌ [v1.97.8] Error cargando página ${page}:`, err);
+          }
+        }
+      }
+
+      console.log(`✅ [v1.97.8] TODAS las páginas cargadas - Total: ${imagenes.length} registros`);
+
+      // ✅ PASO 2: Procesar TODOS los datos
+      // Esto hace que la UI muestre TODOS los 93 casos de una vez
       const pacientesUnicos = new Set(imagenes.map((img) => img.dni || img.numDocPaciente).filter(Boolean));
       const porDni = {};
       const deduplicados = {};
@@ -472,16 +495,15 @@ export default function IPRESSWorkspace() {
       setTodasLasImagenes(imagenes);
       setTotalPagesFromBackend(totalPages);
       setCurrentPage(1);
-      // ⚠️ v1.87.10: NO hacer setStats() aquí - esperar a que carguen TODAS las páginas
-      // setStats() se ejecutará cuando terminen de cargar páginas 2-5 en background
-      setLoading(false);  // ✅ LOADING FALSE AQUÍ - UI lista después de página 1
+      setLoading(false);  // ✅ v1.97.8: LOADING FALSE - TODAS las páginas ya cargadas
 
-      console.log(`✅ UI actualizada con página 1. Cargando páginas 2-5 en BACKGROUND...`);
+      console.log(`✅ [v1.97.8] UI actualizada con TODAS las páginas (${imagenes.length} registros)`);
 
-      // ✅ PASO 3: Cargar PÁGINAS 2-5 en BACKGROUND (sin bloquear UI)
-      // El usuario YA ve datos, así que no importa si es lento
-      if (totalPages > 1) {
-        // setTimeout para que NO bloquee el render
+      // ✅ v1.97.8: Ya tenemos TODOS los datos, actualizar stats inmediatamente
+      // NO necesitamos background loading
+      // (Código anterior removido - ahora todo se carga sincronamente)
+      if (false) {
+        // Código legacy removido - placeholder para mantener estructura
         setTimeout(async () => {
           console.log(`📥 [BACKGROUND] Cargando páginas 2-${totalPages} en background...`);
 
