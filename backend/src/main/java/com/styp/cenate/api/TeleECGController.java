@@ -424,9 +424,17 @@ public class TeleECGController {
             log.info("✅ Búsqueda completada: {} asegurados encontrados (página {}/{})",
                 resultado.getContent().size(), resultado.getNumber() + 1, resultado.getTotalPages());
 
+            // ✅ v1.96.0: Aplicar transformación de estado a cada imagen anidada
+            Usuario usuarioActual = usuarioRepository.findById(getUsuarioActual())
+                .orElse(new Usuario()); // Fallback si no se encuentra usuario
+
+            List<AseguradoConECGsDTO> aseguradosTransformados = resultado.getContent().stream()
+                .map(asegurado -> aplicarTransformacionAImagenesAnidadas(asegurado, usuarioActual))
+                .collect(Collectors.toList());
+
             // ✅ FIX: Retornar Map envuelto para mejor serialización
             return ResponseEntity.ok(Map.of(
-                "content", resultado.getContent(),
+                "content", aseguradosTransformados,
                 "totalPages", resultado.getTotalPages(),
                 "totalElements", resultado.getTotalElements(),
                 "size", resultado.getSize(),
@@ -1228,6 +1236,20 @@ public class TeleECGController {
             return page.map(dto -> aplicarTransformacionEstado(dto, usuario));
         }
         return page;
+    }
+
+    /**
+     * ✅ v1.96.0: Aplica transformación de estado a las imágenes anidadas dentro de AseguradoConECGsDTO
+     * Transforma el estado de cada imagen individual según el rol del usuario
+     */
+    private AseguradoConECGsDTO aplicarTransformacionAImagenesAnidadas(AseguradoConECGsDTO asegurado, Usuario usuario) {
+        if (asegurado != null && asegurado.getImagenes() != null) {
+            List<TeleECGImagenDTO> imagenesTransformadas = asegurado.getImagenes().stream()
+                .map(imagen -> aplicarTransformacionEstado(imagen, usuario))
+                .collect(Collectors.toList());
+            asegurado.setImagenes(imagenesTransformadas);
+        }
+        return asegurado;
     }
 
     /**
