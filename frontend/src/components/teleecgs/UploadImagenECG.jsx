@@ -457,6 +457,10 @@ export default function UploadImagenEKG({ onSuccess, onUploadSuccess, isWorkspac
       setUploadProgress(100);
       toast.success(`✅ ${archivos.length} EKGs cargados exitosamente`);
 
+      // ✅ v1.104.0: Limpiar localStorage INMEDIATAMENTE después del envío exitoso
+      // para evitar que datos viejos persistan cuando el usuario abre el modal nuevamente
+      localStorage.removeItem(STORAGE_KEY);
+
       setTimeout(() => {
         resetFormulario();
         setUploadingFiles(false);

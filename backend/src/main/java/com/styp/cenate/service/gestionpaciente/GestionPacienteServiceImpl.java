@@ -336,10 +336,35 @@ public class GestionPacienteServiceImpl implements IGestionPacienteService {
     @Override
     @Transactional(readOnly = true)
     public Optional<GestionPacienteDTO> buscarAseguradoPorDni(String dni) {
-        log.info("Buscando asegurado por DNI: {}", dni);
+        log.info("🔍 [v1.103.1] Buscando asegurado por DNI: '{}' (length: {})", dni, dni != null ? dni.length() : 0);
 
-        return aseguradoRepository.findByDocPaciente(dni)
-            .map(this::aseguradoToDto);
+        // ✅ v1.103.1: Trim y normalizar DNI
+        String dniNormalizado = dni != null ? dni.trim() : null;
+        log.info("🔍 DNI normalizado: '{}' (length: {})", dniNormalizado, dniNormalizado != null ? dniNormalizado.length() : 0);
+
+        // Intento 1: Buscar en tabla asegurados por doc_paciente
+        Optional<Asegurado> resultado = aseguradoRepository.findByDocPaciente(dniNormalizado);
+
+        if (resultado.isPresent()) {
+            Asegurado asegurado = resultado.get();
+            log.info("✅ Asegurado encontrado en tabla asegurados - PK: {}, Nombre: {}, DNI: {}",
+                asegurado.getPkAsegurado(), asegurado.getPaciente(), asegurado.getDocPaciente());
+            return resultado.map(this::aseguradoToDto);
+        }
+
+        // Intento 2: Si no está en asegurados, intentar buscar por pk_asegurado (en caso de que el DNI sea la PK)
+        log.warn("⚠️ DNI no encontrado en tabla asegurados con búsqueda por doc_paciente. Intentando como pk_asegurado...");
+        Optional<Asegurado> resultadoPK = aseguradoRepository.findById(dniNormalizado);
+
+        if (resultadoPK.isPresent()) {
+            Asegurado asegurado = resultadoPK.get();
+            log.info("✅ Asegurado encontrado usando pk_asegurado - PK: {}, Nombre: {}",
+                asegurado.getPkAsegurado(), asegurado.getPaciente());
+            return resultadoPK.map(this::aseguradoToDto);
+        }
+
+        log.warn("❌ Asegurado NO encontrado con DNI: '{}' en tabla asegurados. Verificar si existe en base de datos.", dniNormalizado);
+        return Optional.empty();
     }
 
     @Override

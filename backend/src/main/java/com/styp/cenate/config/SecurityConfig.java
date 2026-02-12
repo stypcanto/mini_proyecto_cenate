@@ -95,7 +95,8 @@ public class SecurityConfig {
                                                                 "/api/bolsas/solicitudes/**", // Importación y gestión de solicitudes de bolsa
                                                                 "/api/bolsas/estadisticas/**", // Estadísticas y dashboards del módulo Bolsas
                                                                 "/api/bolsas/errores-importacion/**", // Auditoría de errores de importación
-                                                                "/api/menu-usuario/**") // Menú de usuario con permisos (necesario para sidebar)
+                                                                "/api/menu-usuario/**", // Menú de usuario con permisos (necesario para sidebar)
+                                                                "/api/gestion-pacientes/asegurado/**") // ✅ v1.103.1: Búsqueda de asegurados para modal ECG
                                                 .permitAll()
 
                                                 // SEC-006: Otros endpoints de actuator requieren SUPERADMIN
