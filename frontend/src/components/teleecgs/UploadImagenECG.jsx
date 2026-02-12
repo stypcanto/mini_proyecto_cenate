@@ -147,28 +147,21 @@ export default function UploadImagenEKG({ onSuccess, onUploadSuccess, isWorkspac
     };
   }, []);
 
-  // Cargar datos guardados del localStorage al montar
+  // ✅ v1.104.0: INICIAR SIEMPRE CON FORMULARIO LIMPIO
+  // NO cargar del localStorage para garantizar campos vacíos cada vez que se abre el modal
   useEffect(() => {
-    const cargarDraft = () => {
-      try {
-        const saved = localStorage.getItem(STORAGE_KEY);
-        if (saved) {
-          const draft = JSON.parse(saved);
-          if (draft.previews && draft.previews.length > 0) {
-            setPreviews(draft.previews);
-            // Nota: Los archivos no se pueden recuperar del localStorage
-            // pero las previews pueden usarse para mostrar qué se capturó
-            setArchivos(new Array(draft.previews.length).fill(null).map(() => ({ name: "compressed" })));
-            setNumDocPaciente(draft.numDocPaciente || "");
-            setDatosCompletos(draft.datosCompletos || { apellidos: "", nombres: "", sexo: "", codigo: "", telefono: "", ipress: "", edad: "" });
-            setFechaToma(draft.fechaToma || "");
-          }
-        }
-      } catch (error) {
-        console.error("Error cargando draft del localStorage:", error);
-      }
-    };
-    cargarDraft();
+    // Limpiar localStorage y estado al montar el componente
+    localStorage.removeItem(STORAGE_KEY);
+    setNumDocPaciente("");
+    setDatosCompletos({ apellidos: "", nombres: "", sexo: "", codigo: "", telefono: "", ipress: "", edad: "" });
+    setArchivos([]);
+    setPreviews([]);
+    setFechaToma("");
+    setEsUrgente(false);
+    setEnviado(false);
+    setRespuestaServidor(null);
+    setPacienteEncontrado(false);
+    console.log("✅ [UploadImagenECG v1.104.0] Componente montado - Formulario limpio, listo para nuevo paciente");
   }, []);
 
   // Guardar en localStorage cada vez que cambian archivos o paciente
