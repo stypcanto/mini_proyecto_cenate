@@ -132,7 +132,7 @@ export const obtenerHistorialImportaciones = async () => {
  */
 export const importarSolicitudesDesdeExcel = async (formData) => {
   try {
-    const response = await apiClient.uploadFile(`${API_BASE_URL}/solicitudes/importar`, formData);
+    const response = await apiClient.post(`${API_BASE_URL}/solicitudes/importar`, formData, true);
     return response;
   } catch (error) {
     console.error('Error al importar solicitudes desde Excel:', error);
