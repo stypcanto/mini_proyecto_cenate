@@ -2,6 +2,7 @@ package com.styp.cenate.api.mbac;
 
 import java.util.List;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -40,7 +41,8 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class ModuloSistemaController {
 
-	private final ModuloSistemaService mbacService;
+	@Autowired
+	private ModuloSistemaService mbacService;
 
 //	// 🔹 DTO simple para respuestas de error
 //	record ErrorResponse(String message) {

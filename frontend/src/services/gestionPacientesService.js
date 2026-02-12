@@ -164,7 +164,7 @@ const gestionPacientesService = {
      * Actualizar condición de un paciente
      */
     actualizarCondicion: async (id, condicion, observaciones = null) => {
-        return await apiClient.put(`${BASE_ENDPOINT}/${id}/condicion`, { condicion, observaciones });
+        return await apiClient.put(`${BASE_ENDPOINT}/${id}/condicion`, { condicion, observaciones }, true);
     },
 
     // ========================================================================

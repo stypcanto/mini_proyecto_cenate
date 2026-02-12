@@ -516,22 +516,19 @@ public class GestionPacienteServiceImpl implements IGestionPacienteService {
                 );
             }
 
-            // Obtener especialidad del PersonalCnt
-            // ⭐ NOTA v1.78.0: Temporalmente retornando "Cardiología" para pruebas de featured EKG column
-            // En producción, esto debe obtenerse de la BD correctamente
-            String especialidad = "Cardiología";  // TEST: para verificar que la columna de EKG aparece
+            // Obtener especialidad del PersonalCnt desde servicioEssi
+            String especialidad = "Sin especialidad";
 
             try {
-                if (personalCnt != null && personalCnt.getIdPers() != null) {
-                    // TODO: Implementar query correcta para obtener especialidad desde BD
-                    // String sqlEspecialidad = "SELECT COALESCE(desc_especialidad, 'Sin especialidad') FROM dim_especialidad WHERE id_especialidad = ?";
-                    // especialidad = jdbcTemplate.queryForObject(sqlEspecialidad, String.class, personalCnt.getIdEspecialidad());
-
-                    log.debug("✅ v1.78.0: Especalidad del doctor retornada (TEST): {}", especialidad);
+                if (personalCnt.getServicioEssi() != null && personalCnt.getServicioEssi().getDescServicio() != null) {
+                    especialidad = personalCnt.getServicioEssi().getDescServicio();
+                    log.debug("✅ Especialidad obtenida desde BD: {}", especialidad);
+                } else {
+                    log.warn("PersonalCnt {} no tiene servicioEssi asignado", personalCnt.getIdPers());
                 }
             } catch (Exception e) {
                 log.warn("Error obteniendo especialidad para médico {}: {}", usuario.getIdUser(), e.getMessage());
-                especialidad = "Cardiología";  // TEST value
+                especialidad = "Sin especialidad";
             }
 
             // Construir nombre completo
