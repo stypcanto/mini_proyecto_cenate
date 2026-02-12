@@ -182,11 +182,12 @@ export default function IPRESSWorkspace() {
   // ✅ v1.96.2: Usar todasLasImagenes (se actualiza cuando cargan páginas en background)
   const ecgsPaginados = todasLasImagenes.slice(startIndex, endIndex);
 
-  // ✅ v1.97.0: DEDUPLICAR POR PACIENTE para mostrar 1 fila por paciente
+  // ✅ v1.103.1: DEDUPLICAR POR PACIENTE para mostrar 1 fila por paciente
   // Agrupar imágenes por DNI y contar cantidad
   const ecgsPaginadosDeduplicados = (() => {
     const porDni = {};
     const deduplicados = {};
+    const dnisVistos = new Set(); // ✅ v1.103.1: Set para garantizar no hay duplicados
 
     ecgsPaginados.forEach(img => {
       const dni = img.numDocPaciente || img.dni;
@@ -200,12 +201,13 @@ export default function IPRESSWorkspace() {
         // Guardar una sola instancia por DNI (la primera)
         if (!deduplicados[dni]) {
           deduplicados[dni] = img;
+          dnisVistos.add(dni); // ✅ Registrar en Set
         }
       }
     });
 
     // Mapear para asegurar que cantidadImagenes esté correcto
-    return Object.entries(deduplicados).map(([dni, img]) => ({
+    const resultado = Object.entries(deduplicados).map(([dni, img]) => ({
       ...img,
       dni: dni,
       cantidadImagenes: porDni[dni].length || 0,
@@ -215,6 +217,13 @@ export default function IPRESSWorkspace() {
       telefono: img.telefonoPrincipalPaciente || img.telefono || "-",
       esUrgente: img.es_urgente === true || img.esUrgente === true,
     }));
+
+    // ✅ v1.103.1: Validar deduplicación
+    if (resultado.length !== dnisVistos.size) {
+      console.warn(`⚠️ [ecgsPaginados] ${resultado.length} filas vs ${dnisVistos.size} DNIs únicos`);
+    }
+
+    return resultado;
   })();
 
   // =======================================
@@ -378,10 +387,12 @@ export default function IPRESSWorkspace() {
         })
           .then(page1Response => {
             const page1Content = page1Response?.content || [];
-            imagenes = imagenes.concat(page1Content);
+            const imagenesConPage1 = imagenes.concat(page1Content);
             setPaginaActual(1);
-            setTodasLasImagenes(imagenes);
-            console.log(`✅ Página 1 cargada en background: +${page1Content.length} (total: ${imagenes.length})`);
+            setTodasLasImagenes(imagenesConPage1);
+            // ✅ v1.103.1: Reprocess cuando page 1 está lista para mantener deduplicación consistente
+            procesarYMostrarDatos(imagenesConPage1);
+            console.log(`✅ Página 1 cargada en background: +${page1Content.length} (total: ${imagenesConPage1.length})`);
           })
           .catch(err => console.error('❌ Error cargando página 1:', err));
       }
@@ -438,12 +449,13 @@ export default function IPRESSWorkspace() {
   };
 
   /**
-   * ✅ v1.103.0: Procesar y mostrar datos en tabla
-   * Deduplicar por paciente y formatear
+   * ✅ v1.103.1: Procesar y mostrar datos en tabla
+   * Deduplicar por paciente con Set-based validation para garantizar 0 duplicados
    */
   const procesarYMostrarDatos = (imagenesData) => {
     const porDni = {};
     const deduplicados = {};
+    const dnisVistos = new Set(); // ✅ v1.103.1: Set para garantizar no hay duplicados
 
     imagenesData.forEach(img => {
       const dni = img.numDocPaciente || img.dni;
@@ -454,6 +466,7 @@ export default function IPRESSWorkspace() {
         porDni[dni].push(img);
         if (!deduplicados[dni]) {
           deduplicados[dni] = img;
+          dnisVistos.add(dni); // ✅ Registrar DNI en Set
         }
       }
     });
@@ -474,7 +487,14 @@ export default function IPRESSWorkspace() {
       };
     });
 
-    console.log(`✅ [procesarYMostrarDatos] ${ecgsFormateados.length} pacientes únicos`);
+    // ✅ v1.103.1: Validar que no hay duplicados en el resultado final
+    const dnisFinales = ecgsFormateados.map(e => e.dni);
+    const dnisUnicos = new Set(dnisFinales);
+    if (dnisFinales.length !== dnisUnicos.size) {
+      console.warn(`⚠️ [procesarYMostrarDatos] ADVERTENCIA: ${dnisFinales.length} filas pero ${dnisUnicos.size} DNIs únicos`);
+    }
+
+    console.log(`✅ [procesarYMostrarDatos v1.103.1] ${ecgsFormateados.length} pacientes únicos de ${imagenesData.length} registros totales`);
     setEcgs(ecgsFormateados);
   };
 
