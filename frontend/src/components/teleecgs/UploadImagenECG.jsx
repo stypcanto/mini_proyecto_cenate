@@ -11,7 +11,8 @@ import CrearAseguradoForm from "./CrearAseguradoForm";
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 const MAX_COMPRESSED_SIZE = 1 * 1024 * 1024; // 1MB target for compression
 const ALLOWED_TYPES = ["image/jpeg", "image/png"];
-const MIN_IMAGENES = 4;  // Mínimo de imágenes (PADOMI requirement)
+// ✅ v1.100.3: Reducido MIN_IMAGENES de 4 a 3 por requerimiento del usuario
+const MIN_IMAGENES = 3;  // Mínimo de imágenes (PADOMI requirement)
 const MAX_IMAGENES = 10; // Máximo de imágenes (PADOMI requirement)
 const STORAGE_KEY = "ekgUploadDraft"; // localStorage key
 
