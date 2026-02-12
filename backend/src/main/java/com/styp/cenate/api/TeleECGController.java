@@ -247,9 +247,10 @@ public class TeleECGController {
                 .body(new ApiResponse<>(false, "No se proporcionaron archivos", "400", null));
         }
 
-        if (archivos.length < 4) {
+        // ✅ v1.104.0: Reducido mínimo de 4 a 3 imágenes por requerimiento del usuario
+        if (archivos.length < 3) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .body(new ApiResponse<>(false, "Mínimo 4 imágenes requeridas (PADOMI)", "400", null));
+                .body(new ApiResponse<>(false, "Mínimo 3 imágenes requeridas (PADOMI)", "400", null));
         }
 
         if (archivos.length > 10) {
