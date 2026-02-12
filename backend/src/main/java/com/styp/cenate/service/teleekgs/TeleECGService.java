@@ -462,6 +462,81 @@ public class TeleECGService {
     }
 
     /**
+     * ✅ v1.97.2: Obtener estadísticas GLOBALES por PACIENTES (no por imágenes)
+     * Cuenta pacientes únicos en toda la BD, sin límite de página
+     * Esto es lo que debe mostrarse en los cards del frontend
+     */
+    public Map<String, Object> obtenerEstadisticasGlobalesPorPaciente() {
+        log.info("📊 [v1.97.2] Generando estadísticas GLOBALES de pacientes");
+
+        try {
+            // Obtener TODAS las imágenes activas (sin límite de página)
+            List<TeleECGImagen> todasLasImagenes = teleECGImagenRepository.findAll();
+
+            log.info("📋 [v1.97.2] Total de imágenes en BD: {}", todasLasImagenes.size());
+
+            // Filtrar por estado = 'A' (activas)
+            List<TeleECGImagen> imagenesActivas = todasLasImagenes.stream()
+                .filter(img -> "A".equals(img.getStatImagen()))
+                .collect(Collectors.toList());
+
+            log.info("📋 [v1.97.2] Imágenes activas: {}", imagenesActivas.size());
+
+            // Contar PACIENTES únicos por estado
+            Set<String> pacientesUnicos = new HashSet<>();
+            Set<String> pacientesPendientes = new HashSet<>();
+            Set<String> pacientesObservados = new HashSet<>();
+            Set<String> pacientesAtendidos = new HashSet<>();
+
+            imagenesActivas.forEach(img -> {
+                String dni = img.getNumDocPaciente();
+                if (dni != null && !dni.trim().isEmpty()) {
+                    pacientesUnicos.add(dni);
+
+                    if ("ENVIADA".equalsIgnoreCase(img.getEstado())) {
+                        pacientesPendientes.add(dni);
+                    } else if ("OBSERVADA".equalsIgnoreCase(img.getEstado())) {
+                        pacientesObservados.add(dni);
+                    } else if ("ATENDIDA".equalsIgnoreCase(img.getEstado())) {
+                        pacientesAtendidos.add(dni);
+                    }
+                }
+            });
+
+            int totalPacientes = pacientesUnicos.size();
+            int cantPendientes = pacientesPendientes.size();
+            int cantObservados = pacientesObservados.size();
+            int cantAtendidos = pacientesAtendidos.size();
+            int totalImagenes = imagenesActivas.size();
+            int imagenesEnviadas = (int) imagenesActivas.stream()
+                .filter(img -> "ENVIADA".equalsIgnoreCase(img.getEstado()))
+                .count();
+
+            log.info("✅ [v1.97.2] === ESTADÍSTICAS GLOBALES DE PACIENTES ===");
+            log.info("   Total Pacientes: {}", totalPacientes);
+            log.info("   Pacientes Pendientes: {}", cantPendientes);
+            log.info("   Pacientes Observados: {}", cantObservados);
+            log.info("   Pacientes Atendidos: {}", cantAtendidos);
+            log.info("   Total Imágenes: {}", totalImagenes);
+            log.info("   Imágenes Pendientes: {}", imagenesEnviadas);
+
+            return Map.of(
+                "totalPacientes", totalPacientes,
+                "pacientesPendientes", cantPendientes,
+                "pacientesObservados", cantObservados,
+                "pacientesAtendidos", cantAtendidos,
+                "totalImagenes", totalImagenes,
+                "imagenesPendientes", imagenesEnviadas,
+                "porcentajePendientes", totalPacientes > 0 ? (cantPendientes * 100.0 / totalPacientes) : 0.0,
+                "porcentajeAtendidos", totalPacientes > 0 ? (cantAtendidos * 100.0 / totalPacientes) : 0.0
+            );
+        } catch (Exception e) {
+            log.error("❌ [v1.97.2] Error calculando estadísticas globales", e);
+            return Map.of("error", "Error calculando estadísticas: " + e.getMessage());
+        }
+    }
+
+    /**
      * Obtener imágenes próximas a vencer (<3 días)
      */
     public List<TeleECGImagenDTO> obtenerProximasVencer() {

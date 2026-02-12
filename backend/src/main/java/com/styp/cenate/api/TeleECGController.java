@@ -737,6 +737,33 @@ public class TeleECGController {
     }
 
     /**
+     * ✅ v1.97.2: Obtener estadísticas GLOBALES por PACIENTES (no imágenes)
+     * Cuenta pacientes únicos en TODA la BD, sin límite de página
+     * Este es el endpoint que debe usarse en el frontend para los cards
+     */
+    @GetMapping("/estadisticas-globales")
+    @Operation(summary = "Obtener estadísticas globales por pacientes")
+    public ResponseEntity<ApiResponse<?>> obtenerEstadisticasGlobales() {
+
+        log.info("📊 [v1.97.2] Endpoint estadísticas-globales llamado");
+
+        try {
+            Map<String, Object> resultado = teleECGService.obtenerEstadisticasGlobalesPorPaciente();
+
+            return ResponseEntity.ok(new ApiResponse<>(
+                true,
+                "Estadísticas globales por pacientes",
+                "200",
+                resultado
+            ));
+        } catch (Exception e) {
+            log.error("❌ Error generando estadísticas globales", e);
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(new ApiResponse<>(false, e.getMessage(), "400", null));
+        }
+    }
+
+    /**
      * Obtener imágenes próximas a vencer
      * ✅ v1.52.4: Removido @CheckMBACPermission - lectura permitida para usuarios autenticados
      */

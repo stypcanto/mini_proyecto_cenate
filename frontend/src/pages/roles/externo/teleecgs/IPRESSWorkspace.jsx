@@ -152,6 +152,7 @@ export default function IPRESSWorkspace() {
   // ✅ PAGINACIÓN - Usar TODAS las imágenes cargadas (página 1 + páginas en background)
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPagesFromBackend, setTotalPagesFromBackend] = useState(1);  // ✅ v1.71.0: Guardar totalPages del backend
+  const [statsGlobales, setStatsGlobales] = useState(null);  // ✅ v1.97.2: Stats GLOBALES de toda la BD
 
   // ✅ v1.96.2: Cambiar ITEMS_PER_PAGE a 20 para coincidir con backend
   // Backend retorna 20 items/página, frontend debe coincidir
@@ -228,6 +229,30 @@ export default function IPRESSWorkspace() {
       cargarEKGs();
     }, 300000);  // 5 minutos = 300000ms (en lugar de 30000ms)
 
+    return () => clearInterval(interval);
+  }, []);
+
+  // ✅ v1.97.2: Cargar estadísticas GLOBALES de toda la BD (sin paginación)
+  useEffect(() => {
+    const cargarStatsGlobales = async () => {
+      try {
+        console.log("📊 [v1.97.2] Cargando estadísticas globales de toda la BD...");
+        const response = await fetch('/api/teleekgs/estadisticas-globales');
+        const data = await response.json();
+
+        if (data?.data) {
+          console.log("✅ [v1.97.2] Stats globales cargadas:", data.data);
+          setStatsGlobales(data.data);
+        }
+      } catch (error) {
+        console.error("❌ [v1.97.2] Error cargando stats globales:", error);
+      }
+    };
+
+    cargarStatsGlobales();
+
+    // Recargar stats globales cada 5 minutos
+    const interval = setInterval(cargarStatsGlobales, 300000);
     return () => clearInterval(interval);
   }, []);
 
@@ -699,11 +724,11 @@ export default function IPRESSWorkspace() {
             <MisECGsRecientes
               ultimas3={ecgsPaginadosDeduplicados}
               estadisticas={{
-                total: stats.total,  // ✅ Total de imágenes (para referencia)
-                cargadas: stats.cargadas,  // ✅ Pacientes únicos (MOSTRADO EN CARD PRINCIPAL)
-                enEvaluacion: stats.enEvaluacion,  // Pacientes con imágenes en estado ENVIADA/PENDIENTE
-                observadas: stats.observadas,      // Pacientes con imágenes observadas
-                atendidas: stats.atendidas || 0,   // Pacientes con imágenes atendidas
+                total: statsGlobales?.totalImagenes || stats.total,  // ✅ Total de imágenes (GLOBAL)
+                cargadas: statsGlobales?.totalPacientes || stats.cargadas,  // ✅ Pacientes únicos (GLOBAL - MOSTRADO EN CARD PRINCIPAL)
+                enEvaluacion: statsGlobales?.pacientesPendientes || stats.enEvaluacion,  // Pacientes con imágenes pendientes (GLOBAL)
+                observadas: statsGlobales?.pacientesObservados || stats.observadas,      // Pacientes observados (GLOBAL)
+                atendidas: (statsGlobales?.pacientesAtendidos || stats.atendidas || 0),   // Pacientes atendidos (GLOBAL)
               }}
               onRefrescar={handleRefresh}
               onVerImagen={handleVerImagen}
