@@ -300,24 +300,27 @@ public class GestionPacienteServiceImpl implements IGestionPacienteService {
             if ("Atendido".equalsIgnoreCase(condicion)) {
                 try {
                     // Obtener ID del médico actual
-                    log.warn("🚀 [v1.89.4] ANTES de obtenerIdMedicoActual() - solicitando ID del médico");
                     Long idMedicoActual = obtenerIdMedicoActual();
-                    log.warn("⚠️ [v1.89.4] DESPUES de obtenerIdMedicoActual() - resultado: {}", idMedicoActual);
 
-                    // Registrar atención desde MisPacientes
-                    trazabilidadClinicaService.registrarDesdeMisPacientes(
-                        id,
-                        observacionesLimpias,
-                        idMedicoActual
-                    );
+                    // ✅ v1.89.6: Solo registrar si idMedicoActual NO es null
+                    if (idMedicoActual != null) {
+                        // Registrar atención desde MisPacientes
+                        trazabilidadClinicaService.registrarDesdeMisPacientes(
+                            id,
+                            observacionesLimpias,
+                            idMedicoActual
+                        );
 
-                    // Sincronizar y registrar ECG si existe
-                    String pacienteDni = existing.getPacienteDni();
-                    if (pacienteDni != null && !pacienteDni.isEmpty()) {
-                        trazabilidadClinicaService.registrarDesdeTeleECG(pacienteDni, idMedicoActual);
+                        // Sincronizar y registrar ECG si existe
+                        String pacienteDni = existing.getPacienteDni();
+                        if (pacienteDni != null && !pacienteDni.isEmpty()) {
+                            trazabilidadClinicaService.registrarDesdeTeleECG(pacienteDni, idMedicoActual);
+                        }
+
+                        log.info("✅ [v1.81.0] Atención registrada en historial centralizado - Solicitud: {}", id);
+                    } else {
+                        log.warn("⚠️ [v1.89.6] idMedicoActual es null - SKIP trazabilidad para Solicitud: {}", id);
                     }
-
-                    log.info("✅ [v1.81.0] Atención registrada en historial centralizado - Solicitud: {}", id);
                 } catch (Exception e) {
                     log.warn("⚠️ [v1.81.0] Error en trazabilidad - Solicitud {}: {}", id, e.getMessage());
                 }
