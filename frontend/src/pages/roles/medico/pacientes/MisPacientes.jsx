@@ -502,122 +502,93 @@ export default function MisPacientes() {
   // ✅ v1.66.0: Cargar conteos de ECG para todos los pacientes (en lotes de 10)
   const cargarConteosECG = async (pacientesActuales) => {
     try {
-      const dnis = [...new Set(pacientesActuales.map(p => p.numDoc).filter(Boolean))];
-      if (dnis.length === 0) return;
+      console.log('🚀 [v1.89.8] Cargando conteos ECG con BATCH...');
+      const startTime = performance.now();
+
+      // ✅ v1.89.8: BATCH endpoint - UNA sola llamada en lugar de 21
+      const ecgsPorPaciente = await gestionPacientesService.obtenerECGsBatch();
 
       const counts = {};
-      const chunks = [];
-
-      // Dividir en chunks de 10 DNIs
-      for (let i = 0; i < dnis.length; i += 10) {
-        chunks.push(dnis.slice(i, i + 10));
-      }
-
-      // Procesar cada chunk en paralelo
-      for (const chunk of chunks) {
-        await Promise.all(
-          chunk.map(async (dni) => {
-            try {
-              const resultado = await teleecgService.listarAgrupoPorAsegurado(dni, '');
-              counts[dni] = resultado.length > 0 && resultado[0].imagenes ? resultado[0].imagenes.length : 0;
-            } catch (error) {
-              console.error(`Error cargando ECG count para DNI ${dni}:`, error);
-              counts[dni] = 0;
-            }
-          })
-        );
-      }
+      Object.keys(ecgsPorPaciente).forEach(dni => {
+        counts[dni] = Array.isArray(ecgsPorPaciente[dni]) ? ecgsPorPaciente[dni].length : 0;
+      });
 
       setEcgCounts(counts);
-      console.log('✅ [ECG COUNTS] Conteos cargados:', counts);
+
+      const endTime = performance.now();
+      const tiempoMs = (endTime - startTime).toFixed(0);
+      console.log(`✅ [v1.89.8] Conteos cargados en ${tiempoMs}ms:`, counts);
     } catch (error) {
-      console.error('Error cargando conteos ECG:', error);
+      console.error('❌ [v1.89.8] Error cargando conteos ECG:', error);
     }
   };
 
   // ✅ v1.92.0: Cargar estados de evaluación ECG + detectar rechazos (en background, sin bloquear UI)
   const cargarEstadosEvaluacion = async (pacientesActuales) => {
     try {
-      const dnis = [...new Set(pacientesActuales.map(p => p.numDoc).filter(Boolean))];
-      if (dnis.length === 0) return;
+      console.log('🚀 [v1.89.8] Cargando estados de evaluación ECG con BATCH...');
+      const startTime = performance.now();
 
       const estados = {};
       const rechazos = {}; // ✅ v1.92.0: Rastrear imágenes rechazadas (OBSERVADA)
 
-      // ✅ Procesar en paralelo pero en chunks de 5 para no saturar el backend
-      const chunks = [];
-      for (let i = 0; i < dnis.length; i += 5) {
-        chunks.push(dnis.slice(i, i + 5));
-      }
+      // ✅ v1.89.8: BATCH endpoint - UNA sola llamada en lugar de 21
+      const ecgsPorPaciente = await gestionPacientesService.obtenerECGsBatch();
 
-      for (const chunk of chunks) {
-        try {
-          await Promise.all(
-            chunk.map(async (dni) => {
-              try {
-                const resultado = await teleecgService.listarAgrupoPorAsegurado(dni, '');
+      Object.keys(ecgsPorPaciente).forEach(dni => {
+        const imagenes = ecgsPorPaciente[dni];
 
-                if (resultado && Array.isArray(resultado) && resultado.length > 0) {
-                  const imagenes = resultado[0]?.imagenes;
-                  if (imagenes && Array.isArray(imagenes)) {
-                    // ✅ v1.92.0: Detectar imágenes rechazadas (estado OBSERVADA)
-                    const imagenesRechazadas = imagenes.filter(
-                      img => img && img.estado === 'OBSERVADA'
-                    );
-
-                    if (imagenesRechazadas.length > 0) {
-                      rechazos[dni] = {
-                        cantidad: imagenesRechazadas.length,
-                        motivos: imagenesRechazadas.map(img => ({
-                          id: img.idImagen || img.id_imagen,
-                          observaciones: img.observaciones || img.observacionesClinicas || '',
-                          fecha: img.fechaEnvio || img.fecha_envio || ''
-                        }))
-                      };
-                      console.log(`⚠️ Paciente ${dni} tiene ${imagenesRechazadas.length} imagen(es) rechazada(s)`);
-                    }
-
-                    // Obtener la última evaluación
-                    const evaluadas = imagenes.filter(
-                      img => img && img.evaluacion && img.evaluacion !== 'SIN_EVALUAR'
-                    );
-
-                    if (evaluadas.length > 0) {
-                      const ultima = evaluadas[evaluadas.length - 1];
-                      estados[dni] = {
-                        estado: 'EVALUADO',
-                        datos: {
-                          evaluacion: ultima.evaluacion || '',
-                          descripcion: ultima.descripcion_evaluacion || ultima.descripcionEvaluacion || '',
-                          fecha: ultima.fechaEvaluacion || '',
-                          hallazgos: ultima.hallazgos || '',
-                          observacionesClinicas: ultima.observacionesClinicas || ''
-                        }
-                      };
-                    } else {
-                      estados[dni] = { estado: 'PENDIENTE' };
-                    }
-                  } else {
-                    estados[dni] = { estado: 'SIN_IMAGENES' };
-                  }
-                } else {
-                  estados[dni] = { estado: 'SIN_IMAGENES' };
-                }
-              } catch (err) {
-                console.warn(`⚠️ No se pudo cargar estado para DNI ${dni}:`, err.message);
-                estados[dni] = { estado: 'PENDIENTE' };
-              }
-            })
+        if (imagenes && Array.isArray(imagenes)) {
+          // ✅ v1.92.0: Detectar imágenes rechazadas (estado OBSERVADA)
+          const imagenesRechazadas = imagenes.filter(
+            img => img && img.estado === 'OBSERVADA'
           );
-        } catch (err) {
-          console.warn('⚠️ Error en chunk de evaluaciones:', err.message);
+
+          if (imagenesRechazadas.length > 0) {
+            rechazos[dni] = {
+              cantidad: imagenesRechazadas.length,
+              motivos: imagenesRechazadas.map(img => ({
+                id: img.idImagen || img.id_imagen,
+                observaciones: img.observaciones || img.observacionesClinicas || '',
+                fecha: img.fechaEnvio || img.fecha_envio || ''
+              }))
+            };
+            console.log(`⚠️ Paciente ${dni} tiene ${imagenesRechazadas.length} imagen(es) rechazada(s)`);
+          }
+
+          // Obtener la última evaluación
+          const evaluadas = imagenes.filter(
+            img => img && img.evaluacion && img.evaluacion !== 'SIN_EVALUAR'
+          );
+
+          if (evaluadas.length > 0) {
+            const ultima = evaluadas[evaluadas.length - 1];
+            estados[dni] = {
+              estado: 'EVALUADO',
+              datos: {
+                evaluacion: ultima.evaluacion || '',
+                descripcion: ultima.descripcion_evaluacion || ultima.descripcionEvaluacion || '',
+                fecha: ultima.fechaEvaluacion || '',
+                hallazgos: ultima.hallazgos || '',
+                observacionesClinicas: ultima.observacionesClinicas || ''
+              }
+            };
+          } else {
+            estados[dni] = { estado: 'PENDIENTE' };
+          }
+        } else {
+          estados[dni] = { estado: 'SIN_IMAGENES' };
         }
-      }
+      });
 
       setEvaluacionesEstados(estados);
       setPacientesRechazados(rechazos); // ✅ v1.92.0: Guardar rechazos
+
+      const endTime = performance.now();
+      const tiempoMs = (endTime - startTime).toFixed(0);
+      console.log(`✅ [v1.89.8] Estados cargados en ${tiempoMs}ms`);
     } catch (error) {
-      console.error('Error cargando estados evaluación:', error);
+      console.error('❌ [v1.89.8] Error cargando estados evaluación:', error);
     }
   };
 

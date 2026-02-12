@@ -208,6 +208,24 @@ const gestionPacientesService = {
     // ========================================================================
 
     /**
+     * ✅ v1.89.8: BATCH endpoint - Obtener TODOS los ECGs del médico en UNA sola llamada
+     * ⭐ OPTIMIZACIÓN: Reduce 21 llamadas → 1 llamada
+     *
+     * Retorna: {dni1: [ecg1, ecg2, ...], dni2: [ecg1, ...]}
+     */
+    obtenerECGsBatch: async () => {
+        try {
+            console.log('🚀 [v1.89.8] Obteniendo ECGs en BATCH...');
+            const response = await apiClient.get(`${BASE_ENDPOINT}/medico/ecgs-batch`);
+            console.log('✅ [v1.89.8] Batch retornado:', Object.keys(response).length, 'pacientes');
+            return response || {};
+        } catch (error) {
+            console.warn('⚠️ [v1.89.8] Error obteniendo batch de ECGs:', error);
+            return {};
+        }
+    },
+
+    /**
      * Generar enlace de WhatsApp para enviar mensaje
      */
     generarEnlaceWhatsApp: (telefono, mensaje = '') => {
