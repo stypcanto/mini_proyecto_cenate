@@ -197,14 +197,19 @@ export default function IPRESSWorkspace() {
   // =======================================
 
   /**
-   * ✅ v1.94.0: Helper para obtener el estado real de una imagen
+   * ✅ v1.96.0: Helper para obtener el estado real de una imagen
    * Prioriza estadoTransformado, luego estado original
    * Normaliza a mayúsculas y elimina espacios
+   * FIX: Maneja caso donde backend envía "undefined" como string
    */
   const obtenerEstadoReal = (img) => {
     if (!img) return null;
-    const estado = img.estadoTransformado || img.estado;
-    return estado ? estado.toUpperCase().trim() : null;
+    // ✅ v1.96.0: Filtrar valores inválidos (null, undefined, "undefined" string)
+    let estado = img.estadoTransformado || img.estado;
+    if (!estado || estado === "undefined" || estado === "null") {
+      return null;
+    }
+    return estado.toUpperCase().trim();
   };
 
   /**
@@ -320,33 +325,37 @@ export default function IPRESSWorkspace() {
         };
       });
 
-      // ✅ v1.95.0: DEBUG MEJORADO - Ver estructura real de datos con valores específicos
+      // ✅ v1.96.0: DEBUG MEJORADO - Ver estructura real con detección de "undefined" string
       if (imagenes.length > 0) {
-        console.log("📊 [DEBUG v1.95.0] === ANÁLISIS DETALLADO DE PÁGINA 1 ===");
+        console.log("📊 [DEBUG v1.96.0] === ANÁLISIS DETALLADO DE PÁGINA 1 ===");
         console.log(`Total imágenes en página 1: ${imagenes.length}`);
 
         // Inspeccionar primeras 3 imágenes
+        let undefinedStringCount = 0;
         for (let i = 0; i < Math.min(3, imagenes.length); i++) {
           const img = imagenes[i];
           const st = obtenerEstadoReal(img);
-          console.log(`  [IMG ${i}] DNI: ${img.dni}, Estado RAW: "${img.estado}", Estado TRANS: "${img.estadoTransformado}", Estado FINAL: "${st}"`);
+          const isUndefinedString = img.estadoTransformado === "undefined";
+          if (isUndefinedString) undefinedStringCount++;
+          console.log(`  [IMG ${i}] DNI: ${img.dni}, Estado RAW: "${img.estado}", Estado TRANS: ${img.estadoTransformado}${isUndefinedString ? ' ⚠️[STRING "undefined"]' : ''}, Estado FINAL: "${st}"`);
         }
 
         // Debug: contar imágenes por estado en página 1
         const conteoEstados = {};
         imagenes.forEach(img => {
           const st = obtenerEstadoReal(img);
-          if (st === null) {
-            console.warn(`⚠️ ESTADO NULL para imagen DNI: ${img.dni}`);
-          }
           conteoEstados[st] = (conteoEstados[st] || 0) + 1;
         });
 
         // Log EXPANDIDO del conteo
-        console.log("🔍 [DEBUG v1.95.0] Conteo de estados en página 1:");
+        console.log("🔍 [DEBUG v1.96.0] Conteo de estados en página 1:");
         Object.entries(conteoEstados).forEach(([estado, count]) => {
           console.log(`   → ${estado}: ${count} imágenes`);
         });
+
+        if (undefinedStringCount > 0) {
+          console.warn(`⚠️⚠️ DETECTADO: ${undefinedStringCount} imágenes tienen estado_transformado="undefined" (STRING). Backend necesita fix.`);
+        }
       }
 
       // Calcular estadísticas (PÁGINA 1 SOLAMENTE)
