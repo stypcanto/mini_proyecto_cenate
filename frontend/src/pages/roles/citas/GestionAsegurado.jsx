@@ -40,22 +40,6 @@ import {
 import toast from "react-hot-toast";
 import { formatearTiempoRelativo } from "../../../utils/dateUtils";
 
-// =========================================================
-// 🏷️ Clasificación por Grupo Etario (Etapas de vida - MINSA)
-// =========================================================
-const GRUPOS_ETARIOS = [
-  { nombre: "Niñez",        rango: "0-11 años",  min: 0,  max: 11, color: "bg-sky-100 text-sky-700" },
-  { nombre: "Adolescencia", rango: "12-17 años", min: 12, max: 17, color: "bg-violet-100 text-violet-700" },
-  { nombre: "Juventud",     rango: "18-29 años", min: 18, max: 29, color: "bg-emerald-100 text-emerald-700" },
-  { nombre: "Adultez",      rango: "30-59 años", min: 30, max: 59, color: "bg-amber-100 text-amber-700" },
-  { nombre: "Adulto Mayor", rango: "60+ años",   min: 60, max: 999, color: "bg-rose-100 text-rose-700" },
-];
-
-const getGrupoEtario = (edad) => {
-  if (edad === null || edad === undefined || edad === "-" || isNaN(edad)) return null;
-  const edadNum = Number(edad);
-  return GRUPOS_ETARIOS.find(g => edadNum >= g.min && edadNum <= g.max) || null;
-};
 
 export default function GestionAsegurado() {
   const { user } = useAuth();
@@ -89,19 +73,7 @@ export default function GestionAsegurado() {
 
   const [autoRefreshEnabled, setAutoRefreshEnabled] = useState(true);
   const [lastRefreshTime, setLastRefreshTime] = useState(new Date());
-  const [estadosDisponibles] = useState([
-    { codigo: "PENDIENTE_CITA", descripcion: "Pendiente Citar - Paciente nuevo que ingresó a la bolsa" },
-    { codigo: "CITADO", descripcion: "Citado - Paciente agendado para atención" },
-    { codigo: "ATENDIDO_IPRESS", descripcion: "Atendido por IPRESS - Paciente recibió atención en institución" },
-    { codigo: "NO_CONTESTA", descripcion: "No contesta - Paciente no responde a las llamadas" },
-    { codigo: "NO_DESEA", descripcion: "No desea - Paciente rechaza la atención" },
-    { codigo: "APAGADO", descripcion: "Apagado - Teléfono del paciente apagado" },
-    { codigo: "TEL_SIN_SERVICIO", descripcion: "Teléfono sin servicio - Línea telefónica sin servicio" },
-    { codigo: "NUM_NO_EXISTE", descripcion: "Número no existe - Teléfono registrado no existe" },
-    { codigo: "SIN_VIGENCIA", descripcion: "Sin vigencia de Seguro - Seguro del paciente no vigente" },
-    { codigo: "HC_BLOQUEADA", descripcion: "Historia clínica bloqueada - HC del paciente bloqueada en sistema" },
-    { codigo: "REPROG_FALLIDA", descripcion: "Reprogramación Fallida - No se pudo reprogramar la cita" },
-  ]);
+  const [estadosDisponibles, setEstadosDisponibles] = useState([]);
 
   // ============================================================================
   // FILTROS ESPECIALIZADOS v1.42.0 (inspirados en Solicitudes)
@@ -1300,6 +1272,22 @@ CENATE de Essalud`;
         } catch (e) {
           console.error("❌ Error cargando bolsas:", e);
         }
+        // Cargar estados de gestión de citas desde el API
+        try {
+          const resEstados = await fetch(`${getApiBase()}/admin/estados-gestion-citas/todos`, {
+            headers: getHeaders(),
+          });
+          if (resEstados.ok) {
+            const estados = await resEstados.json();
+            const estadosMapeados = estados
+              .map((e) => ({ codigo: e.codEstadoCita, descripcion: e.descEstadoCita }))
+              .sort((a, b) => a.descripcion.localeCompare(b.descripcion, "es"));
+            console.log("📋 Estados cargados desde API:", estadosMapeados.length);
+            setEstadosDisponibles(estadosMapeados);
+          }
+        } catch (e) {
+          console.error("❌ Error cargando estados:", e);
+        }
         await fetchPacientesAsignados();
       } catch (err) {
         console.error("Error loading data:", err);
@@ -2049,9 +2037,6 @@ CENATE de Essalud`;
                         Edad
                       </th>
                       <th className="px-2 py-2 text-center text-[10px] font-bold uppercase">
-                        Grupo Etario
-                      </th>
-                      <th className="px-2 py-2 text-center text-[10px] font-bold uppercase">
                         Gén.
                       </th>
                       {/* Columna Prioridad - Solo visible para Bolsa ID 1 */}
@@ -2142,18 +2127,6 @@ CENATE de Essalud`;
                           ) : (
                             <span className="text-gray-300 italic text-[10px]">N/D</span>
                           )}
-                        </td>
-                        <td className="px-2 py-1.5 text-center">
-                          {(() => {
-                            const grupo = getGrupoEtario(paciente.pacienteEdad);
-                            return grupo ? (
-                              <span className={`inline-flex items-center px-1.5 py-0.5 rounded-full text-[9px] font-semibold ${grupo.color}`}>
-                                {grupo.nombre}
-                              </span>
-                            ) : (
-                              <span className="text-gray-300 italic text-[10px]">N/D</span>
-                            );
-                          })()}
                         </td>
                         <td className="px-2 py-1.5 text-center">
                           {paciente.pacienteSexo && paciente.pacienteSexo !== "-" ? (
@@ -2575,20 +2548,7 @@ CENATE de Essalud`;
                 </table>
               </div>
 
-              {/* Leyenda de Grupos Etarios */}
-              <div className="mt-3 p-3 bg-slate-50 rounded-lg border border-slate-200">
-                <p className="text-[10px] font-bold text-slate-500 uppercase mb-2">Leyenda — Grupos Etarios (Etapas de vida para el cuidado integral)</p>
-                <div className="flex flex-wrap gap-3">
-                  {GRUPOS_ETARIOS.map((grupo) => (
-                    <div key={grupo.nombre} className="flex items-center gap-1.5">
-                      <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-semibold ${grupo.color}`}>
-                        {grupo.nombre}
-                      </span>
-                      <span className="text-[10px] text-slate-500">{grupo.rango}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
+
               </>
             )}
           </div>
