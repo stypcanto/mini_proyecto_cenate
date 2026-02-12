@@ -470,16 +470,6 @@ const teleecgService = {
   },
 
   /**
-   * Rechazar una imagen ECG - v3.0.0: Usa acción "OBSERVAR"
-   */
-  rechazarImagen: async (idImagen, motivo = "") => {
-    return apiClient.put(`/teleekgs/${idImagen}/procesar`, {
-      accion: "OBSERVAR",
-      observaciones: motivo,  // v3.0.0: El backend usa 'observaciones' en lugar de 'motivo'
-    }, true);
-  },
-
-  /**
    * Eliminar una imagen ECG (eliminación física de la base de datos)
    */
   eliminarImagen: async (idImagen) => {
