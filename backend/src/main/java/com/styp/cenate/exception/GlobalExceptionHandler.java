@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.validation.ConstraintViolationException;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.access.AccessDeniedException;
 
 /**
  * 🌐 GlobalExceptionHandler Centraliza el manejo de excepciones para toda la
@@ -65,6 +66,22 @@ public class GlobalExceptionHandler {
 		response.put("timestamp", LocalDateTime.now().toString());
 
 		return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+	}
+
+	// ======================================================
+	// 2️⃣B Acceso Denegado (MBAC)
+	// ======================================================
+	@ExceptionHandler(AccessDeniedException.class)
+	public ResponseEntity<Map<String, Object>> handleAccessDeniedException(AccessDeniedException ex) {
+		log.warn("🚫 Acceso denegado (MBAC): {}", ex.getMessage());
+
+		Map<String, Object> response = new HashMap<>();
+		response.put("status", HttpStatus.FORBIDDEN.value());
+		response.put("error", "Acceso denegado");
+		response.put("message", ex.getMessage() != null ? ex.getMessage() : "No tiene permisos para acceder a este recurso");
+		response.put("timestamp", LocalDateTime.now().toString());
+
+		return ResponseEntity.status(HttpStatus.FORBIDDEN).body(response);
 	}
 
 	// ======================================================

@@ -11,6 +11,7 @@ import com.styp.cenate.service.teleekgs.TeleECGService;
 import com.styp.cenate.repository.DimServicioEssiRepository;
 import com.styp.cenate.security.mbac.CheckMBACPermission;
 import com.styp.cenate.validation.AtenderPacienteValidator;
+import jakarta.annotation.PostConstruct;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
@@ -39,6 +40,12 @@ public class GestionPacienteController {
     private final DimServicioEssiRepository servicioEssiRepository;
     private final AtenderPacienteValidator atenderPacienteValidator;
     private final TeleECGService teleECGService;
+
+    @PostConstruct
+    public void init() {
+        log.info("✅✅✅ GestionPacienteController INICIALIZADO EXITOSAMENTE ✅✅✅");
+        log.info("📌 Servicio: " + (servicio != null ? servicio.getClass().getName() : "NULL"));
+    }
 
     // ========================================================================
     // CRUD Básico
