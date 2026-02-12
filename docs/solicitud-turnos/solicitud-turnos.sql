@@ -259,6 +259,133 @@ GROUP BY dsb.id_ipress, di.desc_ipress, dr.desc_red, dm.desc_macro
 ORDER BY total_atenciones DESC
 LIMIT 10;
 
+-- =========================================================
+-- 9. ATENCIONES POR GRUPO ETARIO (al costado de edad)
+-- =========================================================
+SELECT 
+    paciente_edad AS edad,
+    CASE 
+        WHEN paciente_edad BETWEEN 0  AND 11 THEN 'Niñez'
+        WHEN paciente_edad BETWEEN 12 AND 17 THEN 'Adolescencia'
+        WHEN paciente_edad BETWEEN 18 AND 29 THEN 'Juventud'
+        WHEN paciente_edad BETWEEN 30 AND 59 THEN 'Adultez'
+        WHEN paciente_edad >= 60              THEN 'Adulto Mayor'
+        ELSE 'No registrado'
+    END AS grupo_etario,
+    COUNT(id_solicitud) AS total_atenciones,
+    ROUND((COUNT(id_solicitud) * 100.0 / SUM(COUNT(id_solicitud)) OVER()), 2) AS porcentaje
+FROM dim_solicitud_bolsa
+WHERE id_bolsa = 1
+    AND paciente_edad IS NOT NULL
+GROUP BY paciente_edad,
+    CASE 
+        WHEN paciente_edad BETWEEN 0  AND 11 THEN 'Niñez'
+        WHEN paciente_edad BETWEEN 12 AND 17 THEN 'Adolescencia'
+        WHEN paciente_edad BETWEEN 18 AND 29 THEN 'Juventud'
+        WHEN paciente_edad BETWEEN 30 AND 59 THEN 'Adultez'
+        WHEN paciente_edad >= 60              THEN 'Adulto Mayor'
+        ELSE 'No registrado'
+    END
+ORDER BY paciente_edad;
+
+-- 9b. Resumen agrupado solo por grupo etario
+SELECT 
+    CASE 
+        WHEN paciente_edad BETWEEN 0  AND 11 THEN 'Niñez'
+        WHEN paciente_edad BETWEEN 12 AND 17 THEN 'Adolescencia'
+        WHEN paciente_edad BETWEEN 18 AND 29 THEN 'Juventud'
+        WHEN paciente_edad BETWEEN 30 AND 59 THEN 'Adultez'
+        WHEN paciente_edad >= 60              THEN 'Adulto Mayor'
+        ELSE 'No registrado'
+    END AS grupo_etario,
+    MIN(paciente_edad) AS edad_minima,
+    MAX(paciente_edad) AS edad_maxima,
+    COUNT(id_solicitud) AS total_atenciones,
+    ROUND((COUNT(id_solicitud) * 100.0 / SUM(COUNT(id_solicitud)) OVER()), 2) AS porcentaje
+FROM dim_solicitud_bolsa
+WHERE id_bolsa = 1
+    AND paciente_edad IS NOT NULL
+GROUP BY 
+    CASE 
+        WHEN paciente_edad BETWEEN 0  AND 11 THEN 'Niñez'
+        WHEN paciente_edad BETWEEN 12 AND 17 THEN 'Adolescencia'
+        WHEN paciente_edad BETWEEN 18 AND 29 THEN 'Juventud'
+        WHEN paciente_edad BETWEEN 30 AND 59 THEN 'Adultez'
+        WHEN paciente_edad >= 60              THEN 'Adulto Mayor'
+        ELSE 'No registrado'
+    END
+ORDER BY edad_minima;
+
+-- =========================================================
+-- LEYENDA: GRUPOS ETARIOS POR ETAPAS DE VIDA
+-- =========================================================
+-- ┌──────────────────┬────────────┬───────────────────────────────────────────┐
+-- │  GRUPO ETARIO    │  RANGO     │  DESCRIPCIÓN                              │
+-- ├──────────────────┼────────────┼───────────────────────────────────────────┤
+-- │  Niñez           │  0-11 años │  Cuidado integral pediátrico              │
+-- │  Adolescencia    │ 12-17 años │  Atención diferenciada del adolescente    │
+-- │  Juventud        │ 18-29 años │  Promoción de salud y prevención          │
+-- │  Adultez         │ 30-59 años │  Control de enfermedades crónicas         │
+-- │  Adulto Mayor    │ 60+  años  │  Atención geriátrica especializada        │
+-- └──────────────────┴────────────┴───────────────────────────────────────────┘
+-- Fuente: Etapas de vida para el cuidado integral de salud (MINSA)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
