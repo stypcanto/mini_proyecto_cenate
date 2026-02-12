@@ -9,7 +9,7 @@
 import React, { useState, useEffect } from "react";
 import { useAuth } from "../../context/AuthContext";
 import { useNavigate, useParams } from "react-router-dom";
-import { apiClient } from "../../lib/apiClient";
+import { apiClient } from '../../lib/apiClient';
 import { getFotoUrl } from "../../utils/apiUrlHelper";
 import {
   Phone,
@@ -37,7 +37,7 @@ import {
   RefreshCw,
 } from "lucide-react";
 import toast from "react-hot-toast";
-import api from "../../services/apiClient";
+import api from '../../lib/apiClient';
 
 export default function UserDetail() {
   const { user: authUser } = useAuth();

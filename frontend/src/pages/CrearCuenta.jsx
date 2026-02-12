@@ -16,7 +16,7 @@ import {
   CheckCircle2,
 } from "lucide-react";
 import toast from "react-hot-toast";
-import { apiClient } from "../lib/apiClient";
+import { apiClient } from '../lib/apiClient';
 import { VERSION } from "../config/version";
 
 export default function CrearCuenta() {

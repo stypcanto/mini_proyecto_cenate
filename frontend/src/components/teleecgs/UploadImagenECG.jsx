@@ -11,7 +11,8 @@ import CrearAseguradoForm from "./CrearAseguradoForm";
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 const MAX_COMPRESSED_SIZE = 1 * 1024 * 1024; // 1MB target for compression
 const ALLOWED_TYPES = ["image/jpeg", "image/png"];
-const MIN_IMAGENES = 4;  // Mínimo de imágenes (PADOMI requirement)
+// ✅ v1.100.3: Reducido MIN_IMAGENES de 4 a 3 por requerimiento del usuario
+const MIN_IMAGENES = 3;  // Mínimo de imágenes (PADOMI requirement)
 const MAX_IMAGENES = 10; // Máximo de imágenes (PADOMI requirement)
 const STORAGE_KEY = "ekgUploadDraft"; // localStorage key
 
@@ -146,28 +147,21 @@ export default function UploadImagenEKG({ onSuccess, onUploadSuccess, isWorkspac
     };
   }, []);
 
-  // Cargar datos guardados del localStorage al montar
+  // ✅ v1.104.0: INICIAR SIEMPRE CON FORMULARIO LIMPIO
+  // NO cargar del localStorage para garantizar campos vacíos cada vez que se abre el modal
   useEffect(() => {
-    const cargarDraft = () => {
-      try {
-        const saved = localStorage.getItem(STORAGE_KEY);
-        if (saved) {
-          const draft = JSON.parse(saved);
-          if (draft.previews && draft.previews.length > 0) {
-            setPreviews(draft.previews);
-            // Nota: Los archivos no se pueden recuperar del localStorage
-            // pero las previews pueden usarse para mostrar qué se capturó
-            setArchivos(new Array(draft.previews.length).fill(null).map(() => ({ name: "compressed" })));
-            setNumDocPaciente(draft.numDocPaciente || "");
-            setDatosCompletos(draft.datosCompletos || { apellidos: "", nombres: "", sexo: "", codigo: "", telefono: "", ipress: "", edad: "" });
-            setFechaToma(draft.fechaToma || "");
-          }
-        }
-      } catch (error) {
-        console.error("Error cargando draft del localStorage:", error);
-      }
-    };
-    cargarDraft();
+    // Limpiar localStorage y estado al montar el componente
+    localStorage.removeItem(STORAGE_KEY);
+    setNumDocPaciente("");
+    setDatosCompletos({ apellidos: "", nombres: "", sexo: "", codigo: "", telefono: "", ipress: "", edad: "" });
+    setArchivos([]);
+    setPreviews([]);
+    setFechaToma("");
+    setEsUrgente(false);
+    setEnviado(false);
+    setRespuestaServidor(null);
+    setPacienteEncontrado(false);
+    console.log("✅ [UploadImagenECG v1.104.0] Componente montado - Formulario limpio, listo para nuevo paciente");
   }, []);
 
   // Guardar en localStorage cada vez que cambian archivos o paciente
@@ -455,6 +449,10 @@ export default function UploadImagenEKG({ onSuccess, onUploadSuccess, isWorkspac
       setEnviado(true);
       setUploadProgress(100);
       toast.success(`✅ ${archivos.length} EKGs cargados exitosamente`);
+
+      // ✅ v1.104.0: Limpiar localStorage INMEDIATAMENTE después del envío exitoso
+      // para evitar que datos viejos persistan cuando el usuario abre el modal nuevamente
+      localStorage.removeItem(STORAGE_KEY);
 
       setTimeout(() => {
         resetFormulario();

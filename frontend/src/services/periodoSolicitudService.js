@@ -4,7 +4,7 @@
 // Gestiona los periodos de captura de solicitudes de turnos (Coordinador)
 // ========================================================================
 
-import { apiClient } from "../lib/apiClient";
+import { apiClient } from '../lib/apiClient';
 
 class PeriodoSolicitudService {
   /**

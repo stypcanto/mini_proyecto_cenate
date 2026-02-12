@@ -4,7 +4,7 @@
 // ========================================================================
 
 import React, { useState } from "react";
-import { apiClient } from "../../../lib/apiClient";
+import { apiClient } from '../../../lib/apiClient';
 import toast from "react-hot-toast";
 
 export default function PasswordForm() {

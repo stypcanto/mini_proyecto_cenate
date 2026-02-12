@@ -12,7 +12,7 @@ import {
   RefreshCw, BarChart3, TrendingUp, Activity
 } from "lucide-react";
 import toast from "react-hot-toast";
-import api from "../../../services/apiClient";
+import api from '../../../lib/apiClient';
 
 export default function DashboardPorRedes() {
   // Estados

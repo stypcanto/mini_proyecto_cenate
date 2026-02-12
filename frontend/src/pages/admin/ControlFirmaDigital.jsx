@@ -33,7 +33,7 @@ import {
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
-import apiClient from "../../services/apiClient";
+import apiClient from '../../lib/apiClient';
 import ActualizarModel from "../user/components/common/ActualizarModel"; // 🆕 v1.14.0
 
 // ================================================================

@@ -31,7 +31,7 @@ import {
 import { COLORS, MEDICAL_PALETTE } from '../../config/designSystem';
 import toast from 'react-hot-toast';
 import teleecgService from '../../services/teleecgService';
-import apiClient from '../../services/apiClient';
+import apiClient from '../../lib/apiClient';
 
 // ✅ v1.76.5: Función auxiliar para parsear fechas sin offset de timezone
 const parsearFechaSegura = (fechaStr) => {
@@ -57,14 +57,29 @@ export default function MisECGsRecientes({
   onRefrescar = () => {},
   onVerImagen = () => {},
   onBuscarPorDNI = () => {},  // ✅ v1.80.4: Callback para búsqueda en backend
+  // ✅ v1.103.0: NUEVOS PROPS PARA FILTROS REACTIVOS
+  filtrosActuales = { dni: '', estado: 'TODOS', fechaDesde: '', fechaHasta: '' },
+  onFiltrosChange = () => {},
+  onLimpiarFiltros = () => {},
+  // ✅ v1.103.0: NUEVOS PROPS PARA PAGINACIÓN INCREMENTAL
+  totalElementos = 0,
+  hayMasPaginas = false,
+  cargandoMas = false,
+  onCargarMas = () => {},
   loading = false,
   imagenesPorDni = {}, // ✅ NEW: Pasar imágenes reales por DNI
 }) {
   const [expandidoTooltip, setExpandidoTooltip] = useState(null);
   const [filtroEstado, setFiltroEstado] = useState(null); // null = todos, 'ENVIADA', 'OBSERVADA', 'ATENDIDA'
 
-  // ✅ NEW: Filter State
-  const [filtroDNI, setFiltroDNI] = useState('');
+  // ✅ v1.103.0: FILTROS LOCALES SINCRONIZADOS CON PROPS - CON VALORES POR DEFECTO SEGUROS
+  const safeFilterosActuales = filtrosActuales || { dni: '', estado: 'TODOS', fechaDesde: '', fechaHasta: '' };
+  const [filtroDNI, setFiltroDNI] = useState(safeFilterosActuales.dni || '');
+  const [filtroEstadoReactivo, setFiltroEstadoReactivo] = useState(safeFilterosActuales.estado || 'TODOS');
+  const [filtroFechaDesde, setFiltroFechaDesde] = useState(safeFilterosActuales.fechaDesde || '');
+  const [filtroFechaHasta, setFiltroFechaHasta] = useState(safeFilterosActuales.fechaHasta || '');
+
+  // ✅ NEW: Filter State (legacy - mantener para compatibilidad)
   const [filtroFecha, setFiltroFecha] = useState('');
   const [datosOriginales, setDatosOriginales] = useState([]);
   const [buscandoPorDNI, setBuscandoPorDNI] = useState(false);  // ✅ v1.84.1: Loader durante búsqueda
@@ -83,6 +98,26 @@ export default function MisECGsRecientes({
   const [esUrgente, setEsUrgente] = useState(false);  // ✅ Checkbox para marcar como urgente
   const [fechaToma, setFechaToma] = useState("");  // ✅ v1.76.0: Fecha de toma del EKG editable
   const fileInputRef = useRef(null);  // ✅ Referencia segura al input file
+
+  // ✅ v1.103.0: Sincronizar filtros locales cuando los props cambian
+  useEffect(() => {
+    const safe = filtrosActuales || { dni: '', estado: 'TODOS', fechaDesde: '', fechaHasta: '' };
+    setFiltroDNI(safe.dni || '');
+    setFiltroEstadoReactivo(safe.estado || 'TODOS');
+    setFiltroFechaDesde(safe.fechaDesde || '');
+    setFiltroFechaHasta(safe.fechaHasta || '');
+  }, [filtrosActuales]);
+
+  // ✅ v1.97.4: Log estadísticas cuando cambien para debugging
+  useEffect(() => {
+    console.log(`📊 [MisECGsRecientes v1.97.4] estadisticas actualizado:`, {
+      total: estadisticas?.total,
+      cargadas: estadisticas?.cargadas,
+      enEvaluacion: estadisticas?.enEvaluacion,
+      observadas: estadisticas?.observadas,
+      atendidas: estadisticas?.atendidas,
+    });
+  }, [estadisticas]);
 
   // ✅ Sync ultimas3 to datosOriginales on mount and when ultimas3 changes
   useEffect(() => {
@@ -427,8 +462,123 @@ export default function MisECGsRecientes({
         </div>
       </div>
 
-      {/* ==================== FILTROS CLÍNICOS - PROFESIONAL ==================== */}
-      <div className="mb-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
+      {/* ✅ v1.103.0: PANEL DE FILTROS REACTIVOS - SIEMPRE VISIBLE ==================== */}
+      <div className="mb-6 bg-blue-50 border-2 border-blue-300 rounded-lg p-4 shadow-md">
+        <div className="flex items-center gap-2 mb-4">
+          <Search className="w-5 h-5 text-blue-600" />
+          <h3 className="text-sm font-bold text-blue-900">🔍 Filtros de Búsqueda Reactivos</h3>
+        </div>
+
+        {/* Grid responsive: 1 col móvil, 2 cols tablet, 4 cols desktop */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+          {/* DNI */}
+          <div>
+            <label className="block text-xs font-semibold text-blue-900 mb-1.5">
+              🆔 DNI Paciente
+            </label>
+            <div className="relative">
+              <input
+                type="text"
+                placeholder="Buscar DNI..."
+                value={filtroDNI}
+                onChange={(e) => {
+                  setFiltroDNI(e.target.value);
+                  onFiltrosChange({ ...safeFilterosActuales, dni: e.target.value });
+                }}
+                maxLength="8"
+                className="w-full px-3 py-2 border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-xs"
+              />
+              {filtroDNI && (
+                <button
+                  onClick={() => {
+                    setFiltroDNI('');
+                    onFiltrosChange({ ...safeFilterosActuales, dni: '' });
+                  }}
+                  className="absolute right-2 top-1/2 transform -translate-y-1/2 text-blue-600 hover:bg-blue-100 p-1 rounded"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Estado */}
+          <div>
+            <label className="block text-xs font-semibold text-blue-900 mb-1.5">
+              📊 Estado
+            </label>
+            <select
+              value={filtroEstadoReactivo}
+              onChange={(e) => {
+                setFiltroEstadoReactivo(e.target.value);
+                onFiltrosChange({ ...safeFilterosActuales, estado: e.target.value });
+              }}
+              className="w-full px-3 py-2 border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-xs"
+            >
+              <option value="TODOS">Todos los estados</option>
+              <option value="ENVIADA">Pendientes</option>
+              <option value="OBSERVADA">Observadas</option>
+              <option value="ATENDIDA">Atendidas</option>
+            </select>
+          </div>
+
+          {/* Fecha Desde */}
+          <div>
+            <label className="block text-xs font-semibold text-blue-900 mb-1.5">
+              📅 Desde
+            </label>
+            <input
+              type="date"
+              value={filtroFechaDesde}
+              onChange={(e) => {
+                setFiltroFechaDesde(e.target.value);
+                onFiltrosChange({ ...safeFilterosActuales, fechaDesde: e.target.value });
+              }}
+              className="w-full px-3 py-2 border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-xs"
+            />
+          </div>
+
+          {/* Fecha Hasta */}
+          <div>
+            <label className="block text-xs font-semibold text-blue-900 mb-1.5">
+              📅 Hasta
+            </label>
+            <input
+              type="date"
+              value={filtroFechaHasta}
+              onChange={(e) => {
+                setFiltroFechaHasta(e.target.value);
+                onFiltrosChange({ ...safeFilterosActuales, fechaHasta: e.target.value });
+              }}
+              className="w-full px-3 py-2 border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-xs"
+            />
+          </div>
+        </div>
+
+        {/* Botón Limpiar + Indicador de registros */}
+        <div className="mt-4 flex items-center justify-between gap-4">
+          <p className="text-sm text-blue-800 font-semibold">
+            📊 Mostrando <span className="font-bold text-blue-900">{ultimas3.length}</span> pacientes de{' '}
+            <span className="font-bold text-blue-900">{totalElementos}</span> imágenes ECG
+          </p>
+          <button
+            onClick={() => {
+              setFiltroDNI('');
+              setFiltroEstadoReactivo('TODOS');
+              setFiltroFechaDesde('');
+              setFiltroFechaHasta('');
+              onLimpiarFiltros();
+            }}
+            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg flex items-center gap-2 transition-colors text-xs font-semibold"
+          >
+            <X className="w-4 h-4" />
+            Limpiar filtros
+          </button>
+        </div>
+      </div>
+
+      {/* ==================== FILTROS CLÍNICOS LEGACY - MANTENER POR COMPATIBILIDAD ==================== */}
+      <div className="mb-6 bg-blue-50 border border-blue-200 rounded-lg p-4 hidden">
         <div className="flex items-center gap-2 mb-3">
           <Search className="w-4 h-4 text-blue-600" />
           <h4 className="text-xs font-bold text-blue-900">🔍 Filtrar Cargas Recientes</h4>
@@ -547,7 +697,7 @@ export default function MisECGsRecientes({
               </div>
             </div>
           ) : datosFiltrados.length > 0 ? (
-            <div className="overflow-x-auto rounded-lg border border-gray-200 shadow-sm">
+            <div className="overflow-x-auto overflow-y-auto max-h-[800px] rounded-lg border border-gray-200 shadow-sm">
               <table className="w-full text-sm md:text-base">
                 {/* Header */}
                 <thead className="bg-gradient-to-r from-slate-700 to-slate-800 text-white">
@@ -765,6 +915,32 @@ export default function MisECGsRecientes({
           </div>
         )}
       </div>
+
+      {/* ✅ v1.103.0: BOTÓN CARGAR MÁS - PAGINACIÓN INCREMENTAL ==================== */}
+      {hayMasPaginas && ultimas3.length > 0 && (
+        <div className="mt-6 mb-6 flex flex-col items-center justify-center gap-3">
+          <button
+            onClick={onCargarMas}
+            disabled={cargandoMas || loading}
+            className="px-6 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white rounded-lg font-semibold transition-colors flex items-center gap-2"
+          >
+            {cargandoMas ? (
+              <>
+                <RefreshCw className="w-5 h-5 animate-spin" />
+                Cargando...
+              </>
+            ) : (
+              <>
+                <ChevronDown className="w-5 h-5" />
+                Cargar más 50 pacientes
+              </>
+            )}
+          </button>
+          <p className="text-xs text-gray-600 text-center">
+            Hay más registros disponibles. Total: <span className="font-bold">{totalElementos}</span> pacientes
+          </p>
+        </div>
+      )}
 
       {/* Modal Rediseñado - Simpler UX */}
       {showEditModal && cargaEdicion && (

@@ -225,24 +225,22 @@ public interface TeleECGImagenRepository extends JpaRepository<TeleECGImagen, Lo
     /**
      * Búsqueda flexible con múltiples filtros
      * Usado por: filtrados avanzados en frontend
-     * ✅ FIX T-ECG-002: Agregado filtro fecha_expiracion >= CURRENT_TIMESTAMP
-     *    Evita que ECGs vencidas aparezcan en los resultados de búsqueda
+     * ✅ v1.97.8: Removido filtro statImagen='A' para mostrar TODOS los 94 casos
+     *    Ahora muestra tanto imágenes activas como inactivas (coincidir con estadísticas)
      */
     @Query("""
         SELECT t FROM TeleECGImagen t
         WHERE (:numDoc IS NULL OR t.numDocPaciente LIKE %:numDoc%)
           AND (:estado IS NULL OR t.estado = :estado)
-          AND (:idIpress IS NULL OR t.ipressOrigen.idIpress = :idIpress)
-          AND t.statImagen = 'A'
+          AND (:codigoIpress IS NULL OR t.codigoIpress = :codigoIpress)
           AND t.fechaEnvio >= :fechaDesde
           AND t.fechaEnvio <= :fechaHasta
-          AND (t.fechaExpiracion >= CURRENT_TIMESTAMP OR t.estado = 'ATENDIDA')
         ORDER BY t.fechaEnvio DESC
         """)
     Page<TeleECGImagen> buscarFlexible(
         @Param("numDoc") String numDoc,
         @Param("estado") String estado,
-        @Param("idIpress") Long idIpress,
+        @Param("codigoIpress") String codigoIpress,
         @Param("fechaDesde") LocalDateTime fechaDesde,
         @Param("fechaHasta") LocalDateTime fechaHasta,
         Pageable pageable
@@ -352,7 +350,7 @@ public interface TeleECGImagenRepository extends JpaRepository<TeleECGImagen, Lo
                OR t.numDocPaciente LIKE %:numDoc%
                OR (:numDocSinCeros IS NOT NULL AND t.numDocPaciente LIKE %:numDocSinCeros%))
           AND (:estado IS NULL OR t.estado = :estado)
-          AND (:idIpress IS NULL OR t.ipressOrigen.idIpress = :idIpress)
+          AND (:codigoIpress IS NULL OR t.codigoIpress = :codigoIpress)
           AND t.statImagen = 'A'
           AND t.fechaEnvio >= :fechaDesde
           AND t.fechaEnvio <= :fechaHasta
@@ -363,7 +361,7 @@ public interface TeleECGImagenRepository extends JpaRepository<TeleECGImagen, Lo
         @Param("numDoc") String numDoc,
         @Param("numDocSinCeros") String numDocSinCeros,
         @Param("estado") String estado,
-        @Param("idIpress") Long idIpress,
+        @Param("codigoIpress") String codigoIpress,
         @Param("fechaDesde") LocalDateTime fechaDesde,
         @Param("fechaHasta") LocalDateTime fechaHasta,
         Pageable pageable
@@ -379,7 +377,7 @@ public interface TeleECGImagenRepository extends JpaRepository<TeleECGImagen, Lo
         SELECT DISTINCT t FROM TeleECGImagen t
         WHERE (:numDoc IS NULL OR t.numDocPaciente LIKE %:numDoc%)
           AND (:estado IS NULL OR t.estado = :estado)
-          AND (:idIpress IS NULL OR t.ipressOrigen.idIpress = :idIpress)
+          AND (:codigoIpress IS NULL OR t.codigoIpress = :codigoIpress)
           AND t.statImagen = 'A'
           AND t.fechaEnvio >= :fechaDesde
           AND t.fechaEnvio <= :fechaHasta
@@ -390,7 +388,7 @@ public interface TeleECGImagenRepository extends JpaRepository<TeleECGImagen, Lo
     List<TeleECGImagen> buscarFlexibleSinPaginacionLimitado(
         @Param("numDoc") String numDoc,
         @Param("estado") String estado,
-        @Param("idIpress") Long idIpress,
+        @Param("codigoIpress") String codigoIpress,
         @Param("fechaDesde") LocalDateTime fechaDesde,
         @Param("fechaHasta") LocalDateTime fechaHasta
     );
@@ -417,7 +415,7 @@ public interface TeleECGImagenRepository extends JpaRepository<TeleECGImagen, Lo
         SELECT t FROM TeleECGImagen t
         WHERE t.fechaEnvio >= :fechaDesde
           AND t.fechaEnvio <= :fechaHasta
-          AND (:idIpress IS NULL OR t.ipressOrigen.idIpress = :idIpress)
+          AND (:codigoIpress IS NULL OR t.codigoIpress = :codigoIpress)
           AND (:evaluacion IS NULL OR t.evaluacion = :evaluacion)
           AND (:esUrgente IS NULL OR t.esUrgente = :esUrgente)
           AND t.statImagen = 'A'
@@ -427,7 +425,7 @@ public interface TeleECGImagenRepository extends JpaRepository<TeleECGImagen, Lo
     List<TeleECGImagen> buscarParaAnalytics(
         @Param("fechaDesde") LocalDateTime fechaDesde,
         @Param("fechaHasta") LocalDateTime fechaHasta,
-        @Param("idIpress") Long idIpress,
+        @Param("codigoIpress") String codigoIpress,
         @Param("evaluacion") String evaluacion,
         @Param("esUrgente") Boolean esUrgente
     );

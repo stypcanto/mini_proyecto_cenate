@@ -11,7 +11,7 @@ import {
   Clock,
   AlertCircle,
 } from "lucide-react";
-import apiClient from "../../services/apiClient";
+import apiClient from '../../lib/apiClient';
 import toast from "react-hot-toast";
 
 /**

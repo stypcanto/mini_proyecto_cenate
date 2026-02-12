@@ -3,7 +3,7 @@ import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { X, UserPlus, Shield, Check, User, Mail, Calendar, Briefcase, GraduationCap, Camera, Image as ImageIcon, XCircle } from 'lucide-react';
 import FormField from '../modals/FormField';
 import SelectField from '../modals/SelectField';
-import api from '../../../../services/apiClient';
+import api from '../../../../lib/apiClient';
 import MonthYearPicker from '../../../../components/common/MonthYearPicker';
 import { API_ROUTES } from '../../../../constants/apiRoutes';
 import FirmaDigitalTab from './FirmaDigitalTab'; // 🆕 v1.14.0

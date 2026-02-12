@@ -4,7 +4,7 @@
 // CRUD completo para páginas del sistema CENATE
 // ========================================================================
 
-import apiClient from './apiClient';
+import apiClient from '../lib/apiClient';
 
 const BASE_URL = '/mbac/paginas';
 

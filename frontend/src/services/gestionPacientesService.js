@@ -2,7 +2,7 @@
 // Servicio de Gestión de Pacientes - CENATE
 // ========================================================================
 
-import apiClient from './apiClient';
+import apiClient from '../lib/apiClient';
 
 const BASE_ENDPOINT = '/gestion-pacientes';
 

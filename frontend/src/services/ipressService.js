@@ -4,7 +4,7 @@
 // Servicio para gestionar Instituciones Prestadoras de Servicios de Salud
 // ========================================================================
 
-import { apiClient } from "../lib/apiClient";
+import { apiClient } from '../lib/apiClient';
 
 class IpressService {
   /**

@@ -2,7 +2,7 @@
 // teleconsultorioApi.js - API para gestión de horarios de teleconsultorio
 // ========================================================================
 
-import { API_BASE_URL } from "../../../../../services/apiClient";
+import { API_BASE_URL } from '../../../../../lib/apiClient';
 
 /**
  * Servicio para gestionar la configuración de horarios de teleconsultorio

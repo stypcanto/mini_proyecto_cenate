@@ -2,7 +2,7 @@
 // horarioService.js - Servicio para obtener horarios/turnos
 // ========================================================================
 
-import { apiClient } from "../lib/apiClient";
+import { apiClient } from '../lib/apiClient';
 
 class HorarioService {
   /**

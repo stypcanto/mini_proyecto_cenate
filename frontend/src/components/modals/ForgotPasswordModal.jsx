@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from "react";
 import { X, Mail, Loader2, CheckCircle2, AlertTriangle, User, ChevronRight, Clock } from "lucide-react";
 import { v4 as uuidv4 } from "uuid";
 import { API_ROUTES } from "../../constants/apiRoutes";
-import {apiClient} from "../../lib/apiClient";
+import {apiClient} from '../../lib/apiClient';
 
 export default function ForgotPasswordModal({ onClose }) {
   // Estados para flujo de 2 pasos

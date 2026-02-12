@@ -1,4 +1,4 @@
-import api from './apiClient';
+import api from '../lib/apiClient';
 
 /**
  * Servicio para gestionar el formulario de diagnóstico situacional de Telesalud

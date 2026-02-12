@@ -4,7 +4,7 @@ import { X, Edit, Shield, Save, User, Mail, Briefcase, GraduationCap, RefreshCw,
 import PermisosUsuarioPanel from '../PermisosUsuarioPanel';
 import FormField from '../modals/FormField';
 import SelectField from '../modals/SelectField';
-import api from '../../../../services/apiClient';
+import api from '../../../../lib/apiClient';
 import MonthYearPicker from '../../../../components/common/MonthYearPicker';
 import { getFotoUrl } from '../../../../utils/apiUrlHelper';
 import { useAuth } from '../../../../context/AuthContext';

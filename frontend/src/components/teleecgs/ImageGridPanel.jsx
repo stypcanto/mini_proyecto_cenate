@@ -20,7 +20,8 @@ export default function ImageGridPanel({
   loading = false
 }) {
   const MAX_IMAGENES = 10;
-  const MIN_IMAGENES = 4;
+  // ✅ v1.100.3: Reducido MIN_IMAGENES de 4 a 3 por requerimiento del usuario
+  const MIN_IMAGENES = 3;
 
   const getBorderClass = (index) => {
     const state = validationStates[index];

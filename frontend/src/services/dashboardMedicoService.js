@@ -5,7 +5,7 @@
 // ✅ Obtención de cards activas para dashboard público
 // ========================================================================
 
-import { apiClient } from "../lib/apiClient";
+import { apiClient } from '../lib/apiClient';
 
 class DashboardMedicoService {
   // ============================================================

@@ -39,7 +39,7 @@ import {
 } from "lucide-react";
 import toast from "react-hot-toast";
 import * as XLSX from "xlsx";
-import apiClient from "../../../lib/apiClient";
+import apiClient from '../../../lib/apiClient';
 import AsignarAdmisionistaModal from "../../../components/modals/AsignarAdmisionistaModal";
 import VerPacienteModal from "../../../components/modals/VerPacienteModal";
 import ConfirmDialog from "../../../components/modals/ConfirmDialog"; // Assuming ConfirmDialog availability or I'll implement simple window.confirm first or check if it exists (I saw it in the list)

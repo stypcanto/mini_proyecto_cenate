@@ -4,7 +4,7 @@
 // Maneja todas las operaciones CRUD de redes asistenciales
 // ========================================================================
 
-import apiClient from './apiClient';
+import apiClient from '../lib/apiClient';
 
 export const redesService = {
     /**
