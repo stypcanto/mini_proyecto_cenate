@@ -158,7 +158,10 @@ export default function IPRESSWorkspace() {
   const totalPages = totalPagesFromBackend;
   const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
   const endIndex = startIndex + ITEMS_PER_PAGE;
-  const ecgsPaginados = ecgs.slice(startIndex, endIndex);
+
+  // ✅ v1.96.1: Usar todasLasImagenes para paginación (incluye todas las páginas cargadas)
+  // No usar ecgs que solo tiene página 1 hasta que termine carga en background
+  const ecgsPaginados = todasLasImagenes.slice(startIndex, endIndex);
 
   // =======================================
   // 🔄 LIFECYCLE - Load data & handle resize
