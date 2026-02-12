@@ -664,11 +664,11 @@ export default function IPRESSWorkspace() {
             <MisECGsRecientes
               ultimas3={ecgsPaginados}
               estadisticas={{
-                total: stats.total,  // ✅ Total de imágenes (no suma)
-                cargadas: stats.cargadas,  // Pacientes únicos
-                enEvaluacion: stats.enEvaluacion,  // Imágenes en evaluación
-                observadas: stats.observadas,      // Imágenes observadas
-                atendidas: stats.atendidas || 0,   // Imágenes atendidas
+                total: stats.total,  // ✅ Total de imágenes (para referencia)
+                cargadas: stats.cargadas,  // ✅ Pacientes únicos (MOSTRADO EN CARD PRINCIPAL)
+                enEvaluacion: stats.enEvaluacion,  // Pacientes con imágenes en estado ENVIADA/PENDIENTE
+                observadas: stats.observadas,      // Pacientes con imágenes observadas
+                atendidas: stats.atendidas || 0,   // Pacientes con imágenes atendidas
               }}
               onRefrescar={handleRefresh}
               onVerImagen={handleVerImagen}

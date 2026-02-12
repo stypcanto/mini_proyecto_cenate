@@ -293,13 +293,13 @@ export default function MisECGsRecientes({
 
         {/* Grid responsive - Professional Stats Cards Compact */}
         <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
-          {/* Total - Verde SATURADO (Par - Luz) */}
+          {/* Total Pacientes - Verde SATURADO (Par - Luz) */}
           <button
             onClick={() => setFiltroEstado(null)}
             className={`relative overflow-hidden rounded-lg bg-gradient-to-br from-emerald-500 to-emerald-600 border p-2 sm:p-3 md:p-4 shadow-md hover:shadow-xl transition-all duration-300 hover:scale-105 text-left cursor-pointer ${
               filtroEstado === null ? 'border-white ring-2 ring-white' : 'border-emerald-600'
             }`}
-            title="Ver todos"
+            title="Total de pacientes con ECGs"
           >
             {/* Background decorativo */}
             <div className="absolute top-0 right-0 w-12 sm:w-16 h-12 sm:h-16 bg-white/10 rounded-full -mr-6 sm:-mr-8 -mt-6 sm:-mt-8" />
@@ -315,13 +315,13 @@ export default function MisECGsRecientes({
               {/* Número */}
               <div className="mb-0.5 sm:mb-1">
                 <span className="text-lg sm:text-2xl md:text-3xl font-bold text-white">
-                  {estadisticas.total}
+                  {estadisticas.cargadas}
                 </span>
               </div>
 
               {/* Etiqueta */}
               <span className="text-xs md:text-sm font-semibold text-white/90 line-clamp-2">
-                Imágenes EKG a analizar
+                Pacientes con ECG
               </span>
             </div>
           </button>
