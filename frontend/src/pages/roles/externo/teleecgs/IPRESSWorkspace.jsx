@@ -320,30 +320,41 @@ export default function IPRESSWorkspace() {
         };
       });
 
-      // ✅ v1.93.1: DEBUG - Ver estructura real de datos
+      // ✅ v1.95.0: DEBUG MEJORADO - Ver estructura real de datos con valores específicos
       if (imagenes.length > 0) {
-        const primerEstado = obtenerEstadoReal(imagenes[0]);
-        console.log("📊 [DEBUG v1.94.0] Primera imagen estructura:", {
-          estado_raw: imagenes[0].estado,
-          estadoTransformado_raw: imagenes[0].estadoTransformado,
-          estadoFinal: primerEstado,
-          nombrePaciente: imagenes[0].nombrePaciente,
-          todosLosCampos: Object.keys(imagenes[0]).slice(0, 10) // Solo primeros 10 campos
-        });
+        console.log("📊 [DEBUG v1.95.0] === ANÁLISIS DETALLADO DE PÁGINA 1 ===");
+        console.log(`Total imágenes en página 1: ${imagenes.length}`);
+
+        // Inspeccionar primeras 3 imágenes
+        for (let i = 0; i < Math.min(3, imagenes.length); i++) {
+          const img = imagenes[i];
+          const st = obtenerEstadoReal(img);
+          console.log(`  [IMG ${i}] DNI: ${img.dni}, Estado RAW: "${img.estado}", Estado TRANS: "${img.estadoTransformado}", Estado FINAL: "${st}"`);
+        }
 
         // Debug: contar imágenes por estado en página 1
         const conteoEstados = {};
         imagenes.forEach(img => {
           const st = obtenerEstadoReal(img);
+          if (st === null) {
+            console.warn(`⚠️ ESTADO NULL para imagen DNI: ${img.dni}`);
+          }
           conteoEstados[st] = (conteoEstados[st] || 0) + 1;
         });
-        console.log("🔍 [DEBUG v1.94.0] Conteo de estados en página 1:", conteoEstados);
+
+        // Log EXPANDIDO del conteo
+        console.log("🔍 [DEBUG v1.95.0] Conteo de estados en página 1:");
+        Object.entries(conteoEstados).forEach(([estado, count]) => {
+          console.log(`   → ${estado}: ${count} imágenes`);
+        });
       }
 
       // Calcular estadísticas (PÁGINA 1 SOLAMENTE)
       const imagenesPendientes = imagenes.filter((img) => obtenerEstadoReal(img) === "ENVIADA" || obtenerEstadoReal(img) === "PENDIENTE");
       const imagenesObservadas = imagenes.filter((img) => obtenerEstadoReal(img) === "OBSERVADA");
       const imagenesAtendidas = imagenes.filter((img) => obtenerEstadoReal(img) === "ATENDIDA");
+
+      console.log(`📋 [Página 1] Pendientes: ${imagenesPendientes.length}, Observadas: ${imagenesObservadas.length}, Atendidas: ${imagenesAtendidas.length}`);
 
       // ✅ v1.87.6: Contar PACIENTES ÚNICOS, no imágenes duplicadas
       const pacientesPendientes = new Set(imagenesPendientes.map(img => img.dni || img.numDocPaciente)).size;
@@ -430,18 +441,23 @@ export default function IPRESSWorkspace() {
               enviadas: pacientesGlobalPendientes,
             };
 
-            // ✅ v1.94.0: Debug logging detallado
-            console.log(`✅ [BACKGROUND] Conteo final:`, {
-              imagenesTotal: imagenesAcumuladas.length,
-              imagenesPendientes: imagenesGlobalPendientes.length,
-              imagenesObservadas: imagenesGlobalObservadas.length,
-              imagenesAtendidas: imagenesGlobalAtendidas.length,
-              pacientesTotal: pacientesGlobalUnicos,
-              pacientesPendientes: pacientesGlobalPendientes,
-              pacientesObservadas: pacientesGlobalObservadas,
-              pacientesAtendidas: pacientesGlobalAtendidas,
+            // ✅ v1.95.0: Debug logging detallado CON VALORES EXPANDIDOS
+            console.log(`✅ [BACKGROUND] === CONTEO FINAL GLOBAL ===`);
+            console.log(`   Total Imágenes: ${imagenesAcumuladas.length}`);
+            console.log(`   Imágenes Pendientes (ENVIADA/PENDIENTE): ${imagenesGlobalPendientes.length}`);
+            console.log(`   Imágenes Observadas: ${imagenesGlobalObservadas.length}`);
+            console.log(`   Imágenes Atendidas: ${imagenesGlobalAtendidas.length}`);
+            console.log(`   Pacientes Total: ${pacientesGlobalUnicos}`);
+            console.log(`   Pacientes Pendientes: ${pacientesGlobalPendientes}`);
+            console.log(`   Pacientes Observadas: ${pacientesGlobalObservadas}`);
+            console.log(`   Pacientes Atendidas: ${pacientesGlobalAtendidas}`);
+            console.log(`✅ [BACKGROUND] Stats finales:`, {
+              total: globalStats.total,
+              cargadas: globalStats.cargadas,
+              enEvaluacion: globalStats.enEvaluacion,
+              observadas: globalStats.observadas,
+              atendidas: globalStats.atendidas,
             });
-            console.log(`✅ [BACKGROUND] Stats globales actualizados:`, globalStats);
             setStats(globalStats);  // ✅ Actualizar cards con totales reales
           } catch (err) {
             console.error("❌ Error cargando páginas en background:", err);
