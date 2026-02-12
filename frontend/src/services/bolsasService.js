@@ -17,7 +17,7 @@ const API_BASE_URL = '/bolsas';
  */
 export const obtenerBolsas = async () => {
   try {
-    const response = await apiClient.get(`${API_BASE_URL}`);
+    const response = await apiClient.get(`${API_BASE_URL}`, true);
     return response;
   } catch (error) {
     console.error('Error al obtener bolsas:', error);
@@ -32,7 +32,7 @@ export const obtenerBolsas = async () => {
  */
 export const obtenerBolsaPorId = async (id) => {
   try {
-    const response = await apiClient.get(`${API_BASE_URL}/${id}`);
+    const response = await apiClient.get(`${API_BASE_URL}/${id}`, true);
     return response;
   } catch (error) {
     console.error(`Error al obtener bolsa ${id}:`, error);
@@ -47,7 +47,7 @@ export const obtenerBolsaPorId = async (id) => {
  */
 export const crearBolsa = async (dataBolsa) => {
   try {
-    const response = await apiClient.post(`${API_BASE_URL}`, dataBolsa);
+    const response = await apiClient.post(`${API_BASE_URL}`, dataBolsa, true);
     return response;
   } catch (error) {
     console.error('Error al crear bolsa:', error);
@@ -63,7 +63,7 @@ export const crearBolsa = async (dataBolsa) => {
  */
 export const actualizarBolsa = async (id, dataBolsa) => {
   try {
-    const response = await apiClient.put(`${API_BASE_URL}/${id}`, dataBolsa);
+    const response = await apiClient.put(`${API_BASE_URL}/${id}`, dataBolsa, true);
     return response;
   } catch (error) {
     console.error(`Error al actualizar bolsa ${id}:`, error);
@@ -78,7 +78,7 @@ export const actualizarBolsa = async (id, dataBolsa) => {
  */
 export const eliminarBolsa = async (id) => {
   try {
-    await apiClient.delete(`${API_BASE_URL}/${id}`);
+    await apiClient.delete(`${API_BASE_URL}/${id}`, true);
   } catch (error) {
     console.error(`Error al eliminar bolsa ${id}:`, error);
     throw error;
@@ -110,7 +110,7 @@ export const importarDesdeExcel = async (formData) => {
  */
 export const obtenerHistorialImportaciones = async () => {
   try {
-    const response = await apiClient.get(`${API_BASE_URL}/importaciones/historial`);
+    const response = await apiClient.get(`${API_BASE_URL}/importaciones/historial`, true);
     return response;
   } catch (error) {
     console.error('Error al obtener historial de importaciones:', error);
@@ -147,7 +147,7 @@ export const importarSolicitudesDesdeExcel = async (formData) => {
  */
 export const obtenerSolicitudes = async () => {
   try {
-    const response = await apiClient.get(`${API_BASE_URL}/solicitudes`);
+    const response = await apiClient.get(`${API_BASE_URL}/solicitudes`, true);
     return response;
   } catch (error) {
     console.error('Error al obtener solicitudes:', error);
@@ -207,7 +207,7 @@ export const obtenerSolicitudesPaginado = async (
 
     const finalUrl = `${API_BASE_URL}/solicitudes?${params.toString()}`;
     console.log('🌐 URL de solicitud:', finalUrl);
-    const response = await apiClient.get(finalUrl);
+    const response = await apiClient.get(finalUrl, true);
     return response;
   } catch (error) {
     console.error('Error al obtener solicitudes paginadas:', error);
@@ -222,7 +222,7 @@ export const obtenerSolicitudesPaginado = async (
  */
 export const obtenerSolicitudPorId = async (id) => {
   try {
-    const response = await apiClient.get(`${API_BASE_URL}/solicitudes/${id}`);
+    const response = await apiClient.get(`${API_BASE_URL}/solicitudes/${id}`, true);
     return response;
   } catch (error) {
     console.error(`Error al obtener solicitud ${id}:`, error);
@@ -237,7 +237,7 @@ export const obtenerSolicitudPorId = async (id) => {
  */
 export const crearSolicitud = async (dataSolicitud) => {
   try {
-    const response = await apiClient.post(`${API_BASE_URL}/solicitudes`, dataSolicitud);
+    const response = await apiClient.post(`${API_BASE_URL}/solicitudes`, dataSolicitud, true);
     return response;
   } catch (error) {
     console.error('Error al crear solicitud:', error);
@@ -253,7 +253,7 @@ export const crearSolicitud = async (dataSolicitud) => {
  */
 export const actualizarSolicitud = async (id, dataSolicitud) => {
   try {
-    const response = await apiClient.put(`${API_BASE_URL}/solicitudes/${id}`, dataSolicitud);
+    const response = await apiClient.put(`${API_BASE_URL}/solicitudes/${id}`, dataSolicitud, true);
     return response;
   } catch (error) {
     console.error(`Error al actualizar solicitud ${id}:`, error);
@@ -271,13 +271,16 @@ export const actualizarSolicitud = async (id, dataSolicitud) => {
  */
 export const aprobarSolicitud = async (id, responsableId, responsableNombre, params = {}) => {
   try {
-    const response = await apiClient.put(`${API_BASE_URL}/solicitudes/${id}/aprobar`, {}, {
-      params: {
-        responsableId,
-        responsableNombre,
-        ...params
-      }
+    const queryParams = new URLSearchParams({
+      responsableId,
+      responsableNombre,
+      ...params
     });
+    const response = await apiClient.put(
+      `${API_BASE_URL}/solicitudes/${id}/aprobar?${queryParams.toString()}`,
+      {},
+      true
+    );
     return response;
   } catch (error) {
     console.error(`Error al aprobar solicitud ${id}:`, error);
@@ -295,13 +298,16 @@ export const aprobarSolicitud = async (id, responsableId, responsableNombre, par
  */
 export const rechazarSolicitud = async (id, responsableId, responsableNombre, razon = '') => {
   try {
-    const response = await apiClient.put(`${API_BASE_URL}/solicitudes/${id}/rechazar`, {}, {
-      params: {
-        responsableId,
-        responsableNombre,
-        razon
-      }
+    const queryParams = new URLSearchParams({
+      responsableId,
+      responsableNombre,
+      razon
     });
+    const response = await apiClient.put(
+      `${API_BASE_URL}/solicitudes/${id}/rechazar?${queryParams.toString()}`,
+      {},
+      true
+    );
     return response;
   } catch (error) {
     console.error(`Error al rechazar solicitud ${id}:`, error);
@@ -316,7 +322,7 @@ export const rechazarSolicitud = async (id, responsableId, responsableNombre, ra
  */
 export const eliminarSolicitud = async (id) => {
   try {
-    await apiClient.delete(`${API_BASE_URL}/solicitudes/${id}`);
+    await apiClient.delete(`${API_BASE_URL}/solicitudes/${id}`, true);
   } catch (error) {
     console.error(`Error al eliminar solicitud ${id}:`, error);
     throw error;
@@ -332,7 +338,7 @@ export const eliminarMultiplesSolicitudes = async (ids) => {
   try {
     const response = await apiClient.post(`${API_BASE_URL}/solicitudes/borrar`, {
       ids: ids
-    });
+    }, true);
     return response;
   } catch (error) {
     console.error('Error al eliminar múltiples solicitudes:', error);
@@ -350,7 +356,7 @@ export const eliminarMultiplesSolicitudes = async (ids) => {
  */
 export const obtenerEstadisticas = async () => {
   try {
-    const response = await apiClient.get(`${API_BASE_URL}/estadisticas/resumen`);
+    const response = await apiClient.get(`${API_BASE_URL}/estadisticas/resumen`, true);
     return response;
   } catch (error) {
     console.error('Error al obtener estadísticas:', error);
@@ -367,7 +373,7 @@ export const obtenerEstadisticas = async () => {
  */
 export const obtenerEstadisticasDelDia = async () => {
   try {
-    const response = await apiClient.get(`${API_BASE_URL}/estadisticas/del-dia`);
+    const response = await apiClient.get(`${API_BASE_URL}/estadisticas/del-dia`, true);
     return response;
   } catch (error) {
     console.error('Error al obtener estadísticas del día:', error);
@@ -380,7 +386,7 @@ export const obtenerEstadisticasDelDia = async () => {
  */
 export const obtenerEstadisticasPorEstado = async () => {
   try {
-    const response = await apiClient.get(`${API_BASE_URL}/estadisticas/por-estado`);
+    const response = await apiClient.get(`${API_BASE_URL}/estadisticas/por-estado`, true);
     return response;
   } catch (error) {
     console.error('Error al obtener estadísticas por estado:', error);
@@ -393,7 +399,7 @@ export const obtenerEstadisticasPorEstado = async () => {
  */
 export const obtenerEstadisticasPorEspecialidad = async () => {
   try {
-    const response = await apiClient.get(`${API_BASE_URL}/estadisticas/por-especialidad`);
+    const response = await apiClient.get(`${API_BASE_URL}/estadisticas/por-especialidad`, true);
     return response;
   } catch (error) {
     console.error('Error al obtener estadísticas por especialidad:', error);
@@ -406,7 +412,7 @@ export const obtenerEstadisticasPorEspecialidad = async () => {
  */
 export const obtenerEstadisticasPorIpress = async () => {
   try {
-    const response = await apiClient.get(`${API_BASE_URL}/estadisticas/por-ipress`);
+    const response = await apiClient.get(`${API_BASE_URL}/estadisticas/por-ipress`, true);
     return response;
   } catch (error) {
     console.error('Error al obtener estadísticas por IPRESS:', error);
@@ -419,7 +425,7 @@ export const obtenerEstadisticasPorIpress = async () => {
  */
 export const obtenerEstadisticasPorTipoCita = async () => {
   try {
-    const response = await apiClient.get(`${API_BASE_URL}/estadisticas/por-tipo-cita`);
+    const response = await apiClient.get(`${API_BASE_URL}/estadisticas/por-tipo-cita`, true);
     return response;
   } catch (error) {
     console.error('Error al obtener estadísticas por tipo de cita:', error);
@@ -432,7 +438,7 @@ export const obtenerEstadisticasPorTipoCita = async () => {
  */
 export const obtenerEstadisticasPorTipoBolsa = async () => {
   try {
-    const response = await apiClient.get(`${API_BASE_URL}/estadisticas/por-tipo-bolsa`);
+    const response = await apiClient.get(`${API_BASE_URL}/estadisticas/por-tipo-bolsa`, true);
     return response;
   } catch (error) {
     console.error('Error al obtener estadísticas por tipo de bolsa:', error);
@@ -445,7 +451,7 @@ export const obtenerEstadisticasPorTipoBolsa = async () => {
  */
 export const obtenerEvolutionTemporal = async () => {
   try {
-    const response = await apiClient.get(`${API_BASE_URL}/estadisticas/evolucion-temporal`);
+    const response = await apiClient.get(`${API_BASE_URL}/estadisticas/evolucion-temporal`, true);
     return response;
   } catch (error) {
     console.error('Error al obtener evolución temporal:', error);
@@ -458,7 +464,7 @@ export const obtenerEvolutionTemporal = async () => {
  */
 export const obtenerKpis = async () => {
   try {
-    const response = await apiClient.get(`${API_BASE_URL}/estadisticas/kpis`);
+    const response = await apiClient.get(`${API_BASE_URL}/estadisticas/kpis`, true);
     return response;
   } catch (error) {
     console.error('Error al obtener KPIs:', error);
@@ -485,7 +491,7 @@ export const obtenerKpis = async () => {
 export const obtenerEstadisticasFiltros = async () => {
   try {
     console.log('🔍 [obtenerEstadisticasFiltros] Iniciando llamada a /estadisticas/filtros');
-    const response = await apiClient.get(`${API_BASE_URL}/estadisticas/filtros`);
+    const response = await apiClient.get(`${API_BASE_URL}/estadisticas/filtros`, true);
     console.log('✅ Respuesta recibida:', response);
     console.log('✅ Tipo de respuesta:', typeof response);
     console.log('✅ Keys de respuesta:', Object.keys(response));
@@ -504,7 +510,7 @@ export const obtenerEstadisticasFiltros = async () => {
  */
 export const obtenerDashboardCompleto = async () => {
   try {
-    const response = await apiClient.get(`${API_BASE_URL}/estadisticas/dashboard-completo`);
+    const response = await apiClient.get(`${API_BASE_URL}/estadisticas/dashboard-completo`, true);
     return response;
   } catch (error) {
     console.error('Error al obtener dashboard completo:', error);
@@ -519,7 +525,7 @@ export const obtenerDashboardCompleto = async () => {
  */
 export const exportarBolsas = async (filtros = {}) => {
   try {
-    const response = await apiClient.get(`${API_BASE_URL}/exportar/excel`, { params: filtros });
+    const response = await apiClient.get(`${API_BASE_URL}/exportar/excel`, true);
     return response;
   } catch (error) {
     console.error('Error al exportar bolsas:', error);
@@ -538,7 +544,7 @@ export const exportarBolsas = async (filtros = {}) => {
  */
 export const obtenerListaCargas = async () => {
   try {
-    const response = await apiClient.get(`${API_BASE_URL}/importaciones/historial`);
+    const response = await apiClient.get(`${API_BASE_URL}/importaciones/historial`, true);
     console.log('📋 Historial importaciones cargadas:', response);
     return response;
   } catch (error) {
@@ -555,7 +561,7 @@ export const obtenerListaCargas = async () => {
  */
 export const obtenerDatosCarga = async (idCarga) => {
   try {
-    const response = await apiClient.get(`${API_BASE_URL}/cargas/${idCarga}`);
+    const response = await apiClient.get(`${API_BASE_URL}/cargas/${idCarga}`, true);
     return response;
   } catch (error) {
     console.error(`Error al obtener datos de bolsa ${idCarga}:`, error);
@@ -571,7 +577,7 @@ export const obtenerDatosCarga = async (idCarga) => {
  */
 export const crearCargaBolsa = async (dataBolsa) => {
   try {
-    const response = await apiClient.post(`${API_BASE_URL}/cargas`, dataBolsa);
+    const response = await apiClient.post(`${API_BASE_URL}/cargas`, dataBolsa, true);
     return response;
   } catch (error) {
     console.error('Error al crear bolsa:', error);
@@ -588,7 +594,7 @@ export const crearCargaBolsa = async (dataBolsa) => {
  */
 export const actualizarCargaBolsa = async (idCarga, dataBolsa) => {
   try {
-    const response = await apiClient.put(`${API_BASE_URL}/cargas/${idCarga}`, dataBolsa);
+    const response = await apiClient.put(`${API_BASE_URL}/cargas/${idCarga}`, dataBolsa, true);
     return response;
   } catch (error) {
     console.error(`Error al actualizar bolsa ${idCarga}:`, error);
@@ -603,7 +609,7 @@ export const actualizarCargaBolsa = async (idCarga, dataBolsa) => {
  */
 export const exportarCargaExcel = async (idCarga) => {
   try {
-    const response = await apiClient.get(`${API_BASE_URL}/cargas/${idCarga}/exportar`);
+    const response = await apiClient.get(`${API_BASE_URL}/cargas/${idCarga}/exportar`, true);
     return response;
   } catch (error) {
     console.error(`Error al exportar bolsa ${idCarga}:`, error);
@@ -619,7 +625,7 @@ export const exportarCargaExcel = async (idCarga) => {
  */
 export const eliminarCarga = async (idCarga) => {
   try {
-    await apiClient.delete(`${API_BASE_URL}/cargas/${idCarga}`);
+    await apiClient.delete(`${API_BASE_URL}/cargas/${idCarga}`, true);
   } catch (error) {
     console.error(`Error al eliminar bolsa ${idCarga}:`, error);
     throw error;
@@ -647,7 +653,7 @@ export const asignarAGestora = async (id, gestoraId, gestoraNombre) => {
     const response = await apiClient.patch(url, {
       gestoraId: gestoraId || null,
       gestoraNombre: gestoraNombre || null
-    });
+    }, true);
     return response;
   } catch (error) {
     console.error(`Error al asignar solicitud ${id}:`, error);
@@ -661,7 +667,7 @@ export const asignarAGestora = async (id, gestoraId, gestoraNombre) => {
  */
 export const obtenerGestorasDisponibles = async () => {
   try {
-    const response = await apiClient.get(`${API_BASE_URL}/solicitudes/gestoras-disponibles`);
+    const response = await apiClient.get(`${API_BASE_URL}/solicitudes/gestoras-disponibles`, true);
     return response;
   } catch (error) {
     console.error('Error al obtener gestoras disponibles:', error);
@@ -679,7 +685,7 @@ export const cambiarTelefono = async (id, nuevoTelefono) => {
   try {
     const response = await apiClient.put(`${API_BASE_URL}/solicitudes/${id}`, {
       pacienteTelefono: nuevoTelefono
-    });
+    }, true);
     return response;
   } catch (error) {
     console.error(`Error al cambiar teléfono solicitud ${id}:`, error);
@@ -706,7 +712,9 @@ export const actualizarTelefonos = async (id, telefonoPrincipal, telefonoAlterno
     }
 
     const response = await apiClient.put(
-      `${API_BASE_URL}/solicitudes/${id}?${params.toString()}`
+      `${API_BASE_URL}/solicitudes/${id}?${params.toString()}`,
+      null,
+      true
     );
     return response;
   } catch (error) {
@@ -724,11 +732,11 @@ export const actualizarTelefonos = async (id, telefonoPrincipal, telefonoAlterno
  */
 export const cambiarTipoBolsa = async (id, idBolsaNueva) => {
   try {
-    const response = await apiClient.patch(`${API_BASE_URL}/solicitudes/${id}/cambiar-bolsa`, {}, {
-      params: {
-        idBolsaNueva
-      }
-    });
+    const response = await apiClient.patch(
+      `${API_BASE_URL}/solicitudes/${id}/cambiar-bolsa?idBolsaNueva=${idBolsaNueva}`,
+      {},
+      true
+    );
     return response;
   } catch (error) {
     console.error(`Error al cambiar tipo de bolsa solicitud ${id}:`, error);
@@ -785,7 +793,7 @@ export const enviarRecordatorio = async (id, tipo, mensaje = '') => {
     const response = await apiClient.post(`${API_BASE_URL}/solicitudes/${id}/recordatorio`, {
       tipo,
       mensaje
-    });
+    }, true);
     return response;
   } catch (error) {
     console.error(`Error al enviar recordatorio solicitud ${id}:`, error);
@@ -801,7 +809,7 @@ export const enviarRecordatorio = async (id, tipo, mensaje = '') => {
  */
 export const obtenerMiBandeja = async () => {
   try {
-    const response = await apiClient.get(`${API_BASE_URL}/solicitudes/mi-bandeja`);
+    const response = await apiClient.get(`${API_BASE_URL}/solicitudes/mi-bandeja`, true);
     return response;
   } catch (error) {
     console.error('Error al obtener Mi Bandeja:', error);
@@ -819,13 +827,9 @@ export const obtenerMiBandeja = async () => {
 export const cambiarEstado = async (id, nuevoEstadoId) => {
   try {
     const response = await apiClient.patch(
-      `${API_BASE_URL}/solicitudes/${id}/estado`,
+      `${API_BASE_URL}/solicitudes/${id}/estado?nuevoEstadoId=${nuevoEstadoId}`,
       {},
-      {
-        params: {
-          nuevoEstadoId
-        }
-      }
+      true
     );
     return response;
   } catch (error) {
@@ -844,7 +848,7 @@ export const cambiarEstado = async (id, nuevoEstadoId) => {
  */
 export const obtenerEstadosGestion = async () => {
   try {
-    const response = await apiClient.get('/admin/estados-gestion-citas/todos');
+    const response = await apiClient.get('/admin/estados-gestion-citas/todos', true);
     return response;
   } catch (error) {
     console.error('Error al obtener estados de gestión:', error);
@@ -858,7 +862,7 @@ export const obtenerEstadosGestion = async () => {
  */
 export const obtenerIpress = async () => {
   try {
-    const response = await apiClient.get('/ipress');
+    const response = await apiClient.get('/ipress', true);
     return response;
   } catch (error) {
     console.error('Error al obtener IPRESS:', error);
@@ -873,7 +877,7 @@ export const obtenerIpress = async () => {
  */
 export const obtenerIpressPorId = async (id) => {
   try {
-    const response = await apiClient.get(`/ipress/${id}`);
+    const response = await apiClient.get(`/ipress/${id}`, true);
     return response;
   } catch (error) {
     console.error(`Error al obtener IPRESS ${id}:`, error);
@@ -887,7 +891,7 @@ export const obtenerIpressPorId = async (id) => {
  */
 export const obtenerRedes = async () => {
   try {
-    const response = await apiClient.get('/redes');
+    const response = await apiClient.get('/redes', true);
     return response;
   } catch (error) {
     console.error('Error al obtener redes:', error);
@@ -902,7 +906,7 @@ export const obtenerRedes = async () => {
  */
 export const obtenerRedPorId = async (id) => {
   try {
-    const response = await apiClient.get(`/redes/${id}`);
+    const response = await apiClient.get(`/redes/${id}`, true);
     return response;
   } catch (error) {
     console.error(`Error al obtener red ${id}:`, error);
@@ -921,7 +925,7 @@ export const obtenerRedPorId = async (id) => {
  */
 export const obtenerEspecialidadesUnicas = async () => {
   try {
-    const response = await apiClient.get(`${API_BASE_URL}/solicitudes/especialidades`);
+    const response = await apiClient.get(`${API_BASE_URL}/solicitudes/especialidades`, true);
     return response;
   } catch (error) {
     console.error('❌ Error al obtener especialidades únicas:', error);
@@ -936,7 +940,7 @@ export const obtenerEspecialidadesUnicas = async () => {
  */
 export const obtenerTiposBolsasActivosPublic = async () => {
   try {
-    const response = await apiClient.get(`${API_BASE_URL}/tipos-bolsas/activos`);
+    const response = await apiClient.get(`${API_BASE_URL}/tipos-bolsas/activos`, true);
     return response;
   } catch (error) {
     console.error('Error al obtener tipos de bolsas activos:', error);
@@ -951,7 +955,7 @@ export const obtenerTiposBolsasActivosPublic = async () => {
  */
 export const obtenerEspecialidadesActivasCenate = async () => {
   try {
-    const response = await apiClient.get('/servicio-essi/activos-cenate');
+    const response = await apiClient.get('/servicio-essi/activos-cenate', true);
     return response;
   } catch (error) {
     console.error('Error al obtener especialidades activas CENATE:', error);
@@ -966,7 +970,7 @@ export const obtenerEspecialidadesActivasCenate = async () => {
  */
 export const obtenerAseguradoPorDni = async (dni) => {
   try {
-    const response = await apiClient.get(`/gestion-pacientes/asegurado/${dni}`);
+    const response = await apiClient.get(`/gestion-pacientes/asegurado/${dni}`, true);
     return response;
   } catch (error) {
     // 404 es esperado si no existe
@@ -985,7 +989,7 @@ export const obtenerAseguradoPorDni = async (dni) => {
  */
 export const crearAsegurado = async (datosAsegurado) => {
   try {
-    const response = await apiClient.post('/gestion-pacientes', datosAsegurado);
+    const response = await apiClient.post('/gestion-pacientes', datosAsegurado, true);
     return response;
   } catch (error) {
     console.error('Error al crear asegurado:', error);
@@ -1004,7 +1008,7 @@ export const crearAsegurado = async (datosAsegurado) => {
  */
 export const obtenerErroresImportacion = async () => {
   try {
-    const response = await apiClient.get(`${API_BASE_URL}/errores-importacion`);
+    const response = await apiClient.get(`${API_BASE_URL}/errores-importacion`, true);
     return Array.isArray(response) ? response : response.data || [];
   } catch (error) {
     console.error('Error al obtener errores de importación:', error);
