@@ -1028,8 +1028,8 @@ const UsersManagement = () => {
 
       // 🚀 PAGINACIÓN: Usar endpoint con paginación para mejor rendimiento
       const [usersResponse, ipressResponse] = await Promise.all([
-        api.get(`/usuarios/all-personal?${params.toString()}`),
-        api.get('/ipress')
+        api.get(`/usuarios/all-personal?${params.toString()}`, true),
+        api.get('/ipress', true)
       ]);
 
       console.log('📥 Respuesta del servidor (usuarios):', usersResponse);
@@ -1133,7 +1133,7 @@ const UsersManagement = () => {
 
   const loadRoles = useCallback(async () => {
     try {
-      const response = await api.get('/admin/roles');
+      const response = await api.get('/admin/roles', true);
       console.log('✅ Roles cargados:', response);
       setRoles(Array.isArray(response) ? response : []);
     } catch (error) {
@@ -1176,8 +1176,8 @@ const UsersManagement = () => {
 
       // Cargar usuarios e IPRESS en paralelo
       const [usersResponse, ipressResponse] = await Promise.all([
-        api.get('/usuarios/all-personal?page=0&size=2000&sortBy=createdAt&direction=DESC'),
-        api.get('/ipress')
+        api.get('/usuarios/all-personal?page=0&size=2000&sortBy=createdAt&direction=DESC', true),
+        api.get('/ipress', true)
       ]);
 
       // Extraer datos
@@ -1381,7 +1381,7 @@ const UsersManagement = () => {
     try {
       // Eliminar usuarios en paralelo
       await Promise.all(
-        selectedUsers.map(userId => api.delete(`/usuarios/id/${userId}`))
+        selectedUsers.map(userId => api.delete(`/usuarios/id/${userId}`, true))
       );
 
       alert(`✅ ${selectedUsers.length} usuario(s) eliminado(s) correctamente`);
@@ -1424,7 +1424,7 @@ const UsersManagement = () => {
     try {
       console.log(`🔓 Desbloqueando cuenta de ${user.username}...`);
 
-      await api.put(`/usuarios/id/${user.id_user}/unlock`);
+      await api.put(`/usuarios/id/${user.id_user}/unlock`, null, true);
 
       // Actualizar UI inmediatamente
       setUsers(prevUsers =>
@@ -1480,9 +1480,9 @@ const UsersManagement = () => {
 
       // Llamar al backend para persistir el cambio
       if (nuevoEstado === 'ACTIVO') {
-        await api.put(`/usuarios/id/${user.id_user}/activate`);
+        await api.put(`/usuarios/id/${user.id_user}/activate`, null, true);
       } else {
-        await api.put(`/usuarios/id/${user.id_user}/deactivate`);
+        await api.put(`/usuarios/id/${user.id_user}/deactivate`, null, true);
       }
 
       // ✅ Mostrar Toast de éxito
@@ -1521,7 +1521,7 @@ const UsersManagement = () => {
   const confirmarEliminar = async () => {
     if (!userToDelete) return;
     try {
-      const response = await api.delete(`/usuarios/id/${userToDelete.id_user}`);
+      const response = await api.delete(`/usuarios/id/${userToDelete.id_user}`, true);
       console.log('✅ Usuario eliminado:', response);
       showToast('Usuario eliminado correctamente', 'success');
       setShowDeleteModal(false);

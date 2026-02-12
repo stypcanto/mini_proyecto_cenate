@@ -56,7 +56,7 @@ export default function HeaderCenate() {
 
   const cargarCantidadNotificaciones = async () => {
     try {
-      const count = await apiClient.get('/notificaciones/count');
+      const count = await apiClient.get('/notificaciones/count', true);
       setCantidadNotificaciones(count || 0);
     } catch (error) {
       console.error('❌ Error al cargar notificaciones:', error);

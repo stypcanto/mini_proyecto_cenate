@@ -401,7 +401,7 @@ const ActualizarModel = ({ user, onClose, onSuccess, initialTab = 'personal', fi
   const cargarPerfilCompleto = async (userId) => {
     try {
       console.log(`🔄 Cargando perfil completo del usuario ID: ${userId}...`);
-      const response = await api.get(`/usuarios/id/${userId}`);
+      const response = await api.get(`/usuarios/id/${userId}`, true);
       const userData = response.data || response;
 
       console.log('✅ Perfil completo cargado:', userData);
@@ -447,7 +447,7 @@ const ActualizarModel = ({ user, onClose, onSuccess, initialTab = 'personal', fi
   const cargarIpress = async () => {
     try {
       setLoadingIpress(true);
-      const response = await api.get('/ipress');
+      const response = await api.get('/ipress', true);
       setIpress(Array.isArray(response) ? response : response.data || []);
     } catch (error) {
       console.error('Error al cargar IPRESS:', error);
@@ -461,7 +461,7 @@ const ActualizarModel = ({ user, onClose, onSuccess, initialTab = 'personal', fi
     try {
       setLoadingIpress(true);
       console.log('🔍 Cargando todas las IPRESS desde /ipress...');
-      const ipressResponse = await api.get('/ipress');
+      const ipressResponse = await api.get('/ipress', true);
       console.log('✅ IPRESS cargadas:', ipressResponse);
 
       const ipressData = Array.isArray(ipressResponse) ? ipressResponse : [];
@@ -485,7 +485,7 @@ const ActualizarModel = ({ user, onClose, onSuccess, initialTab = 'personal', fi
     try {
       setLoadingRedes(true);
       console.log('🔍 Cargando Redes desde /redes...');
-      const redesResponse = await api.get('/redes');
+      const redesResponse = await api.get('/redes', true);
       console.log('✅ Redes cargadas:', redesResponse);
 
       const redesData = Array.isArray(redesResponse) ? redesResponse : [];
@@ -511,11 +511,11 @@ const ActualizarModel = ({ user, onClose, onSuccess, initialTab = 'personal', fi
       setLoadingCatalogos(true);
       //epy
       const [profRes, espRes, regRes, areaRes, tiposRes] = await Promise.all([
-        api.get('/profesiones').catch((err) => { console.error('Error profesiones:', err); return { data: [] }; }),
-        api.get('/servicio-essi').catch((err) => { console.error('Error especialidades:', err); return { data: [] }; }), // ✅ Usar mismo endpoint que CrearUsuarioModal
-        api.get('/regimenes').catch((err) => { console.error('Error regimenes:', err); return { data: [] }; }),
-        api.get('/admin/areas').catch((err) => { console.error('Error areas:', err); return { data: [] }; }),
-        api.get('/tipos-personal').catch((err) => { console.error('Error tipos personal:', err); return { data: [] }; }) // 🆕 Tipos de profesional
+        api.get('/profesiones', true).catch((err) => { console.error('Error profesiones:', err); return { data: [] }; }),
+        api.get('/servicio-essi', true).catch((err) => { console.error('Error especialidades:', err); return { data: [] }; }),
+        api.get('/regimenes', true).catch((err) => { console.error('Error regimenes:', err); return { data: [] }; }),
+        api.get('/admin/areas', true).catch((err) => { console.error('Error areas:', err); return { data: [] }; }),
+        api.get('/tipos-personal', true).catch((err) => { console.error('Error tipos personal:', err); return { data: [] }; })
       ]);
 
       console.log('Profesiones:', profRes);
@@ -589,10 +589,10 @@ const ActualizarModel = ({ user, onClose, onSuccess, initialTab = 'personal', fi
 
   const cargarRoles = async () => {
     try {
-      const userResponse = await api.get('/auth/me');
+      const userResponse = await api.get('/auth/me', true);
       setCurrentUserRoles(userResponse.roles || []);
 
-      const rolesResponse = await api.get('/admin/roles');
+      const rolesResponse = await api.get('/admin/roles', true);
       setRoles(Array.isArray(rolesResponse) ? rolesResponse : []);
       setLoadingRoles(false);
     } catch (error) {
@@ -610,7 +610,7 @@ const ActualizarModel = ({ user, onClose, onSuccess, initialTab = 'personal', fi
 
     setLoadingFirmaDigital(true);
     try {
-      const response = await api.get(`/api/firma-digital/personal/${user.id_personal}`);
+      const response = await api.get(`/api/firma-digital/personal/${user.id_personal}`, true);
       if (response.data?.status === 200 && response.data?.data) {
         const firma = response.data.data;
         console.log('🖋️ Firma digital cargada:', firma);
@@ -757,7 +757,7 @@ const ActualizarModel = ({ user, onClose, onSuccess, initialTab = 'personal', fi
       }
       
       setLoading(true);
-      await api.delete(`/personal/foto/${userId}`);
+      await api.delete(`/personal/foto/${userId}`, true);
       setFotoActual(null);
       setFotoSeleccionada(null);
       setFotoPreview(null);
@@ -859,7 +859,7 @@ const ActualizarModel = ({ user, onClose, onSuccess, initialTab = 'personal', fi
       console.log('📤 Actualizando SOLO firma digital:', firmaDigitalRequest);
 
       // Llamar al endpoint POST /api/firma-digital (hace UPSERT)
-      const response = await api.post('/firma-digital', firmaDigitalRequest);
+      const response = await api.post('/firma-digital', firmaDigitalRequest, true);
 
       console.log('✅ Firma digital actualizada exitosamente:', response.data);
 
@@ -1059,7 +1059,7 @@ const ActualizarModel = ({ user, onClose, onSuccess, initialTab = 'personal', fi
       };
 
       console.log('📤 Datos personales a enviar:', dataToSend);
-      const personalResponse = await api.put(`/usuarios/personal/${userId}`, dataToSend);
+      const personalResponse = await api.put(`/usuarios/personal/${userId}`, dataToSend, true);
       console.log('✅ Respuesta actualización personal:', personalResponse);
 
       const usuarioData = {
@@ -1069,7 +1069,7 @@ const ActualizarModel = ({ user, onClose, onSuccess, initialTab = 'personal', fi
         idRed: formData.roles.includes('COORDINADOR_RED') ? formData.id_red : null
       };
       console.log('📤 Datos de usuario a enviar:', usuarioData);
-      const usuarioResponse = await api.put(`/usuarios/id/${userId}`, usuarioData);
+      const usuarioResponse = await api.put(`/usuarios/id/${userId}`, usuarioData, true);
       console.log('✅ Respuesta actualización usuario:', usuarioResponse);
 
       // 🆕 v1.14.0 - Actualizar Firma Digital si existe en formData
@@ -1093,7 +1093,7 @@ const ActualizarModel = ({ user, onClose, onSuccess, initialTab = 'personal', fi
               observaciones: formData.observaciones_firma || null
             };
             console.log('🖋️ Actualizando firma digital:', firmaDigitalPayload);
-            await api.post('/api/firma-digital', firmaDigitalPayload);
+            await api.post('/api/firma-digital', firmaDigitalPayload, true);
             console.log('✅ Firma digital actualizada exitosamente');
           } catch (error) {
             console.error('⚠️ Error al actualizar firma digital:', error);
@@ -1230,7 +1230,7 @@ const ActualizarModel = ({ user, onClose, onSuccess, initialTab = 'personal', fi
       console.log('🔄 Enviando correo de reset para usuario ID:', userId, 'a correo:', correoSeleccionado);
 
       // Enviar email como query parameter
-      const response = await api.put(`/usuarios/id/${userId}/reset-password?email=${encodeURIComponent(correoSeleccionado)}`);
+      const response = await api.put(`/usuarios/id/${userId}/reset-password?email=${encodeURIComponent(correoSeleccionado)}`, null, true);
 
       alert('✅ ' + (response.message || 'Se ha enviado un correo al usuario con el enlace para restablecer su contraseña'));
       setShowResetConfirm(false);

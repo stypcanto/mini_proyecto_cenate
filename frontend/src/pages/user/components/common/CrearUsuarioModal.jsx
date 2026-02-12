@@ -275,7 +275,7 @@ const CrearUsuarioModal = ({ onClose, onSuccess, ipressList, personalData = null
       
       // Cargar profesiones
       try {
-        const profResponse = await api.get('/profesiones');
+        const profResponse = await api.get('/profesiones', true);
         console.log('✅ Profesiones cargadas:', profResponse);
         const profData = Array.isArray(profResponse) ? profResponse : [];
         // Ordenar alfabéticamente por descripción
@@ -293,7 +293,7 @@ const CrearUsuarioModal = ({ onClose, onSuccess, ipressList, personalData = null
       
       // Cargar especialidades
       try {
-        const espResponse = await api.get(API_ROUTES.INICIO.SERVICIO_ESSI);
+        const espResponse = await api.get(API_ROUTES.INICIO.SERVICIO_ESSI, true);
         console.log('✅ Especialidades cargadas:', espResponse);
         const espData = Array.isArray(espResponse) ? espResponse : [];
         // Ordenar alfabéticamente por descServicio
@@ -311,7 +311,7 @@ const CrearUsuarioModal = ({ onClose, onSuccess, ipressList, personalData = null
       
       // Cargar regímenes laborales
       try {
-        const regResponse = await api.get('/regimenes');
+        const regResponse = await api.get('/regimenes', true);
         console.log('✅ Regímenes laborales cargados:', regResponse);
         const regData = Array.isArray(regResponse) ? regResponse : [];
         // Ordenar alfabéticamente por descripción
@@ -330,7 +330,7 @@ const CrearUsuarioModal = ({ onClose, onSuccess, ipressList, personalData = null
       // Cargar tipos de profesional
       try {
         console.log('👨‍⚕️ Iniciando carga de tipos de profesional desde /tipos-personal...');
-        const tiposResponse = await api.get('/tipos-personal');
+        const tiposResponse = await api.get('/tipos-personal', true);
         console.log('📎 Respuesta completa de tipos de profesional:', tiposResponse);
         console.log('📊 Tipo de respuesta:', typeof tiposResponse);
         console.log('📊 Es array?:', Array.isArray(tiposResponse));
@@ -373,7 +373,7 @@ const CrearUsuarioModal = ({ onClose, onSuccess, ipressList, personalData = null
       // Cargar áreas
       try {
         console.log('🏢 Iniciando carga de áreas desde /admin/areas...');
-        const areaResponse = await api.get('/admin/areas');
+        const areaResponse = await api.get('/admin/areas', true);
         console.log('📦 Respuesta completa de áreas:', areaResponse);
         console.log('📊 Tipo de respuesta:', typeof areaResponse);
         console.log('📊 Es array?:', Array.isArray(areaResponse));
@@ -425,7 +425,7 @@ const CrearUsuarioModal = ({ onClose, onSuccess, ipressList, personalData = null
       console.log('🔍 Buscando IPRESS CENATE (código 739)...');
       const ipressResponse = ipressList && ipressList.length > 0 
         ? ipressList 
-        : await api.get('/ipress');
+        : await api.get('/ipress', true);
       
       const cenateIpressFound = ipressResponse.find(ip => 
         ip.codIpress === '739' || 
@@ -467,14 +467,14 @@ const CrearUsuarioModal = ({ onClose, onSuccess, ipressList, personalData = null
   const cargarRoles = async () => {
     try {
       try {
-        const userResponse = await api.get('/auth/me');
+        const userResponse = await api.get('/auth/me', true);
         console.log('✅ Usuario autenticado:', userResponse);
         setCurrentUserRoles(userResponse.roles || []);
       } catch (error) {
         console.error('⚠️ Error al obtener usuario autenticado:', error);
       }
 
-      const rolesResponse = await api.get('/admin/roles');
+      const rolesResponse = await api.get('/admin/roles', true);
       console.log('✅ Roles cargados:', rolesResponse);
       setRoles(Array.isArray(rolesResponse) ? rolesResponse : []);
       setLoadingRoles(false);
@@ -489,7 +489,7 @@ const CrearUsuarioModal = ({ onClose, onSuccess, ipressList, personalData = null
     try {
       setLoadingIpress(true);
       console.log('🔍 Cargando IPRESS desde /ipress...');
-      const ipressResponse = await api.get('/ipress');
+      const ipressResponse = await api.get('/ipress', true);
       console.log('✅ IPRESS cargadas:', ipressResponse);
 
       const ipressFiltered = Array.isArray(ipressResponse)
@@ -514,7 +514,7 @@ const CrearUsuarioModal = ({ onClose, onSuccess, ipressList, personalData = null
     try {
       setLoadingIpress(true);
       console.log('🔍 Cargando todas las IPRESS desde /ipress...');
-      const ipressResponse = await api.get('/ipress');
+      const ipressResponse = await api.get('/ipress', true);
       console.log('✅ IPRESS cargadas:', ipressResponse);
 
       const ipressFiltered = Array.isArray(ipressResponse)
@@ -539,7 +539,7 @@ const CrearUsuarioModal = ({ onClose, onSuccess, ipressList, personalData = null
     try {
       setLoadingRedes(true);
       console.log('🔍 Cargando Redes desde /redes...');
-      const redesResponse = await api.get('/redes');
+      const redesResponse = await api.get('/redes', true);
       console.log('✅ Redes cargadas:', redesResponse);
 
       const redesData = Array.isArray(redesResponse) ? redesResponse : [];
@@ -1052,7 +1052,7 @@ const CrearUsuarioModal = ({ onClose, onSuccess, ipressList, personalData = null
       console.log('🚀 Creando usuario con endpoint:', endpoint);
       console.log('📦 Datos a enviar:', JSON.stringify(dataToSend, null, 2));
 
-      const response = await api.post(endpoint, dataToSend);
+      const response = await api.post(endpoint, dataToSend, true);
       
       console.log('✅ Usuario creado exitosamente');
       
