@@ -318,12 +318,21 @@ export default function MisPacientes() {
     cargarEspecialidades();
   }, []);
 
-  // Esperar a que las especialidades carguen antes de cargar pacientes
+  // ✅ v1.104.0: Cargar pacientes con timeout - no esperar indefinidamente si especialidades falla
   useEffect(() => {
+    const timer = setTimeout(() => {
+      console.log('✅ v1.104.0: Cargando pacientes (timeout de especialidades)...');
+      cargarPacientes();
+    }, 1000);
+
+    // Si especialidades carga antes del timeout, cargar de inmediato
     if (especialidades.length > 0) {
+      clearTimeout(timer);
       console.log('✅ v1.78.0: Especialidades cargadas, ahora cargando pacientes...');
       cargarPacientes();
     }
+
+    return () => clearTimeout(timer);
   }, [especialidades.length]);
 
   // ✅ v1.78.0: Cargar ECGs cuando se detecta que es cardiólogo
