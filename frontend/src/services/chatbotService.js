@@ -4,7 +4,7 @@
 // Servicio para interactuar con endpoints del ChatBot de Citas
 // ========================================================================
 
-import apiClient from '../lib/apiClient';
+import apiClient from '../../lib/apiClient';
 
 const chatbotService = {
   // ========================================================================

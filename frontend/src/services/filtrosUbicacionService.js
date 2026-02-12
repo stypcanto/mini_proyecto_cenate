@@ -4,7 +4,7 @@
 // Gestiona los filtros en cascada: Macroregión → Red → IPRESS
 // ========================================================================
 
-import { apiClient } from "../lib/apiClient";
+import { apiClient } from "../../lib/apiClient";
 
 class FiltrosUbicacionService {
   /**

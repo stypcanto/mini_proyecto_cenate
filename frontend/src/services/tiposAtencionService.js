@@ -4,7 +4,7 @@
 // CENATE 2026 | Servicio para comunicación con API de tipos de atención
 // ========================================================================
 
-import api from '../lib/apiClient';
+import api from '../../lib/apiClient';
 
 const BASE_URL = '/admin/tipos-atencion-telemedicina';
 

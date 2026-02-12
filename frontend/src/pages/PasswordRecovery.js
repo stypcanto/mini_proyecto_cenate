@@ -9,7 +9,7 @@
 import React, { useState } from "react";
 import { ArrowLeft, Send, AlertCircle, Info, CheckCircle2 } from "lucide-react";
 import { Link } from "react-router-dom";
-import { apiClient } from "../lib/apiClient";
+import { apiClient } from "../../lib/apiClient";
 import { VERSION } from "../config/version";
 
 export default function PasswordRecovery() {

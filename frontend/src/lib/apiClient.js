@@ -214,6 +214,9 @@ export const isAuthenticated = () => {
   return !!getToken();
 };
 
+// ✅ v1.97.5: Exportar getToken y API_BASE_URL para servicios
+export { getToken, API_BASE_URL };
+
 // Log para desarrollo
 console.info("🌐 [API Base URL]:", API_BASE_URL);
 console.info("🔧 [Environment]:", process.env.REACT_APP_API_URL || 'No configurado');

@@ -13,7 +13,7 @@ import { useAuth } from "../../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import NotificacionesPanel from "../NotificacionesPanel";
 import UserMenu from "./UserMenu";
-import apiClient from '../../lib/apiClient';
+import apiClient from '../../../../../lib/apiClient';
 
 export default function HeaderCenate() {
   const { user, logout } = useAuth() || {}; // 🛡 Evita error si el contexto no existe

@@ -1,4 +1,4 @@
-import apiClient from '../lib/apiClient';
+import apiClient from '../../lib/apiClient';
 
 /**
  * Servicio para operaciones del Coordinador Médico

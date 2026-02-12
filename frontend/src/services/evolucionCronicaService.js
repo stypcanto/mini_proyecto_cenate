@@ -4,7 +4,7 @@
 // CENATE 2026 | Dashboard CENACRON para HTA/DM
 // ========================================================================
 
-import api from '../lib/apiClient';
+import api from '../../lib/apiClient';
 
 const BASE_URL = '/evolucion-cronica';
 

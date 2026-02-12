@@ -1,7 +1,7 @@
 // src/pages/admin/users/UsersManagement.jsx
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { Building } from 'lucide-react';
-import api from '../../lib/apiClient';
+import api from '../../../../../lib/apiClient';
 import TabsNavigation from './components/TabsNavigation';
 import FiltersPanel from './components/FiltersPanel';
 import UsersTable from './components/UsersTable';

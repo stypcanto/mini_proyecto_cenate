@@ -4,7 +4,7 @@
 // CENATE 2026 | Servicio para comunicación con API de integración chatbot
 // ========================================================================
 
-import api from '../lib/apiClient';
+import api from '../../lib/apiClient';
 
 const BASE_URL = '/integracion-horario';
 

@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
-import apiClient from '../../lib/apiClient';
+import apiClient from '../../../../../lib/apiClient';
 import ipressService from "../../services/ipressService";
 import { useAuth } from "../../context/AuthContext";
 import IpressFormModal from "./components/IpressFormModal";

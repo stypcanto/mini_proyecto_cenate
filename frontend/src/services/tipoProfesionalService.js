@@ -4,7 +4,7 @@
 // CENATE 2025 | Servicio para comunicación con API de tipos profesionales
 // ========================================================================
 
-import api from '../lib/apiClient';
+import api from '../../lib/apiClient';
 
 const BASE_URL = '/admin/tipos-profesionales';
 

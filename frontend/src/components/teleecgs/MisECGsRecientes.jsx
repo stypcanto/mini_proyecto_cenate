@@ -31,7 +31,7 @@ import {
 import { COLORS, MEDICAL_PALETTE } from '../../config/designSystem';
 import toast from 'react-hot-toast';
 import teleecgService from '../../services/teleecgService';
-import apiClient from '../../lib/apiClient';
+import apiClient from '../../../../../lib/apiClient';
 
 // ✅ v1.76.5: Función auxiliar para parsear fechas sin offset de timezone
 const parsearFechaSegura = (fechaStr) => {

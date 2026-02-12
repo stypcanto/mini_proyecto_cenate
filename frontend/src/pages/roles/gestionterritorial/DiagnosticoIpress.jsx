@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 import toast from "react-hot-toast";
 import aseguradosService from "../../../services/aseguradosService";
-import api from '../../lib/apiClient';
+import api from '../../../../../../../lib/apiClient';
 
 export default function DiagnosticoIpress() {
   // Estados principales

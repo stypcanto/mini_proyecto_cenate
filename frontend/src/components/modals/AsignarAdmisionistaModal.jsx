@@ -7,7 +7,7 @@
 import React, { useState, useEffect } from "react";
 import { X, UserCheck, Search, AlertCircle, CheckCircle2 } from "lucide-react";
 import toast from "react-hot-toast";
-import apiClient from "../../lib/apiClient";
+import apiClient from "../../../../../lib/apiClient";
 
 export default function AsignarAdmisionistaModal({
     isOpen,

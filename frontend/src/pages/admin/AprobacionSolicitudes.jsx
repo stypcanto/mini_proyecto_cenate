@@ -28,7 +28,7 @@ import {
   X,
 } from "lucide-react";
 import toast from "react-hot-toast";
-import { apiClient } from "../../lib/apiClient";
+import { apiClient } from "../../../../../lib/apiClient";
 
 export default function AprobacionSolicitudes() {
   const [solicitudes, setSolicitudes] = useState([]);

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Bell } from 'lucide-react';
-import apiClient from '../lib/apiClient';
+import apiClient from '../../lib/apiClient';
 import gestionPacientesService from '../services/gestionPacientesService';
 import { useNavigate } from 'react-router-dom';
 

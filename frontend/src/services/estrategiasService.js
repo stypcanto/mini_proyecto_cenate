@@ -4,7 +4,7 @@
 // CENATE 2026 | Servicio para comunicación con API de estrategias
 // ========================================================================
 
-import api from '../lib/apiClient';
+import api from '../../lib/apiClient';
 
 const BASE_URL = '/admin/estrategias-institucionales';
 

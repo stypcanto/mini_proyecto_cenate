@@ -5,7 +5,7 @@
 // Integración con endpoints del backend ImportExcelController
 // ========================================================================
 
-import apiClient from '../lib/apiClient';
+import apiClient from '../../lib/apiClient';
 
 const API_BASE = '/api/import-excel';
 

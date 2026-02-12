@@ -20,7 +20,7 @@ import {
 } from "lucide-react";
 import toast from "react-hot-toast";
 import * as XLSX from "xlsx";
-import apiClient from "../../../lib/apiClient";
+import apiClient from "../../../../../../../../lib/apiClient";
 import { filtrosUbicacionService } from "../../../services/filtrosUbicacionService";
 
 const REGISTROS_POR_PAGINA = 25;

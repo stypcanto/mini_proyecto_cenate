@@ -4,7 +4,7 @@
 // Servicio para gestionar especialidades de CENATE
 // ========================================================================
 
-import { apiClient } from "../lib/apiClient";
+import { apiClient } from "../../lib/apiClient";
 
 class EspecialidadService {
   /**

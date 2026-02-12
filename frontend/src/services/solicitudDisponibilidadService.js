@@ -5,7 +5,7 @@
 // Trabaja con: solicitud_disponibilidad_medico y solicitud_disponibilidad_medico_det
 // ========================================================================
 
-import { apiClient } from "../lib/apiClient";
+import { apiClient } from "../../lib/apiClient";
 
 class SolicitudDisponibilidadService {
   // ============================================================

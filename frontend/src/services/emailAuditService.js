@@ -4,7 +4,7 @@
  * Servicio para consumir endpoints de auditoría de correos
  */
 
-import apiClient from '../lib/apiClient';
+import apiClient from '../../lib/apiClient';
 
 const ENDPOINT = '/email-audit';
 

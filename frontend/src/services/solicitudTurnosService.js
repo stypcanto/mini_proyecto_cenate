@@ -1,4 +1,4 @@
-import apiClient from "../lib/apiClient";
+import apiClient from "../../lib/apiClient";
 
 const BASE_URL = "/api/solicitudes-turno";
 

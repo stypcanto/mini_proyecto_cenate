@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { useAuth } from "../../context/AuthContext";
-import apiClient from '../../lib/apiClient';
+import apiClient from '../../../../../lib/apiClient';
 import NursingAttendModal from "./components/NursingAttendModal";
 
 export default function MisPacientesEnfermeria() {

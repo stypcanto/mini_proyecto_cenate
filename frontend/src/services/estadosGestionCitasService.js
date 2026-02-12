@@ -14,7 +14,7 @@
  * - DELETE /api/admin/estados-gestion-citas/{id}           → Eliminar
  */
 
-import { apiClient } from '../lib/apiClient';
+import { apiClient } from '../../lib/apiClient';
 
 const BASE_URL = '/api/admin/estados-gestion-citas';
 

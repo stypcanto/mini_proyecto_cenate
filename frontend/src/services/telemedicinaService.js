@@ -2,7 +2,7 @@
 // Servicio de Telemedicina - Jitsi JaaS - CENATE
 // ========================================================================
 
-import apiClient from '../lib/apiClient';
+import apiClient from '../../lib/apiClient';
 
 const BASE_ENDPOINT = '/telemedicina';
 

@@ -33,7 +33,7 @@ import {
   CheckCircle,
   XCircle
 } from "lucide-react";
-import { apiClient } from "../../lib/apiClient";
+import { apiClient } from "../../../../../lib/apiClient";
 import toast from "react-hot-toast";
 import TrazabilidadClinicaTabs from "../../components/trazabilidad/TrazabilidadClinicaTabs";
 

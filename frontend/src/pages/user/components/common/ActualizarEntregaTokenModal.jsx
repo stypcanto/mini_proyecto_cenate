@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { X, FileSignature, AlertCircle, CheckCircle, Calendar, Hash, FileText, Save } from 'lucide-react';
-import apiClient from '../../../../lib/apiClient';
+import apiClient from '../../../../../../../../../../../lib/apiClient';
 
 // 🆕 v1.15.15: Helper para enviar fechas al backend sin conversión UTC
 // IMPORTANTE: Previene el bug donde "02/05/2025" se guarda como "01/05/2025"

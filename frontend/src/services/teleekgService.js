@@ -4,7 +4,7 @@
 // ========================================================================
 
 import axios from "axios";
-import apiClient from '../lib/apiClient';
+import apiClient from '../../lib/apiClient';
 
 // ✅ FIX: REACT_APP_API_URL ya incluye /api, así que no duplicamos
 const API_BASE_URL = `${process.env.REACT_APP_API_URL || "http://localhost:8080/api"}/teleekgs`;

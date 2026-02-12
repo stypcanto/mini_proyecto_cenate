@@ -4,7 +4,7 @@
 // CENATE 2026 | Servicio para comunicación con API de disponibilidad
 // ========================================================================
 
-import api from '../lib/apiClient';
+import api from '../../lib/apiClient';
 
 const BASE_URL = '/solicitudes-disponibilidad';
 
