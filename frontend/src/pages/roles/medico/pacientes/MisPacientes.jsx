@@ -269,6 +269,7 @@ export default function MisPacientes() {
   const [evaluacionesEstados, setEvaluacionesEstados] = useState({}); // ✅ Rastrear estado de evaluación por DNI
   const [showResultadosModal, setShowResultadosModal] = useState(false); // ✅ Modal para ver resultados
   const [resultadosActuales, setResultadosActuales] = useState(null); // ✅ Resultados a mostrar
+  const [pacientesRechazados, setPacientesRechazados] = useState({}); // ✅ v1.92.0: Rastrear imágenes rechazadas (OBSERVADA) por DNI
 
   const bolsasDisponibles = [
     { id: 1, nombre: 'Bolsa 107 (Módulo 107)' },
@@ -534,13 +535,14 @@ export default function MisPacientes() {
     }
   };
 
-  // ✅ v1.80.0: Cargar estados de evaluación ECG (en background, sin bloquear UI)
+  // ✅ v1.92.0: Cargar estados de evaluación ECG + detectar rechazos (en background, sin bloquear UI)
   const cargarEstadosEvaluacion = async (pacientesActuales) => {
     try {
       const dnis = [...new Set(pacientesActuales.map(p => p.numDoc).filter(Boolean))];
       if (dnis.length === 0) return;
 
       const estados = {};
+      const rechazos = {}; // ✅ v1.92.0: Rastrear imágenes rechazadas (OBSERVADA)
 
       // ✅ Procesar en paralelo pero en chunks de 5 para no saturar el backend
       const chunks = [];
@@ -558,6 +560,23 @@ export default function MisPacientes() {
                 if (resultado && Array.isArray(resultado) && resultado.length > 0) {
                   const imagenes = resultado[0]?.imagenes;
                   if (imagenes && Array.isArray(imagenes)) {
+                    // ✅ v1.92.0: Detectar imágenes rechazadas (estado OBSERVADA)
+                    const imagenesRechazadas = imagenes.filter(
+                      img => img && img.estado === 'OBSERVADA'
+                    );
+
+                    if (imagenesRechazadas.length > 0) {
+                      rechazos[dni] = {
+                        cantidad: imagenesRechazadas.length,
+                        motivos: imagenesRechazadas.map(img => ({
+                          id: img.idImagen || img.id_imagen,
+                          observaciones: img.observaciones || img.observacionesClinicas || '',
+                          fecha: img.fechaEnvio || img.fecha_envio || ''
+                        }))
+                      };
+                      console.log(`⚠️ Paciente ${dni} tiene ${imagenesRechazadas.length} imagen(es) rechazada(s)`);
+                    }
+
                     // Obtener la última evaluación
                     const evaluadas = imagenes.filter(
                       img => img && img.evaluacion && img.evaluacion !== 'SIN_EVALUAR'
@@ -596,6 +615,7 @@ export default function MisPacientes() {
       }
 
       setEvaluacionesEstados(estados);
+      setPacientesRechazados(rechazos); // ✅ v1.92.0: Guardar rechazos
     } catch (error) {
       console.error('Error cargando estados evaluación:', error);
     }
@@ -1061,7 +1081,8 @@ export default function MisPacientes() {
       'Atendido': 'bg-emerald-600 text-white border-emerald-700 hover:bg-emerald-700',
       'Pendiente': 'bg-orange-100 text-orange-700 border-orange-300',
       'Reprogramación Fallida': 'bg-red-100 text-red-700 border-red-300',
-      'No Contactado': 'bg-slate-100 text-slate-600 border-slate-300'
+      'No Contactado': 'bg-slate-100 text-slate-600 border-slate-300',
+      'Rechazado': 'bg-purple-100 text-purple-700 border-purple-300' // ✅ v1.92.0: Morado para rechazos
     };
     return colores[condicion] || 'bg-gray-100 text-gray-700 border-gray-200';
   };
@@ -1914,14 +1935,24 @@ export default function MisPacientes() {
                       )}
 
                       <td className="px-4 py-3">
-                        <button
-                          onClick={() => abrirAccion(paciente)}
-                          title="Haz clic para cambiar estado"
-                          className={getButtonStyleCondicion(paciente.condicion)}
-                        >
-                          <span>{paciente.condicion || 'Sin asignar'}</span>
-                          <ChevronRight className="w-3.5 h-3.5" />
-                        </button>
+                        {/* ✅ v1.92.0: Si hay imágenes rechazadas, mostrar "Rechazado" en morado */}
+                        {pacientesRechazados[paciente.numDoc] ? (
+                          <div
+                            title={`ECG rechazado. ${pacientesRechazados[paciente.numDoc].cantidad} imagen(es) con motivo de rechazo`}
+                            className={getButtonStyleCondicion('Rechazado')}
+                          >
+                            <span>⚠️ Rechazado</span>
+                          </div>
+                        ) : (
+                          <button
+                            onClick={() => abrirAccion(paciente)}
+                            title="Haz clic para cambiar estado"
+                            className={getButtonStyleCondicion(paciente.condicion)}
+                          >
+                            <span>{paciente.condicion || 'Sin asignar'}</span>
+                            <ChevronRight className="w-3.5 h-3.5" />
+                          </button>
+                        )}
                       </td>
                       <td className="px-4 py-3 text-gray-600">
                         {paciente.observaciones ? (
@@ -1943,37 +1974,50 @@ export default function MisPacientes() {
                       {esCardiologo && (
                         <td className="px-4 py-3 text-center">
                           <div className="flex items-center justify-center gap-2">
-                            {/* ✅ v1.80.0: Botón para atender/evaluar ECG */}
-                            <button
-                              onClick={() => abrirCarruselECG(paciente)}
-                              disabled={cargandoECG}
-                              title={
-                                cargandoECG
-                                  ? 'Cargando ECG...'
-                                  : evaluacionesEstados[paciente.numDoc]?.estado === 'EVALUADO'
-                                  ? '✏️ Editar evaluación ECG (ya evaluado)'
-                                  : 'Evaluar ECG (Pendiente)'
-                              }
-                              className={`relative inline-flex items-center justify-center gap-2 px-4 py-3 rounded-lg font-semibold text-sm transition-all ${
-                                cargandoECG
-                                  ? 'bg-gray-100 text-gray-400 cursor-not-allowed opacity-50 border border-gray-200'
-                                  : evaluacionesEstados[paciente.numDoc]?.estado === 'EVALUADO'
-                                  ? 'bg-green-600 text-white border border-green-700 hover:bg-green-700 cursor-pointer'
-                                  : 'bg-red-600 text-white hover:bg-red-700 cursor-pointer border border-red-700 ecg-button-pulse'
-                              }`}
-                            >
-                              <Stethoscope
-                                className={`w-6 h-6 ${
-                                  evaluacionesEstados[paciente.numDoc]?.estado === 'EVALUADO'
-                                    ? 'text-white'
-                                    : 'text-current'
+                            {/* ✅ v1.92.0: Botón para atender/evaluar ECG - Maneja rechazos */}
+                            {pacientesRechazados[paciente.numDoc] ? (
+                              // ✅ v1.92.0: Si hay rechazo, mostrar botón deshabilitado en gris con 🔄
+                              <button
+                                disabled={true}
+                                title={`ECG rechazado. IPRESS debe cargar nueva imagen. Motivo: ${pacientesRechazados[paciente.numDoc].motivos?.[0]?.observaciones || 'Por especificar'}`}
+                                className="relative inline-flex items-center justify-center gap-2 px-4 py-3 rounded-lg font-semibold text-sm bg-gray-400 text-white border border-gray-500 cursor-not-allowed opacity-60"
+                              >
+                                <RefreshCw className="w-6 h-6" strokeWidth={2} />
+                                <span className="text-xs">{pacientesRechazados[paciente.numDoc].cantidad}</span>
+                              </button>
+                            ) : (
+                              // ✅ Normal: Botón de evaluación
+                              <button
+                                onClick={() => abrirCarruselECG(paciente)}
+                                disabled={cargandoECG}
+                                title={
+                                  cargandoECG
+                                    ? 'Cargando ECG...'
+                                    : evaluacionesEstados[paciente.numDoc]?.estado === 'EVALUADO'
+                                    ? '✏️ Editar evaluación ECG (ya evaluado)'
+                                    : 'Evaluar ECG (Pendiente)'
+                                }
+                                className={`relative inline-flex items-center justify-center gap-2 px-4 py-3 rounded-lg font-semibold text-sm transition-all ${
+                                  cargandoECG
+                                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed opacity-50 border border-gray-200'
+                                    : evaluacionesEstados[paciente.numDoc]?.estado === 'EVALUADO'
+                                    ? 'bg-green-600 text-white border border-green-700 hover:bg-green-700 cursor-pointer'
+                                    : 'bg-red-600 text-white hover:bg-red-700 cursor-pointer border border-red-700 ecg-button-pulse'
                                 }`}
-                                strokeWidth={2}
-                              />
-                              {ecgCounts[paciente.numDoc] > 0 && (
-                                <span className="font-bold">{ecgCounts[paciente.numDoc]}</span>
-                              )}
-                            </button>
+                              >
+                                <Stethoscope
+                                  className={`w-6 h-6 ${
+                                    evaluacionesEstados[paciente.numDoc]?.estado === 'EVALUADO'
+                                      ? 'text-white'
+                                      : 'text-current'
+                                  }`}
+                                  strokeWidth={2}
+                                />
+                                {ecgCounts[paciente.numDoc] > 0 && (
+                                  <span className="font-bold">{ecgCounts[paciente.numDoc]}</span>
+                                )}
+                              </button>
+                            )}
 
                             {/* ✅ v1.80.0: Botón para ver resultados (si fue evaluado) */}
                             {evaluacionesEstados[paciente.numDoc]?.estado === 'EVALUADO' && (

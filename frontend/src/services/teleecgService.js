@@ -521,18 +521,23 @@ const teleecgService = {
   },
 
   /**
-   * ✅ v1.91.0: Rechazar imagen ECG por validación de calidad
-   * Usa endpoint /procesar con acción "RECHAZAR"
+   * ✅ v1.91.1: Rechazar imagen ECG por validación de calidad
+   * Usa endpoint /procesar con acción "OBSERVAR" (backend no tiene "RECHAZAR")
+   * Cambia estado a OBSERVADA con motivo en observaciones
    * @param {number} idImagen - ID de la imagen ECG
    * @param {string} motivo - Motivo del rechazo (MALA_CALIDAD, INCOMPLETA, etc)
    * @param {string} descripcion - Descripción adicional (opcional)
    */
   rechazarImagen: async (idImagen, motivo, descripcion = "") => {
     try {
+      // Construir texto completo con motivo y descripción
+      const textoCompleto = descripcion
+        ? `${motivo} - ${descripcion}`
+        : motivo;
+
       const payload = {
-        accion: "RECHAZAR",
-        motivo,
-        observaciones: descripcion || "",
+        accion: "OBSERVAR",  // Backend usa OBSERVAR para marcar como rechazado
+        observaciones: textoCompleto,  // Guarda motivo + descripción
       };
 
       console.log("❌ [RECHAZAR ECG]:", { idImagen, motivo, descripcion });
@@ -543,7 +548,7 @@ const teleecgService = {
         true
       );
 
-      console.log("✅ [Imagen Rechazada]:", response);
+      console.log("✅ [Imagen Rechazada - Estado OBSERVADA]:", response);
       return response;
     } catch (error) {
       console.error("❌ Error al rechazar imagen:", error.message);
