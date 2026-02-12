@@ -521,23 +521,24 @@ const teleecgService = {
   },
 
   /**
-   * ❌ v3.1.0: Rechazar imagen ECG por validación de calidad
-   * Devuelve la imagen a IPRESS para que cambie la imagen
+   * ✅ v1.91.0: Rechazar imagen ECG por validación de calidad
+   * Usa endpoint /procesar con acción "RECHAZAR"
    * @param {number} idImagen - ID de la imagen ECG
-   * @param {string} motivo - Motivo predefinido (MALA_CALIDAD, INCOMPLETA, etc)
+   * @param {string} motivo - Motivo del rechazo (MALA_CALIDAD, INCOMPLETA, etc)
    * @param {string} descripcion - Descripción adicional (opcional)
    */
   rechazarImagen: async (idImagen, motivo, descripcion = "") => {
     try {
       const payload = {
+        accion: "RECHAZAR",
         motivo,
-        descripcion,
+        observaciones: descripcion || "",
       };
 
-      console.log("❌ [RECHAZAR ECG]:", { idImagen, motivo });
+      console.log("❌ [RECHAZAR ECG]:", { idImagen, motivo, descripcion });
 
       const response = await apiClient.put(
-        `/teleekgs/${idImagen}/rechazar`,
+        `/teleekgs/${idImagen}/procesar`,
         payload,
         true
       );
