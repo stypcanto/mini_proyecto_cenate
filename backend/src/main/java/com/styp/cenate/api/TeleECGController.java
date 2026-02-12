@@ -1275,7 +1275,14 @@ public class TeleECGController {
      */
     private TeleECGImagenDTO aplicarTransformacionEstado(TeleECGImagenDTO dto, Usuario usuario) {
         if (dto != null) {
+            // ✅ v1.100.3: Garantizar que estadoTransformado NUNCA sea null
             String estadoTransformado = estadoTransformer.transformarEstado(dto, usuario);
+
+            // Fallback: Si por alguna razón es null, usar el estado original
+            if (estadoTransformado == null || estadoTransformado.isEmpty()) {
+                estadoTransformado = dto.getEstado() != null ? dto.getEstado() : "DESCONOCIDO";
+            }
+
             log.info("   🔄 [APPLY_TRANSFORM] ID: {}, EstadoBD: {}, EstadoTransf: {}, Usuario: {}",
                 dto.getIdImagen(),
                 dto.getEstado(),
