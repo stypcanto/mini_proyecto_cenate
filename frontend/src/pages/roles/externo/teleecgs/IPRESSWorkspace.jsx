@@ -165,6 +165,41 @@ export default function IPRESSWorkspace() {
   // ✅ v1.96.2: Usar todasLasImagenes (se actualiza cuando cargan páginas en background)
   const ecgsPaginados = todasLasImagenes.slice(startIndex, endIndex);
 
+  // ✅ v1.97.0: DEDUPLICAR POR PACIENTE para mostrar 1 fila por paciente
+  // Agrupar imágenes por DNI y contar cantidad
+  const ecgsPaginadosDeduplicados = (() => {
+    const porDni = {};
+    const deduplicados = {};
+
+    ecgsPaginados.forEach(img => {
+      const dni = img.numDocPaciente || img.dni;
+      if (dni) {
+        // Agrupar todas las imágenes del paciente
+        if (!porDni[dni]) {
+          porDni[dni] = [];
+        }
+        porDni[dni].push(img);
+
+        // Guardar una sola instancia por DNI (la primera)
+        if (!deduplicados[dni]) {
+          deduplicados[dni] = img;
+        }
+      }
+    });
+
+    // Mapear para asegurar que cantidadImagenes esté correcto
+    return Object.entries(deduplicados).map(([dni, img]) => ({
+      ...img,
+      dni: dni,
+      cantidadImagenes: porDni[dni].length || 0,
+      nombrePaciente: img.nombreCompleto || img.nombresPaciente || img.nombrePaciente || "Cargando...",
+      genero: img.generoPaciente || img.genero || img.sexo || "-",
+      edad: img.edadPaciente || img.edad || img.ageinyears || "-",
+      telefono: img.telefonoPrincipalPaciente || img.telefono || "-",
+      esUrgente: img.es_urgente === true || img.esUrgente === true,
+    }));
+  })();
+
   // =======================================
   // 🔄 LIFECYCLE - Load data & handle resize
   // =======================================
@@ -662,7 +697,7 @@ export default function IPRESSWorkspace() {
           {/* Dashboard Full-Width */}
           <div className="w-full">
             <MisECGsRecientes
-              ultimas3={ecgsPaginados}
+              ultimas3={ecgsPaginadosDeduplicados}
               estadisticas={{
                 total: stats.total,  // ✅ Total de imágenes (para referencia)
                 cargadas: stats.cargadas,  // ✅ Pacientes únicos (MOSTRADO EN CARD PRINCIPAL)
@@ -734,7 +769,7 @@ export default function IPRESSWorkspace() {
                 </button>
 
                 <span className="ml-4 text-sm font-semibold text-gray-700">
-                  Página {currentPage} de {totalPages} ({ecgs.length} total)
+                  Página {currentPage} de {totalPages} ({ecgsPaginadosDeduplicados.length} pacientes)
                 </span>
               </div>
             )}

@@ -849,9 +849,22 @@ public class TeleECGService {
         );
 
         // Agrupar por DNI del paciente (solo contenido de la página actual)
+        // ✅ v1.100.2: Filtrar imágenes SIN DNI para evitar grupos con datos nulos
         List<TeleECGImagen> imagenes = imagenesPaginadas.getContent();
-        Map<String, List<TeleECGImagen>> imagenesPorDni = imagenes.stream()
+        List<TeleECGImagen> imagenesConDni = imagenes.stream()
+            .filter(img -> img.getNumDocPaciente() != null && !img.getNumDocPaciente().trim().isEmpty())
+            .collect(Collectors.toList());
+
+        long imagenesDescartadas = imagenes.size() - imagenesConDni.size();
+        if (imagenesDescartadas > 0) {
+            log.warn("⚠️ v1.100.2: {} imágenes descar tadas por falta de DNI", imagenesDescartadas);
+        }
+
+        Map<String, List<TeleECGImagen>> imagenesPorDni = imagenesConDni.stream()
             .collect(Collectors.groupingBy(TeleECGImagen::getNumDocPaciente));
+
+        log.info("✅ v1.100.2: Agrupadas {} imágenes por DNI en {} grupos",
+            imagenesConDni.size(), imagenesPorDni.size());
 
         // Convertir cada grupo a AseguradoConECGsDTO
         List<AseguradoConECGsDTO> resultado = new ArrayList<>();
