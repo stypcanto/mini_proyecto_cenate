@@ -345,22 +345,42 @@ insert into dim_estados_gestion_citas (cod_estado_cita, desc_estado_cita, stat_e
 values ('NO_IPRESS_CENATE', 'Pertenece a otra Ipress', 'A');
 
 
+select estado_gestion_citas_id from DIM_SOLICITUD_BOLSA where paciente_dni='46183586';
+
+select * from DIM_SOLICITUD_BOLSA where paciente_dni='46183586';
+
+
+
+select * from dim_solicitud_bolsa dsb  where OCTET_LENGTH (especialidad)= 6;
++
+
+
+
+select * from dim_tipos_bolsas dtb where  dtb.id_tipo_bolsa =1;
 
 
 
 
 
 
+select * from DIM_SOLICITUD_BOLSA where paciente_dni in ('46183586','10417941','40046461');
+
+
+
+select * from dim_usuarios;
+
+
+
+
+
+select * from DIM_SOLICITUD_BOLSA where paciente_dni in ('46183586','10417941','40046461');
 
 
 
 
 
 
-
-
-
-
+select  *  from dim_solicitud_bolsa dsb  where OCTET_LENGTH (especialidad)= 6;
 
 
 

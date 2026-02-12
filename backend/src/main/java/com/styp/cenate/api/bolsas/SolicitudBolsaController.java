@@ -668,8 +668,8 @@ public class SolicitudBolsaController {
                             detalleMedico.getNombre(), detalleMedico.getPerPers(), detalleMedico.getIdPers());
                     }
 
-                    if (detalleMedico != null && detalleMedico.getPerPers() != null) {
-                        String especialidadMedico = detalleMedico.getPerPers();
+                    if (detalleMedico != null && detalleMedico.getEspecialidad() != null) {
+                        String especialidadMedico = detalleMedico.getEspecialidad();
                         solicitud.setEspecialidad(especialidadMedico);
                         log.warn("✅✅✅ ESPECIALIDAD DEL MÉDICO GUARDADA: {}", especialidadMedico);
                     } else {
