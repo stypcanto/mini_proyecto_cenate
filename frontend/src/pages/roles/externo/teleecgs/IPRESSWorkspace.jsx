@@ -237,12 +237,27 @@ export default function IPRESSWorkspace() {
     const cargarStatsGlobales = async () => {
       try {
         console.log("📊 [v1.97.2] Cargando estadísticas globales de toda la BD...");
-        const response = await fetch('/api/teleekgs/estadisticas-globales');
+
+        // Obtener token del localStorage
+        const token = localStorage.getItem('token');
+        const headers = {
+          'Content-Type': 'application/json',
+        };
+        if (token) {
+          headers['Authorization'] = `Bearer ${token}`;
+        }
+
+        const response = await fetch('/api/teleekgs/estadisticas-globales', { headers });
         const data = await response.json();
 
         if (data?.data) {
           console.log("✅ [v1.97.2] Stats globales cargadas:", data.data);
+          console.log("   Total Pacientes: ", data.data.totalPacientes);
+          console.log("   Pacientes Pendientes: ", data.data.pacientesPendientes);
+          console.log("   Pacientes Atendidos: ", data.data.pacientesAtendidos);
           setStatsGlobales(data.data);
+        } else {
+          console.warn("⚠️ [v1.97.2] Response sin datos:", data);
         }
       } catch (error) {
         console.error("❌ [v1.97.2] Error cargando stats globales:", error);
