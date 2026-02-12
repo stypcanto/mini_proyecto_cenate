@@ -16,7 +16,7 @@ import {
   Lock,
   Info
 } from "lucide-react";
-import { apiClient } from "../../../../../lib/apiClient";
+import { apiClient } from '../../lib/apiClient';
 
 export default function PrimerAccesoModal({ username, onCompleted }) {
   const [loading, setLoading] = useState(false);

@@ -9,7 +9,7 @@
  * - DELETE /api/admin/cie10/{id}      → Eliminar
  */
 
-import { apiClient } from '../../lib/apiClient';
+import { apiClient } from '../lib/apiClient';
 
 const BASE_URL = '/admin/cie10';
 

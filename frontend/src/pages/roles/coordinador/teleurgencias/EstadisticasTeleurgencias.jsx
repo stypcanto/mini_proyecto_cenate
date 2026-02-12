@@ -25,7 +25,7 @@ import {
   Eye,
   X,
 } from 'lucide-react';
-import apiClient from '../../../../../../../../../lib/apiClient';
+import apiClient from '../../../../lib/apiClient';
 import toast from 'react-hot-toast';
 import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 

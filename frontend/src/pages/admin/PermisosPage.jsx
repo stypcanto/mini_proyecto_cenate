@@ -7,7 +7,7 @@
 
 import React, { useState, useEffect } from "react";
 import ToggleSwitch from "../../components/ui/ToggleSwitch";
-import { apiClient } from "../../../../../lib/apiClient";
+import { apiClient } from '../../lib/apiClient';
 import { useAuth } from "../../context/AuthContext";
 import {
   ChevronRight,

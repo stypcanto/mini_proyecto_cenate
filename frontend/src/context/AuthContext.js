@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
-import { apiClient } from "../../lib/apiClient";
+import { apiClient } from '../lib/apiClient';
 import { saveToken, getToken, clearToken, saveUser, getUser, clearUser, decodeJwt } from "../constants/auth";
 
 // Normaliza roles

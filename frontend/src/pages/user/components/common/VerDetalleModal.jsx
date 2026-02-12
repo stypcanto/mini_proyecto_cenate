@@ -1,7 +1,7 @@
 // src/pages/admin/users/components/modals/VerDetalleModal.jsx
 import React, { useMemo, useState, useEffect, useCallback } from 'react';
 import { getFotoUrl as buildFotoUrl } from '../../../../utils/apiUrlHelper';
-import api from '../../../../../../../../../lib/apiClient';
+import api from '../../../../lib/apiClient';
 import {
   X, User, Mail, Building2, CalendarDays,
   Hash, Clock, Shield, Briefcase, IdCard, GraduationCap,

@@ -4,7 +4,7 @@
 // CRUD completo para módulos del sistema CENATE
 // ========================================================================
 
-import apiClient from '../../lib/apiClient';
+import apiClient from '../lib/apiClient';
 
 const BASE_URL = '/mbac/modulos';
 

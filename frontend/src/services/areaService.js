@@ -4,7 +4,7 @@
 // Servicio para gestionar áreas internas de CENATE
 // ========================================================================
 
-import { apiClient } from "../../lib/apiClient";
+import { apiClient } from '../lib/apiClient';
 
 class AreaService {
   /**

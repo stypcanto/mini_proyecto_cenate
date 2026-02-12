@@ -4,7 +4,7 @@
 // Proporciona datos consolidados de solicitudes de turnos
 // ========================================================================
 
-import { apiClient } from "../../lib/apiClient";
+import { apiClient } from '../lib/apiClient';
 
 class ProgramacionCenateService {
   /**

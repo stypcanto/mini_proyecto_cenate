@@ -12,7 +12,7 @@ import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import axios from "axios";
 import { getApiBaseUrl } from "../../utils/apiUrlHelper";
-import apiClient from '../../../../../lib/apiClient';
+import apiClient from '../../lib/apiClient';
 
 const API_URL = getApiBaseUrl();
 

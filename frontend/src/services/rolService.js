@@ -4,7 +4,7 @@
 // Servicio para gestionar roles del sistema
 // ========================================================================
 
-import { apiClient } from "../../lib/apiClient";
+import { apiClient } from '../lib/apiClient';
 
 class RolService {
   /**

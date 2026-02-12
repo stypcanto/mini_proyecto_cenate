@@ -5,7 +5,7 @@
 // Utiliza Web Crypto API y comunicación con Fortify middleware
 // ========================================================================
 
-import apiClient from '../../lib/apiClient';
+import apiClient from '../lib/apiClient';
 
 // Configuración de Fortify (middleware para tokens USB/DNIe)
 const FORTIFY_PORT = 31337;

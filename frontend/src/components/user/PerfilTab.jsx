@@ -9,7 +9,7 @@ import {
   Save,
   X,
 } from "lucide-react";
-import apiClient from '../../../../../lib/apiClient';
+import apiClient from '../../lib/apiClient';
 import { useAuth } from "../../context/AuthContext";
 import toast from "react-hot-toast";
 

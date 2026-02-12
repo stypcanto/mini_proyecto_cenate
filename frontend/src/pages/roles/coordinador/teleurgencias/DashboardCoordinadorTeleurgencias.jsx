@@ -31,7 +31,7 @@ import {
   AlertTriangle,
 } from 'lucide-react';
 import { useAuth } from '../../../../context/AuthContext';
-import apiClient from '../../../../../../../../../lib/apiClient';
+import apiClient from '../../../../lib/apiClient';
 import toast from 'react-hot-toast';
 
 export default function DashboardCoordinadorTeleurgencias() {

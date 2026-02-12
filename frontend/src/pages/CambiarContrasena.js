@@ -14,7 +14,7 @@ import {
   Home,
   LogIn,
 } from "lucide-react";
-import { apiClient } from "../../lib/apiClient";
+import { apiClient } from '../lib/apiClient';
 
 export default function CambiarContrasena() {
   const [searchParams] = useSearchParams();

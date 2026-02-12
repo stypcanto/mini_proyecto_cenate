@@ -4,7 +4,7 @@
 // Gestiona las solicitudes de turnos de telemedicina por usuarios externos
 // ========================================================================
 
-import { apiClient } from "../../lib/apiClient";
+import { apiClient } from '../lib/apiClient';
 
 class SolicitudTurnoService {
   // ============================================================

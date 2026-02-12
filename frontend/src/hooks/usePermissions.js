@@ -2,7 +2,7 @@
 // usePermissions.js - Hook para gestionar permisos RBAC
 // ========================================================================
 import { useState, useEffect, useCallback } from 'react';
-import { apiClient } from '../../lib/apiClient';
+import { apiClient } from '../lib/apiClient';
 
 /**
  * Hook personalizado para gestionar permisos del usuario

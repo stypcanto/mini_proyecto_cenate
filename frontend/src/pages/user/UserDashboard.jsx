@@ -16,7 +16,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import { useNavigate } from "react-router-dom";
-import apiClient from '../../../../../lib/apiClient';
+import apiClient from '../../lib/apiClient';
 import { PerformanceMonitorCard } from "../../components/monitoring";
 
 export default function UserDashboard() {

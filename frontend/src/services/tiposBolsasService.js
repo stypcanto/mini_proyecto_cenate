@@ -11,7 +11,7 @@
  * - DELETE /api/admin/tipos-bolsas/{id}           → Eliminar
  */
 
-import { apiClient } from '../../lib/apiClient';
+import { apiClient } from '../lib/apiClient';
 
 const BASE_URL = '/admin/tipos-bolsas';
 

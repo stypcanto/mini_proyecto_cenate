@@ -4,7 +4,7 @@
 // Servicio para gestionar profesiones del personal médico
 // ========================================================================
 
-import { apiClient } from "../../lib/apiClient";
+import { apiClient } from '../lib/apiClient';
 
 class ProfesionService {
   /**

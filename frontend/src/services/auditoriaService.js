@@ -4,7 +4,7 @@
 // Servicio para consultar logs y auditoría del sistema
 // ========================================================================
 
-import { apiClient } from "../../lib/apiClient";
+import { apiClient } from '../lib/apiClient';
 
 const auditoriaService = {
   /**

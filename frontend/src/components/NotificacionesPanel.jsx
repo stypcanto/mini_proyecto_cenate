@@ -6,7 +6,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { X, Cake, User } from 'lucide-react';
-import apiClient from '../../../lib/apiClient';
+import apiClient from '../lib/apiClient';
 
 export default function NotificacionesPanel({ isOpen, onClose }) {
   const [notificaciones, setNotificaciones] = useState([]);

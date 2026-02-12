@@ -1,4 +1,4 @@
-import apiClient, { API_BASE_URL, getToken } from '../../lib/apiClient';
+import apiClient, { API_BASE_URL, getToken } from '../lib/apiClient';
 import toast from "react-hot-toast";
 
 /**

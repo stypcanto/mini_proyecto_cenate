@@ -5,7 +5,7 @@
 // Módulo 107 - Atenciones Clínicas
 // ========================================================================
 
-import api from '../../lib/apiClient';
+import api from '../lib/apiClient';
 
 const BASE_URL = '/atenciones-clinicas-107';
 

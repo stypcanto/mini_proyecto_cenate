@@ -9,7 +9,7 @@ import {
   AlertCircle,
   MapPin
 } from 'lucide-react';
-import apiClient from '../../../../../lib/apiClient';
+import apiClient from '../../lib/apiClient';
 
 /**
  * Dashboard para Coordinadores de Red

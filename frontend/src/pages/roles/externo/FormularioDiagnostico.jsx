@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import ReactDOM from "react-dom";
 import { useAuth } from "../../../context/AuthContext";
-import api from '../../../../../../../lib/apiClient';
+import api from '../../../lib/apiClient';
 import formularioDiagnosticoService from "../../../services/formularioDiagnosticoService";
 import firmaDigitalService from "../../../services/firmaDigitalService";
 import FirmaDigitalModal from "../../../components/modals/FirmaDigitalModal";
