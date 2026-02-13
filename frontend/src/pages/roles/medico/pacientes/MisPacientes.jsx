@@ -258,11 +258,25 @@ export default function MisPacientes() {
     return new Date(año, mes - 1, día);
   };
 
-  // ✅ v1.67.4: Extraer fecha simple del string ISO
+  // ✅ v1.67.5: Extraer fecha convirtiendo de UTC a Lima (UTC-5)
+  // PROBLEMA: Backend devuelve timestamps ISO en UTC, pero la BD los almacena en Lima
+  // Ejemplo: 2026-02-12 19:20 Lima = 2026-02-13 00:20 UTC
+  // El split('T')[0] en UTC da 2026-02-13, pero la fecha real en Lima es 2026-02-12
   const extraerFecha = (dateStr) => {
     if (!dateStr) return null;
     try {
-      return dateStr.split('T')[0];
+      // Parsear como ISO 8601 (UTC)
+      const dateObj = new Date(dateStr);
+
+      // Convertir a Lima: restar 5 horas al UTC
+      const limaDate = new Date(dateObj.getTime() - (5 * 60 * 60 * 1000));
+
+      // Extraer fecha en formato YYYY-MM-DD
+      const año = limaDate.getUTCFullYear();
+      const mes = String(limaDate.getUTCMonth() + 1).padStart(2, '0');
+      const día = String(limaDate.getUTCDate()).padStart(2, '0');
+
+      return `${año}-${mes}-${día}`;
     } catch (e) {
       console.error('❌ Error al procesar fecha:', dateStr, e);
       return null;
