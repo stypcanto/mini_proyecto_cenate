@@ -166,7 +166,7 @@ function FilaSolicitud({
       {/* GESTORA ASIGNADA */}
       <td className="px-3 py-3 text-sm">
         {solicitud.gestoraAsignada ? (
-          <span className="font-semibold text-blue-700">{solicitud.gestoraAsignada}</span>
+          <span className="text-blue-700">{solicitud.gestoraAsignada}</span>
         ) : (
           <span className="text-gray-400 italic">Sin asignar</span>
         )}
