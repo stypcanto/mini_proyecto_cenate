@@ -242,6 +242,8 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
                ELSE 1=0
                END)
           AND (:busqueda IS NULL OR COALESCE(sb.paciente_dni, '') LIKE CONCAT('%', :busqueda, '%'))
+          AND (:fechaInicio IS NULL OR DATE(sb.fecha_solicitud) >= DATE(:fechaInicio))
+          AND (:fechaFin IS NULL OR DATE(sb.fecha_solicitud) <= DATE(:fechaFin))
         ORDER BY CASE WHEN COALESCE(deg.cod_estado_cita, 'PENDIENTE_CITA') = 'PENDIENTE_CITA' THEN 0
                       WHEN COALESCE(deg.cod_estado_cita, 'PENDIENTE_CITA') = 'CITADO' THEN 1
                       ELSE 2 END, sb.fecha_solicitud DESC
@@ -257,6 +259,8 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
             @org.springframework.data.repository.query.Param("tipoCita") String tipoCita,
             @org.springframework.data.repository.query.Param("asignacion") String asignacion,
             @org.springframework.data.repository.query.Param("busqueda") String busqueda,
+            @org.springframework.data.repository.query.Param("fechaInicio") String fechaInicio,  // ✅ v1.66.0: Filtro rango fechas
+            @org.springframework.data.repository.query.Param("fechaFin") String fechaFin,        // ✅ v1.66.0: Filtro rango fechas
             org.springframework.data.domain.Pageable pageable);
 
     /**
@@ -287,6 +291,8 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
                ELSE 1=0
                END)
           AND (:busqueda IS NULL OR COALESCE(sb.paciente_dni, '') LIKE CONCAT('%', :busqueda, '%'))
+          AND (:fechaInicio IS NULL OR DATE(sb.fecha_solicitud) >= DATE(:fechaInicio))
+          AND (:fechaFin IS NULL OR DATE(sb.fecha_solicitud) <= DATE(:fechaFin))
         """, nativeQuery = true)
     long countWithFilters(
             @org.springframework.data.repository.query.Param("bolsaNombre") String bolsaNombre,
@@ -297,7 +303,10 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
             @org.springframework.data.repository.query.Param("estadoCodigo") String estadoCodigo,
             @org.springframework.data.repository.query.Param("tipoCita") String tipoCita,
             @org.springframework.data.repository.query.Param("asignacion") String asignacion,
-            @org.springframework.data.repository.query.Param("busqueda") String busqueda);
+            @org.springframework.data.repository.query.Param("busqueda") String busqueda,
+            @org.springframework.data.repository.query.Param("fechaInicio") String fechaInicio,  // ✅ v1.66.0: Filtro rango fechas
+            @org.springframework.data.repository.query.Param("fechaFin") String fechaFin)        // ✅ v1.66.0: Filtro rango fechas
+            ;
 
     /**
      * Cuenta total de solicitudes activas (para calcular páginas totales)
