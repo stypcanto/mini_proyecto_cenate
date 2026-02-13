@@ -324,6 +324,44 @@ export default function FormularioDiagnostico() {
         cargarDatosUsuario();
     }, [user]);
 
+    // 🚀 AUTO-GUARDADO CADA 30 SEGUNDOS
+    useEffect(() => {
+        // No auto-guardar si: está enviado, está firmado, o no hay cambios
+        if (estadoFormulario === "ENVIADO" || estadoFormulario === "FIRMADO" || guardando) {
+            return;
+        }
+
+        const intervalId = setInterval(async () => {
+            // Solo auto-guardar si hay un formulario en proceso
+            if (estadoFormulario === "BORRADOR" || idFormulario) {
+                try {
+                    // Guardar silenciosamente sin mostrar toast
+                    const idIpress = datosUsuario?.id_ipress || datosUsuario?.personalExterno?.ipress?.idIpress;
+                    if (idIpress && formData.datosGenerales && Object.keys(formData.datosGenerales).length > 0) {
+                        const datosParaBackend = formularioDiagnosticoService.transformarParaBackend(
+                            formData,
+                            idIpress,
+                            idFormulario
+                        );
+
+                        const response = await formularioDiagnosticoService.guardarBorrador(datosParaBackend);
+
+                        if (response && response.idFormulario) {
+                            setIdFormulario(response.idFormulario);
+                            setEstadoFormulario(response.estado);
+                            console.log("💾 Auto-guardado completado:", response.idFormulario);
+                        }
+                    }
+                } catch (error) {
+                    console.warn("⚠️ Error en auto-guardado (ignorado):", error.message);
+                    // No mostrar error, solo log. Si hay error, el usuario puede guardar manualmente
+                }
+            }
+        }, 30000); // 30 segundos
+
+        return () => clearInterval(intervalId);
+    }, [formData, idFormulario, estadoFormulario, datosUsuario, guardando]);
+
     // Función para cargar documentos enviados del usuario
     const cargarDocumentosEnviados = async (idIpress) => {
         setCargandoDocumentos(true);
@@ -4911,6 +4949,14 @@ export default function FormularioDiagnostico() {
                         </div>
 
                         <div className="flex items-center gap-3">
+                            {/* Indicador de Auto-guardado */}
+                            {estadoFormulario === "BORRADOR" && idFormulario && (
+                                <div className="flex items-center gap-1.5 px-3 py-1.5 bg-green-50 border border-green-200 rounded-lg text-xs">
+                                    <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                                    <span className="text-green-700 font-medium">Auto-guardando cada 30s</span>
+                                </div>
+                            )}
+
                             {activeTab !== "vista-previa" && (
                                 <button
                                     onClick={handleSaveProgress}
@@ -4920,6 +4966,7 @@ export default function FormularioDiagnostico() {
                                             ? "bg-gray-200 text-gray-400 cursor-not-allowed"
                                             : "bg-gray-100 hover:bg-gray-200 text-gray-700"
                                     }`}
+                                    title="Guardar ahora o espera 30s para auto-guardado"
                                 >
                                     {guardando ? (
                                         <Loader2 className="w-4 h-4 animate-spin" />
