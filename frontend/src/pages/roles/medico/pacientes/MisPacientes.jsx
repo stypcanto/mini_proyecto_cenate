@@ -1770,42 +1770,6 @@ export default function MisPacientes() {
               </select>
             </div>
 
-            {/* Selector de Fecha de Atención - 1 column */}
-            <div data-selector-atencion>
-              <label className="block text-xs font-semibold text-gray-700 mb-2 uppercase tracking-wide">
-                <Calendar className="w-4 h-4 inline mr-2 text-red-500" />
-                Atención
-                {filtroEstado && fechasAtencionDisponibles.length > 0 && (
-                  <span className="ml-2 text-xs font-normal text-red-600">
-                    ({fechasAtencionDisponibles.length})
-                  </span>
-                )}
-              </label>
-              <select
-                value={fechaAtencionSeleccionada}
-                onChange={(e) => setFechaAtencionSeleccionada(e.target.value)}
-                className="w-full px-4 py-3 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-red-400 focus:border-transparent transition-all shadow-sm hover:border-slate-400"
-              >
-                <option value="">
-                  {filtroEstado ? `Todas (${filtroEstado})` : 'Todas'}
-                </option>
-                {fechasAtencionDisponibles.length > 0 ? (
-                  fechasAtencionDisponibles.map(fechaISO => {
-                    const [year, month, day] = fechaISO.split('-');
-                    const fechaFormato = `${day}/${month}/${year.slice(-2)}`;
-                    return (
-                      <option key={fechaISO} value={fechaISO}>
-                        {fechaFormato}
-                      </option>
-                    );
-                  })
-                ) : (
-                  <option disabled>
-                    {filtroEstado ? `Sin fechas de ${filtroEstado}` : 'Sin fechas'}
-                  </option>
-                )}
-              </select>
-            </div>
           </div>
 
           {/* FILA 3: Rango Personalizado (condicional) */}
