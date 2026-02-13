@@ -21,7 +21,6 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
-import java.util.List;
 
 /**
  * ✅ v1.47.0: Servicio para registrar atención médica completa
@@ -54,58 +53,52 @@ public class AtenderPacienteService {
             Asegurado asegurado = aseguradoRepository.findByDocPaciente(solicitudOriginal.getPacienteDni())
                     .orElseThrow(() -> new RuntimeException("Asegurado no encontrado"));
 
-            // ✅ v1.47.0: IMPORTANTE - Marcar la solicitud original como "Atendido"
-            // Esto asegura que aparezca como "Atendido" en Mis Pacientes del médico
-            log.info("✅ Marcando solicitud original {} como Atendido", idSolicitudBolsa);
-            solicitudOriginal.setCondicionMedica("Atendido");
+            // ✅ Actualizar solicitud y enfermedades (inner try - continúa si falla)
+            try {
+                // Marcar la solicitud original como "Atendido"
+                log.info("✅ Marcando solicitud original {} como Atendido", idSolicitudBolsa);
+                solicitudOriginal.setCondicionMedica("Atendido");
 
-            // Registrar fecha de atención en zona horaria de Perú (UTC-5)
-            ZonedDateTime zonedDateTime = Instant.now().atZone(ZoneId.of("America/Lima"));
-            LocalDate fechaAtencionLocal = zonedDateTime.toLocalDate();
-            solicitudOriginal.setFechaAtencion(fechaAtencionLocal);
-            log.info("✅ Fecha de atención registrada: {}", fechaAtencionLocal);
+                // Registrar fecha de atención en zona horaria de Perú (UTC-5)
+                ZonedDateTime zonedDateTime = Instant.now().atZone(ZoneId.of("America/Lima"));
+                LocalDate fechaAtencionLocal = zonedDateTime.toLocalDate();
+                solicitudOriginal.setFechaAtencion(fechaAtencionLocal);
+                log.info("✅ Fecha de atención registrada: {}", fechaAtencionLocal);
 
-            // ✅ v1.47.2: Guardar enfermedades crónicas PRIMERO
-            if (request.getEsCronico() != null && request.getEsCronico() && request.getEnfermedades() != null && !request.getEnfermedades().isEmpty()) {
-                String[] enfermedadesArray = request.getEnfermedades().toArray(new String[0]);
-                log.info("🏥 Guardando enfermedades: {}", String.join(", ", enfermedadesArray));
-                asegurado.setEnfermedadCronica(enfermedadesArray);
-                log.info("🔄 Array establecido en entidad: {}", asegurado.getEnfermedadCronica() != null ? String.join(", ", asegurado.getEnfermedadCronica()) : "null");
-                Asegurado saved = aseguradoRepository.save(asegurado);
-                log.info("✅ Asegurado guardado. Valor retornado: {}", saved.getEnfermedadCronica() != null ? String.join(", ", saved.getEnfermedadCronica()) : "null");
-                entityManager.flush();
-                log.info("✅ Flush ejecutado - cambios persistidos en BD");
+                // Guardar enfermedades crónicas
+                if (request.getEsCronico() != null && request.getEsCronico() && request.getEnfermedades() != null && !request.getEnfermedades().isEmpty()) {
+                    String[] enfermedadesArray = request.getEnfermedades().toArray(new String[0]);
+                    log.info("🏥 Guardando enfermedades: {}", String.join(", ", enfermedadesArray));
+                    asegurado.setEnfermedadCronica(enfermedadesArray);
+                    Asegurado saved = aseguradoRepository.save(asegurado);
+                    entityManager.flush();
+                    log.info("✅ Enfermedades crónicas persistidas en BD");
+                }
+
+                // Guardar solicitud original
+                solicitudBolsaRepository.save(solicitudOriginal);
+                log.info("✅ Solicitud original marcada como Atendido");
+            } catch (Exception e) {
+                log.warn("⚠️ Error actualizando solicitud/asegurado (continuando): {}", e.getMessage());
             }
-
-            // ✅ v1.47.2: Actualizar solicitud original
-            solicitudOriginal.setCondicionMedica("Atendido");
-            solicitudBolsaRepository.save(solicitudOriginal);
-            log.info("✅ Solicitud original marcada como Atendido");
-        } catch (Exception e) {
-            log.warn("⚠️ [v1.103.3] Error actualizando solicitud/asegurado (continuando): {}", e.getMessage());
-            // Continuar sin relanzar - permitir que se procese el resto
-        }
 
             // ✅ v1.81.0: Registrar atención en historial centralizado
             try {
                 Long idMedicoActual = obtenerIdMedicoActual();
                 trazabilidadClinicaService.registrarDesdeMisPacientes(
                     idSolicitudBolsa,
-                    null,  // No hay observaciones en AtenderPacienteRequest
+                    null,
                     idMedicoActual
                 );
-                log.info("✅ [v1.81.0] Atención registrada en historial centralizado");
+                log.info("✅ Atención registrada en historial centralizado");
             } catch (Exception e) {
-                log.warn("⚠️ [v1.81.0] Error registrando en historial: {}", e.getMessage());
+                log.warn("⚠️ Error registrando en historial: {}", e.getMessage());
             }
 
             // 3. Crear bolsa Recita si aplica
-            // ✅ v1.47.0: La Recita es una NUEVA SOLICITUD de seguimiento para la gestora
-            // NO es información que deba aparecer en "Mis Pacientes" del médico
-            // ✅ v1.47.1: Verificar que la Recita no exista ya
             if (request.getTieneRecita() != null && request.getTieneRecita()) {
                 if (existeRecitaParaPaciente(pkAsegurado)) {
-                    log.warn("⚠️ [v1.47.1] Recita ya existe para el paciente: {}", pkAsegurado);
+                    log.warn("⚠️ Recita ya existe para el paciente: {}", pkAsegurado);
                 } else {
                     crearBolsaRecita(solicitudOriginal, especialidadActual, request.getRecitaDias());
                     log.info("✅ Nueva bolsa RECITA creada - visible solo para gestora de citas");
@@ -113,10 +106,9 @@ public class AtenderPacienteService {
             }
 
             // 4. Crear bolsa Interconsulta si aplica
-            // ✅ v1.47.1: Verificar que la Interconsulta no exista ya para esta especialidad
             if (request.getTieneInterconsulta() != null && request.getTieneInterconsulta()) {
                 if (existeInterconsultaParaPaciente(pkAsegurado, request.getInterconsultaEspecialidad())) {
-                    log.warn("⚠️ [v1.47.1] Interconsulta de {} ya existe para el paciente: {}",
+                    log.warn("⚠️ Interconsulta de {} ya existe para el paciente: {}",
                             request.getInterconsultaEspecialidad(), pkAsegurado);
                 } else {
                     crearBolsaInterconsulta(solicitudOriginal, request.getInterconsultaEspecialidad());
@@ -124,36 +116,25 @@ public class AtenderPacienteService {
                 }
             }
 
-            log.info("✅ [v1.47.2] Atención registrada completamente - Enfermedades crónicas guardadas en tabla asegurados");
+            log.info("✅ Atención registrada completamente");
         } catch (Exception e) {
-            log.error("❌ [v1.103.3] Error crítico registrando atención: {}", e.getMessage(), e);
-            // No relanzar - permitir que el flujo continúe
+            log.error("❌ Error crítico registrando atención: {}", e.getMessage(), e);
         }
     }
 
     /**
-     * ✅ v1.47.1: Verificar si ya existe una Recita para el paciente
+     * Verificar si ya existe una Recita activa para el paciente
      */
     private boolean existeRecitaParaPaciente(String pacienteDni) {
-        List<SolicitudBolsa> recitas = solicitudBolsaRepository.findAll().stream()
-                .filter(s -> s.getPacienteDni().equals(pacienteDni)
-                        && s.getTipoCita() != null && s.getTipoCita().equals("RECITA")
-                        && s.getActivo() != null && s.getActivo())
-                .toList();
-        return !recitas.isEmpty();
+        return solicitudBolsaRepository.existsByPacienteDniAndTipoCitaAndActivoTrue(pacienteDni, "RECITA");
     }
 
     /**
-     * ✅ v1.47.1: Verificar si ya existe una Interconsulta para el paciente en esa especialidad
+     * Verificar si ya existe una Interconsulta activa para el paciente en esa especialidad
      */
     private boolean existeInterconsultaParaPaciente(String pacienteDni, String especialidad) {
-        List<SolicitudBolsa> interconsultas = solicitudBolsaRepository.findAll().stream()
-                .filter(s -> s.getPacienteDni().equals(pacienteDni)
-                        && s.getTipoCita() != null && s.getTipoCita().equals("INTERCONSULTA")
-                        && s.getEspecialidad() != null && s.getEspecialidad().equals(especialidad)
-                        && s.getActivo() != null && s.getActivo())
-                .toList();
-        return !interconsultas.isEmpty();
+        return solicitudBolsaRepository.existsByPacienteDniAndTipoCitaAndEspecialidadAndActivoTrue(
+                pacienteDni, "INTERCONSULTA", especialidad);
     }
 
 
@@ -290,10 +271,10 @@ public class AtenderPacienteService {
         try {
             // Obtener el usuario autenticado desde SecurityContext
             String username = SecurityContextHolder.getContext().getAuthentication().getName();
-            log.warn("🔍 [v1.89.7] Username del SecurityContext: {}", username);
+            log.debug("🔍 Username del SecurityContext: {}", username);
 
             if (username == null) {
-                log.warn("⚠️ [v1.89.7] No se pudo obtener el usuario autenticado");
+                log.warn("⚠️ No se pudo obtener el usuario autenticado");
                 return null;
             }
 
@@ -301,28 +282,19 @@ public class AtenderPacienteService {
             Usuario usuario = usuarioRepository.findByNameUserWithFullDetails(username)
                     .orElse(null);
 
-            log.warn("🔍 [v1.89.7] Usuario encontrado en BD: {}", usuario != null);
-
             if (usuario == null) {
-                log.warn("⚠️ [v1.89.7] Usuario '{}' NO EXISTE en base de datos", username);
+                log.warn("⚠️ Usuario '{}' NO EXISTE en base de datos", username);
                 return null;
             }
 
-            log.warn("✅ [v1.89.7] Usuario encontrado: id={}, nameUser={}", usuario.getIdUser(), usuario.getNameUser());
+            log.debug("✅ Usuario encontrado: id={}, nameUser={}", usuario.getIdUser(), usuario.getNameUser());
 
             PersonalCnt personalCnt = usuario.getPersonalCnt();
-            log.warn("🔍 [v1.89.7] PersonalCnt: {} (null? {})", personalCnt, personalCnt == null);
-
             if (personalCnt != null && personalCnt.getIdPers() != null) {
-                Long idPers = personalCnt.getIdPers();
-                log.warn("✅ [v1.89.7] OBTENIDO idPersonalCreador: {} para usuario: {}", idPers, username);
-                return idPers;
+                return personalCnt.getIdPers();
             }
 
-            log.warn("❌ [v1.89.7] Usuario '{}' NO TIENE PersonalCnt o idPers es null", username);
-            if (usuario.getPersonalExterno() != null) {
-                log.warn("⚠️ [v1.89.7] Usuario {} tiene PersonalExterno en lugar de PersonalCnt", username);
-            }
+            log.warn("⚠️ Usuario '{}' no tiene PersonalCnt asociado", username);
             return null;
         } catch (Exception e) {
             log.error("❌ [v1.89.7] Exception en obtenerIdMedicoActual: {}", e.getMessage(), e);

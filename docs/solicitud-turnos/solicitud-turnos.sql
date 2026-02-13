@@ -377,18 +377,27 @@ select * from DIM_SOLICITUD_BOLSA where paciente_dni in ('46183586','10417941','
 
 
 
-
-
-
 select  *  from dim_solicitud_bolsa dsb  where OCTET_LENGTH (especialidad)= 6;
 
 
+select  id_solicitud, especialidad, dsb.id_servicio   from dim_solicitud_bolsa dsb  where OCTET_LENGTH (especialidad)= 6;
+
+
+update dim_solicitud_bolsa set especialidad ='HEMATOLOGIA' where id_solicitud = 7156; -- 70
+update dim_solicitud_bolsa set especialidad ='ALERGIA' where id_solicitud = 44286; -- 1
+update dim_solicitud_bolsa set especialidad ='NEUROLOGIA' where id_solicitud = 9916; --90 
+update dim_solicitud_bolsa set especialidad ='NEUROLOGIA' where id_solicitud = 9915; --90 
+update dim_solicitud_bolsa set especialidad ='NEUROLOGIA' where id_solicitud = 9914; --90 
 
 
 
+select * from dim_servicio_essi dse where dse.id_servicio  in (1, 70 ,90);
+
+select * from dim_solicitud_bolsa where id_solicitud in (7156, 44286, 9914, 9915, 9916);
 
 
 
+select * from dim_personal_cnt dpc ;
 
 
 
