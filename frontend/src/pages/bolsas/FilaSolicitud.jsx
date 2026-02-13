@@ -70,17 +70,25 @@ function FilaSolicitud({
           <span className="inline-block">{solicitud.edad} años</span>
         </div>
       </td>
-      <td className="px-3 py-2 text-sm min-w-max">
-        <div className="font-medium text-gray-900">
-          <span className="text-xs text-gray-500">Principal: </span>
-          <span className="font-bold text-xs text-gray-500">{solicitud.telefono}</span>
-        </div>
-        {solicitud.telefonoAlterno && solicitud.telefonoAlterno !== 'N/A' && (
-          <div className="text-xs text-gray-500 mt-1" title="Teléfono Alterno">
-            <span className="text-gray-500">Alterno: </span>
-            <span className="font-bold text-xs text-gray-500">{solicitud.telefonoAlterno}</span>
+      <td className="px-3 py-3">
+        <div className="bg-green-50 rounded-lg p-2 border-l-4 border-green-600">
+          <div className="flex items-center gap-1.5 mb-1.5">
+            <Phone size={14} className="text-green-600 flex-shrink-0" />
+            <span className="text-xs font-bold text-green-600 uppercase tracking-tight">Principal</span>
           </div>
-        )}
+          <div className="text-sm font-semibold text-green-900">{solicitud.telefono}</div>
+
+          {solicitud.telefonoAlterno && solicitud.telefonoAlterno !== 'N/A' && (
+            <>
+              <div className="h-px bg-green-200 my-1.5"></div>
+              <div className="flex items-center gap-1.5 mb-1">
+                <Phone size={14} className="text-green-500 flex-shrink-0" />
+                <span className="text-xs font-bold text-green-600 uppercase tracking-tight">Alterno</span>
+              </div>
+              <div className="text-sm font-semibold text-green-900">{solicitud.telefonoAlterno}</div>
+            </>
+          )}
+        </div>
       </td>
       {/* TIPO DE CITA */}
       <td className="px-3 py-3 text-sm text-gray-700">
