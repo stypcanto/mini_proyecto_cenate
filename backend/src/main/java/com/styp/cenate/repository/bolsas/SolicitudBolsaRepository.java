@@ -63,6 +63,19 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
     );
 
     /**
+     * Verifica si ya existe una solicitud activa de un tipo de cita para un paciente
+     * Usado en AtenderPacienteService para verificar Recitas duplicadas
+     */
+    boolean existsByPacienteDniAndTipoCitaAndActivoTrue(String pacienteDni, String tipoCita);
+
+    /**
+     * Verifica si ya existe una solicitud activa de un tipo de cita + especialidad para un paciente
+     * Usado en AtenderPacienteService para verificar Interconsultas duplicadas
+     */
+    boolean existsByPacienteDniAndTipoCitaAndEspecialidadAndActivoTrue(
+        String pacienteDni, String tipoCita, String especialidad);
+
+    /**
      * Busca solicitudes por la combinación: bolsa + paciente + servicio
      * Usado en manejo de duplicados y updates
      */
