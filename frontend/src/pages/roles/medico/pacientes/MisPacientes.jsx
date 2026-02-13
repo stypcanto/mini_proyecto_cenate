@@ -31,6 +31,7 @@ import {
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import gestionPacientesService from '../../../../services/gestionPacientesService';
+import { obtenerEspecialidadesActivasCenate } from '../../../../services/bolsasService';
 import ipressService from '../../../../services/ipressService';
 import ModalEvaluacionECG from '../../../../components/teleecgs/ModalEvaluacionECG';
 import teleecgService from '../../../../services/teleecgService';
@@ -347,11 +348,11 @@ export default function MisPacientes() {
 
   const cargarEspecialidades = async () => {
     try {
-      const data = await gestionPacientesService.obtenerEspecialidades();
+      const data = await obtenerEspecialidadesActivasCenate();
       setEspecialidades(Array.isArray(data) ? data : []);
-      console.log('✅ v1.78.0: Especialidades cargadas:', data);
+      console.log('✅ Especialidades CENATE cargadas:', data);
     } catch (error) {
-      console.error('Error cargando especialidades:', error);
+      console.error('Error cargando especialidades CENATE:', error);
     }
   };
 
