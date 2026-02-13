@@ -75,6 +75,10 @@ export default function GestionAsegurado() {
   const [lastRefreshTime, setLastRefreshTime] = useState(new Date());
   const [estadosDisponibles, setEstadosDisponibles] = useState([]);
 
+  // ✅ v1.109.10: Paginación - 100 registros por página
+  const REGISTROS_POR_PAGINA = 100;
+  const [currentPage, setCurrentPage] = useState(1);
+
   // ============================================================================
   // FILTROS ESPECIALIZADOS v1.42.0 (inspirados en Solicitudes)
   // ============================================================================
@@ -98,6 +102,12 @@ export default function GestionAsegurado() {
   const [soloPendientes, setSoloPendientes] = useState(false);
   const [ipressDisponibles, setIpressDisponibles] = useState([]);
   const [cargandoIpress, setCargandoIpress] = useState(false);
+
+  // 📅 Filtros de rango de fechas (v1.43.3)
+  const [filtroFechaIngresoInicio, setFiltroFechaIngresoInicio] = useState("");
+  const [filtroFechaIngresoFin, setFiltroFechaIngresoFin] = useState("");
+  const [filtroFechaAsignacionInicio, setFiltroFechaAsignacionInicio] = useState("");
+  const [filtroFechaAsignacionFin, setFiltroFechaAsignacionFin] = useState("");
 
   // Estados para manejar edición de estado con botones Guardar/Cancelar
   const [pacienteEditandoEstado, setPacienteEditandoEstado] = useState(null);
@@ -327,8 +337,28 @@ export default function GestionAsegurado() {
         return;
       }
 
+      // 📅 Construir URL con parámetros de fecha si están presentes (v1.43.3)
+      let url = `${API_BASE}/bolsas/solicitudes/mi-bandeja`;
+      const params = new URLSearchParams();
+
+      console.log("📅 DEBUG Filtros de fecha crudos:");
+      console.log("   - filtroFechaIngresoInicio:", filtroFechaIngresoInicio, "tipo:", typeof filtroFechaIngresoInicio);
+      console.log("   - filtroFechaIngresoFin:", filtroFechaIngresoFin, "tipo:", typeof filtroFechaIngresoFin);
+      console.log("   - filtroFechaAsignacionInicio:", filtroFechaAsignacionInicio, "tipo:", typeof filtroFechaAsignacionInicio);
+      console.log("   - filtroFechaAsignacionFin:", filtroFechaAsignacionFin, "tipo:", typeof filtroFechaAsignacionFin);
+
+      if (filtroFechaIngresoInicio) params.append('fechaIngresoInicio', filtroFechaIngresoInicio);
+      if (filtroFechaIngresoFin) params.append('fechaIngresoFin', filtroFechaIngresoFin);
+      if (filtroFechaAsignacionInicio) params.append('fechaAsignacionInicio', filtroFechaAsignacionInicio);
+      if (filtroFechaAsignacionFin) params.append('fechaAsignacionFin', filtroFechaAsignacionFin);
+
+      if (params.toString()) {
+        url += `?${params.toString()}`;
+        console.log("📋 URL FINAL con filtros de fecha:", url);
+      }
+
       const response = await fetch(
-        `${API_BASE}/bolsas/solicitudes/mi-bandeja`,
+        url,
         {
           method: "GET",
           headers: {
@@ -379,7 +409,14 @@ export default function GestionAsegurado() {
       // Transform SolicitudBolsaDTO to table structure
       const pacientes = solicitudes.map((solicitud, idx) => {
         // Mapear código de estado a descripción
-        const codigoEstado = solicitud.cod_estado_cita || solicitud.codEstadoCita || "PENDIENTE_CITA";
+        let codigoEstado = solicitud.cod_estado_cita || solicitud.codEstadoCita || "PENDIENTE_CITA";
+
+        // ✅ v1.109.0: Para RECITA e INTERCONSULTA, asegurar que el estado es PENDIENTE_CITA
+        const tipoCita = solicitud.tipo_cita || solicitud.tipoCita || "-";
+        if ((tipoCita === "RECITA" || tipoCita === "INTERCONSULTA") && codigoEstado !== "PENDIENTE_CITA") {
+          codigoEstado = "PENDIENTE_CITA"; // Forzar estado correcto para bolsas generadas por médicos
+        }
+
         const estadoObj = estadosDisponibles.find(e => e.codigo === codigoEstado);
         const descEstadoFinal = estadoObj ? estadoObj.descripcion : codigoEstado;
 
@@ -1322,6 +1359,13 @@ CENATE de Essalud`;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [autoRefreshEnabled]);
 
+  // 📅 Recargar pacientes cuando cambian los filtros de fecha (v1.43.3)
+  useEffect(() => {
+    console.log("📅 Filtros de fecha cambiados, recargando pacientes...");
+    fetchPacientesAsignados();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filtroFechaIngresoInicio, filtroFechaIngresoFin, filtroFechaAsignacionInicio, filtroFechaAsignacionFin]);
+
   // Debounce search - actualizar debouncedSearch después de 300ms sin escribir
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -1524,6 +1568,19 @@ CENATE de Essalud`;
 
     return { pendientes, citados, atendidos };
   }, [pacientesFiltrados]);
+
+  // ✅ v1.109.10: Paginación de pacientes - 100 por página
+  const totalPaginas = Math.ceil(pacientesFiltrados.length / REGISTROS_POR_PAGINA);
+  const pacientesPaginados = pacientesFiltrados.slice(
+    (currentPage - 1) * REGISTROS_POR_PAGINA,
+    currentPage * REGISTROS_POR_PAGINA
+  );
+
+  // Resetear a página 1 cuando cambian los filtros
+  const handleFiltroChange = (setter, value) => {
+    setter(value);
+    setCurrentPage(1);
+  };
 
   // ============================================================================
   // CALCULAR OPCIONES DISPONIBLES PARA FILTROS
@@ -1989,8 +2046,65 @@ CENATE de Essalud`;
                         </div>
                       </div>
 
+                      {/* 📅 Filtros de Rango de Fechas (v1.43.3) */}
+                      <div className="border-t border-gray-200 pt-3">
+                        {/* F. INGRESO BOLSA */}
+                        <div className="mb-3">
+                          <label className="text-xs font-semibold text-orange-600 block mb-2 flex items-center gap-1">
+                            📅 Rango de Fechas - F. Ingreso Bolsa
+                          </label>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            <div>
+                              <label className="text-xs font-semibold text-gray-600 block mb-1">Desde</label>
+                              <input
+                                type="date"
+                                value={filtroFechaIngresoInicio}
+                                onChange={(e) => setFiltroFechaIngresoInicio(e.target.value)}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
+                              />
+                            </div>
+                            <div>
+                              <label className="text-xs font-semibold text-gray-600 block mb-1">Hasta</label>
+                              <input
+                                type="date"
+                                value={filtroFechaIngresoFin}
+                                onChange={(e) => setFiltroFechaIngresoFin(e.target.value)}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
+                              />
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* F. ASIGNACIÓN */}
+                        <div>
+                          <label className="text-xs font-semibold text-blue-600 block mb-2 flex items-center gap-1">
+                            📅 Rango de Fechas - F. Asignación
+                          </label>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            <div>
+                              <label className="text-xs font-semibold text-gray-600 block mb-1">Desde</label>
+                              <input
+                                type="date"
+                                value={filtroFechaAsignacionInicio}
+                                onChange={(e) => setFiltroFechaAsignacionInicio(e.target.value)}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                              />
+                            </div>
+                            <div>
+                              <label className="text-xs font-semibold text-gray-600 block mb-1">Hasta</label>
+                              <input
+                                type="date"
+                                value={filtroFechaAsignacionFin}
+                                onChange={(e) => setFiltroFechaAsignacionFin(e.target.value)}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
                       {/* Botón Limpiar */}
-                      <div className="flex justify-end pt-2">
+                      <div className="flex justify-end pt-3 border-t border-gray-200">
                         <button
                           onClick={() => {
                             setSearchTerm("");
@@ -2002,6 +2116,10 @@ CENATE de Essalud`;
                             setFiltroEspecialidad("todas");
                             setFiltroTipoCita("todas");
                             setFiltroEstado("todos");
+                            setFiltroFechaIngresoInicio("");
+                            setFiltroFechaIngresoFin("");
+                            setFiltroFechaAsignacionInicio("");
+                            setFiltroFechaAsignacionFin("");
                           }}
                           className="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 text-sm font-medium rounded-lg transition-colors"
                         >
@@ -2012,9 +2130,9 @@ CENATE de Essalud`;
                   )}
                 </div>
 
-                <div className="overflow-x-auto">
-                  <table className="w-full text-xs">
-                  <thead className="bg-[#0D5BA9] text-white sticky top-0">
+                <div className="overflow-x-auto max-h-[calc(100vh-400px)] overflow-y-auto relative">
+                  <table className="w-full text-xs border-collapse">
+                  <thead className="bg-[#0D5BA9] text-white sticky top-0 z-20">
                     <tr className="border-b-2 border-blue-800">
                       <th className="px-2 py-2 text-left text-[10px] font-bold uppercase">
                         <input
@@ -2025,23 +2143,23 @@ CENATE de Essalud`;
                           title={selectedRows.size === pacientesFiltrados.length ? "Deseleccionar todo" : "Seleccionar todo"}
                         />
                       </th>
-                      <th className="px-2 py-2 text-left text-[10px] font-bold uppercase">
-                        Bolsa
+                      <th className="px-3 py-2 text-left text-[10px] font-bold uppercase">
+                        F. Ingreso Bolsa
                       </th>
-                      <th className="px-2 py-2 text-left text-[10px] font-bold uppercase">
-                        F. Asign.
+                      <th className="px-3 py-2 text-left text-[10px] font-bold uppercase">
+                        F. Asignación
                       </th>
-                      <th className="px-2 py-2 text-left text-[10px] font-bold uppercase">
-                        DNI
+                      <th className="px-3 py-2 text-left text-[10px] font-bold uppercase">
+                        Origen de la Bolsa
                       </th>
-                      <th className="px-2 py-2 text-left text-[10px] font-bold uppercase">
+                      <th className="px-3 py-2 text-left text-[10px] font-bold uppercase">
+                        T-Nº Documento
+                      </th>
+                      <th className="px-3 py-2 text-left text-[10px] font-bold uppercase">
                         Paciente
                       </th>
-                      <th className="px-2 py-2 text-center text-[10px] font-bold uppercase">
-                        Edad
-                      </th>
-                      <th className="px-2 py-2 text-center text-[10px] font-bold uppercase">
-                        Gén.
+                      <th className="px-3 py-2 text-left text-[10px] font-bold uppercase">
+                        Teléfonos
                       </th>
                       {/* Columna Prioridad - Solo visible para Bolsa ID 1 */}
                       {esBolsaId1 && (
@@ -2068,12 +2186,6 @@ CENATE de Essalud`;
                         Tipo Cita
                       </th>
                       <th className="px-2 py-2 text-left text-[10px] font-bold uppercase">
-                        Tel. 1
-                      </th>
-                      <th className="px-2 py-2 text-left text-[10px] font-bold uppercase">
-                        Tel. 2
-                      </th>
-                      <th className="px-2 py-2 text-left text-[10px] font-bold uppercase">
                         Estado
                       </th>
                       <th className="px-2 py-2 text-left text-[10px] font-bold uppercase">
@@ -2094,7 +2206,7 @@ CENATE de Essalud`;
                     </tr>
                   </thead>
                   <tbody>
-                    {pacientesFiltrados.map((paciente, idx) => (
+                    {pacientesPaginados.map((paciente, idx) => (
                       <tr
                         key={paciente.id}
                         className={`border-b border-gray-200 transition-colors ${
@@ -2115,35 +2227,124 @@ CENATE de Essalud`;
                             }`}
                           />
                         </td>
-                        <td className="px-2 py-1.5 text-[10px]">
-                          <span className={`px-1.5 py-0.5 rounded font-medium transition-colors ${getBolsaColor(paciente.descTipoBolsa)}`}>
-                            {paciente.descTipoBolsa || "Sin clasificar"}
-                          </span>
+                        {/* F. INGRESO BOLSA */}
+                        <td className="px-3 py-2">
+                          {(() => {
+                            // Para RECITA e INTERCONSULTA, usar fechaSolicitud si fechaCambioEstado está vacío
+                            const fechaMostrar = (paciente.tipoCita === "RECITA" || paciente.tipoCita === "INTERCONSULTA")
+                              ? (paciente.fechaSolicitud || paciente.fechaCambioEstado)
+                              : paciente.fechaCambioEstado;
+
+                            return fechaMostrar && fechaMostrar !== "-" ? (
+                              <div className="bg-orange-50 rounded p-1.5 border-l-4 border-orange-600">
+                                <div className="flex items-center gap-1 mb-0.5">
+                                  <Calendar size={12} className="text-orange-600 flex-shrink-0" />
+                                  <span className="text-xs font-bold text-orange-600 uppercase tracking-tight">Ingreso</span>
+                                </div>
+                                <div className="text-xs font-semibold text-orange-900">
+                                  {new Date(fechaMostrar).toLocaleDateString('es-PE', { day: '2-digit', month: '2-digit', year: 'numeric' })}
+                                </div>
+                                <div className="text-xs text-orange-600 font-medium">
+                                  {formatearTiempoRelativo(fechaMostrar)}
+                                </div>
+                              </div>
+                            ) : (
+                              <div className="text-gray-400 italic text-xs py-0.5">—</div>
+                            );
+                          })()}
                         </td>
-                        <td className="px-2 py-1.5 text-gray-700 text-[10px] font-medium whitespace-nowrap">
-                          {paciente.fechaAsignacion === "-"
-                            ? <span className="text-gray-300 italic">N/D</span>
-                            : formatearTiempoRelativo(paciente.fechaAsignacion)}
-                        </td>
-                        <td className="px-2 py-1.5 font-medium text-slate-900">
-                          {paciente.pacienteDni}
-                        </td>
-                        <td className="px-2 py-1.5 text-slate-600">
-                          {paciente.pacienteNombre}
-                        </td>
-                        <td className="px-2 py-1.5 text-center">
-                          {paciente.pacienteEdad && paciente.pacienteEdad !== "-" ? (
-                            <span className="text-slate-600">{paciente.pacienteEdad}</span>
+
+                        {/* F. ASIGNACIÓN */}
+                        <td className="px-3 py-2">
+                          {paciente.fechaAsignacion && paciente.fechaAsignacion !== "-" ? (
+                            <div className="bg-blue-50 rounded p-1.5 border-l-4 border-blue-600">
+                              <div className="flex items-center gap-1 mb-0.5">
+                                <Calendar size={12} className="text-blue-600 flex-shrink-0" />
+                                <span className="text-xs font-bold text-blue-600 uppercase tracking-tight">Asignación</span>
+                              </div>
+                              <div className="text-xs font-semibold text-blue-900">
+                                {new Date(paciente.fechaAsignacion).toLocaleDateString('es-PE', { day: '2-digit', month: '2-digit', year: 'numeric' })}
+                              </div>
+                              <div className="text-xs text-blue-600 font-medium">
+                                {formatearTiempoRelativo(paciente.fechaAsignacion)}
+                              </div>
+                            </div>
                           ) : (
-                            <span className="text-gray-300 italic text-[10px]">N/D</span>
+                            <div className="text-gray-400 italic text-xs py-0.5">—</div>
                           )}
                         </td>
-                        <td className="px-2 py-1.5 text-center">
-                          {paciente.pacienteSexo && paciente.pacienteSexo !== "-" ? (
-                            <span className="text-slate-600">{paciente.pacienteSexo}</span>
+
+                        {/* ORIGEN DE LA BOLSA */}
+                        <td className="px-3 py-2">
+                          {paciente.descTipoBolsa && paciente.descTipoBolsa !== "-" ? (
+                            <span className="text-xs font-semibold text-gray-900">
+                              {paciente.descTipoBolsa}
+                            </span>
                           ) : (
-                            <span className="text-gray-300 italic text-[10px]">N/D</span>
+                            <div className="text-gray-400 italic text-xs py-0.5">—</div>
                           )}
+                        </td>
+
+                        {/* T-Nº DOCUMENTO */}
+                        <td className="px-3 py-2 text-sm min-w-max">
+                          <div className="text-xs text-gray-600 font-semibold">DNI</div>
+                          <div className="font-bold text-blue-600 mt-1 text-base">{paciente.pacienteDni}</div>
+                        </td>
+
+                        {/* PACIENTE */}
+                        <td className="px-3 py-2 text-sm min-w-max">
+                          <div className="font-bold text-gray-900 text-base whitespace-nowrap">{paciente.pacienteNombre}</div>
+                          <div className="text-xs text-gray-500 mt-1">
+                            <span className="inline-block">{paciente.pacienteSexo || "N/D"}</span>
+                            <span className="mx-1">•</span>
+                            <span className="inline-block">{paciente.pacienteEdad || "N/D"} años</span>
+                          </div>
+                        </td>
+
+                        {/* TELÉFONOS */}
+                        <td className="px-3 py-2">
+                          <div className="bg-green-50 rounded p-1.5 border-l-4 border-green-600">
+                            <div className="flex items-center gap-1 mb-0.5">
+                              <Phone size={12} className="text-green-600 flex-shrink-0" />
+                              <span className="text-xs font-bold text-green-600 uppercase tracking-tight">Principal</span>
+                            </div>
+                            <div className="text-xs font-semibold text-green-900">
+                              {paciente.pacienteTelefono ? (
+                                <a
+                                  href={`https://wa.me/${paciente.pacienteTelefono.replace(/\D/g, '')}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="hover:underline text-green-700"
+                                  title="Abrir en WhatsApp"
+                                >
+                                  {paciente.pacienteTelefono}
+                                </a>
+                              ) : (
+                                <span className="text-gray-400">N/D</span>
+                              )}
+                            </div>
+
+                            {paciente.pacienteTelefonoAlterno && (
+                              <>
+                                <div className="h-px bg-green-200 my-1"></div>
+                                <div className="flex items-center gap-1 mb-0.5">
+                                  <Phone size={12} className="text-green-500 flex-shrink-0" />
+                                  <span className="text-xs font-bold text-green-600 uppercase tracking-tight">Alterno</span>
+                                </div>
+                                <div className="text-xs font-semibold text-green-900">
+                                  <a
+                                    href={`https://wa.me/${paciente.pacienteTelefonoAlterno.replace(/\D/g, '')}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="hover:underline text-green-700"
+                                    title="Abrir en WhatsApp"
+                                  >
+                                    {paciente.pacienteTelefonoAlterno}
+                                  </a>
+                                </div>
+                              </>
+                            )}
+                          </div>
                         </td>
                         {/* Celda Prioridad - Solo visible para Bolsa ID 1 */}
                         {esBolsaId1 && (
@@ -2374,38 +2575,6 @@ CENATE de Essalud`;
                           {paciente.tipoCita}
                         </td>
                         <td className="px-2 py-1.5">
-                          {paciente.pacienteTelefono ? (
-                            <a
-                              href={`https://wa.me/${paciente.pacienteTelefono.replace(/\D/g, '')}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="flex items-center gap-1 text-green-600 hover:text-green-700 hover:underline font-medium text-xs"
-                              title="Abrir en WhatsApp"
-                            >
-                              <Phone className="w-3 h-3" strokeWidth={2} />
-                              {paciente.pacienteTelefono}
-                            </a>
-                          ) : (
-                            <span className="text-gray-300 italic text-[10px]">N/D</span>
-                          )}
-                        </td>
-                        <td className="px-2 py-1.5">
-                          {paciente.pacienteTelefonoAlterno ? (
-                            <a
-                              href={`https://wa.me/${paciente.pacienteTelefonoAlterno.replace(/\D/g, '')}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="flex items-center gap-1 text-green-600 hover:text-green-700 hover:underline font-medium text-xs"
-                              title="Abrir en WhatsApp"
-                            >
-                              <Phone className="w-3 h-3" strokeWidth={2} />
-                              {paciente.pacienteTelefonoAlterno}
-                            </a>
-                          ) : (
-                            <span className="text-gray-300 italic text-[10px]">N/D</span>
-                          )}
-                        </td>
-                        <td className="px-2 py-1.5">
                           {pacienteEditandoEstado === paciente.id ? (
                             // Modo Edición: Mostrar Select
                             <div className="space-y-1">
@@ -2587,6 +2756,33 @@ CENATE de Essalud`;
                 </table>
               </div>
 
+              {/* ✅ v1.109.10: Controles de paginación */}
+              {pacientesFiltrados.length > REGISTROS_POR_PAGINA && (
+                <div className="flex items-center justify-between px-6 py-3 bg-white border-t border-gray-200 rounded-b-xl">
+                  <span className="text-sm text-gray-600">
+                    Mostrando {((currentPage - 1) * REGISTROS_POR_PAGINA) + 1} - {Math.min(currentPage * REGISTROS_POR_PAGINA, pacientesFiltrados.length)} de {pacientesFiltrados.length} registros
+                  </span>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                      disabled={currentPage === 1}
+                      className="px-3 py-1 text-sm bg-blue-600 text-white rounded disabled:bg-gray-300 hover:bg-blue-700"
+                    >
+                      ← Anterior
+                    </button>
+                    <span className="px-3 py-1 text-sm text-gray-700 font-semibold">
+                      Página {currentPage} de {totalPaginas}
+                    </span>
+                    <button
+                      onClick={() => setCurrentPage(Math.min(totalPaginas, currentPage + 1))}
+                      disabled={currentPage === totalPaginas}
+                      className="px-3 py-1 text-sm bg-blue-600 text-white rounded disabled:bg-gray-300 hover:bg-blue-700"
+                    >
+                      Siguiente →
+                    </button>
+                  </div>
+                </div>
+              )}
 
               </>
             )}

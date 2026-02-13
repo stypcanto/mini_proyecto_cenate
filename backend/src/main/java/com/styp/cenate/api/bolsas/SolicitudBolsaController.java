@@ -280,14 +280,103 @@ public class SolicitudBolsaController {
      * v1.40.4: Removida restricción de rol para permitir acceso desde módulo Gestión de Citas
      */
     @GetMapping("/mi-bandeja")
-    public ResponseEntity<?> obtenerMiBandeja() {
+    public ResponseEntity<?> obtenerMiBandeja(
+            @RequestParam(required = false) String fechaIngresoInicio,
+            @RequestParam(required = false) String fechaIngresoFin,
+            @RequestParam(required = false) String fechaAsignacionInicio,
+            @RequestParam(required = false) String fechaAsignacionFin) {
         try {
             log.info("═══════════════════════════════════════════════════════════");
             log.info("📬 ENDPOINT: GET /api/bolsas/solicitudes/mi-bandeja");
             log.info("   Obteniendo solicitudes de la gestora actual (Mi Bandeja)...");
+            if (fechaIngresoInicio != null || fechaIngresoFin != null || fechaAsignacionInicio != null || fechaAsignacionFin != null) {
+                log.info("📅 Filtros de fecha aplicados:");
+                if (fechaIngresoInicio != null) log.info("   - F. Ingreso Inicio: {}", fechaIngresoInicio);
+                if (fechaIngresoFin != null) log.info("   - F. Ingreso Fin: {}", fechaIngresoFin);
+                if (fechaAsignacionInicio != null) log.info("   - F. Asignación Inicio: {}", fechaAsignacionInicio);
+                if (fechaAsignacionFin != null) log.info("   - F. Asignación Fin: {}", fechaAsignacionFin);
+            }
 
             // Obtener solicitudes asignadas a la gestora actual
             List<SolicitudBolsaDTO> solicitudes = solicitudBolsaService.obtenerSolicitudesAsignadasAGestora();
+
+            // 📅 Aplicar filtros de fecha (v1.43.3)
+            java.time.LocalDate tempIngresoInicio = null, tempIngresoFin = null, tempAsignacionInicio = null, tempAsignacionFin = null;
+            try {
+                if (fechaIngresoInicio != null && !fechaIngresoInicio.isBlank()) {
+                    tempIngresoInicio = java.time.LocalDate.parse(fechaIngresoInicio);
+                }
+                if (fechaIngresoFin != null && !fechaIngresoFin.isBlank()) {
+                    tempIngresoFin = java.time.LocalDate.parse(fechaIngresoFin);
+                }
+                if (fechaAsignacionInicio != null && !fechaAsignacionInicio.isBlank()) {
+                    tempAsignacionInicio = java.time.LocalDate.parse(fechaAsignacionInicio);
+                }
+                if (fechaAsignacionFin != null && !fechaAsignacionFin.isBlank()) {
+                    tempAsignacionFin = java.time.LocalDate.parse(fechaAsignacionFin);
+                }
+            } catch (Exception e) {
+                log.warn("⚠️ Error parseando fechas: {}", e.getMessage());
+            }
+
+            final java.time.LocalDate diaIngresoInicio = tempIngresoInicio;
+            final java.time.LocalDate diaIngresoFin = tempIngresoFin;
+            final java.time.LocalDate diaAsignacionInicio = tempAsignacionInicio;
+            final java.time.LocalDate diaAsignacionFin = tempAsignacionFin;
+
+            if (diaIngresoInicio != null || diaIngresoFin != null || diaAsignacionInicio != null || diaAsignacionFin != null) {
+                log.info("[DATES] Fechas parseadas:");
+                if (diaIngresoInicio != null) log.info("   - Ingreso Inicio: {}", diaIngresoInicio);
+                if (diaIngresoFin != null) log.info("   - Ingreso Fin: {}", diaIngresoFin);
+                if (diaAsignacionInicio != null) log.info("   - Asignación Inicio: {}", diaAsignacionInicio);
+                if (diaAsignacionFin != null) log.info("   - Asignación Fin: {}", diaAsignacionFin);
+
+                final int totalAntes = solicitudes.size();
+                solicitudes = solicitudes.stream()
+                    .filter(s -> {
+                        // Filtro F. Ingreso Bolsa (fechaCambioEstado)
+                        if (diaIngresoInicio != null || diaIngresoFin != null) {
+                            if (s.getFechaCambioEstado() == null) {
+                                log.debug("  SKIP Solicitud {} sin fechaCambioEstado", s.getIdSolicitud());
+                                return false;
+                            }
+                            java.time.LocalDate diaIngreso = s.getFechaCambioEstado().toLocalDateTime().toLocalDate();
+                            log.debug("  [DEBUG] Solicitud {}: fechaCambioEstado = {}, comparando con {} a {}",
+                                s.getIdSolicitud(), diaIngreso, diaIngresoInicio, diaIngresoFin);
+                            if (diaIngresoInicio != null && diaIngreso.isBefore(diaIngresoInicio)) {
+                                log.debug("    SKIP {} es antes de {}", diaIngreso, diaIngresoInicio);
+                                return false;
+                            }
+                            if (diaIngresoFin != null && diaIngreso.isAfter(diaIngresoFin)) {
+                                log.debug("    SKIP {} es después de {}", diaIngreso, diaIngresoFin);
+                                return false;
+                            }
+                            log.debug("    PASS Solicitud {} pasa filtro F. Ingreso", s.getIdSolicitud());
+                        }
+                        // Filtro F. Asignación (fechaAsignacion)
+                        if (diaAsignacionInicio != null || diaAsignacionFin != null) {
+                            if (s.getFechaAsignacion() == null) {
+                                log.debug("  SKIP Solicitud {} sin fechaAsignacion", s.getIdSolicitud());
+                                return false;
+                            }
+                            java.time.LocalDate diaAsignacion = s.getFechaAsignacion().toLocalDateTime().toLocalDate();
+                            log.debug("  [DEBUG] Solicitud {}: fechaAsignacion = {}, comparando con {} a {}",
+                                s.getIdSolicitud(), diaAsignacion, diaAsignacionInicio, diaAsignacionFin);
+                            if (diaAsignacionInicio != null && diaAsignacion.isBefore(diaAsignacionInicio)) {
+                                log.debug("    SKIP {} es antes de {}", diaAsignacion, diaAsignacionInicio);
+                                return false;
+                            }
+                            if (diaAsignacionFin != null && diaAsignacion.isAfter(diaAsignacionFin)) {
+                                log.debug("    SKIP {} es después de {}", diaAsignacion, diaAsignacionFin);
+                                return false;
+                            }
+                            log.debug("    PASS Solicitud {} pasa filtro F. Asignación", s.getIdSolicitud());
+                        }
+                        return true;
+                    })
+                    .collect(java.util.stream.Collectors.toList());
+                log.info("[RESULT] Filtrado: {} solicitudes => {} solicitudes", totalAntes, solicitudes.size());
+            }
 
             log.info("✅ Resultado final: Se encontraron {} solicitud(es) en la bandeja", solicitudes.size());
             log.info("═══════════════════════════════════════════════════════════");
@@ -311,9 +400,9 @@ public class SolicitudBolsaController {
 
     /**
      * Obtiene todas las solicitudes activas CON PAGINACIÓN
-     * GET /api/bolsas/solicitudes?page=0&size=25
+     * GET /api/bolsas/solicitudes?page=0&size=100
      *
-     * @param pageable información de paginación (default: 25 registros para alinear con frontend)
+     * @param pageable información de paginación (default: 100 registros para alinear con frontend)
      * @return página de solicitudes
      */
     /**
@@ -346,7 +435,7 @@ public class SolicitudBolsaController {
             @RequestParam(required = false) String busqueda,
             @RequestParam(required = false) String fechaInicio,  // ✅ v1.66.0: Filtro rango fechas
             @RequestParam(required = false) String fechaFin,     // ✅ v1.66.0: Filtro rango fechas
-            @PageableDefault(size = 25, page = 0) Pageable pageable) {
+            @PageableDefault(size = 100, page = 0) Pageable pageable) {
 
         // Si hay algún filtro, usar búsqueda con filtros (v2.6.0 + v1.66.0: rango fechas)
         if (bolsa != null || macrorregion != null || red != null || ipress != null ||
