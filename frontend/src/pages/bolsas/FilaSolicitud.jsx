@@ -62,7 +62,7 @@ function FilaSolicitud({
         {solicitud.telefonoAlterno && solicitud.telefonoAlterno !== 'N/A' && (
           <div className="text-xs text-gray-500 mt-1" title="Teléfono Alterno">
             <span className="text-gray-500">Alterno: </span>
-            <span className="font-semibold text-gray-700">{solicitud.telefonoAlterno}</span>
+            <span className="font-bold text-base">{solicitud.telefonoAlterno}</span>
           </div>
         )}
       </td>
