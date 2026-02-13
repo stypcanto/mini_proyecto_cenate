@@ -191,16 +191,19 @@ export default function Solicitudes() {
   useEffect(() => {
     const cargarEspecialidades = async () => {
       try {
-        setErrorEspecialidades(null); // Limpiar errores previos
-        const response = await bolsasService.obtenerEspecialidadesUnicas();
+        setErrorEspecialidades(null);
+        const response = await bolsasService.obtenerEspecialidadesActivasCenate();
 
         if (isMountedRef.current) {
-          // Manejar respuesta estandarizada con metadata
-          if (response.especialidades && Array.isArray(response.especialidades)) {
-            setEspecialidadesActivas(response.especialidades);
+          if (Array.isArray(response) && response.length > 0) {
+            // Extraer descServicio de cada DimServicioEssiDTO y ordenar
+            const nombres = response
+              .map(s => s.descServicio)
+              .filter(n => n && n.trim() !== '')
+              .sort();
+            setEspecialidadesActivas(nombres);
           } else {
-            // Fallback si respuesta no tiene estructura esperada
-            console.warn('⚠️ Respuesta inesperada de especialidades:', response);
+            console.warn('⚠️ Respuesta inesperada de especialidades CENATE:', response);
             setErrorEspecialidades('Formato de respuesta inesperado');
           }
         }
@@ -2070,6 +2073,10 @@ export default function Solicitudes() {
               </div>
             ) : solicitudes.length > 0 ? (
               <>
+              <div className="bg-blue-50 border border-blue-200 rounded px-3 py-1.5 mb-2 text-xs text-blue-700 flex items-center gap-1">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                <span><strong>Paciente:</strong> Género - Nombres del Paciente (Edad)</span>
+              </div>
               <table className="w-full">
                 <thead className="bg-[#0D5BA9] text-white sticky top-0">
                   <tr className="border-b-2 border-blue-800">
@@ -2082,28 +2089,21 @@ export default function Solicitudes() {
                       />
                     </th>
                     {/* Columnas - Orden optimizado v2.1.0 */}
-                    <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">Origen de la Bolsa</th>
-                    <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">Fecha Preferida</th>
-                    <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">Tipo de Documento</th>
-                    <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">Número de documento</th>
-                    <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">Nombre del Asegurado</th>
-                    <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">Fecha de Nacimiento</th>
-                    <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">Sexo</th>
-                    <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">Edad</th>
-                    <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">Teléfono</th>
-                    <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">Teléfono Alterno</th>
-                    <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">Correo</th>
-                    <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">Tipo de Cita</th>
-                    <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">Especialidad</th>
-                    <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">Cod. IPRESS</th>
-                    <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">IPRESS</th>
-                    <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">Red</th>
-                    <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">Estado</th>
-                    <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">Fecha Asignación</th>
-                    <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">Gestora Asignada</th>
-                    <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">Fecha Cambio Estado</th>
-                    <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">Usuario Cambio Estado</th>
-                    <th className="px-4 py-3 text-center text-xs font-bold uppercase tracking-wider">Acciones</th>
+                    <th className="px-1 py-1 text-left text-xs font-bold uppercase tracking-wider">Origen de la Bolsa</th>
+                    <th className="px-1 py-1 text-left text-xs font-bold uppercase tracking-wider">Fecha Preferida</th>
+                    <th className="px-1 py-1 text-left text-xs font-bold uppercase tracking-wider">T-N° Documento</th>
+                    <th className="px-1 py-1 text-left text-xs font-bold uppercase tracking-wider">Paciente</th>
+                    <th className="px-1 py-1 text-left text-xs font-bold uppercase tracking-wider">Teléfonos</th>
+                    <th className="px-1 py-1 text-left text-xs font-bold uppercase tracking-wider">Tipo de Cita</th>
+                    <th className="px-1 py-1 text-left text-xs font-bold uppercase tracking-wider">Especialidad</th>
+                    <th className="px-1 py-1 text-left text-xs font-bold uppercase tracking-wider">IPRESS</th>
+                    <th className="px-1 py-1 text-left text-xs font-bold uppercase tracking-wider">Red</th>
+                    <th className="px-1 py-1 text-left text-xs font-bold uppercase tracking-wider">Estado</th>
+                    <th className="px-1 py-1 text-left text-xs font-bold uppercase tracking-wider">Fecha Asignación</th>
+                    <th className="px-1 py-1 text-left text-xs font-bold uppercase tracking-wider">Gestora Asignada</th>
+                    <th className="px-1 py-1 text-left text-xs font-bold uppercase tracking-wider">Fecha Cambio Estado</th>
+                    <th className="px-1 py-1 text-left text-xs font-bold uppercase tracking-wider">Usuario Cambio Estado</th>
+                    <th className="px-1 py-1 text-center text-xs font-bold uppercase tracking-wider">Acciones</th>
                   </tr>
                 </thead>
                 <tbody>

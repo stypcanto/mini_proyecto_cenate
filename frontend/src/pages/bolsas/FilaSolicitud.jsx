@@ -38,24 +38,20 @@ function FilaSolicitud({
       </td>
 
       {/* DATOS PRINCIPALES - Origen de la Bolsa */}
-      <td className="px-4 py-3 text-sm text-gray-700 max-w-xs">
+      <td className="px-1 py-1 text-sm text-gray-700 max-w-xs">
         <span className="font-medium text-gray-900">{solicitud.descBolsa || solicitud.nombreBolsa || 'Sin clasificar'}</span>
       </td>
-      <td className="px-4 py-3 text-sm text-gray-700">{solicitud.fechaPreferidaNoAtendida}</td>
-      <td className="px-4 py-3 text-sm text-gray-700">{solicitud.tipoDocumento}</td>
-      <td className="px-4 py-3 text-sm font-semibold text-blue-600">{solicitud.dni}</td>
-      <td className="px-4 py-3 text-sm text-gray-900 font-medium">{solicitud.paciente}</td>
-      <td className="px-4 py-3 text-sm text-gray-700">{solicitud.fechaNacimiento}</td>
-      <td className="px-4 py-3 text-sm text-gray-700">{solicitud.sexo}</td>
-      <td className="px-4 py-3 text-sm text-gray-700">{solicitud.edad}</td>
-      <td className="px-4 py-3 text-sm text-gray-900">{solicitud.telefono}</td>
-      <td className="px-4 py-3 text-sm text-gray-900">{solicitud.telefonoAlterno}</td>
-      <td className="px-4 py-3 text-sm text-gray-900 max-w-xs truncate" title={solicitud.correo}>
-        {solicitud.correo}
+      <td className="px-1 py-1 text-sm text-gray-700">{solicitud.fechaPreferidaNoAtendida}</td>
+      <td className="px-1 py-1 text-sm font-semibold text-blue-600 whitespace-nowrap">{solicitud.tipoDocumento}-{solicitud.dni}</td>
+      <td className="px-1 py-1 text-sm text-gray-900 font-medium">{solicitud.sexo}-{solicitud.paciente} ({solicitud.edad})</td>
+      <td className="px-1 py-1 text-sm text-gray-900 whitespace-nowrap">
+        <div>{solicitud.telefono}</div>
+        {solicitud.telefonoAlterno && solicitud.telefonoAlterno !== 'N/A' && (
+          <div className="text-xs text-gray-500" title="Teléfono Alterno">Alterno: {solicitud.telefonoAlterno}</div>
+        )}
       </td>
-
       {/* TIPO DE CITA */}
-      <td className="px-4 py-3 text-sm text-gray-700">
+      <td className="px-1 py-1 text-sm text-gray-700">
         <span
           className={`px-2 py-1 rounded text-xs font-semibold whitespace-nowrap inline-block ${
             solicitud.tipoCita === 'RECITA'
@@ -72,17 +68,14 @@ function FilaSolicitud({
       </td>
 
       {/* ESPECIALIDAD Y UBICACIÓN */}
-      <td className="px-4 py-3 text-sm text-gray-900">{solicitud.especialidad}</td>
-      <td className="px-4 py-3 text-sm text-gray-900 font-semibold" title="Código IPRESS">
-        {solicitud.codigoIpress}
+      <td className="px-1 py-1 text-sm text-gray-900">{solicitud.especialidad}</td>
+      <td className="px-1 py-1 text-sm text-gray-900 max-w-xs truncate" title={solicitud.ipress}>
+        <span className="font-semibold text-blue-600">{solicitud.codigoIpress}</span> - {solicitud.ipress || 'N/A'}
       </td>
-      <td className="px-4 py-3 text-sm text-gray-900 max-w-xs truncate" title={solicitud.ipress}>
-        {solicitud.ipress || 'N/A'}
-      </td>
-      <td className="px-4 py-3 text-sm text-gray-900">{solicitud.red || 'Sin Red'}</td>
+      <td className="px-1 py-1 text-sm text-gray-900">{solicitud.red || 'Sin Red'}</td>
 
       {/* ESTADO */}
-      <td className="px-4 py-3">
+      <td className="px-1 py-1">
         <span
           className={`px-3 py-1 rounded-md text-xs font-semibold whitespace-nowrap inline-block ${getEstadoBadge(
             solicitud.estado
@@ -94,7 +87,7 @@ function FilaSolicitud({
       </td>
 
       {/* FECHA ASIGNACIÓN */}
-      <td className="px-4 py-3 text-xs text-gray-600">
+      <td className="px-1 py-1 text-xs text-gray-600">
         {solicitud.fechaAsignacionFormato ? (
           <span className="text-gray-900 font-medium">{solicitud.fechaAsignacionFormato}</span>
         ) : (
@@ -103,7 +96,7 @@ function FilaSolicitud({
       </td>
 
       {/* GESTORA ASIGNADA */}
-      <td className="px-4 py-3 text-sm">
+      <td className="px-1 py-1 text-sm">
         {solicitud.gestoraAsignada ? (
           <span className="font-semibold text-green-700">{solicitud.gestoraAsignada}</span>
         ) : (
@@ -111,8 +104,8 @@ function FilaSolicitud({
         )}
       </td>
 
-      {/* FECHA CAMBIO ESTADO - Auditoría v3.3.1 */}
-      <td className="px-4 py-3 text-sm text-gray-600">
+      {/* FECHA CAMBIO ESTADO */}
+      <td className="px-1 py-1 text-sm text-gray-600">
         {solicitud.fechaCambioEstado ? (
           <span className="text-blue-700 font-medium">{solicitud.fechaCambioEstado}</span>
         ) : (
@@ -120,8 +113,8 @@ function FilaSolicitud({
         )}
       </td>
 
-      {/* USUARIO CAMBIO ESTADO - Auditoría v3.3.1 */}
-      <td className="px-4 py-3 text-sm text-gray-600">
+      {/* USUARIO CAMBIO ESTADO */}
+      <td className="px-1 py-1 text-sm text-gray-600">
         {solicitud.usuarioCambioEstado ? (
           <span className="text-gray-900 font-medium">{solicitud.usuarioCambioEstado}</span>
         ) : (
@@ -130,7 +123,7 @@ function FilaSolicitud({
       </td>
 
       {/* ACCIONES */}
-      <td className="px-4 py-3 text-center">
+      <td className="px-1 py-1 text-center">
         <div className="flex items-center justify-center gap-1">
           {/* Asignar/Reasignar Gestora */}
           {!solicitud.gestoraAsignada && (

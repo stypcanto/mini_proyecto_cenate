@@ -406,11 +406,11 @@ select * from dim_personal_cnt dpc ;
 
 
 
+select * from dim_servicio_essi where es_cenate=true;
 
 
 
-
-
+select * from dim_solicitud_bolsa where paciente_id in ('48337914');
 
 
 
