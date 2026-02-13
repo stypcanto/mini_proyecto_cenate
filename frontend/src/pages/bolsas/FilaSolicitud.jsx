@@ -18,10 +18,10 @@ function FilaSolicitud({
   getEstadoBadge,
 }) {
   return (
-    <tr className={`border-b transition-colors duration-200 ${
+    <tr className={`border-b transition-colors duration-200 hover:bg-blue-50 ${
       isChecked
-        ? 'bg-blue-100 border-blue-300 hover:bg-blue-150'
-        : 'border-gray-200 hover:bg-gray-50'
+        ? 'bg-blue-100 border-blue-300'
+        : 'border-gray-200 bg-white'
     }`}>
       {/* CHECKBOX */}
       <td className="px-4 py-3">
@@ -38,10 +38,10 @@ function FilaSolicitud({
       </td>
 
       {/* DATOS PRINCIPALES - Origen de la Bolsa */}
-      <td className="px-1 py-1 text-sm text-gray-700 max-w-xs">
+      <td className="px-3 py-3 text-sm text-gray-700 max-w-xs">
         <span className="font-medium text-gray-900">{solicitud.descBolsa || solicitud.nombreBolsa || 'Sin clasificar'}</span>
       </td>
-      <td className="px-1 py-1 text-sm text-gray-700">{solicitud.fechaPreferidaNoAtendida}</td>
+      <td className="px-3 py-3 text-sm text-gray-700">{solicitud.fechaPreferidaNoAtendida}</td>
       <td className="px-3 py-2 text-sm min-w-max">
         <div className="text-xs text-gray-600 font-semibold">{solicitud.tipoDocumento}</div>
         <div className="font-bold text-blue-600 mt-1 text-base">{solicitud.dni}</div>
@@ -67,7 +67,7 @@ function FilaSolicitud({
         )}
       </td>
       {/* TIPO DE CITA */}
-      <td className="px-1 py-1 text-sm text-gray-700">
+      <td className="px-3 py-3 text-sm text-gray-700">
         <span
           className={`px-2 py-1 rounded text-xs font-semibold whitespace-nowrap inline-block ${
             solicitud.tipoCita === 'RECITA'
@@ -84,14 +84,14 @@ function FilaSolicitud({
       </td>
 
       {/* ESPECIALIDAD Y UBICACIÓN */}
-      <td className="px-1 py-1 text-sm text-gray-900">{solicitud.especialidad}</td>
-      <td className="px-1 py-1 text-sm text-gray-900 max-w-xs truncate" title={solicitud.ipress}>
+      <td className="px-3 py-3 text-sm text-gray-900">{solicitud.especialidad}</td>
+      <td className="px-3 py-3 text-sm text-gray-900 max-w-xs truncate" title={solicitud.ipress}>
         <span className="font-semibold text-blue-600">{solicitud.codigoIpress}</span> - {solicitud.ipress || 'N/A'}
       </td>
-      <td className="px-1 py-1 text-sm text-gray-900">{solicitud.red || 'Sin Red'}</td>
+      <td className="px-3 py-3 text-sm text-gray-900">{solicitud.red || 'Sin Red'}</td>
 
       {/* ESTADO */}
-      <td className="px-1 py-1">
+      <td className="px-3 py-3">
         <div className="relative inline-block group">
           <span
             className={`px-3 py-1 rounded-md text-xs font-semibold whitespace-nowrap inline-block cursor-help ${getEstadoBadge(
@@ -109,7 +109,7 @@ function FilaSolicitud({
       </td>
 
       {/* FECHA Y HORA DE CITA */}
-      <td className="px-1 py-1 text-xs">
+      <td className="px-3 py-3 text-xs">
         {solicitud.fechaHoraCita ? (
           <span className="text-indigo-700 font-medium">{solicitud.fechaHoraCita}</span>
         ) : (
@@ -118,7 +118,7 @@ function FilaSolicitud({
       </td>
 
       {/* MÉDICO ASIGNADO */}
-      <td className="px-1 py-1 text-xs">
+      <td className="px-3 py-3 text-xs">
         {solicitud.nombreMedicoAsignado ? (
           <span className="text-gray-900 font-medium">{solicitud.nombreMedicoAsignado}</span>
         ) : (
@@ -127,7 +127,7 @@ function FilaSolicitud({
       </td>
 
       {/* ESTADO DE ATENCIÓN (condicion_medica) */}
-      <td className="px-1 py-1">
+      <td className="px-3 py-3">
         {solicitud.condicionMedica ? (
           <span className={`px-2 py-0.5 rounded-lg text-[10px] font-medium inline-block ${
             solicitud.condicionMedica === 'Atendido'
@@ -146,7 +146,7 @@ function FilaSolicitud({
       </td>
 
       {/* FECHA DE ATENCIÓN MÉDICA */}
-      <td className="px-1 py-1 text-xs">
+      <td className="px-3 py-3 text-xs">
         {solicitud.fechaAtencionMedica ? (
           <span className="text-indigo-700 font-medium">{solicitud.fechaAtencionMedica}</span>
         ) : (
@@ -155,7 +155,7 @@ function FilaSolicitud({
       </td>
 
       {/* FECHA ASIGNACIÓN */}
-      <td className="px-1 py-1 text-xs text-gray-600">
+      <td className="px-3 py-3 text-xs text-gray-600">
         {solicitud.fechaAsignacionFormato ? (
           <span className="text-gray-900 font-medium">{solicitud.fechaAsignacionFormato}</span>
         ) : (
@@ -164,7 +164,7 @@ function FilaSolicitud({
       </td>
 
       {/* GESTORA ASIGNADA */}
-      <td className="px-1 py-1 text-sm">
+      <td className="px-3 py-3 text-sm">
         {solicitud.gestoraAsignada ? (
           <span className="font-semibold text-green-700">{solicitud.gestoraAsignada}</span>
         ) : (
@@ -173,7 +173,7 @@ function FilaSolicitud({
       </td>
 
       {/* FECHA CAMBIO ESTADO */}
-      <td className="px-1 py-1 text-sm text-gray-600">
+      <td className="px-3 py-3 text-sm text-gray-600">
         {solicitud.fechaCambioEstado ? (
           <span className="text-blue-700 font-medium">{solicitud.fechaCambioEstado}</span>
         ) : (
@@ -182,7 +182,7 @@ function FilaSolicitud({
       </td>
 
       {/* USUARIO CAMBIO ESTADO */}
-      <td className="px-1 py-1 text-sm text-gray-600">
+      <td className="px-3 py-3 text-sm text-gray-600">
         {solicitud.usuarioCambioEstado ? (
           <span className="text-gray-900 font-medium">{solicitud.usuarioCambioEstado}</span>
         ) : (
@@ -191,7 +191,7 @@ function FilaSolicitud({
       </td>
 
       {/* ACCIONES */}
-      <td className="px-1 py-1 text-center">
+      <td className="px-3 py-3 text-center">
         <div className="flex items-center justify-center gap-1">
           {/* Asignar/Reasignar Gestora */}
           {!solicitud.gestoraAsignada && (

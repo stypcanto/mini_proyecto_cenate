@@ -2121,10 +2121,10 @@ export default function Solicitudes() {
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                 <span><strong>Paciente:</strong> Género - Nombres del Paciente (Edad)</span>
               </div>
-              <table className="w-full">
-                <thead className="bg-[#0D5BA9] text-white sticky top-0">
-                  <tr className="border-b-2 border-blue-800">
-                    <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">
+              <table className="w-full border-collapse">
+                <thead className="bg-[#0D5BA9] text-white sticky top-0 z-40">
+                  <tr className="border-b-2 border-blue-900">
+                    <th className="px-4 py-3 text-left text-sm font-bold uppercase tracking-wider whitespace-nowrap">
                       <input
                         type="checkbox"
                         checked={selectedRows.size === solicitudes.length && solicitudes.length > 0}
@@ -2133,25 +2133,25 @@ export default function Solicitudes() {
                       />
                     </th>
                     {/* Columnas - Orden optimizado v2.1.0 */}
-                    <th className="px-1 py-1 text-left text-xs font-bold uppercase tracking-wider">Origen de la Bolsa</th>
-                    <th className="px-1 py-1 text-left text-xs font-bold uppercase tracking-wider">Fecha Preferida</th>
-                    <th className="px-1 py-1 text-left text-xs font-bold uppercase tracking-wider">T-N° Documento</th>
-                    <th className="px-1 py-1 text-left text-xs font-bold uppercase tracking-wider">Paciente</th>
-                    <th className="px-1 py-1 text-left text-xs font-bold uppercase tracking-wider">Teléfonos</th>
-                    <th className="px-1 py-1 text-left text-xs font-bold uppercase tracking-wider">Tipo de Cita</th>
-                    <th className="px-1 py-1 text-left text-xs font-bold uppercase tracking-wider">Especialidad</th>
-                    <th className="px-1 py-1 text-left text-xs font-bold uppercase tracking-wider">IPRESS</th>
-                    <th className="px-1 py-1 text-left text-xs font-bold uppercase tracking-wider">Red</th>
-                    <th className="px-1 py-1 text-left text-xs font-bold uppercase tracking-wider">Estado</th>
-                    <th className="px-1 py-1 text-left text-xs font-bold uppercase tracking-wider">F/H Cita</th>
-                    <th className="px-1 py-1 text-left text-xs font-bold uppercase tracking-wider">Médico Asignado</th>
-                    <th className="px-1 py-1 text-left text-xs font-bold uppercase tracking-wider">Est. Atención</th>
-                    <th className="px-1 py-1 text-left text-xs font-bold uppercase tracking-wider">F. Atención Méd.</th>
-                    <th className="px-1 py-1 text-left text-xs font-bold uppercase tracking-wider">Fecha Asignación</th>
-                    <th className="px-1 py-1 text-left text-xs font-bold uppercase tracking-wider">Gestora Asignada</th>
-                    <th className="px-1 py-1 text-left text-xs font-bold uppercase tracking-wider">Fecha Cambio Estado</th>
-                    <th className="px-1 py-1 text-left text-xs font-bold uppercase tracking-wider">Usuario Cambio Estado</th>
-                    <th className="px-1 py-1 text-center text-xs font-bold uppercase tracking-wider">Acciones</th>
+                    <th className="px-3 py-3 text-left text-sm font-bold uppercase tracking-wider whitespace-nowrap">Origen de la Bolsa</th>
+                    <th className="px-3 py-3 text-left text-sm font-bold uppercase tracking-wider whitespace-nowrap">Fecha Preferida</th>
+                    <th className="px-3 py-3 text-left text-sm font-bold uppercase tracking-wider whitespace-nowrap">T-N° Documento</th>
+                    <th className="px-3 py-3 text-left text-sm font-bold uppercase tracking-wider whitespace-nowrap">Paciente</th>
+                    <th className="px-3 py-3 text-left text-sm font-bold uppercase tracking-wider whitespace-nowrap">Teléfonos</th>
+                    <th className="px-3 py-3 text-left text-sm font-bold uppercase tracking-wider whitespace-nowrap">Tipo de Cita</th>
+                    <th className="px-3 py-3 text-left text-sm font-bold uppercase tracking-wider whitespace-nowrap">Especialidad</th>
+                    <th className="px-3 py-3 text-left text-sm font-bold uppercase tracking-wider whitespace-nowrap">IPRESS</th>
+                    <th className="px-3 py-3 text-left text-sm font-bold uppercase tracking-wider whitespace-nowrap">Red</th>
+                    <th className="px-3 py-3 text-left text-sm font-bold uppercase tracking-wider whitespace-nowrap">Estado</th>
+                    <th className="px-3 py-3 text-left text-sm font-bold uppercase tracking-wider whitespace-nowrap">F/H Cita</th>
+                    <th className="px-3 py-3 text-left text-sm font-bold uppercase tracking-wider whitespace-nowrap">Médico Asignado</th>
+                    <th className="px-3 py-3 text-left text-sm font-bold uppercase tracking-wider whitespace-nowrap">Est. Atención</th>
+                    <th className="px-3 py-3 text-left text-sm font-bold uppercase tracking-wider whitespace-nowrap">F. Atención Méd.</th>
+                    <th className="px-3 py-3 text-left text-sm font-bold uppercase tracking-wider whitespace-nowrap">Fecha Asignación</th>
+                    <th className="px-3 py-3 text-left text-sm font-bold uppercase tracking-wider whitespace-nowrap">Gestora Asignada</th>
+                    <th className="px-3 py-3 text-left text-sm font-bold uppercase tracking-wider whitespace-nowrap">Fecha Cambio Estado</th>
+                    <th className="px-3 py-3 text-left text-sm font-bold uppercase tracking-wider whitespace-nowrap">Usuario Cambio Estado</th>
+                    <th className="px-3 py-3 text-center text-sm font-bold uppercase tracking-wider whitespace-nowrap">Acciones</th>
                   </tr>
                 </thead>
                 <tbody>
