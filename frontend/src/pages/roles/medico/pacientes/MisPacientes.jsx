@@ -1625,6 +1625,17 @@ export default function MisPacientes() {
     return `${baseClasses} ${getColorCondicion(condicion)}`;
   };
 
+  // ✅ v1.68.2: Estadísticas del período ACTUAL (no histórico)
+  // Los números SIEMPRE corresponden con lo que ves en la tabla
+  const statsDelPeriodo = React.useMemo(() => {
+    const total = pacientesFiltradosPorFecha.length;
+    const atendidos = pacientesFiltradosPorFecha.filter(p => p.condicion === 'Atendido').length;
+    const pendientes = pacientesFiltradosPorFecha.filter(p => p.condicion === 'Pendiente').length;
+    const deserciones = pacientesFiltradosPorFecha.filter(p => p.condicion === 'Deserción').length;
+
+    return { total, atendidos, pendientes, deserciones };
+  }, [pacientesFiltradosPorFecha]);
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -1723,7 +1734,7 @@ export default function MisPacientes() {
             <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16 group-hover:scale-150 transition-transform duration-500"></div>
             <div className="relative z-10">
               <p className="text-sm font-semibold text-slate-100">Total de Pacientes</p>
-              <p className="text-4xl font-bold mt-3 text-white">{pacientes.length}</p>
+              <p className="text-4xl font-bold mt-3 text-white">{statsDelPeriodo.total}</p>
               <p className="text-xs mt-3 text-slate-300 group-hover:text-white transition-colors">Haz clic para limpiar filtro</p>
             </div>
           </button>
@@ -1748,7 +1759,7 @@ export default function MisPacientes() {
             <div className="relative z-10">
               <p className="text-sm font-semibold text-emerald-100">Atendidos</p>
               <p className="text-4xl font-bold mt-3 text-white">
-                {pacientes.filter(p => p.condicion === 'Atendido').length}
+                {statsDelPeriodo.atendidos}
               </p>
               <p className="text-xs mt-3 text-emerald-200 group-hover:text-white transition-colors">Haz clic para filtrar</p>
             </div>
@@ -1774,7 +1785,7 @@ export default function MisPacientes() {
             <div className="relative z-10">
               <p className="text-sm font-semibold text-amber-100">Pendientes</p>
               <p className="text-4xl font-bold mt-3 text-white">
-                {pacientes.filter(p => p.condicion === 'Pendiente').length}
+                {statsDelPeriodo.pendientes}
               </p>
               <p className="text-xs mt-3 text-amber-200 group-hover:text-white transition-colors">Haz clic para filtrar</p>
             </div>
@@ -1800,7 +1811,7 @@ export default function MisPacientes() {
             <div className="relative z-10">
               <p className="text-sm font-semibold text-rose-100">Deserción</p>
               <p className="text-4xl font-bold mt-3 text-white">
-                {pacientes.filter(p => p.condicion === 'Deserción').length}
+                {statsDelPeriodo.deserciones}
               </p>
               <p className="text-xs mt-3 text-rose-200 group-hover:text-white transition-colors">Haz clic para filtrar</p>
             </div>
