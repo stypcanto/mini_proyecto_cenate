@@ -2182,7 +2182,7 @@ export default function Solicitudes() {
                     <th className="px-3 py-3 text-left text-sm font-bold uppercase tracking-wider whitespace-nowrap">F. Atención Méd.</th>
                     <th className="px-3 py-3 text-left text-sm font-bold uppercase tracking-wider whitespace-nowrap">Fecha Asignación</th>
                     <th className="px-3 py-3 text-left text-sm font-bold uppercase tracking-wider whitespace-nowrap">Gestora Asignada</th>
-                    <th className="px-3 py-3 text-left text-sm font-bold uppercase tracking-wider whitespace-nowrap">Fecha Cambio Estado</th>
+                    <th className="px-3 py-3 text-left text-sm font-bold uppercase tracking-wider whitespace-nowrap">F. Ingreso Bolsa</th>
                     <th className="px-3 py-3 text-left text-sm font-bold uppercase tracking-wider whitespace-nowrap">Usuario Cambio Estado</th>
                     <th className="px-3 py-3 text-center text-sm font-bold uppercase tracking-wider whitespace-nowrap">Acciones</th>
                   </tr>
