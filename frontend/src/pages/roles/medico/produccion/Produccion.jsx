@@ -50,6 +50,41 @@ export default function Produccion() {
   // ✅ v1.61.5: Filtro de búsqueda por DNI
   const [filtroDNI, setFiltroDNI] = useState('');
 
+  // ✅ v1.68.0: Extrae fecha en zona horaria Lima (UTC-5) desde timestamp ISO
+  const extraerFecha = (dateStr) => {
+    if (!dateStr) return null;
+    try {
+      // Parsear como ISO 8601 (UTC)
+      const dateObj = new Date(dateStr);
+
+      // Convertir a Lima: restar 5 horas al UTC
+      const limaDate = new Date(dateObj.getTime() - (5 * 60 * 60 * 1000));
+
+      // Extraer fecha en formato YYYY-MM-DD
+      const año = limaDate.getUTCFullYear();
+      const mes = String(limaDate.getUTCMonth() + 1).padStart(2, '0');
+      const día = String(limaDate.getUTCDate()).padStart(2, '0');
+
+      return `${año}-${mes}-${día}`;
+    } catch (e) {
+      console.error('❌ Error al procesar fecha:', dateStr, e);
+      return null;
+    }
+  };
+
+  // ✅ v1.68.0: Obtener la fecha de HOY en zona horaria de Lima (UTC-5)
+  // IMPORTANTE: Perú (Lima) está en UTC-5 y NO usa horario de verano
+  const obtenerHoyEnLima = () => {
+    const ahora = new Date();
+    // Convertir a Lima: UTC-5 = restar 5 horas al UTC
+    const limaTime = new Date(ahora.getTime() - (5 * 60 * 60 * 1000));
+    const año = limaTime.getUTCFullYear();
+    const mes = String(limaTime.getUTCMonth() + 1).padStart(2, '0');
+    const día = String(limaTime.getUTCDate()).padStart(2, '0');
+    const hoyEnLima = `${año}-${mes}-${día}`;
+    return hoyEnLima;
+  };
+
   useEffect(() => {
     cargarDatos();
   }, []);
@@ -68,24 +103,21 @@ export default function Produccion() {
     }
   };
 
-  // Obtener pacientes atendidos en una fecha específica
+  // ✅ v1.68.0: Obtener pacientes atendidos en una fecha específica (con timezone Lima)
   const getPacientesDelDia = (fecha) => {
     return pacientes.filter(p => {
       if (p.condicion !== 'Atendido' || !p.fechaAtencion) return false;
       try {
-        const fechaAtencion = new Date(p.fechaAtencion);
-        return (
-          fechaAtencion.getDate() === fecha.getDate() &&
-          fechaAtencion.getMonth() === fecha.getMonth() &&
-          fechaAtencion.getFullYear() === fecha.getFullYear()
-        );
+        const fechaAtencionStr = extraerFecha(p.fechaAtencion);
+        const fechaSeleccionadaStr = `${fecha.getFullYear()}-${String(fecha.getMonth() + 1).padStart(2, '0')}-${String(fecha.getDate()).padStart(2, '0')}`;
+        return fechaAtencionStr === fechaSeleccionadaStr;
       } catch {
         return false;
       }
     });
   };
 
-  // ✅ v1.61.12: Obtener días que tienen atenciones (dinámico según filtro de período)
+  // ✅ v1.68.0: Obtener días que tienen atenciones (dinámico según filtro de período, con timezone Lima)
   const getDiasConAtenciones = () => {
     const diasSet = new Set();
     const hoy = new Date();
@@ -93,7 +125,12 @@ export default function Produccion() {
     pacientes.forEach(p => {
       if (p.condicion === 'Atendido' && p.fechaAtencion) {
         try {
-          const fecha = new Date(p.fechaAtencion);
+          // ✅ v1.68.0: Extraer fecha en zona horaria Lima
+          const fechaStr = extraerFecha(p.fechaAtencion);
+          if (!fechaStr) return;
+
+          const [año, mes, día] = fechaStr.split('-').map(Number);
+          const fecha = new Date(año, mes - 1, día);
 
           // Determinar si la fecha está dentro del rango del filtro actual
           let estaEnRango = false;
@@ -213,13 +250,17 @@ export default function Produccion() {
     return { inicio: inicioPrevio, fin: new Date(inicio) };
   }, [getDateRange]);
 
+  // ✅ v1.68.0: Obtener pacientes en rango de fechas con timezone Lima
   const getPacientesEnRango = useCallback((pacientes, inicio, fin) => {
     return pacientes.filter(p => {
       if (!p.fechaAtencion || p.condicion !== 'Atendido') return false;
-      const fecha = new Date(p.fechaAtencion);
+      const fechaStr = extraerFecha(p.fechaAtencion);
+      if (!fechaStr) return false;
+      const [año, mes, día] = fechaStr.split('-').map(Number);
+      const fecha = new Date(año, mes - 1, día);
       return fecha >= inicio && fecha <= fin;
     });
-  }, []);
+  }, [extraerFecha]);
 
   // ✅ v1.61.0: Estadísticas dinámicas (período vs día específico)
   const estadisticas = useMemo(() => {
@@ -261,7 +302,7 @@ export default function Produccion() {
     };
 
     return { statsActual, statsPrevio };
-  }, [pacientes, filtroActual, diaSeleccionado, mostrarPeriodoCompleto, getDateRange, getPacientesEnRango, getPeriodoAnterior]);
+  }, [pacientes, filtroActual, diaSeleccionado, mostrarPeriodoCompleto, getDateRange, getPacientesEnRango, getPeriodoAnterior, extraerFecha]);
 
   const { statsActual, statsPrevio } = estadisticas;
 
@@ -271,16 +312,18 @@ export default function Produccion() {
     return ((actual - anterior) / anterior * 100).toFixed(1);
   }, []);
 
-  // Datos para gráfico de tendencia (memoizado)
+  // ✅ v1.68.0: Datos para gráfico de tendencia (memoizado, con timezone Lima)
   const datosTendencia = useMemo(() => {
     const ultimos7 = [];
     for (let i = 6; i >= 0; i--) {
       const fecha = new Date();
       fecha.setDate(fecha.getDate() - i);
+      const fechaStr = `${fecha.getFullYear()}-${String(fecha.getMonth() + 1).padStart(2, '0')}-${String(fecha.getDate()).padStart(2, '0')}`;
+
       const diaPacientes = pacientes.filter(p => {
         if (!p.fechaAtencion || p.condicion !== 'Atendido') return false;
-        const fechaPaciente = new Date(p.fechaAtencion);
-        return fechaPaciente.toDateString() === fecha.toDateString();
+        const fechaPacienteStr = extraerFecha(p.fechaAtencion);
+        return fechaPacienteStr === fechaStr;
       });
 
       ultimos7.push({
@@ -290,7 +333,7 @@ export default function Produccion() {
       });
     }
     return ultimos7;
-  }, [pacientes]);
+  }, [pacientes, extraerFecha]);
 
   // ✅ v1.60.0: Funciones de exportación (con importación dinámica)
   const exportarPDF = useCallback(async () => {
