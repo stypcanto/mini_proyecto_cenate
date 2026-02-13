@@ -280,14 +280,72 @@ public class SolicitudBolsaController {
      * v1.40.4: Removida restricción de rol para permitir acceso desde módulo Gestión de Citas
      */
     @GetMapping("/mi-bandeja")
-    public ResponseEntity<?> obtenerMiBandeja() {
+    public ResponseEntity<?> obtenerMiBandeja(
+            @RequestParam(required = false) String fechaIngresoInicio,
+            @RequestParam(required = false) String fechaIngresoFin,
+            @RequestParam(required = false) String fechaAsignacionInicio,
+            @RequestParam(required = false) String fechaAsignacionFin) {
         try {
             log.info("═══════════════════════════════════════════════════════════");
             log.info("📬 ENDPOINT: GET /api/bolsas/solicitudes/mi-bandeja");
             log.info("   Obteniendo solicitudes de la gestora actual (Mi Bandeja)...");
+            if (fechaIngresoInicio != null || fechaIngresoFin != null || fechaAsignacionInicio != null || fechaAsignacionFin != null) {
+                log.info("📅 Filtros de fecha aplicados:");
+                if (fechaIngresoInicio != null) log.info("   - F. Ingreso Inicio: {}", fechaIngresoInicio);
+                if (fechaIngresoFin != null) log.info("   - F. Ingreso Fin: {}", fechaIngresoFin);
+                if (fechaAsignacionInicio != null) log.info("   - F. Asignación Inicio: {}", fechaAsignacionInicio);
+                if (fechaAsignacionFin != null) log.info("   - F. Asignación Fin: {}", fechaAsignacionFin);
+            }
 
             // Obtener solicitudes asignadas a la gestora actual
             List<SolicitudBolsaDTO> solicitudes = solicitudBolsaService.obtenerSolicitudesAsignadasAGestora();
+
+            // 📅 Aplicar filtros de fecha (v1.43.3)
+            java.time.LocalDate tempIngresoInicio = null, tempIngresoFin = null, tempAsignacionInicio = null, tempAsignacionFin = null;
+            try {
+                if (fechaIngresoInicio != null && !fechaIngresoInicio.isBlank()) {
+                    tempIngresoInicio = java.time.LocalDate.parse(fechaIngresoInicio);
+                }
+                if (fechaIngresoFin != null && !fechaIngresoFin.isBlank()) {
+                    tempIngresoFin = java.time.LocalDate.parse(fechaIngresoFin);
+                }
+                if (fechaAsignacionInicio != null && !fechaAsignacionInicio.isBlank()) {
+                    tempAsignacionInicio = java.time.LocalDate.parse(fechaAsignacionInicio);
+                }
+                if (fechaAsignacionFin != null && !fechaAsignacionFin.isBlank()) {
+                    tempAsignacionFin = java.time.LocalDate.parse(fechaAsignacionFin);
+                }
+            } catch (Exception e) {
+                log.warn("⚠️ Error parseando fechas: {}", e.getMessage());
+            }
+
+            final java.time.LocalDate diaIngresoInicio = tempIngresoInicio;
+            final java.time.LocalDate diaIngresoFin = tempIngresoFin;
+            final java.time.LocalDate diaAsignacionInicio = tempAsignacionInicio;
+            final java.time.LocalDate diaAsignacionFin = tempAsignacionFin;
+
+            if (diaIngresoInicio != null || diaIngresoFin != null || diaAsignacionInicio != null || diaAsignacionFin != null) {
+                solicitudes = solicitudes.stream()
+                    .filter(s -> {
+                        // Filtro F. Ingreso Bolsa (fechaCambioEstado)
+                        if (diaIngresoInicio != null || diaIngresoFin != null) {
+                            if (s.getFechaCambioEstado() == null) return false;
+                            java.time.LocalDate diaIngreso = s.getFechaCambioEstado().toLocalDateTime().toLocalDate();
+                            if (diaIngresoInicio != null && diaIngreso.isBefore(diaIngresoInicio)) return false;
+                            if (diaIngresoFin != null && diaIngreso.isAfter(diaIngresoFin)) return false;
+                        }
+                        // Filtro F. Asignación (fechaAsignacion)
+                        if (diaAsignacionInicio != null || diaAsignacionFin != null) {
+                            if (s.getFechaAsignacion() == null) return false;
+                            java.time.LocalDate diaAsignacion = s.getFechaAsignacion().toLocalDateTime().toLocalDate();
+                            if (diaAsignacionInicio != null && diaAsignacion.isBefore(diaAsignacionInicio)) return false;
+                            if (diaAsignacionFin != null && diaAsignacion.isAfter(diaAsignacionFin)) return false;
+                        }
+                        return true;
+                    })
+                    .collect(java.util.stream.Collectors.toList());
+                log.info("📋 Después de filtrar por fechas: {} solicitudes", solicitudes.size());
+            }
 
             log.info("✅ Resultado final: Se encontraron {} solicitud(es) en la bandeja", solicitudes.size());
             log.info("═══════════════════════════════════════════════════════════");
