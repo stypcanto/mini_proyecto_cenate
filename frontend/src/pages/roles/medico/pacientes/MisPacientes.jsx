@@ -244,7 +244,7 @@ export default function MisPacientes() {
 
   // ============ v1.49.0: FILTROS AVANZADOS ============
   const [filtroIpress, setFiltroIpress] = useState('');
-  const [filtroRangoFecha, setFiltroRangoFecha] = useState('todos');
+  const [filtroRangoFecha, setFiltroRangoFecha] = useState('hoy');
   const [fechaDesde, setFechaDesde] = useState('');
   const [fechaHasta, setFechaHasta] = useState('');
   const [ipressDisponibles, setIpressDisponibles] = useState([]);
@@ -1501,7 +1501,7 @@ export default function MisPacientes() {
           <button
             onClick={() => {
               setFiltroEstado('');
-              setFiltroRangoFecha('todos');
+              setFiltroRangoFecha('hoy');
               setFechaDesde('');
               setFechaHasta('');
               setFechaAtencionSeleccionada('');
@@ -1524,7 +1524,7 @@ export default function MisPacientes() {
           <button
             onClick={() => {
               setFiltroEstado('Atendido');
-              setFiltroRangoFecha('todos');
+              setFiltroRangoFecha('hoy');
               setFechaDesde('');
               setFechaHasta('');
               setFechaAtencionSeleccionada('');
@@ -1549,7 +1549,7 @@ export default function MisPacientes() {
           <button
             onClick={() => {
               setFiltroEstado('Pendiente');
-              setFiltroRangoFecha('todos');
+              setFiltroRangoFecha('hoy');
               setFechaDesde('');
               setFechaHasta('');
               setFechaAtencionSeleccionada('');
@@ -1574,7 +1574,7 @@ export default function MisPacientes() {
           <button
             onClick={() => {
               setFiltroEstado('Deserción');
-              setFiltroRangoFecha('todos');
+              setFiltroRangoFecha('hoy');
               setFechaDesde('');
               setFechaHasta('');
               setFechaAtencionSeleccionada('');
@@ -1610,7 +1610,7 @@ export default function MisPacientes() {
               <div className="text-left">
                 <h3 className="text-lg font-bold text-gray-900">Filtros de Búsqueda</h3>
                 <p className="text-xs text-gray-600">
-                  {filtroEstado || filtroBolsa || filtroIpress || filtroRangoFecha !== 'todos' ?
+                  {filtroEstado || filtroBolsa || filtroIpress || filtroRangoFecha !== 'hoy' ?
                     '✅ Con filtros aplicados' :
                     'Sin filtros activos'}
                 </p>
@@ -1620,14 +1620,14 @@ export default function MisPacientes() {
             {/* Botones de acción */}
             <div className="flex items-center gap-2">
               {/* Botón Limpiar (siempre visible) */}
-              {(busqueda || filtroEstado || filtroBolsa || filtroIpress || filtroRangoFecha !== 'todos') && (
+              {(busqueda || filtroEstado || filtroBolsa || filtroIpress || filtroRangoFecha !== 'hoy') && (
                 <button
                   onClick={() => {
                     setBusqueda('');
                     setFiltroEstado('');
                     setFiltroBolsa('');
                     setFiltroIpress('');
-                    setFiltroRangoFecha('todos');
+                    setFiltroRangoFecha('hoy');
                     setFechaDesde('');
                     setFechaHasta('');
                     setFechaAtencionSeleccionada('');
