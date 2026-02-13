@@ -92,14 +92,20 @@ function FilaSolicitud({
 
       {/* ESTADO */}
       <td className="px-1 py-1">
-        <span
-          className={`px-3 py-1 rounded-md text-xs font-semibold whitespace-nowrap inline-block cursor-help ${getEstadoBadge(
-            solicitud.estado
-          )}`}
-          title={solicitud.estadoDisplay || 'Estado'}
-        >
-          {solicitud.estadoDisplay?.split(' - ')[0] || solicitud.estado}
-        </span>
+        <div className="relative inline-block group">
+          <span
+            className={`px-3 py-1 rounded-md text-xs font-semibold whitespace-nowrap inline-block cursor-help ${getEstadoBadge(
+              solicitud.estado
+            )}`}
+          >
+            {solicitud.estadoDisplay?.split(' - ')[0] || solicitud.estado}
+          </span>
+          {/* Tooltip personalizado */}
+          <div className="invisible group-hover:visible absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-white border border-gray-300 rounded-md text-xs font-medium text-gray-800 shadow-lg whitespace-nowrap z-50">
+            {solicitud.estadoDisplay || 'Estado'}
+            <div className="absolute top-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-t-white"></div>
+          </div>
+        </div>
       </td>
 
       {/* FECHA Y HORA DE CITA */}
