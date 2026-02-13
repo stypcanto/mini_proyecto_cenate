@@ -1496,27 +1496,66 @@ export default function MisPacientes() {
     <div className="min-h-screen bg-gray-50 p-6">
       <style>{animationStyles}</style>
       <div className="max-w-7xl mx-auto">
-        {/* Header */}
+        {/* Header Mejorado */}
         <div className="mb-8">
-          <div className="flex items-center gap-3 mb-2">
+          <div className="flex items-center gap-3 mb-6">
             <Users className="w-8 h-8 text-[#0A5BA9]" />
             <h1 className="text-3xl font-bold text-gray-900">👨‍⚕️ Mis Pacientes</h1>
           </div>
-          <div className="space-y-1">
-            <p className="text-gray-600 font-medium">Gestiona tus pacientes asignados</p>
-            {/* ✅ v1.78.0: Mostrar nombre y especialidad del médico logueado */}
-            {(doctorInfo?.nombre || authUser?.nombre) && (
-              <div className="flex items-center gap-4 mt-3 pt-3 border-t border-gray-200">
-                <div className="flex flex-col gap-0.5">
-                  <span className="text-sm text-gray-500">MÉDICO</span>
-                  <p className="font-semibold text-gray-900">{doctorInfo?.nombre || authUser?.nombre}</p>
+          <p className="text-gray-600 font-medium mb-6">Gestiona y coordina la atención de tus pacientes asignados</p>
+
+          {/* ✅ v1.78.0: Card profesional del médico logueado */}
+          {(doctorInfo?.nombre || authUser?.nombre) && (
+            <div className="bg-gradient-to-r from-[#0A5BA9] to-[#084A8E] rounded-xl p-6 shadow-lg border border-[#0A5BA9]/20 backdrop-blur-sm">
+              <div className="flex items-start gap-6">
+                {/* Avatar Circle */}
+                <div className="flex-shrink-0">
+                  <div className="w-16 h-16 rounded-full bg-white/20 border-2 border-white/40 flex items-center justify-center">
+                    <div className="text-center">
+                      <p className="text-2xl font-bold text-white">
+                        {(doctorInfo?.nombre || authUser?.nombre || 'MD')
+                          .split(' ')
+                          .slice(0, 2)
+                          .map(n => n[0])
+                          .join('')
+                          .toUpperCase()}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Información */}
+                <div className="flex-1">
+                  <div className="flex items-baseline gap-3 mb-2">
+                    <p className="text-sm font-semibold text-white/80 uppercase tracking-wider">Médico</p>
+                    <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-green-400/20 text-green-50 border border-green-400/30">
+                      ● En línea
+                    </span>
+                  </div>
+                  <h2 className="text-2xl font-bold text-white mb-1">{doctorInfo?.nombre || authUser?.nombre}</h2>
                   {doctorInfo?.especialidad && (
-                    <p className="text-xs text-[#0A5BA9] font-medium">{doctorInfo.especialidad}</p>
+                    <div className="flex items-center gap-2 text-white/90 text-sm font-medium">
+                      <Stethoscope className="w-4 h-4" />
+                      <span>{doctorInfo.especialidad}</span>
+                    </div>
                   )}
                 </div>
+
+                {/* Stats Quick */}
+                <div className="flex gap-6 text-center">
+                  <div>
+                    <p className="text-3xl font-bold text-white">{pacientesFiltradosPorFecha.length}</p>
+                    <p className="text-xs text-white/80 font-medium mt-1">Hoy</p>
+                  </div>
+                  <div className="w-px bg-white/20"></div>
+                  <div>
+                    <p className="text-3xl font-bold text-white">{pacientes.filter(p => p.condicion === 'Atendido').length}</p>
+                    <p className="text-xs text-white/80 font-medium mt-1">Atendidos</p>
+                  </div>
+                </div>
               </div>
-            )}
-          </div>
+            </div>
+          )}
         </div>
 
         {/* 📊 Estadísticas - Clicables para Filtrar */}
