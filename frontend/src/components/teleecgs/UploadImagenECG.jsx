@@ -166,11 +166,14 @@ export default function UploadImagenEKG({ onSuccess, onUploadSuccess, isWorkspac
 
   // ✅ v1.104.1: Guardar en localStorage SOLO metadatos (sin previews que pueden corromperse)
   // Los previews son Data URLs muy grandes que pueden exceder límite de localStorage
+  // ✅ v1.104.2: NO guardar esUrgente ni campos sensibles - Se resetean al abrir modal
   useEffect(() => {
     const guardarDraft = () => {
       try {
         localStorage.setItem(STORAGE_KEY, JSON.stringify({
-          // NO guardar previews - son Data URLs muy grandes que pueden corromperse
+          // NO guardar:
+          // - previews: son Data URLs muy grandes que pueden corromperse
+          // - esUrgente: debe resetear a false cada vez que se abre el modal
           numDocPaciente,
           datosCompletos,
           fechaToma,
