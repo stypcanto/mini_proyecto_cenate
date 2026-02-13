@@ -209,20 +209,45 @@ export default function MisPacientes() {
 
   // ✅ v1.109.25: Formatear nombre del doctor con "Dr(a)" y orden correcto
   const formatearNombreDoctor = (nombreCompleto) => {
-    if (!nombreCompleto) return 'Dr(a) Médico';
+    if (!nombreCompleto) return 'Dr Médico';
+
+    // Lista de nombres femeninos comunes en Perú
+    const nombresFemeninos = [
+      'keyla', 'maría', 'josefa', 'juana', 'rosa', 'ana', 'teresa', 'carla',
+      'patricia', 'sandra', 'gloria', 'diana', 'laura', 'monica', 'beatriz',
+      'elena', 'francisca', 'lucia', 'raquel', 'susana', 'victoria', 'yolanda',
+      'alejandra', 'carolina', 'daniela', 'gabriela', 'isabela', 'jessica',
+      'katrina', 'lorena', 'magdalena', 'nora', 'olivia', 'paula', 'rachel',
+      'sabrina', 'tania', 'valentina', 'wendy', 'xiomara', 'yasmin', 'zoe'
+    ];
 
     const palabras = nombreCompleto.trim().split(/\s+/).filter(p => p.length > 0);
-    if (palabras.length === 0) return 'Dr(a) Médico';
+    if (palabras.length === 0) return 'Dr Médico';
 
-    // Asumir que la última palabra es el apellido
-    const apellido = palabras[palabras.length - 1];
-    const nombres = palabras.slice(0, -1).join(' ');
+    // Detectar género buscando nombres femeninos en la lista
+    const nombreLower = nombreCompleto.toLowerCase();
+    const esFemenino = nombresFemeninos.some(nf => nombreLower.includes(nf));
+    const titulo = esFemenino ? 'Dra' : 'Dr';
 
-    // Detectar género: si el último nombre termina en 'a', usar "Dra", sino "Dr"
-    const ultimoNombre = nombres.split(/\s+/).pop() || apellido;
-    const titulo = ultimoNombre.toLowerCase().endsWith('a') ? 'Dra' : 'Dr';
+    // Asumir que la última palabra es un apellido (ej: Llanos)
+    // y el penúltimo es otro apellido (ej: Humán)
+    // Luego vienen los nombres (ej: Keyla Isabel)
+    // Formato: "Apellido1 Apellido2 Nombre1 Nombre2" → "Nombre1 Nombre2 Apellido1 Apellido2"
+    // O más simple: tomar últimas 1-2 palabras como apellidos
 
-    return `${titulo} ${nombres} ${apellido}`;
+    if (palabras.length >= 3) {
+      // Si hay 3+ palabras, asumir: apellidos al inicio, nombres al final
+      // Humán Keyla Isabel Llanos → Keyla Isabel es el nombre
+      const apellidos = [palabras[0], palabras[palabras.length - 1]].filter(p => p);
+      const nombres = palabras.slice(1, -1);
+      return `${titulo} ${nombres.join(' ')} ${apellidos.join(' ')}`;
+    } else if (palabras.length === 2) {
+      // Si hay 2 palabras, asumir: primer apellido, luego nombre
+      return `${titulo} ${palabras[1]} ${palabras[0]}`;
+    } else {
+      // Si hay 1 palabra, es solo un nombre
+      return `${titulo} ${palabras[0]}`;
+    }
   };
 
   const [pacientes, setPacientes] = useState([]);
