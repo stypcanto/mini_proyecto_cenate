@@ -2260,15 +2260,9 @@ CENATE de Essalud`;
                         {/* ORIGEN DE LA BOLSA */}
                         <td className="px-3 py-2">
                           {paciente.descTipoBolsa && paciente.descTipoBolsa !== "-" ? (
-                            <div className="bg-indigo-50 rounded p-1.5 border-l-4 border-indigo-600">
-                              <div className="flex items-center gap-1 mb-0.5">
-                                <ClipboardList size={12} className="text-indigo-600 flex-shrink-0" />
-                                <span className="text-xs font-bold text-indigo-600 uppercase tracking-tight">Origen</span>
-                              </div>
-                              <div className="text-xs font-semibold text-indigo-900">
-                                {paciente.descTipoBolsa}
-                              </div>
-                            </div>
+                            <span className="inline-block bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs font-semibold">
+                              {paciente.descTipoBolsa}
+                            </span>
                           ) : (
                             <div className="text-gray-400 italic text-xs py-0.5">—</div>
                           )}
