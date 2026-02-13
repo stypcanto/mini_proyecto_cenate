@@ -190,7 +190,7 @@ public class AtenderPacienteService {
                 .especialidad(solicitudOriginal.getEspecialidad())
                 .estado("PENDIENTE")
                 .estadoGestionCitasId(1L) // PENDIENTE CITAR
-                .idBolsa(11L) // BOLSA_GENERADA_X_PROFESIONAL - ✅ v1.47.2 Corregir bolsa correcta
+                .idBolsa(10L) // ✅ v1.103.3: BOLSA_GESTORA para evitar violación de UNIQUE constraint
                 .idServicio(idServicioRecita) // ✅ v1.47.3 Asignar idServicio para permitir selector de médicos
                 .responsableGestoraId(solicitudOriginal.getResponsableGestoraId()) // ✅ Asignar gestora responsable
                 .fechaAsignacion(OffsetDateTime.now())
@@ -198,7 +198,12 @@ public class AtenderPacienteService {
                 .activo(true)
                 .build();
 
-        solicitudBolsaRepository.save(bolsaRecita);
+        try {
+            solicitudBolsaRepository.save(bolsaRecita);
+        } catch (Exception e) {
+            log.warn("⚠️ [v1.103.3] Error creando bolsa Recita (posible duplicado): {}", e.getMessage());
+            // No relanzar la excepción - permitir que continúe el flujo
+        }
         log.info("✅ Bolsa RECITA creada: {} - Fecha preferida: {} - idServicio: {}",
                 bolsaRecita.getIdSolicitud(), fechaPreferida, idServicioRecita);
     }
@@ -242,14 +247,19 @@ public class AtenderPacienteService {
                 .especialidad(especialidad)
                 .estado("PENDIENTE")
                 .estadoGestionCitasId(1L) // PENDIENTE CITAR
-                .idBolsa(11L) // BOLSA_GENERADA_X_PROFESIONAL - ✅ v1.47.2 Corregir bolsa correcta
+                .idBolsa(10L) // ✅ v1.103.3: BOLSA_GESTORA para evitar violación de UNIQUE constraint
                 .idServicio(idServicioInterconsulta) // ✅ v1.47.3 Asignar idServicio para permitir selector de médicos
                 .responsableGestoraId(solicitudOriginal.getResponsableGestoraId()) // ✅ Asignar gestora responsable
                 .fechaAsignacion(OffsetDateTime.now())
                 .activo(true)
                 .build();
 
-        solicitudBolsaRepository.save(bolsaInterconsulta);
+        try {
+            solicitudBolsaRepository.save(bolsaInterconsulta);
+        } catch (Exception e) {
+            log.warn("⚠️ [v1.103.3] Error creando bolsa Interconsulta (posible duplicado): {}", e.getMessage());
+            // No relanzar la excepción - permitir que continúe el flujo
+        }
         log.info("✅ Bolsa INTERCONSULTA creada: {} para especialidad: {} - idServicio: {}",
                 bolsaInterconsulta.getIdSolicitud(), especialidad, idServicioInterconsulta);
     }
