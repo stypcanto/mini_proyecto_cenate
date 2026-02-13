@@ -169,9 +169,10 @@ export default function IPRESSWorkspace() {
   const [totalPagesFromBackend, setTotalPagesFromBackend] = useState(1);  // ✅ v1.71.0: Guardar totalPages del backend
   const [statsGlobales, setStatsGlobales] = useState(null);  // ✅ v1.97.2: Stats GLOBALES de toda la BD
 
-  // ✅ v1.103.0: ITEMS_PER_PAGE aumentado a 50 (carga 100 iniciales)
-  const ITEMS_PER_PAGE = 50;
-  const MAX_PAGES_INITIAL = 2;  // Cargar 2 páginas iniciales = 100 registros
+  // ✅ v1.107.3: ITEMS_PER_PAGE optimizado a 30 para carga más rápida
+  // Con size=30: 2 páginas = 60 registros, respuesta ~5-10MB en lugar de 15-20MB
+  const ITEMS_PER_PAGE = 30;
+  const MAX_PAGES_INITIAL = 2;  // Cargar 2 páginas iniciales = 60 registros (rápido)
 
   // ✅ v1.97.8: Calcular páginas REALES basado en items cargados, no en backend
   // Si hay 100 imágenes con ITEMS_PER_PAGE=100, debería ser 1 página real, no 5
