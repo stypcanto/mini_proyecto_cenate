@@ -14,7 +14,7 @@ export const moduloService = {
    * @returns {Promise<Array>} Lista de módulos
    */
   obtenerTodos: async () => {
-    return await apiClient.get(BASE_URL);
+    return await apiClient.get(BASE_URL, true);
   },
 
   /**
@@ -23,7 +23,7 @@ export const moduloService = {
    * @returns {Promise<Object>} Datos del módulo
    */
   obtenerPorId: async (id) => {
-    return await apiClient.get(`${BASE_URL}/${id}`);
+    return await apiClient.get(`${BASE_URL}/${id}`, true);
   },
 
   /**
@@ -37,7 +37,7 @@ export const moduloService = {
    * @returns {Promise<Object>} Módulo creado
    */
   crear: async (modulo) => {
-    return await apiClient.post(BASE_URL, modulo);
+    return await apiClient.post(BASE_URL, modulo, true);
   },
 
   /**
@@ -47,7 +47,7 @@ export const moduloService = {
    * @returns {Promise<Object>} Módulo actualizado
    */
   actualizar: async (id, modulo) => {
-    return await apiClient.put(`${BASE_URL}/${id}`, modulo);
+    return await apiClient.put(`${BASE_URL}/${id}`, modulo, true);
   },
 
   /**
@@ -56,7 +56,7 @@ export const moduloService = {
    * @returns {Promise<void>}
    */
   eliminar: async (id) => {
-    return await apiClient.delete(`${BASE_URL}/${id}`);
+    return await apiClient.delete(`${BASE_URL}/${id}`, true);
   },
 
   /**
@@ -66,8 +66,8 @@ export const moduloService = {
    * @returns {Promise<Object>} Módulo actualizado
    */
   cambiarEstado: async (id, activo) => {
-    const modulo = await apiClient.get(`${BASE_URL}/${id}`);
-    return await apiClient.put(`${BASE_URL}/${id}`, { ...modulo, activo });
+    const modulo = await apiClient.get(`${BASE_URL}/${id}`, true);
+    return await apiClient.put(`${BASE_URL}/${id}`, { ...modulo, activo }, true);
   }
 };
 

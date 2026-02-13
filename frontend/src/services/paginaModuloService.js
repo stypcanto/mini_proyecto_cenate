@@ -14,7 +14,7 @@ export const paginaModuloService = {
    * @returns {Promise<Array>} Lista de páginas
    */
   obtenerTodas: async () => {
-    return await apiClient.get(BASE_URL);
+    return await apiClient.get(BASE_URL, true);
   },
 
   /**
@@ -23,7 +23,7 @@ export const paginaModuloService = {
    * @returns {Promise<Object>} Datos de la página
    */
   obtenerPorId: async (id) => {
-    return await apiClient.get(`${BASE_URL}/${id}`);
+    return await apiClient.get(`${BASE_URL}/${id}`, true);
   },
 
   /**
@@ -38,7 +38,7 @@ export const paginaModuloService = {
    * @returns {Promise<Object>} Página creada
    */
   crear: async (pagina) => {
-    return await apiClient.post(BASE_URL, pagina);
+    return await apiClient.post(BASE_URL, pagina, true);
   },
 
   /**
@@ -48,7 +48,7 @@ export const paginaModuloService = {
    * @returns {Promise<Object>} Página actualizada
    */
   actualizar: async (id, pagina) => {
-    return await apiClient.put(`${BASE_URL}/${id}`, pagina);
+    return await apiClient.put(`${BASE_URL}/${id}`, pagina, true);
   },
 
   /**
@@ -57,7 +57,7 @@ export const paginaModuloService = {
    * @returns {Promise<void>}
    */
   eliminar: async (id) => {
-    return await apiClient.delete(`${BASE_URL}/${id}`);
+    return await apiClient.delete(`${BASE_URL}/${id}`, true);
   },
 
   /**
@@ -66,7 +66,7 @@ export const paginaModuloService = {
    * @returns {Promise<Array>} Lista de páginas del módulo
    */
   obtenerPorModulo: async (idModulo) => {
-    return await apiClient.get(`/mbac/modulos/${idModulo}/paginas`);
+    return await apiClient.get(`/mbac/modulos/${idModulo}/paginas`, true);
   },
 
   /**
@@ -76,8 +76,8 @@ export const paginaModuloService = {
    * @returns {Promise<Object>} Página actualizada
    */
   cambiarEstado: async (id, activo) => {
-    const pagina = await apiClient.get(`${BASE_URL}/${id}`);
-    return await apiClient.put(`${BASE_URL}/${id}`, { ...pagina, activo });
+    const pagina = await apiClient.get(`${BASE_URL}/${id}`, true);
+    return await apiClient.put(`${BASE_URL}/${id}`, { ...pagina, activo }, true);
   }
 };
 

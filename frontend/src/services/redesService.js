@@ -12,7 +12,7 @@ export const redesService = {
      */
     obtenerTodas: async () => {
         try {
-            const response = await apiClient.get('/redes');
+            const response = await apiClient.get('/redes', true);
             return response;
         } catch (error) {
             console.error('Error al obtener todas las redes:', error);
@@ -25,7 +25,7 @@ export const redesService = {
      */
     obtenerPorId: async (idRed) => {
         try {
-            const response = await apiClient.get(`/redes/${idRed}`);
+            const response = await apiClient.get(`/redes/${idRed}`, true);
             return response;
         } catch (error) {
             console.error(`Error al obtener red ${idRed}:`, error);
@@ -38,7 +38,7 @@ export const redesService = {
      */
     crear: async (redData) => {
         try {
-            const response = await apiClient.post('/redes', redData);
+            const response = await apiClient.post('/redes', redData, true);
             return response;
         } catch (error) {
             console.error('Error al crear red:', error);
@@ -51,7 +51,7 @@ export const redesService = {
      */
     actualizar: async (idRed, redData) => {
         try {
-            const response = await apiClient.put(`/redes/${idRed}`, redData);
+            const response = await apiClient.put(`/redes/${idRed}`, redData, true);
             return response;
         } catch (error) {
             console.error(`Error al actualizar red ${idRed}:`, error);
@@ -64,7 +64,7 @@ export const redesService = {
      */
     eliminar: async (idRed) => {
         try {
-            const response = await apiClient.delete(`/redes/${idRed}`);
+            const response = await apiClient.delete(`/redes/${idRed}`, true);
             return response;
         } catch (error) {
             console.error(`Error al eliminar red ${idRed}:`, error);
@@ -77,7 +77,7 @@ export const redesService = {
      */
     obtenerMacrorregiones: async () => {
         try {
-            const response = await apiClient.get('/macrorregiones');
+            const response = await apiClient.get('/macrorregiones', true);
             return response;
         } catch (error) {
             console.error('Error al obtener macrorregiones:', error);
