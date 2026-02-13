@@ -66,4 +66,7 @@ public class AtencionClinica107DTO {
 
     // 🆕 Condición médica (Pendiente, Atendido, Deserción)
     private String condicionMedica;
+
+    // 📞 Motivo de Llamada (v1.68.2)
+    private String motivoLlamadoBolsa;
 }

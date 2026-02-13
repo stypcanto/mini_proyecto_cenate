@@ -175,7 +175,12 @@ public class SolicitudBolsaDTO {
 
     @JsonProperty("fecha_atencion_medica")
     private java.time.OffsetDateTime fechaAtencionMedica;
-    // �🔔 AUDITORÍA
+
+    // 📞 MOTIVO DE LLAMADA (v1.68.2)
+    @JsonProperty("motivo_llamada_bolsa")
+    private String motivoLlamadoBolsa;
+
+    // 🔔 AUDITORÍA
     @JsonProperty("activo")
     private Boolean activo;
 }

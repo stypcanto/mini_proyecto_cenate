@@ -208,6 +208,12 @@ public class SolicitudBolsa {
     @Column(name = "observaciones_medicas", columnDefinition = "TEXT")
     private String observacionesMedicas;
 
+    // ============================================================================
+    // 📞 MOTIVO DE LLAMADA (v1.68.2 - 2026-02-13)
+    // ============================================================================
+    @Column(name = "motivo_llamada_bolsa", length = 500)
+    private String motivoLlamadoBolsa;
+
     @Column(name = "fecha_atencion_medica", columnDefinition = "TIMESTAMP WITH TIME ZONE")
     private OffsetDateTime fechaAtencionMedica;
 

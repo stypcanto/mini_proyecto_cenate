@@ -51,6 +51,9 @@ public class Modulo107PacienteDTO {
     // 👤 Asignación
     private Long responsableGestoraId;
 
+    // 📞 Motivo de Llamada (v1.68.2)
+    private String motivoLlamadoBolsa;
+
     /**
      * Convertir entidad JPA a DTO
      * Mapea campos de SolicitudBolsa a DTO
@@ -75,6 +78,7 @@ public class Modulo107PacienteDTO {
                 .fechaSolicitud(entity.getFechaSolicitud())
                 .fechaAsignacion(entity.getFechaAsignacion())
                 .responsableGestoraId(entity.getResponsableGestoraId())
+                .motivoLlamadoBolsa(entity.getMotivoLlamadoBolsa())
                 .build();
     }
 }

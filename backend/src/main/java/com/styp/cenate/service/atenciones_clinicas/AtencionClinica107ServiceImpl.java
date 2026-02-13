@@ -299,6 +299,7 @@ public class AtencionClinica107ServiceImpl implements AtencionClinica107Service 
             .consentimientoInformado(atencion.getConsentimientoInformado()) // 🆕 Consentimiento informado
             .condicionMedica(atencion.getCondicionMedica() != null && !atencion.getCondicionMedica().trim().isEmpty() 
                 ? atencion.getCondicionMedica() : "Pendiente") // 🆕 Condición médica con NULL como Pendiente
+            .motivoLlamadoBolsa(atencion.getMotivoLlamadoBolsa()) // 📞 Motivo de llamada (v1.68.2)
             .build();
     }
 
