@@ -2260,7 +2260,7 @@ CENATE de Essalud`;
                         {/* ORIGEN DE LA BOLSA */}
                         <td className="px-3 py-2">
                           {paciente.descTipoBolsa && paciente.descTipoBolsa !== "-" ? (
-                            <span className="inline-block bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs font-semibold">
+                            <span className="text-xs font-semibold text-gray-900">
                               {paciente.descTipoBolsa}
                             </span>
                           ) : (
