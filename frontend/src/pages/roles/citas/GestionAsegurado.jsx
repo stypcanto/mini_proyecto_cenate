@@ -2026,6 +2026,9 @@ CENATE de Essalud`;
                         />
                       </th>
                       <th className="px-3 py-2 text-left text-[10px] font-bold uppercase">
+                        F. Ingreso Bolsa
+                      </th>
+                      <th className="px-3 py-2 text-left text-[10px] font-bold uppercase">
                         F. Asignación
                       </th>
                       <th className="px-3 py-2 text-left text-[10px] font-bold uppercase">
@@ -2103,6 +2106,26 @@ CENATE de Essalud`;
                             }`}
                           />
                         </td>
+                        {/* F. INGRESO BOLSA */}
+                        <td className="px-3 py-2">
+                          {paciente.fechaCambioEstado && paciente.fechaCambioEstado !== "-" ? (
+                            <div className="bg-blue-50 rounded p-1.5 border-l-4 border-blue-600">
+                              <div className="flex items-center gap-1 mb-0.5">
+                                <Calendar size={12} className="text-blue-600 flex-shrink-0" />
+                                <span className="text-xs font-bold text-blue-600 uppercase tracking-tight">Ingreso</span>
+                              </div>
+                              <div className="text-xs font-semibold text-blue-900">
+                                {new Date(paciente.fechaCambioEstado).toLocaleDateString('es-PE', { day: '2-digit', month: '2-digit', year: 'numeric' })}
+                              </div>
+                              <div className="text-xs text-blue-600 font-medium">
+                                {formatearTiempoRelativo(paciente.fechaCambioEstado)}
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="text-gray-400 italic text-xs py-0.5">—</div>
+                          )}
+                        </td>
+
                         {/* F. ASIGNACIÓN */}
                         <td className="px-3 py-2">
                           {paciente.fechaAsignacion && paciente.fechaAsignacion !== "-" ? (
