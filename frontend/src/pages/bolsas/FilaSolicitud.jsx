@@ -43,8 +43,8 @@ function FilaSolicitud({
       </td>
       <td className="px-1 py-1 text-sm text-gray-700">{solicitud.fechaPreferidaNoAtendida}</td>
       <td className="px-1 py-1 text-sm">
-        <div className="font-semibold text-blue-600">{solicitud.dni}</div>
-        <div className="text-xs text-gray-500 mt-0.5">{solicitud.tipoDocumento}</div>
+        <div className="text-xs text-gray-600 font-semibold">{solicitud.tipoDocumento}</div>
+        <div className="font-semibold text-blue-600 mt-0.5">{solicitud.dni}</div>
       </td>
       <td className="px-1 py-1 text-sm">
         <div className="font-semibold text-gray-900">{solicitud.paciente}</div>

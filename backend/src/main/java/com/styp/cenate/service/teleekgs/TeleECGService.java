@@ -1223,7 +1223,7 @@ public class TeleECGService {
                     .codigoAdscripcion(ipress.getCodIpress())
                     .idIpress(ipress.getIdIpress())
                     .estado("PENDIENTE")
-                    .estadoGestionCitasId(1L)
+                    .estadoGestionCitasId(11L)
                     .responsableGestoraId(responsableGestoraId)
                     .activo(true)
                     .tipoDocumento("DNI")

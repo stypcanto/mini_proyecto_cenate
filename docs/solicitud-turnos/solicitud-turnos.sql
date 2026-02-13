@@ -440,3 +440,31 @@ select * from dim_personal_cnt;
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
