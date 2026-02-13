@@ -54,10 +54,16 @@ function FilaSolicitud({
           <span className="inline-block">{solicitud.edad} años</span>
         </div>
       </td>
-      <td className="px-1 py-1 text-sm text-gray-900 whitespace-nowrap">
-        <div>{solicitud.telefono}</div>
+      <td className="px-1 py-1 text-sm">
+        <div className="font-medium text-gray-900">
+          <span className="text-xs text-gray-500">Principal: </span>
+          <span className="font-semibold">{solicitud.telefono}</span>
+        </div>
         {solicitud.telefonoAlterno && solicitud.telefonoAlterno !== 'N/A' && (
-          <div className="text-xs text-gray-500" title="Teléfono Alterno">Alterno: {solicitud.telefonoAlterno}</div>
+          <div className="text-xs text-gray-500 mt-0.5" title="Teléfono Alterno">
+            <span className="text-gray-500">Alterno: </span>
+            <span className="font-semibold text-gray-700">{solicitud.telefonoAlterno}</span>
+          </div>
         )}
       </td>
       {/* TIPO DE CITA */}
