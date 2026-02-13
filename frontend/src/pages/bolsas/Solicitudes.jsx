@@ -2128,9 +2128,9 @@ export default function Solicitudes() {
           <div
             ref={bottomScrollRef}
             onScroll={handleBottomScroll}
-            className="overflow-x-auto overflow-y-auto max-h-[calc(100vh-400px)] bg-white rounded-b-xl shadow-lg border border-gray-200 table-container relative"
+            className="overflow-x-hidden overflow-y-auto max-h-[calc(100vh-400px)] bg-white rounded-b-xl shadow-lg border border-gray-200 table-container relative"
             style={{
-              scrollbarWidth: 'auto',
+              scrollbarWidth: 'none',
             }}
           >
             {isLoading ? (
