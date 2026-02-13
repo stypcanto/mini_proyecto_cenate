@@ -2113,9 +2113,9 @@ CENATE de Essalud`;
                   )}
                 </div>
 
-                <div className="overflow-x-auto">
-                  <table className="w-full text-xs">
-                  <thead className="bg-[#0D5BA9] text-white sticky top-0 z-10">
+                <div className="overflow-x-auto max-h-[calc(100vh-400px)] overflow-y-auto relative">
+                  <table className="w-full text-xs border-collapse">
+                  <thead className="bg-[#0D5BA9] text-white sticky top-0 z-20">
                     <tr className="border-b-2 border-blue-800">
                       <th className="px-2 py-2 text-left text-[10px] font-bold uppercase">
                         <input
