@@ -306,6 +306,31 @@ export default function Produccion() {
 
   const { statsActual, statsPrevio } = estadisticas;
 
+  // ✅ v1.68.3: Estadísticas por CONDICIÓN del período actual (no histórico)
+  // Esto es para los KPI cards: Atendidos, Pendientes, Deserciones
+  const statsCondicionDelPeriodo = useMemo(() => {
+    // Obtener pacientes del período actual basándose en filtroActual
+    let pacientesDelPeriodo = [];
+
+    if (mostrarPeriodoCompleto) {
+      // Si mostramos período completo, usamos estadisticas.statsActual que ya tiene los pacientes del período
+      const { inicio, fin } = getDateRange(filtroActual);
+      pacientesDelPeriodo = getPacientesEnRango(pacientes, inicio, fin);
+    } else {
+      // Si mostramos un día específico
+      const inicio = new Date(diaSeleccionado);
+      const fin = new Date(diaSeleccionado);
+      fin.setHours(23, 59, 59, 999);
+      pacientesDelPeriodo = getPacientesEnRango(pacientes, inicio, fin);
+    }
+
+    return {
+      atendidos: pacientesDelPeriodo.filter(p => p.condicion === 'Atendido').length,
+      pendientes: pacientesDelPeriodo.filter(p => p.condicion === 'Pendiente').length,
+      deserciones: pacientesDelPeriodo.filter(p => p.condicion === 'Deserción').length,
+    };
+  }, [pacientes, filtroActual, diaSeleccionado, mostrarPeriodoCompleto, getDateRange, getPacientesEnRango]);
+
   // Calcular comparativos (%)
   const calcularComparativo = useCallback((actual, anterior) => {
     if (anterior === 0) return actual > 0 ? 100 : 0;
@@ -507,7 +532,7 @@ export default function Produccion() {
           <p className="text-sm text-gray-500 mt-1">📅 Inicio de registro de atenciones en esta nueva plataforma: 06/02/26</p>
         </div>
 
-        {/* ✅ v1.60.0: KPIs DEL PERÍODO ACTUAL + COMPARATIVOS */}
+        {/* ✅ v1.68.3: KPIs DEL PERÍODO ACTUAL (no histórico) */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
           {/* Pacientes Atendidos - Período Actual */}
           <div className="bg-gradient-to-br from-emerald-50 to-emerald-100 border-2 border-emerald-300 rounded-lg p-6 shadow-sm">
@@ -515,33 +540,33 @@ export default function Produccion() {
               <p className="text-sm font-semibold text-emerald-700 uppercase tracking-wider">Atendidos ({filtroActual})</p>
               <CheckCircle2 className="w-5 h-5 text-emerald-600" />
             </div>
-            <p className="text-4xl font-bold text-emerald-900">{statsTotales.atendidos}</p>
+            <p className="text-4xl font-bold text-emerald-900">{statsCondicionDelPeriodo.atendidos}</p>
             <p className="text-xs text-emerald-700 mt-3">
-              Total histórico
+              {mostrarPeriodoCompleto ? `Total ${filtroActual}` : 'Total del día'}
             </p>
           </div>
 
           {/* Pendientes */}
           <div className="bg-gradient-to-br from-amber-50 to-amber-100 border-2 border-amber-300 rounded-lg p-6 shadow-sm">
             <div className="flex items-center justify-between mb-3">
-              <p className="text-sm font-semibold text-amber-700 uppercase tracking-wider">Pendientes</p>
+              <p className="text-sm font-semibold text-amber-700 uppercase tracking-wider">Pendientes ({filtroActual})</p>
               <Clock className="w-5 h-5 text-amber-600" />
             </div>
-            <p className="text-4xl font-bold text-amber-900">{statsTotales.pendientes}</p>
+            <p className="text-4xl font-bold text-amber-900">{statsCondicionDelPeriodo.pendientes}</p>
             <p className="text-xs text-amber-700 mt-3">
-              Pacientes pendientes de atender
+              {mostrarPeriodoCompleto ? `Pendientes ${filtroActual}` : 'Pendientes hoy'}
             </p>
           </div>
 
           {/* Deserciones */}
           <div className="bg-gradient-to-br from-red-50 to-red-100 border-2 border-red-300 rounded-lg p-6 shadow-sm">
             <div className="flex items-center justify-between mb-3">
-              <p className="text-sm font-semibold text-red-700 uppercase tracking-wider">Deserciones</p>
+              <p className="text-sm font-semibold text-red-700 uppercase tracking-wider">Deserciones ({filtroActual})</p>
               <TrendingDown className="w-5 h-5 text-red-600" />
             </div>
-            <p className="text-4xl font-bold text-red-900">{statsTotales.deserciones}</p>
+            <p className="text-4xl font-bold text-red-900">{statsCondicionDelPeriodo.deserciones}</p>
             <p className="text-xs text-red-700 mt-3">
-              Total de pacientes que desertaron
+              {mostrarPeriodoCompleto ? `Total ${filtroActual}` : 'Total del día'}
             </p>
           </div>
         </div>
