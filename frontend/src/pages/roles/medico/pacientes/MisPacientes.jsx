@@ -283,28 +283,26 @@ export default function MisPacientes() {
     return hoyEnLima;
   };
 
-  // ✅ v1.67.3: Calcular fechas con ASIGNACIÓN para el calendario (corregido por timezone Lima UTC-5)
-  // IMPORTANTE: Convertir fechas ISO (UTC) a zona horaria de Lima antes de agrupar
+  // ✅ v1.67.4: Calcular fechas con ASIGNACIÓN para el calendario
+  // DEBUG: Loguear TODOS los pacientes para ver qué fechas están siendo extraídas
   const fechasConAsignaciones = useMemo(() => {
     const fechasMap = {};
     if (Array.isArray(pacientes)) {
-      pacientes.forEach(p => {
-        // 🔄 v1.67.3: Usar extraerFecha para convertir UTC → Lima (UTC-5)
+      console.log(`\n🔍 DEBUG v1.67.4: Procesando ${pacientes.length} pacientes...`);
+      pacientes.forEach((p, idx) => {
         if (p.fechaAsignacion) {
-          const fechaEnLima = extraerFecha(p.fechaAsignacion);
-          if (fechaEnLima) {
-            fechasMap[fechaEnLima] = (fechasMap[fechaEnLima] || 0) + 1;
+          const fechaExtraida = extraerFecha(p.fechaAsignacion);
+          console.log(`[${idx}] ${p.apellidosNombres}: fechaAsignacion="${p.fechaAsignacion}" → extraída="${fechaExtraida}"`);
+          if (fechaExtraida) {
+            fechasMap[fechaExtraida] = (fechasMap[fechaExtraida] || 0) + 1;
           }
+        } else {
+          console.log(`[${idx}] ${p.apellidosNombres}: SIN fechaAsignacion`);
         }
       });
     }
-    console.log('📅 FECHAS CON ASIGNACIÓN EN LIMA UTC-5 (v1.67.3):', fechasMap);
-    console.log('📊 MUESTREO - Primeros 3 pacientes:', pacientes.slice(0, 3).map(p => ({
-      paciente: p.apellidosNombres,
-      fechaAsignacionOriginal: p.fechaAsignacion,
-      fechaAsignacionEnLima: extraerFecha(p.fechaAsignacion),
-      fechaAtencion: p.fechaAtencion
-    })));
+    console.log('📅 RESULTADO FINAL - Fechas agrupadas:', fechasMap);
+    console.log(`🕐 HOY en Lima: ${obtenerHoyEnLima()}`);
     return fechasMap;
   }, [pacientes]);
   const [loading, setLoading] = useState(true);
