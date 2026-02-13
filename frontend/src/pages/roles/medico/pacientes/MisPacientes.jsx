@@ -1499,7 +1499,7 @@ export default function MisPacientes() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 px-6 py-6">
+    <div className="min-h-screen bg-gray-50 px-8 py-6">
       <style>{animationStyles}</style>
       <div className="w-full">
         {/* Header Mejorado */}
