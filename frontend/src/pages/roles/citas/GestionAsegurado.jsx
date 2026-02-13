@@ -2025,23 +2025,17 @@ CENATE de Essalud`;
                           title={selectedRows.size === pacientesFiltrados.length ? "Deseleccionar todo" : "Seleccionar todo"}
                         />
                       </th>
-                      <th className="px-2 py-2 text-left text-[10px] font-bold uppercase">
-                        Bolsa
+                      <th className="px-3 py-2 text-left text-[10px] font-bold uppercase">
+                        F. Asignación
                       </th>
-                      <th className="px-2 py-2 text-left text-[10px] font-bold uppercase">
-                        F. Asign.
+                      <th className="px-3 py-2 text-left text-[10px] font-bold uppercase">
+                        T-Nº Documento
                       </th>
-                      <th className="px-2 py-2 text-left text-[10px] font-bold uppercase">
-                        DNI
-                      </th>
-                      <th className="px-2 py-2 text-left text-[10px] font-bold uppercase">
+                      <th className="px-3 py-2 text-left text-[10px] font-bold uppercase">
                         Paciente
                       </th>
-                      <th className="px-2 py-2 text-center text-[10px] font-bold uppercase">
-                        Edad
-                      </th>
-                      <th className="px-2 py-2 text-center text-[10px] font-bold uppercase">
-                        Gén.
+                      <th className="px-3 py-2 text-left text-[10px] font-bold uppercase">
+                        Teléfonos
                       </th>
                       {/* Columna Prioridad - Solo visible para Bolsa ID 1 */}
                       {esBolsaId1 && (
@@ -2066,12 +2060,6 @@ CENATE de Essalud`;
                       </th>
                       <th className="px-2 py-2 text-left text-[10px] font-bold uppercase">
                         Tipo Cita
-                      </th>
-                      <th className="px-2 py-2 text-left text-[10px] font-bold uppercase">
-                        Tel. 1
-                      </th>
-                      <th className="px-2 py-2 text-left text-[10px] font-bold uppercase">
-                        Tel. 2
                       </th>
                       <th className="px-2 py-2 text-left text-[10px] font-bold uppercase">
                         Estado
@@ -2115,35 +2103,86 @@ CENATE de Essalud`;
                             }`}
                           />
                         </td>
-                        <td className="px-2 py-1.5 text-[10px]">
-                          <span className={`px-1.5 py-0.5 rounded font-medium transition-colors ${getBolsaColor(paciente.descTipoBolsa)}`}>
-                            {paciente.descTipoBolsa || "Sin clasificar"}
-                          </span>
-                        </td>
-                        <td className="px-2 py-1.5 text-gray-700 text-[10px] font-medium whitespace-nowrap">
-                          {paciente.fechaAsignacion === "-"
-                            ? <span className="text-gray-300 italic">N/D</span>
-                            : formatearTiempoRelativo(paciente.fechaAsignacion)}
-                        </td>
-                        <td className="px-2 py-1.5 font-medium text-slate-900">
-                          {paciente.pacienteDni}
-                        </td>
-                        <td className="px-2 py-1.5 text-slate-600">
-                          {paciente.pacienteNombre}
-                        </td>
-                        <td className="px-2 py-1.5 text-center">
-                          {paciente.pacienteEdad && paciente.pacienteEdad !== "-" ? (
-                            <span className="text-slate-600">{paciente.pacienteEdad}</span>
+                        {/* F. ASIGNACIÓN */}
+                        <td className="px-3 py-2">
+                          {paciente.fechaAsignacion && paciente.fechaAsignacion !== "-" ? (
+                            <div className="bg-blue-50 rounded p-1.5 border-l-4 border-blue-600">
+                              <div className="flex items-center gap-1 mb-0.5">
+                                <Calendar size={12} className="text-blue-600 flex-shrink-0" />
+                                <span className="text-xs font-bold text-blue-600 uppercase tracking-tight">Asignación</span>
+                              </div>
+                              <div className="text-xs font-semibold text-blue-900">
+                                {new Date(paciente.fechaAsignacion).toLocaleDateString('es-PE', { day: '2-digit', month: '2-digit', year: 'numeric' })}
+                              </div>
+                              <div className="text-xs text-blue-600 font-medium">
+                                {formatearTiempoRelativo(paciente.fechaAsignacion)}
+                              </div>
+                            </div>
                           ) : (
-                            <span className="text-gray-300 italic text-[10px]">N/D</span>
+                            <div className="text-gray-400 italic text-xs py-0.5">—</div>
                           )}
                         </td>
-                        <td className="px-2 py-1.5 text-center">
-                          {paciente.pacienteSexo && paciente.pacienteSexo !== "-" ? (
-                            <span className="text-slate-600">{paciente.pacienteSexo}</span>
-                          ) : (
-                            <span className="text-gray-300 italic text-[10px]">N/D</span>
-                          )}
+
+                        {/* T-Nº DOCUMENTO */}
+                        <td className="px-3 py-2 text-sm min-w-max">
+                          <div className="text-xs text-gray-600 font-semibold">DNI</div>
+                          <div className="font-bold text-blue-600 mt-1 text-base">{paciente.pacienteDni}</div>
+                        </td>
+
+                        {/* PACIENTE */}
+                        <td className="px-3 py-2 text-sm min-w-max">
+                          <div className="font-bold text-gray-900 text-base whitespace-nowrap">{paciente.pacienteNombre}</div>
+                          <div className="text-xs text-gray-500 mt-1">
+                            <span className="inline-block">{paciente.pacienteSexo || "N/D"}</span>
+                            <span className="mx-1">•</span>
+                            <span className="inline-block">{paciente.pacienteEdad || "N/D"} años</span>
+                          </div>
+                        </td>
+
+                        {/* TELÉFONOS */}
+                        <td className="px-3 py-2">
+                          <div className="bg-green-50 rounded p-1.5 border-l-4 border-green-600">
+                            <div className="flex items-center gap-1 mb-0.5">
+                              <Phone size={12} className="text-green-600 flex-shrink-0" />
+                              <span className="text-xs font-bold text-green-600 uppercase tracking-tight">Principal</span>
+                            </div>
+                            <div className="text-xs font-semibold text-green-900">
+                              {paciente.pacienteTelefono ? (
+                                <a
+                                  href={`https://wa.me/${paciente.pacienteTelefono.replace(/\D/g, '')}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="hover:underline text-green-700"
+                                  title="Abrir en WhatsApp"
+                                >
+                                  {paciente.pacienteTelefono}
+                                </a>
+                              ) : (
+                                <span className="text-gray-400">N/D</span>
+                              )}
+                            </div>
+
+                            {paciente.pacienteTelefonoAlterno && (
+                              <>
+                                <div className="h-px bg-green-200 my-1"></div>
+                                <div className="flex items-center gap-1 mb-0.5">
+                                  <Phone size={12} className="text-green-500 flex-shrink-0" />
+                                  <span className="text-xs font-bold text-green-600 uppercase tracking-tight">Alterno</span>
+                                </div>
+                                <div className="text-xs font-semibold text-green-900">
+                                  <a
+                                    href={`https://wa.me/${paciente.pacienteTelefonoAlterno.replace(/\D/g, '')}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="hover:underline text-green-700"
+                                    title="Abrir en WhatsApp"
+                                  >
+                                    {paciente.pacienteTelefonoAlterno}
+                                  </a>
+                                </div>
+                              </>
+                            )}
+                          </div>
                         </td>
                         {/* Celda Prioridad - Solo visible para Bolsa ID 1 */}
                         {esBolsaId1 && (
@@ -2372,38 +2411,6 @@ CENATE de Essalud`;
                         </td>
                         <td className="px-2 py-1.5 text-slate-600">
                           {paciente.tipoCita}
-                        </td>
-                        <td className="px-2 py-1.5">
-                          {paciente.pacienteTelefono ? (
-                            <a
-                              href={`https://wa.me/${paciente.pacienteTelefono.replace(/\D/g, '')}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="flex items-center gap-1 text-green-600 hover:text-green-700 hover:underline font-medium text-xs"
-                              title="Abrir en WhatsApp"
-                            >
-                              <Phone className="w-3 h-3" strokeWidth={2} />
-                              {paciente.pacienteTelefono}
-                            </a>
-                          ) : (
-                            <span className="text-gray-300 italic text-[10px]">N/D</span>
-                          )}
-                        </td>
-                        <td className="px-2 py-1.5">
-                          {paciente.pacienteTelefonoAlterno ? (
-                            <a
-                              href={`https://wa.me/${paciente.pacienteTelefonoAlterno.replace(/\D/g, '')}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="flex items-center gap-1 text-green-600 hover:text-green-700 hover:underline font-medium text-xs"
-                              title="Abrir en WhatsApp"
-                            >
-                              <Phone className="w-3 h-3" strokeWidth={2} />
-                              {paciente.pacienteTelefonoAlterno}
-                            </a>
-                          ) : (
-                            <span className="text-gray-300 italic text-[10px]">N/D</span>
-                          )}
                         </td>
                         <td className="px-2 py-1.5">
                           {pacienteEditandoEstado === paciente.id ? (
