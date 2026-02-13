@@ -2043,24 +2043,6 @@ export default function MisPacientes() {
                   : 'Intenta seleccionando otro período o ajustando los filtros.')
               }
             </p>
-            {(filtroRangoFecha === 'todos' || filtroRangoFecha === 'hoy' || fechaSeleccionadaCalendario) && (
-              <button
-                onClick={() => {
-                  // Expandir filtros si están colapsados
-                  if (!filtrosExpandidos) {
-                    setFiltrosExpandidos(true);
-                  }
-                  // Scroll al calendario de asignaciones
-                  setTimeout(() => {
-                    document.querySelector('[data-selector-asignacion]')?.scrollIntoView({ behavior: 'smooth' });
-                  }, 100);
-                }}
-                className="px-5 py-2 bg-[#0A5BA9] text-white rounded-lg hover:bg-[#083d78] transition-colors font-medium inline-flex items-center gap-2 text-sm"
-              >
-                <Calendar className="w-4 h-4" />
-                Abrir calendario de asignaciones
-              </button>
-            )}
           </div>
         ) : (
           <div className="relative overflow-hidden bg-white border border-gray-200 shadow-sm rounded-lg">
