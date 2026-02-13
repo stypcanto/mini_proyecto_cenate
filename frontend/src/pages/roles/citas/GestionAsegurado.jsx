@@ -333,8 +333,22 @@ export default function GestionAsegurado() {
         return;
       }
 
+      // 📅 Construir URL con parámetros de fecha si están presentes (v1.43.3)
+      let url = `${API_BASE}/bolsas/solicitudes/mi-bandeja`;
+      const params = new URLSearchParams();
+
+      if (filtroFechaIngresoInicio) params.append('fechaIngresoInicio', filtroFechaIngresoInicio);
+      if (filtroFechaIngresoFin) params.append('fechaIngresoFin', filtroFechaIngresoFin);
+      if (filtroFechaAsignacionInicio) params.append('fechaAsignacionInicio', filtroFechaAsignacionInicio);
+      if (filtroFechaAsignacionFin) params.append('fechaAsignacionFin', filtroFechaAsignacionFin);
+
+      if (params.toString()) {
+        url += `?${params.toString()}`;
+        console.log("📋 URL con filtros de fecha:", url);
+      }
+
       const response = await fetch(
-        `${API_BASE}/bolsas/solicitudes/mi-bandeja`,
+        url,
         {
           method: "GET",
           headers: {
@@ -1327,6 +1341,13 @@ CENATE de Essalud`;
     return () => clearInterval(intervalo);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [autoRefreshEnabled]);
+
+  // 📅 Recargar pacientes cuando cambian los filtros de fecha (v1.43.3)
+  useEffect(() => {
+    console.log("📅 Filtros de fecha cambiados, recargando pacientes...");
+    fetchPacientesAsignados();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filtroFechaIngresoInicio, filtroFechaIngresoFin, filtroFechaAsignacionInicio, filtroFechaAsignacionFin]);
 
   // Debounce search - actualizar debouncedSearch después de 300ms sin escribir
   useEffect(() => {
