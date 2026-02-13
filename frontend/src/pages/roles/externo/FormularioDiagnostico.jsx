@@ -305,7 +305,7 @@ export default function FormularioDiagnostico() {
         const cargarDatosUsuario = async () => {
             if (user?.username) {
                 try {
-                    const response = await api.get(`/usuarios/detalle/${user.username}`);
+                    const response = await api.get(`/usuarios/detalle/${user.username}`, true);
                     if (response) {
                         setDatosUsuario(response);
 
