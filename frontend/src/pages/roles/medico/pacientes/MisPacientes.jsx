@@ -207,6 +207,24 @@ export default function MisPacientes() {
   // Alias para mantener compatibilidad con código existente
   const esCardiologo = hasFeature('EKG_COLUMNS');
 
+  // ✅ v1.109.25: Formatear nombre del doctor con "Dr(a)" y orden correcto
+  const formatearNombreDoctor = (nombreCompleto) => {
+    if (!nombreCompleto) return 'Dr(a) Médico';
+
+    const palabras = nombreCompleto.trim().split(/\s+/).filter(p => p.length > 0);
+    if (palabras.length === 0) return 'Dr(a) Médico';
+
+    // Asumir que la última palabra es el apellido
+    const apellido = palabras[palabras.length - 1];
+    const nombres = palabras.slice(0, -1).join(' ');
+
+    // Detectar género: si el último nombre termina en 'a', usar "Dra", sino "Dr"
+    const ultimoNombre = nombres.split(/\s+/).pop() || apellido;
+    const titulo = ultimoNombre.toLowerCase().endsWith('a') ? 'Dra' : 'Dr';
+
+    return `${titulo} ${nombres} ${apellido}`;
+  };
+
   const [pacientes, setPacientes] = useState([]);
 
   // ✅ v1.66.0: Helper para parsear fechas sin desfase de zona horaria
@@ -1557,7 +1575,7 @@ export default function MisPacientes() {
                       ● En línea
                     </span>
                   </div>
-                  <h2 className="text-2xl font-bold text-white mb-1">{doctorInfo?.nombre || authUser?.nombre}</h2>
+                  <h2 className="text-2xl font-bold text-white mb-1">{formatearNombreDoctor(doctorInfo?.nombre || authUser?.nombre)}</h2>
                   {doctorInfo?.especialidad && (
                     <div className="flex items-center gap-2 text-white/90 text-sm font-medium">
                       <Stethoscope className="w-4 h-4" />
