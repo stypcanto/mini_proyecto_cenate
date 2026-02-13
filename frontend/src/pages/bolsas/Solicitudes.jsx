@@ -100,6 +100,7 @@ export default function Solicitudes() {
   const [cacheEstados, setCacheEstados] = useState({});
   const [cacheIpress, setCacheIpress] = useState({});
   const [cacheRedes, setCacheRedes] = useState({});
+  const [listaEstadosGestion, setListaEstadosGestion] = useState([]); // ✅ v3.7.0: Estados desde dim_estados_gestion_citas
   const [catalogosCargados, setCatalogosCargados] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
 
@@ -376,8 +377,16 @@ export default function Solicitudes() {
       // Crear cache de estados, IPRESS y Redes
       if (estadosData && Array.isArray(estadosData)) {
         const estadosMap = {};
-        estadosData.forEach(e => { estadosMap[e.id] = e; });
-        if (isMountedRef.current) setCacheEstados(estadosMap);
+        const estadosPorCodigo = {};
+        estadosData.forEach(e => {
+          estadosMap[e.idEstadoCita] = e;
+          estadosPorCodigo[e.codEstadoCita] = e;
+        });
+        if (isMountedRef.current) {
+          setCacheEstados(estadosPorCodigo); // ✅ v3.7.0: Cache por codEstadoCita para lookup rápido
+          setListaEstadosGestion(estadosData);
+          console.log('📋 Estados de gestión cargados desde BD:', estadosData.length, Object.keys(estadosPorCodigo));
+        }
       }
 
       if (ipressData && Array.isArray(ipressData)) {
@@ -505,7 +514,7 @@ export default function Solicitudes() {
             sexo: solicitud.paciente_sexo || solicitud.sexo || 'N/A',
             edad: solicitud.paciente_edad || solicitud.edad || 'N/A',
             estado: mapearEstadoAPI(solicitud.cod_estado_cita || solicitud.estado_gestion_citas_id),
-            estadoDisplay: getEstadoDisplay(mapearEstadoAPI(solicitud.cod_estado_cita || solicitud.estado_gestion_citas_id)),
+            estadoDisplay: solicitud.desc_estado_cita || getEstadoDisplay(solicitud.cod_estado_cita),
             estadoCodigo: solicitud.cod_estado_cita,
             semaforo: solicitud.recordatorio_enviado ? 'verde' : 'rojo',
             diferimiento: calcularDiferimiento(solicitud.fecha_solicitud),
@@ -545,7 +554,18 @@ export default function Solicitudes() {
               : null,
             usuarioCambioEstado: solicitud.usuario_cambio_estado_id
               ? `Usuario ${solicitud.usuario_cambio_estado_id}`
-              : null
+              : null,
+            // 🩺 ATENCIÓN MÉDICA (v3.5.0)
+            fechaHoraCita: solicitud.fecha_atencion && solicitud.hora_atencion
+              ? (() => { const [y,m,d] = solicitud.fecha_atencion.split('-'); return `${d}/${m}/${y} ${solicitud.hora_atencion.substring(0,5)}`; })()
+              : solicitud.fecha_atencion
+                ? (() => { const [y,m,d] = solicitud.fecha_atencion.split('-'); return `${d}/${m}/${y}`; })()
+                : null,
+            condicionMedica: solicitud.condicion_medica || null,
+            fechaAtencionMedica: solicitud.fecha_atencion_medica
+              ? new Date(solicitud.fecha_atencion_medica).toLocaleString('es-PE', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' })
+              : null,
+            nombreMedicoAsignado: solicitud.nombre_medico_asignado || null
           };
         } catch (mapError) {
           console.error(`❌ Error procesando solicitud [${idx}]:`, mapError, 'Solicitud:', solicitud);
@@ -659,7 +679,7 @@ export default function Solicitudes() {
               sexo: solicitud.paciente_sexo || solicitud.sexo || 'N/A',
               edad: solicitud.paciente_edad || solicitud.edad || 'N/A',
               estado: mapearEstadoAPI(solicitud.cod_estado_cita || solicitud.estado_gestion_citas_id),
-              estadoDisplay: getEstadoDisplay(mapearEstadoAPI(solicitud.cod_estado_cita || solicitud.estado_gestion_citas_id)),
+              estadoDisplay: solicitud.desc_estado_cita || getEstadoDisplay(solicitud.cod_estado_cita),
               estadoCodigo: solicitud.cod_estado_cita,
               semaforo: solicitud.recordatorio_enviado ? 'verde' : 'rojo',
               diferimiento: calcularDiferimiento(solicitud.fecha_solicitud),
@@ -694,7 +714,18 @@ export default function Solicitudes() {
               fechaCambioEstado: solicitud.fecha_cambio_estado
                 ? new Date(solicitud.fecha_cambio_estado).toLocaleString('es-PE')
                 : null,
-              usuarioCambioEstado: solicitud.nombre_usuario_cambio_estado || null
+              usuarioCambioEstado: solicitud.nombre_usuario_cambio_estado || null,
+              // 🩺 ATENCIÓN MÉDICA (v3.5.0)
+              fechaHoraCita: solicitud.fecha_atencion && solicitud.hora_atencion
+                ? (() => { const [y,m,d] = solicitud.fecha_atencion.split('-'); return `${d}/${m}/${y} ${solicitud.hora_atencion.substring(0,5)}`; })()
+                : solicitud.fecha_atencion
+                  ? (() => { const [y,m,d] = solicitud.fecha_atencion.split('-'); return `${d}/${m}/${y}`; })()
+                  : null,
+              condicionMedica: solicitud.condicion_medica || null,
+              fechaAtencionMedica: solicitud.fecha_atencion_medica
+                ? new Date(solicitud.fecha_atencion_medica).toLocaleString('es-PE', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' })
+                : null,
+              nombreMedicoAsignado: solicitud.nombre_medico_asignado || null
             };
           } catch (mapError) {
             console.error(`❌ Error procesando solicitud [${idx}]:`, mapError);
@@ -789,7 +820,7 @@ export default function Solicitudes() {
               sexo: solicitud.paciente_sexo || solicitud.sexo || 'N/A',
               edad: solicitud.paciente_edad || solicitud.edad || 'N/A',
               estado: mapearEstadoAPI(solicitud.cod_estado_cita || solicitud.estado_gestion_citas_id),
-              estadoDisplay: getEstadoDisplay(mapearEstadoAPI(solicitud.cod_estado_cita || solicitud.estado_gestion_citas_id)),
+              estadoDisplay: solicitud.desc_estado_cita || getEstadoDisplay(solicitud.cod_estado_cita),
               estadoCodigo: solicitud.cod_estado_cita,
               semaforo: solicitud.recordatorio_enviado ? 'verde' : 'rojo',
               diferimiento: calcularDiferimiento(solicitud.fecha_solicitud),
@@ -817,7 +848,18 @@ export default function Solicitudes() {
                   return `${d}/${m}/${y}`;
                 })() : 'N/A',
               tipoCita: solicitud.tipo_cita ? solicitud.tipo_cita.toUpperCase() : 'N/A',
-              codigoIpress: solicitud.codigo_adscripcion || 'N/A'
+              codigoIpress: solicitud.codigo_adscripcion || 'N/A',
+              // 🩺 ATENCIÓN MÉDICA (v3.5.0)
+              fechaHoraCita: solicitud.fecha_atencion && solicitud.hora_atencion
+                ? (() => { const [y,m,d] = solicitud.fecha_atencion.split('-'); return `${d}/${m}/${y} ${solicitud.hora_atencion.substring(0,5)}`; })()
+                : solicitud.fecha_atencion
+                  ? (() => { const [y,m,d] = solicitud.fecha_atencion.split('-'); return `${d}/${m}/${y}`; })()
+                  : null,
+              condicionMedica: solicitud.condicion_medica || null,
+              fechaAtencionMedica: solicitud.fecha_atencion_medica
+                ? new Date(solicitud.fecha_atencion_medica).toLocaleString('es-PE', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' })
+                : null,
+              nombreMedicoAsignado: solicitud.nombre_medico_asignado || null
             };
           } catch (mapError) {
             console.error(`❌ Error procesando solicitud [${idx}]:`, mapError);
@@ -840,14 +882,25 @@ export default function Solicitudes() {
   };
 
   // Helper: Obtener nombre descriptivo del estado para mostrar en tabla
-  const getEstadoDisplay = (estadoCodigo) => {
-    const displayMap = {
-      'pendiente': 'Pendiente Citar',
-      'citado': 'Citado',
-      'atendido': 'Asistió',
-      'observado': 'Observado'
+  // ✅ v3.7.0: Usa descripción desde dim_estados_gestion_citas (cacheEstados por codEstadoCita)
+  const getEstadoDisplay = (codEstadoCita) => {
+    // Buscar en cache de estados desde BD
+    if (cacheEstados && codEstadoCita) {
+      // Primero buscar por código directo (PENDIENTE_CITA, CITADO, etc.)
+      const estadoBD = cacheEstados[codEstadoCita];
+      if (estadoBD && estadoBD.descEstadoCita) {
+        return estadoBD.descEstadoCita;
+      }
+    }
+    // Fallback si no se encuentra en cache
+    const fallbackMap = {
+      'PENDIENTE_CITA': 'Pendiente Citar',
+      'CITADO': 'Citado',
+      'ATENDIDA': 'Asistió',
+      'NO_CONTESTA': 'Observado',
+      'CANCELADO': 'Cancelado'
     };
-    return displayMap[estadoCodigo] || 'Pendiente';
+    return fallbackMap[codEstadoCita] || codEstadoCita || 'Pendiente';
   };
 
   // Helper: Mapear estado API a estado UI (v1.6.0 - Estados Gestión Citas)
@@ -1854,22 +1907,13 @@ export default function Solicitudes() {
                 onChange: (e) => setFiltroEstado(e.target.value),
                 options: [
                   { label: `Todos los estados (${totalElementos})`, value: "todos" },
-                  ...estadosUnicos
-                    .filter(estadoCodigo => countWithFilters('estado', estadoCodigo) > 0)
-                    .map(estadoCodigo => {
-                      // Mapear código API a display name
-                      const mappingDisplay = {
-                        'PENDIENTE_CITA': 'Pendiente Citar',
-                        'CITADO': 'Citado',
-                        'ATENDIDA': 'Asistió',
-                        'NO_CONTESTA': 'Observado',
-                        'CANCELADO': 'Observado'
-                      };
-                      return {
-                        label: `${mappingDisplay[estadoCodigo] || estadoCodigo} (${countWithFilters('estado', estadoCodigo)})`,
-                        value: estadoCodigo
-                      };
-                    })
+                  ...listaEstadosGestion.map(estado => {
+                    const count = countWithFilters('estado', estado.codEstadoCita);
+                    return {
+                      label: `${estado.descEstadoCita} (${count})`,
+                      value: estado.codEstadoCita
+                    };
+                  })
                 ]
               }
             ]}
@@ -2099,6 +2143,10 @@ export default function Solicitudes() {
                     <th className="px-1 py-1 text-left text-xs font-bold uppercase tracking-wider">IPRESS</th>
                     <th className="px-1 py-1 text-left text-xs font-bold uppercase tracking-wider">Red</th>
                     <th className="px-1 py-1 text-left text-xs font-bold uppercase tracking-wider">Estado</th>
+                    <th className="px-1 py-1 text-left text-xs font-bold uppercase tracking-wider">F/H Cita</th>
+                    <th className="px-1 py-1 text-left text-xs font-bold uppercase tracking-wider">Médico Asignado</th>
+                    <th className="px-1 py-1 text-left text-xs font-bold uppercase tracking-wider">Est. Atención</th>
+                    <th className="px-1 py-1 text-left text-xs font-bold uppercase tracking-wider">F. Atención Méd.</th>
                     <th className="px-1 py-1 text-left text-xs font-bold uppercase tracking-wider">Fecha Asignación</th>
                     <th className="px-1 py-1 text-left text-xs font-bold uppercase tracking-wider">Gestora Asignada</th>
                     <th className="px-1 py-1 text-left text-xs font-bold uppercase tracking-wider">Fecha Cambio Estado</th>

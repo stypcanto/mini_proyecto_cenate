@@ -86,6 +86,52 @@ function FilaSolicitud({
         </span>
       </td>
 
+      {/* FECHA Y HORA DE CITA */}
+      <td className="px-1 py-1 text-xs">
+        {solicitud.fechaHoraCita ? (
+          <span className="text-indigo-700 font-medium">{solicitud.fechaHoraCita}</span>
+        ) : (
+          <span className="text-gray-300 italic">—</span>
+        )}
+      </td>
+
+      {/* MÉDICO ASIGNADO */}
+      <td className="px-1 py-1 text-xs">
+        {solicitud.nombreMedicoAsignado ? (
+          <span className="text-gray-900 font-medium">{solicitud.nombreMedicoAsignado}</span>
+        ) : (
+          <span className="text-gray-300 italic">—</span>
+        )}
+      </td>
+
+      {/* ESTADO DE ATENCIÓN (condicion_medica) */}
+      <td className="px-1 py-1">
+        {solicitud.condicionMedica ? (
+          <span className={`px-2 py-0.5 rounded-lg text-[10px] font-medium inline-block ${
+            solicitud.condicionMedica === 'Atendido'
+              ? 'bg-emerald-100 text-emerald-800'
+              : solicitud.condicionMedica === 'Deserción' || solicitud.condicionMedica === 'Desercion'
+              ? 'bg-red-100 text-red-800'
+              : solicitud.condicionMedica === 'Pendiente'
+              ? 'bg-amber-100 text-amber-800'
+              : 'bg-gray-100 text-gray-700'
+          }`}>
+            {solicitud.condicionMedica}
+          </span>
+        ) : (
+          <span className="text-gray-300 italic text-[10px]">—</span>
+        )}
+      </td>
+
+      {/* FECHA DE ATENCIÓN MÉDICA */}
+      <td className="px-1 py-1 text-xs">
+        {solicitud.fechaAtencionMedica ? (
+          <span className="text-indigo-700 font-medium">{solicitud.fechaAtencionMedica}</span>
+        ) : (
+          <span className="text-gray-300 italic">—</span>
+        )}
+      </td>
+
       {/* FECHA ASIGNACIÓN */}
       <td className="px-1 py-1 text-xs text-gray-600">
         {solicitud.fechaAsignacionFormato ? (

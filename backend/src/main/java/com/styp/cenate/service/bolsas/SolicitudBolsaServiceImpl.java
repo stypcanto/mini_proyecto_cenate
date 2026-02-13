@@ -20,6 +20,7 @@ import com.styp.cenate.repository.IpressRepository;
 import com.styp.cenate.repository.RedRepository;
 import com.styp.cenate.repository.TipoBolsaRepository;
 import com.styp.cenate.repository.UsuarioRepository;
+import com.styp.cenate.repository.PersonalCntRepository;
 import com.styp.cenate.exception.ResourceNotFoundException;
 import com.styp.cenate.exception.ValidationException;
 import lombok.RequiredArgsConstructor;
@@ -69,6 +70,7 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
     private final SolicitudBolsaRepository solicitudRepository;
     private final AuditErrorImportacionService auditErrorService;
     private final AseguradoRepository aseguradoRepository;
+    private final PersonalCntRepository personalCntRepository;
     private final DimServicioEssiRepository dimServicioEssiRepository;
     private final IpressRepository ipressRepository;
     private final RedRepository redRepository;
@@ -547,7 +549,7 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
             java.time.LocalDate fechaNacimiento = convertToLocalDate(row[8]); // fecha_nacimiento
 
             // Extraer IPRESS (antes de enriquecimiento)
-            String descIpress = (String) row[26];
+            String descIpress = (String) row[27]; // +1 por desc_estado_cita en idx 22
             String pacienteDni = (String) row[4];
 
             // 🔍 DEBUG: Loguear cuándo descIpress está en blanco
@@ -595,10 +597,10 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
 
             Integer edad = calcularEdad(fechaNacimiento);
 
-            java.time.OffsetDateTime fechaSolicitud = convertToOffsetDateTime(row[22]); // fecha_solicitud (ajustado a 22)
-            java.time.OffsetDateTime fechaActualizacion = convertToOffsetDateTime(row[23]); // fecha_actualizacion (ajustado a 23)
-            java.time.OffsetDateTime fechaAsignacion = row.length > 30 ? convertToOffsetDateTime(row[30]) : null; // NEW v2.4.0 (ajustado a 30)
-            java.time.OffsetDateTime fechaCambioEstado = row.length > 31 ? convertToOffsetDateTime(row[31]) : null; // NEW v3.3.1 (ajustado a 31)
+            java.time.OffsetDateTime fechaSolicitud = convertToOffsetDateTime(row[23]); // fecha_solicitud (ajustado +1 a 23)
+            java.time.OffsetDateTime fechaActualizacion = convertToOffsetDateTime(row[24]); // fecha_actualizacion (ajustado +1 a 24)
+            java.time.OffsetDateTime fechaAsignacion = row.length > 31 ? convertToOffsetDateTime(row[31]) : null; // NEW v2.4.0 (ajustado +1 a 31)
+            java.time.OffsetDateTime fechaCambioEstado = row.length > 32 ? convertToOffsetDateTime(row[32]) : null; // NEW v3.3.1 (ajustado +1 a 32)
 
             // ✅ v1.67.0 - Extraer datos de contacto y enriquecerlos desde tabla de asegurados si es necesario
             String pacienteTelefono = (String) row[10];
@@ -639,27 +641,36 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
                 }
             }
 
-            // ✅ Extraer detalles de cita agendada (NEW v3.4.0 - indices 34, 35, 36)
-            java.time.LocalDate fechaAtencion = row.length > 34 ? convertToLocalDate(row[34]) : null;
+            // ✅ Extraer detalles de cita agendada (NEW v3.4.0 - indices +1: 35, 36, 37)
+            java.time.LocalDate fechaAtencion = row.length > 35 ? convertToLocalDate(row[35]) : null;
             java.time.LocalTime horaAtencion = null;
-            if (row.length > 35 && row[35] != null) {
+            if (row.length > 36 && row[36] != null) {
                 try {
-                    if (row[35] instanceof java.time.LocalTime) {
-                        horaAtencion = (java.time.LocalTime) row[35];
-                    } else if (row[35] instanceof java.sql.Time) {
-                        horaAtencion = ((java.sql.Time) row[35]).toLocalTime();
-                    } else if (row[35] instanceof String) {
-                        horaAtencion = java.time.LocalTime.parse((String) row[35]);
+                    if (row[36] instanceof java.time.LocalTime) {
+                        horaAtencion = (java.time.LocalTime) row[36];
+                    } else if (row[36] instanceof java.sql.Time) {
+                        horaAtencion = ((java.sql.Time) row[36]).toLocalTime();
+                    } else if (row[36] instanceof String) {
+                        horaAtencion = java.time.LocalTime.parse((String) row[36]);
                     }
                 } catch (Exception e) {
                     log.warn("⚠️ Error parsing horaAtencion: {}", e.getMessage());
                 }
             }
-            Long idPersonal = row.length > 36 ? toLongSafe("id_personal", row[36]) : null;
+            Long idPersonal = row.length > 37 ? toLongSafe("id_personal", row[37]) : null;
 
-            // ✅ v3.5.0 - Extraer condición médica y fecha atención médica (indices 37, 38)
-            String condicionMedica = row.length > 37 ? (String) row[37] : null;
-            java.time.OffsetDateTime fechaAtencionMedica = row.length > 38 ? convertToOffsetDateTime(row[38]) : null;
+            // ✅ v3.5.0 - Extraer condición médica y fecha atención médica (indices +1: 38, 39)
+            String condicionMedica = row.length > 38 ? (String) row[38] : null;
+            java.time.OffsetDateTime fechaAtencionMedica = row.length > 39 ? convertToOffsetDateTime(row[39]) : null;
+
+            // ✅ v3.6.0 - Nombre del médico asignado (siempre última columna)
+            String nombreMedicoAsignado = null;
+            // El nombre_medico siempre es la última columna del resultset
+            int lastIdx = row.length - 1;
+            if (lastIdx > 37 && row[lastIdx] instanceof String) {
+                String val = (String) row[lastIdx];
+                if (!val.isBlank()) nombreMedicoAsignado = val.trim();
+            }
 
             return SolicitudBolsaDTO.builder()
                     .idSolicitud(toLongSafe("id_solicitud", row[0]))
@@ -685,23 +696,25 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
                     .idIpress(row[19] != null ? toLongSafe("id_ipress", row[19]) : null)
                     .estado((String) row[20])
                     .codEstadoCita((String) row[21])      // NEW v1.41.1 - cod_estado_cita para filtro Estado
+                    .descEstadoCita((String) row[22])     // NEW - desc_estado_cita desde JOIN dim_estados_gestion_citas
                     .fechaSolicitud(fechaSolicitud)
                     .fechaActualizacion(fechaActualizacion)
-                    .estadoGestionCitasId(toLongSafe("estado_gestion_citas_id", row[24])) // ajustado a 24
-                    .activo((Boolean) row[25])             // ajustado a 25
+                    .estadoGestionCitasId(toLongSafe("estado_gestion_citas_id", row[25])) // ajustado +1 a 25
+                    .activo((Boolean) row[26])             // ajustado +1 a 26
                     .descIpress(descIpress)                // desc_ipress enriquecida (v1.68.0: completada desde asegurados si es necesario)
-                    .descRed((String) row[27])             // desc_red desde JOIN (ajustado a 27)
-                    .descMacroregion((String) row[28])     // desc_macro desde JOIN (ajustado a 28)
-                    .responsableGestoraId(row.length > 29 ? toLongSafe("responsable_gestora_id", row[29]) : null) // NEW v2.4.0 (ajustado a 29)
-                    .fechaAsignacion(fechaAsignacion)      // NEW v2.4.0 (ajustado a 30)
-                    .fechaCambioEstado(fechaCambioEstado)  // NEW v3.3.1 (ajustado a 31)
-                    .usuarioCambioEstadoId(row.length > 32 ? toLongSafe("usuario_cambio_estado_id", row[32]) : null) // NEW v3.3.1 (ajustado a 32)
-                    .nombreUsuarioCambioEstado(row.length > 33 ? (String) row[33] : null) // NEW v3.3.1 (ajustado a 33)
+                    .descRed((String) row[28])             // desc_red desde JOIN (ajustado +1 a 28)
+                    .descMacroregion((String) row[29])     // desc_macro desde JOIN (ajustado +1 a 29)
+                    .responsableGestoraId(row.length > 30 ? toLongSafe("responsable_gestora_id", row[30]) : null) // NEW v2.4.0 (ajustado +1 a 30)
+                    .fechaAsignacion(fechaAsignacion)      // NEW v2.4.0 (ajustado +1 a 31)
+                    .fechaCambioEstado(fechaCambioEstado)  // NEW v3.3.1 (ajustado +1 a 32)
+                    .usuarioCambioEstadoId(row.length > 33 ? toLongSafe("usuario_cambio_estado_id", row[33]) : null) // NEW v3.3.1 (ajustado +1 a 33)
+                    .nombreUsuarioCambioEstado(row.length > 34 ? (String) row[34] : null) // NEW v3.3.1 (ajustado +1 a 34)
                     .fechaAtencion(fechaAtencion)          // NEW v3.4.0 - fecha_atencion (índice 34)
                     .horaAtencion(horaAtencion)            // NEW v3.4.0 - hora_atencion (índice 35)
                     .idPersonal(idPersonal)                // NEW v3.4.0 - id_personal (índice 36)
                     .condicionMedica(condicionMedica)      // NEW v3.5.0 - condicion_medica (índice 37)
                     .fechaAtencionMedica(fechaAtencionMedica) // NEW v3.5.0 - fecha_atencion_medica (índice 38)
+                    .nombreMedicoAsignado(nombreMedicoAsignado) // NEW v3.6.0 - nombre médico desde JOIN
                     .build();
         } catch (Exception e) {
             log.error("Error mapeando resultado SQL en índice. Error: {}", e.getMessage(), e);
@@ -2591,9 +2604,25 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
             .fechaAtencion(solicitud.getFechaAtencion())
             .horaAtencion(solicitud.getHoraAtencion())
             .idPersonal(solicitud.getIdPersonal())
+            .nombreMedicoAsignado(obtenerNombreMedico(solicitud.getIdPersonal()))
             .condicionMedica(solicitud.getCondicionMedica())
             .fechaAtencionMedica(solicitud.getFechaAtencionMedica())
             .build();
+    }
+
+    /**
+     * Obtiene el nombre completo del médico a partir de su id_personal
+     */
+    private String obtenerNombreMedico(Long idPersonal) {
+        if (idPersonal == null) return null;
+        try {
+            return personalCntRepository.findById(idPersonal)
+                .map(p -> (p.getNomPers() + " " + (p.getApePaterPers() != null ? p.getApePaterPers() : "") + " " + (p.getApeMaterPers() != null ? p.getApeMaterPers() : "")).trim())
+                .orElse(null);
+        } catch (Exception e) {
+            log.warn("⚠️ Error obteniendo nombre de médico para id_personal {}: {}", idPersonal, e.getMessage());
+            return null;
+        }
     }
 
     @Override

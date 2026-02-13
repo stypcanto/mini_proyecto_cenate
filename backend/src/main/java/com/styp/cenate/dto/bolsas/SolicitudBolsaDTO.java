@@ -165,6 +165,10 @@ public class SolicitudBolsaDTO {
 
     @JsonProperty("id_personal")
     private Long idPersonal;
+
+    @JsonProperty("nombre_medico_asignado")
+    private String nombreMedicoAsignado;
+
     // 🩺 ATENCIÓN MÉDICA (NEW v3.5.0)
     @JsonProperty("condicion_medica")
     private String condicionMedica;

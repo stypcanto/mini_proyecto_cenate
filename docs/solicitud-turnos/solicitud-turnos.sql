@@ -421,12 +421,15 @@ update dim_solicitud_bolsa set fecha_atencion  ='2026-01-14' where paciente_id i
 
 select * from dim_solicitud_bolsa where paciente_id in ('70073164');
 
+select * from dim_personal_cnt dpc  where dpc.num_doc_pers='33333333'
+select * from dim_usuarios du  where name_user='33333333'; -- 693
+select * from dim_roles dr where id_rol=3;
+select * from rel_user_roles rur  where id_user= 693;
 
 
 
 
-
-
+select * from dim_personal_cnt;
 
 
 

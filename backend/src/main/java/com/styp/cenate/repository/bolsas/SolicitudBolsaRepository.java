@@ -117,18 +117,21 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
                sb.id_bolsa, tb.desc_tipo_bolsa,
                sb.id_servicio, sb.codigo_adscripcion, sb.id_ipress,
                sb.estado, COALESCE(deg.cod_estado_cita, 'PENDIENTE_CITA') as cod_estado_cita,
+               COALESCE(deg.desc_estado_cita, 'Paciente nuevo que ingresó a la bolsa') as desc_estado_cita,
                sb.fecha_solicitud, sb.fecha_actualizacion,
                sb.estado_gestion_citas_id, sb.activo,
                di.desc_ipress, dr.desc_red, dm.desc_macro,
                sb.responsable_gestora_id, sb.fecha_asignacion,
                sb.fecha_atencion, sb.hora_atencion, sb.id_personal,
-               sb.condicion_medica, sb.fecha_atencion_medica
+               sb.condicion_medica, sb.fecha_atencion_medica,
+               COALESCE(CONCAT(med.nom_pers, ' ', med.ape_pater_pers, ' ', med.ape_mater_pers), '') as nombre_medico
         FROM dim_solicitud_bolsa sb
         LEFT JOIN dim_tipos_bolsas tb ON sb.id_bolsa = tb.id_tipo_bolsa
         LEFT JOIN dim_ipress di ON sb.id_ipress = di.id_ipress
         LEFT JOIN dim_red dr ON di.id_red = dr.id_red
         LEFT JOIN dim_macroregion dm ON dr.id_macro = dm.id_macro
         LEFT JOIN dim_estados_gestion_citas deg ON sb.estado_gestion_citas_id = deg.id_estado_cita
+        LEFT JOIN dim_personal_cnt med ON sb.id_personal = med.id_pers
         WHERE sb.activo = true
         ORDER BY CASE WHEN COALESCE(deg.cod_estado_cita, 'PENDIENTE_CITA') = 'PENDIENTE_CITA' THEN 0
                       WHEN COALESCE(deg.cod_estado_cita, 'PENDIENTE_CITA') = 'CITADO' THEN 1
@@ -152,6 +155,7 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
                sb.id_bolsa, tb.desc_tipo_bolsa,
                sb.id_servicio, sb.codigo_adscripcion, sb.id_ipress,
                sb.estado, COALESCE(deg.cod_estado_cita, 'PENDIENTE_CITA') as cod_estado_cita,
+               COALESCE(deg.desc_estado_cita, 'Paciente nuevo que ingresó a la bolsa') as desc_estado_cita,
                sb.fecha_solicitud, sb.fecha_actualizacion,
                sb.estado_gestion_citas_id, sb.activo,
                di.desc_ipress, dr.desc_red, dm.desc_macro,
@@ -159,7 +163,8 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
                sb.fecha_cambio_estado, sb.usuario_cambio_estado_id,
                COALESCE(CONCAT(pc.nom_pers, ' ', pc.ape_pater_pers, ' ', pc.ape_mater_pers), u.name_user, 'Sin asignar') as nombre_usuario_cambio_estado,
                sb.fecha_atencion, sb.hora_atencion, sb.id_personal,
-               sb.condicion_medica, sb.fecha_atencion_medica
+               sb.condicion_medica, sb.fecha_atencion_medica,
+               COALESCE(CONCAT(med.nom_pers, ' ', med.ape_pater_pers, ' ', med.ape_mater_pers), '') as nombre_medico
         FROM dim_solicitud_bolsa sb
         LEFT JOIN dim_tipos_bolsas tb ON sb.id_bolsa = tb.id_tipo_bolsa
         LEFT JOIN dim_ipress di ON sb.id_ipress = di.id_ipress
@@ -168,6 +173,7 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
         LEFT JOIN dim_estados_gestion_citas deg ON sb.estado_gestion_citas_id = deg.id_estado_cita
         LEFT JOIN dim_usuarios u ON sb.usuario_cambio_estado_id = u.id_user
         LEFT JOIN dim_personal_cnt pc ON u.id_user = pc.id_usuario
+        LEFT JOIN dim_personal_cnt med ON sb.id_personal = med.id_pers
         WHERE sb.activo = true
         ORDER BY CASE WHEN COALESCE(deg.cod_estado_cita, 'PENDIENTE_CITA') = 'PENDIENTE_CITA' THEN 0
                       WHEN COALESCE(deg.cod_estado_cita, 'PENDIENTE_CITA') = 'CITADO' THEN 1
@@ -202,6 +208,7 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
                sb.id_bolsa, tb.desc_tipo_bolsa,
                sb.id_servicio, sb.codigo_adscripcion, sb.id_ipress,
                sb.estado, COALESCE(deg.cod_estado_cita, 'PENDIENTE_CITA') as cod_estado_cita,
+               COALESCE(deg.desc_estado_cita, 'Paciente nuevo que ingresó a la bolsa') as desc_estado_cita,
                sb.fecha_solicitud, sb.fecha_actualizacion,
                sb.estado_gestion_citas_id, sb.activo,
                di.desc_ipress, dr.desc_red, dm.desc_macro,
@@ -209,7 +216,8 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
                sb.fecha_cambio_estado, sb.usuario_cambio_estado_id,
                COALESCE(CONCAT(pc.nom_pers, ' ', pc.ape_pater_pers, ' ', pc.ape_mater_pers), u.name_user, 'Sin asignar') as nombre_usuario_cambio_estado,
                sb.fecha_atencion, sb.hora_atencion, sb.id_personal,
-               sb.condicion_medica, sb.fecha_atencion_medica
+               sb.condicion_medica, sb.fecha_atencion_medica,
+               COALESCE(CONCAT(med.nom_pers, ' ', med.ape_pater_pers, ' ', med.ape_mater_pers), '') as nombre_medico
         FROM dim_solicitud_bolsa sb
         LEFT JOIN dim_tipos_bolsas tb ON sb.id_bolsa = tb.id_tipo_bolsa
         LEFT JOIN dim_ipress di ON sb.id_ipress = di.id_ipress
@@ -218,6 +226,7 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
         LEFT JOIN dim_estados_gestion_citas deg ON sb.estado_gestion_citas_id = deg.id_estado_cita
         LEFT JOIN dim_usuarios u ON sb.usuario_cambio_estado_id = u.id_user
         LEFT JOIN dim_personal_cnt pc ON u.id_user = pc.id_usuario
+        LEFT JOIN dim_personal_cnt med ON sb.id_personal = med.id_pers
         WHERE sb.activo = true
           AND (:bolsaNombre IS NULL OR LOWER(COALESCE(tb.desc_tipo_bolsa, '')) LIKE LOWER(CONCAT('%', :bolsaNombre, '%')))
           AND (:macrorregion IS NULL OR dm.desc_macro = :macrorregion)

@@ -73,6 +73,8 @@ public class SolicitudBolsaMapper {
                 // ===== ATENCIÓN MÉDICA (NEW v3.5.0) =====
                 .condicionMedica(entity.getCondicionMedica())
                 .fechaAtencionMedica(entity.getFechaAtencionMedica())
+                // ===== MÉDICO ASIGNADO (v3.6.0) =====
+                .idPersonal(entity.getIdPersonal())
                 // ===== IPRESS (1) =====
                 .idIpress(entity.getIdIpress())
                 .build();
