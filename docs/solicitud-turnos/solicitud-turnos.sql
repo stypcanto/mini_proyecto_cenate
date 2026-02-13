@@ -415,7 +415,11 @@ select * from dim_servicio_essi where es_cenate=true;
 select * from dim_solicitud_bolsa where paciente_id in ('12345601');
 
 
+update dim_solicitud_bolsa set fecha_atencion  ='2026-01-14' where paciente_id in ('12345601');
 
+
+
+select * from dim_solicitud_bolsa where paciente_id in ('70073164');
 
 
 

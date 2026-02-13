@@ -121,7 +121,8 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
                sb.estado_gestion_citas_id, sb.activo,
                di.desc_ipress, dr.desc_red, dm.desc_macro,
                sb.responsable_gestora_id, sb.fecha_asignacion,
-               sb.fecha_atencion, sb.hora_atencion, sb.id_personal
+               sb.fecha_atencion, sb.hora_atencion, sb.id_personal,
+               sb.condicion_medica, sb.fecha_atencion_medica
         FROM dim_solicitud_bolsa sb
         LEFT JOIN dim_tipos_bolsas tb ON sb.id_bolsa = tb.id_tipo_bolsa
         LEFT JOIN dim_ipress di ON sb.id_ipress = di.id_ipress
@@ -157,7 +158,8 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
                sb.responsable_gestora_id, sb.fecha_asignacion,
                sb.fecha_cambio_estado, sb.usuario_cambio_estado_id,
                COALESCE(CONCAT(pc.nom_pers, ' ', pc.ape_pater_pers, ' ', pc.ape_mater_pers), u.name_user, 'Sin asignar') as nombre_usuario_cambio_estado,
-               sb.fecha_atencion, sb.hora_atencion, sb.id_personal
+               sb.fecha_atencion, sb.hora_atencion, sb.id_personal,
+               sb.condicion_medica, sb.fecha_atencion_medica
         FROM dim_solicitud_bolsa sb
         LEFT JOIN dim_tipos_bolsas tb ON sb.id_bolsa = tb.id_tipo_bolsa
         LEFT JOIN dim_ipress di ON sb.id_ipress = di.id_ipress
@@ -206,7 +208,8 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
                sb.responsable_gestora_id, sb.fecha_asignacion,
                sb.fecha_cambio_estado, sb.usuario_cambio_estado_id,
                COALESCE(CONCAT(pc.nom_pers, ' ', pc.ape_pater_pers, ' ', pc.ape_mater_pers), u.name_user, 'Sin asignar') as nombre_usuario_cambio_estado,
-               sb.fecha_atencion, sb.hora_atencion, sb.id_personal
+               sb.fecha_atencion, sb.hora_atencion, sb.id_personal,
+               sb.condicion_medica, sb.fecha_atencion_medica
         FROM dim_solicitud_bolsa sb
         LEFT JOIN dim_tipos_bolsas tb ON sb.id_bolsa = tb.id_tipo_bolsa
         LEFT JOIN dim_ipress di ON sb.id_ipress = di.id_ipress

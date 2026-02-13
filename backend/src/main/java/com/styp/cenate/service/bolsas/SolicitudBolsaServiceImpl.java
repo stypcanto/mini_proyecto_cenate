@@ -657,6 +657,10 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
             }
             Long idPersonal = row.length > 36 ? toLongSafe("id_personal", row[36]) : null;
 
+            // ✅ v3.5.0 - Extraer condición médica y fecha atención médica (indices 37, 38)
+            String condicionMedica = row.length > 37 ? (String) row[37] : null;
+            java.time.OffsetDateTime fechaAtencionMedica = row.length > 38 ? convertToOffsetDateTime(row[38]) : null;
+
             return SolicitudBolsaDTO.builder()
                     .idSolicitud(toLongSafe("id_solicitud", row[0]))
                     .numeroSolicitud((String) row[1])
@@ -696,6 +700,8 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
                     .fechaAtencion(fechaAtencion)          // NEW v3.4.0 - fecha_atencion (índice 34)
                     .horaAtencion(horaAtencion)            // NEW v3.4.0 - hora_atencion (índice 35)
                     .idPersonal(idPersonal)                // NEW v3.4.0 - id_personal (índice 36)
+                    .condicionMedica(condicionMedica)      // NEW v3.5.0 - condicion_medica (índice 37)
+                    .fechaAtencionMedica(fechaAtencionMedica) // NEW v3.5.0 - fecha_atencion_medica (índice 38)
                     .build();
         } catch (Exception e) {
             log.error("Error mapeando resultado SQL en índice. Error: {}", e.getMessage(), e);
@@ -2585,6 +2591,8 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
             .fechaAtencion(solicitud.getFechaAtencion())
             .horaAtencion(solicitud.getHoraAtencion())
             .idPersonal(solicitud.getIdPersonal())
+            .condicionMedica(solicitud.getCondicionMedica())
+            .fechaAtencionMedica(solicitud.getFechaAtencionMedica())
             .build();
     }
 

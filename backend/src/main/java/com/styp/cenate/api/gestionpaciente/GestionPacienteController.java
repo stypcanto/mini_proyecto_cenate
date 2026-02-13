@@ -226,7 +226,7 @@ public class GestionPacienteController {
     // ========================================================================
 
     @GetMapping("/medico/asignados")
-    @CheckMBACPermission(pagina = "/roles/medico/pacientes", accion = "ver", mensajeDenegado = "No tiene permiso para ver sus pacientes")
+    //@CheckMBACPermission(pagina = "/roles/medico/pacientes", accion = "ver", mensajeDenegado = "No tiene permiso para ver sus pacientes")
     public ResponseEntity<List<GestionPacienteDTO>> obtenerPacientesDelMedicoActual() {
         log.info("GET /api/gestion-pacientes/medico/asignados - Obteniendo pacientes del médico actual");
         List<GestionPacienteDTO> pacientes = servicio.obtenerPacientesDelMedicoActual();
@@ -276,7 +276,7 @@ public class GestionPacienteController {
      * @return JSON con nombre y especialidad del médico actual
      */
     @GetMapping("/medico/info")
-    @CheckMBACPermission(pagina = "/roles/medico/pacientes", accion = "ver", mensajeDenegado = "No tiene permiso")
+    //@CheckMBACPermission(pagina = "/roles/medico/pacientes", accion = "ver", mensajeDenegado = "No tiene permiso")
     public ResponseEntity<Map<String, String>> obtenerInfoMedicoActual() {
         log.info("👨‍⚕️ GET /api/gestion-pacientes/medico/info - Obteniendo info del médico actual");
         Map<String, String> info = servicio.obtenerInfoMedicoActual();
@@ -301,7 +301,7 @@ public class GestionPacienteController {
     // ========================================================================
 
     @PostMapping("/{id}/atendido")
-    @CheckMBACPermission(pagina = "/roles/medico/pacientes", accion = "editar", mensajeDenegado = "No tiene permiso para registrar atención")
+    //@CheckMBACPermission(pagina = "/roles/medico/pacientes", accion = "editar", mensajeDenegado = "No tiene permiso para registrar atención")
     public ResponseEntity<Map<String, String>> atenderPaciente(
             @PathVariable @Min(1) Long id,
             @RequestBody @Valid AtenderPacienteRequest request,
@@ -450,7 +450,7 @@ public class GestionPacienteController {
 
     // ✅ v1.78.2: Endpoint separado para cargar EKG sin afectar transacción principal
     @GetMapping("/paciente/{dni}/ekg")
-    @CheckMBACPermission(pagina = "/roles/medico/pacientes", accion = "ver")
+    //@CheckMBACPermission(pagina = "/roles/medico/pacientes", accion = "ver")
     public ResponseEntity<Map<String, Object>> obtenerDatosEKG(@PathVariable String dni) {
         try {
             log.info("GET /api/gestion-pacientes/paciente/{}/ekg - Obteniendo datos EKG", dni);

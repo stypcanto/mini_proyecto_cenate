@@ -165,7 +165,12 @@ public class SolicitudBolsaDTO {
 
     @JsonProperty("id_personal")
     private Long idPersonal;
+    // 🩺 ATENCIÓN MÉDICA (NEW v3.5.0)
+    @JsonProperty("condicion_medica")
+    private String condicionMedica;
 
+    @JsonProperty("fecha_atencion_medica")
+    private java.time.OffsetDateTime fechaAtencionMedica;
     // �🔔 AUDITORÍA
     @JsonProperty("activo")
     private Boolean activo;

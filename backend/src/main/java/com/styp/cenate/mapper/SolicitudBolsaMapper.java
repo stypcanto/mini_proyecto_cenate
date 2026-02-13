@@ -70,6 +70,9 @@ public class SolicitudBolsaMapper {
                 .nombreUsuarioCambioEstado(entity.getUsuarioCambioEstado() != null ? entity.getUsuarioCambioEstado().getNameUser() : null)
                 .activo(entity.getActivo())
                 .estado(entity.getEstado())
+                // ===== ATENCIÓN MÉDICA (NEW v3.5.0) =====
+                .condicionMedica(entity.getCondicionMedica())
+                .fechaAtencionMedica(entity.getFechaAtencionMedica())
                 // ===== IPRESS (1) =====
                 .idIpress(entity.getIdIpress())
                 .build();

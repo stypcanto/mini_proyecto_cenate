@@ -409,6 +409,9 @@ export default function GestionAsegurado() {
           fechaAtencion: solicitud.fecha_atencion || null,
           horaAtencion: solicitud.hora_atencion || null,
           idPersonal: solicitud.id_personal || null,
+          // 🩺 Atención médica (NEW v3.5.0)
+          condicionMedica: solicitud.condicion_medica || null,
+          fechaAtencionMedica: solicitud.fecha_atencion_medica || null,
           // 🆕 Campos para filtro de bolsa y prioridad (v1.48.0)
           idTipoBolsa: solicitud.id_bolsa || solicitud.idBolsa || null,
           descTipoBolsa: solicitud.desc_tipo_bolsa || solicitud.descTipoBolsa || "Sin clasificar",
@@ -2074,6 +2077,12 @@ CENATE de Essalud`;
                         Estado
                       </th>
                       <th className="px-2 py-2 text-left text-[10px] font-bold uppercase">
+                        F. Atención Méd.
+                      </th>
+                      <th className="px-2 py-2 text-left text-[10px] font-bold uppercase">
+                        Est. Atención
+                      </th>
+                      <th className="px-2 py-2 text-left text-[10px] font-bold uppercase">
                         F. Cambio
                       </th>
                       <th className="px-2 py-2 text-left text-[10px] font-bold uppercase">
@@ -2453,6 +2462,35 @@ CENATE de Essalud`;
                             }`}>
                               {paciente.descEstadoCita?.split(" - ")[0] || "Sin estado"}
                             </span>
+                          )}
+                        </td>
+                        {/* FECHA ATENCIÓN MÉDICA */}
+                        <td className="px-2 py-1.5 text-[10px] font-medium">
+                          {paciente.fechaAtencionMedica ? (
+                            <span className="text-indigo-700">
+                              {new Date(paciente.fechaAtencionMedica).toLocaleDateString('es-PE', { day: '2-digit', month: '2-digit', year: 'numeric' })}{' '}
+                              {new Date(paciente.fechaAtencionMedica).toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit' })}
+                            </span>
+                          ) : (
+                            <span className="text-gray-300 italic">—</span>
+                          )}
+                        </td>
+                        {/* ESTADO/CONDICIÓN ATENCIÓN MÉDICA */}
+                        <td className="px-2 py-1.5">
+                          {paciente.condicionMedica ? (
+                            <span className={`px-2 py-0.5 rounded-lg text-[10px] font-medium inline-block ${
+                              paciente.condicionMedica === 'Atendido'
+                                ? 'bg-emerald-100 text-emerald-800'
+                                : paciente.condicionMedica === 'Deserción' || paciente.condicionMedica === 'Desercion'
+                                ? 'bg-red-100 text-red-800'
+                                : paciente.condicionMedica === 'Pendiente'
+                                ? 'bg-amber-100 text-amber-800'
+                                : 'bg-gray-100 text-gray-700'
+                            }`}>
+                              {paciente.condicionMedica}
+                            </span>
+                          ) : (
+                            <span className="text-gray-300 italic text-[10px]">—</span>
                           )}
                         </td>
                         {/* FECHA CAMBIO ESTADO - Auditoría v3.3.1 */}
