@@ -164,15 +164,17 @@ export default function UploadImagenEKG({ onSuccess, onUploadSuccess, isWorkspac
     console.log("✅ [UploadImagenECG v1.104.0] Componente montado - Formulario limpio, listo para nuevo paciente");
   }, []);
 
-  // Guardar en localStorage cada vez que cambian archivos o paciente
+  // ✅ v1.104.1: Guardar en localStorage SOLO metadatos (sin previews que pueden corromperse)
+  // Los previews son Data URLs muy grandes que pueden exceder límite de localStorage
   useEffect(() => {
     const guardarDraft = () => {
       try {
         localStorage.setItem(STORAGE_KEY, JSON.stringify({
-          previews,
+          // NO guardar previews - son Data URLs muy grandes que pueden corromperse
           numDocPaciente,
           datosCompletos,
           fechaToma,
+          numArchivos: archivos.length,
           timestamp: new Date().toISOString()
         }));
       } catch (error) {
@@ -180,7 +182,7 @@ export default function UploadImagenEKG({ onSuccess, onUploadSuccess, isWorkspac
       }
     };
     guardarDraft();
-  }, [previews, numDocPaciente, datosCompletos, fechaToma]);
+  }, [archivos, numDocPaciente, datosCompletos, fechaToma]);
 
   // ✅ v1.77.0: Limpiar imágenes cuando cambia el DNI (nuevo paciente)
   const [dniBuscadoAnterior, setDniBuscadoAnterior] = useState("");
@@ -758,13 +760,22 @@ export default function UploadImagenEKG({ onSuccess, onUploadSuccess, isWorkspac
           {archivos.length > 0 && (
             <div>
               <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-2">
-                {previews.map((preview, index) => (
+                {previews.map((preview, index) => {
+                  // ✅ v1.104.1: Verificar que el preview sea válido (data URL)
+                  const isValidPreview = preview && typeof preview === 'string' && preview.startsWith('data:image');
+                  return (
                   <div key={index} className="relative group">
-                    <img
-                      src={preview}
-                      alt={`EKG ${index + 1}`}
-                      className="w-full h-24 rounded-lg object-cover border-2 border-gray-300 hover:border-blue-500 transition-all"
-                    />
+                    {isValidPreview ? (
+                      <img
+                        src={preview}
+                        alt={`EKG ${index + 1}`}
+                        className="w-full h-24 rounded-lg object-cover border-2 border-gray-300 hover:border-blue-500 transition-all"
+                      />
+                    ) : (
+                      <div className="w-full h-24 rounded-lg bg-gray-200 border-2 border-gray-300 flex items-center justify-center text-gray-500 text-xs text-center p-2">
+                        📸 Imagen {index + 1}
+                      </div>
+                    )}
                     <div className="absolute top-1 right-1 bg-gray-800 bg-opacity-75 text-white text-xs px-2 py-0.5 rounded font-medium">
                       {archivos[index]?.size ? `${(archivos[index].size / 1024).toFixed(0)}KB` : '—'}
                     </div>
@@ -779,7 +790,8 @@ export default function UploadImagenEKG({ onSuccess, onUploadSuccess, isWorkspac
                       <X className="w-3.5 h-3.5" />
                     </button>
                   </div>
-                ))}
+                );
+                })}
               </div>
             </div>
           )}
