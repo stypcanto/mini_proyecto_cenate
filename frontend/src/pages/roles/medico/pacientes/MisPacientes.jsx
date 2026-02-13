@@ -1500,7 +1500,7 @@ export default function MisPacientes() {
         <div className="mb-8">
           <div className="flex items-center gap-3 mb-6">
             <Users className="w-8 h-8 text-[#0A5BA9]" />
-            <h1 className="text-3xl font-bold text-gray-900">👨‍⚕️ Mis Pacientes</h1>
+            <h1 className="text-3xl font-bold text-gray-900">Mis Pacientes</h1>
           </div>
           <p className="text-gray-600 font-medium mb-6">Gestiona y coordina la atención de tus pacientes asignados</p>
 

@@ -19,12 +19,19 @@ function CalendarioAsignacion({
 }) {
   const [mesActual, setMesActual] = useState(new Date());
   const [calendarioAbierto, setCalendarioAbierto] = useState(false);
+  const [buttonRef, setButtonRef] = useState(null);
+  const [position, setPosition] = useState({ top: 0, left: 0 });
   const calendarRef = useRef(null);
 
   // Cerrar calendario cuando se hace click fuera
   useEffect(() => {
     const handleClickAfuera = (event) => {
-      if (calendarRef.current && !calendarRef.current.contains(event.target)) {
+      const calendarioElement = document.querySelector('[data-calendario-flotante]');
+      if (
+        calendarRef.current &&
+        !calendarRef.current.contains(event.target) &&
+        !calendarioElement?.contains(event.target)
+      ) {
         setCalendarioAbierto(false);
       }
     };
@@ -34,6 +41,17 @@ function CalendarioAsignacion({
       return () => document.removeEventListener('mousedown', handleClickAfuera);
     }
   }, [calendarioAbierto]);
+
+  // Actualizar posición cuando se abre el calendario
+  useEffect(() => {
+    if (calendarioAbierto && buttonRef) {
+      const rect = buttonRef.getBoundingClientRect();
+      setPosition({
+        top: rect.bottom + window.scrollY + 8,
+        left: rect.left + window.scrollX,
+      });
+    }
+  }, [calendarioAbierto, buttonRef]);
 
   /**
    * Genera array de días del mes con información útil
@@ -100,9 +118,10 @@ function CalendarioAsignacion({
   const nombreMes = mesActual.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' });
 
   return (
-    <div className="relative" ref={calendarRef}>
+    <div ref={calendarRef}>
       {/* Botón para abrir calendario */}
       <button
+        ref={setButtonRef}
         onClick={() => setCalendarioAbierto(!calendarioAbierto)}
         className="w-full px-4 py-3 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-green-400 focus:border-transparent transition-all shadow-sm hover:border-slate-400 flex items-center gap-2 text-left text-gray-700 font-medium"
       >
@@ -117,9 +136,16 @@ function CalendarioAsignacion({
         )}
       </button>
 
-      {/* Calendario flotante */}
+      {/* Calendario flotante - Usar fixed para evitar overflow */}
       {calendarioAbierto && (
-        <div className="absolute top-full left-0 mt-2 z-50 bg-white shadow-lg rounded-lg p-4 w-full sm:w-80 border border-gray-200">
+        <div
+          data-calendario-flotante
+          className="fixed z-50 bg-white shadow-xl rounded-lg p-4 w-80 border border-gray-200"
+          style={{
+            top: `${position.top}px`,
+            left: `${position.left}px`,
+          }}
+        >
           {/* Header: Navegación de meses */}
           <div className="flex items-center justify-between mb-4">
             <button
