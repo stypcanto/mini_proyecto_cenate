@@ -435,15 +435,17 @@ select * from dim_personal_cnt;
 
 
 
+select * from dim_solicitud_bolsa dsb  where dsb.paciente_dni ='70073164';
+
+delete from dim_solicitud_bolsa dsb  where dsb.paciente_dni ='70073164';
 
 
+select * from dim_estados_gestion_citas degc ;
+-- 07887379
 
 
-
-
-
-
-
+select * from dim_solicitud_bolsa dsb  where dsb.paciente_dni in ('70073164','07887379');
+delete from dim_solicitud_bolsa dsb  where dsb.paciente_dni in ('70073164','07887379');
 
 
 
