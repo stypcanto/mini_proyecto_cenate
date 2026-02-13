@@ -325,26 +325,57 @@ public class SolicitudBolsaController {
             final java.time.LocalDate diaAsignacionFin = tempAsignacionFin;
 
             if (diaIngresoInicio != null || diaIngresoFin != null || diaAsignacionInicio != null || diaAsignacionFin != null) {
+                log.info("[DATES] Fechas parseadas:");
+                if (diaIngresoInicio != null) log.info("   - Ingreso Inicio: {}", diaIngresoInicio);
+                if (diaIngresoFin != null) log.info("   - Ingreso Fin: {}", diaIngresoFin);
+                if (diaAsignacionInicio != null) log.info("   - Asignación Inicio: {}", diaAsignacionInicio);
+                if (diaAsignacionFin != null) log.info("   - Asignación Fin: {}", diaAsignacionFin);
+
+                final int totalAntes = solicitudes.size();
                 solicitudes = solicitudes.stream()
                     .filter(s -> {
                         // Filtro F. Ingreso Bolsa (fechaCambioEstado)
                         if (diaIngresoInicio != null || diaIngresoFin != null) {
-                            if (s.getFechaCambioEstado() == null) return false;
+                            if (s.getFechaCambioEstado() == null) {
+                                log.debug("  SKIP Solicitud {} sin fechaCambioEstado", s.getIdSolicitud());
+                                return false;
+                            }
                             java.time.LocalDate diaIngreso = s.getFechaCambioEstado().toLocalDateTime().toLocalDate();
-                            if (diaIngresoInicio != null && diaIngreso.isBefore(diaIngresoInicio)) return false;
-                            if (diaIngresoFin != null && diaIngreso.isAfter(diaIngresoFin)) return false;
+                            log.debug("  [DEBUG] Solicitud {}: fechaCambioEstado = {}, comparando con {} a {}",
+                                s.getIdSolicitud(), diaIngreso, diaIngresoInicio, diaIngresoFin);
+                            if (diaIngresoInicio != null && diaIngreso.isBefore(diaIngresoInicio)) {
+                                log.debug("    SKIP {} es antes de {}", diaIngreso, diaIngresoInicio);
+                                return false;
+                            }
+                            if (diaIngresoFin != null && diaIngreso.isAfter(diaIngresoFin)) {
+                                log.debug("    SKIP {} es después de {}", diaIngreso, diaIngresoFin);
+                                return false;
+                            }
+                            log.debug("    PASS Solicitud {} pasa filtro F. Ingreso", s.getIdSolicitud());
                         }
                         // Filtro F. Asignación (fechaAsignacion)
                         if (diaAsignacionInicio != null || diaAsignacionFin != null) {
-                            if (s.getFechaAsignacion() == null) return false;
+                            if (s.getFechaAsignacion() == null) {
+                                log.debug("  SKIP Solicitud {} sin fechaAsignacion", s.getIdSolicitud());
+                                return false;
+                            }
                             java.time.LocalDate diaAsignacion = s.getFechaAsignacion().toLocalDateTime().toLocalDate();
-                            if (diaAsignacionInicio != null && diaAsignacion.isBefore(diaAsignacionInicio)) return false;
-                            if (diaAsignacionFin != null && diaAsignacion.isAfter(diaAsignacionFin)) return false;
+                            log.debug("  [DEBUG] Solicitud {}: fechaAsignacion = {}, comparando con {} a {}",
+                                s.getIdSolicitud(), diaAsignacion, diaAsignacionInicio, diaAsignacionFin);
+                            if (diaAsignacionInicio != null && diaAsignacion.isBefore(diaAsignacionInicio)) {
+                                log.debug("    SKIP {} es antes de {}", diaAsignacion, diaAsignacionInicio);
+                                return false;
+                            }
+                            if (diaAsignacionFin != null && diaAsignacion.isAfter(diaAsignacionFin)) {
+                                log.debug("    SKIP {} es después de {}", diaAsignacion, diaAsignacionFin);
+                                return false;
+                            }
+                            log.debug("    PASS Solicitud {} pasa filtro F. Asignación", s.getIdSolicitud());
                         }
                         return true;
                     })
                     .collect(java.util.stream.Collectors.toList());
-                log.info("📋 Después de filtrar por fechas: {} solicitudes", solicitudes.size());
+                log.info("[RESULT] Filtrado: {} solicitudes => {} solicitudes", totalAntes, solicitudes.size());
             }
 
             log.info("✅ Resultado final: Se encontraron {} solicitud(es) en la bandeja", solicitudes.size());

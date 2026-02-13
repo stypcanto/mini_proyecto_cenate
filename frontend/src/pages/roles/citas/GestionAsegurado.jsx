@@ -337,6 +337,12 @@ export default function GestionAsegurado() {
       let url = `${API_BASE}/bolsas/solicitudes/mi-bandeja`;
       const params = new URLSearchParams();
 
+      console.log("📅 DEBUG Filtros de fecha crudos:");
+      console.log("   - filtroFechaIngresoInicio:", filtroFechaIngresoInicio, "tipo:", typeof filtroFechaIngresoInicio);
+      console.log("   - filtroFechaIngresoFin:", filtroFechaIngresoFin, "tipo:", typeof filtroFechaIngresoFin);
+      console.log("   - filtroFechaAsignacionInicio:", filtroFechaAsignacionInicio, "tipo:", typeof filtroFechaAsignacionInicio);
+      console.log("   - filtroFechaAsignacionFin:", filtroFechaAsignacionFin, "tipo:", typeof filtroFechaAsignacionFin);
+
       if (filtroFechaIngresoInicio) params.append('fechaIngresoInicio', filtroFechaIngresoInicio);
       if (filtroFechaIngresoFin) params.append('fechaIngresoFin', filtroFechaIngresoFin);
       if (filtroFechaAsignacionInicio) params.append('fechaAsignacionInicio', filtroFechaAsignacionInicio);
@@ -344,7 +350,7 @@ export default function GestionAsegurado() {
 
       if (params.toString()) {
         url += `?${params.toString()}`;
-        console.log("📋 URL con filtros de fecha:", url);
+        console.log("📋 URL FINAL con filtros de fecha:", url);
       }
 
       const response = await fetch(
@@ -399,7 +405,14 @@ export default function GestionAsegurado() {
       // Transform SolicitudBolsaDTO to table structure
       const pacientes = solicitudes.map((solicitud, idx) => {
         // Mapear código de estado a descripción
-        const codigoEstado = solicitud.cod_estado_cita || solicitud.codEstadoCita || "PENDIENTE_CITA";
+        let codigoEstado = solicitud.cod_estado_cita || solicitud.codEstadoCita || "PENDIENTE_CITA";
+
+        // ✅ v1.109.0: Para RECITA e INTERCONSULTA, asegurar que el estado es PENDIENTE_CITA
+        const tipoCita = solicitud.tipo_cita || solicitud.tipoCita || "-";
+        if ((tipoCita === "RECITA" || tipoCita === "INTERCONSULTA") && codigoEstado !== "PENDIENTE_CITA") {
+          codigoEstado = "PENDIENTE_CITA"; // Forzar estado correcto para bolsas generadas por médicos
+        }
+
         const estadoObj = estadosDisponibles.find(e => e.codigo === codigoEstado);
         const descEstadoFinal = estadoObj ? estadoObj.descripcion : codigoEstado;
 
@@ -2196,22 +2209,29 @@ CENATE de Essalud`;
                         </td>
                         {/* F. INGRESO BOLSA */}
                         <td className="px-3 py-2">
-                          {paciente.fechaCambioEstado && paciente.fechaCambioEstado !== "-" ? (
-                            <div className="bg-orange-50 rounded p-1.5 border-l-4 border-orange-600">
-                              <div className="flex items-center gap-1 mb-0.5">
-                                <Calendar size={12} className="text-orange-600 flex-shrink-0" />
-                                <span className="text-xs font-bold text-orange-600 uppercase tracking-tight">Ingreso</span>
+                          {(() => {
+                            // Para RECITA e INTERCONSULTA, usar fechaSolicitud si fechaCambioEstado está vacío
+                            const fechaMostrar = (paciente.tipoCita === "RECITA" || paciente.tipoCita === "INTERCONSULTA")
+                              ? (paciente.fechaSolicitud || paciente.fechaCambioEstado)
+                              : paciente.fechaCambioEstado;
+
+                            return fechaMostrar && fechaMostrar !== "-" ? (
+                              <div className="bg-orange-50 rounded p-1.5 border-l-4 border-orange-600">
+                                <div className="flex items-center gap-1 mb-0.5">
+                                  <Calendar size={12} className="text-orange-600 flex-shrink-0" />
+                                  <span className="text-xs font-bold text-orange-600 uppercase tracking-tight">Ingreso</span>
+                                </div>
+                                <div className="text-xs font-semibold text-orange-900">
+                                  {new Date(fechaMostrar).toLocaleDateString('es-PE', { day: '2-digit', month: '2-digit', year: 'numeric' })}
+                                </div>
+                                <div className="text-xs text-orange-600 font-medium">
+                                  {formatearTiempoRelativo(fechaMostrar)}
+                                </div>
                               </div>
-                              <div className="text-xs font-semibold text-orange-900">
-                                {new Date(paciente.fechaCambioEstado).toLocaleDateString('es-PE', { day: '2-digit', month: '2-digit', year: 'numeric' })}
-                              </div>
-                              <div className="text-xs text-orange-600 font-medium">
-                                {formatearTiempoRelativo(paciente.fechaCambioEstado)}
-                              </div>
-                            </div>
-                          ) : (
-                            <div className="text-gray-400 italic text-xs py-0.5">—</div>
-                          )}
+                            ) : (
+                              <div className="text-gray-400 italic text-xs py-0.5">—</div>
+                            );
+                          })()}
                         </td>
 
                         {/* F. ASIGNACIÓN */}
