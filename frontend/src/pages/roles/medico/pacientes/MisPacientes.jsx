@@ -1856,28 +1856,24 @@ export default function MisPacientes() {
 
         {/* Tabla de pacientes */}
         {pacientesFiltradosPorFecha.length === 0 ? (
-          <div className="bg-gradient-to-br from-amber-50 to-orange-100 border border-amber-200 shadow-sm rounded-lg p-12 text-center">
-            <div className="p-4 bg-amber-200 rounded-full inline-block mb-4">
-              <AlertCircle className="w-8 h-8 text-amber-600" strokeWidth={1.5} />
-            </div>
-            <p className="text-amber-900 font-semibold text-lg">
-              {filtroRangoFecha === 'todos' || filtroRangoFecha === 'hoy' ? '❌ No hay pacientes asignados para hoy' : 'No hay pacientes en el período seleccionado'}
+          <div className="bg-white border border-gray-200 shadow-sm rounded-lg p-12 text-center">
+            <p className="text-gray-700 font-semibold text-base mb-2">
+              {filtroRangoFecha === 'todos' || filtroRangoFecha === 'hoy' ? 'No hay pacientes asignados para hoy' : 'No hay pacientes en el período seleccionado'}
             </p>
-            <p className="text-amber-700 text-sm mt-2">
+            <p className="text-gray-500 text-sm mb-6">
               {filtroRangoFecha === 'todos' || filtroRangoFecha === 'hoy'
-                ? 'Para ver pacientes de otros días, abre el selector "ASIGNACIÓN" arriba.'
-                : 'Intenta seleccionando otro período o ajustando los filtros de búsqueda.'}
+                ? 'Selecciona otro período desde el filtro "ASIGNACIÓN"'
+                : 'Intenta seleccionando otro período o ajustando los filtros.'}
             </p>
             {(filtroRangoFecha === 'todos' || filtroRangoFecha === 'hoy') && (
               <button
                 onClick={() => {
-                  // Scroll hasta el selector ASIGNACIÓN
                   document.querySelector('[data-selector-asignacion]')?.scrollIntoView({ behavior: 'smooth' });
                 }}
-                className="mt-4 px-6 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition-colors font-medium inline-flex items-center gap-2"
+                className="px-5 py-2 bg-[#0A5BA9] text-white rounded-lg hover:bg-[#083d78] transition-colors font-medium inline-flex items-center gap-2 text-sm"
               >
                 <Calendar className="w-4 h-4" />
-                Abrir calendario
+                Abrir selector de fechas
               </button>
             )}
           </div>
