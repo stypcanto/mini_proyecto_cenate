@@ -281,7 +281,7 @@ export default function DiagnosticoIpress() {
 
   const exportarExcel = () => {
     try {
-      // Preparar datos para Excel
+      // Preparar datos para Excel detallado
       const datosExcel = datosFiltrados.map(diagnostico => ({
         'ID Formulario': diagnostico.idFormulario || '',
         'IPRESS': diagnostico.nombreIpress || '',
@@ -333,6 +333,45 @@ export default function DiagnosticoIpress() {
     } catch (error) {
       console.error("Error al exportar Excel:", error);
       toast.error("Error al exportar a Excel");
+    }
+  };
+
+  const exportarResumenExcel = () => {
+    try {
+      // Preparar datos para Excel resumen (solo 5 columnas principales)
+      const datosResumen = datosFiltrados.map(diagnostico => ({
+        'IPRESS': diagnostico.nombreIpress || '',
+        'RED': diagnostico.nombreRed || '',
+        'ESTADO': diagnostico.estado || '',
+        'FIRMA': diagnostico.tieneFirma ? 'Firmado' : 'Sin firma',
+        'FECHA ENVIO': diagnostico.fechaEnvio ? new Date(diagnostico.fechaEnvio).toLocaleDateString('es-PE') : ''
+      }));
+
+      // Crear libro de trabajo
+      const ws = XLSX.utils.json_to_sheet(datosResumen);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Resumen");
+
+      // Ajustar ancho de columnas
+      const colWidths = [
+        { wch: 35 }, // IPRESS
+        { wch: 28 }, // RED
+        { wch: 15 }, // ESTADO
+        { wch: 15 }, // FIRMA
+        { wch: 15 }  // FECHA ENVIO
+      ];
+      ws['!cols'] = colWidths;
+
+      // Generar nombre del archivo con timestamp
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
+      const fileName = `resumen_diagnosticos_${timestamp}.xlsx`;
+
+      // Descargar archivo
+      XLSX.writeFile(wb, fileName);
+      toast.success(`Resumen Excel exportado: ${datosResumen.length} registros`);
+    } catch (error) {
+      console.error("Error al exportar resumen:", error);
+      toast.error("Error al exportar resumen");
     }
   };
 
@@ -639,6 +678,13 @@ export default function DiagnosticoIpress() {
           >
             <RefreshCw className="w-4 h-4" />
             Actualizar
+          </button>
+          <button
+            onClick={exportarResumenExcel}
+            className="flex items-center gap-2 px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg transition-colors shadow-sm"
+          >
+            <FileSpreadsheet className="w-4 h-4" />
+            Exportar Resumen
           </button>
           <button
             onClick={exportarExcel}
