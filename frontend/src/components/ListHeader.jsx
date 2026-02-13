@@ -53,10 +53,10 @@ export default function ListHeader({
       </div>
 
       {/* Filtros */}
-      <div className="space-y-2">
+      <div className="space-y-1.5">
         {/* Primera fila: Bolsas + Botón Limpiar */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-2">
-          <div className="md:col-span-3 relative">
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-2">
+          <div className="md:col-span-4 relative">
             <label className="block text-xs font-semibold text-gray-600 mb-1">{filters[0]?.name}</label>
             <div className="relative">
               <select
@@ -78,7 +78,7 @@ export default function ListHeader({
           <div className="flex items-end">
             <button
               onClick={onClearFilters}
-              className="w-full px-3 py-2 bg-gray-500 hover:bg-gray-600 text-white rounded-lg font-medium flex items-center justify-center gap-1.5 transition-all shadow-md hover:shadow-lg text-xs"
+              className="w-full px-3 py-2 bg-gray-500 hover:bg-gray-600 text-white rounded-lg font-medium flex items-center justify-center gap-1.5 transition-all shadow-md hover:shadow-lg text-xs whitespace-nowrap"
             >
               <RotateCcw size={16} />
               Limpiar
@@ -86,9 +86,9 @@ export default function ListHeader({
           </div>
         </div>
 
-        {/* Segunda fila: Macrorregión | Redes | IPRESS (siempre juntas) */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
-          {filters.slice(1, 4).map((filter, index) => (
+        {/* Segunda fila: Macrorregión | Redes | IPRESS | Especialidades (4 columnas) */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-2">
+          {filters.slice(1, 5).map((filter, index) => (
             <div key={index + 1} className="relative">
               <label className="block text-xs font-semibold text-gray-600 mb-1">{filter.name}</label>
               <div className="relative">
@@ -109,28 +109,30 @@ export default function ListHeader({
           ))}
         </div>
 
-        {/* Tercera fila: Especialidades | Tipo de Cita */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-          {filters.slice(4).map((filter, index) => (
-            <div key={index + 4} className="relative">
-              <label className="block text-xs font-semibold text-gray-600 mb-1">{filter.name}</label>
-              <div className="relative">
-                <select
-                  value={filter.value}
-                  onChange={filter.onChange}
-                  className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-xs appearance-none cursor-pointer bg-white font-medium transition-all hover:border-gray-400"
-                >
-                  {filter.options?.map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
-                <ChevronDown size={16} className="absolute right-2 top-2.5 text-gray-400 pointer-events-none" />
+        {/* Tercera fila: Tipo de Cita | Estado | Filtros adicionales */}
+        {filters.length > 5 && (
+          <div className={`grid grid-cols-1 ${filters.length === 6 ? 'md:grid-cols-2' : 'md:grid-cols-3'} gap-2`}>
+            {filters.slice(5).map((filter, index) => (
+              <div key={index + 5} className="relative">
+                <label className="block text-xs font-semibold text-gray-600 mb-1">{filter.name}</label>
+                <div className="relative">
+                  <select
+                    value={filter.value}
+                    onChange={filter.onChange}
+                    className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-xs appearance-none cursor-pointer bg-white font-medium transition-all hover:border-gray-400"
+                  >
+                    {filter.options?.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                  <ChevronDown size={16} className="absolute right-2 top-2.5 text-gray-400 pointer-events-none" />
+                </div>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

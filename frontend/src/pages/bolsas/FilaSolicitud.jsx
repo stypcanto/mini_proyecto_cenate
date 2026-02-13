@@ -37,6 +37,15 @@ function FilaSolicitud({
         />
       </td>
 
+      {/* F. INGRESO BOLSA - Primera columna de datos */}
+      <td className="px-3 py-3 text-sm text-gray-600">
+        {solicitud.fechaCambioEstado ? (
+          <span className="text-blue-700 font-medium">{solicitud.fechaCambioEstado}</span>
+        ) : (
+          <span className="text-gray-400 italic">—</span>
+        )}
+      </td>
+
       {/* DATOS PRINCIPALES - Origen de la Bolsa */}
       <td className="px-3 py-3 text-sm text-gray-700 max-w-xs">
         <span className="font-medium text-gray-900">{solicitud.descBolsa || solicitud.nombreBolsa || 'Sin clasificar'}</span>
@@ -169,15 +178,6 @@ function FilaSolicitud({
           <span className="text-blue-700">{solicitud.gestoraAsignada}</span>
         ) : (
           <span className="text-gray-400 italic">Sin asignar</span>
-        )}
-      </td>
-
-      {/* FECHA CAMBIO ESTADO */}
-      <td className="px-3 py-3 text-sm text-gray-600">
-        {solicitud.fechaCambioEstado ? (
-          <span className="text-blue-700 font-medium">{solicitud.fechaCambioEstado}</span>
-        ) : (
-          <span className="text-gray-400 italic">—</span>
         )}
       </td>
 

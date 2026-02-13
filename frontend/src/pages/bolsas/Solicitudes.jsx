@@ -1887,15 +1887,18 @@ export default function Solicitudes() {
                 ]
               },
               {
-                name: "Especialidades",
-                value: filtroEspecialidad,
-                onChange: (e) => setFiltroEspecialidad(e.target.value),
+                name: "Estado",
+                value: filtroEstado,
+                onChange: (e) => setFiltroEstado(e.target.value),
                 options: [
-                  { label: `Todas las especialidades (${especialidadesConSE.length})`, value: "todas" },
-                  ...especialidadesConSE.map(esp => ({
-                    label: esp,
-                    value: esp
-                  }))
+                  { label: `Todos los estados (${totalElementos})`, value: "todos" },
+                  ...listaEstadosGestion.map(estado => {
+                    const count = countWithFilters('estado', estado.codEstadoCita);
+                    return {
+                      label: `${estado.descEstadoCita} (${count})`,
+                      value: estado.codEstadoCita
+                    };
+                  })
                 ]
               },
               {
@@ -1911,18 +1914,15 @@ export default function Solicitudes() {
                 ]
               },
               {
-                name: "Estado",
-                value: filtroEstado,
-                onChange: (e) => setFiltroEstado(e.target.value),
+                name: "Especialidades",
+                value: filtroEspecialidad,
+                onChange: (e) => setFiltroEspecialidad(e.target.value),
                 options: [
-                  { label: `Todos los estados (${totalElementos})`, value: "todos" },
-                  ...listaEstadosGestion.map(estado => {
-                    const count = countWithFilters('estado', estado.codEstadoCita);
-                    return {
-                      label: `${estado.descEstadoCita} (${count})`,
-                      value: estado.codEstadoCita
-                    };
-                  })
+                  { label: `Todas las especialidades (${especialidadesConSE.length})`, value: "todas" },
+                  ...especialidadesConSE.map(esp => ({
+                    label: esp,
+                    value: esp
+                  }))
                 ]
               }
             ]}
@@ -1941,25 +1941,28 @@ export default function Solicitudes() {
           />
           </div>
 
-          {/* ✅ v1.66.0: FILTRO RANGO DE FECHAS */}
-          <div className="flex gap-2 items-end px-2 py-2">
-            <div className="flex-1">
-              <label className="block text-xs font-semibold text-gray-600 mb-0.5">F. Inicio</label>
-              <input
-                type="date"
-                value={filtroFechaInicio}
-                onChange={(e) => setFiltroFechaInicio(e.target.value)}
-                className="w-full px-2 py-1.5 border border-gray-300 rounded text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-            <div className="flex-1">
-              <label className="block text-xs font-semibold text-gray-600 mb-0.5">F. Fin</label>
-              <input
-                type="date"
-                value={filtroFechaFin}
-                onChange={(e) => setFiltroFechaFin(e.target.value)}
-                className="w-full px-2 py-1.5 border border-gray-300 rounded text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
+          {/* ✅ v1.66.0: FILTRO RANGO DE FECHAS - Optimizado v1.67.0 */}
+          <div className="px-2 py-1">
+            <label className="block text-xs font-semibold text-gray-700 mb-1.5">Filtro de Rango de Fechas de Ingreso a Bolsa</label>
+            <div className="bg-gradient-to-br from-gray-50 to-gray-100 border border-gray-200 rounded-lg p-2 grid grid-cols-1 md:grid-cols-2 gap-2">
+              <div className="relative">
+                <label className="block text-xs font-semibold text-gray-600 mb-1">F. Inicio</label>
+                <input
+                  type="date"
+                  value={filtroFechaInicio}
+                  onChange={(e) => setFiltroFechaInicio(e.target.value)}
+                  className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all hover:border-gray-400 font-medium"
+                />
+              </div>
+              <div className="relative">
+                <label className="block text-xs font-semibold text-gray-600 mb-1">F. Fin</label>
+                <input
+                  type="date"
+                  value={filtroFechaFin}
+                  onChange={(e) => setFiltroFechaFin(e.target.value)}
+                  className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all hover:border-gray-400 font-medium"
+                />
+              </div>
             </div>
           </div>
 
@@ -2165,7 +2168,8 @@ export default function Solicitudes() {
                         className="w-5 h-5 cursor-pointer"
                       />
                     </th>
-                    {/* Columnas - Orden optimizado v2.1.0 */}
+                    {/* Columnas - Orden optimizado v2.1.0 + v1.68.0: F. Ingreso Bolsa primera */}
+                    <th className="px-3 py-3 text-left text-sm font-bold uppercase tracking-wider whitespace-nowrap">F. Ingreso Bolsa</th>
                     <th className="px-3 py-3 text-left text-sm font-bold uppercase tracking-wider whitespace-nowrap">Origen de la Bolsa</th>
                     <th className="px-3 py-3 text-left text-sm font-bold uppercase tracking-wider whitespace-nowrap">Fecha Preferida</th>
                     <th className="px-3 py-3 text-left text-sm font-bold uppercase tracking-wider whitespace-nowrap">T-N° Documento</th>
@@ -2182,7 +2186,6 @@ export default function Solicitudes() {
                     <th className="px-3 py-3 text-left text-sm font-bold uppercase tracking-wider whitespace-nowrap">F. Atención Méd.</th>
                     <th className="px-3 py-3 text-left text-sm font-bold uppercase tracking-wider whitespace-nowrap">Fecha Asignación</th>
                     <th className="px-3 py-3 text-left text-sm font-bold uppercase tracking-wider whitespace-nowrap">Gestora Asignada</th>
-                    <th className="px-3 py-3 text-left text-sm font-bold uppercase tracking-wider whitespace-nowrap">F. Ingreso Bolsa</th>
                     <th className="px-3 py-3 text-left text-sm font-bold uppercase tracking-wider whitespace-nowrap">Usuario Cambio Estado</th>
                     <th className="px-3 py-3 text-center text-sm font-bold uppercase tracking-wider whitespace-nowrap">Acciones</th>
                   </tr>
