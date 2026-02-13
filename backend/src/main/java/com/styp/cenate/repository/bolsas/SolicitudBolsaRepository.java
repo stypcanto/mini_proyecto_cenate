@@ -242,8 +242,8 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
                ELSE 1=0
                END)
           AND (:busqueda IS NULL OR COALESCE(sb.paciente_dni, '') LIKE CONCAT('%', :busqueda, '%'))
-          AND (:fechaInicio IS NULL OR DATE(sb.fecha_cambio_estado) >= DATE(:fechaInicio))
-          AND (:fechaFin IS NULL OR DATE(sb.fecha_cambio_estado) <= DATE(:fechaFin))
+          AND (:fechaInicio IS NULL OR (sb.fecha_cambio_estado IS NOT NULL AND DATE(sb.fecha_cambio_estado) >= DATE(:fechaInicio)))
+          AND (:fechaFin IS NULL OR (sb.fecha_cambio_estado IS NOT NULL AND DATE(sb.fecha_cambio_estado) <= DATE(:fechaFin)))
         ORDER BY CASE WHEN COALESCE(deg.cod_estado_cita, 'PENDIENTE_CITA') = 'PENDIENTE_CITA' THEN 0
                       WHEN COALESCE(deg.cod_estado_cita, 'PENDIENTE_CITA') = 'CITADO' THEN 1
                       ELSE 2 END, sb.fecha_solicitud DESC
@@ -291,8 +291,8 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
                ELSE 1=0
                END)
           AND (:busqueda IS NULL OR COALESCE(sb.paciente_dni, '') LIKE CONCAT('%', :busqueda, '%'))
-          AND (:fechaInicio IS NULL OR DATE(sb.fecha_cambio_estado) >= DATE(:fechaInicio))
-          AND (:fechaFin IS NULL OR DATE(sb.fecha_cambio_estado) <= DATE(:fechaFin))
+          AND (:fechaInicio IS NULL OR (sb.fecha_cambio_estado IS NOT NULL AND DATE(sb.fecha_cambio_estado) >= DATE(:fechaInicio)))
+          AND (:fechaFin IS NULL OR (sb.fecha_cambio_estado IS NOT NULL AND DATE(sb.fecha_cambio_estado) <= DATE(:fechaFin)))
         """, nativeQuery = true)
     long countWithFilters(
             @org.springframework.data.repository.query.Param("bolsaNombre") String bolsaNombre,
