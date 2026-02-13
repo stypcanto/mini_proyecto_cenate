@@ -36,6 +36,7 @@ import ipressService from '../../../../services/ipressService';
 import ModalEvaluacionECG from '../../../../components/teleecgs/ModalEvaluacionECG';
 import teleecgService from '../../../../services/teleecgService';
 import { useAuth } from '../../../../context/AuthContext';
+import CalendarioAsignacion from '../../../../components/calendario/CalendarioAsignacion';
 
 // ✅ v1.78.0: Sistema Genérico de Especialidades
 // Define qué funcionalidades tiene cada tipo de especialidad
@@ -207,6 +208,20 @@ export default function MisPacientes() {
   const esCardiologo = hasFeature('EKG_COLUMNS');
 
   const [pacientes, setPacientes] = useState([]);
+
+  // ✅ v1.66.0: Calcular fechas con asignaciones para el calendario
+  const fechasConAsignaciones = useMemo(() => {
+    const fechasMap = {};
+    if (Array.isArray(pacientes)) {
+      pacientes.forEach(p => {
+        if (p.fechaAsignacion) {
+          const fecha = p.fechaAsignacion.split('T')[0]; // "2026-02-13"
+          fechasMap[fecha] = (fechasMap[fecha] || 0) + 1;
+        }
+      });
+    }
+    return fechasMap;
+  }, [pacientes]);
   const [loading, setLoading] = useState(true);
   const [busqueda, setBusqueda] = useState('');
   const [filtroEstado, setFiltroEstado] = useState('');
@@ -249,6 +264,9 @@ export default function MisPacientes() {
   const [fechaHasta, setFechaHasta] = useState('');
   const [ipressDisponibles, setIpressDisponibles] = useState([]);
   const [ordenarPor, setOrdenarPor] = useState('reciente');
+
+  // ✅ v1.66.0: CALENDARIO PROFESIONAL DE ASIGNACIONES
+  const [fechaSeleccionadaCalendario, setFechaSeleccionadaCalendario] = useState(null);
 
   // ============ v1.62.0: FILTRO DE FECHA DE ATENCIÓN ============
   const [fechaAtencionSeleccionada, setFechaAtencionSeleccionada] = useState('');
@@ -1393,18 +1411,24 @@ export default function MisPacientes() {
     setFechaAtencionSeleccionada(''); // Limpiar selección de fecha
   }, [filtroEstado, pacientes]);
 
-  // ✅ v1.65.0: Filtrar pacientes por fecha de ASIGNACIÓN - DEFAULT HOY
-  // Filtra por fechaAsignacion usando filtroRangoFecha (ASIGNACIÓN)
-  // IMPORTANTE: usa fechaAsignacion, no fechaAtencion
+  // ✅ v1.66.0: Filtrar pacientes por fecha de ASIGNACIÓN - Integración Calendario
+  // Prioridad: fechaSeleccionadaCalendario > fechaAtencionSeleccionada > comportamiento anterior
   const pacientesFiltradosPorFecha = pacientesFiltrados.filter(p => {
-    // Si el filtro de ATENCIÓN está seleccionado, úsalo primero (tiene prioridad)
+    // ✅ v1.66.0: PRIORIDAD 1: Si hay fecha seleccionada en el calendario, usar esa
+    if (fechaSeleccionadaCalendario) {
+      if (!p.fechaAsignacion) return false;
+      const fechaAsignacion = p.fechaAsignacion.split('T')[0];
+      return fechaAsignacion === fechaSeleccionadaCalendario;
+    }
+
+    // PRIORIDAD 2: Si el filtro de ATENCIÓN está seleccionado, úsalo
     if (fechaAtencionSeleccionada) {
       if (!p.fechaAtencion) return false;
       const fechaAtencion = p.fechaAtencion.split('T')[0];
       return fechaAtencion === fechaAtencionSeleccionada;
     }
 
-    // Si NO hay filtro ATENCIÓN, usa el filtro ASIGNACIÓN
+    // PRIORIDAD 3: Si NO hay filtro ATENCIÓN, usa el filtro ASIGNACIÓN (comportamiento anterior)
     if (!p.fechaAsignacion) return false;
 
     const fechaAsignacion = p.fechaAsignacion.split('T')[0];
@@ -1505,6 +1529,7 @@ export default function MisPacientes() {
               setFechaDesde('');
               setFechaHasta('');
               setFechaAtencionSeleccionada('');
+              setFechaSeleccionadaCalendario(null); // ✅ v1.66.0: Limpiar calendario
             }}
             className={`kpi-card-animate kpi-card-hover text-left rounded-xl p-7 overflow-hidden relative group ${
               filtroEstado === ''
@@ -1528,6 +1553,7 @@ export default function MisPacientes() {
               setFechaDesde('');
               setFechaHasta('');
               setFechaAtencionSeleccionada('');
+              setFechaSeleccionadaCalendario(null); // ✅ v1.66.0: Limpiar calendario
             }}
             className={`kpi-card-animate kpi-card-hover text-left rounded-xl p-7 overflow-hidden relative group ${
               filtroEstado === 'Atendido'
@@ -1553,6 +1579,7 @@ export default function MisPacientes() {
               setFechaDesde('');
               setFechaHasta('');
               setFechaAtencionSeleccionada('');
+              setFechaSeleccionadaCalendario(null); // ✅ v1.66.0: Limpiar calendario
             }}
             className={`kpi-card-animate kpi-card-hover text-left rounded-xl p-7 overflow-hidden relative group ${
               filtroEstado === 'Pendiente'
@@ -1578,6 +1605,7 @@ export default function MisPacientes() {
               setFechaDesde('');
               setFechaHasta('');
               setFechaAtencionSeleccionada('');
+              setFechaSeleccionadaCalendario(null); // ✅ v1.66.0: Limpiar calendario
             }}
             className={`kpi-card-animate kpi-card-hover text-left rounded-xl p-7 overflow-hidden relative group ${
               filtroEstado === 'Deserción'
@@ -1745,29 +1773,19 @@ export default function MisPacientes() {
               </select>
             </div>
 
-            {/* Filtro Rango Fecha - 1 column */}
+            {/* ✅ v1.66.0: Filtro Calendario Profesional de Asignaciones - 1 column */}
             <div data-selector-asignacion>
               <label className="block text-xs font-semibold text-gray-700 mb-2 uppercase tracking-wide">
                 <Calendar className="w-4 h-4 inline mr-2 text-green-600" />
                 Asignación
               </label>
-              <select
-                value={filtroRangoFecha}
-                onChange={(e) => {
-                  setFiltroRangoFecha(e.target.value);
-                  if (e.target.value !== 'personalizado') {
-                    setFechaDesde('');
-                    setFechaHasta('');
-                  }
+              <CalendarioAsignacion
+                fechaSeleccionada={fechaSeleccionadaCalendario}
+                onFechaChange={(fecha) => {
+                  setFechaSeleccionadaCalendario(fecha);
                 }}
-                className="w-full px-4 py-3 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-green-400 focus:border-transparent transition-all shadow-sm hover:border-slate-400"
-              >
-                <option value="todos">Todas</option>
-                <option value="hoy">Hoy</option>
-                <option value="ayer">Ayer</option>
-                <option value="7dias">Últimos 7 días</option>
-                <option value="personalizado">Personalizado...</option>
-              </select>
+                fechasConAsignaciones={fechasConAsignaciones}
+              />
             </div>
 
           </div>
@@ -1822,14 +1840,20 @@ export default function MisPacientes() {
         {pacientesFiltradosPorFecha.length === 0 ? (
           <div className="bg-blue-50 border border-blue-200 shadow-sm rounded-lg p-12 text-center">
             <p className="text-gray-700 font-semibold text-base mb-2">
-              {filtroRangoFecha === 'todos' || filtroRangoFecha === 'hoy' ? 'No hay pacientes asignados para hoy' : 'No hay pacientes en el período seleccionado'}
+              {fechaSeleccionadaCalendario
+                ? `No hay pacientes asignados el ${new Date(fechaSeleccionadaCalendario).toLocaleDateString('es-ES', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' })}`
+                : (filtroRangoFecha === 'todos' || filtroRangoFecha === 'hoy' ? 'No hay pacientes asignados para hoy' : 'No hay pacientes en el período seleccionado')
+              }
             </p>
             <p className="text-gray-500 text-sm mb-6">
-              {filtroRangoFecha === 'todos' || filtroRangoFecha === 'hoy'
-                ? 'Selecciona otro período desde el filtro "ASIGNACIÓN"'
-                : 'Intenta seleccionando otro período o ajustando los filtros.'}
+              {fechaSeleccionadaCalendario
+                ? 'Intenta seleccionando otra fecha desde el calendario'
+                : (filtroRangoFecha === 'todos' || filtroRangoFecha === 'hoy'
+                  ? 'Selecciona otra fecha desde el calendario "ASIGNACIÓN"'
+                  : 'Intenta seleccionando otro período o ajustando los filtros.')
+              }
             </p>
-            {(filtroRangoFecha === 'todos' || filtroRangoFecha === 'hoy') && (
+            {(filtroRangoFecha === 'todos' || filtroRangoFecha === 'hoy' || fechaSeleccionadaCalendario) && (
               <button
                 onClick={() => {
                   document.querySelector('[data-selector-asignacion]')?.scrollIntoView({ behavior: 'smooth' });
@@ -1837,7 +1861,7 @@ export default function MisPacientes() {
                 className="px-5 py-2 bg-[#0A5BA9] text-white rounded-lg hover:bg-[#083d78] transition-colors font-medium inline-flex items-center gap-2 text-sm"
               >
                 <Calendar className="w-4 h-4" />
-                Abrir selector de fechas
+                Abrir calendario de asignaciones
               </button>
             )}
           </div>
