@@ -253,7 +253,7 @@ export default function ControlFirmaDigital() {
   const cargarFirmasDigitales = async () => {
     try {
       setLoading(true);
-      const response = await apiClient.get('/firma-digital');
+      const response = await apiClient.get('/firma-digital', true);
 
       console.log('📦 Respuesta completa:', response);
       console.log('📊 Total registros:', response?.total);
@@ -490,7 +490,7 @@ export default function ControlFirmaDigital() {
       }
 
       // Llamar al endpoint de desactivación
-      await apiClient.put(`/usuarios/id/${firma.idPersonal}/deactivate`);
+      await apiClient.put(`/usuarios/id/${firma.idPersonal}/deactivate`, {}, true);
 
       toast.success('✅ Usuario dado de baja exitosamente');
 
