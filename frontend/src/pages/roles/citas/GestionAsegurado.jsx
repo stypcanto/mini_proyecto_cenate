@@ -99,6 +99,12 @@ export default function GestionAsegurado() {
   const [ipressDisponibles, setIpressDisponibles] = useState([]);
   const [cargandoIpress, setCargandoIpress] = useState(false);
 
+  // 📅 Filtros de rango de fechas (v1.43.3)
+  const [filtroFechaIngresoInicio, setFiltroFechaIngresoInicio] = useState("");
+  const [filtroFechaIngresoFin, setFiltroFechaIngresoFin] = useState("");
+  const [filtroFechaAsignacionInicio, setFiltroFechaAsignacionInicio] = useState("");
+  const [filtroFechaAsignacionFin, setFiltroFechaAsignacionFin] = useState("");
+
   // Estados para manejar edición de estado con botones Guardar/Cancelar
   const [pacienteEditandoEstado, setPacienteEditandoEstado] = useState(null);
   const [nuevoEstadoSeleccionado, setNuevoEstadoSeleccionado] = useState("");
@@ -1989,8 +1995,65 @@ CENATE de Essalud`;
                         </div>
                       </div>
 
+                      {/* 📅 Filtros de Rango de Fechas (v1.43.3) */}
+                      <div className="border-t border-gray-200 pt-3">
+                        {/* F. INGRESO BOLSA */}
+                        <div className="mb-3">
+                          <label className="text-xs font-semibold text-orange-600 block mb-2 flex items-center gap-1">
+                            📅 Rango de Fechas - F. Ingreso Bolsa
+                          </label>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            <div>
+                              <label className="text-xs font-semibold text-gray-600 block mb-1">Desde</label>
+                              <input
+                                type="date"
+                                value={filtroFechaIngresoInicio}
+                                onChange={(e) => setFiltroFechaIngresoInicio(e.target.value)}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
+                              />
+                            </div>
+                            <div>
+                              <label className="text-xs font-semibold text-gray-600 block mb-1">Hasta</label>
+                              <input
+                                type="date"
+                                value={filtroFechaIngresoFin}
+                                onChange={(e) => setFiltroFechaIngresoFin(e.target.value)}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
+                              />
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* F. ASIGNACIÓN */}
+                        <div>
+                          <label className="text-xs font-semibold text-blue-600 block mb-2 flex items-center gap-1">
+                            📅 Rango de Fechas - F. Asignación
+                          </label>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            <div>
+                              <label className="text-xs font-semibold text-gray-600 block mb-1">Desde</label>
+                              <input
+                                type="date"
+                                value={filtroFechaAsignacionInicio}
+                                onChange={(e) => setFiltroFechaAsignacionInicio(e.target.value)}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                              />
+                            </div>
+                            <div>
+                              <label className="text-xs font-semibold text-gray-600 block mb-1">Hasta</label>
+                              <input
+                                type="date"
+                                value={filtroFechaAsignacionFin}
+                                onChange={(e) => setFiltroFechaAsignacionFin(e.target.value)}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
                       {/* Botón Limpiar */}
-                      <div className="flex justify-end pt-2">
+                      <div className="flex justify-end pt-3 border-t border-gray-200">
                         <button
                           onClick={() => {
                             setSearchTerm("");
@@ -2002,6 +2065,10 @@ CENATE de Essalud`;
                             setFiltroEspecialidad("todas");
                             setFiltroTipoCita("todas");
                             setFiltroEstado("todos");
+                            setFiltroFechaIngresoInicio("");
+                            setFiltroFechaIngresoFin("");
+                            setFiltroFechaAsignacionInicio("");
+                            setFiltroFechaAsignacionFin("");
                           }}
                           className="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 text-sm font-medium rounded-lg transition-colors"
                         >
