@@ -42,8 +42,18 @@ function FilaSolicitud({
         <span className="font-medium text-gray-900">{solicitud.descBolsa || solicitud.nombreBolsa || 'Sin clasificar'}</span>
       </td>
       <td className="px-1 py-1 text-sm text-gray-700">{solicitud.fechaPreferidaNoAtendida}</td>
-      <td className="px-1 py-1 text-sm font-semibold text-blue-600 whitespace-nowrap">{solicitud.tipoDocumento}-{solicitud.dni}</td>
-      <td className="px-1 py-1 text-sm text-gray-900 font-medium">{solicitud.sexo}-{solicitud.paciente} ({solicitud.edad})</td>
+      <td className="px-1 py-1 text-sm">
+        <div className="font-semibold text-blue-600">{solicitud.dni}</div>
+        <div className="text-xs text-gray-500 mt-0.5">{solicitud.tipoDocumento}</div>
+      </td>
+      <td className="px-1 py-1 text-sm">
+        <div className="font-semibold text-gray-900">{solicitud.paciente}</div>
+        <div className="text-xs text-gray-500 mt-0.5">
+          <span className="inline-block">{solicitud.sexo}</span>
+          <span className="mx-1">•</span>
+          <span className="inline-block">{solicitud.edad} años</span>
+        </div>
+      </td>
       <td className="px-1 py-1 text-sm text-gray-900 whitespace-nowrap">
         <div>{solicitud.telefono}</div>
         {solicitud.telefonoAlterno && solicitud.telefonoAlterno !== 'N/A' && (
