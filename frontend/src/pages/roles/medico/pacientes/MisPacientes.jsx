@@ -1393,13 +1393,22 @@ export default function MisPacientes() {
     setFechaAtencionSeleccionada(''); // Limpiar selección de fecha
   }, [filtroEstado, pacientes]);
 
-  // ✅ v1.62.0: Filtrar pacientes por fecha de atención si está seleccionada
+  // ✅ v1.65.0: Filtrar pacientes por fecha - DEFAULT HOY
+  // Si no hay fecha seleccionada, filtra solo HOY; si está seleccionada, filtra por esa fecha
   const pacientesFiltradosPorFecha = pacientesFiltrados.filter(p => {
-    if (!fechaAtencionSeleccionada) return true;
     if (!p.fechaAtencion) return false;
+
     // Extraer fecha en formato ISO: "2026-02-06T16:30:17.428Z" → "2026-02-06"
     const fechaPaciente = p.fechaAtencion.split('T')[0];
-    return fechaPaciente === fechaAtencionSeleccionada;
+
+    // Si hay fecha seleccionada, filtra por esa fecha
+    if (fechaAtencionSeleccionada) {
+      return fechaPaciente === fechaAtencionSeleccionada;
+    }
+
+    // Si NO hay fecha seleccionada, filtra por HOY
+    const hoy = new Date().toISOString().split('T')[0];
+    return fechaPaciente === hoy;
   });
 
   const toggleEnfermedad = (enfermedad) => {
@@ -1736,7 +1745,7 @@ export default function MisPacientes() {
             </div>
 
             {/* Selector de Fecha de Atención - 1 column */}
-            <div>
+            <div data-selector-atencion>
               <label className="block text-xs font-semibold text-gray-700 mb-2 uppercase tracking-wide">
                 <Calendar className="w-4 h-4 inline mr-2 text-red-500" />
                 Atención
@@ -1821,18 +1830,30 @@ export default function MisPacientes() {
 
         {/* Tabla de pacientes */}
         {pacientesFiltradosPorFecha.length === 0 ? (
-          <div className="bg-gradient-to-br from-blue-50 to-blue-100 border border-blue-200 shadow-sm rounded-lg p-12 text-center">
-            <div className="p-4 bg-blue-200 rounded-full inline-block mb-4">
-              <Calendar className="w-8 h-8 text-blue-600" strokeWidth={1.5} />
+          <div className="bg-gradient-to-br from-amber-50 to-orange-100 border border-amber-200 shadow-sm rounded-lg p-12 text-center">
+            <div className="p-4 bg-amber-200 rounded-full inline-block mb-4">
+              <AlertCircle className="w-8 h-8 text-amber-600" strokeWidth={1.5} />
             </div>
-            <p className="text-blue-900 font-semibold text-lg">
-              {filtroRangoFecha === 'hoy' ? 'Hoy no hay pacientes asignados' : 'No hay pacientes que coincidan con los filtros'}
+            <p className="text-amber-900 font-semibold text-lg">
+              {!fechaAtencionSeleccionada ? '❌ No hay pacientes asignados para hoy' : 'No hay pacientes en la fecha seleccionada'}
             </p>
-            <p className="text-blue-700 text-sm mt-2">
-              {filtroRangoFecha === 'hoy'
-                ? 'Es un buen momento para revisar tus pacientes ya atendidos. Puedes ajustar el filtro de fecha para ver tus consultas en días anteriores.'
-                : 'Intenta ajustando los filtros de búsqueda o cambia el rango de fechas.'}
+            <p className="text-amber-700 text-sm mt-2">
+              {!fechaAtencionSeleccionada
+                ? 'Para ver pacientes de otros días, abre el calendario en el filtro "ATENCIÓN" arriba.'
+                : 'Intenta seleccionando otra fecha o ajustando los filtros de búsqueda.'}
             </p>
+            {!fechaAtencionSeleccionada && (
+              <button
+                onClick={() => {
+                  // Scroll hasta el selector de fechas
+                  document.querySelector('[data-selector-atencion]')?.scrollIntoView({ behavior: 'smooth' });
+                }}
+                className="mt-4 px-6 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition-colors font-medium inline-flex items-center gap-2"
+              >
+                <Calendar className="w-4 h-4" />
+                Abrir calendario
+              </button>
+            )}
           </div>
         ) : (
           <div className="relative overflow-hidden bg-white border border-gray-200 shadow-sm rounded-lg">
