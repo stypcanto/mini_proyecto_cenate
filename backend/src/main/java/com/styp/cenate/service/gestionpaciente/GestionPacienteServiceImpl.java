@@ -755,7 +755,9 @@ public class GestionPacienteServiceImpl implements IGestionPacienteService {
             .condicion(condicion)  // ✅ v1.64.0: Usar condición procesada
             .observaciones(bolsa.getObservacionesMedicas())  // ✅ v1.46.0: Incluir observaciones médicas
             .fechaAsignacion(bolsa.getFechaAsignacion())  // ✅ v1.45.1: Incluir fecha de asignación
-            .fechaAtencion(bolsa.getFechaAtencion())  // ✅ v1.67.6: FIXED - Usar fecha_atencion (cuándo debe atender), NO fecha_atencion_medica
+            .fechaAtencion(bolsa.getFechaAtencion() != null
+                ? bolsa.getFechaAtencion().atStartOfDay().atOffset(java.time.ZoneOffset.of("-05:00"))
+                : null)  // ✅ v1.67.6: FIXED - Usar fecha_atencion (cuándo debe atender), NO fecha_atencion_medica
             .enfermedadCronica(enfermedadesCronicas)  // ✅ v1.50.0: Incluir enfermedades crónicas
             .tiempoInicioSintomas(tiempoSintomas)  // ✅ v1.64.0: Con valor por defecto "> 72 hrs."
             .consentimientoInformado(consentimiento)  // ✅ v1.64.0: Con valores por defecto según condición
