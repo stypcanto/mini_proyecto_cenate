@@ -183,7 +183,9 @@ export const obtenerSolicitudesPaginado = async (
   estado = null,
   tipoCita = null,
   asignacion = null,
-  busqueda = null
+  busqueda = null,
+  fechaInicio = null,  // ✅ v1.66.0: Filtro rango de fechas
+  fechaFin = null      // ✅ v1.66.0: Filtro rango de fechas
 ) => {
   try {
     // Construir query string dinámico
@@ -204,6 +206,8 @@ export const obtenerSolicitudesPaginado = async (
       params.append('asignacion', asignacion);
     }
     if (busqueda && busqueda.trim()) params.append('busqueda', busqueda.trim());
+    if (fechaInicio && fechaInicio.trim()) params.append('fechaInicio', fechaInicio.trim()); // ✅ v1.66.0
+    if (fechaFin && fechaFin.trim()) params.append('fechaFin', fechaFin.trim()); // ✅ v1.66.0
 
     const finalUrl = `${API_BASE_URL}/solicitudes?${params.toString()}`;
     console.log('🌐 URL de solicitud:', finalUrl);

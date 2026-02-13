@@ -344,15 +344,18 @@ public class SolicitudBolsaController {
             @RequestParam(required = false) String tipoCita,
             @RequestParam(required = false) String asignacion,
             @RequestParam(required = false) String busqueda,
+            @RequestParam(required = false) String fechaInicio,  // ✅ v1.66.0: Filtro rango fechas
+            @RequestParam(required = false) String fechaFin,     // ✅ v1.66.0: Filtro rango fechas
             @PageableDefault(size = 25, page = 0) Pageable pageable) {
 
-        // Si hay algún filtro, usar búsqueda con filtros (v2.6.0)
+        // Si hay algún filtro, usar búsqueda con filtros (v2.6.0 + v1.66.0: rango fechas)
         if (bolsa != null || macrorregion != null || red != null || ipress != null ||
-            especialidad != null || estado != null || tipoCita != null || asignacion != null || busqueda != null) {
-            log.info("🔍 Solicitud con filtros - Bolsa: {}, Macro: {}, Red: {}, IPRESS: {}, Especialidad: {}, Estado: {}, TipoCita: {}, Asignación: {}, Búsqueda: {}",
-                bolsa, macrorregion, red, ipress, especialidad, estado, tipoCita, asignacion, busqueda);
+            especialidad != null || estado != null || tipoCita != null || asignacion != null || busqueda != null ||
+            fechaInicio != null || fechaFin != null) {
+            log.info("🔍 Solicitud con filtros - Bolsa: {}, Macro: {}, Red: {}, IPRESS: {}, Especialidad: {}, Estado: {}, TipoCita: {}, Asignación: {}, Búsqueda: {}, FechaInicio: {}, FechaFin: {}",
+                bolsa, macrorregion, red, ipress, especialidad, estado, tipoCita, asignacion, busqueda, fechaInicio, fechaFin);
             return ResponseEntity.ok(solicitudBolsaService.listarConFiltros(
-                    bolsa, macrorregion, red, ipress, especialidad, estado, tipoCita, asignacion, busqueda, pageable));
+                    bolsa, macrorregion, red, ipress, especialidad, estado, tipoCita, asignacion, busqueda, fechaInicio, fechaFin, pageable));
         }
 
         // Sin filtros, listar todas (comportamiento anterior)

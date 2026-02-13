@@ -92,6 +92,8 @@ export default function Solicitudes() {
   const [filtroEstado, setFiltroEstado] = useState('todos'); // Mostrar todos los estados por defecto
   const [filtroTipoCita, setFiltroTipoCita] = useState('todas');
   const [filtroAsignacion, setFiltroAsignacion] = useState('todos');  // ✅ v1.42.0: Filtro asignación (cards clickeables)
+  const [filtroFechaInicio, setFiltroFechaInicio] = useState('');     // ✅ v1.66.0: Filtro rango de fechas - inicio
+  const [filtroFechaFin, setFiltroFechaFin] = useState('');           // ✅ v1.66.0: Filtro rango de fechas - fin
   const [cardSeleccionado, setCardSeleccionado] = useState(null);     // ✅ v1.42.0: Rastrear card activo
   const [selectedRows, setSelectedRows] = useState(new Set());
   const [currentPage, setCurrentPage] = useState(1);
@@ -312,11 +314,12 @@ export default function Solicitudes() {
     // El usuario cambió un filtro: recargar con filtros
     console.log('🔍 Filtros cambiados - Reloading solicitudes con filtros:', {
       filtroBolsa, filtroMacrorregion, filtroRed, filtroIpress,
-      filtroEspecialidad, filtroEstado, filtroTipoCita, filtroAsignacion, searchTerm
+      filtroEspecialidad, filtroEstado, filtroTipoCita, filtroAsignacion, searchTerm,
+      filtroFechaInicio, filtroFechaFin
     });
     setCurrentPage(1); // Reset a página 1
     cargarSolicitudesConFiltros(); // Cargar CON FILTROS desde el backend
-  }, [filtroBolsa, filtroMacrorregion, filtroRed, filtroIpress, filtroEspecialidad, filtroEstado, filtroTipoCita, filtroAsignacion, searchTerm]);
+  }, [filtroBolsa, filtroMacrorregion, filtroRed, filtroIpress, filtroEspecialidad, filtroEstado, filtroTipoCita, filtroAsignacion, searchTerm, filtroFechaInicio, filtroFechaFin]);
 
   // ============================================================================
   // 📦 EFFECT 4: Cargar SIGUIENTE PÁGINA cuando cambia currentPage (v2.5.2 - Server-side pagination)
@@ -609,12 +612,14 @@ export default function Solicitudes() {
       filtroEstado,
       filtroTipoCita,
       filtroAsignacion,
+      filtroFechaInicio,
+      filtroFechaFin,
       searchTerm
     });
     setIsLoading(true);
     setErrorMessage('');
     try {
-      // Llamar al backend CON parámetros de filtro (v2.6.0 + v1.42.0: asignación)
+      // Llamar al backend CON parámetros de filtro (v2.6.0 + v1.42.0: asignación + v1.66.0: rango fechas)
       const asignacionFinal = filtroAsignacion === 'todos' ? null : filtroAsignacion;
       console.log('✅ asignacionFinal para enviar:', asignacionFinal);
 
@@ -629,7 +634,9 @@ export default function Solicitudes() {
         filtroEstado === 'todos' ? null : filtroEstado,
         filtroTipoCita === 'todas' ? null : filtroTipoCita,
         asignacionFinal,
-        searchTerm.trim() || null
+        searchTerm.trim() || null,
+        filtroFechaInicio || null,
+        filtroFechaFin || null
       );
 
       console.log('📥 Respuesta con filtros recibida:', response);
@@ -772,7 +779,9 @@ export default function Solicitudes() {
         filtroEstado === 'todos' ? null : filtroEstado,
         filtroTipoCita === 'todas' ? null : filtroTipoCita,
         filtroAsignacion === 'todos' ? null : filtroAsignacion,
-        searchTerm.trim() || null
+        searchTerm.trim() || null,
+        filtroFechaInicio || null,
+        filtroFechaFin || null
       );
       console.log('📥 Respuesta página recibida:', response);
 
@@ -1925,9 +1934,33 @@ export default function Solicitudes() {
               setFiltroEspecialidad('todas');
               setFiltroEstado('todos');
               setFiltroTipoCita('todas');
+              setFiltroFechaInicio('');
+              setFiltroFechaFin('');
               setSearchTerm('');
             }}
           />
+          </div>
+
+          {/* ✅ v1.66.0: FILTRO RANGO DE FECHAS */}
+          <div className="flex gap-4 items-end mb-4 px-4">
+            <div className="flex-1">
+              <label className="block text-sm font-semibold text-gray-700 mb-1">Fecha Inicio</label>
+              <input
+                type="date"
+                value={filtroFechaInicio}
+                onChange={(e) => setFiltroFechaInicio(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+            <div className="flex-1">
+              <label className="block text-sm font-semibold text-gray-700 mb-1">Fecha Fin</label>
+              <input
+                type="date"
+                value={filtroFechaFin}
+                onChange={(e) => setFiltroFechaFin(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
           </div>
 
           {/* ⚠️ Mensaje de error/aviso de especialidades (v1.42.0) */}
