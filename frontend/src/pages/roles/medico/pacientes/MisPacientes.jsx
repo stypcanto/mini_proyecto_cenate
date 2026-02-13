@@ -1473,8 +1473,8 @@ export default function MisPacientes() {
             }}
             className={`kpi-card-animate kpi-card-hover text-left rounded-xl p-7 overflow-hidden relative group ${
               filtroEstado === ''
-                ? 'bg-gradient-to-br from-slate-700 to-slate-900 shadow-xl'
-                : 'bg-gradient-to-br from-slate-500 to-slate-700 shadow-lg hover:from-slate-600 hover:to-slate-800'
+                ? 'bg-gradient-to-br from-slate-600 to-slate-700 shadow-lg'
+                : 'bg-gradient-to-br from-slate-400 to-slate-600 shadow-md hover:from-slate-500 hover:to-slate-700'
             } text-white border-0 cursor-pointer`}
           >
             <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16 group-hover:scale-150 transition-transform duration-500"></div>
@@ -1496,8 +1496,8 @@ export default function MisPacientes() {
             }}
             className={`kpi-card-animate kpi-card-hover text-left rounded-xl p-7 overflow-hidden relative group ${
               filtroEstado === 'Atendido'
-                ? 'bg-gradient-to-br from-emerald-600 to-emerald-800 shadow-xl'
-                : 'bg-gradient-to-br from-emerald-500 to-emerald-700 shadow-lg hover:from-emerald-600 hover:to-emerald-800'
+                ? 'bg-gradient-to-br from-teal-600 to-teal-700 shadow-lg'
+                : 'bg-gradient-to-br from-teal-500 to-teal-600 shadow-md hover:from-teal-600 hover:to-teal-700'
             } text-white border-0 cursor-pointer`}
           >
             <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16 group-hover:scale-150 transition-transform duration-500"></div>
@@ -1521,8 +1521,8 @@ export default function MisPacientes() {
             }}
             className={`kpi-card-animate kpi-card-hover text-left rounded-xl p-7 overflow-hidden relative group ${
               filtroEstado === 'Pendiente'
-                ? 'bg-gradient-to-br from-amber-600 to-amber-800 shadow-xl'
-                : 'bg-gradient-to-br from-amber-500 to-amber-700 shadow-lg hover:from-amber-600 hover:to-amber-800'
+                ? 'bg-gradient-to-br from-amber-600 to-amber-700 shadow-lg'
+                : 'bg-gradient-to-br from-amber-500 to-amber-600 shadow-md hover:from-amber-600 hover:to-amber-700'
             } text-white border-0 cursor-pointer`}
           >
             <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16 group-hover:scale-150 transition-transform duration-500"></div>
@@ -1546,8 +1546,8 @@ export default function MisPacientes() {
             }}
             className={`kpi-card-animate kpi-card-hover text-left rounded-xl p-7 overflow-hidden relative group ${
               filtroEstado === 'Deserción'
-                ? 'bg-gradient-to-br from-rose-600 to-rose-800 shadow-xl'
-                : 'bg-gradient-to-br from-rose-500 to-rose-700 shadow-lg hover:from-rose-600 hover:to-rose-800'
+                ? 'bg-gradient-to-br from-red-600 to-red-700 shadow-lg'
+                : 'bg-gradient-to-br from-red-500 to-red-600 shadow-md hover:from-red-600 hover:to-red-700'
             } text-white border-0 cursor-pointer`}
           >
             <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16 group-hover:scale-150 transition-transform duration-500"></div>
@@ -1838,7 +1838,7 @@ export default function MisPacientes() {
           <div className="relative overflow-hidden bg-white border border-gray-200 shadow-sm rounded-lg">
             <div className="overflow-x-auto relative">
               <table className="w-full text-sm text-left">
-                <thead className="text-xs font-semibold text-white uppercase tracking-wider bg-[#0A5BA9] relative z-20">
+                <thead className="text-xs font-semibold text-white uppercase tracking-wider bg-slate-700 relative z-20">
                   <tr>
                     <th className="px-2 py-1 text-left">Paciente</th>
                     <th className="px-2 py-1 text-left">Teléfono</th>
@@ -1870,7 +1870,7 @@ export default function MisPacientes() {
                 <tbody className="divide-y divide-gray-200">
                   {pacientesFiltradosPorFecha.map((paciente, idx) => (
                     <tr key={idx} className={`transition-colors duration-150 ${
-                      paciente.esUrgente ? 'bg-red-100 hover:bg-red-200' : paciente.condicion === 'Atendido' ? 'bg-emerald-100 hover:bg-emerald-200' : paciente.condicion === 'Deserción' ? 'bg-red-50 hover:bg-red-100' : paciente.condicion === 'Pendiente' ? 'bg-amber-50 hover:bg-amber-100' : 'bg-white hover:bg-gray-50'
+                      idx % 2 === 0 ? 'bg-white hover:bg-gray-50' : 'bg-gray-50 hover:bg-gray-100'
                     }`}>
                       {/* Paciente: Nombre en bold + DNI abajo en gris + Ojo para ver detalles */}
                       <td className="px-2 py-1">
