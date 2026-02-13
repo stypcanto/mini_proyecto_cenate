@@ -8,7 +8,8 @@ import teleekgService from "../../services/teleekgService";
 import gestionPacientesService from "../../services/gestionPacientesService";
 import CrearAseguradoForm from "./CrearAseguradoForm";
 
-const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB por archivo
+const MAX_TOTAL_SIZE = 10 * 1024 * 1024; // 10MB total para todos los archivos
 const MAX_COMPRESSED_SIZE = 1 * 1024 * 1024; // 1MB target for compression
 const ALLOWED_TYPES = ["image/jpeg", "image/png"];
 // ✅ v1.100.3: Reducido MIN_IMAGENES de 4 a 3 por requerimiento del usuario
@@ -287,6 +288,11 @@ export default function UploadImagenEKG({ onSuccess, onUploadSuccess, isWorkspac
     return true;
   };
 
+  // Calcular tamaño total actual de archivos
+  const getTotalSize = (listaArchivos) => {
+    return listaArchivos.reduce((sum, f) => sum + (f.size || 0), 0);
+  };
+
   const agregarArchivos = async (nuevosArchivos) => {
     const archivosValidos = [];
     const nuevosPreviews = [];
@@ -306,6 +312,15 @@ export default function UploadImagenEKG({ onSuccess, onUploadSuccess, isWorkspac
         try {
           // Comprimir imagen a JPEG max 1MB
           const comprimido = await comprimirImagen(file);
+
+          // Validar que no exceda el límite total de 10MB
+          const totalActual = getTotalSize(archivos) + getTotalSize(archivosValidos);
+          if (totalActual + comprimido.size > MAX_TOTAL_SIZE) {
+            const restante = MAX_TOTAL_SIZE - totalActual;
+            toast.error(`Límite total de 10MB excedido. Espacio restante: ${(restante / 1024 / 1024).toFixed(1)}MB`);
+            break;
+          }
+
           archivosValidos.push(comprimido);
           contador++;
 
@@ -404,6 +419,12 @@ export default function UploadImagenEKG({ onSuccess, onUploadSuccess, isWorkspac
 
     if (archivos.length > MAX_IMAGENES) {
       toast.error(`No puede exceder ${MAX_IMAGENES} imágenes`);
+      return false;
+    }
+
+    const totalSize = getTotalSize(archivos);
+    if (totalSize > MAX_TOTAL_SIZE) {
+      toast.error(`El tamaño total (${(totalSize / 1024 / 1024).toFixed(1)}MB) excede el límite de 10MB. Reduce el número de imágenes.`);
       return false;
     }
 
@@ -756,7 +777,7 @@ export default function UploadImagenEKG({ onSuccess, onUploadSuccess, isWorkspac
             <p className={`text-sm font-bold ${pacienteEncontrado && !loading ? 'text-blue-900' : 'text-gray-500'}`}>
               {dragActive ? '¡Suelta aquí!' : '📂 Arrastra o haz clic'}
             </p>
-            <p className="text-xs text-gray-600 mt-1">JPEG, PNG • máx 5MB • {MIN_IMAGENES}-{MAX_IMAGENES} fotos</p>
+            <p className="text-xs text-gray-600 mt-1">JPEG, PNG • máx 5MB c/u • 10MB total • {MIN_IMAGENES}-{MAX_IMAGENES} fotos</p>
           </div>
 
           {/* Image Grid */}
@@ -796,6 +817,31 @@ export default function UploadImagenEKG({ onSuccess, onUploadSuccess, isWorkspac
                 );
                 })}
               </div>
+              {/* Indicador de tamaño total */}
+              {(() => {
+                const totalSizeBytes = getTotalSize(archivos);
+                const totalSizeMB = totalSizeBytes / 1024 / 1024;
+                const porcentaje = Math.min((totalSizeBytes / MAX_TOTAL_SIZE) * 100, 100);
+                const excedido = totalSizeBytes > MAX_TOTAL_SIZE;
+                return (
+                  <div className="mb-1">
+                    <div className="flex items-center justify-between text-xs mb-0.5">
+                      <span className={`font-semibold ${excedido ? 'text-red-700' : 'text-gray-600'}`}>
+                        {totalSizeMB.toFixed(1)}MB / 10MB
+                      </span>
+                      {excedido && <span className="text-red-600 font-bold">Excedido</span>}
+                    </div>
+                    <div className="w-full bg-gray-200 rounded-full h-1.5 overflow-hidden">
+                      <div
+                        className={`h-full transition-all duration-300 rounded-full ${
+                          excedido ? 'bg-red-500' : porcentaje > 80 ? 'bg-yellow-500' : 'bg-green-500'
+                        }`}
+                        style={{ width: `${porcentaje}%` }}
+                      />
+                    </div>
+                  </div>
+                );
+              })()}
             </div>
           )}
         </div>
@@ -1112,6 +1158,7 @@ export default function UploadImagenEKG({ onSuccess, onUploadSuccess, isWorkspac
               <li><strong>Mínimo {MIN_IMAGENES}</strong> imágenes requeridas</li>
               <li><strong>Máximo {MAX_IMAGENES}</strong> imágenes permitidas</li>
               <li>JPEG y PNG (máximo 5MB cada uno)</li>
+              <li><strong>Tamaño total máximo: 10MB</strong></li>
             </ul>
           </div>
         </div>

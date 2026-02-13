@@ -24,6 +24,9 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionDefinition;
+import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.web.multipart.MultipartFile;
 import jakarta.annotation.PostConstruct;
 
@@ -85,6 +88,9 @@ public class TeleECGService {
 
     @Autowired
     private TipoBolsaRepository tipoBolsaRepository;
+
+    @Autowired
+    private PlatformTransactionManager transactionManager;
 
     /**
      * Subir nueva imagen ECG
@@ -1175,94 +1181,87 @@ public class TeleECGService {
     /**
      * 🆕 v1.58.0: Crear bolsa automática en dim_solicitud_bolsa para CENATE
      * Permite que coordinadores/médicos vean el ECG en su bandeja de trabajo
-     * ✅ v1.108.1: REQUIRES_NEW para evitar que fallos en bolsa afecten la transacción principal de ECG
+     * ✅ v1.108.2: Usa TransactionTemplate con REQUIRES_NEW programático
+     *    NOTA: @Transactional(REQUIRES_NEW) NO funciona en métodos private ni en self-invocation
+     *    (Spring AOP proxy-based ignora anotaciones en métodos privados).
+     *    TransactionTemplate sí funciona correctamente en cualquier contexto.
      */
-    @Transactional(propagation = org.springframework.transaction.annotation.Propagation.REQUIRES_NEW)
     private void crearBolsaTeleECG(TeleECGImagen imagen, Asegurado asegurado, Ipress ipress) {
         try {
-            log.info("🆕 Creando bolsa TeleECG para paciente: {}", imagen.getNumDocPaciente());
+            TransactionTemplate txTemplate = new TransactionTemplate(transactionManager);
+            txTemplate.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
+            txTemplate.execute(status -> {
+                log.info("🆕 Creando bolsa TeleECG para paciente: {}", imagen.getNumDocPaciente());
 
-            // 1. Verificar si ya existe una bolsa activa para este paciente
-            var bolsasExistentes = solicitudBolsaRepository.findByPacienteDniAndActivoTrue(
-                asegurado.getDocPaciente());
-            if (!bolsasExistentes.isEmpty()) {
-                log.info("ℹ️ Bolsa TeleECG ya existe para paciente: {}", imagen.getNumDocPaciente());
-                return;
-            }
-
-            // 2. Obtener tipo de bolsa TELEECG
-            TipoBolsa tipoBolsa = tipoBolsaRepository.findByCodTipoBolsa("BOLSA_TELEECG")
-                .orElseThrow(() -> new RuntimeException("Tipo de bolsa TELEECG no encontrado. Ejecutar migración V4_0_0"));
-
-            // 3. Generar número único de solicitud
-            String numeroSolicitud = "TEL-" + System.currentTimeMillis();
-
-            // 4. Obtener coordinador responsable del IPRESS (si existe)
-            // TODO v1.61.0: Implementar búsqueda de coordinador por IPRESS cuando esté disponible
-            Long responsableGestoraId = null;
-            try {
-                // Placeholder: Sin coordinador asignado por ahora
-                log.info("ℹ️ Bolsa TeleECG sin coordinador responsable asignado aún");
-            } catch (Exception e) {
-                log.warn("⚠️ Error obteniendo coordinador para IPRESS: {}", ipress.getCodIpress());
-            }
-
-            // 5. Crear bolsa (estado PENDIENTE)
-            SolicitudBolsa bolsa = SolicitudBolsa.builder()
-                .numeroSolicitud(numeroSolicitud)
-                .pacienteId(asegurado.getPkAsegurado())
-                .pacienteDni(asegurado.getDocPaciente())
-                .pacienteNombre(asegurado.getPaciente() != null ? asegurado.getPaciente() : "N/A")
-                .idBolsa(tipoBolsa.getIdTipoBolsa())
-                .idServicio(1L) // Servicio genérico para TeleECG
-                .codigoAdscripcion(ipress.getCodIpress())
-                .idIpress(ipress.getIdIpress())
-                .estado("PENDIENTE")
-                .estadoGestionCitasId(1L) // PENDIENTE
-                .responsableGestoraId(responsableGestoraId)
-                .activo(true)
-                // v1.60.0: Completar datos del paciente automáticamente desde asegurados
-                .tipoDocumento("DNI")
-                .pacienteSexo(asegurado.getSexo())
-                .pacienteTelefono(asegurado.getTelCelular() != null ? asegurado.getTelCelular() : asegurado.getTelFijo())
-                .fechaNacimiento(asegurado.getFecnacimpaciente())
-                // v1.60.0: Asignar tipo de cita por defecto "Voluntaria" para bolsas TeleECG
-                .tipoCita("Voluntaria")
-                .build();
-
-            // 6. Guardar referencia a imagen TeleECG (nuevo campo v4.0.0)
-            // bolsa.setIdTeleecgImagen(imagen.getIdImagen()); // Si la columna existe
-
-            solicitudBolsaRepository.save(bolsa);
-            log.info("✅ Bolsa TeleECG creada: ID={}, DNI={}", bolsa.getIdSolicitud(), imagen.getNumDocPaciente());
-
-            // 7. v1.58.2: Enviar notificación email al coordinador
-            // NOTA: Usuario no tiene email en BD, se envía solo log por ahora
-            try {
-                if (responsableGestoraId != null) {
-                    var coordOpt = usuarioRepository.findById(responsableGestoraId);
-                    if (coordOpt.isPresent()) {
-                        Usuario coordinador = coordOpt.get();
-                        log.info("📧 ECG cargado - Notificar a coordinador: {}", coordinador.getNameUser());
-                        // TODO v1.61.0: Implementar envío de email cuando Usuario tenga campo email
-                        // emailService.enviarNotificacionECGNuevo(...);
-                    }
+                // 1. Verificar si ya existe una bolsa activa para este paciente
+                var bolsasExistentes = solicitudBolsaRepository.findByPacienteDniAndActivoTrue(
+                    asegurado.getDocPaciente());
+                if (!bolsasExistentes.isEmpty()) {
+                    log.info("ℹ️ Bolsa TeleECG ya existe para paciente: {}", imagen.getNumDocPaciente());
+                    return null;
                 }
-            } catch (Exception e) {
-                log.warn("⚠️ Error procesando notificación ECG (continuando): {}", e.getMessage());
-            }
 
-            // Auditoría
-            auditLogService.registrarEvento(
-                "SYSTEM",
-                "CREATE_BOLSA_TELEECG",
-                "TELEEKGS",
-                String.format("Bolsa TeleECG creada - Solicitud: %s, Paciente: %s, Urgente: %s",
-                    numeroSolicitud, imagen.getNumDocPaciente(), imagen.getEsUrgente()),
-                "INFO",
-                "SUCCESS"
-            );
+                // 2. Obtener tipo de bolsa TELEECG
+                TipoBolsa tipoBolsa = tipoBolsaRepository.findByCodTipoBolsa("BOLSA_TELEECG")
+                    .orElseThrow(() -> new RuntimeException("Tipo de bolsa TELEECG no encontrado. Ejecutar migración V4_0_0"));
 
+                // 3. Generar número único de solicitud
+                String numeroSolicitud = "TEL-" + System.currentTimeMillis();
+
+                // 4. Obtener coordinador responsable del IPRESS (si existe)
+                Long responsableGestoraId = null;
+                log.info("ℹ️ Bolsa TeleECG sin coordinador responsable asignado aún");
+
+                // 5. Crear bolsa (estado PENDIENTE)
+                SolicitudBolsa bolsa = SolicitudBolsa.builder()
+                    .numeroSolicitud(numeroSolicitud)
+                    .pacienteId(asegurado.getPkAsegurado())
+                    .pacienteDni(asegurado.getDocPaciente())
+                    .pacienteNombre(asegurado.getPaciente() != null ? asegurado.getPaciente() : "N/A")
+                    .idBolsa(tipoBolsa.getIdTipoBolsa())
+                    .idServicio(1L)
+                    .codigoAdscripcion(ipress.getCodIpress())
+                    .idIpress(ipress.getIdIpress())
+                    .estado("PENDIENTE")
+                    .estadoGestionCitasId(1L)
+                    .responsableGestoraId(responsableGestoraId)
+                    .activo(true)
+                    .tipoDocumento("DNI")
+                    .pacienteSexo(asegurado.getSexo())
+                    .pacienteTelefono(asegurado.getTelCelular() != null ? asegurado.getTelCelular() : asegurado.getTelFijo())
+                    .fechaNacimiento(asegurado.getFecnacimpaciente())
+                    .tipoCita("Voluntaria")
+                    .build();
+
+                solicitudBolsaRepository.save(bolsa);
+                log.info("✅ Bolsa TeleECG creada: ID={}, DNI={}", bolsa.getIdSolicitud(), imagen.getNumDocPaciente());
+
+                // Notificación email al coordinador
+                try {
+                    if (responsableGestoraId != null) {
+                        var coordOpt = usuarioRepository.findById(responsableGestoraId);
+                        if (coordOpt.isPresent()) {
+                            Usuario coordinador = coordOpt.get();
+                            log.info("📧 ECG cargado - Notificar a coordinador: {}", coordinador.getNameUser());
+                        }
+                    }
+                } catch (Exception e) {
+                    log.warn("⚠️ Error procesando notificación ECG (continuando): {}", e.getMessage());
+                }
+
+                // Auditoría
+                auditLogService.registrarEvento(
+                    "SYSTEM",
+                    "CREATE_BOLSA_TELEECG",
+                    "TELEEKGS",
+                    String.format("Bolsa TeleECG creada - Solicitud: %s, Paciente: %s, Urgente: %s",
+                        numeroSolicitud, imagen.getNumDocPaciente(), imagen.getEsUrgente()),
+                    "INFO",
+                    "SUCCESS"
+                );
+
+                return null;
+            });
         } catch (Exception e) {
             // Log the error but don't rethrow - bolsa creation is not critical
             log.warn("⚠️ Error creando bolsa TeleECG (continuando): {}", e.getMessage());
@@ -1271,39 +1270,42 @@ public class TeleECGService {
 
     /**
      * Registrar evento en auditoría
+     * ✅ v1.108.2: Usa TransactionTemplate con REQUIRES_NEW programático
+     *    NOTA: @Transactional(REQUIRES_NEW) NO funciona en métodos private ni en self-invocation
      */
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
     private void registrarAuditoria(TeleECGImagen imagen, Long idUsuario, String accion,
                                    String ipCliente, String resultado) {
         try {
-            TeleECGAuditoria auditoria = new TeleECGAuditoria();
-            auditoria.setImagen(imagen);
+            TransactionTemplate txTemplate = new TransactionTemplate(transactionManager);
+            txTemplate.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
+            txTemplate.execute(status -> {
+                TeleECGAuditoria auditoria = new TeleECGAuditoria();
+                auditoria.setImagen(imagen);
 
-            // ✅ FIX: Asegurar que siempre hay un usuario (id_usuario es NOT NULL en BD)
-            if (idUsuario != null) {
-                var usuarioOpt = usuarioRepository.findById(idUsuario);
-                if (usuarioOpt.isPresent()) {
-                    Usuario usuario = usuarioOpt.get();
-                    auditoria.setUsuario(usuario);
-                    auditoria.setNombreUsuario(usuario.getNameUser());
+                if (idUsuario != null) {
+                    var usuarioOpt = usuarioRepository.findById(idUsuario);
+                    if (usuarioOpt.isPresent()) {
+                        Usuario usuario = usuarioOpt.get();
+                        auditoria.setUsuario(usuario);
+                        auditoria.setNombreUsuario(usuario.getNameUser());
+                    } else {
+                        log.warn("⚠️ Usuario no encontrado para auditoría: {}", idUsuario);
+                        return null;
+                    }
                 } else {
-                    log.warn("⚠️ Usuario no encontrado para auditoría: {}", idUsuario);
-                    return; // No registrar si el usuario no existe
+                    log.warn("⚠️ Sin usuario para auditoría, no registrando");
+                    return null;
                 }
-            } else {
-                log.warn("⚠️ Sin usuario para auditoría, no registrando");
-                return; // No registrar si no hay usuario
-            }
 
-            auditoria.setAccion(accion);
-            auditoria.setResultado(resultado);
-            auditoria.setIpUsuario(ipCliente);
-            auditoria.setDescripcion(String.format("Acción: %s en imagen ECG ID: %d", accion, imagen.getIdImagen()));
+                auditoria.setAccion(accion);
+                auditoria.setResultado(resultado);
+                auditoria.setIpUsuario(ipCliente);
+                auditoria.setDescripcion(String.format("Acción: %s en imagen ECG ID: %d", accion, imagen.getIdImagen()));
 
-            teleECGAuditoriaRepository.save(auditoria);
-
-            log.debug("📝 Auditoría registrada: {} - {}", accion, resultado);
-
+                teleECGAuditoriaRepository.save(auditoria);
+                log.debug("📝 Auditoría registrada: {} - {}", accion, resultado);
+                return null;
+            });
         } catch (Exception e) {
             log.warn("⚠️ Error registrando auditoría", e);
         }
