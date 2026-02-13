@@ -460,7 +460,7 @@ select * from dim_solicitud_bolsa where paciente_dni in ('09201701', '06630022')
 
 
 select dsb.id_solicitud , dsb.paciente_dni , dsb.fecha_solicitud, dsb.source_last_seen_at , dsb.fecha_cambio_estado , dsb.fecha_actualizacion  
-from dim_solicitud_bolsa dsb  where dsb.paciente_dni in ('09201701', '06630022');
+from dim_solicitud_bolsa dsb  where dsb.paciente_dni in ('09201701', '06630022', '70073164');
 
 
 
@@ -474,7 +474,17 @@ update dim_solicitud_bolsa set source_last_seen_at ='2026-02-13 11:40:05.000 -05
 
 -- semaforo reprogramacion 
 -- considerar la fecha para el semaforo
--- 
+-- fecha Solicitud - fechaActual => EN ESTADO PENDIENTE => REPROGRAMACION 
+
+
+select * from dim_estados_gestion_citas degc ;
+
+-- cambiar en la tabla de axel . que se muestra el codigo de la cita, no considerar la descripcion .
+-- Al costado agregar semaforizacion(lado derecho de Estado)
+
+
+
+
 
 
 

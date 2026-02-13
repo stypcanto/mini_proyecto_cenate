@@ -2227,13 +2227,11 @@ CENATE de Essalud`;
                             }`}
                           />
                         </td>
-                        {/* F. INGRESO BOLSA */}
+                        {/* F. INGRESO BOLSA - Siempre usar fecha_solicitud del API mi-bandeja */}
                         <td className="px-3 py-2">
                           {(() => {
-                            // Para RECITA e INTERCONSULTA, usar fechaSolicitud si fechaCambioEstado está vacío
-                            const fechaMostrar = (paciente.tipoCita === "RECITA" || paciente.tipoCita === "INTERCONSULTA")
-                              ? (paciente.fechaSolicitud || paciente.fechaCambioEstado)
-                              : paciente.fechaCambioEstado;
+                            // v1.68.1: Siempre usar fechaSolicitud (devuelto por API mi-bandeja)
+                            const fechaMostrar = paciente.fechaSolicitud;
 
                             return fechaMostrar && fechaMostrar !== "-" ? (
                               <div className="bg-orange-50 rounded p-1.5 border-l-4 border-orange-600">
