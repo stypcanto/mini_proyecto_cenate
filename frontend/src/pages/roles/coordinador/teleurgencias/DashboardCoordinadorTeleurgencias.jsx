@@ -61,7 +61,7 @@ export default function DashboardCoordinadorTeleurgencias() {
   const cargarMedicos = async () => {
     try {
       setCargando(true);
-      const response = await apiClient.get('/gestion-pacientes/coordinador/medicos-teleurgencias');
+      const response = await apiClient.get('/gestion-pacientes/coordinador/medicos-teleurgencias', true);
       setMedicos(response);
       setFiltrado(response);
       toast.success('Datos sincronizados');

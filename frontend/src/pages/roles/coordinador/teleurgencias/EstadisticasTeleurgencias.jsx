@@ -48,7 +48,7 @@ export default function EstadisticasTeleurgencias() {
     try {
       setCargando(true);
       // Usar endpoint que ya tiene permisos configurados
-      const response = await apiClient.get('/gestion-pacientes/coordinador/medicos-teleurgencias');
+      const response = await apiClient.get('/gestion-pacientes/coordinador/medicos-teleurgencias', true);
 
       // Transformar datos al formato esperado
       const datosProcesados = Array.isArray(response) ? response.map(m => ({
@@ -118,7 +118,7 @@ export default function EstadisticasTeleurgencias() {
     setCargandoPacientes(true);
     try {
       // Obtener pacientes de este médico desde el backend
-      const response = await apiClient.get(`/gestion-pacientes/medico/${medico.username}/pacientes`);
+      const response = await apiClient.get(`/gestion-pacientes/medico/${medico.username}/pacientes`, true);
       setPacientesMedico(Array.isArray(response) ? response : []);
     } catch (error) {
       console.error('Error cargando pacientes del médico:', error);
