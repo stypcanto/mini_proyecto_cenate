@@ -1813,9 +1813,9 @@ export default function Solicitudes() {
 
           {/* Filtros - Collapse/Expand con animación suave y contenedor visual mejorado */}
           <div className={`overflow-hidden transition-all duration-500 ease-in-out ${
-            expandFiltros ? 'max-h-[600px] opacity-100' : 'max-h-0 opacity-0'
+            expandFiltros ? 'max-h-[450px] opacity-100' : 'max-h-0 opacity-0'
           }`}>
-          <div className="bg-gradient-to-br from-gray-50 to-gray-100 border border-gray-200 rounded-xl p-3 shadow-sm mb-4">
+          <div className="bg-gradient-to-br from-gray-50 to-gray-100 border border-gray-200 rounded-lg p-2 shadow-sm">
           <ListHeader
             title=""
             showTitle={false}
@@ -1942,30 +1942,30 @@ export default function Solicitudes() {
           </div>
 
           {/* ✅ v1.66.0: FILTRO RANGO DE FECHAS */}
-          <div className="flex gap-4 items-end mb-4 px-4">
+          <div className="flex gap-2 items-end px-2 py-2">
             <div className="flex-1">
-              <label className="block text-sm font-semibold text-gray-700 mb-1">Fecha Inicio</label>
+              <label className="block text-xs font-semibold text-gray-600 mb-0.5">F. Inicio</label>
               <input
                 type="date"
                 value={filtroFechaInicio}
                 onChange={(e) => setFiltroFechaInicio(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-2 py-1.5 border border-gray-300 rounded text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
             <div className="flex-1">
-              <label className="block text-sm font-semibold text-gray-700 mb-1">Fecha Fin</label>
+              <label className="block text-xs font-semibold text-gray-600 mb-0.5">F. Fin</label>
               <input
                 type="date"
                 value={filtroFechaFin}
                 onChange={(e) => setFiltroFechaFin(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-2 py-1.5 border border-gray-300 rounded text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
           </div>
 
           {/* ⚠️ Mensaje de error/aviso de especialidades (v1.42.0) */}
           {errorEspecialidades && (
-            <div className={`px-4 py-2 rounded-lg text-sm font-medium mb-3 ${
+            <div className={`px-2 py-1 rounded text-xs font-medium mb-1 ${
               errorEspecialidades.includes('Usando')
                 ? 'bg-orange-50 text-orange-700 border border-orange-200'
                 : 'bg-red-50 text-red-700 border border-red-200'
@@ -1978,7 +1978,7 @@ export default function Solicitudes() {
           </div>
 
           {/* 📌 ESPACIADO: Separación entre filtros y tabla */}
-          <div className="h-4"></div>
+          <div className="h-2"></div>
 
           {/* Botones de acción: asignar gestora, descargar, cambiar bolsa, limpiar y borrar */}
           {(selectedRows.size > 0 || solicitudes.length > 0) && (
