@@ -550,7 +550,13 @@ export default function Solicitudes() {
             tipoCita: solicitud.tipo_cita ? solicitud.tipo_cita.toUpperCase() : 'N/A',
             codigoIpress: solicitud.codigo_adscripcion || 'N/A',
             // ============================================================================
-            // 📋 AUDITORÍA: CAMBIOS DE ESTADO (v3.3.1)
+            // � F. INGRESO BOLSA - Campo para FilaSolicitud.jsx (v1.68.1)
+            // ============================================================================
+            fechaSolicitud: solicitud.fecha_solicitud
+              ? new Date(solicitud.fecha_solicitud).toLocaleString('es-PE')
+              : null,
+            // ============================================================================
+            // �📋 AUDITORÍA: CAMBIOS DE ESTADO (v3.3.1)
             // ============================================================================
             fechaCambioEstado: solicitud.fecha_cambio_estado
               ? new Date(solicitud.fecha_cambio_estado).toLocaleString('es-PE')
@@ -716,7 +722,13 @@ export default function Solicitudes() {
               tipoCita: solicitud.tipo_cita ? solicitud.tipo_cita.toUpperCase() : 'N/A',
               codigoIpress: solicitud.codigo_adscripcion || 'N/A',
               // ============================================================================
-              // 📋 AUDITORÍA: CAMBIOS DE ESTADO (v3.3.1) - MAPEO FALTANTE
+              // � F. INGRESO BOLSA - Campo para FilaSolicitud.jsx (v1.68.1)
+              // ============================================================================
+              fechaSolicitud: solicitud.fecha_solicitud
+                ? new Date(solicitud.fecha_solicitud).toLocaleString('es-PE')
+                : null,
+              // ============================================================================
+              // �📋 AUDITORÍA: CAMBIOS DE ESTADO (v3.3.1) - MAPEO FALTANTE
               // ============================================================================
               fechaCambioEstado: solicitud.fecha_cambio_estado
                 ? new Date(solicitud.fecha_cambio_estado).toLocaleString('es-PE')
@@ -858,6 +870,12 @@ export default function Solicitudes() {
                 })() : 'N/A',
               tipoCita: solicitud.tipo_cita ? solicitud.tipo_cita.toUpperCase() : 'N/A',
               codigoIpress: solicitud.codigo_adscripcion || 'N/A',
+              // ============================================================================
+              // 📅 F. INGRESO BOLSA - Campo para FilaSolicitud.jsx (v1.68.1)
+              // ============================================================================
+              fechaSolicitud: solicitud.fecha_solicitud
+                ? new Date(solicitud.fecha_solicitud).toLocaleString('es-PE')
+                : null,
               // 🩺 ATENCIÓN MÉDICA (v3.5.0)
               fechaHoraCita: solicitud.fecha_atencion && solicitud.hora_atencion
                 ? (() => { const [y,m,d] = solicitud.fecha_atencion.split('-'); return `${d}/${m}/${y} ${solicitud.hora_atencion.substring(0,5)}`; })()

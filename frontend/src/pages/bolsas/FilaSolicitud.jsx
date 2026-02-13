@@ -39,14 +39,14 @@ function FilaSolicitud({
 
       {/* F. INGRESO BOLSA - Primera columna de datos */}
       <td className="px-3 py-2">
-        {solicitud.fechaCambioEstado ? (
+        {solicitud.fechaSolicitud ? (
           <div className="bg-blue-50 rounded p-1.5 border-l-4 border-blue-600">
             <div className="flex items-center gap-1 mb-0.5">
               <Calendar size={12} className="text-blue-600 flex-shrink-0" />
               <span className="text-xs font-bold text-blue-600 uppercase tracking-tight">Ingreso</span>
             </div>
-            <div className="text-xs font-semibold text-blue-900">{solicitud.fechaCambioEstado.split(',')[0]}</div>
-            <div className="text-xs text-blue-600 font-medium">{solicitud.fechaCambioEstado.split(',')[1]?.trim()}</div>
+            <div className="text-xs font-semibold text-blue-900">{solicitud.fechaSolicitud.split(',')[0]}</div>
+            <div className="text-xs text-blue-600 font-medium">{solicitud.fechaSolicitud.split(',')[1]?.trim()}</div>
           </div>
         ) : (
           <div className="text-gray-400 italic text-xs py-0.5">—</div>
