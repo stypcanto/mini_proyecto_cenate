@@ -215,24 +215,25 @@ export default function MisPacientes() {
     return new Date(año, mes - 1, día);
   };
 
-  // ✅ v1.66.0: Calcular fechas con asignaciones para el calendario
+  // ✅ v1.67.0: Calcular fechas con ATENCIÓN para el calendario
+  // CAMBIO IMPORTANTE: Usar fechaAtencion (cuándo está programado atender)
+  // NO fechaAsignacion (cuándo fue asignado el paciente)
   const fechasConAsignaciones = useMemo(() => {
     const fechasMap = {};
     if (Array.isArray(pacientes)) {
       pacientes.forEach(p => {
-        if (p.fechaAsignacion) {
-          const fecha = p.fechaAsignacion.split('T')[0]; // "2026-02-13"
+        // 🔄 CORRECCIÓN v1.67.0: Usar fechaAtencion en lugar de fechaAsignacion
+        if (p.fechaAtencion) {
+          const fecha = p.fechaAtencion.split('T')[0];
           fechasMap[fecha] = (fechasMap[fecha] || 0) + 1;
         }
       });
     }
-    // 🔍 DEBUG: Ver qué fechas se están contando
-    console.log('📅 FECHAS CON ASIGNACIONES:', fechasMap);
-    console.log('📊 PRIMEROS 5 PACIENTES CRUDO:', pacientes.slice(0, 5).map(p => ({
-      nombre: p.nombre,
-      fechaAsignacion: p.fechaAsignacion,
-      idPersonal: p.idPersonal,
-      condicion: p.condicion
+    console.log('📅 FECHAS CON ATENCIÓN (v1.67.0 - cuándo están programados):', fechasMap);
+    console.log('📊 MUESTREO - Primeros 3 pacientes:', pacientes.slice(0, 3).map(p => ({
+      paciente: p.apellidosNombres,
+      fechaAtencion: p.fechaAtencion,
+      fechaAsignacion: p.fechaAsignacion
     })));
     return fechasMap;
   }, [pacientes]);
@@ -1425,19 +1426,22 @@ export default function MisPacientes() {
     setFechaAtencionSeleccionada(''); // Limpiar selección de fecha
   }, [filtroEstado, pacientes]);
 
-  // ✅ v1.66.0: Filtrar pacientes por fecha de ASIGNACIÓN - Integración Calendario
+  // ✅ v1.67.0: Filtrar pacientes por fecha de ATENCIÓN - NO asignación
   // Prioridad: fechaSeleccionadaCalendario > fechaAtencionSeleccionada > comportamiento anterior
   const pacientesFiltradosPorFecha = pacientesFiltrados.filter(p => {
-    // ✅ v1.66.0: PRIORIDAD 1: Si hay fecha seleccionada en el calendario, usar esa
+    // ✅ v1.67.0: PRIORIDAD 1: Si hay fecha seleccionada en el calendario, usar fechaAtencion
     if (fechaSeleccionadaCalendario) {
-      if (!p.fechaAsignacion) {
-        console.log(`🔴 Paciente ${p.nombre} sin fechaAsignacion`);
+      if (!p.fechaAtencion) {
+        console.log(`🔴 Paciente ${p.apellidosNombres} sin fechaAtencion`);
         return false;
       }
-      const fechaAsignacion = p.fechaAsignacion.split('T')[0];
-      const match = fechaAsignacion === fechaSeleccionadaCalendario;
+      // CAMBIO IMPORTANTE: Comparar con fechaAtencion (cuándo está programado)
+      const fechaAtencion = p.fechaAtencion.split('T')[0];
+      const match = fechaAtencion === fechaSeleccionadaCalendario;
       if (!match) {
-        console.log(`🟡 ${p.nombre}: fechaAsignacion="${fechaAsignacion}" != seleccionada="${fechaSeleccionadaCalendario}"`);
+        console.log(`🟡 ${p.apellidosNombres}: fechaAtencion="${fechaAtencion}" != seleccionada="${fechaSeleccionadaCalendario}"`);
+      } else {
+        console.log(`✅ ${p.apellidosNombres}: COINCIDE con fecha seleccionada ${fechaSeleccionadaCalendario}`);
       }
       return match;
     }
@@ -1901,8 +1905,8 @@ export default function MisPacientes() {
           <div className="bg-blue-50 border border-blue-200 shadow-sm rounded-lg p-12 text-center">
             <p className="text-gray-700 font-semibold text-base mb-2">
               {fechaSeleccionadaCalendario
-                ? `No hay pacientes asignados el ${parsearFechaLocal(fechaSeleccionadaCalendario).toLocaleDateString('es-ES', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' })}`
-                : (filtroRangoFecha === 'todos' || filtroRangoFecha === 'hoy' ? 'No hay pacientes asignados para hoy' : 'No hay pacientes en el período seleccionado')
+                ? `No hay pacientes programados para atender el ${parsearFechaLocal(fechaSeleccionadaCalendario).toLocaleDateString('es-ES', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' })}`
+                : (filtroRangoFecha === 'todos' || filtroRangoFecha === 'hoy' ? 'No hay pacientes programados para atender hoy' : 'No hay pacientes en el período seleccionado')
               }
             </p>
             <p className="text-gray-500 text-sm mb-6">

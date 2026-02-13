@@ -23,6 +23,15 @@ function CalendarioAsignacion({
   const [position, setPosition] = useState({ top: 0, left: 0 });
   const calendarRef = useRef(null);
 
+  // 🔍 DEBUG: Log whenever props change
+  useEffect(() => {
+    console.log('📅 [CALENDARIO] Props recibidas:', {
+      fechasConAsignaciones,
+      fechaSeleccionada,
+      keys: Object.keys(fechasConAsignaciones || {})
+    });
+  }, [fechasConAsignaciones, fechaSeleccionada]);
+
   // Cerrar calendario cuando se hace click fuera
   useEffect(() => {
     const handleClickAfuera = (event) => {
@@ -89,7 +98,12 @@ function CalendarioAsignacion({
    * Obtiene la cantidad de pacientes para un día específico
    */
   const getPacientesPorDia = (fecha) => {
-    return fechasConAsignaciones[fecha] || 0;
+    const cantidad = fechasConAsignaciones[fecha] || 0;
+    // Log solo para febrero 9-13
+    if (fecha && fecha.includes('2026-02-') && [9, 11, 12, 13].includes(parseInt(fecha.split('-')[2]))) {
+      console.log(`📅 getPacientesPorDia(${fecha}) = ${cantidad}`);
+    }
+    return cantidad;
   };
 
   /**
