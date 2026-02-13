@@ -2113,7 +2113,7 @@ CENATE de Essalud`;
                   )}
                 </div>
 
-                <div className="overflow-x-auto max-h-[calc(100vh-400px)] overflow-y-auto relative">
+                <div className="overflow-x-hidden max-h-[calc(100vh-400px)] overflow-y-auto relative">
                   <table className="w-full text-xs border-collapse">
                   <thead className="bg-[#0D5BA9] text-white sticky top-0 z-20">
                     <tr className="border-b-2 border-blue-800">
