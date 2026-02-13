@@ -57,11 +57,11 @@ public class AtenderPacienteService {
             log.info("✅ Marcando solicitud original {} como Atendido", idSolicitudBolsa);
             solicitudOriginal.setCondicionMedica("Atendido");
 
-            // Registrar fecha de atención en zona horaria de Perú (UTC-5)
+            // Registrar fecha de atención médica en zona horaria de Perú (UTC-5)
             ZonedDateTime zonedDateTime = Instant.now().atZone(ZoneId.of("America/Lima"));
-            LocalDate fechaAtencionLocal = zonedDateTime.toLocalDate();
-            solicitudOriginal.setFechaAtencion(fechaAtencionLocal);
-            log.info("✅ Fecha de atención registrada: {}", fechaAtencionLocal);
+            OffsetDateTime fechaAtencionMedica = zonedDateTime.toOffsetDateTime();
+            solicitudOriginal.setFechaAtencionMedica(fechaAtencionMedica);
+            log.info("✅ fechaAtencionMedica registrada: {}", fechaAtencionMedica);
 
             // ✅ v1.47.2: Guardar enfermedades crónicas PRIMERO
             if (request.getEsCronico() != null && request.getEsCronico() && request.getEnfermedades() != null && !request.getEnfermedades().isEmpty()) {

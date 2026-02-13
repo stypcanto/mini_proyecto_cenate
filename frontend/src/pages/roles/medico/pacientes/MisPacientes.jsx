@@ -1840,48 +1840,48 @@ export default function MisPacientes() {
               <table className="w-full text-sm text-left">
                 <thead className="text-xs font-semibold text-white uppercase tracking-wider bg-[#0A5BA9] relative z-20">
                   <tr>
-                    <th className="px-4 py-3 text-left">Paciente</th>
-                    <th className="px-4 py-3 text-left">Teléfono</th>
-                    <th className="px-4 py-3 text-left">IPRESS</th>
+                    <th className="px-2 py-1 text-left">Paciente</th>
+                    <th className="px-2 py-1 text-left">Teléfono</th>
+                    <th className="px-2 py-1 text-left">IPRESS</th>
 
                     {/* ✅ v1.76.0: Columna de Fecha toma EKG SOLO para Cardiología */}
                     {esCardiologo && (
-                      <th className="px-4 py-3 text-left">📅 Fecha toma EKG</th>
+                      <th className="px-2 py-1 text-left">📅 Fecha toma EKG</th>
                     )}
 
                     {/* ✅ v1.63.0: Columnas condicionales SOLO para Bolsa 107 (idBolsa = 1) */}
                     {pacientesFiltradosPorFecha.some(p => p.idBolsa === 1) && (
                       <>
-                        <th className="px-4 py-3 text-left">Tiempo Inicio Síntomas</th>
-                        <th className="px-4 py-3 text-left">Consentimiento Informado</th>
+                        <th className="px-2 py-1 text-left">Tiempo Inicio Síntomas</th>
+                        <th className="px-2 py-1 text-left">Consentimiento Informado</th>
                       </>
                     )}
 
-                    <th className="px-4 py-3 text-left">Condición</th>
-                    <th className="px-4 py-3 text-left">Motivo</th>
-                    <th className="px-4 py-3 text-left">Fecha Asignación</th>
-                    <th className="px-4 py-3 text-left">Fecha Atención</th>
+                    <th className="px-2 py-1 text-left">Condición</th>
+                    <th className="px-2 py-1 text-left">Motivo</th>
+                    <th className="px-2 py-1 text-left">Fecha Asignación</th>
+                    <th className="px-2 py-1 text-left">Fecha Atención</th>
                     {/* ✅ v1.66.4: Columna final para visualizar ECGs (SOLO CARDIÓLOGOS) */}
                     {esCardiologo && (
-                      <th className="px-4 py-3 text-center">Atender Lectura EKG</th>
+                      <th className="px-2 py-1 text-center">Atender Lectura EKG</th>
                     )}
                   </tr>
                 </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
+                <tbody className="divide-y divide-gray-200">
                   {pacientesFiltradosPorFecha.map((paciente, idx) => (
-                    <tr key={idx} className={`hover:transition-colors duration-150 ${
-                      paciente.esUrgente ? 'bg-red-100 hover:bg-red-200' : paciente.condicion === 'Atendido' ? 'bg-emerald-200 hover:bg-emerald-300' : 'bg-white hover:bg-gray-50'
-                    } ${idx % 2 === 0 ? '' : 'bg-opacity-50'}`}>
+                    <tr key={idx} className={`transition-colors duration-150 ${
+                      paciente.esUrgente ? 'bg-red-100 hover:bg-red-200' : paciente.condicion === 'Atendido' ? 'bg-emerald-100 hover:bg-emerald-200' : paciente.condicion === 'Deserción' ? 'bg-red-50 hover:bg-red-100' : paciente.condicion === 'Pendiente' ? 'bg-amber-50 hover:bg-amber-100' : 'bg-white hover:bg-gray-50'
+                    }`}>
                       {/* Paciente: Nombre en bold + DNI abajo en gris + Ojo para ver detalles */}
-                      <td className="px-4 py-3">
+                      <td className="px-2 py-1">
                         <div className="flex items-start gap-2">
                           {/* Ojo - icono para detalles */}
                           <button
                             onClick={() => abrirDetallesPaciente(paciente)}
                             title="Ver detalles del paciente"
-                            className="flex-shrink-0 inline-flex items-center justify-center w-9 h-9 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 transition-colors duration-150"
+                            className="flex-shrink-0 inline-flex items-center justify-center w-7 h-7 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 transition-colors duration-150"
                           >
-                            <Eye className="w-5 h-5" strokeWidth={2} />
+                            <Eye className="w-4 h-4" strokeWidth={2} />
                           </button>
 
                           {/* Nombre y DNI */}
@@ -1891,31 +1891,31 @@ export default function MisPacientes() {
                           </div>
                         </div>
                       </td>
-                      <td className="px-4 py-3 text-gray-600">{paciente.telefono || '-'}</td>
-                      <td className="px-4 py-3 text-gray-600">{paciente.ipress || '-'}</td>
+                      <td className="px-2 py-1 text-gray-600 text-sm">{paciente.telefono || '-'}</td>
+                      <td className="px-2 py-1 text-gray-600 text-sm">{paciente.ipress || '-'}</td>
 
                       {/* ✅ v1.76.0: Fecha toma EKG - SOLO para Cardiología */}
                       {esCardiologo && (
-                        <td className="px-4 py-3 text-gray-600 text-xs whitespace-nowrap">
+                        <td className="px-2 py-1 text-gray-600 text-xs whitespace-nowrap">
                           {paciente.fechaTomaEKG ? formatearSoloFecha(paciente.fechaTomaEKG) : '-'}
                         </td>
                       )}
 
                       {/* ✅ v1.63.0: TIEMPO INICIO SÍNTOMAS (solo si hay pacientes de Bolsa 107) */}
                       {pacientesFiltradosPorFecha.some(p => p.idBolsa === 1) && (
-                        <td className="px-4 py-3 text-sm">
+                        <td className="px-2 py-1 text-sm">
                           {renderTiempoInicioSintomas(paciente)}
                         </td>
                       )}
 
                       {/* ✅ v1.63.0: CONSENTIMIENTO INFORMADO (solo si hay pacientes de Bolsa 107) */}
                       {pacientesFiltradosPorFecha.some(p => p.idBolsa === 1) && (
-                        <td className="px-4 py-3 text-sm">
+                        <td className="px-2 py-1 text-sm">
                           {renderConsentimientoInformado(paciente)}
                         </td>
                       )}
 
-                      <td className="px-4 py-3">
+                      <td className="px-2 py-1">
                         {/* ✅ v1.92.0: Si hay imágenes rechazadas, mostrar "Rechazado" en morado */}
                         {pacientesRechazados[paciente.numDoc] ? (
                           <div
@@ -1935,7 +1935,7 @@ export default function MisPacientes() {
                           </button>
                         )}
                       </td>
-                      <td className="px-4 py-3 text-gray-600">
+                      <td className="px-2 py-1 text-gray-600">
                         {paciente.observaciones ? (
                           <span className="inline-flex px-2.5 py-1 rounded text-xs font-medium bg-yellow-100 text-yellow-800 border border-yellow-200">
                             {paciente.observaciones}
@@ -1944,16 +1944,16 @@ export default function MisPacientes() {
                           <span className="text-gray-400">-</span>
                         )}
                       </td>
-                      <td className="px-4 py-3 text-gray-600 text-xs whitespace-nowrap">
+                      <td className="px-2 py-1 text-gray-600 text-xs whitespace-nowrap">
                         {formatearFechaHumana(paciente.fechaAsignacion)}
                       </td>
-                      <td className="px-4 py-3 text-gray-600 text-xs whitespace-nowrap">
+                      <td className="px-2 py-1 text-gray-600 text-xs whitespace-nowrap">
                         {formatearFechaHumana(paciente.fechaAtencion)}
                       </td>
 
                       {/* ✅ v1.80.0: Columna final - Ver imágenes ECG (SOLO CARDIÓLOGOS) + Estados */}
                       {esCardiologo && (
-                        <td className="px-4 py-3 text-center">
+                        <td className="px-2 py-1 text-center">
                           <div className="flex items-center justify-center gap-2">
                             {/* ✅ v1.92.0: Botón para atender/evaluar ECG - Maneja rechazos */}
                             {pacientesRechazados[paciente.numDoc] ? (
@@ -2372,11 +2372,23 @@ export default function MisPacientes() {
                   <p className="text-sm font-medium text-gray-900">{formatearFechaHumana(pacienteDetalles.fechaAsignacion) || '-'}</p>
                 </div>
 
-                {/* Fecha Atención */}
-                <div className="bg-emerald-50 rounded-lg p-4 border border-emerald-200">
-                  <p className="text-xs font-semibold text-emerald-700 uppercase tracking-wider mb-1">✓ Atendido</p>
-                  <p className="text-sm font-medium text-gray-900">{formatearFechaHumana(pacienteDetalles.fechaAtencion) || '-'}</p>
-                </div>
+                {/* Fecha Atención - solo para Atendido */}
+                {pacienteDetalles.condicion !== 'Deserción' && (
+                  <div className="bg-emerald-50 rounded-lg p-4 border border-emerald-200">
+                    <p className="text-xs font-semibold text-emerald-700 uppercase tracking-wider mb-1">✓ Atendido</p>
+                    <p className="text-sm font-medium text-gray-900">
+                      {pacienteDetalles.condicion === 'Atendido' ? (formatearFechaHumana(pacienteDetalles.fechaAtencion) || '-') : '-'}
+                    </p>
+                  </div>
+                )}
+
+                {/* Fecha Deserción - solo para Deserción */}
+                {pacienteDetalles.condicion === 'Deserción' && (
+                  <div className="bg-red-50 rounded-lg p-4 border border-red-200">
+                    <p className="text-xs font-semibold text-red-700 uppercase tracking-wider mb-1">✗ Deserción</p>
+                    <p className="text-sm font-medium text-gray-900">{formatearFechaHumana(pacienteDetalles.fechaAtencion) || '-'}</p>
+                  </div>
+                )}
               </div>
 
               {/* Observaciones */}
