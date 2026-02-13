@@ -2133,6 +2133,9 @@ CENATE de Essalud`;
                         F. Asignación
                       </th>
                       <th className="px-3 py-2 text-left text-[10px] font-bold uppercase">
+                        Origen de la Bolsa
+                      </th>
+                      <th className="px-3 py-2 text-left text-[10px] font-bold uppercase">
                         T-Nº Documento
                       </th>
                       <th className="px-3 py-2 text-left text-[10px] font-bold uppercase">
@@ -2247,6 +2250,23 @@ CENATE de Essalud`;
                               </div>
                               <div className="text-xs text-blue-600 font-medium">
                                 {formatearTiempoRelativo(paciente.fechaAsignacion)}
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="text-gray-400 italic text-xs py-0.5">—</div>
+                          )}
+                        </td>
+
+                        {/* ORIGEN DE LA BOLSA */}
+                        <td className="px-3 py-2">
+                          {paciente.descTipoBolsa && paciente.descTipoBolsa !== "-" ? (
+                            <div className="bg-indigo-50 rounded p-1.5 border-l-4 border-indigo-600">
+                              <div className="flex items-center gap-1 mb-0.5">
+                                <ClipboardList size={12} className="text-indigo-600 flex-shrink-0" />
+                                <span className="text-xs font-bold text-indigo-600 uppercase tracking-tight">Origen</span>
+                              </div>
+                              <div className="text-xs font-semibold text-indigo-900">
+                                {paciente.descTipoBolsa}
                               </div>
                             </div>
                           ) : (
