@@ -1856,7 +1856,7 @@ export default function MisPacientes() {
 
         {/* Tabla de pacientes */}
         {pacientesFiltradosPorFecha.length === 0 ? (
-          <div className="bg-white border border-gray-200 shadow-sm rounded-lg p-12 text-center">
+          <div className="bg-blue-50 border border-blue-200 shadow-sm rounded-lg p-12 text-center">
             <p className="text-gray-700 font-semibold text-base mb-2">
               {filtroRangoFecha === 'todos' || filtroRangoFecha === 'hoy' ? 'No hay pacientes asignados para hoy' : 'No hay pacientes en el período seleccionado'}
             </p>
