@@ -449,24 +449,32 @@ delete from dim_solicitud_bolsa dsb  where dsb.paciente_dni in ('70073164','0788
 
 
 
+select * from tele_ecg_imagenes tei where tei.num_doc_paciente ='70073164';
+
+
+delete from tele_ecg_imagenes tei where tei.num_doc_paciente ='70073164';
+
+
+
+select * from dim_solicitud_bolsa where paciente_dni in ('09201701', '06630022');
+
+
+select dsb.id_solicitud , dsb.paciente_dni , dsb.fecha_solicitud, dsb.source_last_seen_at , dsb.fecha_cambio_estado , dsb.fecha_actualizacion  
+from dim_solicitud_bolsa dsb  where dsb.paciente_dni in ('09201701', '06630022');
 
 
 
 
 
 
+update dim_solicitud_bolsa set source_last_seen_at ='2026-02-13 11:40:05.000 -0500' , 
+                               fecha_cambio_estado ='2026-02-13 11:41:05.000 -0500' , 
+							   fecha_actualizacion ='2026-02-13 11:42:05.000 -0500'   where id_solicitud = 44675;
 
 
-
-
-
-
-
-
-
-
-
-
+-- semaforo reprogramacion 
+-- considerar la fecha para el semaforo
+-- 
 
 
 
