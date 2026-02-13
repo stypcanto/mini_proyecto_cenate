@@ -45,90 +45,80 @@ public class AtenderPacienteService {
     public void atenderPaciente(Long idSolicitudBolsa, String especialidadActual, AtenderPacienteRequest request) {
         log.info("🏥 [v1.47.0] Registrando atención - Solicitud: {}", idSolicitudBolsa);
 
+        // 1. Obtener solicitud original
+        SolicitudBolsa solicitudOriginal = solicitudBolsaRepository.findById(idSolicitudBolsa)
+                .orElseThrow(() -> new RuntimeException("Solicitud no encontrada"));
+
+        String pkAsegurado = solicitudOriginal.getPacienteDni();
+        Asegurado asegurado = aseguradoRepository.findByDocPaciente(solicitudOriginal.getPacienteDni())
+                .orElseThrow(() -> new RuntimeException("Asegurado no encontrado con DNI: " + pkAsegurado));
+
+        // ✅ v1.47.0: IMPORTANTE - Marcar la solicitud original como "Atendido"
+        log.info("✅ Marcando solicitud original {} como Atendido", idSolicitudBolsa);
+        solicitudOriginal.setCondicionMedica("Atendido");
+
+        // Registrar fecha de atención en zona horaria de Perú (UTC-5)
+        ZonedDateTime zonedDateTime = Instant.now().atZone(ZoneId.of("America/Lima"));
+        LocalDate fechaAtencionLocal = zonedDateTime.toLocalDate();
+        solicitudOriginal.setFechaAtencion(fechaAtencionLocal);
+        log.info("✅ Fecha de atención registrada: {}", fechaAtencionLocal);
+
+        // ✅ v1.47.2: Guardar enfermedades crónicas PRIMERO
+        if (request.getEsCronico() != null && request.getEsCronico() && request.getEnfermedades() != null && !request.getEnfermedades().isEmpty()) {
+            String[] enfermedadesArray = request.getEnfermedades().toArray(new String[0]);
+            log.info("🏥 Guardando enfermedades: {}", String.join(", ", enfermedadesArray));
+            asegurado.setEnfermedadCronica(enfermedadesArray);
+            log.info("🔄 Array establecido en entidad: {}", asegurado.getEnfermedadCronica() != null ? String.join(", ", asegurado.getEnfermedadCronica()) : "null");
+            Asegurado saved = aseguradoRepository.save(asegurado);
+            log.info("✅ Asegurado guardado. Valor retornado: {}", saved.getEnfermedadCronica() != null ? String.join(", ", saved.getEnfermedadCronica()) : "null");
+            entityManager.flush();
+            log.info("✅ Flush ejecutado - cambios persistidos en BD");
+        }
+
+        // ✅ v1.47.2: Actualizar solicitud original
+        solicitudOriginal.setCondicionMedica("Atendido");
+        solicitudBolsaRepository.save(solicitudOriginal);
+        log.info("✅ Solicitud original marcada como Atendido");
+
+        // ✅ v1.81.0: Registrar atención en historial centralizado
         try {
-            // 1. Obtener solicitud original
-            SolicitudBolsa solicitudOriginal = solicitudBolsaRepository.findById(idSolicitudBolsa)
-                    .orElseThrow(() -> new RuntimeException("Solicitud no encontrada"));
-
-            String pkAsegurado = solicitudOriginal.getPacienteDni();
-            Asegurado asegurado = aseguradoRepository.findByDocPaciente(solicitudOriginal.getPacienteDni())
-                    .orElseThrow(() -> new RuntimeException("Asegurado no encontrado"));
-
-            // ✅ v1.47.0: IMPORTANTE - Marcar la solicitud original como "Atendido"
-            // Esto asegura que aparezca como "Atendido" en Mis Pacientes del médico
-            log.info("✅ Marcando solicitud original {} como Atendido", idSolicitudBolsa);
-            solicitudOriginal.setCondicionMedica("Atendido");
-
-            // Registrar fecha de atención en zona horaria de Perú (UTC-5)
-            ZonedDateTime zonedDateTime = Instant.now().atZone(ZoneId.of("America/Lima"));
-            LocalDate fechaAtencionLocal = zonedDateTime.toLocalDate();
-            solicitudOriginal.setFechaAtencion(fechaAtencionLocal);
-            log.info("✅ Fecha de atención registrada: {}", fechaAtencionLocal);
-
-            // ✅ v1.47.2: Guardar enfermedades crónicas PRIMERO
-            if (request.getEsCronico() != null && request.getEsCronico() && request.getEnfermedades() != null && !request.getEnfermedades().isEmpty()) {
-                String[] enfermedadesArray = request.getEnfermedades().toArray(new String[0]);
-                log.info("🏥 Guardando enfermedades: {}", String.join(", ", enfermedadesArray));
-                asegurado.setEnfermedadCronica(enfermedadesArray);
-                log.info("🔄 Array establecido en entidad: {}", asegurado.getEnfermedadCronica() != null ? String.join(", ", asegurado.getEnfermedadCronica()) : "null");
-                Asegurado saved = aseguradoRepository.save(asegurado);
-                log.info("✅ Asegurado guardado. Valor retornado: {}", saved.getEnfermedadCronica() != null ? String.join(", ", saved.getEnfermedadCronica()) : "null");
-                entityManager.flush();
-                log.info("✅ Flush ejecutado - cambios persistidos en BD");
-            }
-
-            // ✅ v1.47.2: Actualizar solicitud original
-            solicitudOriginal.setCondicionMedica("Atendido");
-            solicitudBolsaRepository.save(solicitudOriginal);
-            log.info("✅ Solicitud original marcada como Atendido");
+            Long idMedicoActual = obtenerIdMedicoActual();
+            trazabilidadClinicaService.registrarDesdeMisPacientes(
+                idSolicitudBolsa,
+                null,  // No hay observaciones en AtenderPacienteRequest
+                idMedicoActual
+            );
+            log.info("✅ [v1.81.0] Atención registrada en historial centralizado");
         } catch (Exception e) {
-            log.warn("⚠️ [v1.103.3] Error actualizando solicitud/asegurado (continuando): {}", e.getMessage());
-            // Continuar sin relanzar - permitir que se procese el resto
+            log.warn("⚠️ [v1.81.0] Error registrando en historial: {}", e.getMessage());
         }
 
-            // ✅ v1.81.0: Registrar atención en historial centralizado
-            try {
-                Long idMedicoActual = obtenerIdMedicoActual();
-                trazabilidadClinicaService.registrarDesdeMisPacientes(
-                    idSolicitudBolsa,
-                    null,  // No hay observaciones en AtenderPacienteRequest
-                    idMedicoActual
-                );
-                log.info("✅ [v1.81.0] Atención registrada en historial centralizado");
-            } catch (Exception e) {
-                log.warn("⚠️ [v1.81.0] Error registrando en historial: {}", e.getMessage());
+        // 3. Crear bolsa Recita si aplica
+        // ✅ v1.47.0: La Recita es una NUEVA SOLICITUD de seguimiento para la gestora
+        // NO es información que deba aparecer en "Mis Pacientes" del médico
+        // ✅ v1.47.1: Verificar que la Recita no exista ya
+        if (request.getTieneRecita() != null && request.getTieneRecita()) {
+            if (existeRecitaParaPaciente(pkAsegurado)) {
+                log.warn("⚠️ [v1.47.1] Recita ya existe para el paciente: {}", pkAsegurado);
+            } else {
+                crearBolsaRecita(solicitudOriginal, especialidadActual, request.getRecitaDias());
+                log.info("✅ Nueva bolsa RECITA creada - visible solo para gestora de citas");
             }
-
-            // 3. Crear bolsa Recita si aplica
-            // ✅ v1.47.0: La Recita es una NUEVA SOLICITUD de seguimiento para la gestora
-            // NO es información que deba aparecer en "Mis Pacientes" del médico
-            // ✅ v1.47.1: Verificar que la Recita no exista ya
-            if (request.getTieneRecita() != null && request.getTieneRecita()) {
-                if (existeRecitaParaPaciente(pkAsegurado)) {
-                    log.warn("⚠️ [v1.47.1] Recita ya existe para el paciente: {}", pkAsegurado);
-                } else {
-                    crearBolsaRecita(solicitudOriginal, especialidadActual, request.getRecitaDias());
-                    log.info("✅ Nueva bolsa RECITA creada - visible solo para gestora de citas");
-                }
-            }
-
-            // 4. Crear bolsa Interconsulta si aplica
-            // ✅ v1.47.1: Verificar que la Interconsulta no exista ya para esta especialidad
-            if (request.getTieneInterconsulta() != null && request.getTieneInterconsulta()) {
-                if (existeInterconsultaParaPaciente(pkAsegurado, request.getInterconsultaEspecialidad())) {
-                    log.warn("⚠️ [v1.47.1] Interconsulta de {} ya existe para el paciente: {}",
-                            request.getInterconsultaEspecialidad(), pkAsegurado);
-                } else {
-                    crearBolsaInterconsulta(solicitudOriginal, request.getInterconsultaEspecialidad());
-                    log.info("✅ Nueva bolsa INTERCONSULTA creada - visible solo para gestora de citas");
-                }
-            }
-
-            log.info("✅ [v1.47.2] Atención registrada completamente - Enfermedades crónicas guardadas en tabla asegurados");
-        } catch (Exception e) {
-            log.error("❌ [v1.103.3] Error crítico registrando atención: {}", e.getMessage(), e);
-            // No relanzar - permitir que el flujo continúe
         }
+
+        // 4. Crear bolsa Interconsulta si aplica
+        // ✅ v1.47.1: Verificar que la Interconsulta no exista ya para esta especialidad
+        if (request.getTieneInterconsulta() != null && request.getTieneInterconsulta()) {
+            if (existeInterconsultaParaPaciente(pkAsegurado, request.getInterconsultaEspecialidad())) {
+                log.warn("⚠️ [v1.47.1] Interconsulta de {} ya existe para el paciente: {}",
+                        request.getInterconsultaEspecialidad(), pkAsegurado);
+            } else {
+                crearBolsaInterconsulta(solicitudOriginal, request.getInterconsultaEspecialidad());
+                log.info("✅ Nueva bolsa INTERCONSULTA creada - visible solo para gestora de citas");
+            }
+        }
+
+        log.info("✅ [v1.47.2] Atención registrada completamente - Enfermedades crónicas guardadas en tabla asegurados");
     }
 
     /**
@@ -208,12 +198,12 @@ public class AtenderPacienteService {
 
         try {
             solicitudBolsaRepository.save(bolsaRecita);
+            log.info("✅ Bolsa RECITA creada: {} - Fecha preferida: {} - idServicio: {}",
+                    bolsaRecita.getIdSolicitud(), fechaPreferida, idServicioRecita);
         } catch (Exception e) {
-            log.warn("⚠️ [v1.103.3] Error creando bolsa Recita (posible duplicado): {}", e.getMessage());
-            // No relanzar la excepción - permitir que continúe el flujo
+            log.error("❌ [v1.103.5] Error CRÍTICO creando bolsa Recita: {}", e.getMessage(), e);
+            throw new RuntimeException("Error creando bolsa de Recita: " + e.getMessage(), e);
         }
-        log.info("✅ Bolsa RECITA creada: {} - Fecha preferida: {} - idServicio: {}",
-                bolsaRecita.getIdSolicitud(), fechaPreferida, idServicioRecita);
     }
 
     public void crearBolsaInterconsulta(SolicitudBolsa solicitudOriginal, String especialidad) {
@@ -264,12 +254,12 @@ public class AtenderPacienteService {
 
         try {
             solicitudBolsaRepository.save(bolsaInterconsulta);
+            log.info("✅ Bolsa INTERCONSULTA creada: {} para especialidad: {} - idServicio: {}",
+                    bolsaInterconsulta.getIdSolicitud(), especialidad, idServicioInterconsulta);
         } catch (Exception e) {
-            log.warn("⚠️ [v1.103.3] Error creando bolsa Interconsulta (posible duplicado): {}", e.getMessage());
-            // No relanzar la excepción - permitir que continúe el flujo
+            log.error("❌ [v1.103.5] Error CRÍTICO creando bolsa Interconsulta: {}", e.getMessage(), e);
+            throw new RuntimeException("Error creando bolsa de Interconsulta: " + e.getMessage(), e);
         }
-        log.info("✅ Bolsa INTERCONSULTA creada: {} para especialidad: {} - idServicio: {}",
-                bolsaInterconsulta.getIdSolicitud(), especialidad, idServicioInterconsulta);
     }
 
     private String generarNumeroSolicitud(String prefijo) {

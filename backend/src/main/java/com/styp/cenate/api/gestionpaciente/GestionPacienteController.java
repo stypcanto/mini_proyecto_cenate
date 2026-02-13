@@ -333,12 +333,19 @@ public class GestionPacienteController {
             ? request.getInterconsultaEspecialidad()
             : "General"; // Fallback a especialidad general
 
-        atenderPacienteService.atenderPaciente(id, especialidad, request);
-
-        return ResponseEntity.ok(Map.of(
-            "mensaje", "Atención registrada correctamente",
-            "solicitudId", id.toString()
-        ));
+        try {
+            atenderPacienteService.atenderPaciente(id, especialidad, request);
+            return ResponseEntity.ok(Map.of(
+                "mensaje", "Atención registrada correctamente",
+                "solicitudId", id.toString()
+            ));
+        } catch (Exception e) {
+            log.error("❌ [v1.103.5] Error atendiendo paciente {}: {}", id, e.getMessage(), e);
+            return ResponseEntity.status(500).body(Map.of(
+                "error", "Error al registrar atención: " + e.getMessage(),
+                "solicitudId", id.toString()
+            ));
+        }
     }
 
     @GetMapping("/especialidades")
