@@ -306,22 +306,35 @@ export default function Produccion() {
 
   const { statsActual, statsPrevio } = estadisticas;
 
-  // ✅ v1.68.3: Estadísticas por CONDICIÓN del período actual (no histórico)
-  // Esto es para los KPI cards: Atendidos, Pendientes, Deserciones
+  // ✅ v1.68.4: Estadísticas por CONDICIÓN del período actual (no histórico)
+  // Calcula Atendidos, Pendientes, Deserciones del período actual
   const statsCondicionDelPeriodo = useMemo(() => {
-    // Obtener pacientes del período actual basándose en filtroActual
     let pacientesDelPeriodo = [];
 
     if (mostrarPeriodoCompleto) {
-      // Si mostramos período completo, usamos estadisticas.statsActual que ya tiene los pacientes del período
+      // Obtener TODOS los pacientes (no solo atendidos) del período actual
       const { inicio, fin } = getDateRange(filtroActual);
-      pacientesDelPeriodo = getPacientesEnRango(pacientes, inicio, fin);
+      pacientesDelPeriodo = pacientes.filter(p => {
+        if (!p.fechaAtencion) return false;
+        const fechaStr = extraerFecha(p.fechaAtencion);
+        if (!fechaStr) return false;
+        const [año, mes, día] = fechaStr.split('-').map(Number);
+        const fecha = new Date(año, mes - 1, día);
+        return fecha >= inicio && fecha <= fin;
+      });
     } else {
       // Si mostramos un día específico
       const inicio = new Date(diaSeleccionado);
       const fin = new Date(diaSeleccionado);
       fin.setHours(23, 59, 59, 999);
-      pacientesDelPeriodo = getPacientesEnRango(pacientes, inicio, fin);
+      pacientesDelPeriodo = pacientes.filter(p => {
+        if (!p.fechaAtencion) return false;
+        const fechaStr = extraerFecha(p.fechaAtencion);
+        if (!fechaStr) return false;
+        const [año, mes, día] = fechaStr.split('-').map(Number);
+        const fecha = new Date(año, mes - 1, día);
+        return fecha >= inicio && fecha <= fin;
+      });
     }
 
     return {
@@ -329,7 +342,7 @@ export default function Produccion() {
       pendientes: pacientesDelPeriodo.filter(p => p.condicion === 'Pendiente').length,
       deserciones: pacientesDelPeriodo.filter(p => p.condicion === 'Deserción').length,
     };
-  }, [pacientes, filtroActual, diaSeleccionado, mostrarPeriodoCompleto, getDateRange, getPacientesEnRango]);
+  }, [pacientes, filtroActual, diaSeleccionado, mostrarPeriodoCompleto, getDateRange, extraerFecha]);
 
   // Calcular comparativos (%)
   const calcularComparativo = useCallback((actual, anterior) => {
