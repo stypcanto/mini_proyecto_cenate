@@ -258,25 +258,25 @@ export default function MisPacientes() {
     return new Date(año, mes - 1, día);
   };
 
-  // ✅ v1.67.0: Calcular fechas con ATENCIÓN para el calendario
-  // CAMBIO IMPORTANTE: Usar fechaAtencion (cuándo está programado atender)
-  // NO fechaAsignacion (cuándo fue asignado el paciente)
+  // ✅ v1.67.2: Calcular fechas con ASIGNACIÓN para el calendario
+  // REVERTIDO: Usar fechaAsignacion (fecha en que fue asignado) porque tiene datos consistentes
+  // Backend API tiene data inconsistente en fechaAtencion (muestra Feb 13 pero todos asignados Feb 12)
   const fechasConAsignaciones = useMemo(() => {
     const fechasMap = {};
     if (Array.isArray(pacientes)) {
       pacientes.forEach(p => {
-        // 🔄 CORRECCIÓN v1.67.0: Usar fechaAtencion en lugar de fechaAsignacion
-        if (p.fechaAtencion) {
-          const fecha = p.fechaAtencion.split('T')[0];
+        // 🔄 v1.67.2: Revertir a fechaAsignacion - API tiene bug en fechaAtencion
+        if (p.fechaAsignacion) {
+          const fecha = p.fechaAsignacion.split('T')[0];
           fechasMap[fecha] = (fechasMap[fecha] || 0) + 1;
         }
       });
     }
-    console.log('📅 FECHAS CON ATENCIÓN (v1.67.0 - cuándo están programados):', fechasMap);
+    console.log('📅 FECHAS CON ASIGNACIÓN (v1.67.2 - cuándo fueron asignados):', fechasMap);
     console.log('📊 MUESTREO - Primeros 3 pacientes:', pacientes.slice(0, 3).map(p => ({
       paciente: p.apellidosNombres,
-      fechaAtencion: p.fechaAtencion,
-      fechaAsignacion: p.fechaAsignacion
+      fechaAsignacion: p.fechaAsignacion,
+      fechaAtencion: p.fechaAtencion
     })));
     return fechasMap;
   }, [pacientes]);
@@ -1472,17 +1472,17 @@ export default function MisPacientes() {
   // ✅ v1.67.0: Filtrar pacientes por fecha de ATENCIÓN - NO asignación
   // Prioridad: fechaSeleccionadaCalendario > fechaAtencionSeleccionada > comportamiento anterior
   const pacientesFiltradosPorFecha = pacientesFiltrados.filter(p => {
-    // ✅ v1.67.0: PRIORIDAD 1: Si hay fecha seleccionada en el calendario, usar fechaAtencion
+    // ✅ v1.67.2: PRIORIDAD 1: Si hay fecha seleccionada en el calendario, usar fechaAsignacion
     if (fechaSeleccionadaCalendario) {
-      if (!p.fechaAtencion) {
-        console.log(`🔴 Paciente ${p.apellidosNombres} sin fechaAtencion`);
+      if (!p.fechaAsignacion) {
+        console.log(`🔴 Paciente ${p.apellidosNombres} sin fechaAsignacion`);
         return false;
       }
-      // CAMBIO IMPORTANTE: Comparar con fechaAtencion (cuándo está programado)
-      const fechaAtencion = p.fechaAtencion.split('T')[0];
-      const match = fechaAtencion === fechaSeleccionadaCalendario;
+      // REVERTIDO v1.67.2: Comparar con fechaAsignacion (cuándo fue asignado) - data consistente
+      const fechaAsignacion = p.fechaAsignacion.split('T')[0];
+      const match = fechaAsignacion === fechaSeleccionadaCalendario;
       if (!match) {
-        console.log(`🟡 ${p.apellidosNombres}: fechaAtencion="${fechaAtencion}" != seleccionada="${fechaSeleccionadaCalendario}"`);
+        console.log(`🟡 ${p.apellidosNombres}: fechaAsignacion="${fechaAsignacion}" != seleccionada="${fechaSeleccionadaCalendario}"`);
       } else {
         console.log(`✅ ${p.apellidosNombres}: COINCIDE con fecha seleccionada ${fechaSeleccionadaCalendario}`);
       }
@@ -1890,6 +1890,13 @@ export default function MisPacientes() {
                 fechaSeleccionada={fechaSeleccionadaCalendario}
                 onFechaChange={(fecha) => {
                   setFechaSeleccionadaCalendario(fecha);
+                  // ✅ v1.67.1: Cambiar filtroRangoFecha para permitir filtros de fecha custom
+                  // Si se selecciona una fecha, desactivar el filtro 'hoy' por defecto
+                  if (fecha) {
+                    setFiltroRangoFecha('personalizado');
+                  } else {
+                    setFiltroRangoFecha('hoy'); // Limpiar = volver a hoy
+                  }
                 }}
                 fechasConAsignaciones={fechasConAsignaciones}
               />
