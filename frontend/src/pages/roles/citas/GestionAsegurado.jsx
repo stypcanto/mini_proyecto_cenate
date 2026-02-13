@@ -75,6 +75,10 @@ export default function GestionAsegurado() {
   const [lastRefreshTime, setLastRefreshTime] = useState(new Date());
   const [estadosDisponibles, setEstadosDisponibles] = useState([]);
 
+  // ✅ v1.109.10: Paginación - 100 registros por página
+  const REGISTROS_POR_PAGINA = 100;
+  const [currentPage, setCurrentPage] = useState(1);
+
   // ============================================================================
   // FILTROS ESPECIALIZADOS v1.42.0 (inspirados en Solicitudes)
   // ============================================================================
@@ -1565,6 +1569,19 @@ CENATE de Essalud`;
     return { pendientes, citados, atendidos };
   }, [pacientesFiltrados]);
 
+  // ✅ v1.109.10: Paginación de pacientes - 100 por página
+  const totalPaginas = Math.ceil(pacientesFiltrados.length / REGISTROS_POR_PAGINA);
+  const pacientesPaginados = pacientesFiltrados.slice(
+    (currentPage - 1) * REGISTROS_POR_PAGINA,
+    currentPage * REGISTROS_POR_PAGINA
+  );
+
+  // Resetear a página 1 cuando cambian los filtros
+  const handleFiltroChange = (setter, value) => {
+    setter(value);
+    setCurrentPage(1);
+  };
+
   // ============================================================================
   // CALCULAR OPCIONES DISPONIBLES PARA FILTROS
   // ============================================================================
@@ -2189,7 +2206,7 @@ CENATE de Essalud`;
                     </tr>
                   </thead>
                   <tbody>
-                    {pacientesFiltrados.map((paciente, idx) => (
+                    {pacientesPaginados.map((paciente, idx) => (
                       <tr
                         key={paciente.id}
                         className={`border-b border-gray-200 transition-colors ${
@@ -2739,6 +2756,33 @@ CENATE de Essalud`;
                 </table>
               </div>
 
+              {/* ✅ v1.109.10: Controles de paginación */}
+              {pacientesFiltrados.length > REGISTROS_POR_PAGINA && (
+                <div className="flex items-center justify-between px-6 py-3 bg-white border-t border-gray-200 rounded-b-xl">
+                  <span className="text-sm text-gray-600">
+                    Mostrando {((currentPage - 1) * REGISTROS_POR_PAGINA) + 1} - {Math.min(currentPage * REGISTROS_POR_PAGINA, pacientesFiltrados.length)} de {pacientesFiltrados.length} registros
+                  </span>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                      disabled={currentPage === 1}
+                      className="px-3 py-1 text-sm bg-blue-600 text-white rounded disabled:bg-gray-300 hover:bg-blue-700"
+                    >
+                      ← Anterior
+                    </button>
+                    <span className="px-3 py-1 text-sm text-gray-700 font-semibold">
+                      Página {currentPage} de {totalPaginas}
+                    </span>
+                    <button
+                      onClick={() => setCurrentPage(Math.min(totalPaginas, currentPage + 1))}
+                      disabled={currentPage === totalPaginas}
+                      className="px-3 py-1 text-sm bg-blue-600 text-white rounded disabled:bg-gray-300 hover:bg-blue-700"
+                    >
+                      Siguiente →
+                    </button>
+                  </div>
+                </div>
+              )}
 
               </>
             )}
