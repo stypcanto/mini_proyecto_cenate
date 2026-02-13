@@ -1175,8 +1175,9 @@ public class TeleECGService {
     /**
      * 🆕 v1.58.0: Crear bolsa automática en dim_solicitud_bolsa para CENATE
      * Permite que coordinadores/médicos vean el ECG en su bandeja de trabajo
+     * ✅ v1.108.1: REQUIRES_NEW para evitar que fallos en bolsa afecten la transacción principal de ECG
      */
-    @Transactional
+    @Transactional(propagation = org.springframework.transaction.annotation.Propagation.REQUIRES_NEW)
     private void crearBolsaTeleECG(TeleECGImagen imagen, Asegurado asegurado, Ipress ipress) {
         try {
             log.info("🆕 Creando bolsa TeleECG para paciente: {}", imagen.getNumDocPaciente());
