@@ -57,12 +57,12 @@ function FilaSolicitud({
       <td className="px-3 py-2 text-sm min-w-max">
         <div className="font-medium text-gray-900">
           <span className="text-xs text-gray-500">Principal: </span>
-          <span className="font-bold text-base text-gray-900">{solicitud.telefono}</span>
+          <span className="font-bold text-xs text-gray-500">{solicitud.telefono}</span>
         </div>
         {solicitud.telefonoAlterno && solicitud.telefonoAlterno !== 'N/A' && (
           <div className="text-xs text-gray-500 mt-1" title="Teléfono Alterno">
             <span className="text-gray-500">Alterno: </span>
-            <span className="font-bold text-base text-gray-900">{solicitud.telefonoAlterno}</span>
+            <span className="font-bold text-xs text-gray-500">{solicitud.telefonoAlterno}</span>
           </div>
         )}
       </td>
