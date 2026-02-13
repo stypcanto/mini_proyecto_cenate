@@ -1872,22 +1872,22 @@ export default function MisPacientes() {
                     <tr key={idx} className={`transition-colors duration-150 ${
                       idx % 2 === 0 ? 'bg-white hover:bg-gray-50' : 'bg-gray-50 hover:bg-gray-100'
                     }`}>
-                      {/* Paciente: Nombre en bold + DNI abajo en gris + Ojo para ver detalles */}
-                      <td className="px-2 py-1">
+                      {/* Paciente: Nombre compacto + DNI abajo en gris + Ojo para ver detalles */}
+                      <td className="px-2 py-0.5">
                         <div className="flex items-start gap-2">
                           {/* Ojo - icono para detalles */}
                           <button
                             onClick={() => abrirDetallesPaciente(paciente)}
                             title="Ver detalles del paciente"
-                            className="flex-shrink-0 inline-flex items-center justify-center w-7 h-7 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 transition-colors duration-150"
+                            className="flex-shrink-0 inline-flex items-center justify-center w-6 h-6 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 transition-colors duration-150"
                           >
-                            <Eye className="w-4 h-4" strokeWidth={2} />
+                            <Eye className="w-3.5 h-3.5" strokeWidth={2} />
                           </button>
 
                           {/* Nombre y DNI */}
-                          <div className="flex flex-col gap-0.5 min-w-0">
-                            <div className="font-bold text-gray-900 text-sm">{paciente.apellidosNombres}</div>
-                            <div className="text-gray-500 text-xs">DNI: {paciente.numDoc}</div>
+                          <div className="flex flex-col gap-0 min-w-0 leading-tight">
+                            <div className="font-semibold text-gray-900 text-[13px]">{paciente.apellidosNombres}</div>
+                            <div className="text-gray-400 text-[11px]">DNI: {paciente.numDoc}</div>
                           </div>
                         </div>
                       </td>
