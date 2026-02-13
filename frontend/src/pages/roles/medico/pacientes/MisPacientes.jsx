@@ -226,6 +226,14 @@ export default function MisPacientes() {
         }
       });
     }
+    // 🔍 DEBUG: Ver qué fechas se están contando
+    console.log('📅 FECHAS CON ASIGNACIONES:', fechasMap);
+    console.log('📊 PRIMEROS 5 PACIENTES CRUDO:', pacientes.slice(0, 5).map(p => ({
+      nombre: p.nombre,
+      fechaAsignacion: p.fechaAsignacion,
+      idPersonal: p.idPersonal,
+      condicion: p.condicion
+    })));
     return fechasMap;
   }, [pacientes]);
   const [loading, setLoading] = useState(true);
@@ -1422,9 +1430,16 @@ export default function MisPacientes() {
   const pacientesFiltradosPorFecha = pacientesFiltrados.filter(p => {
     // ✅ v1.66.0: PRIORIDAD 1: Si hay fecha seleccionada en el calendario, usar esa
     if (fechaSeleccionadaCalendario) {
-      if (!p.fechaAsignacion) return false;
+      if (!p.fechaAsignacion) {
+        console.log(`🔴 Paciente ${p.nombre} sin fechaAsignacion`);
+        return false;
+      }
       const fechaAsignacion = p.fechaAsignacion.split('T')[0];
-      return fechaAsignacion === fechaSeleccionadaCalendario;
+      const match = fechaAsignacion === fechaSeleccionadaCalendario;
+      if (!match) {
+        console.log(`🟡 ${p.nombre}: fechaAsignacion="${fechaAsignacion}" != seleccionada="${fechaSeleccionadaCalendario}"`);
+      }
+      return match;
     }
 
     // PRIORIDAD 2: Si el filtro de ATENCIÓN está seleccionado, úsalo
@@ -1901,7 +1916,14 @@ export default function MisPacientes() {
             {(filtroRangoFecha === 'todos' || filtroRangoFecha === 'hoy' || fechaSeleccionadaCalendario) && (
               <button
                 onClick={() => {
-                  document.querySelector('[data-selector-asignacion]')?.scrollIntoView({ behavior: 'smooth' });
+                  // Expandir filtros si están colapsados
+                  if (!filtrosExpandidos) {
+                    setFiltrosExpandidos(true);
+                  }
+                  // Scroll al calendario de asignaciones
+                  setTimeout(() => {
+                    document.querySelector('[data-selector-asignacion]')?.scrollIntoView({ behavior: 'smooth' });
+                  }, 100);
                 }}
                 className="px-5 py-2 bg-[#0A5BA9] text-white rounded-lg hover:bg-[#083d78] transition-colors font-medium inline-flex items-center gap-2 text-sm"
               >
