@@ -209,6 +209,12 @@ export default function MisPacientes() {
 
   const [pacientes, setPacientes] = useState([]);
 
+  // ✅ v1.66.0: Helper para parsear fechas sin desfase de zona horaria
+  const parsearFechaLocal = (dateStr) => {
+    const [año, mes, día] = dateStr.split('-').map(Number);
+    return new Date(año, mes - 1, día);
+  };
+
   // ✅ v1.66.0: Calcular fechas con asignaciones para el calendario
   const fechasConAsignaciones = useMemo(() => {
     const fechasMap = {};
@@ -1493,9 +1499,9 @@ export default function MisPacientes() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
+    <div className="min-h-screen bg-gray-50 px-3 py-6">
       <style>{animationStyles}</style>
-      <div className="max-w-7xl mx-auto">
+      <div className="w-full">
         {/* Header Mejorado */}
         <div className="mb-8">
           <div className="flex items-center gap-3 mb-6">
@@ -1880,7 +1886,7 @@ export default function MisPacientes() {
           <div className="bg-blue-50 border border-blue-200 shadow-sm rounded-lg p-12 text-center">
             <p className="text-gray-700 font-semibold text-base mb-2">
               {fechaSeleccionadaCalendario
-                ? `No hay pacientes asignados el ${new Date(fechaSeleccionadaCalendario).toLocaleDateString('es-ES', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' })}`
+                ? `No hay pacientes asignados el ${parsearFechaLocal(fechaSeleccionadaCalendario).toLocaleDateString('es-ES', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' })}`
                 : (filtroRangoFecha === 'todos' || filtroRangoFecha === 'hoy' ? 'No hay pacientes asignados para hoy' : 'No hay pacientes en el período seleccionado')
               }
             </p>
