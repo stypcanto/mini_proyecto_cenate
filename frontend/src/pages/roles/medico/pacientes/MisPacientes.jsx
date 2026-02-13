@@ -258,24 +258,39 @@ export default function MisPacientes() {
     return new Date(año, mes - 1, día);
   };
 
-  // ✅ v1.67.2: Calcular fechas con ASIGNACIÓN para el calendario
-  // REVERTIDO: Usar fechaAsignacion (fecha en que fue asignado) porque tiene datos consistentes
-  // Backend API tiene data inconsistente en fechaAtencion (muestra Feb 13 pero todos asignados Feb 12)
+  // ✅ v1.67.3: Extraer fecha simple del string ISO sin conversiones de timezone
+  // Nota: El backend aparentemente ya devuelve fechas en zona horaria local (no UTC)
+  const extraerFecha = (dateStr) => {
+    if (!dateStr) return null;
+    try {
+      // Simple: extraer solo la parte YYYY-MM-DD del string ISO
+      return dateStr.split('T')[0];
+    } catch (e) {
+      console.error('❌ Error al procesar fecha:', dateStr, e);
+      return null;
+    }
+  };
+
+  // ✅ v1.67.3: Calcular fechas con ASIGNACIÓN para el calendario (corregido por timezone Lima UTC-5)
+  // IMPORTANTE: Convertir fechas ISO (UTC) a zona horaria de Lima antes de agrupar
   const fechasConAsignaciones = useMemo(() => {
     const fechasMap = {};
     if (Array.isArray(pacientes)) {
       pacientes.forEach(p => {
-        // 🔄 v1.67.2: Revertir a fechaAsignacion - API tiene bug en fechaAtencion
+        // 🔄 v1.67.3: Usar extraerFecha para convertir UTC → Lima (UTC-5)
         if (p.fechaAsignacion) {
-          const fecha = p.fechaAsignacion.split('T')[0];
-          fechasMap[fecha] = (fechasMap[fecha] || 0) + 1;
+          const fechaEnLima = extraerFecha(p.fechaAsignacion);
+          if (fechaEnLima) {
+            fechasMap[fechaEnLima] = (fechasMap[fechaEnLima] || 0) + 1;
+          }
         }
       });
     }
-    console.log('📅 FECHAS CON ASIGNACIÓN (v1.67.2 - cuándo fueron asignados):', fechasMap);
+    console.log('📅 FECHAS CON ASIGNACIÓN EN LIMA UTC-5 (v1.67.3):', fechasMap);
     console.log('📊 MUESTREO - Primeros 3 pacientes:', pacientes.slice(0, 3).map(p => ({
       paciente: p.apellidosNombres,
-      fechaAsignacion: p.fechaAsignacion,
+      fechaAsignacionOriginal: p.fechaAsignacion,
+      fechaAsignacionEnLima: extraerFecha(p.fechaAsignacion),
       fechaAtencion: p.fechaAtencion
     })));
     return fechasMap;
@@ -1472,14 +1487,14 @@ export default function MisPacientes() {
   // ✅ v1.67.0: Filtrar pacientes por fecha de ATENCIÓN - NO asignación
   // Prioridad: fechaSeleccionadaCalendario > fechaAtencionSeleccionada > comportamiento anterior
   const pacientesFiltradosPorFecha = pacientesFiltrados.filter(p => {
-    // ✅ v1.67.2: PRIORIDAD 1: Si hay fecha seleccionada en el calendario, usar fechaAsignacion
+    // ✅ v1.67.3: PRIORIDAD 1: Si hay fecha seleccionada en el calendario, usar fechaAsignacion
     if (fechaSeleccionadaCalendario) {
       if (!p.fechaAsignacion) {
         console.log(`🔴 Paciente ${p.apellidosNombres} sin fechaAsignacion`);
         return false;
       }
-      // REVERTIDO v1.67.2: Comparar con fechaAsignacion (cuándo fue asignado) - data consistente
-      const fechaAsignacion = p.fechaAsignacion.split('T')[0];
+      // v1.67.3: Extraer fecha simple del string ISO
+      const fechaAsignacion = extraerFecha(p.fechaAsignacion);
       const match = fechaAsignacion === fechaSeleccionadaCalendario;
       if (!match) {
         console.log(`🟡 ${p.apellidosNombres}: fechaAsignacion="${fechaAsignacion}" != seleccionada="${fechaSeleccionadaCalendario}"`);
@@ -1499,7 +1514,8 @@ export default function MisPacientes() {
     // PRIORIDAD 3: Si NO hay filtro ATENCIÓN, usa el filtro ASIGNACIÓN (comportamiento anterior)
     if (!p.fechaAsignacion) return false;
 
-    const fechaAsignacion = p.fechaAsignacion.split('T')[0];
+    // v1.67.3: Extraer fecha simple (el backend probablemente ya está en zona horaria local)
+    const fechaAsignacion = extraerFecha(p.fechaAsignacion);
     const hoy = new Date().toISOString().split('T')[0];
 
     // Por default, filtroRangoFecha es 'todos', pero queremos comportamiento de 'hoy'
@@ -1518,8 +1534,8 @@ export default function MisPacientes() {
     }
 
     if (filtroRangoFecha === 'personalizado') {
-      const desde = fechaDesde ? new Date(fechaDesde).toISOString().split('T')[0] : null;
-      const hasta = fechaHasta ? new Date(fechaHasta).toISOString().split('T')[0] : null;
+      const desde = fechaDesde || null;
+      const hasta = fechaHasta || null;
       if (desde && hasta) {
         return fechaAsignacion >= desde && fechaAsignacion <= hasta;
       }
