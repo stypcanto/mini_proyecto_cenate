@@ -297,26 +297,30 @@ export default function MisPacientes() {
     return hoyEnLima;
   };
 
-  // ✅ v1.67.4: Calcular fechas con ASIGNACIÓN para el calendario
-  // DEBUG: Loguear TODOS los pacientes para ver qué fechas están siendo extraídas
+  // ✅ v1.67.5: Calcular fechas con ATENCIÓN para el calendario
+  // IMPORTANTE: El médico necesita ver cuándo DEBE ATENDER, no cuándo fue asignado
+  // fecha_atencion es DATE (sin timezone issues), todos tienen 2026-02-12
   const fechasConAsignaciones = useMemo(() => {
     const fechasMap = {};
     if (Array.isArray(pacientes)) {
-      console.log(`\n🔍 DEBUG v1.67.4: Procesando ${pacientes.length} pacientes...`);
+      console.log(`\n📅 v1.67.5: Procesando ${pacientes.length} pacientes por FECHA DE ATENCIÓN...`);
       pacientes.forEach((p, idx) => {
-        if (p.fechaAsignacion) {
-          const fechaExtraida = extraerFecha(p.fechaAsignacion);
-          console.log(`[${idx}] ${p.apellidosNombres}: fechaAsignacion="${p.fechaAsignacion}" → extraída="${fechaExtraida}"`);
-          if (fechaExtraida) {
-            fechasMap[fechaExtraida] = (fechasMap[fechaExtraida] || 0) + 1;
+        if (p.fechaAtencion) {
+          // fechaAtencion es DATE (YYYY-MM-DD), no timestamp
+          const fechaAtencion = typeof p.fechaAtencion === 'string'
+            ? p.fechaAtencion.split('T')[0]  // Si es ISO, extraer parte date
+            : p.fechaAtencion;  // Si ya es DATE
+
+          console.log(`[${idx}] ${p.apellidosNombres}: fechaAtencion="${fechaAtencion}"`);
+          if (fechaAtencion) {
+            fechasMap[fechaAtencion] = (fechasMap[fechaAtencion] || 0) + 1;
           }
         } else {
-          console.log(`[${idx}] ${p.apellidosNombres}: SIN fechaAsignacion`);
+          console.log(`[${idx}] ${p.apellidosNombres}: SIN fechaAtencion`);
         }
       });
     }
-    console.log('📅 RESULTADO FINAL - Fechas agrupadas:', fechasMap);
-    console.log(`🕐 HOY en Lima: ${obtenerHoyEnLima()}`);
+    console.log('📅 RESULTADO FINAL - Fechas de ATENCIÓN agrupadas:', fechasMap);
     return fechasMap;
   }, [pacientes]);
   const [loading, setLoading] = useState(true);
@@ -1508,22 +1512,26 @@ export default function MisPacientes() {
     setFechaAtencionSeleccionada(''); // Limpiar selección de fecha
   }, [filtroEstado, pacientes]);
 
-  // ✅ v1.67.0: Filtrar pacientes por fecha de ATENCIÓN - NO asignación
+  // ✅ v1.67.5: Filtrar pacientes por fecha de ATENCIÓN (cuándo debe atender el médico)
+  // IMPORTANTE: Usar fechaAtencion, NO fechaAsignacion
   // Prioridad: fechaSeleccionadaCalendario > fechaAtencionSeleccionada > comportamiento anterior
   const pacientesFiltradosPorFecha = pacientesFiltrados.filter(p => {
-    // ✅ v1.67.3: PRIORIDAD 1: Si hay fecha seleccionada en el calendario, usar fechaAsignacion
+    // ✅ v1.67.5: PRIORIDAD 1: Si hay fecha seleccionada en el calendario, usar fechaAtencion
     if (fechaSeleccionadaCalendario) {
-      if (!p.fechaAsignacion) {
-        console.log(`🔴 Paciente ${p.apellidosNombres} sin fechaAsignacion`);
+      if (!p.fechaAtencion) {
+        console.log(`🔴 Paciente ${p.apellidosNombres} sin fechaAtencion`);
         return false;
       }
-      // v1.67.3: Extraer fecha simple del string ISO
-      const fechaAsignacion = extraerFecha(p.fechaAsignacion);
-      const match = fechaAsignacion === fechaSeleccionadaCalendario;
+      // v1.67.5: fechaAtencion es DATE (YYYY-MM-DD), extraer correctamente
+      const fechaAtencion = typeof p.fechaAtencion === 'string'
+        ? p.fechaAtencion.split('T')[0]
+        : p.fechaAtencion;
+
+      const match = fechaAtencion === fechaSeleccionadaCalendario;
       if (!match) {
-        console.log(`🟡 ${p.apellidosNombres}: fechaAsignacion="${fechaAsignacion}" != seleccionada="${fechaSeleccionadaCalendario}"`);
+        console.log(`🟡 ${p.apellidosNombres}: fechaAtencion="${fechaAtencion}" != seleccionada="${fechaSeleccionadaCalendario}"`);
       } else {
-        console.log(`✅ ${p.apellidosNombres}: COINCIDE con fecha seleccionada ${fechaSeleccionadaCalendario}`);
+        console.log(`✅ ${p.apellidosNombres}: COINCIDE - debe atender el ${fechaSeleccionadaCalendario}`);
       }
       return match;
     }
@@ -1926,11 +1934,11 @@ export default function MisPacientes() {
               </select>
             </div>
 
-            {/* ✅ v1.66.0: Filtro Calendario Profesional de Asignaciones - 1 column */}
+            {/* ✅ v1.67.5: Filtro Calendario - Cuándo DEBE ATENDER el médico - 1 column */}
             <div data-selector-asignacion>
               <label className="block text-xs font-semibold text-gray-700 mb-2 uppercase tracking-wide">
                 <Calendar className="w-4 h-4 inline mr-2 text-green-600" />
-                Asignación
+                Atención (Cuándo Atender)
               </label>
               <CalendarioAsignacion
                 fechaSeleccionada={fechaSeleccionadaCalendario}
