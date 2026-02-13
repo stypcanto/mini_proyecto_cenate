@@ -1,5 +1,5 @@
 import React from 'react';
-import { Phone, Users, UserPlus, Download, FileText, X } from 'lucide-react';
+import { Phone, Users, UserPlus, Download, FileText, X, Calendar } from 'lucide-react';
 
 /**
  * 🚀 v2.6.0 - Componente MEMORIZADO para cada fila de tabla
@@ -38,11 +38,18 @@ function FilaSolicitud({
       </td>
 
       {/* F. INGRESO BOLSA - Primera columna de datos */}
-      <td className="px-3 py-3 text-sm text-gray-600">
+      <td className="px-3 py-3">
         {solicitud.fechaCambioEstado ? (
-          <span className="text-blue-700 font-medium">{solicitud.fechaCambioEstado}</span>
+          <div className="bg-blue-50 rounded-lg p-2 border-l-4 border-blue-600">
+            <div className="flex items-center gap-1.5 mb-1">
+              <Calendar size={14} className="text-blue-600 flex-shrink-0" />
+              <span className="text-xs font-bold text-blue-600 uppercase tracking-tight">Ingreso</span>
+            </div>
+            <div className="text-sm font-semibold text-blue-900">{solicitud.fechaCambioEstado.split(',')[0]}</div>
+            <div className="text-xs text-blue-600 font-medium">{solicitud.fechaCambioEstado.split(',')[1]?.trim()}</div>
+          </div>
         ) : (
-          <span className="text-gray-400 italic">—</span>
+          <div className="text-gray-400 italic text-xs py-1">—</div>
         )}
       </td>
 
