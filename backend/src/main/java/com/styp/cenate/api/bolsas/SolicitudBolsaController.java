@@ -400,9 +400,9 @@ public class SolicitudBolsaController {
 
     /**
      * Obtiene todas las solicitudes activas CON PAGINACIÓN
-     * GET /api/bolsas/solicitudes?page=0&size=25
+     * GET /api/bolsas/solicitudes?page=0&size=100
      *
-     * @param pageable información de paginación (default: 25 registros para alinear con frontend)
+     * @param pageable información de paginación (default: 100 registros para alinear con frontend)
      * @return página de solicitudes
      */
     /**
@@ -435,7 +435,7 @@ public class SolicitudBolsaController {
             @RequestParam(required = false) String busqueda,
             @RequestParam(required = false) String fechaInicio,  // ✅ v1.66.0: Filtro rango fechas
             @RequestParam(required = false) String fechaFin,     // ✅ v1.66.0: Filtro rango fechas
-            @PageableDefault(size = 25, page = 0) Pageable pageable) {
+            @PageableDefault(size = 100, page = 0) Pageable pageable) {
 
         // Si hay algún filtro, usar búsqueda con filtros (v2.6.0 + v1.66.0: rango fechas)
         if (bolsa != null || macrorregion != null || red != null || ipress != null ||
