@@ -695,7 +695,11 @@ export default function IPRESSWorkspace() {
               }}
               onRefrescar={handleRefresh}
               onVerImagen={handleVerImagen}
-              onBuscarPorDNI={(dni) => cargarEKGs(dni)}  // ✅ v1.80.4: Buscar en backend
+              onBuscarPorDNI={(dni) => {
+                // ✅ v1.108.0 FIX: Pasar objeto de filtros completo, no solo string DNI
+                // El useEffect en línea 251 automáticamente ejecutará cargarEKGs cuando filtros cambie
+                setFiltros({ ...filtros, dni: dni || '', estado: 'TODOS' });
+              }}
               // ✅ v1.103.0: NUEVOS PROPS PARA FILTROS REACTIVOS
               filtrosActuales={filtros}
               onFiltrosChange={(nuevosFiltros) => setFiltros(nuevosFiltros)}
