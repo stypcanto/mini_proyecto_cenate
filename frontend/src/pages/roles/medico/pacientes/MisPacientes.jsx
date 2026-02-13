@@ -297,30 +297,52 @@ export default function MisPacientes() {
     return hoyEnLima;
   };
 
-  // ✅ v1.67.5: Calcular fechas con ATENCIÓN para el calendario
+  // ✅ v1.67.6: Calcular fechas con ATENCIÓN para el calendario
   // IMPORTANTE: El médico necesita ver cuándo DEBE ATENDER, no cuándo fue asignado
-  // fecha_atencion es DATE (sin timezone issues), todos tienen 2026-02-12
+  // fecha_atencion es DATE (YYYY-MM-DD), sin timezone issues
   const fechasConAsignaciones = useMemo(() => {
     const fechasMap = {};
-    if (Array.isArray(pacientes)) {
-      console.log(`\n📅 v1.67.5: Procesando ${pacientes.length} pacientes por FECHA DE ATENCIÓN...`);
-      pacientes.forEach((p, idx) => {
-        if (p.fechaAtencion) {
-          // fechaAtencion es DATE (YYYY-MM-DD), no timestamp
-          const fechaAtencion = typeof p.fechaAtencion === 'string'
-            ? p.fechaAtencion.split('T')[0]  // Si es ISO, extraer parte date
-            : p.fechaAtencion;  // Si ya es DATE
+    let contadores = {
+      total: 0,
+      conFechaAtencion: 0,
+      sinFechaAtencion: 0,
+      conFechaAsignacionSolo: 0
+    };
 
-          console.log(`[${idx}] ${p.apellidosNombres}: fechaAtencion="${fechaAtencion}"`);
+    if (Array.isArray(pacientes)) {
+      console.log(`\n📅 v1.67.6: Procesando ${pacientes.length} pacientes por FECHA DE ATENCIÓN...`);
+      pacientes.forEach((p, idx) => {
+        contadores.total++;
+
+        // PREFERENCIA 1: Usar fechaAtencion (cuándo debe atender)
+        if (p.fechaAtencion) {
+          const fechaAtencion = typeof p.fechaAtencion === 'string'
+            ? p.fechaAtencion.split('T')[0]
+            : p.fechaAtencion;
+
+          console.log(`[${idx}] ${p.apellidosNombres.substring(0, 30)}: fechaAtencion="${fechaAtencion}" ✅`);
           if (fechaAtencion) {
             fechasMap[fechaAtencion] = (fechasMap[fechaAtencion] || 0) + 1;
+            contadores.conFechaAtencion++;
           }
-        } else {
-          console.log(`[${idx}] ${p.apellidosNombres}: SIN fechaAtencion`);
+        }
+        // FALLBACK: Si NO tiene fechaAtencion, usar fechaAsignacion
+        else if (p.fechaAsignacion) {
+          const fechaAsignacion = extraerFecha(p.fechaAsignacion);
+          console.log(`[${idx}] ${p.apellidosNombres.substring(0, 30)}: SIN fechaAtencion, usando fechaAsignacion="${fechaAsignacion}" ⚠️`);
+          if (fechaAsignacion) {
+            fechasMap[fechaAsignacion] = (fechasMap[fechaAsignacion] || 0) + 1;
+            contadores.conFechaAsignacionSolo++;
+          }
+        }
+        else {
+          console.log(`[${idx}] ${p.apellidosNombres.substring(0, 30)}: SIN fechaAtencion NI fechaAsignacion ❌`);
+          contadores.sinFechaAtencion++;
         }
       });
     }
-    console.log('📅 RESULTADO FINAL - Fechas de ATENCIÓN agrupadas:', fechasMap);
+    console.log('📊 ESTADÍSTICAS:', contadores);
+    console.log('📅 RESULTADO FINAL - Fechas de ATENCIÓN:', fechasMap);
     return fechasMap;
   }, [pacientes]);
   const [loading, setLoading] = useState(true);
