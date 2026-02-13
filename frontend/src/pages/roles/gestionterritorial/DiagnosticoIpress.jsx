@@ -14,6 +14,7 @@ import {
   Shield, FileCheck, User, Fingerprint, ExternalLink
 } from "lucide-react";
 import toast from "react-hot-toast";
+import * as XLSX from 'xlsx';
 import aseguradosService from "../../../services/aseguradosService";
 import api from '../../../lib/apiClient';
 
@@ -279,8 +280,60 @@ export default function DiagnosticoIpress() {
   };
 
   const exportarExcel = () => {
-    toast.success("Exportando a Excel...");
-    // Implementar exportacion a Excel
+    try {
+      // Preparar datos para Excel
+      const datosExcel = datosFiltrados.map(diagnostico => ({
+        'ID Formulario': diagnostico.idFormulario || '',
+        'IPRESS': diagnostico.nombreIpress || '',
+        'Código IPRESS': diagnostico.codigoIpress || '',
+        'Red Asistencial': diagnostico.nombreRed || '',
+        'Macroregión': diagnostico.nombreMacroregion || '',
+        'Estado': diagnostico.estado || '',
+        'Año': diagnostico.anio || '',
+        'Fecha Creación': diagnostico.fechaCreacion ? new Date(diagnostico.fechaCreacion).toLocaleDateString('es-PE') : '',
+        'Fecha Envío': diagnostico.fechaEnvio ? new Date(diagnostico.fechaEnvio).toLocaleDateString('es-PE') : '',
+        'Firma Digital': diagnostico.tieneFirma ? 'Sí' : 'No',
+        'Nombre Firmante': diagnostico.nombreFirmante || '',
+        'Fecha Firma': diagnostico.fechaFirma ? new Date(diagnostico.fechaFirma).toLocaleDateString('es-PE') : '',
+        'Tamaño PDF (KB)': diagnostico.pdfTamanio ? (diagnostico.pdfTamanio / 1024).toFixed(2) : '',
+        'Archivo PDF': diagnostico.pdfNombre || ''
+      }));
+
+      // Crear libro de trabajo
+      const ws = XLSX.utils.json_to_sheet(datosExcel);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Diagnósticos");
+
+      // Ajustar ancho de columnas
+      const colWidths = [
+        { wch: 12 }, // ID Formulario
+        { wch: 30 }, // IPRESS
+        { wch: 12 }, // Código IPRESS
+        { wch: 25 }, // Red Asistencial
+        { wch: 20 }, // Macroregión
+        { wch: 12 }, // Estado
+        { wch: 8 },  // Año
+        { wch: 15 }, // Fecha Creación
+        { wch: 15 }, // Fecha Envío
+        { wch: 12 }, // Firma Digital
+        { wch: 20 }, // Nombre Firmante
+        { wch: 15 }, // Fecha Firma
+        { wch: 15 }, // Tamaño PDF
+        { wch: 25 }  // Archivo PDF
+      ];
+      ws['!cols'] = colWidths;
+
+      // Generar nombre del archivo con timestamp
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
+      const fileName = `diagnosticos_ipress_${timestamp}.xlsx`;
+
+      // Descargar archivo
+      XLSX.writeFile(wb, fileName);
+      toast.success(`Excel exportado correctamente: ${datosExcel.length} registros`);
+    } catch (error) {
+      console.error("Error al exportar Excel:", error);
+      toast.error("Error al exportar a Excel");
+    }
   };
 
   // ================================================================

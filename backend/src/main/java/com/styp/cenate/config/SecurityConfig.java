@@ -178,13 +178,15 @@ public class SecurityConfig {
                                                                                                                   // (público
                                                                                                                   // para
                                                                                                                   // dropdowns)
-                                                                "/api/admin/tipos-atencion-telemedicina/activos" // ✅
+                                                                "/api/admin/tipos-atencion-telemedicina/activos", // ✅
                                                 // Tipos
                                                 // de
                                                 // atención
                                                 // telemedicina
                                                 // activos
                                                 // (público)
+                                                "/api/diagnostico/estadisticas/**", // ✅ Dashboard de diagnóstico por redes (público para Gestión Territorial)
+                                                "/api/formulario-diagnostico/**" // ✅ Formulario diagnóstico IPRESS (público para consulta y descarga)
                                                 ).permitAll()
 
                                                 // =====================================================
