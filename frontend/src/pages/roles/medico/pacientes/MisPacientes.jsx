@@ -258,17 +258,29 @@ export default function MisPacientes() {
     return new Date(año, mes - 1, día);
   };
 
-  // ✅ v1.67.3: Extraer fecha simple del string ISO sin conversiones de timezone
-  // Nota: El backend aparentemente ya devuelve fechas en zona horaria local (no UTC)
+  // ✅ v1.67.4: Extraer fecha simple del string ISO
   const extraerFecha = (dateStr) => {
     if (!dateStr) return null;
     try {
-      // Simple: extraer solo la parte YYYY-MM-DD del string ISO
       return dateStr.split('T')[0];
     } catch (e) {
       console.error('❌ Error al procesar fecha:', dateStr, e);
       return null;
     }
+  };
+
+  // ✅ v1.67.4: Obtener la fecha de HOY en zona horaria de Lima (UTC-5)
+  // IMPORTANTE: Perú (Lima) está en UTC-5 y NO usa horario de verano
+  const obtenerHoyEnLima = () => {
+    const ahora = new Date();
+    // Convertir a Lima: UTC-5 = restar 5 horas al UTC
+    const limaTime = new Date(ahora.getTime() - (5 * 60 * 60 * 1000));
+    const año = limaTime.getUTCFullYear();
+    const mes = String(limaTime.getUTCMonth() + 1).padStart(2, '0');
+    const día = String(limaTime.getUTCDate()).padStart(2, '0');
+    const hoyEnLima = `${año}-${mes}-${día}`;
+    console.log(`🕐 HOY EN LIMA (UTC-5): ${hoyEnLima}, UTC: ${ahora.toISOString().split('T')[0]}`);
+    return hoyEnLima;
   };
 
   // ✅ v1.67.3: Calcular fechas con ASIGNACIÓN para el calendario (corregido por timezone Lima UTC-5)
@@ -1514,9 +1526,9 @@ export default function MisPacientes() {
     // PRIORIDAD 3: Si NO hay filtro ATENCIÓN, usa el filtro ASIGNACIÓN (comportamiento anterior)
     if (!p.fechaAsignacion) return false;
 
-    // v1.67.3: Extraer fecha simple (el backend probablemente ya está en zona horaria local)
+    // v1.67.4: Extraer fecha y calcular HOY en Lima (UTC-5)
     const fechaAsignacion = extraerFecha(p.fechaAsignacion);
-    const hoy = new Date().toISOString().split('T')[0];
+    const hoy = obtenerHoyEnLima();
 
     // Por default, filtroRangoFecha es 'todos', pero queremos comportamiento de 'hoy'
     if (filtroRangoFecha === 'todos' || filtroRangoFecha === 'hoy') {
@@ -1524,12 +1536,18 @@ export default function MisPacientes() {
     }
 
     if (filtroRangoFecha === 'ayer') {
-      const ayer = new Date(Date.now() - 86400000).toISOString().split('T')[0];
+      // Calcular ayer en Lima (restar 1 día a la fecha de hoy en Lima)
+      const hoyDate = new Date(hoy);
+      const ayerDate = new Date(hoyDate.getTime() - 86400000);
+      const ayer = `${ayerDate.getFullYear()}-${String(ayerDate.getMonth() + 1).padStart(2, '0')}-${String(ayerDate.getDate()).padStart(2, '0')}`;
       return fechaAsignacion === ayer;
     }
 
     if (filtroRangoFecha === '7dias') {
-      const hace7dias = new Date(Date.now() - 7 * 86400000).toISOString().split('T')[0];
+      // Calcular hace 7 días en Lima
+      const hoyDate = new Date(hoy);
+      const hace7diasDate = new Date(hoyDate.getTime() - 7 * 86400000);
+      const hace7dias = `${hace7diasDate.getFullYear()}-${String(hace7diasDate.getMonth() + 1).padStart(2, '0')}-${String(hace7diasDate.getDate()).padStart(2, '0')}`;
       return fechaAsignacion >= hace7dias && fechaAsignacion <= hoy;
     }
 
