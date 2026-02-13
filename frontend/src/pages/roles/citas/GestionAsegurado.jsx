@@ -1102,7 +1102,7 @@ CENATE de Essalud`;
   // 🔍 BUSCAR ASEGURADOS CON DEBOUNCE (v1.46.0)
   // ============================================================================
   const buscarAseguradosImpl = async (termino) => {
-    if (!termino || termino.length < 3) {
+    if (!termino || termino.length !== 8) {
       setResultadosBusqueda([]);
       return;
     }
@@ -1226,7 +1226,8 @@ CENATE de Essalud`;
             especialidad: especialidadSeleccionada, // ✅ v1.46.5: Agregar especialidad
             // ✅ v1.46.9: Agregar médico y fecha de cita si se seleccionaron
             idPersonal: medicoSeleccionado ? parseInt(medicoSeleccionado) : null,
-            fechaAsignacion: fechaHoraCitaSeleccionada ? new Date(fechaHoraCitaSeleccionada).toISOString() : null,
+            fechaAtencion: fechaHoraCitaSeleccionada ? fechaHoraCitaSeleccionada.split('T')[0] : null,
+            horaAtencion: fechaHoraCitaSeleccionada ? fechaHoraCitaSeleccionada.split('T')[1] + ':00' : null,
           }),
         }
       );
@@ -2805,15 +2806,20 @@ CENATE de Essalud`;
               {/* Input búsqueda */}
               <div className="mb-6">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Buscar por DNI o Nombre
+                  Buscar por N° de Documento
                 </label>
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                   <input
                     type="text"
+                    inputMode="numeric"
+                    maxLength={8}
                     value={busquedaAsegurado}
-                    onChange={(e) => setBusquedaAsegurado(e.target.value)}
-                    placeholder="Ingresa DNI o nombre del paciente..."
+                    onChange={(e) => {
+                      const soloDigitos = e.target.value.replace(/\D/g, '').slice(0, 8);
+                      setBusquedaAsegurado(soloDigitos);
+                    }}
+                    placeholder="Ingresa los 8 dígitos del DNI"
                     className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                     autoFocus
                   />
@@ -2822,12 +2828,12 @@ CENATE de Essalud`;
                   )}
                 </div>
                 <p className="text-xs text-gray-500 mt-1">
-                  Mínimo 3 caracteres para buscar
+                  {busquedaAsegurado.length > 0 ? `${busquedaAsegurado.length}/8 dígitos` : 'Ingresa 8 dígitos para buscar'}
                 </p>
               </div>
 
               {/* Resultados */}
-              {busquedaAsegurado.length >= 3 && (
+              {busquedaAsegurado.length === 8 && (
                 <div className="space-y-3">
                   {cargandoBusqueda ? (
                     <div className="flex items-center justify-center py-8">

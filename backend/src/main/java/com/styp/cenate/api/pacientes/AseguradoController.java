@@ -232,15 +232,12 @@ public class AseguradoController {
             @RequestParam(defaultValue = "25") int size) {
         
         try {
-            log.info("🔍 Buscando asegurados con término: '{}'", q);
+            log.info("🔍 Buscando asegurado por documento: '{}'", q);
             
-            String searchTerm = "%" + q.toUpperCase() + "%";
-            
-            // Construir condiciones dinámicas para los filtros
-            StringBuilder whereClause = new StringBuilder("WHERE (UPPER(a.paciente) LIKE ? OR a.doc_paciente LIKE ?)");
+            // Búsqueda exacta por número de documento (8 dígitos)
+            StringBuilder whereClause = new StringBuilder("WHERE a.doc_paciente = ?");
             List<Object> params = new ArrayList<>();
-            params.add(searchTerm);
-            params.add(searchTerm);
+            params.add(q.trim());
             
             // Filtro por Red
             if (idRed != null) {
