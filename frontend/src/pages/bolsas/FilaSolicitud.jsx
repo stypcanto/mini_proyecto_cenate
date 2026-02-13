@@ -93,12 +93,12 @@ function FilaSolicitud({
       {/* ESTADO */}
       <td className="px-1 py-1">
         <span
-          className={`px-3 py-1 rounded-md text-xs font-semibold whitespace-nowrap inline-block ${getEstadoBadge(
+          className={`px-3 py-1 rounded-md text-xs font-semibold whitespace-nowrap inline-block cursor-help ${getEstadoBadge(
             solicitud.estado
           )}`}
-          title={solicitud.estadoCodigo || 'Código de estado'}
+          title={solicitud.estadoDisplay || 'Estado'}
         >
-          {solicitud.estadoDisplay}
+          {solicitud.estadoDisplay?.split(' - ')[0] || solicitud.estado}
         </span>
       </td>
 
