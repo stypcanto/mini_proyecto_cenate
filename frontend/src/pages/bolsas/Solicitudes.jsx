@@ -67,7 +67,7 @@ function generarCodigoBolsa(nombreBolsa) {
 }
 
 export default function Solicitudes() {
-  const REGISTROS_POR_PAGINA = 25;
+  const REGISTROS_POR_PAGINA = 100;
   const { esSuperAdmin } = usePermisos();
 
   const [solicitudes, setSolicitudes] = useState([]);
@@ -443,7 +443,7 @@ export default function Solicitudes() {
   // 🔄 FUNCIÓN 2: Cargar SOLICITUDES (se puede ejecutar múltiples veces)
   // ============================================================================
   const cargarSolicitudes = async () => {
-    console.log('⚡ Cargando solicitudes (página: 0, size: 25)...');
+    console.log('⚡ Cargando solicitudes (página: 0, size: 100)...');
     setIsLoading(true);
     setErrorMessage('');
     try {
