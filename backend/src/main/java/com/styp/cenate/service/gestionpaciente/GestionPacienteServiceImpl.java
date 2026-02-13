@@ -214,123 +214,160 @@ public class GestionPacienteServiceImpl implements IGestionPacienteService {
     }
 
     @Override
-    @Transactional
     public GestionPacienteDTO actualizarCondicion(Long id, String condicion, String observaciones) {
         log.info("Actualizando condición para ID: {} a {}", id, condicion);
 
-        // ✅ v1.64.0: Extraer campos clínicos de Bolsa 107 si vienen en JSON
-        String tiempoInicioSintomas = null;
-        Boolean consentimientoInformado = null;
-        String observacionesLimpias = observaciones;
+        try {
+            // ✅ v1.64.0: Extraer campos clínicos de Bolsa 107 si vienen en JSON
+            String tiempoInicioSintomas = null;
+            Boolean consentimientoInformado = null;
+            String observacionesLimpias = observaciones;
 
-        if (observaciones != null && !observaciones.isEmpty()) {
-            try {
-                // Si es JSON (comienza con {), extraer campos
-                if (observaciones.trim().startsWith("{")) {
-                    com.fasterxml.jackson.databind.JsonNode node =
-                        new com.fasterxml.jackson.databind.ObjectMapper().readTree(observaciones);
-
-                    if (node.has("tiempoInicioSintomas")) {
-                        tiempoInicioSintomas = node.get("tiempoInicioSintomas").asText();
-                        log.info("✅ Extraído tiempoInicioSintomas: {}", tiempoInicioSintomas);
-                    }
-                    if (node.has("consentimientoInformado")) {
-                        consentimientoInformado = node.get("consentimientoInformado").asBoolean();
-                        log.info("✅ Extraído consentimientoInformado: {}", consentimientoInformado);
-                    }
-                    observacionesLimpias = ""; // No guardar JSON en observaciones
-                }
-            } catch (Exception e) {
-                log.warn("No se pudo parsear JSON de observaciones, se guardará como texto: {}", e.getMessage());
-                observacionesLimpias = observaciones;
-            }
-        }
-
-        // ✅ v1.46.0: Intentar actualizar en GestionPaciente primero
-        var gestionOpt = repository.findById(id);
-
-        if (gestionOpt.isPresent()) {
-            // Actualizar en gestion_paciente
-            GestionPaciente existing = gestionOpt.get();
-            existing.setCondicion(condicion);
-            existing.setObservaciones(observacionesLimpias);
-            GestionPaciente updated = repository.save(existing);
-            log.info("✅ Condición actualizada en tabla gestion_paciente: {}", id);
-            return toDto(updated);
-        }
-
-        // ✅ v1.46.0: Si no existe en gestion_paciente, intentar actualizar en SolicitudBolsa
-        // El ID podría ser el idSolicitudBolsa
-        var solicitudOpt = solicitudBolsaRepository.findById(id);
-
-        if (solicitudOpt.isPresent()) {
-            SolicitudBolsa existing = solicitudOpt.get();
-            existing.setCondicionMedica(condicion);
-            existing.setObservacionesMedicas(observacionesLimpias);
-
-            // ✅ v1.64.0: Actualizar campos clínicos de Bolsa 107
-            if (tiempoInicioSintomas != null) {
-                existing.setTiempoInicioSintomas(tiempoInicioSintomas);
-                log.info("✅ Actualizado tiempoInicioSintomas: {}", tiempoInicioSintomas);
-            }
-            if (consentimientoInformado != null) {
-                existing.setConsentimientoInformado(consentimientoInformado);
-                log.info("✅ Actualizado consentimientoInformado: {}", consentimientoInformado);
-            }
-
-            // ✅ v1.47.0: Guardar fecha de atención cuando se marca como "Atendido" o "Deserción"
-            if ("Atendido".equalsIgnoreCase(condicion) || "Deserción".equalsIgnoreCase(condicion)) {
-                // Usar zona horaria de Perú (UTC-5)
-                // Obtener el momento actual (Instant es independiente de timezone)
-                // Luego aplicar la zona horaria de Perú explícitamente
-                ZonedDateTime zonedDateTime = Instant.now().atZone(ZoneId.of("America/Lima"));
-                OffsetDateTime fechaAtencion = zonedDateTime.toOffsetDateTime();
-                existing.setFechaAtencionMedica(fechaAtencion);
-                log.info("✅ Fecha de atención registrada (Instant→America/Lima): {} | LocalTime: {}", fechaAtencion, zonedDateTime.toLocalTime());
-            } else if ("Pendiente".equalsIgnoreCase(condicion)) {
-                // ✅ v1.47.0: Limpiar fecha de atención cuando se cambia a "Pendiente"
-                existing.setFechaAtencionMedica(null);
-                log.info("✅ Fecha de atención limpiada - estado cambiado a Pendiente");
-            }
-
-            SolicitudBolsa updated = solicitudBolsaRepository.save(existing);
-            log.info("✅ Condición actualizada en tabla dim_solicitud_bolsa: {}", id);
-
-            // ✅ v1.81.0: Registrar atención en historial centralizado cuando se marca ATENDIDO
-            if ("Atendido".equalsIgnoreCase(condicion)) {
+            if (observaciones != null && !observaciones.isEmpty()) {
                 try {
-                    // Obtener ID del médico actual
-                    Long idMedicoActual = obtenerIdMedicoActual();
+                    // Si es JSON (comienza con {), extraer campos
+                    if (observaciones.trim().startsWith("{")) {
+                        com.fasterxml.jackson.databind.JsonNode node =
+                            new com.fasterxml.jackson.databind.ObjectMapper().readTree(observaciones);
 
-                    // ✅ v1.89.6: Solo registrar si idMedicoActual NO es null
-                    if (idMedicoActual != null) {
-                        // Registrar atención desde MisPacientes
-                        trazabilidadClinicaService.registrarDesdeMisPacientes(
-                            id,
-                            observacionesLimpias,
-                            idMedicoActual
-                        );
-
-                        // Sincronizar y registrar ECG si existe
-                        String pacienteDni = existing.getPacienteDni();
-                        if (pacienteDni != null && !pacienteDni.isEmpty()) {
-                            trazabilidadClinicaService.registrarDesdeTeleECG(pacienteDni, idMedicoActual);
+                        if (node.has("tiempoInicioSintomas")) {
+                            tiempoInicioSintomas = node.get("tiempoInicioSintomas").asText();
+                            log.info("✅ Extraído tiempoInicioSintomas: {}", tiempoInicioSintomas);
                         }
-
-                        log.info("✅ [v1.81.0] Atención registrada en historial centralizado - Solicitud: {}", id);
-                    } else {
-                        log.warn("⚠️ [v1.89.6] idMedicoActual es null - SKIP trazabilidad para Solicitud: {}", id);
+                        if (node.has("consentimientoInformado")) {
+                            consentimientoInformado = node.get("consentimientoInformado").asBoolean();
+                            log.info("✅ Extraído consentimientoInformado: {}", consentimientoInformado);
+                        }
+                        observacionesLimpias = ""; // No guardar JSON en observaciones
                     }
                 } catch (Exception e) {
-                    log.warn("⚠️ [v1.81.0] Error en trazabilidad - Solicitud {}: {}", id, e.getMessage());
+                    log.warn("No se pudo parsear JSON de observaciones, se guardará como texto: {}", e.getMessage());
+                    observacionesLimpias = observaciones;
                 }
             }
 
-            return bolsaToGestionDTO(updated);
-        }
+            // ✅ v1.46.0: Intentar actualizar en GestionPaciente primero
+            var gestionOpt = repository.findById(id);
 
-        // Si no existe en ninguna tabla, lanzar excepción
-        throw new RuntimeException("Gestión o Solicitud no encontrada con ID: " + id);
+            if (gestionOpt.isPresent()) {
+                // ✅ v1.103.7: Usar transacción separada para guardar en gestion_paciente
+                GestionPaciente existing = gestionOpt.get();
+                existing.setCondicion(condicion);
+                existing.setObservaciones(observacionesLimpias);
+                GestionPaciente updated = guardarGestionPacienteConTransaccion(existing);
+                log.info("✅ Condición actualizada en tabla gestion_paciente: {}", id);
+                return toDto(updated);
+            }
+
+            // ✅ v1.46.0: Si no existe en gestion_paciente, intentar actualizar en SolicitudBolsa
+            // El ID podría ser el idSolicitudBolsa
+            var solicitudOpt = solicitudBolsaRepository.findById(id);
+
+            if (solicitudOpt.isPresent()) {
+                SolicitudBolsa existing = solicitudOpt.get();
+                existing.setCondicionMedica(condicion);
+                existing.setObservacionesMedicas(observacionesLimpias);
+
+                // ✅ v1.64.0: Actualizar campos clínicos de Bolsa 107
+                if (tiempoInicioSintomas != null) {
+                    existing.setTiempoInicioSintomas(tiempoInicioSintomas);
+                    log.info("✅ Actualizado tiempoInicioSintomas: {}", tiempoInicioSintomas);
+                }
+                if (consentimientoInformado != null) {
+                    existing.setConsentimientoInformado(consentimientoInformado);
+                    log.info("✅ Actualizado consentimientoInformado: {}", consentimientoInformado);
+                }
+
+                // ✅ v1.47.0: Guardar fecha de atención cuando se marca como "Atendido" o "Deserción"
+                if ("Atendido".equalsIgnoreCase(condicion) || "Deserción".equalsIgnoreCase(condicion)) {
+                    // Usar zona horaria de Perú (UTC-5)
+                    ZonedDateTime zonedDateTime = Instant.now().atZone(ZoneId.of("America/Lima"));
+                    OffsetDateTime fechaAtencion = zonedDateTime.toOffsetDateTime();
+                    existing.setFechaAtencionMedica(fechaAtencion);
+                    log.info("✅ Fecha de atención registrada (Instant→America/Lima): {} | LocalTime: {}", fechaAtencion, zonedDateTime.toLocalTime());
+                } else if ("Pendiente".equalsIgnoreCase(condicion)) {
+                    // ✅ v1.47.0: Limpiar fecha de atención cuando se cambia a "Pendiente"
+                    existing.setFechaAtencionMedica(null);
+                    log.info("✅ Fecha de atención limpiada - estado cambiado a Pendiente");
+                }
+
+                // ✅ v1.103.7: Usar transacción separada para guardar en SolicitudBolsa
+                SolicitudBolsa updated = guardarSolicitudBolsaConTransaccion(existing);
+                log.info("✅ Condición actualizada en tabla dim_solicitud_bolsa: {}", id);
+
+                // ✅ v1.81.0: Registrar atención en historial centralizado cuando se marca ATENDIDO
+                if ("Atendido".equalsIgnoreCase(condicion)) {
+                    registrarTrazabilidadConTransaccion(id, observacionesLimpias, existing.getPacienteDni());
+                }
+
+                return bolsaToGestionDTO(updated);
+            }
+
+            // Si no existe en ninguna tabla, lanzar excepción
+            throw new RuntimeException("Gestión o Solicitud no encontrada con ID: " + id);
+
+        } catch (Exception e) {
+            log.error("❌ [v1.103.7] Error en actualizarCondicion: {}", e.getMessage(), e);
+            throw new RuntimeException("Error actualizando condición: " + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * ✅ v1.103.7: Guardar GestionPaciente en transacción separada
+     * Previene que excepciones marquen la transacción principal como rollback-only
+     */
+    @Transactional
+    private GestionPaciente guardarGestionPacienteConTransaccion(GestionPaciente existing) {
+        return repository.save(existing);
+    }
+
+    /**
+     * ✅ v1.103.7: Guardar SolicitudBolsa en transacción separada
+     * Previene que excepciones marquen la transacción principal como rollback-only
+     */
+    @Transactional
+    private SolicitudBolsa guardarSolicitudBolsaConTransaccion(SolicitudBolsa existing) {
+        return solicitudBolsaRepository.save(existing);
+    }
+
+    /**
+     * ✅ v1.103.7: Registrar trazabilidad en transacción separada
+     * Previene que excepciones en trazabilidad afecten el guardado de la condición
+     */
+    private void registrarTrazabilidadConTransaccion(Long id, String observacionesLimpias, String pacienteDni) {
+        try {
+            // Obtener ID del médico actual
+            Long idMedicoActual = obtenerIdMedicoActual();
+
+            // ✅ v1.89.6: Solo registrar si idMedicoActual NO es null
+            if (idMedicoActual != null) {
+                try {
+                    // Registrar atención desde MisPacientes
+                    trazabilidadClinicaService.registrarDesdeMisPacientes(
+                        id,
+                        observacionesLimpias,
+                        idMedicoActual
+                    );
+                } catch (Exception e) {
+                    log.warn("⚠️ [v1.103.7] Error registrando desde MisPacientes - Solicitud {}: {}", id, e.getMessage());
+                }
+
+                // Sincronizar y registrar ECG si existe
+                if (pacienteDni != null && !pacienteDni.isEmpty()) {
+                    try {
+                        trazabilidadClinicaService.registrarDesdeTeleECG(pacienteDni, idMedicoActual);
+                    } catch (Exception e) {
+                        log.warn("⚠️ [v1.103.7] Error registrando desde TeleECG - DNI {}: {}", pacienteDni, e.getMessage());
+                    }
+                }
+
+                log.info("✅ [v1.81.0] Atención registrada en historial centralizado - Solicitud: {}", id);
+            } else {
+                log.warn("⚠️ [v1.89.6] idMedicoActual es null - SKIP trazabilidad para Solicitud: {}", id);
+            }
+        } catch (Exception e) {
+            log.warn("⚠️ [v1.81.0] Error en trazabilidad - Solicitud {}: {}", id, e.getMessage());
+        }
     }
 
     @Override
