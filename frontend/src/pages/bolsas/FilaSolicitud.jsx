@@ -42,25 +42,25 @@ function FilaSolicitud({
         <span className="font-medium text-gray-900">{solicitud.descBolsa || solicitud.nombreBolsa || 'Sin clasificar'}</span>
       </td>
       <td className="px-1 py-1 text-sm text-gray-700">{solicitud.fechaPreferidaNoAtendida}</td>
-      <td className="px-1 py-1 text-sm">
+      <td className="px-3 py-2 text-sm min-w-max">
         <div className="text-xs text-gray-600 font-semibold">{solicitud.tipoDocumento}</div>
-        <div className="font-semibold text-blue-600 mt-0.5">{solicitud.dni}</div>
+        <div className="font-bold text-blue-600 mt-1 text-base">{solicitud.dni}</div>
       </td>
-      <td className="px-1 py-1 text-sm">
-        <div className="font-semibold text-gray-900">{solicitud.paciente}</div>
-        <div className="text-xs text-gray-500 mt-0.5">
+      <td className="px-3 py-2 text-sm min-w-max">
+        <div className="font-bold text-gray-900 text-base whitespace-nowrap">{solicitud.paciente}</div>
+        <div className="text-xs text-gray-500 mt-1">
           <span className="inline-block">{solicitud.sexo}</span>
           <span className="mx-1">•</span>
           <span className="inline-block">{solicitud.edad} años</span>
         </div>
       </td>
-      <td className="px-1 py-1 text-sm">
+      <td className="px-3 py-2 text-sm min-w-max">
         <div className="font-medium text-gray-900">
           <span className="text-xs text-gray-500">Principal: </span>
-          <span className="font-semibold">{solicitud.telefono}</span>
+          <span className="font-bold text-base">{solicitud.telefono}</span>
         </div>
         {solicitud.telefonoAlterno && solicitud.telefonoAlterno !== 'N/A' && (
-          <div className="text-xs text-gray-500 mt-0.5" title="Teléfono Alterno">
+          <div className="text-xs text-gray-500 mt-1" title="Teléfono Alterno">
             <span className="text-gray-500">Alterno: </span>
             <span className="font-semibold text-gray-700">{solicitud.telefonoAlterno}</span>
           </div>
