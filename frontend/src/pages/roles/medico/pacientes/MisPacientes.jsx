@@ -1393,22 +1393,48 @@ export default function MisPacientes() {
     setFechaAtencionSeleccionada(''); // Limpiar selección de fecha
   }, [filtroEstado, pacientes]);
 
-  // ✅ v1.65.0: Filtrar pacientes por fecha - DEFAULT HOY
-  // Si no hay fecha seleccionada, filtra solo HOY; si está seleccionada, filtra por esa fecha
+  // ✅ v1.65.0: Filtrar pacientes por fecha de ASIGNACIÓN - DEFAULT HOY
+  // Filtra por fechaAsignacion usando filtroRangoFecha (ASIGNACIÓN)
+  // IMPORTANTE: usa fechaAsignacion, no fechaAtencion
   const pacientesFiltradosPorFecha = pacientesFiltrados.filter(p => {
-    if (!p.fechaAtencion) return false;
-
-    // Extraer fecha en formato ISO: "2026-02-06T16:30:17.428Z" → "2026-02-06"
-    const fechaPaciente = p.fechaAtencion.split('T')[0];
-
-    // Si hay fecha seleccionada, filtra por esa fecha
+    // Si el filtro de ATENCIÓN está seleccionado, úsalo primero (tiene prioridad)
     if (fechaAtencionSeleccionada) {
-      return fechaPaciente === fechaAtencionSeleccionada;
+      if (!p.fechaAtencion) return false;
+      const fechaAtencion = p.fechaAtencion.split('T')[0];
+      return fechaAtencion === fechaAtencionSeleccionada;
     }
 
-    // Si NO hay fecha seleccionada, filtra por HOY
+    // Si NO hay filtro ATENCIÓN, usa el filtro ASIGNACIÓN
+    if (!p.fechaAsignacion) return false;
+
+    const fechaAsignacion = p.fechaAsignacion.split('T')[0];
     const hoy = new Date().toISOString().split('T')[0];
-    return fechaPaciente === hoy;
+
+    // Por default, filtroRangoFecha es 'todos', pero queremos comportamiento de 'hoy'
+    if (filtroRangoFecha === 'todos' || filtroRangoFecha === 'hoy') {
+      return fechaAsignacion === hoy;
+    }
+
+    if (filtroRangoFecha === 'ayer') {
+      const ayer = new Date(Date.now() - 86400000).toISOString().split('T')[0];
+      return fechaAsignacion === ayer;
+    }
+
+    if (filtroRangoFecha === '7dias') {
+      const hace7dias = new Date(Date.now() - 7 * 86400000).toISOString().split('T')[0];
+      return fechaAsignacion >= hace7dias && fechaAsignacion <= hoy;
+    }
+
+    if (filtroRangoFecha === 'personalizado') {
+      const desde = fechaDesde ? new Date(fechaDesde).toISOString().split('T')[0] : null;
+      const hasta = fechaHasta ? new Date(fechaHasta).toISOString().split('T')[0] : null;
+      if (desde && hasta) {
+        return fechaAsignacion >= desde && fechaAsignacion <= hasta;
+      }
+      return true;
+    }
+
+    return true;
   });
 
   const toggleEnfermedad = (enfermedad) => {
@@ -1720,7 +1746,7 @@ export default function MisPacientes() {
             </div>
 
             {/* Filtro Rango Fecha - 1 column */}
-            <div>
+            <div data-selector-asignacion>
               <label className="block text-xs font-semibold text-gray-700 mb-2 uppercase tracking-wide">
                 <Calendar className="w-4 h-4 inline mr-2 text-green-600" />
                 Asignación
@@ -1835,18 +1861,18 @@ export default function MisPacientes() {
               <AlertCircle className="w-8 h-8 text-amber-600" strokeWidth={1.5} />
             </div>
             <p className="text-amber-900 font-semibold text-lg">
-              {!fechaAtencionSeleccionada ? '❌ No hay pacientes asignados para hoy' : 'No hay pacientes en la fecha seleccionada'}
+              {filtroRangoFecha === 'todos' || filtroRangoFecha === 'hoy' ? '❌ No hay pacientes asignados para hoy' : 'No hay pacientes en el período seleccionado'}
             </p>
             <p className="text-amber-700 text-sm mt-2">
-              {!fechaAtencionSeleccionada
-                ? 'Para ver pacientes de otros días, abre el calendario en el filtro "ATENCIÓN" arriba.'
-                : 'Intenta seleccionando otra fecha o ajustando los filtros de búsqueda.'}
+              {filtroRangoFecha === 'todos' || filtroRangoFecha === 'hoy'
+                ? 'Para ver pacientes de otros días, abre el selector "ASIGNACIÓN" arriba.'
+                : 'Intenta seleccionando otro período o ajustando los filtros de búsqueda.'}
             </p>
-            {!fechaAtencionSeleccionada && (
+            {(filtroRangoFecha === 'todos' || filtroRangoFecha === 'hoy') && (
               <button
                 onClick={() => {
-                  // Scroll hasta el selector de fechas
-                  document.querySelector('[data-selector-atencion]')?.scrollIntoView({ behavior: 'smooth' });
+                  // Scroll hasta el selector ASIGNACIÓN
+                  document.querySelector('[data-selector-asignacion]')?.scrollIntoView({ behavior: 'smooth' });
                 }}
                 className="mt-4 px-6 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition-colors font-medium inline-flex items-center gap-2"
               >
