@@ -146,4 +146,8 @@ public class AtencionClinica107 {
     // 🆕 Condición médica (Pendiente, Atendido, Deserción)
     @Column(name = "condicion_medica")
     private String condicionMedica;
+
+    // 📞 Motivo de Llamada (v1.68.2)
+    @Column(name = "motivo_llamada_bolsa")
+    private String motivoLlamadoBolsa;
 }

@@ -183,6 +183,13 @@ export default function Modulo107PacientesList() {
       // Mapear respuesta al formato esperado
       const data = response.content || response || [];
       
+      // 🔍 DEBUG: Ver campos del primer registro para verificar motivoLlamadoBolsa
+      if (data.length > 0) {
+        console.log("📋 [DEBUG] Primer paciente recibido:", data[0]);
+        console.log("📋 [DEBUG] Campos disponibles:", Object.keys(data[0]));
+        console.log("📋 [DEBUG] motivoLlamadoBolsa:", data[0].motivoLlamadoBolsa);
+      }
+      
       // Ya no necesitamos ordenar en frontend - se ordena en backend
       
       // Guardar total de elementos
@@ -931,12 +938,13 @@ export default function Modulo107PacientesList() {
                   <th className="px-2 py-1.5 text-left text-xs font-bold uppercase">Fecha de Cita</th>
                   <th className="px-2 py-1.5 text-left text-xs font-bold uppercase">Personal ID</th>
                   <th className="px-2 py-1.5 text-left text-xs font-bold uppercase">Estado Atención</th>
+                  <th className="px-2 py-1.5 text-left text-xs font-bold uppercase">Motivo de Llamada</th>
                 </tr>
               </thead>
               <tbody>
                 {loading ? (
                   <tr>
-                    <td colSpan="13" className="py-8 text-center">
+                    <td colSpan="14" className="py-8 text-center">
                       <RefreshCw className="w-10 h-10 text-slate-300 animate-spin mx-auto mb-1" />
                       <p className="font-medium text-sm text-slate-500">Cargando pacientes...</p>
                     </td>
@@ -1034,11 +1042,14 @@ export default function Modulo107PacientesList() {
                         {paciente.idPersonal || "—"}
                       </td>
                       <td className="px-2 py-1 text-xs">{getCondicionMedicaBadge(paciente.condicionMedica)}</td>
+                      <td className="px-2 py-1 text-xs text-gray-700">
+                        {paciente.motivoLlamadoBolsa || <span className="text-gray-400 italic">—</span>}
+                      </td>
                     </tr>
                   ))
                 ) : (
                   <tr>
-                    <td colSpan="13" className="py-8 text-center">
+                    <td colSpan="14" className="py-8 text-center">
                       <Activity className="w-12 h-12 text-gray-300 mx-auto mb-2" />
                       <p className="text-sm text-gray-500 font-medium">No se encontraron pacientes con los filtros aplicados</p>
                     </td>
