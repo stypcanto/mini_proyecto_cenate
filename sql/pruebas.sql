@@ -260,6 +260,48 @@ select * from form_diag_cat_categoria_profesional fdccp ;
 
 select * from form_diag_cat_equipamiento fdce ;
 
+select * from form_diag_cat_estado_equipo fdcee ;
+
+select * from form_diag_cat_necesidad fdcn  ;
+
+
+ -- (id_bolsa, paciente_id, id_servicio, especialidad)
+select dsb.id_bolsa , dsb.paciente_dni , dsb.id_servicio , dsb.especialidad , dsb.*
+from dim_solicitud_bolsa dsb  where dsb.paciente_dni ='08213320';
+
+
+
+ -- (id_bolsa, paciente_id, id_servicio, especialidad)
+select dsb.id_bolsa , dsb.paciente_dni , dsb.id_servicio , dsb.especialidad , dsb.*
+from dim_solicitud_bolsa dsb  where dsb.paciente_dni ='48162124';
+
+select * from asegurados a  where a.doc_paciente ='48162124';
+
+
+
+select dsb.codigo_adscripcion , dsb.id_ipress , dsb.codigo_ipress
+from dim_solicitud_bolsa dsb 
+where dsb.id_bolsa =1;
+
+select count(*) from dim_ipress di  where di.stat_ipress ='A';
+
+select * from dim_servicio_essi dse ;
+
+
+
+
+select * from asegurados a  where a.doc_paciente = '46048073';
+
+
+
+select * from dim_ipress di  where di.cod_ipress ='074';
+
+
+
+
+
+
+
 
 
 

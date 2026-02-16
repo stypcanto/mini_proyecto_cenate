@@ -2079,7 +2079,8 @@ export default function MisPacientes() {
                     )}
 
                     <th className="px-2 py-1 text-left">Condición</th>
-                    <th className="px-2 py-1 text-left">Motivo</th>
+                    <th className="px-2 py-1 text-left">Observaciones</th>
+                    <th className="px-2 py-1 text-left">🔔 Motivo Llamada</th>
                     <th className="px-2 py-1 text-left">Fecha Asignación</th>
                     <th className="px-2 py-1 text-left">Fecha Atención</th>
                     {/* ✅ v1.66.4: Columna final para visualizar ECGs (SOLO CARDIÓLOGOS) */}
@@ -2160,6 +2161,15 @@ export default function MisPacientes() {
                         {paciente.observaciones ? (
                           <span className="inline-flex px-2.5 py-1 rounded text-xs font-medium bg-yellow-100 text-yellow-800 border border-yellow-200">
                             {paciente.observaciones}
+                          </span>
+                        ) : (
+                          <span className="text-gray-400">-</span>
+                        )}
+                      </td>
+                      <td className="px-2 py-1 text-gray-600 text-sm max-w-xs truncate" title={paciente.motivoLlamadoBolsa}>
+                        {paciente.motivoLlamadoBolsa ? (
+                          <span className="inline-flex px-2.5 py-1 rounded text-xs font-medium bg-blue-100 text-blue-800 border border-blue-200">
+                            {paciente.motivoLlamadoBolsa}
                           </span>
                         ) : (
                           <span className="text-gray-400">-</span>

@@ -764,6 +764,7 @@ public class GestionPacienteServiceImpl implements IGestionPacienteService {
             .fechaTomaEKG(fechaTomaEKG)  // ✅ v1.76.0: Fecha de toma del ECG más reciente
             .esUrgente(esUrgente)  // ✅ v1.76.0: Flag de urgencia del ECG más reciente
             .especialidadMedico(especialidadMedico)  // ✅ v1.76.0: Especialidad del médico asignado
+            .motivoLlamadoBolsa(bolsa.getMotivoLlamadoBolsa())  // ✅ v1.104.0: Motivo de llamada o atención
             .build();
     }
 
