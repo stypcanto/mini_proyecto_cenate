@@ -361,20 +361,126 @@ function TabDashboard({ data }) {
 
 // ==================== COMPONENTE TAB ANÁLISIS ====================
 function TabAnalisis({ data }) {
+  // Calcular porcentajes para Equipamiento Informático
+  const infoPorcentaje = data.equipamientoInformatico ?
+    {
+      disponibles: (data.equipamientoInformatico.filter(e => e.disponible).length / data.equipamientoInformatico.length * 100).toFixed(1),
+      noDisponibles: (data.equipamientoInformatico.filter(e => !e.disponible).length / data.equipamientoInformatico.length * 100).toFixed(1),
+      total: data.equipamientoInformatico.length,
+      disponiblesCount: data.equipamientoInformatico.filter(e => e.disponible).length
+    } : null;
+
+  // Calcular porcentajes para Equipamiento Biomédico
+  const bioPorcentaje = data.equipamientoBiomedico ?
+    {
+      disponibles: (data.equipamientoBiomedico.filter(e => e.disponible).length / data.equipamientoBiomedico.length * 100).toFixed(1),
+      noDisponibles: (data.equipamientoBiomedico.filter(e => !e.disponible).length / data.equipamientoBiomedico.length * 100).toFixed(1),
+      total: data.equipamientoBiomedico.length,
+      disponiblesCount: data.equipamientoBiomedico.filter(e => e.disponible).length
+    } : null;
+
+  // Calcular porcentajes para Servicios
+  const serviciosPorcentaje = data.servicios ?
+    {
+      disponibles: (data.servicios.filter(s => s.disponible).length / data.servicios.length * 100).toFixed(1),
+      noDisponibles: (data.servicios.filter(s => !s.disponible).length / data.servicios.length * 100).toFixed(1),
+      total: data.servicios.length,
+      disponiblesCount: data.servicios.filter(s => s.disponible).length
+    } : null;
+
+  // Datos para los gráficos de barras
+  const chartDataInfo = infoPorcentaje ? [
+    { categoria: 'Disponibles', porcentaje: parseFloat(infoPorcentaje.disponibles), color: '#10b981' },
+    { categoria: 'No disponibles', porcentaje: parseFloat(infoPorcentaje.noDisponibles), color: '#ef4444' }
+  ] : [];
+
+  const chartDataBio = bioPorcentaje ? [
+    { categoria: 'Disponibles', porcentaje: parseFloat(bioPorcentaje.disponibles), color: '#10b981' },
+    { categoria: 'No disponibles', porcentaje: parseFloat(bioPorcentaje.noDisponibles), color: '#ef4444' }
+  ] : [];
+
+  const chartDataServicios = serviciosPorcentaje ? [
+    { categoria: 'Disponibles', porcentaje: parseFloat(serviciosPorcentaje.disponibles), color: '#10b981' },
+    { categoria: 'No disponibles', porcentaje: parseFloat(serviciosPorcentaje.noDisponibles), color: '#ef4444' }
+  ] : [];
+
   return (
     <div className="space-y-6">
       <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-        <p className="text-yellow-800 font-semibold">📊 Análisis por Sección</p>
+        <p className="text-yellow-800 font-semibold">📊 Análisis por Sección con Gráficos de Disponibilidad</p>
         <p className="text-yellow-700 text-sm mt-1">
-          Vista detallada de cada sección con gráficos y tablas interactivas
+          Porcentaje de equipamiento y servicios disponibles vs no disponibles
         </p>
       </div>
+
+      {/* Equipamiento Informático */}
+      {infoPorcentaje && (
+        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
+          <div className="px-6 py-4 bg-gradient-to-r from-blue-50 to-indigo-50 border-b border-gray-200">
+            <h3 className="text-lg font-semibold text-gray-900">Equipamiento Informático</h3>
+            <p className="text-sm text-gray-600 mt-1">{infoPorcentaje.disponiblesCount} de {infoPorcentaje.total} equipos operativos</p>
+          </div>
+          <div className="p-6">
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={chartDataInfo} layout="vertical" margin={{ top: 5, right: 30, left: 150, bottom: 5 }}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis type="number" domain={[0, 100]} label={{ value: 'Porcentaje (%)', position: 'insideBottomRight', offset: -5 }} />
+                <YAxis dataKey="categoria" type="category" width={140} />
+                <Tooltip formatter={(value) => `${value.toFixed(1)}%`} />
+                <Bar dataKey="porcentaje" fill="#3b82f6" radius={[0, 8, 8, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      )}
+
+      {/* Equipamiento Biomédico */}
+      {bioPorcentaje && (
+        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
+          <div className="px-6 py-4 bg-gradient-to-r from-purple-50 to-pink-50 border-b border-gray-200">
+            <h3 className="text-lg font-semibold text-gray-900">Equipamiento Biomédico</h3>
+            <p className="text-sm text-gray-600 mt-1">{bioPorcentaje.disponiblesCount} de {bioPorcentaje.total} equipos operativos</p>
+          </div>
+          <div className="p-6">
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={chartDataBio} layout="vertical" margin={{ top: 5, right: 30, left: 150, bottom: 5 }}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis type="number" domain={[0, 100]} label={{ value: 'Porcentaje (%)', position: 'insideBottomRight', offset: -5 }} />
+                <YAxis dataKey="categoria" type="category" width={140} />
+                <Tooltip formatter={(value) => `${value.toFixed(1)}%`} />
+                <Bar dataKey="porcentaje" fill="#8b5cf6" radius={[0, 8, 8, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      )}
+
+      {/* Servicios de Telesalud */}
+      {serviciosPorcentaje && (
+        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
+          <div className="px-6 py-4 bg-gradient-to-r from-emerald-50 to-cyan-50 border-b border-gray-200">
+            <h3 className="text-lg font-semibold text-gray-900">Servicios de Telesalud</h3>
+            <p className="text-sm text-gray-600 mt-1">{serviciosPorcentaje.disponiblesCount} de {serviciosPorcentaje.total} servicios disponibles</p>
+          </div>
+          <div className="p-6">
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={chartDataServicios} layout="vertical" margin={{ top: 5, right: 30, left: 150, bottom: 5 }}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis type="number" domain={[0, 100]} label={{ value: 'Porcentaje (%)', position: 'insideBottomRight', offset: -5 }} />
+                <YAxis dataKey="categoria" type="category" width={140} />
+                <Tooltip formatter={(value) => `${value.toFixed(1)}%`} />
+                <Bar dataKey="porcentaje" fill="#10b981" radius={[0, 8, 8, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      )}
 
       {/* Resumen de Necesidades */}
       {data.necesidadResumen && (
         <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
           <div className="px-6 py-4 bg-gray-50 border-b border-gray-200">
-            <h3 className="text-lg font-semibold text-gray-900">Resumen de Necesidades</h3>
+            <h3 className="text-lg font-semibold text-gray-900">Resumen de Necesidades Identificadas</h3>
           </div>
           <div className="p-6">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
