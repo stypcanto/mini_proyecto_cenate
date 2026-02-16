@@ -73,7 +73,7 @@ const UsersManagement = () => {
 
   // 🚀 Estados de paginación
   const [currentPage, setCurrentPage] = useState(0);
-  const [pageSize] = useState(7); // Tamaño fijo de página: 7 usuarios por página
+  const [pageSize] = useState(27); // Tamaño fijo de página: 27 usuarios por página
   const [totalElements, setTotalElements] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
   const [sortBy, setSortBy] = useState('idPers');

@@ -3,6 +3,8 @@ package com.styp.cenate.security.filter;
 import com.styp.cenate.security.service.JwtUtil;
 import com.styp.cenate.security.service.UserDetailsServiceImpl;
 import com.styp.cenate.service.security.TokenBlacklistService;
+import io.jsonwebtoken.ExpiredJwtException;
+import io.jsonwebtoken.JwtException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -65,21 +67,29 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             return;
         }
 
-        final String username = jwtUtil.extractUsername(token);
+        try {
+            final String username = jwtUtil.extractUsername(token);
 
-        if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-            UserDetails userDetails = userDetailsService.loadUserByUsername(username);
+            if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+                UserDetails userDetails = userDetailsService.loadUserByUsername(username);
 
-            if (jwtUtil.validateToken(token, userDetails.getUsername())) {
-                UsernamePasswordAuthenticationToken authToken =
-                        new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
-                authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                if (jwtUtil.validateToken(token, userDetails.getUsername())) {
+                    UsernamePasswordAuthenticationToken authToken =
+                            new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
+                    authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
 
-                SecurityContextHolder.getContext().setAuthentication(authToken);
-                log.debug("JWT valido para usuario: {}", username);
-            } else {
-                log.warn("Token JWT invalido o expirado para usuario: {}", username);
+                    SecurityContextHolder.getContext().setAuthentication(authToken);
+                    log.debug("JWT valido para usuario: {}", username);
+                } else {
+                    log.warn("Token JWT invalido o expirado para usuario: {}", username);
+                }
             }
+        } catch (ExpiredJwtException e) {
+            log.warn("Token JWT expirado: {}", e.getMessage());
+        } catch (JwtException e) {
+            log.warn("Token JWT invalido: {}", e.getMessage());
+        } catch (Exception e) {
+            log.warn("Error procesando token JWT: {}", e.getMessage());
         }
 
         filterChain.doFilter(request, response);
