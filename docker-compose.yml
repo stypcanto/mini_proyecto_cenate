@@ -86,6 +86,8 @@ services:
       # 🔧 v1.45.4 - Mapear dominios EsSalud a IP del servidor de correo
       - "essalud.gob.pe:172.20.0.227"
       - "wiracocha.essalud:172.20.0.227"
+    networks:
+      - cenate-net
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "postfix", "status"]
