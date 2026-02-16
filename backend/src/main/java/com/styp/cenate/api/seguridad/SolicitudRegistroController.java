@@ -47,28 +47,28 @@ public class SolicitudRegistroController {
     }
 
     @GetMapping("/admin/solicitudes-registro")
-    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN')")
+    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'GESTOR_TERRITORIAL_TI')")
     public ResponseEntity<List<SolicitudRegistroDTO>> listarTodasSolicitudes() {
         log.info("Listando todas las solicitudes de registro");
         return ResponseEntity.ok(accountRequestService.listarTodasLasSolicitudes());
     }
 
     @GetMapping("/admin/solicitudes-registro/pendientes")
-    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN')")
+    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'GESTOR_TERRITORIAL_TI')")
     public ResponseEntity<List<SolicitudRegistroDTO>> listarSolicitudesPendientes() {
         log.info("Listando solicitudes pendientes");
         return ResponseEntity.ok(accountRequestService.listarSolicitudesPendientes());
     }
 
     @GetMapping("/admin/solicitudes-registro/estadisticas")
-    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN')")
+    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'GESTOR_TERRITORIAL_TI')")
     public ResponseEntity<Map<String, Long>> obtenerEstadisticas() {
         log.info("Obteniendo estadisticas de solicitudes");
         return ResponseEntity.ok(accountRequestService.obtenerEstadisticas());
     }
 
     @GetMapping("/admin/solicitudes-registro/{id}/validar-usuario")
-    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN')")
+    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'GESTOR_TERRITORIAL_TI')")
     public ResponseEntity<?> validarExistenciaUsuario(@PathVariable Long id) {
         try {
             log.info("Validando existencia de usuario para solicitud ID: {}", id);
@@ -87,7 +87,7 @@ public class SolicitudRegistroController {
     }
 
     @PutMapping("/admin/solicitudes-registro/{id}/aprobar")
-    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN')")
+    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'GESTOR_TERRITORIAL_TI')")
     public ResponseEntity<?> aprobarSolicitud(@PathVariable Long id) {
         try {
             log.info("Aprobando solicitud ID: *********************** {}", id);
@@ -113,7 +113,7 @@ public class SolicitudRegistroController {
     }
 
     @PutMapping("/admin/solicitudes-registro/{id}/rechazar")
-    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN')")
+    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'GESTOR_TERRITORIAL_TI')")
     public ResponseEntity<?> rechazarSolicitud(
             @PathVariable Long id,
             @RequestBody Map<String, String> body) {
@@ -151,7 +151,7 @@ public class SolicitudRegistroController {
      * (requiere_cambio_password = true)
      */
     @GetMapping("/admin/usuarios/pendientes-activacion")
-    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN')")
+    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'GESTOR_TERRITORIAL_TI')")
     public ResponseEntity<?> listarUsuariosPendientesActivacion() {
         try {
             log.info("Listando usuarios pendientes de activación");
@@ -169,7 +169,7 @@ public class SolicitudRegistroController {
      * GET /api/admin/usuarios/pendientes-activacion/por-red/{idRed}
      */
     @GetMapping("/admin/usuarios/pendientes-activacion/por-red/{idRed}")
-    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN')")
+    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'GESTOR_TERRITORIAL_TI')")
     public ResponseEntity<?> listarUsuariosPendientesPorRed(@PathVariable Long idRed) {
         try {
             log.info("Listando usuarios pendientes de activación para Red ID: {}", idRed);
@@ -187,7 +187,7 @@ public class SolicitudRegistroController {
      * GET /api/admin/usuarios/pendientes-activacion/por-macroregion/{idMacroregion}
      */
     @GetMapping("/admin/usuarios/pendientes-activacion/por-macroregion/{idMacroregion}")
-    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN')")
+    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'GESTOR_TERRITORIAL_TI')")
     public ResponseEntity<?> listarUsuariosPendientesPorMacroregion(@PathVariable Long idMacroregion) {
         try {
             log.info("Listando usuarios pendientes de activación para Macrorregión ID: {}", idMacroregion);
@@ -204,7 +204,7 @@ public class SolicitudRegistroController {
      * Reenvía el email de activación a un usuario específico
      */
     @PostMapping("/admin/usuarios/{idUsuario}/reenviar-activacion")
-    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN')")
+    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'GESTOR_TERRITORIAL_TI')")
     public ResponseEntity<?> reenviarEmailActivacion(
             @PathVariable Long idUsuario,
             @RequestBody(required = false) Map<String, String> body) {
@@ -248,7 +248,7 @@ public class SolicitudRegistroController {
      * Solo elimina usuarios que tienen requiere_cambio_password = true (nunca activaron su cuenta)
      */
     @DeleteMapping("/admin/usuarios/{idUsuario}/pendiente-activacion")
-    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN')")
+    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'GESTOR_TERRITORIAL_TI')")
     public ResponseEntity<?> eliminarUsuarioPendiente(@PathVariable Long idUsuario) {
         try {
             log.info("Eliminando usuario pendiente de activación ID: {}", idUsuario);
@@ -283,7 +283,7 @@ public class SolicitudRegistroController {
      * Útil para diagnosticar por qué un usuario no puede registrarse.
      */
     @GetMapping("/admin/datos-huerfanos/{numDocumento}")
-    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN')")
+    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'GESTOR_TERRITORIAL_TI')")
     public ResponseEntity<?> verificarDatosHuerfanos(@PathVariable String numDocumento) {
         try {
             log.info("Verificando datos existentes para documento: {}", numDocumento);
