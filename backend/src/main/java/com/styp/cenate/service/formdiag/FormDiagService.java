@@ -1,5 +1,6 @@
 package com.styp.cenate.service.formdiag;
 
+import com.styp.cenate.dto.formdiag.FormDiagEstadisticasDTO;
 import com.styp.cenate.dto.formdiag.FormDiagListResponse;
 import com.styp.cenate.dto.formdiag.FormDiagRequest;
 import com.styp.cenate.dto.formdiag.FormDiagResponse;
@@ -80,4 +81,9 @@ public interface FormDiagService {
      * Verificar si existe un formulario en proceso para la IPRESS en el año actual
      */
     boolean existeEnProcesoActual(Long idIpress);
+
+    /**
+     * Obtener estadísticas detalladas de un formulario
+     */
+    FormDiagEstadisticasDTO obtenerEstadisticasDetalladas(Integer idFormulario);
 }

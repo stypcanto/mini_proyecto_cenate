@@ -11,12 +11,13 @@ import {
   ChevronLeft, ChevronRight, Filter, Loader,
   Network, ClipboardList, Eye, CheckCircle2,
   AlertCircle, Calendar, FileText, XCircle, RefreshCw,
-  Shield, FileCheck, User, Fingerprint, ExternalLink
+  Shield, FileCheck, User, Fingerprint, ExternalLink, BarChart3
 } from "lucide-react";
 import toast from "react-hot-toast";
 import * as XLSX from 'xlsx';
 import aseguradosService from "../../../services/aseguradosService";
 import api from '../../../lib/apiClient';
+import ReporteEstadisticoModal from "../../../components/modals/ReporteEstadisticoModal";
 
 export default function DiagnosticoIpress() {
   // Estados principales
@@ -33,6 +34,10 @@ export default function DiagnosticoIpress() {
   const [modalDetalle, setModalDetalle] = useState(false);
   const [diagnosticoSeleccionado, setDiagnosticoSeleccionado] = useState(null);
   const [cargandoPdf, setCargandoPdf] = useState(false);
+
+  // Modal de estadísticas
+  const [modalEstadisticas, setModalEstadisticas] = useState(false);
+  const [idFormularioEstadisticas, setIdFormularioEstadisticas] = useState(null);
 
   // Paginacion
   const [paginaActual, setPaginaActual] = useState(1);
@@ -833,6 +838,21 @@ export default function DiagnosticoIpress() {
                             Descargar PDF
                           </span>
                         </div>
+                        {/* Ver Estadísticas */}
+                        <div className="relative group">
+                          <button
+                            onClick={() => {
+                              setIdFormularioEstadisticas(diagnostico.idFormulario);
+                              setModalEstadisticas(true);
+                            }}
+                            className="p-1.5 rounded-lg text-amber-600 hover:bg-amber-100 transition-colors"
+                          >
+                            <BarChart3 className="w-4 h-4" />
+                          </button>
+                          <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 text-xs font-medium text-white bg-gray-800 rounded shadow-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-10">
+                            Ver estadísticas
+                          </span>
+                        </div>
                       </div>
                     </td>
                   </tr>
@@ -1009,6 +1029,16 @@ export default function DiagnosticoIpress() {
           </div>
         </div>
       )}
+
+      {/* Modal Estadísticas - Reporte detallado */}
+      <ReporteEstadisticoModal
+        isOpen={modalEstadisticas}
+        onClose={() => {
+          setModalEstadisticas(false);
+          setIdFormularioEstadisticas(null);
+        }}
+        idFormulario={idFormularioEstadisticas}
+      />
     </div>
   );
 }

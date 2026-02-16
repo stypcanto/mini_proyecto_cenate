@@ -133,6 +133,51 @@ const formularioDiagnosticoService = {
     },
 
     /**
+     * Obtener estadísticas detalladas de un formulario
+     * @param {number} idFormulario - ID del formulario
+     * @returns {Promise}
+     */
+    obtenerEstadisticas: async (idFormulario) => {
+        return api.get(`/formulario-diagnostico/${idFormulario}/estadisticas`);
+    },
+
+    /**
+     * Descargar reporte Excel con estadísticas del formulario
+     * @param {number} idFormulario - ID del formulario
+     * @returns {Promise}
+     */
+    descargarExcelReporte: async (idFormulario) => {
+        try {
+            const token = localStorage.getItem('auth.token');
+            const baseUrl = process.env.REACT_APP_API_URL || 'http://localhost:8080/api';
+
+            const response = await fetch(`${baseUrl}/formulario-diagnostico/${idFormulario}/excel-reporte`, {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error(`Error ${response.status}: ${response.statusText}`);
+            }
+
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `reporte_estadistico_formulario_${idFormulario}.xlsx`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+        } catch (error) {
+            console.error('Error descargando Excel:', error);
+            throw error;
+        }
+    },
+
+    /**
      * Transforma datos del frontend al formato del backend
      * @param {Object} formData - Datos del formulario
      * @param {number} idIpress - ID de la IPRESS

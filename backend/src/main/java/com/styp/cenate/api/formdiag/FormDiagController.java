@@ -3,6 +3,7 @@ package com.styp.cenate.api.formdiag;
 import com.styp.cenate.dto.formdiag.DescargarZipRequest;
 import com.styp.cenate.dto.formdiag.FirmaDigitalRequest;
 import com.styp.cenate.dto.formdiag.FirmaDigitalResponse;
+import com.styp.cenate.dto.formdiag.FormDiagEstadisticasDTO;
 import com.styp.cenate.dto.formdiag.FormDiagListResponse;
 import com.styp.cenate.dto.formdiag.FormDiagRequest;
 import com.styp.cenate.dto.formdiag.FormDiagResponse;
@@ -11,6 +12,7 @@ import com.styp.cenate.model.formdiag.FormDiagCatPrioridad;
 import com.styp.cenate.repository.formdiag.FormDiagCatNecesidadRepository;
 import com.styp.cenate.repository.formdiag.FormDiagCatPrioridadRepository;
 import com.styp.cenate.service.formdiag.FirmaDigitalService;
+import com.styp.cenate.service.formdiag.FormDiagExcelService;
 import com.styp.cenate.service.formdiag.FormDiagService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -36,6 +38,7 @@ public class FormDiagController {
 
     private final FormDiagService formDiagService;
     private final FirmaDigitalService firmaDigitalService;
+    private final FormDiagExcelService formDiagExcelService;
     private final FormDiagCatNecesidadRepository catNecesidadRepo;
     private final FormDiagCatPrioridadRepository catPrioridadRepo;
 
@@ -340,5 +343,47 @@ public class FormDiagController {
         log.info("GET /api/formulario-diagnostico/catalogos/prioridades");
         List<FormDiagCatPrioridad> lista = catPrioridadRepo.findAllByOrderByIdPrioridadAsc();
         return ResponseEntity.ok(lista);
+    }
+
+    // ==================== ENDPOINTS DE ESTADÍSTICAS ====================
+
+    /**
+     * Obtener estadísticas detalladas de un formulario de diagnóstico
+     */
+    @GetMapping("/{id}/estadisticas")
+    public ResponseEntity<FormDiagEstadisticasDTO> obtenerEstadisticas(@PathVariable("id") Integer id) {
+        log.info("GET /api/formulario-diagnostico/{}/estadisticas - Obteniendo estadísticas", id);
+        FormDiagEstadisticasDTO estadisticas = formDiagService.obtenerEstadisticasDetalladas(id);
+        return ResponseEntity.ok(estadisticas);
+    }
+
+    /**
+     * Descargar reporte Excel con estadísticas del formulario
+     */
+    @GetMapping("/{id}/excel-reporte")
+    public ResponseEntity<byte[]> descargarExcelReporte(@PathVariable("id") Integer id) {
+        log.info("GET /api/formulario-diagnostico/{}/excel-reporte - Descargando Excel", id);
+
+        try {
+            byte[] excelBytes = formDiagExcelService.generarReporteExcel(id);
+
+            if (excelBytes == null || excelBytes.length == 0) {
+                return ResponseEntity.noContent().build();
+            }
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
+            String filename = "reporte_estadistico_formulario_" + id + ".xlsx";
+            headers.setContentDispositionFormData("attachment", filename);
+            headers.setContentLength(excelBytes.length);
+
+            log.info("Excel generado: {} bytes", excelBytes.length);
+            return new ResponseEntity<>(excelBytes, headers, HttpStatus.OK);
+
+        } catch (Exception e) {
+            log.error("Error al generar Excel: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(("Error: " + e.getMessage()).getBytes());
+        }
     }
 }

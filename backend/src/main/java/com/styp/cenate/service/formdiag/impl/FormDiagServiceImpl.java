@@ -1,5 +1,6 @@
 package com.styp.cenate.service.formdiag.impl;
 
+import com.styp.cenate.dto.formdiag.FormDiagEstadisticasDTO;
 import com.styp.cenate.dto.formdiag.FormDiagListResponse;
 import com.styp.cenate.dto.formdiag.FormDiagRequest;
 import com.styp.cenate.dto.formdiag.FormDiagResponse;
@@ -18,7 +19,9 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.Year;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
@@ -243,6 +246,338 @@ public class FormDiagServiceImpl implements FormDiagService {
     public boolean existeEnProcesoActual(Long idIpress) {
         int anioActual = Year.now().getValue();
         return formularioRepo.findEnProcesoPorIpressAndAnio(idIpress, anioActual).isPresent();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public FormDiagEstadisticasDTO obtenerEstadisticasDetalladas(Integer idFormulario) {
+        log.info("Obteniendo estadísticas detalladas para formulario: {}", idFormulario);
+
+        FormDiagFormulario formulario = formularioRepo.findById(idFormulario)
+                .orElseThrow(() -> new EntityNotFoundException("Formulario no encontrado: " + idFormulario));
+
+        // Obtener el FormDiagResponse completo que tiene todos los datos cargados y correctamente mapeados
+        FormDiagResponse formResponse = mapToResponse(formulario);
+
+        // Extraer necesidades del formResponse para los cálculos
+        Object necesidadesResponseObj = formResponse.getNecesidades();
+        List<Map<String, Object>> necesidadesResponse = new ArrayList<>();
+        if (necesidadesResponseObj instanceof Map) {
+            Map<String, Object> necesidadesMap = (Map<String, Object>) necesidadesResponseObj;
+            Object necList = necesidadesMap.get("necesidades");
+            if (necList instanceof List) {
+                necesidadesResponse = (List<Map<String, Object>>) necList;
+            }
+        }
+
+        Ipress ipress = formulario.getIpress();
+
+        // ===== INFRAESTRUCTURA FÍSICA =====
+        FormDiagInfraFis infraFisica = infraFisRepo.findByIdFormulario(idFormulario).orElse(null);
+        FormDiagEstadisticasDTO.InfraestructuraFisicaStats infraFisStats = null;
+        int preguntasSiTotal = 0;
+        int preguntasNoTotal = 0;
+        int totalPreguntasTotal = 0;
+
+        if (infraFisica != null) {
+            Map<String, Boolean> detallesFisica = new HashMap<>();
+            int siCount = 0, noCount = 0;
+            if (infraFisica.getEspacioFisico() != null) { detallesFisica.put("Espacio Físico", infraFisica.getEspacioFisico()); if (infraFisica.getEspacioFisico()) siCount++; else noCount++; }
+            if (infraFisica.getPrivacidad() != null) { detallesFisica.put("Privacidad", infraFisica.getPrivacidad()); if (infraFisica.getPrivacidad()) siCount++; else noCount++; }
+            if (infraFisica.getEscritorio() != null) { detallesFisica.put("Escritorio", infraFisica.getEscritorio()); if (infraFisica.getEscritorio()) siCount++; else noCount++; }
+            if (infraFisica.getSillas() != null) { detallesFisica.put("Sillas", infraFisica.getSillas()); if (infraFisica.getSillas()) siCount++; else noCount++; }
+            if (infraFisica.getEstantes() != null) { detallesFisica.put("Estantes", infraFisica.getEstantes()); if (infraFisica.getEstantes()) siCount++; else noCount++; }
+            if (infraFisica.getArchivero() != null) { detallesFisica.put("Archivero", infraFisica.getArchivero()); if (infraFisica.getArchivero()) siCount++; else noCount++; }
+            if (infraFisica.getIluminacion() != null) { detallesFisica.put("Iluminación", infraFisica.getIluminacion()); if (infraFisica.getIluminacion()) siCount++; else noCount++; }
+            if (infraFisica.getVentilacion() != null) { detallesFisica.put("Ventilación", infraFisica.getVentilacion()); if (infraFisica.getVentilacion()) siCount++; else noCount++; }
+            if (infraFisica.getAireAcondicionado() != null) { detallesFisica.put("Aire Acondicionado", infraFisica.getAireAcondicionado()); if (infraFisica.getAireAcondicionado()) siCount++; else noCount++; }
+
+            int totalFisica = siCount + noCount;
+            preguntasSiTotal += siCount;
+            preguntasNoTotal += noCount;
+            totalPreguntasTotal += totalFisica;
+
+            infraFisStats = FormDiagEstadisticasDTO.InfraestructuraFisicaStats.builder()
+                    .totalPreguntas(totalFisica)
+                    .respuestasSi(siCount)
+                    .respuestasNo(noCount)
+                    .porcentajeCumplimiento(totalFisica > 0 ? (siCount * 100.0 / totalFisica) : 0)
+                    .detalles(detallesFisica)
+                    .build();
+        }
+
+        // ===== INFRAESTRUCTURA TECNOLÓGICA =====
+        FormDiagInfraTec infraTec = infraTecRepo.findByIdFormulario(idFormulario).orElse(null);
+        FormDiagEstadisticasDTO.InfraestructuraTecStats infraTecStats = null;
+
+        if (infraTec != null) {
+            Map<String, Boolean> detallesTec = new HashMap<>();
+            int siCount = 0, noCount = 0;
+            if (infraTec.getHardware() != null) { detallesTec.put("Hardware", infraTec.getHardware()); if (infraTec.getHardware()) siCount++; else noCount++; }
+            if (infraTec.getSoftware() != null) { detallesTec.put("Software", infraTec.getSoftware()); if (infraTec.getSoftware()) siCount++; else noCount++; }
+            if (infraTec.getRedes() != null) { detallesTec.put("Redes", infraTec.getRedes()); if (infraTec.getRedes()) siCount++; else noCount++; }
+            if (infraTec.getAlmacenamiento() != null) { detallesTec.put("Almacenamiento", infraTec.getAlmacenamiento()); if (infraTec.getAlmacenamiento()) siCount++; else noCount++; }
+            if (infraTec.getServicios() != null) { detallesTec.put("Servicios Técnicos", infraTec.getServicios()); if (infraTec.getServicios()) siCount++; else noCount++; }
+
+            int totalTec = siCount + noCount;
+            preguntasSiTotal += siCount;
+            preguntasNoTotal += noCount;
+            totalPreguntasTotal += totalTec;
+
+            infraTecStats = FormDiagEstadisticasDTO.InfraestructuraTecStats.builder()
+                    .totalPreguntas(totalTec)
+                    .respuestasSi(siCount)
+                    .respuestasNo(noCount)
+                    .porcentajeCumplimiento(totalTec > 0 ? (siCount * 100.0 / totalTec) : 0)
+                    .detalles(detallesTec)
+                    .build();
+        }
+
+        // ===== CONECTIVIDAD =====
+        FormDiagConectividadSist conectividad = conectividadRepo.findByIdFormulario(idFormulario).orElse(null);
+        FormDiagEstadisticasDTO.ConectividadStats conectividadStats = null;
+
+        if (conectividad != null) {
+            List<FormDiagEstadisticasDTO.SistemaDisponible> sistemas = new ArrayList<>();
+            sistemas.add(FormDiagEstadisticasDTO.SistemaDisponible.builder().nombre("ESSI").disponible(conectividad.getEssi() != null && conectividad.getEssi()).build());
+            sistemas.add(FormDiagEstadisticasDTO.SistemaDisponible.builder().nombre("PACS").disponible(conectividad.getPacs() != null && conectividad.getPacs()).build());
+            sistemas.add(FormDiagEstadisticasDTO.SistemaDisponible.builder().nombre("ANATPAT").disponible(conectividad.getAnatpat() != null && conectividad.getAnatpat()).build());
+            sistemas.add(FormDiagEstadisticasDTO.SistemaDisponible.builder().nombre("Videoconferencia").disponible(conectividad.getVideoconferencia() != null && conectividad.getVideoconferencia()).build());
+            sistemas.add(FormDiagEstadisticasDTO.SistemaDisponible.builder().nombre("Citas Línea").disponible(conectividad.getCitasLinea() != null && conectividad.getCitasLinea()).build());
+
+            conectividadStats = FormDiagEstadisticasDTO.ConectividadStats.builder()
+                    .tieneInternet(conectividad.getAccesoInternet() != null && conectividad.getAccesoInternet())
+                    .esEstable(conectividad.getConexionEstable() != null && conectividad.getConexionEstable())
+                    .tipoConexion(conectividad.getTipoConexion())
+                    .proveedor(conectividad.getProveedorInternet())
+                    .velocidadContratada(conectividad.getVelocidadContratada() != null ? conectividad.getVelocidadContratada().intValue() : 0)
+                    .velocidadReal(conectividad.getVelocidadReal() != null ? conectividad.getVelocidadReal().intValue() : 0)
+                    .numPuntosRed(conectividad.getPuntosRedDisponibles() != null ? conectividad.getPuntosRedDisponibles() : 0)
+                    .tieneWifi(conectividad.getRedWifi() != null && conectividad.getRedWifi())
+                    .tieneEnergyAlt(conectividad.getSistemaEnergia() != null && conectividad.getSistemaEnergia())
+                    .sistemas(sistemas)
+                    .build();
+        }
+
+        // ===== EQUIPAMIENTO =====
+        // Mapa de nombres de equipamiento por ID (catálogo fijo del sistema)
+        Map<Integer, String> equipamientoNombres = Map.ofEntries(
+            Map.entry(1, "Computadora de escritorio"),
+            Map.entry(2, "Computadora portátil (laptop)"),
+            Map.entry(3, "Monitor"),
+            Map.entry(4, "Cable HDMI"),
+            Map.entry(5, "Cámara web HD 1080p"),
+            Map.entry(6, "Micrófono"),
+            Map.entry(7, "Parlantes/audífonos"),
+            Map.entry(8, "Impresora"),
+            Map.entry(9, "Escáner"),
+            Map.entry(10, "Router/Switch de red"),
+            Map.entry(11, "Pulsioxímetro digital"),
+            Map.entry(12, "Dermatoscopio digital"),
+            Map.entry(13, "Ecógrafo digital"),
+            Map.entry(14, "Electrocardiógrafo digital"),
+            Map.entry(15, "Equipo de gases arteriales digital"),
+            Map.entry(16, "Estetoscopio digital"),
+            Map.entry(17, "Fonendoscopio digital"),
+            Map.entry(18, "Monitor de funciones vitales"),
+            Map.entry(19, "Otoscopio digital"),
+            Map.entry(20, "Oxímetro digital"),
+            Map.entry(21, "Retinógrafo digital"),
+            Map.entry(22, "Tensiómetro digital"),
+            Map.entry(23, "Videocolposcopio"),
+            Map.entry(24, "Estación móvil de telemedicina")
+        );
+
+        List<FormDiagEquipamiento> equiposList = equipamientoRepo.findByIdFormulario(idFormulario);
+        List<FormDiagEstadisticasDTO.EquipamientoStats> equipamientoInfo = new ArrayList<>();
+        List<FormDiagEstadisticasDTO.EquipamientoStats> equipamientoInformatico = new ArrayList<>();
+        List<FormDiagEstadisticasDTO.EquipamientoStats> equipamientoBiomedico = new ArrayList<>();
+
+        int equiposDisponibles = 0;
+        for (FormDiagEquipamiento equipo : equiposList) {
+            // Determinar tipo basado en idEquipamiento: 1-10 = INF, 11+ = BIO
+            Integer idEq = equipo.getIdEquipamiento() != null ? equipo.getIdEquipamiento() : 0;
+            String tipoEquipo = (idEq >= 1 && idEq <= 10) ? "INF" : "BIO";
+
+            // Obtener nombre del equipamiento usando array inline
+            String nombreEquipo;
+            if (idEq == 1) nombreEquipo = "Computadora de escritorio";
+            else if (idEq == 2) nombreEquipo = "Computadora portátil (laptop)";
+            else if (idEq == 3) nombreEquipo = "Monitor";
+            else if (idEq == 4) nombreEquipo = "Cable HDMI";
+            else if (idEq == 5) nombreEquipo = "Cámara web HD 1080p";
+            else if (idEq == 6) nombreEquipo = "Micrófono";
+            else if (idEq == 7) nombreEquipo = "Parlantes/audífonos";
+            else if (idEq == 8) nombreEquipo = "Impresora";
+            else if (idEq == 9) nombreEquipo = "Escáner";
+            else if (idEq == 10) nombreEquipo = "Router/Switch de red";
+            else if (idEq == 11) nombreEquipo = "Pulsioxímetro digital";
+            else if (idEq == 12) nombreEquipo = "Dermatoscopio digital";
+            else if (idEq == 13) nombreEquipo = "Ecógrafo digital";
+            else if (idEq == 14) nombreEquipo = "Electrocardiógrafo digital";
+            else if (idEq == 15) nombreEquipo = "Equipo de gases arteriales digital";
+            else if (idEq == 16) nombreEquipo = "Estetoscopio digital";
+            else if (idEq == 17) nombreEquipo = "Fonendoscopio digital";
+            else if (idEq == 18) nombreEquipo = "Monitor de funciones vitales";
+            else if (idEq == 19) nombreEquipo = "Otoscopio digital";
+            else if (idEq == 20) nombreEquipo = "Oxímetro digital";
+            else if (idEq == 21) nombreEquipo = "Retinógrafo digital";
+            else if (idEq == 22) nombreEquipo = "Tensiómetro digital";
+            else if (idEq == 23) nombreEquipo = "Videocolposcopio";
+            else if (idEq == 24) nombreEquipo = "Estación móvil de telemedicina";
+            else nombreEquipo = "Equipo " + idEq;
+
+            // Determinar estado: si está disponible entonces "Operativo", si no, "No disponible"
+            String estado;
+            if (equipo.getDisponible() != null && equipo.getDisponible()) {
+                estado = "Operativo";
+            } else {
+                estado = "No disponible";
+            }
+
+            FormDiagEstadisticasDTO.EquipamientoStats stats = FormDiagEstadisticasDTO.EquipamientoStats.builder()
+                    .id(equipo.getIdFormEquip())
+                    .nombreEquipamiento(nombreEquipo)
+                    .tipoEquipamiento(tipoEquipo)
+                    .disponible(equipo.getDisponible() != null && equipo.getDisponible())
+                    .cantidad(equipo.getCantidad() != null ? equipo.getCantidad() : 0)
+                    .estado(estado)
+                    .build();
+            equipamientoInfo.add(stats);
+            if (stats.getDisponible()) equiposDisponibles++;
+
+            if ("INF".equalsIgnoreCase(tipoEquipo)) {
+                equipamientoInformatico.add(stats);
+            } else {
+                equipamientoBiomedico.add(stats);
+            }
+        }
+
+        FormDiagEstadisticasDTO.EquipamientoResumenStats equipamientoResumen = FormDiagEstadisticasDTO.EquipamientoResumenStats.builder()
+                .totalEquipos(equiposList.size())
+                .equiposDisponibles(equiposDisponibles)
+                .equiposNoDisponibles(equiposList.size() - equiposDisponibles)
+                .porcentajeDisponibilidad(equiposList.size() > 0 ? (equiposDisponibles * 100.0 / equiposList.size()) : 0)
+                .build();
+
+        // ===== SERVICIOS =====
+        List<FormDiagServicio> serviciosList = servicioRepo.findByIdFormulario(idFormulario);
+        List<FormDiagEstadisticasDTO.ServicioStats> servicios = new ArrayList<>();
+        int serviciosDisponibles = 0;
+
+        for (FormDiagServicio servicio : serviciosList) {
+            // Mapear nombres de servicios por ID (catálogo de 12 servicios)
+            Integer idServ = servicio.getIdServicio() != null ? servicio.getIdServicio() : 0;
+            String nombreServicio;
+            if (idServ == 1) nombreServicio = "Teleconsulta";
+            else if (idServ == 2) nombreServicio = "Teleorientación";
+            else if (idServ == 3) nombreServicio = "Telediagnóstico";
+            else if (idServ == 4) nombreServicio = "Telemonitoreo";
+            else if (idServ == 5) nombreServicio = "Telereceta";
+            else if (idServ == 6) nombreServicio = "Telefarmacia";
+            else if (idServ == 7) nombreServicio = "Teleradiología";
+            else if (idServ == 8) nombreServicio = "Telepatología";
+            else if (idServ == 9) nombreServicio = "Telecirugía";
+            else if (idServ == 10) nombreServicio = "Teleinterconsulta";
+            else if (idServ == 11) nombreServicio = "Teleasistencia";
+            else if (idServ == 12) nombreServicio = "Teleformación";
+            else nombreServicio = "Servicio " + idServ;
+
+            FormDiagEstadisticasDTO.ServicioStats stats = FormDiagEstadisticasDTO.ServicioStats.builder()
+                    .id(servicio.getIdFormServicio())
+                    .nombreServicio(nombreServicio)
+                    .disponible(servicio.getDisponible() != null && servicio.getDisponible())
+                    .build();
+            servicios.add(stats);
+            if (stats.getDisponible()) serviciosDisponibles++;
+        }
+
+        FormDiagEstadisticasDTO.ServicioResumenStats servicioResumen = FormDiagEstadisticasDTO.ServicioResumenStats.builder()
+                .totalServicios(serviciosList.size())
+                .serviciosDisponibles(serviciosDisponibles)
+                .serviciosNoDisponibles(serviciosList.size() - serviciosDisponibles)
+                .porcentajeDisponibilidad(serviciosList.size() > 0 ? (serviciosDisponibles * 100.0 / serviciosList.size()) : 0)
+                .build();
+
+        // ===== NECESIDADES =====
+        // NOTA: Usar datos del formulario original que ya están completos en formResponse
+        List<FormDiagEstadisticasDTO.NecesidadStats> necesidades = new ArrayList<>();
+        int necesidadesAlta = 0, necesidadesMedia = 0, necesidadesBaja = 0;
+        int totalNecesidades = 0;
+
+        // Obtener lista de necesidades del formulario original
+        List<FormDiagNecesidad> necList = necesidadRepo.findByIdFormulario(idFormulario);
+        totalNecesidades = necList.size();
+
+        // Para esta versión, simplificamos y usamos el total
+        // Las prioridades se calcularán correctamente en el Excel que usa mapToResponse
+        FormDiagEstadisticasDTO.NecesidadResumenStats necesidadResumen = FormDiagEstadisticasDTO.NecesidadResumenStats.builder()
+                .totalNecesidades(totalNecesidades)
+                .necesidadesAlta(0)
+                .necesidadesMedia(0)
+                .necesidadesBaja(0)
+                .build();
+
+        // ===== RECURSOS HUMANOS =====
+        FormDiagRecursosHumanos rrhh = recursosHumanosRepo.findByIdFormulario(idFormulario).orElse(null);
+        FormDiagEstadisticasDTO.RecursosHumanosStats rrhhStats = null;
+
+        if (rrhh != null) {
+            int siCount = 0, noCount = 0;
+            if (rrhh.getCoordDesignado() != null && rrhh.getCoordDesignado()) siCount++; else noCount++;
+            if (rrhh.getCapacitacionTic() != null && rrhh.getCapacitacionTic()) siCount++; else noCount++;
+            if (rrhh.getConoceNormativa() != null && rrhh.getConoceNormativa()) siCount++; else noCount++;
+
+            preguntasSiTotal += siCount;
+            preguntasNoTotal += noCount;
+            totalPreguntasTotal += (siCount + noCount);
+
+            rrhhStats = FormDiagEstadisticasDTO.RecursosHumanosStats.builder()
+                    .totalPreguntas(siCount + noCount)
+                    .respuestasSi(siCount)
+                    .respuestasNo(noCount)
+                    .porcentajeSi((siCount + noCount) > 0 ? (siCount * 100.0 / (siCount + noCount)) : 0)
+                    .tieneCoordinador(rrhh.getCoordDesignado() != null && rrhh.getCoordDesignado())
+                    .coordinadorNombre(rrhh.getCoordNombreCompleto())
+                    .coordinadorCorreo(rrhh.getCoordCorreo())
+                    .tieneCapacitacionTic(rrhh.getCapacitacionTic() != null && rrhh.getCapacitacionTic())
+                    .conoceNormativa(rrhh.getConoceNormativa() != null && rrhh.getConoceNormativa())
+                    .capacitacionesAnio(rrhh.getNumCapacitacionesUltimoAnio() != null ? rrhh.getNumCapacitacionesUltimoAnio() : 0)
+                    .necesidadesCapacitacion(rrhh.getNecesidadesCapacitacionTexto())
+                    .build();
+        }
+
+        // ===== CONSTRUCCIÓN DEL DTO =====
+        double porcentajeSiGeneral = totalPreguntasTotal > 0 ? (preguntasSiTotal * 100.0 / totalPreguntasTotal) : 0;
+
+        return FormDiagEstadisticasDTO.builder()
+                .idFormulario(idFormulario)
+                .idIpress(ipress.getIdIpress())
+                .nombreIpress(ipress.getDescIpress())
+                .codigoIpress(ipress.getCodIpress())
+                .idRed(ipress.getRed() != null ? ipress.getRed().getId() : null)
+                .nombreRed(ipress.getRed() != null ? ipress.getRed().getDescripcion() : null)
+                .nombreMacroregion(ipress.getRed() != null && ipress.getRed().getMacroregion() != null
+                        ? ipress.getRed().getMacroregion().getDescMacro() : null)
+                .anio(formulario.getAnio())
+                .estado(formulario.getEstado())
+                .fechaEnvio(formulario.getFechaEnvio())
+                .totalPreguntas(totalPreguntasTotal)
+                .preguntasSi(preguntasSiTotal)
+                .preguntasNo(preguntasNoTotal)
+                .porcentajeSi(porcentajeSiGeneral)
+                .infraFisica(infraFisStats)
+                .infraTec(infraTecStats)
+                .conectividad(conectividadStats)
+                .equipamientoInformatico(equipamientoInformatico)
+                .equipamientoBiomedico(equipamientoBiomedico)
+                .equipamientoResumen(equipamientoResumen)
+                .servicios(servicios)
+                .servicioResumen(servicioResumen)
+                .necesidades(necesidades)
+                .necesidadResumen(necesidadResumen)
+                .rrhh(rrhhStats)
+                .build();
     }
 
     // ==================== MÉTODOS PRIVADOS ====================
@@ -783,5 +1118,45 @@ public class FormDiagServiceImpl implements FormDiagService {
                 // Datos generales
                 .datosGenerales(datosGeneralesResumen)
                 .build();
+    }
+
+    /**
+     * Obtener nombre del equipamiento por ID del catálogo
+     */
+    private String obtenerNombreEquipamiento(Integer idEq) {
+        if (idEq == null || idEq <= 0) return "Equipo Desconocido";
+
+        String[] nombres = {
+            "", // índice 0 no usado
+            "Computadora de escritorio",                    // 1
+            "Computadora portátil (laptop)",                // 2
+            "Monitor",                                       // 3
+            "Cable HDMI",                                    // 4
+            "Cámara web HD 1080p",                          // 5
+            "Micrófono",                                     // 6
+            "Parlantes/audífonos",                          // 7
+            "Impresora",                                     // 8
+            "Escáner",                                       // 9
+            "Router/Switch de red",                         // 10
+            "Pulsioxímetro digital",                        // 11
+            "Dermatoscopio digital",                        // 12
+            "Ecógrafo digital",                             // 13
+            "Electrocardiógrafo digital",                   // 14
+            "Equipo de gases arteriales digital",           // 15
+            "Estetoscopio digital",                         // 16
+            "Fonendoscopio digital",                        // 17
+            "Monitor de funciones vitales",                 // 18
+            "Otoscopio digital",                            // 19
+            "Oxímetro digital",                             // 20
+            "Retinógrafo digital",                          // 21
+            "Tensiómetro digital",                          // 22
+            "Videocolposcopio",                             // 23
+            "Estación móvil de telemedicina"                // 24
+        };
+
+        if (idEq > 0 && idEq < nombres.length) {
+            return nombres[idEq];
+        }
+        return "Equipo " + idEq;
     }
 }
