@@ -41,6 +41,7 @@ public class AtenderPacienteService {
     private final DimServicioEssiRepository servicioEssiRepository;
     private final TrazabilidadClinicaService trazabilidadClinicaService;  // ✅ v1.81.0
 
+    @Transactional
     public void atenderPaciente(Long idSolicitudBolsa, String especialidadActual, AtenderPacienteRequest request) {
         log.info("🏥 [v1.103.6] Registrando atención - Solicitud: {}", idSolicitudBolsa);
 

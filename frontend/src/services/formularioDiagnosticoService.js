@@ -13,7 +13,7 @@ const formularioDiagnosticoService = {
      * @returns {Promise} - Respuesta del servidor
      */
     guardarBorrador: async (request) => {
-        return api.post('/formulario-diagnostico/borrador', request);
+        return api.post('/formulario-diagnostico/borrador', request, true);
     },
 
     /**
@@ -25,7 +25,7 @@ const formularioDiagnosticoService = {
      */
     actualizar: async (idFormulario, formData, idIpress) => {
         const request = transformarParaBackendInterno(formData, idIpress, idFormulario);
-        return api.put(`/formulario-diagnostico/${idFormulario}`, request);
+        return api.put(`/formulario-diagnostico/${idFormulario}`, request, true);
     },
 
     /**
@@ -34,7 +34,7 @@ const formularioDiagnosticoService = {
      * @returns {Promise}
      */
     enviar: async (idFormulario) => {
-        return api.post(`/formulario-diagnostico/${idFormulario}/enviar`);
+        return api.post(`/formulario-diagnostico/${idFormulario}/enviar`, {}, true);
     },
 
     /**
@@ -43,7 +43,7 @@ const formularioDiagnosticoService = {
      * @returns {Promise}
      */
     obtenerPorId: async (idFormulario) => {
-        const response = await api.get(`/formulario-diagnostico/${idFormulario}`);
+        const response = await api.get(`/formulario-diagnostico/${idFormulario}`, true);
         return transformarParaFrontend(response);
     },
 
@@ -54,7 +54,7 @@ const formularioDiagnosticoService = {
      */
     obtenerBorradorPorIpress: async (idIpress) => {
         try {
-            const response = await api.get(`/formulario-diagnostico/borrador/ipress/${idIpress}`);
+            const response = await api.get(`/formulario-diagnostico/borrador/ipress/${idIpress}`, true);
             if (response) {
                 return transformarParaFrontend(response);
             }
@@ -74,7 +74,7 @@ const formularioDiagnosticoService = {
      */
     obtenerUltimoPorIpress: async (idIpress) => {
         try {
-            const response = await api.get(`/formulario-diagnostico/ultimo/ipress/${idIpress}`);
+            const response = await api.get(`/formulario-diagnostico/ultimo/ipress/${idIpress}`, true);
             if (response) {
                 return transformarParaFrontend(response);
             }
@@ -92,7 +92,7 @@ const formularioDiagnosticoService = {
      * @returns {Promise}
      */
     listarTodos: async () => {
-        return api.get('/formulario-diagnostico');
+        return api.get('/formulario-diagnostico', true);
     },
 
     /**
@@ -101,7 +101,7 @@ const formularioDiagnosticoService = {
      * @returns {Promise}
      */
     listarPorIpress: async (idIpress) => {
-        return api.get(`/formulario-diagnostico/ipress/${idIpress}`);
+        return api.get(`/formulario-diagnostico/ipress/${idIpress}`, true);
     },
 
     /**
@@ -110,7 +110,7 @@ const formularioDiagnosticoService = {
      * @returns {Promise}
      */
     listarPorRed: async (idRed) => {
-        return api.get(`/formulario-diagnostico/red/${idRed}`);
+        return api.get(`/formulario-diagnostico/red/${idRed}`, true);
     },
 
     /**
@@ -119,7 +119,7 @@ const formularioDiagnosticoService = {
      * @returns {Promise}
      */
     eliminar: async (idFormulario) => {
-        return api.delete(`/formulario-diagnostico/${idFormulario}`);
+        return api.delete(`/formulario-diagnostico/${idFormulario}`, true);
     },
 
     /**
@@ -128,7 +128,7 @@ const formularioDiagnosticoService = {
      * @returns {Promise<boolean>}
      */
     existeEnProcesoActual: async (idIpress) => {
-        const response = await api.get(`/formulario-diagnostico/existe-en-proceso/ipress/${idIpress}`);
+        const response = await api.get(`/formulario-diagnostico/existe-en-proceso/ipress/${idIpress}`, true);
         return response.data;
     },
 
@@ -138,7 +138,7 @@ const formularioDiagnosticoService = {
      * @returns {Promise}
      */
     obtenerEstadisticas: async (idFormulario) => {
-        return api.get(`/formulario-diagnostico/${idFormulario}/estadisticas`);
+        return api.get(`/formulario-diagnostico/${idFormulario}/estadisticas`, true);
     },
 
     /**

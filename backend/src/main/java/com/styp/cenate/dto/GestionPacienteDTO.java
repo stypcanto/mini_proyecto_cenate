@@ -109,6 +109,10 @@ public class GestionPacienteDTO {
     @JsonProperty("especialidadMedico")
     private String especialidadMedico;  // Ej: "Cardiología", "Medicina General", etc.
 
+    // ✅ v1.104.0: Motivo de llamada de bolsa (desde dim_solicitud_bolsa.motivo_llamada_bolsa)
+    @JsonProperty("motivoLlamadoBolsa")
+    private String motivoLlamadoBolsa;  // Razón/motivo de la llamada o atención
+
     /**
      * Calcula la edad a partir de la fecha de nacimiento
      */
