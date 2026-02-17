@@ -10,6 +10,9 @@ FROM gradle:8.5-jdk17 AS build
 
 WORKDIR /app
 
+# Limitar memoria del JVM de Gradle para evitar OOM durante el build
+ENV GRADLE_OPTS="-Xmx1536m -Xms512m -XX:+UseG1GC"
+
 # Copiar archivos de configuración de Gradle primero (para mejor cache)
 COPY build.gradle settings.gradle ./
 COPY gradle ./gradle
@@ -20,8 +23,7 @@ RUN gradle dependencies --no-daemon || true
 # Copiar el resto del código
 COPY src ./src
 
-# 🧱 Compilar el jar ejecutable (sin tests para acelerar)
-# Usar 'gradle' directamente en lugar de './gradlew'
+# Compilar el jar ejecutable (sin tests para acelerar)
 RUN gradle clean bootJar -x test --no-daemon
 
 # 🔍 Verificar que el JAR contiene la clase principal
