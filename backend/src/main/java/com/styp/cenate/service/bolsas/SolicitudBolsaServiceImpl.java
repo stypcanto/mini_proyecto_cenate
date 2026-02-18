@@ -1234,7 +1234,7 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
             .estado("PENDIENTE")
             .estadoGestionCitasId(11L)  // ✅ ID 11: Estado "Pendiente Cita" en dim_estados_gestion_citas
             .activo(true)
-            .condicionMedica("Pendiente")  // 🟢 v1.69.0: Establecer condicion_medica a "Pendiente" por defecto
+            .condicionMedica(null)  // 🟢 v1.69.0: condicion_medica permanece null hasta que médico asigne
             // ============================================================================
             // 📋 LOS 12 CAMPOS DE EXCEL v1.15.0 - ASIGNADOS AL BUILDER
             // ============================================================================
