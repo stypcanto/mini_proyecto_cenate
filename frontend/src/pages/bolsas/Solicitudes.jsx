@@ -2195,7 +2195,7 @@ export default function Solicitudes() {
                     <th className="px-3 py-3 text-left text-sm font-bold uppercase tracking-wider whitespace-nowrap">Teléfonos</th>
                     <th className="px-3 py-3 text-left text-sm font-bold uppercase tracking-wider whitespace-nowrap">Tipo de Cita</th>
                     <th className="px-3 py-3 text-left text-sm font-bold uppercase tracking-wider whitespace-nowrap">Especialidad</th>
-                    <th className="px-3 py-3 text-left text-sm font-bold uppercase tracking-wider whitespace-nowrap">IPRESS</th>
+                    <th className="px-3 py-3 text-left text-sm font-bold uppercase tracking-wider whitespace-nowrap">IPRESS - Adscripción</th>
                     <th className="px-3 py-3 text-left text-sm font-bold uppercase tracking-wider whitespace-nowrap">Red</th>
                     <th className="px-3 py-3 text-left text-sm font-bold uppercase tracking-wider whitespace-nowrap">Estado</th>
                     <th className="px-3 py-3 text-left text-sm font-bold uppercase tracking-wider whitespace-nowrap">F/H Cita</th>

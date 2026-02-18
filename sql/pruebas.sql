@@ -511,7 +511,7 @@ order by fecha_solicitud desc;
 
 
 
-select dsb.codigo_adscripcion , dsb.id_ipress , dsb.codigo_ipress , dsb.id_ipress_atencion
+select dsb.codigo_adscripcion , dsb.id_ipress , dsb.codigo_ipress , dsb.id_ipress_atencion, dsb.*
 from dim_solicitud_bolsa dsb  where paciente_id='70073164';
 
 delete from dim_solicitud_bolsa dsb where paciente_id='70073164';
@@ -524,6 +524,7 @@ select * from dim_ipress di  where di.cod_ipress='046';	-- 160
 select * from dim_ipress di  where di.cod_ipress='159';  -- 38
 
 
+select * from dim_ipress di where di.id_ipress  in (160,38);
 
 
 
