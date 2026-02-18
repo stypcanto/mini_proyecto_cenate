@@ -26,7 +26,7 @@ import { getApiBaseUrl } from '../../utils/apiUrlHelper';
  *      • Correos (formato válido)
  *      • IPRESS (código numérico)
  *      • Tipos cita (Recita, Interconsulta, Voluntaria)
- *    - Calcula porcentaje de viabilidad (≥70% = viable)
+ *    - Calcula porcentaje de viabilidad (≥83% = viable, requiere 10/12 cols con obligatorios válidos)
  *    - Muestra feedback detallado al usuario
  *
  * 3️⃣ AUTO-SELECCIÓN INTELIGENTE (v1.11.0)
@@ -38,8 +38,8 @@ import { getApiBaseUrl } from '../../utils/apiUrlHelper';
  *    - Usa similitud fuzzy para encontrar mejores coincidencias
  *    - Umbral de similitud: 40% para aceptar coincidencia
  *
- * 4️⃣ ESTRUCTURA
- *    - 11 campos en ORDEN FIJO (posiciones no cambian) - v1.40.0 BOLSAS
+ * 4️⃣ ESTRUCTURA COM PLETA
+ *    - 12 campos en ORDEN FIJO (posiciones no cambian) - v1.15.0 BOLSAS
  *    - Columna 0: FECHA PREFERIDA QUE NO FUE ATENDIDA (YYYY-MM-DD) [OBLIGATORIO]
  *    - Columna 1: TIPO DOCUMENTO (DNI, RUC, etc.) [OBLIGATORIO]
  *    - Columna 2: DNI (8 dígitos) [OBLIGATORIO]
@@ -50,7 +50,8 @@ import { getApiBaseUrl } from '../../utils/apiUrlHelper';
  *    - Columna 7: TELÉFONO ALTERNO (números) [OPCIONAL - Se enriquece desde BD]
  *    - Columna 8: CORREO (email) [OPCIONAL - Se enriquece desde BD]
  *    - Columna 9: COD. IPRESS ADSCRIPCIÓN (números) [OBLIGATORIO]
- *    - Columna 10: TIPO CITA (Recita/Interconsulta/Voluntaria) [OBLIGATORIO]
+ *    - Columna 10: IPRESS - ATENCIÓN (números) [OBLIGATORIO] v1.15.0
+ *    - Columna 11: TIPO CITA (Recita/Interconsulta/Voluntaria) [OBLIGATORIO]
  *
  *    💡 IMPORTANTE: Si el Asegurado (DNI) no existe en el sistema, será creado automáticamente (v1.13.8)
  *
@@ -69,6 +70,7 @@ export default function CargarDesdeExcel() {
   const [file, setFile] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [importStatus, setImportStatus] = useState(null);
+  const [isImported, setIsImported] = useState(false);  // Rastrear si la importación fue completada (v1.15.0)
   const [preview, setPreview] = useState([]);
   const [usuario, setUsuario] = useState(null);
   const [tipoBolesaId, setTipoBolesaId] = useState(null);
@@ -100,7 +102,7 @@ export default function CargarDesdeExcel() {
      * Valida si un archivo Excel tiene la estructura correcta para bolsas.
      * Analiza el contenido de las columnas para detectar tipos de datos.
      *
-     * Estructura esperada v1.14.0: 11 columnas en este orden:
+     * Estructura esperada v1.15.0: 12 columnas en este orden:
      * 0: FECHA PREFERIDA (YYYY-MM-DD) [OBLIGATORIO]
      * 1: TIPO DOCUMENTO (DNI, RUC, etc.) [OBLIGATORIO]
      * 2: DNI (8 dígitos) [OBLIGATORIO]
@@ -110,8 +112,9 @@ export default function CargarDesdeExcel() {
      * 6: TELÉFONO PRINCIPAL (números) [OPCIONAL]
      * 7: TELÉFONO ALTERNO (números) [OPCIONAL]
      * 8: CORREO (email) [OPCIONAL]
-     * 9: COD. IPRESS (números) [OBLIGATORIO]
-     * 10: TIPO CITA (Recita, Interconsulta, Voluntaria) [OBLIGATORIO]
+     * 9: COD. IPRESS ADSCRIPCIÓN (números) [OBLIGATORIO]
+     * 10: IPRESS - ATENCIÓN (números) [OBLIGATORIO]
+     * 11: TIPO CITA (Recita, Interconsulta, Voluntaria) [OBLIGATORIO]
      */
 
     if (!listaData || listaData.length === 0) {
@@ -164,37 +167,38 @@ export default function CargarDesdeExcel() {
 
     const valoresAnalisis = Object.values(filaAnalisis);
 
-    // Validar estructura esperada (11 columnas exactamente - v1.16.2 BOLSAS)
-    if (valoresAnalisis.length !== 11) {
+    // Validar estructura esperada (12 columnas exactamente - v1.15.0 BOLSAS)
+    if (valoresAnalisis.length !== 12) {
       return {
         valido: false,
-        error: `Se detectaron ${valoresAnalisis.length} columnas, se esperan exactamente 11. Estructura BOLSAS v1.16.2: FECHA PREFERIDA, TIPO DOC, DNI, ASEGURADO, SEXO, FECHA NACIMIENTO, TELÉFONO PRINCIPAL, TELÉFONO ALTERNO, CORREO, COD. IPRESS, TIPO CITA`
+        error: `Se detectaron ${valoresAnalisis.length} columnas, se esperan exactamente 12. Estructura BOLSAS v1.15.0: FECHA PREFERIDA, TIPO DOC, DNI, ASEGURADO, SEXO, FECHA NACIMIENTO, TELÉFONO PRINCIPAL, TELÉFONO ALTERNO, CORREO, COD. IPRESS, IPRESS - ATENCIÓN, TIPO CITA`
       };
     }
 
-    // Validaciones por columna esperada (11 columnas - BOLSAS v1.16.2)
+    // Validaciones por columna esperada (12 columnas - BOLSAS v1.15.0)
     const validaciones = {
-      col0_fechaPreferida: /^\d{4}-\d{2}-\d{2}|^\d{1,2}\/\d{1,2}\/\d{4}/.test(valoresAnalisis[0]?.toString() || ''), // OBLIGATORIO
+      col0_fechaPreferida: /^\d{4}-\d{2}-\d{2}|^\d{1,2}\/\d{1,2}\/\d{4}|^\d{5,6}$/.test(valoresAnalisis[0]?.toString() || ''), // OBLIGATORIO
       col1_tipoDoc: /^[A-Za-z]+/.test(valoresAnalisis[1]?.toString() || ''), // OBLIGATORIO
       col2_dni: /^\d{6,10}/.test(valoresAnalisis[2]?.toString() || ''), // OBLIGATORIO
       col3_asegurado: valoresAnalisis[3]?.toString().length > 3, // OBLIGATORIO
-      col4_sexo: true, // OPCIONAL - Se enriquece desde BD si falta
-      col5_fechaNac: true, // OPCIONAL - Se enriquece desde BD si falta
-      col6_telPrincipal: true, // OPCIONAL - Se enriquece desde BD si falta
-      col7_telAlterno: true, // OPCIONAL - Se enriquece desde BD si falta
-      col8_correo: true, // OPCIONAL - Se enriquece desde BD si falta
+      col4_sexo: true, // OPCIONAL
+      col5_fechaNac: true, // OPCIONAL
+      col6_telPrincipal: true, // OPCIONAL
+      col7_telAlterno: true, // OPCIONAL
+      col8_correo: true, // OPCIONAL
       col9_codigoIpress: /^\d+/.test(valoresAnalisis[9]?.toString() || ''), // OBLIGATORIO
-      col10_tipoCita: /^(recita|interconsulta|voluntaria)$/i.test(valoresAnalisis[10]?.toString() || '') // OBLIGATORIO
+      col10_ipressAtencion: /^\d+/.test(valoresAnalisis[10]?.toString() || ''), // OBLIGATORIO v1.15.0
+      col11_tipoCita: /^(recita|interconsulta|voluntaria)$/i.test(valoresAnalisis[11]?.toString() || '') // OBLIGATORIO
     };
 
-    console.log('✅ Validaciones por columna (11 campos BOLSAS v1.16.2):', validaciones);
+    console.log('✅ Validaciones por columna (12 campos BOLSAS v1.15.0):', validaciones);
 
-    // Contar validaciones exitosas (11 campos)
+    // Contar validaciones exitosas (12 campos)
     const validacionesExitosas = Object.values(validaciones).filter(v => v).length;
-    const porcentajeValido = (validacionesExitosas / 11) * 100;
+    const porcentajeValido = (validacionesExitosas / 12) * 100;
 
-    // Decisión: viable si al menos 8 de 11 columnas son válidas
-    const esViable = porcentajeValido >= 70;
+    // Decisión: viable si al menos 9 de 12 columnas son válidas
+    const esViable = porcentajeValido >= 75;
 
     return {
       valido: esViable,
@@ -203,13 +207,13 @@ export default function CargarDesdeExcel() {
       analisis,
       detalles: {
         columnasValidas: validacionesExitosas,
-        columnasEsperadas: 11,
+        columnasEsperadas: 12,
         tieneHeaders: analisis.tieneEnlaces,
         tieneData: analisis.tieneDatos
       },
       recomendacion: esViable
         ? `✅ Estructura válida (${Math.round(porcentajeValido)}% de coincidencia)`
-        : `❌ Estructura inválida (${Math.round(porcentajeValido)}% de coincidencia). Se esperan 11 columnas en el orden: Fecha Preferida, Tipo Documento, DNI, Asegurado, Sexo*, Fecha Nacimiento*, Teléfono Principal*, Teléfono Alterno*, Correo*, Código IPRESS, Tipo Cita (*=enriquecibles desde BD)`
+        : `❌ Estructura inválida (${Math.round(porcentajeValido)}% de coincidencia). Se esperan 12 columnas: Fecha Preferida, Tipo Documento, DNI, Asegurado, Sexo*, Fecha Nacimiento*, Tel. Principal*, Tel. Alterno*, Correo*, Código IPRESS, IPRESS Atención, Tipo Cita (*=opcional/enriquecible desde BD)`
     };
   };
 
@@ -493,6 +497,7 @@ export default function CargarDesdeExcel() {
     if (selectedFile && validateFile(selectedFile)) {
       setFile(selectedFile);
       setImportStatus(null);
+      setIsImported(false);  // Reset importación cuando se selecciona nuevo archivo
 
       // 🧠 INTELIGENCIA TOTAL: Analizar Excel de forma completa
       const reader = new FileReader();
@@ -758,12 +763,14 @@ export default function CargarDesdeExcel() {
         showModal: true  // Mostrar modal
       });
 
+      setIsImported(true);  // Marcar importación como completada
       console.log('✅ Importación exitosa:', resultado);
 
       // Esperar 5 segundos antes de redirigir (dar tiempo al usuario para ver el resultado)
       setTimeout(() => {
         setFile(null);
         setTipoBolesaId(null);
+        setIsImported(false);
         navigate('/bolsas/solicitudes');
       }, 5000);
 
@@ -777,7 +784,7 @@ export default function CargarDesdeExcel() {
       if (error.message?.includes('Archivo ya cargado') || error.message?.includes('mismo hash') || error.message?.includes('Ya se cargó')) {
         mensajeAmigable = '⚠️ Esta bolsa ya fue cargada anteriormente. Si deseas cargar una nueva versión, modifica el archivo o cambia su nombre.';
       } else if (error.message?.includes('400') || error.message?.includes('validación')) {
-        mensajeAmigable = '❌ El archivo no cumple con la estructura requerida. Verifica que tenga exactamente 11 columnas en el siguiente orden:\n1. Fecha Preferida, 2. Tipo Documento, 3. DNI, 4. Asegurado, 5. Sexo, 6. Fecha Nacimiento, 7. Teléfono Principal, 8. Teléfono Alterno, 9. Correo, 10. Código IPRESS, 11. Tipo Cita.';
+        mensajeAmigable = '❌ El archivo no cumple con la estructura requerida. Verifica que tenga exactamente 12 columnas en el siguiente orden:\n1. Fecha Preferida, 2. Tipo Documento, 3. DNI, 4. Asegurado, 5. Sexo, 6. Fecha Nacimiento, 7. Teléfono Principal, 8. Teléfono Alterno, 9. Correo, 10. Código IPRESS, 11. IPRESS Atención, 12. Tipo Cita.';
       } else if (error.message?.includes('500')) {
         mensajeAmigable = '❌ Error interno del servidor. Por favor, intenta nuevamente.';
       } else if (error.message?.includes('token') || error.message?.includes('401')) {
@@ -817,6 +824,7 @@ export default function CargarDesdeExcel() {
       setFile(null);
       setTipoBolesaId(null);
       setReporteDeduplicacion(null);
+      setIsImported(false);
       navigate('/bolsas/solicitudes');
     }, 5000);
   };
@@ -828,6 +836,7 @@ export default function CargarDesdeExcel() {
     setReporteDeduplicacion(null);
     setFile(null);
     setTipoBolesaId(null);
+    setIsImported(false);
 
     // Mostrar mensaje informativo
     setImportStatus({
@@ -837,7 +846,7 @@ export default function CargarDesdeExcel() {
     });
   };
 
-  // Función para descargar plantilla Excel (COMPLETA)
+  // Función para descargar plantilla Excel (COMPLETA -  v1.15.0 con IPRESS ATENCIÓN)
   const descargarPlantilla = () => {
     const datosPlantilla = [
       {
@@ -851,6 +860,7 @@ export default function CargarDesdeExcel() {
         'TELÉFONO ALTERNO': '998765432',
         'CORREO': 'juan.perez@email.com',
         'COD. IPRESS ADSCRIPCIÓN': '349',
+        'IPRESS - ATENCIÓN': '349',
         'TIPO CITA': 'Recita'
       },
       {
@@ -864,6 +874,7 @@ export default function CargarDesdeExcel() {
         'TELÉFONO ALTERNO': '998765433',
         'CORREO': 'maria.lopez@email.com',
         'COD. IPRESS ADSCRIPCIÓN': '350',
+        'IPRESS - ATENCIÓN': '350',
         'TIPO CITA': 'Interconsulta'
       },
       {
@@ -877,6 +888,7 @@ export default function CargarDesdeExcel() {
         'TELÉFONO ALTERNO': '998765434',
         'CORREO': 'carlos.gomez@email.com',
         'COD. IPRESS ADSCRIPCIÓN': '351',
+        'IPRESS - ATENCIÓN': '351',
         'TIPO CITA': 'Voluntaria'
       },
       {
@@ -890,6 +902,7 @@ export default function CargarDesdeExcel() {
         'TELÉFONO ALTERNO': '998765435',
         'CORREO': 'patricia.sanchez@email.com',
         'COD. IPRESS ADSCRIPCIÓN': '349',
+        'IPRESS - ATENCIÓN': '349',
         'TIPO CITA': 'Recita'
       },
       {
@@ -903,6 +916,7 @@ export default function CargarDesdeExcel() {
         'TELÉFONO ALTERNO': '998765436',
         'CORREO': 'roberto.morales@email.com',
         'COD. IPRESS ADSCRIPCIÓN': '350',
+        'IPRESS - ATENCIÓN': '350',
         'TIPO CITA': 'Interconsulta'
       }
     ];
@@ -919,12 +933,13 @@ export default function CargarDesdeExcel() {
       { wch: 15 },   // TELÉFONO ALTERNO
       { wch: 25 },   // CORREO
       { wch: 20 },   // COD. IPRESS ADSCRIPCIÓN
+      { wch: 20 },   // IPRESS - ATENCIÓN (v1.15.0)
       { wch: 18 }    // TIPO CITA
     ];
 
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Plantilla');
-    XLSX.writeFile(wb, 'PLANTILLA_SOLICITUD_BOLSA_COMPLETA_v1.8.0.xlsx');
+    XLSX.writeFile(wb, 'PLANTILLA_SOLICITUD_BOLSA_COMPLETA_v1.15.0.xlsx');
   };
 
   // Modal de resultado
@@ -1075,7 +1090,7 @@ export default function CargarDesdeExcel() {
               >
                 <div className="flex items-center gap-2">
                   <Info size={24} className="text-blue-600" />
-                  <h2 className="text-xl font-bold text-gray-800">Estructura Excel (11 campos - 5 obligatorios)</h2>
+                  <h2 className="text-xl font-bold text-gray-800">Estructura Excel (12 campos - 6 obligatorios)</h2>
                 </div>
                 {expandedObligatorios ? (
                   <ChevronUp size={24} className="text-blue-600" />
@@ -1167,10 +1182,18 @@ export default function CargarDesdeExcel() {
                     <p className="text-xs text-blue-600 mt-1">Ej: 349 (H.II PUCALLPA), 350, 351...</p>
                   </div>
                 </div>
+                <div className="flex gap-4 p-3 bg-blue-50 rounded-lg">
+                  <div className="text-2xl">🏩</div>
+                  <div className="flex-1">
+                    <p className="font-semibold text-gray-800">11. IPRESS - ATENCIÓN</p>
+                    <p className="text-sm text-gray-600">Código de la IPRESS donde se atenderá al paciente (punto de servicio)</p>
+                    <p className="text-xs text-blue-600 mt-1">Ej: 159, 349, 350, 351... | Identifica el centro de atención</p>
+                  </div>
+                </div>
                 <div className="flex gap-4 p-3 bg-green-50 rounded-lg">
                   <div className="text-2xl">🔖</div>
                   <div className="flex-1">
-                    <p className="font-semibold text-gray-800">11. TIPO CITA</p>
+                    <p className="font-semibold text-gray-800">12. TIPO CITA</p>
                     <p className="text-sm text-gray-600">Clasificación del tipo de atención solicitada</p>
                     <p className="text-xs text-green-600 mt-1">Valores válidos: Recita | Interconsulta | Voluntaria</p>
                   </div>
@@ -1250,7 +1273,7 @@ export default function CargarDesdeExcel() {
                 </li>
                 <li className="flex items-start gap-2">
                   <span className="text-blue-600 font-bold">✓</span>
-                  <span className="text-gray-700">Campos OBLIGATORIOS: Tipo Doc, DNI, Nombre, IPRESS, Tipo Cita</span>
+                  <span className="text-gray-700">Campos OBLIGATORIOS: Tipo Doc, DNI, Nombre, IPRESS Adscripción, IPRESS Atención, Tipo Cita</span>
                 </li>
                 <li className="flex items-start gap-2">
                   <span className="text-blue-600 font-bold">✓</span>
@@ -1332,6 +1355,7 @@ export default function CargarDesdeExcel() {
                   setFile(null);
                   setTipoBolesaId(null);
                   setImportStatus(null);
+                  setIsImported(false);
                 }}
                 className="text-green-600 hover:text-green-800 font-semibold"
               >
@@ -1392,7 +1416,7 @@ export default function CargarDesdeExcel() {
           )}
 
           {/* Selección de Tipo de Bolsa */}
-          {file && (!importStatus || importStatus.type !== 'success') && (
+          {file && !isImported && (
             <div className="mb-6 p-6 bg-yellow-50 rounded-xl border-2 border-yellow-300">
               <label className="block text-sm font-bold text-gray-800 mb-4">
                 📦 PASO 1: Selecciona el Tipo de Bolsa
@@ -1426,7 +1450,7 @@ export default function CargarDesdeExcel() {
           )}
 
           {/* Selección de Especialidad/Servicio */}
-          {file && (!importStatus || importStatus.type !== 'success') && (
+          {file && !isImported && (
             <div className="mb-6 p-6 bg-blue-50 rounded-xl border-2 border-blue-300">
               <label className="block text-sm font-bold text-gray-800 mb-4">
                 🏥 PASO 2: Selecciona la Especialidad/Servicio
@@ -1491,6 +1515,7 @@ export default function CargarDesdeExcel() {
                   setTipoBolesaId(null);
                   setIdServicio(null);
                   setImportStatus(null);
+                  setIsImported(false);
                 }}
                 className="py-4 px-8 rounded-lg font-bold bg-gray-300 text-gray-800 hover:bg-gray-400 transition-all"
               >
@@ -1523,7 +1548,7 @@ export default function CargarDesdeExcel() {
               El orden de las columnas debe ser SIEMPRE el mismo:
               <br />
               <code className="text-xs bg-white px-2 py-1 rounded mt-2 block">
-                Fecha | Tipo Doc | DNI | Nombre | Sexo | Fecha Nac | Teléfono Principal | Teléfono Alterno | Correo | IPRESS | Tipo Cita
+                Fecha | Tipo Doc | DNI | Nombre | Sexo | Fecha Nac | Teléfono Principal | Teléfono Alterno | Correo | IPRESS ADSCRIPCIÓN | IPRESS - ATENCIÓN | Tipo Cita
               </code>
             </p>
             <p className="text-xs text-purple-700 mt-2">
@@ -1579,7 +1604,7 @@ export default function CargarDesdeExcel() {
             <div className="space-y-4 text-sm">
               <div className="border-b pb-4">
                 <p className="font-semibold text-gray-800">¿Puedo dejar campos vacíos (SEXO, FECHA NACIMIENTO, CORREO)?</p>
-                <p className="text-gray-600 mt-1">Sí. Si estos campos están vacíos en el Excel, el sistema completará automáticamente la información usando el DNI del paciente con los datos de la tabla de asegurados. Solo son OBLIGATORIOS: DNI, TIPO DOCUMENTO, ASEGURADO, COD. IPRESS y TIPO CITA.</p>
+                <p className="text-gray-600 mt-1">Sí. Si estos campos están vacíos en el Excel, el sistema completará automáticamente la información usando el DNI del paciente con los datos de la tabla de asegurados. Solo son OBLIGATORIOS: DNI, TIPO DOCUMENTO, ASEGURADO, COD. IPRESS ADSCRIPCIÓN, IPRESS - ATENCIÓN y TIPO CITA.</p>
               </div>
               <div className="border-b pb-4">
                 <p className="font-semibold text-gray-800">¿Necesito incluir la columna EDAD?</p>
@@ -1606,8 +1631,8 @@ export default function CargarDesdeExcel() {
                 <p className="text-gray-600 mt-1">No. El sistema valida y rechaza duplicados por la combinación única: (DNI + Tipo de Bolsa).</p>
               </div>
               <div>
-                <p className="font-semibold text-gray-800">¿Debo llenar todos los 11 campos?</p>
-                <p className="text-gray-600 mt-1">NO. Solo los campos OBLIGATORIOS: Tipo Documento, DNI, Nombre, Código IPRESS, Tipo Cita. Los demás (Sexo, Fecha Nac, Teléfono Principal, Teléfono Alterno, Correo) son OPCIONALES. Si faltan datos opcionales, el sistema los completa automáticamente usando los datos del DNI en la base de datos.</p>
+                <p className="font-semibold text-gray-800">¿Debo llenar todos los 12 campos?</p>
+                <p className="text-gray-600 mt-1">NO. Solo los campos OBLIGATORIOS: Tipo Documento, DNI, Nombre, Código IPRESS Adscripción, IPRESS - Atención, Tipo Cita. Los demás (Sexo, Fecha Nac, Teléfono Principal, Teléfono Alterno, Correo) son OPCIONALES. Si faltan datos opcionales, el sistema los completa automáticamente usando los datos del DNI en la base de datos.</p>
               </div>
             </div>
           </div>

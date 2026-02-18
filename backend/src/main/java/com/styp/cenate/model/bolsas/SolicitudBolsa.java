@@ -141,6 +141,10 @@ public class SolicitudBolsa {
     @Column(name = "id_ipress")
     private Long idIpress;
 
+    // 🏥 IPRESS - ATENCIÓN (v1.15.0 - Nueva columna Excel, OBLIGATORIO)
+    @Column(name = "id_ipress_atencion")
+    private Long idIpressAtencion;
+
     // 📊 ESTADO (Aprobación)
     @Column(name = "estado", length = 20, nullable = false)
     private String estado;

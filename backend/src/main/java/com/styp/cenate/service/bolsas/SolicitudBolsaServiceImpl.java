@@ -265,6 +265,21 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
                         }
                     }
 
+                    String ipressAtencion = camposExcel.get("ipressAtencion");  // ✅ v1.15.0: Nueva columna
+                    
+                    // ============================================================================
+                    // 🔧 NORMALIZAR IPRESS ATENCIÓN A 3 DÍGITOS (21 → 021) - v1.15.0
+                    // ============================================================================
+                    if (ipressAtencion != null && !ipressAtencion.isBlank()) {
+                        try {
+                            int codigo = Integer.parseInt(ipressAtencion.trim());
+                            ipressAtencion = String.format("%03d", codigo);
+                            log.debug("✓ Código IPRESS ATENCIÓN normalizado: {} → {}", ipressAtencion, ipressAtencion);
+                        } catch (NumberFormatException e) {
+                            log.warn("⚠️ Código IPRESS ATENCIÓN no numérico: {} para DNI {} | Usando valor original", ipressAtencion.trim(), dni);
+                        }
+                    }
+
                     String tipoCita = camposExcel.get("tipoCita");
                     // Normalizar tipoCita a PascalCase (VOLUNTARIA → Voluntaria, REFERENCIA → Referencia)
                     if (tipoCita != null && !tipoCita.isBlank()) {
@@ -333,7 +348,7 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
                         log.warn("⚠️  Fila {}: FECHA_NACIMIENTO está vacía incluso después de enriquecimiento. Usando fallback: '{}'", filaNumero, fechaNacimiento);
                     }
 
-                    // Crear DTO para procesar fila con TODOS los 11 campos (ahora enriquecidos)
+                    // Crear DTO para procesar fila con TODOS los 12 campos (v1.15.0 - ahora enriquecidos)
                     rowDTO = new SolicitudBolsaExcelRowDTO(
                         filaNumero,
                         fechaPreferidaNoAtendida,
@@ -346,6 +361,7 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
                         telefonoAlterno,
                         correo,
                         codigoIpress,
+                        ipressAtencion,  // ✅ v1.15.0: Nuevo campo
                         tipoCita
                     );
 
@@ -1052,6 +1068,7 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
         String codTipoBolsa = null;
         String descTipoBolsa = null;
         Long idIpress = null;
+        Long idIpressAtencion = null;  // ✅ v1.15.0: FK a dim_ipress.id_ipress para IPRESS ATENCIÓN
         String nombreIpress = "N/A";
         String redAsistencial = "N/A";
 
@@ -1175,6 +1192,30 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
             }
         }
 
+        // 4. Obtener IPRESS ATENCIÓN desde código (columna posición 11 - v1.15.0 - OBLIGATORIO)
+        // ⭐ IMPORTANTE: ipressAtencion es OBLIGATORIO en v1.15.0. Viene como código STRING de Excel, debe convertirse a FK Long
+        try {
+            if (row.ipressAtencion() != null && !row.ipressAtencion().isBlank()) {
+                Ipress ipressAtencionEntity = ipressRepository.findByCodIpress(row.ipressAtencion()).orElse(null);
+                if (ipressAtencionEntity != null) {
+                    idIpressAtencion = ipressAtencionEntity.getIdIpress();
+                    log.debug("✅ IPRESS ATENCIÓN encontrada: {} (código: {}, ID: {})", 
+                        ipressAtencionEntity.getDescIpress(), row.ipressAtencion(), idIpressAtencion);
+                } else {
+                    log.error("❌ IPRESS ATENCIÓN OBLIGATORIA no encontrada para código {}", row.ipressAtencion());
+                }
+            } else {
+                log.error("❌ IPRESS ATENCIÓN OBLIGATORIA está vacía para esta fila - RECHAZADA (v1.15.0)");
+            }
+        } catch (Exception e) {
+            log.error("❌ Error al obtener IPRESS ATENCIÓN OBLIGATORIA para código {}: {}", row.ipressAtencion(), e.getMessage());
+            try {
+                entityManager.clear();
+            } catch (Exception cleanupEx) {
+                log.warn("⚠️ No se pudo limpiar sesión después de error IPRESS ATENCIÓN: {}", cleanupEx.getMessage());
+            }
+        }
+
         return SolicitudBolsa.builder()
             .numeroSolicitud(encontrarNumeroSolicitudDisponible(5))  // ✅ FIX: Pre-valida 5 candidatos
             .pacienteDni(row.dni())
@@ -1184,11 +1225,12 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
             .idServicio(idServicio)
             .codigoAdscripcion(row.codigoIpress())
             .idIpress(idIpress)
+            .idIpressAtencion(idIpressAtencion)  // ✅ v1.15.0: IPRESS ATENCIÓN - FK a dim_ipress.id_ipress
             .estado("PENDIENTE")
-            .estadoGestionCitasId(5L)
+            .estadoGestionCitasId(11L)  // ✅ ID 11: Estado "Pendiente Cita" en dim_estados_gestion_citas
             .activo(true)
             // ============================================================================
-            // 📋 LOS 11 CAMPOS DE EXCEL v1.14.0 - ASIGNADOS AL BUILDER
+            // 📋 LOS 12 CAMPOS DE EXCEL v1.15.0 - ASIGNADOS AL BUILDER
             // ============================================================================
             .fechaPreferidaNoAtendida(fechaPreferida)
             .tipoDocumento(row.tipoDocumento())
@@ -1246,9 +1288,9 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
             valores[i] = obtenerValorCelda(row.getCell(i));
         }
 
-        // Detectar TIPO_CITA para identificar posición real
+        // Detectar TIPO_CITA para identificar posición real (puede estar en posición 10, 11 o 12)
         int tipoCitaPos = -1;
-        for (int i = 7; i <= 11; i++) {
+        for (int i = 9; i <= 12; i++) {
             String val = valores[i].toLowerCase().trim();
             if (val.equals("recita") || val.equals("interconsulta") ||
                 val.equals("voluntaria") || val.equals("referencia")) {
@@ -1260,10 +1302,13 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
         // Mapear campos según posición detectada de TIPO_CITA
         String fechaPreferidaNoAtendida, tipoDocumento, dni, nombreCompleto, sexo,
                fechaNacimiento, telefonoPrincipal, telefonoAlterno, correo,
-               codigoIpress, tipoCita;
+               codigoIpress, ipressAtencion, tipoCita;
 
-        if (tipoCitaPos == 9) {
-            // Caso Pediatría22: CORREO missing, todo desplazado -1 después de col 7
+        // ============================================================================
+        // v1.15.0: Estructura con 12 campos (IPRESS ATENCIÓN es nuevo en posición 10)
+        // ============================================================================
+        if (tipoCitaPos == 11) {
+            // Caso normal: 12 columnas correctamente alineadas (v1.15.0)
             fechaPreferidaNoAtendida = valores[0];
             tipoDocumento = valores[1];
             dni = valores[2];
@@ -1271,14 +1316,15 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
             sexo = valores[4];
             fechaNacimiento = valores[5];
             telefonoPrincipal = valores[6];
-            telefonoAlterno = valores[7];  // Vacío pero presente
-            correo = "";  // Missing!
-            codigoIpress = valores[8];  // Desplazado a la izquierda
-            tipoCita = valores[9];  // Desplazado a la izquierda
-            log.info("✅ [FILA {}] TIPO_CITA detectado en posición 9 (formato Pediatría22 con CORREO missing)",
+            telefonoAlterno = valores[7];
+            correo = valores[8];
+            codigoIpress = valores[9];
+            ipressAtencion = valores[10];  // v1.15.0: Nueva posición 10
+            tipoCita = valores[11];
+            log.info("✅ [FILA {}] TIPO_CITA detectado en posición 11 (formato standard 12 columnas con IPRESS ATENCIÓN)",
                 filaNumero);
         } else if (tipoCitaPos == 10) {
-            // Caso normal: 11 columnas correctamente alineadas
+            // Caso fallback: 11 columnas (sin IPRESS ATENCIÓN) - compatibilidad hacia atrás
             fechaPreferidaNoAtendida = valores[0];
             tipoDocumento = valores[1];
             dni = valores[2];
@@ -1289,11 +1335,12 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
             telefonoAlterno = valores[7];
             correo = valores[8];
             codigoIpress = valores[9];
+            ipressAtencion = "";  // Vacío si no está presente (v1.14.0 o anterior)
             tipoCita = valores[10];
-            log.info("✅ [FILA {}] TIPO_CITA detectado en posición 10 (formato standard 11 columnas)",
+            log.info("✅ [FILA {}] TIPO_CITA detectado en posición 10 (formato legacy 11 columnas sin IPRESS ATENCIÓN)",
                 filaNumero);
         } else {
-            // Fallback: asumir formato 11 columnas estándar
+            // Fallback: asumir formato 12 columnas estándar (v1.15.0)
             fechaPreferidaNoAtendida = valores[0];
             tipoDocumento = valores[1];
             dni = valores[2];
@@ -1304,27 +1351,38 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
             telefonoAlterno = valores[7];
             correo = valores[8];
             codigoIpress = valores[9];
-            tipoCita = valores[10];
-            log.warn("⚠️  [FILA {}] TIPO_CITA no detectado en posiciones 9-10 (usando default pos 10). Valores: {}",
+            ipressAtencion = valores[10];  // v1.15.0
+            tipoCita = valores[11];
+            log.warn("⚠️  [FILA {}] TIPO_CITA no detectado en posiciones 10-11 (usando default pos 11). Valores: {}",
                 filaNumero, String.join(", ", valores));
         }
 
-        log.debug("📋 [FILA {}] DNI={}, Nombres={}, TipoCita={}",
-            filaNumero, dni, nombreCompleto, tipoCita);
+        log.debug("📋 [FILA {}] DNI={}, Nombres={}, TipoCita={}, IpressAtencion={}",
+            filaNumero, dni, nombreCompleto, tipoCita, ipressAtencion);
 
         // ============================================================================
-        // 🔧 NORMALIZAR COD. IPRESS A 3 DÍGITOS (21 → 021)
+        // 🔧 NORMALIZAR CÓDIGOS IPRESS A 3 DÍGITOS (21 → 021)
         // ============================================================================
         if (codigoIpress != null && !codigoIpress.isBlank()) {
             try {
                 int codigo = Integer.parseInt(codigoIpress.trim());
                 codigoIpress = String.format("%03d", codigo);
             } catch (NumberFormatException e) {
-                log.warn("⚠️ Código IPRESS no numérico: {}", codigoIpress.trim());
+                log.warn("⚠️ Código IPRESS ADSCRIPCIÓN no numérico: {}", codigoIpress.trim());
             }
         }
 
-        // Llenar el mapa
+        // Normalizar IPRESS ATENCIÓN (v1.15.0)
+        if (ipressAtencion != null && !ipressAtencion.isBlank()) {
+            try {
+                int codigo = Integer.parseInt(ipressAtencion.trim());
+                ipressAtencion = String.format("%03d", codigo);
+            } catch (NumberFormatException e) {
+                log.warn("⚠️ Código IPRESS ATENCIÓN no numérico: {}", ipressAtencion.trim());
+            }
+        }
+
+        // Llenar el mapa (12 campos para v1.15.0)
         campos.put("fechaPreferidaNoAtendida", fechaPreferidaNoAtendida);
         campos.put("tipoDocumento", tipoDocumento);
         campos.put("dni", dni);
@@ -1335,6 +1393,7 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
         campos.put("telefonoAlterno", telefonoAlterno);
         campos.put("correo", correo);
         campos.put("codigoIpress", codigoIpress);
+        campos.put("ipressAtencion", ipressAtencion);  // v1.15.0: Nuevo campo
         campos.put("tipoCita", tipoCita);
 
         return campos;

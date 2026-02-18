@@ -3,17 +3,17 @@ package com.styp.cenate.dto.bolsas;
 /**
  * DTO para representar una fila procesada del archivo Excel
  * Utilizado durante el procesamiento de importación de solicitudes de bolsa
- * Incluye los 11 campos de la plantilla v1.14.0
+ * Incluye los 12 campos de la plantilla v1.15.0
  *
- * @version v1.14.0 - 11 CAMPOS COMPLETOS (Agregado Teléfono Alterno)
- * @since 2026-01-28
+ * @version v1.15.0 - 12 CAMPOS COMPLETOS (Agregado IPRESS ATENCIÓN)
+ * @since 2026-02-18
  */
 public record SolicitudBolsaExcelRowDTO(
     // Metadata
     int filaExcel,
 
     // ============================================================================
-    // 📋 LOS 11 CAMPOS DE EXCEL v1.14.0
+    // 📋 LOS 12 CAMPOS DE EXCEL v1.15.0
     // ============================================================================
 
     // 1. FECHA PREFERIDA QUE NO FUE ATENDIDA
@@ -37,7 +37,7 @@ public record SolicitudBolsaExcelRowDTO(
     // 7. TELÉFONO PRINCIPAL
     String telefonoPrincipal,
 
-    // 8. TELÉFONO ALTERNO (NEW)
+    // 8. TELÉFONO ALTERNO
     String telefonoAlterno,
 
     // 9. CORREO
@@ -46,7 +46,10 @@ public record SolicitudBolsaExcelRowDTO(
     // 10. COD. IPRESS ADSCRIPCIÓN
     String codigoIpress,
 
-    // 11. TIPO CITA (Recita, Interconsulta, Voluntaria, Referencia)
+    // 11. IPRESS - ATENCION (NEW v1.15.0)
+    String ipressAtencion,
+
+    // 12. TIPO CITA (Recita, Interconsulta, Voluntaria, Referencia)
     String tipoCita
 ) {
     /**
