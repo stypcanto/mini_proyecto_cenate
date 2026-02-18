@@ -516,7 +516,8 @@ export default function Solicitudes() {
             correo: solicitud.paciente_email || solicitud.email_pers || '',
             sexo: solicitud.paciente_sexo || solicitud.sexo || 'N/A',
             edad: solicitud.paciente_edad || solicitud.edad || 'N/A',
-            estado: mapearEstadoAPI(solicitud.cod_estado_cita || solicitud.estado_gestion_citas_id),
+            estado: solicitud.estado || 'N/A',  // 🟢 Estado de Bolsa (sin mapear)
+            estadoCita: mapearEstadoAPI(solicitud.cod_estado_cita || solicitud.estado_gestion_citas_id),  // Estado de cita mapeado
             estadoDisplay: solicitud.desc_estado_cita || getEstadoDisplay(solicitud.cod_estado_cita),
             estadoCodigo: solicitud.cod_estado_cita,
             semaforo: solicitud.recordatorio_enviado ? 'verde' : 'rojo',
@@ -722,7 +723,8 @@ export default function Solicitudes() {
               correo: solicitud.paciente_email || solicitud.email_pers || '',
               sexo: solicitud.paciente_sexo || solicitud.sexo || 'N/A',
               edad: solicitud.paciente_edad || solicitud.edad || 'N/A',
-              estado: mapearEstadoAPI(solicitud.cod_estado_cita || solicitud.estado_gestion_citas_id),
+              estado: solicitud.estado || 'N/A',  // 🟢 Estado de Bolsa (sin mapear)
+              estadoCita: mapearEstadoAPI(solicitud.cod_estado_cita || solicitud.estado_gestion_citas_id),  // Estado de cita mapeado
               estadoDisplay: solicitud.desc_estado_cita || getEstadoDisplay(solicitud.cod_estado_cita),
               estadoCodigo: solicitud.cod_estado_cita,
               semaforo: solicitud.recordatorio_enviado ? 'verde' : 'rojo',
@@ -902,7 +904,8 @@ export default function Solicitudes() {
               correo: solicitud.paciente_email || solicitud.email_pers || '',
               sexo: solicitud.paciente_sexo || solicitud.sexo || 'N/A',
               edad: solicitud.paciente_edad || solicitud.edad || 'N/A',
-              estado: mapearEstadoAPI(solicitud.cod_estado_cita || solicitud.estado_gestion_citas_id),
+              estado: solicitud.estado || 'N/A',  // 🟢 Estado de Bolsa (sin mapear)
+              estadoCita: mapearEstadoAPI(solicitud.cod_estado_cita || solicitud.estado_gestion_citas_id),  // Estado de cita mapeado
               estadoDisplay: solicitud.desc_estado_cita || getEstadoDisplay(solicitud.cod_estado_cita),
               estadoCodigo: solicitud.cod_estado_cita,
               semaforo: solicitud.recordatorio_enviado ? 'verde' : 'rojo',
@@ -2254,6 +2257,7 @@ export default function Solicitudes() {
                     </th>
                     {/* Columnas - Orden optimizado v2.1.0 + v1.68.0: F. Ingreso Bolsa primera */}
                     <th className="px-3 py-3 text-left text-sm font-bold uppercase tracking-wider whitespace-nowrap">F. Ingreso Bolsa</th>
+                    <th className="px-3 py-3 text-left text-sm font-bold uppercase tracking-wider whitespace-nowrap">Estado de Bolsa</th>
                     <th className="px-3 py-3 text-left text-sm font-bold uppercase tracking-wider whitespace-nowrap">Origen de la Bolsa</th>
                     <th className="px-3 py-3 text-left text-sm font-bold uppercase tracking-wider whitespace-nowrap">Fecha Preferida</th>
                     <th className="px-3 py-3 text-left text-sm font-bold uppercase tracking-wider whitespace-nowrap">T-N° Documento</th>
@@ -2264,7 +2268,7 @@ export default function Solicitudes() {
                     <th className="px-3 py-3 text-left text-sm font-bold uppercase tracking-wider whitespace-nowrap">IPRESS - Adscripción</th>
                     <th className="px-3 py-3 text-left text-sm font-bold uppercase tracking-wider whitespace-nowrap">IPRESS - Atención</th>
                     <th className="px-3 py-3 text-left text-sm font-bold uppercase tracking-wider whitespace-nowrap">Red</th>
-                    <th className="px-3 py-3 text-left text-sm font-bold uppercase tracking-wider whitespace-nowrap">Estado</th>
+                    <th className="px-3 py-3 text-left text-sm font-bold uppercase tracking-wider whitespace-nowrap">Estado de Gestora</th>
                     <th className="px-3 py-3 text-left text-sm font-bold uppercase tracking-wider whitespace-nowrap">F/H Cita</th>
                     <th className="px-3 py-3 text-left text-sm font-bold uppercase tracking-wider whitespace-nowrap">Médico Asignado</th>
                     <th className="px-3 py-3 text-left text-sm font-bold uppercase tracking-wider whitespace-nowrap">Est. Atención</th>

@@ -531,6 +531,35 @@ update dim_solicitud_bolsa dsb  set id_ipress_atencion=7 where id_solicitud=4610
 
 
 
+select  dsb.codigo_adscripcion , dsb.id_ipress , dsb.codigo_ipress , dsb.id_ipress_atencion, dsb.id_bolsa , 
+dsb.estado, dsb.estado_gestion_citas_id , dsb.*
+from dim_solicitud_bolsa dsb  where dsb.paciente_dni ='70073164';
+
+--update dim_solicitud_bolsa set estado_gestion_citas_id=7  where id_solicitud=46123
+
+
+select  dsb.codigo_adscripcion , dsb.id_ipress , dsb.codigo_ipress , dsb.id_ipress_atencion, dsb.id_bolsa , dsb.*
+from dim_solicitud_bolsa dsb  where dsb.paciente_dni ='46183586';
+
+select * from asegurados a  where a.pk_asegurado  ='46183586';
+
+
+select * from dim_tipos_bolsas dtb  where dtb.id_tipo_bolsa =4;
+
+
+
+
+
+
+
+
+select dsb.codigo_adscripcion , dsb.id_ipress , dsb.codigo_ipress , dsb.id_ipress_atencion, dsb.id_bolsa , dsb.*
+from  dim_solicitud_bolsa dsb
+where dsb.numero_solicitud  like 'REC-%'
+
+select dsb.codigo_adscripcion , dsb.id_ipress , dsb.codigo_ipress , dsb.id_ipress_atencion, dsb.id_bolsa , dsb.*
+from  dim_solicitud_bolsa dsb
+where dsb.numero_solicitud  like 'INT%'
 
 
 
@@ -544,14 +573,9 @@ update dim_solicitud_bolsa dsb  set id_ipress_atencion=7 where id_solicitud=4610
 
 
 
-
-
-
-
-
-
-
-
+select  dsb.codigo_adscripcion , dsb.id_ipress , dsb.codigo_ipress , dsb.id_ipress_atencion, dsb.id_bolsa , 
+dsb.estado, dsb.estado_gestion_citas_id , dsb.*
+from dim_solicitud_bolsa dsb  where dsb.paciente_dni ='70073164';
 
 
 

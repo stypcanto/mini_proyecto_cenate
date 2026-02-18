@@ -53,10 +53,16 @@ function FilaSolicitud({
         )}
       </td>
 
+      {/* ESTADO DE BOLSA */}
+      <td className="px-3 py-3 text-sm text-gray-700">
+        <span className="font-medium text-gray-900">{solicitud.estado || 'N/A'}</span>
+      </td>
+
       {/* DATOS PRINCIPALES - Origen de la Bolsa */}
       <td className="px-3 py-3 text-sm text-gray-700 max-w-xs">
         <span className="font-medium text-gray-900">{solicitud.descBolsa || solicitud.nombreBolsa || 'Sin clasificar'}</span>
       </td>
+
       <td className="px-3 py-3 text-sm text-gray-700">{solicitud.fechaPreferidaNoAtendida}</td>
       <td className="px-3 py-2 text-sm min-w-max">
         <div className="text-xs text-gray-600 font-semibold">{solicitud.tipoDocumento}</div>
