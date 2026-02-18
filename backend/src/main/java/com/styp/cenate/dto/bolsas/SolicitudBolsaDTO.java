@@ -180,6 +180,16 @@ public class SolicitudBolsaDTO {
     @JsonProperty("motivo_llamada_bolsa")
     private String motivoLlamadoBolsa;
 
+    // 🏥 IPRESS - ATENCIÓN (NUEVA v1.15.0 - Excel mapping)
+    @JsonProperty("id_ipress_atencion")
+    private Long idIpressAtencion;
+
+    @JsonProperty("cod_ipress_atencion")
+    private String codIpressAtencion;
+
+    @JsonProperty("desc_ipress_atencion")
+    private String descIpressAtencion;
+
     // 🔔 AUDITORÍA
     @JsonProperty("activo")
     private Boolean activo;

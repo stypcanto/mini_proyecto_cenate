@@ -549,6 +549,10 @@ export default function Solicitudes() {
               })() : 'N/A',
             tipoCita: solicitud.tipo_cita ? solicitud.tipo_cita.toUpperCase() : 'N/A',
             codigoIpress: solicitud.codigo_adscripcion || 'N/A',
+            idIpressAtencion: solicitud.id_ipress_atencion || null,
+            codIpressAtencion: solicitud.cod_ipress_atencion || 'N/A',
+            descIpressAtencion: solicitud.desc_ipress_atencion || 'N/A',
+            ipressAtencion: solicitud.desc_ipress_atencion || 'N/A',
             // ============================================================================
             // � F. INGRESO BOLSA - Campo para FilaSolicitud.jsx (v1.68.1)
             // ============================================================================
@@ -589,6 +593,33 @@ export default function Solicitudes() {
       if (solicitudesEnriquecidas && solicitudesEnriquecidas.length > 0) {
         console.log('✅ DEBUG ENRIQUECIDA - Primera solicitud después del mapeo:', JSON.stringify(solicitudesEnriquecidas[0], null, 2));
         console.log('✅ DEBUG - Campos en objeto enriquecido:', Object.keys(solicitudesEnriquecidas[0]));
+      }
+
+      // 🔍 DEBUG: Mostrar datos completos para DNI 70073164
+      const solicitud70073164 = solicitudesEnriquecidas.find(s => s.dni === '70073164');
+      if (solicitud70073164) {
+        console.log('🔍 DEBUG - DOCUMENTO 70073164 - DATOS COMPLETOS DEL BACKEND:');
+        console.log('════════════════════════════════════════════════════════════');
+        console.log('ID Solicitud:', solicitud70073164.id_solicitud);
+        console.log('Nombre:', solicitud70073164.paciente_nombre);
+        console.log('DNI:', solicitud70073164.paciente_dni);
+        console.log('');
+        console.log('🏥 IPRESS - ADSCRIPCIÓN:');
+        console.log('  id_ipress:', solicitud70073164.id_ipress);
+        console.log('  desc_ipress:', solicitud70073164.desc_ipress);
+        console.log('  codigo_adscripcion:', solicitud70073164.codigo_adscripcion);
+        console.log('');
+        console.log('🏥 IPRESS - ATENCIÓN (NUEVO v1.15.0):');
+        console.log('  id_ipress_atencion:', solicitud70073164.id_ipress_atencion);
+        console.log('  cod_ipress_atencion:', solicitud70073164.cod_ipress_atencion);
+        console.log('  desc_ipress_atencion:', solicitud70073164.desc_ipress_atencion);
+        console.log('  ipressAtencion:', solicitud70073164.ipressAtencion);
+        console.log('');
+        console.log('📋 OBJETO COMPLETO DEL BACKEND:');
+        console.log(JSON.stringify(solicitud70073164, null, 2));
+        console.log('════════════════════════════════════════════════════════════');
+      } else {
+        console.log('⚠️ No se encontró documento 70073164 en esta página');
       }
 
       // Verificar si hay asegurados nuevos sin sincronizar
@@ -755,6 +786,33 @@ export default function Solicitudes() {
         console.log('✅ Solicitudes enriquecidas con filtros:', solicitudesEnriquecidas.length);
         setSolicitudes(solicitudesEnriquecidas);
         setTotalElementos(totalElementosDelBackend);
+
+        // 🔍 DEBUG: Mostrar datos completos para DNI 70073164
+        const solicitud70073164 = solicitudesEnriquecidas.find(s => s.dni === '70073164');
+        if (solicitud70073164) {
+          console.log('🔍 DEBUG - DOCUMENTO 70073164 - DATOS COMPLETOS DEL BACKEND:');
+          console.log('════════════════════════════════════════════════════════════');
+          console.log('ID Solicitud:', solicitud70073164.id_solicitud);
+          console.log('Nombre:', solicitud70073164.paciente_nombre);
+          console.log('DNI:', solicitud70073164.paciente_dni);
+          console.log('');
+          console.log('🏥 IPRESS - ADSCRIPCIÓN:');
+          console.log('  id_ipress:', solicitud70073164.id_ipress);
+          console.log('  desc_ipress:', solicitud70073164.desc_ipress);
+          console.log('  codigo_adscripcion:', solicitud70073164.codigo_adscripcion);
+          console.log('');
+          console.log('🏥 IPRESS - ATENCIÓN (NUEVO v1.15.0):');
+          console.log('  id_ipress_atencion:', solicitud70073164.id_ipress_atencion);
+          console.log('  cod_ipress_atencion:', solicitud70073164.cod_ipress_atencion);
+          console.log('  desc_ipress_atencion:', solicitud70073164.desc_ipress_atencion);
+          console.log('  ipressAtencion:', solicitud70073164.ipressAtencion);
+          console.log('');
+          console.log('📋 OBJETO COMPLETO DEL BACKEND:');
+          console.log(JSON.stringify(solicitud70073164, null, 2));
+          console.log('════════════════════════════════════════════════════════════');
+        } else {
+          console.log('⚠️ No se encontró documento 70073164 en esta página');
+        }
       } else {
         console.warn('⚠️ Sin resultados con estos filtros');
         setSolicitudes([]);
@@ -870,6 +928,14 @@ export default function Solicitudes() {
                 })() : 'N/A',
               tipoCita: solicitud.tipo_cita ? solicitud.tipo_cita.toUpperCase() : 'N/A',
               codigoIpress: solicitud.codigo_adscripcion || 'N/A',
+              idIpressAtencion: solicitud.id_ipress_atencion || null,
+              codIpressAtencion: solicitud.cod_ipress_atencion || 'N/A',
+              descIpressAtencion: solicitud.desc_ipress_atencion || 'N/A',
+              ipressAtencion: solicitud.desc_ipress_atencion || 'N/A',
+              idIpressAtencion: solicitud.id_ipress_atencion || null,
+              codIpressAtencion: solicitud.cod_ipress_atencion || 'N/A',
+              descIpressAtencion: solicitud.desc_ipress_atencion || 'N/A',
+              ipressAtencion: solicitud.desc_ipress_atencion || 'N/A',
               // ============================================================================
               // 📅 F. INGRESO BOLSA - Campo para FilaSolicitud.jsx (v1.68.1)
               // ============================================================================
@@ -2196,6 +2262,7 @@ export default function Solicitudes() {
                     <th className="px-3 py-3 text-left text-sm font-bold uppercase tracking-wider whitespace-nowrap">Tipo de Cita</th>
                     <th className="px-3 py-3 text-left text-sm font-bold uppercase tracking-wider whitespace-nowrap">Especialidad</th>
                     <th className="px-3 py-3 text-left text-sm font-bold uppercase tracking-wider whitespace-nowrap">IPRESS - Adscripción</th>
+                    <th className="px-3 py-3 text-left text-sm font-bold uppercase tracking-wider whitespace-nowrap">IPRESS - Atención</th>
                     <th className="px-3 py-3 text-left text-sm font-bold uppercase tracking-wider whitespace-nowrap">Red</th>
                     <th className="px-3 py-3 text-left text-sm font-bold uppercase tracking-wider whitespace-nowrap">Estado</th>
                     <th className="px-3 py-3 text-left text-sm font-bold uppercase tracking-wider whitespace-nowrap">F/H Cita</th>

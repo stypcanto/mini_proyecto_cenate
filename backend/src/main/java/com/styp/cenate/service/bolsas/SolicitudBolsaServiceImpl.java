@@ -550,13 +550,12 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
 
     /**
      * Mapea un Object[] de la consulta SQL nativa a SolicitudBolsaDTO
-     * Orden de campos: id_solicitud, numero_solicitud, paciente_id, paciente_nombre, paciente_dni,
-     *                  especialidad, fecha_preferida_no_atendida, tipo_documento, fecha_nacimiento,
-     *                  paciente_sexo, paciente_telefono, paciente_telefono_alterno, paciente_email,
-     *                  codigo_ipress, tipo_cita, id_bolsa, desc_tipo_bolsa, id_servicio,
-     *                  codigo_adscripcion, id_ipress, estado, cod_estado_cita, fecha_solicitud,
-     *                  fecha_actualizacion, estado_gestion_citas_id, activo, desc_ipress, desc_red, desc_macro,
-     *                  responsable_gestora_id (29), fecha_asignacion (30) - v2.4.0, cod_estado_cita v1.41.1
+     * Índices (0-40): 
+     * (0-19): Campos base solicitud + estado
+     * (20-26): Estado gestión citas + auditoría
+     * (27-29): Descripciones (IPRESS, Red, Macroregión)
+     * (30-37): Asignación gestora + campos temporales + médico
+     * (38-40): IPRESS - Atención (NEW v1.15.0)
      */
     private SolicitudBolsaDTO mapFromResultSet(Object[] row) {
         try {
@@ -657,7 +656,7 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
                 }
             }
 
-            // ✅ Extraer detalles de cita agendada (NEW v3.4.0 - indices +1: 35, 36, 37)
+            // ✅ Extraer detalles de cita agendada (NEW v3.4.0 - índices correctos: 35, 36, 37)
             java.time.LocalDate fechaAtencion = row.length > 35 ? convertToLocalDate(row[35]) : null;
             java.time.LocalTime horaAtencion = null;
             if (row.length > 36 && row[36] != null) {
@@ -675,18 +674,21 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
             }
             Long idPersonal = row.length > 37 ? toLongSafe("id_personal", row[37]) : null;
 
-            // ✅ v3.5.0 - Extraer condición médica y fecha atención médica (indices +1: 38, 39)
+            // ✅ v3.5.0 - Extraer condición médica y fecha atención médica (índices correctos: 38, 39)
             String condicionMedica = row.length > 38 ? (String) row[38] : null;
             java.time.OffsetDateTime fechaAtencionMedica = row.length > 39 ? convertToOffsetDateTime(row[39]) : null;
 
-            // ✅ v3.6.0 - Nombre del médico asignado (siempre última columna)
+            // ✅ v3.6.0 - Nombre del médico asignado (índice 40)
             String nombreMedicoAsignado = null;
-            // El nombre_medico siempre es la última columna del resultset
-            int lastIdx = row.length - 1;
-            if (lastIdx > 37 && row[lastIdx] instanceof String) {
-                String val = (String) row[lastIdx];
+            if (row.length > 40 && row[40] instanceof String) {
+                String val = (String) row[40];
                 if (!val.isBlank()) nombreMedicoAsignado = val.trim();
             }
+
+            // ✅ v1.15.0 - IPRESS - Atención (NEW EXCEL COLUMN - índices 41, 42, 43)
+            Long idIpressAtencion = row.length > 41 ? toLongSafe("id_ipress_atencion", row[41]) : null;
+            String codIpressAtencion = row.length > 42 ? (String) row[42] : null;
+            String descIpressAtencion = row.length > 43 ? (String) row[43] : null;
 
             return SolicitudBolsaDTO.builder()
                     .idSolicitud(toLongSafe("id_solicitud", row[0]))
@@ -725,12 +727,15 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
                     .fechaCambioEstado(fechaCambioEstado)  // NEW v3.3.1 (ajustado +1 a 32)
                     .usuarioCambioEstadoId(row.length > 33 ? toLongSafe("usuario_cambio_estado_id", row[33]) : null) // NEW v3.3.1 (ajustado +1 a 33)
                     .nombreUsuarioCambioEstado(row.length > 34 ? (String) row[34] : null) // NEW v3.3.1 (ajustado +1 a 34)
-                    .fechaAtencion(fechaAtencion)          // NEW v3.4.0 - fecha_atencion (índice 34)
-                    .horaAtencion(horaAtencion)            // NEW v3.4.0 - hora_atencion (índice 35)
-                    .idPersonal(idPersonal)                // NEW v3.4.0 - id_personal (índice 36)
-                    .condicionMedica(condicionMedica)      // NEW v3.5.0 - condicion_medica (índice 37)
-                    .fechaAtencionMedica(fechaAtencionMedica) // NEW v3.5.0 - fecha_atencion_medica (índice 38)
-                    .nombreMedicoAsignado(nombreMedicoAsignado) // NEW v3.6.0 - nombre médico desde JOIN
+                    .fechaAtencion(fechaAtencion)          // NEW v3.4.0 - fecha_atencion (índice 35)
+                    .horaAtencion(horaAtencion)            // NEW v3.4.0 - hora_atencion (índice 36)
+                    .idPersonal(idPersonal)                // NEW v3.4.0 - id_personal (índice 37)
+                    .condicionMedica(condicionMedica)      // NEW v3.5.0 - condicion_medica (índice 38)
+                    .fechaAtencionMedica(fechaAtencionMedica) // NEW v3.5.0 - fecha_atencion_medica (índice 39)
+                    .nombreMedicoAsignado(nombreMedicoAsignado) // NEW v3.6.0 - nombre médico desde JOIN (índice 37)
+                    .idIpressAtencion(idIpressAtencion)    // NEW v1.15.0 - id_ipress_atencion (índice 38)
+                    .codIpressAtencion(codIpressAtencion)  // NEW v1.15.0 - cod_ipress_atencion (índice 39)
+                    .descIpressAtencion(descIpressAtencion) // NEW v1.15.0 - desc_ipress_atencion (índice 40)
                     .build();
         } catch (Exception e) {
             log.error("Error mapeando resultado SQL en índice. Error: {}", e.getMessage(), e);

@@ -112,6 +112,10 @@ function FilaSolicitud({
       <td className="px-3 py-3 text-sm text-gray-900 max-w-xs truncate" title={solicitud.ipress}>
         <span className="font-semibold text-blue-600">{solicitud.codigoIpress}</span> - {solicitud.ipress || 'N/A'}
       </td>
+      {/* IPRESS - ATENCIÓN (v1.15.0) */}
+      <td className="px-3 py-3 text-sm text-gray-900 max-w-xs truncate" title={solicitud.ipressAtencion}>
+        <span className="font-semibold text-purple-600">{solicitud.codIpressAtencion || 'N/A'}</span> - {solicitud.ipressAtencion || 'N/A'}
+      </td>
       <td className="px-3 py-3 text-sm text-gray-900">{solicitud.red || 'Sin Red'}</td>
 
       {/* ESTADO */}
