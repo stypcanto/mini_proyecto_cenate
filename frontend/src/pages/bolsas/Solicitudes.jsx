@@ -1974,7 +1974,7 @@ export default function Solicitudes() {
                 ]
               },
               {
-                name: "Estado",
+                name: "Estado de Gestora",
                 value: filtroEstado,
                 onChange: (e) => setFiltroEstado(e.target.value),
                 options: [
