@@ -526,7 +526,8 @@ select * from dim_ipress di  where di.cod_ipress='159';  -- 38
 
 select * from dim_ipress di where di.id_ipress  in (160,38);
 
-
+7
+update dim_solicitud_bolsa dsb  set id_ipress_atencion=7 where id_solicitud=46101;
 
 
 

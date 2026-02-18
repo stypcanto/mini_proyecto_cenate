@@ -752,6 +752,10 @@ export default function Solicitudes() {
                 })() : 'N/A',
               tipoCita: solicitud.tipo_cita ? solicitud.tipo_cita.toUpperCase() : 'N/A',
               codigoIpress: solicitud.codigo_adscripcion || 'N/A',
+              idIpressAtencion: solicitud.id_ipress_atencion || null,
+              codIpressAtencion: solicitud.cod_ipress_atencion || 'N/A',
+              descIpressAtencion: solicitud.desc_ipress_atencion || 'N/A',
+              ipressAtencion: solicitud.desc_ipress_atencion || 'N/A',
               // ============================================================================
               // � F. INGRESO BOLSA - Campo para FilaSolicitud.jsx (v1.68.1)
               // ============================================================================
@@ -928,10 +932,6 @@ export default function Solicitudes() {
                 })() : 'N/A',
               tipoCita: solicitud.tipo_cita ? solicitud.tipo_cita.toUpperCase() : 'N/A',
               codigoIpress: solicitud.codigo_adscripcion || 'N/A',
-              idIpressAtencion: solicitud.id_ipress_atencion || null,
-              codIpressAtencion: solicitud.cod_ipress_atencion || 'N/A',
-              descIpressAtencion: solicitud.desc_ipress_atencion || 'N/A',
-              ipressAtencion: solicitud.desc_ipress_atencion || 'N/A',
               idIpressAtencion: solicitud.id_ipress_atencion || null,
               codIpressAtencion: solicitud.cod_ipress_atencion || 'N/A',
               descIpressAtencion: solicitud.desc_ipress_atencion || 'N/A',
