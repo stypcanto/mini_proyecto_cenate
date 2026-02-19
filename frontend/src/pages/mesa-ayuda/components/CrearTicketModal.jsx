@@ -29,6 +29,7 @@ function CrearTicketModal({ isOpen, onClose, medico, paciente, onSuccess }) {
   const [loadingMotivos, setLoadingMotivos] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(false);
+  const [ticketCreado, setTicketCreado] = useState(null);
 
   // ✅ v1.64.0: Cargar motivos al abrir el modal
   useEffect(() => {
@@ -112,6 +113,7 @@ function CrearTicketModal({ isOpen, onClose, medico, paciente, onSuccess }) {
       const response = await mesaAyudaService.crearTicket(ticketData);
 
       console.log('✅ Ticket creado exitosamente:', response.data);
+      setTicketCreado(response.data);
       setSuccess(true);
 
       // Limpiar formulario
@@ -145,6 +147,7 @@ function CrearTicketModal({ isOpen, onClose, medico, paciente, onSuccess }) {
       setPrioridad('MEDIA');
       setError(null);
       setSuccess(false);
+      setTicketCreado(null);
       onClose();
     }
   };
@@ -212,8 +215,8 @@ function CrearTicketModal({ isOpen, onClose, medico, paciente, onSuccess }) {
               <CheckCircle size={20} className="text-green-600 flex-shrink-0 mt-0.5" />
               <div className="text-sm text-green-800">
                 <p className="font-semibold mb-1">✅ Ticket creado exitosamente</p>
-                {response?.data?.numeroTicket && (
-                  <p className="text-xs">Número de Ticket: <span className="font-mono font-bold text-green-700">{response.data.numeroTicket}</span></p>
+                {ticketCreado?.numeroTicket && (
+                  <p className="text-xs">Número de Ticket: <span className="font-mono font-bold text-green-700">{ticketCreado.numeroTicket}</span></p>
                 )}
               </div>
             </div>
