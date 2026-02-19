@@ -27,7 +27,9 @@ import {
   Calendar,
   Eye,
   Activity,
-  Stethoscope
+  Stethoscope,
+  HelpCircle,
+  Ticket
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import gestionPacientesService from '../../../../services/gestionPacientesService';
@@ -37,6 +39,7 @@ import ModalEvaluacionECG from '../../../../components/teleecgs/ModalEvaluacionE
 import teleecgService from '../../../../services/teleecgService';
 import { useAuth } from '../../../../context/AuthContext';
 import CalendarioAsignacion from '../../../../components/calendario/CalendarioAsignacion';
+import CrearTicketModal from '../../../mesa-ayuda/components/CrearTicketModal';
 
 // ✅ v1.78.0: Sistema Genérico de Especialidades
 // Define qué funcionalidades tiene cada tipo de especialidad
@@ -412,6 +415,10 @@ export default function MisPacientes() {
   const [showResultadosModal, setShowResultadosModal] = useState(false); // ✅ Modal para ver resultados
   const [resultadosActuales, setResultadosActuales] = useState(null); // ✅ Resultados a mostrar
   const [pacientesRechazados, setPacientesRechazados] = useState({}); // ✅ v1.92.0: Rastrear imágenes rechazadas (OBSERVADA) por DNI
+
+  // ✅ v1.64.0: Estados para Modal Crear Ticket Mesa de Ayuda
+  const [showTicketModal, setShowTicketModal] = useState(false);
+  const [pacienteTicket, setPacienteTicket] = useState(null);
 
   const bolsasDisponibles = [
     { id: 1, nombre: 'Bolsa 107 (Módulo 107)' },
@@ -2081,6 +2088,13 @@ export default function MisPacientes() {
                     <th className="px-2 py-1 text-left">Condición</th>
                     <th className="px-2 py-1 text-left">Observaciones</th>
                     <th className="px-2 py-1 text-left">🔔 Motivo Llamada</th>
+                    {/* ✅ v1.64.0: Columna de Generación de Ticket */}
+                    <th className="px-2 py-1 text-center">
+                      <div className="flex items-center justify-center gap-1">
+                        <Ticket size={14} />
+                        <span>Generación Ticket</span>
+                      </div>
+                    </th>
                     <th className="px-2 py-1 text-left">Fecha Asignación</th>
                     <th className="px-2 py-1 text-left">Fecha Atención</th>
                     {/* ✅ v1.66.4: Columna final para visualizar ECGs (SOLO CARDIÓLOGOS) */}
@@ -2174,6 +2188,19 @@ export default function MisPacientes() {
                         ) : (
                           <span className="text-gray-400">-</span>
                         )}
+                      </td>
+                      {/* ✅ v1.64.0: Columna Generación Ticket */}
+                      <td className="px-2 py-1 text-center">
+                        <button
+                          onClick={() => {
+                            setPacienteTicket(paciente);
+                            setShowTicketModal(true);
+                          }}
+                          title="Generar ticket de Mesa de Ayuda para este paciente"
+                          className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors duration-150"
+                        >
+                          <Ticket size={18} strokeWidth={1.5} />
+                        </button>
                       </td>
                       <td className="px-2 py-1 text-gray-600 text-xs whitespace-nowrap">
                         {formatearFechaHumana(paciente.fechaAsignacion)}
@@ -2872,6 +2899,33 @@ export default function MisPacientes() {
           </div>
         </div>
       )}
+
+      {/* ✅ v1.64.0: Modal para Crear Ticket Mesa de Ayuda */}
+      <CrearTicketModal
+        isOpen={showTicketModal}
+        onClose={() => {
+          setShowTicketModal(false);
+          setPacienteTicket(null);
+        }}
+        medico={doctorInfo ? {
+          id: doctorInfo.idPersonal,
+          nombre: doctorInfo.nombreCompleto,
+          especialidad: userSpecialty?.name || 'General'
+        } : null}
+        paciente={pacienteTicket ? {
+          id: pacienteTicket.idSolicitudBolsa,
+          idSolicitudBolsa: pacienteTicket.idSolicitudBolsa,
+          dni: pacienteTicket.numDoc,
+          nombre: pacienteTicket.apellidosNombres,
+          especialidad: userSpecialty?.name || 'General',
+          ipress: pacienteTicket.ipress
+        } : null}
+        onSuccess={(ticket) => {
+          toast.success('Ticket creado exitosamente');
+          setShowTicketModal(false);
+          setPacienteTicket(null);
+        }}
+      />
 
     </div>
   );

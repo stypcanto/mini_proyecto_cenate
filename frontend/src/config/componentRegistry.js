@@ -602,6 +602,25 @@ export const componentRegistry = {
     component: lazy(() => import('../pages/roles/coordcitas/Modulo107EstadisticasAtencion')),
     requiredAction: 'ver',
   },
+
+  // ========================================================================
+  // 🎧 MÓDULO MESA DE AYUDA (v1.64.0)
+  // ========================================================================
+
+  '/mesa-ayuda/bienvenida': {
+    component: lazy(() => import('../pages/mesa-ayuda/BienvenidaMesaAyuda')),
+    requiredAction: 'ver',
+  },
+
+  '/mesa-ayuda/tickets': {
+    component: lazy(() => import('../pages/mesa-ayuda/ListaTickets')),
+    requiredAction: 'ver',
+  },
+
+  '/mesa-ayuda/faqs': {
+    component: lazy(() => import('../pages/mesa-ayuda/FAQsMesaAyuda')),
+    requiredAction: 'ver',
+  },
 };
 
 // ========================================================================
