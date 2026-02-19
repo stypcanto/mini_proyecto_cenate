@@ -483,6 +483,28 @@ select * from dim_estados_gestion_citas degc ;
 -- Al costado agregar semaforizacion(lado derecho de Estado)
 
 
+select * from dim_red dr ; -- id red 24 y cod red 26
+
+select * from dim_ipress where id_red=24;
+
+
+--  
+
+select * from dim_solicitud_bolsa where  paciente_dni ='34567803';
+
+update dim_solicitud_bolsa dsb  set motivo_llamada_bolsa='' where id_bolsa =1 and paciente_dni ='08471048';
+
+
+
+select * from dim_ticket_mesa_ayuda dtma ;
+
+
+/*
+*vw_ctr_horario_area_servicio_grupo
+*vw_ctr_horario_area_servicio
+*vw_ctr_horario_prof_area
+*Tabla: ctr_periodo
+*/
 
 
 
