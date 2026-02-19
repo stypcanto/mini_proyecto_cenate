@@ -4,11 +4,6 @@ import {
   Loader2,
   Plus,
   Eye,
-  ToggleLeft,
-  ToggleRight,
-  TrendingUp,
-  Users,
-  Clock,
   CheckCircle2,
   XCircle,
   ChevronDown,
@@ -17,7 +12,7 @@ import {
   Trash2,
 } from "lucide-react";
 
-import { fmtDate, safeNum } from "../utils/ui";
+import { fmtDate, fmtDateTime, safeNum } from "../utils/ui";
 
 export default function TabPeriodos({
   periodos,
@@ -110,9 +105,42 @@ export default function TabPeriodos({
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               >
                 <option value="TODOS">Todos</option>
-                <option value="ACTIVO">Activo</option>
+                <option value="ABIERTO">Abierto</option>
+                <option value="EN_VALIDACION">En Validación</option>
                 <option value="CERRADO">Cerrado</option>
-                <option value="BORRADOR">Borrador</option>
+                <option value="REABIERTO">Reabierto</option>
+              </select>
+            </div>
+
+            {/* Filtro Área */}
+            <div className="flex-1">
+              <label className="block text-xs font-semibold text-gray-700 mb-1.5">
+                Área
+              </label>
+              <select
+                value={filtros.idArea || "TODOS"}
+                onChange={(e) => onFiltrosChange({ ...filtros, idArea: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              >
+                <option value="TODOS">Todas las áreas</option>
+                <option value="2">SGDT - SERVICIO DE MEDICINA GENERAL - TELEURGENCIAS Y TELETRIAJE</option>
+                <option value="3">SGDT - SERVICIO DE TELE APOYO AL DIAGNÓSTICO</option>
+                <option value="13">SGDT - SERVICIO DE MEDICINA ESPECIALIZADA</option>
+              </select>
+            </div>
+
+            {/* Filtro Propietario */}
+            <div className="flex-1">
+              <label className="block text-xs font-semibold text-gray-700 mb-1.5">
+                Propietario
+              </label>
+              <select
+                value={filtros.propietario || "TODOS"}
+                onChange={(e) => onFiltrosChange({ ...filtros, propietario: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              >
+                <option value="TODOS">Todos</option>
+                <option value="MIS_PERIODOS">Solo mis períodos</option>
               </select>
             </div>
 
@@ -135,7 +163,7 @@ export default function TabPeriodos({
             {/* Botón Limpiar Filtros */}
             <div className="flex-shrink-0 pt-6">
               <button
-                onClick={() => onFiltrosChange({ estado: "TODOS", anio: new Date().getFullYear() })}
+                onClick={() => onFiltrosChange({ estado: "TODOS", idArea: "TODOS", propietario: "TODOS", anio: new Date().getFullYear() })}
                 className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-lg hover:bg-gray-200 transition-colors"
               >
                 Limpiar
@@ -147,6 +175,8 @@ export default function TabPeriodos({
           <div className="mt-3 text-xs text-gray-600">
             Mostrando <span className="font-semibold">{(periodos || []).length}</span> periodo(s)
             {filtros.estado !== "TODOS" && <span> con estado <span className="font-semibold">{filtros.estado}</span></span>}
+            {filtros.idArea && filtros.idArea !== "TODOS" && <span> del área <span className="font-semibold">{filtros.idArea}</span></span>}
+            {filtros.propietario === "MIS_PERIODOS" && <span> <span className="font-semibold">(solo mis períodos)</span></span>}
             {filtros.anio && <span> del año <span className="font-semibold">{filtros.anio}</span></span>}
           </div>
         </div>
@@ -166,33 +196,51 @@ export default function TabPeriodos({
                 <tr>
                   <th 
                     className="px-3 py-2.5 text-left text-xs font-bold text-white cursor-pointer hover:bg-blue-700/50"
-                    onClick={() => handleSort('idPeriodo')}
+                    onClick={() => handleSort('periodo')}
                   >
-                    ID <SortIcon columnKey="idPeriodo" />
+                    Periodo <SortIcon columnKey="periodo" />
                   </th>
                   <th 
                     className="px-3 py-2.5 text-left text-xs font-bold text-white cursor-pointer hover:bg-blue-700/50"
-                    onClick={() => handleSort('descripcion')}
+                    onClick={() => handleSort('nombreArea')}
                   >
-                    Descripción <SortIcon columnKey="descripcion" />
+                    Área <SortIcon columnKey="nombreArea" />
                   </th>
-                  <th className="px-3 py-2.5 text-center text-xs font-bold text-white">
-                    Total Disponibilidades
+                  <th 
+                    className="px-3 py-2.5 text-left text-xs font-bold text-white cursor-pointer hover:bg-blue-700/50"
+                    onClick={() => handleSort('nombreCoordinador')}
+                  >
+                    Creado por <SortIcon columnKey="nombreCoordinador" />
                   </th>
-                  <th className="px-3 py-2.5 text-center text-xs font-bold text-white">
-                    Enviadas
+                  <th 
+                    className="px-3 py-2.5 text-center text-xs font-bold text-white cursor-pointer hover:bg-blue-700/50"
+                    onClick={() => handleSort('fechaInicio')}
+                  >
+                    Fecha Inicio <SortIcon columnKey="fechaInicio" />
                   </th>
-                  <th className="px-3 py-2.5 text-center text-xs font-bold text-white">
-                    Revisadas
+                  <th 
+                    className="px-3 py-2.5 text-center text-xs font-bold text-white cursor-pointer hover:bg-blue-700/50"
+                    onClick={() => handleSort('fechaFin')}
+                  >
+                    Fecha Fin <SortIcon columnKey="fechaFin" />
+                  </th>
+                  <th 
+                    className="px-3 py-2.5 text-center text-xs font-bold text-white cursor-pointer hover:bg-blue-700/50"
+                    onClick={() => handleSort('createdAt')}
+                  >
+                    Fecha Registro <SortIcon columnKey="createdAt" />
+                  </th>
+                  <th 
+                    className="px-3 py-2.5 text-center text-xs font-bold text-white cursor-pointer hover:bg-blue-700/50"
+                    onClick={() => handleSort('updatedAt')}
+                  >
+                    Fecha Actualización <SortIcon columnKey="updatedAt" />
                   </th>
                   <th 
                     className="px-3 py-2.5 text-center text-xs font-bold text-white cursor-pointer hover:bg-blue-700/50"
                     onClick={() => handleSort('estado')}
                   >
                     Estado <SortIcon columnKey="estado" />
-                  </th>
-                  <th className="px-3 py-2.5 text-left text-xs font-bold text-white">
-                    Fechas
                   </th>
                   <th className="px-3 py-2.5 text-center text-xs font-bold text-white">
                     Acciones
@@ -201,53 +249,39 @@ export default function TabPeriodos({
               </thead>
               <tbody className="divide-y divide-gray-200">
                 {sortedPeriodos.map((p) => {
-                  const cantidadDisponibilidades = safeNum(p.totalDisponibilidades ?? p.cantidadDisponibilidades ?? 0);
-                  const enviadas = safeNum(p.enviadas ?? 0);
-                  const revisadas = safeNum(p.revisadas ?? 0);
-                  const isActivo = p.estado === "ACTIVO";
+                  const isActivo = p.estado === "ABIERTO" || p.estado === "REABIERTO";
                   const isCerrado = p.estado === "CERRADO";
 
                   return (
-                    <tr key={p.idPeriodo || p.idDisponibilidad} className="hover:bg-gray-50 transition-colors">
-                      <td className="px-3 py-2 text-sm text-gray-900 font-medium">
-                        {p.idPeriodo || p.idDisponibilidad}
+                    <tr key={`${p.periodo}-${p.idArea}`} className="hover:bg-gray-50 transition-colors">
+                      <td className="px-3 py-2 text-sm text-gray-900 font-semibold">
+                        {p.periodo}
                       </td>
                       <td className="px-3 py-2">
-                        <div className="text-sm font-medium text-gray-900">
-                          {p.descripcion ?? p.nombrePeriodo ?? `Periodo ${p.periodo ?? p.idPeriodo}`}
+                        <div className="text-sm text-gray-900">
+                          <span className="font-medium">{p.nombreArea || `Área ${p.idArea}`}</span>
+                          <span className="text-xs text-gray-500 ml-1">({p.idArea})</span>
                         </div>
                       </td>
-                      <td className="px-3 py-2 text-center">
-                        <span className="inline-flex items-center justify-center w-10 h-8 rounded-full bg-blue-100 text-blue-700 text-xs font-semibold">
-                          {cantidadDisponibilidades}
-                        </span>
+                      <td className="px-3 py-2 text-sm text-gray-700">
+                        {p.nombreCoordinador || "—"}
                       </td>
-                      <td className="px-3 py-2 text-center">
-                        <span className="inline-flex items-center justify-center w-10 h-8 rounded-full bg-green-100 text-green-700 text-xs font-semibold">
-                          {enviadas}
-                        </span>
+                      <td className="px-3 py-2 text-center text-sm text-gray-700">
+                        {p.fechaInicio ? fmtDate(p.fechaInicio) : "—"}
                       </td>
-                      <td className="px-3 py-2 text-center">
-                        <span className="inline-flex items-center justify-center w-10 h-8 rounded-full bg-purple-100 text-purple-700 text-xs font-semibold">
-                          {revisadas}
-                        </span>
+                      <td className="px-3 py-2 text-center text-sm text-gray-700">
+                        {p.fechaFin ? fmtDate(p.fechaFin) : "—"}
+                      </td>
+                      <td className="px-3 py-2 text-center text-xs text-gray-600">
+                        {p.createdAt ? fmtDateTime(p.createdAt) : "—"}
+                      </td>
+                      <td className="px-3 py-2 text-center text-xs text-gray-600">
+                        {p.updatedAt ? fmtDateTime(p.updatedAt) : "—"}
                       </td>
                       <td className="px-3 py-2 text-center">
                         <span className={`inline-block px-2 py-1 rounded-md text-xs font-semibold border ${getEstadoBadge(p.estado)}`}>
                           {p.estado}
                         </span>
-                      </td>
-                      <td className="px-3 py-2">
-                        <div className="text-xs text-gray-600 space-y-0.5">
-                          <div className="flex items-center gap-1">
-                            <Clock className="w-3 h-3" />
-                            <span>{p.fechaInicio ? fmtDate(p.fechaInicio) : "—"}</span>
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <Clock className="w-3 h-3" />
-                            <span>{p.fechaFin ? fmtDate(p.fechaFin) : "—"}</span>
-                          </div>
-                        </div>
                       </td>
                       <td className="px-3 py-2">
                         <div className="flex items-center justify-center gap-1">
@@ -259,16 +293,16 @@ export default function TabPeriodos({
                             <Eye className="w-3 h-3" />
                           </button>
                           
-                          {/* Botón Editar - disponible si está ACTIVO o BORRADOR */}
+                          {/* Botón Editar - disponible si está ABIERTO o REABIERTO */}
                           <button
                             onClick={() => onEditarPeriodo?.(p)}
-                            disabled={p.estado !== "ACTIVO" && p.estado !== "BORRADOR"}
+                            disabled={p.estado !== "ABIERTO" && p.estado !== "REABIERTO"}
                             className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded transition-colors ${
-                              (p.estado === "ACTIVO" || p.estado === "BORRADOR")
+                              (p.estado === "ABIERTO" || p.estado === "REABIERTO")
                                 ? 'bg-amber-600 text-white hover:bg-amber-700'
                                 : 'bg-gray-300 text-gray-500 cursor-not-allowed'
                             }`}
-                            title={(p.estado === "ACTIVO" || p.estado === "BORRADOR") ? "Editar fechas" : "Solo se puede editar periodos en estado ACTIVO o BORRADOR"}
+                            title={(p.estado === "ABIERTO" || p.estado === "REABIERTO") ? "Editar fechas" : "Solo se puede editar periodos en estado ABIERTO o REABIERTO"}
                           >
                             <Pencil className="w-3 h-3" />
                           </button>

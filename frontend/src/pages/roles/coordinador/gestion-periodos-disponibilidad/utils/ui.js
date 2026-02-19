@@ -10,6 +10,18 @@ export const pad2 = (v) => String(v).padStart(2, "0");
 export const fmtDate = (val) => {
   if (!val) return "—";
   try {
+    // Si es string en formato YYYY-MM-DD, parsearlo directamente sin conversión de zona horaria
+    if (typeof val === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(val)) {
+      const [anio, mes, dia] = val.split('-');
+      return `${dia}/${mes}/${anio}`;
+    }
+    // Si tiene parte de tiempo (ISO datetime), extraer solo la fecha
+    if (typeof val === 'string' && val.includes('T')) {
+      const fechaPart = val.split('T')[0];
+      const [anio, mes, dia] = fechaPart.split('-');
+      return `${dia}/${mes}/${anio}`;
+    }
+    // Para otros formatos, usar Date (puede tener problemas de TZ)
     const fecha = new Date(val);
     const dia = String(fecha.getDate()).padStart(2, '0');
     const mes = String(fecha.getMonth() + 1).padStart(2, '0');

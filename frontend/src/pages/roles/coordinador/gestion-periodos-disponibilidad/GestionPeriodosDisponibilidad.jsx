@@ -2,6 +2,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Calendar, FileText, Loader2, RefreshCw } from "lucide-react";
 
+import { useAuth } from "../../../../context/AuthContext";
 import periodoMedicoDisponibilidadService from "../../../../services/periodoMedicoDisponibilidadService";
 import periodoDisponibilidadService from "../../../../services/periodoDisponibilidadService";
 
@@ -14,10 +15,12 @@ import CardStat from "./components/CardStat";
 
 import { getEstadoBadgeDefault } from "./utils/ui";
 
+// Estados válidos para la nueva tabla ctr_periodo
 const ESTADO_PERIODO = {
-  BORRADOR: "BORRADOR",
-  ACTIVO: "ACTIVO",
+  ABIERTO: "ABIERTO",
+  EN_VALIDACION: "EN_VALIDACION",
   CERRADO: "CERRADO",
+  REABIERTO: "REABIERTO",
 };
 
 export default function GestionPeriodosDisponibilidad() {
@@ -47,9 +50,14 @@ export default function GestionPeriodosDisponibilidad() {
     busquedaEspecialidad: "",
   });
 
+  // Obtener usuario autenticado
+  const { user } = useAuth();
+
   // Filtros específicos para periodos
   const [filtrosPeriodos, setFiltrosPeriodos] = useState({
-    estado: "TODOS", // TODOS, ACTIVO, CERRADO
+    estado: "TODOS", // TODOS, ABIERTO, EN_VALIDACION, CERRADO, REABIERTO
+    idArea: "TODOS", // TODOS, 2, 3, 13
+    propietario: "TODOS", // TODOS, MIS_PERIODOS
     anio: new Date().getFullYear(), // Año actual por defecto
   });
 
@@ -66,7 +74,7 @@ export default function GestionPeriodosDisponibilidad() {
       cargarPeriodos();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filtrosPeriodos.estado, filtrosPeriodos.anio]);
+  }, [filtrosPeriodos.estado, filtrosPeriodos.idArea, filtrosPeriodos.propietario, filtrosPeriodos.anio]);
 
   // Cargar disponibilidades solo al cambiar de tab (no automáticamente con filtros)
   useEffect(() => {
@@ -77,18 +85,8 @@ export default function GestionPeriodosDisponibilidad() {
   const cargarPeriodos = async () => {
     setLoadingPeriodos(true);
     try {
-      let response;
-      
-      // Usar el servicio correcto según el filtro de estado
-      if (filtrosPeriodos.estado === "ACTIVO") {
-        response = await periodoMedicoDisponibilidadService.listarActivos();
-      } else if (filtrosPeriodos.estado === "CERRADO") {
-        // Para CERRADO, obtenemos todos y filtramos
-        response = await periodoMedicoDisponibilidadService.listarTodos();
-      } else {
-        // TODOS
-        response = await periodoMedicoDisponibilidadService.listarTodos();
-      }
+      // Siempre cargar todos y filtrar en el frontend
+      const response = await periodoMedicoDisponibilidadService.listarTodos();
       
       let data = Array.isArray(response) ? response : (response?.data || []);
       
@@ -100,24 +98,45 @@ export default function GestionPeriodosDisponibilidad() {
         });
       }
       
-      // Filtrar por estado CERRADO si está seleccionado
-      if (filtrosPeriodos.estado === "CERRADO") {
-        data = data.filter((p) => p.estado === "CERRADO");
+      // Filtrar por estado si está seleccionado (no TODOS)
+      if (filtrosPeriodos.estado && filtrosPeriodos.estado !== "TODOS") {
+        data = data.filter((p) => p.estado === filtrosPeriodos.estado);
+      }
+      
+      // Filtrar por área si está seleccionada
+      if (filtrosPeriodos.idArea && filtrosPeriodos.idArea !== "TODOS") {
+        const idAreaNum = parseInt(filtrosPeriodos.idArea);
+        data = data.filter((p) => p.idArea === idAreaNum);
+      }
+      
+      // Filtrar por propietario (solo mis períodos)
+      if (filtrosPeriodos.propietario === "MIS_PERIODOS" && user?.id) {
+        data = data.filter((p) => p.idCoordinador === user.id);
       }
       
       // Mapear los datos del backend al formato esperado por el frontend
+      // Nueva estructura con PK compuesta (periodo, idArea)
       const periodosMapeados = data.map((p) => ({
-        idPeriodo: p.idPeriodoRegDisp,
-        idPeriodoRegDisp: p.idPeriodoRegDisp,
+        // Clave compuesta
         periodo: p.periodo,
-        descripcion: p.descripcion,
+        idArea: p.idArea,
+        nombreArea: p.nombreArea,
+        // Datos del periodo
+        descripcion: `${p.periodo} - ${p.nombreArea || 'Área ' + p.idArea}`,
         fechaInicio: p.fechaInicio,
         fechaFin: p.fechaFin,
         estado: p.estado,
         anio: p.anio,
-        totalDisponibilidades: 0, // Se calculará si es necesario
-        enviadas: 0,
-        revisadas: 0,
+        mes: p.mes,
+        // Coordinador
+        idCoordinador: p.idCoordinador,
+        nombreCoordinador: p.nombreCoordinador,
+        // Fechas de apertura/cierre
+        fechaApertura: p.fechaApertura,
+        fechaCierre: p.fechaCierre,
+        // Fechas de auditoría
+        createdAt: p.createdAt,
+        updatedAt: p.updatedAt,
       }));
       
       setPeriodos(periodosMapeados);
@@ -199,16 +218,20 @@ export default function GestionPeriodosDisponibilidad() {
     }
   };
 
-  const handleTogglePeriodo = async (periodo) => {
-    const actual = periodo?.estado;
-    const nuevoEstado = actual === ESTADO_PERIODO.ACTIVO ? ESTADO_PERIODO.CERRADO : ESTADO_PERIODO.ACTIVO;
+  const handleTogglePeriodo = async (periodoObj) => {
+    const actual = periodoObj?.estado;
+    // Alternar entre ABIERTO y CERRADO
+    const nuevoEstado = actual === ESTADO_PERIODO.ABIERTO || actual === ESTADO_PERIODO.REABIERTO 
+      ? ESTADO_PERIODO.CERRADO 
+      : ESTADO_PERIODO.ABIERTO;
 
     try {
-      const idPeriodo = periodo.idPeriodoRegDisp || periodo.idPeriodo;
-      await periodoMedicoDisponibilidadService.cambiarEstado(idPeriodo, nuevoEstado);
+      // Usar clave compuesta (periodo, idArea)
+      const { periodo, idArea } = periodoObj;
+      await periodoMedicoDisponibilidadService.cambiarEstado(periodo, idArea, nuevoEstado);
       await cargarPeriodos();
       if (activeTab === "disponibilidades") await cargarDisponibilidades();
-      window.alert(`Período ${nuevoEstado === ESTADO_PERIODO.ACTIVO ? 'activado' : 'cerrado'} correctamente`);
+      window.alert(`Período ${nuevoEstado === ESTADO_PERIODO.ABIERTO ? 'abierto' : 'cerrado'} correctamente`);
     } catch (err) {
       console.error(err);
       const errorMessage = err.message || "Error desconocido al cambiar estado del período";
@@ -219,16 +242,16 @@ export default function GestionPeriodosDisponibilidad() {
   const handleAperturarPeriodo = async (nuevoPeriodo) => {
     try {
       // Preparar los datos según el formato esperado por el backend
-      const anio = parseInt(nuevoPeriodo.periodo.substring(0, 4));
+      // Nota: idArea se obtiene automáticamente del backend usando dim_personal_cnt
       const fechaInicio = nuevoPeriodo.fechaInicio.split('T')[0]; // Solo la fecha sin hora
       const fechaFin = nuevoPeriodo.fechaFin.split('T')[0];
       
       const requestData = {
-        anio: anio,
         periodo: nuevoPeriodo.periodo,
-        descripcion: nuevoPeriodo.descripcion,
+        // idArea se obtiene automáticamente del usuario autenticado (dim_personal_cnt)
         fechaInicio: fechaInicio,
         fechaFin: fechaFin,
+        estado: "ABIERTO",
       };
       
       await periodoMedicoDisponibilidadService.crear(requestData);
@@ -244,26 +267,26 @@ export default function GestionPeriodosDisponibilidad() {
     }
   };
 
-  const handleEditarPeriodo = (periodo) => {
+  const handleEditarPeriodo = (periodoObj) => {
     console.log("%c🔧 EDITAR PERIODO", "color: #f59e0b; font-weight: bold; font-size: 14px;");
-    console.log("Periodo recibido:", periodo);
-    console.log("Estado del periodo:", periodo?.estado);
+    console.log("Periodo recibido:", periodoObj);
+    console.log("Estado del periodo:", periodoObj?.estado);
     
-    // Permitir editar si está en ACTIVO o BORRADOR
-    if (periodo.estado !== "ACTIVO" && periodo.estado !== "BORRADOR") {
-      window.alert("Solo se pueden editar periodos en estado ACTIVO o BORRADOR");
+    // Permitir editar si está en ABIERTO o REABIERTO
+    if (periodoObj.estado !== "ABIERTO" && periodoObj.estado !== "REABIERTO") {
+      window.alert("Solo se pueden editar periodos en estado ABIERTO o REABIERTO");
       return;
     }
     
     console.log("✅ Abriendo modal de edición...");
-    setPeriodoAEditar(periodo);
+    setPeriodoAEditar(periodoObj);
     setShowEditarModal(true);
   };
 
-  const handleGuardarEdicionPeriodo = async (idPeriodo, fechas) => {
+  const handleGuardarEdicionPeriodo = async (periodoObj, fechas) => {
     try {
       console.log("%c💾 GUARDAR EDICIÓN PERIODO", "color: #059669; font-weight: bold; font-size: 14px;");
-      console.log("🆔 ID Periodo:", idPeriodo);
+      console.log("📦 Periodo:", periodoObj);
       console.log("📦 Fechas a actualizar:", fechas);
       
       // Obtener el período actual para mantener los demás campos
@@ -276,16 +299,16 @@ export default function GestionPeriodosDisponibilidad() {
       const fechaInicio = fechas.fechaInicio ? fechas.fechaInicio.split(' ')[0] : periodoActual.fechaInicio?.split('T')[0];
       const fechaFin = fechas.fechaFin ? fechas.fechaFin.split(' ')[0] : periodoActual.fechaFin?.split('T')[0];
       
-      // Preparar los datos según el formato esperado por el backend
+      // Preparar los datos según el formato esperado por el nuevo backend
       const requestData = {
-        anio: periodoActual.anio || parseInt(periodoActual.periodo?.substring(0, 4)),
         periodo: periodoActual.periodo,
-        descripcion: periodoActual.descripcion,
+        idArea: periodoActual.idArea,
         fechaInicio: fechaInicio,
         fechaFin: fechaFin,
       };
       
-      await periodoMedicoDisponibilidadService.actualizar(idPeriodo, requestData);
+      // Usar clave compuesta (periodo, idArea)
+      await periodoMedicoDisponibilidadService.actualizar(periodoActual.periodo, periodoActual.idArea, requestData);
       
       setShowEditarModal(false);
       setPeriodoAEditar(null);
@@ -313,10 +336,10 @@ export default function GestionPeriodosDisponibilidad() {
     setEliminando(true);
     try {
       console.log("%c🗑️ CONFIRMAR ELIMINACIÓN", "color: #dc2626; font-weight: bold; font-size: 14px;");
-      const idPeriodo = periodoAEliminar.idPeriodoRegDisp || periodoAEliminar.idPeriodo;
-      console.log("🆔 ID del periodo a eliminar:", idPeriodo);
+      console.log("📦 Periodo a eliminar:", periodoAEliminar.periodo, "idArea:", periodoAEliminar.idArea);
       
-      await periodoMedicoDisponibilidadService.eliminar(idPeriodo);
+      // Usar clave compuesta (periodo, idArea)
+      await periodoMedicoDisponibilidadService.eliminar(periodoAEliminar.periodo, periodoAEliminar.idArea);
       
       setShowEliminarModal(false);
       setPeriodoAEliminar(null);
@@ -355,10 +378,11 @@ export default function GestionPeriodosDisponibilidad() {
 
   const stats = useMemo(() => {
     const total = (periodos || []).length;
-    const activos = (periodos || []).filter((p) => p.estado === ESTADO_PERIODO.ACTIVO).length;
+    const abiertos = (periodos || []).filter((p) => p.estado === ESTADO_PERIODO.ABIERTO).length;
     const cerrados = (periodos || []).filter((p) => p.estado === ESTADO_PERIODO.CERRADO).length;
-    const borradores = (periodos || []).filter((p) => p.estado === ESTADO_PERIODO.BORRADOR).length;
-    return { total, activos, cerrados, borradores };
+    const enValidacion = (periodos || []).filter((p) => p.estado === ESTADO_PERIODO.EN_VALIDACION).length;
+    const reabiertos = (periodos || []).filter((p) => p.estado === ESTADO_PERIODO.REABIERTO).length;
+    return { total, abiertos, cerrados, enValidacion, reabiertos };
   }, [periodos]);
 
   const statsDisponibilidades = useMemo(() => {
@@ -384,17 +408,9 @@ export default function GestionPeriodosDisponibilidad() {
         {activeTab === "periodos" && (
           <div className="grid grid-cols-4 gap-2 mb-4">
             <CardStat title="Períodos" value={stats.total} subtitle="Total registrados" icon={<Calendar className="w-4 h-4" />} tone="blue" />
-            <CardStat title="Activos" value={stats.activos} subtitle="En captura" icon={<Calendar className="w-4 h-4" />} tone="green" />
+            <CardStat title="Abiertos" value={stats.abiertos} subtitle="En captura" icon={<Calendar className="w-4 h-4" />} tone="green" />
             <CardStat title="Cerrados" value={stats.cerrados} subtitle="Históricos" icon={<Calendar className="w-4 h-4" />} tone="orange" />
-            <CardStat title="Borradores" value={stats.borradores} subtitle="Sin publicar" icon={<Calendar className="w-4 h-4" />} tone="purple" />
-          </div>
-        )}
-
-        {activeTab === "disponibilidades" && (
-          <div className="grid grid-cols-3 gap-2 mb-4">
-            <CardStat title="Total" value={statsDisponibilidades.total} subtitle="Disponibilidades" icon={<FileText className="w-4 h-4" />} tone="blue" />
-            <CardStat title="Enviadas" value={statsDisponibilidades.enviadas} subtitle="Para revisión" icon={<FileText className="w-4 h-4" />} tone="green" />
-            <CardStat title="Revisadas" value={statsDisponibilidades.revisadas} subtitle="Procesadas" icon={<FileText className="w-4 h-4" />} tone="purple" />
+            <CardStat title="En Validación" value={stats.enValidacion} subtitle="Por revisar" icon={<Calendar className="w-4 h-4" />} tone="purple" />
           </div>
         )}
 

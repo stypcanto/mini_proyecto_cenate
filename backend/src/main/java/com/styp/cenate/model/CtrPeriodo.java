@@ -7,13 +7,12 @@ import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
-import java.util.LinkedHashSet;
-import java.util.Set;
 
 /**
- * 📅 Entidad que representa los periodos de carga de horarios.
+ * 📅 Entidad que representa los periodos de control por área.
  * Tabla: ctr_periodo
  *
+ * PK Compuesta: (periodo, id_area)
  * Define periodos mensuales para la gestión de horarios (AAAAMM).
  * Ejemplos: "202601", "202602", "202603"
  *
@@ -24,8 +23,8 @@ import java.util.Set;
  * - REABIERTO: Cerrado pero reabierto para correcciones
  *
  * @author Ing. Styp Canto Rondón
- * @version 1.0.0
- * @since 2026-01-03
+ * @version 2.0.0
+ * @since 2026-02-19
  */
 @Entity
 @Table(name = "ctr_periodo")
@@ -35,13 +34,23 @@ import java.util.Set;
 @AllArgsConstructor
 @Builder
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
-@ToString(exclude = {"horarios"})
+@ToString(exclude = {"area", "coordinador", "usuarioUltimaAccion"})
 public class CtrPeriodo {
 
-    @Id
+    /**
+     * Clave primaria compuesta (periodo, id_area)
+     */
+    @EmbeddedId
     @EqualsAndHashCode.Include
-    @Column(name = "periodo", length = 6)
-    private String periodo; // Formato: AAAAMM (ejemplo: "202601")
+    private CtrPeriodoId id;
+
+    /**
+     * Relación con el área.
+     * Usa insertable=false, updatable=false porque id_area ya está en el @EmbeddedId
+     */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "id_area", insertable = false, updatable = false)
+    private Area area;
 
     /**
      * Fecha de inicio del periodo
@@ -63,10 +72,16 @@ public class CtrPeriodo {
     private String estado = "ABIERTO"; // ABIERTO, EN_VALIDACION, CERRADO, REABIERTO
 
     /**
+     * ID del coordinador responsable del periodo
+     */
+    @Column(name = "id_coordinador", nullable = false)
+    private Long idCoordinador;
+
+    /**
      * Coordinador responsable del periodo
      */
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "id_coordinador", nullable = false)
+    @JoinColumn(name = "id_coordinador", insertable = false, updatable = false)
     private Usuario coordinador;
 
     /**
@@ -82,10 +97,16 @@ public class CtrPeriodo {
     private OffsetDateTime fechaCierre;
 
     /**
+     * ID del usuario que realizó la última acción
+     */
+    @Column(name = "id_usuario_ultima_accion")
+    private Long idUsuarioUltimaAccion;
+
+    /**
      * Usuario que realizó la última acción
      */
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "id_usuario_ultima_accion")
+    @JoinColumn(name = "id_usuario_ultima_accion", insertable = false, updatable = false)
     private Usuario usuarioUltimaAccion;
 
     @CreationTimestamp
@@ -97,19 +118,22 @@ public class CtrPeriodo {
     private OffsetDateTime updatedAt;
 
     // ==========================================================
-    // 🔗 Relaciones
+    // 🛠️ Métodos de utilidad
     // ==========================================================
 
     /**
-     * Horarios del periodo
+     * Obtiene el código de periodo.
      */
-    @OneToMany(mappedBy = "periodoObj", fetch = FetchType.LAZY)
-    @Builder.Default
-    private Set<CtrHorario> horarios = new LinkedHashSet<>();
+    public String getPeriodo() {
+        return id != null ? id.getPeriodo() : null;
+    }
 
-    // ==========================================================
-    // 🛠️ Métodos de utilidad
-    // ==========================================================
+    /**
+     * Obtiene el ID del área.
+     */
+    public Long getIdArea() {
+        return id != null ? id.getIdArea() : null;
+    }
 
     /**
      * Verifica si el periodo está abierto para modificaciones
@@ -133,13 +157,20 @@ public class CtrPeriodo {
     }
 
     /**
+     * Verifica si el periodo está reabierto
+     */
+    public boolean isReabierto() {
+        return "REABIERTO".equals(this.estado);
+    }
+
+    /**
      * Abre el periodo
      */
-    public void abrir(Usuario coordinador) {
+    public void abrir(Usuario coordinadorUsuario) {
         this.estado = "ABIERTO";
         this.fechaApertura = OffsetDateTime.now();
-        this.coordinador = coordinador;
-        this.usuarioUltimaAccion = coordinador;
+        this.idCoordinador = coordinadorUsuario.getIdUser();
+        this.idUsuarioUltimaAccion = coordinadorUsuario.getIdUser();
     }
 
     /**
@@ -148,7 +179,7 @@ public class CtrPeriodo {
     public void cerrar(Usuario usuario) {
         this.estado = "CERRADO";
         this.fechaCierre = OffsetDateTime.now();
-        this.usuarioUltimaAccion = usuario;
+        this.idUsuarioUltimaAccion = usuario.getIdUser();
     }
 
     /**
@@ -156,7 +187,7 @@ public class CtrPeriodo {
      */
     public void reabrir(Usuario usuario) {
         this.estado = "REABIERTO";
-        this.usuarioUltimaAccion = usuario;
+        this.idUsuarioUltimaAccion = usuario.getIdUser();
     }
 
     /**
@@ -164,22 +195,38 @@ public class CtrPeriodo {
      */
     public void marcarEnValidacion(Usuario usuario) {
         this.estado = "EN_VALIDACION";
-        this.usuarioUltimaAccion = usuario;
+        this.idUsuarioUltimaAccion = usuario.getIdUser();
     }
 
     /**
      * Obtiene año del periodo
      * Ejemplo: "202601" → 2026
      */
-    public int getAnio() {
-        return Integer.parseInt(periodo.substring(0, 4));
+    public Integer getAnio() {
+        String periodo = getPeriodo();
+        if (periodo != null && periodo.length() >= 4) {
+            try {
+                return Integer.parseInt(periodo.substring(0, 4));
+            } catch (NumberFormatException e) {
+                return null;
+            }
+        }
+        return null;
     }
 
     /**
      * Obtiene mes del periodo
      * Ejemplo: "202601" → 1
      */
-    public int getMes() {
-        return Integer.parseInt(periodo.substring(4, 6));
+    public Integer getMes() {
+        String periodo = getPeriodo();
+        if (periodo != null && periodo.length() == 6) {
+            try {
+                return Integer.parseInt(periodo.substring(4, 6));
+            } catch (NumberFormatException e) {
+                return null;
+            }
+        }
+        return null;
     }
 }

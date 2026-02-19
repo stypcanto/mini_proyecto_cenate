@@ -81,10 +81,14 @@ public class CtrHorario {
     private DimServicioEssi servicio;
 
     /**
-     * Relación con periodo (objeto completo)
+     * Relación con periodo (objeto completo).
+     * Usa ambas columnas de la PK compuesta de CtrPeriodo.
      */
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "periodo", referencedColumnName = "periodo", insertable = false, updatable = false)
+    @JoinColumns({
+        @JoinColumn(name = "periodo", referencedColumnName = "periodo", insertable = false, updatable = false),
+        @JoinColumn(name = "id_area", referencedColumnName = "id_area", insertable = false, updatable = false)
+    })
     private CtrPeriodo periodoObj;
 
     /**

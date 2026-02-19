@@ -1,8 +1,8 @@
 # CLAUDE.md - Proyecto CENATE
 
 > **Sistema de Telemedicina - EsSalud Perú**
-> **Versión:** v1.63.2 (2026-02-11) 🚀
-> **Última Feature:** v1.63.2 - Fix: Pacientes No Visibles en Mis Pacientes ✅ (2026-02-11)
+> **Versión:** v1.64.0 (2026-02-19) 🚀
+> **Última Feature:** v1.64.0 - Filtros Avanzados Gestión Períodos (Estado, Área, Propietario) ✅ (2026-02-19)
 > **Última Feature Base:** v1.62.0 - Notificaciones de Pacientes Pendientes ✅ (2026-02-08)
 > **Status:** ✅ Production Ready
 
@@ -180,7 +180,35 @@ Nuevo módulo completo para gestionar solicitudes de especialidades médicas de 
 
 ---
 
-## 📚 DOCUMENTACIÓN - START HERE
+## � MÓDULO GESTIÓN DE PERÍODOS DE DISPONIBILIDAD (v1.64.0)
+
+**⭐ Documento Maestro:** [`docs/periodo-medico/README.md`](docs/periodo-medico/README.md)
+
+### 🎯 Descripción
+Módulo para gestionar los períodos durante los cuales los médicos registran su disponibilidad horaria.
+
+### 📍 Ubicación
+- **Coordinador:** `/roles/coordinador/periodo-disponibilidad-medica`
+
+### ✨ Nuevas Funcionalidades (v1.64.0)
+- ✅ **Filtro Estado:** Abierto, En Validación, Cerrado, Reabierto
+- ✅ **Filtro Área:** 3 servicios SGDT (Medicina General, Tele Apoyo, Medicina Especializada)
+- ✅ **Filtro Propietario:** Todos / Solo mis períodos (basado en `user.id`)
+- ✅ **Filtro Año:** Dinámico
+- ✅ **Columnas:** Periodo, Área, Creado por, Fecha Inicio/Fin, Fecha Registro/Actualización, Estado
+- ✅ **Fix fechas:** Corrección zona horaria para fechas ISO
+
+### 📊 Datos
+- **Tabla principal:** `ctr_periodo` (PK compuesta: `periodo`, `id_area`)
+- **Relaciones:** `dim_area`, `dim_usuarios`, `dim_personal_cnt`
+- **Estados:** ABIERTO, EN_VALIDACION, CERRADO, REABIERTO
+
+### 🔐 Acceso (MBAC)
+- **Coordinador:** Crear, editar, cerrar, eliminar períodos
+
+---
+
+## �📚 DOCUMENTACIÓN - START HERE
 
 **👉 Índice Maestro:** [`spec/INDEX.md`](spec/INDEX.md)
 
@@ -223,12 +251,12 @@ Nuevo módulo completo para gestionar solicitudes de especialidades médicas de 
 **👉 Ver historial completo:** [`CHANGELOG-VERSIONES.md`](CHANGELOG-VERSIONES.md)
 
 Versiones recientes:
-- **v1.62.0** - Notificaciones de Pacientes Pendientes ✅ (2026-02-08) 🆕
+- **v1.64.0** - Filtros Avanzados Gestión Períodos (Estado, Área, Propietario) ✅ (2026-02-19) 🆕
+- **v1.62.0** - Notificaciones de Pacientes Pendientes ✅ (2026-02-08)
 - **v1.58.0** - Módulo de Requerimiento de Especialidades ✅ (2026-02-08)
 - **v1.57.1** - Exportación de Tabla Especialidades (2026-02-07)
 - **v1.56.1** - Filtros Clínicos DNI + Fecha (2026-02-07)
 - **v1.56.3** - Género y Edad en Tabla (2026-02-06)
-- **v1.54.4** - KPI Cards + Filtros Estado (2026-02-07)
 
 Para ver detalles de cada versión, abre: [`CHANGELOG-VERSIONES.md`](CHANGELOG-VERSIONES.md)
 
