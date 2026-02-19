@@ -107,6 +107,7 @@ export default function HeaderCenate() {
         <NotificacionesPanel
           isOpen={showNotificaciones}
           onClose={() => setShowNotificaciones(false)}
+          esSuperAdmin={user?.roles?.includes('SUPERADMIN')}
         />
       </div>
     )}
