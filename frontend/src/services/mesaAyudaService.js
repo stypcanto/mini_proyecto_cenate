@@ -28,12 +28,12 @@ export const mesaAyudaService = {
    * @returns {Promise} Página de tickets
    */
   obtenerTodos: async (page = 0, size = 20, estado = null) => {
-    const params = { page, size };
+    let url = `${ENDPOINT}/tickets?page=${page}&size=${size}`;
     if (estado) {
-      params.estado = estado;
+      url += `&estado=${encodeURIComponent(estado)}`;
     }
-    console.log('Fetching all tickets:', params);
-    const response = await apiClient.get(`${ENDPOINT}/tickets`, true, params);
+    console.log('Fetching all tickets:', { page, size, estado });
+    const response = await apiClient.get(url, true);
     return { data: response };
   },
 
@@ -168,6 +168,18 @@ export const mesaAyudaService = {
   asignarMasivo: async (data) => {
     console.log('Bulk assigning tickets:', data);
     const response = await apiClient.put(`${ENDPOINT}/tickets/asignar-masivo`, data, true);
+    return response;
+  },
+
+  /**
+   * Actualizar teléfonos del paciente asociado a un ticket
+   * @param {number} id ID del ticket
+   * @param {Object} telefonos { telefonoPrincipal, telefonoAlterno }
+   * @returns {Promise} Ticket actualizado
+   */
+  actualizarTelefonos: async (id, telefonos) => {
+    console.log('Updating telefonos for ticket:', id, telefonos);
+    const response = await apiClient.put(`${ENDPOINT}/tickets/${id}/telefonos`, telefonos, true);
     return response;
   },
 

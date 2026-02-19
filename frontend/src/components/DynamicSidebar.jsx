@@ -94,6 +94,9 @@ import {
   GitBranch,
   Briefcase,
   MapPinned,
+  TicketCheck,
+  CircleDot,
+  HelpCircle,
 } from "lucide-react";
 
 // Mapeo de nombres de iconos a componentes de Lucide
@@ -715,6 +718,15 @@ function getPageIcon(nombreModulo, nombrePagina) {
     if (lowerName.includes('paciente')) return Users;
     if (lowerName.includes('respuesta')) return CheckCircle;
     return Package;
+  }
+
+  // --- MÓDULO: MESA DE AYUDA ---
+  if (lowerModule.includes('mesa') && lowerModule.includes('ayuda')) {
+    if (lowerName.includes('bienvenida')) return Home;
+    if (lowerName.includes('pendiente')) return CircleDot;
+    if (lowerName.includes('atendido') || lowerName.includes('resuelto')) return TicketCheck;
+    if (lowerName.includes('faq') || lowerName.includes('pregunta')) return HelpCircle;
+    return Headphones;
   }
 
   // --- MÓDULO: ADMINISTRACIÓN ---

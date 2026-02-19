@@ -65,6 +65,12 @@ public interface TicketMesaAyudaRepository extends JpaRepository<TicketMesaAyuda
     Page<TicketMesaAyuda> findByEstadoAndDeletedAtIsNull(String estado, Pageable pageable);
 
     /**
+     * Obtener tickets por múltiples estados con paginación
+     * Utilizado para filtrar pendientes (NUEVO, EN_PROCESO) o atendidos (RESUELTO, CERRADO)
+     */
+    Page<TicketMesaAyuda> findByEstadoInAndDeletedAtIsNull(List<String> estados, Pageable pageable);
+
+    /**
      * Obtener tickets con múltiples filtros
      * Estados que NO sean CERRADO (tickets abiertos/en proceso/resueltos)
      */

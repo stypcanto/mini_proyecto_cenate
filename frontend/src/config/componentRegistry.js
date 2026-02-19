@@ -617,6 +617,16 @@ export const componentRegistry = {
     requiredAction: 'ver',
   },
 
+  '/mesa-ayuda/tickets-pendientes': {
+    component: lazy(() => import('../pages/mesa-ayuda/ListaTickets')),
+    requiredAction: 'ver',
+  },
+
+  '/mesa-ayuda/tickets-atendidos': {
+    component: lazy(() => import('../pages/mesa-ayuda/ListaTickets')),
+    requiredAction: 'ver',
+  },
+
   '/mesa-ayuda/faqs': {
     component: lazy(() => import('../pages/mesa-ayuda/FAQsMesaAyuda')),
     requiredAction: 'ver',

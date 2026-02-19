@@ -82,7 +82,7 @@ export default function BienvenidaMesaAyuda() {
               title="Gestión de Tickets"
               description="Revisa, responde y gestiona todos los tickets de soporte creados por los médicos. Filtra por estado, prioridad y realiza seguimiento"
               color="blue"
-              action={() => navigate("/mesa-ayuda/tickets")}
+              action={() => navigate("/mesa-ayuda/tickets-pendientes")}
             />
 
             {/* Card 2: Preguntas Frecuentes */}
@@ -99,7 +99,7 @@ export default function BienvenidaMesaAyuda() {
         {/* Botón de acción principal */}
         <div className="flex justify-center pt-4">
           <button
-            onClick={() => navigate("/mesa-ayuda/tickets")}
+            onClick={() => navigate("/mesa-ayuda/tickets-pendientes")}
             className="flex items-center gap-3 bg-gradient-to-r from-blue-600 to-teal-600 hover:from-blue-700 hover:to-teal-700 text-white px-8 py-3 rounded-xl font-semibold shadow-lg transition-all transform hover:scale-105"
           >
             <span>Ir a Gestión de Tickets</span>

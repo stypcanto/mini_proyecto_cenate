@@ -137,8 +137,9 @@ public class TicketMesaAyudaController {
 
         Page<TicketMesaAyudaResponseDTO> resultado;
         if (estado != null && !estado.isEmpty()) {
-            // Filtro por estado (implementar en servicio si es necesario)
-            resultado = ticketService.obtenerTodosPaginado(pageable);
+            // Soporta múltiples estados separados por coma: "NUEVO,EN_PROCESO"
+            List<String> estados = List.of(estado.split(","));
+            resultado = ticketService.obtenerPorEstadosPaginado(estados, pageable);
         } else {
             resultado = ticketService.obtenerTodosPaginado(pageable);
         }
@@ -389,6 +390,36 @@ public class TicketMesaAyudaController {
         response.put("tickets", resultados);
 
         return ResponseEntity.ok(response);
+    }
+
+    // ========== ACTUALIZAR TELÉFONOS ==========
+
+    /**
+     * Actualizar teléfonos del paciente asociado a un ticket
+     * Actualiza en la tabla asegurados (fuente real) y en el ticket para coherencia
+     *
+     * @param id ID del ticket
+     * @param requestBody { "telefonoPrincipal": "...", "telefonoAlterno": "..." }
+     * @return ResponseEntity con el ticket actualizado
+     * @status 200 OK
+     */
+    @PutMapping("/tickets/{id}/telefonos")
+    public ResponseEntity<TicketMesaAyudaResponseDTO> actualizarTelefonos(
+        @PathVariable @NotNull Long id,
+        @RequestBody Map<String, String> requestBody
+    ) {
+        log.info("PUT /api/mesa-ayuda/tickets/{}/telefonos - Actualizando teléfonos", id);
+
+        String telefonoPrincipal = requestBody.get("telefonoPrincipal");
+        String telefonoAlterno = requestBody.get("telefonoAlterno");
+
+        try {
+            TicketMesaAyudaResponseDTO actualizado = ticketService.actualizarTelefonos(id, telefonoPrincipal, telefonoAlterno);
+            return ResponseEntity.ok(actualizado);
+        } catch (IllegalArgumentException e) {
+            log.warn("Error al actualizar teléfonos: {}", e.getMessage());
+            return ResponseEntity.badRequest().build();
+        }
     }
 
     // ========== ELIMINAR TICKET ==========
