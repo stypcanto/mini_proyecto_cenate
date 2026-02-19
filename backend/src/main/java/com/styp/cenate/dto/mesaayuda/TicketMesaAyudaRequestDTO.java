@@ -62,6 +62,11 @@ public class TicketMesaAyudaRequestDTO {
     private Long idSolicitudBolsa;
 
     /**
+     * Tipo de documento del paciente (DNI, CE, PASAPORTE, etc.)
+     */
+    private String tipoDocumento;
+
+    /**
      * DNI del paciente (opcional)
      * Se pre-carga si el ticket se crea desde MisPacientes
      */

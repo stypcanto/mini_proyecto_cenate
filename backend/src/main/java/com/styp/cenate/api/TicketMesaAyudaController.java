@@ -192,7 +192,7 @@ public class TicketMesaAyudaController {
     }
 
     /**
-     * Obtener tickets activos (ABIERTO, EN_PROCESO, RESUELTO)
+     * Obtener tickets activos (NUEVO, EN_PROCESO, RESUELTO)
      *
      * @param page Número de página (default 0)
      * @param size Tamaño de página (default 20)
@@ -243,7 +243,7 @@ public class TicketMesaAyudaController {
 
     /**
      * Cambiar el estado de un ticket
-     * Estados válidos: ABIERTO, EN_PROCESO, RESUELTO, CERRADO
+     * Estados válidos: NUEVO, EN_PROCESO, RESUELTO, CERRADO
      *
      * @param id ID del ticket
      * @param requestBody { "estado": "RESUELTO" }
@@ -267,6 +267,80 @@ public class TicketMesaAyudaController {
             return ResponseEntity.ok(actualizado);
         } catch (IllegalArgumentException e) {
             log.warn("Error al cambiar estado: {}", e.getMessage());
+            return ResponseEntity.badRequest().build();
+        }
+    }
+
+    // ========== PERSONAL MESA DE AYUDA ==========
+
+    /**
+     * Obtener lista de personal con rol MESA_DE_AYUDA
+     * Utilizado para el dropdown de asignación de tickets
+     *
+     * @return Lista de personal [{ idPersonal, nombreCompleto }]
+     * @status 200 OK
+     */
+    @GetMapping("/personal")
+    public ResponseEntity<List<Map<String, Object>>> obtenerPersonalMesaAyuda() {
+        log.info("GET /api/mesa-ayuda/personal - Obteniendo personal Mesa de Ayuda");
+
+        List<Map<String, Object>> personal = ticketService.obtenerPersonalMesaAyuda();
+        return ResponseEntity.ok(personal);
+    }
+
+    // ========== ASIGNAR / DESASIGNAR TICKET ==========
+
+    /**
+     * Asignar personal de Mesa de Ayuda a un ticket
+     *
+     * @param id ID del ticket
+     * @param requestBody { "idPersonalAsignado": 123, "nombrePersonalAsignado": "Juan Pérez" }
+     * @return ResponseEntity con el ticket actualizado
+     * @status 200 OK
+     */
+    @PutMapping("/tickets/{id}/asignar")
+    public ResponseEntity<TicketMesaAyudaResponseDTO> asignarTicket(
+        @PathVariable @NotNull Long id,
+        @RequestBody Map<String, Object> requestBody
+    ) {
+        log.info("PUT /api/mesa-ayuda/tickets/{}/asignar - Asignando ticket", id);
+
+        Object idPersonalObj = requestBody.get("idPersonalAsignado");
+        String nombrePersonal = (String) requestBody.get("nombrePersonalAsignado");
+
+        if (idPersonalObj == null || nombrePersonal == null || nombrePersonal.isEmpty()) {
+            return ResponseEntity.badRequest().build();
+        }
+
+        Long idPersonal = ((Number) idPersonalObj).longValue();
+
+        try {
+            TicketMesaAyudaResponseDTO actualizado = ticketService.asignarTicket(id, idPersonal, nombrePersonal);
+            return ResponseEntity.ok(actualizado);
+        } catch (IllegalArgumentException e) {
+            log.warn("Error al asignar ticket: {}", e.getMessage());
+            return ResponseEntity.badRequest().build();
+        }
+    }
+
+    /**
+     * Desasignar personal de un ticket
+     *
+     * @param id ID del ticket
+     * @return ResponseEntity con el ticket actualizado
+     * @status 200 OK
+     */
+    @PutMapping("/tickets/{id}/desasignar")
+    public ResponseEntity<TicketMesaAyudaResponseDTO> desasignarTicket(
+        @PathVariable @NotNull Long id
+    ) {
+        log.info("PUT /api/mesa-ayuda/tickets/{}/desasignar - Desasignando ticket", id);
+
+        try {
+            TicketMesaAyudaResponseDTO actualizado = ticketService.desasignarTicket(id);
+            return ResponseEntity.ok(actualizado);
+        } catch (IllegalArgumentException e) {
+            log.warn("Error al desasignar ticket: {}", e.getMessage());
             return ResponseEntity.badRequest().build();
         }
     }

@@ -237,6 +237,7 @@ export default function DynamicSidebar({ collapsed = false, onToggleCollapse }) 
   const isEnfermeria = roles.includes("ENFERMERIA");
   const isMedico = roles.includes("MEDICO");
   const isCoordinadorTeleurgencias = roles.includes("COORDINADOR_MEDICO_TELEURGENCIAS");
+  const isMesaDeAyuda = roles.some(r => r.includes("MESA") && r.includes("AYUDA"));
 
   // ============================================================
   // Obtener modulos permitidos (segun permisos RBAC)
@@ -383,12 +384,23 @@ export default function DynamicSidebar({ collapsed = false, onToggleCollapse }) 
         }
       }
 
+      // Para usuarios MESA_DE_AYUDA: expandir "Mesa de Ayuda"
+      if (isMesaDeAyuda) {
+        const moduloMesaAyuda = modulosPermitidos.find(m =>
+          m.nombreModulo?.toLowerCase().includes("mesa de ayuda") ||
+          m.nombreModulo?.toLowerCase().includes("mesa ayuda")
+        );
+        if (moduloMesaAyuda) {
+          sectionsToOpen[moduloMesaAyuda.nombreModulo] = true;
+        }
+      }
+
       // Si hay secciones para abrir, establecerlas
       if (Object.keys(sectionsToOpen).length > 0) {
         setOpenSections(prev => ({ ...prev, ...sectionsToOpen }));
       }
     }
-  }, [loading, modulosPermitidos, collapsed, isSuperAdmin, isExterno, isCoordinadorRed, isGestorCitas, isCoordinadorGestionCitas, isPersonal107, isEnfermeria, isMedico, isCoordinadorTeleurgencias]);
+  }, [loading, modulosPermitidos, collapsed, isSuperAdmin, isExterno, isCoordinadorRed, isGestorCitas, isCoordinadorGestionCitas, isPersonal107, isEnfermeria, isMedico, isCoordinadorTeleurgencias, isMesaDeAyuda]);
 
   // ============================================================
   // Render principal - Menu dinamico desde la BD

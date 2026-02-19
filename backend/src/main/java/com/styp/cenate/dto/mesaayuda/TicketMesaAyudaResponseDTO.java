@@ -38,7 +38,7 @@ public class TicketMesaAyudaResponseDTO {
     private String descripcion;
 
     /**
-     * Estado actual: ABIERTO, EN_PROCESO, RESUELTO, CERRADO
+     * Estado actual: NUEVO, EN_PROCESO, RESUELTO, CERRADO
      */
     private String estado;
 
@@ -51,6 +51,11 @@ public class TicketMesaAyudaResponseDTO {
      * Nombre del médico que creó el ticket
      */
     private String nombreMedico;
+
+    /**
+     * Tipo de documento del paciente (DNI, CE, PASAPORTE, etc.)
+     */
+    private String tipoDocumento;
 
     /**
      * DNI del paciente relacionado (si aplica)
@@ -127,4 +132,20 @@ public class TicketMesaAyudaResponseDTO {
      * Formato: XXX-YYYY (ej: 001-2026, 002-2026)
      */
     private String numeroTicket;
+
+    /**
+     * ID del personal asignado al ticket (NUEVO v1.65.1)
+     */
+    private Long idPersonalAsignado;
+
+    /**
+     * Nombre del personal asignado (NUEVO v1.65.1)
+     */
+    private String nombrePersonalAsignado;
+
+    /**
+     * Fecha de asignación del personal (NUEVO v1.65.1)
+     */
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    private LocalDateTime fechaAsignacion;
 }

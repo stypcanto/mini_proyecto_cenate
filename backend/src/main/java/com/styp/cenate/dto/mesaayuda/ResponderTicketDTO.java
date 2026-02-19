@@ -31,7 +31,7 @@ public class ResponderTicketDTO {
     /**
      * Nuevo estado del ticket (requerido)
      * Valores válidos: EN_PROCESO, RESUELTO, CERRADO
-     * ABIERTO no es válido en respuesta (es estado inicial)
+     * NUEVO no es válido en respuesta (es estado inicial)
      */
     @NotBlank(message = "El estado es requerido")
     private String estado; // EN_PROCESO, RESUELTO, CERRADO

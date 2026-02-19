@@ -120,6 +120,7 @@ function CrearTicketModal({ isOpen, onClose, medico, paciente, onSuccess }) {
         idMedico: medico.id ? Number(medico.id) : null,
         nombreMedico: medico.nombre,
         idSolicitudBolsa: paciente?.idSolicitudBolsa || null,
+        tipoDocumento: paciente?.tipoDocumento || 'DNI',
         dniPaciente: paciente?.dni || null,
         nombrePaciente: paciente?.nombre || null,
         especialidad: medico.especialidad || null,

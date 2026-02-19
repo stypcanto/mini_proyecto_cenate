@@ -46,7 +46,7 @@ CREATE TABLE IF NOT EXISTS public.dim_ticket_mesa_ayuda (
     id BIGSERIAL PRIMARY KEY,
     titulo VARCHAR(255) NOT NULL,
     descripcion TEXT NOT NULL,
-    estado VARCHAR(50) DEFAULT 'ABIERTO' CHECK (estado IN ('ABIERTO', 'EN_PROCESO', 'RESUELTO', 'CERRADO')),
+    estado VARCHAR(50) DEFAULT 'NUEVO' CHECK (estado IN ('NUEVO', 'EN_PROCESO', 'RESUELTO')),
     prioridad VARCHAR(20) DEFAULT 'MEDIA' CHECK (prioridad IN ('ALTA', 'MEDIA', 'BAJA')),
     id_medico BIGINT,
     nombre_medico VARCHAR(255),
@@ -81,7 +81,7 @@ COMMENT ON TABLE dim_ticket_mesa_ayuda IS 'Tabla de tickets de soporte creados p
 COMMENT ON COLUMN dim_ticket_mesa_ayuda.id IS 'ID único del ticket (pk)';
 COMMENT ON COLUMN dim_ticket_mesa_ayuda.titulo IS 'Título del ticket (requerido)';
 COMMENT ON COLUMN dim_ticket_mesa_ayuda.descripcion IS 'Descripción detallada del problema o solicitud';
-COMMENT ON COLUMN dim_ticket_mesa_ayuda.estado IS 'Estado del ticket: ABIERTO, EN_PROCESO, RESUELTO, CERRADO';
+COMMENT ON COLUMN dim_ticket_mesa_ayuda.estado IS 'Estado del ticket: NUEVO, EN_PROCESO, RESUELTO';
 COMMENT ON COLUMN dim_ticket_mesa_ayuda.prioridad IS 'Prioridad: ALTA, MEDIA, BAJA';
 COMMENT ON COLUMN dim_ticket_mesa_ayuda.nombre_medico IS 'Nombre del médico que creó el ticket (denormalizado)';
 COMMENT ON COLUMN dim_ticket_mesa_ayuda.id_solicitud_bolsa IS 'Referencia opcional a solicitud de bolsa del paciente';

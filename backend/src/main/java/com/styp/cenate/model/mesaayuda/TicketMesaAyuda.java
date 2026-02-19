@@ -18,7 +18,7 @@ import java.time.ZoneId;
  * personal de Mesa de Ayuda. Sistema de tickets para soporte técnico y consultas.
  *
  * Flujo:
- * 1. Médico crea ticket desde MisPacientes → estado ABIERTO
+ * 1. Médico crea ticket desde MisPacientes → estado NUEVO
  * 2. Personal Mesa de Ayuda ve el ticket en lista
  * 3. Personal responde → estado EN_PROCESO o RESUELTO
  * 4. Médico puede ver respuesta
@@ -63,11 +63,11 @@ public class TicketMesaAyuda {
     // ========== ESTADO Y PRIORIDAD ==========
 
     /**
-     * Estado del ticket: ABIERTO, EN_PROCESO, RESUELTO, CERRADO
+     * Estado del ticket: NUEVO, EN_PROCESO, RESUELTO, CERRADO
      * Valores válidos controlados en BD con CHECK constraint
      */
     @Column(length = 50, nullable = false)
-    private String estado; // Default: 'ABIERTO'
+    private String estado; // Default: 'NUEVO'
 
     /**
      * Prioridad del ticket: ALTA, MEDIA, BAJA
@@ -101,6 +101,12 @@ public class TicketMesaAyuda {
      */
     @Column(name = "id_solicitud_bolsa")
     private Long idSolicitudBolsa;
+
+    /**
+     * Tipo de documento del paciente (DNI, CE, PASAPORTE, etc.)
+     */
+    @Column(name = "tipo_documento", length = 20)
+    private String tipoDocumento;
 
     /**
      * DNI del paciente (máximo 15 caracteres)
@@ -198,6 +204,28 @@ public class TicketMesaAyuda {
     @Column(columnDefinition = "TEXT")
     private String observaciones;
 
+    // ========== PERSONAL ASIGNADO (v1.65.1) ==========
+
+    /**
+     * ID del personal de Mesa de Ayuda asignado al ticket
+     * Referencia a dim_personal_cnt.id_personal
+     * NULL si no hay nadie asignado
+     */
+    @Column(name = "id_personal_asignado")
+    private Long idPersonalAsignado;
+
+    /**
+     * Nombre del personal asignado (denormalizado)
+     */
+    @Column(name = "nombre_personal_asignado", length = 255)
+    private String nombrePersonalAsignado;
+
+    /**
+     * Timestamp de cuando se asignó el personal
+     */
+    @Column(name = "fecha_asignacion")
+    private LocalDateTime fechaAsignacion;
+
     // ========== NUMERACIÓN Y TRAZABILIDAD (v1.64.1) ==========
 
     /**
@@ -224,7 +252,7 @@ public class TicketMesaAyuda {
             fechaActualizacion = ahoraPeru;
         }
         if (estado == null) {
-            estado = "ABIERTO";
+            estado = "NUEVO";
         }
         if (prioridad == null) {
             prioridad = "MEDIA";

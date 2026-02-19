@@ -53,7 +53,7 @@ public interface TicketMesaAyudaRepository extends JpaRepository<TicketMesaAyuda
 
     /**
      * Obtener tickets por estado
-     * @param estado: ABIERTO, EN_PROCESO, RESUELTO, CERRADO
+     * @param estado: NUEVO, EN_PROCESO, RESUELTO, CERRADO
      */
     List<TicketMesaAyuda> findByEstadoAndDeletedAtIsNullOrderByPrioridadDescFechaCreacionDesc(
         String estado
@@ -71,7 +71,7 @@ public interface TicketMesaAyudaRepository extends JpaRepository<TicketMesaAyuda
     @Query("""
         SELECT t FROM TicketMesaAyuda t
         WHERE t.deletedAt IS NULL
-        AND t.estado IN ('ABIERTO', 'EN_PROCESO', 'RESUELTO')
+        AND t.estado IN ('NUEVO', 'EN_PROCESO', 'RESUELTO')
         ORDER BY t.prioridad DESC, t.fechaCreacion DESC
     """)
     List<TicketMesaAyuda> findActiveTickets();
@@ -82,7 +82,7 @@ public interface TicketMesaAyudaRepository extends JpaRepository<TicketMesaAyuda
     @Query("""
         SELECT t FROM TicketMesaAyuda t
         WHERE t.deletedAt IS NULL
-        AND t.estado IN ('ABIERTO', 'EN_PROCESO', 'RESUELTO')
+        AND t.estado IN ('NUEVO', 'EN_PROCESO', 'RESUELTO')
         ORDER BY t.prioridad DESC, t.fechaCreacion DESC
     """)
     Page<TicketMesaAyuda> findActiveTickets(Pageable pageable);
@@ -146,7 +146,7 @@ public interface TicketMesaAyudaRepository extends JpaRepository<TicketMesaAyuda
     Long countByEstadoInAndDeletedAtIsNull(List<String> estados);
 
     /**
-     * Obtener tickets sin respuesta (estado ABIERTO)
+     * Obtener tickets sin respuesta (estado NUEVO)
      */
     List<TicketMesaAyuda> findByEstadoAndFechaRespuestaIsNullAndDeletedAtIsNullOrderByFechaCreacionDesc(
         String estado

@@ -99,10 +99,9 @@ function ResponderTicketModal({ isOpen, onClose, ticket, usuario, onSuccess }) {
    */
   const getEstadoBadgeColor = (est) => {
     const colors = {
-      ABIERTO: 'bg-red-100 text-red-800',
-      EN_PROCESO: 'bg-yellow-100 text-yellow-800',
+      NUEVO: 'bg-yellow-100 text-yellow-800',
+      EN_PROCESO: 'bg-orange-100 text-orange-800',
       RESUELTO: 'bg-green-100 text-green-800',
-      CERRADO: 'bg-gray-100 text-gray-800',
     };
     return colors[est] || 'bg-gray-100 text-gray-800';
   };
@@ -256,7 +255,6 @@ function ResponderTicketModal({ isOpen, onClose, ticket, usuario, onSuccess }) {
                 >
                   <option value="EN_PROCESO">En Proceso</option>
                   <option value="RESUELTO">Resuelto</option>
-                  <option value="CERRADO">Cerrado</option>
                 </select>
               </div>
 

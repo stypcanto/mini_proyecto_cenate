@@ -81,6 +81,7 @@ export default function Login() {
     if (hasAny(["GESTOR_CITAS", "GESTOR DE CITAS", "GESTORCITAS"])) return "/citas/bienvenida";
     if (hasAny(["COORDINADOR_GESTION_CITAS", "COORD. GESTION CITAS", "COORD_GESTION_CITAS"])) return "/roles/coordcitas/bienvenida";
     if (has("EXTERNO") || has("INSTITUCION_EX")) return "/roles/externo/bienvenida";
+    if (hasAny(["MESA_DE_AYUDA", "MESA DE AYUDA", "MESAAYUDA"])) return "/mesa-ayuda/bienvenida";
     return "/citas/bienvenida"; // ruta por defecto → Gestor de Citas
   };
 

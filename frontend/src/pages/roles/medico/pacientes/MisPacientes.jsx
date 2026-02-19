@@ -2283,14 +2283,13 @@ export default function MisPacientes() {
                           {ticketsMedico[paciente.numDoc] && (() => {
                             const t = ticketsMedico[paciente.numDoc];
                             const colores = {
-                              ABIERTO: 'bg-amber-100 text-amber-800 border-amber-300',
+                              NUEVO: 'bg-amber-100 text-amber-800 border-amber-300',
                               EN_PROCESO: 'bg-blue-100 text-blue-800 border-blue-300',
                               RESUELTO: 'bg-green-100 text-green-800 border-green-300',
-                              CERRADO: 'bg-gray-100 text-gray-600 border-gray-300',
                             };
                             return (
                               <span
-                                className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-semibold border ${colores[t.estado] || colores.ABIERTO}`}
+                                className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-semibold border ${colores[t.estado] || colores.NUEVO}`}
                                 title={`Ticket ${t.numeroTicket} - ${t.estado}`}
                               >
                                 {t.numeroTicket}
@@ -2954,6 +2953,7 @@ export default function MisPacientes() {
         paciente={pacienteTicket ? {
           id: pacienteTicket.idSolicitudBolsa,
           idSolicitudBolsa: pacienteTicket.idSolicitudBolsa,
+          tipoDocumento: pacienteTicket.tipoDoc || 'DNI',
           dni: pacienteTicket.numDoc,
           nombre: pacienteTicket.apellidosNombres,
           especialidad: userSpecialty?.name || 'General',

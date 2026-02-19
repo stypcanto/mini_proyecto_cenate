@@ -10,6 +10,8 @@ import com.styp.cenate.model.mesaayuda.DimSecuenciaTickets;
 import com.styp.cenate.repository.mesaayuda.TicketMesaAyudaRepository;
 import com.styp.cenate.repository.mesaayuda.MotivoMesaAyudaRepository;
 import com.styp.cenate.repository.mesaayuda.SecuenciaTicketsRepository;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -20,7 +22,10 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -46,6 +51,9 @@ public class TicketMesaAyudaService {
     private final TicketMesaAyudaRepository ticketRepository;
     private final MotivoMesaAyudaRepository motivoRepository;
     private final SecuenciaTicketsRepository secuenciaRepository;
+
+    @PersistenceContext
+    private EntityManager entityManager;
 
     // ========== GENERAR NÚMERO DE TICKET ==========
 
@@ -153,10 +161,11 @@ public class TicketMesaAyudaService {
             .titulo(tituloFinal)
             .descripcion(requestDTO.getDescripcion() != null ? requestDTO.getDescripcion() : "")
             .prioridad(requestDTO.getPrioridad() != null ? requestDTO.getPrioridad() : "MEDIA")
-            .estado("ABIERTO") // Estado inicial
+            .estado("NUEVO") // Estado inicial
             .idMedico(requestDTO.getIdMedico())
             .nombreMedico(requestDTO.getNombreMedico())
             .idSolicitudBolsa(requestDTO.getIdSolicitudBolsa())
+            .tipoDocumento(requestDTO.getTipoDocumento() != null ? requestDTO.getTipoDocumento() : "DNI")
             .dniPaciente(requestDTO.getDniPaciente())
             .nombrePaciente(requestDTO.getNombrePaciente())
             .especialidad(requestDTO.getEspecialidad())
@@ -227,7 +236,7 @@ public class TicketMesaAyudaService {
 
     /**
      * Obtener tickets por estado
-     * Filtra tickets ABIERTOS, EN_PROCESO, RESUELTOS o CERRADOS
+     * Filtra tickets NUEVOS, EN_PROCESO, RESUELTOS o CERRADOS
      */
     @Transactional(readOnly = true)
     public List<TicketMesaAyudaResponseDTO> obtenerPorEstado(String estado) {
@@ -240,7 +249,7 @@ public class TicketMesaAyudaService {
     }
 
     /**
-     * Obtener tickets activos (ABIERTO, EN_PROCESO, RESUELTO)
+     * Obtener tickets activos (NUEVO, EN_PROCESO, RESUELTO)
      */
     @Transactional(readOnly = true)
     public List<TicketMesaAyudaResponseDTO> obtenerTicketsActivos() {
@@ -288,10 +297,10 @@ public class TicketMesaAyudaService {
         TicketMesaAyuda ticket = ticketRepository.findByIdAndDeletedAtIsNull(id)
             .orElseThrow(() -> new IllegalArgumentException("Ticket no encontrado con ID: " + id));
 
-        // Validar que el estado sea válido (no ABIERTO)
+        // Validar que el estado sea válido (no NUEVO)
         String nuevoEstado = responderDTO.getEstado();
-        if ("ABIERTO".equals(nuevoEstado)) {
-            throw new IllegalArgumentException("No se puede cambiar a estado ABIERTO desde una respuesta");
+        if ("NUEVO".equals(nuevoEstado)) {
+            throw new IllegalArgumentException("No se puede cambiar a estado NUEVO desde una respuesta");
         }
 
         // Actualizar campos
@@ -312,7 +321,7 @@ public class TicketMesaAyudaService {
 
     /**
      * Cambiar el estado de un ticket
-     * Estados válidos: ABIERTO, EN_PROCESO, RESUELTO, CERRADO
+     * Estados válidos: NUEVO, EN_PROCESO, RESUELTO, CERRADO
      *
      * @param id ID del ticket
      * @param nuevoEstado Nuevo estado
@@ -325,21 +334,122 @@ public class TicketMesaAyudaService {
             .orElseThrow(() -> new IllegalArgumentException("Ticket no encontrado con ID: " + id));
 
         // Validar estado
-        List<String> estadosValidos = List.of("ABIERTO", "EN_PROCESO", "RESUELTO", "CERRADO");
+        List<String> estadosValidos = List.of("NUEVO", "EN_PROCESO", "RESUELTO");
         if (!estadosValidos.contains(nuevoEstado)) {
             throw new IllegalArgumentException("Estado no válido: " + nuevoEstado);
+        }
+
+        // Ticket RESUELTO no puede cambiar de estado
+        if ("RESUELTO".equals(ticket.getEstado())) {
+            throw new IllegalArgumentException("No se puede cambiar el estado de un ticket ya resuelto");
         }
 
         ticket.setEstado(nuevoEstado);
         ticket.setFechaActualizacion(LocalDateTime.now(ZONA_PERU));
 
         // Si es la primera respuesta, registrar fecha
-        if (ticket.getFechaRespuesta() == null && !nuevoEstado.equals("ABIERTO")) {
+        if (ticket.getFechaRespuesta() == null && !nuevoEstado.equals("NUEVO")) {
             ticket.setFechaRespuesta(LocalDateTime.now(ZONA_PERU));
         }
 
         TicketMesaAyuda updated = ticketRepository.save(ticket);
         log.info("Estado cambiado exitosamente");
+
+        return toResponseDTO(updated);
+    }
+
+    // ========== PERSONAL MESA DE AYUDA ==========
+
+    /**
+     * Obtener lista de personal con rol MESA_DE_AYUDA
+     * Utilizado para el dropdown de asignación de tickets
+     *
+     * @return Lista de mapas con id_pers y nombre_completo
+     */
+    @Transactional(readOnly = true)
+    @SuppressWarnings("unchecked")
+    public List<Map<String, Object>> obtenerPersonalMesaAyuda() {
+        log.debug("Obteniendo personal con rol MESA_DE_AYUDA");
+
+        String sql = """
+            SELECT p.id_pers,
+                   CONCAT(p.nom_pers, ' ', p.ape_pater_pers, ' ', p.ape_mater_pers) AS nombre_completo
+            FROM dim_personal_cnt p
+            JOIN dim_usuarios u ON p.id_usuario = u.id_user
+            JOIN rel_user_roles ur ON u.id_user = ur.id_user
+            JOIN dim_roles r ON ur.id_rol = r.id_rol
+            WHERE r.desc_rol ILIKE '%mesa%ayuda%'
+            ORDER BY p.nom_pers
+            """;
+
+        List<Object[]> results = entityManager.createNativeQuery(sql).getResultList();
+
+        List<Map<String, Object>> personal = new ArrayList<>();
+        for (Object[] row : results) {
+            Map<String, Object> item = new HashMap<>();
+            item.put("idPersonal", ((Number) row[0]).longValue());
+            item.put("nombreCompleto", row[1]);
+            personal.add(item);
+        }
+
+        log.debug("Personal Mesa de Ayuda encontrado: {}", personal.size());
+        return personal;
+    }
+
+    // ========== ASIGNAR / DESASIGNAR TICKET ==========
+
+    /**
+     * Asignar un personal de Mesa de Ayuda a un ticket
+     *
+     * @param id ID del ticket
+     * @param idPersonal ID del personal a asignar
+     * @param nombrePersonal Nombre del personal a asignar
+     * @return TicketMesaAyudaResponseDTO actualizado
+     */
+    public TicketMesaAyudaResponseDTO asignarTicket(Long id, Long idPersonal, String nombrePersonal) {
+        log.info("Asignando ticket {} al personal: {} ({})", id, nombrePersonal, idPersonal);
+
+        TicketMesaAyuda ticket = ticketRepository.findByIdAndDeletedAtIsNull(id)
+            .orElseThrow(() -> new IllegalArgumentException("Ticket no encontrado con ID: " + id));
+
+        if ("RESUELTO".equals(ticket.getEstado())) {
+            throw new IllegalArgumentException("No se puede reasignar un ticket ya resuelto");
+        }
+
+        ticket.setIdPersonalAsignado(idPersonal);
+        ticket.setNombrePersonalAsignado(nombrePersonal);
+        ticket.setFechaAsignacion(LocalDateTime.now(ZONA_PERU));
+        ticket.setFechaActualizacion(LocalDateTime.now(ZONA_PERU));
+
+        TicketMesaAyuda updated = ticketRepository.save(ticket);
+        log.info("Ticket {} asignado exitosamente a {}", id, nombrePersonal);
+
+        return toResponseDTO(updated);
+    }
+
+    /**
+     * Desasignar el personal de un ticket
+     *
+     * @param id ID del ticket
+     * @return TicketMesaAyudaResponseDTO actualizado
+     */
+    public TicketMesaAyudaResponseDTO desasignarTicket(Long id) {
+        log.info("Desasignando ticket {}", id);
+
+        TicketMesaAyuda ticket = ticketRepository.findByIdAndDeletedAtIsNull(id)
+            .orElseThrow(() -> new IllegalArgumentException("Ticket no encontrado con ID: " + id));
+
+        if ("RESUELTO".equals(ticket.getEstado())) {
+            throw new IllegalArgumentException("No se puede desasignar un ticket ya resuelto");
+        }
+
+        ticket.setIdPersonalAsignado(null);
+        ticket.setNombrePersonalAsignado(null);
+        ticket.setFechaAsignacion(null);
+        ticket.setFechaActualizacion(LocalDateTime.now(ZONA_PERU));
+
+        TicketMesaAyuda updated = ticketRepository.save(ticket);
+        log.info("Ticket {} desasignado exitosamente", id);
 
         return toResponseDTO(updated);
     }
@@ -376,17 +486,16 @@ public class TicketMesaAyudaService {
         log.debug("Calculando KPIs de Mesa de Ayuda");
 
         Long totalTickets = (long) ticketRepository.findAllByDeletedAtIsNullOrderByFechaCreacionDesc().size();
-        Long ticketsAbiertos = ticketRepository.countByEstadoAndDeletedAtIsNull("ABIERTO");
+        Long ticketsNuevos = ticketRepository.countByEstadoAndDeletedAtIsNull("NUEVO");
         Long ticketsEnProceso = ticketRepository.countByEstadoAndDeletedAtIsNull("EN_PROCESO");
         Long ticketsResueltos = ticketRepository.countByEstadoAndDeletedAtIsNull("RESUELTO");
-        Long ticketsCerrados = ticketRepository.countByEstadoAndDeletedAtIsNull("CERRADO");
 
         return KPIsTicketDTO.builder()
             .totalTickets(totalTickets)
-            .ticketsAbiertos(ticketsAbiertos)
+            .ticketsAbiertos(ticketsNuevos)
             .ticketsEnProceso(ticketsEnProceso)
             .ticketsResueltos(ticketsResueltos)
-            .ticketsCerrados(ticketsCerrados)
+            .ticketsCerrados(0L)
             .tasaResolucion(totalTickets > 0 ? (ticketsResueltos.doubleValue() / totalTickets) * 100 : 0.0)
             .build();
     }
@@ -421,6 +530,7 @@ public class TicketMesaAyudaService {
             .estado(ticket.getEstado())
             .prioridad(ticket.getPrioridad())
             .nombreMedico(ticket.getNombreMedico())
+            .tipoDocumento(ticket.getTipoDocumento())
             .dniPaciente(ticket.getDniPaciente())
             .nombrePaciente(ticket.getNombrePaciente())
             .especialidad(ticket.getEspecialidad())
@@ -435,6 +545,9 @@ public class TicketMesaAyudaService {
             .nombreMotivo(nombreMotivo)
             .observaciones(ticket.getObservaciones())
             .numeroTicket(ticket.getNumeroTicket())
+            .idPersonalAsignado(ticket.getIdPersonalAsignado())
+            .nombrePersonalAsignado(ticket.getNombrePersonalAsignado())
+            .fechaAsignacion(ticket.getFechaAsignacion())
             .build();
     }
 

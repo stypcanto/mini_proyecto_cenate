@@ -63,7 +63,7 @@ export const mesaAyudaService = {
   },
 
   /**
-   * Obtener tickets activos (ABIERTO, EN_PROCESO, RESUELTO)
+   * Obtener tickets activos (NUEVO, EN_PROCESO, RESUELTO)
    * @param {number} page Número de página (default 0)
    * @param {number} size Tamaño de página (default 20)
    * @returns {Promise} Página de tickets activos
@@ -90,7 +90,7 @@ export const mesaAyudaService = {
   /**
    * Cambiar el estado de un ticket
    * @param {number} id ID del ticket
-   * @param {string} nuevoEstado Nuevo estado (ABIERTO, EN_PROCESO, RESUELTO, CERRADO)
+   * @param {string} nuevoEstado Nuevo estado (NUEVO, EN_PROCESO, RESUELTO, CERRADO)
    * @returns {Promise} Ticket actualizado
    */
   cambiarEstado: async (id, nuevoEstado) => {
@@ -125,6 +125,39 @@ export const mesaAyudaService = {
    */
   obtenerSiguienteNumero: async () => {
     const response = await apiClient.get(`${ENDPOINT}/siguiente-numero`, true);
+    return response;
+  },
+
+  /**
+   * Obtener lista de personal con rol MESA_DE_AYUDA
+   * @returns {Promise} Lista de personal [{ idPersonal, nombreCompleto }]
+   */
+  obtenerPersonalMesaAyuda: async () => {
+    console.log('Fetching personal Mesa de Ayuda');
+    const response = await apiClient.get(`${ENDPOINT}/personal`, true);
+    return response;
+  },
+
+  /**
+   * Asignar personal a un ticket
+   * @param {number} id ID del ticket
+   * @param {Object} data { idPersonalAsignado, nombrePersonalAsignado }
+   * @returns {Promise} Ticket actualizado
+   */
+  asignarTicket: async (id, data) => {
+    console.log('Assigning ticket:', id, data);
+    const response = await apiClient.put(`${ENDPOINT}/tickets/${id}/asignar`, data, true);
+    return response;
+  },
+
+  /**
+   * Desasignar personal de un ticket
+   * @param {number} id ID del ticket
+   * @returns {Promise} Ticket actualizado
+   */
+  desasignarTicket: async (id) => {
+    console.log('Unassigning ticket:', id);
+    const response = await apiClient.put(`${ENDPOINT}/tickets/${id}/desasignar`, {}, true);
     return response;
   },
 
