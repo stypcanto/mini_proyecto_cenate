@@ -162,6 +162,16 @@ export const mesaAyudaService = {
   },
 
   /**
+   * Asignar personal a múltiples tickets a la vez
+   * @param {Object} data { ticketIds: [1,2,3], idPersonalAsignado: 123, nombrePersonalAsignado: "..." }
+   */
+  asignarMasivo: async (data) => {
+    console.log('Bulk assigning tickets:', data);
+    const response = await apiClient.put(`${ENDPOINT}/tickets/asignar-masivo`, data, true);
+    return response;
+  },
+
+  /**
    * Obtener motivos predefinidos (NUEVO v1.64.0)
    * @returns {Promise} Lista de motivos para el combo de CrearTicketModal
    */

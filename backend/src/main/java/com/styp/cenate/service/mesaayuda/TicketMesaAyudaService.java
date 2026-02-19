@@ -10,6 +10,8 @@ import com.styp.cenate.model.mesaayuda.DimSecuenciaTickets;
 import com.styp.cenate.repository.mesaayuda.TicketMesaAyudaRepository;
 import com.styp.cenate.repository.mesaayuda.MotivoMesaAyudaRepository;
 import com.styp.cenate.repository.mesaayuda.SecuenciaTicketsRepository;
+import com.styp.cenate.repository.bolsas.SolicitudBolsaRepository;
+import com.styp.cenate.model.bolsas.SolicitudBolsa;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import lombok.RequiredArgsConstructor;
@@ -51,6 +53,7 @@ public class TicketMesaAyudaService {
     private final TicketMesaAyudaRepository ticketRepository;
     private final MotivoMesaAyudaRepository motivoRepository;
     private final SecuenciaTicketsRepository secuenciaRepository;
+    private final SolicitudBolsaRepository solicitudBolsaRepository;
 
     @PersistenceContext
     private EntityManager entityManager;
@@ -170,6 +173,7 @@ public class TicketMesaAyudaService {
             .nombrePaciente(requestDTO.getNombrePaciente())
             .especialidad(requestDTO.getEspecialidad())
             .ipress(requestDTO.getIpress())
+            .telefonoPaciente(requestDTO.getTelefonoPaciente())
             .idMotivo(requestDTO.getIdMotivo())
             .observaciones(requestDTO.getObservaciones())
             .numeroTicket(numeroTicket)
@@ -416,10 +420,21 @@ public class TicketMesaAyudaService {
             throw new IllegalArgumentException("No se puede reasignar un ticket ya resuelto");
         }
 
+        // Ticket ya asignado no puede cambiar de personal
+        if (ticket.getIdPersonalAsignado() != null) {
+            throw new IllegalArgumentException("Este ticket ya está asignado a " + ticket.getNombrePersonalAsignado() + ". La asignación es permanente.");
+        }
+
         ticket.setIdPersonalAsignado(idPersonal);
         ticket.setNombrePersonalAsignado(nombrePersonal);
         ticket.setFechaAsignacion(LocalDateTime.now(ZONA_PERU));
         ticket.setFechaActualizacion(LocalDateTime.now(ZONA_PERU));
+
+        // Al asignar personal, el estado cambia automáticamente a EN_PROCESO
+        if ("NUEVO".equals(ticket.getEstado())) {
+            ticket.setEstado("EN_PROCESO");
+            ticket.setFechaRespuesta(LocalDateTime.now(ZONA_PERU));
+        }
 
         TicketMesaAyuda updated = ticketRepository.save(ticket);
         log.info("Ticket {} asignado exitosamente a {}", id, nombrePersonal);
@@ -429,19 +444,16 @@ public class TicketMesaAyudaService {
 
     /**
      * Desasignar el personal de un ticket
+     * SOLO permitido para SUPERADMIN (validado en el Controller con @PreAuthorize)
      *
      * @param id ID del ticket
      * @return TicketMesaAyudaResponseDTO actualizado
      */
     public TicketMesaAyudaResponseDTO desasignarTicket(Long id) {
-        log.info("Desasignando ticket {}", id);
+        log.info("SUPERADMIN desasignando ticket {}", id);
 
         TicketMesaAyuda ticket = ticketRepository.findByIdAndDeletedAtIsNull(id)
             .orElseThrow(() -> new IllegalArgumentException("Ticket no encontrado con ID: " + id));
-
-        if ("RESUELTO".equals(ticket.getEstado())) {
-            throw new IllegalArgumentException("No se puede desasignar un ticket ya resuelto");
-        }
 
         ticket.setIdPersonalAsignado(null);
         ticket.setNombrePersonalAsignado(null);
@@ -449,7 +461,7 @@ public class TicketMesaAyudaService {
         ticket.setFechaActualizacion(LocalDateTime.now(ZONA_PERU));
 
         TicketMesaAyuda updated = ticketRepository.save(ticket);
-        log.info("Ticket {} desasignado exitosamente", id);
+        log.info("Ticket {} desasignado exitosamente por SUPERADMIN", id);
 
         return toResponseDTO(updated);
     }
@@ -523,6 +535,28 @@ public class TicketMesaAyudaService {
                 .orElse(null);
         }
 
+        // Obtener teléfonos del paciente desde tabla asegurados (por DNI)
+        String telefonoPrincipal = ticket.getTelefonoPaciente();
+        String telefonoAlterno = null;
+        if (ticket.getDniPaciente() != null && !ticket.getDniPaciente().isBlank()) {
+            try {
+                @SuppressWarnings("unchecked")
+                List<Object[]> telResult = entityManager.createNativeQuery(
+                    "SELECT tel_fijo, tel_celular FROM asegurados WHERE doc_paciente = :dni LIMIT 1")
+                    .setParameter("dni", ticket.getDniPaciente())
+                    .getResultList();
+                if (!telResult.isEmpty()) {
+                    Object[] row = telResult.get(0);
+                    if (telefonoPrincipal == null || telefonoPrincipal.isBlank()) {
+                        telefonoPrincipal = row[0] != null ? row[0].toString() : null;
+                    }
+                    telefonoAlterno = row[1] != null ? row[1].toString() : null;
+                }
+            } catch (Exception e) {
+                log.warn("No se pudieron obtener teléfonos del asegurado {}: {}", ticket.getDniPaciente(), e.getMessage());
+            }
+        }
+
         return TicketMesaAyudaResponseDTO.builder()
             .id(ticket.getId())
             .titulo(ticket.getTitulo())
@@ -535,6 +569,8 @@ public class TicketMesaAyudaService {
             .nombrePaciente(ticket.getNombrePaciente())
             .especialidad(ticket.getEspecialidad())
             .ipress(ticket.getIpress())
+            .telefonoPaciente(telefonoPrincipal)
+            .telefonoPacienteAlterno(telefonoAlterno)
             .respuesta(ticket.getRespuesta())
             .nombrePersonalMesa(ticket.getNombrePersonalMesa())
             .fechaCreacion(ticket.getFechaCreacion())

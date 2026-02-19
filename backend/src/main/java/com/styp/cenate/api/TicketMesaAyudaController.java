@@ -13,6 +13,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -330,6 +331,7 @@ public class TicketMesaAyudaController {
      * @return ResponseEntity con el ticket actualizado
      * @status 200 OK
      */
+    @PreAuthorize("hasRole('SUPERADMIN')")
     @PutMapping("/tickets/{id}/desasignar")
     public ResponseEntity<TicketMesaAyudaResponseDTO> desasignarTicket(
         @PathVariable @NotNull Long id
@@ -343,6 +345,50 @@ public class TicketMesaAyudaController {
             log.warn("Error al desasignar ticket: {}", e.getMessage());
             return ResponseEntity.badRequest().build();
         }
+    }
+
+    // ========== ASIGNACIÓN MASIVA ==========
+
+    /**
+     * Asignar personal de Mesa de Ayuda a múltiples tickets a la vez
+     *
+     * @param requestBody { "ticketIds": [1, 2, 3], "idPersonalAsignado": 123, "nombrePersonalAsignado": "Juan Pérez" }
+     * @return ResponseEntity con la lista de tickets actualizados
+     */
+    @SuppressWarnings("unchecked")
+    @PutMapping("/tickets/asignar-masivo")
+    public ResponseEntity<?> asignarMasivo(@RequestBody Map<String, Object> requestBody) {
+        log.info("PUT /api/mesa-ayuda/tickets/asignar-masivo - Asignación masiva");
+
+        List<Number> ticketIds = (List<Number>) requestBody.get("ticketIds");
+        Object idPersonalObj = requestBody.get("idPersonalAsignado");
+        String nombrePersonal = (String) requestBody.get("nombrePersonalAsignado");
+
+        if (ticketIds == null || ticketIds.isEmpty() || idPersonalObj == null || nombrePersonal == null || nombrePersonal.isEmpty()) {
+            return ResponseEntity.badRequest().body("Faltan datos requeridos");
+        }
+
+        Long idPersonal = ((Number) idPersonalObj).longValue();
+        List<TicketMesaAyudaResponseDTO> resultados = new java.util.ArrayList<>();
+        List<String> errores = new java.util.ArrayList<>();
+
+        for (Number ticketIdNum : ticketIds) {
+            Long ticketId = ticketIdNum.longValue();
+            try {
+                TicketMesaAyudaResponseDTO actualizado = ticketService.asignarTicket(ticketId, idPersonal, nombrePersonal);
+                resultados.add(actualizado);
+            } catch (IllegalArgumentException e) {
+                log.warn("Error al asignar ticket {}: {}", ticketId, e.getMessage());
+                errores.add("Ticket " + ticketId + ": " + e.getMessage());
+            }
+        }
+
+        Map<String, Object> response = new java.util.HashMap<>();
+        response.put("asignados", resultados.size());
+        response.put("errores", errores);
+        response.put("tickets", resultados);
+
+        return ResponseEntity.ok(response);
     }
 
     // ========== ELIMINAR TICKET ==========

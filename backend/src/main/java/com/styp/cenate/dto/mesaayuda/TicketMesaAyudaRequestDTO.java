@@ -90,6 +90,11 @@ public class TicketMesaAyudaRequestDTO {
     private String ipress;
 
     /**
+     * Teléfono del paciente (opcional, denormalizado)
+     */
+    private String telefonoPaciente;
+
+    /**
      * ID del motivo predefinido (NUEVO v1.64.0)
      * Si se especifica, el título se genera automáticamente desde el motivo
      */

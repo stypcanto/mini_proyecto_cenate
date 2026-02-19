@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { Zap, AlertCircle, RotateCw, ChevronDown, UserCircle, PlayCircle, Clock, CheckCircle2, Eye } from 'lucide-react';
+import { Zap, AlertCircle, RotateCw, ChevronDown, UserCircle, PlayCircle, Clock, CheckCircle2, Eye, Users } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import ResponderTicketModal from './components/ResponderTicketModal';
 
@@ -18,7 +18,7 @@ import ResponderTicketModal from './components/ResponderTicketModal';
  * @version v1.65.1 (2026-02-19)
  */
 function ListaTickets() {
-  const { user } = useAuth();
+  const { user, hasRole } = useAuth();
   const [tickets, setTickets] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -41,6 +41,12 @@ function ListaTickets() {
   const [dropdownPos, setDropdownPos] = useState({ top: 0, left: 0 });
   const [personalMesaAyuda, setPersonalMesaAyuda] = useState([]);
   const dropdownRef = useRef(null);
+
+  // Selección múltiple
+  const [selectedTickets, setSelectedTickets] = useState(new Set());
+  const [showBulkDropdown, setShowBulkDropdown] = useState(false);
+  const [bulkAssigning, setBulkAssigning] = useState(false);
+  const bulkDropdownRef = useRef(null);
 
   // Usuario actual desde contexto de autenticación
   const usuario = {
@@ -71,6 +77,9 @@ function ListaTickets() {
     const handleClickOutside = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
         setDropdownTicketId(null);
+      }
+      if (bulkDropdownRef.current && !bulkDropdownRef.current.contains(event.target)) {
+        setShowBulkDropdown(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
@@ -133,6 +142,43 @@ function ListaTickets() {
     }
   };
 
+  // Asignación masiva
+  const handleBulkAsignar = async (idPersonal, nombrePersonal) => {
+    setBulkAssigning(true);
+    try {
+      const { mesaAyudaService } = await import('../../services/mesaAyudaService');
+      await mesaAyudaService.asignarMasivo({
+        ticketIds: Array.from(selectedTickets),
+        idPersonalAsignado: idPersonal,
+        nombrePersonalAsignado: nombrePersonal,
+      });
+      setSelectedTickets(new Set());
+      setShowBulkDropdown(false);
+      fetchTickets();
+    } catch (err) {
+      console.error('Error en asignación masiva:', err);
+    } finally {
+      setBulkAssigning(false);
+    }
+  };
+
+  const toggleTicketSelection = (ticketId) => {
+    setSelectedTickets(prev => {
+      const next = new Set(prev);
+      if (next.has(ticketId)) next.delete(ticketId);
+      else next.add(ticketId);
+      return next;
+    });
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedTickets.size === ticketsAsignables.length && ticketsAsignables.length > 0) {
+      setSelectedTickets(new Set());
+    } else {
+      setSelectedTickets(new Set(ticketsAsignables.map(t => t.id)));
+    }
+  };
+
   const getEstadoConfig = (estado) => {
     const config = {
       NUEVO: { label: 'Nuevo', color: 'bg-yellow-50 text-yellow-700 border-yellow-300', icon: Clock },
@@ -171,6 +217,9 @@ function ListaTickets() {
       ticket.nombrePaciente?.toLowerCase().includes(searchLower)
     );
   });
+
+  // Solo tickets asignables (sin personal y no resueltos)
+  const ticketsAsignables = ticketsFiltrados.filter(t => !t.nombrePersonalAsignado && t.estado !== 'RESUELTO');
 
   return (
     <div className="p-6 bg-gray-50 min-h-screen">
@@ -291,6 +340,15 @@ function ListaTickets() {
             <table className="w-full border-collapse">
               <thead className="bg-[#0a5ba9]">
                 <tr>
+                  <th className="px-3 py-3 text-center w-12">
+                    <input
+                      type="checkbox"
+                      checked={ticketsAsignables.length > 0 && selectedTickets.size === ticketsAsignables.length}
+                      onChange={toggleSelectAll}
+                      className="w-4 h-4 rounded border-white/50 text-blue-400 focus:ring-blue-400 cursor-pointer accent-white"
+                      title="Seleccionar todos los tickets sin asignar"
+                    />
+                  </th>
                   <th className="px-4 py-3 text-center text-xs font-semibold text-white uppercase tracking-wider w-16">
                     Info
                   </th>
@@ -336,8 +394,20 @@ function ListaTickets() {
                 {ticketsFiltrados.map((ticket) => (
                   <tr
                     key={ticket.id}
-                    className="border-b border-gray-200 hover:bg-gray-50 transition-colors"
+                    className={`border-b border-gray-200 hover:bg-gray-50 transition-colors ${selectedTickets.has(ticket.id) ? 'bg-blue-50/50' : ''}`}
                   >
+                    <td className="px-3 py-4 text-center">
+                      {!ticket.nombrePersonalAsignado && ticket.estado !== 'RESUELTO' ? (
+                        <input
+                          type="checkbox"
+                          checked={selectedTickets.has(ticket.id)}
+                          onChange={() => toggleTicketSelection(ticket.id)}
+                          className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                        />
+                      ) : (
+                        <div className="w-4 h-4" />
+                      )}
+                    </td>
                     <td className="px-4 py-4 text-center">
                       <button
                         className="p-1.5 rounded-lg text-[#0a5ba9] hover:bg-blue-50 transition-colors"
@@ -392,38 +462,54 @@ function ListaTickets() {
                     </td>
                     {/* Columna Personal Asignado */}
                     <td className="px-6 py-4">
-                      <div
-                        className={`flex items-center gap-2 ${ticket.estado !== 'RESUELTO' ? 'cursor-pointer group' : 'cursor-default opacity-80'}`}
-                        onClick={(e) => {
-                          if (ticket.estado === 'RESUELTO') return;
-                          if (dropdownTicketId === ticket.id) {
-                            setDropdownTicketId(null);
-                          } else {
-                            const rect = e.currentTarget.getBoundingClientRect();
-                            setDropdownPos({ top: rect.top, left: rect.left });
-                            setDropdownTicketId(ticket.id);
-                          }
-                        }}
-                      >
-                        {ticket.nombrePersonalAsignado ? (
-                          <>
-                            <div className={`w-7 h-7 rounded-full ${getAvatarColor(ticket.nombrePersonalAsignado)} flex items-center justify-center text-white text-xs font-bold flex-shrink-0`}>
-                              {ticket.nombrePersonalAsignado.charAt(0).toUpperCase()}
-                            </div>
-                            <span className="text-sm text-gray-900 truncate max-w-[120px]">
-                              {ticket.nombrePersonalAsignado}
-                            </span>
-                          </>
-                        ) : (
-                          <>
-                            <UserCircle size={20} className="text-gray-300 flex-shrink-0" />
-                            <span className="text-sm text-gray-400 italic">Sin asignar</span>
-                          </>
-                        )}
-                        {ticket.estado !== 'RESUELTO' && (
-                          <ChevronDown size={14} className="text-gray-400 group-hover:text-gray-600 flex-shrink-0" />
-                        )}
-                      </div>
+                      {ticket.nombrePersonalAsignado ? (
+                        <div
+                          className={`flex items-center gap-2 ${ticket.estado !== 'RESUELTO' && hasRole('SUPERADMIN') ? 'cursor-pointer group' : 'cursor-default'}`}
+                          onClick={(e) => {
+                            if (ticket.estado === 'RESUELTO') return;
+                            if (!hasRole('SUPERADMIN')) return;
+                            if (dropdownTicketId === ticket.id) {
+                              setDropdownTicketId(null);
+                            } else {
+                              const rect = e.currentTarget.getBoundingClientRect();
+                              setDropdownPos({ top: rect.top, left: rect.left });
+                              setDropdownTicketId(ticket.id);
+                            }
+                          }}
+                        >
+                          <div className={`w-7 h-7 rounded-full ${getAvatarColor(ticket.nombrePersonalAsignado)} flex items-center justify-center text-white text-xs font-bold flex-shrink-0`}>
+                            {ticket.nombrePersonalAsignado.charAt(0).toUpperCase()}
+                          </div>
+                          <span className="text-sm text-gray-900 truncate max-w-[120px]">
+                            {ticket.nombrePersonalAsignado}
+                          </span>
+                          {ticket.estado !== 'RESUELTO' && hasRole('SUPERADMIN') && (
+                            <ChevronDown size={14} className="text-gray-400 group-hover:text-gray-600 flex-shrink-0" />
+                          )}
+                        </div>
+                      ) : ticket.estado === 'RESUELTO' ? (
+                        <div className="flex items-center gap-2 opacity-50">
+                          <UserCircle size={20} className="text-gray-300 flex-shrink-0" />
+                          <span className="text-sm text-gray-400 italic">Sin asignar</span>
+                        </div>
+                      ) : (
+                        <button
+                          className="flex items-center gap-2 px-3 py-1.5 rounded-lg border-2 border-dashed border-blue-300 bg-blue-50 hover:bg-blue-100 hover:border-blue-400 transition-all cursor-pointer group"
+                          onClick={(e) => {
+                            if (dropdownTicketId === ticket.id) {
+                              setDropdownTicketId(null);
+                            } else {
+                              const rect = e.currentTarget.getBoundingClientRect();
+                              setDropdownPos({ top: rect.top, left: rect.left });
+                              setDropdownTicketId(ticket.id);
+                            }
+                          }}
+                        >
+                          <UserCircle size={18} className="text-blue-400 group-hover:text-blue-500 flex-shrink-0" />
+                          <span className="text-sm text-blue-600 group-hover:text-blue-700 font-medium">Asignar</span>
+                          <ChevronDown size={14} className="text-blue-400 group-hover:text-blue-500 flex-shrink-0" />
+                        </button>
+                      )}
 
                     </td>
                     <td className="px-6 py-4">
@@ -473,6 +559,57 @@ function ListaTickets() {
         )}
       </div>
 
+      {/* Barra flotante de asignación masiva */}
+      {selectedTickets.size > 0 && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 bg-[#0a5ba9] text-white px-6 py-3 rounded-2xl shadow-2xl flex items-center gap-4 animate-in slide-in-from-bottom">
+          <div className="flex items-center gap-2">
+            <div className="bg-white/20 rounded-full w-8 h-8 flex items-center justify-center text-sm font-bold">
+              {selectedTickets.size}
+            </div>
+            <span className="text-sm font-medium">
+              {selectedTickets.size === 1 ? 'ticket seleccionado' : 'tickets seleccionados'}
+            </span>
+          </div>
+          <div className="w-px h-8 bg-white/30" />
+          <div className="relative" ref={bulkDropdownRef}>
+            <button
+              onClick={() => setShowBulkDropdown(!showBulkDropdown)}
+              disabled={bulkAssigning}
+              className="flex items-center gap-2 bg-white text-[#0a5ba9] px-4 py-2 rounded-xl text-sm font-semibold hover:bg-blue-50 transition-colors disabled:opacity-50"
+            >
+              <Users size={16} />
+              {bulkAssigning ? 'Asignando...' : 'Asignar personal'}
+              <ChevronDown size={14} />
+            </button>
+            {showBulkDropdown && (
+              <div className="absolute bottom-full mb-2 left-0 bg-white border border-gray-200 rounded-xl shadow-2xl min-w-[280px] max-h-[240px] overflow-y-auto">
+                <div className="px-4 py-2 border-b border-gray-100 text-xs font-semibold text-gray-500 uppercase tracking-wider bg-gray-50 rounded-t-xl">
+                  Asignar a los {selectedTickets.size} tickets
+                </div>
+                {personalMesaAyuda.map((persona) => (
+                  <button
+                    key={persona.idPersonal}
+                    onClick={() => handleBulkAsignar(persona.idPersonal, persona.nombreCompleto)}
+                    className="w-full px-4 py-2.5 text-left text-sm flex items-center gap-2.5 hover:bg-blue-50 hover:text-blue-700 text-gray-700 transition-colors"
+                  >
+                    <div className={`w-7 h-7 rounded-full ${getAvatarColor(persona.nombreCompleto)} flex items-center justify-center text-white text-xs font-bold flex-shrink-0`}>
+                      {persona.nombreCompleto?.charAt(0).toUpperCase()}
+                    </div>
+                    <span className="truncate">{persona.nombreCompleto}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+          <button
+            onClick={() => setSelectedTickets(new Set())}
+            className="text-white/70 hover:text-white text-sm underline underline-offset-2 transition-colors"
+          >
+            Cancelar
+          </button>
+        </div>
+      )}
+
       {/* Dropdown Fixed - Asignar Personal */}
       {dropdownTicketId && (
         <>
@@ -510,9 +647,10 @@ function ListaTickets() {
                 No hay personal disponible
               </div>
             )}
+            {/* Desasignar solo visible para SUPERADMIN */}
             {(() => {
               const ticketActual = ticketsFiltrados.find(t => t.id === dropdownTicketId);
-              return ticketActual?.nombrePersonalAsignado ? (
+              return ticketActual?.nombrePersonalAsignado && hasRole('SUPERADMIN') ? (
                 <button
                   onClick={() => handleDesasignar(dropdownTicketId)}
                   className="w-full px-4 py-2.5 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-2.5 border-t border-gray-200 transition-colors"
@@ -605,6 +743,22 @@ function ListaTickets() {
                   <div>
                     <p className="text-xs text-gray-500">{ticketDetalle.tipoDocumento || 'DNI'}</p>
                     <p className="text-sm font-semibold text-gray-900">{ticketDetalle.dniPaciente || 'N/A'}</p>
+                  </div>
+                </div>
+
+                <div className="bg-gray-50 rounded-lg p-3 mb-3 flex items-center gap-3">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-gray-400 flex-shrink-0"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+                  <div>
+                    <p className="text-xs text-gray-500">Teléfono móvil principal</p>
+                    <p className="text-sm font-semibold text-gray-900">{ticketDetalle.telefonoPaciente || 'N/A'}</p>
+                  </div>
+                </div>
+
+                <div className="bg-gray-50 rounded-lg p-3 mb-3 flex items-center gap-3">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-gray-400 flex-shrink-0"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+                  <div>
+                    <p className="text-xs text-gray-500">Teléfono celular o fijo alterno</p>
+                    <p className="text-sm font-semibold text-gray-900">{ticketDetalle.telefonoPacienteAlterno || 'N/A'}</p>
                   </div>
                 </div>
 

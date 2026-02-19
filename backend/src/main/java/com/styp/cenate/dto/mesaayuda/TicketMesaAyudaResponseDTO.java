@@ -78,6 +78,18 @@ public class TicketMesaAyudaResponseDTO {
     private String ipress;
 
     /**
+     * Teléfono móvil principal del paciente
+     * Obtenido dinámicamente desde dim_solicitud_bolsa
+     */
+    private String telefonoPaciente;
+
+    /**
+     * Teléfono celular o fijo alterno del paciente
+     * Obtenido dinámicamente desde dim_solicitud_bolsa
+     */
+    private String telefonoPacienteAlterno;
+
+    /**
      * Respuesta del personal de Mesa de Ayuda
      */
     private String respuesta;

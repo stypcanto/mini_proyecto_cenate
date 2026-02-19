@@ -125,6 +125,7 @@ function CrearTicketModal({ isOpen, onClose, medico, paciente, onSuccess }) {
         nombrePaciente: paciente?.nombre || null,
         especialidad: medico.especialidad || null,
         ipress: paciente?.ipress || null,
+        telefonoPaciente: paciente?.telefono || null,
       };
 
       console.log('✅ v1.64.0: Creando ticket con motivo:', ticketData);

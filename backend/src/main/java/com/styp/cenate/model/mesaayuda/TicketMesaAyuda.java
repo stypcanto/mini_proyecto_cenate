@@ -135,6 +135,13 @@ public class TicketMesaAyuda {
     @Column(length = 255)
     private String ipress;
 
+    /**
+     * Teléfono del paciente (denormalizado)
+     * Se obtiene de dim_solicitud_bolsa.paciente_telefono
+     */
+    @Column(name = "telefono_paciente", length = 50)
+    private String telefonoPaciente;
+
     // ========== RESPUESTA Y CIERRE ==========
 
     /**
