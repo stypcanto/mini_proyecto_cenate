@@ -1,5 +1,6 @@
-import React, { useEffect, useState, useRef } from 'react';
-import { Zap, AlertCircle, RotateCw, ChevronDown, UserCircle, PlayCircle, Clock, CheckCircle2, Eye, Users } from 'lucide-react';
+import React, { useEffect, useState, useRef, useMemo } from 'react';
+import { useLocation } from 'react-router-dom';
+import { Zap, AlertCircle, RotateCw, ChevronDown, UserCircle, PlayCircle, Clock, CheckCircle2, Eye, Users, Archive, Pencil, Check, X } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import ResponderTicketModal from './components/ResponderTicketModal';
 
@@ -19,6 +20,45 @@ import ResponderTicketModal from './components/ResponderTicketModal';
  */
 function ListaTickets() {
   const { user, hasRole } = useAuth();
+  const location = useLocation();
+
+  // Detectar modo según la ruta actual
+  const esPendientes = location.pathname.includes('tickets-pendientes');
+  const esAtendidos = location.pathname.includes('tickets-atendidos');
+
+  // Configuración según modo
+  const modoConfig = useMemo(() => {
+    if (esAtendidos) {
+      return {
+        titulo: 'Tickets Atendidos',
+        subtitulo: 'Historial de tickets resueltos y cerrados',
+        icon: Archive,
+        estadosBackend: 'RESUELTO,CERRADO',
+        mostrarSemaforo: false,
+        mostrarSeleccionMultiple: false,
+      };
+    }
+    if (esPendientes) {
+      return {
+        titulo: 'Tickets Pendientes',
+        subtitulo: 'Tickets nuevos y en proceso que requieren atención',
+        icon: Zap,
+        estadosBackend: 'NUEVO,EN_PROCESO',
+        mostrarSemaforo: true,
+        mostrarSeleccionMultiple: true,
+      };
+    }
+    // Modo genérico (todas las rutas)
+    return {
+      titulo: 'Tablero de Tickets',
+      subtitulo: 'Gestiona los tickets creados por médicos y proporciona soporte',
+      icon: Zap,
+      estadosBackend: null,
+      mostrarSemaforo: true,
+      mostrarSeleccionMultiple: true,
+    };
+  }, [esPendientes, esAtendidos]);
+
   const [tickets, setTickets] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -27,14 +67,22 @@ function ListaTickets() {
   const [totalPages, setTotalPages] = useState(0);
 
   // Filtros
-  const [filtroEstado, setFiltroEstado] = useState('');
   const [filtroPrioridad, setFiltroPrioridad] = useState('');
-  const [busqueda, setBusqueda] = useState('');
+  const [busquedaDni, setBusquedaDni] = useState('');
+  const [filtroMedico, setFiltroMedico] = useState('');
+  const [filtroSemaforo, setFiltroSemaforo] = useState('');
 
   // Modal
   const [showModalResponder, setShowModalResponder] = useState(false);
   const [ticketSeleccionado, setTicketSeleccionado] = useState(null);
   const [ticketDetalle, setTicketDetalle] = useState(null);
+
+  // Edición de teléfonos en modal detalle
+  const [editandoTelefonos, setEditandoTelefonos] = useState(false);
+  const [telPrincipalEdit, setTelPrincipalEdit] = useState('');
+  const [telAlternoEdit, setTelAlternoEdit] = useState('');
+  const [guardandoTelefonos, setGuardandoTelefonos] = useState(false);
+  const [toastMsg, setToastMsg] = useState(null);
 
   // Dropdown asignación
   const [dropdownTicketId, setDropdownTicketId] = useState(null);
@@ -54,9 +102,19 @@ function ListaTickets() {
     nombre: user?.nombreCompleto || user?.username || 'Personal Mesa de Ayuda',
   };
 
+  // Reset page y filtro al cambiar de ruta
+  useEffect(() => {
+    setCurrentPage(0);
+    setFiltroPrioridad('');
+    setBusquedaDni('');
+    setFiltroMedico('');
+    setFiltroSemaforo('');
+    setSelectedTickets(new Set());
+  }, [location.pathname]);
+
   useEffect(() => {
     fetchTickets();
-  }, [currentPage, pageSize, filtroEstado, filtroPrioridad]);
+  }, [currentPage, pageSize, modoConfig.estadosBackend]);
 
   // Cargar lista de personal Mesa de Ayuda al montar
   useEffect(() => {
@@ -94,7 +152,9 @@ function ListaTickets() {
       // Lazy import para evitar problemas de circular dependencies
       const { mesaAyudaService } = await import('../../services/mesaAyudaService');
 
-      const response = await mesaAyudaService.obtenerTodos(currentPage, pageSize, filtroEstado || null);
+      // Usar los estados del modo (pendientes: NUEVO,EN_PROCESO; atendidos: RESUELTO,CERRADO)
+      const estadoParam = modoConfig.estadosBackend || null;
+      const response = await mesaAyudaService.obtenerTodos(currentPage, pageSize, estadoParam);
 
       setTickets(response.data.content || []);
       setTotalPages(response.data.totalPages || 0);
@@ -225,15 +285,71 @@ function ListaTickets() {
     }
   };
 
-  // Filtrar tickets por búsqueda local
+  // Iniciar edición de teléfonos
+  const handleEditarTelefonos = () => {
+    setTelPrincipalEdit(ticketDetalle?.telefonoPaciente || '');
+    setTelAlternoEdit(ticketDetalle?.telefonoPacienteAlterno || '');
+    setEditandoTelefonos(true);
+  };
+
+  // Cancelar edición de teléfonos
+  const handleCancelarTelefonos = () => {
+    setEditandoTelefonos(false);
+  };
+
+  // Guardar teléfonos editados
+  const handleGuardarTelefonos = async () => {
+    setGuardandoTelefonos(true);
+    try {
+      const { mesaAyudaService } = await import('../../services/mesaAyudaService');
+      const ticketActualizado = await mesaAyudaService.actualizarTelefonos(ticketDetalle.id, {
+        telefonoPrincipal: telPrincipalEdit,
+        telefonoAlterno: telAlternoEdit,
+      });
+      // Actualizar el detalle localmente
+      setTicketDetalle({
+        ...ticketDetalle,
+        telefonoPaciente: telPrincipalEdit,
+        telefonoPacienteAlterno: telAlternoEdit,
+      });
+      setEditandoTelefonos(false);
+      setToastMsg({ tipo: 'ok', texto: 'Teléfonos actualizados correctamente' });
+      setTimeout(() => setToastMsg(null), 3000);
+    } catch (err) {
+      console.error('Error actualizando teléfonos:', err);
+      setToastMsg({ tipo: 'error', texto: 'Error al actualizar teléfonos' });
+      setTimeout(() => setToastMsg(null), 3000);
+    } finally {
+      setGuardandoTelefonos(false);
+    }
+  };
+
+  // Lista única de médicos para el dropdown
+  const medicosUnicos = useMemo(() => {
+    const nombres = new Set();
+    tickets.forEach(t => { if (t.nombreMedico) nombres.add(t.nombreMedico); });
+    return Array.from(nombres).sort();
+  }, [tickets]);
+
+  // Calcular semáforo helper para filtro
+  const getSemaforoNivel = (fechaCreacion) => {
+    const minutos = Math.floor((new Date() - new Date(fechaCreacion)) / 60000);
+    if (minutos <= 20) return 'verde';
+    if (minutos <= 40) return 'amarillo';
+    return 'rojo';
+  };
+
+  // Filtrar tickets por filtros locales
   const ticketsFiltrados = tickets.filter(ticket => {
-    const searchLower = busqueda.toLowerCase();
-    return (
-      ticket.titulo.toLowerCase().includes(searchLower) ||
-      ticket.dniPaciente?.toLowerCase().includes(searchLower) ||
-      ticket.nombreMedico?.toLowerCase().includes(searchLower) ||
-      ticket.nombrePaciente?.toLowerCase().includes(searchLower)
-    );
+    // Filtro DNI
+    if (busquedaDni && !ticket.dniPaciente?.toLowerCase().includes(busquedaDni.toLowerCase())) return false;
+    // Filtro Médico
+    if (filtroMedico && ticket.nombreMedico !== filtroMedico) return false;
+    // Filtro Semáforo (nivel de importancia por tiempo)
+    if (filtroSemaforo && modoConfig.mostrarSemaforo && getSemaforoNivel(ticket.fechaCreacion) !== filtroSemaforo) return false;
+    // Filtro Prioridad
+    if (filtroPrioridad && ticket.prioridad !== filtroPrioridad) return false;
+    return true;
   });
 
   // Solo tickets asignables (sin personal y no resueltos)
@@ -244,14 +360,14 @@ function ListaTickets() {
       {/* Header */}
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
-          <Zap size={32} className="text-yellow-500" />
-          Tablero de Tickets
+          {React.createElement(modoConfig.icon, { size: 32, className: esAtendidos ? 'text-green-500' : 'text-yellow-500' })}
+          {modoConfig.titulo}
           <span className="text-sm font-medium text-gray-500 bg-gray-100 px-3 py-1 rounded-full">
             {ticketsFiltrados.length} tickets
           </span>
         </h1>
         <p className="text-gray-600 mt-2">
-          Gestiona los tickets creados por médicos y proporciona soporte
+          {modoConfig.subtitulo}
         </p>
       </div>
 
@@ -273,45 +389,67 @@ function ListaTickets() {
 
       {/* Filtros */}
       <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200 mb-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {/* Búsqueda */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+          {/* Buscar por DNI */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Buscar
+              Buscar por DNI
             </label>
             <input
               type="text"
-              value={busqueda}
-              onChange={(e) => setBusqueda(e.target.value)}
-              placeholder="Título, DNI, médico, paciente..."
+              value={busquedaDni}
+              onChange={(e) => setBusquedaDni(e.target.value)}
+              placeholder="N° de documento..."
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
 
-          {/* Filtro Estado */}
+          {/* Filtro Médico */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Estado
+              Profesional de Salud
             </label>
             <select
-              value={filtroEstado}
+              value={filtroMedico}
               onChange={(e) => {
-                setFiltroEstado(e.target.value);
+                setFiltroMedico(e.target.value);
                 setCurrentPage(0);
               }}
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             >
               <option value="">Todos</option>
-              <option value="NUEVO">Nuevos</option>
-              <option value="EN_PROCESO">En Proceso</option>
-              <option value="RESUELTO">Resueltos</option>
+              {medicosUnicos.map(nombre => (
+                <option key={nombre} value={nombre}>{nombre}</option>
+              ))}
             </select>
           </div>
 
-          {/* Filtro Prioridad */}
+          {/* Filtro Nivel de Importancia (Semáforo) */}
+          {modoConfig.mostrarSemaforo && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Nivel de Importancia
+              </label>
+              <select
+                value={filtroSemaforo}
+                onChange={(e) => {
+                  setFiltroSemaforo(e.target.value);
+                  setCurrentPage(0);
+                }}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              >
+                <option value="">Todos</option>
+                <option value="rojo">Rojo (&gt; 40 min)</option>
+                <option value="amarillo">Amarillo (20 – 40 min)</option>
+                <option value="verde">Verde (≤ 20 min)</option>
+              </select>
+            </div>
+          )}
+
+          {/* Filtro Prioridad de Ticket */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Prioridad
+              Prioridad de Ticket
             </label>
             <select
               value={filtroPrioridad}
@@ -342,6 +480,25 @@ function ListaTickets() {
         </div>
       </div>
 
+      {/* Leyenda de Tiempo de espera - solo en modo pendientes */}
+      {modoConfig.mostrarSemaforo && (
+        <div className="flex items-center gap-5 mb-3 px-1">
+          <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Tiempo de espera:</span>
+          <div className="flex items-center gap-1.5">
+            <span className="w-2.5 h-2.5 rounded-full bg-green-500 inline-block"></span>
+            <span className="text-xs text-gray-600">≤ 20 min</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <span className="w-2.5 h-2.5 rounded-full bg-yellow-400 inline-block"></span>
+            <span className="text-xs text-gray-600">20 – 40 min</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <span className="w-2.5 h-2.5 rounded-full bg-red-500 inline-block"></span>
+            <span className="text-xs text-gray-600">&gt; 40 min</span>
+          </div>
+        </div>
+      )}
+
       {/* Tabla de Tickets */}
       <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
         {loading ? (
@@ -358,21 +515,25 @@ function ListaTickets() {
             <table className="w-full border-collapse">
               <thead className="bg-[#0a5ba9]">
                 <tr>
-                  <th className="px-3 py-3 text-center w-12">
-                    <input
-                      type="checkbox"
-                      checked={ticketsAsignables.length > 0 && selectedTickets.size === ticketsAsignables.length}
-                      onChange={toggleSelectAll}
-                      className="w-4 h-4 rounded border-white/50 text-blue-400 focus:ring-blue-400 cursor-pointer accent-white"
-                      title="Seleccionar todos los tickets sin asignar"
-                    />
-                  </th>
-                  <th className="px-2 py-3 text-center text-xs font-semibold text-white uppercase tracking-wider w-10">
-                  </th>
+                  {modoConfig.mostrarSeleccionMultiple && (
+                    <th className="px-3 py-3 text-center w-12">
+                      <input
+                        type="checkbox"
+                        checked={ticketsAsignables.length > 0 && selectedTickets.size === ticketsAsignables.length}
+                        onChange={toggleSelectAll}
+                        className="w-4 h-4 rounded border-white/50 text-blue-400 focus:ring-blue-400 cursor-pointer accent-white"
+                        title="Seleccionar todos los tickets sin asignar"
+                      />
+                    </th>
+                  )}
+                  {modoConfig.mostrarSemaforo && (
+                    <th className="px-2 py-3 text-center text-xs font-semibold text-white uppercase tracking-wider w-10">
+                    </th>
+                  )}
                   <th className="px-4 py-3 text-center text-xs font-semibold text-white uppercase tracking-wider w-16">
                     Info
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider whitespace-nowrap">
                     Código Ticket
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">
@@ -399,8 +560,8 @@ function ListaTickets() {
                   <th className="px-6 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">
                     Estado de Atención
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">
-                    Prioridad
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider whitespace-nowrap">
+                    Prioridad de Ticket
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">
                     Personal Asignado
@@ -416,28 +577,32 @@ function ListaTickets() {
                     key={ticket.id}
                     className={`border-b border-gray-200 hover:bg-gray-50 transition-colors ${selectedTickets.has(ticket.id) ? 'bg-blue-50/50' : ''}`}
                   >
-                    <td className="px-3 py-4 text-center">
-                      {!ticket.nombrePersonalAsignado && ticket.estado !== 'RESUELTO' ? (
-                        <input
-                          type="checkbox"
-                          checked={selectedTickets.has(ticket.id)}
-                          onChange={() => toggleTicketSelection(ticket.id)}
-                          className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
-                        />
-                      ) : (
-                        <div className="w-4 h-4" />
-                      )}
-                    </td>
-                    <td className="px-2 py-4 text-center">
-                      {(() => {
-                        const sem = getSemaforo(ticket.fechaCreacion);
-                        return (
-                          <div className="flex justify-center" title={sem.titulo}>
-                            <div className={`w-3.5 h-3.5 rounded-full ${sem.color} shadow-md ${sem.shadow} ${sem.anim}`} />
-                          </div>
-                        );
-                      })()}
-                    </td>
+                    {modoConfig.mostrarSeleccionMultiple && (
+                      <td className="px-3 py-4 text-center">
+                        {!ticket.nombrePersonalAsignado && ticket.estado !== 'RESUELTO' ? (
+                          <input
+                            type="checkbox"
+                            checked={selectedTickets.has(ticket.id)}
+                            onChange={() => toggleTicketSelection(ticket.id)}
+                            className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                          />
+                        ) : (
+                          <div className="w-4 h-4" />
+                        )}
+                      </td>
+                    )}
+                    {modoConfig.mostrarSemaforo && (
+                      <td className="px-2 py-4 text-center">
+                        {(() => {
+                          const sem = getSemaforo(ticket.fechaCreacion);
+                          return (
+                            <div className="flex justify-center" title={sem.titulo}>
+                              <div className={`w-3.5 h-3.5 rounded-full ${sem.color} shadow-md ${sem.shadow} ${sem.anim}`} />
+                            </div>
+                          );
+                        })()}
+                      </td>
+                    )}
                     <td className="px-4 py-4 text-center">
                       <button
                         className="p-1.5 rounded-lg text-[#0a5ba9] hover:bg-blue-50 transition-colors"
@@ -447,7 +612,7 @@ function ListaTickets() {
                         <Eye size={18} />
                       </button>
                     </td>
-                    <td className="px-6 py-4 text-sm text-blue-700 font-bold">
+                    <td className="px-6 py-4 text-sm text-blue-700 font-bold whitespace-nowrap">
                       {ticket.numeroTicket || `#${ticket.id}`}
                     </td>
                     <td className="px-6 py-4 text-sm text-gray-900">
@@ -522,7 +687,7 @@ function ListaTickets() {
                           <UserCircle size={20} className="text-gray-300 flex-shrink-0" />
                           <span className="text-sm text-gray-400 italic">Sin asignar</span>
                         </div>
-                      ) : (
+                      ) : hasRole('SUPERADMIN') ? (
                         <button
                           className="flex items-center gap-2 px-3 py-1.5 rounded-lg border-2 border-dashed border-blue-300 bg-blue-50 hover:bg-blue-100 hover:border-blue-400 transition-all cursor-pointer group"
                           onClick={(e) => {
@@ -538,6 +703,14 @@ function ListaTickets() {
                           <UserCircle size={18} className="text-blue-400 group-hover:text-blue-500 flex-shrink-0" />
                           <span className="text-sm text-blue-600 group-hover:text-blue-700 font-medium">Asignar</span>
                           <ChevronDown size={14} className="text-blue-400 group-hover:text-blue-500 flex-shrink-0" />
+                        </button>
+                      ) : (
+                        <button
+                          className="flex items-center gap-2 px-3 py-1.5 rounded-lg border-2 border-dashed border-blue-300 bg-blue-50 hover:bg-blue-100 hover:border-blue-400 transition-all cursor-pointer group"
+                          onClick={() => handleAsignar(ticket.id, usuario.id, usuario.nombre)}
+                        >
+                          <UserCircle size={18} className="text-blue-400 group-hover:text-blue-500 flex-shrink-0" />
+                          <span className="text-sm text-blue-600 group-hover:text-blue-700 font-medium">Asignarme</span>
                         </button>
                       )}
 
@@ -601,36 +774,47 @@ function ListaTickets() {
             </span>
           </div>
           <div className="w-px h-8 bg-white/30" />
-          <div className="relative" ref={bulkDropdownRef}>
+          {hasRole('SUPERADMIN') ? (
+            <div className="relative" ref={bulkDropdownRef}>
+              <button
+                onClick={() => setShowBulkDropdown(!showBulkDropdown)}
+                disabled={bulkAssigning}
+                className="flex items-center gap-2 bg-white text-[#0a5ba9] px-4 py-2 rounded-xl text-sm font-semibold hover:bg-blue-50 transition-colors disabled:opacity-50"
+              >
+                <Users size={16} />
+                {bulkAssigning ? 'Asignando...' : 'Asignar personal'}
+                <ChevronDown size={14} />
+              </button>
+              {showBulkDropdown && (
+                <div className="absolute bottom-full mb-2 left-0 bg-white border border-gray-200 rounded-xl shadow-2xl min-w-[280px] max-h-[240px] overflow-y-auto">
+                  <div className="px-4 py-2 border-b border-gray-100 text-xs font-semibold text-gray-500 uppercase tracking-wider bg-gray-50 rounded-t-xl">
+                    Asignar a los {selectedTickets.size} tickets
+                  </div>
+                  {personalMesaAyuda.map((persona) => (
+                    <button
+                      key={persona.idPersonal}
+                      onClick={() => handleBulkAsignar(persona.idPersonal, persona.nombreCompleto)}
+                      className="w-full px-4 py-2.5 text-left text-sm flex items-center gap-2.5 hover:bg-blue-50 hover:text-blue-700 text-gray-700 transition-colors"
+                    >
+                      <div className={`w-7 h-7 rounded-full ${getAvatarColor(persona.nombreCompleto)} flex items-center justify-center text-white text-xs font-bold flex-shrink-0`}>
+                        {persona.nombreCompleto?.charAt(0).toUpperCase()}
+                      </div>
+                      <span className="truncate">{persona.nombreCompleto}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          ) : (
             <button
-              onClick={() => setShowBulkDropdown(!showBulkDropdown)}
+              onClick={() => handleBulkAsignar(usuario.id, usuario.nombre)}
               disabled={bulkAssigning}
               className="flex items-center gap-2 bg-white text-[#0a5ba9] px-4 py-2 rounded-xl text-sm font-semibold hover:bg-blue-50 transition-colors disabled:opacity-50"
             >
               <Users size={16} />
-              {bulkAssigning ? 'Asignando...' : 'Asignar personal'}
-              <ChevronDown size={14} />
+              {bulkAssigning ? 'Asignando...' : 'Asignarme todos'}
             </button>
-            {showBulkDropdown && (
-              <div className="absolute bottom-full mb-2 left-0 bg-white border border-gray-200 rounded-xl shadow-2xl min-w-[280px] max-h-[240px] overflow-y-auto">
-                <div className="px-4 py-2 border-b border-gray-100 text-xs font-semibold text-gray-500 uppercase tracking-wider bg-gray-50 rounded-t-xl">
-                  Asignar a los {selectedTickets.size} tickets
-                </div>
-                {personalMesaAyuda.map((persona) => (
-                  <button
-                    key={persona.idPersonal}
-                    onClick={() => handleBulkAsignar(persona.idPersonal, persona.nombreCompleto)}
-                    className="w-full px-4 py-2.5 text-left text-sm flex items-center gap-2.5 hover:bg-blue-50 hover:text-blue-700 text-gray-700 transition-colors"
-                  >
-                    <div className={`w-7 h-7 rounded-full ${getAvatarColor(persona.nombreCompleto)} flex items-center justify-center text-white text-xs font-bold flex-shrink-0`}>
-                      {persona.nombreCompleto?.charAt(0).toUpperCase()}
-                    </div>
-                    <span className="truncate">{persona.nombreCompleto}</span>
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
+          )}
           <button
             onClick={() => setSelectedTickets(new Set())}
             className="text-white/70 hover:text-white text-sm underline underline-offset-2 transition-colors"
@@ -694,10 +878,20 @@ function ListaTickets() {
         </>
       )}
 
+      {/* Toast de confirmación */}
+      {toastMsg && (
+        <div className={`fixed top-6 right-6 z-[60] px-5 py-3 rounded-xl shadow-lg text-sm font-medium flex items-center gap-2 animate-in slide-in-from-top ${
+          toastMsg.tipo === 'ok' ? 'bg-green-600 text-white' : 'bg-red-600 text-white'
+        }`}>
+          {toastMsg.tipo === 'ok' ? <CheckCircle2 size={16} /> : <AlertCircle size={16} />}
+          {toastMsg.texto}
+        </div>
+      )}
+
       {/* Modal Detalle Ticket */}
       {ticketDetalle && (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
-          <div className="fixed inset-0 bg-black/40" onClick={() => setTicketDetalle(null)} />
+          <div className="fixed inset-0 bg-black/40" onClick={() => { setTicketDetalle(null); setEditandoTelefonos(false); }} />
           <div className="relative bg-gray-50 rounded-2xl shadow-2xl w-full max-w-5xl mx-4 max-h-[90vh] overflow-y-auto">
             {/* Header del modal */}
             <div className="bg-white px-8 py-5 border-b border-gray-200 rounded-t-2xl flex items-center justify-between">
@@ -706,7 +900,7 @@ function ListaTickets() {
                 <p className="text-sm text-gray-500 mt-0.5">Ticket {ticketDetalle.numeroTicket}</p>
               </div>
               <button
-                onClick={() => setTicketDetalle(null)}
+                onClick={() => { setTicketDetalle(null); setEditandoTelefonos(false); }}
                 className="p-2 hover:bg-gray-100 rounded-lg transition-colors text-gray-400 hover:text-gray-600"
               >
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
@@ -776,21 +970,81 @@ function ListaTickets() {
                   </div>
                 </div>
 
-                <div className="bg-gray-50 rounded-lg p-3 mb-3 flex items-center gap-3">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-gray-400 flex-shrink-0"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
-                  <div>
-                    <p className="text-xs text-gray-500">Teléfono móvil principal</p>
-                    <p className="text-sm font-semibold text-gray-900">{ticketDetalle.telefonoPaciente || 'N/A'}</p>
-                  </div>
-                </div>
+                {/* Teléfonos - Modo lectura o edición */}
+                {!editandoTelefonos ? (
+                  <>
+                    <div className="bg-gray-50 rounded-lg p-3 mb-3 flex items-center gap-3 group/tel">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-gray-400 flex-shrink-0"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+                      <div className="flex-1">
+                        <p className="text-xs text-gray-500">Teléfono móvil principal</p>
+                        <p className="text-sm font-semibold text-gray-900">{ticketDetalle.telefonoPaciente || 'N/A'}</p>
+                      </div>
+                      <button
+                        onClick={handleEditarTelefonos}
+                        className="opacity-0 group-hover/tel:opacity-100 p-1.5 rounded-lg hover:bg-teal-100 text-teal-600 transition-all"
+                        title="Editar teléfonos"
+                      >
+                        <Pencil size={14} />
+                      </button>
+                    </div>
 
-                <div className="bg-gray-50 rounded-lg p-3 mb-3 flex items-center gap-3">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-gray-400 flex-shrink-0"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
-                  <div>
-                    <p className="text-xs text-gray-500">Teléfono celular o fijo alterno</p>
-                    <p className="text-sm font-semibold text-gray-900">{ticketDetalle.telefonoPacienteAlterno || 'N/A'}</p>
+                    <div className="bg-gray-50 rounded-lg p-3 mb-3 flex items-center gap-3 group/tel2">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-gray-400 flex-shrink-0"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+                      <div className="flex-1">
+                        <p className="text-xs text-gray-500">Teléfono celular o fijo alterno</p>
+                        <p className="text-sm font-semibold text-gray-900">{ticketDetalle.telefonoPacienteAlterno || 'N/A'}</p>
+                      </div>
+                      <button
+                        onClick={handleEditarTelefonos}
+                        className="opacity-0 group-hover/tel2:opacity-100 p-1.5 rounded-lg hover:bg-teal-100 text-teal-600 transition-all"
+                        title="Editar teléfonos"
+                      >
+                        <Pencil size={14} />
+                      </button>
+                    </div>
+                  </>
+                ) : (
+                  <div className="bg-teal-50 rounded-lg p-3 mb-3 border border-teal-200">
+                    <div className="mb-3">
+                      <label className="text-xs text-gray-500 block mb-1">Teléfono móvil principal</label>
+                      <input
+                        type="text"
+                        value={telPrincipalEdit}
+                        onChange={(e) => setTelPrincipalEdit(e.target.value)}
+                        className="w-full px-3 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                        placeholder="Ej: 987654321"
+                      />
+                    </div>
+                    <div className="mb-3">
+                      <label className="text-xs text-gray-500 block mb-1">Teléfono celular o fijo alterno</label>
+                      <input
+                        type="text"
+                        value={telAlternoEdit}
+                        onChange={(e) => setTelAlternoEdit(e.target.value)}
+                        className="w-full px-3 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                        placeholder="Ej: 014567890"
+                      />
+                    </div>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={handleGuardarTelefonos}
+                        disabled={guardandoTelefonos}
+                        className="flex items-center gap-1.5 px-3 py-1.5 bg-teal-600 text-white text-xs font-medium rounded-lg hover:bg-teal-700 disabled:opacity-50 transition-colors"
+                      >
+                        <Check size={14} />
+                        {guardandoTelefonos ? 'Guardando...' : 'Guardar'}
+                      </button>
+                      <button
+                        onClick={handleCancelarTelefonos}
+                        disabled={guardandoTelefonos}
+                        className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-200 text-gray-700 text-xs font-medium rounded-lg hover:bg-gray-300 disabled:opacity-50 transition-colors"
+                      >
+                        <X size={14} />
+                        Cancelar
+                      </button>
+                    </div>
                   </div>
-                </div>
+                )}
 
                 <div className="bg-gray-50 rounded-lg p-3 flex items-center gap-3">
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-gray-400 flex-shrink-0"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
@@ -805,7 +1059,7 @@ function ListaTickets() {
             {/* Footer - Ocultar detalles */}
             <div className="px-8 pb-6 flex justify-center">
               <button
-                onClick={() => setTicketDetalle(null)}
+                onClick={() => { setTicketDetalle(null); setEditandoTelefonos(false); }}
                 className="flex items-center gap-2 text-teal-600 hover:text-teal-700 font-medium text-sm transition-colors"
               >
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="18 15 12 9 6 15"/></svg>

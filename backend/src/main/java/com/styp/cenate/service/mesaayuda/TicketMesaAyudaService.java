@@ -213,6 +213,21 @@ public class TicketMesaAyudaService {
     }
 
     /**
+     * Obtener tickets filtrados por múltiples estados con paginación
+     * Soporta: "NUEVO,EN_PROCESO" o "RESUELTO,CERRADO"
+     *
+     * @param estados Lista de estados a filtrar
+     * @param pageable Paginación
+     * @return Page<TicketMesaAyudaResponseDTO>
+     */
+    @Transactional(readOnly = true)
+    public Page<TicketMesaAyudaResponseDTO> obtenerPorEstadosPaginado(List<String> estados, Pageable pageable) {
+        log.debug("Obteniendo tickets con estados: {}", estados);
+        return ticketRepository.findByEstadoInAndDeletedAtIsNull(estados, pageable)
+            .map(this::toResponseDTO);
+    }
+
+    /**
      * Obtener tickets de un médico específico
      * Utilizado para mostrar los tickets creados por el médico en MisPacientes
      *
@@ -464,6 +479,45 @@ public class TicketMesaAyudaService {
         log.info("Ticket {} desasignado exitosamente por SUPERADMIN", id);
 
         return toResponseDTO(updated);
+    }
+
+    // ========== ACTUALIZAR TELÉFONOS ==========
+
+    /**
+     * Actualizar teléfonos del paciente asociado a un ticket
+     * Actualiza en la tabla asegurados (fuente real) y en el ticket para coherencia
+     *
+     * @param ticketId ID del ticket
+     * @param telPrincipal Teléfono principal (tel_fijo en asegurados)
+     * @param telAlterno Teléfono alterno (tel_celular en asegurados)
+     * @return TicketMesaAyudaResponseDTO actualizado
+     */
+    public TicketMesaAyudaResponseDTO actualizarTelefonos(Long ticketId, String telPrincipal, String telAlterno) {
+        log.info("Actualizando teléfonos del ticket {}: principal={}, alterno={}", ticketId, telPrincipal, telAlterno);
+
+        TicketMesaAyuda ticket = ticketRepository.findByIdAndDeletedAtIsNull(ticketId)
+            .orElseThrow(() -> new IllegalArgumentException("Ticket no encontrado con ID: " + ticketId));
+
+        String dni = ticket.getDniPaciente();
+        if (dni == null || dni.isBlank()) {
+            throw new IllegalArgumentException("El ticket no tiene DNI de paciente asociado");
+        }
+
+        // Actualizar en tabla asegurados (fuente real de teléfonos)
+        entityManager.createNativeQuery(
+            "UPDATE asegurados SET tel_fijo = :telFijo, tel_celular = :telCelular WHERE doc_paciente = :dni")
+            .setParameter("telFijo", telPrincipal)
+            .setParameter("telCelular", telAlterno)
+            .setParameter("dni", dni)
+            .executeUpdate();
+
+        // Actualizar teléfono principal en el ticket para coherencia
+        ticket.setTelefonoPaciente(telPrincipal);
+        ticket.setFechaActualizacion(LocalDateTime.now(ZONA_PERU));
+        ticketRepository.save(ticket);
+
+        log.info("Teléfonos actualizados exitosamente para DNI: {}", dni);
+        return toResponseDTO(ticket);
     }
 
     // ========== ELIMINAR (SOFT DELETE) ==========
