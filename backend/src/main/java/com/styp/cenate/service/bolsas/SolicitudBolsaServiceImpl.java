@@ -2560,12 +2560,25 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
         java.time.LocalDate fechaNacimiento = solicitud.getFechaNacimiento();
         String descIpress = null;
 
+        // Teléfonos: enriquecer desde asegurados si están vacíos en la solicitud
+        String pacienteTelefono = solicitud.getPacienteTelefono();
+        String pacienteTelefonoAlterno = solicitud.getPacienteTelefonoAlterno();
+
         String pacienteDni = solicitud.getPacienteDni();
-        if ((fechaNacimiento == null || solicitud.getIdIpress() == null) && !isBlank(pacienteDni)) {
+        if ((fechaNacimiento == null || solicitud.getIdIpress() == null || isBlank(pacienteTelefono)) && !isBlank(pacienteDni)) {
             try {
                 Optional<Asegurado> aseguradoOpt = aseguradoRepository.findByDocPaciente(pacienteDni);
                 if (aseguradoOpt.isPresent()) {
                     Asegurado asegurado = aseguradoOpt.get();
+
+                    // Si no hay teléfono principal, usar tel_fijo del asegurado
+                    if (isBlank(pacienteTelefono) && !isBlank(asegurado.getTelFijo())) {
+                        pacienteTelefono = asegurado.getTelFijo();
+                    }
+                    // Si no hay teléfono alterno, usar tel_celular del asegurado
+                    if (isBlank(pacienteTelefonoAlterno) && !isBlank(asegurado.getTelCelular())) {
+                        pacienteTelefonoAlterno = asegurado.getTelCelular();
+                    }
 
                     // Si no hay fecha_nacimiento, usar la del asegurado
                     if (fechaNacimiento == null && asegurado.getFecnacimpaciente() != null) {
@@ -2640,8 +2653,8 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
             .tipoDocumento(solicitud.getTipoDocumento())
             .fechaNacimiento(fechaNacimiento)
             .pacienteSexo(solicitud.getPacienteSexo())
-            .pacienteTelefono(solicitud.getPacienteTelefono())
-            .pacienteTelefonoAlterno(solicitud.getPacienteTelefonoAlterno())
+            .pacienteTelefono(pacienteTelefono)
+            .pacienteTelefonoAlterno(pacienteTelefonoAlterno)
             .pacienteEmail(solicitud.getPacienteEmail())
             .pacienteEdad(calcularEdad(fechaNacimiento))
             .codigoIpressAdscripcion(solicitud.getCodigoIpressAdscripcion())
