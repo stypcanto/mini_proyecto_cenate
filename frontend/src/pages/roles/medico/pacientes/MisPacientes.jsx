@@ -254,6 +254,22 @@ export default function MisPacientes() {
     }
   };
 
+  // Formatear nombre del paciente: "APELLIDO1 APELLIDO2 NOMBRE1 NOMBRE2" → "Nombre1 Nombre2 Apellido1 Apellido2"
+  const formatearNombrePaciente = (nombreCompleto) => {
+    if (!nombreCompleto) return '';
+    const palabras = nombreCompleto.trim().split(/\s+/).filter(p => p.length > 0);
+    if (palabras.length <= 2) {
+      return palabras.map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
+    }
+    // 4 palabras: AP1 AP2 NOM1 NOM2 → NOM1 NOM2 AP1 AP2
+    // 3 palabras: AP1 AP2 NOM1 → NOM1 AP1 AP2
+    const apellidos = palabras.slice(0, 2);
+    const nombres = palabras.slice(2);
+    return [...nombres, ...apellidos]
+      .map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+      .join(' ');
+  };
+
   const [pacientes, setPacientes] = useState([]);
 
   // ✅ v1.66.0: Helper para parsear fechas sin desfase de zona horaria
@@ -420,6 +436,7 @@ export default function MisPacientes() {
   // ✅ v1.64.0: Estados para Modal Crear Ticket Mesa de Ayuda
   const [showTicketModal, setShowTicketModal] = useState(false);
   const [pacienteTicket, setPacienteTicket] = useState(null);
+  const [ticketDetalleModal, setTicketDetalleModal] = useState(null);
   const [ticketsMedico, setTicketsMedico] = useState({});
 
   const bolsasDisponibles = [
@@ -2141,7 +2158,7 @@ export default function MisPacientes() {
 
                           {/* Nombre y DNI */}
                           <div className="flex flex-col gap-0 min-w-0 leading-tight">
-                            <div className="font-semibold text-gray-900 text-[13px]">{paciente.apellidosNombres}</div>
+                            <div className="font-semibold text-gray-900 text-[13px]">{formatearNombrePaciente(paciente.apellidosNombres)}</div>
                             <div className="text-gray-400 text-[11px]">DNI: {paciente.numDoc}</div>
                           </div>
                         </div>
@@ -2288,13 +2305,14 @@ export default function MisPacientes() {
                               RESUELTO: 'bg-green-100 text-green-800 border-green-300',
                             };
                             return (
-                              <span
-                                className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-semibold border ${colores[t.estado] || colores.NUEVO}`}
-                                title={`Ticket ${t.numeroTicket} - ${t.estado}`}
+                              <button
+                                onClick={() => setTicketDetalleModal(t)}
+                                className={`inline-flex flex-col items-center px-1.5 py-0.5 rounded-md text-[9px] font-semibold border cursor-pointer hover:opacity-80 transition-opacity leading-tight ${colores[t.estado] || colores.NUEVO}`}
+                                title={`Ver detalle del Ticket ${t.numeroTicket}`}
                               >
-                                {t.numeroTicket}
-                                <span className="hidden sm:inline">· {t.estado === 'EN_PROCESO' ? 'PROCESO' : t.estado}</span>
-                              </span>
+                                <span>{t.numeroTicket}</span>
+                                <span className="text-[8px] opacity-80">{t.estado === 'EN_PROCESO' ? 'PROCESO' : t.estado}</span>
+                              </button>
                             );
                           })()}
                           <button
@@ -2337,10 +2355,7 @@ export default function MisPacientes() {
                 {/* Nombre del paciente y DNI */}
                 <div className="flex-1">
                   <p className="text-2xl font-bold text-white leading-relaxed">
-                    {pacienteSeleccionado?.apellidosNombres
-                      ?.split(' ')
-                      .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-                      .join(' ')}
+                    {formatearNombrePaciente(pacienteSeleccionado?.apellidosNombres)}
                   </p>
                   <p className="text-sm text-white/75 font-medium mt-1">DNI: {pacienteSeleccionado?.numDoc}</p>
                 </div>
@@ -2633,7 +2648,7 @@ export default function MisPacientes() {
               <div className="flex items-start gap-4">
                 <div className="flex-1">
                   <p className="text-2xl font-bold text-white">
-                    {pacienteDetalles.apellidosNombres}
+                    {formatearNombrePaciente(pacienteDetalles.apellidosNombres)}
                   </p>
                   <p className="text-sm text-white/80 mt-1">DNI: {pacienteDetalles.numDoc}</p>
                 </div>
@@ -2849,7 +2864,7 @@ export default function MisPacientes() {
                     📋 Resultados de Evaluación ECG
                   </h2>
                   <p className="text-blue-100 text-sm">
-                    {resultadosActuales.paciente?.apellidosNombres} (DNI: {resultadosActuales.paciente?.numDoc})
+                    {formatearNombrePaciente(resultadosActuales.paciente?.apellidosNombres)} (DNI: {resultadosActuales.paciente?.numDoc})
                   </p>
                 </div>
                 <button
@@ -2967,6 +2982,118 @@ export default function MisPacientes() {
           if (doctorInfo?.idPersonal) cargarTicketsMedico(doctorInfo.idPersonal);
         }}
       />
+
+      {/* Modal Detalle Ticket Mesa de Ayuda - Vista Médico */}
+      {ticketDetalleModal && (() => {
+        const t = ticketDetalleModal;
+        const esResuelto = t.estado === 'RESUELTO';
+        const enProceso = t.estado === 'EN_PROCESO';
+        const esNuevo = t.estado === 'NUEVO';
+        const formatFecha = (f) => f ? new Date(f).toLocaleString('es-PE', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false }) : '';
+        return (
+          <div className="fixed inset-0 z-50 flex items-center justify-center">
+            <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setTicketDetalleModal(null)} />
+            <div className="relative bg-white rounded-2xl shadow-2xl max-w-md w-full mx-4 max-h-[90vh] overflow-y-auto">
+
+              {/* Header con estado visual */}
+              <div className={`rounded-t-2xl px-6 py-5 ${esResuelto ? 'bg-gradient-to-r from-green-600 to-green-500' : enProceso ? 'bg-gradient-to-r from-blue-600 to-blue-500' : 'bg-gradient-to-r from-amber-500 to-amber-400'}`}>
+                <button onClick={() => setTicketDetalleModal(null)} className="absolute top-4 right-4 text-white/70 hover:text-white transition-colors">
+                  <X size={20} />
+                </button>
+                <p className="text-white/70 text-xs font-medium mb-1">Ticket {t.numeroTicket}</p>
+                <h3 className="text-white font-bold text-lg leading-snug">
+                  {esResuelto ? 'Tu solicitud fue atendida' : enProceso ? 'Tu solicitud está siendo atendida' : 'Tu solicitud fue recibida'}
+                </h3>
+                <p className="text-white/60 text-xs mt-2">Enviada el {formatFecha(t.fechaCreacion)}</p>
+              </div>
+
+              <div className="p-6">
+                {/* Timeline visual */}
+                <div className="relative pl-8 space-y-6">
+                  {/* Línea vertical del timeline */}
+                  <div className="absolute left-[11px] top-2 bottom-2 w-0.5 bg-gray-200" />
+
+                  {/* Paso 1: Lo que reportó el médico */}
+                  <div className="relative">
+                    <div className="absolute -left-8 top-0.5 w-6 h-6 rounded-full bg-[#0A5BA9] flex items-center justify-center">
+                      <span className="text-white text-xs font-bold">1</span>
+                    </div>
+                    <p className="text-xs font-semibold text-[#0A5BA9] uppercase tracking-wide mb-2">Tu solicitud</p>
+                    <div className="bg-blue-50/70 rounded-xl p-4 border border-blue-100">
+                      <p className="text-sm font-semibold text-gray-900 mb-1">{t.nombreMotivo || t.titulo || 'Solicitud'}</p>
+                      {(t.observaciones || t.descripcion) && (
+                        <p className="text-sm text-gray-600 mt-2 border-t border-blue-100 pt-2">"{t.observaciones || t.descripcion}"</p>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Paso 2: Asignación */}
+                  <div className="relative">
+                    <div className={`absolute -left-8 top-0.5 w-6 h-6 rounded-full flex items-center justify-center ${t.nombrePersonalAsignado ? 'bg-[#0A5BA9]' : 'bg-gray-300'}`}>
+                      <span className="text-white text-xs font-bold">2</span>
+                    </div>
+                    <p className={`text-xs font-semibold uppercase tracking-wide mb-2 ${t.nombrePersonalAsignado ? 'text-[#0A5BA9]' : 'text-gray-400'}`}>
+                      PERSONAL DE MESA DE AYUDA ASIGNADO
+                    </p>
+                    {t.nombrePersonalAsignado ? (
+                      <div className="bg-gray-50 rounded-xl p-3 border border-gray-100 flex items-center gap-3">
+                        <div className="w-9 h-9 rounded-full bg-[#0A5BA9] flex items-center justify-center text-white text-sm font-bold flex-shrink-0">
+                          {t.nombrePersonalAsignado.charAt(0).toUpperCase()}
+                        </div>
+                        <div>
+                          <p className="text-sm font-semibold text-gray-900">{t.nombrePersonalAsignado}</p>
+                          <p className="text-xs text-gray-400">Mesa de Ayuda</p>
+                        </div>
+                      </div>
+                    ) : (
+                      <p className="text-sm text-gray-400 italic">En espera de asignación...</p>
+                    )}
+                  </div>
+
+                  {/* Paso 3: Respuesta */}
+                  <div className="relative">
+                    <div className={`absolute -left-8 top-0.5 w-6 h-6 rounded-full flex items-center justify-center ${t.respuesta ? 'bg-green-500' : 'bg-gray-300'}`}>
+                      {t.respuesta ? (
+                        <CheckCircle size={14} className="text-white" />
+                      ) : (
+                        <span className="text-white text-xs font-bold">3</span>
+                      )}
+                    </div>
+                    <p className={`text-xs font-semibold uppercase tracking-wide mb-2 ${t.respuesta ? 'text-green-600' : 'text-gray-400'}`}>
+                      Respuesta
+                    </p>
+                    {t.respuesta ? (
+                      <div className="bg-green-50 rounded-xl p-4 border-2 border-green-200">
+                        <p className="text-sm text-gray-900 leading-relaxed">{t.respuesta}</p>
+                        <p className="text-xs text-gray-400 mt-3 pt-2 border-t border-green-200">
+                          {formatFecha(t.fechaRespuesta)}
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="bg-gray-50 rounded-xl p-4 border border-dashed border-gray-300">
+                        <div className="flex items-center gap-2">
+                          <div className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
+                          <p className="text-sm text-gray-500">Esperando respuesta de Mesa de Ayuda</p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Footer */}
+              <div className="px-6 pb-6">
+                <button
+                  onClick={() => setTicketDetalleModal(null)}
+                  className="w-full py-2.5 bg-gray-100 text-gray-700 rounded-xl font-medium hover:bg-gray-200 transition-colors text-sm"
+                >
+                  Cerrar
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
 
     </div>
   );

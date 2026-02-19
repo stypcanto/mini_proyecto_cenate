@@ -207,6 +207,24 @@ function ListaTickets() {
     return colores[index];
   };
 
+  // Semaforización por tiempo transcurrido desde creación
+  const getSemaforo = (fechaCreacion) => {
+    const ahora = new Date();
+    const creacion = new Date(fechaCreacion);
+    const minutos = Math.floor((ahora - creacion) / 60000);
+
+    if (minutos <= 20) {
+      return { color: 'bg-green-500', shadow: 'shadow-green-400/50', anim: '', label: `${minutos} min`, titulo: 'Dentro de los 20 minutos' };
+    } else if (minutos <= 40) {
+      return { color: 'bg-yellow-400', shadow: 'shadow-yellow-400/50', anim: 'animate-pulse-slow', label: `${minutos} min`, titulo: 'Entre 20 y 40 minutos' };
+    } else {
+      const horas = Math.floor(minutos / 60);
+      const mins = minutos % 60;
+      const label = horas > 0 ? `${horas}h ${mins}m` : `${minutos} min`;
+      return { color: 'bg-red-500', shadow: 'shadow-red-400/50', anim: 'animate-pulse-fast', label, titulo: `Más de 40 minutos (${label})` };
+    }
+  };
+
   // Filtrar tickets por búsqueda local
   const ticketsFiltrados = tickets.filter(ticket => {
     const searchLower = busqueda.toLowerCase();
@@ -349,6 +367,8 @@ function ListaTickets() {
                       title="Seleccionar todos los tickets sin asignar"
                     />
                   </th>
+                  <th className="px-2 py-3 text-center text-xs font-semibold text-white uppercase tracking-wider w-10">
+                  </th>
                   <th className="px-4 py-3 text-center text-xs font-semibold text-white uppercase tracking-wider w-16">
                     Info
                   </th>
@@ -407,6 +427,16 @@ function ListaTickets() {
                       ) : (
                         <div className="w-4 h-4" />
                       )}
+                    </td>
+                    <td className="px-2 py-4 text-center">
+                      {(() => {
+                        const sem = getSemaforo(ticket.fechaCreacion);
+                        return (
+                          <div className="flex justify-center" title={sem.titulo}>
+                            <div className={`w-3.5 h-3.5 rounded-full ${sem.color} shadow-md ${sem.shadow} ${sem.anim}`} />
+                          </div>
+                        );
+                      })()}
                     </td>
                     <td className="px-4 py-4 text-center">
                       <button

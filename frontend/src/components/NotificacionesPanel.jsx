@@ -8,7 +8,7 @@ import React, { useEffect, useState } from 'react';
 import { X, Cake, User } from 'lucide-react';
 import apiClient from '../lib/apiClient';
 
-export default function NotificacionesPanel({ isOpen, onClose }) {
+export default function NotificacionesPanel({ isOpen, onClose, esSuperAdmin = false }) {
   const [notificaciones, setNotificaciones] = useState([]);
   const [loading, setLoading] = useState(false);
 
@@ -21,7 +21,7 @@ export default function NotificacionesPanel({ isOpen, onClose }) {
   const cargarNotificaciones = async () => {
     setLoading(true);
     try {
-      const response = await apiClient.get('/notificaciones/cumpleanos');
+      const response = await apiClient.get('/notificaciones/cumpleanos', true);
       console.log('📋 Notificaciones recibidas:', response);
       setNotificaciones(response || []);
     } catch (error) {
@@ -30,6 +30,13 @@ export default function NotificacionesPanel({ isOpen, onClose }) {
     } finally {
       setLoading(false);
     }
+  };
+
+  // Formatear profesión: "INGENIERÍA" → "Profesional en Ingeniería"
+  const formatearProfesion = (profesion) => {
+    if (!profesion) return 'Profesional de salud';
+    const nombre = profesion.charAt(0).toUpperCase() + profesion.slice(1).toLowerCase();
+    return `Profesional en ${nombre}`;
   };
 
   if (!isOpen) return null;
@@ -70,44 +77,38 @@ export default function NotificacionesPanel({ isOpen, onClose }) {
               <p className="text-sm">No hay cumpleaños hoy</p>
             </div>
           ) : (
-            <div className="divide-y divide-gray-200 dark:divide-slate-700">
+            <div className="divide-y divide-gray-100 dark:divide-slate-700">
               {notificaciones.map((notif, index) => (
                 <div
                   key={index}
-                  className="p-4 hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-colors"
+                  className="px-4 py-3 hover:bg-blue-50/50 dark:hover:bg-slate-700/50 transition-colors flex items-center gap-3"
                 >
-                  <div className="flex items-start gap-3">
-                    {/* Avatar o foto */}
-                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-pink-500 to-purple-600 flex items-center justify-center flex-shrink-0">
-                      {notif.foto_url ? (
-                        <img
-                          src={notif.foto_url}
-                          alt={notif.nombre_completo}
-                          className="w-full h-full rounded-full object-cover"
-                        />
-                      ) : (
-                        <User className="w-6 h-6 text-white" />
-                      )}
-                    </div>
-
-                    {/* Información */}
-                    <div className="flex-1">
-                      <div className="flex items-start justify-between">
-                        <div>
-                          <p className="font-semibold text-gray-900 dark:text-white">
-                            {notif.nombre_completo}
-                          </p>
-                          <p className="text-sm text-gray-600 dark:text-gray-400">
-                            {notif.profesion || 'Personal médico'}
-                          </p>
-                        </div>
-                        <span className="text-2xl">🎂</span>
-                      </div>
-                      <p className="text-sm text-gray-700 dark:text-gray-300 mt-1">
-                        {notif.mensaje}
-                      </p>
-                    </div>
+                  {/* Avatar */}
+                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-pink-400 to-purple-500 flex items-center justify-center flex-shrink-0 ring-2 ring-white shadow-sm">
+                    {notif.foto_url ? (
+                      <img
+                        src={notif.foto_url}
+                        alt={notif.nombre_completo}
+                        className="w-full h-full rounded-full object-cover"
+                      />
+                    ) : (
+                      <User className="w-5 h-5 text-white" />
+                    )}
                   </div>
+
+                  {/* Nombre + profesión */}
+                  <div className="flex-1 min-w-0">
+                    <p className="font-semibold text-gray-900 dark:text-white text-sm truncate">
+                      {notif.nombre_completo}
+                    </p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                      {esSuperAdmin
+                        ? `Cumple ${notif.mensaje?.match(/\d+/)?.[0] || ''} años · ${formatearProfesion(notif.profesion)}`
+                        : formatearProfesion(notif.profesion)}
+                    </p>
+                  </div>
+
+                  <span className="text-lg flex-shrink-0">🎂</span>
                 </div>
               ))}
             </div>
@@ -116,9 +117,9 @@ export default function NotificacionesPanel({ isOpen, onClose }) {
 
         {/* Footer */}
         {notificaciones.length > 0 && (
-          <div className="p-3 bg-gray-50 dark:bg-slate-700/50 border-t border-gray-200 dark:border-slate-700 text-center">
-            <p className="text-xs text-gray-600 dark:text-gray-400">
-              {notificaciones.length} {notificaciones.length === 1 ? 'cumpleaños' : 'cumpleaños'} para celebrar hoy
+          <div className="px-4 py-2.5 bg-gray-50 dark:bg-slate-700/50 border-t border-gray-100 dark:border-slate-700 text-center">
+            <p className="text-xs text-gray-400 dark:text-gray-500">
+              {notificaciones.length} {notificaciones.length === 1 ? 'persona cumple' : 'personas cumplen'} años hoy
             </p>
           </div>
         )}

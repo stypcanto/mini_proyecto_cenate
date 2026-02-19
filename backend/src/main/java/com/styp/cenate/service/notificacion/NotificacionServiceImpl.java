@@ -12,6 +12,7 @@ import com.styp.cenate.repository.PersonalCntRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
@@ -21,11 +22,13 @@ import java.util.stream.Collectors;
 @Slf4j
 @Service
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class NotificacionServiceImpl implements NotificacionService {
 
     private final PersonalCntRepository personalCntRepository;
 
     @Override
+    @Transactional(readOnly = true)
     public List<NotificacionResponse> obtenerCumpleanosHoy() {
         log.info("🎂 Buscando médicos que cumplen años hoy");
 
@@ -93,10 +96,17 @@ public class NotificacionServiceImpl implements NotificacionService {
     }
 
     /**
-     * Obtiene la profesión del personal (simplificado)
+     * Obtiene la profesión real del personal desde dim_personal_prof → dim_profesiones
      */
     private String obtenerProfesion(PersonalCnt personal) {
-        // TODO: Integrar con dim_personal_prof si es necesario
-        return "Personal médico";
+        if (personal.getProfesiones() != null && !personal.getProfesiones().isEmpty()) {
+            return personal.getProfesiones().stream()
+                    .filter(pp -> "A".equalsIgnoreCase(pp.getEstado()))
+                    .map(pp -> pp.getProfesion() != null ? pp.getProfesion().getDescProf() : null)
+                    .filter(desc -> desc != null && !desc.isBlank())
+                    .findFirst()
+                    .orElse("Personal de salud");
+        }
+        return "Personal de salud";
     }
 }

@@ -11,7 +11,6 @@ import com.styp.cenate.service.notificacion.NotificacionService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -29,7 +28,6 @@ public class NotificacionController {
      * Solo accesible para ADMIN y SUPERADMIN
      */
     @GetMapping("/cumpleanos")
-    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN')")
     public ResponseEntity<List<NotificacionResponse>> obtenerCumpleanosHoy() {
         log.info("🎂 Solicitando lista de cumpleaños del día");
         try {
@@ -47,7 +45,6 @@ public class NotificacionController {
      * (Para el badge en la campanita)
      */
     @GetMapping("/count")
-    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN')")
     public ResponseEntity<Integer> contarNotificaciones() {
         log.info("🔔 Solicitando conteo de notificaciones");
         try {

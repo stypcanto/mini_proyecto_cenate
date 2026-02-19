@@ -118,6 +118,7 @@ public class TrazabilidadClinicaService {
      * @param observaciones Observaciones adicionales
      * @param idMedico ID del médico que atiende (puede ser null)
      */
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void registrarDesdeMisPacientes(Long idSolicitud, String observaciones, Long idMedico) {
         log.warn("🔍 [v1.89.5] registrarDesdeMisPacientes - Solicitud: {}, idMedico: {}", idSolicitud, idMedico);
 
