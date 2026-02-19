@@ -16,7 +16,7 @@ export const mesaAyudaService = {
    */
   crearTicket: async (ticketData) => {
     console.log('Creating new ticket:', ticketData);
-    const response = await apiClient.post(`${ENDPOINT}/tickets`, ticketData);
+    const response = await apiClient.post(`${ENDPOINT}/tickets`, ticketData, true);
     return response;
   },
 
@@ -83,7 +83,7 @@ export const mesaAyudaService = {
    */
   responderTicket: async (id, responderData) => {
     console.log('Responding to ticket:', id, responderData);
-    const response = await apiClient.put(`${ENDPOINT}/tickets/${id}/responder`, responderData);
+    const response = await apiClient.put(`${ENDPOINT}/tickets/${id}/responder`, responderData, true);
     return response;
   },
 
@@ -95,7 +95,7 @@ export const mesaAyudaService = {
    */
   cambiarEstado: async (id, nuevoEstado) => {
     console.log('Changing ticket status:', id, nuevoEstado);
-    const response = await apiClient.put(`${ENDPOINT}/tickets/${id}/estado`, { estado: nuevoEstado });
+    const response = await apiClient.put(`${ENDPOINT}/tickets/${id}/estado`, { estado: nuevoEstado }, true);
     return response;
   },
 
@@ -106,7 +106,7 @@ export const mesaAyudaService = {
    */
   eliminarTicket: async (id) => {
     console.log('Deleting ticket:', id);
-    await apiClient.delete(`${ENDPOINT}/tickets/${id}`);
+    await apiClient.delete(`${ENDPOINT}/tickets/${id}`, true);
   },
 
   /**
@@ -117,6 +117,15 @@ export const mesaAyudaService = {
     console.log('Fetching KPIs');
     const response = await apiClient.get(`${ENDPOINT}/kpis`, true);
     return { data: response };
+  },
+
+  /**
+   * Obtener preview del siguiente número de ticket
+   * @returns {Promise} { siguienteNumero: "0001-2026" }
+   */
+  obtenerSiguienteNumero: async () => {
+    const response = await apiClient.get(`${ENDPOINT}/siguiente-numero`, true);
+    return response;
   },
 
   /**

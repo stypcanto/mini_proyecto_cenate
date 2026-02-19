@@ -14,7 +14,7 @@ export const estrategiasService = {
    */
   obtenerTodas: async () => {
     try {
-      const data = await api.get(BASE_URL);
+      const data = await api.get(BASE_URL, true);
       return data;
     } catch (error) {
       console.error('Error al obtener estrategias institucionales:', error);
@@ -27,7 +27,7 @@ export const estrategiasService = {
    */
   obtenerActivas: async () => {
     try {
-      const data = await api.get(`${BASE_URL}/activas`);
+      const data = await api.get(`${BASE_URL}/activas`, true);
       return data;
     } catch (error) {
       console.error('Error al obtener estrategias activas:', error);
@@ -40,7 +40,7 @@ export const estrategiasService = {
    */
   obtenerPorId: async (id) => {
     try {
-      const data = await api.get(`${BASE_URL}/${id}`);
+      const data = await api.get(`${BASE_URL}/${id}`, true);
       return data;
     } catch (error) {
       console.error(`Error al obtener estrategia ${id}:`, error);
@@ -53,7 +53,7 @@ export const estrategiasService = {
    */
   crear: async (estrategia) => {
     try {
-      const data = await api.post(BASE_URL, estrategia);
+      const data = await api.post(BASE_URL, estrategia, true);
       return data;
     } catch (error) {
       console.error('Error al crear estrategia institucional:', error);
@@ -66,7 +66,7 @@ export const estrategiasService = {
    */
   actualizar: async (id, estrategia) => {
     try {
-      const data = await api.put(`${BASE_URL}/${id}`, estrategia);
+      const data = await api.put(`${BASE_URL}/${id}`, estrategia, true);
       return data;
     } catch (error) {
       console.error(`Error al actualizar estrategia ${id}:`, error);
@@ -79,7 +79,7 @@ export const estrategiasService = {
    */
   eliminar: async (id) => {
     try {
-      const data = await api.delete(`${BASE_URL}/${id}`);
+      const data = await api.delete(`${BASE_URL}/${id}`, true);
       return data;
     } catch (error) {
       console.error(`Error al eliminar estrategia ${id}:`, error);

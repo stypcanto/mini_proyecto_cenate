@@ -14,7 +14,7 @@ export const tipoProfesionalService = {
    */
   obtenerTodos: async () => {
     try {
-      const data = await api.get(BASE_URL);
+      const data = await api.get(BASE_URL, true);
       return data;
     } catch (error) {
       console.error('Error al obtener tipos profesionales:', error);
@@ -27,7 +27,7 @@ export const tipoProfesionalService = {
    */
   obtenerActivos: async () => {
     try {
-      const data = await api.get(`${BASE_URL}/activos`);
+      const data = await api.get(`${BASE_URL}/activos`, true);
       return data;
     } catch (error) {
       console.error('Error al obtener tipos profesionales activos:', error);
@@ -40,7 +40,7 @@ export const tipoProfesionalService = {
    */
   obtenerPorId: async (id) => {
     try {
-      const data = await api.get(`${BASE_URL}/${id}`);
+      const data = await api.get(`${BASE_URL}/${id}`, true);
       return data;
     } catch (error) {
       console.error(`Error al obtener tipo profesional ${id}:`, error);
@@ -53,7 +53,7 @@ export const tipoProfesionalService = {
    */
   crear: async (tipoProfesional) => {
     try {
-      const data = await api.post(BASE_URL, tipoProfesional);
+      const data = await api.post(BASE_URL, tipoProfesional, true);
       return data;
     } catch (error) {
       console.error('Error al crear tipo profesional:', error);
@@ -66,7 +66,7 @@ export const tipoProfesionalService = {
    */
   actualizar: async (id, tipoProfesional) => {
     try {
-      const data = await api.put(`${BASE_URL}/${id}`, tipoProfesional);
+      const data = await api.put(`${BASE_URL}/${id}`, tipoProfesional, true);
       return data;
     } catch (error) {
       console.error(`Error al actualizar tipo profesional ${id}:`, error);
@@ -79,7 +79,7 @@ export const tipoProfesionalService = {
    */
   eliminar: async (id) => {
     try {
-      const data = await api.delete(`${BASE_URL}/${id}`);
+      const data = await api.delete(`${BASE_URL}/${id}`, true);
       return data;
     } catch (error) {
       console.error(`Error al eliminar tipo profesional ${id}:`, error);

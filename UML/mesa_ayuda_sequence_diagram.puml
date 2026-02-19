@@ -1,0 +1,115 @@
+@startuml Mesa_Ayuda_Sequence
+
+participant "Usuario\n(Frontend)" as USER
+participant "CrearTicketModal\n(React)" as MODAL
+participant "mesaAyudaService\n(JS)" as SERVICE
+participant "Backend API\nTicketMesaAyudaController" as CONTROLLER
+participant "TicketMesaAyudaService" as BSERVICE
+participant "MotivoRepository\nSecuenciaRepository\nTicketRepository" as REPO
+participant "PostgreSQL\nDatabase" as DB
+
+title Mesa de Ayuda - Flujo de Creación de Ticket (v1.64.0)
+
+== FASE 1: ABRIR MODAL ==
+USER -> MODAL: Click botón Ticket
+MODAL -> MODAL: useState + useEffect
+MODAL -> SERVICE: obtenerMotivos()
+SERVICE -> CONTROLLER: GET /api/mesa-ayuda/motivos
+CONTROLLER -> BSERVICE: obtenerMotivos()
+BSERVICE -> REPO: findByActivoTrueOrderByOrdenAsc()
+REPO -> DB: SELECT * FROM dim_motivos_mesadeayuda\nWHERE activo = TRUE
+DB --> REPO: [7 motivos]
+REPO --> BSERVICE: List<MotivoMesaAyudaDTO>
+BSERVICE --> CONTROLLER: ResponseEntity<List<MotivoMesaAyudaDTO>>
+CONTROLLER --> SERVICE: [7 motivos JSON]
+SERVICE --> MODAL: Array con motivos
+MODAL -> MODAL: setMotivos([...])
+MODAL --> USER: ✅ Modal abierto con dropdown cargado
+
+== FASE 2: SELECCIONAR MOTIVO Y LLENAR DATOS ==
+USER -> MODAL: Selecciona motivo (id=1)
+MODAL -> MODAL: setIdMotivo(1)
+MODAL -> MODAL: getMotivoSeleccionado()
+MODAL -> MODAL: Muestra título auto-generado
+USER -> MODAL: Escribe observaciones
+MODAL -> MODAL: setObservaciones(texto)
+USER -> MODAL: Selecciona prioridad
+MODAL -> MODAL: setPrioridad(valor)
+USER -> MODAL: Click "Crear Ticket"
+
+== FASE 3: CREAR TICKET ==
+MODAL -> MODAL: handleSubmit()
+MODAL -> MODAL: validar idMotivo (requerido)
+MODAL -> MODAL: armar payload:
+note right MODAL
+  {
+    idMotivo: 1,
+    titulo: "PROFESIONAL DE SALUD SOLICITA...",
+    observaciones: "texto opcional",
+    prioridad: "MEDIA",
+    idMedico: 123,
+    nombreMedico: "Dr. Pérez",
+    dniPaciente: "12345678",
+    ...
+  }
+end note
+MODAL -> SERVICE: crearTicket(payload)
+SERVICE -> CONTROLLER: POST /api/mesa-ayuda/tickets
+CONTROLLER -> BSERVICE: crearTicket(TicketMesaAyudaRequestDTO)
+
+== FASE 4: GENERAR NÚMERO TICKET ==
+BSERVICE -> BSERVICE: generarNumeroTicket()
+BSERVICE -> REPO: findByAnio(2026)
+REPO -> DB: SELECT * FROM dim_secuencia_tickets\nWHERE anio = 2026
+DB --> REPO: DimSecuenciaTickets{id:1, anio:2026, contador:2}
+REPO --> BSERVICE: Optional<DimSecuenciaTickets>
+
+alt Existe registro para 2026
+    BSERVICE -> REPO: incrementarContador(2026)
+    REPO -> DB: UPDATE dim_secuencia_tickets\nSET contador = contador + 1\nWHERE anio = 2026
+    DB --> REPO: 1 (rows updated)
+    note right DB
+    contador: 2 → 3
+    numeroTicket: "003-2026"
+    end note
+else Primera vez en 2026
+    BSERVICE -> REPO: save(DimSecuenciaTickets)
+    REPO -> DB: INSERT INTO dim_secuencia_tickets
+    DB --> REPO: DimSecuenciaTickets
+    note right DB
+    contador: 1
+    numeroTicket: "001-2026"
+    end note
+end
+
+BSERVICE -> REPO: save(DimTicketMesaAyuda)
+note right BSERVICE
+  Ticket con:
+  - numeroTicket: "003-2026"
+  - idMotivo: 1
+  - titulo: "PROFESIONAL DE SALUD..."
+  - observaciones: "texto"
+  - estado: "ABIERTO"
+end note
+REPO -> DB: INSERT INTO dim_ticket_mesa_ayuda
+DB --> REPO: DimTicketMesaAyuda{id:123, numeroTicket:"003-2026"}
+
+== FASE 5: RESPONDER AL USUARIO ==
+REPO --> BSERVICE: ticket creado
+BSERVICE -> BSERVICE: toResponseDTO(ticket)
+BSERVICE --> CONTROLLER: TicketMesaAyudaResponseDTO
+CONTROLLER --> SERVICE: ResponseEntity{numeroTicket:"003-2026", ...}
+SERVICE --> MODAL: response data
+MODAL -> MODAL: setTicketCreado(response.data)
+MODAL -> MODAL: setSuccess(true)
+MODAL -> MODAL: setTimeout() → onSuccess()
+MODAL --> USER: ✅ Mensaje de éxito:\n"Ticket creado: 003-2026"
+
+== FASE 6: CERRAR MODAL ==
+USER -> MODAL: Esperar 2 segundos
+MODAL -> MODAL: onSuccess callback
+MODAL -> MODAL: onClose()
+MODAL -> MODAL: Limpiar estados
+MODAL --> USER: Modal cerrado
+
+@enduml

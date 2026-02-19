@@ -1,0 +1,167 @@
+@startuml Mesa_Ayuda_Classes
+
+!define PRIMARY_KEY(x) <u>x</u>
+!define FOREIGN_KEY(x) #x#
+
+skinparam backgroundColor #FEFEFE
+skinparam classBackgroundColor #E8F4F8
+skinparam classBorderColor #0080A0
+skinparam arrowColor #0080A0
+
+title Mesa de Ayuda - Diagrama de Clases (v1.64.0)
+
+package "com.styp.cenate.model.mesaayuda" {
+
+    class DimMotivosMesaAyuda {
+        - id: Long
+        - codigo: String
+        - descripcion: String
+        - activo: Boolean
+        - orden: Integer
+        - fechaCreacion: LocalDateTime
+        --
+        + getId(): Long
+        + getCodigo(): String
+        + getDescripcion(): String
+        + isActivo(): Boolean
+    }
+
+    class DimTicketMesaAyuda {
+        - id: Long
+        - titulo: String
+        - descripcion: String
+        - estado: String
+        - prioridad: String
+        - numeroTicket: String (UNIQUE)
+        - idMotivo: Long
+        - observaciones: String
+        - idMedico: Long
+        - nombreMedico: String
+        - dniPaciente: String
+        - nombrePaciente: String
+        - especialidad: String
+        - ipress: String
+        - fechaCreacion: LocalDateTime
+        - fechaActualizacion: LocalDateTime
+        --
+        + getId(): Long
+        + getTitulo(): String
+        + getNumeroTicket(): String
+        + setNumeroTicket(String): void
+    }
+
+    class DimSecuenciaTickets {
+        - id: Long
+        - anio: Integer (UNIQUE)
+        - contador: Integer
+        - fechaCreacion: LocalDateTime
+        - fechaActualizacion: LocalDateTime
+        --
+        + getAnio(): Integer
+        + getContador(): Integer
+        + incrementarContador(): void
+    }
+}
+
+package "com.styp.cenate.dto.mesaayuda" {
+
+    class MotivoMesaAyudaDTO {
+        - id: Long
+        - codigo: String
+        - descripcion: String
+        --
+        + getId(): Long
+        + getDescripcion(): String
+    }
+
+    class TicketMesaAyudaRequestDTO {
+        - idMotivo: Long
+        - titulo: String
+        - descripcion: String
+        - observaciones: String
+        - prioridad: String
+        - idMedico: Long
+        - nombreMedico: String
+        - dniPaciente: String
+        - nombrePaciente: String
+        - especialidad: String
+        - ipress: String
+    }
+
+    class TicketMesaAyudaResponseDTO {
+        - id: Long
+        - numeroTicket: String
+        - titulo: String
+        - idMotivo: Long
+        - nombreMotivo: String
+        - observaciones: String
+        - estado: String
+        - prioridad: String
+        - fechaCreacion: LocalDateTime
+        --
+        + getNumeroTicket(): String
+        + getNombreMotivo(): String
+    }
+}
+
+package "com.styp.cenate.repository.mesaayuda" {
+
+    interface MotivoMesaAyudaRepository {
+        + findByActivoTrueOrderByOrdenAsc(): List<DimMotivosMesaAyuda>
+        + findByCodigo(String): Optional<DimMotivosMesaAyuda>
+    }
+
+    interface SecuenciaTicketsRepository {
+        + findByAnio(Integer): Optional<DimSecuenciaTickets>
+        + incrementarContador(Integer): int
+    }
+
+    interface TicketMesaAyudaRepository {
+        + findByIdAndDeletedAtIsNull(Long): Optional<DimTicketMesaAyuda>
+        + findAllByDeletedAtIsNullOrderByFechaCreacionDesc(): List<DimTicketMesaAyuda>
+    }
+}
+
+package "com.styp.cenate.service.mesaayuda" {
+
+    class TicketMesaAyudaService {
+        - motivoRepository: MotivoMesaAyudaRepository
+        - secuenciaRepository: SecuenciaTicketsRepository
+        - ticketRepository: TicketMesaAyudaRepository
+        --
+        + obtenerMotivos(): List<MotivoMesaAyudaDTO>
+        + crearTicket(TicketMesaAyudaRequestDTO): TicketMesaAyudaResponseDTO
+        + generarNumeroTicket(): String
+        - toResponseDTO(DimTicketMesaAyuda): TicketMesaAyudaResponseDTO
+    }
+}
+
+package "com.styp.cenate.api" {
+
+    class TicketMesaAyudaController {
+        - ticketService: TicketMesaAyudaService
+        --
+        + obtenerMotivos(): ResponseEntity<List<MotivoMesaAyudaDTO>>
+        + crearTicket(TicketMesaAyudaRequestDTO): ResponseEntity<TicketMesaAyudaResponseDTO>
+    }
+}
+
+' Relaciones
+
+DimMotivosMesaAyuda --> MotivoMesaAyudaDTO: "mapea a"
+DimTicketMesaAyuda --> TicketMesaAyudaResponseDTO: "mapea a"
+TicketMesaAyudaRequestDTO --> DimTicketMesaAyuda: "crea"
+
+DimMotivosMesaAyuda "1" --> "*" DimTicketMesaAyuda: "tiene FK id_motivo"
+note on link: Relación 1:N
+end note
+
+DimSecuenciaTickets "1" --> "*" DimTicketMesaAyuda: "genera número único"
+
+TicketMesaAyudaService --> MotivoMesaAyudaRepository: "usa"
+TicketMesaAyudaService --> SecuenciaTicketsRepository: "usa"
+TicketMesaAyudaService --> TicketMesaAyudaRepository: "usa"
+
+TicketMesaAyudaController --> TicketMesaAyudaService: "inyecta"
+
+@enduml

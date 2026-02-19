@@ -239,7 +239,7 @@ function ListaTickets() {
                     Prioridad
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600">
-                    Fecha
+                    Fecha y Hora
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600">
                     Acción
@@ -275,7 +275,7 @@ function ListaTickets() {
                       </span>
                     </td>
                     <td className="px-6 py-4 text-sm text-gray-600">
-                      {new Date(ticket.fechaCreacion).toLocaleDateString('es-ES')}
+                      {new Date(ticket.fechaCreacion).toLocaleString('es-PE', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false })}
                     </td>
                     <td className="px-6 py-4">
                       {ticket.estado === 'ABIERTO' || ticket.estado === 'EN_PROCESO' ? (
@@ -286,7 +286,9 @@ function ListaTickets() {
                           Responder
                         </button>
                       ) : (
-                        <span className="text-xs text-gray-500">Cerrado</span>
+                        <span className="inline-block px-4 py-2 bg-green-100 text-green-800 text-xs font-semibold rounded-lg">
+                          Resuelto
+                        </span>
                       )}
                     </td>
                   </tr>

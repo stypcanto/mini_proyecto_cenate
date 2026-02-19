@@ -8,6 +8,7 @@ import lombok.Setter;
 
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 
 /**
  * Entidad JPA para tickets de Mesa de Ayuda
@@ -211,13 +212,16 @@ public class TicketMesaAyuda {
 
     // ========== LIFECYCLE CALLBACKS ==========
 
+    private static final ZoneId ZONA_PERU = ZoneId.of("America/Lima");
+
     @PrePersist
     protected void onCreate() {
+        LocalDateTime ahoraPeru = LocalDateTime.now(ZONA_PERU);
         if (fechaCreacion == null) {
-            fechaCreacion = LocalDateTime.now();
+            fechaCreacion = ahoraPeru;
         }
         if (fechaActualizacion == null) {
-            fechaActualizacion = LocalDateTime.now();
+            fechaActualizacion = ahoraPeru;
         }
         if (estado == null) {
             estado = "ABIERTO";
@@ -229,6 +233,6 @@ public class TicketMesaAyuda {
 
     @PreUpdate
     protected void onUpdate() {
-        fechaActualizacion = LocalDateTime.now();
+        fechaActualizacion = LocalDateTime.now(ZONA_PERU);
     }
 }

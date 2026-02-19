@@ -1,0 +1,525 @@
+╔════════════════════════════════════════════════════════════════════════════════════════════════════════╗
+║                   MESA DE AYUDA (Help Desk) - DIAGRAMA UML VISUAL (v1.64.0)                           ║
+╚════════════════════════════════════════════════════════════════════════════════════════════════════════╝
+
+
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃ 1. ESTRUCTURA DE BASE DE DATOS (PostgreSQL)                                                      ┃
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+
+┌─────────────────────────────────────────────────────────────────┐
+│                  dim_motivos_mesadeayuda                        │
+│  ┌─────────────────────────────────────────────────────────┐   │
+│  │ TABLA CATÁLOGO - 7 MOTIVOS PREDEFINIDOS                │   │
+│  ├─────────────────────────────────────────────────────────┤   │
+│  │ PK  id                BIGSERIAL (1, 2, 3, 4, 5, 6, 7)  │   │
+│  │     codigo            VARCHAR(100) [UNIQUE]             │   │
+│  │     descripcion       VARCHAR(500)                      │   │
+│  │     activo            BOOLEAN (DEFAULT TRUE)            │   │
+│  │     orden             INTEGER (DEFAULT 0)               │   │
+│  │     fecha_creacion    TIMESTAMP                         │   │
+│  └─────────────────────────────────────────────────────────┘   │
+│                                                                  │
+│  ÍNDICES:                                                       │
+│  ├─ idx_motivos_activo    ✓ (búsqueda rápida por estado)      │
+│  └─ idx_motivos_orden     ✓ (ordenamiento)                    │
+│                                                                  │
+│  DATOS (7 motivos):                                             │
+│  ┌─────────────────────────────────────────────────────────┐   │
+│  │ id │ Descripción                                        │   │
+│  ├────┼──────────────────────────────────────────────────┤   │
+│  │ 1  │ PROFESIONAL DE SALUD SOLICITA CITAR ADICIONAL    │   │
+│  │ 2  │ PROFESIONAL DE SALUD SOLICITA ACTUALIZAR LISTADO │   │
+│  │ 3  │ PROFESIONAL DE SALUD SOLICITA CONTACTAR PACIENTE │   │
+│  │ 4  │ PROFESIONAL DE SALUD SOLICITA ELIMINAR EXCEDENTE │   │
+│  │ 5  │ PROFESIONAL DE SALUD SOLICITA ENVIAR ACTO MÉDICO │   │
+│  │ 6  │ PROFESIONAL DE SALUD SOLICITA ENVÍO IMÁGENES     │   │
+│  │ 7  │ PROFESIONAL DE SALUD SOLICITA CITA ADICIONAL     │   │
+│  └────┴──────────────────────────────────────────────────┘   │
+│                                                                  │
+│  ESTADO: ✅ ESTÁTICA (cambia raramente)                        │
+│  USO: Llenar dropdown en modal del frontend                    │
+└─────────────────────────────────────────────────────────────────┘
+                              ▲
+                              │
+                              │ Clave Foránea
+                              │ (1:N - Uno a Muchos)
+                              │
+                              │
+┌─────────────────────────────▼─────────────────────────────────────────┐
+│                    dim_ticket_mesa_ayuda                              │
+│  ┌───────────────────────────────────────────────────────────┐        │
+│  │ TABLA TRANSACCIONAL - TICKETS CREADOS POR MÉDICOS       │        │
+│  ├───────────────────────────────────────────────────────────┤        │
+│  │ PK  id                    BIGSERIAL (auto-increment)     │        │
+│  │     titulo                VARCHAR(255)                    │        │
+│  │ --- NUEVO v1.64.0 ---                                     │        │
+│  │ FK  id_motivo             BIGINT → dim_motivos(id)       │        │
+│  │     numero_ticket         VARCHAR(20) [UNIQUE] ***        │        │
+│  │     observaciones         TEXT                            │        │
+│  │ --- CAMPO EXISTENTE ---                                   │        │
+│  │     descripcion           TEXT                            │        │
+│  │     estado                VARCHAR(50)                     │        │
+│  │     prioridad             VARCHAR(20)                     │        │
+│  │ --- DATOS DEL MÉDICO ---                                  │        │
+│  │     id_medico             BIGINT                          │        │
+│  │     nombre_medico         VARCHAR(255)                    │        │
+│  │     especialidad          VARCHAR(255)                    │        │
+│  │ --- DATOS DEL PACIENTE ---                                │        │
+│  │     dni_paciente          VARCHAR(15)                     │        │
+│  │     nombre_paciente       VARCHAR(255)                    │        │
+│  │     ipress                VARCHAR(255)                    │        │
+│  │     id_solicitud_bolsa    BIGINT                          │        │
+│  │ --- DATOS DE RESPUESTA ---                                │        │
+│  │     respuesta             TEXT                            │        │
+│  │     id_personal_mesa      BIGINT                          │        │
+│  │     nombre_personal_mesa  VARCHAR(255)                    │        │
+│  │ --- AUDITORÍA ---                                         │        │
+│  │     fecha_creacion        TIMESTAMP (DEFAULT NOW())       │        │
+│  │     fecha_actualizacion   TIMESTAMP (DEFAULT NOW())       │        │
+│  │     fecha_respuesta       TIMESTAMP (NULL)                │        │
+│  │     deleted_at            TIMESTAMP (NULL) [Soft Delete]  │        │
+│  └───────────────────────────────────────────────────────────┘        │
+│                                                                        │
+│  *** numero_ticket = "001-2026", "002-2026", "003-2026", ...        │
+│      Auto-generado con Sistema de Numeración (ver abajo)            │
+│                                                                        │
+│  ÍNDICES:                                                             │
+│  ├─ idx_ticket_mesa_numero        ✓ (búsqueda por número)           │
+│  ├─ idx_ticket_mesa_estado        ✓ (filtro por estado)             │
+│  ├─ idx_ticket_mesa_medico        ✓ (buscar tickets del médico)     │
+│  ├─ idx_ticket_mesa_prioridad     ✓ (filtro por prioridad)          │
+│  └─ idx_ticket_mesa_fecha_creacion ✓ (ordenar cronológicamente)     │
+│                                                                        │
+│  ESTADO: ✅ DINÁMICA (crece con cada ticket)                        │
+│  RELACIÓN: 1 motivo → Muchos tickets                                │
+│  SOFT DELETE: deleted_at para auditoría                             │
+└────────────────────────────────────────────────────────────────────────┘
+                              ▲
+                              │
+                              │ Genera numero_ticket
+                              │ Formato: XXX-YYYY
+                              │
+┌─────────────────────────────▼─────────────────────────────────────────┐
+│                   dim_secuencia_tickets                               │
+│  ┌───────────────────────────────────────────────────────────┐        │
+│  │ TABLA GENERADORA DE NÚMEROS - 1 REGISTRO POR AÑO        │        │
+│  ├───────────────────────────────────────────────────────────┤        │
+│  │ PK  id                 BIGSERIAL                          │        │
+│  │ U   anio               INTEGER [UNIQUE] (2026, 2027...)  │        │
+│  │     contador           INTEGER (0, 1, 2, 3, ...)         │        │
+│  │     fecha_creacion     TIMESTAMP                          │        │
+│  │     fecha_actualizacion TIMESTAMP                         │        │
+│  └───────────────────────────────────────────────────────────┘        │
+│                                                                        │
+│  ALGORITMO (THREAD-SAFE):                                            │
+│  ┌───────────────────────────────────────────────────────────┐        │
+│  │ CUANDO: Crear nuevo ticket                               │        │
+│  │ HACER:                                                    │        │
+│  │   1. Obtener año actual: 2026                            │        │
+│  │   2. SELECT * FROM dim_secuencia_tickets WHERE anio=2026 │        │
+│  │   3a. SI existe:                                          │        │
+│  │       UPDATE contador = contador + 1 [NATIVE SQL]        │        │
+│  │       contador: 2 → 3                                     │        │
+│  │       numeroTicket = "003-2026"                          │        │
+│  │   3b. SI no existe:                                       │        │
+│  │       INSERT INTO dim_secuencia_tickets                  │        │
+│  │       VALUES (NULL, 2026, 1, NOW(), NOW())               │        │
+│  │       numeroTicket = "001-2026"                          │        │
+│  └───────────────────────────────────────────────────────────┘        │
+│                                                                        │
+│  ÍNDICE:                                                              │
+│  └─ idx_secuencia_tickets_anio  ✓ (búsqueda rápida por año)         │
+│                                                                        │
+│  PROPÓSITO:                                                           │
+│  ✓ Generar números únicos: 001, 002, 003, ..., 999                  │
+│  ✓ Reiniciar en cada año: 001-2026, 001-2027, 001-2028, ...        │
+│  ✓ Garantizar secuencia sin duplicados                              │
+│  ✓ Permitir trazabilidad y búsqueda rápida                          │
+│  ✓ Usar UPDATE nativo para evitar race conditions                   │
+└────────────────────────────────────────────────────────────────────────┘
+
+
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃ 2. RELACIÓN ENTRE TABLAS (1:N - Uno a Muchos)                                                     ┃
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+
+Motivo 1: "SOLICITA CITAR PACIENTE ADICIONAL"
+    │
+    ├─→ Ticket 001-2026 (Médico: Dr. Pérez,   Paciente: Juan García)
+    ├─→ Ticket 003-2026 (Médico: Dra. Martín, Paciente: María López)
+    └─→ Ticket 005-2026 (Médico: Dr. Romero,  Paciente: Pedro Sánchez)
+
+Motivo 2: "SOLICITA ACTUALIZAR LISTADO"
+    │
+    ├─→ Ticket 002-2026 (Médico: Dr. López, Paciente: Ana Rodríguez)
+    └─→ Ticket 004-2026 (Médico: Dra. Silva, Paciente: Carlos Flores)
+
+Motivo 3: "SOLICITA CONTACTAR CON PACIENTE"
+    │
+    └─→ Ticket 006-2026 (Médico: Dr. Gutiérrez, Paciente: Rosa Díaz)
+
+... (y así sucesivamente para los 7 motivos)
+
+
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃ 3. FLUJO DE CREACIÓN DE TICKET (End-to-End)                                                       ┃
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+
+FRONTEND (React 19.2)
+┌─────────────────────────────────────────────────────┐
+│ 1. Usuario abre "Mis Pacientes" del médico         │
+│    → Ve tabla de pacientes                          │
+│    → Columna "Generación Ticket" con icono Ticket  │
+│                                                     │
+│ 2. Usuario selecciona paciente y hace clic         │
+│    → onClick → setPacienteTicket(paciente)         │
+│    → setShowTicketModal(true)                       │
+│                                                     │
+│ 3. CrearTicketModal abre                           │
+│    → useEffect ejecuta cargarMotivos()             │
+│                                                     │
+│ 4. API: GET /api/mesa-ayuda/motivos                │
+│    ↓↓↓ (PASA A BACKEND)                             │
+└─────────────────────────────────────────────────────┘
+                      ↓
+BACKEND (Spring Boot 3.5.6)
+┌─────────────────────────────────────────────────────┐
+│ 5. TicketMesaAyudaController.obtenerMotivos()     │
+│    → TicketMesaAyudaService.obtenerMotivos()       │
+│    → MotivoRepository.findByActivoTrueOrderByOrden  │
+│    → SQL: SELECT FROM dim_motivos_mesadeayuda      │
+│             WHERE activo = TRUE                    │
+│                                                     │
+│ 6. Retorna JSON con 7 motivos                      │
+│    ↓↓↓ (VUELVE A FRONTEND)                          │
+└─────────────────────────────────────────────────────┘
+                      ↓
+FRONTEND (React 19.2)
+┌─────────────────────────────────────────────────────┐
+│ 7. Modal muestra dropdown con 7 opciones            │
+│    → Usuario selecciona motivo (id=1)              │
+│    → setIdMotivo(1)                                │
+│    → Muestra título auto-generado en read-only    │
+│                                                     │
+│ 8. Usuario escribe observaciones (opcional)        │
+│    → setObservaciones("texto...")                  │
+│                                                     │
+│ 9. Usuario selecciona prioridad                    │
+│    → setPrioridad("MEDIA")                         │
+│                                                     │
+│ 10. Usuario hace clic "Crear Ticket"               │
+│     → handleSubmit()                                │
+│     → Valida: idMotivo es requerido ✓              │
+│     → Arma payload con todos los datos             │
+│                                                     │
+│ 11. POST /api/mesa-ayuda/tickets                   │
+│     ↓↓↓ (PASA A BACKEND)                            │
+└─────────────────────────────────────────────────────┘
+                      ↓
+BACKEND (Spring Boot 3.5.6)
+┌─────────────────────────────────────────────────────┐
+│ 12. TicketMesaAyudaController.crearTicket()        │
+│     → TicketMesaAyudaService.crearTicket()         │
+│                                                     │
+│ 13. GENERAR NÚMERO TICKET (v1.64.1)                │
+│     → generarNumeroTicket()                        │
+│     → año = 2026                                    │
+│     → SELECT * FROM dim_secuencia_tickets           │
+│       WHERE anio = 2026                            │
+│     → Existe: contador = 5                          │
+│     → UPDATE dim_secuencia_tickets                 │
+│       SET contador = contador + 1                  │
+│       WHERE anio = 2026                            │
+│     → contador: 5 → 6                               │
+│     → numeroTicket = String.format("%03d-%04d"...  │
+│     → numeroTicket = "006-2026"                    │
+│                                                     │
+│ 14. CREAR TICKET                                    │
+│     → DimTicketMesaAyuda.builder()                 │
+│        .numeroTicket("006-2026")                   │
+│        .idMotivo(1)                                │
+│        .titulo("PROFESIONAL DE SALUD...")          │
+│        .observaciones("texto...")                  │
+│        .estado("ABIERTO")                          │
+│        .prioridad("MEDIA")                         │
+│        .idMedico(123)                              │
+│        .nombreMedico("Dr. Pérez")                  │
+│        .dniPaciente("12345678")                    │
+│        .nombrePaciente("Juan García")              │
+│        .especialidad("Cardiología")                │
+│        .ipress("IPRESS CENTRAL")                   │
+│        .build()                                     │
+│                                                     │
+│ 15. GUARDAR EN BD                                   │
+│     → INSERT INTO dim_ticket_mesa_ayuda            │
+│       (numero_ticket, id_motivo, titulo,           │
+│        observaciones, estado, prioridad, ...)      │
+│       VALUES (006-2026, 1, ..., 'ABIERTO', ...)   │
+│                                                     │
+│ 16. MAPEAR A DTO                                    │
+│     → toResponseDTO(ticket)                        │
+│     → TicketMesaAyudaResponseDTO {                 │
+│       numeroTicket: "006-2026",                   │
+│       titulo: "PROFESIONAL DE SALUD...",          │
+│       idMotivo: 1,                                 │
+│       nombreMotivo: "PROFESIONAL DE SALUD...",    │
+│       observaciones: "...",                        │
+│       estado: "ABIERTO",                           │
+│       prioridad: "MEDIA",                          │
+│       fechaCreacion: "2026-02-19 12:30:45"        │
+│     }                                               │
+│                                                     │
+│ 17. Retorna ResponseEntity.ok(DTO)                 │
+│     ↓↓↓ (VUELVE A FRONTEND)                         │
+└─────────────────────────────────────────────────────┘
+                      ↓
+FRONTEND (React 19.2)
+┌─────────────────────────────────────────────────────┐
+│ 18. Modal recibe response                           │
+│     → setTicketCreado(response.data)               │
+│     → setSuccess(true)                             │
+│     → Muestra mensaje de éxito:                    │
+│       "✅ Ticket creado exitosamente               │
+│        Número de Ticket: 006-2026"                 │
+│                                                     │
+│ 19. setTimeout(2000ms)                             │
+│     → onSuccess(response.data) callback            │
+│     → onClose()                                     │
+│     → Modal se cierra                              │
+│     → Usuario ve tabla actualizada                 │
+└─────────────────────────────────────────────────────┘
+
+
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃ 4. ARQUITECTURA DE CAPAS                                                                          ┃
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+
+┌──────────────────────────────────────────────────────────────┐
+│                   LAYER 1: FRONTEND (React 19.2)             │
+├──────────────────────────────────────────────────────────────┤
+│  Components:                                                  │
+│  ├─ MisPacientes.jsx                                         │
+│  │  ├─ useState: showTicketModal, pacienteTicket            │
+│  │  └─ Render: Tabla con columna "Generación Ticket"        │
+│  │                                                            │
+│  └─ CrearTicketModal.jsx                                    │
+│     ├─ useState: idMotivo, observaciones, prioridad,         │
+│     │            motivos, loading, error, success,          │
+│     │            ticketCreado                               │
+│     ├─ useEffect: Cargar motivos al abrir                   │
+│     ├─ handleSubmit: Crear ticket                           │
+│     └─ Render: Modal con dropdown + form + success message  │
+│                                                              │
+│  Services:                                                    │
+│  └─ mesaAyudaService.js                                     │
+│     ├─ obtenerMotivos()  → GET /api/mesa-ayuda/motivos     │
+│     └─ crearTicket()     → POST /api/mesa-ayuda/tickets    │
+└──────────────────────────────────────────────────────────────┘
+                           ↕ REST API
+┌──────────────────────────────────────────────────────────────┐
+│               LAYER 2: BACKEND (Spring Boot 3.5.6)           │
+├──────────────────────────────────────────────────────────────┤
+│  Controllers:                                                 │
+│  └─ TicketMesaAyudaController                               │
+│     ├─ @GetMapping("/motivos")                              │
+│     └─ @PostMapping("/tickets")                             │
+│                                                              │
+│  Services:                                                    │
+│  └─ TicketMesaAyudaService                                  │
+│     ├─ obtenerMotivos()                                     │
+│     ├─ crearTicket()                                        │
+│     └─ generarNumeroTicket() [THREAD-SAFE]                 │
+│                                                              │
+│  Repositories:                                                │
+│  ├─ MotivoMesaAyudaRepository extends JpaRepository         │
+│  │  └─ findByActivoTrueOrderByOrdenAsc()                    │
+│  ├─ SecuenciaTicketsRepository extends JpaRepository        │
+│  │  ├─ findByAnio()                                         │
+│  │  └─ incrementarContador() [NATIVE SQL - ATOMIC]          │
+│  └─ TicketMesaAyudaRepository extends JpaRepository         │
+│     └─ findAllByDeletedAtIsNullOrderByFechaCreacionDesc()   │
+│                                                              │
+│  Models (JPA Entities):                                       │
+│  ├─ DimMotivosMesaAyuda                                      │
+│  ├─ DimTicketMesaAyuda                                       │
+│  └─ DimSecuenciaTickets                                      │
+│                                                              │
+│  DTOs:                                                        │
+│  ├─ MotivoMesaAyudaDTO                                       │
+│  ├─ TicketMesaAyudaRequestDTO                               │
+│  └─ TicketMesaAyudaResponseDTO                              │
+└──────────────────────────────────────────────────────────────┘
+                           ↕ JDBC
+┌──────────────────────────────────────────────────────────────┐
+│                    LAYER 3: DATABASE (PostgreSQL)            │
+├──────────────────────────────────────────────────────────────┤
+│  Tables:                                                      │
+│  ├─ dim_motivos_mesadeayuda (CATÁLOGO - 7 registros)       │
+│  │  ├─ id (PK)                                              │
+│  │  ├─ codigo (UNIQUE)                                      │
+│  │  ├─ descripcion                                          │
+│  │  ├─ activo (DEFAULT TRUE)                                │
+│  │  └─ orden (DEFAULT 0)                                    │
+│  │  Índices: idx_motivos_activo, idx_motivos_orden         │
+│  │                                                           │
+│  ├─ dim_ticket_mesa_ayuda (TRANSACCIONAL - N registros)    │
+│  │  ├─ id (PK)                                              │
+│  │  ├─ numero_ticket (UNIQUE) ← AUTO-GENERADO              │
+│  │  ├─ id_motivo (FK)                                       │
+│  │  ├─ titulo, descripcion, observaciones                   │
+│  │  ├─ estado (CHECK: ABIERTO|EN_PROCESO|RESUELTO|CERRADO) │
+│  │  ├─ prioridad (CHECK: ALTA|MEDIA|BAJA)                  │
+│  │  ├─ id_medico, nombre_medico, especialidad              │
+│  │  ├─ dni_paciente, nombre_paciente, ipress               │
+│  │  ├─ respuesta, id_personal_mesa, nombre_personal_mesa   │
+│  │  ├─ fecha_creacion, fecha_actualizacion, fecha_respuesta│
+│  │  └─ deleted_at (Soft Delete)                            │
+│  │  Índices: idx_ticket_mesa_numero, idx_ticket_mesa_estado,
+│  │           idx_ticket_mesa_medico, idx_ticket_mesa_fecha,
+│  │           idx_ticket_mesa_prioridad                     │
+│  │  FKs: id_motivo → dim_motivos_mesadeayuda(id)          │
+│  │       id_medico → dim_personal_cnt(id_pers)            │
+│  │                                                           │
+│  └─ dim_secuencia_tickets (NUMERACIÓN - 1/año)             │
+│     ├─ id (PK)                                              │
+│     ├─ anio (UNIQUE) ← Año del ticket                       │
+│     ├─ contador ← Auto-incrementa (ATOMIC UPDATE)           │
+│     └─ fecha_creacion, fecha_actualizacion                 │
+│     Índice: idx_secuencia_tickets_anio                      │
+└──────────────────────────────────────────────────────────────┘
+
+
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃ 5. EJEMPLO DE DATOS EN EJECUCIÓN                                                                  ┃
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+
+Base de Datos ANTES de crear tickets:
+┌─────────────────────────────────────────────────────────────┐
+│ dim_motivos_mesadeayuda                                     │
+├──────────┬──────────────────────┬──────────────────────────┤
+│ id (PK)  │ codigo               │ descripcion              │
+├──────────┼──────────────────────┼──────────────────────────┤
+│ 1        │ PS_CITAR_ADICIONAL   │ PROFESIONAL DE SALUD...  │
+│ 2        │ PS_ACTUALIZAR_...    │ PROFESIONAL DE SALUD...  │
+│ 3        │ PS_CONTACTAR_...     │ PROFESIONAL DE SALUD...  │
+│ 4        │ PS_ELIMINAR_...      │ PROFESIONAL DE SALUD...  │
+│ 5        │ PS_ENVIAR_ACTO_...   │ PROFESIONAL DE SALUD...  │
+│ 6        │ PS_ENVIO_IMAGENES    │ PROFESIONAL DE SALUD...  │
+│ 7        │ PS_CITA_ADICIONAL    │ PROFESIONAL DE SALUD...  │
+└──────────┴──────────────────────┴──────────────────────────┘
+
+┌────────────────────────────────────────────────┐
+│ dim_secuencia_tickets                          │
+├───────┬──────────┬─────────┬──────────────────┤
+│ id    │ anio (U) │ contador│ fecha_creacion   │
+├───────┼──────────┼─────────┼──────────────────┤
+│ 1     │ 2026     │ 0       │ 2026-02-18 10:00 │
+└───────┴──────────┴─────────┴──────────────────┘
+
+┌────────────────────────────────────────────────┐
+│ dim_ticket_mesa_ayuda                          │
+├────────────────────────────────────────────────┤
+│ (vacía - aún no hay tickets)                   │
+└────────────────────────────────────────────────┘
+
+
+Médico Dr. Pérez crea Ticket #1:
+─────────────────────────────────
+Selecciona motivo: id=1 "PROFESIONAL DE SALUD SOLICITA CITAR PACIENTE..."
+Observaciones: "Necesito citar al paciente para control..."
+Prioridad: "MEDIA"
+
+BASE DE DATOS DESPUÉS:
+
+┌───────────────────────────────────────────────────┐
+│ dim_secuencia_tickets                             │
+├───────┬──────────┬─────────┬─────────────────────┤
+│ id    │ anio     │ contador│ fecha_actualizacion │
+├───────┼──────────┼─────────┼─────────────────────┤
+│ 1     │ 2026     │ 1       │ 2026-02-19 10:30    │  ← Incrementó
+└───────┴──────────┴─────────┴─────────────────────┘
+
+┌──────────────────────────────────────────────────────────────────────────┐
+│ dim_ticket_mesa_ayuda                                                    │
+├─────┬───────────┬─────────┬──────────┬─────────┬──────────┬──────────────┤
+│ id  │numero_    │id_motivo│titulo    │obser-   │estado    │fecha_creacion│
+│     │ticket     │         │          │vaciones │          │              │
+├─────┼───────────┼─────────┼──────────┼─────────┼──────────┼──────────────┤
+│ 1   │ 001-2026  │ 1       │PROFES... │"Neces..." │ABIERTO   │2026-02-19... │
+└─────┴───────────┴─────────┴──────────┴─────────┴──────────┴──────────────┘
+
+
+Médico Dra. Martín crea Ticket #2:
+──────────────────────────────────
+Selecciona motivo: id=3 "PROFESIONAL DE SALUD SOLICITA CONTACTAR CON PACIENTE..."
+Observaciones: "Paciente en riesgo de deserción"
+Prioridad: "ALTA"
+
+BASE DE DATOS DESPUÉS:
+
+┌───────────────────────────────────────────────────┐
+│ dim_secuencia_tickets                             │
+├───────┬──────────┬─────────┬─────────────────────┤
+│ id    │ anio     │ contador│ fecha_actualizacion │
+├───────┼──────────┼─────────┼─────────────────────┤
+│ 1     │ 2026     │ 2       │ 2026-02-19 10:35    │  ← Incrementó nuevamente
+└───────┴──────────┴─────────┴─────────────────────┘
+
+┌──────────────────────────────────────────────────────────────────────────┐
+│ dim_ticket_mesa_ayuda                                                    │
+├─────┬───────────┬─────────┬──────────┬─────────┬──────────┬──────────────┤
+│ id  │numero_    │id_motivo│titulo    │obser-   │estado    │fecha_creacion│
+│     │ticket     │         │          │vaciones │          │              │
+├─────┼───────────┼─────────┼──────────┼─────────┼──────────┼──────────────┤
+│ 1   │ 001-2026  │ 1       │PROFES... │"Neces..." │ABIERTO   │2026-02-19... │
+│ 2   │ 002-2026  │ 3       │PROFES... │"Pacient.."│ABIERTO   │2026-02-19... │
+└─────┴───────────┴─────────┴──────────┴─────────┴──────────┴──────────────┘
+
+
+Médico Dr. Pérez crea Ticket #3 (MISMO MOTIVO que el primero):
+─────────────────────────────────────────────────────────────
+Selecciona motivo: id=1 "PROFESIONAL DE SALUD SOLICITA CITAR PACIENTE..."
+Observaciones: "Nuevo paciente para programa de cardiología"
+Prioridad: "BAJA"
+
+BASE DE DATOS DESPUÉS:
+
+┌───────────────────────────────────────────────────────────────────────────┐
+│ dim_secuencia_tickets                                                     │
+├───────┬──────────┬─────────┬─────────────────────┐
+│ id    │ anio     │ contador│ fecha_actualizacion │
+├───────┼──────────┼─────────┼─────────────────────┤
+│ 1     │ 2026     │ 3       │ 2026-02-19 10:40    │  ← Incrementó nuevamente
+└───────┴──────────┴─────────┴─────────────────────┘
+
+┌──────────────────────────────────────────────────────────────────────────┐
+│ dim_ticket_mesa_ayuda                                                    │
+├─────┬───────────┬─────────┬──────────┬─────────┬──────────┬──────────────┤
+│ id  │numero_    │id_motivo│titulo    │obser-   │estado    │fecha_creacion│
+│     │ticket     │         │          │vaciones │          │              │
+├─────┼───────────┼─────────┼──────────┼─────────┼──────────┼──────────────┤
+│ 1   │ 001-2026  │ 1       │PROFES... │"Neces..." │ABIERTO   │2026-02-19... │
+│ 2   │ 002-2026  │ 3       │PROFES... │"Pacient.."│ABIERTO   │2026-02-19... │
+│ 3   │ 003-2026  │ 1       │PROFES... │"Nuevo..." │ABIERTO   │2026-02-19... │
+└─────┴───────────┴─────────┴──────────┴─────────┴──────────┴──────────────┘
+
+✅ NOTA: Aunque los tickets 1 y 3 tienen el MISMO motivo (id=1),
+          sus números son DIFERENTES (001-2026 vs 003-2026)
+         porque CADA ticket obtiene un número único secuencial.
+
+
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃ CONCLUSIÓN                                                                                        ┃
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+
+✅ dim_motivos_mesadeayuda    = TABLA CATÁLOGO (7 motivos predefinidos)
+✅ dim_ticket_mesa_ayuda      = TABLA TRANSACCIONAL (tickets creados)
+✅ dim_secuencia_tickets      = TABLA NUMERACIÓN (generador de números únicos)
+
+✅ RELACIÓN: 1:N (Un motivo → Muchos tickets)
+✅ THREAD-SAFE: UPDATE nativo para incrementar contador
+✅ NÚMEROS ÚNICOS: 001-2026, 002-2026, 003-2026, ... 999-2026
+
+Documentación disponible en: /UML/README_MESA_AYUDA.md
+Diagramas PlantUML en: /UML/*.puml

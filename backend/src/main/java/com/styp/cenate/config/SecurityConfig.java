@@ -97,7 +97,9 @@ public class SecurityConfig {
                                                                 "/api/bolsas/errores-importacion/**", // Auditoría de errores de importación
                                                                 "/api/menu-usuario/**", // Menú de usuario con permisos (necesario para sidebar)
                                                                 "/api/gestion-pacientes/asegurado/**", // ✅ v1.103.1: Búsqueda de asegurados para modal ECG
-                                                                "/api/mesa-ayuda/motivos") // ✅ v1.64.0: Obtener motivos para crear tickets
+                                                                "/api/mesa-ayuda/motivos", // ✅ v1.64.0: Obtener motivos para crear tickets
+                                                                "/api/mesa-ayuda/siguiente-numero", // ✅ v1.64.2: Preview siguiente número de ticket
+                                                                "/api/admin/motivos-mesa-ayuda/**") // ✅ v1.65.0: CRUD motivos mesa de ayuda
                                                 .permitAll()
 
                                                 // SEC-006: Otros endpoints de actuator requieren SUPERADMIN

@@ -579,7 +579,8 @@ public class GestionPacienteServiceImpl implements IGestionPacienteService {
 
             return Map.of(
                 "nombre", nombreCompleto,
-                "especialidad", especialidad
+                "especialidad", especialidad,
+                "idPersonal", String.valueOf(personalCnt.getIdPers())
             );
 
         } catch (Exception e) {

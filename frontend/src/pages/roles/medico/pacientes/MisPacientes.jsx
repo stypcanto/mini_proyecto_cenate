@@ -40,6 +40,7 @@ import teleecgService from '../../../../services/teleecgService';
 import { useAuth } from '../../../../context/AuthContext';
 import CalendarioAsignacion from '../../../../components/calendario/CalendarioAsignacion';
 import CrearTicketModal from '../../../mesa-ayuda/components/CrearTicketModal';
+import { mesaAyudaService } from '../../../../services/mesaAyudaService';
 
 // ✅ v1.78.0: Sistema Genérico de Especialidades
 // Define qué funcionalidades tiene cada tipo de especialidad
@@ -419,6 +420,7 @@ export default function MisPacientes() {
   // ✅ v1.64.0: Estados para Modal Crear Ticket Mesa de Ayuda
   const [showTicketModal, setShowTicketModal] = useState(false);
   const [pacienteTicket, setPacienteTicket] = useState(null);
+  const [ticketsMedico, setTicketsMedico] = useState({});
 
   const bolsasDisponibles = [
     { id: 1, nombre: 'Bolsa 107 (Módulo 107)' },
@@ -447,6 +449,23 @@ export default function MisPacientes() {
     }
   }, [pacientes]);
 
+  // ✅ v1.65.0: Cargar tickets del médico para mostrar estado en columna
+  const cargarTicketsMedico = async (idMedico) => {
+    try {
+      const result = await mesaAyudaService.obtenerPorMedico(idMedico, 0, 500);
+      const tickets = result?.data?.content || [];
+      const mapa = {};
+      for (const t of tickets) {
+        if (t.dniPaciente && (!mapa[t.dniPaciente] || t.id > mapa[t.dniPaciente].id)) {
+          mapa[t.dniPaciente] = t;
+        }
+      }
+      setTicketsMedico(mapa);
+    } catch (error) {
+      console.error('⚠️ Error al cargar tickets del médico:', error);
+    }
+  };
+
   // ✅ v1.78.0: Cargar información del médico logueado (especialidad)
   useEffect(() => {
     const cargarInfoMedico = async () => {
@@ -454,9 +473,9 @@ export default function MisPacientes() {
         const info = await gestionPacientesService.obtenerInfoMedicoActual();
         console.log('✅ v1.78.0: Información del doctor cargada:', info);
         setDoctorInfo(info);
+        if (info?.idPersonal) cargarTicketsMedico(info.idPersonal);
       } catch (error) {
         console.error('⚠️ v1.78.0: Error al cargar información del doctor:', error);
-        // No es crítico, continuará con fallback
       }
     };
     cargarInfoMedico();
@@ -2258,18 +2277,38 @@ export default function MisPacientes() {
                           </div>
                         </td>
                       )}
-                      {/* ✅ v1.64.0: COLUMNA FINAL - Generación de Ticket Mesa de Ayuda */}
+                      {/* ✅ v1.65.0: COLUMNA FINAL - Ticket Mesa de Ayuda con estado */}
                       <td className="px-2 py-1 text-center">
-                        <button
-                          onClick={() => {
-                            setPacienteTicket(paciente);
-                            setShowTicketModal(true);
-                          }}
-                          title="Generar ticket de Mesa de Ayuda para este paciente"
-                          className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors duration-150"
-                        >
-                          <Ticket size={18} strokeWidth={1.5} />
-                        </button>
+                        <div className="flex flex-col items-center gap-1">
+                          {ticketsMedico[paciente.numDoc] && (() => {
+                            const t = ticketsMedico[paciente.numDoc];
+                            const colores = {
+                              ABIERTO: 'bg-amber-100 text-amber-800 border-amber-300',
+                              EN_PROCESO: 'bg-blue-100 text-blue-800 border-blue-300',
+                              RESUELTO: 'bg-green-100 text-green-800 border-green-300',
+                              CERRADO: 'bg-gray-100 text-gray-600 border-gray-300',
+                            };
+                            return (
+                              <span
+                                className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-semibold border ${colores[t.estado] || colores.ABIERTO}`}
+                                title={`Ticket ${t.numeroTicket} - ${t.estado}`}
+                              >
+                                {t.numeroTicket}
+                                <span className="hidden sm:inline">· {t.estado === 'EN_PROCESO' ? 'PROCESO' : t.estado}</span>
+                              </span>
+                            );
+                          })()}
+                          <button
+                            onClick={() => {
+                              setPacienteTicket(paciente);
+                              setShowTicketModal(true);
+                            }}
+                            title="Generar ticket de Mesa de Ayuda para este paciente"
+                            className="p-1 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors duration-150"
+                          >
+                            <Ticket size={16} strokeWidth={1.5} />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -2909,7 +2948,7 @@ export default function MisPacientes() {
         }}
         medico={doctorInfo ? {
           id: doctorInfo.idPersonal,
-          nombre: doctorInfo.nombreCompleto,
+          nombre: doctorInfo.nombre,
           especialidad: userSpecialty?.name || 'General'
         } : null}
         paciente={pacienteTicket ? {
@@ -2924,6 +2963,7 @@ export default function MisPacientes() {
           toast.success('Ticket creado exitosamente');
           setShowTicketModal(false);
           setPacienteTicket(null);
+          if (doctorInfo?.idPersonal) cargarTicketsMedico(doctorInfo.idPersonal);
         }}
       />
 

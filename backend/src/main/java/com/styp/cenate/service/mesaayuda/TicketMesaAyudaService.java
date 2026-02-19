@@ -18,6 +18,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Optional;
@@ -49,10 +50,10 @@ public class TicketMesaAyudaService {
     // ========== GENERAR NÚMERO DE TICKET ==========
 
     /**
-     * Generar número único del ticket con formato XXX-YYYY
+     * Generar número único del ticket con formato XXXX-YYYY
      * Incrementa el contador anual automáticamente
      *
-     * @return Número generado (ej: 001-2026, 002-2026)
+     * @return Número generado (ej: 0001-2026, 0002-2026)
      */
     private String generarNumeroTicket() {
         int anioActual = java.time.Year.now().getValue();
@@ -71,11 +72,32 @@ public class TicketMesaAyudaService {
         secuenciaRepository.incrementarContador(anioActual);
         secuencia.setContador(secuencia.getContador() + 1);
 
-        // Generar número con padding de 3 dígitos
-        String numeroFormato = String.format("%03d-%04d", secuencia.getContador(), anioActual);
+        // Generar número con padding de 4 dígitos
+        String numeroFormato = String.format("%04d-%04d", secuencia.getContador(), anioActual);
         log.info("Número de ticket generado: {}", numeroFormato);
 
         return numeroFormato;
+    }
+
+    // ========== SIGUIENTE NÚMERO DE TICKET ==========
+
+    /**
+     * Obtener el siguiente número de ticket (preview, sin incrementar)
+     * Utilizado para mostrar en el modal antes de crear el ticket
+     *
+     * @return Siguiente número (ej: 0001-2026, 0002-2026)
+     */
+    @Transactional(readOnly = true)
+    public String obtenerSiguienteNumeroTicket() {
+        int anioActual = java.time.Year.now().getValue();
+
+        int contadorActual = secuenciaRepository.findByAnio(anioActual)
+            .map(DimSecuenciaTickets::getContador)
+            .orElse(0);
+
+        String siguienteNumero = String.format("%04d-%04d", contadorActual + 1, anioActual);
+        log.debug("Siguiente número de ticket (preview): {}", siguienteNumero);
+        return siguienteNumero;
     }
 
     // ========== OBTENER MOTIVOS ==========
@@ -108,7 +130,7 @@ public class TicketMesaAyudaService {
      * Si se proporciona idMotivo, el título se genera automáticamente desde la descripción del motivo
      * Si no hay idMotivo, se usa el título proporcionado directamente
      *
-     * Genera automáticamente un número de ticket único (XXX-YYYY) para trazabilidad
+     * Genera automáticamente un número de ticket único (XXXX-YYYY) para trazabilidad
      *
      * @param requestDTO Datos del ticket (título OR idMotivo, descripción/observaciones, prioridad, datos del paciente)
      * @return TicketMesaAyudaResponseDTO con los datos del ticket creado (incluyendo numeroTicket)
@@ -142,8 +164,8 @@ public class TicketMesaAyudaService {
             .idMotivo(requestDTO.getIdMotivo())
             .observaciones(requestDTO.getObservaciones())
             .numeroTicket(numeroTicket)
-            .fechaCreacion(LocalDateTime.now())
-            .fechaActualizacion(LocalDateTime.now())
+            .fechaCreacion(LocalDateTime.now(ZONA_PERU))
+            .fechaActualizacion(LocalDateTime.now(ZONA_PERU))
             .build();
 
         TicketMesaAyuda saved = ticketRepository.save(ticket);
@@ -277,8 +299,8 @@ public class TicketMesaAyudaService {
         ticket.setEstado(nuevoEstado);
         ticket.setIdPersonalMesa(responderDTO.getIdPersonalMesa());
         ticket.setNombrePersonalMesa(responderDTO.getNombrePersonalMesa());
-        ticket.setFechaRespuesta(LocalDateTime.now());
-        ticket.setFechaActualizacion(LocalDateTime.now());
+        ticket.setFechaRespuesta(LocalDateTime.now(ZONA_PERU));
+        ticket.setFechaActualizacion(LocalDateTime.now(ZONA_PERU));
 
         TicketMesaAyuda updated = ticketRepository.save(ticket);
         log.info("Ticket respondido exitosamente");
@@ -309,11 +331,11 @@ public class TicketMesaAyudaService {
         }
 
         ticket.setEstado(nuevoEstado);
-        ticket.setFechaActualizacion(LocalDateTime.now());
+        ticket.setFechaActualizacion(LocalDateTime.now(ZONA_PERU));
 
         // Si es la primera respuesta, registrar fecha
         if (ticket.getFechaRespuesta() == null && !nuevoEstado.equals("ABIERTO")) {
-            ticket.setFechaRespuesta(LocalDateTime.now());
+            ticket.setFechaRespuesta(LocalDateTime.now(ZONA_PERU));
         }
 
         TicketMesaAyuda updated = ticketRepository.save(ticket);
@@ -336,8 +358,8 @@ public class TicketMesaAyudaService {
         TicketMesaAyuda ticket = ticketRepository.findByIdAndDeletedAtIsNull(id)
             .orElseThrow(() -> new IllegalArgumentException("Ticket no encontrado con ID: " + id));
 
-        ticket.setDeletedAt(LocalDateTime.now());
-        ticket.setFechaActualizacion(LocalDateTime.now());
+        ticket.setDeletedAt(LocalDateTime.now(ZONA_PERU));
+        ticket.setFechaActualizacion(LocalDateTime.now(ZONA_PERU));
         ticketRepository.save(ticket);
 
         log.info("Ticket eliminado exitosamente");
@@ -376,10 +398,12 @@ public class TicketMesaAyudaService {
      * Calcula campos derivados como horasDesdeCreacion
      * Mapea idMotivo a nombreMotivo desde la BD (v1.64.0)
      */
+    private static final ZoneId ZONA_PERU = ZoneId.of("America/Lima");
+
     private TicketMesaAyudaResponseDTO toResponseDTO(TicketMesaAyuda ticket) {
         long horasDesdeCreacion = ChronoUnit.HOURS.between(
             ticket.getFechaCreacion(),
-            LocalDateTime.now()
+            LocalDateTime.now(ZONA_PERU)
         );
 
         // Obtener descripción del motivo si existe

@@ -30,11 +30,13 @@ function CrearTicketModal({ isOpen, onClose, medico, paciente, onSuccess }) {
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(false);
   const [ticketCreado, setTicketCreado] = useState(null);
+  const [siguienteNumero, setSiguienteNumero] = useState(null);
 
-  // ✅ v1.64.0: Cargar motivos al abrir el modal
+  // ✅ v1.64.0: Cargar motivos y siguiente número al abrir el modal
   useEffect(() => {
     if (isOpen) {
       cargarMotivos();
+      cargarSiguienteNumero();
     }
   }, [isOpen]);
 
@@ -54,6 +56,20 @@ function CrearTicketModal({ isOpen, onClose, medico, paciente, onSuccess }) {
       setMotivos([]);
     } finally {
       setLoadingMotivos(false);
+    }
+  };
+
+  /**
+   * Cargar preview del siguiente número de ticket
+   */
+  const cargarSiguienteNumero = async () => {
+    try {
+      const { mesaAyudaService } = await import('../../../services/mesaAyudaService');
+      const data = await mesaAyudaService.obtenerSiguienteNumero();
+      setSiguienteNumero(data?.siguienteNumero || null);
+    } catch (err) {
+      console.error('Error cargando siguiente número:', err);
+      setSiguienteNumero(null);
     }
   };
 
@@ -94,13 +110,14 @@ function CrearTicketModal({ isOpen, onClose, medico, paciente, onSuccess }) {
       const { mesaAyudaService } = await import('../../../services/mesaAyudaService');
 
       // ✅ v1.64.0: El título se auto-genera desde la descripción del motivo
+      const obs = observaciones.trim();
       const ticketData = {
         idMotivo: parseInt(idMotivo),
         titulo: motivoSeleccionado.descripcion, // Auto-generado desde motivo
-        descripcion: '', // Campo vacío (el backend usará observaciones)
-        observaciones: observaciones.trim(), // Observaciones opcionales
+        descripcion: obs || motivoSeleccionado.descripcion, // Usar observaciones o título como fallback
+        observaciones: obs, // Observaciones opcionales
         prioridad: prioridad,
-        idMedico: medico.id,
+        idMedico: medico.id ? Number(medico.id) : null,
         nombreMedico: medico.nombre,
         idSolicitudBolsa: paciente?.idSolicitudBolsa || null,
         dniPaciente: paciente?.dni || null,
@@ -148,6 +165,7 @@ function CrearTicketModal({ isOpen, onClose, medico, paciente, onSuccess }) {
       setError(null);
       setSuccess(false);
       setTicketCreado(null);
+      setSiguienteNumero(null);
       onClose();
     }
   };
@@ -157,9 +175,16 @@ function CrearTicketModal({ isOpen, onClose, medico, paciente, onSuccess }) {
       <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
-          <h2 className="text-xl font-bold text-gray-900">
-            Crear un Nuevo Ticket a Mesa de Ayuda
-          </h2>
+          <div>
+            <h2 className="text-xl font-bold text-gray-900">
+              Crear un Nuevo Ticket a Mesa de Ayuda
+            </h2>
+            {siguienteNumero && (
+              <p className="text-sm text-gray-500 mt-1">
+                Ticket N.° <span className="font-mono font-semibold text-blue-600">{siguienteNumero}</span>
+              </p>
+            )}
+          </div>
           <button
             onClick={handleClose}
             disabled={loading}

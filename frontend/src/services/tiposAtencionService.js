@@ -14,7 +14,7 @@ export const tiposAtencionService = {
    */
   obtenerTodos: async () => {
     try {
-      const data = await api.get(BASE_URL);
+      const data = await api.get(BASE_URL, true);
       return data;
     } catch (error) {
       console.error('Error al obtener tipos de atención:', error);
@@ -27,7 +27,7 @@ export const tiposAtencionService = {
    */
   obtenerActivos: async () => {
     try {
-      const data = await api.get(`${BASE_URL}/activos`);
+      const data = await api.get(`${BASE_URL}/activos`, true);
       return data;
     } catch (error) {
       console.error('Error al obtener tipos de atención activos:', error);
@@ -40,7 +40,7 @@ export const tiposAtencionService = {
    */
   obtenerPorId: async (id) => {
     try {
-      const data = await api.get(`${BASE_URL}/${id}`);
+      const data = await api.get(`${BASE_URL}/${id}`, true);
       return data;
     } catch (error) {
       console.error(`Error al obtener tipo de atención ${id}:`, error);
@@ -53,7 +53,7 @@ export const tiposAtencionService = {
    */
   crear: async (tipoAtencion) => {
     try {
-      const data = await api.post(BASE_URL, tipoAtencion);
+      const data = await api.post(BASE_URL, tipoAtencion, true);
       return data;
     } catch (error) {
       console.error('Error al crear tipo de atención:', error);
@@ -66,7 +66,7 @@ export const tiposAtencionService = {
    */
   actualizar: async (id, tipoAtencion) => {
     try {
-      const data = await api.put(`${BASE_URL}/${id}`, tipoAtencion);
+      const data = await api.put(`${BASE_URL}/${id}`, tipoAtencion, true);
       return data;
     } catch (error) {
       console.error(`Error al actualizar tipo de atención ${id}:`, error);
@@ -79,7 +79,7 @@ export const tiposAtencionService = {
    */
   eliminar: async (id) => {
     try {
-      const data = await api.delete(`${BASE_URL}/${id}`);
+      const data = await api.delete(`${BASE_URL}/${id}`, true);
       return data;
     } catch (error) {
       console.error(`Error al eliminar tipo de atención ${id}:`, error);

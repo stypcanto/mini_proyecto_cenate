@@ -1,0 +1,80 @@
+@startuml Mesa_de_Ayuda_ER
+
+!define ABSTRACTCLASS
+!define PRIMARY_KEY(x) <u>x</u>
+!define FOREIGN_KEY(x) #x#
+
+skinparam backgroundColor #FEFEFE
+skinparam classBackgroundColor #F0F0FF
+skinparam classBorderColor #000080
+
+title Mesa de Ayuda - Diagrama Entidad-Relación (v1.64.0)
+
+package "Mesa de Ayuda Module" {
+
+    entity "dim_motivos_mesadeayuda" as DIM_MOTIVOS {
+        * PRIMARY_KEY(id): BIGSERIAL
+        --
+        * codigo: VARCHAR(100) [UNIQUE]
+        * descripcion: VARCHAR(500)
+        * activo: BOOLEAN [DEFAULT TRUE]
+        * orden: INTEGER [DEFAULT 0]
+        * fecha_creacion: TIMESTAMP [DEFAULT NOW()]
+    }
+
+    entity "dim_ticket_mesa_ayuda" as DIM_TICKETS {
+        * PRIMARY_KEY(id): BIGSERIAL
+        --
+        * titulo: VARCHAR(255)
+        * descripcion: TEXT
+        * estado: VARCHAR(50) [ABIERTO|EN_PROCESO|RESUELTO|CERRADO]
+        * prioridad: VARCHAR(20) [ALTA|MEDIA|BAJA]
+        * numero_ticket: VARCHAR(20) [UNIQUE] ← Auto-generado (001-2026)
+        --
+        id_medico: BIGINT
+        nombre_medico: VARCHAR(255)
+        id_solicitud_bolsa: BIGINT
+        dni_paciente: VARCHAR(15)
+        nombre_paciente: VARCHAR(255)
+        especialidad: VARCHAR(255)
+        ipress: VARCHAR(255)
+        respuesta: TEXT
+        id_personal_mesa: BIGINT
+        nombre_personal_mesa: VARCHAR(255)
+        FOREIGN_KEY(id_motivo): BIGINT
+        observaciones: TEXT
+        deleted_at: TIMESTAMP [NULL]
+        fecha_creacion: TIMESTAMP [DEFAULT NOW()]
+        fecha_actualizacion: TIMESTAMP [DEFAULT NOW()]
+        fecha_respuesta: TIMESTAMP [NULL]
+    }
+
+    entity "dim_secuencia_tickets" as DIM_SECUENCIA {
+        * PRIMARY_KEY(id): BIGSERIAL
+        --
+        * anio: INTEGER [UNIQUE]
+        * contador: INTEGER [DEFAULT 0]
+        * fecha_creacion: TIMESTAMP [DEFAULT NOW()]
+        * fecha_actualizacion: TIMESTAMP [DEFAULT NOW()]
+    }
+
+}
+
+' Relaciones
+DIM_MOTIVOS ||--o{ DIM_TICKETS : "FK id_motivo"
+note on link
+  Un motivo puede tener muchos tickets
+  Relación 1:N (uno a muchos)
+  Integridad referencial:
+  - ON DELETE SET NULL
+end note
+
+DIM_SECUENCIA }o--|| DIM_TICKETS : "genera"
+note on link
+  Sistema de numeración:
+  - 1 registro por año
+  - Auto-incrementa contador
+  - Formato: XXX-YYYY
+end note
+
+@enduml

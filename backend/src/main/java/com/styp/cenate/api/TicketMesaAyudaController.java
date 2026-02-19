@@ -53,6 +53,26 @@ public class TicketMesaAyudaController {
         log.info("✅ TicketMesaAyudaController inicializado correctamente");
     }
 
+    // ========== SIGUIENTE NÚMERO DE TICKET ==========
+
+    /**
+     * Obtener preview del siguiente número de ticket
+     * Utilizado por CrearTicketModal para mostrar el número antes de crear
+     *
+     * @return ResponseEntity con el siguiente número (ej: "0001-2026")
+     * @status 200 OK
+     */
+    @GetMapping("/siguiente-numero")
+    public ResponseEntity<Map<String, String>> obtenerSiguienteNumero() {
+        log.info("GET /api/mesa-ayuda/siguiente-numero - Obteniendo preview");
+
+        String siguienteNumero = ticketService.obtenerSiguienteNumeroTicket();
+
+        Map<String, String> response = new HashMap<>();
+        response.put("siguienteNumero", siguienteNumero);
+        return ResponseEntity.ok(response);
+    }
+
     // ========== OBTENER MOTIVOS ==========
 
     /**
