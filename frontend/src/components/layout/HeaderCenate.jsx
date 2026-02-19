@@ -40,15 +40,10 @@ export default function HeaderCenate() {
     }
   }, [darkMode]);
 
-  // 🔔 Cargar notificaciones si es ADMIN o SUPERADMIN
+  // 🔔 Cargar notificaciones para todos los usuarios
   useEffect(() => {
-    const esAdmin = user?.roles?.some(
-      (rol) => rol === "ADMIN" || rol === "SUPERADMIN"
-    );
-
-    if (esAdmin) {
+    if (user) {
       cargarCantidadNotificaciones();
-      // Polling cada 5 minutos para actualizar notificaciones
       const interval = setInterval(cargarCantidadNotificaciones, 5 * 60 * 1000);
       return () => clearInterval(interval);
     }

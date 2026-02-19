@@ -254,6 +254,22 @@ export default function MisPacientes() {
     }
   };
 
+  // Formatear nombre del paciente: "APELLIDO1 APELLIDO2 NOMBRE1 NOMBRE2" → "Nombre1 Nombre2 Apellido1 Apellido2"
+  const formatearNombrePaciente = (nombreCompleto) => {
+    if (!nombreCompleto) return '';
+    const palabras = nombreCompleto.trim().split(/\s+/).filter(p => p.length > 0);
+    if (palabras.length <= 2) {
+      return palabras.map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
+    }
+    // 4 palabras: AP1 AP2 NOM1 NOM2 → NOM1 NOM2 AP1 AP2
+    // 3 palabras: AP1 AP2 NOM1 → NOM1 AP1 AP2
+    const apellidos = palabras.slice(0, 2);
+    const nombres = palabras.slice(2);
+    return [...nombres, ...apellidos]
+      .map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+      .join(' ');
+  };
+
   const [pacientes, setPacientes] = useState([]);
 
   // ✅ v1.66.0: Helper para parsear fechas sin desfase de zona horaria
@@ -2142,7 +2158,7 @@ export default function MisPacientes() {
 
                           {/* Nombre y DNI */}
                           <div className="flex flex-col gap-0 min-w-0 leading-tight">
-                            <div className="font-semibold text-gray-900 text-[13px]">{paciente.apellidosNombres}</div>
+                            <div className="font-semibold text-gray-900 text-[13px]">{formatearNombrePaciente(paciente.apellidosNombres)}</div>
                             <div className="text-gray-400 text-[11px]">DNI: {paciente.numDoc}</div>
                           </div>
                         </div>
@@ -2291,11 +2307,11 @@ export default function MisPacientes() {
                             return (
                               <button
                                 onClick={() => setTicketDetalleModal(t)}
-                                className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-semibold border cursor-pointer hover:opacity-80 transition-opacity ${colores[t.estado] || colores.NUEVO}`}
+                                className={`inline-flex flex-col items-center px-1.5 py-0.5 rounded-md text-[9px] font-semibold border cursor-pointer hover:opacity-80 transition-opacity leading-tight ${colores[t.estado] || colores.NUEVO}`}
                                 title={`Ver detalle del Ticket ${t.numeroTicket}`}
                               >
-                                {t.numeroTicket}
-                                <span className="hidden sm:inline">· {t.estado === 'EN_PROCESO' ? 'PROCESO' : t.estado}</span>
+                                <span>{t.numeroTicket}</span>
+                                <span className="text-[8px] opacity-80">{t.estado === 'EN_PROCESO' ? 'PROCESO' : t.estado}</span>
                               </button>
                             );
                           })()}
@@ -2339,10 +2355,7 @@ export default function MisPacientes() {
                 {/* Nombre del paciente y DNI */}
                 <div className="flex-1">
                   <p className="text-2xl font-bold text-white leading-relaxed">
-                    {pacienteSeleccionado?.apellidosNombres
-                      ?.split(' ')
-                      .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-                      .join(' ')}
+                    {formatearNombrePaciente(pacienteSeleccionado?.apellidosNombres)}
                   </p>
                   <p className="text-sm text-white/75 font-medium mt-1">DNI: {pacienteSeleccionado?.numDoc}</p>
                 </div>
@@ -2635,7 +2648,7 @@ export default function MisPacientes() {
               <div className="flex items-start gap-4">
                 <div className="flex-1">
                   <p className="text-2xl font-bold text-white">
-                    {pacienteDetalles.apellidosNombres}
+                    {formatearNombrePaciente(pacienteDetalles.apellidosNombres)}
                   </p>
                   <p className="text-sm text-white/80 mt-1">DNI: {pacienteDetalles.numDoc}</p>
                 </div>
@@ -2851,7 +2864,7 @@ export default function MisPacientes() {
                     📋 Resultados de Evaluación ECG
                   </h2>
                   <p className="text-blue-100 text-sm">
-                    {resultadosActuales.paciente?.apellidosNombres} (DNI: {resultadosActuales.paciente?.numDoc})
+                    {formatearNombrePaciente(resultadosActuales.paciente?.apellidosNombres)} (DNI: {resultadosActuales.paciente?.numDoc})
                   </p>
                 </div>
                 <button
@@ -3020,7 +3033,7 @@ export default function MisPacientes() {
                       <span className="text-white text-xs font-bold">2</span>
                     </div>
                     <p className={`text-xs font-semibold uppercase tracking-wide mb-2 ${t.nombrePersonalAsignado ? 'text-[#0A5BA9]' : 'text-gray-400'}`}>
-                      Personal que te atiende
+                      PERSONAL DE MESA DE AYUDA ASIGNADO
                     </p>
                     {t.nombrePersonalAsignado ? (
                       <div className="bg-gray-50 rounded-xl p-3 border border-gray-100 flex items-center gap-3">

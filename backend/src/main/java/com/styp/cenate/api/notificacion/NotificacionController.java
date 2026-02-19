@@ -29,7 +29,6 @@ public class NotificacionController {
      * Solo accesible para ADMIN y SUPERADMIN
      */
     @GetMapping("/cumpleanos")
-    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN')")
     public ResponseEntity<List<NotificacionResponse>> obtenerCumpleanosHoy() {
         log.info("🎂 Solicitando lista de cumpleaños del día");
         try {
@@ -47,7 +46,6 @@ public class NotificacionController {
      * (Para el badge en la campanita)
      */
     @GetMapping("/count")
-    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN')")
     public ResponseEntity<Integer> contarNotificaciones() {
         log.info("🔔 Solicitando conteo de notificaciones");
         try {
