@@ -160,4 +160,10 @@ public class TicketMesaAyudaResponseDTO {
      */
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime fechaAsignacion;
+
+    /**
+     * Fecha y hora en que el ticket fue marcado como RESUELTO
+     */
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    private LocalDateTime fechaAtencion;
 }

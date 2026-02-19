@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef, useMemo } from 'react';
 import { useLocation } from 'react-router-dom';
-import { Zap, AlertCircle, RotateCw, ChevronDown, UserCircle, PlayCircle, Clock, CheckCircle2, Eye, Users, Archive, Pencil, Check, X } from 'lucide-react';
+import { Zap, AlertCircle, RotateCw, ChevronDown, UserCircle, PlayCircle, Clock, CheckCircle2, Eye, Users, Archive, Pencil, Check, X, Timer, User, Stethoscope } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import ResponderTicketModal from './components/ResponderTicketModal';
 
@@ -76,6 +76,7 @@ function ListaTickets() {
   const [showModalResponder, setShowModalResponder] = useState(false);
   const [ticketSeleccionado, setTicketSeleccionado] = useState(null);
   const [ticketDetalle, setTicketDetalle] = useState(null);
+  const [ticketTiempo, setTicketTiempo] = useState(null);
 
   // Edición de teléfonos en modal detalle
   const [editandoTelefonos, setEditandoTelefonos] = useState(false);
@@ -543,9 +544,6 @@ function ListaTickets() {
                     Especialidad
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">
-                    Fecha y Hora de Registro
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">
                     Tipo Doc.
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">
@@ -565,6 +563,9 @@ function ListaTickets() {
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">
                     Personal Asignado
+                  </th>
+                  <th className="px-6 py-3 text-center text-xs font-semibold text-white uppercase tracking-wider">
+                    Tiempo de Espera
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">
                     Acción
@@ -620,9 +621,6 @@ function ListaTickets() {
                     </td>
                     <td className="px-6 py-4 text-sm text-gray-600">
                       {ticket.especialidad || 'N/A'}
-                    </td>
-                    <td className="px-6 py-4 text-sm text-gray-600">
-                      {new Date(ticket.fechaCreacion).toLocaleString('es-PE', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false })}
                     </td>
                     <td className="px-6 py-4 text-sm text-gray-600">
                       {ticket.tipoDocumento || 'DNI'}
@@ -714,6 +712,16 @@ function ListaTickets() {
                         </button>
                       )}
 
+                    </td>
+                    {/* Columna Tiempo de Espera */}
+                    <td className="px-6 py-4 text-center">
+                      <button
+                        onClick={() => setTicketTiempo(ticket)}
+                        className="p-1.5 rounded-lg text-orange-500 hover:bg-orange-50 transition-colors"
+                        title="Ver tiempo de espera"
+                      >
+                        <Timer size={18} />
+                      </button>
                     </td>
                     <td className="px-6 py-4">
                       {ticket.estado === 'NUEVO' || ticket.estado === 'EN_PROCESO' ? (
@@ -1069,6 +1077,156 @@ function ListaTickets() {
           </div>
         </div>
       )}
+
+      {/* Modal Tiempo de Espera */}
+      {ticketTiempo && (() => {
+        const inicio = new Date(ticketTiempo.fechaCreacion);
+        const fechaAtencionReal = ticketTiempo.fechaAtencion || ticketTiempo.fechaRespuesta || (ticketTiempo.estado === 'RESUELTO' ? ticketTiempo.fechaActualizacion : null);
+        const fin = fechaAtencionReal ? new Date(fechaAtencionReal) : new Date();
+        const esResuelto = fechaAtencionReal != null;
+        const diffMs = fin - inicio;
+        const diffMin = Math.floor(diffMs / 60000);
+        const diffHrs = Math.floor(diffMin / 60);
+        const diffDias = Math.floor(diffHrs / 24);
+
+        let textoTiempo = '';
+        let colorTiempo = 'text-emerald-600';
+        let bgKpi = 'bg-emerald-50';
+        if (diffDias > 0) {
+          textoTiempo = `${diffDias} día${diffDias > 1 ? 's' : ''}`;
+          if (diffDias >= 3) { colorTiempo = 'text-red-500'; bgKpi = 'bg-red-50'; }
+          else { colorTiempo = 'text-amber-600'; bgKpi = 'bg-amber-50'; }
+        } else if (diffHrs > 0) {
+          textoTiempo = `${diffHrs}h ${diffMin % 60}m`;
+          if (diffHrs >= 12) { colorTiempo = 'text-amber-600'; bgKpi = 'bg-amber-50'; }
+        } else {
+          textoTiempo = `${diffMin} min`;
+        }
+
+        const formatFecha = (f) => f ? new Date(f).toLocaleString('es-PE', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false }) : null;
+        const getInitials = (name) => name ? name.split(' ').filter(Boolean).slice(0, 2).map(w => w[0]).join('').toUpperCase() : '?';
+
+        const estadoConfig = {
+          'NUEVO': { bg: 'bg-blue-100', text: 'text-blue-700', label: 'Nuevo' },
+          'EN_PROCESO': { bg: 'bg-yellow-100', text: 'text-yellow-700', label: 'En Proceso' },
+          'RESUELTO': { bg: 'bg-emerald-100', text: 'text-emerald-700', label: 'Resuelto' },
+          'CERRADO': { bg: 'bg-gray-200', text: 'text-gray-600', label: 'Cerrado' },
+        };
+        const prioridadConfig = {
+          'ALTA': { bg: 'bg-red-100', text: 'text-red-700' },
+          'MEDIA': { bg: 'bg-yellow-100', text: 'text-yellow-700' },
+          'BAJA': { bg: 'bg-green-100', text: 'text-green-700' },
+        };
+        const est = estadoConfig[ticketTiempo.estado] || estadoConfig['NUEVO'];
+        const prio = prioridadConfig[ticketTiempo.prioridad] || prioridadConfig['MEDIA'];
+
+        return (
+          <div className="fixed inset-0 z-50 flex items-center justify-center">
+            <div className="fixed inset-0 bg-black/30" onClick={() => setTicketTiempo(null)} />
+            <div className="relative bg-white rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] w-full max-w-[680px] mx-4 overflow-hidden">
+
+              {/* Header: Ticket + Estado + Prioridad */}
+              <div className="bg-gradient-to-r from-[#0a5ba9] to-[#1472c4] px-5 py-3.5 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <h3 className="text-white font-bold text-base">Ticket #{ticketTiempo.numeroTicket || ticketTiempo.id}</h3>
+                  <span className={`${est.bg} ${est.text} text-[11px] font-semibold px-2.5 py-0.5 rounded-full flex items-center gap-1`}>
+                    <CheckCircle2 size={12} />
+                    {est.label}
+                  </span>
+                  <span className={`${prio.bg} ${prio.text} text-[11px] font-semibold px-2.5 py-0.5 rounded-full`}>
+                    {ticketTiempo.prioridad}
+                  </span>
+                </div>
+                <button
+                  onClick={() => setTicketTiempo(null)}
+                  className="w-7 h-7 flex items-center justify-center rounded-full bg-white/20 hover:bg-white/40 transition-colors"
+                >
+                  <X size={14} className="text-white" />
+                </button>
+              </div>
+
+              {/* Dos tarjetas */}
+              <div className="p-5">
+                <div className="grid grid-cols-2 gap-5">
+
+                  {/* Tarjeta Izquierda - Solicitante (borde teal) */}
+                  <div className="border-l-[3px] border-teal-400 rounded-xl shadow-[0_2px_12px_rgba(0,0,0,0.06)] bg-white p-5">
+                    <div className="flex items-center gap-2 mb-5">
+                      <Stethoscope size={16} className="text-teal-500" />
+                      <h4 className="font-bold text-gray-700 text-sm uppercase tracking-wide">Solicitante</h4>
+                    </div>
+
+                    {/* Profesional con avatar */}
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-teal-400 to-teal-600 flex items-center justify-center flex-shrink-0">
+                        <span className="text-white text-xs font-bold">{getInitials(ticketTiempo.nombreMedico)}</span>
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-[11px] text-gray-400">Nombre completo</p>
+                        <p className="text-sm font-bold text-gray-800 leading-tight">{ticketTiempo.nombreMedico || 'N/A'}</p>
+                      </div>
+                    </div>
+
+                    {/* Paciente con avatar */}
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0">
+                        <span className="text-gray-500 text-xs font-bold">{getInitials(ticketTiempo.nombrePaciente)}</span>
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-[11px] text-gray-400">Paciente</p>
+                        <p className="text-sm font-bold text-gray-800 leading-tight">{ticketTiempo.nombrePaciente || 'N/A'}</p>
+                      </div>
+                    </div>
+
+                    {/* Motivo */}
+                    {ticketTiempo.nombreMotivo && (
+                      <div className="mt-2">
+                        <p className="text-[11px] text-gray-400 mb-1">Categoría</p>
+                        <p className="text-sm text-gray-700 leading-relaxed" style={{ textTransform: 'lowercase' }}><span style={{ textTransform: 'capitalize' }}>{ticketTiempo.nombreMotivo?.charAt(0)}</span>{ticketTiempo.nombreMotivo?.slice(1)}</p>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Tarjeta Derecha - Tiempo de Atención (borde naranja) */}
+                  <div className="border-l-[3px] border-orange-400 rounded-xl shadow-[0_2px_12px_rgba(0,0,0,0.06)] bg-white p-5 flex flex-col">
+                    <div className="flex items-center gap-2 mb-5">
+                      <Timer size={16} className="text-orange-500" />
+                      <h4 className="font-bold text-gray-700 text-sm uppercase tracking-wide">Tiempo de Atención</h4>
+                    </div>
+
+                    {/* KPI grande */}
+                    <div className={`${bgKpi} rounded-xl p-5 text-center mb-5 flex-1 flex flex-col justify-center`}>
+                      <p className={`text-4xl font-black ${colorTiempo} tracking-tight italic`}>{textoTiempo}</p>
+                      <p className="text-xs text-gray-400 mt-2 font-medium">
+                        {esResuelto ? 'desde la creación' : 'desde la incidencia'}
+                      </p>
+                    </div>
+
+                    {/* Fechas en formato tabla */}
+                    <div className="space-y-3 text-sm">
+                      <div className="flex justify-between items-center">
+                        <span className="text-gray-400 font-medium">Registro de incidencia:</span>
+                        <span className="font-semibold text-gray-700">{formatFecha(ticketTiempo.fechaCreacion) || 'N/A'}</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-gray-400 font-medium">Asignación:</span>
+                        <span className="font-semibold text-gray-700">{formatFecha(ticketTiempo.fechaAsignacion) || <span className="text-gray-300 italic">Pendiente</span>}</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-gray-400 font-medium">Atención:</span>
+                        <span className={`font-semibold ${fechaAtencionReal ? 'text-emerald-600' : 'text-gray-300 italic'}`}>
+                          {formatFecha(fechaAtencionReal) || 'Pendiente'}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
 
       {/* Modal Responder */}
       {ticketSeleccionado && (

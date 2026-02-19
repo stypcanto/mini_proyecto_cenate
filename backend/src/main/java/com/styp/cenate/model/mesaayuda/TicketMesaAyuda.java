@@ -233,6 +233,12 @@ public class TicketMesaAyuda {
     @Column(name = "fecha_asignacion")
     private LocalDateTime fechaAsignacion;
 
+    /**
+     * Timestamp de cuando el ticket fue marcado como RESUELTO
+     */
+    @Column(name = "fecha_atencion")
+    private LocalDateTime fechaAtencion;
+
     // ========== NUMERACIÓN Y TRAZABILIDAD (v1.64.1) ==========
 
     /**

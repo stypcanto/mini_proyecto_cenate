@@ -330,6 +330,11 @@ public class TicketMesaAyudaService {
         ticket.setFechaRespuesta(LocalDateTime.now(ZONA_PERU));
         ticket.setFechaActualizacion(LocalDateTime.now(ZONA_PERU));
 
+        // Registrar fecha de atención cuando se resuelve
+        if ("RESUELTO".equals(nuevoEstado)) {
+            ticket.setFechaAtencion(LocalDateTime.now(ZONA_PERU));
+        }
+
         TicketMesaAyuda updated = ticketRepository.save(ticket);
         log.info("Ticket respondido exitosamente");
 
@@ -369,6 +374,11 @@ public class TicketMesaAyudaService {
         // Si es la primera respuesta, registrar fecha
         if (ticket.getFechaRespuesta() == null && !nuevoEstado.equals("NUEVO")) {
             ticket.setFechaRespuesta(LocalDateTime.now(ZONA_PERU));
+        }
+
+        // Registrar fecha de atención cuando se resuelve
+        if ("RESUELTO".equals(nuevoEstado)) {
+            ticket.setFechaAtencion(LocalDateTime.now(ZONA_PERU));
         }
 
         TicketMesaAyuda updated = ticketRepository.save(ticket);
@@ -638,6 +648,7 @@ public class TicketMesaAyudaService {
             .idPersonalAsignado(ticket.getIdPersonalAsignado())
             .nombrePersonalAsignado(ticket.getNombrePersonalAsignado())
             .fechaAsignacion(ticket.getFechaAsignacion())
+            .fechaAtencion(ticket.getFechaAtencion())
             .build();
     }
 
