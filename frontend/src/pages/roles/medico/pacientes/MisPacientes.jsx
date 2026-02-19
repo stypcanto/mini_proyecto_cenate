@@ -1662,7 +1662,7 @@ export default function MisPacientes() {
         <div className="mb-8">
           <div className="flex items-center gap-3 mb-6">
             <Users className="w-8 h-8 text-[#0A5BA9]" />
-            <h1 className="text-3xl font-bold text-gray-900">Mis Pacientes</h1>
+            <h1 className="text-3xl font-bold text-gray-900">TICKET MESA DE AYUDA</h1>
           </div>
           <p className="text-gray-600 font-medium mb-6">Gestiona y coordina la atención de tus pacientes asignados</p>
 
@@ -2088,19 +2088,19 @@ export default function MisPacientes() {
                     <th className="px-2 py-1 text-left">Condición</th>
                     <th className="px-2 py-1 text-left">Observaciones</th>
                     <th className="px-2 py-1 text-left">🔔 Motivo Llamada</th>
-                    {/* ✅ v1.64.0: Columna de Generación de Ticket */}
-                    <th className="px-2 py-1 text-center">
-                      <div className="flex items-center justify-center gap-1">
-                        <Ticket size={14} />
-                        <span>Generación Ticket</span>
-                      </div>
-                    </th>
                     <th className="px-2 py-1 text-left">Fecha Asignación</th>
                     <th className="px-2 py-1 text-left">Fecha Atención</th>
-                    {/* ✅ v1.66.4: Columna final para visualizar ECGs (SOLO CARDIÓLOGOS) */}
+                    {/* ✅ v1.66.4: Columna para visualizar ECGs (SOLO CARDIÓLOGOS) */}
                     {esCardiologo && (
                       <th className="px-2 py-1 text-center">Atender Lectura EKG</th>
                     )}
+                    {/* ✅ v1.64.0: Columna FINAL de Generación de Ticket */}
+                    <th className="px-2 py-1 text-center">
+                      <div className="flex items-center justify-center gap-1">
+                        <Ticket size={14} />
+                        <span>Ticket Mesa de Ayuda</span>
+                      </div>
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
@@ -2189,19 +2189,6 @@ export default function MisPacientes() {
                           <span className="text-gray-400">-</span>
                         )}
                       </td>
-                      {/* ✅ v1.64.0: Columna Generación Ticket */}
-                      <td className="px-2 py-1 text-center">
-                        <button
-                          onClick={() => {
-                            setPacienteTicket(paciente);
-                            setShowTicketModal(true);
-                          }}
-                          title="Generar ticket de Mesa de Ayuda para este paciente"
-                          className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors duration-150"
-                        >
-                          <Ticket size={18} strokeWidth={1.5} />
-                        </button>
-                      </td>
                       <td className="px-2 py-1 text-gray-600 text-xs whitespace-nowrap">
                         {formatearFechaHumana(paciente.fechaAsignacion)}
                       </td>
@@ -2209,7 +2196,7 @@ export default function MisPacientes() {
                         {formatearFechaHumana(paciente.fechaAtencion)}
                       </td>
 
-                      {/* ✅ v1.80.0: Columna final - Ver imágenes ECG (SOLO CARDIÓLOGOS) + Estados */}
+                      {/* ✅ v1.80.0: Columna - Ver imágenes ECG (SOLO CARDIÓLOGOS) + Estados */}
                       {esCardiologo && (
                         <td className="px-2 py-1 text-center">
                           <div className="flex items-center justify-center gap-2">
@@ -2271,6 +2258,19 @@ export default function MisPacientes() {
                           </div>
                         </td>
                       )}
+                      {/* ✅ v1.64.0: COLUMNA FINAL - Generación de Ticket Mesa de Ayuda */}
+                      <td className="px-2 py-1 text-center">
+                        <button
+                          onClick={() => {
+                            setPacienteTicket(paciente);
+                            setShowTicketModal(true);
+                          }}
+                          title="Generar ticket de Mesa de Ayuda para este paciente"
+                          className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors duration-150"
+                        >
+                          <Ticket size={18} strokeWidth={1.5} />
+                        </button>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
