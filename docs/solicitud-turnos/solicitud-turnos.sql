@@ -522,7 +522,7 @@ select * from dim_ticket_mesa_ayuda dtma ;
 
 select * from periodo_medico_disponibilidad pmd ;
 
-select * from dim_area;
+select * from dim_area where id_area  in(2,3,13);
 
 select * from dim_usuarios du  where name_user = '70073164';
 
@@ -532,9 +532,10 @@ select * from dim_personal_cnt where id_usuario =49;
 select * from ctr_periodo cp ;
 
 
-
-
-
+-- 
+select * from dim_usuarios where name_user ='70073164';
+select * from rel_user_roles rur  where rur.id_user =49;
+select * from dim_roles where id_rol in (15,33,35);
 
 
 
