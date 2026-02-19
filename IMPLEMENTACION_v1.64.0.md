@@ -167,7 +167,7 @@ ALTER TABLE dim_ticket_mesa_ayuda ADD COLUMN
   "id": 1,
   "titulo": "PROFESIONAL DE SALUD / LICENCIADO SOLICITA CITAR PACIENTE ADICIONAL",
   "descripcion": "",
-  "estado": "ABIERTO",
+  "estado": "NUEVO",
   "prioridad": "MEDIA",
   "nombreMedico": "Dr. Juan Pérez",
   "dniPaciente": "12345678",
@@ -264,7 +264,7 @@ npm start
 13. Verificar: Nuevo ticket aparece con:
     - Título = descripción del motivo ✅
     - Observaciones guardadas ✅
-    - Estado = ABIERTO ✅
+    - Estado = NUEVO ✅
 
 ---
 

@@ -84,8 +84,8 @@ CREATE TABLE dim_ticket_mesa_ayuda (
     id                      BIGSERIAL PRIMARY KEY,
     titulo                  VARCHAR(255) NOT NULL,
     descripcion             TEXT NOT NULL,
-    estado                  VARCHAR(50) DEFAULT 'ABIERTO'
-        CHECK (estado IN ('ABIERTO', 'EN_PROCESO', 'RESUELTO', 'CERRADO')),
+    estado                  VARCHAR(50) DEFAULT 'NUEVO'
+        CHECK (estado IN ('NUEVO', 'EN_PROCESO', 'RESUELTO')),
     prioridad               VARCHAR(20) DEFAULT 'MEDIA'
         CHECK (prioridad IN ('ALTA', 'MEDIA', 'BAJA')),
     -- Datos del médico (denormalizados)
@@ -339,7 +339,7 @@ public class DimTicketMesaAyuda {
 
     private String observaciones;
 
-    private String estado = "ABIERTO";
+    private String estado = "NUEVO";
 
     private String prioridad = "MEDIA";
 
@@ -472,7 +472,7 @@ public class TicketMesaAyudaService {
             .idMotivo(request.getIdMotivo())
             .titulo(motivo != null ? motivo.getDescripcion() : request.getTitulo())
             .observaciones(request.getObservaciones())
-            .estado("ABIERTO")
+            .estado("NUEVO")
             .prioridad(request.getPrioridad())
             // ... más campos
             .build();
@@ -619,7 +619,7 @@ public class TicketMesaAyudaController {
    INSERT INTO dim_ticket_mesa_ayuda
    (titulo, numero_ticket, id_motivo, observaciones, estado, prioridad, ...)
    VALUES
-   ('PROFESIONAL DE SALUD SOLICITA...', '006-2026', 1, '...', 'ABIERTO', 'MEDIA', ...)
+   ('PROFESIONAL DE SALUD SOLICITA...', '006-2026', 1, '...', 'NUEVO', 'MEDIA', ...)
    ```
 
 7. **Backend - Retornar respuesta**
@@ -627,7 +627,7 @@ public class TicketMesaAyudaController {
    TicketMesaAyudaResponseDTO {
      numeroTicket: "006-2026",
      titulo: "PROFESIONAL DE SALUD SOLICITA...",
-     estado: "ABIERTO",
+     estado: "NUEVO",
      prioridad: "MEDIA",
      nombreMotivo: "PROFESIONAL DE SALUD...",
      observaciones: "..."
@@ -695,7 +695,7 @@ public class TicketMesaAyudaController {
 
 ## 📞 Contacto
 
-- **Versión:** v1.64.0 (2026-02-18)
+- **Versión:** v1.65.2 (2026-02-19)
 - **Última Actualización:** 2026-02-19
 - **Autor:** Styp Canto Rondón
 - **Módulo:** Mesa de Ayuda (Help Desk)

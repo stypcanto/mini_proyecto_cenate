@@ -1,9 +1,9 @@
-# 🎫 Modulo de Mesa de Ayuda (v1.65.0)
+# Modulo de Mesa de Ayuda (v1.65.2)
 
 > **Sistema de Telemedicina CENATE - EsSalud Peru**
 > **Fecha de Creacion:** 2026-02-18
 > **Ultima Actualizacion:** 2026-02-19
-> **Version Modulo:** 1.2.0
+> **Version Modulo:** 1.3.0
 > **Status:** Production Ready
 
 ---
@@ -14,7 +14,7 @@ El **Modulo de Mesa de Ayuda** permite a los medicos generar tickets de soporte 
 
 El modulo permite:
 - **Medicos:** Crear tickets vinculados a un paciente desde MisPacientes, ver estado del ticket en la columna de la tabla
-- **Personal Mesa de Ayuda:** Listar, filtrar, responder y cambiar estado de tickets
+- **Personal Mesa de Ayuda:** Listar, filtrar, responder, asignar personal y cambiar estado de tickets
 - **Administradores:** Gestionar motivos predefinidos y ver KPIs
 
 ---
@@ -31,13 +31,13 @@ El modulo permite:
 |  +------------------+  +------------------+                   |
 |  |  Medico          |  |  Mesa de Ayuda   |                   |
 |  |  MisPacientes    |  |  ListaTickets    |                   |
-|  |                  |  |                  |                    |
+|  |                  |  |  (Tablero)       |                   |
 |  | - Crear ticket   |  | - Listar tickets |                   |
 |  | - Ver estado     |  | - Filtrar        |                   |
 |  | - Ver numero     |  | - Responder      |                   |
-|  |   ticket         |  | - Cambiar estado |                   |
-|  +------------------+  +------------------+                   |
-|           |                     |                              |
+|  |   ticket         |  | - Asignar personal|                  |
+|  +------------------+  | - Ver detalle    |                   |
+|           |            +------------------+                   |
 |           +--------+------------+                              |
 |                    |                                           |
 |             +------v-----------+                               |
@@ -58,20 +58,23 @@ El modulo permite:
 ### Flujo del Ticket
 
 ```
-Medico (MisPacientes)          Mesa de Ayuda (ListaTickets)
+Medico (MisPacientes)          Mesa de Ayuda (Tablero de Tickets)
        |                                |
        | 1. Click icono ticket          |
        | 2. Selecciona motivo           |
        | 3. Agrega observaciones        |
        | 4. Click "Crear Ticket"        |
        |-----> POST /tickets ---------> |
-       |                                | 5. Ve ticket ABIERTO
-       | 6. Badge aparece               | 6. Click "Responder"
-       |    en columna                  | 7. Escribe respuesta
-       |    (ABIERTO - ambar)           | 8. Cambia estado
+       |                                | 5. Ve ticket NUEVO
+       | 6. Badge aparece               | 6. Asigna personal
+       |    en columna                  | 7. Click "Responder"
+       |    (NUEVO - amarillo)          | 8. Escribe respuesta
+       |                                | 9. Cambia estado
        |                                |-----> PUT /tickets/{id}/responder
-       | 9. Badge actualiza             |
-       |    (RESUELTO - verde)          |
+       | 10. Badge actualiza            |
+       |    (RESUELTO - verde)          | ** TICKET BLOQUEADO **
+       |    (no modificable)            | (no se puede cambiar estado
+       |                                |  ni reasignar personal)
 ```
 
 ---
@@ -87,11 +90,12 @@ Medico (MisPacientes)          Mesa de Ayuda (ListaTickets)
 | `id` | BIGINT PK | ID auto-generado |
 | `titulo` | VARCHAR | Titulo del ticket (auto-generado desde motivo) |
 | `descripcion` | TEXT | Descripcion detallada |
-| `estado` | VARCHAR | ABIERTO, EN_PROCESO, RESUELTO, CERRADO |
+| `estado` | VARCHAR | NUEVO, EN_PROCESO, RESUELTO |
 | `prioridad` | VARCHAR | ALTA, MEDIA, BAJA |
 | `id_medico` | BIGINT | FK al medico que crea el ticket |
 | `nombre_medico` | VARCHAR | Nombre denormalizado del medico |
 | `id_solicitud_bolsa` | BIGINT | FK a la solicitud de bolsa del paciente |
+| `tipo_documento` | VARCHAR | Tipo de documento (DNI, CE, etc.) |
 | `dni_paciente` | VARCHAR | DNI del paciente |
 | `nombre_paciente` | VARCHAR | Nombre denormalizado del paciente |
 | `especialidad` | VARCHAR | Especialidad del medico |
@@ -99,6 +103,9 @@ Medico (MisPacientes)          Mesa de Ayuda (ListaTickets)
 | `respuesta` | TEXT | Respuesta del personal de mesa |
 | `id_personal_mesa` | BIGINT | FK al personal que responde |
 | `nombre_personal_mesa` | VARCHAR | Nombre de quien responde |
+| `id_personal_asignado` | BIGINT | FK al personal asignado al ticket (v1.65.1) |
+| `nombre_personal_asignado` | VARCHAR | Nombre del personal asignado (v1.65.1) |
+| `fecha_asignacion` | TIMESTAMP | Fecha/hora de asignacion (v1.65.1) |
 | `numero_ticket` | VARCHAR | Numero unico formato XXXX-YYYY (ej: 0001-2026) |
 | `id_motivo` | BIGINT | FK al motivo predefinido |
 | `observaciones` | TEXT | Observaciones adicionales del medico |
@@ -106,6 +113,12 @@ Medico (MisPacientes)          Mesa de Ayuda (ListaTickets)
 | `fecha_actualizacion` | TIMESTAMP | Fecha/hora ultima actualizacion (hora Peru) |
 | `fecha_respuesta` | TIMESTAMP | Fecha/hora de la respuesta (hora Peru) |
 | `deleted_at` | TIMESTAMP | Soft delete |
+
+**CHECK constraints:**
+```sql
+estado VARCHAR(50) DEFAULT 'NUEVO' CHECK (estado IN ('NUEVO', 'EN_PROCESO', 'RESUELTO'))
+prioridad VARCHAR(20) DEFAULT 'MEDIA' CHECK (prioridad IN ('ALTA', 'MEDIA', 'BAJA'))
+```
 
 #### `dim_motivos_mesa_ayuda` (Catalogo de motivos)
 
@@ -128,14 +141,33 @@ Medico (MisPacientes)          Mesa de Ayuda (ListaTickets)
 ### Estados del Ticket
 
 ```
-ABIERTO -----> EN_PROCESO -----> RESUELTO -----> CERRADO
-  (ambar)       (azul)           (verde)         (gris)
+NUEVO -----> EN_PROCESO -----> RESUELTO (BLOQUEADO)
+(amarillo)    (naranja)         (verde)
 ```
 
-- **ABIERTO:** Ticket recien creado, pendiente de atencion
+- **NUEVO:** Ticket recien creado, pendiente de atencion
 - **EN_PROCESO:** Personal de mesa esta trabajando en el ticket
-- **RESUELTO:** Ticket atendido y respondido
-- **CERRADO:** Ticket finalizado (cerrado permanentemente)
+- **RESUELTO:** Ticket atendido y respondido (estado final, no modificable)
+
+**Reglas de negocio:**
+- Un ticket RESUELTO **no puede** cambiar de estado
+- Un ticket RESUELTO **no puede** ser reasignado ni desasignado
+- Esto protege la produccion del personal asignado
+
+### Migracion de Estados (v1.65.2)
+
+Migracion Flyway `V4_6_0__migrar_estados_mesa_ayuda.sql`:
+```sql
+-- Migrar datos existentes
+UPDATE dim_ticket_mesa_ayuda SET estado = 'NUEVO' WHERE estado = 'ABIERTO';
+UPDATE dim_ticket_mesa_ayuda SET estado = 'RESUELTO' WHERE estado = 'CERRADO';
+
+-- Actualizar CHECK constraint
+ALTER TABLE dim_ticket_mesa_ayuda DROP CONSTRAINT IF EXISTS dim_ticket_mesa_ayuda_estado_check;
+ALTER TABLE dim_ticket_mesa_ayuda ALTER COLUMN estado SET DEFAULT 'NUEVO';
+ALTER TABLE dim_ticket_mesa_ayuda ADD CONSTRAINT dim_ticket_mesa_ayuda_estado_check
+    CHECK (estado IN ('NUEVO', 'EN_PROCESO', 'RESUELTO'));
+```
 
 ---
 
@@ -152,6 +184,9 @@ ABIERTO -----> EN_PROCESO -----> RESUELTO -----> CERRADO
 | `GET` | `/api/mesa-ayuda/tickets/activos` | JWT | Tickets activos (paginado) |
 | `PUT` | `/api/mesa-ayuda/tickets/{id}/responder` | JWT | Responder ticket |
 | `PUT` | `/api/mesa-ayuda/tickets/{id}/estado` | JWT | Cambiar estado |
+| `PUT` | `/api/mesa-ayuda/tickets/{id}/asignar` | JWT | Asignar personal (v1.65.1) |
+| `PUT` | `/api/mesa-ayuda/tickets/{id}/desasignar` | JWT | Desasignar personal (v1.65.1) |
+| `GET` | `/api/mesa-ayuda/personal` | JWT | Listar personal Mesa de Ayuda (v1.65.1) |
 | `DELETE` | `/api/mesa-ayuda/tickets/{id}` | JWT | Eliminar (soft delete) |
 | `GET` | `/api/mesa-ayuda/kpis` | JWT | Obtener KPIs |
 | `GET` | `/api/mesa-ayuda/motivos` | Publico | Obtener motivos predefinidos |
@@ -169,6 +204,7 @@ ABIERTO -----> EN_PROCESO -----> RESUELTO -----> CERRADO
   "idMedico": 672,
   "nombreMedico": "Test Doctor 1",
   "idSolicitudBolsa": 7100,
+  "tipoDocumento": "DNI",
   "dniPaciente": "07888772",
   "nombrePaciente": "ARIAS CUBILLAS MARIA",
   "especialidad": "CARDIOLOGIA",
@@ -183,15 +219,18 @@ ABIERTO -----> EN_PROCESO -----> RESUELTO -----> CERRADO
   "id": 2,
   "titulo": "PROFESIONAL DE SALUD SOLICITA CONTACTAR CON EL PACIENTE...",
   "descripcion": "Observaciones del medico",
-  "estado": "ABIERTO",
+  "estado": "NUEVO",
   "prioridad": "MEDIA",
   "nombreMedico": "Test Doctor 1",
+  "tipoDocumento": "DNI",
   "dniPaciente": "07888772",
   "nombrePaciente": "ARIAS CUBILLAS MARIA",
   "especialidad": "CARDIOLOGIA",
   "ipress": "CAP II LURIN",
   "respuesta": null,
   "nombrePersonalMesa": null,
+  "idPersonalAsignado": null,
+  "nombrePersonalAsignado": null,
   "fechaCreacion": "2026-02-19T00:50:26",
   "fechaRespuesta": null,
   "fechaActualizacion": "2026-02-19T00:50:26",
@@ -211,6 +250,15 @@ ABIERTO -----> EN_PROCESO -----> RESUELTO -----> CERRADO
   "estado": "RESUELTO",
   "idPersonalMesa": 288,
   "nombrePersonalMesa": "Jorge Test Test"
+}
+```
+
+### Request - Asignar Personal (PUT /tickets/{id}/asignar)
+
+```json
+{
+  "idPersonalAsignado": 288,
+  "nombrePersonalAsignado": "Jorge Test Test"
 }
 ```
 
@@ -239,7 +287,21 @@ backend/src/main/java/com/styp/cenate/
 |   +-- TicketMesaAyudaRepository.java         # Repository tickets
 |   +-- MotivoMesaAyudaRepository.java         # Repository motivos
 |   +-- SecuenciaTicketsRepository.java        # Repository secuencia
+
+backend/src/main/resources/db/migration/
++-- V4_5_0__agregar_personal_asignado_mesa_ayuda.sql  # Columnas asignacion
++-- V4_6_0__migrar_estados_mesa_ayuda.sql              # Migracion estados
 ```
+
+### Validaciones de Negocio (Backend)
+
+| Accion | Validacion | Error |
+|--------|-----------|-------|
+| Cambiar estado | Ticket RESUELTO no puede cambiar | "No se puede cambiar el estado de un ticket ya resuelto" |
+| Asignar personal | Ticket RESUELTO no puede reasignarse | "No se puede reasignar un ticket ya resuelto" |
+| Desasignar | Ticket RESUELTO no puede desasignarse | "No se puede desasignar un ticket ya resuelto" |
+| Responder | No puede cambiar a estado NUEVO | "No se puede cambiar a estado NUEVO desde una respuesta" |
+| Cambiar estado | Solo acepta NUEVO, EN_PROCESO, RESUELTO | "Estado no valido" |
 
 ### Zona Horaria
 
@@ -247,16 +309,6 @@ Todas las fechas se registran en **hora Peru (America/Lima, UTC-5)**:
 
 ```java
 private static final ZoneId ZONA_PERU = ZoneId.of("America/Lima");
-
-// En @PrePersist y @PreUpdate de la entidad
-fechaCreacion = LocalDateTime.now(ZONA_PERU);
-fechaActualizacion = LocalDateTime.now(ZONA_PERU);
-
-// En el servicio al responder
-ticket.setFechaRespuesta(LocalDateTime.now(ZONA_PERU));
-
-// En el calculo de horas transcurridas
-long horas = ChronoUnit.HOURS.between(ticket.getFechaCreacion(), LocalDateTime.now(ZONA_PERU));
 ```
 
 ### Numeracion Automatica de Tickets
@@ -267,17 +319,6 @@ Los tickets se numeran con formato `XXXX-YYYY` donde:
 
 La secuencia se reinicia cada ano usando la tabla `dim_secuencia_tickets`.
 
-### Seguridad (SecurityConfig)
-
-```java
-// Endpoints publicos (sin token):
-"/api/mesa-ayuda/motivos"           // Catalogo de motivos
-"/api/mesa-ayuda/siguiente-numero"  // Preview numero ticket
-
-// Endpoints autenticados (requieren JWT):
-// Todos los demas bajo /api/mesa-ayuda/** via .anyRequest().authenticated()
-```
-
 ---
 
 ## Frontend - Archivos
@@ -287,7 +328,7 @@ La secuencia se reinicia cada ano usando la tabla `dim_secuencia_tickets`.
 ```
 frontend/src/
 +-- pages/mesa-ayuda/
-|   +-- ListaTickets.jsx                       # Tabla de tickets (Mesa de Ayuda)
+|   +-- ListaTickets.jsx                       # Tablero de Tickets (Mesa de Ayuda)
 |   +-- BienvenidaMesaAyuda.jsx                # Pagina de bienvenida
 |   +-- FAQsMesaAyuda.jsx                      # Preguntas frecuentes
 |   +-- components/
@@ -299,112 +340,111 @@ frontend/src/
 |   +-- mesaAyudaService.js                    # Servicio API Mesa de Ayuda
 ```
 
-### MisPacientes.jsx - Integracion con Tickets
+### ListaTickets.jsx - Tablero de Tickets (v1.65.2)
 
-#### Estado y Carga de Tickets
+#### Header
+- Titulo: "Tablero de Tickets" con icono Zap (rayo amarillo)
+- Contador de tickets: badge gris con total de tickets filtrados
+- Subtitulo: "Gestiona los tickets creados por medicos y proporciona soporte"
 
-```javascript
-const [ticketsMedico, setTicketsMedico] = useState({});  // Mapa DNI -> ticket mas reciente
-
-const cargarTicketsMedico = async (idMedico) => {
-  const result = await mesaAyudaService.obtenerPorMedico(idMedico, 0, 500);
-  const tickets = result?.data?.content || [];
-  const mapa = {};
-  for (const t of tickets) {
-    // Guardar solo el ticket mas reciente por DNI (mayor ID)
-    if (t.dniPaciente && (!mapa[t.dniPaciente] || t.id > mapa[t.dniPaciente].id)) {
-      mapa[t.dniPaciente] = t;
-    }
-  }
-  setTicketsMedico(mapa);
-};
-```
-
-#### Columna "TICKET MESA DE AYUDA"
-
-Muestra dos elementos:
-1. **Badge de estado** (si existe ticket para el paciente):
-   - ABIERTO: ambar (`bg-amber-100 text-amber-800`)
-   - EN_PROCESO: azul (`bg-blue-100 text-blue-800`)
-   - RESUELTO: verde (`bg-green-100 text-green-800`)
-   - CERRADO: gris (`bg-gray-100 text-gray-600`)
-   - Formato: `0001-2026 . ABIERTO`
-
-2. **Boton crear ticket** (siempre visible, icono Ticket de lucide-react)
-
-#### Recarga Automatica
-
-Los tickets se recargan en dos momentos:
-- Al obtener `doctorInfo` (carga inicial)
-- Despues de crear un ticket exitosamente (`onSuccess` del modal)
-
-### ListaTickets.jsx - Vista Mesa de Ayuda
+#### Diseno UI Estandarizado
+- **Header tabla:** Color `#0a5ba9` (mismo que HeaderCenate) con texto blanco en mayusculas
+- **Bordes tabla:** Redondeados (`rounded-xl`) con sombra elegante (`shadow-lg`)
+- **Boton Refrescar:** Color `#0a5ba9` (estandarizado con el header)
 
 #### Columnas de la Tabla
 
 | Columna | Descripcion |
 |---------|-------------|
-| ID | Numero incremental (#1, #2, ...) |
-| Titulo | Titulo del ticket (truncado con ...) |
+| Info | Icono Eye (ojito) - abre modal de detalle |
+| Codigo Ticket | Numero formato XXXX-YYYY (enlace azul) |
 | Medico | Nombre del medico que creo el ticket |
-| Paciente | Nombre del paciente |
-| Estado | Badge con color (ABIERTO, EN_PROCESO, RESUELTO, CERRADO) |
+| Especialidad | Especialidad medica |
+| Fecha y Hora de Registro | Formato: DD/MM/YYYY, HH:mm |
+| Tipo Doc. | Tipo de documento (DNI, CE, etc.) |
+| N Documento | Numero de documento del paciente |
+| Nombre del Asegurado | Nombre del paciente |
+| Motivo de Incidencia | Motivo predefinido (truncado 3 lineas) |
+| Estado de Atencion | Badge con icono y chevron (ver abajo) |
 | Prioridad | Badge (ALTA, MEDIA, BAJA) |
-| Fecha y Hora | Formato: DD/MM/YYYY, HH:mm (hora Peru) |
-| Accion | Boton "Responder" (si ABIERTO/EN_PROCESO) o "Resuelto" verde (si RESUELTO/CERRADO) |
+| Personal Asignado | Avatar + nombre + dropdown asignacion |
+| Accion | Boton "Responder" o badge "Resuelto" |
+
+#### Badges de Estado de Atencion
+
+| Estado | Label | Color | Icono | Interactivo |
+|--------|-------|-------|-------|-------------|
+| NUEVO | Nuevo | Amarillo (`bg-yellow-50 border-yellow-300`) | Clock | Si (chevron) |
+| EN_PROCESO | En Proceso | Naranja (`bg-orange-50 border-orange-300`) | PlayCircle | Si (chevron) |
+| RESUELTO | Resuelto | Verde (`bg-green-50 border-green-300`) | CheckCircle2 | No (bloqueado) |
+
+#### Dropdown Asignacion de Personal
+- **Posicionamiento:** `position: fixed` (no se corta por overflow de tabla)
+- **Apertura:** Hacia arriba desde el click (`bottom-full`)
+- **Header:** "Asignar personal" en gris
+- **Items:** Avatar con inicial + nombre completo
+- **Opcion desasignar:** Texto rojo al final (solo si hay asignado)
+- **Backdrop:** Overlay invisible para cerrar al click fuera
+- **Bloqueado:** No se abre si el ticket es RESUELTO
+
+#### Modal Detalle de Ticket (v1.65.2)
+Al hacer click en el icono Eye se abre un modal con 3 tarjetas:
+
+1. **Informacion del Solicitante:**
+   - Avatar con inicial del medico
+   - Nombre del medico
+   - Especialidad
+   - Categoria (motivo predefinido en badge oscuro)
+
+2. **Descripcion del Problema:**
+   - Texto de observaciones o descripcion del ticket
+
+3. **Datos del Paciente:**
+   - Nombre del paciente (card teal)
+   - Tipo y numero de documento (con icono)
+   - IPRESS (con icono)
+
+Footer: Boton "Ocultar detalles" con chevron hacia arriba
 
 #### Filtros
 
 - **Busqueda:** Por titulo, DNI, medico, paciente
-- **Estado:** Todos, Abiertos, En Proceso, Resueltos, Cerrados
+- **Estado:** Todos, Nuevos, En Proceso, Resueltos
 - **Prioridad:** Todas, Alta, Media, Baja
+
+### MisPacientes.jsx - Integracion con Tickets
+
+#### Columna "TICKET MESA DE AYUDA"
+
+Muestra dos elementos:
+1. **Badge de estado** (si existe ticket para el paciente):
+   - NUEVO: ambar (`bg-amber-100 text-amber-800`)
+   - EN_PROCESO: azul (`bg-blue-100 text-blue-800`)
+   - RESUELTO: verde (`bg-green-100 text-green-800`)
+   - Formato: `0001-2026 . NUEVO`
+
+2. **Boton crear ticket** (siempre visible, icono Ticket de lucide-react)
+
+### ResponderTicketModal.jsx
+
+#### Campos del Formulario
+
+| Campo | Tipo | Requerido | Descripcion |
+|-------|------|-----------|-------------|
+| Cambiar Estado | Select | Si | En Proceso, Resuelto |
+| Respuesta | Textarea | Si | Respuesta o solucion al problema |
 
 ### mesaAyudaService.js - Servicio Frontend
 
-Todos los metodos de escritura envian `auth = true` para incluir el token JWT:
-
 ```javascript
-crearTicket:      apiClient.post(endpoint, data, true)    // auth=true
-responderTicket:  apiClient.put(endpoint, data, true)     // auth=true
-cambiarEstado:    apiClient.put(endpoint, data, true)     // auth=true
-eliminarTicket:   apiClient.delete(endpoint, true)        // auth=true
+crearTicket:        apiClient.post(endpoint, data, true)    // auth=true
+responderTicket:    apiClient.put(endpoint, data, true)     // auth=true
+cambiarEstado:      apiClient.put(endpoint, data, true)     // auth=true
+asignarTicket:      apiClient.put(endpoint, data, true)     // auth=true (v1.65.1)
+desasignarTicket:   apiClient.put(endpoint, null, true)     // auth=true (v1.65.1)
+obtenerPersonalMesaAyuda: apiClient.get(endpoint, true)     // auth=true (v1.65.1)
+eliminarTicket:     apiClient.delete(endpoint, true)        // auth=true
 ```
-
-Los metodos GET de catalogo (motivos, siguiente-numero) son publicos y no requieren token.
-
-### CrearTicketModal.jsx - Modal de Creacion
-
-#### Campos del Formulario
-
-| Campo | Tipo | Requerido | Descripcion |
-|-------|------|-----------|-------------|
-| Solicitud a Mesa de Ayuda | Select (combo) | Si | Motivo predefinido |
-| Titulo del Ticket | Input (readonly) | Auto | Auto-generado desde motivo |
-| Observaciones | Textarea | No | Detalle adicional del medico |
-| Prioridad | Select | Si | ALTA, MEDIA (default), BAJA |
-
-#### Datos Pre-cargados
-
-- **Medico:** ID, nombre, especialidad (desde `doctorInfo`)
-- **Paciente:** DNI, nombre, IPRESS, idSolicitudBolsa (desde fila de la tabla)
-- **Numero ticket:** Preview del siguiente numero (desde API)
-- **Motivos:** Lista de motivos activos (desde API)
-
-### ResponderTicketModal.jsx - Modal de Respuesta
-
-#### Informacion Mostrada
-
-- Titulo del ticket con badges (estado actual + prioridad)
-- Datos del medico, paciente, IPRESS
-- Fecha de creacion y tiempo abierto (horas)
-- Descripcion del ticket
-
-#### Campos del Formulario
-
-| Campo | Tipo | Requerido | Descripcion |
-|-------|------|-----------|-------------|
-| Cambiar Estado | Select | Si | En Proceso, Resuelto, Cerrado |
-| Respuesta | Textarea | Si | Respuesta o solucion al problema |
 
 ---
 
@@ -422,29 +462,51 @@ Los metodos GET de catalogo (motivos, siguiente-numero) son publicos y no requie
 
 ---
 
-## Fixes Aplicados
+## Historial de Versiones
+
+### v1.65.2 (2026-02-19) - Rediseno UI + Estados BD + Modal Detalle
+
+- **Nuevo:** Renombrar "Lista de Tickets" a "Tablero de Tickets" con icono Zap y contador
+- **Nuevo:** Header tabla color `#0a5ba9` (estandarizado con HeaderCenate), texto blanco mayusculas
+- **Nuevo:** Bordes redondeados (`rounded-xl`) y sombra elegante en tabla
+- **Nuevo:** Badges de estado con iconos (Clock, PlayCircle, CheckCircle2) y chevron
+- **Nuevo:** Columna "Info" con icono Eye al inicio de la tabla
+- **Nuevo:** Modal detalle ticket con 3 tarjetas (Solicitante, Descripcion, Paciente)
+- **Nuevo:** Dropdown asignacion personal con `position: fixed` (no se corta por overflow)
+- **Cambio:** Migracion estados BD: ABIERTO -> NUEVO, CERRADO fusionado con RESUELTO
+- **Cambio:** 3 estados finales: NUEVO, EN_PROCESO, RESUELTO (antes 4)
+- **Cambio:** Ticket RESUELTO bloqueado (no se puede cambiar estado ni reasignar)
+- **Cambio:** Columna "Estado" renombrada a "Estado de Atencion"
+- **Cambio:** Boton Refrescar con color estandarizado `#0a5ba9`
+- **Migracion:** `V4_6_0__migrar_estados_mesa_ayuda.sql` (CHECK constraint actualizado)
+
+### v1.65.1 (2026-02-19) - Asignacion de Personal
+
+- **Nuevo:** Columnas `id_personal_asignado`, `nombre_personal_asignado`, `fecha_asignacion`
+- **Nuevo:** Endpoints asignar/desasignar ticket y listar personal Mesa de Ayuda
+- **Nuevo:** Dropdown con avatares para asignar personal desde la tabla
+- **Migracion:** `V4_5_0__agregar_personal_asignado_mesa_ayuda.sql`
+
+### v1.65.0 (2026-02-19) - Estado de Tickets en MisPacientes
+
+- **Nuevo:** Badge de estado del ticket en columna "TICKET MESA DE AYUDA"
+- **Nuevo:** Mapa `ticketsMedico` (DNI -> ticket mas reciente) con recarga automatica
+- **Fix:** `mesaAyudaService.js` - Agregar `auth = true` en POST, PUT, DELETE
+- **Fix:** `GestionPacienteServiceImpl.java` - Agregar `idPersonal` al response de `/medico/info`
+- **Fix:** `CrearTicketModal.jsx` - `descripcion` usa observaciones o titulo como fallback
+- **Fix:** Zona horaria Peru (America/Lima, UTC-5) en todas las fechas
+
+### v1.64.1 (2026-02-18) - Numeracion Automatica
+
+- Numeracion automatica XXXX-YYYY con secuencia anual
+- Fix variable `response` no definida en CrearTicketModal
 
 ### v1.64.0 (2026-02-18) - Implementacion Inicial
 
 - Crear tickets desde MisPacientes con motivos predefinidos
-- Numeracion automatica XXXX-YYYY
 - ListaTickets con filtros y paginacion
 - ResponderTicketModal para personal de mesa
-
-### v1.64.1 (2026-02-18) - Fix variable response
-
-- Correccion de variable `response` no definida en CrearTicketModal
-
-### v1.65.0 (2026-02-19) - Estado de Tickets en MisPacientes + Fixes Criticos
-
-- **Nuevo:** Badge de estado del ticket en columna "TICKET MESA DE AYUDA"
-- **Nuevo:** Mapa `ticketsMedico` (DNI -> ticket mas reciente) con recarga automatica
-- **Fix:** `mesaAyudaService.js` - Agregar `auth = true` en POST, PUT, DELETE (el token JWT no se enviaba, causando 403 enmascarado como 404)
-- **Fix:** `GestionPacienteServiceImpl.java` - Agregar `idPersonal` al response de `/medico/info` (se necesita para crear tickets)
-- **Fix:** `CrearTicketModal.jsx` - `descripcion` usa observaciones o titulo como fallback (evita error `@NotBlank`)
-- **Fix:** Zona horaria Peru (America/Lima, UTC-5) en todas las fechas de tickets
-- **Fix:** Columna "Fecha y Hora" muestra formato DD/MM/YYYY, HH:mm
-- **Fix:** Accion "Resuelto" con boton verde en vez de texto gris "Cerrado"
+- 3 tablas: tickets, motivos, secuencia
 
 ---
 
@@ -452,7 +514,7 @@ Los metodos GET de catalogo (motivos, siguiente-numero) son publicos y no requie
 
 | Ruta | Componente | Rol |
 |------|-----------|-----|
-| `/mesa-ayuda/tickets` | ListaTickets | MESA_DE_AYUDA |
+| `/mesa-ayuda/tickets` | ListaTickets (Tablero) | MESA_DE_AYUDA |
 | `/mesa-ayuda/bienvenida` | BienvenidaMesaAyuda | MESA_DE_AYUDA |
 | `/mesa-ayuda/faqs` | FAQsMesaAyuda | MESA_DE_AYUDA |
 | `/roles/medico/pacientes` | MisPacientes (columna ticket) | MEDICO |

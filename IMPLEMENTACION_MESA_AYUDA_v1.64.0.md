@@ -104,12 +104,12 @@ WHERE NOT EXISTS (
   - Pre-carga datos del médico y paciente
   - Campos: Título, Descripción, Prioridad
   - Validaciones en cliente
-  - Estados: ABIERTO
+  - Estados: NUEVO
 
 - `frontend/src/pages/mesa-ayuda/components/ResponderTicketModal.jsx` - Para responder
   - Muestra detalles completos del ticket
   - Campo de respuesta
-  - Cambio de estado (EN_PROCESO, RESUELTO, CERRADO)
+  - Cambio de estado (EN_PROCESO, RESUELTO)
   - Información de médico y paciente
 
 **Páginas:**
@@ -219,7 +219,7 @@ Content-Type: application/json
 
 ### Obtener Todos los Tickets (MESA_DE_AYUDA)
 ```
-GET /api/mesa-ayuda/tickets?page=0&size=20&estado=ABIERTO
+GET /api/mesa-ayuda/tickets?page=0&size=20&estado=NUEVO
 ```
 
 ### Responder Ticket (MESA_DE_AYUDA)
@@ -271,10 +271,9 @@ Configurar en MBAC si es necesario:
 
 | Estado | Descripción | Quién cambia | Color |
 |--------|-------------|-------------|-------|
-| **ABIERTO** | Recién creado, sin respuesta | Sistema | 🔴 Rojo |
-| **EN_PROCESO** | Mesa de Ayuda está trabajando | Mesa de Ayuda | 🟡 Amarillo |
-| **RESUELTO** | Problema solucionado | Mesa de Ayuda | 🟢 Verde |
-| **CERRADO** | Ticket finalizado | Mesa de Ayuda | ⚪ Gris |
+| **NUEVO** | Recién creado, pendiente de atención | Sistema | 🟡 Amarillo |
+| **EN_PROCESO** | Mesa de Ayuda está trabajando | Mesa de Ayuda | 🟠 Naranja |
+| **RESUELTO** | Problema solucionado (estado final, bloqueado) | Mesa de Ayuda | 🟢 Verde |
 
 ---
 
