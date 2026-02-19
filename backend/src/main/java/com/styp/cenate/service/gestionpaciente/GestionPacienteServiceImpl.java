@@ -655,24 +655,44 @@ public class GestionPacienteServiceImpl implements IGestionPacienteService {
     private Map<String, Object> enriquecerDatosIpressYAsegurado(SolicitudBolsa bolsa) {
         String ipressNombre = null;
         String[] enfermedadesCronicas = null;
+        String telefonoPrincipal = null;
+        String telefonoAlterno = null;
 
         try {
             if (bolsa.getCodigoIpressAdscripcion() != null) {
                 ipressNombre = obtenerNombreIpress(bolsa.getCodigoIpressAdscripcion());
             }
 
-            if (ipressNombre == null && bolsa.getPacienteId() != null) {
+            // Buscar asegurado por pacienteId o por DNI para enriquecer datos faltantes
+            Asegurado asegurado = null;
+            if (bolsa.getPacienteId() != null) {
                 try {
-                    Optional<Asegurado> aseguradoOpt = aseguradoRepository.findById(bolsa.getPacienteId());
-                    if (aseguradoOpt.isPresent()) {
-                        String codIpressFromAsegurado = aseguradoOpt.get().getCasAdscripcion();
-                        if (codIpressFromAsegurado != null) {
-                            ipressNombre = obtenerNombreIpress(codIpressFromAsegurado);
-                        }
-                        enfermedadesCronicas = aseguradoOpt.get().getEnfermedadCronica();
-                    }
+                    asegurado = aseguradoRepository.findById(bolsa.getPacienteId()).orElse(null);
                 } catch (Exception e) {
-                    log.warn("No se pudo obtener datos de asegurados: {}", e.getMessage());
+                    log.warn("No se pudo obtener asegurado por ID: {}", e.getMessage());
+                }
+            }
+            if (asegurado == null && bolsa.getPacienteDni() != null && !bolsa.getPacienteDni().isBlank()) {
+                try {
+                    asegurado = aseguradoRepository.findByDocPaciente(bolsa.getPacienteDni()).orElse(null);
+                } catch (Exception e) {
+                    log.warn("No se pudo obtener asegurado por DNI: {}", e.getMessage());
+                }
+            }
+
+            if (asegurado != null) {
+                if (ipressNombre == null && asegurado.getCasAdscripcion() != null) {
+                    ipressNombre = obtenerNombreIpress(asegurado.getCasAdscripcion());
+                }
+                enfermedadesCronicas = asegurado.getEnfermedadCronica();
+
+                // Enriquecer teléfonos desde asegurados si la bolsa no los tiene
+                if ((bolsa.getPacienteTelefono() == null || bolsa.getPacienteTelefono().isBlank())
+                        && asegurado.getTelFijo() != null && !asegurado.getTelFijo().isBlank()) {
+                    telefonoPrincipal = asegurado.getTelFijo();
+                }
+                if (asegurado.getTelCelular() != null && !asegurado.getTelCelular().isBlank()) {
+                    telefonoAlterno = asegurado.getTelCelular();
                 }
             }
         } catch (Exception e) {
@@ -682,6 +702,8 @@ public class GestionPacienteServiceImpl implements IGestionPacienteService {
         Map<String, Object> result = new HashMap<>();
         result.put("ipressNombre", ipressNombre);
         result.put("enfermedadesCronicas", enfermedadesCronicas);
+        result.put("telefonoPrincipal", telefonoPrincipal);
+        result.put("telefonoAlterno", telefonoAlterno);
         return result;
     }
 
@@ -717,6 +739,8 @@ public class GestionPacienteServiceImpl implements IGestionPacienteService {
         Map<String, Object> enriquecimiento = enriquecerDatosIpressYAsegurado(bolsa);
         String ipressNombre = (String) enriquecimiento.get("ipressNombre");
         String[] enfermedadesCronicas = (String[]) enriquecimiento.get("enfermedadesCronicas");
+        String telefonoEnriquecido = (String) enriquecimiento.get("telefonoPrincipal");
+        String telefonoAlternoEnriquecido = (String) enriquecimiento.get("telefonoAlterno");
 
         // ✅ v1.64.0: Aplicar valores por defecto para Bolsa 107
         String condicion = bolsa.getCondicionMedica() != null ? bolsa.getCondicionMedica() : "Pendiente";
@@ -751,7 +775,9 @@ public class GestionPacienteServiceImpl implements IGestionPacienteService {
             .apellidosNombres(bolsa.getPacienteNombre())
             .sexo(bolsa.getPacienteSexo())
             .edad(calcularEdad(bolsa.getFechaNacimiento()))
-            .telefono(bolsa.getPacienteTelefono())
+            .telefono(bolsa.getPacienteTelefono() != null && !bolsa.getPacienteTelefono().isBlank()
+                ? bolsa.getPacienteTelefono() : telefonoEnriquecido)
+            .telefonoAlterno(telefonoAlternoEnriquecido)
             .ipress(ipressNombre)  // ✅ v1.46.9: Mostrar nombre de IPRESS, obtenido desde bolsa o asegurados
             .condicion(condicion)  // ✅ v1.64.0: Usar condición procesada
             .observaciones(bolsa.getObservacionesMedicas())  // ✅ v1.46.0: Incluir observaciones médicas

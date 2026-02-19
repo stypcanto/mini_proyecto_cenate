@@ -1864,17 +1864,17 @@ export default function MisPacientes() {
         {/* ✅ v1.65.2: Filtros colapsables - Accordion */}
         <div className="bg-gradient-to-br from-slate-50 to-slate-100 border border-slate-200 shadow-md rounded-xl mb-6 overflow-hidden">
           {/* ENCABEZADO - BOTÓN PARA EXPANDIR/COLAPSAR + LIMPIAR */}
-          <div className="px-6 py-4 flex items-center justify-between hover:bg-slate-100 transition-colors border-b border-slate-200">
+          <div className="px-4 py-2.5 flex items-center justify-between hover:bg-slate-100 transition-colors border-b border-slate-200">
             <button
               onClick={() => setFiltrosExpandidos(!filtrosExpandidos)}
-              className="flex-1 flex items-center gap-3"
+              className="flex-1 flex items-center gap-2"
             >
-              <div className="p-2 bg-[#0A5BA9]/10 rounded-lg">
-                <Filter className="w-5 h-5 text-[#0A5BA9]" />
+              <div className="p-1.5 bg-[#0A5BA9]/10 rounded-lg">
+                <Filter className="w-4 h-4 text-[#0A5BA9]" />
               </div>
               <div className="text-left">
-                <h3 className="text-lg font-bold text-gray-900">Filtros de Búsqueda</h3>
-                <p className="text-xs text-gray-600">
+                <h3 className="text-sm font-bold text-gray-900">Filtros de Búsqueda</h3>
+                <p className="text-[11px] text-gray-500">
                   {filtroEstado || filtroBolsa || filtroIpress || filtroRangoFecha !== 'hoy' ?
                     '✅ Con filtros aplicados' :
                     'Sin filtros activos'}
@@ -1900,7 +1900,7 @@ export default function MisPacientes() {
                     toast.success('✨ Filtros limpiados');
                   }}
                   title="Limpiar todos los filtros"
-                  className="px-3 py-2 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg transition-colors flex items-center gap-1 text-sm font-medium"
+                  className="px-2.5 py-1.5 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg transition-colors flex items-center gap-1 text-xs font-medium"
                 >
                   <X className="w-4 h-4" />
                   Limpiar
@@ -1918,14 +1918,14 @@ export default function MisPacientes() {
 
           {/* CONTENIDO - FILTROS (COLAPSABLE) */}
           {filtrosExpandidos && (
-            <div className="px-6 py-5 border-t border-slate-200 bg-white space-y-5">
+            <div className="px-4 py-3 border-t border-slate-200 bg-white space-y-3">
 
           {/* FILA 1: Búsqueda + Estado + Actualizar (4-column symmetric grid) */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end mb-5">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-3 items-end mb-3">
             {/* Búsqueda - span 2 columns */}
             <div className="md:col-span-2">
-              <label className="block text-xs font-semibold text-gray-700 mb-2 uppercase tracking-wide">
-                <Search className="w-4 h-4 inline mr-2 text-[#0A5BA9]" />
+              <label className="block text-[11px] font-semibold text-gray-600 mb-1 uppercase tracking-wide">
+                <Search className="w-3.5 h-3.5 inline mr-1.5 text-[#0A5BA9]" />
                 Buscar Paciente
               </label>
               <input
@@ -1933,25 +1933,25 @@ export default function MisPacientes() {
                 placeholder="Nombre o DNI..."
                 value={busqueda}
                 onChange={(e) => setBusqueda(e.target.value)}
-                className="w-full px-4 py-3 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#0A5BA9] focus:border-transparent transition-all shadow-sm hover:border-slate-400"
+                className="w-full h-[34px] px-3 text-sm bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#0A5BA9] focus:border-transparent transition-all shadow-sm hover:border-slate-400"
               />
             </div>
 
             {/* Estado - 1 column */}
             <div>
-              <label className="block text-xs font-semibold text-gray-700 mb-2 uppercase tracking-wide">
-                <Filter className="w-4 h-4 inline mr-2 text-orange-500" />
+              <label className="block text-[11px] font-semibold text-gray-600 mb-1 uppercase tracking-wide">
+                <Filter className="w-3.5 h-3.5 inline mr-1.5 text-orange-500" />
                 Estado
               </label>
               <select
                 value={filtroEstado}
                 onChange={(e) => setFiltroEstado(e.target.value)}
-                className="w-full px-4 py-3 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-400 focus:border-transparent transition-all shadow-sm hover:border-slate-400"
+                className="w-full h-[34px] px-3 text-sm bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-400 focus:border-transparent transition-all shadow-sm hover:border-slate-400"
               >
                 <option value="">Todos</option>
-                <option value="Pendiente">🟠 Pendiente</option>
-                <option value="Atendido">✅ Atendido</option>
-                <option value="Deserción">❌ Deserción</option>
+                <option value="Pendiente">Pendiente</option>
+                <option value="Atendido">Atendido</option>
+                <option value="Deserción">Deserción</option>
               </select>
             </div>
 
@@ -1960,26 +1960,26 @@ export default function MisPacientes() {
               <button
                 onClick={cargarPacientes}
                 title="Actualizar lista de pacientes"
-                className="w-full h-12 px-4 bg-gradient-to-r from-[#0A5BA9] to-[#0d4a8f] text-white rounded-lg hover:from-[#083d78] hover:to-[#062d5f] transition-all duration-200 flex items-center justify-center gap-2 hover:shadow-lg font-semibold active:scale-95"
+                className="w-full h-[34px] px-3 bg-gradient-to-r from-[#0A5BA9] to-[#0d4a8f] text-white text-xs rounded-lg hover:from-[#083d78] hover:to-[#062d5f] transition-all duration-200 flex items-center justify-center gap-1.5 hover:shadow-lg font-medium active:scale-95"
               >
-                <RefreshCw className="w-5 h-5" />
+                <RefreshCw className="w-3.5 h-3.5" />
                 Actualizar
               </button>
             </div>
           </div>
 
           {/* FILA 2: Tipo de Bolsa + IPRESS + Asignación + Atención (4-column symmetric grid) */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-start">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-3 items-start">
             {/* Filtro Tipo de Bolsa - 1 column */}
             <div>
-              <label className="block text-xs font-semibold text-gray-700 mb-2 uppercase tracking-wide">
-                <span className="inline-block w-4 h-4 mr-2 text-purple-500">📦</span>
+              <label className="block text-[11px] font-semibold text-gray-600 mb-1 uppercase tracking-wide">
+                <span className="inline-block w-3.5 h-3.5 mr-1.5 text-purple-500">📦</span>
                 Bolsa
               </label>
               <select
                 value={filtroBolsa}
                 onChange={(e) => setFiltroBolsa(e.target.value)}
-                className="w-full px-4 py-3 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-400 focus:border-transparent transition-all shadow-sm hover:border-slate-400"
+                className="w-full h-[34px] px-3 text-sm bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-400 focus:border-transparent transition-all shadow-sm hover:border-slate-400"
               >
                 <option value="">Todas</option>
                 {bolsasDisponibles.map((bolsa) => (
@@ -1992,14 +1992,14 @@ export default function MisPacientes() {
 
             {/* Filtro IPRESS - 1 column */}
             <div>
-              <label className="block text-xs font-semibold text-gray-700 mb-2 uppercase tracking-wide">
-                <span className="inline-block w-4 h-4 mr-2 text-blue-500">🏥</span>
+              <label className="block text-[11px] font-semibold text-gray-600 mb-1 uppercase tracking-wide">
+                <span className="inline-block w-3.5 h-3.5 mr-1.5 text-blue-500">🏥</span>
                 IPRESS
               </label>
               <select
                 value={filtroIpress}
                 onChange={(e) => setFiltroIpress(e.target.value)}
-                className="w-full px-4 py-3 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-400 focus:border-transparent transition-all shadow-sm hover:border-slate-400"
+                className="w-full h-[34px] px-3 text-sm bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-400 focus:border-transparent transition-all shadow-sm hover:border-slate-400"
               >
                 <option value="">Todas</option>
                 {ipressDisponibles.map((ipress) => (
@@ -2012,8 +2012,8 @@ export default function MisPacientes() {
 
             {/* ✅ v1.67.5: Filtro Calendario - Cuándo DEBE ATENDER el médico - 1 column */}
             <div data-selector-asignacion>
-              <label className="block text-xs font-semibold text-gray-700 mb-2 uppercase tracking-wide">
-                <Calendar className="w-4 h-4 inline mr-2 text-green-600" />
+              <label className="block text-[11px] font-semibold text-gray-600 mb-1 uppercase tracking-wide">
+                <Calendar className="w-3.5 h-3.5 inline mr-1.5 text-green-600" />
                 Atención (Cuándo Atender)
               </label>
               <CalendarioAsignacion
@@ -2036,39 +2036,39 @@ export default function MisPacientes() {
 
           {/* FILA 3: Rango Personalizado (condicional) */}
           {filtroRangoFecha === 'personalizado' && (
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 pt-5 mt-2 pl-4 border-l-4 border-green-500 bg-green-50/40 rounded-r-lg">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-3 pt-3 mt-1 pl-3 border-l-4 border-green-500 bg-green-50/40 rounded-r-lg">
               <div>
-                <label className="block text-xs font-semibold text-gray-700 mb-2 uppercase tracking-wide">
+                <label className="block text-[11px] font-semibold text-gray-600 mb-1 uppercase tracking-wide">
                   📅 Desde
                 </label>
                 <input
                   type="date"
                   value={fechaDesde}
                   onChange={(e) => setFechaDesde(e.target.value)}
-                  className="w-full px-4 py-3 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-green-400 focus:border-transparent transition-all shadow-sm hover:border-slate-400"
+                  className="w-full h-[34px] px-3 text-sm bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-green-400 focus:border-transparent transition-all shadow-sm hover:border-slate-400"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-gray-700 mb-2 uppercase tracking-wide">
+                <label className="block text-[11px] font-semibold text-gray-600 mb-1 uppercase tracking-wide">
                   📅 Hasta
                 </label>
                 <input
                   type="date"
                   value={fechaHasta}
                   onChange={(e) => setFechaHasta(e.target.value)}
-                  className="w-full px-4 py-3 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-green-400 focus:border-transparent transition-all shadow-sm hover:border-slate-400"
+                  className="w-full h-[34px] px-3 text-sm bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-green-400 focus:border-transparent transition-all shadow-sm hover:border-slate-400"
                 />
               </div>
 
               <div className="md:col-span-2">
-                <label className="block text-xs font-semibold text-gray-700 mb-2 uppercase tracking-wide">
+                <label className="block text-[11px] font-semibold text-gray-600 mb-1 uppercase tracking-wide">
                   Ordenar por
                 </label>
                 <select
                   value={ordenarPor}
                   onChange={(e) => setOrdenarPor(e.target.value)}
-                  className="w-full px-4 py-3 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-green-400 focus:border-transparent transition-all shadow-sm hover:border-slate-400"
+                  className="w-full h-[34px] px-3 text-sm bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-green-400 focus:border-transparent transition-all shadow-sm hover:border-slate-400"
                 >
                   <option value="reciente">Más recientes primero</option>
                   <option value="antiguo">Más antiguos primero</option>
@@ -2163,7 +2163,24 @@ export default function MisPacientes() {
                           </div>
                         </div>
                       </td>
-                      <td className="px-2 py-1 text-gray-600 text-sm">{paciente.telefono || '-'}</td>
+                      <td className="px-2 py-1 text-sm">
+                        <div className="flex flex-col gap-1">
+                          <div className="flex items-center gap-1.5">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-green-600 flex-shrink-0"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+                            <div>
+                              <span className="text-[10px] font-bold text-green-700 uppercase block leading-none">Principal</span>
+                              <span className="text-gray-800 text-xs">{paciente.telefono || '-'}</span>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-1.5">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-green-600 flex-shrink-0"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+                            <div>
+                              <span className="text-[10px] font-bold text-green-700 uppercase block leading-none">Alterno</span>
+                              <span className="text-gray-800 text-xs">{paciente.telefonoAlterno || '-'}</span>
+                            </div>
+                          </div>
+                        </div>
+                      </td>
                       <td className="px-2 py-1 text-gray-600 text-sm">{paciente.ipress || '-'}</td>
 
                       {/* ✅ v1.76.0: Fecha toma EKG - SOLO para Cardiología */}

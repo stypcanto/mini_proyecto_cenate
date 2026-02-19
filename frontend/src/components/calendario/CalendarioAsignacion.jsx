@@ -137,16 +137,16 @@ function CalendarioAsignacion({
       <button
         ref={setButtonRef}
         onClick={() => setCalendarioAbierto(!calendarioAbierto)}
-        className="w-full px-4 py-3 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-green-400 focus:border-transparent transition-all shadow-sm hover:border-slate-400 flex items-center gap-2 text-left text-gray-700 font-medium"
+        className="w-full h-[34px] px-3 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-green-400 focus:border-transparent transition-all shadow-sm hover:border-slate-400 flex items-center gap-2 text-left text-sm text-gray-700 font-medium"
       >
-        <Calendar className="w-4 h-4 text-green-600 flex-shrink-0" />
-        <span className="flex-1">
+        <Calendar className="w-3.5 h-3.5 text-green-600 flex-shrink-0" />
+        <span className="flex-1 truncate">
           {fechaSeleccionada ? formatearFechaBoton(fechaSeleccionada) : 'Seleccionar fecha'}
         </span>
         {calendarioAbierto ? (
-          <ChevronLeft className="w-4 h-4 text-gray-500 transform rotate-90" />
+          <ChevronLeft className="w-3.5 h-3.5 text-gray-500 transform rotate-90" />
         ) : (
-          <ChevronLeft className="w-4 h-4 text-gray-500" />
+          <ChevronLeft className="w-3.5 h-3.5 text-gray-500" />
         )}
       </button>
 

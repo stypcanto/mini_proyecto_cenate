@@ -55,6 +55,7 @@ public class GestionPacienteDTO {
     private String sexo;
     private Integer edad;
     private String telefono;
+    private String telefonoAlterno;
     private String tipoPaciente;
     private String tipoSeguro;
     @JsonProperty("ipress")
