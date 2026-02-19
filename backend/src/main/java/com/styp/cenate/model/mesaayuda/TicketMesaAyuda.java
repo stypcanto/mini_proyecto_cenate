@@ -197,6 +197,18 @@ public class TicketMesaAyuda {
     @Column(columnDefinition = "TEXT")
     private String observaciones;
 
+    // ========== NUMERACIÓN Y TRAZABILIDAD (v1.64.1) ==========
+
+    /**
+     * Número único del ticket para trazabilidad y búsqueda
+     * Formato: XXX-YYYY (ej: 001-2026, 002-2026, etc)
+     * XXX = contador de 3 dígitos
+     * YYYY = año actual
+     * Único a nivel global para permitir búsquedas rápidas
+     */
+    @Column(name = "numero_ticket", nullable = false, unique = true, length = 20)
+    private String numeroTicket;
+
     // ========== LIFECYCLE CALLBACKS ==========
 
     @PrePersist

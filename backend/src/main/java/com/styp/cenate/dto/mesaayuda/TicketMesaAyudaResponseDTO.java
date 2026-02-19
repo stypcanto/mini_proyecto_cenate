@@ -121,4 +121,10 @@ public class TicketMesaAyudaResponseDTO {
      * Observaciones adicionales del médico (NUEVO v1.64.0)
      */
     private String observaciones;
+
+    /**
+     * Número único del ticket para trazabilidad (NUEVO v1.64.1)
+     * Formato: XXX-YYYY (ej: 001-2026, 002-2026)
+     */
+    private String numeroTicket;
 }

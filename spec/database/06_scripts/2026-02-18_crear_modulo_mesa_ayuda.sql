@@ -18,6 +18,18 @@ CREATE TABLE IF NOT EXISTS public.dim_motivos_mesadeayuda (
 CREATE INDEX IF NOT EXISTS idx_motivos_activo ON dim_motivos_mesadeayuda(activo);
 CREATE INDEX IF NOT EXISTS idx_motivos_orden ON dim_motivos_mesadeayuda(orden);
 
+-- Tabla para secuencia de numeración de tickets (NUEVO v1.64.1)
+CREATE TABLE IF NOT EXISTS public.dim_secuencia_tickets (
+    id          BIGSERIAL PRIMARY KEY,
+    anio        INTEGER NOT NULL UNIQUE,
+    contador    INTEGER NOT NULL DEFAULT 0,
+    fecha_creacion TIMESTAMP DEFAULT NOW(),
+    fecha_actualizacion TIMESTAMP DEFAULT NOW()
+);
+
+-- Crear índice para búsqueda rápida por año
+CREATE INDEX IF NOT EXISTS idx_secuencia_tickets_anio ON dim_secuencia_tickets(anio);
+
 -- Insertar 7 motivos predefinidos (NUEVO v1.64.0)
 INSERT INTO public.dim_motivos_mesadeayuda (codigo, descripcion, activo, orden) VALUES
 ('PS_CITAR_ADICIONAL',   'PROFESIONAL DE SALUD / LICENCIADO SOLICITA CITAR PACIENTE ADICIONAL', TRUE, 1),
@@ -52,6 +64,7 @@ CREATE TABLE IF NOT EXISTS public.dim_ticket_mesa_ayuda (
     deleted_at TIMESTAMP NULL,
     id_motivo   BIGINT REFERENCES public.dim_motivos_mesadeayuda(id) ON DELETE SET NULL,
     observaciones TEXT,
+    numero_ticket VARCHAR(20) UNIQUE NOT NULL,
     CONSTRAINT fk_ticket_medico FOREIGN KEY (id_medico) REFERENCES dim_personal_cnt(id_pers) ON DELETE SET NULL,
     CONSTRAINT fk_ticket_motivo FOREIGN KEY (id_motivo) REFERENCES public.dim_motivos_mesadeayuda(id) ON DELETE SET NULL
 );
@@ -61,10 +74,11 @@ CREATE INDEX IF NOT EXISTS idx_ticket_mesa_estado ON dim_ticket_mesa_ayuda(estad
 CREATE INDEX IF NOT EXISTS idx_ticket_mesa_medico ON dim_ticket_mesa_ayuda(id_medico);
 CREATE INDEX IF NOT EXISTS idx_ticket_mesa_fecha_creacion ON dim_ticket_mesa_ayuda(fecha_creacion DESC);
 CREATE INDEX IF NOT EXISTS idx_ticket_mesa_prioridad ON dim_ticket_mesa_ayuda(prioridad);
+CREATE INDEX IF NOT EXISTS idx_ticket_mesa_numero ON dim_ticket_mesa_ayuda(numero_ticket);
 
 -- Agregar comentarios a la tabla y columnas
-COMMENT ON TABLE dim_ticket_mesa_ayuda IS 'Tabla de tickets de soporte creados por médicos para Mesa de Ayuda. Versión v1.64.0+';
-COMMENT ON COLUMN dim_ticket_mesa_ayuda.id IS 'ID único del ticket';
+COMMENT ON TABLE dim_ticket_mesa_ayuda IS 'Tabla de tickets de soporte creados por médicos para Mesa de Ayuda. Versión v1.64.1+';
+COMMENT ON COLUMN dim_ticket_mesa_ayuda.id IS 'ID único del ticket (pk)';
 COMMENT ON COLUMN dim_ticket_mesa_ayuda.titulo IS 'Título del ticket (requerido)';
 COMMENT ON COLUMN dim_ticket_mesa_ayuda.descripcion IS 'Descripción detallada del problema o solicitud';
 COMMENT ON COLUMN dim_ticket_mesa_ayuda.estado IS 'Estado del ticket: ABIERTO, EN_PROCESO, RESUELTO, CERRADO';
@@ -73,6 +87,7 @@ COMMENT ON COLUMN dim_ticket_mesa_ayuda.nombre_medico IS 'Nombre del médico que
 COMMENT ON COLUMN dim_ticket_mesa_ayuda.id_solicitud_bolsa IS 'Referencia opcional a solicitud de bolsa del paciente';
 COMMENT ON COLUMN dim_ticket_mesa_ayuda.nombre_personal_mesa IS 'Nombre del personal de Mesa de Ayuda que respondió (denormalizado)';
 COMMENT ON COLUMN dim_ticket_mesa_ayuda.fecha_respuesta IS 'Timestamp de cuando se respondió el ticket';
+COMMENT ON COLUMN dim_ticket_mesa_ayuda.numero_ticket IS 'Número de ticket único (ej: 001-2026) para trazabilidad y búsqueda. Formato: 003 dígitos-YYYY';
 
 -- Insertar módulo "Mesa de Ayuda" en dim_modulos_sistema
 -- NOTA: Primero verifica si existe el módulo

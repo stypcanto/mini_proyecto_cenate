@@ -6,8 +6,10 @@ import com.styp.cenate.dto.mesaayuda.ResponderTicketDTO;
 import com.styp.cenate.dto.mesaayuda.MotivoMesaAyudaDTO;
 import com.styp.cenate.model.mesaayuda.TicketMesaAyuda;
 import com.styp.cenate.model.mesaayuda.DimMotivosMesaAyuda;
+import com.styp.cenate.model.mesaayuda.DimSecuenciaTickets;
 import com.styp.cenate.repository.mesaayuda.TicketMesaAyudaRepository;
 import com.styp.cenate.repository.mesaayuda.MotivoMesaAyudaRepository;
+import com.styp.cenate.repository.mesaayuda.SecuenciaTicketsRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -42,6 +44,39 @@ public class TicketMesaAyudaService {
 
     private final TicketMesaAyudaRepository ticketRepository;
     private final MotivoMesaAyudaRepository motivoRepository;
+    private final SecuenciaTicketsRepository secuenciaRepository;
+
+    // ========== GENERAR NÚMERO DE TICKET ==========
+
+    /**
+     * Generar número único del ticket con formato XXX-YYYY
+     * Incrementa el contador anual automáticamente
+     *
+     * @return Número generado (ej: 001-2026, 002-2026)
+     */
+    private String generarNumeroTicket() {
+        int anioActual = java.time.Year.now().getValue();
+
+        // Obtener o crear la secuencia para este año
+        DimSecuenciaTickets secuencia = secuenciaRepository.findByAnio(anioActual)
+            .orElseGet(() -> {
+                DimSecuenciaTickets nueva = DimSecuenciaTickets.builder()
+                    .anio(anioActual)
+                    .contador(0)
+                    .build();
+                return secuenciaRepository.save(nueva);
+            });
+
+        // Incrementar contador
+        secuenciaRepository.incrementarContador(anioActual);
+        secuencia.setContador(secuencia.getContador() + 1);
+
+        // Generar número con padding de 3 dígitos
+        String numeroFormato = String.format("%03d-%04d", secuencia.getContador(), anioActual);
+        log.info("Número de ticket generado: {}", numeroFormato);
+
+        return numeroFormato;
+    }
 
     // ========== OBTENER MOTIVOS ==========
 
@@ -73,8 +108,10 @@ public class TicketMesaAyudaService {
      * Si se proporciona idMotivo, el título se genera automáticamente desde la descripción del motivo
      * Si no hay idMotivo, se usa el título proporcionado directamente
      *
+     * Genera automáticamente un número de ticket único (XXX-YYYY) para trazabilidad
+     *
      * @param requestDTO Datos del ticket (título OR idMotivo, descripción/observaciones, prioridad, datos del paciente)
-     * @return TicketMesaAyudaResponseDTO con los datos del ticket creado
+     * @return TicketMesaAyudaResponseDTO con los datos del ticket creado (incluyendo numeroTicket)
      */
     public TicketMesaAyudaResponseDTO crearTicket(TicketMesaAyudaRequestDTO requestDTO) {
         log.info("Creando nuevo ticket para médico: {}", requestDTO.getIdMedico());
@@ -86,6 +123,9 @@ public class TicketMesaAyudaService {
                 .orElseThrow(() -> new IllegalArgumentException("Motivo no encontrado con ID: " + requestDTO.getIdMotivo()));
             tituloFinal = motivo.getDescripcion();
         }
+
+        // ✅ v1.64.1: Generar número único del ticket para trazabilidad
+        String numeroTicket = generarNumeroTicket();
 
         TicketMesaAyuda ticket = TicketMesaAyuda.builder()
             .titulo(tituloFinal)
@@ -101,12 +141,13 @@ public class TicketMesaAyudaService {
             .ipress(requestDTO.getIpress())
             .idMotivo(requestDTO.getIdMotivo())
             .observaciones(requestDTO.getObservaciones())
+            .numeroTicket(numeroTicket)
             .fechaCreacion(LocalDateTime.now())
             .fechaActualizacion(LocalDateTime.now())
             .build();
 
         TicketMesaAyuda saved = ticketRepository.save(ticket);
-        log.info("Ticket creado exitosamente con ID: {}", saved.getId());
+        log.info("Ticket creado exitosamente con ID: {} - Número: {}", saved.getId(), numeroTicket);
 
         return toResponseDTO(saved);
     }
@@ -369,6 +410,7 @@ public class TicketMesaAyudaService {
             .idMotivo(ticket.getIdMotivo())
             .nombreMotivo(nombreMotivo)
             .observaciones(ticket.getObservaciones())
+            .numeroTicket(ticket.getNumeroTicket())
             .build();
     }
 
