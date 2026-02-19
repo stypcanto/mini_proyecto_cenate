@@ -2948,7 +2948,7 @@ export default function MisPacientes() {
         medico={doctorInfo ? {
           id: doctorInfo.idPersonal,
           nombre: doctorInfo.nombre,
-          especialidad: userSpecialty?.name || 'General'
+          especialidad: doctorInfo.especialidad || userSpecialty?.name || 'General'
         } : null}
         paciente={pacienteTicket ? {
           id: pacienteTicket.idSolicitudBolsa,
@@ -2956,7 +2956,7 @@ export default function MisPacientes() {
           tipoDocumento: pacienteTicket.tipoDoc || 'DNI',
           dni: pacienteTicket.numDoc,
           nombre: pacienteTicket.apellidosNombres,
-          especialidad: userSpecialty?.name || 'General',
+          especialidad: doctorInfo?.especialidad || userSpecialty?.name || 'General',
           ipress: pacienteTicket.ipress
         } : null}
         onSuccess={(ticket) => {

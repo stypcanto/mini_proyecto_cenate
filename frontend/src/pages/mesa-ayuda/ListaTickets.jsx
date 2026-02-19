@@ -298,7 +298,7 @@ function ListaTickets() {
                     Código Ticket
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">
-                    Médico
+                    Profesional de Salud
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">
                     Especialidad
