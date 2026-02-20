@@ -11,6 +11,8 @@ import { useNavigate } from "react-router-dom";
 import {
   Headphones,
   ListChecks,
+  CheckSquare,
+  BarChart3,
   HelpCircle,
   ArrowRight,
   CheckCircle2,
@@ -75,21 +77,32 @@ export default function BienvenidaMesaAyuda() {
           <h3 className="text-xl font-bold text-slate-900 mb-4">
             Acciones Rápidas
           </h3>
-          <div className="grid md:grid-cols-2 gap-4">
-            {/* Card 1: Gestión de Tickets */}
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <QuickActionCard
               icon={<ListChecks className="w-6 h-6" />}
-              title="Gestión de Tickets"
-              description="Revisa, responde y gestiona todos los tickets de soporte creados por los médicos. Filtra por estado, prioridad y realiza seguimiento"
+              title="Tickets Pendientes"
+              description="Revisa y atiende los tickets nuevos y en proceso. Asigna, responde y da seguimiento."
               color="blue"
               action={() => navigate("/mesa-ayuda/tickets-pendientes")}
             />
-
-            {/* Card 2: Preguntas Frecuentes */}
+            <QuickActionCard
+              icon={<CheckSquare className="w-6 h-6" />}
+              title="Tickets Atendidos"
+              description="Consulta el historial de tickets resueltos y cerrados del sistema."
+              color="teal"
+              action={() => navigate("/mesa-ayuda/tickets-atendidos")}
+            />
+            <QuickActionCard
+              icon={<BarChart3 className="w-6 h-6" />}
+              title="Estadísticas"
+              description="Visualiza el rendimiento del equipo, ranking de operadores y tu producción individual."
+              color="amber"
+              action={() => navigate("/mesa-ayuda/estadisticas")}
+            />
             <QuickActionCard
               icon={<HelpCircle className="w-6 h-6" />}
               title="Preguntas Frecuentes"
-              description="Consulta las preguntas frecuentes sobre el uso del sistema de Mesa de Ayuda, flujos de tickets y procedimientos de soporte"
+              description="Consulta las FAQs sobre flujos de tickets y procedimientos de soporte."
               color="purple"
               action={() => navigate("/mesa-ayuda/faqs")}
             />
@@ -123,12 +136,16 @@ export default function BienvenidaMesaAyuda() {
 // ============================================================
 function QuickActionCard({ icon, title, description, color, action }) {
   const colorClasses = {
-    blue: "bg-blue-50 border-blue-200 hover:bg-blue-100 hover:border-blue-300",
+    blue:   "bg-blue-50   border-blue-200   hover:bg-blue-100   hover:border-blue-300",
+    teal:   "bg-teal-50   border-teal-200   hover:bg-teal-100   hover:border-teal-300",
+    amber:  "bg-amber-50  border-amber-200  hover:bg-amber-100  hover:border-amber-300",
     purple: "bg-purple-50 border-purple-200 hover:bg-purple-100 hover:border-purple-300",
   };
 
   const iconColorClasses = {
-    blue: "bg-blue-100 text-blue-600",
+    blue:   "bg-blue-100   text-blue-600",
+    teal:   "bg-teal-100   text-teal-600",
+    amber:  "bg-amber-100  text-amber-600",
     purple: "bg-purple-100 text-purple-600",
   };
 

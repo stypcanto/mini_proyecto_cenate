@@ -520,6 +520,19 @@ public class TicketMesaAyudaController {
         return ResponseEntity.ok(estadisticas);
     }
 
+    /**
+     * GET /api/mesa-ayuda/estadisticas/personal?nombre=X&periodo=dia|semana|mes|ano
+     * Estadísticas detalladas de un operador filtradas por período
+     */
+    @GetMapping("/estadisticas/personal")
+    public ResponseEntity<Map<String, Object>> obtenerEstadisticasPersonal(
+            @RequestParam String nombre,
+            @RequestParam(defaultValue = "mes") String periodo) {
+        log.info("GET /api/mesa-ayuda/estadisticas/personal - nombre={}, periodo={}", nombre, periodo);
+        Map<String, Object> data = ticketService.obtenerEstadisticasPersonal(nombre, periodo);
+        return ResponseEntity.ok(data);
+    }
+
     // ========== ERROR HANDLING ==========
 
     /**

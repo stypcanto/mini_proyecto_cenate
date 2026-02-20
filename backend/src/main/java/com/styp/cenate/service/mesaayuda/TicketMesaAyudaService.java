@@ -672,6 +672,39 @@ public class TicketMesaAyudaService {
         }
         result.put("porPersonal", porPersonal);
 
+        // 4b. Detalle por personal (para ranking y vista individual)
+        List<Object[]> personalDetalleRaw = entityManager.createNativeQuery(
+            "SELECT " +
+            "  nombre_personal_asignado, " +
+            "  COUNT(*) AS total, " +
+            "  COUNT(CASE WHEN estado = 'RESUELTO' THEN 1 END) AS resueltos, " +
+            "  COUNT(CASE WHEN estado = 'EN_PROCESO' THEN 1 END) AS en_proceso, " +
+            "  COUNT(CASE WHEN estado = 'NUEVO' THEN 1 END) AS nuevos, " +
+            "  COUNT(CASE WHEN estado = 'CERRADO' THEN 1 END) AS cerrados, " +
+            "  COALESCE(AVG(CASE WHEN estado = 'RESUELTO' AND fecha_atencion IS NOT NULL " +
+            "    THEN EXTRACT(EPOCH FROM (fecha_atencion - fecha_creacion))/60 END), 0) AS tprom " +
+            "FROM dim_ticket_mesa_ayuda " +
+            "WHERE deleted_at IS NULL AND nombre_personal_asignado IS NOT NULL " +
+            "GROUP BY nombre_personal_asignado " +
+            "ORDER BY total DESC"
+        ).getResultList();
+        List<Map<String, Object>> porPersonalDetalle = new ArrayList<>();
+        for (Object[] row : personalDetalleRaw) {
+            long tot = ((Number) row[1]).longValue();
+            long res = ((Number) row[2]).longValue();
+            Map<String, Object> m = new HashMap<>();
+            m.put("personal", row[0]);
+            m.put("total", tot);
+            m.put("resueltos", res);
+            m.put("enProceso", ((Number) row[3]).longValue());
+            m.put("nuevos", ((Number) row[4]).longValue());
+            m.put("cerrados", ((Number) row[5]).longValue());
+            m.put("tasaResolucion", tot > 0 ? Math.round((res * 100.0 / tot) * 10.0) / 10.0 : 0.0);
+            m.put("tiempoPromedioMinutos", ((Number) row[6]).longValue());
+            porPersonalDetalle.add(m);
+        }
+        result.put("porPersonalDetalle", porPersonalDetalle);
+
         // 5. Tiempo promedio de resolución (minutos)
         Object tiempoRaw = entityManager.createNativeQuery(
             "SELECT AVG(EXTRACT(EPOCH FROM (fecha_atencion - fecha_creacion))/60) " +
@@ -697,6 +730,124 @@ public class TicketMesaAyudaService {
         }
         result.put("porDia", porDia);
 
+        return result;
+    }
+
+    // ========== ESTADÍSTICAS POR PERSONAL Y PERÍODO ==========
+
+    /**
+     * Estadísticas detalladas de un operador filtradas por período.
+     * periodo: "dia" | "semana" | "mes" | "ano"
+     */
+    @Transactional(readOnly = true)
+    public Map<String, Object> obtenerEstadisticasPersonal(String nombre, String periodo) {
+        log.info("Calculando estadísticas de '{}' para periodo '{}'", nombre, periodo);
+
+        // Cláusula WHERE de período (hora Lima)
+        String filtroFecha = switch (periodo) {
+            case "dia"    -> "AND DATE(t.fecha_creacion AT TIME ZONE 'America/Lima') = CURRENT_DATE";
+            case "semana" -> "AND t.fecha_creacion >= DATE_TRUNC('week',  NOW() AT TIME ZONE 'America/Lima') AT TIME ZONE 'America/Lima'";
+            case "ano"    -> "AND t.fecha_creacion >= DATE_TRUNC('year',  NOW() AT TIME ZONE 'America/Lima') AT TIME ZONE 'America/Lima'";
+            default       -> "AND t.fecha_creacion >= DATE_TRUNC('month', NOW() AT TIME ZONE 'America/Lima') AT TIME ZONE 'America/Lima'";
+        };
+
+        Map<String, Object> result = new HashMap<>();
+
+        // 1. KPIs del operador en el período
+        Object[] row = (Object[]) entityManager.createNativeQuery(
+            "SELECT " +
+            "  COUNT(*) AS total, " +
+            "  COUNT(CASE WHEN t.estado = 'RESUELTO'    THEN 1 END) AS resueltos, " +
+            "  COUNT(CASE WHEN t.estado = 'EN_PROCESO'  THEN 1 END) AS en_proceso, " +
+            "  COUNT(CASE WHEN t.estado = 'NUEVO'       THEN 1 END) AS nuevos, " +
+            "  COUNT(CASE WHEN t.estado = 'CERRADO'     THEN 1 END) AS cerrados, " +
+            "  COALESCE(AVG(CASE WHEN t.estado = 'RESUELTO' AND t.fecha_atencion IS NOT NULL " +
+            "    THEN EXTRACT(EPOCH FROM (t.fecha_atencion - t.fecha_creacion))/60 END), 0) " +
+            "FROM dim_ticket_mesa_ayuda t " +
+            "WHERE t.deleted_at IS NULL " +
+            "  AND t.nombre_personal_asignado = :nombre " +
+            filtroFecha
+        ).setParameter("nombre", nombre).getSingleResult();
+
+        long total     = ((Number) row[0]).longValue();
+        long resueltos = ((Number) row[1]).longValue();
+        double tasa    = total > 0 ? Math.round((resueltos * 100.0 / total) * 10.0) / 10.0 : 0.0;
+
+        Map<String, Object> kpis = new HashMap<>();
+        kpis.put("total",                total);
+        kpis.put("resueltos",            resueltos);
+        kpis.put("enProceso",            ((Number) row[2]).longValue());
+        kpis.put("nuevos",               ((Number) row[3]).longValue());
+        kpis.put("cerrados",             ((Number) row[4]).longValue());
+        kpis.put("tasaResolucion",       tasa);
+        kpis.put("tiempoPromedioMinutos", ((Number) row[5]).longValue());
+        result.put("kpis", kpis);
+
+        // 2. Evolución en el período (agrupación según granularidad)
+        String groupExpr, labelExpr, orderExpr;
+        if ("dia".equals(periodo)) {
+            // Por hora
+            groupExpr = "DATE_TRUNC('hour', t.fecha_creacion AT TIME ZONE 'America/Lima')";
+            labelExpr = "TO_CHAR(" + groupExpr + ", 'HH24:MI')";
+            orderExpr = groupExpr;
+        } else if ("semana".equals(periodo)) {
+            // Por día
+            groupExpr = "DATE(t.fecha_creacion AT TIME ZONE 'America/Lima')";
+            labelExpr = "TO_CHAR(" + groupExpr + ", 'DD Mon')";
+            orderExpr = groupExpr;
+        } else if ("ano".equals(periodo)) {
+            // Por mes
+            groupExpr = "DATE_TRUNC('month', t.fecha_creacion AT TIME ZONE 'America/Lima')";
+            labelExpr = "TO_CHAR(" + groupExpr + ", 'Mon YYYY')";
+            orderExpr = groupExpr;
+        } else {
+            // mes → por día
+            groupExpr = "DATE(t.fecha_creacion AT TIME ZONE 'America/Lima')";
+            labelExpr = "TO_CHAR(" + groupExpr + ", 'DD Mon')";
+            orderExpr = groupExpr;
+        }
+
+        @SuppressWarnings("unchecked")
+        List<Object[]> evolucionRaw = entityManager.createNativeQuery(
+            "SELECT " + labelExpr + " AS etiqueta, COUNT(*) AS cnt " +
+            "FROM dim_ticket_mesa_ayuda t " +
+            "WHERE t.deleted_at IS NULL " +
+            "  AND t.nombre_personal_asignado = :nombre " +
+            filtroFecha +
+            " GROUP BY " + groupExpr + " ORDER BY " + orderExpr
+        ).setParameter("nombre", nombre).getResultList();
+
+        List<Map<String, Object>> evolucion = new ArrayList<>();
+        for (Object[] r : evolucionRaw) {
+            Map<String, Object> m = new HashMap<>();
+            m.put("etiqueta", r[0]);
+            m.put("cantidad", ((Number) r[1]).longValue());
+            evolucion.add(m);
+        }
+        result.put("evolucion", evolucion);
+
+        // 3. Distribución por prioridad en el período
+        @SuppressWarnings("unchecked")
+        List<Object[]> prioridadRaw = entityManager.createNativeQuery(
+            "SELECT t.prioridad, COUNT(*) " +
+            "FROM dim_ticket_mesa_ayuda t " +
+            "WHERE t.deleted_at IS NULL " +
+            "  AND t.nombre_personal_asignado = :nombre " +
+            filtroFecha +
+            " GROUP BY t.prioridad"
+        ).setParameter("nombre", nombre).getResultList();
+
+        List<Map<String, Object>> porPrioridad = new ArrayList<>();
+        for (Object[] r : prioridadRaw) {
+            Map<String, Object> m = new HashMap<>();
+            m.put("prioridad", r[0]);
+            m.put("cantidad", ((Number) r[1]).longValue());
+            porPrioridad.add(m);
+        }
+        result.put("porPrioridad", porPrioridad);
+
+        result.put("periodo", periodo);
+        result.put("nombre", nombre);
         return result;
     }
 

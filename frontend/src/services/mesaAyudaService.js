@@ -223,4 +223,14 @@ export const mesaAyudaService = {
     const response = await apiClient.get(`${ENDPOINT}/estadisticas`, true);
     return response;
   },
+
+  /**
+   * Estadísticas de un operador filtradas por período (v1.69.1)
+   * @param {string} nombre Nombre completo del operador
+   * @param {string} periodo "dia" | "semana" | "mes" | "ano"
+   */
+  obtenerEstadisticasPersonal: async (nombre, periodo = 'mes') => {
+    const response = await apiClient.getWithParams(`${ENDPOINT}/estadisticas/personal`, { nombre, periodo }, true);
+    return response;
+  },
 };

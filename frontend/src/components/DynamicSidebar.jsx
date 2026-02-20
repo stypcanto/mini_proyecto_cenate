@@ -731,6 +731,7 @@ function getPageIcon(nombreModulo, nombrePagina) {
     if (lowerName.includes('pendiente')) return CircleDot;
     if (lowerName.includes('atendido') || lowerName.includes('resuelto')) return TicketCheck;
     if (lowerName.includes('faq') || lowerName.includes('pregunta')) return HelpCircle;
+    if (lowerName.includes('estadística') || lowerName.includes('estadisticas')) return BarChart3;
     return Headphones;
   }
 
