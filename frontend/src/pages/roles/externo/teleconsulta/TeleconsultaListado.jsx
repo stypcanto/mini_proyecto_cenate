@@ -3,7 +3,7 @@
 // v1.0.0 – Lista completa con estados y detalle de observaciones
 // ========================================================================
 
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   ArrowLeft, Search, X, RefreshCw, ChevronDown, ChevronUp,
@@ -150,8 +150,9 @@ export default function TeleconsultaListado() {
   const [totalPaginas, setTotalPaginas] = useState(0);
 
   // Filtros
-  const [busqueda, setBusqueda]     = useState('');
-  const [filtroGrupo, setFiltroGrupo] = useState('TODOS'); // TODOS | ATENDIDO | PENDIENTE | OBSERVADO
+  const [busqueda, setBusqueda]         = useState('');
+  const [filtroGrupo, setFiltroGrupo]   = useState('TODOS'); // TODOS | ATENDIDO | PENDIENTE | OBSERVADO
+  const [filtroEspecialidad, setFiltroEspecialidad] = useState('');
 
   // Filas expandidas (para OBSERVADO)
   const [expandido, setExpandido] = useState(null);
@@ -167,7 +168,7 @@ export default function TeleconsultaListado() {
   const [totalGeneral, setTotalGeneral] = useState(0); // total sin filtro, no cambia al filtrar
 
   // ── Cargar datos ──────────────────────────────────────────────────────────
-  const cargar = useCallback(async (pag = 0, busq = busqueda, grupo = filtroGrupo) => {
+  const cargar = useCallback(async (pag = 0, busq = busqueda, grupo = filtroGrupo, esp = filtroEspecialidad) => {
     setLoading(true);
     setError(null);
     try {
@@ -180,7 +181,7 @@ export default function TeleconsultaListado() {
       const resp = await obtenerSolicitudesPaginado(
         pag, PAGE_SIZE,
         BOLSA_PADOMI,  // bolsa
-        null, null, null, null,  // macrorregion, red, ipress, especialidad
+        null, null, null, esp || null,  // macrorregion, red, ipress, especialidad
         estadoBackend, // estado
         'PADOMI',      // ipressAtencion – solo pacientes IPRESS Atención PADOMI
         null, null,    // tipoCita, asignacion
@@ -194,7 +195,7 @@ export default function TeleconsultaListado() {
       setTotalPaginas(resp?.totalPages ?? 1);
       setPagina(pag);
       // Solo actualizar el total general cuando no hay filtro activo
-      if (grupo === 'TODOS' && !busq) setTotalGeneral(total);
+      if (grupo === 'TODOS' && !busq && !esp) setTotalGeneral(total);
       setExpandido(null);
     } catch (err) {
       console.error('Error cargando pacientes PADOMI:', err);
@@ -202,7 +203,7 @@ export default function TeleconsultaListado() {
     } finally {
       setLoading(false);
     }
-  }, [busqueda, filtroGrupo]);
+  }, [busqueda, filtroGrupo, filtroEspecialidad]);
 
   useEffect(() => {
     cargar(0);
@@ -220,17 +221,29 @@ export default function TeleconsultaListado() {
       .catch(() => {}); // silencioso; los totales seguirán como 0
   }, []);
 
+  // ── Especialidades únicas extraídas del listado cargado ───────────────────
+  const especialidades = useMemo(() => {
+    const set = new Set(pacientes.map(p => p.especialidad).filter(Boolean));
+    return Array.from(set).sort();
+  }, [pacientes]);
+
   // ── Filtro grupo (cards superiores) ──────────────────────────────────────
   const cambiarGrupo = (grupo) => {
     setFiltroGrupo(grupo);
-    cargar(0, busqueda, grupo);
+    cargar(0, busqueda, grupo, filtroEspecialidad);
+  };
+
+  // ── Cambio de especialidad ────────────────────────────────────────────────
+  const handleEspecialidad = (val) => {
+    setFiltroEspecialidad(val);
+    cargar(0, busqueda, filtroGrupo, val);
   };
 
   // ── Búsqueda con debounce ─────────────────────────────────────────────────
   const handleBusqueda = (val) => {
     setBusqueda(val);
     if (debounceRef.current) clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(() => cargar(0, val, filtroGrupo), 500);
+    debounceRef.current = setTimeout(() => cargar(0, val, filtroGrupo, filtroEspecialidad), 500);
   };
 
   // ── Filtro local para OBSERVADO (el backend no distingue tipos de observado) ─
@@ -445,9 +458,10 @@ export default function TeleconsultaListado() {
           </button>
         </div>
 
-        {/* ── Barra de búsqueda ── */}
-        <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-4 flex flex-col sm:flex-row gap-3 items-center">
-          <div className="relative flex-1 w-full">
+        {/* ── Barra de búsqueda y filtros ── */}
+        <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-4 flex flex-col sm:flex-row gap-3 items-center flex-wrap">
+          {/* Búsqueda */}
+          <div className="relative flex-1 min-w-[200px] w-full">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
             <input
               type="text"
@@ -466,6 +480,21 @@ export default function TeleconsultaListado() {
             )}
           </div>
 
+          {/* Filtro especialidad */}
+          <div className="relative shrink-0">
+            <Stethoscope className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+            <select
+              value={filtroEspecialidad}
+              onChange={e => handleEspecialidad(e.target.value)}
+              className="pl-9 pr-8 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-slate-700 appearance-none cursor-pointer"
+            >
+              <option value="">Todas las especialidades</option>
+              {especialidades.map(esp => (
+                <option key={esp} value={esp}>{esp}</option>
+              ))}
+            </select>
+          </div>
+
           {/* Indicador */}
           <p className="text-sm text-slate-500 whitespace-nowrap shrink-0">
             {loading ? 'Cargando…' : (
@@ -477,9 +506,9 @@ export default function TeleconsultaListado() {
           </p>
 
           {/* Limpiar filtros */}
-          {(busqueda || filtroGrupo !== 'TODOS') && (
+          {(busqueda || filtroGrupo !== 'TODOS' || filtroEspecialidad) && (
             <button
-              onClick={() => { setBusqueda(''); setFiltroGrupo('TODOS'); cargar(0, '', 'TODOS'); }}
+              onClick={() => { setBusqueda(''); setFiltroGrupo('TODOS'); setFiltroEspecialidad(''); cargar(0, '', 'TODOS', ''); }}
               className="flex items-center gap-1.5 px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-lg text-sm font-medium transition-colors shrink-0"
             >
               <X className="w-3.5 h-3.5" />
@@ -560,9 +589,9 @@ export default function TeleconsultaListado() {
                                   ? `No hay resultados para "${busqueda}"`
                                   : 'No hay pacientes PADOMI registrados en este estado.'}
                               </p>
-                              {(busqueda || filtroGrupo !== 'TODOS') && (
+                              {(busqueda || filtroGrupo !== 'TODOS' || filtroEspecialidad) && (
                                 <button
-                                  onClick={() => { setBusqueda(''); setFiltroGrupo('TODOS'); cargar(0, '', 'TODOS'); }}
+                                  onClick={() => { setBusqueda(''); setFiltroGrupo('TODOS'); setFiltroEspecialidad(''); cargar(0, '', 'TODOS', ''); }}
                                   className="text-xs text-blue-600 hover:underline mt-1"
                                 >
                                   Ver todos los pacientes
