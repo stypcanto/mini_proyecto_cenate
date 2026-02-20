@@ -125,7 +125,12 @@ public class SolicitudBolsaEstadisticasController {
         description = "OK - Lista de especialidades con métricas",
         content = @Content(schema = @Schema(implementation = EstadisticasPorEspecialidadDTO.class))
     )
-    public ResponseEntity<List<EstadisticasPorEspecialidadDTO>> obtenerEstadisticasPorEspecialidad() {
+    public ResponseEntity<List<EstadisticasPorEspecialidadDTO>> obtenerEstadisticasPorEspecialidad(
+            @RequestParam(required = false) String ipressAtencion) {
+        if (ipressAtencion != null && !ipressAtencion.isBlank()) {
+            log.info("GET /api/bolsas/estadisticas/por-especialidad?ipressAtencion={}", ipressAtencion);
+            return ResponseEntity.ok(estadisticasService.obtenerEstadisticasPorEspecialidadFiltrado(ipressAtencion));
+        }
         log.info("GET /api/bolsas/estadisticas/por-especialidad");
         List<EstadisticasPorEspecialidadDTO> datos = estadisticasService.obtenerEstadisticasPorEspecialidad();
         return ResponseEntity.ok(datos);

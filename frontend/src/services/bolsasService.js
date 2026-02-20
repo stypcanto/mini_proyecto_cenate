@@ -406,10 +406,14 @@ export const obtenerEstadisticasPorEstado = async (ipressAtencion = null) => {
 
 /**
  * Obtiene estadísticas por especialidad
+ * @param {string} ipressAtencion - Filtro opcional por IPRESS atención (ej: 'PADOMI')
  */
-export const obtenerEstadisticasPorEspecialidad = async () => {
+export const obtenerEstadisticasPorEspecialidad = async (ipressAtencion = null) => {
   try {
-    const response = await apiClient.get(`${API_BASE_URL}/estadisticas/por-especialidad`, true);
+    const url = ipressAtencion
+      ? `${API_BASE_URL}/estadisticas/por-especialidad?ipressAtencion=${encodeURIComponent(ipressAtencion)}`
+      : `${API_BASE_URL}/estadisticas/por-especialidad`;
+    const response = await apiClient.get(url, true);
     return response;
   } catch (error) {
     console.error('Error al obtener estadísticas por especialidad:', error);

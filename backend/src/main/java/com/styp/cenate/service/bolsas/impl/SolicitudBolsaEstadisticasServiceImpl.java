@@ -207,6 +207,35 @@ public class SolicitudBolsaEstadisticasServiceImpl implements SolicitudBolsaEsta
         return dtos;
     }
 
+    @Override
+    public List<EstadisticasPorEspecialidadDTO> obtenerEstadisticasPorEspecialidadFiltrado(String ipressAtencion) {
+        log.info("📊 Obteniendo estadísticas por especialidad filtrado por ipressAtencion: {}", ipressAtencion);
+        String filtro = (ipressAtencion == null || ipressAtencion.isBlank()) ? null : ipressAtencion.trim();
+        List<Map<String, Object>> resultados = solicitudRepository.estadisticasPorEspecialidadFiltrado(filtro);
+        List<EstadisticasPorEspecialidadDTO> dtos = new ArrayList<>();
+        int ranking = 1;
+        for (Map<String, Object> row : resultados) {
+            Long total = ((Number) row.get("total")).longValue();
+            Long atendidos = ((Number) row.getOrDefault("atendidos", 0L)).longValue();
+            BigDecimal tasaCompletacion = (BigDecimal) row.get("tasa_completacion");
+            Integer horasPromedio = ((Number) row.getOrDefault("horas_promedio", 0)).intValue();
+            dtos.add(EstadisticasPorEspecialidadDTO.builder()
+                    .especialidad((String) row.get("especialidad"))
+                    .total(total)
+                    .atendidos(atendidos)
+                    .pendientes(((Number) row.getOrDefault("pendientes", 0L)).longValue())
+                    .cancelados(((Number) row.getOrDefault("cancelados", 0L)).longValue())
+                    .tasaCompletacion(tasaCompletacion)
+                    .tasaCancelacion((BigDecimal) row.get("tasa_cancelacion"))
+                    .horasPromedio(horasPromedio)
+                    .diasPromedio(horasPromedio / 24)
+                    .tendencia(calcularTendencia(tasaCompletacion))
+                    .ranking(ranking++)
+                    .build());
+        }
+        return dtos;
+    }
+
     // ========================================================================
     // 🏛️ ESTADÍSTICAS POR IPRESS
     // ========================================================================

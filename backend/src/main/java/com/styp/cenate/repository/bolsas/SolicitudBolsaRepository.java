@@ -428,6 +428,39 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
     List<Map<String, Object>> estadisticasPorEspecialidad();
 
     /**
+     * 2️⃣b Estadísticas por especialidad filtradas por ipressAtencion
+     */
+    @Query(value = """
+        SELECT
+            sb.especialidad,
+            COUNT(sb.id_solicitud) as total,
+            COUNT(CASE WHEN dgc.desc_estado_cita = 'ATENDIDO' THEN 1 END) as atendidos,
+            COUNT(CASE WHEN dgc.desc_estado_cita = 'CANCELADO' THEN 1 END) as cancelados,
+            COUNT(CASE WHEN dgc.desc_estado_cita = 'PENDIENTE' THEN 1 END) as pendientes,
+            ROUND(
+                COUNT(CASE WHEN dgc.desc_estado_cita = 'ATENDIDO' THEN 1 END) * 100.0 /
+                NULLIF(COUNT(sb.id_solicitud), 0), 2
+            ) as tasa_completacion,
+            ROUND(
+                COUNT(CASE WHEN dgc.desc_estado_cita = 'CANCELADO' THEN 1 END) * 100.0 /
+                NULLIF(COUNT(sb.id_solicitud), 0), 2
+            ) as tasa_cancelacion,
+            CAST(ROUND(
+                AVG(EXTRACT(EPOCH FROM (sb.fecha_actualizacion - sb.fecha_solicitud)) / 3600),
+                2
+            ) AS INTEGER) as horas_promedio
+        FROM dim_solicitud_bolsa sb
+        LEFT JOIN dim_estados_gestion_citas dgc ON sb.estado_gestion_citas_id = dgc.id_estado_cita
+        LEFT JOIN dim_ipress di2 ON sb.id_ipress_atencion = di2.id_ipress
+        WHERE sb.activo = true AND sb.especialidad IS NOT NULL
+          AND (:ipressAtencion IS NULL OR LOWER(COALESCE(di2.desc_ipress, '')) LIKE LOWER(CONCAT('%', :ipressAtencion, '%')))
+        GROUP BY sb.especialidad
+        ORDER BY total DESC
+        """, nativeQuery = true)
+    List<Map<String, Object>> estadisticasPorEspecialidadFiltrado(
+            @org.springframework.data.repository.query.Param("ipressAtencion") String ipressAtencion);
+
+    /**
      * 3️⃣ Estadísticas por IPRESS
      * Incluye ranking por volumen
      */

@@ -45,6 +45,8 @@ public interface SolicitudBolsaEstadisticasService {
      */
     List<EstadisticasPorEspecialidadDTO> obtenerEstadisticasPorEspecialidad();
 
+    List<EstadisticasPorEspecialidadDTO> obtenerEstadisticasPorEspecialidadFiltrado(String ipressAtencion);
+
     /**
      * Obtiene estadísticas agrupadas por IPRESS (institución)
      * Incluye ranking y carga de trabajo comparativa

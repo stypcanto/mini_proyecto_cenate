@@ -3,7 +3,7 @@
 // v1.0.0 – Lista completa con estados y detalle de observaciones
 // ========================================================================
 
-import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   ArrowLeft, Search, X, RefreshCw, ChevronDown, ChevronUp,
@@ -11,7 +11,7 @@ import {
   User, Building2, Stethoscope, FileText, AlertCircle,
   ChevronLeft, ChevronRight, Info, UserPlus, PhoneCall,
 } from 'lucide-react';
-import { obtenerSolicitudesPaginado, obtenerEstadisticasPorEstado } from '../../../../services/bolsasService';
+import { obtenerSolicitudesPaginado, obtenerEstadisticasPorEstado, obtenerEstadisticasPorEspecialidad } from '../../../../services/bolsasService';
 
 // ─── Constantes de estado ────────────────────────────────────────────────────
 const ESTADOS = {
@@ -154,6 +154,9 @@ export default function TeleconsultaListado() {
   const [filtroGrupo, setFiltroGrupo]   = useState('TODOS'); // TODOS | ATENDIDO | PENDIENTE | OBSERVADO
   const [filtroEspecialidad, setFiltroEspecialidad] = useState('');
 
+  // Especialidades con conteos (cargadas desde backend)
+  const [especialidadesStat, setEspecialidadesStat] = useState([]);
+
   // Filas expandidas (para OBSERVADO)
   const [expandido, setExpandido] = useState(null);
 
@@ -218,14 +221,14 @@ export default function TeleconsultaListado() {
         });
         setStatsGlobal(acc);
       })
-      .catch(() => {}); // silencioso; los totales seguirán como 0
+      .catch(() => {});
+    // Cargar especialidades con conteos filtradas por PADOMI
+    obtenerEstadisticasPorEspecialidad('PADOMI')
+      .then(data => {
+        if (Array.isArray(data)) setEspecialidadesStat(data);
+      })
+      .catch(() => {});
   }, []);
-
-  // ── Especialidades únicas extraídas del listado cargado ───────────────────
-  const especialidades = useMemo(() => {
-    const set = new Set(pacientes.map(p => p.especialidad).filter(Boolean));
-    return Array.from(set).sort();
-  }, [pacientes]);
 
   // ── Filtro grupo (cards superiores) ──────────────────────────────────────
   const cambiarGrupo = (grupo) => {
@@ -489,8 +492,10 @@ export default function TeleconsultaListado() {
               className="pl-9 pr-8 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-slate-700 appearance-none cursor-pointer"
             >
               <option value="">Todas las especialidades</option>
-              {especialidades.map(esp => (
-                <option key={esp} value={esp}>{esp}</option>
+              {especialidadesStat.map(({ especialidad, total }) => (
+                <option key={especialidad} value={especialidad}>
+                  {especialidad} ({total})
+                </option>
               ))}
             </select>
           </div>
