@@ -1,5 +1,5 @@
 // ========================================================================
-// TeleECGDashboard.jsx – Dashboard TeleECG (Power BI)
+// Tele-EKGDashboard.jsx – Dashboard Tele-EKG (Power BI)
 // ========================================================================
 
 import React, { useState, useRef } from "react";
@@ -58,7 +58,7 @@ export default function TeleEKGDashboard() {
           </button>
           <div className="min-w-0">
             <h1 className="text-lg font-bold truncate">
-              Dashboard TeleECG
+              Dashboard Tele-EKG
             </h1>
             <p className="text-red-100 text-xs mt-0.5">
               Dashboard dinámico actualizado diariamente
@@ -88,7 +88,7 @@ export default function TeleEKGDashboard() {
       {/* Info */}
       <div className="bg-red-50 border-b border-red-200 px-6 py-3 flex-shrink-0">
         <p className="text-sm text-slate-700 leading-relaxed">
-          Visualiza los <strong>indicadores de TeleECG</strong> de CENATE.
+          Visualiza los <strong>indicadores de Tele-EKG</strong> de CENATE.
           Utiliza los <strong>filtros del dashboard</strong> para revisar el detalle por período, IPRESS o estado.{" "}
           <strong>Los datos se actualizan automáticamente cada día.</strong>
         </p>
@@ -101,7 +101,7 @@ export default function TeleEKGDashboard() {
         style={{ backgroundColor: "#f5f5f5" }}
       >
         <iframe
-          title="Dashboard TeleECG"
+          title="Dashboard Tele-EKG"
           src={POWERBI_URL}
           width="100%"
           height="100%"
