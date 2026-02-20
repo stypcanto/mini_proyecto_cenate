@@ -84,7 +84,7 @@ export default function Solicitudes() {
   const [isLoading, setIsLoading] = useState(true); // Inicia con loader por defecto
   const [estadisticasCargadas, setEstadisticasCargadas] = useState(false); // ✅ v1.42.0: Rastrear carga de estadísticas
   const [searchTerm, setSearchTerm] = useState('');
-  const [filtroBolsa, setFiltroBolsa] = useState('todas');
+  const [filtroBolsa, setFiltroBolsa] = useState([]); // [] = todas las bolsas (multi-select)
   const [filtroRed, setFiltroRed] = useState('todas');
   const [filtroIpress, setFiltroIpress] = useState('todas');
   const [filtroMacrorregion, setFiltroMacrorregion] = useState('todas');
@@ -664,7 +664,7 @@ export default function Solicitudes() {
       const response = await bolsasService.obtenerSolicitudesPaginado(
         0, // page 0 (primera página cuando cambian los filtros)
         REGISTROS_POR_PAGINA,
-        filtroBolsa === 'todas' ? null : filtroBolsa,
+        filtroBolsa.length === 0 ? null : filtroBolsa.join(','),
         filtroMacrorregion === 'todas' ? null : filtroMacrorregion,
         filtroRed === 'todas' ? null : filtroRed,
         filtroIpress === 'todas' ? null : filtroIpress,
@@ -847,7 +847,7 @@ export default function Solicitudes() {
       const response = await bolsasService.obtenerSolicitudesPaginado(
         pageIndex,
         REGISTROS_POR_PAGINA,
-        filtroBolsa === 'todas' ? null : filtroBolsa,
+        filtroBolsa.length === 0 ? null : filtroBolsa.join(','),
         filtroMacrorregion === 'todas' ? null : filtroMacrorregion,
         filtroRed === 'todas' ? null : filtroRed,
         filtroIpress === 'todas' ? null : filtroIpress,
@@ -1292,7 +1292,7 @@ export default function Solicitudes() {
       const matchSearch = !searchTerm || sol.dni.includes(searchTerm);
 
       // Si estamos contando esta opción, usa filterValue; si no, usa el filtro activo
-      const matchBolsa = filterKey === 'bolsa' ? sol.descTipoBolsa === filterValue : (filtroBolsa === 'todas' ? true : sol.descTipoBolsa === filtroBolsa); // ✅ v1.66.6: Usar descTipoBolsa para filtrado correcto
+      const matchBolsa = filterKey === 'bolsa' ? sol.descTipoBolsa === filterValue : (filtroBolsa.length === 0 ? true : filtroBolsa.includes(sol.descTipoBolsa));
       const matchMacrorregion = filterKey === 'macro' ? sol.macroregion === filterValue : (filtroMacrorregion === 'todas' ? true : sol.macroregion === filtroMacrorregion);
       const matchRed = filterKey === 'red' ? sol.red === filterValue : (filtroRed === 'todas' ? true : sol.red === filtroRed);
       const matchIpress = filterKey === 'ipress' ? sol.ipress === filterValue : (filtroIpress === 'todas' ? true : sol.ipress === filtroIpress);
@@ -1915,20 +1915,18 @@ export default function Solicitudes() {
             filters={[
               {
                 name: "Bolsas",
+                multiSelect: true,
                 value: filtroBolsa,
-                onChange: (e) => setFiltroBolsa(e.target.value),
-                options: [
-                  { label: `Todas las bolsas (${totalElementos})`, value: "todas" },
-                  ...estadisticasTipoBolsa
-                    .sort((a, b) => b.total - a.total)
-                    .map(bolsa => {
-                      const nombreBolsa = generarAliasBolsa(bolsa.tipoBolsa);
-                      return {
-                        label: `${nombreBolsa} (${bolsa.total})`,
-                        value: bolsa.tipoBolsa  // ✅ CORRECTO - Usar valor original de BD
-                      };
-                    })
-                ]
+                onMultiChange: (values) => setFiltroBolsa(values),
+                options: estadisticasTipoBolsa
+                  .sort((a, b) => b.total - a.total)
+                  .map(bolsa => {
+                    const nombreBolsa = generarAliasBolsa(bolsa.tipoBolsa);
+                    return {
+                      label: `${nombreBolsa} (${bolsa.total})`,
+                      value: bolsa.tipoBolsa
+                    };
+                  })
               },
               {
                 name: "Macrorregión",
@@ -2014,7 +2012,7 @@ export default function Solicitudes() {
               }
             ]}
             onClearFilters={() => {
-              setFiltroBolsa('todas');
+              setFiltroBolsa([]);
               setFiltroMacrorregion('todas');
               setFiltroRed('todas');
               setFiltroIpress('todas');

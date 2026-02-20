@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, AlertCircle, CheckCircle, ChevronRight } from 'lucide-react';
+import { X, AlertCircle, CheckCircle } from 'lucide-react';
 
 /**
  * Modal para responder un ticket de Mesa de Ayuda
@@ -233,31 +233,24 @@ function ResponderTicketModal({ isOpen, onClose, ticket, usuario, onSuccess }) {
                 {loadingRespuestas ? (
                   <div className="text-sm text-gray-400 py-2">Cargando opciones...</div>
                 ) : (
-                  <div className="space-y-2">
-                    {respuestasPredefinidas.map((resp) => {
-                      const isSelected = respuestaSeleccionada?.id === resp.id;
-                      return (
-                        <button
-                          key={resp.id}
-                          type="button"
-                          onClick={() => {
-                            setRespuestaSeleccionada(resp);
-                            setTextoOtros('');
-                            setError(null);
-                          }}
-                          disabled={loading}
-                          className={`w-full flex items-center justify-between px-4 py-2.5 rounded-lg border text-sm text-left transition-all
-                            ${isSelected
-                              ? 'bg-blue-50 border-blue-400 text-blue-800 font-semibold shadow-sm'
-                              : 'bg-white border-gray-200 text-gray-700 hover:border-blue-300 hover:bg-blue-50/40'
-                            } disabled:opacity-50`}
-                        >
-                          <span>{resp.descripcion}</span>
-                          {isSelected && <ChevronRight size={16} className="text-blue-500 flex-shrink-0" />}
-                        </button>
-                      );
-                    })}
-                  </div>
+                  <select
+                    value={respuestaSeleccionada?.id ?? ''}
+                    onChange={(e) => {
+                      const selected = respuestasPredefinidas.find(r => r.id === Number(e.target.value));
+                      setRespuestaSeleccionada(selected || null);
+                      setTextoOtros('');
+                      setError(null);
+                    }}
+                    disabled={loading}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100"
+                  >
+                    <option value="">-- Seleccione una respuesta --</option>
+                    {respuestasPredefinidas.map((resp) => (
+                      <option key={resp.id} value={resp.id}>
+                        {resp.descripcion}
+                      </option>
+                    ))}
+                  </select>
                 )}
 
                 {/* Campo libre solo para "Otros" */}
