@@ -2757,8 +2757,9 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
             String tipoCita,
             String asignacion,
             String busqueda,
-            String fechaInicio,     // ✅ v1.66.0: Filtro rango fechas
-            String fechaFin,        // ✅ v1.66.0: Filtro rango fechas
+            String fechaInicio,
+            String fechaFin,
+            String condicionMedica,
             org.springframework.data.domain.Pageable pageable) {
         try {
             log.info("🔍 Listando solicitudes con filtros - Bolsa: {}, Macro: {}, Red: {}, IPRESS: {}, Especialidad: {}, Estado: {}, IPRESSAtencion: {}, TipoCita: {}, Asignación: {}, Búsqueda: {}, FechaInicio: {}, FechaFin: {}",
@@ -2775,17 +2776,18 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
             String tipoCitaFinal = (tipoCita == null || "todas".equals(tipoCita) || tipoCita.trim().isEmpty()) ? null : tipoCita.trim();
             String asignacionFinal = (asignacion == null || "todos".equals(asignacion) || asignacion.trim().isEmpty()) ? null : asignacion.trim();
             String busquedaFinal = (busqueda == null || busqueda.trim().isEmpty()) ? null : busqueda.trim();
-            String fechaInicioFinal = (fechaInicio == null || fechaInicio.trim().isEmpty()) ? null : fechaInicio.trim(); // ✅ v1.66.0
-            String fechaFinFinal = (fechaFin == null || fechaFin.trim().isEmpty()) ? null : fechaFin.trim(); // ✅ v1.66.0
+            String fechaInicioFinal = (fechaInicio == null || fechaInicio.trim().isEmpty()) ? null : fechaInicio.trim();
+            String fechaFinFinal = (fechaFin == null || fechaFin.trim().isEmpty()) ? null : fechaFin.trim();
+            String condicionMedicaFinal = (condicionMedica == null || condicionMedica.trim().isEmpty()) ? null : condicionMedica.trim();
 
             // Llamar al repository con filtros
             List<Object[]> resultados = solicitudRepository.findAllWithFiltersAndPagination(
                     bolsaNombreFinal, macrorFinal, redFinal, ipressFinal, especialidadFinal,
-                    estadoCod, ipressAtencionFinal, tipoCitaFinal, asignacionFinal, busquedaFinal, fechaInicioFinal, fechaFinFinal, pageable);
+                    estadoCod, ipressAtencionFinal, tipoCitaFinal, asignacionFinal, busquedaFinal, fechaInicioFinal, fechaFinFinal, condicionMedicaFinal, pageable);
 
             long total = solicitudRepository.countWithFilters(
                     bolsaNombreFinal, macrorFinal, redFinal, ipressFinal, especialidadFinal,
-                    estadoCod, ipressAtencionFinal, tipoCitaFinal, asignacionFinal, busquedaFinal, fechaInicioFinal, fechaFinFinal);
+                    estadoCod, ipressAtencionFinal, tipoCitaFinal, asignacionFinal, busquedaFinal, fechaInicioFinal, fechaFinFinal, condicionMedicaFinal);
 
             // Mapear a DTOs
             List<SolicitudBolsaDTO> dtos = resultados.stream()

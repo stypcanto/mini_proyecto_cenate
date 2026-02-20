@@ -258,6 +258,9 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
           AND (:busqueda IS NULL OR COALESCE(sb.paciente_dni, '') LIKE CONCAT('%', :busqueda, '%'))
           AND (CAST(:fechaInicio AS VARCHAR) IS NULL OR CAST(:fechaInicio AS DATE) IS NULL OR DATE(sb.fecha_cambio_estado) >= CAST(:fechaInicio AS DATE))
           AND (CAST(:fechaFin AS VARCHAR) IS NULL OR CAST(:fechaFin AS DATE) IS NULL OR DATE(sb.fecha_cambio_estado) <= CAST(:fechaFin AS DATE))
+          AND (:condicionMedica IS NULL
+               OR (:condicionMedica != 'Sin atención' AND COALESCE(TRIM(sb.condicion_medica), '') = :condicionMedica)
+               OR (:condicionMedica = 'Sin atención' AND (sb.condicion_medica IS NULL OR TRIM(sb.condicion_medica) = '')))
         ORDER BY CASE WHEN COALESCE(deg.cod_estado_cita, 'PENDIENTE_CITA') = 'PENDIENTE_CITA' THEN 0
                       WHEN COALESCE(deg.cod_estado_cita, 'PENDIENTE_CITA') = 'CITADO' THEN 1
                       ELSE 2 END, sb.fecha_solicitud DESC
@@ -276,6 +279,7 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
             @org.springframework.data.repository.query.Param("busqueda") String busqueda,
             @org.springframework.data.repository.query.Param("fechaInicio") String fechaInicio,
             @org.springframework.data.repository.query.Param("fechaFin") String fechaFin,
+            @org.springframework.data.repository.query.Param("condicionMedica") String condicionMedica,
             org.springframework.data.domain.Pageable pageable);
 
     /**
@@ -310,6 +314,9 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
           AND (:busqueda IS NULL OR COALESCE(sb.paciente_dni, '') LIKE CONCAT('%', :busqueda, '%'))
           AND (CAST(:fechaInicio AS VARCHAR) IS NULL OR CAST(:fechaInicio AS DATE) IS NULL OR DATE(sb.fecha_cambio_estado) >= CAST(:fechaInicio AS DATE))
           AND (CAST(:fechaFin AS VARCHAR) IS NULL OR CAST(:fechaFin AS DATE) IS NULL OR DATE(sb.fecha_cambio_estado) <= CAST(:fechaFin AS DATE))
+          AND (:condicionMedica IS NULL
+               OR (:condicionMedica != 'Sin atención' AND COALESCE(TRIM(sb.condicion_medica), '') = :condicionMedica)
+               OR (:condicionMedica = 'Sin atención' AND (sb.condicion_medica IS NULL OR TRIM(sb.condicion_medica) = '')))
         """, nativeQuery = true)
     long countWithFilters(
             @org.springframework.data.repository.query.Param("bolsaNombre") String bolsaNombre,
@@ -322,8 +329,9 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
             @org.springframework.data.repository.query.Param("tipoCita") String tipoCita,
             @org.springframework.data.repository.query.Param("asignacion") String asignacion,
             @org.springframework.data.repository.query.Param("busqueda") String busqueda,
-            @org.springframework.data.repository.query.Param("fechaInicio") String fechaInicio,  // ✅ v1.66.0: Filtro rango fechas
-            @org.springframework.data.repository.query.Param("fechaFin") String fechaFin)        // ✅ v1.66.0: Filtro rango fechas
+            @org.springframework.data.repository.query.Param("fechaInicio") String fechaInicio,
+            @org.springframework.data.repository.query.Param("fechaFin") String fechaFin,
+            @org.springframework.data.repository.query.Param("condicionMedica") String condicionMedica)
             ;
 
     /**

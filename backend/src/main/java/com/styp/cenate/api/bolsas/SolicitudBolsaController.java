@@ -434,18 +434,20 @@ public class SolicitudBolsaController {
             @RequestParam(required = false) String tipoCita,
             @RequestParam(required = false) String asignacion,
             @RequestParam(required = false) String busqueda,
-            @RequestParam(required = false) String fechaInicio,  // ✅ v1.66.0: Filtro rango fechas
-            @RequestParam(required = false) String fechaFin,     // ✅ v1.66.0: Filtro rango fechas
+            @RequestParam(required = false) String fechaInicio,
+            @RequestParam(required = false) String fechaFin,
+            @RequestParam(required = false) String condicionMedica,
             @PageableDefault(size = 100, page = 0) Pageable pageable) {
 
-        // Si hay algún filtro, usar búsqueda con filtros (v2.6.0 + v1.66.0: rango fechas)
+        // Si hay algún filtro, usar búsqueda con filtros
         if (bolsa != null || macrorregion != null || red != null || ipress != null ||
             especialidad != null || estado != null || ipressAtencion != null || tipoCita != null ||
-            asignacion != null || busqueda != null || fechaInicio != null || fechaFin != null) {
-            log.info("🔍 Solicitud con filtros - Bolsa: {}, Macro: {}, Red: {}, IPRESS: {}, Especialidad: {}, Estado: {}, IPRESSAtencion: {}, TipoCita: {}, Asignación: {}, Búsqueda: {}, FechaInicio: {}, FechaFin: {}",
-                bolsa, macrorregion, red, ipress, especialidad, estado, ipressAtencion, tipoCita, asignacion, busqueda, fechaInicio, fechaFin);
+            asignacion != null || busqueda != null || fechaInicio != null || fechaFin != null ||
+            condicionMedica != null) {
+            log.info("🔍 Solicitud con filtros - Bolsa: {}, Macro: {}, Red: {}, IPRESS: {}, Especialidad: {}, Estado: {}, IPRESSAtencion: {}, TipoCita: {}, Asignación: {}, Búsqueda: {}, FechaInicio: {}, FechaFin: {}, CondicionMedica: {}",
+                bolsa, macrorregion, red, ipress, especialidad, estado, ipressAtencion, tipoCita, asignacion, busqueda, fechaInicio, fechaFin, condicionMedica);
             return ResponseEntity.ok(solicitudBolsaService.listarConFiltros(
-                    bolsa, macrorregion, red, ipress, especialidad, estado, ipressAtencion, tipoCita, asignacion, busqueda, fechaInicio, fechaFin, pageable));
+                    bolsa, macrorregion, red, ipress, especialidad, estado, ipressAtencion, tipoCita, asignacion, busqueda, fechaInicio, fechaFin, condicionMedica, pageable));
         }
 
         // Sin filtros, listar todas (comportamiento anterior)

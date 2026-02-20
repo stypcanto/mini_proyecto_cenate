@@ -1,35 +1,30 @@
 // ========================================================================
 // TeleconsultaListado.jsx – Pacientes PADOMI · Bolsa Teleconsulta
-// v1.0.0 – Lista completa con estados y detalle de observaciones
+// v1.1.0 – Estado basado en condicion_medica (dim_solicitud_bolsa)
 // ========================================================================
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  ArrowLeft, Search, X, RefreshCw, ChevronDown, ChevronUp,
-  Users, CheckCircle, Clock, AlertTriangle, Phone, Calendar,
-  User, Building2, Stethoscope, FileText, AlertCircle,
-  ChevronLeft, ChevronRight, Info, UserPlus, PhoneCall,
+  ArrowLeft, Search, X, RefreshCw,
+  Users, CheckCircle, Clock, AlertTriangle, Phone,
+  Stethoscope, AlertCircle,
+  ChevronLeft, ChevronRight, UserPlus, PhoneCall,
 } from 'lucide-react';
-import { obtenerSolicitudesPaginado, obtenerEstadisticasPorEstado, obtenerEstadisticasPorEspecialidad } from '../../../../services/bolsasService';
+import {
+  obtenerSolicitudesPaginado,
+  obtenerEstadisticasCondicionMedicaPadomi,
+  obtenerEstadisticasPorEspecialidad,
+} from '../../../../services/bolsasService';
 
-// ─── Constantes de estado ────────────────────────────────────────────────────
-const ESTADOS = {
-  ATENDIDO_IPRESS: { grupo: 'ATENDIDO', label: 'Atendido',      color: 'emerald' },
-  CITADO:          { grupo: 'PENDIENTE', label: 'Citado',        color: 'blue'    },
-  PENDIENTE_CITA:  { grupo: 'PENDIENTE', label: 'Pendiente',     color: 'slate'   },
-  NO_CONTESTA:     { grupo: 'OBSERVADO', label: 'No Contesta',   color: 'orange'  },
-  NO_DESEA:        { grupo: 'OBSERVADO', label: 'No Desea',      color: 'orange'  },
-  APAGADO:         { grupo: 'OBSERVADO', label: 'Apagado',       color: 'orange'  },
-  TEL_SIN_SERVICIO:{ grupo: 'OBSERVADO', label: 'Sin Servicio',  color: 'orange'  },
-  NUM_NO_EXISTE:   { grupo: 'OBSERVADO', label: 'Nro. Inválido', color: 'orange'  },
-  SIN_VIGENCIA:    { grupo: 'OBSERVADO', label: 'Sin Vigencia',  color: 'red'     },
-  HC_BLOQUEADA:    { grupo: 'OBSERVADO', label: 'HC Bloqueada',  color: 'red'     },
-  REPROG_FALLIDA:  { grupo: 'OBSERVADO', label: 'Reprog. Fallida', color: 'orange'},
+// ─── condicion_medica → meta de visualización ────────────────────────────────
+const getCondicionMeta = (valor) => {
+  const v = (valor ?? '').trim();
+  if (v === 'Atendido')  return { grupo: 'ATENDIDO',    label: 'Atendido',     color: 'emerald' };
+  if (v === 'Deserción') return { grupo: 'DESERCION',   label: 'Deserción',    color: 'red'     };
+  if (v === 'Pendiente') return { grupo: 'PENDIENTE',   label: 'Pendiente',    color: 'blue'    };
+  return                        { grupo: 'SIN_ATENCION', label: 'Sin atención', color: 'slate'  };
 };
-
-const getGrupo = (cod) => ESTADOS[cod]?.grupo ?? 'PENDIENTE';
-const getMeta  = (cod) => ESTADOS[cod] ?? { grupo: 'PENDIENTE', label: cod ?? 'Pendiente', color: 'slate' };
 
 const BADGE_CLASSES = {
   emerald: 'bg-emerald-100 text-emerald-800 border-emerald-300',
@@ -39,78 +34,20 @@ const BADGE_CLASSES = {
   red:     'bg-red-100    text-red-700    border-red-300',
 };
 
-const MOTIVOS_OBSERVACION = {
-  NO_CONTESTA:      'El paciente no contestó las llamadas realizadas.',
-  NO_DESEA:         'El paciente manifestó no desear la atención.',
-  APAGADO:          'El teléfono del paciente se encontraba apagado.',
-  TEL_SIN_SERVICIO: 'El número de teléfono no tiene servicio activo.',
-  NUM_NO_EXISTE:    'El número de teléfono registrado no existe.',
-  SIN_VIGENCIA:     'El seguro del paciente no se encuentra vigente.',
-  HC_BLOQUEADA:     'La historia clínica del paciente está bloqueada.',
-  REPROG_FALLIDA:   'No fue posible reprogramar la cita del paciente.',
-};
-
 const PAGE_SIZE    = 20;
 const BOLSA_PADOMI = null;
 
-// ─── Componente Badge de Estado ──────────────────────────────────────────────
-function EstadoBadge({ cod }) {
-  const meta = getMeta(cod);
+// ─── Badge de condicion_medica ────────────────────────────────────────────────
+function CondicionBadge({ valor }) {
+  const meta = getCondicionMeta(valor);
   return (
     <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full border text-xs font-semibold ${BADGE_CLASSES[meta.color]}`}>
-      {meta.grupo === 'ATENDIDO' && <CheckCircle className="w-3 h-3" />}
-      {meta.grupo === 'PENDIENTE' && <Clock className="w-3 h-3" />}
-      {meta.grupo === 'OBSERVADO' && <AlertTriangle className="w-3 h-3" />}
+      {meta.grupo === 'ATENDIDO'     && <CheckCircle   className="w-3 h-3" />}
+      {meta.grupo === 'PENDIENTE'    && <Clock         className="w-3 h-3" />}
+      {meta.grupo === 'SIN_ATENCION' && <Clock         className="w-3 h-3" />}
+      {meta.grupo === 'DESERCION'    && <AlertTriangle className="w-3 h-3" />}
       {meta.label}
     </span>
-  );
-}
-
-// ─── Fila expandible de detalle OBSERVADO ────────────────────────────────────
-function FilaObservacion({ paciente }) {
-  const cod    = paciente.cod_estado_cita;
-  const desc   = paciente.desc_estado_cita;
-  const motivo = paciente.motivo_llamada_bolsa;
-  const quien  = paciente.nombre_usuario_cambio_estado;
-  const cuando = paciente.fecha_cambio_estado
-    ? new Date(paciente.fecha_cambio_estado).toLocaleString('es-PE', { dateStyle: 'medium', timeStyle: 'short' })
-    : null;
-
-  return (
-    <div className="bg-orange-50 border border-orange-200 rounded-lg p-4 mt-2 mb-1 mx-1">
-      <div className="flex items-center gap-2 mb-3">
-        <AlertTriangle className="w-4 h-4 text-orange-600 shrink-0" />
-        <p className="text-xs font-bold text-orange-800 uppercase tracking-wide">Detalle de Observación</p>
-      </div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-        <div className="bg-white border border-orange-200 rounded-lg p-3">
-          <p className="font-semibold text-orange-700 mb-1">Motivo</p>
-          <p className="text-gray-700">{MOTIVOS_OBSERVACION[cod] ?? desc ?? 'Sin motivo registrado'}</p>
-        </div>
-        <div className="bg-white border border-orange-200 rounded-lg p-3">
-          <p className="font-semibold text-orange-700 mb-1">Notas de la gestora</p>
-          <p className="text-gray-700 italic">{motivo || 'Sin notas adicionales'}</p>
-        </div>
-        {quien && (
-          <div className="bg-white border border-orange-200 rounded-lg p-3 flex items-start gap-2">
-            <User className="w-4 h-4 text-orange-400 mt-0.5 shrink-0" />
-            <div>
-              <p className="font-semibold text-orange-700">Registrado por</p>
-              <p className="text-gray-700">{quien}</p>
-            </div>
-          </div>
-        )}
-        {cuando && (
-          <div className="bg-white border border-orange-200 rounded-lg p-3 flex items-start gap-2">
-            <Calendar className="w-4 h-4 text-orange-400 mt-0.5 shrink-0" />
-            <div>
-              <p className="font-semibold text-orange-700">Fecha registro</p>
-              <p className="text-gray-700">{cuando}</p>
-            </div>
-          </div>
-        )}
-      </div>
-    </div>
   );
 }
 
@@ -143,14 +80,11 @@ export default function TeleconsultaListado() {
 
   // Filtros
   const [busqueda, setBusqueda]         = useState('');
-  const [filtroGrupo, setFiltroGrupo]   = useState('TODOS'); // TODOS | ATENDIDO | PENDIENTE | OBSERVADO
+  const [filtroGrupo, setFiltroGrupo]   = useState('TODOS'); // TODOS | ATENDIDO | PENDIENTE | DESERCION | SIN_ATENCION
   const [filtroEspecialidad, setFiltroEspecialidad] = useState('');
 
   // Especialidades con conteos (cargadas desde backend)
   const [especialidadesStat, setEspecialidadesStat] = useState([]);
-
-  // Filas expandidas (para OBSERVADO)
-  const [expandido, setExpandido] = useState(null);
 
   // Modal "Ingresar nuevos pacientes"
   const [modalNuevoPaciente, setModalNuevoPaciente] = useState(false);
@@ -158,29 +92,34 @@ export default function TeleconsultaListado() {
   // Debounce ref
   const debounceRef = useRef(null);
 
-  // ── Estadísticas globales (totales reales del backend) ────────────────────
-  const [statsGlobal, setStatsGlobal] = useState({ ATENDIDO: 0, PENDIENTE: 0, OBSERVADO: 0 });
-  const [totalGeneral, setTotalGeneral] = useState(0); // total sin filtro, no cambia al filtrar
+  // ── Estadísticas globales por condicion_medica ────────────────────────────
+  const [statsGlobal, setStatsGlobal] = useState({ ATENDIDO: 0, PENDIENTE: 0, DESERCION: 0, SIN_ATENCION: 0 });
+  const [totalGeneral, setTotalGeneral] = useState(0);
 
   // ── Cargar datos ──────────────────────────────────────────────────────────
   const cargar = useCallback(async (pag = 0, busq = busqueda, grupo = filtroGrupo, esp = filtroEspecialidad) => {
     setLoading(true);
     setError(null);
     try {
-      // Mapeamos el grupo UI al código de estado del backend
-      const estadoBackend =
-        grupo === 'ATENDIDO'  ? 'ATENDIDO_IPRESS' :
-        grupo === 'PENDIENTE' ? 'PENDIENTE_CITA'  :
-        null; // OBSERVADO y TODOS los trae el backend sin filtro de estado exacto
+      // Mapear grupo UI → valor de condicion_medica para filtrar en backend
+      const condicionMedicaBackend =
+        grupo === 'ATENDIDO'    ? 'Atendido'    :
+        grupo === 'PENDIENTE'   ? 'Pendiente'   :
+        grupo === 'DESERCION'   ? 'Deserción'   :
+        grupo === 'SIN_ATENCION'? 'Sin atención':
+        null; // TODOS → sin filtro
 
       const resp = await obtenerSolicitudesPaginado(
         pag, PAGE_SIZE,
-        BOLSA_PADOMI,  // bolsa
-        null, null, null, esp || null,  // macrorregion, red, ipress, especialidad
-        estadoBackend, // estado
-        'PADOMI',      // ipressAtencion – solo pacientes IPRESS Atención PADOMI
-        null, null,    // tipoCita, asignacion
-        busq || null,  // busqueda
+        BOLSA_PADOMI,           // bolsa
+        null, null, null,       // macrorregion, red, ipress
+        esp || null,            // especialidad
+        null,                   // estado (cod_estado_cita) – no usado aquí
+        'PADOMI',               // ipressAtencion – solo pacientes IPRESS Atención PADOMI
+        null, null,             // tipoCita, asignacion
+        busq || null,           // busqueda
+        null, null,             // fechaInicio, fechaFin
+        condicionMedicaBackend, // condicionMedica – filtro por dim_solicitud_bolsa.condicion_medica
       );
 
       const content = resp?.content ?? resp ?? [];
@@ -189,9 +128,7 @@ export default function TeleconsultaListado() {
       setTotal(total);
       setTotalPaginas(resp?.totalPages ?? 1);
       setPagina(pag);
-      // Solo actualizar el total general cuando no hay filtro activo
       if (grupo === 'TODOS' && !busq && !esp) setTotalGeneral(total);
-      setExpandido(null);
     } catch (err) {
       console.error('Error cargando pacientes PADOMI:', err);
       setError('No se pudo cargar el listado. Verifica la conexión e intenta nuevamente.');
@@ -202,23 +139,21 @@ export default function TeleconsultaListado() {
 
   useEffect(() => {
     cargar(0);
-    // Cargar estadísticas globales filtradas solo por PADOMI
-    obtenerEstadisticasPorEstado('PADOMI')
+    // Estadísticas por condicion_medica (dim_solicitud_bolsa)
+    obtenerEstadisticasCondicionMedicaPadomi()
       .then(data => {
         if (!Array.isArray(data)) return;
-        const acc = { ATENDIDO: 0, PENDIENTE: 0, OBSERVADO: 0 };
+        const acc = { ATENDIDO: 0, PENDIENTE: 0, DESERCION: 0, SIN_ATENCION: 0 };
         data.forEach(({ estado, cantidad }) => {
-          const grupo = getGrupo(estado?.toUpperCase());
-          if (grupo && acc[grupo] !== undefined) acc[grupo] += (cantidad || 0);
+          const grupo = getCondicionMeta(estado).grupo;
+          acc[grupo] = (acc[grupo] ?? 0) + (Number(cantidad) || 0);
         });
         setStatsGlobal(acc);
       })
       .catch(() => {});
-    // Cargar especialidades con conteos filtradas por PADOMI
+    // Especialidades con conteos filtradas por PADOMI
     obtenerEstadisticasPorEspecialidad('PADOMI')
-      .then(data => {
-        if (Array.isArray(data)) setEspecialidadesStat(data);
-      })
+      .then(data => { if (Array.isArray(data)) setEspecialidadesStat(data); })
       .catch(() => {});
   }, []);
 
@@ -241,10 +176,8 @@ export default function TeleconsultaListado() {
     debounceRef.current = setTimeout(() => cargar(0, val, filtroGrupo, filtroEspecialidad), 500);
   };
 
-  // ── Filtro local para OBSERVADO (el backend no distingue tipos de observado) ─
-  const pacientesFiltrados = filtroGrupo === 'OBSERVADO'
-    ? pacientes.filter(p => getGrupo(p.cod_estado_cita) === 'OBSERVADO')
-    : pacientes;
+  // El backend ya filtra por condicion_medica, los resultados son siempre correctos
+  const pacientesFiltrados = pacientes;
 
   // ── Formatear fecha ───────────────────────────────────────────────────────
   const fmtFecha = (d) => {
@@ -298,7 +231,6 @@ export default function TeleconsultaListado() {
             className="bg-white rounded-2xl shadow-2xl w-full max-w-md"
             onClick={e => e.stopPropagation()}
           >
-            {/* Cabecera del modal */}
             <div className="bg-gradient-to-r from-blue-700 to-blue-600 rounded-t-2xl px-6 py-5 flex items-start justify-between gap-4">
               <div className="flex items-center gap-3">
                 <div className="bg-white/20 rounded-xl p-2.5">
@@ -317,7 +249,6 @@ export default function TeleconsultaListado() {
               </button>
             </div>
 
-            {/* Cuerpo */}
             <div className="px-6 py-6 space-y-4">
               <div className="flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-xl p-4">
                 <AlertTriangle className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
@@ -334,7 +265,7 @@ export default function TeleconsultaListado() {
                 </p>
                 <a
                   href="tel:+51945946714"
-                  className="flex items-center gap-3 mt-3 px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl transition-colors group"
+                  className="flex items-center gap-3 mt-3 px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl transition-colors"
                 >
                   <div className="bg-white/20 rounded-lg p-1.5">
                     <PhoneCall className="w-4 h-4" />
@@ -347,7 +278,6 @@ export default function TeleconsultaListado() {
               </div>
             </div>
 
-            {/* Pie */}
             <div className="px-6 pb-6">
               <button
                 onClick={() => setModalNuevoPaciente(false)}
@@ -430,24 +360,24 @@ export default function TeleconsultaListado() {
             </div>
           </button>
 
-          {/* Observados */}
+          {/* Deserción */}
           <button
-            onClick={() => cambiarGrupo('OBSERVADO')}
+            onClick={() => cambiarGrupo('DESERCION')}
             className={`flex items-center gap-3 p-4 rounded-xl border-2 transition-all text-left shadow-sm hover:shadow-md ${
-              filtroGrupo === 'OBSERVADO'
-                ? 'border-orange-500 bg-orange-500 text-white shadow-orange-200'
-                : 'border-slate-200 bg-white text-slate-800 hover:border-orange-300'
+              filtroGrupo === 'DESERCION'
+                ? 'border-red-500 bg-red-500 text-white shadow-red-200'
+                : 'border-slate-200 bg-white text-slate-800 hover:border-red-300'
             }`}
           >
-            <div className={`p-2 rounded-lg ${filtroGrupo === 'OBSERVADO' ? 'bg-white/20' : 'bg-orange-50'}`}>
-              <AlertTriangle className={`w-5 h-5 ${filtroGrupo === 'OBSERVADO' ? 'text-white' : 'text-orange-500'}`} />
+            <div className={`p-2 rounded-lg ${filtroGrupo === 'DESERCION' ? 'bg-white/20' : 'bg-red-50'}`}>
+              <AlertTriangle className={`w-5 h-5 ${filtroGrupo === 'DESERCION' ? 'text-white' : 'text-red-500'}`} />
             </div>
             <div>
-              <p className={`text-2xl font-bold leading-none ${filtroGrupo === 'OBSERVADO' ? 'text-white' : 'text-orange-600'}`}>
-                {loading ? '…' : statsGlobal.OBSERVADO}
+              <p className={`text-2xl font-bold leading-none ${filtroGrupo === 'DESERCION' ? 'text-white' : 'text-red-600'}`}>
+                {loading ? '…' : statsGlobal.DESERCION}
               </p>
-              <p className={`text-xs font-medium mt-0.5 ${filtroGrupo === 'OBSERVADO' ? 'text-orange-100' : 'text-slate-500'}`}>
-                Observados
+              <p className={`text-xs font-medium mt-0.5 ${filtroGrupo === 'DESERCION' ? 'text-red-100' : 'text-slate-500'}`}>
+                Deserción
               </p>
             </div>
           </button>
@@ -538,13 +468,15 @@ export default function TeleconsultaListado() {
             {/* Leyenda de grupo seleccionado */}
             {filtroGrupo !== 'TODOS' && (
               <div className={`px-4 py-2 border-b text-xs font-semibold flex items-center gap-2 ${
-                filtroGrupo === 'ATENDIDO' ? 'bg-emerald-50 border-emerald-200 text-emerald-700' :
-                filtroGrupo === 'PENDIENTE' ? 'bg-slate-50 border-slate-200 text-slate-600' :
-                'bg-orange-50 border-orange-200 text-orange-700'
+                filtroGrupo === 'ATENDIDO'    ? 'bg-emerald-50 border-emerald-200 text-emerald-700' :
+                filtroGrupo === 'PENDIENTE'   ? 'bg-slate-50   border-slate-200   text-slate-600'   :
+                filtroGrupo === 'DESERCION'   ? 'bg-red-50     border-red-200     text-red-700'     :
+                                                'bg-slate-50   border-slate-200   text-slate-600'
               }`}>
-                {filtroGrupo === 'ATENDIDO'  && <><CheckCircle className="w-3.5 h-3.5" /> Mostrando pacientes ATENDIDOS</>}
-                {filtroGrupo === 'PENDIENTE' && <><Clock className="w-3.5 h-3.5" /> Mostrando pacientes PENDIENTES de cita</>}
-                {filtroGrupo === 'OBSERVADO' && <><AlertTriangle className="w-3.5 h-3.5" /> Mostrando pacientes OBSERVADOS · Haz clic en una fila para ver el motivo</>}
+                {filtroGrupo === 'ATENDIDO'    && <><CheckCircle   className="w-3.5 h-3.5" /> Mostrando pacientes ATENDIDOS</>}
+                {filtroGrupo === 'PENDIENTE'   && <><Clock         className="w-3.5 h-3.5" /> Mostrando pacientes PENDIENTES</>}
+                {filtroGrupo === 'DESERCION'   && <><AlertTriangle className="w-3.5 h-3.5" /> Mostrando pacientes con DESERCIÓN</>}
+                {filtroGrupo === 'SIN_ATENCION'&& <><Clock         className="w-3.5 h-3.5" /> Mostrando pacientes SIN ATENCIÓN registrada</>}
               </div>
             )}
 
@@ -563,11 +495,6 @@ export default function TeleconsultaListado() {
                       <th className="px-4 py-3 text-left font-semibold text-xs hidden md:table-cell">Fecha Atención</th>
                     )}
                     <th className="px-4 py-3 text-left font-semibold text-xs hidden lg:table-cell">Teléfono</th>
-                    {filtroGrupo === 'OBSERVADO' && (
-                      <th className="px-4 py-3 text-center font-semibold text-xs w-10">
-                        <Info className="w-4 h-4 mx-auto" title="Motivo de observación" />
-                      </th>
-                    )}
                   </tr>
                 </thead>
 
@@ -577,7 +504,7 @@ export default function TeleconsultaListado() {
                     : pacientesFiltrados.length === 0
                       ? (
                         <tr>
-                          <td colSpan={9} className="px-4 py-16 text-center">
+                          <td colSpan={8} className="px-4 py-16 text-center">
                             <div className="flex flex-col items-center gap-3">
                               <Users className="w-10 h-10 text-slate-300" />
                               <p className="text-slate-500 font-medium">No se encontraron pacientes</p>
@@ -599,127 +526,100 @@ export default function TeleconsultaListado() {
                         </tr>
                       )
                       : pacientesFiltrados.map((p, idx) => {
-                          const grupo     = getGrupo(p.cod_estado_cita);
-                          const esObs     = grupo === 'OBSERVADO';
-                          const isExpand  = expandido === p.id_solicitud;
+                          const meta = getCondicionMeta(p.condicion_medica);
 
                           return (
-                            <React.Fragment key={p.id_solicitud ?? idx}>
-                              <tr
-                                onClick={() => esObs && setExpandido(isExpand ? null : p.id_solicitud)}
-                                className={`border-b border-slate-100 transition-colors ${
-                                  esObs
-                                    ? 'cursor-pointer hover:bg-orange-50'
-                                    : grupo === 'ATENDIDO'
-                                      ? 'hover:bg-emerald-50'
-                                      : 'hover:bg-slate-50'
-                                } ${isExpand ? 'bg-orange-50' : ''}`}
-                              >
-                                {/* # */}
-                                <td className="px-4 py-3 text-xs text-slate-400 font-mono">
-                                  {pagina * PAGE_SIZE + idx + 1}
-                                </td>
+                            <tr
+                              key={p.id_solicitud ?? idx}
+                              className={`border-b border-slate-100 transition-colors ${
+                                meta.grupo === 'ATENDIDO'  ? 'hover:bg-emerald-50' :
+                                meta.grupo === 'DESERCION' ? 'hover:bg-red-50'     :
+                                'hover:bg-slate-50'
+                              }`}
+                            >
+                              {/* # */}
+                              <td className="px-4 py-3 text-xs text-slate-400 font-mono">
+                                {pagina * PAGE_SIZE + idx + 1}
+                              </td>
 
-                                {/* DNI */}
-                                <td className="px-4 py-3 font-mono text-xs text-slate-700 font-semibold">
-                                  {p.paciente_dni ?? '—'}
-                                </td>
+                              {/* DNI */}
+                              <td className="px-4 py-3 font-mono text-xs text-slate-700 font-semibold">
+                                {p.paciente_dni ?? '—'}
+                              </td>
 
-                                {/* Nombre */}
-                                <td className="px-4 py-3">
-                                  <p className="font-semibold text-slate-800 text-xs">
-                                    {p.paciente_nombre ?? '—'}
-                                  </p>
-                                  {p.paciente_edad && (
-                                    <p className="text-slate-400 text-xs">{p.paciente_edad} años · {p.paciente_sexo ?? '—'}</p>
-                                  )}
-                                </td>
-
-                                {/* IPRESS */}
-                                <td className="px-4 py-3 hidden md:table-cell">
-                                  <p className="text-xs text-slate-700 line-clamp-1">{p.desc_ipress ?? p.codigo_ipress ?? '—'}</p>
-                                  {p.desc_red && (
-                                    <p className="text-xs text-slate-400 mt-0.5">{p.desc_red}</p>
-                                  )}
-                                </td>
-
-                                {/* Especialidad */}
-                                <td className="px-4 py-3 hidden lg:table-cell">
-                                  <span className="text-xs text-slate-600">{p.especialidad ?? '—'}</span>
-                                </td>
-
-                                {/* Estado */}
-                                <td className="px-4 py-3">
-                                  <EstadoBadge cod={p.cod_estado_cita} />
-                                </td>
-
-                                {/* Fecha cita */}
-                                <td className="px-4 py-3 hidden md:table-cell">
-                                  {p.fecha_atencion ? (
-                                    <div>
-                                      <p className="text-xs text-slate-700 font-medium">{fmtFecha(p.fecha_atencion)}</p>
-                                      {p.hora_atencion && (
-                                        <p className="text-xs text-slate-400">{String(p.hora_atencion).slice(0, 5)}</p>
-                                      )}
-                                    </div>
-                                  ) : (
-                                    <span className="text-xs text-slate-400">—</span>
-                                  )}
-                                </td>
-
-                                {/* Fecha Atención (solo cuando filtro = ATENDIDO) */}
-                                {filtroGrupo === 'ATENDIDO' && (
-                                  <td className="px-4 py-3 hidden md:table-cell">
-                                    {(p.fecha_atencion_medica || p.fecha_cambio_estado) ? (
-                                      <p className="text-xs text-emerald-700 font-medium">
-                                        {new Date(p.fecha_atencion_medica ?? p.fecha_cambio_estado).toLocaleString('es-PE', {
-                                          day: '2-digit', month: '2-digit', year: 'numeric',
-                                          hour: '2-digit', minute: '2-digit',
-                                        })}
-                                      </p>
-                                    ) : (
-                                      <span className="text-xs text-slate-400 italic">—</span>
-                                    )}
-                                  </td>
+                              {/* Nombre */}
+                              <td className="px-4 py-3">
+                                <p className="font-semibold text-slate-800 text-xs">
+                                  {p.paciente_nombre ?? '—'}
+                                </p>
+                                {p.paciente_edad && (
+                                  <p className="text-slate-400 text-xs">{p.paciente_edad} años · {p.paciente_sexo ?? '—'}</p>
                                 )}
+                              </td>
 
-                                {/* Teléfono */}
-                                <td className="px-4 py-3 hidden lg:table-cell">
-                                  {p.paciente_telefono ? (
-                                    <a
-                                      href={`tel:${p.paciente_telefono}`}
-                                      onClick={e => e.stopPropagation()}
-                                      className="flex items-center gap-1 text-xs text-blue-600 hover:underline"
-                                    >
-                                      <Phone className="w-3 h-3" />
-                                      {p.paciente_telefono}
-                                    </a>
+                              {/* IPRESS */}
+                              <td className="px-4 py-3 hidden md:table-cell">
+                                <p className="text-xs text-slate-700 line-clamp-1">{p.desc_ipress ?? p.codigo_ipress ?? '—'}</p>
+                                {p.desc_red && (
+                                  <p className="text-xs text-slate-400 mt-0.5">{p.desc_red}</p>
+                                )}
+                              </td>
+
+                              {/* Especialidad */}
+                              <td className="px-4 py-3 hidden lg:table-cell">
+                                <span className="text-xs text-slate-600">{p.especialidad ?? '—'}</span>
+                              </td>
+
+                              {/* Estado (condicion_medica) */}
+                              <td className="px-4 py-3">
+                                <CondicionBadge valor={p.condicion_medica} />
+                              </td>
+
+                              {/* Fecha cita */}
+                              <td className="px-4 py-3 hidden md:table-cell">
+                                {p.fecha_atencion ? (
+                                  <div>
+                                    <p className="text-xs text-slate-700 font-medium">{fmtFecha(p.fecha_atencion)}</p>
+                                    {p.hora_atencion && (
+                                      <p className="text-xs text-slate-400">{String(p.hora_atencion).slice(0, 5)}</p>
+                                    )}
+                                  </div>
+                                ) : (
+                                  <span className="text-xs text-slate-400">—</span>
+                                )}
+                              </td>
+
+                              {/* Fecha Atención (solo cuando filtro = ATENDIDO) */}
+                              {filtroGrupo === 'ATENDIDO' && (
+                                <td className="px-4 py-3 hidden md:table-cell">
+                                  {(p.fecha_atencion_medica || p.fecha_cambio_estado) ? (
+                                    <p className="text-xs text-emerald-700 font-medium">
+                                      {new Date(p.fecha_atencion_medica ?? p.fecha_cambio_estado).toLocaleString('es-PE', {
+                                        day: '2-digit', month: '2-digit', year: 'numeric',
+                                        hour: '2-digit', minute: '2-digit',
+                                      })}
+                                    </p>
                                   ) : (
-                                    <span className="text-xs text-slate-400">—</span>
+                                    <span className="text-xs text-slate-400 italic">—</span>
                                   )}
                                 </td>
-
-                                {/* Expand icon para OBSERVADO */}
-                                {filtroGrupo === 'OBSERVADO' && (
-                                  <td className="px-4 py-3 text-center">
-                                    {esObs && (
-                                      isExpand
-                                        ? <ChevronUp className="w-4 h-4 text-orange-500 mx-auto" />
-                                        : <ChevronDown className="w-4 h-4 text-orange-400 mx-auto" />
-                                    )}
-                                  </td>
-                                )}
-                              </tr>
-
-                              {/* Fila expandida de detalle observación */}
-                              {esObs && isExpand && (
-                                <tr className="border-b border-orange-200">
-                                  <td colSpan={9} className="px-3 pb-3">
-                                    <FilaObservacion paciente={p} />
-                                  </td>
-                                </tr>
                               )}
-                            </React.Fragment>
+
+                              {/* Teléfono */}
+                              <td className="px-4 py-3 hidden lg:table-cell">
+                                {p.paciente_telefono ? (
+                                  <a
+                                    href={`tel:${p.paciente_telefono}`}
+                                    className="flex items-center gap-1 text-xs text-blue-600 hover:underline"
+                                  >
+                                    <Phone className="w-3 h-3" />
+                                    {p.paciente_telefono}
+                                  </a>
+                                ) : (
+                                  <span className="text-xs text-slate-400">—</span>
+                                )}
+                              </td>
+                            </tr>
                           );
                         })
                   }
@@ -743,21 +643,20 @@ export default function TeleconsultaListado() {
                     <ChevronLeft className="w-4 h-4 text-slate-600" />
                   </button>
 
-                  {/* Páginas visibles */}
                   {Array.from({ length: Math.min(5, totalPaginas) }, (_, i) => {
-                    const p = Math.max(0, Math.min(pagina - 2, totalPaginas - 5)) + i;
+                    const pg = Math.max(0, Math.min(pagina - 2, totalPaginas - 5)) + i;
                     return (
                       <button
-                        key={p}
-                        onClick={() => cargar(p)}
+                        key={pg}
+                        onClick={() => cargar(pg)}
                         disabled={loading}
                         className={`w-8 h-8 text-xs rounded-lg font-medium transition-colors ${
-                          p === pagina
+                          pg === pagina
                             ? 'bg-blue-600 text-white border border-blue-600'
                             : 'border border-slate-200 hover:bg-white text-slate-600'
                         }`}
                       >
-                        {p + 1}
+                        {pg + 1}
                       </button>
                     );
                   })}

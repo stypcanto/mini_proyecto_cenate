@@ -79,8 +79,9 @@ public interface SolicitudBolsaService {
             String tipoCita,
             String asignacion,
             String busqueda,
-            String fechaInicio,     // ✅ v1.66.0: Filtro rango fechas
-            String fechaFin,        // ✅ v1.66.0: Filtro rango fechas
+            String fechaInicio,
+            String fechaFin,
+            String condicionMedica,
             org.springframework.data.domain.Pageable pageable);
 
     /**

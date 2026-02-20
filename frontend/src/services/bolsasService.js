@@ -185,8 +185,9 @@ export const obtenerSolicitudesPaginado = async (
   tipoCita = null,
   asignacion = null,
   busqueda = null,
-  fechaInicio = null,  // ✅ v1.66.0: Filtro rango de fechas
-  fechaFin = null      // ✅ v1.66.0: Filtro rango de fechas
+  fechaInicio = null,
+  fechaFin = null,
+  condicionMedica = null   // v1.74.0: Filtro por condicion_medica (PADOMI)
 ) => {
   try {
     // Construir query string dinámico
@@ -208,8 +209,9 @@ export const obtenerSolicitudesPaginado = async (
       params.append('asignacion', asignacion);
     }
     if (busqueda && busqueda.trim()) params.append('busqueda', busqueda.trim());
-    if (fechaInicio && fechaInicio.trim()) params.append('fechaInicio', fechaInicio.trim()); // ✅ v1.66.0
-    if (fechaFin && fechaFin.trim()) params.append('fechaFin', fechaFin.trim()); // ✅ v1.66.0
+    if (fechaInicio && fechaInicio.trim()) params.append('fechaInicio', fechaInicio.trim());
+    if (fechaFin && fechaFin.trim()) params.append('fechaFin', fechaFin.trim());
+    if (condicionMedica && condicionMedica.trim()) params.append('condicionMedica', condicionMedica.trim());
 
     const finalUrl = `${API_BASE_URL}/solicitudes?${params.toString()}`;
     console.log('🌐 URL de solicitud:', finalUrl);
@@ -391,6 +393,17 @@ export const obtenerEstadisticasDelDia = async () => {
  * Obtiene estadísticas por estado de cita
  * @param {string} ipressAtencion - Filtro opcional por IPRESS Atención (ej: 'PADOMI')
  */
+/** Estadísticas por condicion_medica para bolsa PADOMI (v1.73.1) */
+export const obtenerEstadisticasCondicionMedicaPadomi = async () => {
+  try {
+    const response = await apiClient.get(`${API_BASE_URL}/estadisticas/por-condicion-medica-padomi`, true);
+    return response;
+  } catch (error) {
+    console.error('Error al obtener estadísticas condicion_medica PADOMI:', error);
+    throw error;
+  }
+};
+
 export const obtenerEstadisticasPorEstado = async (ipressAtencion = null) => {
   try {
     const url = ipressAtencion
