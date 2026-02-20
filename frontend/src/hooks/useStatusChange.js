@@ -84,17 +84,35 @@ export const useStatusChange = (onStatusChange, onStatusChangedBackend) => {
           console.log(`✅ Estado guardado en backend: ${pacienteNombre} → ${newStatus}`);
         } catch (error) {
           console.error('❌ Error guardando estado en backend:', error);
+          console.error('📊 Estructura del error:', {
+            response: error.response,
+            data: error.response?.data,
+            message: error.message
+          });
 
           // ROLLBACK AUTOMÁTICO en caso de error
           onStatusChange(pacienteId, previousStatus);
           toast.dismiss(toastRef.current);
 
+          // ✅ v1.66.0: Extraer mensaje específico del backend - múltiples rutas
+          let mensajeBackend = 'Error al guardar estado';
+          let detalles = '';
+
+          if (error.response?.data?.mensaje) {
+            mensajeBackend = error.response.data.mensaje;
+            detalles = error.response.data.estado_actual ? `Estado actual: ${error.response.data.estado_actual}` : '';
+          } else if (error.response?.data?.error) {
+            mensajeBackend = error.response.data.error;
+          } else if (error.message) {
+            mensajeBackend = error.message;
+          }
+
           toast.error(
             <div>
-              <p className="font-medium">Error al guardar estado</p>
-              <p className="text-sm">Se restauró al estado anterior</p>
+              <p className="font-medium">❌ {mensajeBackend}</p>
+              {detalles && <p className="text-sm">{detalles}</p>}
             </div>,
-            { duration: 4000 }
+            { duration: 5000 }
           );
         }
       }, 5000);

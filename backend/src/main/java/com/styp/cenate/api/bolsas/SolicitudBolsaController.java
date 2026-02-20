@@ -720,18 +720,51 @@ public class SolicitudBolsaController {
 
             log.info("✅ Solicitud encontrada: {}", solicitud.getNumeroSolicitud());
 
+            // ✅ VALIDACIÓN 1: Si está en CITADO, solo permitir si el nuevo estado también es CITADO
+            Long estadoGestionCitasId = solicitud.getEstadoGestionCitasId();
+            if (estadoGestionCitasId != null) {
+                DimEstadosGestionCitas estadoActual = estadosRepository.findById(estadoGestionCitasId).orElse(null);
+                if (estadoActual != null && "CITADO".equalsIgnoreCase(estadoActual.getCodigoEstado())) {
+                    // Si está en CITADO y quiere cambiar a otro estado → Bloquear
+                    if (!("CITADO".equalsIgnoreCase(dto.getNuevoEstadoCodigo()))) {
+                        log.warn("❌ VALIDACIÓN FALLIDA: Solicitud {} está CITADO, no puede cambiar a {}", id, dto.getNuevoEstadoCodigo());
+                        return ResponseEntity.status(400).body(
+                            Map.of(
+                                "error", "No se puede cambiar estado",
+                                "mensaje", "El paciente está CITADO. No se permite cambiar el estado. Solo se puede actualizar fecha, hora o médico de la cita.",
+                                "estado_actual", "CITADO",
+                                "idSolicitud", id
+                            )
+                        );
+                    }
+                }
+            }
+
+            // ✅ VALIDACIÓN 2: Campo estado - Bloquear solo si es ATENDIDO
+            if ("ATENDIDO".equalsIgnoreCase(solicitud.getEstado())) {
+                log.warn("❌ VALIDACIÓN FALLIDA: Solicitud {} tiene estado=ATENDIDO - No se puede cambiar", id);
+                return ResponseEntity.status(400).body(
+                    Map.of(
+                        "error", "No se puede cambiar estado",
+                        "mensaje", "La solicitud ya fue atendida (estado=ATENDIDO). No se permite realizar cambios.",
+                        "estado_actual", "ATENDIDO",
+                        "idSolicitud", id
+                    )
+                );
+            }
+
             // ✅ v1.65.0: Actualizar condicion_medica y estado según el nuevo estado
-            String estadoFinal = dto.getNuevoEstadoCodigo(); // El estado que se guardará finalmente
-            
             if ("CITADO".equalsIgnoreCase(dto.getNuevoEstadoCodigo())) {
                 log.warn("🔄 Estado es CITADO - Actualizando condicion_medica a 'Pendiente'");
                 solicitud.setCondicionMedica("Pendiente");
+                solicitud.setEstado("PENDIENTE");
             } else if ("APAGADO".equalsIgnoreCase(dto.getNuevoEstadoCodigo()) ||
                        "NO_CONTESTA".equalsIgnoreCase(dto.getNuevoEstadoCodigo()) ||
                        "NO_GRUPO_ETARIO".equalsIgnoreCase(dto.getNuevoEstadoCodigo()) ||
                        "REPROG_FALLIDA".equalsIgnoreCase(dto.getNuevoEstadoCodigo())) {
                 log.warn("🔄 Estado es {} - Limpiando condicion_medica (null)", dto.getNuevoEstadoCodigo());
                 solicitud.setCondicionMedica(null);
+                solicitud.setEstado("PENDIENTE");
             } else if ("ATENDIDO_IPRESS".equalsIgnoreCase(dto.getNuevoEstadoCodigo()) ||
                        "HC_BLOQUEADA".equalsIgnoreCase(dto.getNuevoEstadoCodigo()) ||
                        "NO_DESEA".equalsIgnoreCase(dto.getNuevoEstadoCodigo()) ||

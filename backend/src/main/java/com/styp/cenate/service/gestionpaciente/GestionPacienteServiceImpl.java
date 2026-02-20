@@ -285,6 +285,10 @@ public class GestionPacienteServiceImpl implements IGestionPacienteService {
                     OffsetDateTime fechaAtencion = zonedDateTime.toOffsetDateTime();
                     existing.setFechaAtencionMedica(fechaAtencion);
                     log.info("✅ Fecha de atención registrada (Instant→America/Lima): {} | LocalTime: {}", fechaAtencion, zonedDateTime.toLocalTime());
+
+                    // ✅ v1.65.0: MEDICAL MODULE - Actualizar campo estado a "ATENDIDO" cuando condición es "Atendido" o "Deserción"
+                    existing.setEstado("ATENDIDO");
+                    log.info("✅ [v1.65.0] Campo estado actualizado a ATENDIDO (condición: {})", condicion);
                 } else if ("Pendiente".equalsIgnoreCase(condicion)) {
                     // ✅ v1.47.0: Limpiar fecha de atención cuando se cambia a "Pendiente"
                     existing.setFechaAtencionMedica(null);

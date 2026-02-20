@@ -635,16 +635,44 @@ export default function GestionAsegurado() {
         if (!response.ok) {
           const errorData = await response.json();
           console.error("❌ Error response from backend:", errorData);
-          throw new Error(errorData.error || "Error al actualizar el estado");
+          
+          // ✅ v1.66.0: Crear error con estructura compatible con useStatusChange
+          const error = new Error(errorData.mensaje || errorData.error || "Error al actualizar el estado");
+          error.response = { data: errorData };
+          throw error;
         }
 
         const responseData = await response.json();
         console.log("✅ Backend response OK:", responseData);
 
-        // Refrescar datos desde backend para asegurar sincronización
-        console.log("🔄 Recargando datos desde backend...");
-        await fetchPacientesAsignados();
-        console.log("✅ Datos recargados exitosamente");
+        // ✅ v1.66.0: Actualizar estado local INMEDIATAMENTE con respuesta del backend
+        // No esperar a fetchPacientesAsignados para mejor UX
+        setPacientesAsignados(prev =>
+          prev.map(p => {
+            if (p.id === pacienteId) {
+              // Encontrar la descripción del estado desde estadosDisponibles
+              const estadoObj = estadosDisponibles.find(e => e.codigo === responseData.nuevoEstadoCodigo);
+              return {
+                ...p,
+                descEstadoCita: estadoObj?.descripcion || newStatus,
+                codigoEstado: responseData.nuevoEstadoCodigo,
+                // Actualizar demás campos si existen en el response
+                fechaAtencion: responseData.fechaAtencion || p.fechaAtencion,
+                horaAtencion: responseData.horaAtencion || p.horaAtencion,
+                idPersonal: responseData.idPersonal || p.idPersonal,
+              };
+            }
+            return p;
+          })
+        );
+        
+        console.log("✅ Estado local actualizado inmediatamente");
+
+        // Refrescar datos desde backend DESPUÉS para sincronización completa (en background)
+        console.log("🔄 Recargando datos desde backend en background...");
+        fetchPacientesAsignados().catch(err => 
+          console.warn("⚠️ Error refrescando datos en background:", err)
+        );
       } catch (error) {
         console.error("❌ Error en CALLBACK 2:", error);
         throw error;
@@ -2719,13 +2747,21 @@ CENATE de Essalud`;
                           ) : (
                             // Modo Normal: Mostrar botones de acciones
                             <div className="flex gap-1 justify-center items-center">
+                              {/* ✅ v1.67.0: Deshabilitar edición solo si condicionMedica=Atendido */}
                               <button
                                 onClick={() => {
                                   setPacienteEditandoEstado(paciente.id);
                                   setNuevoEstadoSeleccionado(paciente.codigoEstado || "");
                                 }}
-                                className="bg-blue-600 hover:bg-blue-700 text-white p-2 rounded transition-colors"
-                                title="Editar estado y cita"
+                                disabled={paciente.condicionMedica === "Atendido"}
+                                className={`p-2 rounded transition-colors text-white font-medium flex items-center gap-1 ${
+                                  paciente.condicionMedica === "Atendido"
+                                    ? "bg-gray-400 cursor-not-allowed opacity-50"
+                                    : "bg-blue-600 hover:bg-blue-700"
+                                }`}
+                                title={paciente.condicionMedica === "Atendido" 
+                                  ? "❌ La atención ya fue atendida. No se puede editar."
+                                  : "Editar estado y cita"}
                               >
                                 <Edit2 className="w-4 h-4" strokeWidth={2} />
                               </button>
