@@ -32,6 +32,7 @@ import {
 import { COLORS, MEDICAL_PALETTE } from '../../config/designSystem';
 import toast from 'react-hot-toast';
 import teleecgService from '../../services/teleecgService';
+import * as XLSX from 'xlsx';
 import apiClient from '../../lib/apiClient';
 
 // ✅ v1.76.5: Función auxiliar para parsear fechas sin offset de timezone
@@ -109,6 +110,12 @@ export default function MisECGsRecientes({
   const [showResultadosModal, setShowResultadosModal] = useState(false);
   const [resultadosModal, setResultadosModal] = useState(null);
 
+  // ✅ Descargas Inteligentes
+  const [showDescargas, setShowDescargas] = useState(false);
+  const [descargaEvaluacion, setDescargaEvaluacion] = useState('NORMAL');
+  const [descargandoAtendidos, setDescargandoAtendidos] = useState(false);
+  const [descargandoEvaluacion, setDescargandoEvaluacion] = useState(false);
+
   // ✅ Parsear descripción completa para extraer hallazgos y observaciones
   const parsearEvaluacionCompleta = (descripcion) => {
     if (!descripcion) return { hallazgos: '', observacionesClinicas: '' };
@@ -123,6 +130,210 @@ export default function MisECGsRecientes({
       hallazgos: hallazgos ? hallazgos.split('\n').filter(h => h.trim().startsWith('-')).map(h => h.replace(/^-\s*/, '').trim()).join('\n') : '',
       observacionesClinicas
     };
+  };
+
+  // ✅ Helper: dar formato a fecha para Excel
+  const formatearFechaExcel = (fechaStr) => {
+    if (!fechaStr) return '-';
+    try {
+      const fecha = new Date(fechaStr);
+      return `${String(fecha.getUTCDate()).padStart(2,'0')}/${String(fecha.getUTCMonth()+1).padStart(2,'0')}/${fecha.getUTCFullYear()} ${String(fecha.getUTCHours()).padStart(2,'0')}:${String(fecha.getUTCMinutes()).padStart(2,'0')}`;
+    } catch { return '-'; }
+  };
+
+  // ✅ Descarga 1: Todos los Atendidos — consulta el total desde el backend
+  const descargarAtendidosExcel = async () => {
+    setDescargandoAtendidos(true);
+    try {
+      toast.loading('Obteniendo todos los atendidos...');
+      const resultado = await teleecgService.listarAgrupoPorAsegurado('', 'ATENDIDA');
+      toast.dismiss();
+
+      if (!resultado || resultado.length === 0) {
+        toast.error('No hay pacientes atendidos para exportar');
+        setDescargandoAtendidos(false);
+        return;
+      }
+
+      const filas = resultado.map((asegurado, i) => {
+        const imagenes = asegurado.imagenes || [];
+        const ultima = imagenes[imagenes.length - 1] || {};
+        return {
+          '#': i + 1,
+          'DNI': asegurado.dni || ultima.numDocPaciente || '-',
+          'Paciente': asegurado.nombrePaciente || ultima.nombrePaciente || '-',
+          'Edad': asegurado.edad || ultima.edadPaciente || '-',
+          'Género': (asegurado.genero || ultima.generoPaciente) === 'M' ? 'Masculino' : (asegurado.genero || ultima.generoPaciente) === 'F' ? 'Femenino' : '-',
+          'Estado': 'Atendida',
+          'Cant. Imágenes': imagenes.length || 0,
+          'Evaluación': ultima.evaluacion || '-',
+          'Fecha EKG': ultima.fechaToma ? formatearFechaExcel(ultima.fechaToma) : '-',
+          'Fecha Envío': ultima.fechaEnvio ? formatearFechaExcel(ultima.fechaEnvio) : '-',
+        };
+      });
+
+      const ws = XLSX.utils.json_to_sheet(filas);
+      ws['!cols'] = [
+        {wch:4},{wch:12},{wch:35},{wch:7},{wch:10},
+        {wch:12},{wch:14},{wch:14},{wch:18},{wch:18}
+      ];
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'Atendidos');
+      XLSX.writeFile(wb, `Pacientes_Atendidos_ECG_${new Date().toISOString().slice(0,10)}.xlsx`);
+      toast.success(`✅ ${resultado.length} pacientes exportados`);
+    } catch (e) {
+      toast.dismiss();
+      toast.error('Error al obtener datos del servidor');
+    } finally {
+      setDescargandoAtendidos(false);
+    }
+  };
+
+  // ✅ Descarga 2: Por Evaluación (NORMAL o ANORMAL) — llama al backend
+  const descargarPorEvaluacionExcel = async () => {
+    setDescargandoEvaluacion(true);
+    try {
+      toast.loading('Obteniendo datos de evaluaciones...');
+      // Obtener todos los pacientes atendidos agrupados con sus evaluaciones
+      const resultado = await teleecgService.listarAgrupoPorAsegurado('', 'ATENDIDA');
+      toast.dismiss();
+
+      if (!resultado || resultado.length === 0) {
+        toast.error('No se encontraron datos');
+        setDescargandoEvaluacion(false);
+        return;
+      }
+
+      // Filtrar por tipo de evaluación seleccionado
+      const filtrados = resultado.filter(asegurado => {
+        const imagenes = asegurado.imagenes || [];
+        return imagenes.some(img => img.evaluacion === descargaEvaluacion);
+      });
+
+      if (filtrados.length === 0) {
+        toast.error(`No hay pacientes con evaluación ${descargaEvaluacion}`);
+        setDescargandoEvaluacion(false);
+        return;
+      }
+
+      const filas = filtrados.map((asegurado, i) => {
+        const imagenes = asegurado.imagenes || [];
+        const ultimaEval = [...imagenes].reverse().find(img => img.evaluacion === descargaEvaluacion);
+        return {
+          '#': i + 1,
+          'DNI': asegurado.numDoc || asegurado.numDocPaciente || '-',
+          'Paciente': asegurado.nombreCompleto || asegurado.apellidosNombres || '-',
+          'Edad': asegurado.edadPaciente || asegurado.edad || '-',
+          'Género': (asegurado.generoPaciente || asegurado.genero) === 'M' ? 'Masculino' : (asegurado.generoPaciente || asegurado.genero) === 'F' ? 'Femenino' : '-',
+          'Estado': 'Atendida',
+          'Evaluación': descargaEvaluacion,
+          'Cant. Imágenes': imagenes.length,
+          'Fecha Evaluación': ultimaEval?.fechaEvaluacion ? formatearFechaExcel(ultimaEval.fechaEvaluacion) : '-',
+          'Hallazgos': ultimaEval?.hallazgos || '-',
+          'Observaciones': ultimaEval?.observacionesClinicas || '-',
+        };
+      });
+
+      const ws = XLSX.utils.json_to_sheet(filas);
+      ws['!cols'] = [
+        {wch:4},{wch:12},{wch:35},{wch:7},{wch:10},
+        {wch:12},{wch:12},{wch:14},{wch:18},{wch:40},{wch:50}
+      ];
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, `Eval_${descargaEvaluacion}`);
+      XLSX.writeFile(wb, `Pacientes_Eval_${descargaEvaluacion}_${new Date().toISOString().slice(0,10)}.xlsx`);
+      toast.success(`✅ ${filtrados.length} pacientes con evaluación ${descargaEvaluacion} exportados`);
+    } catch (e) {
+      toast.dismiss();
+      toast.error('Error al generar el Excel: ' + e.message);
+    } finally {
+      setDescargandoEvaluacion(false);
+    }
+  };
+
+  const descargarComoWord = () => {
+    if (!resultadosModal) return;
+
+    const fecha = resultadosModal.fecha
+      ? new Date(resultadosModal.fecha).toLocaleDateString('es-ES', {
+          day: 'numeric', month: 'long', year: 'numeric',
+          hour: '2-digit', minute: '2-digit'
+        })
+      : 'Sin fecha';
+
+    const colorEval = resultadosModal.evaluacion === 'NORMAL' ? '#059669' : '#DC2626';
+
+    const html = `
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <style>
+    body { font-family: Calibri, Arial, sans-serif; margin: 40px; color: #1e293b; }
+    .header { background: #1e293b; color: white; padding: 20px 24px; margin-bottom: 24px; }
+    .header .label { font-size: 10px; letter-spacing: 2px; color: #94a3b8; margin-bottom: 6px; }
+    .header .name { font-size: 18px; font-weight: bold; margin-bottom: 4px; }
+    .header .dni { font-size: 12px; color: #94a3b8; }
+    .badge { display: inline-flex; align-items: center; gap: 10px; background: ${resultadosModal.evaluacion === 'NORMAL' ? '#f0fdf4' : '#fef2f2'}; border: 1px solid ${resultadosModal.evaluacion === 'NORMAL' ? '#bbf7d0' : '#fecaca'}; border-radius: 10px; padding: 14px 20px; margin-bottom: 24px; width: 100%; box-sizing: border-box; }
+    .badge .circle { background: ${colorEval}; color: white; border-radius: 50%; width: 40px; height: 40px; display: inline-flex; align-items: center; justify-content: center; font-size: 20px; font-weight: bold; flex-shrink: 0; }
+    .badge .eval-text { font-size: 22px; font-weight: 900; color: ${colorEval}; }
+    .badge .eval-fecha { font-size: 11px; color: #64748b; margin-top: 2px; }
+    .section { margin-bottom: 20px; }
+    .section-title { font-size: 11px; font-weight: bold; letter-spacing: 2px; color: #475569; text-transform: uppercase; padding-bottom: 6px; border-bottom: 2px solid #e2e8f0; margin-bottom: 12px; }
+    .section-bar { display: inline-block; width: 4px; height: 18px; background: #1e293b; border-radius: 2px; margin-right: 8px; vertical-align: middle; }
+    .content-box { background: #f8fafc; border-radius: 8px; padding: 14px 16px; font-size: 13px; line-height: 1.7; color: #475569; white-space: pre-wrap; }
+    .footer { margin-top: 40px; padding-top: 16px; border-top: 1px solid #e2e8f0; font-size: 10px; color: #94a3b8; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div class="label">INFORME DE EVALUACIÓN ECG — CENATE</div>
+    <div class="name">${resultadosModal.nombrePaciente}</div>
+    <div class="dni">DNI: ${resultadosModal.dni}</div>
+  </div>
+
+  <div class="badge">
+    <div class="circle">${resultadosModal.evaluacion === 'NORMAL' ? '✓' : '!'}</div>
+    <div>
+      <div class="eval-text">${resultadosModal.evaluacion}</div>
+      <div class="eval-fecha">Evaluado el ${fecha}</div>
+    </div>
+  </div>
+
+  ${resultadosModal.hallazgos ? `
+  <div class="section">
+    <div class="section-title"><span class="section-bar"></span>Hallazgos</div>
+    <div class="content-box">${resultadosModal.hallazgos}</div>
+  </div>` : ''}
+
+  ${resultadosModal.observacionesClinicas ? `
+  <div class="section">
+    <div class="section-title"><span class="section-bar"></span>Observaciones Clínicas</div>
+    <div class="content-box">${resultadosModal.observacionesClinicas}</div>
+  </div>` : ''}
+
+  ${resultadosModal.descripcion ? `
+  <div class="section">
+    <div class="section-title"><span class="section-bar"></span>Informe Completo</div>
+    <div class="content-box">${resultadosModal.descripcion}</div>
+  </div>` : ''}
+
+  <div class="footer">
+    Generado por CENATE — Sistema de Telemedicina EsSalud &nbsp;|&nbsp; ${new Date().toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })}
+  </div>
+</body>
+</html>`;
+
+    const blob = new Blob([html], { type: 'application/vnd.ms-word;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `Informe_ECG_${resultadosModal.dni}_${new Date().toISOString().slice(0,10)}.doc`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    toast.success('✅ Informe descargado correctamente');
   };
 
   const abrirResultadosModal = async (carga) => {
@@ -832,6 +1043,94 @@ export default function MisECGsRecientes({
               <span>📊 Mostrando cargas de <strong>{filtroFecha}</strong> ({datosFiltrados.length} encontrada{datosFiltrados.length !== 1 ? 's' : ''})</span>
             )}
           </div>
+        )}
+      </div>
+
+      {/* ==================== DESCARGAS INTELIGENTES ==================== */}
+      <div className="mb-6 bg-slate-50 border border-slate-200 rounded-xl overflow-hidden">
+        <button
+          onClick={() => setShowDescargas(prev => !prev)}
+          className="w-full flex items-center gap-2 px-5 py-3.5 hover:bg-slate-100 transition-colors text-left"
+        >
+          <Download className="w-5 h-5 text-slate-700 flex-shrink-0" />
+          <h3 className="text-sm font-bold text-slate-800">Descargas Inteligentes</h3>
+          <span className="text-xs text-slate-500 font-normal">— Exporta la lista de pacientes a Excel</span>
+          <div className="ml-auto flex-shrink-0">
+            {showDescargas
+              ? <ChevronUp className="w-4 h-4 text-slate-500" />
+              : <ChevronDown className="w-4 h-4 text-slate-500" />
+            }
+          </div>
+        </button>
+
+        {showDescargas && (
+        <div className="px-5 pb-5 pt-1">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+          {/* Opción 1: Todos los Atendidos */}
+          <div className="bg-white border border-slate-200 rounded-xl p-4 flex flex-col gap-3">
+            <div className="flex items-start gap-3">
+              <div className="w-9 h-9 rounded-lg bg-teal-100 flex items-center justify-center flex-shrink-0">
+                <CheckCheck className="w-5 h-5 text-teal-700" strokeWidth={2.5} />
+              </div>
+              <div>
+                <p className="text-sm font-bold text-slate-800">Todos los Atendidos</p>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Exporta <span className="font-semibold text-teal-700">todos</span> los pacientes atendidos desde el servidor
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center justify-between pt-1 border-t border-slate-100">
+              <span className="text-xs text-slate-500 font-medium">
+                Total en servidor: <span className="font-bold text-slate-700">{estadisticas.atendidas || 0}</span>
+              </span>
+              <button
+                onClick={descargarAtendidosExcel}
+                disabled={descargandoAtendidos}
+                className="inline-flex items-center gap-1.5 px-4 py-2 bg-teal-600 hover:bg-teal-700 disabled:bg-slate-300 disabled:cursor-not-allowed text-white rounded-lg text-xs font-bold transition-colors"
+              >
+                {descargandoAtendidos ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
+                {descargandoAtendidos ? 'Generando...' : 'Descargar Excel'}
+              </button>
+            </div>
+          </div>
+
+          {/* Opción 2: Por Evaluación */}
+          <div className="bg-white border border-slate-200 rounded-xl p-4 flex flex-col gap-3">
+            <div className="flex items-start gap-3">
+              <div className="w-9 h-9 rounded-lg bg-indigo-100 flex items-center justify-center flex-shrink-0">
+                <Search className="w-5 h-5 text-indigo-700" strokeWidth={2.5} />
+              </div>
+              <div>
+                <p className="text-sm font-bold text-slate-800">Por Evaluación Médica</p>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Filtra pacientes según el diagnóstico del médico evaluador
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 pt-1 border-t border-slate-100">
+              <select
+                value={descargaEvaluacion}
+                onChange={(e) => setDescargaEvaluacion(e.target.value)}
+                className="flex-1 px-3 py-2 border border-slate-300 rounded-lg text-xs font-semibold text-slate-700 focus:ring-2 focus:ring-indigo-400"
+              >
+                <option value="NORMAL">✅ Normal</option>
+                <option value="ANORMAL">⚠️ Anormal</option>
+                <option value="NO_DIAGNOSTICO">❓ No Diagnóstico</option>
+              </select>
+              <button
+                onClick={descargarPorEvaluacionExcel}
+                disabled={descargandoEvaluacion}
+                className="inline-flex items-center gap-1.5 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-300 disabled:cursor-not-allowed text-white rounded-lg text-xs font-bold transition-colors whitespace-nowrap"
+              >
+                {descargandoEvaluacion ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
+                {descargandoEvaluacion ? 'Buscando...' : 'Descargar Excel'}
+              </button>
+            </div>
+          </div>
+
+        </div>
+        </div>
         )}
       </div>
 
@@ -1899,94 +2198,130 @@ export default function MisECGsRecientes({
         </div>
       )}
 
-      {/* ✅ Modal de Resultados de Evaluación ECG */}
+      {/* ✅ Modal de Resultados de Evaluación ECG - Diseño médico profesional */}
       {showResultadosModal && resultadosModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            {/* Header */}
-            <div className="px-6 py-5 bg-gradient-to-r from-blue-600 to-blue-700 rounded-t-lg">
-              <div className="flex items-start justify-between">
-                <div className="flex-1">
-                  <h2 className="text-2xl font-bold text-white mb-2">
-                    📋 Resultados de Evaluación ECG
-                  </h2>
-                  <p className="text-blue-100 text-sm">
-                    {resultadosModal.nombrePaciente} (DNI: {resultadosModal.dni})
-                  </p>
-                </div>
-                <button
-                  onClick={() => setShowResultadosModal(false)}
-                  className="text-white hover:bg-white/20 p-2 rounded-full transition-colors"
-                  title="Cerrar"
-                >
-                  <X className="w-6 h-6" strokeWidth={2} />
-                </button>
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-xl w-full max-h-[90vh] overflow-y-auto">
+
+            {/* Header compacto */}
+            <div className="px-6 py-4 bg-slate-800 rounded-t-2xl flex items-start justify-between">
+              <div>
+                <p className="text-xs font-semibold text-slate-400 uppercase tracking-widest mb-1">Informe de Evaluación ECG</p>
+                <p className="text-white font-bold text-sm leading-tight">{resultadosModal.nombrePaciente}</p>
+                <p className="text-slate-400 text-xs mt-0.5">DNI: {resultadosModal.dni}</p>
               </div>
+              <button
+                onClick={() => setShowResultadosModal(false)}
+                className="text-slate-400 hover:text-white hover:bg-slate-700 p-1.5 rounded-lg transition-colors mt-0.5"
+                title="Cerrar"
+              >
+                <X className="w-5 h-5" strokeWidth={2} />
+              </button>
             </div>
 
-            {/* Contenido */}
-            <div className="p-8 space-y-6">
-              {/* Evaluación General */}
-              <div className="border-l-4 border-blue-500 bg-blue-50 p-4 rounded">
-                <h3 className="text-lg font-bold text-blue-900 mb-2">
-                  🔍 Evaluación: {resultadosModal.evaluacion === 'NORMAL' ? '✅ NORMAL' : resultadosModal.evaluacion === 'ANORMAL' ? '⚠️ ANORMAL' : resultadosModal.evaluacion}
-                </h3>
-                <p className="text-blue-700 font-medium">Estado: {resultadosModal.evaluacion}</p>
+            {/* Resultado principal - Badge grande */}
+            <div className={`mx-6 mt-6 rounded-xl px-5 py-4 flex items-center gap-4 ${
+              resultadosModal.evaluacion === 'NORMAL'
+                ? 'bg-emerald-50 border border-emerald-200'
+                : 'bg-red-50 border border-red-200'
+            }`}>
+              <div className={`w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 ${
+                resultadosModal.evaluacion === 'NORMAL' ? 'bg-emerald-500' : 'bg-red-500'
+              }`}>
+                {resultadosModal.evaluacion === 'NORMAL'
+                  ? <Check className="w-7 h-7 text-white" strokeWidth={3} />
+                  : <AlertCircle className="w-7 h-7 text-white" strokeWidth={2.5} />
+                }
+              </div>
+              <div>
+                <p className={`text-xl font-extrabold tracking-wide ${
+                  resultadosModal.evaluacion === 'NORMAL' ? 'text-emerald-700' : 'text-red-700'
+                }`}>
+                  {resultadosModal.evaluacion}
+                </p>
                 {resultadosModal.fecha && (
-                  <p className="text-blue-600 text-sm mt-1">
-                    Evaluado el: {new Date(resultadosModal.fecha).toLocaleDateString('es-ES', {
-                      year: 'numeric', month: 'long', day: 'numeric',
+                  <p className="text-gray-500 text-xs mt-0.5">
+                    Evaluado el {new Date(resultadosModal.fecha).toLocaleDateString('es-ES', {
+                      day: 'numeric', month: 'long', year: 'numeric',
                       hour: '2-digit', minute: '2-digit'
                     })}
                   </p>
                 )}
               </div>
+            </div>
 
-              {/* Hallazgos */}
+            {/* Secciones de detalle - datos exactos de BD sin modificar */}
+            <div className="px-6 py-5 space-y-5">
+
+              {/* Hallazgos - campo directo de BD */}
               {resultadosModal.hallazgos && (
-                <div className="border-l-4 border-green-500 bg-green-50 p-4 rounded">
-                  <h3 className="text-lg font-bold text-green-900 mb-3">✅ Hallazgos</h3>
-                  <ul className="space-y-2">
-                    {resultadosModal.hallazgos.split('\n').filter(h => h.trim()).map((h, i) => (
-                      <li key={i} className="text-green-700 flex items-start gap-2">
-                        <CheckCircle className="w-5 h-5 flex-shrink-0 mt-0.5" strokeWidth={2} />
-                        <span>{h}</span>
-                      </li>
-                    ))}
-                  </ul>
+                <div>
+                  <div className="flex items-center gap-2 mb-3">
+                    <div className="w-1 h-5 bg-slate-700 rounded-full" />
+                    <h3 className="text-sm font-bold text-slate-700 uppercase tracking-wide">Hallazgos</h3>
+                  </div>
+                  <p className="text-slate-600 text-sm leading-relaxed bg-slate-50 rounded-lg p-3 whitespace-pre-wrap">
+                    {resultadosModal.hallazgos}
+                  </p>
                 </div>
               )}
 
-              {/* Observaciones Clínicas */}
+              {/* Separador */}
+              {resultadosModal.hallazgos && resultadosModal.observacionesClinicas && (
+                <hr className="border-gray-100" />
+              )}
+
+              {/* Observaciones Clínicas - campo directo de BD */}
               {resultadosModal.observacionesClinicas && (
-                <div className="border-l-4 border-purple-500 bg-purple-50 p-4 rounded">
-                  <h3 className="text-lg font-bold text-purple-900 mb-3">📝 Observaciones Clínicas</h3>
-                  <p className="text-purple-700 leading-relaxed italic">
+                <div>
+                  <div className="flex items-center gap-2 mb-3">
+                    <div className="w-1 h-5 bg-slate-700 rounded-full" />
+                    <h3 className="text-sm font-bold text-slate-700 uppercase tracking-wide">Observaciones Clínicas</h3>
+                  </div>
+                  <p className="text-slate-600 text-sm leading-relaxed bg-slate-50 rounded-lg p-3 whitespace-pre-wrap">
                     {resultadosModal.observacionesClinicas}
                   </p>
                 </div>
               )}
 
-              {/* Descripción */}
+              {/* Separador */}
               {resultadosModal.descripcion && (
-                <div className="border-l-4 border-amber-500 bg-amber-50 p-4 rounded">
-                  <h3 className="text-lg font-bold text-amber-900 mb-3">📌 Descripción</h3>
-                  <p className="text-amber-700 leading-relaxed italic">
+                <hr className="border-gray-100" />
+              )}
+
+              {/* Informe completo - descripcion_evaluacion exacta de BD */}
+              {resultadosModal.descripcion && (
+                <div>
+                  <div className="flex items-center gap-2 mb-3">
+                    <div className="w-1 h-5 bg-slate-700 rounded-full" />
+                    <h3 className="text-sm font-bold text-slate-700 uppercase tracking-wide">Informe Completo</h3>
+                  </div>
+                  <p className="text-slate-600 text-sm leading-relaxed bg-slate-50 rounded-lg p-3 whitespace-pre-wrap">
                     {resultadosModal.descripcion}
                   </p>
                 </div>
               )}
+
             </div>
 
             {/* Footer */}
-            <div className="px-6 py-4 bg-gray-50 border-t rounded-b-lg flex justify-end">
+            <div className="px-6 pb-5 flex items-center justify-between">
+              <button
+                onClick={descargarComoWord}
+                className="inline-flex items-center gap-2 px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-semibold text-sm transition-colors"
+                title="Descargar informe en Word"
+              >
+                <Download className="w-4 h-4" />
+                Descargar Word
+              </button>
               <button
                 onClick={() => setShowResultadosModal(false)}
-                className="px-6 py-2 bg-gray-300 text-gray-800 rounded-lg font-semibold hover:bg-gray-400 transition-colors"
+                className="px-6 py-2.5 bg-slate-800 hover:bg-slate-700 text-white rounded-lg font-semibold text-sm transition-colors"
               >
                 Cerrar
               </button>
             </div>
+
           </div>
         </div>
       )}

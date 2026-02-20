@@ -365,14 +365,22 @@ public class TeleECGService {
                 break;
 
             case "OBSERVAR":
-                // Cambiar ENVIADA → OBSERVADA con observaciones (problemas detectados)
-                if ("ENVIADA".equals(estadoAnterior)) {
+                // Cambiar a OBSERVADA con observaciones (problemas de calidad detectados por médico)
+                // Permitido desde cualquier estado excepto ya OBSERVADA
+                if (!"OBSERVADA".equals(estadoAnterior)) {
                     imagen.setEstado("OBSERVADA");
-                    imagen.setObservaciones(dto.getObservaciones());  // Aquí van los motivos/observaciones
+                    // Guardar motivo y descripción en campos separados
+                    if (dto.getMotivo() != null && !dto.getMotivo().isBlank()) {
+                        imagen.setMotivoRechazo(dto.getMotivo());
+                        imagen.setObservaciones(dto.getObservaciones()); // descripción adicional
+                    } else {
+                        // Compatibilidad: si viene todo en observaciones (formato antiguo)
+                        imagen.setObservaciones(dto.getObservaciones());
+                    }
                     registrarAuditoria(imagen, idUsuario, "OBSERVADA", ipCliente, "EXITOSA");
-                    log.info("✅ Observaciones agregadas: {} → OBSERVADA", estadoAnterior);
+                    log.info("✅ Imagen marcada como OBSERVADA (rechazo de calidad): {} → OBSERVADA | motivo={}", estadoAnterior, dto.getMotivo());
                 } else {
-                    throw new RuntimeException("Solo se pueden observar imágenes en estado ENVIADA, actual: " + estadoAnterior);
+                    throw new RuntimeException("La imagen ya está en estado OBSERVADA");
                 }
                 break;
 

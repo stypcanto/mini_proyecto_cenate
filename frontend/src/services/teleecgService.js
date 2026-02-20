@@ -570,14 +570,10 @@ const teleecgService = {
    */
   rechazarImagen: async (idImagen, motivo, descripcion = "") => {
     try {
-      // Construir texto completo con motivo y descripción
-      const textoCompleto = descripcion
-        ? `${motivo} - ${descripcion}`
-        : motivo;
-
       const payload = {
-        accion: "OBSERVAR",  // Backend usa OBSERVAR para marcar como rechazado
-        observaciones: textoCompleto,  // Guarda motivo + descripción
+        accion: "OBSERVAR",        // Backend usa OBSERVAR para marcar como rechazado
+        motivo: motivo,            // Motivo principal (MALA_CALIDAD, INCOMPLETA, etc.) → BD: motivo_rechazo
+        observaciones: descripcion || null,  // Descripción adicional opcional → BD: observaciones
       };
 
       console.log("❌ [RECHAZAR ECG]:", { idImagen, motivo, descripcion });
