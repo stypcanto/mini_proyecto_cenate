@@ -192,4 +192,14 @@ export const mesaAyudaService = {
     const response = await apiClient.get(`${ENDPOINT}/motivos`, true);
     return response;
   },
+
+  /**
+   * Obtener respuestas predefinidas para ResponderTicketModal (NUEVO v1.65.10)
+   * @returns {Promise} Lista de respuestas predefinidas
+   */
+  obtenerRespuestasPredefinidas: async () => {
+    console.log('Fetching respuestas predefinidas');
+    const response = await apiClient.get(`${ENDPOINT}/respuestas-predefinidas`, true);
+    return response;
+  },
 };

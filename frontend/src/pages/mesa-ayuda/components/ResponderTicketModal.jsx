@@ -1,77 +1,92 @@
-import React, { useState } from 'react';
-import { X, AlertCircle, CheckCircle } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { X, AlertCircle, CheckCircle, ChevronRight } from 'lucide-react';
 
 /**
  * Modal para responder un ticket de Mesa de Ayuda
- * Utilizado por personal de Mesa de Ayuda para responder tickets
+ * Muestra respuestas predefinidas como chips seleccionables.
+ * Solo cuando se elige "Otros" se habilita el campo de texto libre.
  *
  * Props:
- * - isOpen: boolean - Si el modal está abierto
- * - onClose: function - Callback para cerrar el modal
- * - ticket: Object - Datos del ticket a responder
- * - usuario: Object - Datos del usuario actual (id, nombre)
- * - onSuccess: function - Callback cuando se responde exitosamente
+ * - isOpen: boolean
+ * - onClose: function
+ * - ticket: Object
+ * - usuario: Object
+ * - onSuccess: function
  *
- * @version v1.64.0 (2026-02-18)
+ * @version v1.65.10 (2026-02-19)
  */
 function ResponderTicketModal({ isOpen, onClose, ticket, usuario, onSuccess }) {
-  const [respuesta, setRespuesta] = useState('');
+  const [respuestaSeleccionada, setRespuestaSeleccionada] = useState(null); // { id, codigo, descripcion, esOtros }
+  const [textoOtros, setTextoOtros] = useState('');
   const [estado, setEstado] = useState('RESUELTO');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(false);
+  const [respuestasPredefinidas, setRespuestasPredefinidas] = useState([]);
+  const [loadingRespuestas, setLoadingRespuestas] = useState(false);
+
+  // Cargar respuestas predefinidas al abrir el modal
+  useEffect(() => {
+    if (isOpen) {
+      cargarRespuestasPredefinidas();
+    }
+  }, [isOpen]);
+
+  const cargarRespuestasPredefinidas = async () => {
+    setLoadingRespuestas(true);
+    try {
+      const { mesaAyudaService } = await import('../../../services/mesaAyudaService');
+      const data = await mesaAyudaService.obtenerRespuestasPredefinidas();
+      setRespuestasPredefinidas(Array.isArray(data) ? data : []);
+    } catch (err) {
+      console.error('Error cargando respuestas predefinidas:', err);
+      setRespuestasPredefinidas([]);
+    } finally {
+      setLoadingRespuestas(false);
+    }
+  };
 
   if (!isOpen || !ticket) return null;
 
-  /**
-   * Manejar submit del formulario
-   */
+  // Texto final a enviar: si es "Otros" usar textoOtros, sino la descripcion de la respuesta
+  const textoFinal = respuestaSeleccionada?.esOtros
+    ? textoOtros.trim()
+    : respuestaSeleccionada?.descripcion || '';
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError(null);
     setSuccess(false);
 
-    // Validaciones
-    if (!respuesta.trim()) {
-      setError('La respuesta es requerida');
+    if (!respuestaSeleccionada) {
+      setError('Debe seleccionar una respuesta');
       return;
     }
-
+    if (respuestaSeleccionada.esOtros && !textoOtros.trim()) {
+      setError('Debe ingresar el detalle de la respuesta');
+      return;
+    }
     if (!estado) {
       setError('Debe seleccionar un estado');
       return;
     }
 
     setLoading(true);
-
     try {
-      // Lazy import para evitar problemas de circular dependencies
       const { mesaAyudaService } = await import('../../../services/mesaAyudaService');
-
       const responderData = {
-        respuesta: respuesta.trim(),
-        estado: estado,
+        respuesta: textoFinal,
+        estado,
         idPersonalMesa: usuario?.id || null,
         nombrePersonalMesa: usuario?.nombre || null,
       };
-
-      console.log('Respondiendo ticket:', ticket.id, responderData);
       const response = await mesaAyudaService.responderTicket(ticket.id, responderData);
-
-      console.log('Ticket respondido exitosamente:', response.data);
       setSuccess(true);
-
-      // Limpiar formulario
-      setRespuesta('');
-      setEstado('RESUELTO');
-
-      // Cerrar después de 2 segundos si hay callback de éxito
       setTimeout(() => {
         onSuccess?.(response.data);
         onClose();
-      }, 2000);
+      }, 1500);
     } catch (err) {
-      console.error('Error respondiendo ticket:', err);
       setError(
         err.response?.data?.mensaje ||
         err.message ||
@@ -81,12 +96,10 @@ function ResponderTicketModal({ isOpen, onClose, ticket, usuario, onSuccess }) {
     }
   };
 
-  /**
-   * Manejar cierre del modal
-   */
   const handleClose = () => {
     if (!loading) {
-      setRespuesta('');
+      setRespuestaSeleccionada(null);
+      setTextoOtros('');
       setEstado('RESUELTO');
       setError(null);
       setSuccess(false);
@@ -94,184 +107,176 @@ function ResponderTicketModal({ isOpen, onClose, ticket, usuario, onSuccess }) {
     }
   };
 
-  /**
-   * Obtener color del badge según el estado
-   */
-  const getEstadoBadgeColor = (est) => {
-    const colors = {
-      NUEVO: 'bg-yellow-100 text-yellow-800',
-      EN_PROCESO: 'bg-orange-100 text-orange-800',
-      RESUELTO: 'bg-green-100 text-green-800',
-    };
-    return colors[est] || 'bg-gray-100 text-gray-800';
-  };
+  const getEstadoBadgeColor = (est) => ({
+    NUEVO: 'bg-yellow-100 text-yellow-800',
+    EN_PROCESO: 'bg-orange-100 text-orange-800',
+    RESUELTO: 'bg-green-100 text-green-800',
+  }[est] || 'bg-gray-100 text-gray-800');
 
-  /**
-   * Obtener color del badge según la prioridad
-   */
-  const getPrioridadBadgeColor = (prio) => {
-    const colors = {
-      ALTA: 'bg-red-50 text-red-700 border-red-200',
-      MEDIA: 'bg-orange-50 text-orange-700 border-orange-200',
-      BAJA: 'bg-blue-50 text-blue-700 border-blue-200',
-    };
-    return colors[prio] || 'bg-gray-50 text-gray-700 border-gray-200';
-  };
+  const getPrioridadBadgeColor = (prio) => ({
+    ALTA: 'bg-red-50 text-red-700 border-red-200',
+    MEDIA: 'bg-orange-50 text-orange-700 border-orange-200',
+    BAJA: 'bg-blue-50 text-blue-700 border-blue-200',
+  }[prio] || 'bg-gray-50 text-gray-700 border-gray-200');
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg shadow-xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
+      <div className="bg-white rounded-xl shadow-xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
+
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-200">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
           <div className="flex-1">
-            <h2 className="text-xl font-bold text-gray-900">
-              {ticket.titulo}
-            </h2>
+            <h2 className="text-lg font-bold text-gray-900 leading-tight">{ticket.titulo}</h2>
             <div className="flex gap-2 mt-2">
-              <span className={`inline-block px-2 py-1 rounded-full text-xs font-semibold ${getEstadoBadgeColor(ticket.estado)}`}>
+              <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-semibold ${getEstadoBadgeColor(ticket.estado)}`}>
                 {ticket.estado}
               </span>
-              <span className={`inline-block px-2 py-1 rounded text-xs font-semibold border ${getPrioridadBadgeColor(ticket.prioridad)}`}>
+              <span className={`inline-block px-2 py-0.5 rounded text-xs font-semibold border ${getPrioridadBadgeColor(ticket.prioridad)}`}>
                 {ticket.prioridad}
               </span>
             </div>
           </div>
-          <button
-            onClick={handleClose}
-            disabled={loading}
-            className="text-gray-500 hover:text-gray-700 disabled:opacity-50 flex-shrink-0"
-          >
-            <X size={24} />
+          <button onClick={handleClose} disabled={loading} className="text-gray-400 hover:text-gray-600 disabled:opacity-50 ml-4">
+            <X size={22} />
           </button>
         </div>
 
-        {/* Content */}
-        <div className="p-6">
-          {/* Detalles del Ticket */}
-          <div className="grid grid-cols-2 gap-4 mb-6 bg-gray-50 p-4 rounded-lg">
+        <div className="px-6 py-5 space-y-5">
+          {/* Detalles del ticket */}
+          <div className="grid grid-cols-2 gap-4 bg-gray-50 p-4 rounded-lg text-sm">
             <div>
-              <label className="block text-xs font-semibold text-gray-600 mb-1">
-                Médico
-              </label>
-              <p className="text-sm text-gray-900">{ticket.nombreMedico || 'N/A'}</p>
+              <p className="text-xs font-semibold text-gray-500 mb-0.5">Médico</p>
+              <p className="text-gray-900">{ticket.nombreMedico || 'N/A'}</p>
             </div>
-
             {ticket.dniPaciente && (
               <>
                 <div>
-                  <label className="block text-xs font-semibold text-gray-600 mb-1">
-                    Paciente
-                  </label>
-                  <p className="text-sm text-gray-900">{ticket.nombrePaciente || 'N/A'}</p>
-                  <p className="text-xs text-gray-600">DNI: {ticket.dniPaciente}</p>
+                  <p className="text-xs font-semibold text-gray-500 mb-0.5">Paciente</p>
+                  <p className="text-gray-900">{ticket.nombrePaciente || 'N/A'}</p>
+                  <p className="text-xs text-gray-500">DNI: {ticket.dniPaciente}</p>
                 </div>
-
                 <div className="col-span-2">
-                  <label className="block text-xs font-semibold text-gray-600 mb-1">
-                    IPRESS
-                  </label>
-                  <p className="text-sm text-gray-900">{ticket.ipress || 'N/A'}</p>
+                  <p className="text-xs font-semibold text-gray-500 mb-0.5">IPRESS</p>
+                  <p className="text-gray-900">{ticket.ipress || 'N/A'}</p>
                 </div>
               </>
             )}
-
             <div>
-              <label className="block text-xs font-semibold text-gray-600 mb-1">
-                Fecha de Creación
-              </label>
-              <p className="text-sm text-gray-900">
-                {new Date(ticket.fechaCreacion).toLocaleString('es-ES')}
-              </p>
+              <p className="text-xs font-semibold text-gray-500 mb-0.5">Fecha de Creación</p>
+              <p className="text-gray-900">{new Date(ticket.fechaCreacion).toLocaleString('es-ES')}</p>
             </div>
-
             <div>
-              <label className="block text-xs font-semibold text-gray-600 mb-1">
-                Tiempo Abierto
-              </label>
-              <p className="text-sm text-gray-900">
-                {ticket.horasDesdeCreacion} horas
-              </p>
+              <p className="text-xs font-semibold text-gray-500 mb-0.5">Tiempo Abierto</p>
+              <p className="text-gray-900">{ticket.horasDesdeCreacion} horas</p>
             </div>
           </div>
 
-          {/* Descripción Original */}
-          <div className="mb-6">
-            <h3 className="text-sm font-semibold text-gray-700 mb-2">
-              Descripción del Ticket
-            </h3>
-            <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
-              <p className="text-sm text-gray-800 whitespace-pre-wrap">
-                {ticket.descripcion}
-              </p>
+          {/* Descripción */}
+          <div>
+            <h3 className="text-sm font-semibold text-gray-700 mb-2">Descripción del Ticket</h3>
+            <div className="bg-gray-50 p-3 rounded-lg border border-gray-200">
+              <p className="text-sm text-gray-800 whitespace-pre-wrap">{ticket.descripcion}</p>
             </div>
           </div>
 
-          {/* Respuesta Anterior (si existe) */}
+          {/* Respuesta anterior */}
           {ticket.respuesta && (
-            <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-              <h3 className="text-sm font-semibold text-blue-900 mb-2">
-                Respuesta Anterior
-              </h3>
-              <p className="text-sm text-blue-800 whitespace-pre-wrap">
-                {ticket.respuesta}
-              </p>
+            <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+              <h3 className="text-sm font-semibold text-blue-900 mb-1">Respuesta Anterior</h3>
+              <p className="text-sm text-blue-800 whitespace-pre-wrap">{ticket.respuesta}</p>
               {ticket.nombrePersonalMesa && (
-                <p className="text-xs text-blue-700 mt-2">
-                  Por: {ticket.nombrePersonalMesa}
-                </p>
+                <p className="text-xs text-blue-600 mt-1">Por: {ticket.nombrePersonalMesa}</p>
               )}
             </div>
           )}
 
-          {/* Mensajes de Error/Éxito */}
+          {/* Mensajes */}
           {error && (
-            <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg flex items-start gap-3">
-              <AlertCircle size={20} className="text-red-600 flex-shrink-0 mt-0.5" />
+            <div className="p-3 bg-red-50 border border-red-200 rounded-lg flex items-start gap-2">
+              <AlertCircle size={16} className="text-red-600 flex-shrink-0 mt-0.5" />
               <p className="text-sm text-red-800">{error}</p>
             </div>
           )}
-
           {success && (
-            <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-lg flex items-start gap-3">
-              <CheckCircle size={20} className="text-green-600 flex-shrink-0 mt-0.5" />
+            <div className="p-3 bg-green-50 border border-green-200 rounded-lg flex items-start gap-2">
+              <CheckCircle size={16} className="text-green-600 flex-shrink-0 mt-0.5" />
               <p className="text-sm text-green-800">Ticket actualizado exitosamente</p>
             </div>
           )}
 
           {/* Formulario */}
           {!success && (
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handleSubmit} className="space-y-5">
+
               {/* Estado */}
               <div>
-                <label htmlFor="estado" className="block text-sm font-semibold text-gray-700 mb-2">
-                  Cambiar Estado *
+                <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                  Cambiar Estado <span className="text-red-500">*</span>
                 </label>
                 <select
-                  id="estado"
                   value={estado}
                   onChange={(e) => setEstado(e.target.value)}
                   disabled={loading}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100"
                 >
                   <option value="EN_PROCESO">En Proceso</option>
                   <option value="RESUELTO">Resuelto</option>
                 </select>
               </div>
 
-              {/* Respuesta */}
+              {/* Respuestas predefinidas */}
               <div>
-                <label htmlFor="respuesta" className="block text-sm font-semibold text-gray-700 mb-2">
-                  Respuesta *
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Respuesta <span className="text-red-500">*</span>
                 </label>
-                <textarea
-                  id="respuesta"
-                  value={respuesta}
-                  onChange={(e) => setRespuesta(e.target.value)}
-                  placeholder="Escribe la respuesta o solución al problema..."
-                  rows={6}
-                  disabled={loading}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100"
-                />
+
+                {loadingRespuestas ? (
+                  <div className="text-sm text-gray-400 py-2">Cargando opciones...</div>
+                ) : (
+                  <div className="space-y-2">
+                    {respuestasPredefinidas.map((resp) => {
+                      const isSelected = respuestaSeleccionada?.id === resp.id;
+                      return (
+                        <button
+                          key={resp.id}
+                          type="button"
+                          onClick={() => {
+                            setRespuestaSeleccionada(resp);
+                            setTextoOtros('');
+                            setError(null);
+                          }}
+                          disabled={loading}
+                          className={`w-full flex items-center justify-between px-4 py-2.5 rounded-lg border text-sm text-left transition-all
+                            ${isSelected
+                              ? 'bg-blue-50 border-blue-400 text-blue-800 font-semibold shadow-sm'
+                              : 'bg-white border-gray-200 text-gray-700 hover:border-blue-300 hover:bg-blue-50/40'
+                            } disabled:opacity-50`}
+                        >
+                          <span>{resp.descripcion}</span>
+                          {isSelected && <ChevronRight size={16} className="text-blue-500 flex-shrink-0" />}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {/* Campo libre solo para "Otros" */}
+                {respuestaSeleccionada?.esOtros && (
+                  <div className="mt-3">
+                    <label className="block text-xs font-semibold text-gray-600 mb-1">
+                      Detalle la respuesta <span className="text-red-500">*</span>
+                    </label>
+                    <textarea
+                      value={textoOtros}
+                      onChange={(e) => setTextoOtros(e.target.value)}
+                      placeholder="Escribe la respuesta o solución al problema..."
+                      rows={4}
+                      disabled={loading}
+                      autoFocus
+                      className="w-full px-3 py-2 border border-blue-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100"
+                    />
+                  </div>
+                )}
               </div>
 
               {/* Botones */}
@@ -280,14 +285,14 @@ function ResponderTicketModal({ isOpen, onClose, ticket, usuario, onSuccess }) {
                   type="button"
                   onClick={handleClose}
                   disabled={loading}
-                  className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-50 disabled:opacity-50"
+                  className="px-4 py-2 border border-gray-300 rounded-lg text-sm text-gray-700 font-medium hover:bg-gray-50 disabled:opacity-50"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
-                  disabled={loading || !respuesta.trim()}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
+                  disabled={loading || !textoFinal}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed"
                 >
                   {loading ? 'Respondiendo...' : 'Responder Ticket'}
                 </button>

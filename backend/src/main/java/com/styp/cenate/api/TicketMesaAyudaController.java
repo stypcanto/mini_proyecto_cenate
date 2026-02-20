@@ -4,6 +4,7 @@ import com.styp.cenate.dto.mesaayuda.TicketMesaAyudaRequestDTO;
 import com.styp.cenate.dto.mesaayuda.TicketMesaAyudaResponseDTO;
 import com.styp.cenate.dto.mesaayuda.ResponderTicketDTO;
 import com.styp.cenate.dto.mesaayuda.MotivoMesaAyudaDTO;
+import com.styp.cenate.dto.mesaayuda.RespuestaPredefinidaDTO;
 import com.styp.cenate.service.mesaayuda.TicketMesaAyudaService;
 import com.styp.cenate.service.mesaayuda.TicketMesaAyudaService.KPIsTicketDTO;
 import lombok.RequiredArgsConstructor;
@@ -89,6 +90,21 @@ public class TicketMesaAyudaController {
 
         List<MotivoMesaAyudaDTO> motivos = ticketService.obtenerMotivos();
         return ResponseEntity.ok(motivos);
+    }
+
+    // ========== OBTENER RESPUESTAS PREDEFINIDAS ==========
+
+    /**
+     * Obtener lista de respuestas predefinidas activas para ResponderTicketModal
+     *
+     * @return Lista de respuestas predefinidas ordenadas
+     * @status 200 OK
+     */
+    @GetMapping("/respuestas-predefinidas")
+    public ResponseEntity<List<RespuestaPredefinidaDTO>> obtenerRespuestasPredefinidas() {
+        log.info("GET /api/mesa-ayuda/respuestas-predefinidas - Obteniendo respuestas predefinidas");
+        List<RespuestaPredefinidaDTO> respuestas = ticketService.obtenerRespuestasPredefinidas();
+        return ResponseEntity.ok(respuestas);
     }
 
     // ========== CREAR TICKET ==========

@@ -4,12 +4,14 @@ import com.styp.cenate.dto.mesaayuda.TicketMesaAyudaRequestDTO;
 import com.styp.cenate.dto.mesaayuda.TicketMesaAyudaResponseDTO;
 import com.styp.cenate.dto.mesaayuda.ResponderTicketDTO;
 import com.styp.cenate.dto.mesaayuda.MotivoMesaAyudaDTO;
+import com.styp.cenate.dto.mesaayuda.RespuestaPredefinidaDTO;
 import com.styp.cenate.model.mesaayuda.TicketMesaAyuda;
 import com.styp.cenate.model.mesaayuda.DimMotivosMesaAyuda;
 import com.styp.cenate.model.mesaayuda.DimSecuenciaTickets;
 import com.styp.cenate.repository.mesaayuda.TicketMesaAyudaRepository;
 import com.styp.cenate.repository.mesaayuda.MotivoMesaAyudaRepository;
 import com.styp.cenate.repository.mesaayuda.SecuenciaTicketsRepository;
+import com.styp.cenate.repository.mesaayuda.RespuestasPredefinidasRepository;
 import com.styp.cenate.repository.bolsas.SolicitudBolsaRepository;
 import com.styp.cenate.model.bolsas.SolicitudBolsa;
 import jakarta.persistence.EntityManager;
@@ -54,6 +56,7 @@ public class TicketMesaAyudaService {
     private final MotivoMesaAyudaRepository motivoRepository;
     private final SecuenciaTicketsRepository secuenciaRepository;
     private final SolicitudBolsaRepository solicitudBolsaRepository;
+    private final RespuestasPredefinidasRepository respuestasPredefinidasRepository;
 
     @PersistenceContext
     private EntityManager entityManager;
@@ -128,6 +131,29 @@ public class TicketMesaAyudaService {
                 .id(motivo.getId())
                 .codigo(motivo.getCodigo())
                 .descripcion(motivo.getDescripcion())
+                .build())
+            .collect(Collectors.toList());
+    }
+
+    // ========== RESPUESTAS PREDEFINIDAS ==========
+
+    /**
+     * Obtener respuestas predefinidas activas ordenadas por orden
+     * Utilizado en ResponderTicketModal para mostrar opciones rápidas
+     *
+     * @return Lista de respuestas predefinidas
+     */
+    @Transactional(readOnly = true)
+    public List<RespuestaPredefinidaDTO> obtenerRespuestasPredefinidas() {
+        log.debug("Obteniendo respuestas predefinidas activas");
+        return respuestasPredefinidasRepository.findByActivoTrueOrderByOrdenAsc()
+            .stream()
+            .map(r -> RespuestaPredefinidaDTO.builder()
+                .id(r.getId())
+                .codigo(r.getCodigo())
+                .descripcion(r.getDescripcion())
+                .esOtros(r.getEsOtros())
+                .orden(r.getOrden())
                 .build())
             .collect(Collectors.toList());
     }
