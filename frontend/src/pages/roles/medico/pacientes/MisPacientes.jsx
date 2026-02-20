@@ -211,6 +211,12 @@ export default function MisPacientes() {
   // Alias para mantener compatibilidad con código existente
   const esCardiologo = hasFeature('EKG_COLUMNS');
 
+  // ✅ v1.74.0: Detectar si el usuario tiene rol ENFERMERIA
+  const esEnfermeria = useMemo(() => {
+    const roles = (authUser?.roles || []).map(r => r.toUpperCase());
+    return roles.includes('ENFERMERIA') || roles.includes('ENFERMERÍA');
+  }, [authUser]);
+
   // ✅ v1.109.25: Formatear nombre del profesional con título según rol
   const formatearNombreDoctor = (nombreCompleto, roles = []) => {
     if (!nombreCompleto) return 'Prof. Profesional';
@@ -409,6 +415,15 @@ export default function MisPacientes() {
 
   const [especialidades, setEspecialidades] = useState([]);
   const [notasAccion, setNotasAccion] = useState('');
+
+  // ✅ v1.74.0: Estados para Ficha de Enfermería
+  const [otraPatologia, setOtraPatologia] = useState([]);           // multi: NEUROPATIA, RETINOPATIA, PIE DIABETICA, ERC, NINGUNO
+  const [controlEnfermeria, setControlEnfermeria] = useState([]);   // multi: SABE/NO SABE UTILIZAR TENSIOMETRO/GLUCOMETRO
+  const [imcEnfermeria, setImcEnfermeria] = useState('');           // DELGADEZ | NORMAL | SOBREPESO | OBESIDAD I-II
+  const [tratamientoEnfermeria, setTratamientoEnfermeria] = useState(''); // TIENE MEDICACION | NO TIENE MEDICACION
+  const [adherenciaEnfermeria, setAdherenciaEnfermeria] = useState('');   // ALTA | MEDIA | BAJA
+  const [nivelRiesgoEnfermeria, setNivelRiesgoEnfermeria] = useState(''); // BAJO | MODERADO | ALTO
+  const [controladoEnfermeria, setControladoEnfermeria] = useState('');   // SI | NO
 
   // ✅ v1.64.0: Estados para editar Bolsa 107 campos
   const [editingField, setEditingField] = useState(null); // 'consentimiento' o 'tiempo'
@@ -1470,11 +1485,21 @@ export default function MisPacientes() {
         tieneInterconsulta,
         interconsultaEspecialidad: tieneInterconsulta ? interconsultaEspecialidad : null,
         esCronico,
-        enfermedades: esCronico ? enfermedadesCronicas : []
+        enfermedades: esCronico ? enfermedadesCronicas : [],
         // ✅ v1.47.2: Sin otroDetalle - solo respuestas cerradas (Hipertensión, Diabetes)
+        // ✅ v1.74.0: Campos de Ficha de Enfermería (solo si el usuario es ENFERMERIA)
+        ...(esEnfermeria && {
+          otraPatologia: otraPatologia.length > 0 ? otraPatologia.join(', ') : null,
+          controlEnfermeria: controlEnfermeria.length > 0 ? controlEnfermeria.join(', ') : null,
+          imc: imcEnfermeria || null,
+          tratamiento: tratamientoEnfermeria || null,
+          adherencia: adherenciaEnfermeria || null,
+          nivelRiesgo: nivelRiesgoEnfermeria || null,
+          controlado: controladoEnfermeria || null,
+        })
       };
 
-      console.log('🏥 [v1.47.0] Registrando atención:', payload);
+      console.log('🏥 [v1.74.0] Registrando atención:', payload);
 
       // 1️⃣ Registrar atención médica
       await gestionPacientesService.atenderPaciente(idParaAtender, payload);
@@ -1510,6 +1535,14 @@ export default function MisPacientes() {
       setEsCronico(false);
       setEnfermedadesCronicas([]);
       setOtroDetalle('');
+      // ✅ v1.74.0: Limpiar campos de Ficha de Enfermería
+      setOtraPatologia([]);
+      setControlEnfermeria([]);
+      setImcEnfermeria('');
+      setTratamientoEnfermeria('');
+      setAdherenciaEnfermeria('');
+      setNivelRiesgoEnfermeria('');
+      setControladoEnfermeria('');
     } catch (error) {
       console.error('Error registrando atención:', error);
       toast.error('Error al registrar atención. Intenta nuevamente.');
@@ -1668,6 +1701,18 @@ export default function MisPacientes() {
       prev.includes(enfermedad)
         ? prev.filter(e => e !== enfermedad)
         : [...prev, enfermedad]
+    );
+  };
+
+  // ✅ v1.74.0: Toggle para campos multi-select de Enfermería
+  const toggleOtraPatologia = (valor) => {
+    setOtraPatologia(prev =>
+      prev.includes(valor) ? prev.filter(v => v !== valor) : [...prev, valor]
+    );
+  };
+  const toggleControlEnfermeria = (valor) => {
+    setControlEnfermeria(prev =>
+      prev.includes(valor) ? prev.filter(v => v !== valor) : [...prev, valor]
     );
   };
 
@@ -2510,10 +2555,12 @@ export default function MisPacientes() {
                           onChange={(e) => setRecitaDias(parseInt(e.target.value))}
                           className="w-full px-3 py-2 border border-green-300 rounded-md focus:ring-2 focus:ring-green-500 focus:border-green-500 text-sm font-medium text-gray-900 bg-white"
                         >
+                          <option value={7}>7 DIAS</option>
                           <option value={15}>15 DIAS</option>
                           <option value={30}>UN MES</option>
                           <option value={60}>2 MESES</option>
                           <option value={90}>3 MESES</option>
+                          <option value={180}>6 MESES</option>
                         </select>
                       </div>
                     )}
@@ -2565,6 +2612,160 @@ export default function MisPacientes() {
                       </div>
                     )}
                   </div>
+
+                  {/* ✅ v1.74.0: Ficha de Enfermería - solo visible para el rol ENFERMERIA */}
+                  {esEnfermeria && (
+                    <div className="mt-2 bg-teal-50 border border-teal-200 rounded-xl p-4">
+                      {/* Header */}
+                      <div className="flex items-center gap-2 mb-4 pb-2 border-b border-teal-200">
+                        <div className="w-6 h-6 bg-teal-600 rounded-full flex items-center justify-center flex-shrink-0">
+                          <Activity className="w-3.5 h-3.5 text-white" />
+                        </div>
+                        <span className="text-sm font-bold text-teal-800">Ficha de Enfermería</span>
+                        <span className="text-xs text-teal-500 ml-1">• Campos clínicos del paciente</span>
+                      </div>
+
+                      {/* Otras Patologías — multi-checkbox */}
+                      <div className="mb-4">
+                        <p className="text-xs font-semibold text-teal-800 uppercase tracking-wider mb-2">Otras Patologías</p>
+                        <div className="flex flex-wrap gap-2">
+                          {['NEUROPATIA', 'RETINOPATIA', 'PIE DIABETICA', 'ERC', 'NINGUNO'].map(pat => (
+                            <label key={pat} className={`flex items-center gap-1.5 cursor-pointer rounded-lg px-3 py-1.5 border transition-all text-xs font-medium ${
+                              otraPatologia.includes(pat)
+                                ? 'bg-teal-600 text-white border-teal-600'
+                                : 'bg-white text-gray-700 border-teal-200 hover:bg-teal-50'
+                            }`}>
+                              <input
+                                type="checkbox"
+                                checked={otraPatologia.includes(pat)}
+                                onChange={() => toggleOtraPatologia(pat)}
+                                className="sr-only"
+                              />
+                              {otraPatologia.includes(pat) && <Check className="w-3 h-3" strokeWidth={3} />}
+                              {pat}
+                            </label>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Control — multi-checkbox */}
+                      <div className="mb-4">
+                        <p className="text-xs font-semibold text-teal-800 uppercase tracking-wider mb-2">Control de Dispositivos</p>
+                        <div className="flex flex-wrap gap-2">
+                          {[
+                            'SABE UTILIZAR TENSIOMETRO',
+                            'NO SABE UTILIZAR TENSIOMETRO',
+                            'SABE UTILIZAR GLUCOMETRO',
+                            'NO SABE UTILIZAR GLUCOMETRO'
+                          ].map(ctrl => (
+                            <label key={ctrl} className={`flex items-center gap-1.5 cursor-pointer rounded-lg px-3 py-1.5 border transition-all text-xs font-medium ${
+                              controlEnfermeria.includes(ctrl)
+                                ? 'bg-teal-600 text-white border-teal-600'
+                                : 'bg-white text-gray-700 border-teal-200 hover:bg-teal-50'
+                            }`}>
+                              <input
+                                type="checkbox"
+                                checked={controlEnfermeria.includes(ctrl)}
+                                onChange={() => toggleControlEnfermeria(ctrl)}
+                                className="sr-only"
+                              />
+                              {controlEnfermeria.includes(ctrl) && <Check className="w-3 h-3" strokeWidth={3} />}
+                              {ctrl}
+                            </label>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Grid 2x2 para campos con pocas opciones */}
+                      <div className="grid grid-cols-2 gap-4">
+                        {/* IMC */}
+                        <div>
+                          <p className="text-xs font-semibold text-teal-800 uppercase tracking-wider mb-2">IMC</p>
+                          <div className="flex flex-wrap gap-1.5">
+                            {['DELGADEZ', 'NORMAL', 'SOBREPESO', 'OBESIDAD I-II'].map(v => (
+                              <button key={v} type="button" onClick={() => setImcEnfermeria(imcEnfermeria === v ? '' : v)}
+                                className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold border transition-all ${
+                                  imcEnfermeria === v
+                                    ? 'bg-teal-600 text-white border-teal-600 shadow-sm'
+                                    : 'bg-white text-gray-600 border-teal-200 hover:bg-teal-50'
+                                }`}>{v}</button>
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* Tratamiento */}
+                        <div>
+                          <p className="text-xs font-semibold text-teal-800 uppercase tracking-wider mb-2">Tratamiento</p>
+                          <div className="flex flex-wrap gap-1.5">
+                            {['TIENE MEDICACION', 'NO TIENE MEDICACION'].map(v => (
+                              <button key={v} type="button" onClick={() => setTratamientoEnfermeria(tratamientoEnfermeria === v ? '' : v)}
+                                className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold border transition-all ${
+                                  tratamientoEnfermeria === v
+                                    ? 'bg-teal-600 text-white border-teal-600 shadow-sm'
+                                    : 'bg-white text-gray-600 border-teal-200 hover:bg-teal-50'
+                                }`}>{v}</button>
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* Adherencia (Escala de Morisky) */}
+                        <div>
+                          <p className="text-xs font-semibold text-teal-800 uppercase tracking-wider mb-2">Adherencia <span className="normal-case font-normal text-teal-500">(Escala de Morisky)</span></p>
+                          <div className="flex gap-1.5">
+                            {[
+                              { v: 'ALTA',  color: 'bg-green-500 border-green-500' },
+                              { v: 'MEDIA', color: 'bg-amber-500 border-amber-500' },
+                              { v: 'BAJA',  color: 'bg-red-500 border-red-500' }
+                            ].map(({ v, color }) => (
+                              <button key={v} type="button" onClick={() => setAdherenciaEnfermeria(adherenciaEnfermeria === v ? '' : v)}
+                                className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all ${
+                                  adherenciaEnfermeria === v
+                                    ? `${color} text-white shadow-sm`
+                                    : 'bg-white text-gray-600 border-teal-200 hover:bg-teal-50'
+                                }`}>{v}</button>
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* Nivel de Riesgo */}
+                        <div>
+                          <p className="text-xs font-semibold text-teal-800 uppercase tracking-wider mb-2">Nivel de Riesgo</p>
+                          <div className="flex gap-1.5">
+                            {[
+                              { v: 'BAJO',     color: 'bg-green-500 border-green-500' },
+                              { v: 'MODERADO', color: 'bg-amber-500 border-amber-500' },
+                              { v: 'ALTO',     color: 'bg-red-500 border-red-500' }
+                            ].map(({ v, color }) => (
+                              <button key={v} type="button" onClick={() => setNivelRiesgoEnfermeria(nivelRiesgoEnfermeria === v ? '' : v)}
+                                className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all ${
+                                  nivelRiesgoEnfermeria === v
+                                    ? `${color} text-white shadow-sm`
+                                    : 'bg-white text-gray-600 border-teal-200 hover:bg-teal-50'
+                                }`}>{v}</button>
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* Controlado */}
+                        <div className="col-span-2">
+                          <p className="text-xs font-semibold text-teal-800 uppercase tracking-wider mb-2">¿Controlado?</p>
+                          <div className="flex gap-2">
+                            {[
+                              { v: 'SI', color: 'bg-green-500 border-green-500' },
+                              { v: 'NO', color: 'bg-red-500 border-red-500' }
+                            ].map(({ v, color }) => (
+                              <button key={v} type="button" onClick={() => setControladoEnfermeria(controladoEnfermeria === v ? '' : v)}
+                                className={`px-6 py-2 rounded-lg text-sm font-bold border transition-all ${
+                                  controladoEnfermeria === v
+                                    ? `${color} text-white shadow-sm`
+                                    : 'bg-white text-gray-600 border-teal-200 hover:bg-teal-50'
+                                }`}>{v}</button>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
 
