@@ -66,6 +66,11 @@ function ResponderTicketModal({ isOpen, onClose, ticket, usuario, onSuccess }) {
     ticket?.codigoMotivo === 'PS_CITA_REPROGRAMADA' || ticket?.idMotivo === 8;
   const mostrarAlertaESSI = esEliminarExcedente || esCitaReprogramada;
 
+  // Mostrar botón de bolsa si tiene DNI: obligatorio para PS_CITA_REPROGRAMADA, opcional para el resto
+  const tienePaciente = !!ticket?.dniPaciente;
+  const bolsaObligatoria = esCitaReprogramada;
+  const mostrarBotonBolsa = tienePaciente;
+
   // Texto final a enviar
   const textoFinal = respuestaSeleccionada?.esOtros
     ? textoOtros.trim()
@@ -110,8 +115,8 @@ function ResponderTicketModal({ isOpen, onClose, ticket, usuario, onSuccess }) {
       return;
     }
 
-    // PS_CITA_REPROGRAMADA requiere enviar a bolsa primero
-    if (esCitaReprogramada && !yaEnviadoABolsa) {
+    // PS_CITA_REPROGRAMADA: enviar a bolsa es obligatorio antes de responder
+    if (bolsaObligatoria && !yaEnviadoABolsa) {
       setError('Debe enviar al paciente a la Bolsa de Reprogramación antes de responder el ticket');
       return;
     }
@@ -343,9 +348,9 @@ function ResponderTicketModal({ isOpen, onClose, ticket, usuario, onSuccess }) {
                 {/* Botones de acción */}
                 <div className="flex flex-wrap items-center justify-between gap-3 pt-4 border-t border-gray-200">
 
-                  {/* Botón Bolsa Reprogramación (solo PS_CITA_REPROGRAMADA) */}
+                  {/* Botón Bolsa Reprogramación (visible para cualquier ticket con DNI) */}
                   <div className="flex flex-col gap-1">
-                    {esCitaReprogramada && (
+                    {mostrarBotonBolsa && (
                       <>
                         <button
                           type="button"
@@ -377,9 +382,14 @@ function ResponderTicketModal({ isOpen, onClose, ticket, usuario, onSuccess }) {
                         {errorBolsa && (
                           <p className="text-xs text-red-600">{errorBolsa}</p>
                         )}
-                        {!yaEnviadoABolsa && (
+                        {!yaEnviadoABolsa && bolsaObligatoria && (
                           <p className="text-xs text-amber-600 font-medium">
                             ⚠️ Requerido antes de responder el ticket
+                          </p>
+                        )}
+                        {!yaEnviadoABolsa && !bolsaObligatoria && (
+                          <p className="text-xs text-gray-400">
+                            Opcional — solo si aplica reprogramación
                           </p>
                         )}
                       </>
@@ -398,7 +408,7 @@ function ResponderTicketModal({ isOpen, onClose, ticket, usuario, onSuccess }) {
                     </button>
                     <button
                       type="submit"
-                      disabled={loading || !textoFinal || (esCitaReprogramada && !yaEnviadoABolsa)}
+                      disabled={loading || !textoFinal || (bolsaObligatoria && !yaEnviadoABolsa)}
                       className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed"
                     >
                       {loading ? 'Respondiendo...' : 'Responder Ticket'}
