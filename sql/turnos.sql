@@ -81,29 +81,32 @@ select * from dim_roles where id_rol in (15,33,35);
 
 
 select estado, estado_gestion_citas_id , condicion_medica , 
-responsable_gestora_id , fecha_asignacion , fecha_actualizacion , fecha_solicitud ,
-* from dim_solicitud_bolsa where paciente_dni='70073164';
+responsable_gestora_id , fecha_asignacion , fecha_atencion, hora_atencion , id_personal
+ from dim_solicitud_bolsa where paciente_dni='70073164';
 
 
 update dim_solicitud_bolsa set condicion_medica='Pendiente', 
 	estado='PENDIENTE' where paciente_dni ='70073164';
 
+update dim_solicitud_bolsa set condicion_medica='Atendido', 
+	estado='ATENDIDO' where paciente_dni ='70073164';
 
 
-
-update dim_solicitud_bolsa set condicion_medica='' where paciente_dni ='70073164';
+delete from dim_solicitud_bolsa  where paciente_dni ='70073164';
 
 
 select * from dim_estados_gestion_citas degc ;
 
 
+select * from dim_tipos_bolsas dtb ;
+
+
+select distinct condicion_medica from dim_solicitud_bolsa;
 
 
 
 
-
-
-
+select * from dim_solicitud_bolsa dsb  where dsb.condicion_medica ='Atendido';
 
 
 

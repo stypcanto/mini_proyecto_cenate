@@ -437,6 +437,7 @@ export default function GestionAsegurado() {
           descIpress: solicitud.desc_ipress || solicitud.descIpress || "-",
           descEstadoCita: descEstadoFinal,
           codigoEstado: codigoEstado, // Guardar también el código para comparaciones
+          estado: solicitud.estado || null, // ✅ Campo estado de la bolsa (v1.70.0)
           fechaSolicitud: solicitud.fecha_solicitud || solicitud.fechaSolicitud || new Date().toISOString(),
           fechaAsignacion: solicitud.fecha_asignacion || solicitud.fechaAsignacion || "-",
           // Auditoría: Fecha y usuario del cambio de estado (v3.3.1)
@@ -2171,6 +2172,9 @@ CENATE de Essalud`;
                           title={selectedRows.size === pacientesFiltrados.length ? "Deseleccionar todo" : "Seleccionar todo"}
                         />
                       </th>
+                      <th className="px-2 py-2 text-left text-[10px] font-bold uppercase">
+                        Estado de Bolsa
+                      </th>
                       <th className="px-3 py-2 text-left text-[10px] font-bold uppercase">
                         F. Ingreso Bolsa
                       </th>
@@ -2214,7 +2218,7 @@ CENATE de Essalud`;
                         Tipo Cita
                       </th>
                       <th className="px-2 py-2 text-left text-[10px] font-bold uppercase">
-                        Estado
+                        Estado de Gestora
                       </th>
                       <th className="px-2 py-2 text-left text-[10px] font-bold uppercase">
                         F. Atención Méd.
@@ -2254,6 +2258,20 @@ CENATE de Essalud`;
                                 : 'border-gray-300 hover:border-blue-400'
                             }`}
                           />
+                        </td>
+                        {/* ESTADO DE BOLSA */}
+                        <td className="px-2 py-1.5">
+                          <span className={`px-2 py-1 rounded-lg text-[10px] font-medium inline-block ${
+                            paciente.estado === "PENDIENTE"
+                              ? "bg-yellow-100 text-yellow-800"
+                              : paciente.estado === "OBSERVADO"
+                              ? "bg-blue-100 text-blue-800"
+                              : paciente.estado === "ATENDIDO"
+                              ? "bg-green-100 text-green-800"
+                              : "bg-gray-100 text-gray-800"
+                          }`}>
+                            {paciente.estado || "Sin estado"}
+                          </span>
                         </td>
                         {/* F. INGRESO BOLSA - Siempre usar fecha_solicitud del API mi-bandeja */}
                         <td className="px-3 py-2">
