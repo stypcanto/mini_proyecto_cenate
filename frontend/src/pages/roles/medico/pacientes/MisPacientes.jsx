@@ -413,6 +413,9 @@ export default function MisPacientes() {
   const [otroDetalle, setOtroDetalle] = useState('');
   const [expandCronico, setExpandCronico] = useState(false);
 
+  // ✅ v1.75.0: Modal Ficha de Enfermería
+  const [showFichaEnfermeriaModal, setShowFichaEnfermeriaModal] = useState(false);
+
   const [especialidades, setEspecialidades] = useState([]);
   const [notasAccion, setNotasAccion] = useState('');
 
@@ -424,6 +427,46 @@ export default function MisPacientes() {
   const [adherenciaEnfermeria, setAdherenciaEnfermeria] = useState('');   // ALTA | MEDIA | BAJA
   const [nivelRiesgoEnfermeria, setNivelRiesgoEnfermeria] = useState(''); // BAJO | MODERADO | ALTO
   const [controladoEnfermeria, setControladoEnfermeria] = useState('');   // SI | NO
+  // Accordion state: qué secciones de la Ficha están abiertas
+  const [fichaOpen, setFichaOpen] = useState({
+    patologias: false, dispositivos: false, imc: true,
+    tratamiento: false, adherencia: false, riesgo: false, controlado: false,
+    morisky: false, observaciones: false, videos: false,
+  });
+  const [videosSeleccionados, setVideosSeleccionados] = useState([]);
+  const toggleFicha = (key) => setFichaOpen(prev => ({ ...prev, [key]: !prev[key] }));
+
+  // ✅ v1.75.0: Peso y Talla para calcular IMC automáticamente
+  const [pesoKg, setPesoKg] = useState('');
+  const [tallaMt, setTallaMt] = useState('');
+  const imcCalculado = useMemo(() => {
+    const p = parseFloat(pesoKg);
+    const t = parseFloat(tallaMt);
+    if (!p || !t || t <= 0) return null;
+    return (p / (t * t)).toFixed(1);
+  }, [pesoKg, tallaMt]);
+  const categoriaIMC = useMemo(() => {
+    const v = parseFloat(imcCalculado);
+    if (!v) return '';
+    if (v < 18.5) return 'DELGADEZ';
+    if (v < 25) return 'NORMAL';
+    if (v < 30) return 'SOBREPESO';
+    return 'OBESIDAD I-II';
+  }, [imcCalculado]);
+
+  // ✅ v1.75.0: Test de Morisky — 4 preguntas (null = no respondida, true = SÍ, false = NO)
+  const [moriskyRespuestas, setMoriskyRespuestas] = useState([null, null, null, null]);
+  const adherenciaMorisky = useMemo(() => {
+    const respondidas = moriskyRespuestas.filter(r => r !== null);
+    if (respondidas.length < 4) return null;
+    const siCount = moriskyRespuestas.filter(r => r === true).length;
+    if (siCount === 0) return 'ALTA';
+    if (siCount <= 2) return 'MEDIA';
+    return 'BAJA';
+  }, [moriskyRespuestas]);
+
+  // ✅ v1.75.0: Observaciones libres de enfermería
+  const [observacionesEnfermeria, setObservacionesEnfermeria] = useState('');
 
   // ✅ v1.64.0: Estados para editar Bolsa 107 campos
   const [editingField, setEditingField] = useState(null); // 'consentimiento' o 'tiempo'
@@ -1288,6 +1331,17 @@ export default function MisPacientes() {
     setEstadoSeleccionado('Pendiente'); // Por defecto
     setRazonDesercion('');
     setNotasAccion('');
+    // Pre-cargar enfermedades crónicas existentes del paciente
+    const enfermedadesExistentes = paciente?.enfermedadCronica || [];
+    if (enfermedadesExistentes.length > 0) {
+      setEsCronico(true);
+      setExpandCronico(true);
+      setEnfermedadesCronicas(enfermedadesExistentes);
+    } else {
+      setEsCronico(false);
+      setExpandCronico(false);
+      setEnfermedadesCronicas([]);
+    }
   };
 
   // ✅ v1.50.0: Abrir modal de detalles del paciente
@@ -1487,15 +1541,17 @@ export default function MisPacientes() {
         esCronico,
         enfermedades: esCronico ? enfermedadesCronicas : [],
         // ✅ v1.47.2: Sin otroDetalle - solo respuestas cerradas (Hipertensión, Diabetes)
-        // ✅ v1.74.0: Campos de Ficha de Enfermería (solo si el usuario es ENFERMERIA)
+        // ✅ v1.74.0 / v1.75.0: Campos de Ficha de Enfermería (solo si el usuario es ENFERMERIA)
         ...(esEnfermeria && {
           otraPatologia: otraPatologia.length > 0 ? otraPatologia.join(', ') : null,
           controlEnfermeria: controlEnfermeria.length > 0 ? controlEnfermeria.join(', ') : null,
-          imc: imcEnfermeria || null,
+          imc: categoriaIMC || imcEnfermeria || null,
+          imcValor: imcCalculado || null,
           tratamiento: tratamientoEnfermeria || null,
-          adherencia: adherenciaEnfermeria || null,
+          adherencia: adherenciaMorisky || adherenciaEnfermeria || null,
           nivelRiesgo: nivelRiesgoEnfermeria || null,
           controlado: controladoEnfermeria || null,
+          observaciones: observacionesEnfermeria || null,
         })
       };
 
@@ -1533,16 +1589,23 @@ export default function MisPacientes() {
       setTieneInterconsulta(false);
       setInterconsultaEspecialidad('');
       setEsCronico(false);
+      setExpandCronico(false);
       setEnfermedadesCronicas([]);
       setOtroDetalle('');
-      // ✅ v1.74.0: Limpiar campos de Ficha de Enfermería
+      // ✅ v1.74.0 / v1.75.0: Limpiar campos de Ficha de Enfermería
       setOtraPatologia([]);
       setControlEnfermeria([]);
       setImcEnfermeria('');
+      setPesoKg('');
+      setTallaMt('');
       setTratamientoEnfermeria('');
       setAdherenciaEnfermeria('');
+      setMoriskyRespuestas([null, null, null, null]);
       setNivelRiesgoEnfermeria('');
       setControladoEnfermeria('');
+      setObservacionesEnfermeria('');
+      setVideosSeleccionados([]);
+      setShowFichaEnfermeriaModal(false);
     } catch (error) {
       console.error('Error registrando atención:', error);
       toast.error('Error al registrar atención. Intenta nuevamente.');
@@ -1705,15 +1768,32 @@ export default function MisPacientes() {
   };
 
   // ✅ v1.74.0: Toggle para campos multi-select de Enfermería
+  // ✅ v1.75.0: NINGUNO es exclusivo — seleccionarlo limpia las demás opciones
   const toggleOtraPatologia = (valor) => {
-    setOtraPatologia(prev =>
-      prev.includes(valor) ? prev.filter(v => v !== valor) : [...prev, valor]
-    );
+    if (valor === 'NINGUNO') {
+      setOtraPatologia(prev => prev.includes('NINGUNO') ? [] : ['NINGUNO']);
+    } else {
+      setOtraPatologia(prev => {
+        const sinNinguno = prev.filter(v => v !== 'NINGUNO');
+        return sinNinguno.includes(valor)
+          ? sinNinguno.filter(v => v !== valor)
+          : [...sinNinguno, valor];
+      });
+    }
   };
+  // ✅ v1.75.0: Pares excluyentes — SABE / NO SABE no pueden coexistir para el mismo dispositivo
   const toggleControlEnfermeria = (valor) => {
-    setControlEnfermeria(prev =>
-      prev.includes(valor) ? prev.filter(v => v !== valor) : [...prev, valor]
-    );
+    const pares = {
+      'SABE UTILIZAR TENSIOMETRO':    'NO SABE UTILIZAR TENSIOMETRO',
+      'NO SABE UTILIZAR TENSIOMETRO': 'SABE UTILIZAR TENSIOMETRO',
+      'SABE UTILIZAR GLUCOMETRO':     'NO SABE UTILIZAR GLUCOMETRO',
+      'NO SABE UTILIZAR GLUCOMETRO':  'SABE UTILIZAR GLUCOMETRO',
+    };
+    const opuesto = pares[valor];
+    setControlEnfermeria(prev => {
+      if (prev.includes(valor)) return prev.filter(v => v !== valor);
+      return [...prev.filter(v => v !== opuesto), valor];
+    });
   };
 
   // ✅ v1.48.0: Estilos dinámicos para botón de condición
@@ -2487,18 +2567,19 @@ export default function MisPacientes() {
               {/* ✅ Opciones de Atención (aparecen cuando selecciona Atendido) - Chips simples */}
               {estadoSeleccionado === 'Atendido' && (
                 <div className="space-y-3 pl-10">
-                  {/* Grid 3 columnas para chips grandes */}
-                  <div className="grid grid-cols-3 gap-3">
+                  {/* Grid chips: 3 cols normal, 2 cols cuando ENFERMERIA (4 chips) */}
+                  <div className={`grid gap-3 ${esEnfermeria ? 'grid-cols-2' : 'grid-cols-3'}`}>
                     {/* Chip 1: Recita */}
                     <button
                       onClick={() => {
                         setTieneRecita(!tieneRecita);
                         setExpandRecita(!expandRecita);
                       }}
-                      className={`p-4 rounded-lg transition-all cursor-pointer text-center font-semibold ${
+                      className={`p-4 rounded-xl transition-all cursor-pointer text-center font-semibold border-2
+                        focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-green-400 ${
                         tieneRecita
-                          ? 'bg-green-100 text-green-900 border-2 border-green-400 shadow-md'
-                          : 'bg-gray-100 text-gray-700 border-2 border-gray-300 hover:bg-gray-200 hover:border-green-300'
+                          ? 'bg-green-500 text-white border-green-500 shadow-md'
+                          : 'bg-green-50 text-green-800 border-green-200 hover:bg-green-100 hover:border-green-400'
                       }`}
                     >
                       <div className="flex flex-col items-center gap-2">
@@ -2513,10 +2594,11 @@ export default function MisPacientes() {
                         setTieneInterconsulta(!tieneInterconsulta);
                         setExpandInterconsulta(!expandInterconsulta);
                       }}
-                      className={`p-4 rounded-lg transition-all cursor-pointer text-center font-semibold ${
+                      className={`p-4 rounded-xl transition-all cursor-pointer text-center font-semibold border-2
+                        focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-blue-400 ${
                         tieneInterconsulta
-                          ? 'bg-blue-100 text-blue-900 border-2 border-blue-400 shadow-md'
-                          : 'bg-gray-100 text-gray-700 border-2 border-gray-300 hover:bg-gray-200 hover:border-blue-300'
+                          ? 'bg-blue-600 text-white border-blue-600 shadow-md'
+                          : 'bg-blue-50 text-blue-800 border-blue-200 hover:bg-blue-100 hover:border-blue-400'
                       }`}
                     >
                       <div className="flex flex-col items-center gap-2">
@@ -2531,10 +2613,11 @@ export default function MisPacientes() {
                         setEsCronico(!esCronico);
                         setExpandCronico(!expandCronico);
                       }}
-                      className={`p-4 rounded-lg transition-all cursor-pointer text-center font-semibold ${
+                      className={`p-4 rounded-xl transition-all cursor-pointer text-center font-semibold border-2
+                        focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-purple-400 ${
                         esCronico
-                          ? 'bg-purple-100 text-purple-900 border-2 border-purple-400 shadow-md'
-                          : 'bg-gray-100 text-gray-700 border-2 border-gray-300 hover:bg-gray-200 hover:border-purple-300'
+                          ? 'bg-purple-600 text-white border-purple-600 shadow-md'
+                          : 'bg-purple-50 text-purple-800 border-purple-200 hover:bg-purple-100 hover:border-purple-400'
                       }`}
                     >
                       <div className="flex flex-col items-center gap-2">
@@ -2542,37 +2625,61 @@ export default function MisPacientes() {
                         <span className="text-sm">Registrar Crónico</span>
                       </div>
                     </button>
+
+                    {/* Chip 4: Ficha Enfermería — solo para rol ENFERMERIA */}
+                    {esEnfermeria && (
+                      <button
+                        onClick={() => setShowFichaEnfermeriaModal(true)}
+                        className={`p-4 rounded-xl transition-all cursor-pointer text-center font-semibold border-2
+                          focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-teal-400 ${
+                          (otraPatologia.length > 0 || controlEnfermeria.length > 0 ||
+                           categoriaIMC || imcEnfermeria || tratamientoEnfermeria ||
+                           adherenciaMorisky || adherenciaEnfermeria || nivelRiesgoEnfermeria ||
+                           controladoEnfermeria || observacionesEnfermeria)
+                            ? 'bg-teal-600 text-white border-teal-600 shadow-md'
+                            : 'bg-teal-50 text-teal-800 border-teal-200 hover:bg-teal-100 hover:border-teal-400'
+                        }`}
+                      >
+                        <div className="flex flex-col items-center gap-2">
+                          <Stethoscope className="w-5 h-5" strokeWidth={2.5} />
+                          <span className="text-sm">Ficha Enfermería</span>
+                        </div>
+                      </button>
+                    )}
                   </div>
 
                   {/* Detalles Expandibles */}
                   <div className="space-y-2">
                     {/* Detalle 1: RECITA */}
                     {expandRecita && tieneRecita && (
-                      <div className="bg-green-50 border border-green-200 rounded-lg p-3 animate-in slide-in-from-top-2">
-                        <label className="text-xs font-semibold text-gray-700 block mb-2">Plazo:</label>
+                      <div className="bg-green-50 border-2 border-green-300 rounded-xl p-3 animate-in slide-in-from-top-2">
+                        <div className="flex items-center justify-between mb-2">
+                          <label className="text-xs font-bold text-green-900 tracking-wide">Plazo de Recita</label>
+                          <span className="text-xs font-medium text-green-600 bg-green-100 px-2 py-0.5 rounded-full">Obligatorio</span>
+                        </div>
                         <select
                           value={recitaDias}
                           onChange={(e) => setRecitaDias(parseInt(e.target.value))}
-                          className="w-full px-3 py-2 border border-green-300 rounded-md focus:ring-2 focus:ring-green-500 focus:border-green-500 text-sm font-medium text-gray-900 bg-white"
+                          className="w-full px-3 py-2 border-2 border-green-400 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 text-sm font-semibold text-green-900 bg-white appearance-none cursor-pointer"
                         >
-                          <option value={7}>7 DIAS</option>
-                          <option value={15}>15 DIAS</option>
-                          <option value={30}>UN MES</option>
-                          <option value={60}>2 MESES</option>
-                          <option value={90}>3 MESES</option>
-                          <option value={180}>6 MESES</option>
+                          <option value={7}>7 días</option>
+                          <option value={15}>15 días</option>
+                          <option value={30}>1 mes</option>
+                          <option value={60}>2 meses</option>
+                          <option value={90}>3 meses</option>
+                          <option value={180}>6 meses</option>
                         </select>
                       </div>
                     )}
 
                     {/* Detalle 2: INTERCONSULTA */}
                     {expandInterconsulta && tieneInterconsulta && (
-                      <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 animate-in slide-in-from-top-2">
-                        <label className="text-xs font-semibold text-gray-700 block mb-2">Especialidad:</label>
+                      <div className="bg-blue-50 border-2 border-blue-300 rounded-xl p-3 animate-in slide-in-from-top-2">
+                        <label className="text-xs font-bold text-blue-900 block mb-2">Especialidad de derivación</label>
                         <select
                           value={interconsultaEspecialidad}
                           onChange={(e) => setInterconsultaEspecialidad(e.target.value)}
-                          className="w-full px-3 py-2 border border-blue-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm font-medium text-gray-900 bg-white"
+                          className="w-full px-3 py-2 border-2 border-blue-400 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm font-semibold text-blue-900 bg-white"
                         >
                           <option value="">Selecciona especialidad...</option>
                           {especialidades.map(esp => (
@@ -2585,11 +2692,11 @@ export default function MisPacientes() {
                     )}
 
                     {/* Detalle 3: CRÓNICO */}
-                    {/* ✅ v1.47.2: Solo respuestas cerradas - Hipertensión y Diabetes */}
                     {expandCronico && esCronico && (
-                      <div className="bg-purple-50 border border-purple-200 rounded-lg p-3 animate-in slide-in-from-top-2">
-                        <div className="space-y-2">
-                          <label className="flex items-center gap-3 cursor-pointer p-2 rounded hover:bg-purple-100 transition-colors">
+                      <div className="bg-purple-50 border-2 border-purple-300 rounded-xl p-3 animate-in slide-in-from-top-2">
+                        <p className="text-xs font-bold text-purple-900 mb-2">Enfermedades crónicas</p>
+                        <div className="space-y-1.5">
+                          <label className="flex items-center gap-3 cursor-pointer p-2 rounded-lg hover:bg-purple-100 transition-colors">
                             <input
                               type="checkbox"
                               checked={enfermedadesCronicas.includes('Hipertensión')}
@@ -2598,8 +2705,7 @@ export default function MisPacientes() {
                             />
                             <span className="text-xs font-medium text-gray-800">Hipertensión</span>
                           </label>
-
-                          <label className="flex items-center gap-3 cursor-pointer p-2 rounded hover:bg-purple-100 transition-colors">
+                          <label className="flex items-center gap-3 cursor-pointer p-2 rounded-lg hover:bg-purple-100 transition-colors">
                             <input
                               type="checkbox"
                               checked={enfermedadesCronicas.includes('Diabetes')}
@@ -2611,161 +2717,385 @@ export default function MisPacientes() {
                         </div>
                       </div>
                     )}
-                  </div>
 
-                  {/* ✅ v1.74.0: Ficha de Enfermería - solo visible para el rol ENFERMERIA */}
-                  {esEnfermeria && (
-                    <div className="mt-2 bg-teal-50 border border-teal-200 rounded-xl p-4">
-                      {/* Header */}
-                      <div className="flex items-center gap-2 mb-4 pb-2 border-b border-teal-200">
-                        <div className="w-6 h-6 bg-teal-600 rounded-full flex items-center justify-center flex-shrink-0">
-                          <Activity className="w-3.5 h-3.5 text-white" />
-                        </div>
-                        <span className="text-sm font-bold text-teal-800">Ficha de Enfermería</span>
-                        <span className="text-xs text-teal-500 ml-1">• Campos clínicos del paciente</span>
+                    {/* ✅ v1.75.0: Ficha de Enfermería - se abre como modal separado */}
+                    {false && (
+                    <div className={`mt-2 rounded-xl border-2 overflow-hidden transition-all ${
+                      (nivelRiesgoEnfermeria === 'ALTO' || controladoEnfermeria === 'NO')
+                        ? 'border-red-400 shadow-red-100 shadow-md'
+                        : 'border-teal-200'
+                    }`}>
+                      {/* Header — cambia a rojo si hay alerta */}
+                      <div className={`flex items-center gap-2 px-4 py-2.5 ${
+                        (nivelRiesgoEnfermeria === 'ALTO' || controladoEnfermeria === 'NO')
+                          ? 'bg-red-500'
+                          : 'bg-teal-600'
+                      }`}>
+                        <Activity className="w-4 h-4 text-white flex-shrink-0" />
+                        <span className="text-sm font-bold text-white">Ficha de Enfermería</span>
+                        {(nivelRiesgoEnfermeria === 'ALTO' || controladoEnfermeria === 'NO') && (
+                          <span className="ml-auto text-xs bg-white/25 text-white px-2 py-0.5 rounded-full font-semibold">Alerta</span>
+                        )}
                       </div>
 
-                      {/* Otras Patologías — multi-checkbox */}
-                      <div className="mb-4">
-                        <p className="text-xs font-semibold text-teal-800 uppercase tracking-wider mb-2">Otras Patologías</p>
-                        <div className="flex flex-wrap gap-2">
-                          {['NEUROPATIA', 'RETINOPATIA', 'PIE DIABETICA', 'ERC', 'NINGUNO'].map(pat => (
-                            <label key={pat} className={`flex items-center gap-1.5 cursor-pointer rounded-lg px-3 py-1.5 border transition-all text-xs font-medium ${
-                              otraPatologia.includes(pat)
-                                ? 'bg-teal-600 text-white border-teal-600'
-                                : 'bg-white text-gray-700 border-teal-200 hover:bg-teal-50'
-                            }`}>
-                              <input
-                                type="checkbox"
-                                checked={otraPatologia.includes(pat)}
-                                onChange={() => toggleOtraPatologia(pat)}
-                                className="sr-only"
+                      <div className="bg-white divide-y divide-gray-100">
+
+                        {/* ── 1. OTRAS PATOLOGÍAS ── */}
+                        <div>
+                          <button type="button" onClick={() => toggleFicha('patologias')}
+                            className="w-full flex items-center justify-between px-4 py-2.5 text-left hover:bg-gray-50 transition-colors">
+                            <div className="flex items-center gap-2">
+                              <span className="text-base">🫀</span>
+                              <span className="text-xs font-bold text-gray-700 uppercase tracking-wider">Otras Patologías</span>
+                              {otraPatologia.length > 0 && (
+                                <span className="text-xs bg-purple-600 text-white px-1.5 py-0.5 rounded-full font-bold">{otraPatologia.join(', ')}</span>
+                              )}
+                            </div>
+                            <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform flex-shrink-0 ${fichaOpen.patologias ? 'rotate-180' : ''}`} />
+                          </button>
+                          {fichaOpen.patologias && (
+                            <div className="px-4 pb-3 pt-1 bg-gray-50">
+                              <div className="flex flex-wrap gap-1.5">
+                                {['NEUROPATIA', 'RETINOPATIA', 'PIE DIABETICA', 'ERC', 'NINGUNO'].map(pat => (
+                                  <button key={pat} type="button" onClick={() => toggleOtraPatologia(pat)}
+                                    className={`px-3 py-1.5 rounded-lg text-xs font-semibold border-2 transition-all ${
+                                      otraPatologia.includes(pat)
+                                        ? pat === 'NINGUNO'
+                                          ? 'bg-gray-600 text-white border-gray-600'
+                                          : 'bg-purple-600 text-white border-purple-600'
+                                        : 'bg-white text-gray-600 border-gray-300 hover:border-purple-400 hover:bg-purple-50'
+                                    }`}>
+                                    {otraPatologia.includes(pat) && '✓ '}{pat}
+                                  </button>
+                                ))}
+                              </div>
+                              <p className="text-xs text-gray-400 mt-2">"NINGUNO" deselecciona las demás opciones</p>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* ── 2. CONTROL DE DISPOSITIVOS ── */}
+                        <div>
+                          <button type="button" onClick={() => toggleFicha('dispositivos')}
+                            className="w-full flex items-center justify-between px-4 py-2.5 text-left hover:bg-gray-50 transition-colors">
+                            <div className="flex items-center gap-2">
+                              <span className="text-base">⚡</span>
+                              <span className="text-xs font-bold text-gray-700 uppercase tracking-wider">Control de Dispositivos</span>
+                              {controlEnfermeria.length > 0 && (
+                                <span className="text-xs bg-sky-600 text-white px-1.5 py-0.5 rounded-full font-bold">{controlEnfermeria.length} sel.</span>
+                              )}
+                            </div>
+                            <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform flex-shrink-0 ${fichaOpen.dispositivos ? 'rotate-180' : ''}`} />
+                          </button>
+                          {fichaOpen.dispositivos && (
+                            <div className="px-4 pb-3 pt-1 bg-gray-50 space-y-2">
+                              {/* Par Tensiómetro */}
+                              <div>
+                                <p className="text-xs text-gray-500 mb-1 font-medium">Tensiómetro</p>
+                                <div className="flex gap-2">
+                                  {['SABE UTILIZAR TENSIOMETRO', 'NO SABE UTILIZAR TENSIOMETRO'].map(ctrl => (
+                                    <button key={ctrl} type="button" onClick={() => toggleControlEnfermeria(ctrl)}
+                                      className={`flex-1 px-2 py-1.5 rounded-lg text-xs font-semibold border-2 transition-all ${
+                                        controlEnfermeria.includes(ctrl)
+                                          ? ctrl.startsWith('SABE') ? 'bg-green-500 text-white border-green-500' : 'bg-red-500 text-white border-red-500'
+                                          : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50'
+                                      }`}>{ctrl.replace(' UTILIZAR TENSIOMETRO', '')}</button>
+                                  ))}
+                                </div>
+                              </div>
+                              {/* Par Glucómetro */}
+                              <div>
+                                <p className="text-xs text-gray-500 mb-1 font-medium">Glucómetro</p>
+                                <div className="flex gap-2">
+                                  {['SABE UTILIZAR GLUCOMETRO', 'NO SABE UTILIZAR GLUCOMETRO'].map(ctrl => (
+                                    <button key={ctrl} type="button" onClick={() => toggleControlEnfermeria(ctrl)}
+                                      className={`flex-1 px-2 py-1.5 rounded-lg text-xs font-semibold border-2 transition-all ${
+                                        controlEnfermeria.includes(ctrl)
+                                          ? ctrl.startsWith('SABE') ? 'bg-green-500 text-white border-green-500' : 'bg-red-500 text-white border-red-500'
+                                          : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50'
+                                      }`}>{ctrl.replace(' UTILIZAR GLUCOMETRO', '')}</button>
+                                  ))}
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* ── 3. IMC CON CALCULADORA ── */}
+                        <div>
+                          <button type="button" onClick={() => toggleFicha('imc')}
+                            className="w-full flex items-center justify-between px-4 py-2.5 text-left hover:bg-gray-50 transition-colors">
+                            <div className="flex items-center gap-2">
+                              <span className="text-base">⚖️</span>
+                              <span className="text-xs font-bold text-gray-700 uppercase tracking-wider">IMC</span>
+                              {(categoriaIMC || imcEnfermeria) && (
+                                <span className={`text-xs text-white px-1.5 py-0.5 rounded-full font-bold ${
+                                  (categoriaIMC || imcEnfermeria) === 'NORMAL' ? 'bg-green-500' :
+                                  (categoriaIMC || imcEnfermeria) === 'DELGADEZ' ? 'bg-sky-500' :
+                                  (categoriaIMC || imcEnfermeria) === 'SOBREPESO' ? 'bg-amber-500' : 'bg-red-500'
+                                }`}>{imcCalculado ? `${imcCalculado} — ${categoriaIMC}` : (categoriaIMC || imcEnfermeria)}</span>
+                              )}
+                            </div>
+                            <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform flex-shrink-0 ${fichaOpen.imc ? 'rotate-180' : ''}`} />
+                          </button>
+                          {fichaOpen.imc && (
+                            <div className="px-4 pb-3 pt-2 bg-gray-50 space-y-3">
+                              {/* Calculadora automática */}
+                              <div className="bg-white border border-gray-200 rounded-lg p-3">
+                                <p className="text-xs font-semibold text-gray-600 mb-2">Calcular automáticamente</p>
+                                <div className="grid grid-cols-2 gap-2 mb-2">
+                                  <div>
+                                    <label className="text-xs text-gray-500 block mb-1">Peso (kg)</label>
+                                    <input type="number" value={pesoKg} onChange={e => setPesoKg(e.target.value)}
+                                      placeholder="Ej: 70"
+                                      className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500" />
+                                  </div>
+                                  <div>
+                                    <label className="text-xs text-gray-500 block mb-1">Talla (m)</label>
+                                    <input type="number" value={tallaMt} onChange={e => setTallaMt(e.target.value)}
+                                      placeholder="Ej: 1.65" step="0.01"
+                                      className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500" />
+                                  </div>
+                                </div>
+                                {imcCalculado && (
+                                  <div className={`flex items-center justify-between px-3 py-2 rounded-lg ${
+                                    categoriaIMC === 'NORMAL' ? 'bg-green-50 border border-green-200' :
+                                    categoriaIMC === 'DELGADEZ' ? 'bg-sky-50 border border-sky-200' :
+                                    categoriaIMC === 'SOBREPESO' ? 'bg-amber-50 border border-amber-200' :
+                                    'bg-red-50 border border-red-200'
+                                  }`}>
+                                    <span className="text-xs text-gray-600">IMC = <strong>{imcCalculado}</strong></span>
+                                    <span className={`text-xs font-bold px-2 py-0.5 rounded-full text-white ${
+                                      categoriaIMC === 'NORMAL' ? 'bg-green-500' :
+                                      categoriaIMC === 'DELGADEZ' ? 'bg-sky-500' :
+                                      categoriaIMC === 'SOBREPESO' ? 'bg-amber-500' : 'bg-red-500'
+                                    }`}>{categoriaIMC}</span>
+                                  </div>
+                                )}
+                              </div>
+                              {/* O selección manual */}
+                              <div>
+                                <p className="text-xs text-gray-500 mb-1.5">O seleccionar manualmente:</p>
+                                <div className="flex gap-1.5">
+                                  {[
+                                    { v: 'DELGADEZ',     c: 'bg-sky-500 border-sky-500',     d: 'bg-sky-50 text-sky-700 border-sky-300 hover:bg-sky-100' },
+                                    { v: 'NORMAL',       c: 'bg-green-500 border-green-500', d: 'bg-green-50 text-green-700 border-green-300 hover:bg-green-100' },
+                                    { v: 'SOBREPESO',    c: 'bg-amber-500 border-amber-500', d: 'bg-amber-50 text-amber-700 border-amber-300 hover:bg-amber-100' },
+                                    { v: 'OBESIDAD I-II', c: 'bg-red-500 border-red-500',    d: 'bg-red-50 text-red-700 border-red-300 hover:bg-red-100' },
+                                  ].map(({ v, c, d }) => {
+                                    const efectivo = categoriaIMC || imcEnfermeria;
+                                    return (
+                                      <button key={v} type="button"
+                                        onClick={() => { setImcEnfermeria(efectivo === v ? '' : v); setPesoKg(''); setTallaMt(''); }}
+                                        className={`flex-1 py-1.5 rounded-lg text-xs font-semibold border-2 transition-all ${efectivo === v ? `${c} text-white shadow-sm` : d}`}>{v}</button>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* ── 4. TRATAMIENTO ── */}
+                        <div>
+                          <button type="button" onClick={() => toggleFicha('tratamiento')}
+                            className="w-full flex items-center justify-between px-4 py-2.5 text-left hover:bg-gray-50 transition-colors">
+                            <div className="flex items-center gap-2">
+                              <span className="text-base">💊</span>
+                              <span className="text-xs font-bold text-gray-700 uppercase tracking-wider">Tratamiento</span>
+                              {tratamientoEnfermeria && (
+                                <span className={`text-xs text-white px-1.5 py-0.5 rounded-full font-bold ${tratamientoEnfermeria === 'TIENE MEDICACION' ? 'bg-green-500' : 'bg-red-500'}`}>
+                                  {tratamientoEnfermeria}
+                                </span>
+                              )}
+                            </div>
+                            <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform flex-shrink-0 ${fichaOpen.tratamiento ? 'rotate-180' : ''}`} />
+                          </button>
+                          {fichaOpen.tratamiento && (
+                            <div className="px-4 pb-3 pt-1 bg-gray-50">
+                              <div className="flex gap-2">
+                                {[
+                                  { v: 'TIENE MEDICACION',    c: 'bg-green-500 border-green-500', d: 'bg-green-50 text-green-700 border-green-300 hover:bg-green-100' },
+                                  { v: 'NO TIENE MEDICACION', c: 'bg-red-500 border-red-500',     d: 'bg-red-50 text-red-700 border-red-300 hover:bg-red-100' },
+                                ].map(({ v, c, d }) => (
+                                  <button key={v} type="button" onClick={() => setTratamientoEnfermeria(tratamientoEnfermeria === v ? '' : v)}
+                                    className={`flex-1 py-2 rounded-lg text-xs font-bold border-2 transition-all ${tratamientoEnfermeria === v ? `${c} text-white shadow-sm` : d}`}>
+                                    {v === 'TIENE MEDICACION' ? '✓ Tiene Medicación' : '✗ No Tiene Medicación'}
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* ── 5. ADHERENCIA — Test de Morisky ── */}
+                        <div>
+                          <button type="button" onClick={() => toggleFicha('adherencia')}
+                            className="w-full flex items-center justify-between px-4 py-2.5 text-left hover:bg-gray-50 transition-colors">
+                            <div className="flex items-center gap-2">
+                              <span className="text-base">📋</span>
+                              <span className="text-xs font-bold text-gray-700 uppercase tracking-wider">Adherencia</span>
+                              <span className="text-xs text-gray-400 font-normal">(Morisky)</span>
+                              {(adherenciaMorisky || adherenciaEnfermeria) && (
+                                <span className={`text-xs text-white px-1.5 py-0.5 rounded-full font-bold ${
+                                  (adherenciaMorisky || adherenciaEnfermeria) === 'ALTA' ? 'bg-green-500' :
+                                  (adherenciaMorisky || adherenciaEnfermeria) === 'MEDIA' ? 'bg-amber-500' : 'bg-red-500'
+                                }`}>{adherenciaMorisky || adherenciaEnfermeria}</span>
+                              )}
+                            </div>
+                            <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform flex-shrink-0 ${fichaOpen.adherencia ? 'rotate-180' : ''}`} />
+                          </button>
+                          {fichaOpen.adherencia && (
+                            <div className="px-4 pb-3 pt-2 bg-gray-50 space-y-3">
+                              {/* Test de Morisky-Green */}
+                              <div className="bg-white border border-gray-200 rounded-lg p-3">
+                                <p className="text-xs font-semibold text-gray-600 mb-3">Test de Morisky-Green (4 preguntas)</p>
+                                <div className="space-y-2">
+                                  {[
+                                    '¿Olvida alguna vez tomar los medicamentos?',
+                                    '¿Toma los medicamentos a las horas indicadas?',
+                                    'Cuando se encuentra bien, ¿deja de tomarlos?',
+                                    'Si alguna vez le sienta mal, ¿deja de tomarlos?',
+                                  ].map((pregunta, idx) => (
+                                    <div key={idx} className="flex items-start gap-2">
+                                      <span className="text-xs text-gray-400 font-bold w-4 flex-shrink-0 mt-0.5">{idx + 1}.</span>
+                                      <p className="text-xs text-gray-700 flex-1 leading-relaxed">{pregunta}</p>
+                                      <div className="flex gap-1 flex-shrink-0">
+                                        <button type="button"
+                                          onClick={() => setMoriskyRespuestas(prev => { const n = [...prev]; n[idx] = true; return n; })}
+                                          className={`px-2.5 py-1 rounded text-xs font-bold border transition-all ${moriskyRespuestas[idx] === true ? 'bg-red-500 text-white border-red-500' : 'bg-white text-gray-500 border-gray-300 hover:bg-red-50'}`}>Sí</button>
+                                        <button type="button"
+                                          onClick={() => setMoriskyRespuestas(prev => { const n = [...prev]; n[idx] = false; return n; })}
+                                          className={`px-2.5 py-1 rounded text-xs font-bold border transition-all ${moriskyRespuestas[idx] === false ? 'bg-green-500 text-white border-green-500' : 'bg-white text-gray-500 border-gray-300 hover:bg-green-50'}`}>No</button>
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                                {adherenciaMorisky && (
+                                  <div className={`mt-3 flex items-center justify-between px-3 py-2 rounded-lg ${
+                                    adherenciaMorisky === 'ALTA' ? 'bg-green-50 border border-green-200' :
+                                    adherenciaMorisky === 'MEDIA' ? 'bg-amber-50 border border-amber-200' :
+                                    'bg-red-50 border border-red-200'
+                                  }`}>
+                                    <span className="text-xs text-gray-600">Resultado automático:</span>
+                                    <span className={`text-xs font-bold px-2 py-0.5 rounded-full text-white ${
+                                      adherenciaMorisky === 'ALTA' ? 'bg-green-500' :
+                                      adherenciaMorisky === 'MEDIA' ? 'bg-amber-500' : 'bg-red-500'
+                                    }`}>Adherencia {adherenciaMorisky}</span>
+                                  </div>
+                                )}
+                              </div>
+                              {/* Selección directa (alternativa) */}
+                              <div>
+                                <p className="text-xs text-gray-400 mb-1.5">O registrar directamente:</p>
+                                <div className="flex gap-1.5">
+                                  {[
+                                    { v: 'ALTA',  c: 'bg-green-500 border-green-500', d: 'bg-green-50 text-green-700 border-green-300 hover:bg-green-100' },
+                                    { v: 'MEDIA', c: 'bg-amber-500 border-amber-500', d: 'bg-amber-50 text-amber-700 border-amber-300 hover:bg-amber-100' },
+                                    { v: 'BAJA',  c: 'bg-red-500 border-red-500',     d: 'bg-red-50 text-red-700 border-red-300 hover:bg-red-100' },
+                                  ].map(({ v, c, d }) => {
+                                    const efectivo = adherenciaMorisky || adherenciaEnfermeria;
+                                    return (
+                                      <button key={v} type="button"
+                                        onClick={() => { setAdherenciaEnfermeria(efectivo === v ? '' : v); setMoriskyRespuestas([null, null, null, null]); }}
+                                        className={`flex-1 py-1.5 rounded-lg text-xs font-bold border-2 transition-all ${efectivo === v ? `${c} text-white shadow-sm` : d}`}>{v}</button>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* ── 6. NIVEL DE RIESGO ── */}
+                        <div>
+                          <button type="button" onClick={() => toggleFicha('riesgo')}
+                            className={`w-full flex items-center justify-between px-4 py-2.5 text-left transition-colors ${nivelRiesgoEnfermeria === 'ALTO' ? 'hover:bg-red-50' : 'hover:bg-gray-50'}`}>
+                            <div className="flex items-center gap-2">
+                              <span className="text-base">🚦</span>
+                              <span className="text-xs font-bold text-gray-700 uppercase tracking-wider">Nivel de Riesgo</span>
+                              {nivelRiesgoEnfermeria && (
+                                <span className={`text-xs text-white px-1.5 py-0.5 rounded-full font-bold ${
+                                  nivelRiesgoEnfermeria === 'BAJO' ? 'bg-green-500' :
+                                  nivelRiesgoEnfermeria === 'MODERADO' ? 'bg-amber-500' : 'bg-red-500'
+                                }`}>{nivelRiesgoEnfermeria}</span>
+                              )}
+                            </div>
+                            <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform flex-shrink-0 ${fichaOpen.riesgo ? 'rotate-180' : ''}`} />
+                          </button>
+                          {fichaOpen.riesgo && (
+                            <div className="px-4 pb-3 pt-1 bg-gray-50">
+                              <div className="flex gap-2">
+                                {[
+                                  { v: 'BAJO',     c: 'bg-green-500 border-green-500', d: 'bg-green-50 text-green-700 border-green-300 hover:bg-green-100' },
+                                  { v: 'MODERADO', c: 'bg-amber-500 border-amber-500', d: 'bg-amber-50 text-amber-700 border-amber-300 hover:bg-amber-100' },
+                                  { v: 'ALTO',     c: 'bg-red-500 border-red-500',     d: 'bg-red-50 text-red-700 border-red-300 hover:bg-red-100' },
+                                ].map(({ v, c, d }) => (
+                                  <button key={v} type="button" onClick={() => setNivelRiesgoEnfermeria(nivelRiesgoEnfermeria === v ? '' : v)}
+                                    className={`flex-1 py-2 rounded-lg text-xs font-bold border-2 transition-all ${nivelRiesgoEnfermeria === v ? `${c} text-white shadow-sm` : d}`}>{v}</button>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* ── 7. ¿CONTROLADO? ── */}
+                        <div>
+                          <button type="button" onClick={() => toggleFicha('controlado')}
+                            className={`w-full flex items-center justify-between px-4 py-2.5 text-left transition-colors ${controladoEnfermeria === 'NO' ? 'hover:bg-red-50' : 'hover:bg-gray-50'}`}>
+                            <div className="flex items-center gap-2">
+                              <span className="text-base">✅</span>
+                              <span className="text-xs font-bold text-gray-700 uppercase tracking-wider">¿Controlado?</span>
+                              {controladoEnfermeria && (
+                                <span className={`text-xs text-white px-2 py-0.5 rounded-full font-bold ${controladoEnfermeria === 'SI' ? 'bg-green-500' : 'bg-red-500'}`}>{controladoEnfermeria}</span>
+                              )}
+                            </div>
+                            <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform flex-shrink-0 ${fichaOpen.controlado ? 'rotate-180' : ''}`} />
+                          </button>
+                          {fichaOpen.controlado && (
+                            <div className="px-4 pb-3 pt-1 bg-gray-50">
+                              <div className="flex gap-3">
+                                <button type="button" onClick={() => setControladoEnfermeria(controladoEnfermeria === 'SI' ? '' : 'SI')}
+                                  className={`flex-1 py-2.5 rounded-xl text-sm font-bold border-2 transition-all ${controladoEnfermeria === 'SI' ? 'bg-green-500 text-white border-green-500 shadow-md' : 'bg-green-50 text-green-700 border-green-300 hover:bg-green-100'}`}>✓ SÍ</button>
+                                <button type="button" onClick={() => setControladoEnfermeria(controladoEnfermeria === 'NO' ? '' : 'NO')}
+                                  className={`flex-1 py-2.5 rounded-xl text-sm font-bold border-2 transition-all ${controladoEnfermeria === 'NO' ? 'bg-red-500 text-white border-red-500 shadow-md' : 'bg-red-50 text-red-700 border-red-300 hover:bg-red-100'}`}>✗ NO</button>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* ── 8. OBSERVACIONES LIBRES ── */}
+                        <div>
+                          <button type="button" onClick={() => toggleFicha('observaciones')}
+                            className="w-full flex items-center justify-between px-4 py-2.5 text-left hover:bg-gray-50 transition-colors">
+                            <div className="flex items-center gap-2">
+                              <span className="text-base">📝</span>
+                              <span className="text-xs font-bold text-gray-700 uppercase tracking-wider">Observaciones</span>
+                              {observacionesEnfermeria && (
+                                <span className="text-xs bg-gray-600 text-white px-1.5 py-0.5 rounded-full font-bold">Con nota</span>
+                              )}
+                            </div>
+                            <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform flex-shrink-0 ${fichaOpen.observaciones ? 'rotate-180' : ''}`} />
+                          </button>
+                          {fichaOpen.observaciones && (
+                            <div className="px-4 pb-3 pt-1 bg-gray-50">
+                              <textarea
+                                value={observacionesEnfermeria}
+                                onChange={e => setObservacionesEnfermeria(e.target.value)}
+                                placeholder="Ej: paciente no tiene dinero para tiras reactivas, herida en pie izquierdo en proceso de cierre..."
+                                rows={3}
+                                maxLength={500}
+                                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 resize-none placeholder-gray-400"
                               />
-                              {otraPatologia.includes(pat) && <Check className="w-3 h-3" strokeWidth={3} />}
-                              {pat}
-                            </label>
-                          ))}
-                        </div>
-                      </div>
-
-                      {/* Control — multi-checkbox */}
-                      <div className="mb-4">
-                        <p className="text-xs font-semibold text-teal-800 uppercase tracking-wider mb-2">Control de Dispositivos</p>
-                        <div className="flex flex-wrap gap-2">
-                          {[
-                            'SABE UTILIZAR TENSIOMETRO',
-                            'NO SABE UTILIZAR TENSIOMETRO',
-                            'SABE UTILIZAR GLUCOMETRO',
-                            'NO SABE UTILIZAR GLUCOMETRO'
-                          ].map(ctrl => (
-                            <label key={ctrl} className={`flex items-center gap-1.5 cursor-pointer rounded-lg px-3 py-1.5 border transition-all text-xs font-medium ${
-                              controlEnfermeria.includes(ctrl)
-                                ? 'bg-teal-600 text-white border-teal-600'
-                                : 'bg-white text-gray-700 border-teal-200 hover:bg-teal-50'
-                            }`}>
-                              <input
-                                type="checkbox"
-                                checked={controlEnfermeria.includes(ctrl)}
-                                onChange={() => toggleControlEnfermeria(ctrl)}
-                                className="sr-only"
-                              />
-                              {controlEnfermeria.includes(ctrl) && <Check className="w-3 h-3" strokeWidth={3} />}
-                              {ctrl}
-                            </label>
-                          ))}
-                        </div>
-                      </div>
-
-                      {/* Grid 2x2 para campos con pocas opciones */}
-                      <div className="grid grid-cols-2 gap-4">
-                        {/* IMC */}
-                        <div>
-                          <p className="text-xs font-semibold text-teal-800 uppercase tracking-wider mb-2">IMC</p>
-                          <div className="flex flex-wrap gap-1.5">
-                            {['DELGADEZ', 'NORMAL', 'SOBREPESO', 'OBESIDAD I-II'].map(v => (
-                              <button key={v} type="button" onClick={() => setImcEnfermeria(imcEnfermeria === v ? '' : v)}
-                                className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold border transition-all ${
-                                  imcEnfermeria === v
-                                    ? 'bg-teal-600 text-white border-teal-600 shadow-sm'
-                                    : 'bg-white text-gray-600 border-teal-200 hover:bg-teal-50'
-                                }`}>{v}</button>
-                            ))}
-                          </div>
+                              <p className="text-xs text-gray-400 mt-1">{observacionesEnfermeria.length}/500 caracteres</p>
+                            </div>
+                          )}
                         </div>
 
-                        {/* Tratamiento */}
-                        <div>
-                          <p className="text-xs font-semibold text-teal-800 uppercase tracking-wider mb-2">Tratamiento</p>
-                          <div className="flex flex-wrap gap-1.5">
-                            {['TIENE MEDICACION', 'NO TIENE MEDICACION'].map(v => (
-                              <button key={v} type="button" onClick={() => setTratamientoEnfermeria(tratamientoEnfermeria === v ? '' : v)}
-                                className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold border transition-all ${
-                                  tratamientoEnfermeria === v
-                                    ? 'bg-teal-600 text-white border-teal-600 shadow-sm'
-                                    : 'bg-white text-gray-600 border-teal-200 hover:bg-teal-50'
-                                }`}>{v}</button>
-                            ))}
-                          </div>
-                        </div>
-
-                        {/* Adherencia (Escala de Morisky) */}
-                        <div>
-                          <p className="text-xs font-semibold text-teal-800 uppercase tracking-wider mb-2">Adherencia <span className="normal-case font-normal text-teal-500">(Escala de Morisky)</span></p>
-                          <div className="flex gap-1.5">
-                            {[
-                              { v: 'ALTA',  color: 'bg-green-500 border-green-500' },
-                              { v: 'MEDIA', color: 'bg-amber-500 border-amber-500' },
-                              { v: 'BAJA',  color: 'bg-red-500 border-red-500' }
-                            ].map(({ v, color }) => (
-                              <button key={v} type="button" onClick={() => setAdherenciaEnfermeria(adherenciaEnfermeria === v ? '' : v)}
-                                className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all ${
-                                  adherenciaEnfermeria === v
-                                    ? `${color} text-white shadow-sm`
-                                    : 'bg-white text-gray-600 border-teal-200 hover:bg-teal-50'
-                                }`}>{v}</button>
-                            ))}
-                          </div>
-                        </div>
-
-                        {/* Nivel de Riesgo */}
-                        <div>
-                          <p className="text-xs font-semibold text-teal-800 uppercase tracking-wider mb-2">Nivel de Riesgo</p>
-                          <div className="flex gap-1.5">
-                            {[
-                              { v: 'BAJO',     color: 'bg-green-500 border-green-500' },
-                              { v: 'MODERADO', color: 'bg-amber-500 border-amber-500' },
-                              { v: 'ALTO',     color: 'bg-red-500 border-red-500' }
-                            ].map(({ v, color }) => (
-                              <button key={v} type="button" onClick={() => setNivelRiesgoEnfermeria(nivelRiesgoEnfermeria === v ? '' : v)}
-                                className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all ${
-                                  nivelRiesgoEnfermeria === v
-                                    ? `${color} text-white shadow-sm`
-                                    : 'bg-white text-gray-600 border-teal-200 hover:bg-teal-50'
-                                }`}>{v}</button>
-                            ))}
-                          </div>
-                        </div>
-
-                        {/* Controlado */}
-                        <div className="col-span-2">
-                          <p className="text-xs font-semibold text-teal-800 uppercase tracking-wider mb-2">¿Controlado?</p>
-                          <div className="flex gap-2">
-                            {[
-                              { v: 'SI', color: 'bg-green-500 border-green-500' },
-                              { v: 'NO', color: 'bg-red-500 border-red-500' }
-                            ].map(({ v, color }) => (
-                              <button key={v} type="button" onClick={() => setControladoEnfermeria(controladoEnfermeria === v ? '' : v)}
-                                className={`px-6 py-2 rounded-lg text-sm font-bold border transition-all ${
-                                  controladoEnfermeria === v
-                                    ? `${color} text-white shadow-sm`
-                                    : 'bg-white text-gray-600 border-teal-200 hover:bg-teal-50'
-                                }`}>{v}</button>
-                            ))}
-                          </div>
-                        </div>
                       </div>
                     </div>
-                  )}
+                    )}
+                  </div>
                 </div>
               )}
 
@@ -3193,6 +3523,416 @@ export default function MisPacientes() {
                 className="px-6 py-2 bg-gray-300 text-gray-800 rounded-lg font-semibold hover:bg-gray-400 transition-colors"
               >
                 Cerrar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ✅ Modal Ficha de Enfermería */}
+      {showFichaEnfermeriaModal && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center">
+          <div
+            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            onClick={() => setShowFichaEnfermeriaModal(false)}
+          />
+          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-lg mx-4 max-h-[90vh] flex flex-col">
+            {/* Header */}
+            <div className={`flex items-center justify-between px-5 py-4 rounded-t-2xl ${
+              (nivelRiesgoEnfermeria === 'ALTO' || controladoEnfermeria === 'NO')
+                ? 'bg-red-600' : 'bg-teal-600'
+            } text-white`}>
+              <div className="flex items-center gap-2">
+                <Stethoscope className="w-5 h-5" />
+                <span className="font-bold text-base">Ficha de Enfermería</span>
+                {(nivelRiesgoEnfermeria === 'ALTO' || controladoEnfermeria === 'NO') && (
+                  <span className="bg-white/20 text-white text-xs font-bold px-2 py-0.5 rounded-full">ALERTA</span>
+                )}
+              </div>
+              <button onClick={() => setShowFichaEnfermeriaModal(false)} className="hover:bg-white/20 rounded-lg p-1 transition-colors">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Body scrollable */}
+            <div className="overflow-y-auto flex-1 px-5 py-4 space-y-3">
+
+              {/* Otras Patologías */}
+              <div className="border border-gray-200 rounded-xl overflow-hidden">
+                <button
+                  onClick={() => toggleFicha('patologias')}
+                  className="w-full flex items-center justify-between px-4 py-2.5 bg-gray-50 hover:bg-gray-100 transition-colors text-sm font-semibold text-gray-700"
+                >
+                  <span className="flex items-center gap-2">🩺 Otras Patologías</span>
+                  <span>{fichaOpen.patologias ? '▲' : '▼'}</span>
+                </button>
+                {fichaOpen.patologias && (
+                  <div className="px-4 py-3 flex flex-wrap gap-2">
+                    {['NINGUNO','DM','HTA','OBESIDAD','DISLIPIDEMIA','ERC','ARTRITIS','DEPRESIÓN'].map(op => (
+                      <button
+                        key={op}
+                        onClick={() => toggleOtraPatologia(op)}
+                        className={`px-3 py-1 rounded-full text-xs font-semibold border transition-all ${
+                          otraPatologia.includes(op)
+                            ? op === 'NINGUNO' ? 'bg-gray-600 text-white border-gray-600' : 'bg-blue-600 text-white border-blue-600'
+                            : 'bg-white text-gray-700 border-gray-300 hover:border-blue-400'
+                        }`}
+                      >{op}</button>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Control de Dispositivos */}
+              <div className="border border-gray-200 rounded-xl overflow-hidden">
+                <button
+                  onClick={() => toggleFicha('dispositivos')}
+                  className="w-full flex items-center justify-between px-4 py-2.5 bg-gray-50 hover:bg-gray-100 transition-colors text-sm font-semibold text-gray-700"
+                >
+                  <span className="flex items-center gap-2">🩸 Control de Dispositivos</span>
+                  <span>{fichaOpen.dispositivos ? '▲' : '▼'}</span>
+                </button>
+                {fichaOpen.dispositivos && (
+                  <div className="px-4 py-3 space-y-2">
+                    <div>
+                      <p className="text-xs text-gray-500 mb-1 font-medium">Tensiómetro</p>
+                      <div className="flex gap-2">
+                        {['SABE UTILIZAR TENSIOMETRO','NO SABE UTILIZAR TENSIOMETRO'].map(op => (
+                          <button key={op} onClick={() => toggleControlEnfermeria(op)}
+                            className={`flex-1 px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all ${
+                              controlEnfermeria.includes(op)
+                                ? op.startsWith('NO') ? 'bg-red-500 text-white border-red-500' : 'bg-green-600 text-white border-green-600'
+                                : 'bg-white text-gray-600 border-gray-300 hover:border-gray-400'
+                            }`}>{op.startsWith('NO') ? 'No sabe' : 'Sabe'}</button>
+                        ))}
+                      </div>
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-500 mb-1 font-medium">Glucómetro</p>
+                      <div className="flex gap-2">
+                        {['SABE UTILIZAR GLUCOMETRO','NO SABE UTILIZAR GLUCOMETRO'].map(op => (
+                          <button key={op} onClick={() => toggleControlEnfermeria(op)}
+                            className={`flex-1 px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all ${
+                              controlEnfermeria.includes(op)
+                                ? op.startsWith('NO') ? 'bg-red-500 text-white border-red-500' : 'bg-green-600 text-white border-green-600'
+                                : 'bg-white text-gray-600 border-gray-300 hover:border-gray-400'
+                            }`}>{op.startsWith('NO') ? 'No sabe' : 'Sabe'}</button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* IMC */}
+              <div className="border border-gray-200 rounded-xl overflow-hidden">
+                <button
+                  onClick={() => toggleFicha('imc')}
+                  className="w-full flex items-center justify-between px-4 py-2.5 bg-gray-50 hover:bg-gray-100 transition-colors text-sm font-semibold text-gray-700"
+                >
+                  <span className="flex items-center gap-2">⚖️ IMC</span>
+                  <span>{fichaOpen.imc ? '▲' : '▼'}</span>
+                </button>
+                {fichaOpen.imc && (
+                  <div className="px-4 py-3 space-y-3">
+                    <div className="flex gap-3">
+                      <div className="flex-1">
+                        <label className="text-xs text-gray-500 font-medium">Peso (kg)</label>
+                        <input
+                          type="number" min="20" max="300" step="0.1"
+                          value={pesoKg}
+                          onChange={e => setPesoKg(e.target.value)}
+                          placeholder="ej. 75"
+                          className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-teal-400 focus:border-teal-400"
+                        />
+                      </div>
+                      <div className="flex-1">
+                        <label className="text-xs text-gray-500 font-medium">Talla (m)</label>
+                        <input
+                          type="number" min="0.5" max="2.5" step="0.01"
+                          value={tallaMt}
+                          onChange={e => setTallaMt(e.target.value)}
+                          placeholder="ej. 1.65"
+                          className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-teal-400 focus:border-teal-400"
+                        />
+                      </div>
+                    </div>
+                    {imcCalculado && (
+                      <div className={`flex items-center justify-between px-4 py-2.5 rounded-xl font-bold text-sm ${
+                        categoriaIMC === 'NORMAL' ? 'bg-green-100 text-green-800' :
+                        categoriaIMC === 'SOBREPESO' ? 'bg-amber-100 text-amber-800' :
+                        'bg-red-100 text-red-800'
+                      }`}>
+                        <span>IMC: {imcCalculado} kg/m²</span>
+                        <span>{categoriaIMC}</span>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* Tratamiento */}
+              <div className="border border-gray-200 rounded-xl overflow-hidden">
+                <button
+                  onClick={() => toggleFicha('tratamiento')}
+                  className="w-full flex items-center justify-between px-4 py-2.5 bg-gray-50 hover:bg-gray-100 transition-colors text-sm font-semibold text-gray-700"
+                >
+                  <span className="flex items-center gap-2">💊 Tratamiento</span>
+                  <span>{fichaOpen.tratamiento ? '▲' : '▼'}</span>
+                </button>
+                {fichaOpen.tratamiento && (
+                  <div className="px-4 py-3 flex flex-wrap gap-2">
+                    {['INSULINA','HIPOGLICEMIANTE ORAL','ANTIHIPERTENSIVO','DIURÉTICO','NINGUNO'].map(op => (
+                      <button key={op} onClick={() => setTratamientoEnfermeria(tratamientoEnfermeria === op ? '' : op)}
+                        className={`px-3 py-1 rounded-full text-xs font-semibold border transition-all ${
+                          tratamientoEnfermeria === op ? 'bg-purple-600 text-white border-purple-600' : 'bg-white text-gray-700 border-gray-300 hover:border-purple-400'
+                        }`}>{op}</button>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Morisky (Adherencia) */}
+              <div className="border border-gray-200 rounded-xl overflow-hidden">
+                <button
+                  onClick={() => toggleFicha('morisky')}
+                  className="w-full flex items-center justify-between px-4 py-2.5 bg-gray-50 hover:bg-gray-100 transition-colors text-sm font-semibold text-gray-700"
+                >
+                  <span className="flex items-center gap-2">📋 Adherencia — Escala de Morisky</span>
+                  <span>{fichaOpen.morisky ? '▲' : '▼'}</span>
+                </button>
+                {fichaOpen.morisky && (
+                  <div className="px-4 py-3 space-y-3">
+                    {[
+                      '¿Olvida tomar sus medicamentos?',
+                      '¿Olvida tomar sus medicamentos a la hora indicada?',
+                      'Cuando se siente bien, ¿deja de tomar sus medicamentos?',
+                      'Cuando se siente mal, ¿deja de tomar sus medicamentos?',
+                    ].map((pregunta, idx) => (
+                      <div key={idx}>
+                        <p className="text-xs text-gray-700 font-medium mb-1">{idx + 1}. {pregunta}</p>
+                        <div className="flex gap-2">
+                          {[{label:'Sí', val:true}, {label:'No', val:false}].map(({label, val}) => (
+                            <button key={label} onClick={() => {
+                              const nuevo = [...moriskyRespuestas];
+                              nuevo[idx] = moriskyRespuestas[idx] === val ? null : val;
+                              setMoriskyRespuestas(nuevo);
+                            }}
+                              className={`flex-1 py-1.5 rounded-lg text-xs font-semibold border transition-all ${
+                                moriskyRespuestas[idx] === val
+                                  ? val ? 'bg-red-500 text-white border-red-500' : 'bg-green-600 text-white border-green-600'
+                                  : 'bg-white text-gray-600 border-gray-300 hover:border-gray-400'
+                              }`}>{label}</button>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                    {adherenciaMorisky && (
+                      <div className={`text-center py-2 rounded-xl font-bold text-sm ${
+                        adherenciaMorisky === 'ALTA' ? 'bg-green-100 text-green-800' :
+                        adherenciaMorisky === 'MEDIA' ? 'bg-amber-100 text-amber-800' :
+                        'bg-red-100 text-red-800'
+                      }`}>
+                        Adherencia: {adherenciaMorisky}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* Nivel de Riesgo */}
+              <div className="border border-gray-200 rounded-xl overflow-hidden">
+                <button
+                  onClick={() => toggleFicha('riesgo')}
+                  className="w-full flex items-center justify-between px-4 py-2.5 bg-gray-50 hover:bg-gray-100 transition-colors text-sm font-semibold text-gray-700"
+                >
+                  <span className="flex items-center gap-2">🚦 Nivel de Riesgo</span>
+                  <span>{fichaOpen.riesgo ? '▲' : '▼'}</span>
+                </button>
+                {fichaOpen.riesgo && (
+                  <div className="px-4 py-3 flex gap-2">
+                    {[{val:'BAJO',color:'bg-green-600'},{val:'MEDIO',color:'bg-amber-500'},{val:'ALTO',color:'bg-red-600'}].map(({val,color}) => (
+                      <button key={val} onClick={() => setNivelRiesgoEnfermeria(nivelRiesgoEnfermeria === val ? '' : val)}
+                        className={`flex-1 py-2 rounded-xl text-sm font-bold border-2 transition-all ${
+                          nivelRiesgoEnfermeria === val ? `${color} text-white border-transparent` : 'bg-white text-gray-700 border-gray-200 hover:border-gray-400'
+                        }`}>{val}</button>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Controlado */}
+              <div className="border border-gray-200 rounded-xl overflow-hidden">
+                <button
+                  onClick={() => toggleFicha('controlado')}
+                  className="w-full flex items-center justify-between px-4 py-2.5 bg-gray-50 hover:bg-gray-100 transition-colors text-sm font-semibold text-gray-700"
+                >
+                  <span className="flex items-center gap-2">✅ ¿Controlado?</span>
+                  <span>{fichaOpen.controlado ? '▲' : '▼'}</span>
+                </button>
+                {fichaOpen.controlado && (
+                  <div className="px-4 py-3 flex gap-3">
+                    {['SÍ','NO'].map(op => (
+                      <button key={op} onClick={() => setControladoEnfermeria(controladoEnfermeria === op ? '' : op)}
+                        className={`flex-1 py-2.5 rounded-xl text-sm font-bold border-2 transition-all ${
+                          controladoEnfermeria === op
+                            ? op === 'SÍ' ? 'bg-green-600 text-white border-green-600' : 'bg-red-600 text-white border-red-600'
+                            : 'bg-white text-gray-700 border-gray-200 hover:border-gray-400'
+                        }`}>{op}</button>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Observaciones */}
+              <div className="border border-gray-200 rounded-xl overflow-hidden">
+                <button
+                  onClick={() => toggleFicha('observaciones')}
+                  className="w-full flex items-center justify-between px-4 py-2.5 bg-gray-50 hover:bg-gray-100 transition-colors text-sm font-semibold text-gray-700"
+                >
+                  <span className="flex items-center gap-2">📝 Observaciones</span>
+                  <span>{fichaOpen.observaciones ? '▲' : '▼'}</span>
+                </button>
+                {fichaOpen.observaciones && (
+                  <div className="px-4 py-3">
+                    <textarea
+                      value={observacionesEnfermeria}
+                      onChange={e => setObservacionesEnfermeria(e.target.value)}
+                      rows={3}
+                      placeholder="Notas clínicas adicionales..."
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-teal-400 focus:border-teal-400 resize-none"
+                    />
+                  </div>
+                )}
+              </div>
+
+              {/* Videos de Apoyo */}
+              {(() => {
+                const VIDEOS_CATALOGO = [
+                  // HTA
+                  { id: 'hta1', condicion: 'HTA', titulo: 'HTA — Consejos del médico (1)', url: 'https://www.youtube.com/shorts/MA3PVRgQyVo', rol: 'MEDICO' },
+                  { id: 'hta2', condicion: 'HTA', titulo: 'HTA — Consejos del médico (2)', url: 'https://www.youtube.com/shorts/mxqt5-i2JEE', rol: 'MEDICO' },
+                  { id: 'hta3', condicion: 'HTA', titulo: 'HTA — Consejos del médico (3)', url: 'https://www.youtube.com/shorts/qxGbrbiWYyg', rol: 'MEDICO' },
+                  { id: 'hta4', condicion: 'HTA', titulo: 'HTA — Consejos del médico (4)', url: 'https://www.youtube.com/shorts/nCkoUndLg9I', rol: 'MEDICO' },
+                  { id: 'hta5', condicion: 'HTA', titulo: 'HTA — Recomendaciones de enfermería', url: 'https://www.youtube.com/shorts/7RQ0z170rUU', rol: 'ENFERMERIA' },
+                  // DM
+                  { id: 'dm1', condicion: 'DM', titulo: 'DM — Cuidados de enfermería (1)', url: 'https://www.youtube.com/shorts/RoVfzNLcfNI', rol: 'ENFERMERIA' },
+                  { id: 'dm2', condicion: 'DM', titulo: 'DM — Cuidados de enfermería (2)', url: 'https://www.youtube.com/shorts/CMC-kcB6Kks', rol: 'ENFERMERIA' },
+                  { id: 'dm3', condicion: 'DM', titulo: 'DM — Cuidados de enfermería (3)', url: 'https://www.youtube.com/shorts/TzANBdiW0nU', rol: 'ENFERMERIA' },
+                  { id: 'dm4', condicion: 'DM', titulo: 'DM — Consejos del médico (1)', url: 'https://www.youtube.com/shorts/yLe5XXca-bA', rol: 'MEDICO' },
+                  { id: 'dm5', condicion: 'DM', titulo: 'DM — Consejos del médico (2)', url: 'https://www.youtube.com/shorts/DD9KvRPZtXk', rol: 'MEDICO' },
+                  { id: 'dm6', condicion: 'DM', titulo: 'DM — Consejos del médico (3)', url: 'https://www.youtube.com/shorts/ErT9OijKZBw', rol: 'MEDICO' },
+                ];
+                const condicionesActivas = otraPatologia.filter(p => ['HTA','DM'].includes(p));
+                const videosFiltrados = VIDEOS_CATALOGO.filter(v =>
+                  condicionesActivas.length === 0 || condicionesActivas.includes(v.condicion)
+                );
+                const toggleVideo = (id) => setVideosSeleccionados(prev =>
+                  prev.includes(id) ? prev.filter(v => v !== id) : [...prev, id]
+                );
+                const seleccionados = VIDEOS_CATALOGO.filter(v => videosSeleccionados.includes(v.id));
+                const telefonoPaciente = pacienteSeleccionado?.telefono || '';
+                const nombrePaciente = pacienteSeleccionado?.apellidosNombres
+                  ? pacienteSeleccionado.apellidosNombres.split(',').reverse().join(' ').trim()
+                  : 'Estimado paciente';
+                const mensajeBase = `Hola ${nombrePaciente}, le compartimos los siguientes videos de apoyo para su salud:\n\n${seleccionados.map((v, i) => `${i + 1}. ${v.titulo}\n${v.url}`).join('\n\n')}\n\n— Equipo CENATE / EsSalud`;
+                const enviarWhatsApp = () => {
+                  if (seleccionados.length === 0) return;
+                  const numero = telefonoPaciente.replace(/\D/g, '');
+                  const url = `https://wa.me/51${numero}?text=${encodeURIComponent(mensajeBase)}`;
+                  window.open(url, '_blank', 'noopener,noreferrer');
+                };
+                const enviarEmail = () => {
+                  if (seleccionados.length === 0) return;
+                  const asunto = 'Videos de apoyo para su salud — CENATE / EsSalud';
+                  const url = `mailto:?subject=${encodeURIComponent(asunto)}&body=${encodeURIComponent(mensajeBase)}`;
+                  window.open(url, '_blank');
+                };
+                return (
+                  <div className="border border-blue-200 rounded-xl overflow-hidden">
+                    <button
+                      onClick={() => toggleFicha('videos')}
+                      className="w-full flex items-center justify-between px-4 py-2.5 bg-blue-50 hover:bg-blue-100 transition-colors text-sm font-semibold text-blue-800"
+                    >
+                      <span className="flex items-center gap-2">
+                        📹 Videos de Apoyo
+                        {videosSeleccionados.length > 0 && (
+                          <span className="bg-blue-600 text-white text-xs font-bold px-2 py-0.5 rounded-full">
+                            {videosSeleccionados.length} selec.
+                          </span>
+                        )}
+                      </span>
+                      <span>{fichaOpen.videos ? '▲' : '▼'}</span>
+                    </button>
+                    {fichaOpen.videos && (
+                      <div className="px-4 py-3 space-y-3">
+                        {condicionesActivas.length === 0 && (
+                          <p className="text-xs text-gray-500 italic">Seleccione HTA o DM en "Otras Patologías" para filtrar videos relevantes.</p>
+                        )}
+                        <div className="space-y-1.5">
+                          {videosFiltrados.map(video => (
+                            <label key={video.id} className={`flex items-center gap-3 px-3 py-2 rounded-lg cursor-pointer border transition-all ${
+                              videosSeleccionados.includes(video.id)
+                                ? 'bg-blue-50 border-blue-400'
+                                : 'bg-white border-gray-200 hover:border-blue-300'
+                            }`}>
+                              <input
+                                type="checkbox"
+                                checked={videosSeleccionados.includes(video.id)}
+                                onChange={() => toggleVideo(video.id)}
+                                className="w-4 h-4 accent-blue-600 flex-shrink-0"
+                              />
+                              <div className="flex-1 min-w-0">
+                                <p className="text-xs font-semibold text-gray-800 truncate">{video.titulo}</p>
+                                <p className="text-xs text-gray-400 truncate">{video.url}</p>
+                              </div>
+                              <span className={`text-xs font-bold px-2 py-0.5 rounded-full flex-shrink-0 ${
+                                video.condicion === 'HTA' ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700'
+                              }`}>{video.condicion}</span>
+                            </label>
+                          ))}
+                        </div>
+                        {seleccionados.length > 0 && (
+                          <div className="flex gap-2 pt-2 border-t border-blue-100">
+                            <button
+                              onClick={enviarWhatsApp}
+                              disabled={!telefonoPaciente}
+                              title={!telefonoPaciente ? 'El paciente no tiene teléfono registrado' : `Enviar a ${telefonoPaciente}`}
+                              className="flex-1 flex items-center justify-center gap-2 py-2 rounded-lg bg-green-600 hover:bg-green-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white text-xs font-bold transition-colors"
+                            >
+                              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+                              WhatsApp
+                            </button>
+                            <button
+                              onClick={enviarEmail}
+                              className="flex-1 flex items-center justify-center gap-2 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition-colors"
+                            >
+                              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,12 2,6"/></svg>
+                              Correo
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
+
+            </div>
+
+            {/* Footer */}
+            <div className="px-5 py-4 border-t bg-gray-50 rounded-b-2xl flex justify-end gap-3">
+              <button
+                onClick={() => setShowFichaEnfermeriaModal(false)}
+                className="px-5 py-2 rounded-lg border border-gray-300 text-gray-700 text-sm font-semibold hover:bg-gray-100 transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={() => setShowFichaEnfermeriaModal(false)}
+                className="px-5 py-2 rounded-lg bg-teal-600 text-white text-sm font-semibold hover:bg-teal-700 transition-colors"
+              >
+                Aplicar
               </button>
             </div>
           </div>
