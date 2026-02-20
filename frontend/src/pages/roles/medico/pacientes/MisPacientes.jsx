@@ -211,13 +211,13 @@ export default function MisPacientes() {
   // Alias para mantener compatibilidad con código existente
   const esCardiologo = hasFeature('EKG_COLUMNS');
 
-  // ✅ v1.109.25: Formatear nombre del doctor con "Dr(a)" y orden correcto
-  const formatearNombreDoctor = (nombreCompleto) => {
-    if (!nombreCompleto) return 'Dr Médico';
+  // ✅ v1.109.25: Formatear nombre del profesional con título según rol
+  const formatearNombreDoctor = (nombreCompleto, roles = []) => {
+    if (!nombreCompleto) return 'Prof. Profesional';
 
     // Lista de nombres femeninos comunes en Perú
     const nombresFemeninos = [
-      'keyla', 'maría', 'josefa', 'juana', 'rosa', 'ana', 'teresa', 'carla',
+      'keyla', 'maría', 'maria', 'josefa', 'juana', 'rosa', 'ana', 'teresa', 'carla',
       'patricia', 'sandra', 'gloria', 'diana', 'laura', 'monica', 'beatriz',
       'elena', 'francisca', 'lucia', 'raquel', 'susana', 'victoria', 'yolanda',
       'alejandra', 'carolina', 'daniela', 'gabriela', 'isabela', 'jessica',
@@ -226,30 +226,45 @@ export default function MisPacientes() {
     ];
 
     const palabras = nombreCompleto.trim().split(/\s+/).filter(p => p.length > 0);
-    if (palabras.length === 0) return 'Dr Médico';
+    if (palabras.length === 0) return 'Prof. Profesional';
 
     // Detectar género buscando nombres femeninos en la lista
     const nombreLower = nombreCompleto.toLowerCase();
     const esFemenino = nombresFemeninos.some(nf => nombreLower.includes(nf));
-    const titulo = esFemenino ? 'Dra' : 'Dr';
 
-    // Asumir que la última palabra es un apellido (ej: Llanos)
-    // y el penúltimo es otro apellido (ej: Humán)
-    // Luego vienen los nombres (ej: Keyla Isabel)
+    // Título según rol
+    const rolesUpper = (roles || []).map(r => r.toUpperCase());
+    let titulo;
+    if (rolesUpper.includes('MEDICO') || rolesUpper.includes('MÉDICO')) {
+      titulo = esFemenino ? 'Dra.' : 'Dr.';
+    } else if (rolesUpper.includes('OBSTETRA')) {
+      titulo = esFemenino ? 'Obs.' : 'Obs.';
+    } else if (rolesUpper.includes('PSICOLOGO') || rolesUpper.includes('PSICÓLOGO')) {
+      titulo = esFemenino ? 'Psic.' : 'Psic.';
+    } else if (rolesUpper.includes('NUTRICION') || rolesUpper.includes('NUTRICIÓN')) {
+      titulo = esFemenino ? 'Nut.' : 'Nut.';
+    } else if (rolesUpper.includes('ENFERMERIA') || rolesUpper.includes('ENFERMERÍA')) {
+      titulo = esFemenino ? 'Enf.' : 'Enf.';
+    } else if (rolesUpper.includes('LABORATORIO')) {
+      titulo = esFemenino ? 'Lic.' : 'Lic.';
+    } else if (rolesUpper.includes('RADIOLOGIA') || rolesUpper.includes('RADIOLOGÍA')) {
+      titulo = esFemenino ? 'Lic.' : 'Lic.';
+    } else if (rolesUpper.includes('FARMACIA')) {
+      titulo = esFemenino ? 'Q.F.' : 'Q.F.';
+    } else if (rolesUpper.includes('TERAPISTA_LENG') || rolesUpper.includes('TERAPISTA_FISI')) {
+      titulo = esFemenino ? 'Lic.' : 'Lic.';
+    } else {
+      titulo = esFemenino ? 'Dra.' : 'Dr.';
+    }
+
     // Formato: "Apellido1 Apellido2 Nombre1 Nombre2" → "Nombre1 Nombre2 Apellido1 Apellido2"
-    // O más simple: tomar últimas 1-2 palabras como apellidos
-
     if (palabras.length >= 3) {
-      // Si hay 3+ palabras, asumir: apellidos al inicio, nombres al final
-      // Humán Keyla Isabel Llanos → Keyla Isabel es el nombre
       const apellidos = [palabras[0], palabras[palabras.length - 1]].filter(p => p);
       const nombres = palabras.slice(1, -1);
       return `${titulo} ${nombres.join(' ')} ${apellidos.join(' ')}`;
     } else if (palabras.length === 2) {
-      // Si hay 2 palabras, asumir: primer apellido, luego nombre
       return `${titulo} ${palabras[1]} ${palabras[0]}`;
     } else {
-      // Si hay 1 palabra, es solo un nombre
       return `${titulo} ${palabras[0]}`;
     }
   };
@@ -1745,7 +1760,7 @@ export default function MisPacientes() {
                       ● En línea
                     </span>
                   </div>
-                  <h2 className="text-2xl font-bold text-white mb-1">{formatearNombreDoctor(doctorInfo?.nombre || authUser?.nombre)}</h2>
+                  <h2 className="text-2xl font-bold text-white mb-1">{formatearNombreDoctor(doctorInfo?.nombre || authUser?.nombre, authUser?.roles)}</h2>
                   {doctorInfo?.especialidad && (
                     <div className="flex items-center gap-2 text-white/90 text-sm font-medium">
                       <Stethoscope className="w-4 h-4" />
