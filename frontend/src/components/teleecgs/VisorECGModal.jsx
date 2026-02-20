@@ -269,15 +269,6 @@ const VisorEKGModal = ({ ecg, imagenes = [], onClose, onDescargar }) => {
             Restaurar
           </button>
 
-          <div className="w-px h-6 bg-gray-300"></div>
-
-          <button
-            onClick={onDescargar}
-            className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors"
-          >
-            <Download className="w-4 h-4" />
-            Descargar
-          </button>
         </div>
 
         {/* Información */}
