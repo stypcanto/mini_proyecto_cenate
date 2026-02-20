@@ -129,6 +129,13 @@ public class TicketMesaAyudaResponseDTO {
     private Long idMotivo;
 
     /**
+     * Código único del motivo (NUEVO v1.68.0)
+     * Ej: PS_ELIMINAR_EXCEDENTE, PS_CITA_REPROGRAMADA
+     * Utilizado en frontend para lógica de negocio condicional
+     */
+    private String codigoMotivo;
+
+    /**
      * Descripción del motivo (NUEVO v1.64.0)
      * Se utiliza como nombre legible del motivo
      */

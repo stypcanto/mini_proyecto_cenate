@@ -78,6 +78,13 @@ public class DimMotivosMesaAyuda {
     private Integer orden;
 
     /**
+     * Prioridad predeterminada del motivo: ALTA, MEDIA, BAJA
+     * Se usará como sugerencia al crear un ticket con este motivo
+     */
+    @Column(nullable = false, length = 10)
+    private String prioridad;
+
+    /**
      * Timestamp de creación (auditoría)
      */
     @Column(nullable = false, updatable = false)
@@ -93,6 +100,9 @@ public class DimMotivosMesaAyuda {
         }
         if (orden == null) {
             orden = 0;
+        }
+        if (prioridad == null) {
+            prioridad = "MEDIA";
         }
     }
 }

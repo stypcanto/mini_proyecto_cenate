@@ -294,6 +294,17 @@ export const componentRegistry = {
     pathMatch: '/roles/externo/teleekgs',
   },
 
+  // ✅ NUEVO v1.66.1: Teleconsulta IPRESS externas
+  '/roles/externo/teleconsulta/listado': {
+    component: lazy(() => import('../pages/roles/externo/teleconsulta/TeleconsultaListado')),
+    requiredAction: 'ver',
+  },
+
+  '/roles/externo/teleconsulta/estadisticas': {
+    component: lazy(() => import('../pages/roles/externo/teleconsulta/TeleconsultaEstadisticas')),
+    requiredAction: 'ver',
+  },
+
   // ✅ NUEVO v1.52.0: IPRESSWorkspace - Split View/Tabs (Upload + Listar) integrados
   '/teleekgs/ipress-workspace': {
     component: lazy(() => import('../pages/roles/externo/teleecgs/IPRESSWorkspace')),

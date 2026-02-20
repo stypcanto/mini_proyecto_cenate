@@ -1,6 +1,64 @@
 import React, { useState, useEffect } from 'react';
 import { X, AlertCircle, CheckCircle, Loader } from 'lucide-react';
 
+// ============================================================
+// Mapeo automático: motivo → prioridad
+// Se evalúa en orden: ALTA → MEDIA → BAJA (fallback MEDIA)
+// ============================================================
+const REGLAS_PRIORIDAD = [
+  {
+    prioridad: 'ALTA',
+    keywords: [
+      'deserci',           // evitar deserción
+      'actualizar listado',
+      'drive',
+      'essi',
+      'citar paciente adicional',
+      'licenciado solicita citar',
+    ],
+  },
+  {
+    prioridad: 'MEDIA',
+    keywords: [
+      'programaci',        // programación de cita adicional
+      'env\u00edo de im\u00e1genes', // envío de imágenes
+      'envio de imagenes',
+      'resultados del paciente',
+      'eliminar paciente excedente',
+    ],
+  },
+  {
+    prioridad: 'BAJA',
+    keywords: [
+      'mensaje nro',
+      'acto medico',
+      'acto m\u00e9dico',
+      'receta',
+      'referencia',
+      'laboratorio',
+      'examenes',
+      'ex\u00e1menes',
+    ],
+  },
+];
+
+function inferirPrioridad(descripcion) {
+  if (!descripcion) return 'MEDIA';
+  const lower = descripcion.toLowerCase();
+  for (const regla of REGLAS_PRIORIDAD) {
+    if (regla.keywords.some((kw) => lower.includes(kw))) {
+      return regla.prioridad;
+    }
+  }
+  return 'MEDIA';
+}
+
+const PRIORIDAD_CONFIG = {
+  ALTA:  { label: 'Alta',  color: 'bg-red-100 text-red-700 border-red-300',    dot: 'bg-red-500' },
+  MEDIA: { label: 'Media', color: 'bg-yellow-100 text-yellow-700 border-yellow-300', dot: 'bg-yellow-500' },
+  BAJA:  { label: 'Baja',  color: 'bg-green-100 text-green-700 border-green-300',  dot: 'bg-green-500' },
+};
+
 /**
  * Modal para crear un ticket de Mesa de Ayuda (v1.64.0)
  * Utilizado desde MisPacientes cuando el médico quiere solicitar ayuda
@@ -266,7 +324,13 @@ function CrearTicketModal({ isOpen, onClose, medico, paciente, onSuccess }) {
                   <select
                     id="idMotivo"
                     value={idMotivo}
-                    onChange={(e) => setIdMotivo(e.target.value)}
+                    onChange={(e) => {
+                      const nuevoId = e.target.value;
+                      setIdMotivo(nuevoId);
+                      // Auto-asignar prioridad según descripción del motivo
+                      const motivoEncontrado = motivos.find(m => m.id == nuevoId);
+                      setPrioridad(inferirPrioridad(motivoEncontrado?.descripcion || ''));
+                    }}
                     disabled={loading || loadingMotivos}
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100"
                   >
@@ -280,17 +344,6 @@ function CrearTicketModal({ isOpen, onClose, medico, paciente, onSuccess }) {
                 )}
               </div>
 
-              {/* Título Auto-Generado (ReadOnly) */}
-              {idMotivo && (
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Título del Ticket (Auto-generado)
-                  </label>
-                  <div className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-900 text-sm">
-                    {getMotivoSeleccionado()?.descripcion || 'N/A'}
-                  </div>
-                </div>
-              )}
 
               {/* Observaciones */}
               <div>
@@ -308,22 +361,22 @@ function CrearTicketModal({ isOpen, onClose, medico, paciente, onSuccess }) {
                 />
               </div>
 
-              {/* Prioridad */}
+              {/* Prioridad (auto-asignada, solo lectura) */}
               <div>
-                <label htmlFor="prioridad" className="block text-sm font-semibold text-gray-700 mb-2">
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
                   Prioridad
+                  <span className="ml-2 text-xs font-normal text-gray-400">(asignada automáticamente según el motivo)</span>
                 </label>
-                <select
-                  id="prioridad"
-                  value={prioridad}
-                  onChange={(e) => setPrioridad(e.target.value)}
-                  disabled={loading}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100"
-                >
-                  <option value="BAJA">Baja</option>
-                  <option value="MEDIA">Media</option>
-                  <option value="ALTA">Alta</option>
-                </select>
+                {idMotivo ? (
+                  <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg border text-sm font-semibold ${PRIORIDAD_CONFIG[prioridad]?.color}`}>
+                    <span className={`w-2.5 h-2.5 rounded-full ${PRIORIDAD_CONFIG[prioridad]?.dot}`} />
+                    {PRIORIDAD_CONFIG[prioridad]?.label}
+                  </div>
+                ) : (
+                  <div className="px-4 py-2 border border-gray-200 rounded-lg bg-gray-50 text-gray-400 text-sm">
+                    Se asignará al seleccionar un motivo
+                  </div>
+                )}
               </div>
 
               {/* Botones */}

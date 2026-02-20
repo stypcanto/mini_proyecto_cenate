@@ -230,6 +230,9 @@ public class SecurityConfig {
                                                 // =====================================================
                                                 // ⚠️ Usuarios: permitir GET para autenticados, resto solo ADMIN
                                                 .requestMatchers(HttpMethod.GET, "/api/usuarios/**").authenticated()
+                                                // ✅ Perfil propio: cualquier usuario autenticado puede actualizar sus datos personales y cambiar contraseña
+                                                .requestMatchers(HttpMethod.PUT, "/api/usuarios/personal/**").authenticated()
+                                                .requestMatchers(HttpMethod.PUT, "/api/usuarios/change-password").authenticated()
                                                 .requestMatchers(HttpMethod.POST, "/api/usuarios/**")
                                                 .hasAnyRole("SUPERADMIN", "ADMIN")
                                                 .requestMatchers(HttpMethod.PUT, "/api/usuarios/**")

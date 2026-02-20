@@ -49,6 +49,7 @@ public class MotivosMesaAyudaAdminServiceImpl implements MotivosMesaAyudaAdminSe
                 .codigo(request.codigo())
                 .descripcion(request.descripcion())
                 .orden(request.orden() != null ? request.orden() : 0)
+                .prioridad(request.prioridad() != null ? request.prioridad() : "MEDIA")
                 .activo(true)
                 .build();
         DimMotivosMesaAyuda guardado = motivoRepository.save(motivo);
@@ -64,6 +65,9 @@ public class MotivosMesaAyudaAdminServiceImpl implements MotivosMesaAyudaAdminSe
         motivo.setDescripcion(request.descripcion());
         if (request.orden() != null) {
             motivo.setOrden(request.orden());
+        }
+        if (request.prioridad() != null) {
+            motivo.setPrioridad(request.prioridad());
         }
         DimMotivosMesaAyuda actualizado = motivoRepository.save(motivo);
         return mapToDTO(actualizado);
@@ -103,6 +107,7 @@ public class MotivosMesaAyudaAdminServiceImpl implements MotivosMesaAyudaAdminSe
                 .descripcion(motivo.getDescripcion())
                 .activo(motivo.getActivo())
                 .orden(motivo.getOrden())
+                .prioridad(motivo.getPrioridad())
                 .fechaCreacion(motivo.getFechaCreacion())
                 .build();
     }

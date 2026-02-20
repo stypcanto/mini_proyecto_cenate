@@ -602,6 +602,73 @@ public class TicketMesaAyudaService {
             .build();
     }
 
+    // ========== BOLSA DE REPROGRAMACIÓN ==========
+
+    /**
+     * Enviar paciente del ticket a la Bolsa de Reprogramación (BOLSA_MESA_DE_AYUDA)
+     * Crea una nueva entrada en dim_solicitud_bolsa con id_bolsa=13
+     *
+     * Si el paciente ya está en esa bolsa, retorna mensaje informativo sin error.
+     *
+     * @param ticketId ID del ticket con datos del paciente
+     * @return Map con mensaje y numeroSolicitud (o mensaje ya existente)
+     */
+    @Transactional
+    public Map<String, Object> enviarABolsaReprogramacion(Long ticketId) {
+        log.info("Enviando paciente a Bolsa Reprogramación - Ticket ID: {}", ticketId);
+
+        TicketMesaAyuda ticket = ticketRepository.findByIdAndDeletedAtIsNull(ticketId)
+            .orElseThrow(() -> new IllegalArgumentException("Ticket no encontrado con ID: " + ticketId));
+
+        String dniPaciente = ticket.getDniPaciente();
+        if (dniPaciente == null || dniPaciente.isBlank()) {
+            throw new IllegalArgumentException("El ticket no tiene DNI de paciente para enviar a la bolsa");
+        }
+
+        final Long ID_BOLSA_MESA_DE_AYUDA = 13L;
+        final Long ID_ESTADO_PENDIENTE_CITA = 11L;
+        final Long ID_SERVICIO_DEFAULT = 1L;
+
+        // Verificar si el paciente ya está en la bolsa
+        boolean yaExiste = solicitudBolsaRepository.existsByIdBolsaAndPacienteId(
+            ID_BOLSA_MESA_DE_AYUDA, dniPaciente);
+
+        if (yaExiste) {
+            log.info("Paciente {} ya existe en BOLSA_MESA_DE_AYUDA, omitiendo duplicado", dniPaciente);
+            Map<String, Object> response = new HashMap<>();
+            response.put("mensaje", "El paciente ya se encontraba en la Bolsa de Reprogramación");
+            response.put("yaExistia", true);
+            return response;
+        }
+
+        // Generar número de solicitud único
+        String numeroSolicitud = String.format("MESA-%d-%d", ticketId, System.currentTimeMillis());
+
+        SolicitudBolsa solicitud = SolicitudBolsa.builder()
+            .numeroSolicitud(numeroSolicitud)
+            .pacienteId(dniPaciente)
+            .pacienteDni(dniPaciente)
+            .pacienteNombre(ticket.getNombrePaciente() != null ? ticket.getNombrePaciente() : "SIN NOMBRE")
+            .especialidad(ticket.getEspecialidad())
+            .tipoDocumento(ticket.getTipoDocumento() != null ? ticket.getTipoDocumento() : "DNI")
+            .idBolsa(ID_BOLSA_MESA_DE_AYUDA)
+            .idServicio(ID_SERVICIO_DEFAULT)
+            .estadoGestionCitasId(ID_ESTADO_PENDIENTE_CITA)
+            .estado("PENDIENTE")
+            .activo(true)
+            .build();
+
+        solicitudBolsaRepository.save(solicitud);
+        log.info("Paciente {} enviado exitosamente a BOLSA_MESA_DE_AYUDA - Solicitud: {}",
+            dniPaciente, numeroSolicitud);
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("mensaje", "Paciente enviado exitosamente a la Bolsa de Reprogramación");
+        response.put("numeroSolicitud", numeroSolicitud);
+        response.put("yaExistia", false);
+        return response;
+    }
+
     // ========== UTILIDADES INTERNAS ==========
 
     /**
@@ -617,12 +684,15 @@ public class TicketMesaAyudaService {
             LocalDateTime.now(ZONA_PERU)
         );
 
-        // Obtener descripción del motivo si existe
+        // Obtener descripción y código del motivo si existe
         String nombreMotivo = null;
+        String codigoMotivo = null;
         if (ticket.getIdMotivo() != null) {
-            nombreMotivo = motivoRepository.findById(ticket.getIdMotivo())
-                .map(DimMotivosMesaAyuda::getDescripcion)
-                .orElse(null);
+            Optional<DimMotivosMesaAyuda> motivoOpt = motivoRepository.findById(ticket.getIdMotivo());
+            if (motivoOpt.isPresent()) {
+                nombreMotivo = motivoOpt.get().getDescripcion();
+                codigoMotivo = motivoOpt.get().getCodigo();
+            }
         }
 
         // Obtener teléfonos del paciente desde tabla asegurados (por DNI)
@@ -668,6 +738,7 @@ public class TicketMesaAyudaService {
             .fechaActualizacion(ticket.getFechaActualizacion())
             .horasDesdeCreacion(horasDesdeCreacion)
             .idMotivo(ticket.getIdMotivo())
+            .codigoMotivo(codigoMotivo)
             .nombreMotivo(nombreMotivo)
             .observaciones(ticket.getObservaciones())
             .numeroTicket(ticket.getNumeroTicket())

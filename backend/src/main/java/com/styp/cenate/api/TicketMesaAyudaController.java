@@ -462,6 +462,34 @@ public class TicketMesaAyudaController {
         }
     }
 
+    // ========== BOLSA DE REPROGRAMACIÓN ==========
+
+    /**
+     * Enviar paciente del ticket a la Bolsa de Reprogramación (BOLSA_MESA_DE_AYUDA)
+     * Solo aplica para motivos PS_CITA_REPROGRAMADA
+     *
+     * @param id ID del ticket
+     * @return Mensaje de éxito o error
+     */
+    @PostMapping("/tickets/{id}/bolsa-reprogramacion")
+    public ResponseEntity<?> enviarABolsaReprogramacion(
+        @PathVariable @NotNull Long id
+    ) {
+        log.info("POST /api/mesa-ayuda/tickets/{}/bolsa-reprogramacion - Enviando a Bolsa", id);
+
+        try {
+            Map<String, Object> resultado = ticketService.enviarABolsaReprogramacion(id);
+            return ResponseEntity.ok(resultado);
+        } catch (IllegalArgumentException e) {
+            log.warn("Error al enviar a bolsa de reprogramación: {}", e.getMessage());
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        } catch (Exception e) {
+            log.error("Error al enviar a bolsa de reprogramación: ", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(Map.of("error", "Error al procesar la solicitud: " + e.getMessage()));
+        }
+    }
+
     // ========== KPIs ==========
 
     /**

@@ -12,6 +12,7 @@ import { NavLink, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import usePermissions from "../hooks/usePermissions";
 import { VERSION } from "../config/version";
+import ExternoSidebar from "./ExternoSidebar";
 import {
   LayoutDashboard,
   Users,
@@ -454,34 +455,38 @@ export default function DynamicSidebar({ collapsed = false, onToggleCollapse }) 
         </div>
       </div>
 
-      {/* Menu de navegacion dinamico */}
-      <nav className={`flex-1 py-4 space-y-2 scrollbar-thin scrollbar-thumb-slate-700 scrollbar-track-transparent transition-all duration-300 ${collapsed ? 'px-2' : 'px-4'}`} style={{ overflowY: 'auto', overflowX: 'visible', position: 'relative' }}>
-        {loading && (
-          <p className={`text-center text-slate-400 text-sm ${collapsed ? 'text-xs' : ''}`}>
-            {collapsed ? '...' : 'Cargando permisos...'}
-          </p>
-        )}
+      {/* Menu de navegacion: sidebar estático para EXTERNO, dinámico para otros roles */}
+      {isExterno ? (
+        <ExternoSidebar collapsed={collapsed} VERSION={VERSION} />
+      ) : (
+        <nav className={`flex-1 py-4 space-y-2 scrollbar-thin scrollbar-thumb-slate-700 scrollbar-track-transparent transition-all duration-300 ${collapsed ? 'px-2' : 'px-4'}`} style={{ overflowY: 'auto', overflowX: 'visible', position: 'relative' }}>
+          {loading && (
+            <p className={`text-center text-slate-400 text-sm ${collapsed ? 'text-xs' : ''}`}>
+              {collapsed ? '...' : 'Cargando permisos...'}
+            </p>
+          )}
 
-        {!loading && modulosPermitidos && modulosPermitidos.length === 0 && (
-          <p className="text-center text-slate-500 text-sm px-2">
-            No tienes modulos asignados
-          </p>
-        )}
+          {!loading && modulosPermitidos && modulosPermitidos.length === 0 && (
+            <p className="text-center text-slate-500 text-sm px-2">
+              No tienes modulos asignados
+            </p>
+          )}
 
-        {!loading && modulosPermitidos && modulosPermitidos.map((modulo, index) => (
-          <DynamicModuleSection
-            key={modulo.idModulo || index}
-            modulo={modulo}
-            colorConfig={getModuleColor(index)}
-            location={location}
-            toggleSection={toggleSection}
-            openSections={openSections}
-            collapsed={collapsed}
-            getIconComponent={getIconComponent}
-            isPersonal107={isPersonal107}
-          />
-        ))}
-      </nav>
+          {!loading && modulosPermitidos && modulosPermitidos.map((modulo, index) => (
+            <DynamicModuleSection
+              key={modulo.idModulo || index}
+              modulo={modulo}
+              colorConfig={getModuleColor(index)}
+              location={location}
+              toggleSection={toggleSection}
+              openSections={openSections}
+              collapsed={collapsed}
+              getIconComponent={getIconComponent}
+              isPersonal107={isPersonal107}
+            />
+          ))}
+        </nav>
+      )}
 
       {/* Estado del Sistema (solo para usuarios privilegiados) */}
       {isPrivileged && (

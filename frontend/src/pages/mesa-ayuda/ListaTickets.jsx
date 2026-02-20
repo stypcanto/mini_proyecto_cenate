@@ -63,7 +63,7 @@ function ListaTickets() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [currentPage, setCurrentPage] = useState(0);
-  const [pageSize, setPageSize] = useState(20);
+  const [pageSize, setPageSize] = useState(15);
   const [totalPages, setTotalPages] = useState(0);
 
   // Filtros
@@ -531,43 +531,40 @@ function ListaTickets() {
                     <th className="px-2 py-3 text-center text-xs font-semibold text-white uppercase tracking-wider w-10">
                     </th>
                   )}
-                  <th className="px-4 py-3 text-center text-xs font-semibold text-white uppercase tracking-wider w-16">
+                  <th className="px-3 py-2.5 text-center text-xs font-semibold text-white uppercase tracking-wider w-12">
                     Info
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider whitespace-nowrap">
-                    Código Ticket
+                  <th className="px-3 py-2.5 text-left text-xs font-semibold text-white uppercase tracking-wider whitespace-nowrap">
+                    Ticket
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">
+                  <th className="px-3 py-2.5 text-left text-xs font-semibold text-white uppercase tracking-wider whitespace-nowrap">
                     Profesional de Salud
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">
+                  <th className="px-3 py-2.5 text-left text-xs font-semibold text-white uppercase tracking-wider whitespace-nowrap">
                     Especialidad
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">
-                    Tipo Doc.
+                  <th className="px-3 py-2.5 text-left text-xs font-semibold text-white uppercase tracking-wider whitespace-nowrap">
+                    Documento
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">
-                    N° Documento
+                  <th className="px-3 py-2.5 text-left text-xs font-semibold text-white uppercase tracking-wider">
+                    Asegurado
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">
-                    Nombre del Asegurado
+                  <th className="px-3 py-2.5 text-left text-xs font-semibold text-white uppercase tracking-wider">
+                    Motivo
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">
-                    Motivo de Incidencia
+                  <th className="px-3 py-2.5 text-left text-xs font-semibold text-white uppercase tracking-wider whitespace-nowrap">
+                    Estado
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">
-                    Estado de Atención
+                  <th className="px-3 py-2.5 text-left text-xs font-semibold text-white uppercase tracking-wider whitespace-nowrap">
+                    Prioridad
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider whitespace-nowrap">
-                    Prioridad de Ticket
+                  <th className="px-3 py-2.5 text-left text-xs font-semibold text-white uppercase tracking-wider whitespace-nowrap">
+                    Asignado a
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">
-                    Personal Asignado
+                  <th className="px-3 py-2.5 text-center text-xs font-semibold text-white uppercase tracking-wider whitespace-nowrap">
+                    Espera
                   </th>
-                  <th className="px-6 py-3 text-center text-xs font-semibold text-white uppercase tracking-wider">
-                    Tiempo de Espera
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">
+                  <th className="px-3 py-2.5 text-left text-xs font-semibold text-white uppercase tracking-wider">
                     Acción
                   </th>
                 </tr>
@@ -579,7 +576,7 @@ function ListaTickets() {
                     className={`border-b border-gray-200 hover:bg-gray-50 transition-colors ${selectedTickets.has(ticket.id) ? 'bg-blue-50/50' : ''}`}
                   >
                     {modoConfig.mostrarSeleccionMultiple && (
-                      <td className="px-3 py-4 text-center">
+                      <td className="px-3 py-2.5 text-center">
                         {!ticket.nombrePersonalAsignado && ticket.estado !== 'RESUELTO' ? (
                           <input
                             type="checkbox"
@@ -593,7 +590,7 @@ function ListaTickets() {
                       </td>
                     )}
                     {modoConfig.mostrarSemaforo && (
-                      <td className="px-2 py-4 text-center">
+                      <td className="px-2 py-2.5 text-center">
                         {(() => {
                           const sem = getSemaforo(ticket.fechaCreacion);
                           return (
@@ -604,60 +601,60 @@ function ListaTickets() {
                         })()}
                       </td>
                     )}
-                    <td className="px-4 py-4 text-center">
+                    <td className="px-3 py-2.5 text-center">
                       <button
                         className="p-1.5 rounded-lg text-[#0a5ba9] hover:bg-blue-50 transition-colors"
                         title="Ver detalle"
                         onClick={() => setTicketDetalle(ticket)}
                       >
-                        <Eye size={18} />
+                        <Eye size={16} />
                       </button>
                     </td>
-                    <td className="px-6 py-4 text-sm text-blue-700 font-bold whitespace-nowrap">
+                    <td className="px-3 py-2.5 text-sm text-blue-700 font-bold whitespace-nowrap">
                       {ticket.numeroTicket || `#${ticket.id}`}
                     </td>
-                    <td className="px-6 py-4 text-sm text-gray-900">
-                      {ticket.nombreMedico || 'N/A'}
+                    <td className="px-3 py-2.5 text-sm text-gray-900 max-w-[140px]">
+                      <span className="block truncate" title={ticket.nombreMedico || 'N/A'}>{ticket.nombreMedico || 'N/A'}</span>
                     </td>
-                    <td className="px-6 py-4 text-sm text-gray-600">
-                      {ticket.especialidad || 'N/A'}
+                    <td className="px-3 py-2.5 text-xs text-gray-500 whitespace-nowrap max-w-[120px]">
+                      <span className="block truncate" title={ticket.especialidad || 'N/A'}>{ticket.especialidad || 'N/A'}</span>
                     </td>
-                    <td className="px-6 py-4 text-sm text-gray-600">
-                      {ticket.tipoDocumento || 'DNI'}
+                    <td className="px-3 py-2.5 text-sm text-gray-700 whitespace-nowrap">
+                      <span className="text-xs text-gray-400">{ticket.tipoDocumento || 'DNI'}</span>
+                      {' '}
+                      <span className="font-medium">{ticket.dniPaciente || 'N/A'}</span>
                     </td>
-                    <td className="px-6 py-4 text-sm text-gray-900 font-medium">
-                      {ticket.dniPaciente || 'N/A'}
+                    <td className="px-3 py-2.5 text-sm text-gray-900 max-w-[160px]">
+                      <span className="block truncate" title={ticket.nombrePaciente || 'N/A'}>{ticket.nombrePaciente || 'N/A'}</span>
                     </td>
-                    <td className="px-6 py-4 text-sm text-gray-900">
-                      {ticket.nombrePaciente || 'N/A'}
+                    <td className="px-3 py-2.5 text-sm text-gray-600 max-w-[180px]">
+                      <span className="block truncate" title={ticket.nombreMotivo || ticket.titulo || 'N/A'}>{ticket.nombreMotivo || ticket.titulo || 'N/A'}</span>
                     </td>
-                    <td className="px-6 py-4 text-sm text-gray-900 max-w-[220px]">
-                      <span className="line-clamp-3 break-words">{ticket.nombreMotivo || ticket.titulo || 'N/A'}</span>
-                    </td>
-                    <td className="px-6 py-4">
+                    <td className="px-3 py-2.5">
                       {(() => {
                         const cfg = getEstadoConfig(ticket.estado);
                         const Icon = cfg.icon;
                         const isResuelto = ticket.estado === 'RESUELTO';
                         return (
-                          <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-semibold ${cfg.color}`}>
-                            <Icon size={14} />
+                          <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-md border text-xs font-semibold whitespace-nowrap ${cfg.color}`}>
+                            <Icon size={12} />
                             {cfg.label}
-                            {!isResuelto && <ChevronDown size={12} className="ml-0.5 opacity-60" />}
+                            {!isResuelto && <ChevronDown size={11} className="ml-0.5 opacity-60" />}
                           </span>
                         );
                       })()}
                     </td>
-                    <td className="px-6 py-4">
-                      <span className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${getPrioridadBadgeColor(ticket.prioridad)}`}>
+                    <td className="px-3 py-2.5">
+                      <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-semibold ${getPrioridadBadgeColor(ticket.prioridad)}`}>
                         {ticket.prioridad}
                       </span>
                     </td>
                     {/* Columna Personal Asignado */}
-                    <td className="px-6 py-4">
+                    <td className="px-3 py-2.5">
                       {ticket.nombrePersonalAsignado ? (
                         <div
-                          className={`flex items-center gap-2 ${ticket.estado !== 'RESUELTO' && hasRole('SUPERADMIN') ? 'cursor-pointer group' : 'cursor-default'}`}
+                          className={`flex items-center gap-1.5 ${ticket.estado !== 'RESUELTO' && hasRole('SUPERADMIN') ? 'cursor-pointer group' : 'cursor-default'}`}
+                          title={ticket.nombrePersonalAsignado}
                           onClick={(e) => {
                             if (ticket.estado === 'RESUELTO') return;
                             if (!hasRole('SUPERADMIN')) return;
@@ -670,24 +667,24 @@ function ListaTickets() {
                             }
                           }}
                         >
-                          <div className={`w-7 h-7 rounded-full ${getAvatarColor(ticket.nombrePersonalAsignado)} flex items-center justify-center text-white text-xs font-bold flex-shrink-0`}>
+                          <div className={`w-6 h-6 rounded-full ${getAvatarColor(ticket.nombrePersonalAsignado)} flex items-center justify-center text-white text-xs font-bold flex-shrink-0`}>
                             {ticket.nombrePersonalAsignado.charAt(0).toUpperCase()}
                           </div>
-                          <span className="text-sm text-gray-900 truncate max-w-[120px]">
+                          <span className="text-xs text-gray-800 truncate max-w-[100px]">
                             {ticket.nombrePersonalAsignado}
                           </span>
                           {ticket.estado !== 'RESUELTO' && hasRole('SUPERADMIN') && (
-                            <ChevronDown size={14} className="text-gray-400 group-hover:text-gray-600 flex-shrink-0" />
+                            <ChevronDown size={12} className="text-gray-400 group-hover:text-gray-600 flex-shrink-0" />
                           )}
                         </div>
                       ) : ticket.estado === 'RESUELTO' ? (
-                        <div className="flex items-center gap-2 opacity-50">
-                          <UserCircle size={20} className="text-gray-300 flex-shrink-0" />
-                          <span className="text-sm text-gray-400 italic">Sin asignar</span>
+                        <div className="flex items-center gap-1.5 opacity-50">
+                          <UserCircle size={16} className="text-gray-300 flex-shrink-0" />
+                          <span className="text-xs text-gray-400 italic">Sin asignar</span>
                         </div>
                       ) : hasRole('SUPERADMIN') ? (
                         <button
-                          className="flex items-center gap-2 px-3 py-1.5 rounded-lg border-2 border-dashed border-blue-300 bg-blue-50 hover:bg-blue-100 hover:border-blue-400 transition-all cursor-pointer group"
+                          className="flex items-center gap-1.5 px-2 py-1 rounded-lg border border-dashed border-blue-300 bg-blue-50 hover:bg-blue-100 hover:border-blue-400 transition-all cursor-pointer group"
                           onClick={(e) => {
                             if (dropdownTicketId === ticket.id) {
                               setDropdownTicketId(null);
@@ -698,41 +695,41 @@ function ListaTickets() {
                             }
                           }}
                         >
-                          <UserCircle size={18} className="text-blue-400 group-hover:text-blue-500 flex-shrink-0" />
-                          <span className="text-sm text-blue-600 group-hover:text-blue-700 font-medium">Asignar</span>
-                          <ChevronDown size={14} className="text-blue-400 group-hover:text-blue-500 flex-shrink-0" />
+                          <UserCircle size={14} className="text-blue-400 group-hover:text-blue-500 flex-shrink-0" />
+                          <span className="text-xs text-blue-600 group-hover:text-blue-700 font-medium">Asignar</span>
+                          <ChevronDown size={11} className="text-blue-400 group-hover:text-blue-500 flex-shrink-0" />
                         </button>
                       ) : (
                         <button
-                          className="flex items-center gap-2 px-3 py-1.5 rounded-lg border-2 border-dashed border-blue-300 bg-blue-50 hover:bg-blue-100 hover:border-blue-400 transition-all cursor-pointer group"
+                          className="flex items-center gap-1.5 px-2 py-1 rounded-lg border border-dashed border-blue-300 bg-blue-50 hover:bg-blue-100 hover:border-blue-400 transition-all cursor-pointer group"
                           onClick={() => handleAsignar(ticket.id, usuario.id, usuario.nombre)}
                         >
-                          <UserCircle size={18} className="text-blue-400 group-hover:text-blue-500 flex-shrink-0" />
-                          <span className="text-sm text-blue-600 group-hover:text-blue-700 font-medium">Asignarme</span>
+                          <UserCircle size={14} className="text-blue-400 group-hover:text-blue-500 flex-shrink-0" />
+                          <span className="text-xs text-blue-600 group-hover:text-blue-700 font-medium">Asignarme</span>
                         </button>
                       )}
 
                     </td>
                     {/* Columna Tiempo de Espera */}
-                    <td className="px-6 py-4 text-center">
+                    <td className="px-3 py-2.5 text-center">
                       <button
                         onClick={() => setTicketTiempo(ticket)}
-                        className="p-1.5 rounded-lg text-orange-500 hover:bg-orange-50 transition-colors"
+                        className="p-1 rounded-lg text-orange-500 hover:bg-orange-50 transition-colors"
                         title="Ver tiempo de espera"
                       >
-                        <Timer size={18} />
+                        <Timer size={16} />
                       </button>
                     </td>
-                    <td className="px-6 py-4">
+                    <td className="px-3 py-2.5">
                       {ticket.estado === 'NUEVO' || ticket.estado === 'EN_PROCESO' ? (
                         <button
                           onClick={() => handleResponderClick(ticket)}
-                          className="px-4 py-2 bg-blue-600 text-white text-xs font-medium rounded-lg hover:bg-blue-700 transition-colors"
+                          className="px-3 py-1.5 bg-blue-600 text-white text-xs font-medium rounded-lg hover:bg-blue-700 transition-colors whitespace-nowrap"
                         >
                           Responder
                         </button>
                       ) : (
-                        <span className="inline-block px-4 py-2 bg-green-100 text-green-800 text-xs font-semibold rounded-lg">
+                        <span className="inline-block px-3 py-1 bg-green-100 text-green-800 text-xs font-semibold rounded-lg whitespace-nowrap">
                           Resuelto
                         </span>
                       )}
@@ -746,24 +743,86 @@ function ListaTickets() {
 
         {/* Paginación */}
         {!loading && totalPages > 0 && (
-          <div className="px-6 py-4 border-t border-gray-200 flex items-center justify-between">
-            <div className="text-sm text-gray-600">
-              Página {currentPage + 1} de {totalPages} ({tickets.length} registros)
+          <div className="px-6 py-4 border-t border-gray-200 flex flex-col sm:flex-row items-center justify-between gap-3">
+            <div className="text-sm text-gray-500">
+              Página <span className="font-semibold text-gray-700">{currentPage + 1}</span> de{' '}
+              <span className="font-semibold text-gray-700">{totalPages}</span>
+              {' '}·{' '}
+              <span className="font-semibold text-gray-700">{tickets.length}</span> registros en esta página
             </div>
-            <div className="flex gap-2">
+            <div className="flex items-center gap-1">
+              {/* Primera página */}
+              <button
+                onClick={() => setCurrentPage(0)}
+                disabled={currentPage === 0}
+                className="px-2 py-1.5 border border-gray-300 rounded-lg text-sm text-gray-600 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                title="Primera página"
+              >
+                «
+              </button>
+              {/* Anterior */}
               <button
                 onClick={() => setCurrentPage(Math.max(0, currentPage - 1))}
                 disabled={currentPage === 0}
-                className="px-3 py-1 border border-gray-300 rounded text-sm hover:bg-gray-50 disabled:opacity-50"
+                className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm text-gray-600 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
               >
-                Anterior
+                ‹ Anterior
               </button>
+
+              {/* Números de página */}
+              {(() => {
+                const pages = [];
+                const delta = 2;
+                const left = Math.max(0, currentPage - delta);
+                const right = Math.min(totalPages - 1, currentPage + delta);
+
+                if (left > 0) {
+                  pages.push(0);
+                  if (left > 1) pages.push('...');
+                }
+                for (let i = left; i <= right; i++) pages.push(i);
+                if (right < totalPages - 1) {
+                  if (right < totalPages - 2) pages.push('...');
+                  pages.push(totalPages - 1);
+                }
+
+                return pages.map((p, idx) =>
+                  p === '...' ? (
+                    <span key={`ellipsis-${idx}`} className="px-2 py-1.5 text-sm text-gray-400 select-none">
+                      …
+                    </span>
+                  ) : (
+                    <button
+                      key={p}
+                      onClick={() => setCurrentPage(p)}
+                      className={`w-9 h-8 rounded-lg text-sm font-medium transition-colors border ${
+                        p === currentPage
+                          ? 'bg-[#0a5ba9] text-white border-[#0a5ba9] shadow-sm'
+                          : 'border-gray-300 text-gray-600 hover:bg-gray-50'
+                      }`}
+                    >
+                      {p + 1}
+                    </button>
+                  )
+                );
+              })()}
+
+              {/* Siguiente */}
               <button
                 onClick={() => setCurrentPage(Math.min(totalPages - 1, currentPage + 1))}
                 disabled={currentPage >= totalPages - 1}
-                className="px-3 py-1 border border-gray-300 rounded text-sm hover:bg-gray-50 disabled:opacity-50"
+                className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm text-gray-600 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
               >
-                Siguiente
+                Siguiente ›
+              </button>
+              {/* Última página */}
+              <button
+                onClick={() => setCurrentPage(totalPages - 1)}
+                disabled={currentPage >= totalPages - 1}
+                className="px-2 py-1.5 border border-gray-300 rounded-lg text-sm text-gray-600 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                title="Última página"
+              >
+                »
               </button>
             </div>
           </div>
@@ -899,179 +958,197 @@ function ListaTickets() {
       {/* Modal Detalle Ticket */}
       {ticketDetalle && (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
-          <div className="fixed inset-0 bg-black/40" onClick={() => { setTicketDetalle(null); setEditandoTelefonos(false); }} />
-          <div className="relative bg-gray-50 rounded-2xl shadow-2xl w-full max-w-5xl mx-4 max-h-[90vh] overflow-y-auto">
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm" onClick={() => { setTicketDetalle(null); setEditandoTelefonos(false); }} />
+          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-5xl mx-4 max-h-[90vh] overflow-y-auto">
             {/* Header del modal */}
-            <div className="bg-white px-8 py-5 border-b border-gray-200 rounded-t-2xl flex items-center justify-between">
-              <div>
-                <h2 className="text-xl font-bold text-gray-900">Detalle del Ticket</h2>
-                <p className="text-sm text-gray-500 mt-0.5">Ticket {ticketDetalle.numeroTicket}</p>
+            <div className="bg-[#0a5ba9] px-8 py-5 rounded-t-2xl flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold text-white">Detalle del Ticket</h2>
+                  <div className="flex items-center gap-2 mt-0.5">
+                    <span className="text-sm text-blue-200">{ticketDetalle.numeroTicket}</span>
+                    {ticketDetalle.prioridad && (
+                      <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
+                        ticketDetalle.prioridad === 'ALTA' ? 'bg-red-500 text-white' :
+                        ticketDetalle.prioridad === 'MEDIA' ? 'bg-amber-400 text-white' :
+                        'bg-green-500 text-white'
+                      }`}>{ticketDetalle.prioridad}</span>
+                    )}
+                  </div>
+                </div>
               </div>
               <button
                 onClick={() => { setTicketDetalle(null); setEditandoTelefonos(false); }}
-                className="p-2 hover:bg-gray-100 rounded-lg transition-colors text-gray-400 hover:text-gray-600"
+                className="p-2 hover:bg-white/20 rounded-lg transition-colors text-white/70 hover:text-white"
               >
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
               </button>
             </div>
 
             {/* Contenido - 3 tarjetas */}
-            <div className="p-8 grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="p-6 bg-gray-50 grid grid-cols-1 md:grid-cols-3 gap-5">
               {/* Tarjeta 1: Información del Solicitante */}
-              <div className="bg-white rounded-xl border-2 border-teal-200 p-6">
-                <div className="flex items-center gap-2 mb-5">
-                  <UserCircle size={20} className="text-teal-600" />
-                  <h3 className="font-semibold text-gray-900">Información del Solicitante</h3>
+              <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+                <div className="flex items-center gap-2 px-5 py-3.5 border-b border-gray-100 bg-emerald-50">
+                  <UserCircle size={18} className="text-emerald-700" />
+                  <h3 className="font-semibold text-emerald-700 text-sm">Información del Solicitante</h3>
                 </div>
-
-                <div className="flex items-center gap-3 mb-4">
-                  <div className={`w-10 h-10 rounded-full ${getAvatarColor(ticketDetalle.nombreMedico || 'N')} flex items-center justify-center text-white font-bold`}>
-                    {(ticketDetalle.nombreMedico || 'N').charAt(0).toUpperCase()}
+                <div className="p-5">
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className={`w-10 h-10 rounded-full ${getAvatarColor(ticketDetalle.nombreMedico || 'N')} flex items-center justify-center text-white font-bold text-sm flex-shrink-0`}>
+                      {(ticketDetalle.nombreMedico || 'N').charAt(0).toUpperCase()}
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-400">Profesional de Salud</p>
+                      <p className="font-semibold text-gray-900 text-sm">{ticketDetalle.nombreMedico || 'N/A'}</p>
+                    </div>
                   </div>
+
+                  <div className="bg-gray-50 rounded-lg p-3 mb-3 border border-gray-100">
+                    <p className="text-xs text-gray-400 mb-0.5">Especialidad</p>
+                    <p className="text-sm font-medium text-gray-800">{ticketDetalle.especialidad || 'N/A'}</p>
+                  </div>
+
                   <div>
-                    <p className="text-xs text-gray-500">Nombre</p>
-                    <p className="font-semibold text-gray-900">{ticketDetalle.nombreMedico || 'N/A'}</p>
+                    <p className="text-xs text-gray-400 mb-1.5">Categoría</p>
+                    <span className="inline-block bg-blue-600 text-white text-xs font-medium px-3 py-1.5 rounded-lg leading-snug">
+                      {ticketDetalle.nombreMotivo || ticketDetalle.titulo || 'Sin categoría'}
+                    </span>
                   </div>
-                </div>
-
-                <div className="bg-gray-50 rounded-lg p-3 mb-3">
-                  <p className="text-xs text-gray-500">Especialidad</p>
-                  <p className="text-sm font-medium text-gray-900">{ticketDetalle.especialidad || 'N/A'}</p>
-                </div>
-
-                <div className="mt-3">
-                  <p className="text-xs text-gray-500 mb-1">Categoría</p>
-                  <span className="inline-block bg-gray-900 text-white text-xs font-medium px-3 py-1.5 rounded-lg">
-                    {ticketDetalle.nombreMotivo || ticketDetalle.titulo || 'Sin categoría'}
-                  </span>
                 </div>
               </div>
 
               {/* Tarjeta 2: Descripción del Problema */}
-              <div className="bg-white rounded-xl border-2 border-teal-200 p-6">
-                <div className="flex items-center gap-2 mb-5">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-teal-600"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
-                  <h3 className="font-semibold text-gray-900">Descripción del Problema</h3>
+              <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+                <div className="flex items-center gap-2 px-5 py-3.5 border-b border-gray-100 bg-emerald-50">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-emerald-700"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                  <h3 className="font-semibold text-emerald-700 text-sm">Descripción del Problema</h3>
                 </div>
-                <p className="text-sm text-gray-700 leading-relaxed">
-                  {ticketDetalle.observaciones || ticketDetalle.descripcion || 'Sin descripción'}
-                </p>
+                <div className="p-5">
+                  <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">
+                    {ticketDetalle.observaciones || ticketDetalle.descripcion || 'Sin descripción'}
+                  </p>
+                </div>
               </div>
 
               {/* Tarjeta 3: Datos del Paciente */}
-              <div className="bg-white rounded-xl border-2 border-teal-200 p-6">
-                <div className="flex items-center gap-2 mb-5">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-teal-600"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-                  <h3 className="font-semibold text-gray-900">Datos del Paciente</h3>
+              <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+                <div className="flex items-center gap-2 px-5 py-3.5 border-b border-gray-100 bg-emerald-50">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-emerald-700"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                  <h3 className="font-semibold text-emerald-700 text-sm">Datos del Paciente</h3>
                 </div>
-
-                <div className="bg-teal-50 rounded-lg p-3 mb-3 border border-teal-100">
-                  <p className="text-xs text-gray-500">Nombre del Paciente</p>
-                  <p className="font-semibold text-gray-900">{ticketDetalle.nombrePaciente || 'N/A'}</p>
-                </div>
-
-                <div className="bg-gray-50 rounded-lg p-3 mb-3 flex items-center gap-3">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-gray-400 flex-shrink-0"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M7 15h0M2 9.5h20"/></svg>
-                  <div>
-                    <p className="text-xs text-gray-500">{ticketDetalle.tipoDocumento || 'DNI'}</p>
-                    <p className="text-sm font-semibold text-gray-900">{ticketDetalle.dniPaciente || 'N/A'}</p>
+                <div className="p-5">
+                  <div className="bg-blue-50 rounded-lg p-3 mb-3 border border-blue-100">
+                    <p className="text-xs text-gray-400 mb-0.5">Nombre del Paciente</p>
+                    <p className="font-semibold text-gray-900 text-sm">{ticketDetalle.nombrePaciente || 'N/A'}</p>
                   </div>
-                </div>
 
-                {/* Teléfonos - Modo lectura o edición */}
-                {!editandoTelefonos ? (
-                  <>
-                    <div className="bg-gray-50 rounded-lg p-3 mb-3 flex items-center gap-3 group/tel">
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-gray-400 flex-shrink-0"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
-                      <div className="flex-1">
-                        <p className="text-xs text-gray-500">Teléfono móvil principal</p>
-                        <p className="text-sm font-semibold text-gray-900">{ticketDetalle.telefonoPaciente || 'N/A'}</p>
-                      </div>
-                      <button
-                        onClick={handleEditarTelefonos}
-                        className="opacity-0 group-hover/tel:opacity-100 p-1.5 rounded-lg hover:bg-teal-100 text-teal-600 transition-all"
-                        title="Editar teléfonos"
-                      >
-                        <Pencil size={14} />
-                      </button>
-                    </div>
-
-                    <div className="bg-gray-50 rounded-lg p-3 mb-3 flex items-center gap-3 group/tel2">
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-gray-400 flex-shrink-0"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
-                      <div className="flex-1">
-                        <p className="text-xs text-gray-500">Teléfono celular o fijo alterno</p>
-                        <p className="text-sm font-semibold text-gray-900">{ticketDetalle.telefonoPacienteAlterno || 'N/A'}</p>
-                      </div>
-                      <button
-                        onClick={handleEditarTelefonos}
-                        className="opacity-0 group-hover/tel2:opacity-100 p-1.5 rounded-lg hover:bg-teal-100 text-teal-600 transition-all"
-                        title="Editar teléfonos"
-                      >
-                        <Pencil size={14} />
-                      </button>
-                    </div>
-                  </>
-                ) : (
-                  <div className="bg-teal-50 rounded-lg p-3 mb-3 border border-teal-200">
-                    <div className="mb-3">
-                      <label className="text-xs text-gray-500 block mb-1">Teléfono móvil principal</label>
-                      <input
-                        type="text"
-                        value={telPrincipalEdit}
-                        onChange={(e) => setTelPrincipalEdit(e.target.value)}
-                        className="w-full px-3 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-teal-500 focus:border-transparent"
-                        placeholder="Ej: 987654321"
-                      />
-                    </div>
-                    <div className="mb-3">
-                      <label className="text-xs text-gray-500 block mb-1">Teléfono celular o fijo alterno</label>
-                      <input
-                        type="text"
-                        value={telAlternoEdit}
-                        onChange={(e) => setTelAlternoEdit(e.target.value)}
-                        className="w-full px-3 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-teal-500 focus:border-transparent"
-                        placeholder="Ej: 014567890"
-                      />
-                    </div>
-                    <div className="flex gap-2">
-                      <button
-                        onClick={handleGuardarTelefonos}
-                        disabled={guardandoTelefonos}
-                        className="flex items-center gap-1.5 px-3 py-1.5 bg-teal-600 text-white text-xs font-medium rounded-lg hover:bg-teal-700 disabled:opacity-50 transition-colors"
-                      >
-                        <Check size={14} />
-                        {guardandoTelefonos ? 'Guardando...' : 'Guardar'}
-                      </button>
-                      <button
-                        onClick={handleCancelarTelefonos}
-                        disabled={guardandoTelefonos}
-                        className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-200 text-gray-700 text-xs font-medium rounded-lg hover:bg-gray-300 disabled:opacity-50 transition-colors"
-                      >
-                        <X size={14} />
-                        Cancelar
-                      </button>
+                  <div className="bg-gray-50 rounded-lg p-3 mb-2.5 flex items-center gap-3 border border-gray-100">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-[#0a5ba9] flex-shrink-0"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M7 15h0M2 9.5h20"/></svg>
+                    <div>
+                      <p className="text-xs text-gray-400">{ticketDetalle.tipoDocumento || 'DNI'}</p>
+                      <p className="text-sm font-semibold text-gray-900">{ticketDetalle.dniPaciente || 'N/A'}</p>
                     </div>
                   </div>
-                )}
 
-                <div className="bg-gray-50 rounded-lg p-3 flex items-center gap-3">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-gray-400 flex-shrink-0"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-                  <div>
-                    <p className="text-xs text-gray-500">IPRESS</p>
-                    <p className="text-sm font-semibold text-gray-900">{ticketDetalle.ipress || 'N/A'}</p>
+                  {/* Teléfonos - Modo lectura o edición */}
+                  {!editandoTelefonos ? (
+                    <>
+                      <div className="bg-gray-50 rounded-lg p-3 mb-2.5 flex items-center gap-3 group/tel border border-gray-100">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-[#0a5ba9] flex-shrink-0"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+                        <div className="flex-1">
+                          <p className="text-xs text-gray-400">Teléfono móvil principal</p>
+                          <p className="text-sm font-semibold text-gray-900">{ticketDetalle.telefonoPaciente || 'N/A'}</p>
+                        </div>
+                        <button
+                          onClick={handleEditarTelefonos}
+                          className="opacity-0 group-hover/tel:opacity-100 p-1.5 rounded-lg hover:bg-blue-50 text-[#0a5ba9] transition-all"
+                          title="Editar teléfonos"
+                        >
+                          <Pencil size={14} />
+                        </button>
+                      </div>
+
+                      <div className="bg-gray-50 rounded-lg p-3 mb-2.5 flex items-center gap-3 group/tel2 border border-gray-100">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-[#0a5ba9] flex-shrink-0"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+                        <div className="flex-1">
+                          <p className="text-xs text-gray-400">Teléfono alterno</p>
+                          <p className="text-sm font-semibold text-gray-900">{ticketDetalle.telefonoPacienteAlterno || 'N/A'}</p>
+                        </div>
+                        <button
+                          onClick={handleEditarTelefonos}
+                          className="opacity-0 group-hover/tel2:opacity-100 p-1.5 rounded-lg hover:bg-blue-50 text-[#0a5ba9] transition-all"
+                          title="Editar teléfonos"
+                        >
+                          <Pencil size={14} />
+                        </button>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="bg-blue-50 rounded-lg p-3 mb-2.5 border border-blue-200">
+                      <div className="mb-3">
+                        <label className="text-xs text-gray-500 block mb-1">Teléfono móvil principal</label>
+                        <input
+                          type="text"
+                          value={telPrincipalEdit}
+                          onChange={(e) => setTelPrincipalEdit(e.target.value)}
+                          className="w-full px-3 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          placeholder="Ej: 987654321"
+                        />
+                      </div>
+                      <div className="mb-3">
+                        <label className="text-xs text-gray-500 block mb-1">Teléfono celular o fijo alterno</label>
+                        <input
+                          type="text"
+                          value={telAlternoEdit}
+                          onChange={(e) => setTelAlternoEdit(e.target.value)}
+                          className="w-full px-3 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          placeholder="Ej: 014567890"
+                        />
+                      </div>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={handleGuardarTelefonos}
+                          disabled={guardandoTelefonos}
+                          className="flex items-center gap-1.5 px-3 py-1.5 bg-[#0a5ba9] text-white text-xs font-medium rounded-lg hover:bg-blue-800 disabled:opacity-50 transition-colors"
+                        >
+                          <Check size={14} />
+                          {guardandoTelefonos ? 'Guardando...' : 'Guardar'}
+                        </button>
+                        <button
+                          onClick={handleCancelarTelefonos}
+                          disabled={guardandoTelefonos}
+                          className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-200 text-gray-700 text-xs font-medium rounded-lg hover:bg-gray-300 disabled:opacity-50 transition-colors"
+                        >
+                          <X size={14} />
+                          Cancelar
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="bg-gray-50 rounded-lg p-3 flex items-center gap-3 border border-gray-100">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-[#0a5ba9] flex-shrink-0"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                    <div>
+                      <p className="text-xs text-gray-400">IPRESS</p>
+                      <p className="text-sm font-semibold text-gray-900">{ticketDetalle.ipress || 'N/A'}</p>
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* Footer - Ocultar detalles */}
-            <div className="px-8 pb-6 flex justify-center">
+            {/* Footer */}
+            <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 rounded-b-2xl flex justify-center">
               <button
                 onClick={() => { setTicketDetalle(null); setEditandoTelefonos(false); }}
-                className="flex items-center gap-2 text-teal-600 hover:text-teal-700 font-medium text-sm transition-colors"
+                className="flex items-center gap-2 text-[#0a5ba9] hover:text-blue-800 font-medium text-sm transition-colors"
               >
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="18 15 12 9 6 15"/></svg>
-                Ocultar detalles
+                Cerrar detalle
               </button>
             </div>
           </div>

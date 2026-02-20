@@ -44,6 +44,16 @@ const MOTIVOS_INICIALES = [
 ];
 
 // ============================================================================
+// HELPERS
+// ============================================================================
+
+const PRIORIDAD_CONFIG = {
+  ALTA:  { label: 'Alta',  className: 'bg-red-100 text-red-800' },
+  MEDIA: { label: 'Media', className: 'bg-amber-100 text-amber-800' },
+  BAJA:  { label: 'Baja',  className: 'bg-green-100 text-green-800' },
+};
+
+// ============================================================================
 // COMPONENTE PRINCIPAL
 // ============================================================================
 
@@ -79,7 +89,8 @@ const MotivosMesaAyuda = () => {
   const [formData, setFormData] = useState({
     codigo: '',
     descripcion: '',
-    orden: 0
+    orden: 0,
+    prioridad: 'MEDIA'
   });
 
   // Estadisticas
@@ -169,7 +180,7 @@ const MotivosMesaAyuda = () => {
 
   const abrirModalCrear = () => {
     setModalMode('create');
-    setFormData({ codigo: '', descripcion: '', orden: 0 });
+    setFormData({ codigo: '', descripcion: '', orden: 0, prioridad: 'MEDIA' });
     setShowModal(true);
   };
 
@@ -179,7 +190,8 @@ const MotivosMesaAyuda = () => {
     setFormData({
       codigo: item.codigo,
       descripcion: item.descripcion,
-      orden: item.orden || 0
+      orden: item.orden || 0,
+      prioridad: item.prioridad || 'MEDIA'
     });
     setShowModal(true);
   };
@@ -199,7 +211,7 @@ const MotivosMesaAyuda = () => {
     setShowViewModal(false);
     setShowDeleteModal(false);
     setSelectedItem(null);
-    setFormData({ codigo: '', descripcion: '', orden: 0 });
+    setFormData({ codigo: '', descripcion: '', orden: 0, prioridad: 'MEDIA' });
   };
 
   const guardarMotivo = async () => {
@@ -364,6 +376,7 @@ const MotivosMesaAyuda = () => {
             <th className="px-6 py-4 text-left text-sm font-semibold">Codigo</th>
             <th className="px-6 py-4 text-left text-sm font-semibold">Descripcion</th>
             <th className="px-6 py-4 text-center text-sm font-semibold">Orden</th>
+            <th className="px-6 py-4 text-center text-sm font-semibold">Prioridad</th>
             <th className="px-6 py-4 text-center text-sm font-semibold">Estado</th>
             <th className="px-6 py-4 text-right text-sm font-semibold">Acciones</th>
           </tr>
@@ -371,7 +384,7 @@ const MotivosMesaAyuda = () => {
         <tbody>
           {loading ? (
             <tr>
-              <td colSpan="6" className="px-6 py-8 text-center">
+              <td colSpan="7" className="px-6 py-8 text-center">
                 <div className="flex justify-center items-center">
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
                 </div>
@@ -379,13 +392,13 @@ const MotivosMesaAyuda = () => {
             </tr>
           ) : error ? (
             <tr>
-              <td colSpan="6" className="px-6 py-8 text-center text-red-600">
+              <td colSpan="7" className="px-6 py-8 text-center text-red-600">
                 {error}
               </td>
             </tr>
           ) : motivos.length === 0 ? (
             <tr>
-              <td colSpan="6" className="px-6 py-8 text-center text-gray-500">
+              <td colSpan="7" className="px-6 py-8 text-center text-gray-500">
                 No hay motivos de mesa de ayuda
               </td>
             </tr>
@@ -399,6 +412,16 @@ const MotivosMesaAyuda = () => {
                 <td className="px-6 py-4 text-sm font-medium text-gray-900">{item.codigo}</td>
                 <td className="px-6 py-4 text-sm text-gray-600">{item.descripcion}</td>
                 <td className="px-6 py-4 text-center text-sm text-gray-600">{item.orden}</td>
+                <td className="px-6 py-4 text-center">
+                  {(() => {
+                    const cfg = PRIORIDAD_CONFIG[item.prioridad] || PRIORIDAD_CONFIG.MEDIA;
+                    return (
+                      <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${cfg.className}`}>
+                        {cfg.label}
+                      </span>
+                    );
+                  })()}
+                </td>
                 <td className="px-6 py-4 text-center">
                   <button
                     onClick={() => toggleEstado(item)}
@@ -531,6 +554,18 @@ const MotivosMesaAyuda = () => {
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Prioridad</label>
+            <select
+              value={formData.prioridad}
+              onChange={(e) => setFormData({ ...formData, prioridad: e.target.value })}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="ALTA">Alta</option>
+              <option value="MEDIA">Media</option>
+              <option value="BAJA">Baja</option>
+            </select>
+          </div>
         </div>
 
         <div className="flex gap-2 justify-end">
@@ -578,6 +613,17 @@ const MotivosMesaAyuda = () => {
             <div>
               <label className="block text-sm font-medium text-gray-700">Orden</label>
               <p className="text-gray-900">{selectedItem.orden}</p>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Prioridad</label>
+              {(() => {
+                const cfg = PRIORIDAD_CONFIG[selectedItem.prioridad] || PRIORIDAD_CONFIG.MEDIA;
+                return (
+                  <span className={`inline-block mt-1 px-2.5 py-1 rounded-full text-xs font-semibold ${cfg.className}`}>
+                    {cfg.label}
+                  </span>
+                );
+              })()}
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700">Estado</label>

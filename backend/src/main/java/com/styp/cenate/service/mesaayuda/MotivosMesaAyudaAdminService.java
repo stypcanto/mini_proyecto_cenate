@@ -24,7 +24,8 @@ public interface MotivosMesaAyudaAdminService {
     record MotivoMesaAyudaRequest(
         String codigo,
         String descripcion,
-        Integer orden
+        Integer orden,
+        String prioridad
     ) {}
 
     record EstadisticasMotivosDTO(

@@ -202,4 +202,16 @@ export const mesaAyudaService = {
     const response = await apiClient.get(`${ENDPOINT}/respuestas-predefinidas`, true);
     return response;
   },
+
+  /**
+   * Enviar paciente del ticket a la Bolsa de Reprogramación (NUEVO v1.68.0)
+   * Solo para motivo PS_CITA_REPROGRAMADA
+   * @param {number} id ID del ticket
+   * @returns {Promise} Resultado de la operación
+   */
+  enviarABolsaReprogramacion: async (id) => {
+    console.log('Enviando paciente a Bolsa Reprogramación - Ticket ID:', id);
+    const response = await apiClient.post(`${ENDPOINT}/tickets/${id}/bolsa-reprogramacion`, {}, true);
+    return response;
+  },
 };

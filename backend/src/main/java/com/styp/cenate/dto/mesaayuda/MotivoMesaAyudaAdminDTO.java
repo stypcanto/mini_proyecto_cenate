@@ -25,6 +25,7 @@ public class MotivoMesaAyudaAdminDTO {
     private String descripcion;
     private Boolean activo;
     private Integer orden;
+    private String prioridad;
     private LocalDateTime fechaCreacion;
 
 }
