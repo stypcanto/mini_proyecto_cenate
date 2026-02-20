@@ -642,6 +642,11 @@ export const componentRegistry = {
     component: lazy(() => import('../pages/mesa-ayuda/FAQsMesaAyuda')),
     requiredAction: 'ver',
   },
+
+  '/mesa-ayuda/estadisticas': {
+    component: lazy(() => import('../pages/mesa-ayuda/EstadisticasMesaAyuda')),
+    requiredAction: 'ver',
+  },
 };
 
 // ========================================================================

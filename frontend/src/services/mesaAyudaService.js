@@ -214,4 +214,13 @@ export const mesaAyudaService = {
     const response = await apiClient.post(`${ENDPOINT}/tickets/${id}/bolsa-reprogramacion`, {}, true);
     return response;
   },
+
+  /**
+   * Obtener estadísticas completas de Mesa de Ayuda (v1.68.0)
+   * @returns {Promise} Objeto con resumen, porEstado, porPrioridad, porMotivo, porPersonal, porDia, tiempoPromedio
+   */
+  obtenerEstadisticas: async () => {
+    const response = await apiClient.get(`${ENDPOINT}/estadisticas`, true);
+    return response;
+  },
 };

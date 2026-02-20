@@ -602,6 +602,104 @@ public class TicketMesaAyudaService {
             .build();
     }
 
+    // ========== ESTADÍSTICAS COMPLETAS ==========
+
+    /**
+     * Obtener estadísticas completas de Mesa de Ayuda
+     * Incluye: totales, por estado, prioridad, motivo, personal y evolución diaria
+     */
+    @Transactional(readOnly = true)
+    public Map<String, Object> obtenerEstadisticas() {
+        log.info("Calculando estadísticas completas de Mesa de Ayuda");
+        Map<String, Object> result = new HashMap<>();
+
+        // 1. Totales por estado
+        long total      = ticketRepository.countByDeletedAtIsNull();
+        long nuevos     = ticketRepository.countByEstadoAndDeletedAtIsNull("NUEVO");
+        long enProceso  = ticketRepository.countByEstadoAndDeletedAtIsNull("EN_PROCESO");
+        long resueltos  = ticketRepository.countByEstadoAndDeletedAtIsNull("RESUELTO");
+        double tasa     = total > 0 ? (resueltos * 100.0 / total) : 0.0;
+
+        Map<String, Object> resumen = new HashMap<>();
+        resumen.put("total", total);
+        resumen.put("nuevos", nuevos);
+        resumen.put("enProceso", enProceso);
+        resumen.put("resueltos", resueltos);
+        resumen.put("tasaResolucion", Math.round(tasa * 10.0) / 10.0);
+        result.put("resumen", resumen);
+
+        // 2. Por prioridad
+        List<Map<String, Object>> porPrioridad = new ArrayList<>();
+        for (String p : List.of("ALTA", "MEDIA", "BAJA")) {
+            long cnt = ticketRepository.countByPrioridadAndDeletedAtIsNull(p);
+            Map<String, Object> row = new HashMap<>();
+            row.put("prioridad", p);
+            row.put("cantidad", cnt);
+            porPrioridad.add(row);
+        }
+        result.put("porPrioridad", porPrioridad);
+
+        // 3. Por motivo (top 6)
+        List<Object[]> motivosRaw = entityManager.createNativeQuery(
+            "SELECT m.descripcion, COUNT(t.id) AS cnt " +
+            "FROM dim_ticket_mesa_ayuda t " +
+            "JOIN dim_motivos_mesadeayuda m ON t.id_motivo = m.id " +
+            "WHERE t.deleted_at IS NULL " +
+            "GROUP BY m.descripcion ORDER BY cnt DESC LIMIT 6"
+        ).getResultList();
+        List<Map<String, Object>> porMotivo = new ArrayList<>();
+        for (Object[] row : motivosRaw) {
+            Map<String, Object> m = new HashMap<>();
+            m.put("motivo", row[0]);
+            m.put("cantidad", ((Number) row[1]).longValue());
+            porMotivo.add(m);
+        }
+        result.put("porMotivo", porMotivo);
+
+        // 4. Por personal asignado (top 5 resueltos)
+        List<Object[]> personalRaw = entityManager.createNativeQuery(
+            "SELECT nombre_personal_asignado, COUNT(id) AS cnt " +
+            "FROM dim_ticket_mesa_ayuda " +
+            "WHERE deleted_at IS NULL AND nombre_personal_asignado IS NOT NULL " +
+            "GROUP BY nombre_personal_asignado ORDER BY cnt DESC LIMIT 5"
+        ).getResultList();
+        List<Map<String, Object>> porPersonal = new ArrayList<>();
+        for (Object[] row : personalRaw) {
+            Map<String, Object> m = new HashMap<>();
+            m.put("personal", row[0]);
+            m.put("cantidad", ((Number) row[1]).longValue());
+            porPersonal.add(m);
+        }
+        result.put("porPersonal", porPersonal);
+
+        // 5. Tiempo promedio de resolución (minutos)
+        Object tiempoRaw = entityManager.createNativeQuery(
+            "SELECT AVG(EXTRACT(EPOCH FROM (fecha_atencion - fecha_creacion))/60) " +
+            "FROM dim_ticket_mesa_ayuda " +
+            "WHERE deleted_at IS NULL AND estado = 'RESUELTO' AND fecha_atencion IS NOT NULL"
+        ).getSingleResult();
+        long tiempoPromedio = tiempoRaw != null ? ((Number) tiempoRaw).longValue() : 0L;
+        result.put("tiempoPromedioMinutos", tiempoPromedio);
+
+        // 6. Tickets por día (últimos 7 días)
+        List<Object[]> diasRaw = entityManager.createNativeQuery(
+            "SELECT DATE(fecha_creacion AT TIME ZONE 'America/Lima') AS dia, COUNT(id) " +
+            "FROM dim_ticket_mesa_ayuda " +
+            "WHERE deleted_at IS NULL AND fecha_creacion >= NOW() - INTERVAL '7 days' " +
+            "GROUP BY dia ORDER BY dia"
+        ).getResultList();
+        List<Map<String, Object>> porDia = new ArrayList<>();
+        for (Object[] row : diasRaw) {
+            Map<String, Object> m = new HashMap<>();
+            m.put("fecha", row[0].toString());
+            m.put("cantidad", ((Number) row[1]).longValue());
+            porDia.add(m);
+        }
+        result.put("porDia", porDia);
+
+        return result;
+    }
+
     // ========== BOLSA DE REPROGRAMACIÓN ==========
 
     /**

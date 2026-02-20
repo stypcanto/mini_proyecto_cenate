@@ -507,6 +507,19 @@ public class TicketMesaAyudaController {
         return ResponseEntity.ok(kpis);
     }
 
+    // ========== ESTADÍSTICAS ==========
+
+    /**
+     * Obtener estadísticas completas de Mesa de Ayuda
+     * GET /api/mesa-ayuda/estadisticas
+     */
+    @GetMapping("/estadisticas")
+    public ResponseEntity<Map<String, Object>> obtenerEstadisticas() {
+        log.info("GET /api/mesa-ayuda/estadisticas - Obteniendo estadísticas completas");
+        Map<String, Object> estadisticas = ticketService.obtenerEstadisticas();
+        return ResponseEntity.ok(estadisticas);
+    }
+
     // ========== ERROR HANDLING ==========
 
     /**

@@ -157,4 +157,14 @@ public interface TicketMesaAyudaRepository extends JpaRepository<TicketMesaAyuda
     List<TicketMesaAyuda> findByEstadoAndFechaRespuestaIsNullAndDeletedAtIsNullOrderByFechaCreacionDesc(
         String estado
     );
+
+    /**
+     * Contar todos los tickets no eliminados (para estadísticas)
+     */
+    Long countByDeletedAtIsNull();
+
+    /**
+     * Contar tickets por prioridad no eliminados (para estadísticas)
+     */
+    Long countByPrioridadAndDeletedAtIsNull(String prioridad);
 }

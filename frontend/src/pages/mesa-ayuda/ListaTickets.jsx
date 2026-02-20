@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef, useMemo } from 'react';
 import { useLocation } from 'react-router-dom';
-import { Zap, AlertCircle, RotateCw, ChevronDown, UserCircle, PlayCircle, Clock, CheckCircle2, Eye, Users, Archive, Pencil, Check, X, Timer, User, Stethoscope } from 'lucide-react';
+import { Zap, AlertCircle, RotateCw, ChevronDown, UserCircle, PlayCircle, Clock, CheckCircle2, Eye, Users, Archive, Pencil, Check, X, Timer, User, Stethoscope, Phone } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import ResponderTicketModal from './components/ResponderTicketModal';
 
@@ -69,6 +69,12 @@ function ListaTickets() {
   // Filtros
   const [filtroPrioridad, setFiltroPrioridad] = useState('');
   const [busquedaDni, setBusquedaDni] = useState('');
+  const [busquedaNumeroTicket, setBusquedaNumeroTicket] = useState('');
+  const [showTicketSuggestions, setShowTicketSuggestions] = useState(false);
+  const ticketInputRef = useRef(null);
+
+  // WhatsApp modal
+  const [whatsappTicket, setWhatsappTicket] = useState(null);
   const [filtroMedico, setFiltroMedico] = useState('');
   const [filtroSemaforo, setFiltroSemaforo] = useState('');
   const [filtroAsignado, setFiltroAsignado] = useState('');
@@ -109,6 +115,7 @@ function ListaTickets() {
     setCurrentPage(0);
     setFiltroPrioridad('');
     setBusquedaDni('');
+    setBusquedaNumeroTicket('');
     setFiltroMedico('');
     setFiltroSemaforo('');
     setFiltroAsignado('');
@@ -288,6 +295,35 @@ function ListaTickets() {
     }
   };
 
+  // ── WhatsApp ─────────────────────────────────────────────────────────────
+  const buildWhatsappUrl = (telefono, ticket) => {
+    // Normalizar: quitar espacios/guiones y agregar código de país Peru (51)
+    const num = telefono.replace(/[\s\-\(\)]/g, '');
+    const full = num.startsWith('51') ? num : `51${num}`;
+    const nombre = ticket.nombrePaciente || 'asegurado/a';
+    const especialidad = ticket.especialidad || 'su especialidad';
+    const mensaje =
+      `Estimado/a asegurado/a: ${nombre}\n\n` +
+      `El día de hoy tenía programada una cita en ${especialidad}. Hemos intentado comunicarnos con usted sin éxito a través de nuestro número (01) 211-8830.\n` +
+      `Por favor, comuníquese con nosotros a la brevedad o solicite la reprogramación de su cita.\n\n` +
+      `Atentamente,\nCentro Nacional de Telemedicina – CENATE (EsSalud)`;
+    return `https://wa.me/${full}?text=${encodeURIComponent(mensaje)}`;
+  };
+
+  const handleWhatsappClick = (ticket) => {
+    const tel1 = ticket.telefonoPrincipal || ticket.telefonoPaciente;
+    const tel2 = ticket.telefonoAlterno;
+    if (tel1 && tel2) {
+      // Dos teléfonos → mostrar selector
+      setWhatsappTicket(ticket);
+    } else if (tel1) {
+      window.open(buildWhatsappUrl(tel1, ticket), '_blank');
+    } else {
+      alert('Este ticket no tiene teléfono registrado.');
+    }
+  };
+  // ─────────────────────────────────────────────────────────────────────────
+
   // Iniciar edición de teléfonos
   const handleEditarTelefonos = () => {
     setTelPrincipalEdit(ticketDetalle?.telefonoPaciente || '');
@@ -335,6 +371,17 @@ function ListaTickets() {
   }, [tickets]);
 
   // Lista de personal asignado con conteo de tickets
+  // Sugerencias autocomplete para N° de Ticket
+  const ticketSuggestions = useMemo(() => {
+    if (!busquedaNumeroTicket.trim()) return [];
+    return tickets
+      .map(t => t.numeroTicket)
+      .filter(Boolean)
+      .filter((n, i, arr) => arr.indexOf(n) === i) // únicos
+      .filter(n => n.toLowerCase().includes(busquedaNumeroTicket.toLowerCase()))
+      .slice(0, 8);
+  }, [tickets, busquedaNumeroTicket]);
+
   const asignadosConCount = useMemo(() => {
     const mapa = {};
     tickets.forEach(t => {
@@ -357,6 +404,8 @@ function ListaTickets() {
 
   // Filtrar tickets por filtros locales
   const ticketsFiltrados = tickets.filter(ticket => {
+    // Filtro N° Ticket
+    if (busquedaNumeroTicket && !ticket.numeroTicket?.toLowerCase().includes(busquedaNumeroTicket.toLowerCase())) return false;
     // Filtro DNI
     if (busquedaDni && !ticket.dniPaciente?.toLowerCase().includes(busquedaDni.toLowerCase())) return false;
     // Filtro Médico
@@ -407,17 +456,62 @@ function ListaTickets() {
 
       {/* Filtros */}
       <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200 mb-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
-          {/* Buscar por DNI */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-7 gap-4">
+          {/* Buscar por N° de Ticket - Autocomplete */}
+          <div className="relative" ref={ticketInputRef}>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              N° de Ticket
+            </label>
+            <div className="relative">
+              <input
+                type="text"
+                value={busquedaNumeroTicket}
+                onChange={(e) => {
+                  setBusquedaNumeroTicket(e.target.value);
+                  setShowTicketSuggestions(true);
+                }}
+                onFocus={() => setShowTicketSuggestions(true)}
+                onBlur={() => setTimeout(() => setShowTicketSuggestions(false), 150)}
+                placeholder="Ej: 0001-2026..."
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
+              {busquedaNumeroTicket && (
+                <button
+                  onClick={() => { setBusquedaNumeroTicket(''); setShowTicketSuggestions(false); }}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                >
+                  <X size={14} />
+                </button>
+              )}
+            </div>
+            {showTicketSuggestions && ticketSuggestions.length > 0 && (
+              <ul className="absolute z-30 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg max-h-48 overflow-auto">
+                {ticketSuggestions.map(numero => (
+                  <li
+                    key={numero}
+                    onMouseDown={() => {
+                      setBusquedaNumeroTicket(numero);
+                      setShowTicketSuggestions(false);
+                    }}
+                    className="px-4 py-2 text-sm cursor-pointer hover:bg-blue-50 hover:text-blue-700 font-mono"
+                  >
+                    {numero}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+
+          {/* Buscar por DNI del Paciente */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Buscar por DNI
+              DNI del Paciente
             </label>
             <input
               type="text"
               value={busquedaDni}
               onChange={(e) => setBusquedaDni(e.target.value)}
-              placeholder="N° de documento..."
+              placeholder="DNI del paciente..."
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
@@ -794,18 +888,31 @@ function ListaTickets() {
                       </button>
                     </td>
                     <td className="px-3 py-2.5">
-                      {ticket.estado === 'NUEVO' || ticket.estado === 'EN_PROCESO' ? (
-                        <button
-                          onClick={() => handleResponderClick(ticket)}
-                          className="px-3 py-1.5 bg-blue-600 text-white text-xs font-medium rounded-lg hover:bg-blue-700 transition-colors whitespace-nowrap"
-                        >
-                          Responder
-                        </button>
-                      ) : (
-                        <span className="inline-block px-3 py-1 bg-green-100 text-green-800 text-xs font-semibold rounded-lg whitespace-nowrap">
-                          Resuelto
-                        </span>
-                      )}
+                      <div className="flex items-center gap-1.5">
+                        {/* Botón WhatsApp */}
+                        {(ticket.telefonoPrincipal || ticket.telefonoPaciente || ticket.telefonoAlterno) && (
+                          <button
+                            onClick={() => handleWhatsappClick(ticket)}
+                            className="p-1.5 rounded-lg text-green-600 hover:bg-green-50 transition-colors"
+                            title={`Enviar WhatsApp${ticket.telefonoAlterno ? ' (seleccionar teléfono)' : ''}`}
+                          >
+                            <Phone size={15} />
+                          </button>
+                        )}
+                        {/* Botón Responder / badge Resuelto */}
+                        {ticket.estado === 'NUEVO' || ticket.estado === 'EN_PROCESO' ? (
+                          <button
+                            onClick={() => handleResponderClick(ticket)}
+                            className="px-3 py-1.5 bg-blue-600 text-white text-xs font-medium rounded-lg hover:bg-blue-700 transition-colors whitespace-nowrap"
+                          >
+                            Responder
+                          </button>
+                        ) : (
+                          <span className="inline-block px-3 py-1 bg-green-100 text-green-800 text-xs font-semibold rounded-lg whitespace-nowrap">
+                            Resuelto
+                          </span>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -1025,6 +1132,82 @@ function ListaTickets() {
         }`}>
           {toastMsg.tipo === 'ok' ? <CheckCircle2 size={16} /> : <AlertCircle size={16} />}
           {toastMsg.texto}
+        </div>
+      )}
+
+      {/* Modal Selector Teléfono WhatsApp */}
+      {whatsappTicket && (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center">
+          <div className="fixed inset-0 bg-black/40" onClick={() => setWhatsappTicket(null)} />
+          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm mx-4 overflow-hidden">
+            {/* Header */}
+            <div className="bg-green-600 px-6 py-4 flex items-center justify-between">
+              <div className="flex items-center gap-2 text-white">
+                <Phone size={18} />
+                <span className="font-semibold">Enviar por WhatsApp</span>
+              </div>
+              <button onClick={() => setWhatsappTicket(null)} className="text-white/80 hover:text-white">
+                <X size={18} />
+              </button>
+            </div>
+            {/* Paciente */}
+            <div className="px-6 pt-5 pb-2">
+              <p className="text-xs text-gray-500 uppercase tracking-wide font-semibold mb-0.5">Paciente</p>
+              <p className="text-sm font-semibold text-gray-800">{whatsappTicket.nombrePaciente || 'N/A'}</p>
+              <p className="text-xs text-gray-400 mt-0.5">Especialidad: {whatsappTicket.especialidad || 'N/A'}</p>
+            </div>
+            {/* Selección de teléfono */}
+            <div className="px-6 pb-2 pt-3">
+              <p className="text-xs text-gray-500 mb-3">Selecciona el teléfono al que deseas enviar el mensaje:</p>
+              <div className="flex flex-col gap-2">
+                {(whatsappTicket.telefonoPrincipal || whatsappTicket.telefonoPaciente) && (
+                  <button
+                    onClick={() => {
+                      window.open(buildWhatsappUrl(whatsappTicket.telefonoPrincipal || whatsappTicket.telefonoPaciente, whatsappTicket), '_blank');
+                      setWhatsappTicket(null);
+                    }}
+                    className="flex items-center justify-between w-full px-4 py-3 rounded-xl border-2 border-green-200 hover:border-green-500 hover:bg-green-50 transition-all group"
+                  >
+                    <div className="text-left">
+                      <p className="text-xs text-gray-400 font-medium">Teléfono principal</p>
+                      <p className="text-sm font-bold text-gray-800 group-hover:text-green-700">
+                        {whatsappTicket.telefonoPrincipal || whatsappTicket.telefonoPaciente}
+                      </p>
+                    </div>
+                    <div className="w-8 h-8 rounded-full bg-green-100 group-hover:bg-green-500 flex items-center justify-center transition-colors">
+                      <Phone size={15} className="text-green-600 group-hover:text-white" />
+                    </div>
+                  </button>
+                )}
+                {whatsappTicket.telefonoAlterno && (
+                  <button
+                    onClick={() => {
+                      window.open(buildWhatsappUrl(whatsappTicket.telefonoAlterno, whatsappTicket), '_blank');
+                      setWhatsappTicket(null);
+                    }}
+                    className="flex items-center justify-between w-full px-4 py-3 rounded-xl border-2 border-green-200 hover:border-green-500 hover:bg-green-50 transition-all group"
+                  >
+                    <div className="text-left">
+                      <p className="text-xs text-gray-400 font-medium">Teléfono alterno</p>
+                      <p className="text-sm font-bold text-gray-800 group-hover:text-green-700">
+                        {whatsappTicket.telefonoAlterno}
+                      </p>
+                    </div>
+                    <div className="w-8 h-8 rounded-full bg-green-100 group-hover:bg-green-500 flex items-center justify-center transition-colors">
+                      <Phone size={15} className="text-green-600 group-hover:text-white" />
+                    </div>
+                  </button>
+                )}
+              </div>
+            </div>
+            {/* Preview del mensaje */}
+            <div className="mx-6 mb-5 mt-3 bg-gray-50 rounded-xl p-3 border border-gray-200">
+              <p className="text-xs text-gray-400 font-semibold mb-1">Vista previa del mensaje:</p>
+              <p className="text-xs text-gray-600 leading-relaxed whitespace-pre-line">
+                {`Estimado/a asegurado/a: ${whatsappTicket.nombrePaciente || '...'}\n\nEl día de hoy tenía programada una cita en ${whatsappTicket.especialidad || '...'}. Hemos intentado comunicarnos con usted sin éxito a través de nuestro número (01) 211-8830.\nPor favor, comuníquese con nosotros a la brevedad o solicite la reprogramación de su cita.\n\nAtentamente,\nCentro Nacional de Telemedicina – CENATE (EsSalud)`}
+              </p>
+            </div>
+          </div>
         </div>
       )}
 
