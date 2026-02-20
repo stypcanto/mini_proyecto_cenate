@@ -133,25 +133,25 @@ export const componentRegistry = {
   },
 
   // ========================================================================
-  // 👨‍⚕️ MÓDULO MÉDICO
+  // 🩺 MÓDULO PROFESIONAL DE SALUD (antes: Panel Médico)
   // ========================================================================
-  '/roles/medico/bienvenida': {
+  '/roles/profesionaldesalud/bienvenida': {
     component: lazy(() => import('../pages/roles/medico/BienvenidaMedico')),
     requiredAction: 'ver',
   },
 
 
-  '/roles/medico/disponibilidad': {
+  '/roles/profesionaldesalud/disponibilidad': {
     component: lazy(() => import('../pages/roles/medico/disponibilidad/FormularioDisponibilidad')),
     requiredAction: 'ver',
   },
 
-  '/roles/medico/pacientes': {
+  '/roles/profesionaldesalud/pacientes': {
     component: lazy(() => import('../pages/roles/medico/pacientes/MisPacientes')),
     requiredAction: 'ver',
   },
 
-  '/roles/medico/produccion': {
+  '/roles/profesionaldesalud/produccion': {
     component: lazy(() => import('../pages/roles/medico/produccion/Produccion')),
     requiredAction: 'ver',
   },

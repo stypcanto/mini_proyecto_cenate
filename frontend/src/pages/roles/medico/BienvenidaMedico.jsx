@@ -188,7 +188,7 @@ export default function BienvenidaMedico() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-5">
             {/* Card 1: Pacientes */}
             <button
-              onClick={() => navigate('/roles/medico/pacientes')}
+              onClick={() => navigate('/roles/profesionaldesalud/pacientes')}
               className="card-animate card-hover bg-gradient-to-br from-purple-600 to-purple-800 rounded-xl p-6 shadow-lg text-left text-white overflow-hidden relative group"
             >
               {/* Efecto de luz */}
@@ -211,7 +211,7 @@ export default function BienvenidaMedico() {
 
             {/* Card 2: Producción */}
             <button
-              onClick={() => navigate('/roles/medico/produccion')}
+              onClick={() => navigate('/roles/profesionaldesalud/produccion')}
               className="card-animate card-hover bg-gradient-to-br from-blue-600 to-blue-800 rounded-xl p-6 shadow-lg text-left text-white overflow-hidden relative group"
             >
               {/* Efecto de luz */}
@@ -260,7 +260,7 @@ export default function BienvenidaMedico() {
           {/* Primary CTA */}
           <div className="text-center">
             <button
-              onClick={() => navigate('/roles/medico/pacientes')}
+              onClick={() => navigate('/roles/profesionaldesalud/pacientes')}
               className="bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white font-bold py-3 px-6 rounded-lg shadow-md hover:shadow-lg transition inline-flex items-center gap-2 text-sm"
             >
               Ver mis Pacientes

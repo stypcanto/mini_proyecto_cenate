@@ -236,7 +236,7 @@ const NotificationBell = () => {
                       className="px-4 py-4 hover:bg-gray-50 cursor-pointer flex items-center justify-between"
                       onClick={() => {
                         setShowDropdown(false);
-                        navigate('/roles/medico/pacientes');
+                        navigate('/roles/profesionaldesalud/pacientes');
                       }}
                     >
                       <div>

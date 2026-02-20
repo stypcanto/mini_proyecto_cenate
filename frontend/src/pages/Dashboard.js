@@ -44,7 +44,7 @@ export default function Dashboard() {
     } else if (roles.includes("COORDINADOR_GESTION_CITAS") || roles.includes("COORD_GESTION_CITAS") || roles.includes("COORDINADOR GESTION CITAS") || roles.includes("COORD. GESTION CITAS")) {
       targetPath = "/roles/coordcitas/bienvenida";
     } else if (roles.includes("MEDICO")) {
-      targetPath = "/roles/medico/bienvenida";
+      targetPath = "/roles/profesionaldesalud/bienvenida";
     } else if (roles.includes("COORDINADOR")) {
       targetPath = "/roles/coordinador/dashboard";
     } else if (roles.includes("GESTOR DE CITAS") || roles.includes("CITAS")) {

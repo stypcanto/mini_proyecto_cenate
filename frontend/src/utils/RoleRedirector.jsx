@@ -40,7 +40,7 @@ export default function RoleRedirector({ roles = [] }) {
                 ].includes(r)
             )
         ) {
-            navigate("/roles/medico");
+            navigate("/roles/profesionaldesalud");
             return;
         }
 

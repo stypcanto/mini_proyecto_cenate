@@ -74,7 +74,7 @@ export default function Login() {
 
     if (has("SUPERADMIN") || has("ADMIN")) return "/admin/bienvenida";
     if (isPersonal107) return "/roles/personal107/bienvenida";
-    if (has("MEDICO")) return "/roles/medico/bienvenida";
+    if (has("MEDICO")) return "/roles/profesionaldesalud/bienvenida";
     if (has("COORDINADOR_MEDICO_TELEURGENCIAS")) return "/roles/coordinador/teleurgencias/bienvenida";
     if (has("COORDINADOR")) return "/roles/coordinador/bienvenida";
     // ✅ v1.40.0: Mejorada detección flexible para GESTOR DE CITAS
@@ -373,7 +373,7 @@ export default function Login() {
                       if (has("SUPERADMIN") || has("ADMIN")) {
                         destination = "/admin/dashboard";
                       } else if (has("MEDICO")) {
-                        destination = "/roles/medico/dashboard";
+                        destination = "/roles/profesionaldesalud/dashboard";
                       } else if (has("COORDINADOR")) {
                         destination = "/roles/coordinador/dashboard";
                       } else if (has("EXTERNO")) {
