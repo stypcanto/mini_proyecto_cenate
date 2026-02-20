@@ -395,7 +395,7 @@ export default function MisPacientes() {
 
   // ✅ v1.47.0: Estados para modal Atender Paciente
   const [tieneRecita, setTieneRecita] = useState(false);
-  const [recitaDias, setRecitaDias] = useState(7);
+  const [recitaDias, setRecitaDias] = useState(15);
   const [expandRecita, setExpandRecita] = useState(false);
 
   const [tieneInterconsulta, setTieneInterconsulta] = useState(false);
@@ -2510,12 +2510,10 @@ export default function MisPacientes() {
                           onChange={(e) => setRecitaDias(parseInt(e.target.value))}
                           className="w-full px-3 py-2 border border-green-300 rounded-md focus:ring-2 focus:ring-green-500 focus:border-green-500 text-sm font-medium text-gray-900 bg-white"
                         >
-                          <option value={3}>3 días</option>
-                          <option value={7}>7 días</option>
-                          <option value={15}>15 días</option>
-                          <option value={30}>30 días</option>
-                          <option value={60}>60 días</option>
-                          <option value={90}>90 días</option>
+                          <option value={15}>15 DIAS</option>
+                          <option value={30}>UN MES</option>
+                          <option value={60}>2 MESES</option>
+                          <option value={90}>3 MESES</option>
                         </select>
                       </div>
                     )}
