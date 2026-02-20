@@ -106,6 +106,27 @@ public class SolicitudBolsaEstadisticasServiceImpl implements SolicitudBolsaEsta
                 .collect(Collectors.toList());
     }
 
+    @Override
+    public List<EstadisticasPorEstadoDTO> obtenerEstadisticasPorEstadoFiltrado(String ipressAtencion) {
+        log.info("📊 Obteniendo estadísticas por estado filtrado por IPRESS Atención: {}", ipressAtencion);
+        String filtro = (ipressAtencion == null || ipressAtencion.isBlank()) ? null : ipressAtencion.trim();
+        List<Map<String, Object>> resultados = solicitudRepository.estadisticasPorEstadoFiltrado(filtro);
+        return resultados.stream()
+                .map(row -> {
+                    String estado = (String) row.get("estado");
+                    Long cantidad = ((Number) row.get("cantidad")).longValue();
+                    return EstadisticasPorEstadoDTO.builder()
+                            .estado(estado)
+                            .cantidad(cantidad)
+                            .porcentaje(BigDecimal.ZERO)
+                            .color(getColorPorEstado(estado))
+                            .emoji(getEmojiPorEstado(estado))
+                            .build();
+                })
+                .sorted(Comparator.comparingLong(EstadisticasPorEstadoDTO::getCantidad).reversed())
+                .collect(Collectors.toList());
+    }
+
     private EstadisticasPorEstadoDTO mapearAEstadoDTO(Map<String, Object> row) {
         String estado = (String) row.get("estado");
         Long cantidad = ((Number) row.get("cantidad")).longValue();

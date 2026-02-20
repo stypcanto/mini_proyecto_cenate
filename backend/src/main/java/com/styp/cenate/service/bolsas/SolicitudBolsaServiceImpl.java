@@ -2753,6 +2753,7 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
             String ipress,
             String especialidad,
             String estadoCodigo,
+            String ipressAtencion,
             String tipoCita,
             String asignacion,
             String busqueda,
@@ -2760,8 +2761,8 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
             String fechaFin,        // ✅ v1.66.0: Filtro rango fechas
             org.springframework.data.domain.Pageable pageable) {
         try {
-            log.info("🔍 Listando solicitudes con filtros - Bolsa: {}, Macro: {}, Red: {}, IPRESS: {}, Especialidad: {}, Estado: {}, TipoCita: {}, Asignación: {}, Búsqueda: {}, FechaInicio: {}, FechaFin: {}",
-                bolsaNombre, macrorregion, red, ipress, especialidad, estadoCodigo, tipoCita, asignacion, busqueda, fechaInicio, fechaFin);
+            log.info("🔍 Listando solicitudes con filtros - Bolsa: {}, Macro: {}, Red: {}, IPRESS: {}, Especialidad: {}, Estado: {}, IPRESSAtencion: {}, TipoCita: {}, Asignación: {}, Búsqueda: {}, FechaInicio: {}, FechaFin: {}",
+                bolsaNombre, macrorregion, red, ipress, especialidad, estadoCodigo, ipressAtencion, tipoCita, asignacion, busqueda, fechaInicio, fechaFin);
 
             // Convertir "todas"/"todos" a null para ignorar ese filtro
             String bolsaNombreFinal = (bolsaNombre == null || "todas".equals(bolsaNombre) || bolsaNombre.trim().isEmpty()) ? null : bolsaNombre.trim();
@@ -2770,6 +2771,7 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
             String ipressFinal = (ipress == null || "todas".equals(ipress) || ipress.trim().isEmpty()) ? null : ipress.trim();
             String especialidadFinal = (especialidad == null || "todas".equals(especialidad) || especialidad.trim().isEmpty()) ? null : especialidad.trim();
             String estadoCod = (estadoCodigo == null || "todos".equals(estadoCodigo) || estadoCodigo.trim().isEmpty()) ? null : estadoCodigo.trim();
+            String ipressAtencionFinal = (ipressAtencion == null || ipressAtencion.trim().isEmpty()) ? null : ipressAtencion.trim();
             String tipoCitaFinal = (tipoCita == null || "todas".equals(tipoCita) || tipoCita.trim().isEmpty()) ? null : tipoCita.trim();
             String asignacionFinal = (asignacion == null || "todos".equals(asignacion) || asignacion.trim().isEmpty()) ? null : asignacion.trim();
             String busquedaFinal = (busqueda == null || busqueda.trim().isEmpty()) ? null : busqueda.trim();
@@ -2779,11 +2781,11 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
             // Llamar al repository con filtros
             List<Object[]> resultados = solicitudRepository.findAllWithFiltersAndPagination(
                     bolsaNombreFinal, macrorFinal, redFinal, ipressFinal, especialidadFinal,
-                    estadoCod, tipoCitaFinal, asignacionFinal, busquedaFinal, fechaInicioFinal, fechaFinFinal, pageable);
+                    estadoCod, ipressAtencionFinal, tipoCitaFinal, asignacionFinal, busquedaFinal, fechaInicioFinal, fechaFinFinal, pageable);
 
             long total = solicitudRepository.countWithFilters(
                     bolsaNombreFinal, macrorFinal, redFinal, ipressFinal, especialidadFinal,
-                    estadoCod, tipoCitaFinal, asignacionFinal, busquedaFinal, fechaInicioFinal, fechaFinFinal);
+                    estadoCod, ipressAtencionFinal, tipoCitaFinal, asignacionFinal, busquedaFinal, fechaInicioFinal, fechaFinFinal);
 
             // Mapear a DTOs
             List<SolicitudBolsaDTO> dtos = resultados.stream()

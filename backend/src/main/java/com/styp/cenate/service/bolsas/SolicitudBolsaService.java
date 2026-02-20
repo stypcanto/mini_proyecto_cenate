@@ -75,6 +75,7 @@ public interface SolicitudBolsaService {
             String ipress,
             String especialidad,
             String estadoCodigo,
+            String ipressAtencion,
             String tipoCita,
             String asignacion,
             String busqueda,

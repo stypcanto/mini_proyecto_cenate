@@ -247,6 +247,7 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
           AND (:ipress IS NULL OR di.desc_ipress = :ipress)
           AND (:especialidad IS NULL OR LOWER(COALESCE(sb.especialidad, '')) LIKE LOWER(CONCAT('%', :especialidad, '%')))
           AND (:estadoCodigo IS NULL OR UPPER(COALESCE(deg.cod_estado_cita, 'PENDIENTE_CITA')) = UPPER(:estadoCodigo))
+          AND (:ipressAtencion IS NULL OR LOWER(COALESCE(di2.desc_ipress, '')) LIKE LOWER(CONCAT('%', :ipressAtencion, '%')))
           AND (:tipoCita IS NULL OR UPPER(COALESCE(sb.tipo_cita, 'N/A')) = UPPER(:tipoCita))
           AND (CASE
                WHEN :asignacion IS NULL THEN 1=1
@@ -269,11 +270,12 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
             @org.springframework.data.repository.query.Param("ipress") String ipress,
             @org.springframework.data.repository.query.Param("especialidad") String especialidad,
             @org.springframework.data.repository.query.Param("estadoCodigo") String estadoCodigo,
+            @org.springframework.data.repository.query.Param("ipressAtencion") String ipressAtencion,
             @org.springframework.data.repository.query.Param("tipoCita") String tipoCita,
             @org.springframework.data.repository.query.Param("asignacion") String asignacion,
             @org.springframework.data.repository.query.Param("busqueda") String busqueda,
-            @org.springframework.data.repository.query.Param("fechaInicio") String fechaInicio,  // ✅ v1.66.0: Filtro rango fechas
-            @org.springframework.data.repository.query.Param("fechaFin") String fechaFin,        // ✅ v1.66.0: Filtro rango fechas
+            @org.springframework.data.repository.query.Param("fechaInicio") String fechaInicio,
+            @org.springframework.data.repository.query.Param("fechaFin") String fechaFin,
             org.springframework.data.domain.Pageable pageable);
 
     /**
@@ -286,6 +288,7 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
         FROM dim_solicitud_bolsa sb
         LEFT JOIN dim_tipos_bolsas tb ON sb.id_bolsa = tb.id_tipo_bolsa
         LEFT JOIN dim_ipress di ON sb.id_ipress = di.id_ipress
+        LEFT JOIN dim_ipress di2 ON sb.id_ipress_atencion = di2.id_ipress
         LEFT JOIN dim_red dr ON di.id_red = dr.id_red
         LEFT JOIN dim_macroregion dm ON dr.id_macro = dm.id_macro
         LEFT JOIN dim_estados_gestion_citas deg ON sb.estado_gestion_citas_id = deg.id_estado_cita
@@ -296,6 +299,7 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
           AND (:ipress IS NULL OR di.desc_ipress = :ipress)
           AND (:especialidad IS NULL OR LOWER(COALESCE(sb.especialidad, '')) LIKE LOWER(CONCAT('%', :especialidad, '%')))
           AND (:estadoCodigo IS NULL OR UPPER(COALESCE(deg.cod_estado_cita, 'PENDIENTE_CITA')) = UPPER(:estadoCodigo))
+          AND (:ipressAtencion IS NULL OR LOWER(COALESCE(di2.desc_ipress, '')) LIKE LOWER(CONCAT('%', :ipressAtencion, '%')))
           AND (:tipoCita IS NULL OR UPPER(COALESCE(sb.tipo_cita, 'N/A')) = UPPER(:tipoCita))
           AND (CASE
                WHEN :asignacion IS NULL THEN 1=1
@@ -314,6 +318,7 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
             @org.springframework.data.repository.query.Param("ipress") String ipress,
             @org.springframework.data.repository.query.Param("especialidad") String especialidad,
             @org.springframework.data.repository.query.Param("estadoCodigo") String estadoCodigo,
+            @org.springframework.data.repository.query.Param("ipressAtencion") String ipressAtencion,
             @org.springframework.data.repository.query.Param("tipoCita") String tipoCita,
             @org.springframework.data.repository.query.Param("asignacion") String asignacion,
             @org.springframework.data.repository.query.Param("busqueda") String busqueda,
@@ -372,6 +377,24 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
         ORDER BY cantidad DESC
         """, nativeQuery = true)
     List<Map<String, Object>> estadisticasPorEstado();
+
+    /**
+     * Estadísticas por estado filtradas por IPRESS Atención (para PADOMI u otras IPRESS específicas)
+     */
+    @Query(value = """
+        SELECT
+            COALESCE(dgc.cod_estado_cita, 'PENDIENTE_CITA') as estado,
+            COUNT(sb.id_solicitud) as cantidad
+        FROM dim_solicitud_bolsa sb
+        LEFT JOIN dim_estados_gestion_citas dgc ON sb.estado_gestion_citas_id = dgc.id_estado_cita
+        LEFT JOIN dim_ipress di2 ON sb.id_ipress_atencion = di2.id_ipress
+        WHERE sb.activo = true
+          AND (:ipressAtencion IS NULL OR LOWER(COALESCE(di2.desc_ipress, '')) LIKE LOWER(CONCAT('%', :ipressAtencion, '%')))
+        GROUP BY dgc.cod_estado_cita, dgc.id_estado_cita
+        ORDER BY cantidad DESC
+        """, nativeQuery = true)
+    List<Map<String, Object>> estadisticasPorEstadoFiltrado(
+            @org.springframework.data.repository.query.Param("ipressAtencion") String ipressAtencion);
 
     /**
      * 2️⃣ Estadísticas por especialidad

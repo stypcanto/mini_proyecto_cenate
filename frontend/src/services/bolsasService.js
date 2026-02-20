@@ -181,6 +181,7 @@ export const obtenerSolicitudesPaginado = async (
   ipress = null,
   especialidad = null,
   estado = null,
+  ipressAtencion = null,
   tipoCita = null,
   asignacion = null,
   busqueda = null,
@@ -200,6 +201,7 @@ export const obtenerSolicitudesPaginado = async (
     if (ipress && ipress !== 'todas') params.append('ipress', ipress);
     if (especialidad && especialidad !== 'todas') params.append('especialidad', especialidad);
     if (estado && estado !== 'todos') params.append('estado', estado);
+    if (ipressAtencion && ipressAtencion.trim()) params.append('ipressAtencion', ipressAtencion.trim());
     if (tipoCita && tipoCita !== 'todas') params.append('tipoCita', tipoCita);
     if (asignacion && asignacion !== 'todos') {
       console.log('🔍 Agregando filtro asignacion:', asignacion);
@@ -387,10 +389,14 @@ export const obtenerEstadisticasDelDia = async () => {
 
 /**
  * Obtiene estadísticas por estado de cita
+ * @param {string} ipressAtencion - Filtro opcional por IPRESS Atención (ej: 'PADOMI')
  */
-export const obtenerEstadisticasPorEstado = async () => {
+export const obtenerEstadisticasPorEstado = async (ipressAtencion = null) => {
   try {
-    const response = await apiClient.get(`${API_BASE_URL}/estadisticas/por-estado`, true);
+    const url = ipressAtencion
+      ? `${API_BASE_URL}/estadisticas/por-estado?ipressAtencion=${encodeURIComponent(ipressAtencion)}`
+      : `${API_BASE_URL}/estadisticas/por-estado`;
+    const response = await apiClient.get(url, true);
     return response;
   } catch (error) {
     console.error('Error al obtener estadísticas por estado:', error);

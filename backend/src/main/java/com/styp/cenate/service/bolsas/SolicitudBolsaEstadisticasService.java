@@ -35,6 +35,8 @@ public interface SolicitudBolsaEstadisticasService {
      */
     List<EstadisticasPorEstadoDTO> obtenerEstadisticasPorEstado();
 
+    List<EstadisticasPorEstadoDTO> obtenerEstadisticasPorEstadoFiltrado(String ipressAtencion);
+
     /**
      * Obtiene estadísticas agrupadas por especialidad médica
      * Incluye tasas de completación y tiempo promedio

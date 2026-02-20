@@ -9,7 +9,7 @@ import {
   ArrowLeft, Search, X, RefreshCw, ChevronDown, ChevronUp,
   Users, CheckCircle, Clock, AlertTriangle, Phone, Calendar,
   User, Building2, Stethoscope, FileText, AlertCircle,
-  ChevronLeft, ChevronRight, Info,
+  ChevronLeft, ChevronRight, Info, UserPlus, PhoneCall,
 } from 'lucide-react';
 import { obtenerSolicitudesPaginado, obtenerEstadisticasPorEstado } from '../../../../services/bolsasService';
 
@@ -156,6 +156,9 @@ export default function TeleconsultaListado() {
   // Filas expandidas (para OBSERVADO)
   const [expandido, setExpandido] = useState(null);
 
+  // Modal "Ingresar nuevos pacientes"
+  const [modalNuevoPaciente, setModalNuevoPaciente] = useState(false);
+
   // Debounce ref
   const debounceRef = useRef(null);
 
@@ -179,6 +182,7 @@ export default function TeleconsultaListado() {
         BOLSA_PADOMI,  // bolsa
         null, null, null, null,  // macrorregion, red, ipress, especialidad
         estadoBackend, // estado
+        'PADOMI',      // ipressAtencion – solo pacientes IPRESS Atención PADOMI
         null, null,    // tipoCita, asignacion
         busq || null,  // busqueda
       );
@@ -202,8 +206,8 @@ export default function TeleconsultaListado() {
 
   useEffect(() => {
     cargar(0);
-    // Cargar estadísticas globales (totales reales, no solo la página actual)
-    obtenerEstadisticasPorEstado()
+    // Cargar estadísticas globales filtradas solo por PADOMI
+    obtenerEstadisticasPorEstado('PADOMI')
       .then(data => {
         if (!Array.isArray(data)) return;
         const acc = { ATENDIDO: 0, PENDIENTE: 0, OBSERVADO: 0 };
@@ -259,6 +263,14 @@ export default function TeleconsultaListado() {
           <p className="text-blue-200 text-xs mt-0.5">Bolsa de pacientes derivados del Programa de Atención Domiciliaria</p>
         </div>
         <button
+          onClick={() => setModalNuevoPaciente(true)}
+          className="flex items-center gap-2 px-4 py-2 bg-white text-blue-700 hover:bg-blue-50 rounded-lg transition-colors text-sm font-semibold shadow-sm"
+        >
+          <UserPlus className="w-4 h-4" />
+          <span className="hidden sm:inline">Ingresar nuevos pacientes</span>
+          <span className="sm:hidden">Nuevo</span>
+        </button>
+        <button
           onClick={() => cargar(pagina)}
           disabled={loading}
           className="p-2 bg-white/20 hover:bg-white/30 rounded-lg transition-colors"
@@ -267,6 +279,78 @@ export default function TeleconsultaListado() {
           <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
         </button>
       </div>
+
+      {/* ── Modal: Ingresar nuevos pacientes ── */}
+      {modalNuevoPaciente && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+          onClick={() => setModalNuevoPaciente(false)}
+        >
+          <div
+            className="bg-white rounded-2xl shadow-2xl w-full max-w-md"
+            onClick={e => e.stopPropagation()}
+          >
+            {/* Cabecera del modal */}
+            <div className="bg-gradient-to-r from-blue-700 to-blue-600 rounded-t-2xl px-6 py-5 flex items-start justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <div className="bg-white/20 rounded-xl p-2.5">
+                  <UserPlus className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <h2 className="text-white font-bold text-base leading-tight">Ingresar nuevos pacientes</h2>
+                  <p className="text-blue-200 text-xs mt-0.5">Bolsa PADOMI · Teleconsulta</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setModalNuevoPaciente(false)}
+                className="text-white/60 hover:text-white transition-colors mt-0.5"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Cuerpo */}
+            <div className="px-6 py-6 space-y-4">
+              <div className="flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-xl p-4">
+                <AlertTriangle className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
+                <p className="text-sm text-amber-800 leading-relaxed">
+                  Esta funcionalidad se habilitará <span className="font-semibold">únicamente en coordinación con CENATE</span>.
+                  El ingreso de nuevos pacientes a la bolsa PADOMI requiere autorización previa.
+                </p>
+              </div>
+
+              <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-2">
+                <p className="text-sm text-slate-700 leading-relaxed">
+                  Para gestionar el ingreso de nuevos pacientes, comuníquese con el{' '}
+                  <span className="font-semibold text-slate-900">Coordinador de Especialidades Médicas</span>:
+                </p>
+                <a
+                  href="tel:+51945946714"
+                  className="flex items-center gap-3 mt-3 px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl transition-colors group"
+                >
+                  <div className="bg-white/20 rounded-lg p-1.5">
+                    <PhoneCall className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-blue-200 leading-none mb-0.5">Teléfono de coordinación</p>
+                    <p className="font-bold text-base tracking-wide">+51 945 946 714</p>
+                  </div>
+                </a>
+              </div>
+            </div>
+
+            {/* Pie */}
+            <div className="px-6 pb-6">
+              <button
+                onClick={() => setModalNuevoPaciente(false)}
+                className="w-full py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-xl transition-colors text-sm"
+              >
+                Cerrar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="max-w-screen-xl mx-auto px-4 py-6 space-y-5">
 

@@ -11,6 +11,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
@@ -86,7 +87,7 @@ public class SolicitudBolsaEstadisticasController {
     @GetMapping("/por-estado")
     @Operation(
         summary = "Estadísticas por estado de cita",
-        description = "Estados: PENDIENTE, CITADO, ATENDIDO, CANCELADO, DERIVADO, OBSERVADO",
+        description = "Estados: PENDIENTE, CITADO, ATENDIDO, CANCELADO, DERIVADO, OBSERVADO. Acepta filtro opcional ipressAtencion.",
         tags = {"Por Estado"}
     )
     @ApiResponse(
@@ -94,7 +95,12 @@ public class SolicitudBolsaEstadisticasController {
         description = "OK - Lista de estados con cantidad y porcentaje",
         content = @Content(schema = @Schema(implementation = EstadisticasPorEstadoDTO.class))
     )
-    public ResponseEntity<List<EstadisticasPorEstadoDTO>> obtenerEstadisticasPorEstado() {
+    public ResponseEntity<List<EstadisticasPorEstadoDTO>> obtenerEstadisticasPorEstado(
+            @RequestParam(required = false) String ipressAtencion) {
+        if (ipressAtencion != null && !ipressAtencion.isBlank()) {
+            log.info("GET /api/bolsas/estadisticas/por-estado?ipressAtencion={}", ipressAtencion);
+            return ResponseEntity.ok(estadisticasService.obtenerEstadisticasPorEstadoFiltrado(ipressAtencion));
+        }
         log.info("GET /api/bolsas/estadisticas/por-estado");
         List<EstadisticasPorEstadoDTO> datos = estadisticasService.obtenerEstadisticasPorEstado();
         return ResponseEntity.ok(datos);

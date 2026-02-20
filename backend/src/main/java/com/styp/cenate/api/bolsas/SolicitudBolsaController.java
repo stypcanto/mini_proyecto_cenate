@@ -430,6 +430,7 @@ public class SolicitudBolsaController {
             @RequestParam(required = false) String ipress,
             @RequestParam(required = false) String especialidad,
             @RequestParam(required = false) String estado,
+            @RequestParam(required = false) String ipressAtencion,
             @RequestParam(required = false) String tipoCita,
             @RequestParam(required = false) String asignacion,
             @RequestParam(required = false) String busqueda,
@@ -439,12 +440,12 @@ public class SolicitudBolsaController {
 
         // Si hay algún filtro, usar búsqueda con filtros (v2.6.0 + v1.66.0: rango fechas)
         if (bolsa != null || macrorregion != null || red != null || ipress != null ||
-            especialidad != null || estado != null || tipoCita != null || asignacion != null || busqueda != null ||
-            fechaInicio != null || fechaFin != null) {
-            log.info("🔍 Solicitud con filtros - Bolsa: {}, Macro: {}, Red: {}, IPRESS: {}, Especialidad: {}, Estado: {}, TipoCita: {}, Asignación: {}, Búsqueda: {}, FechaInicio: {}, FechaFin: {}",
-                bolsa, macrorregion, red, ipress, especialidad, estado, tipoCita, asignacion, busqueda, fechaInicio, fechaFin);
+            especialidad != null || estado != null || ipressAtencion != null || tipoCita != null ||
+            asignacion != null || busqueda != null || fechaInicio != null || fechaFin != null) {
+            log.info("🔍 Solicitud con filtros - Bolsa: {}, Macro: {}, Red: {}, IPRESS: {}, Especialidad: {}, Estado: {}, IPRESSAtencion: {}, TipoCita: {}, Asignación: {}, Búsqueda: {}, FechaInicio: {}, FechaFin: {}",
+                bolsa, macrorregion, red, ipress, especialidad, estado, ipressAtencion, tipoCita, asignacion, busqueda, fechaInicio, fechaFin);
             return ResponseEntity.ok(solicitudBolsaService.listarConFiltros(
-                    bolsa, macrorregion, red, ipress, especialidad, estado, tipoCita, asignacion, busqueda, fechaInicio, fechaFin, pageable));
+                    bolsa, macrorregion, red, ipress, especialidad, estado, ipressAtencion, tipoCita, asignacion, busqueda, fechaInicio, fechaFin, pageable));
         }
 
         // Sin filtros, listar todas (comportamiento anterior)
