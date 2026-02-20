@@ -201,8 +201,25 @@ export default function BienvenidaExterno() {
             </div>
 
             {/* Footer */}
-            <div className="text-center text-xs md:text-sm text-slate-400 pt-2 border-t border-slate-200">
-              ¿Necesitas ayuda? Contacta al equipo de soporte de CENATE o revisa la documentación en tu panel.
+            <div className="pt-4 border-t border-slate-200 text-center space-y-1">
+              <p className="text-xs md:text-sm text-slate-500 font-medium">
+                ¿Necesitas ayuda? Contacta al equipo de soporte técnico de CENATE:
+              </p>
+              <div className="flex items-center justify-center gap-4 flex-wrap">
+                <a
+                  href="mailto:cenate.sistemas01@essalud.gob.pe"
+                  className="text-xs md:text-sm text-[#0a5ba9] hover:underline font-medium"
+                >
+                  cenate.sistemas01@essalud.gob.pe
+                </a>
+                <span className="text-slate-300 hidden sm:inline">|</span>
+                <a
+                  href="mailto:cenate.sistemas02@essalud.gob.pe"
+                  className="text-xs md:text-sm text-[#0a5ba9] hover:underline font-medium"
+                >
+                  cenate.sistemas02@essalud.gob.pe
+                </a>
+              </div>
             </div>
 
           </div>
