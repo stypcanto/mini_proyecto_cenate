@@ -1725,7 +1725,22 @@ export default function MisPacientes() {
                 {/* Información */}
                 <div className="flex-1">
                   <div className="flex items-baseline gap-3 mb-2">
-                    <p className="text-sm font-semibold text-white/80 uppercase tracking-wider">Médico</p>
+                    <p className="text-sm font-semibold text-white/80 uppercase tracking-wider">
+                      {(() => {
+                        const roles = (authUser?.roles || []).map(r => r.toUpperCase());
+                        if (roles.includes('MEDICO') || roles.includes('MÉDICO')) return 'Médico';
+                        if (roles.includes('ENFERMERIA') || roles.includes('ENFERMERÍA')) return 'Enfermería';
+                        if (roles.includes('OBSTETRA')) return 'Obstetra';
+                        if (roles.includes('PSICOLOGO') || roles.includes('PSICÓLOGO')) return 'Psicólogo';
+                        if (roles.includes('NUTRICION') || roles.includes('NUTRICIÓN')) return 'Nutricionista';
+                        if (roles.includes('LABORATORIO')) return 'Laboratorio';
+                        if (roles.includes('RADIOLOGIA') || roles.includes('RADIOLOGÍA')) return 'Radiología';
+                        if (roles.includes('FARMACIA')) return 'Farmacia';
+                        if (roles.includes('TERAPISTA_LENG')) return 'Terapista de Lenguaje';
+                        if (roles.includes('TERAPISTA_FISI')) return 'Terapista Físico';
+                        return 'Profesional de Salud';
+                      })()}
+                    </p>
                     <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-green-400/20 text-green-50 border border-green-400/30">
                       ● En línea
                     </span>
