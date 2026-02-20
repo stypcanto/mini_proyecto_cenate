@@ -410,6 +410,7 @@ export default function MisPacientes() {
 
   const [esCronico, setEsCronico] = useState(false);
   const [enfermedadesCronicas, setEnfermedadesCronicas] = useState([]);
+  const [enfermedadesCronicasOriginales, setEnfermedadesCronicasOriginales] = useState([]);
   const [otroDetalle, setOtroDetalle] = useState('');
   const [expandCronico, setExpandCronico] = useState(false);
 
@@ -1333,6 +1334,7 @@ export default function MisPacientes() {
     setNotasAccion('');
     // Pre-cargar enfermedades crónicas existentes del paciente
     const enfermedadesExistentes = paciente?.enfermedadCronica || [];
+    setEnfermedadesCronicasOriginales(enfermedadesExistentes);
     if (enfermedadesExistentes.length > 0) {
       setEsCronico(true);
       setExpandCronico(true);
@@ -1591,6 +1593,7 @@ export default function MisPacientes() {
       setEsCronico(false);
       setExpandCronico(false);
       setEnfermedadesCronicas([]);
+      setEnfermedadesCronicasOriginales([]);
       setOtroDetalle('');
       // ✅ v1.74.0 / v1.75.0: Limpiar campos de Ficha de Enfermería
       setOtraPatologia([]);
@@ -1760,6 +1763,8 @@ export default function MisPacientes() {
   });
 
   const toggleEnfermedad = (enfermedad) => {
+    // Las enfermedades ya registradas no se pueden desmarcar
+    if (enfermedadesCronicasOriginales.includes(enfermedad)) return;
     setEnfermedadesCronicas(prev =>
       prev.includes(enfermedad)
         ? prev.filter(e => e !== enfermedad)
@@ -2696,24 +2701,26 @@ export default function MisPacientes() {
                       <div className="bg-purple-50 border-2 border-purple-300 rounded-xl p-3 animate-in slide-in-from-top-2">
                         <p className="text-xs font-bold text-purple-900 mb-2">Enfermedades crónicas</p>
                         <div className="space-y-1.5">
-                          <label className="flex items-center gap-3 cursor-pointer p-2 rounded-lg hover:bg-purple-100 transition-colors">
-                            <input
-                              type="checkbox"
-                              checked={enfermedadesCronicas.includes('Hipertensión')}
-                              onChange={() => toggleEnfermedad('Hipertensión')}
-                              className="w-4 h-4 text-purple-600 rounded"
-                            />
-                            <span className="text-xs font-medium text-gray-800">Hipertensión</span>
-                          </label>
-                          <label className="flex items-center gap-3 cursor-pointer p-2 rounded-lg hover:bg-purple-100 transition-colors">
-                            <input
-                              type="checkbox"
-                              checked={enfermedadesCronicas.includes('Diabetes')}
-                              onChange={() => toggleEnfermedad('Diabetes')}
-                              className="w-4 h-4 text-purple-600 rounded"
-                            />
-                            <span className="text-xs font-medium text-gray-800">Diabetes</span>
-                          </label>
+                          {['Hipertensión', 'Diabetes'].map((enfermedad) => {
+                            const bloqueada = enfermedadesCronicasOriginales.includes(enfermedad);
+                            return (
+                              <label
+                                key={enfermedad}
+                                className={`flex items-center gap-3 p-2 rounded-lg transition-colors ${bloqueada ? 'cursor-not-allowed opacity-80 bg-purple-100' : 'cursor-pointer hover:bg-purple-100'}`}
+                                title={bloqueada ? 'Enfermedad ya registrada — no se puede eliminar' : ''}
+                              >
+                                <input
+                                  type="checkbox"
+                                  checked={enfermedadesCronicas.includes(enfermedad)}
+                                  onChange={() => toggleEnfermedad(enfermedad)}
+                                  disabled={bloqueada}
+                                  className="w-4 h-4 text-purple-600 rounded disabled:cursor-not-allowed"
+                                />
+                                <span className="text-xs font-medium text-gray-800">{enfermedad}</span>
+                                {bloqueada && <span className="ml-auto text-xs text-purple-500 font-semibold">Ya registrado</span>}
+                              </label>
+                            );
+                          })}
                         </div>
                       </div>
                     )}
