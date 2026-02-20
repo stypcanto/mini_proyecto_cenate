@@ -51,7 +51,7 @@ const MOTIVOS_OBSERVACION = {
 };
 
 const PAGE_SIZE    = 20;
-const BOLSA_PADOMI = null; // TODO: reemplazar con el ID real de la bolsa PADOMI
+const BOLSA_PADOMI = null;
 
 // ─── Componente Badge de Estado ──────────────────────────────────────────────
 function EstadoBadge({ cod }) {
@@ -82,21 +82,15 @@ function FilaObservacion({ paciente }) {
         <AlertTriangle className="w-4 h-4 text-orange-600 shrink-0" />
         <p className="text-xs font-bold text-orange-800 uppercase tracking-wide">Detalle de Observación</p>
       </div>
-
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-        {/* Motivo principal */}
         <div className="bg-white border border-orange-200 rounded-lg p-3">
           <p className="font-semibold text-orange-700 mb-1">Motivo</p>
           <p className="text-gray-700">{MOTIVOS_OBSERVACION[cod] ?? desc ?? 'Sin motivo registrado'}</p>
         </div>
-
-        {/* Notas adicionales */}
         <div className="bg-white border border-orange-200 rounded-lg p-3">
           <p className="font-semibold text-orange-700 mb-1">Notas de la gestora</p>
           <p className="text-gray-700 italic">{motivo || 'Sin notas adicionales'}</p>
         </div>
-
-        {/* Quién */}
         {quien && (
           <div className="bg-white border border-orange-200 rounded-lg p-3 flex items-start gap-2">
             <User className="w-4 h-4 text-orange-400 mt-0.5 shrink-0" />
@@ -106,8 +100,6 @@ function FilaObservacion({ paciente }) {
             </div>
           </div>
         )}
-
-        {/* Cuándo */}
         {cuando && (
           <div className="bg-white border border-orange-200 rounded-lg p-3 flex items-start gap-2">
             <Calendar className="w-4 h-4 text-orange-400 mt-0.5 shrink-0" />

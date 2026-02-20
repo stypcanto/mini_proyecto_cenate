@@ -397,6 +397,22 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
             @org.springframework.data.repository.query.Param("ipressAtencion") String ipressAtencion);
 
     /**
+     * Estadísticas por condicion_medica para bolsa PADOMI (v1.73.1)
+     */
+    @Query(value = """
+        SELECT
+            COALESCE(NULLIF(TRIM(sb.condicion_medica), ''), 'Sin atención') as estado,
+            COUNT(*) as cantidad
+        FROM dim_solicitud_bolsa sb
+        JOIN dim_tipos_bolsas tb ON sb.id_bolsa = tb.id_tipo_bolsa
+        WHERE sb.activo = true
+          AND (LOWER(tb.desc_tipo_bolsa) LIKE '%padomi%' OR LOWER(tb.desc_tipo_bolsa) LIKE '%derivado%')
+        GROUP BY COALESCE(NULLIF(TRIM(sb.condicion_medica), ''), 'Sin atención')
+        ORDER BY cantidad DESC
+        """, nativeQuery = true)
+    List<Map<String, Object>> estadisticasPorCondicionMedicaPadomi();
+
+    /**
      * 2️⃣ Estadísticas por especialidad
      * Incluye tasas de completación y tiempo promedio
      */

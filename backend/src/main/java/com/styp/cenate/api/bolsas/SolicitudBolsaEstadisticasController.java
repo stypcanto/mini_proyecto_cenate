@@ -1,6 +1,7 @@
 package com.styp.cenate.api.bolsas;
 
 import com.styp.cenate.dto.bolsas.estadisticas.*;
+import com.styp.cenate.repository.bolsas.SolicitudBolsaRepository;
 import com.styp.cenate.service.bolsas.SolicitudBolsaEstadisticasService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -30,9 +31,12 @@ import java.util.Map;
 public class SolicitudBolsaEstadisticasController {
 
     private final SolicitudBolsaEstadisticasService estadisticasService;
+    private final SolicitudBolsaRepository solicitudRepository;
 
-    public SolicitudBolsaEstadisticasController(SolicitudBolsaEstadisticasService estadisticasService) {
+    public SolicitudBolsaEstadisticasController(SolicitudBolsaEstadisticasService estadisticasService,
+                                                SolicitudBolsaRepository solicitudRepository) {
         this.estadisticasService = estadisticasService;
+        this.solicitudRepository = solicitudRepository;
     }
 
     // ========================================================================
@@ -104,6 +108,27 @@ public class SolicitudBolsaEstadisticasController {
         log.info("GET /api/bolsas/estadisticas/por-estado");
         List<EstadisticasPorEstadoDTO> datos = estadisticasService.obtenerEstadisticasPorEstado();
         return ResponseEntity.ok(datos);
+    }
+
+    /**
+     * Estadísticas por condicion_medica para bolsa PADOMI (v1.73.1)
+     * GET /api/bolsas/estadisticas/por-condicion-medica-padomi
+     */
+    @GetMapping("/por-condicion-medica-padomi")
+    public ResponseEntity<List<EstadisticasPorEstadoDTO>> obtenerEstadisticasPorCondicionMedicaPadomi() {
+        log.info("GET /api/bolsas/estadisticas/por-condicion-medica-padomi");
+        List<Map<String, Object>> rows = solicitudRepository.estadisticasPorCondicionMedicaPadomi();
+        List<EstadisticasPorEstadoDTO> result = rows.stream()
+            .map(row -> {
+                String estado = (String) row.get("estado");
+                Long cantidad = ((Number) row.get("cantidad")).longValue();
+                return EstadisticasPorEstadoDTO.builder()
+                    .estado(estado)
+                    .cantidad(cantidad)
+                    .porcentaje(java.math.BigDecimal.ZERO)
+                    .build();
+            }).collect(java.util.stream.Collectors.toList());
+        return ResponseEntity.ok(result);
     }
 
     // ========================================================================
