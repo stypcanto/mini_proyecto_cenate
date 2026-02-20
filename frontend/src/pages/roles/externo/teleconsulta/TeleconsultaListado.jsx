@@ -191,7 +191,7 @@ export default function TeleconsultaListado() {
     <div className="min-h-screen bg-slate-50">
 
       {/* ── Header ── */}
-      <div className="bg-gradient-to-r from-blue-700 to-blue-600 text-white px-6 py-4 flex items-center gap-4 shadow-lg sticky top-0 z-20">
+      <div className="bg-gradient-to-r from-blue-700 to-blue-600 text-white px-6 py-4 flex items-center gap-4 shadow-lg">
         <button
           onClick={() => navigate(-1)}
           className="flex items-center gap-1.5 px-3 py-1.5 bg-white/20 hover:bg-white/30 rounded-lg transition-colors text-sm font-medium"
