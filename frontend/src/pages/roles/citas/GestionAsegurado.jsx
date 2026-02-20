@@ -1632,16 +1632,23 @@ CENATE de Essalud`;
       .filter((i) => i))
   ].sort();
 
-  // 🏥 Especialidades disponibles para importación (v1.46.5)
+  // 🏥 Especialidades disponibles para importación (v1.46.5 + v1.71.1)
   const especialidadesDisponibles = [
-    "NUTRICION",
+    // ── Especialidades Médicas ──
     "CARDIOLOGIA",
+    "DERMATOLOGIA",
+    "HEMATOLOGIA",
     "MEDICINA GENERAL",
     "NEUROLOGIA",
-    "PSIQUIATRIA",
-    "PEDIATRIA",
-    "DERMATOLOGIA",
     "OFTALMOLOGIA",
+    "PEDIATRIA",
+    "PSIQUIATRIA",
+    // ── Otros Servicios ──
+    "ENFERMERIA",
+    "NUTRICION",
+    "PSICOLOGIA",
+    "TERAPIA FISICA",
+    "TERAPIA DE LENGUAJE",
     "S/E"
   ];
 
@@ -3177,7 +3184,7 @@ CENATE de Essalud`;
                             </div>
                             <div className="col-span-2 bg-gradient-to-r from-green-50 to-emerald-50 p-3 rounded-lg border-2 border-green-300">
                               <label className="block text-sm font-semibold text-gray-800 mb-2">
-                                📋 Especialidad <span className="text-red-600 text-lg">*</span>
+                                📋 Especialidad / Servicio <span className="text-red-600 text-lg">*</span>
                               </label>
                               <select
                                 value={especialidadSeleccionada}
@@ -3191,18 +3198,23 @@ CENATE de Essalud`;
                                 <option value="" disabled className="text-gray-400">
                                   🔴 Seleccionar especialidad (obligatorio)
                                 </option>
-                                {especialidadesDisponibles.map((esp) => (
-                                  <option key={esp} value={esp} className="text-gray-900">
-                                    ✓ {esp}
-                                  </option>
-                                ))}
+                                <optgroup label="── Especialidades Médicas ──">
+                                  {["CARDIOLOGIA","DERMATOLOGIA","HEMATOLOGIA","MEDICINA GENERAL","NEUROLOGIA","OFTALMOLOGIA","PEDIATRIA","PSIQUIATRIA"].map((esp) => (
+                                    <option key={esp} value={esp} className="text-gray-900">✓ {esp}</option>
+                                  ))}
+                                </optgroup>
+                                <optgroup label="── Otros Servicios ──">
+                                  {["ENFERMERIA","NUTRICION","PSICOLOGIA","TERAPIA FISICA","TERAPIA DE LENGUAJE","S/E"].map((esp) => (
+                                    <option key={esp} value={esp} className="text-gray-900">✓ {esp}</option>
+                                  ))}
+                                </optgroup>
                               </select>
                             </div>
 
-                            {/* 👨‍⚕️ Médico - v1.46.8: Select dinámico por especialidad */}
+                            {/* 👨‍⚕️ Profesional de Salud - v1.46.8: Select dinámico por especialidad */}
                             <div className="col-span-2 bg-blue-50 p-3 rounded-lg border-2 border-blue-300">
                               <label className="block text-sm font-semibold text-gray-800 mb-2">
-                                👨‍⚕️ Médico Especialista
+                                👨‍⚕️ Profesional de Salud
                               </label>
                               <select
                                 value={medicoSeleccionado}
@@ -3218,14 +3230,14 @@ CENATE de Essalud`;
                               >
                                 <option value="">
                                   {!especialidadSeleccionada
-                                    ? "⚠️ Primero selecciona una especialidad"
+                                    ? "⚠️ Primero selecciona una especialidad / servicio"
                                     : medicosDisponibles.length === 0
-                                    ? "⚠️ No hay médicos disponibles"
-                                    : "Seleccionar médico (opcional)"}
+                                    ? "⚠️ No hay profesionales disponibles"
+                                    : "Seleccionar profesional (opcional)"}
                                 </option>
                                 {medicosDisponibles.map((medico) => (
                                   <option key={medico.idPers} value={medico.idPers}>
-                                    Dr(a). {medico.nombre} - DNI: {medico.documento}
+                                    {medico.nombre} - DNI: {medico.documento}
                                   </option>
                                 ))}
                               </select>
@@ -3279,46 +3291,18 @@ CENATE de Essalud`;
                                     className="w-full px-3 py-2 border-2 border-purple-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-purple-600 text-sm"
                                   >
                                     <option value="">Seleccionar hora...</option>
-                                    <option value="08:00">08:00</option>
-                                    <option value="08:15">08:15</option>
-                                    <option value="08:30">08:30</option>
-                                    <option value="08:45">08:45</option>
-                                    <option value="09:00">09:00</option>
-                                    <option value="09:15">09:15</option>
-                                    <option value="09:30">09:30</option>
-                                    <option value="09:45">09:45</option>
-                                    <option value="10:00">10:00</option>
-                                    <option value="10:15">10:15</option>
-                                    <option value="10:30">10:30</option>
-                                    <option value="10:45">10:45</option>
-                                    <option value="11:00">11:00</option>
-                                    <option value="11:15">11:15</option>
-                                    <option value="11:30">11:30</option>
-                                    <option value="11:45">11:45</option>
-                                    <option value="12:00">12:00</option>
-                                    <option value="12:15">12:15</option>
-                                    <option value="12:30">12:30</option>
-                                    <option value="12:45">12:45</option>
-                                    <option value="13:00">13:00</option>
-                                    <option value="13:15">13:15</option>
-                                    <option value="13:30">13:30</option>
-                                    <option value="13:45">13:45</option>
-                                    <option value="14:00">14:00</option>
-                                    <option value="14:15">14:15</option>
-                                    <option value="14:30">14:30</option>
-                                    <option value="14:45">14:45</option>
-                                    <option value="15:00">15:00</option>
-                                    <option value="15:15">15:15</option>
-                                    <option value="15:30">15:30</option>
-                                    <option value="15:45">15:45</option>
-                                    <option value="16:00">16:00</option>
-                                    <option value="16:15">16:15</option>
-                                    <option value="16:30">16:30</option>
-                                    <option value="16:45">16:45</option>
-                                    <option value="17:00">17:00</option>
-                                    <option value="17:15">17:15</option>
-                                    <option value="17:30">17:30</option>
-                                    <option value="17:45">17:45</option>
+                                    {Array.from({ length: (24 * 60) / 15 }, (_, i) => {
+                                      const totalMin = i * 15;
+                                      const h24 = Math.floor(totalMin / 60);
+                                      const m = String(totalMin % 60).padStart(2, '0');
+                                      const value = `${String(h24).padStart(2, '0')}:${m}`;
+                                      const period = h24 < 12 ? 'a.m.' : 'p.m.';
+                                      const h12 = h24 === 0 ? 12 : h24 > 12 ? h24 - 12 : h24;
+                                      const label = `${String(h12).padStart(2, '0')}:${m} ${period}`;
+                                      return { value, label };
+                                    }).filter(t => t.value >= '08:00').map(({ value, label }) => (
+                                      <option key={value} value={value}>{label}</option>
+                                    ))}
                                   </select>
                                 </div>
                               </div>
