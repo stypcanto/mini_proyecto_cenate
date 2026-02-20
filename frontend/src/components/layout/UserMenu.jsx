@@ -106,7 +106,7 @@ export default function UserMenu() {
                 {user?.roles?.[0]?.toUpperCase() || "Usuario"}
               </p>
               <p className="text-xs text-gray-500 mt-1">
-                {user?.institucion || "CENTRO NACIONAL DE TELEMEDICINA"}
+                {user?.nombreIpress || user?.institucion || "CENTRO NACIONAL DE TELEMEDICINA"}
               </p>
             </div>
           </div>

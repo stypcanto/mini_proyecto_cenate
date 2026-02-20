@@ -81,6 +81,7 @@ export const AuthProvider = ({ children }) => {
             foto: payload.foto || null,  // 📷 Foto restaurada del JWT
             requiereCambioPassword: payload.requiereCambioPassword || false,
             especialidad: payload.especialidad || null,  // ✅ v1.77.0: Especialidad del médico
+            nombreIpress: payload.nombre_ipress || null,  // 🏥 IPRESS restaurada del JWT
             token
           };
 
@@ -163,6 +164,7 @@ export const AuthProvider = ({ children }) => {
       foto: data.foto || payload.foto || null,  // 📷 URL de la foto del usuario
       requiereCambioPassword: data.requiereCambioPassword || false,
       especialidad: data.especialidad || payload.especialidad || null,  // ✅ v1.77.0: Especialidad del médico
+      nombreIpress: data.nombreIpress || null,  // 🏥 Nombre IPRESS para usuarios externos
       token: jwt
     };
 

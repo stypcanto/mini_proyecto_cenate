@@ -61,7 +61,7 @@ export default function Profile() {
 
         {/* 👤 Card de usuario con foto e información */}
         <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-          <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-4">
+          <div className="bg-gradient-to-r from-[#0a5ba9] via-[#0d4e90] to-[#073b6c] px-6 py-4">
             <div className="flex items-center gap-4">
               {/* Foto o inicial */}
               <div className="w-16 h-16 bg-white/20 rounded-xl flex items-center justify-center text-white text-2xl font-bold shadow-lg flex-shrink-0 overflow-hidden">

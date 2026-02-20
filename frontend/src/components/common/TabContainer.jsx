@@ -36,8 +36,8 @@ export default function TabContainer({ tabs, activeTab, onChange }) {
               flex items-center gap-2 px-4 py-4 border-b-2 transition-all
               ${
                 activeTab === tab.id
-                  ? 'border-blue-600 text-blue-600 font-semibold'
-                  : 'border-transparent text-slate-600 hover:text-slate-900 hover:border-slate-300'
+                  ? 'border-[#0a5ba9] text-[#0a5ba9] font-semibold'
+                  : 'border-transparent text-slate-600 hover:text-[#0a5ba9] hover:border-[#0a5ba9]/40'
               }
             `}
             role="tab"

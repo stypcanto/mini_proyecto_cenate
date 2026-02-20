@@ -150,10 +150,10 @@ export default function SeguridadTab({ user }) {
       {/* 🔐 Sección Cambiar Contraseña */}
       <div className="border border-slate-200 rounded-lg overflow-hidden">
         {/* Header */}
-        <div className="bg-gradient-to-r from-red-50 to-orange-50 px-6 py-4 border-b border-slate-200">
+        <div className="bg-gradient-to-r from-[#0a5ba9]/8 to-[#073b6c]/5 px-6 py-4 border-b border-slate-200">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center">
-              <Lock className="w-5 h-5 text-red-600" />
+            <div className="w-10 h-10 bg-[#0a5ba9]/10 rounded-lg flex items-center justify-center">
+              <Lock className="w-5 h-5 text-[#0a5ba9]" />
             </div>
             <div>
               <h3 className="font-semibold text-slate-900">
@@ -186,7 +186,7 @@ export default function SeguridadTab({ user }) {
                 className={`w-full px-4 py-2.5 border-2 rounded-lg transition-all ${
                   errors.oldPassword
                     ? "border-red-500 bg-red-50"
-                    : "border-slate-200 focus:border-blue-600 focus:ring-1 focus:ring-blue-600"
+                    : "border-slate-200 focus:border-[#0a5ba9] focus:ring-1 focus:ring-[#0a5ba9]/30"
                 }`}
                 placeholder="Ingresa tu contraseña actual"
               />
@@ -227,7 +227,7 @@ export default function SeguridadTab({ user }) {
                     newPassword: e.target.value,
                   })
                 }
-                className="w-full px-4 py-2.5 border-2 border-slate-200 rounded-lg focus:border-blue-600 focus:ring-1 focus:ring-blue-600 transition-all"
+                className="w-full px-4 py-2.5 border-2 border-slate-200 rounded-lg focus:border-[#0a5ba9] focus:ring-1 focus:ring-[#0a5ba9]/30 transition-all"
                 placeholder="Crea una contraseña fuerte"
               />
               <button
@@ -258,7 +258,7 @@ export default function SeguridadTab({ user }) {
                       : strengthScore <= 3
                       ? "text-amber-600"
                       : strengthScore <= 4
-                      ? "text-blue-600"
+                      ? "text-[#0a5ba9]"
                       : "text-green-600"
                   }`}>
                     {getStrengthLabel()}
@@ -326,7 +326,7 @@ export default function SeguridadTab({ user }) {
                     : passwordData.confirmPassword &&
                       !passwordsMatch
                     ? "border-amber-500 bg-amber-50"
-                    : "border-slate-200 focus:border-blue-600 focus:ring-1 focus:ring-blue-600"
+                    : "border-slate-200 focus:border-[#0a5ba9] focus:ring-1 focus:ring-[#0a5ba9]/30"
                 }`}
                 placeholder="Confirma tu nueva contraseña"
               />
@@ -373,9 +373,9 @@ export default function SeguridadTab({ user }) {
           <button
             onClick={handleChangePassword}
             disabled={!canSubmit || loading}
-            className={`w-full px-6 py-2.5 rounded-lg font-medium transition-all ${
+            className={`w-full px-6 py-3 rounded-lg font-semibold transition-all shadow-sm ${
               canSubmit && !loading
-                ? "bg-red-600 hover:bg-red-700 text-white cursor-pointer"
+                ? "bg-gradient-to-r from-[#0a5ba9] to-[#073b6c] hover:from-[#0d4e90] hover:to-[#0a5ba9] text-white cursor-pointer shadow-[#0a5ba9]/30 hover:shadow-md"
                 : "bg-slate-200 text-slate-500 cursor-not-allowed"
             }`}
           >
@@ -384,60 +384,6 @@ export default function SeguridadTab({ user }) {
         </div>
       </div>
 
-      {/* 📊 Sección Actividad Reciente */}
-      <div className="border border-slate-200 rounded-lg overflow-hidden">
-        {/* Header */}
-        <div className="bg-gradient-to-r from-blue-50 to-cyan-50 px-6 py-4 border-b border-slate-200">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-              <Clock className="w-5 h-5 text-blue-600" />
-            </div>
-            <div>
-              <h3 className="font-semibold text-slate-900">
-                Actividad Reciente
-              </h3>
-              <p className="text-xs text-slate-500">
-                Historial de acceso y cambios de seguridad
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {/* Contenido */}
-        <div className="p-6 space-y-4">
-          {/* Último Acceso */}
-          <ActivityItem
-            icon={<Clock className="w-5 h-5" />}
-            title="Último Acceso"
-            value={formatDate(user?.lastLoginAt)}
-            color="blue"
-          />
-
-          {/* Sesión Actual */}
-          <ActivityItem
-            icon={<CheckCircle2 className="w-5 h-5" />}
-            title="Sesión Actual"
-            value={getBrowserInfo()}
-            color="green"
-          />
-
-          {/* Intentos Fallidos */}
-          <ActivityItem
-            icon={<AlertCircle className="w-5 h-5" />}
-            title="Intentos Fallidos"
-            value={
-              (user?.failedAttempts || 0) === 0
-                ? "Ninguno"
-                : `${user?.failedAttempts} intento(s)`
-            }
-            color={
-              (user?.failedAttempts || 0) > 0
-                ? "amber"
-                : "green"
-            }
-          />
-        </div>
-      </div>
     </div>
   );
 }
@@ -447,13 +393,13 @@ export default function SeguridadTab({ user }) {
 // ============================================================
 function ActivityItem({ icon, title, value, color }) {
   const colorClasses = {
-    blue: "bg-blue-50 border-blue-200",
+    blue: "bg-[#0a5ba9]/5 border-[#0a5ba9]/20",
     green: "bg-green-50 border-green-200",
     amber: "bg-amber-50 border-amber-200",
   };
 
   const iconColorClasses = {
-    blue: "text-blue-600",
+    blue: "text-[#0a5ba9]",
     green: "text-green-600",
     amber: "text-amber-600",
   };

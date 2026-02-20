@@ -1,11 +1,8 @@
 // ========================================================================
 // 👋 BienvenidaExterno.jsx – Página de Bienvenida para Usuarios Externos
 // ========================================================================
-// Diseño profesional inspirado en BienvenidaCoordCitas
-// Para IPRESS externas que solicitan servicios de telemedicina
-// ========================================================================
 
-import React, { useState } from "react";
+import React from "react";
 import { useAuth } from "../../../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import {
@@ -16,12 +13,12 @@ import {
   CheckCircle2,
   BarChart3,
   Heart,
-  TrendingUp,
-  Zap,
   Video,
-  Copy,
-  Radio,
   ExternalLink,
+  Monitor,
+  Activity,
+  Building2,
+  Stethoscope,
 } from "lucide-react";
 
 export default function BienvenidaExterno() {
@@ -30,84 +27,46 @@ export default function BienvenidaExterno() {
 
   const genero = user?.genero === "F" || user?.genero === "FEMENINO" ? "a" : "o";
   const nombreUsuario = user?.nombreCompleto || "Usuario";
-
-  // Estilo para animación suave de pulse
-  const subtlePulseStyle = `
-    @keyframes subtlePulse {
-      0%, 100% { opacity: 1; }
-      50% { opacity: 0.85; }
-    }
-    .subtle-pulse {
-      animation: subtlePulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-    }
-  `;
+  const nombreIpress = user?.nombreIpress || "INSTITUCIÓN EXTERNA (IPRESS)";
+  const isPadomi = user?.nombreIpress?.toUpperCase().includes("PADOMI") || false;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-slate-50 to-blue-50 flex flex-col overflow-hidden">
-      <style>{subtlePulseStyle}</style>
 
-
-      {/* Main Content - Horizontal Layout */}
       <div className="flex flex-1 overflow-hidden">
-
-        {/* Main Scrollable Content */}
         <div className="flex-1 overflow-y-auto">
-          <div className="p-4 md:p-6 space-y-4 md:space-y-6">
-            {/* Header - Compact */}
-            <div className="space-y-2">
-              <h1 className="text-2xl md:text-3xl font-bold text-slate-900">
-                ¡Bienvenid{genero}, {nombreUsuario}!
-              </h1>
-              <p className="text-sm md:text-base text-slate-600">
-                Centro Nacional de Telemedicina - CENATE
-              </p>
-            </div>
+          <div className="p-4 md:p-6 space-y-6 md:space-y-8">
 
-            {/* Hero Card - Optimized for Landscape Tablet */}
-            <div className="bg-gradient-to-br from-blue-700 to-teal-700 rounded-xl shadow-lg overflow-hidden relative">
-              {/* Overlay for better contrast */}
+            {/* ── Hero ── */}
+            <div className="bg-gradient-to-br from-blue-700 to-teal-700 rounded-2xl shadow-lg overflow-hidden relative">
               <div className="absolute inset-0 bg-black/10" />
-
-              <div className="relative grid grid-cols-1 md:grid-cols-5 gap-4 p-4 md:p-5 text-white items-center">
-                {/* Contenido */}
+              <div className="relative grid grid-cols-1 md:grid-cols-5 gap-4 p-5 md:p-6 text-white items-center">
                 <div className="md:col-span-4 space-y-2">
-                  <h2 className="text-lg md:text-xl font-bold leading-tight">
-                    Portal de Servicios de Telemedicina para IPRESS Consultantes
-                  </h2>
-                  <p className="text-blue-100 text-xs md:text-sm leading-relaxed">
-                    Como IPRESS externa, utiliza este portal para solicitar servicios de telemedicina,
-                    verificar el estado de tus solicitudes, informar diagnósticos situacionales y acceder
-                    a información sobre los servicios de telemedicina disponibles en CENATE.
+                  <p className="text-blue-200 text-xs font-medium uppercase tracking-widest">
+                    Portal de Telemedicina · CENATE
                   </p>
-
-                  {/* Rol */}
-                  <div className="pt-1 flex items-center gap-2 text-blue-100 text-xs md:text-sm">
-                    <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
-                    <span className="font-medium">INSTITUCIÓN EXTERNA (IPRESS)</span>
+                  <h1 className="text-2xl md:text-3xl font-bold leading-tight">
+                    ¡Bienvenid{genero}, {nombreUsuario}!
+                  </h1>
+                  <div className="flex items-center gap-2 pt-1">
+                    <CheckCircle2 className="w-4 h-4 text-teal-300 flex-shrink-0" />
+                    <span className="font-bold drop-shadow-sm [text-shadow:0_2px_6px_rgba(0,0,0,0.3)] text-sm md:text-base">
+                      {nombreIpress}
+                    </span>
                   </div>
+                  <p className="text-blue-100 text-xs md:text-sm leading-relaxed pt-1 max-w-xl">
+                    Utiliza este portal para solicitar servicios de telemedicina, gestionar requerimientos,
+                    informar diagnósticos situacionales y monitorear tus atenciones con CENATE.
+                  </p>
                 </div>
-
-                {/* Ícono minimalista - Edificio médico */}
                 <div className="hidden md:flex justify-center items-center md:col-span-1">
-                  <svg
-                    className="w-16 h-16 md:w-20 md:h-20"
-                    viewBox="0 0 100 100"
-                    fill="none"
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    {/* Edificio */}
+                  <svg className="w-20 h-20" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <rect x="25" y="35" width="50" height="50" rx="4" fill="white" opacity="0.9" />
-
-                    {/* Puerta */}
                     <rect x="40" y="55" width="12" height="20" fill="#1e3a8a" opacity="0.8" />
-
-                    {/* Ventanas */}
                     <rect x="32" y="42" width="8" height="8" fill="#1e3a8a" opacity="0.7" />
                     <rect x="52" y="42" width="8" height="8" fill="#1e3a8a" opacity="0.7" />
                     <rect x="32" y="54" width="8" height="8" fill="#1e3a8a" opacity="0.7" />
                     <rect x="52" y="54" width="8" height="8" fill="#1e3a8a" opacity="0.7" />
-
-                    {/* Cruz médica */}
                     <line x1="50" y1="20" x2="50" y2="30" stroke="white" strokeWidth="2.5" opacity="0.95" />
                     <line x1="45" y1="25" x2="55" y2="25" stroke="white" strokeWidth="2.5" opacity="0.95" />
                   </svg>
@@ -115,254 +74,199 @@ export default function BienvenidaExterno() {
               </div>
             </div>
 
-            {/* Tarjetas de acciones rápidas - 4 columns in landscape */}
+            {/* ── Sección: Gestión IPRESS ── */}
             <div>
-              <h3 className="text-lg md:text-xl font-bold text-slate-900 mb-3">
-                Acciones Rápidas
-              </h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 md:gap-3">
-                {/* Card 1: Formulario de Diagnóstico */}
-                <QuickActionCard
-                  icon={<FileText className="w-5 h-5 md:w-6 md:h-6" />}
-                  title="Formulario de Diagnóstico"
-                  description="Recopila información para el diagnóstico situacional de Telesalud y realiza el requerimiento de servicios."
+              <div className="flex items-center gap-2 mb-3">
+                <Building2 className="w-5 h-5 text-blue-600" />
+                <h2 className="text-lg font-bold text-slate-800">Gestión IPRESS</h2>
+                <div className="flex-1 h-px bg-slate-200 ml-2" />
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <AccionCard
+                  icon={<FileText className="w-5 h-5" />}
+                  title="Diagnóstico Situacional"
+                  description="Recopila y envía el diagnóstico situacional de Telesalud de tu IPRESS a CENATE."
                   color="indigo"
                   action={() => navigate("/roles/externo/formulario-diagnostico")}
                 />
-
-                {/* Card 2: Solicitud de Turnos */}
-                <QuickActionCard
-                  icon={<Calendar className="w-5 h-5 md:w-6 md:h-6" />}
-                  title="Solicitud de Turnos"
-                  description="Solicita las especialidades médicas que requieres de CENATE para que programe médicos a atender a tus pacientes por telemedicina."
+                <AccionCard
+                  icon={<Calendar className="w-5 h-5" />}
+                  title="Solicitud de Requerimientos"
+                  description="Solicita las especialidades médicas que requieres de CENATE para atender a tus pacientes."
                   color="emerald"
                   badge="Disponible a partir de marzo"
                   action={() => navigate("/roles/externo/solicitud-turnos")}
                 />
-
-                {/* Card 3: Gestión de Modalidad */}
-                <QuickActionCard
-                  icon={<Settings className="w-5 h-5 md:w-6 md:h-6" />}
-                  title="Gestión de Modalidades"
-                  description="Actualiza información sobre qué atenciones recibirás desde CENATE: por teleconsultorio, por teleconsulta, o de manera mixta."
+                <AccionCard
+                  icon={<Settings className="w-5 h-5" />}
+                  title="Gestión de Modalidades de Atención"
+                  description="Actualiza qué tipo de atenciones recibirás: teleconsultorio, teleconsulta o mixta."
                   color="purple"
                   action={() => navigate("/roles/externo/gestion-modalidad")}
                 />
+              </div>
+            </div>
 
-                {/* Card 4: Seguimiento de Lecturas */}
-                <QuickActionCard
-                  icon={<Zap className="w-5 h-5 md:w-6 md:h-6" />}
-                  title="Seguimiento de Lecturas"
-                  description="Dashboard dinámico para monitorear el número de lecturas pendientes por IPRESS. Datos actualizados diariamente."
+            {/* ── Sección: Servicios de Telemedicina ── */}
+            <div>
+              <div className="flex items-center gap-2 mb-3">
+                <Stethoscope className="w-5 h-5 text-teal-600" />
+                <h2 className="text-lg font-bold text-slate-800">Servicios de Telemedicina</h2>
+                <div className="flex-1 h-px bg-slate-200 ml-2" />
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <AccionCard
+                  icon={<Monitor className="w-5 h-5" />}
+                  title="Teleconsulta"
+                  description="Consulta el listado de pacientes y estadísticas de teleconsulta de tu IPRESS."
+                  color="blue"
+                  action={() => navigate("/roles/externo/teleconsulta/listado")}
+                />
+                <AccionCard
+                  icon={<Activity className="w-5 h-5" />}
+                  title="Teleinterconsulta"
+                  description="Accede al módulo Tele-EKG para envío de electrocardiogramas e interpretación remota."
+                  color="teal"
+                  action={() => navigate("/teleekgs/ipress-workspace")}
+                />
+                <AccionCard
+                  icon={<BarChart3 className="w-5 h-5" />}
+                  title="Teleapoyo al Diagnóstico"
+                  description="Monitorea el número de lecturas pendientes por IPRESS con datos actualizados diariamente."
                   color="cyan"
                   action={() => navigate("/roles/externo/seguimiento-lecturas")}
                 />
               </div>
             </div>
 
-            {/* Módulos Especializados - 2 columns in landscape */}
+            {/* ── Módulos Especializados ── */}
             <div>
-              <h3 className="text-lg md:text-xl font-bold text-slate-900 mb-3">
-                Módulos Especializados
-              </h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-2 md:gap-3">
-                {/* TELE-EKG */}
-                <SpecializedModuleCard
-                  icon={<Heart className="w-5 h-5 md:w-6 md:h-6" />}
-                  title="TELE-EKG"
-                  description="Envío de electrocardiogramas a CENATE para interpretación remota por especialistas. Agiliza el diagnóstico cardiológico."
-                  color="red"
-                  buttonText="Enviar EKG"
-                  badge="Actualmente disponible solo para PADOMI"
-                  disabled={true}
-                />
+              <div className="flex items-center gap-2 mb-3">
+                <Heart className="w-5 h-5 text-red-500" />
+                <h2 className="text-lg font-bold text-slate-800">Módulos Especializados</h2>
+                <div className="flex-1 h-px bg-slate-200 ml-2" />
+              </div>
+              <div className={`grid grid-cols-1 ${isPadomi ? "md:grid-cols-2" : "md:grid-cols-1 max-w-lg"} gap-3`}>
 
-                {/* Enlace de Videollamada - Teleconsultorio */}
+                {/* TELE-EKG — solo visible para PADOMI */}
+                {isPadomi && (
+                  <button
+                    onClick={() => navigate("/teleekgs/ipress-workspace")}
+                    className="bg-white border border-red-200 hover:border-red-400 rounded-xl p-4 md:p-5 shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer group text-left"
+                  >
+                    <div className="flex items-start gap-3">
+                      <div className="bg-red-50 w-11 h-11 rounded-lg flex items-center justify-center flex-shrink-0 group-hover:bg-red-100 transition-colors">
+                        <Heart className="w-5 h-5 text-red-500" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap mb-1">
+                          <h4 className="font-semibold text-slate-800 text-sm md:text-base">TELE-EKG</h4>
+                          <span className="bg-red-100 text-red-700 px-2 py-0.5 rounded-full text-xs font-semibold">
+                            PADOMI
+                          </span>
+                        </div>
+                        <p className="text-xs md:text-sm text-slate-500 mb-2">
+                          Envío de electrocardiogramas a CENATE para interpretación remota por especialistas.
+                        </p>
+                        <div className="flex items-center gap-1.5 text-red-600 text-xs md:text-sm font-medium group-hover:gap-2 transition-all">
+                          Ir al módulo <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
+                        </div>
+                      </div>
+                    </div>
+                  </button>
+                )}
+
+                {/* Enlace de Videollamada */}
                 <button
                   onClick={() => window.open("https://us06web.zoom.us/j/86422884993?pwd=By6ANg3MnCxbcRVbE0CeotV7G8fLky.1#success", "_blank")}
-                  className="bg-white border border-blue-200 hover:border-blue-300 rounded-xl p-4 md:p-5 shadow-sm transition-all duration-300 cursor-pointer group text-left relative hover:shadow-lg hover:scale-105 min-h-[44px] flex items-center"
+                  className="bg-white border border-blue-200 hover:border-blue-400 rounded-xl p-4 md:p-5 shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer group text-left"
                 >
-                  <div className="flex items-start gap-3 w-full">
-                    <div className="bg-blue-100 w-10 h-10 md:w-12 md:h-12 rounded-lg flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform min-w-[44px] min-h-[44px]">
-                      <span className="text-blue-600">
-                        <Video className="w-5 h-5 md:w-6 md:h-6" />
-                      </span>
+                  <div className="flex items-start gap-3">
+                    <div className="bg-blue-50 w-11 h-11 rounded-lg flex items-center justify-center flex-shrink-0 group-hover:bg-blue-100 transition-colors">
+                      <Video className="w-5 h-5 text-blue-500" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <h4 className="font-semibold text-slate-900 mb-1 text-sm md:text-base">Enlace de Videollamada</h4>
-                      <p className="text-xs md:text-sm text-slate-600 mb-2 line-clamp-2">Accede a la teleconsulta con CENATE a través de Zoom.</p>
+                      <h4 className="font-semibold text-slate-800 mb-1 text-sm md:text-base">Enlace de Videollamada</h4>
+                      <p className="text-xs md:text-sm text-slate-500 mb-2">
+                        Accede a la teleconsulta con CENATE a través de Zoom.
+                      </p>
                       <div className="flex items-center gap-1.5 text-blue-600 text-xs md:text-sm font-medium group-hover:gap-2 transition-all">
-                        Abrir en Zoom
-                        <ExternalLink className="w-3.5 h-3.5 md:w-4 md:h-4" />
+                        Abrir en Zoom <ExternalLink className="w-3.5 h-3.5" />
                       </div>
                     </div>
                   </div>
                 </button>
+
               </div>
             </div>
 
             {/* Footer */}
-            <div className="text-center text-xs md:text-sm text-slate-500 pt-4 border-t border-slate-200">
-              <p>
-                ¿Necesitas ayuda? Contacta al equipo de soporte de CENATE o revisa la documentación en tu panel.
-              </p>
+            <div className="text-center text-xs md:text-sm text-slate-400 pt-2 border-t border-slate-200">
+              ¿Necesitas ayuda? Contacta al equipo de soporte de CENATE o revisa la documentación en tu panel.
             </div>
+
           </div>
         </div>
       </div>
 
-      {/* Mobile Bottom Navigation - Hidden on lg+ */}
+      {/* Mobile Bottom Navigation */}
       <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 h-14 z-40 flex items-center px-4 gap-1">
-        <button
-          onClick={() => {
-            navigate("/roles/externo/formulario-diagnostico");
-          }}
-          className="flex-1 flex flex-col items-center justify-center py-2 px-1 rounded-lg text-slate-600 hover:text-blue-600 hover:bg-blue-50 transition-colors"
-          aria-label="Formulario"
-        >
-          <FileText className="w-5 h-5" />
-          <span className="text-[10px] font-semibold mt-0.5">Formulario</span>
-        </button>
-        <button
-          onClick={() => {
-            navigate("/roles/externo/solicitud-turnos");
-          }}
-          className="flex-1 flex flex-col items-center justify-center py-2 px-1 rounded-lg text-slate-600 hover:text-emerald-600 hover:bg-emerald-50 transition-colors"
-          aria-label="Turnos"
-        >
-          <Calendar className="w-5 h-5" />
-          <span className="text-[10px] font-semibold mt-0.5">Turnos</span>
-        </button>
-        <button
-          onClick={() => {
-            navigate("/roles/externo/gestion-modalidad");
-          }}
-          className="flex-1 flex flex-col items-center justify-center py-2 px-1 rounded-lg text-slate-600 hover:text-purple-600 hover:bg-purple-50 transition-colors"
-          aria-label="Modalidades"
-        >
-          <Settings className="w-5 h-5" />
-          <span className="text-[10px] font-semibold mt-0.5">Modalidades</span>
-        </button>
-        <button
-          onClick={() => {
-            navigate("/roles/externo/seguimiento-lecturas");
-          }}
-          className="flex-1 flex flex-col items-center justify-center py-2 px-1 rounded-lg text-slate-600 hover:text-purple-600 hover:bg-purple-50 transition-colors"
-          aria-label="Lecturas"
-        >
-          <Zap className="w-5 h-5" />
-          <span className="text-[10px] font-semibold mt-0.5">Lecturas</span>
-        </button>
+        <MobileNavBtn icon={<FileText className="w-5 h-5" />} label="Diagnóstico" action={() => navigate("/roles/externo/formulario-diagnostico")} />
+        <MobileNavBtn icon={<Calendar className="w-5 h-5" />} label="Turnos" action={() => navigate("/roles/externo/solicitud-turnos")} />
+        <MobileNavBtn icon={<Settings className="w-5 h-5" />} label="Modalidades" action={() => navigate("/roles/externo/gestion-modalidad")} />
+        <MobileNavBtn icon={<Monitor className="w-5 h-5" />} label="Teleconsulta" action={() => navigate("/roles/externo/teleconsulta/listado")} />
+        <MobileNavBtn icon={<BarChart3 className="w-5 h-5" />} label="Lecturas" action={() => navigate("/roles/externo/seguimiento-lecturas")} />
       </nav>
-
-      {/* Padding for mobile bottom nav */}
       <div className="lg:hidden h-14" />
     </div>
   );
 }
 
-// ============================================================
-// 🔧 Componente: Tarjeta de Acción Rápida
-// ============================================================
-function QuickActionCard({ icon, title, description, color, badge, action }) {
-  const colorClasses = {
-    indigo: "bg-indigo-50 border-indigo-200 hover:bg-indigo-100 hover:border-indigo-300",
-    emerald: "bg-emerald-50 border-emerald-200 hover:bg-emerald-100 hover:border-emerald-300",
-    purple: "bg-purple-50 border-purple-200 hover:bg-purple-100 hover:border-purple-300",
-    cyan: "bg-cyan-50 border-cyan-200 hover:bg-cyan-100 hover:border-cyan-300",
-  };
+// ── Componente: Tarjeta de Acción ──────────────────────────────
+const colorMap = {
+  indigo: { card: "hover:border-indigo-300 hover:bg-indigo-50/50", icon: "bg-indigo-50 text-indigo-600", border: "border-slate-200" },
+  emerald: { card: "hover:border-emerald-300 hover:bg-emerald-50/50", icon: "bg-emerald-50 text-emerald-600", border: "border-slate-200" },
+  purple:  { card: "hover:border-purple-300 hover:bg-purple-50/50",  icon: "bg-purple-50 text-purple-600",  border: "border-slate-200" },
+  blue:    { card: "hover:border-blue-300 hover:bg-blue-50/50",      icon: "bg-blue-50 text-blue-600",      border: "border-slate-200" },
+  teal:    { card: "hover:border-teal-300 hover:bg-teal-50/50",      icon: "bg-teal-50 text-teal-600",      border: "border-slate-200" },
+  cyan:    { card: "hover:border-cyan-300 hover:bg-cyan-50/50",      icon: "bg-cyan-50 text-cyan-600",      border: "border-slate-200" },
+};
 
-  const iconColorClasses = {
-    indigo: "bg-indigo-100 text-indigo-600",
-    emerald: "bg-emerald-100 text-emerald-600",
-    purple: "bg-purple-100 text-purple-600",
-    cyan: "bg-cyan-100 text-cyan-600",
-  };
-
+function AccionCard({ icon, title, description, color, badge, action }) {
+  const c = colorMap[color] || colorMap.indigo;
   return (
     <button
       onClick={action}
-      className={`${colorClasses[color]} border rounded-lg md:rounded-xl p-4 md:p-5 transition-all duration-300 cursor-pointer group text-left w-full relative shadow-sm hover:shadow-lg hover:scale-105 min-h-[44px] flex flex-col justify-center`}
-      aria-label={title}
+      className={`bg-white border ${c.border} ${c.card} rounded-xl p-4 md:p-5 shadow-sm hover:shadow-md transition-all duration-200 text-left w-full group flex flex-col gap-3`}
     >
       {badge && (
-        <div className="absolute top-2 md:top-3 right-2 md:right-3 subtle-pulse">
-          <div className="bg-red-500 text-white px-2 md:px-3 py-1 rounded-full text-xs font-semibold">
-            {badge}
-          </div>
-        </div>
+        <span className="self-start bg-red-500 text-white text-xs font-semibold px-2.5 py-1 rounded-full">
+          {badge}
+        </span>
       )}
-      <div className={`${iconColorClasses[color]} w-10 h-10 md:w-11 md:h-11 rounded-lg flex items-center justify-center mb-2 md:mb-3 group-hover:scale-110 transition-transform min-w-[44px] min-h-[44px]`}>
+      <div className={`${c.icon} w-10 h-10 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform`}>
         {icon}
       </div>
-      <h4 className="font-semibold text-slate-900 mb-1 text-sm md:text-base line-clamp-2">{title}</h4>
-      <p className="text-xs md:text-sm text-slate-600 line-clamp-3">{description}</p>
+      <div>
+        <h4 className="font-semibold text-slate-800 text-sm md:text-base mb-1">{title}</h4>
+        <p className="text-xs md:text-sm text-slate-500 leading-relaxed">{description}</p>
+      </div>
+      <div className="flex items-center gap-1 text-xs font-medium text-slate-400 group-hover:text-slate-600 transition-colors mt-auto">
+        Ir al módulo <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
+      </div>
     </button>
   );
 }
 
-// ============================================================
-// 🔧 Componente: Tarjeta de Módulo Especializado
-// ============================================================
-function SpecializedModuleCard({ icon, title, description, color, buttonText, badge, disabled, action }) {
-  const borderColorMap = {
-    red: "border-red-200 hover:border-red-300",
-    cyan: "border-cyan-200 hover:border-cyan-300",
-    purple: "border-purple-200 hover:border-purple-300",
-  };
-
-  const bgColorMap = {
-    red: disabled ? "bg-slate-50" : "bg-white hover:bg-red-50",
-    cyan: "bg-white hover:bg-cyan-50",
-    purple: "bg-white hover:bg-purple-50",
-  };
-
-  const buttonColorMap = {
-    red: "text-red-600",
-    cyan: "text-cyan-600",
-    purple: "text-purple-600",
-  };
-
-  const iconBgColorMap = {
-    red: "bg-red-100",
-    cyan: "bg-cyan-100",
-    purple: "bg-purple-100",
-  };
-
-  const iconColorMap = {
-    red: "text-red-600",
-    cyan: "text-cyan-600",
-    purple: "text-purple-600",
-  };
-
+// ── Componente: Botón de navegación mobile ─────────────────────
+function MobileNavBtn({ icon, label, action }) {
   return (
     <button
-      onClick={!disabled ? action : undefined}
-      disabled={disabled}
-      className={`${bgColorMap[color]} border ${borderColorMap[color]} rounded-lg md:rounded-xl p-4 md:p-5 shadow-sm transition-all duration-300 ${disabled ? "cursor-not-allowed opacity-60" : "cursor-pointer group hover:shadow-lg hover:scale-105"} text-left relative min-h-[44px] flex items-start`}
-      aria-label={title}
+      onClick={action}
+      className="flex-1 flex flex-col items-center justify-center py-2 px-1 rounded-lg text-slate-500 hover:text-blue-600 hover:bg-blue-50 transition-colors"
     >
-      {badge && (
-        <div className="absolute top-2 md:top-3 right-2 md:right-3 subtle-pulse">
-          <div className={`${disabled ? "bg-slate-600" : "bg-red-500"} text-white px-2 md:px-3 py-1 rounded-full text-xs font-semibold`}>
-            {badge}
-          </div>
-        </div>
-      )}
-      <div className="flex items-start gap-3 md:gap-4 w-full">
-        <div className={`${iconBgColorMap[color]} w-10 h-10 md:w-12 md:h-12 rounded-lg flex items-center justify-center flex-shrink-0 ${!disabled ? "group-hover:scale-110" : ""} transition-transform min-w-[44px] min-h-[44px]`}>
-          <span className={`${iconColorMap[color]}`}>{icon}</span>
-        </div>
-        <div className="flex-1 min-w-0">
-          <h4 className="font-semibold text-slate-900 mb-1 text-sm md:text-base line-clamp-2">{title}</h4>
-          <p className="text-xs md:text-sm text-slate-600 mb-2 line-clamp-2">{description}</p>
-          {!disabled && (
-            <div className={`flex items-center gap-1.5 md:gap-2 ${buttonColorMap[color]} text-xs md:text-sm font-medium group-hover:gap-2 md:group-hover:gap-3 transition-all`}>
-              {buttonText} <ArrowRight className="w-3.5 h-3.5 md:w-4 md:h-4 flex-shrink-0" />
-            </div>
-          )}
-        </div>
-      </div>
+      {icon}
+      <span className="text-[10px] font-semibold mt-0.5">{label}</span>
     </button>
   );
 }

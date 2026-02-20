@@ -108,6 +108,21 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         // 🔧 DISABLED: Tabla dim_personal no existe, deshabilitando para permitir login
         String especialidad = null;
 
+        // 🏥 Obtener nombre de la IPRESS para usuarios externos
+        String nombreIpress = null;
+        try {
+            nombreIpress = jdbcTemplate.queryForObject(
+                "SELECT i.desc_ipress FROM public.dim_personal_externo pe " +
+                "JOIN public.dim_ipress i ON pe.id_ipress = i.id_ipress " +
+                "WHERE pe.id_user = ?",
+                String.class,
+                user.getIdUser()
+            );
+            log.info("🏥 IPRESS encontrada para usuario {}: {}", user.getIdUser(), nombreIpress);
+        } catch (Exception e) {
+            log.info("ℹ️ No se encontró IPRESS para usuario {}: {}", user.getIdUser(), e.getMessage());
+        }
+
         Map<String, Object> claims = new HashMap<>();
         claims.put("id_user", user.getIdUser());  // 🆕 CRITICO: ID en el JWT para persistencia
         claims.put("roles", roles);
@@ -115,6 +130,9 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         claims.put("nombre_completo", user.getNombreCompleto());  // ✅ Nombre y apellido
         if (especialidad != null) {
             claims.put("especialidad", especialidad);  // ✅ v1.77.0: Especialidad del médico
+        }
+        if (nombreIpress != null) {
+            claims.put("nombre_ipress", nombreIpress);  // 🏥 IPRESS para usuarios externos (en JWT)
         }
 
         String token = jwtService.generateToken(claims, userDetails);
@@ -162,6 +180,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                 .requiereCambioPassword(user.getRequiereCambioPassword() != null ? user.getRequiereCambioPassword() : false)  // 🔑 Flag de primer acceso
                 .sessionId(sessionId)  // 🆕 ID de sesión para tracking
                 .especialidad(especialidad)  // ✅ v1.77.0: Especialidad del médico
+                .nombreIpress(nombreIpress)  // 🏥 Nombre de la IPRESS (solo externos)
                 .message("Inicio de sesión exitoso")
                 .build();
     }

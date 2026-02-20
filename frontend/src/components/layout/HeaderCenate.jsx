@@ -19,6 +19,14 @@ export default function HeaderCenate() {
   const { user, logout } = useAuth() || {}; // 🛡 Evita error si el contexto no existe
   const navigate = useNavigate();
 
+  // 🔒 Notificaciones solo para personal interno (no EXTERNO/INSTITUCION)
+  const isExternoRole = user?.roles?.some(
+    (rol) =>
+      typeof rol === "string"
+        ? rol.toUpperCase().includes("EXTERNO") || rol.toUpperCase().includes("INSTITUCION")
+        : rol?.authority?.toUpperCase().includes("EXTERNO") || rol?.authority?.toUpperCase().includes("INSTITUCION")
+  ) || false;
+
   // 🌗 Estado inicial del modo oscuro (persistente)
   const [darkMode, setDarkMode] = useState(() => {
     return localStorage.getItem("theme") === "dark";
@@ -40,14 +48,14 @@ export default function HeaderCenate() {
     }
   }, [darkMode]);
 
-  // 🔔 Cargar notificaciones para todos los usuarios
+  // 🔔 Cargar notificaciones solo para personal interno
   useEffect(() => {
-    if (user) {
+    if (user && !isExternoRole) {
       cargarCantidadNotificaciones();
       const interval = setInterval(cargarCantidadNotificaciones, 5 * 60 * 1000);
       return () => clearInterval(interval);
     }
-  }, [user]);
+  }, [user, isExternoRole]);
 
   const cargarCantidadNotificaciones = async () => {
     try {
@@ -78,22 +86,24 @@ export default function HeaderCenate() {
 
       {/* 🔔 Controles de usuario */}
       <div className="flex items-center gap-4 sm:gap-5">
-        {/* Notificaciones */}
-        <button
-          onClick={handleNotificacionClick}
-          aria-label="Notificaciones"
-          className="relative p-3 rounded-xl bg-white/10 hover:bg-white/20 text-white border border-white/20 transition-all"
-        >
-          <Bell className="w-6 h-6" />
-          {cantidadNotificaciones > 0 && (
-            <>
-              <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full ring-2 ring-white animate-pulse"></span>
-              <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
-                {cantidadNotificaciones > 9 ? '9+' : cantidadNotificaciones}
-              </span>
-            </>
-          )}
-        </button>
+        {/* Notificaciones - solo para personal interno */}
+        {!isExternoRole && (
+          <button
+            onClick={handleNotificacionClick}
+            aria-label="Notificaciones"
+            className="relative p-3 rounded-xl bg-white/10 hover:bg-white/20 text-white border border-white/20 transition-all"
+          >
+            <Bell className="w-6 h-6" />
+            {cantidadNotificaciones > 0 && (
+              <>
+                <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full ring-2 ring-white animate-pulse"></span>
+                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
+                  {cantidadNotificaciones > 9 ? '9+' : cantidadNotificaciones}
+                </span>
+              </>
+            )}
+          </button>
+        )}
 
         {/* Menú de usuario (avatar + dropdown) */}
         <UserMenu />
@@ -101,8 +111,8 @@ export default function HeaderCenate() {
 
     </header>
 
-    {/* Panel de Notificaciones - FUERA del header para z-index correcto */}
-    {showNotificaciones && (
+    {/* Panel de Notificaciones - FUERA del header para z-index correcto (solo interno) */}
+    {!isExternoRole && showNotificaciones && (
       <div className="fixed z-50 top-16 right-6">
         <NotificacionesPanel
           isOpen={showNotificaciones}
