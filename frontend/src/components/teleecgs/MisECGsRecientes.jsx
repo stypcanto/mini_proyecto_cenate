@@ -805,8 +805,8 @@ export default function MisECGsRecientes({
           <h3 className="text-sm font-bold text-blue-900">🔍 Filtros de Búsqueda Reactivos</h3>
         </div>
 
-        {/* Grid responsive: 1 col móvil, 2 cols tablet, 5 cols desktop */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+        {/* Grid responsive: 1 col móvil, 3 cols desktop */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           {/* DNI */}
           <div>
             <label className="block text-xs font-semibold text-blue-900 mb-1.5">
