@@ -238,7 +238,6 @@ export default function DynamicSidebar({ collapsed = false, onToggleCollapse }) 
   const isCoordinadorGestionCitas = roles.includes("COORDINADOR_GESTION_CITAS") || roles.includes("COORD_GESTION_CITAS") || roles.includes("COORDINADOR GESTION CITAS") || roles.includes("COORD. GESTION CITAS");
   // Detección flexible de PERSONAL_107 (puede venir como PERSONAL_107, PERSONAL-107, etc)
   const isPersonal107 = roles.some(r => r.includes("PERSONAL") && r.includes("107"));
-  const isEnfermeria = roles.includes("ENFERMERIA");
   const isMedico = roles.includes("MEDICO");
   const isCoordinadorTeleurgencias = roles.includes("COORDINADOR_MEDICO_TELEURGENCIAS");
   const isMesaDeAyuda = roles.some(r => r.includes("MESA") && r.includes("AYUDA"));
@@ -325,17 +324,6 @@ export default function DynamicSidebar({ collapsed = false, onToggleCollapse }) 
         }
       }
 
-      // Para usuarios ENFERMERIA: expandir "Enfermería"
-      if (isEnfermeria) {
-        const moduloEnfermeria = modulosPermitidos.find(m =>
-          m.nombreModulo?.toLowerCase().includes("enfermería") ||
-          m.nombreModulo?.toLowerCase().includes("enfermeria")
-        );
-        if (moduloEnfermeria) {
-          sectionsToOpen[moduloEnfermeria.nombreModulo] = true;
-        }
-      }
-
       // Para usuarios COORDINADOR_GESTION_CITAS: expandir "Bolsas de Pacientes"
       if (isCoordinadorGestionCitas) {
         const moduloBolsas = modulosPermitidos.find(m =>
@@ -404,7 +392,7 @@ export default function DynamicSidebar({ collapsed = false, onToggleCollapse }) 
         setOpenSections(prev => ({ ...prev, ...sectionsToOpen }));
       }
     }
-  }, [loading, modulosPermitidos, collapsed, isSuperAdmin, isExterno, isCoordinadorRed, isGestorCitas, isCoordinadorGestionCitas, isPersonal107, isEnfermeria, isMedico, isCoordinadorTeleurgencias, isMesaDeAyuda]);
+  }, [loading, modulosPermitidos, collapsed, isSuperAdmin, isExterno, isCoordinadorRed, isGestorCitas, isCoordinadorGestionCitas, isPersonal107, isMedico, isCoordinadorTeleurgencias, isMesaDeAyuda]);
 
   // ============================================================
   // Render principal - Menu dinamico desde la BD

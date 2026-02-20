@@ -477,26 +477,7 @@ export const componentRegistry = {
     pathMatch: '/programacion/detalle', // Para MBAC, usar path sin parámetros
   },
 
-  // ========================================================================
-  // 👩‍⚕️ MÓDULO ENFERMERÍA
-  // ========================================================================
-  '/enfermeria/bienvenida': {
-    component: lazy(() => import('../pages/enfermeria/BienvenidaEnfermeria')),
-    requiredAction: 'ver',
-    requiredRoles: ['ENFERMERIA'],
-  },
-
-  '/enfermeria/mis-pacientes': {
-    component: lazy(() => import('../pages/enfermeria/MisPacientesEnfermeria')),
-    requiredAction: 'ver',
-    requiredRoles: ['ENFERMERIA'],
-  },
-
-  '/enfermeria/dashboard': {
-    component: lazy(() => import('../pages/enfermeria/DashboardEnfermeria')),
-    requiredAction: 'ver',
-    requiredRoles: ['ENFERMERIA', 'SUPERADMIN'], // Enfermeras y SUPERADMIN pueden ver
-  },
+  // MÓDULO ENFERMERÍA eliminado (v1.72.1) — integrado en Panel Profesional de Salud
 
   // ========================================================================
   // 🫀 MÓDULO TELEECG (ADMIN - Vista Consolidada)
