@@ -3226,6 +3226,7 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
         // 4. Crear nueva solicitud con campos válidos de la entidad SolicitudBolsa
         // ✅ v1.46.4: Si codigoIpressAdscripcion es null, pasarlo como null (nullable)
         // ✅ v1.46.4: Auto-asignar al gestor que realiza la importación
+        // ✅ v1.70.0: Insertar condicion_medica con valor "Pendiente"
         SolicitudBolsa nuevaSolicitud = SolicitudBolsa.builder()
             .numeroSolicitud(numeroSolicitud)
             .pacienteDni(request.getPacienteDni())
@@ -3245,6 +3246,7 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
             .idPersonal(request.getIdPersonal()) // ✅ v1.47.1 - ID del médico especialista
             .fechaAtencion(request.getFechaAtencion()) // ✅ v1.47.2 - Fecha de atención
             .horaAtencion(request.getHoraAtencion()) // ✅ v1.47.2 - Hora de atención
+            .condicionMedica("Pendiente") // ✅ v1.70.0 - Inicializar con "Pendiente"
             .responsableGestoraId(responsableGestoraId) // ✅ Auto-asignar al gestor actual
             .fechaAsignacion(OffsetDateTime.now()) // ✅ Registrar fecha de asignación
             .activo(true)

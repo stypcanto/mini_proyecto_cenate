@@ -3233,21 +3233,116 @@ CENATE de Essalud`;
 
                             {/* 📅 Fecha y Hora de Cita - v1.46.7 */}
                             <div className="col-span-2 bg-purple-50 p-3 rounded-lg border-2 border-purple-300">
-                              <label className="block text-sm font-semibold text-gray-800 mb-2">
+                              <label className="block text-sm font-semibold text-gray-800 mb-3">
                                 📅 Fecha y Hora de Cita
                               </label>
-                              <input
-                                type="datetime-local"
-                                value={fechaHoraCitaSeleccionada}
-                                onChange={(e) => setFechaHoraCitaSeleccionada(e.target.value)}
-                                className="w-full px-3 py-2.5 border-2 border-purple-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-purple-600 text-sm"
-                              />
+                              <div className="space-y-2">
+                                {/* Campo Fecha */}
+                                <div>
+                                  <label className="text-xs text-gray-700 font-medium">Fecha</label>
+                                  <input
+                                    type="date"
+                                    value={fechaHoraCitaSeleccionada?.split('T')[0] || ''}
+                                    onChange={(e) => {
+                                      const fechaSeleccionada = e.target.value;
+                                      const horaActual = fechaHoraCitaSeleccionada?.split('T')[1] || '';
+                                      setFechaHoraCitaSeleccionada(horaActual ? `${fechaSeleccionada}T${horaActual}` : fechaSeleccionada);
+                                    }}
+                                    min={new Date().toISOString().slice(0, 10)}
+                                    className="w-full px-3 py-2 border-2 border-purple-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-purple-600 text-sm"
+                                  />
+                                </div>
+
+                                {/* Campo Hora - Select con intervalos de 15 minutos */}
+                                <div>
+                                  <label className="text-xs text-gray-700 font-medium">Hora</label>
+                                  <select
+                                    value={fechaHoraCitaSeleccionada?.split('T')[1] || ''}
+                                    onChange={(e) => {
+                                      const horaSeleccionada = e.target.value;
+                                      const fechaActual = fechaHoraCitaSeleccionada?.split('T')[0] || '';
+                                      const hoy = new Date().toISOString().slice(0, 10);
+                                      
+                                      // Si es hoy, validar que la hora no sea anterior a ahora
+                                      if (fechaActual === hoy) {
+                                        const ahora = new Date();
+                                        const horaAhora = `${String(ahora.getHours()).padStart(2, '0')}:${String(ahora.getMinutes()).padStart(2, '0')}`;
+                                        
+                                        if (horaSeleccionada < horaAhora) {
+                                          toast.error("❌ No puedes seleccionar una hora anterior a la actual");
+                                          return;
+                                        }
+                                      }
+                                      
+                                      setFechaHoraCitaSeleccionada(fechaActual ? `${fechaActual}T${horaSeleccionada}` : horaSeleccionada);
+                                    }}
+                                    className="w-full px-3 py-2 border-2 border-purple-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-purple-600 text-sm"
+                                  >
+                                    <option value="">Seleccionar hora...</option>
+                                    <option value="08:00">08:00</option>
+                                    <option value="08:15">08:15</option>
+                                    <option value="08:30">08:30</option>
+                                    <option value="08:45">08:45</option>
+                                    <option value="09:00">09:00</option>
+                                    <option value="09:15">09:15</option>
+                                    <option value="09:30">09:30</option>
+                                    <option value="09:45">09:45</option>
+                                    <option value="10:00">10:00</option>
+                                    <option value="10:15">10:15</option>
+                                    <option value="10:30">10:30</option>
+                                    <option value="10:45">10:45</option>
+                                    <option value="11:00">11:00</option>
+                                    <option value="11:15">11:15</option>
+                                    <option value="11:30">11:30</option>
+                                    <option value="11:45">11:45</option>
+                                    <option value="12:00">12:00</option>
+                                    <option value="12:15">12:15</option>
+                                    <option value="12:30">12:30</option>
+                                    <option value="12:45">12:45</option>
+                                    <option value="13:00">13:00</option>
+                                    <option value="13:15">13:15</option>
+                                    <option value="13:30">13:30</option>
+                                    <option value="13:45">13:45</option>
+                                    <option value="14:00">14:00</option>
+                                    <option value="14:15">14:15</option>
+                                    <option value="14:30">14:30</option>
+                                    <option value="14:45">14:45</option>
+                                    <option value="15:00">15:00</option>
+                                    <option value="15:15">15:15</option>
+                                    <option value="15:30">15:30</option>
+                                    <option value="15:45">15:45</option>
+                                    <option value="16:00">16:00</option>
+                                    <option value="16:15">16:15</option>
+                                    <option value="16:30">16:30</option>
+                                    <option value="16:45">16:45</option>
+                                    <option value="17:00">17:00</option>
+                                    <option value="17:15">17:15</option>
+                                    <option value="17:30">17:30</option>
+                                    <option value="17:45">17:45</option>
+                                  </select>
+                                </div>
+                              </div>
+                              <p className="text-xs text-gray-600 mt-2">✅ Selecciona fecha (desde hoy) y hora (intervalos de 15 minutos)</p>
                             </div>
                           </div>
 
                           {/* Botón agregar */}
                           <button
-                            onClick={() => importarPacienteAdicional(asegurado)}
+                            onClick={() => {
+                              // Validar que la fecha no sea anterior a hoy
+                              if (fechaHoraCitaSeleccionada) {
+                                const fechaSeleccionada = fechaHoraCitaSeleccionada.split('T')[0];
+                                const ahora = new Date();
+                                const hoy = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate()).toISOString().slice(0, 10);
+                                
+                                if (fechaSeleccionada < hoy) {
+                                  toast.error("❌ No puedes citar a una fecha anterior a hoy");
+                                  return;
+                                }
+                              }
+                              
+                              importarPacienteAdicional(asegurado);
+                            }}
                             disabled={agregandoPaciente}
                             className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
                           >
