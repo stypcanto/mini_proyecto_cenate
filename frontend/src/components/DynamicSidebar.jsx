@@ -239,6 +239,10 @@ export default function DynamicSidebar({ collapsed = false, onToggleCollapse }) 
   // Detección flexible de PERSONAL_107 (puede venir como PERSONAL_107, PERSONAL-107, etc)
   const isPersonal107 = roles.some(r => r.includes("PERSONAL") && r.includes("107"));
   const isMedico = roles.includes("MEDICO");
+  const isProfesionalSalud = roles.some(r => [
+    "MEDICO", "ENFERMERIA", "OBSTETRA", "LABORATORIO", "RADIOLOGIA",
+    "FARMACIA", "PSICOLOGO", "TERAPISTA_LENG", "TERAPISTA_FISI", "NUTRICION"
+  ].includes(r));
   const isCoordinadorTeleurgencias = roles.includes("COORDINADOR_MEDICO_TELEURGENCIAS");
   const isMesaDeAyuda = roles.some(r => r.includes("MESA") && r.includes("AYUDA"));
 
@@ -346,16 +350,20 @@ export default function DynamicSidebar({ collapsed = false, onToggleCollapse }) 
         }
       }
 
-      // Para usuarios MEDICO: expandir "Panel Médico" y "TeleECG"
-      if (isMedico) {
-        const moduloPanelMedico = modulosPermitidos.find(m =>
+      // Para profesionales de salud: expandir "Panel profesional de salud"
+      if (isProfesionalSalud) {
+        const moduloPanelSalud = modulosPermitidos.find(m =>
+          m.nombreModulo?.toLowerCase().includes("panel profesional") ||
           m.nombreModulo?.toLowerCase().includes("panel médico") ||
           m.nombreModulo?.toLowerCase().includes("panel medico")
         );
-        if (moduloPanelMedico) {
-          sectionsToOpen[moduloPanelMedico.nombreModulo] = true;
+        if (moduloPanelSalud) {
+          sectionsToOpen[moduloPanelSalud.nombreModulo] = true;
         }
+      }
 
+      // Para MEDICO: también expandir "TeleECG"
+      if (isMedico) {
         const moduloTeleECG = modulosPermitidos.find(m =>
           m.nombreModulo?.toLowerCase().includes("teleecg") ||
           m.nombreModulo?.toLowerCase().includes("tele ecg")
@@ -392,7 +400,7 @@ export default function DynamicSidebar({ collapsed = false, onToggleCollapse }) 
         setOpenSections(prev => ({ ...prev, ...sectionsToOpen }));
       }
     }
-  }, [loading, modulosPermitidos, collapsed, isSuperAdmin, isExterno, isCoordinadorRed, isGestorCitas, isCoordinadorGestionCitas, isPersonal107, isMedico, isCoordinadorTeleurgencias, isMesaDeAyuda]);
+  }, [loading, modulosPermitidos, collapsed, isSuperAdmin, isExterno, isCoordinadorRed, isGestorCitas, isCoordinadorGestionCitas, isPersonal107, isMedico, isProfesionalSalud, isCoordinadorTeleurgencias, isMesaDeAyuda]);
 
   // ============================================================
   // Render principal - Menu dinamico desde la BD
@@ -675,14 +683,15 @@ function getPageIcon(nombreModulo, nombrePagina) {
     return Building2;
   }
 
-  // --- MÓDULO: PANEL MÉDICO ---
-  if (lowerModule.includes('panel médico') || lowerModule.includes('panel medico')) {
-    if (lowerName.includes('bienvenida')) return Home;
-    if (lowerName.includes('mis pacientes')) return Users;
-    if (lowerName.includes('información') || lowerName.includes('informacion')) return User;
-    if (lowerName.includes('disponibilidad')) return Calendar;
+  // --- MÓDULO: PANEL PROFESIONAL DE SALUD (antes: Panel Médico) ---
+  if (lowerModule.includes('panel profesional') || lowerModule.includes('panel médico') || lowerModule.includes('panel medico')) {
+    if (lowerName.includes('bienvenida') || lowerName.includes('inicio')) return HeartPulse;
+    if (lowerName.includes('mis pacientes') || lowerName.includes('paciente')) return Users;
+    if (lowerName.includes('producción') || lowerName.includes('produccion') || lowerName.includes('kpi') || lowerName.includes('estadística')) return BarChart3;
+    if (lowerName.includes('disponibilidad') || lowerName.includes('horario')) return CalendarCheck;
+    if (lowerName.includes('información') || lowerName.includes('informacion') || lowerName.includes('perfil')) return User;
     if (lowerName.includes('receta')) return Pill;
-    if (lowerName.includes('interconsulta')) return Share2;
+    if (lowerName.includes('interconsulta')) return Microscope;
     return Stethoscope;
   }
 
@@ -854,7 +863,7 @@ function getModuleIcon(nombreModulo, iconoDeBaseDatos) {
   if (lowerName.includes('gestión de personal externo') || lowerName.includes('personal externo')) return UserPlus;
   if (lowerName.includes('gestión territorial') || lowerName.includes('gestion territorial')) return MapPinned;
   if (lowerName.includes('ipress')) return Building2;
-  if (lowerName.includes('panel médico') || lowerName.includes('panel medico')) return Stethoscope;
+  if (lowerName.includes('panel profesional') || lowerName.includes('panel médico') || lowerName.includes('panel medico')) return HeartPulse;
   if (lowerName.includes('programación') || lowerName.includes('programacion')) return Calendar;
   if (lowerName.includes('teleecg') || lowerName.includes('tele ecg') || lowerName.includes('ecg')) return Heart;
   if (lowerName.includes('bolsa')) return Package;
