@@ -54,7 +54,7 @@ public class ModuloSistemaServiceImpl implements ModuloSistemaService {
 
 	@Override
 	public List<ModuloSistemaDTO> listado() {
-		return ModuloSistemaMapper.toDtoList(moduloRepo.findAll());
+		return ModuloSistemaMapper.toDtoList(moduloRepo.findAllWithPaginasActivas());
 	}
 
 	@Override
