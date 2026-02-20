@@ -639,7 +639,7 @@ export default function IPRESSWorkspace() {
                 📋 Gestión de Electrocardiogramas
               </h1>
               <p className="text-slate-600">
-                Sube y gestiona tus imágenes ECG desde aquí
+                Sube y gestiona tus imágenes EKG desde aquí
               </p>
             </div>
 
@@ -836,7 +836,7 @@ export default function IPRESSWorkspace() {
                 📋 Gestión de EKGs
               </h1>
               <p className="text-slate-600 text-sm">
-                Sube y gestiona tus imágenes ECG
+                Sube y gestiona tus imágenes EKG
               </p>
             </div>
 
@@ -988,7 +988,7 @@ export default function IPRESSWorkspace() {
               📋 Gestión de EKGs
             </h1>
             <p className="text-slate-600 text-sm">
-              Sube y gestiona tus imágenes ECG
+              Sube y gestiona tus imágenes EKG
             </p>
           </div>
 

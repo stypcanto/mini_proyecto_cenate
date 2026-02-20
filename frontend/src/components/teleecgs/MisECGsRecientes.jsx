@@ -287,7 +287,7 @@ export default function MisECGsRecientes({
 </head>
 <body>
   <div class="header">
-    <div class="label">INFORME DE EVALUACIÓN ECG — CENATE</div>
+    <div class="label">INFORME DE EVALUACIÓN EKG — CENATE</div>
     <div class="name">${resultadosModal.nombrePaciente}</div>
     <div class="dni">DNI: ${resultadosModal.dni}</div>
   </div>
@@ -678,7 +678,7 @@ export default function MisECGsRecientes({
 
               {/* Etiqueta */}
               <span className="text-xs md:text-sm font-semibold text-white/90 line-clamp-2">
-                Pacientes con ECG
+                Pacientes con EKG
               </span>
             </div>
           </button>
@@ -895,7 +895,7 @@ export default function MisECGsRecientes({
         <div className="mt-4 flex items-center justify-between gap-4">
           <p className="text-sm text-blue-800 font-semibold">
             📊 Mostrando <span className="font-bold text-blue-900">{ultimas3.length}</span> pacientes de{' '}
-            <span className="font-bold text-blue-900">{totalElementos}</span> imágenes ECG
+            <span className="font-bold text-blue-900">{totalElementos}</span> imágenes EKG
           </p>
           <button
             onClick={() => {
@@ -2166,7 +2166,7 @@ export default function MisECGsRecientes({
         </div>
       )}
 
-      {/* ✅ Modal de Resultados de Evaluación ECG - Diseño médico profesional */}
+      {/* ✅ Modal de Resultados de Evaluación EKG - Diseño médico profesional */}
       {showResultadosModal && resultadosModal && (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl shadow-2xl max-w-xl w-full max-h-[90vh] overflow-y-auto">
@@ -2174,7 +2174,7 @@ export default function MisECGsRecientes({
             {/* Header compacto */}
             <div className="px-6 py-4 bg-slate-800 rounded-t-2xl flex items-start justify-between">
               <div>
-                <p className="text-xs font-semibold text-slate-400 uppercase tracking-widest mb-1">Informe de Evaluación ECG</p>
+                <p className="text-xs font-semibold text-slate-400 uppercase tracking-widest mb-1">Informe de Evaluación EKG</p>
                 <p className="text-white font-bold text-sm leading-tight">{resultadosModal.nombrePaciente}</p>
                 <p className="text-slate-400 text-xs mt-0.5">DNI: {resultadosModal.dni}</p>
               </div>
