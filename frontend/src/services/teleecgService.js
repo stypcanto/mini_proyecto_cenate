@@ -127,6 +127,10 @@ const teleecgService = {
       params.append("fechaHasta", filtros.fechaHasta);
     }
 
+    if (filtros.evaluacion && filtros.evaluacion !== 'TODOS') {
+      params.append("evaluacion", filtros.evaluacion);
+    }
+
     console.log(`📋 [listarImagenes v1.103.0] Parámetros:`, params.toString());
 
     const response = await apiClient.get(`/teleekgs?${params.toString()}`, true);
@@ -160,6 +164,10 @@ const teleecgService = {
 
     if (filtros.fechaHasta) {
       params.append("fechaHasta", filtros.fechaHasta);
+    }
+
+    if (filtros.evaluacion && filtros.evaluacion !== 'TODOS') {
+      params.append("evaluacion", filtros.evaluacion);
     }
 
     console.log(`📄 [listarImagenesPage v1.103.0] Página ${filtros.page}, Parámetros:`, params.toString());

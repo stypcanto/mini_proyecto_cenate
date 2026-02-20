@@ -156,6 +156,7 @@ export default function IPRESSWorkspace() {
     estado: 'TODOS',
     fechaDesde: '',
     fechaHasta: '',
+    evaluacion: 'TODOS',
   });
 
   // ✅ v1.103.0: PAGINACIÓN INCREMENTAL
@@ -356,6 +357,7 @@ export default function IPRESSWorkspace() {
         estado: filtrosActuales.estado,
         fechaDesde: filtrosActuales.fechaDesde,
         fechaHasta: filtrosActuales.fechaHasta,
+        evaluacion: filtrosActuales.evaluacion,
       });
 
       // ✅ Cargar PÁGINA INICIAL (página 0)
@@ -364,6 +366,7 @@ export default function IPRESSWorkspace() {
         estado: filtrosActuales.estado !== 'TODOS' ? filtrosActuales.estado : null,
         fechaDesde: filtrosActuales.fechaDesde || null,
         fechaHasta: filtrosActuales.fechaHasta || null,
+        evaluacion: filtrosActuales.evaluacion !== 'TODOS' ? filtrosActuales.evaluacion : null,
         page: 0,
         size: ITEMS_PER_PAGE,
       });
@@ -383,6 +386,7 @@ export default function IPRESSWorkspace() {
           estado: filtrosActuales.estado !== 'TODOS' ? filtrosActuales.estado : null,
           fechaDesde: filtrosActuales.fechaDesde || null,
           fechaHasta: filtrosActuales.fechaHasta || null,
+          evaluacion: filtrosActuales.evaluacion !== 'TODOS' ? filtrosActuales.evaluacion : null,
           page: 1,
           size: ITEMS_PER_PAGE,
         })
@@ -703,7 +707,7 @@ export default function IPRESSWorkspace() {
               // ✅ v1.103.0: NUEVOS PROPS PARA FILTROS REACTIVOS
               filtrosActuales={filtros}
               onFiltrosChange={(nuevosFiltros) => setFiltros(nuevosFiltros)}
-              onLimpiarFiltros={() => setFiltros({ dni: '', estado: 'TODOS', fechaDesde: '', fechaHasta: '' })}
+              onLimpiarFiltros={() => setFiltros({ dni: '', estado: 'TODOS', fechaDesde: '', fechaHasta: '', evaluacion: 'TODOS' })}
               // ✅ v1.103.0: NUEVOS PROPS PARA PAGINACIÓN INCREMENTAL
               totalElementos={totalElementos}
               hayMasPaginas={hayMasPaginas}

@@ -18,6 +18,7 @@ import {
   Eye,
   MessageSquare,
   CheckCheck,
+  Check,
   Search,
   X,
   Calendar,
@@ -78,11 +79,16 @@ export default function MisECGsRecientes({
   const [filtroEstadoReactivo, setFiltroEstadoReactivo] = useState(safeFilterosActuales.estado || 'TODOS');
   const [filtroFechaDesde, setFiltroFechaDesde] = useState(safeFilterosActuales.fechaDesde || '');
   const [filtroFechaHasta, setFiltroFechaHasta] = useState(safeFilterosActuales.fechaHasta || '');
+  const [filtroEvaluacion, setFiltroEvaluacion] = useState(safeFilterosActuales.evaluacion || 'TODOS');
 
   // ✅ NEW: Filter State (legacy - mantener para compatibilidad)
   const [filtroFecha, setFiltroFecha] = useState('');
   const [datosOriginales, setDatosOriginales] = useState([]);
   const [buscandoPorDNI, setBuscandoPorDNI] = useState(false);  // ✅ v1.84.1: Loader durante búsqueda
+
+  // Modal detalle de observación
+  const [showObsModal, setShowObsModal] = useState(false);
+  const [cargaObsSeleccionada, setCargaObsSeleccionada] = useState(null);
 
   // ✅ NEW: Modal de edición de imágenes
   const [showEditModal, setShowEditModal] = useState(false);
@@ -99,13 +105,78 @@ export default function MisECGsRecientes({
   const [fechaToma, setFechaToma] = useState("");  // ✅ v1.76.0: Fecha de toma del EKG editable
   const fileInputRef = useRef(null);  // ✅ Referencia segura al input file
 
+  // ✅ Modal de resultados de evaluación ECG
+  const [showResultadosModal, setShowResultadosModal] = useState(false);
+  const [resultadosModal, setResultadosModal] = useState(null);
+
+  // ✅ Parsear descripción completa para extraer hallazgos y observaciones
+  const parsearEvaluacionCompleta = (descripcion) => {
+    if (!descripcion) return { hallazgos: '', observacionesClinicas: '' };
+    let hallazgos = '';
+    if (descripcion.includes('HALLAZGOS NORMALES:')) {
+      hallazgos = descripcion.split('HALLAZGOS NORMALES:')[1]?.split('OBSERVACIONES CLÍNICAS:')[0]?.trim() || '';
+    } else if (descripcion.includes('HALLAZGOS ANORMALES:')) {
+      hallazgos = descripcion.split('HALLAZGOS ANORMALES:')[1]?.split('OBSERVACIONES CLÍNICAS:')[0]?.trim() || '';
+    }
+    const observacionesClinicas = descripcion.split('OBSERVACIONES CLÍNICAS:')[1]?.trim() || '';
+    return {
+      hallazgos: hallazgos ? hallazgos.split('\n').filter(h => h.trim().startsWith('-')).map(h => h.replace(/^-\s*/, '').trim()).join('\n') : '',
+      observacionesClinicas
+    };
+  };
+
+  const abrirResultadosModal = async (carga) => {
+    try {
+      // Obtener todas las imágenes del paciente con sus evaluaciones reales
+      const resultado = await teleecgService.listarAgrupoPorAsegurado(carga.dni, '');
+
+      if (!resultado || resultado.length === 0) {
+        toast.error('No se encontraron datos de evaluación');
+        return;
+      }
+
+      const imagenes = resultado[0]?.imagenes || [];
+
+      // Filtrar imágenes que tienen evaluación real (igual que MisPacientes)
+      const evaluadas = imagenes.filter(
+        img => img && img.evaluacion && img.evaluacion !== 'SIN_EVALUAR'
+      );
+
+      if (evaluadas.length === 0) {
+        toast.info('Este paciente aún no tiene evaluación registrada');
+        return;
+      }
+
+      // Tomar la última evaluación
+      const ultima = evaluadas[evaluadas.length - 1];
+      const descripcion = ultima.descripcion_evaluacion || ultima.descripcionEvaluacion || '';
+      const { hallazgos, observacionesClinicas } = parsearEvaluacionCompleta(descripcion);
+
+      setResultadosModal({
+        nombrePaciente: carga.nombrePaciente,
+        dni: carga.dni,
+        evaluacion: ultima.evaluacion || '',
+        descripcion,
+        hallazgos: hallazgos || ultima.hallazgos || '',
+        observacionesClinicas: observacionesClinicas || ultima.observacionesClinicas || '',
+        fecha: ultima.fechaEvaluacion || ultima.fecha_evaluacion || '',
+      });
+      setShowResultadosModal(true);
+    } catch (error) {
+      console.error('❌ Error cargando evaluación:', error);
+      toast.error('Error al cargar los resultados de evaluación');
+    }
+  };
+
   // ✅ v1.103.0: Sincronizar filtros locales cuando los props cambian
   useEffect(() => {
     const safe = filtrosActuales || { dni: '', estado: 'TODOS', fechaDesde: '', fechaHasta: '' };
     setFiltroDNI(safe.dni || '');
     setFiltroEstadoReactivo(safe.estado || 'TODOS');
+    setFiltroEstado(safe.estado && safe.estado !== 'TODOS' ? safe.estado : null);
     setFiltroFechaDesde(safe.fechaDesde || '');
     setFiltroFechaHasta(safe.fechaHasta || '');
+    setFiltroEvaluacion(safe.evaluacion || 'TODOS');
   }, [filtrosActuales]);
 
   // ✅ v1.97.4: Log estadísticas cuando cambien para debugging
@@ -266,18 +337,25 @@ export default function MisECGsRecientes({
     return datos.filter(item => item.estado === estado);
   };
 
-  const aplicarFiltrosCombinados = (datos, dniBusqueda, fechaBusqueda, estado) => {
+  const filtrarPorEvaluacion = (datos, evaluacion) => {
+    if (!evaluacion || evaluacion === 'TODOS') return datos;
+    return datos.filter(item => item.evaluacion === evaluacion);
+  };
+
+  const aplicarFiltrosCombinados = (datos, dniBusqueda, fechaBusqueda, estado, evaluacion) => {
     let resultado = datos;
     resultado = filtrarPorDNI(resultado, dniBusqueda);
     resultado = filtrarPorFecha(resultado, fechaBusqueda);
     resultado = filtrarPorEstado(resultado, estado);
+    resultado = filtrarPorEvaluacion(resultado, evaluacion);
     return resultado;
   };
 
   // ✅ Computed filtered data
   const datosFiltrados = useMemo(() => {
-    return aplicarFiltrosCombinados(datosOriginales, filtroDNI, filtroFecha, filtroEstado);
-  }, [datosOriginales, filtroDNI, filtroFecha, filtroEstado]);
+    const evalFiltro = filtroEstadoReactivo === 'ATENDIDA' ? filtroEvaluacion : 'TODOS';
+    return aplicarFiltrosCombinados(datosOriginales, filtroDNI, filtroFecha, filtroEstado, evalFiltro);
+  }, [datosOriginales, filtroDNI, filtroFecha, filtroEstado, filtroEvaluacion, filtroEstadoReactivo]);
 
   // ✅ Check if any filters are active
   const hayFiltrosActivos = filtroDNI !== '' || filtroFecha !== '';
@@ -327,10 +405,43 @@ export default function MisECGsRecientes({
         </div>
 
         {/* Grid responsive - Professional Stats Cards Compact */}
-        <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 md:gap-4">
+          {/* Total Pacientes - Azul Índigo */}
+          <button
+            onClick={() => {
+              setFiltroEstado(null);
+              setFiltroEstadoReactivo('TODOS');
+              onFiltrosChange({ ...safeFilterosActuales, estado: 'TODOS' });
+            }}
+            className="relative overflow-hidden rounded-lg bg-gradient-to-br from-indigo-600 to-indigo-700 border border-indigo-700 p-2 sm:p-3 md:p-4 shadow-md hover:shadow-xl transition-all duration-300 hover:scale-105 text-left cursor-pointer"
+            title="Total de pacientes"
+          >
+            <div className="absolute top-0 right-0 w-12 sm:w-16 h-12 sm:h-16 bg-white/10 rounded-full -mr-6 sm:-mr-8 -mt-6 sm:-mt-8" />
+            <div className="relative z-10">
+              <div className="mb-1.5 sm:mb-2">
+                <div className="inline-flex p-1.5 sm:p-2 bg-white/20 rounded-lg">
+                  <BarChart3 className="w-3 h-3 sm:w-4 sm:h-4 md:w-5 md:h-5 text-white" strokeWidth={2.5} />
+                </div>
+              </div>
+              <div className="mb-0.5 sm:mb-1">
+                <span className="text-lg sm:text-2xl md:text-3xl font-bold text-white">
+                  {(estadisticas.cargadas || 0) + (estadisticas.observadas || 0) + (estadisticas.atendidas || 0)}
+                </span>
+              </div>
+              <span className="text-xs md:text-sm font-semibold text-white/90 line-clamp-2">
+                Total Pacientes
+              </span>
+            </div>
+          </button>
+
           {/* Total Pacientes - Verde SATURADO (Par - Luz) */}
           <button
-            onClick={() => setFiltroEstado(null)}
+            onClick={() => {
+              setFiltroEstado(null);
+              setFiltroEstadoReactivo('TODOS');
+              setFiltroEvaluacion('TODOS');
+              onFiltrosChange({ ...safeFilterosActuales, estado: 'TODOS', evaluacion: 'TODOS' });
+            }}
             className={`relative overflow-hidden rounded-lg bg-gradient-to-br from-emerald-500 to-emerald-600 border p-2 sm:p-3 md:p-4 shadow-md hover:shadow-xl transition-all duration-300 hover:scale-105 text-left cursor-pointer ${
               filtroEstado === null ? 'border-white ring-2 ring-white' : 'border-emerald-600'
             }`}
@@ -361,9 +472,14 @@ export default function MisECGsRecientes({
             </div>
           </button>
 
-          {/* Pendiente - Gris Oscuro/Negro SATURADO */}
-          <button
-            onClick={() => setFiltroEstado('ENVIADA')}
+          {/* Pendiente - Gris Oscuro/Negro SATURADO - HIDDEN */}
+          <button hidden style={{display:"none"}}
+            onClick={() => {
+              setFiltroEstado('ENVIADA');
+              setFiltroEstadoReactivo('ENVIADA');
+              setFiltroEvaluacion('TODOS');
+              onFiltrosChange({ ...safeFilterosActuales, estado: 'ENVIADA', evaluacion: 'TODOS' });
+            }}
             className={`relative overflow-hidden rounded-lg bg-gradient-to-br from-slate-700 to-slate-800 border p-2 sm:p-3 md:p-4 shadow-md hover:shadow-xl transition-all duration-300 hover:scale-105 text-left cursor-pointer ${
               filtroEstado === 'ENVIADA' ? 'border-white ring-2 ring-white' : 'border-slate-800'
             }`}
@@ -396,7 +512,12 @@ export default function MisECGsRecientes({
 
           {/* Observadas - Ámbar SATURADO (Impar - Oscuro) */}
           <button
-            onClick={() => setFiltroEstado('OBSERVADA')}
+            onClick={() => {
+              setFiltroEstado('OBSERVADA');
+              setFiltroEstadoReactivo('OBSERVADA');
+              setFiltroEvaluacion('TODOS');
+              onFiltrosChange({ ...safeFilterosActuales, estado: 'OBSERVADA', evaluacion: 'TODOS' });
+            }}
             className={`relative overflow-hidden rounded-lg bg-gradient-to-br from-orange-500 to-orange-600 border p-2 sm:p-3 md:p-4 shadow-md hover:shadow-xl transition-all duration-300 hover:scale-105 text-left cursor-pointer ${
               filtroEstado === 'OBSERVADA' ? 'border-white ring-2 ring-white' : 'border-orange-600'
             }`}
@@ -429,7 +550,11 @@ export default function MisECGsRecientes({
 
           {/* Atendidas - Teal CLARO (Par - Luz) */}
           <button
-            onClick={() => setFiltroEstado('ATENDIDA')}
+            onClick={() => {
+              setFiltroEstado('ATENDIDA');
+              setFiltroEstadoReactivo('ATENDIDA');
+              onFiltrosChange({ ...safeFilterosActuales, estado: 'ATENDIDA' });
+            }}
             className={`relative overflow-hidden rounded-lg bg-gradient-to-br from-teal-50 to-teal-100 border p-2 sm:p-3 md:p-4 shadow-sm hover:shadow-lg transition-all duration-300 hover:scale-105 text-left cursor-pointer ${
               filtroEstado === 'ATENDIDA' ? 'border-teal-700 ring-2 ring-teal-700' : 'border-teal-200'
             }`}
@@ -469,8 +594,8 @@ export default function MisECGsRecientes({
           <h3 className="text-sm font-bold text-blue-900">🔍 Filtros de Búsqueda Reactivos</h3>
         </div>
 
-        {/* Grid responsive: 1 col móvil, 2 cols tablet, 4 cols desktop */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+        {/* Grid responsive: 1 col móvil, 2 cols tablet, 5 cols desktop */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
           {/* DNI */}
           <div>
             <label className="block text-xs font-semibold text-blue-900 mb-1.5">
@@ -510,8 +635,12 @@ export default function MisECGsRecientes({
             <select
               value={filtroEstadoReactivo}
               onChange={(e) => {
-                setFiltroEstadoReactivo(e.target.value);
-                onFiltrosChange({ ...safeFilterosActuales, estado: e.target.value });
+                const val = e.target.value;
+                setFiltroEstadoReactivo(val);
+                setFiltroEstado(val === 'TODOS' ? null : val);
+                const evalReset = val !== 'ATENDIDA' ? 'TODOS' : filtroEvaluacion;
+                if (val !== 'ATENDIDA') setFiltroEvaluacion('TODOS');
+                onFiltrosChange({ ...safeFilterosActuales, estado: val, evaluacion: evalReset });
               }}
               className="w-full px-3 py-2 border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-xs"
             >
@@ -553,6 +682,34 @@ export default function MisECGsRecientes({
               className="w-full px-3 py-2 border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-xs"
             />
           </div>
+
+          {/* Evaluación - solo habilitado cuando Estado = ATENDIDA */}
+          <div>
+            <label className={`block text-xs font-semibold mb-1.5 ${filtroEstadoReactivo === 'ATENDIDA' ? 'text-blue-900' : 'text-gray-400'}`}>
+              🩺 Evaluación
+            </label>
+            <select
+              value={filtroEstadoReactivo === 'ATENDIDA' ? filtroEvaluacion : 'TODOS'}
+              disabled={filtroEstadoReactivo !== 'ATENDIDA'}
+              onChange={(e) => {
+                const val = e.target.value;
+                setFiltroEvaluacion(val);
+                onFiltrosChange({ ...safeFilterosActuales, evaluacion: val });
+              }}
+              className={`w-full px-3 py-2 border rounded-lg text-xs transition-colors ${
+                filtroEstadoReactivo === 'ATENDIDA'
+                  ? 'border-blue-300 focus:ring-2 focus:ring-blue-500 bg-white text-gray-800 cursor-pointer'
+                  : 'border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed'
+              }`}
+            >
+              <option value="TODOS">Todas</option>
+              <option value="NORMAL">Normal</option>
+              <option value="ANORMAL">Anormal</option>
+            </select>
+            {filtroEstadoReactivo !== 'ATENDIDA' && (
+              <p className="text-xs text-gray-400 mt-1 italic">Solo para Atendidas</p>
+            )}
+          </div>
         </div>
 
         {/* Botón Limpiar + Indicador de registros */}
@@ -567,6 +724,7 @@ export default function MisECGsRecientes({
               setFiltroEstadoReactivo('TODOS');
               setFiltroFechaDesde('');
               setFiltroFechaHasta('');
+              setFiltroEvaluacion('TODOS');
               onLimpiarFiltros();
             }}
             className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg flex items-center gap-2 transition-colors text-xs font-semibold"
@@ -726,6 +884,9 @@ export default function MisECGsRecientes({
                     {/* Cant. Imágenes Cargadas */}
                     <th className="px-3 md:px-4 py-2 md:py-3 text-center font-bold whitespace-nowrap text-xs md:text-sm">Cant. Imágenes</th>
 
+                    {/* Resultados de Evaluación */}
+                    <th className="px-3 md:px-4 py-2 md:py-3 text-left font-bold whitespace-nowrap text-xs md:text-sm">Resultados</th>
+
                     {/* Acciones */}
                     <th className="px-3 md:px-4 py-2 md:py-3 text-center font-bold whitespace-nowrap text-xs md:text-sm">Acciones</th>
                   </tr>
@@ -826,6 +987,41 @@ export default function MisECGsRecientes({
                           <span className="inline-flex items-center justify-center px-2.5 md:px-3 py-1 md:py-1.5 bg-indigo-100 text-indigo-800 rounded text-xs md:text-sm font-bold">
                             {carga.cantidadImagenes || 0}
                           </span>
+                        </td>
+
+                        {/* Resultados de Evaluación */}
+                        <td className="px-3 md:px-4 py-2 md:py-3 text-center">
+                          {carga.estado === 'ATENDIDA' ? (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                abrirResultadosModal(carga);
+                              }}
+                              className="inline-flex items-center justify-center p-2 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 border border-emerald-700 transition-all"
+                              title="Ver resultados de evaluación"
+                            >
+                              <CheckCheck className="w-4 h-4 md:w-5 md:h-5" strokeWidth={2} />
+                            </button>
+                          ) : carga.estado === 'OBSERVADA' ? (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setCargaObsSeleccionada(carga);
+                                setShowObsModal(true);
+                              }}
+                              className="inline-flex items-center justify-center p-2 rounded-lg bg-orange-100 text-orange-600 border border-orange-300 hover:bg-orange-200 transition-all"
+                              title="Ver motivo de observación"
+                            >
+                              <MessageSquare className="w-4 h-4 md:w-5 md:h-5" strokeWidth={2} />
+                            </button>
+                          ) : (
+                            <span
+                              className="inline-flex items-center justify-center p-2 rounded-lg bg-slate-100 text-slate-500 border border-slate-300"
+                              title="Pendiente de evaluación"
+                            >
+                              <Clock className="w-4 h-4 md:w-5 md:h-5" strokeWidth={2} />
+                            </span>
+                          )}
                         </td>
 
                         {/* Acciones */}
@@ -939,6 +1135,74 @@ export default function MisECGsRecientes({
           <p className="text-xs text-gray-600 text-center">
             Hay más registros disponibles. Total: <span className="font-bold">{totalElementos}</span> pacientes
           </p>
+        </div>
+      )}
+
+      {/* Modal Detalle Observación */}
+      {showObsModal && cargaObsSeleccionada && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6">
+            {/* Header */}
+            <div className="flex items-start justify-between mb-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-orange-100 rounded-lg">
+                  <MessageSquare className="w-5 h-5 text-orange-600" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-gray-900 text-base">Motivo de Observación</h3>
+                  <p className="text-xs text-gray-500">{cargaObsSeleccionada.nombrePaciente}</p>
+                </div>
+              </div>
+              <button
+                onClick={() => { setShowObsModal(false); setCargaObsSeleccionada(null); }}
+                className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                <X className="w-5 h-5 text-gray-500" />
+              </button>
+            </div>
+
+            {/* Info paciente */}
+            <div className="bg-orange-50 border border-orange-200 rounded-lg p-3 mb-4">
+              <div className="grid grid-cols-2 gap-2 text-xs">
+                <div>
+                  <span className="text-orange-700 font-semibold">DNI:</span>
+                  <span className="ml-1 text-orange-900 font-mono">{cargaObsSeleccionada.dni}</span>
+                </div>
+                <div>
+                  <span className="text-orange-700 font-semibold">Estado:</span>
+                  <span className="ml-1 inline-flex px-2 py-0.5 bg-orange-200 text-orange-800 rounded text-xs font-semibold">Observada</span>
+                </div>
+                {cargaObsSeleccionada.fechaEnvio && (
+                  <div className="col-span-2">
+                    <span className="text-orange-700 font-semibold">Fecha envío:</span>
+                    <span className="ml-1 text-orange-900">{cargaObsSeleccionada.fechaEnvioFormato || cargaObsSeleccionada.fechaEnvio}</span>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Motivo / Observaciones */}
+            <div className="mb-4">
+              <p className="text-xs font-semibold text-gray-700 mb-2">Detalle de observación:</p>
+              {(cargaObsSeleccionada.observaciones || cargaObsSeleccionada.motivo_rechazo || cargaObsSeleccionada.observacion || cargaObsSeleccionada.notaClinicaObservaciones) ? (
+                <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 text-sm text-gray-800 whitespace-pre-wrap">
+                  {cargaObsSeleccionada.observaciones || cargaObsSeleccionada.motivo_rechazo || cargaObsSeleccionada.observacion || cargaObsSeleccionada.notaClinicaObservaciones}
+                </div>
+              ) : (
+                <div className="bg-gray-50 border border-dashed border-gray-300 rounded-lg p-4 text-center">
+                  <AlertCircle className="w-5 h-5 text-gray-400 mx-auto mb-1" />
+                  <p className="text-xs text-gray-500 italic">Sin detalle registrado</p>
+                </div>
+              )}
+            </div>
+
+            <button
+              onClick={() => { setShowObsModal(false); setCargaObsSeleccionada(null); }}
+              className="w-full py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg font-semibold text-sm transition-colors"
+            >
+              Cerrar
+            </button>
+          </div>
         </div>
       )}
 
@@ -1631,6 +1895,98 @@ export default function MisECGsRecientes({
                 </button>
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* ✅ Modal de Resultados de Evaluación ECG */}
+      {showResultadosModal && resultadosModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            {/* Header */}
+            <div className="px-6 py-5 bg-gradient-to-r from-blue-600 to-blue-700 rounded-t-lg">
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <h2 className="text-2xl font-bold text-white mb-2">
+                    📋 Resultados de Evaluación ECG
+                  </h2>
+                  <p className="text-blue-100 text-sm">
+                    {resultadosModal.nombrePaciente} (DNI: {resultadosModal.dni})
+                  </p>
+                </div>
+                <button
+                  onClick={() => setShowResultadosModal(false)}
+                  className="text-white hover:bg-white/20 p-2 rounded-full transition-colors"
+                  title="Cerrar"
+                >
+                  <X className="w-6 h-6" strokeWidth={2} />
+                </button>
+              </div>
+            </div>
+
+            {/* Contenido */}
+            <div className="p-8 space-y-6">
+              {/* Evaluación General */}
+              <div className="border-l-4 border-blue-500 bg-blue-50 p-4 rounded">
+                <h3 className="text-lg font-bold text-blue-900 mb-2">
+                  🔍 Evaluación: {resultadosModal.evaluacion === 'NORMAL' ? '✅ NORMAL' : resultadosModal.evaluacion === 'ANORMAL' ? '⚠️ ANORMAL' : resultadosModal.evaluacion}
+                </h3>
+                <p className="text-blue-700 font-medium">Estado: {resultadosModal.evaluacion}</p>
+                {resultadosModal.fecha && (
+                  <p className="text-blue-600 text-sm mt-1">
+                    Evaluado el: {new Date(resultadosModal.fecha).toLocaleDateString('es-ES', {
+                      year: 'numeric', month: 'long', day: 'numeric',
+                      hour: '2-digit', minute: '2-digit'
+                    })}
+                  </p>
+                )}
+              </div>
+
+              {/* Hallazgos */}
+              {resultadosModal.hallazgos && (
+                <div className="border-l-4 border-green-500 bg-green-50 p-4 rounded">
+                  <h3 className="text-lg font-bold text-green-900 mb-3">✅ Hallazgos</h3>
+                  <ul className="space-y-2">
+                    {resultadosModal.hallazgos.split('\n').filter(h => h.trim()).map((h, i) => (
+                      <li key={i} className="text-green-700 flex items-start gap-2">
+                        <CheckCircle className="w-5 h-5 flex-shrink-0 mt-0.5" strokeWidth={2} />
+                        <span>{h}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {/* Observaciones Clínicas */}
+              {resultadosModal.observacionesClinicas && (
+                <div className="border-l-4 border-purple-500 bg-purple-50 p-4 rounded">
+                  <h3 className="text-lg font-bold text-purple-900 mb-3">📝 Observaciones Clínicas</h3>
+                  <p className="text-purple-700 leading-relaxed italic">
+                    {resultadosModal.observacionesClinicas}
+                  </p>
+                </div>
+              )}
+
+              {/* Descripción */}
+              {resultadosModal.descripcion && (
+                <div className="border-l-4 border-amber-500 bg-amber-50 p-4 rounded">
+                  <h3 className="text-lg font-bold text-amber-900 mb-3">📌 Descripción</h3>
+                  <p className="text-amber-700 leading-relaxed italic">
+                    {resultadosModal.descripcion}
+                  </p>
+                </div>
+              )}
+            </div>
+
+            {/* Footer */}
+            <div className="px-6 py-4 bg-gray-50 border-t rounded-b-lg flex justify-end">
+              <button
+                onClick={() => setShowResultadosModal(false)}
+                className="px-6 py-2 bg-gray-300 text-gray-800 rounded-lg font-semibold hover:bg-gray-400 transition-colors"
+              >
+                Cerrar
+              </button>
+            </div>
           </div>
         </div>
       )}
