@@ -71,6 +71,7 @@ function ListaTickets() {
   const [busquedaDni, setBusquedaDni] = useState('');
   const [filtroMedico, setFiltroMedico] = useState('');
   const [filtroSemaforo, setFiltroSemaforo] = useState('');
+  const [filtroAsignado, setFiltroAsignado] = useState('');
 
   // Modal
   const [showModalResponder, setShowModalResponder] = useState(false);
@@ -110,6 +111,7 @@ function ListaTickets() {
     setBusquedaDni('');
     setFiltroMedico('');
     setFiltroSemaforo('');
+    setFiltroAsignado('');
     setSelectedTickets(new Set());
   }, [location.pathname]);
 
@@ -332,6 +334,19 @@ function ListaTickets() {
     return Array.from(nombres).sort();
   }, [tickets]);
 
+  // Lista de personal asignado con conteo de tickets
+  const asignadosConCount = useMemo(() => {
+    const mapa = {};
+    tickets.forEach(t => {
+      if (t.nombrePersonalAsignado) {
+        mapa[t.nombrePersonalAsignado] = (mapa[t.nombrePersonalAsignado] || 0) + 1;
+      }
+    });
+    return Object.entries(mapa)
+      .map(([nombre, count]) => ({ nombre, count }))
+      .sort((a, b) => b.count - a.count);
+  }, [tickets]);
+
   // Calcular semáforo helper para filtro
   const getSemaforoNivel = (fechaCreacion) => {
     const minutos = Math.floor((new Date() - new Date(fechaCreacion)) / 60000);
@@ -350,6 +365,8 @@ function ListaTickets() {
     if (filtroSemaforo && modoConfig.mostrarSemaforo && getSemaforoNivel(ticket.fechaCreacion) !== filtroSemaforo) return false;
     // Filtro Prioridad
     if (filtroPrioridad && ticket.prioridad !== filtroPrioridad) return false;
+    // Filtro Asignado a
+    if (filtroAsignado && ticket.nombrePersonalAsignado !== filtroAsignado) return false;
     return true;
   });
 
@@ -390,7 +407,7 @@ function ListaTickets() {
 
       {/* Filtros */}
       <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200 mb-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
           {/* Buscar por DNI */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -467,6 +484,28 @@ function ListaTickets() {
             </select>
           </div>
 
+          {/* Filtro Asignado a */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Asignado a
+            </label>
+            <select
+              value={filtroAsignado}
+              onChange={(e) => {
+                setFiltroAsignado(e.target.value);
+                setCurrentPage(0);
+              }}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            >
+              <option value="">Todos</option>
+              {asignadosConCount.map(({ nombre, count }) => (
+                <option key={nombre} value={nombre}>
+                  {nombre} ({count})
+                </option>
+              ))}
+            </select>
+          </div>
+
           {/* Botón Refrescar */}
           <div className="flex items-end">
             <button
@@ -480,6 +519,40 @@ function ListaTickets() {
           </div>
         </div>
       </div>
+
+      {/* Contador resumen por asignado (solo cuando hay filtro activo) */}
+      {filtroAsignado && (
+        <div className="mb-4 flex items-center gap-3 bg-[#0a5ba9]/5 border border-[#0a5ba9]/20 rounded-lg px-4 py-3">
+          <div className="w-9 h-9 rounded-full bg-[#0a5ba9] flex items-center justify-center flex-shrink-0">
+            <User size={18} className="text-white" />
+          </div>
+          <div className="flex-1">
+            <p className="text-sm font-semibold text-[#0a5ba9]">{filtroAsignado}</p>
+            <p className="text-xs text-gray-500">Personal Mesa de Ayuda</p>
+          </div>
+          <div className="flex items-center gap-4">
+            <div className="text-center">
+              <p className="text-2xl font-bold text-[#0a5ba9]">{ticketsFiltrados.length}</p>
+              <p className="text-xs text-gray-500 whitespace-nowrap">tickets asignados</p>
+            </div>
+            {esAtendidos && (
+              <div className="text-center">
+                <p className="text-2xl font-bold text-green-600">
+                  {ticketsFiltrados.filter(t => t.estado === 'RESUELTO').length}
+                </p>
+                <p className="text-xs text-gray-500 whitespace-nowrap">resueltos</p>
+              </div>
+            )}
+          </div>
+          <button
+            onClick={() => setFiltroAsignado('')}
+            className="text-gray-400 hover:text-gray-600 ml-2"
+            title="Limpiar filtro"
+          >
+            <X size={16} />
+          </button>
+        </div>
+      )}
 
       {/* Leyenda de Tiempo de espera - solo en modo pendientes */}
       {modoConfig.mostrarSemaforo && (
