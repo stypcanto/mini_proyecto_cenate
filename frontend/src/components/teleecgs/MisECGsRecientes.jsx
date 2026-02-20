@@ -862,38 +862,6 @@ export default function MisECGsRecientes({
             </select>
           </div>
 
-          {/* Fecha Desde */}
-          <div>
-            <label className="block text-xs font-semibold text-blue-900 mb-1.5">
-              📅 Desde
-            </label>
-            <input
-              type="date"
-              value={filtroFechaDesde}
-              onChange={(e) => {
-                setFiltroFechaDesde(e.target.value);
-                onFiltrosChange({ ...safeFilterosActuales, fechaDesde: e.target.value });
-              }}
-              className="w-full px-3 py-2 border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-xs"
-            />
-          </div>
-
-          {/* Fecha Hasta */}
-          <div>
-            <label className="block text-xs font-semibold text-blue-900 mb-1.5">
-              📅 Hasta
-            </label>
-            <input
-              type="date"
-              value={filtroFechaHasta}
-              onChange={(e) => {
-                setFiltroFechaHasta(e.target.value);
-                onFiltrosChange({ ...safeFilterosActuales, fechaHasta: e.target.value });
-              }}
-              className="w-full px-3 py-2 border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-xs"
-            />
-          </div>
-
           {/* Evaluación - solo habilitado cuando Estado = ATENDIDA */}
           <div>
             <label className={`block text-xs font-semibold mb-1.5 ${filtroEstadoReactivo === 'ATENDIDA' ? 'text-blue-900' : 'text-gray-400'}`}>
