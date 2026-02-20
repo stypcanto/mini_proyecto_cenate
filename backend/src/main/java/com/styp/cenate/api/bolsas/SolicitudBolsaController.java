@@ -720,6 +720,34 @@ public class SolicitudBolsaController {
 
             log.info("✅ Solicitud encontrada: {}", solicitud.getNumeroSolicitud());
 
+            // ✅ v1.65.0: Actualizar condicion_medica y estado según el nuevo estado
+            String estadoFinal = dto.getNuevoEstadoCodigo(); // El estado que se guardará finalmente
+            
+            if ("CITADO".equalsIgnoreCase(dto.getNuevoEstadoCodigo())) {
+                log.warn("🔄 Estado es CITADO - Actualizando condicion_medica a 'Pendiente'");
+                solicitud.setCondicionMedica("Pendiente");
+            } else if ("APAGADO".equalsIgnoreCase(dto.getNuevoEstadoCodigo()) ||
+                       "NO_CONTESTA".equalsIgnoreCase(dto.getNuevoEstadoCodigo()) ||
+                       "NO_GRUPO_ETARIO".equalsIgnoreCase(dto.getNuevoEstadoCodigo()) ||
+                       "REPROG_FALLIDA".equalsIgnoreCase(dto.getNuevoEstadoCodigo())) {
+                log.warn("🔄 Estado es {} - Limpiando condicion_medica (null)", dto.getNuevoEstadoCodigo());
+                solicitud.setCondicionMedica(null);
+            } else if ("ATENDIDO_IPRESS".equalsIgnoreCase(dto.getNuevoEstadoCodigo()) ||
+                       "HC_BLOQUEADA".equalsIgnoreCase(dto.getNuevoEstadoCodigo()) ||
+                       "NO_DESEA".equalsIgnoreCase(dto.getNuevoEstadoCodigo()) ||
+                       "PARTICULAR".equalsIgnoreCase(dto.getNuevoEstadoCodigo()) ||
+                       "NUM_NO_EXISTE".equalsIgnoreCase(dto.getNuevoEstadoCodigo()) ||
+                       "NO_IPRESS_CENATE".equalsIgnoreCase(dto.getNuevoEstadoCodigo()) ||
+                       "SIN_VIGENCIA".equalsIgnoreCase(dto.getNuevoEstadoCodigo()) ||
+                       "TEL_SIN_SERVICIO".equalsIgnoreCase(dto.getNuevoEstadoCodigo()) ||
+                       "YA_NO_REQUIERE".equalsIgnoreCase(dto.getNuevoEstadoCodigo())) {
+                log.warn("🔄 Estado es {} - Limpiando condicion_medica (null) y actualizando campo estado a OBSERVADO", dto.getNuevoEstadoCodigo());
+                solicitud.setCondicionMedica(null);
+                solicitud.setEstado("OBSERVADO"); // Actualizar el campo estado directamente a OBSERVADO
+            } else {
+                log.info("ℹ️ Estado es {} - condicion_medica se mantiene como estaba", dto.getNuevoEstadoCodigo());
+            }
+
             // Actualizar estado usando el ID encontrado
             log.info("🔄 Actualizando estadoGestionCitasId a {}", estado.getIdEstado());
             solicitud.setEstadoGestionCitasId(estado.getIdEstado());

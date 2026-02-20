@@ -526,7 +526,7 @@ select * from dim_ipress di  where di.cod_ipress='159';  -- 38
 
 select * from dim_ipress di where di.id_ipress  in (160,38);
 
-7
+
 update dim_solicitud_bolsa dsb  set id_ipress_atencion=7 where id_solicitud=46101;
 
 
@@ -547,12 +547,6 @@ select * from asegurados a  where a.pk_asegurado  ='46183586';
 select * from dim_tipos_bolsas dtb  where dtb.id_tipo_bolsa =4;
 
 
-
-
-
-
-
-
 select dsb.codigo_adscripcion , dsb.id_ipress , dsb.codigo_ipress , dsb.id_ipress_atencion, dsb.id_bolsa , dsb.*
 from  dim_solicitud_bolsa dsb
 where dsb.numero_solicitud  like 'REC-%'
@@ -563,19 +557,38 @@ where dsb.numero_solicitud  like 'INT%'
 
 
 
-
-
-
-
-
-
-
-
-
-
 select  dsb.codigo_adscripcion , dsb.id_ipress , dsb.codigo_ipress , dsb.id_ipress_atencion, dsb.id_bolsa , 
 dsb.estado, dsb.estado_gestion_citas_id , dsb.*
 from dim_solicitud_bolsa dsb  where dsb.paciente_dni ='70073164';
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
