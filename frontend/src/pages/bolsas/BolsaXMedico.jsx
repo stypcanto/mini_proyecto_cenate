@@ -12,7 +12,7 @@ import apiClient from '../../lib/apiClient';
 import {
   Stethoscope, RefreshCw, CalendarCheck, PhoneMissed,
   AlertCircle, CheckCircle2, XCircle, Clock, Calendar,
-  ChevronLeft, ChevronRight, Search,
+  ChevronLeft, ChevronRight, Search, ChevronUp, ChevronDown,
 } from 'lucide-react';
 
 // ── Categorías de estado ──────────────────────────────────────
@@ -151,6 +151,35 @@ function Badge({ valor, accent, bg }) {
   );
 }
 
+// ── Encabezado de columna ordenable ───────────────────────────
+function SortTh({ col, label, sortCol, sortDir, onSort, align = 'center', minWidth, noWrap }) {
+  const activo = sortCol === col;
+  return (
+    <th
+      onClick={() => onSort(col)}
+      style={{
+        ...TH,
+        textAlign: align,
+        minWidth: minWidth || undefined,
+        whiteSpace: noWrap ? 'nowrap' : undefined,
+        cursor: 'pointer',
+        userSelect: 'none',
+        background: activo ? 'rgba(255,255,255,0.15)' : undefined,
+        transition: 'background 0.15s',
+      }}
+      title={`Ordenar por ${label} ${activo && sortDir === 'desc' ? '(ascendente)' : '(descendente)'}`}
+    >
+      <div style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', justifyContent: align === 'left' ? 'flex-start' : 'center' }}>
+        {label}
+        <span style={{ display: 'flex', flexDirection: 'column', gap: '1px', opacity: activo ? 1 : 0.35 }}>
+          <ChevronUp  size={9} color={activo && sortDir === 'asc'  ? '#fff' : 'rgba(255,255,255,0.6)'} />
+          <ChevronDown size={9} color={activo && sortDir === 'desc' ? '#fff' : 'rgba(255,255,255,0.6)'} />
+        </span>
+      </div>
+    </th>
+  );
+}
+
 // ══════════════════════════════════════════════════════════════
 // Componente principal
 // ══════════════════════════════════════════════════════════════
@@ -160,6 +189,8 @@ export default function BolsaXMedico() {
   const [error, setError]                   = useState('');
   const [filtroCat, setFiltroCat]           = useState(null);
   const [busquedaNombre, setBusquedaNombre] = useState('');
+  const [sortCol, setSortCol]               = useState('total');
+  const [sortDir, setSortDir]               = useState('desc');
 
   const [fechaSeleccionada, setFechaSeleccionada] = useState(null);
   const [conteoPorFecha, setConteoPorFecha]       = useState({});
@@ -207,6 +238,16 @@ export default function BolsaXMedico() {
     cargar(null);
     cargarConteos(mesActual());
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const handleSort = (col) => {
+    if (sortCol === col) {
+      setSortDir(d => d === 'desc' ? 'asc' : 'desc');
+    } else {
+      setSortCol(col);
+      setSortDir('desc');
+    }
+    setFiltroCat(null);
+  };
 
   const handleSelectFecha = (fecha) => {
     setFechaSeleccionada(fecha);
@@ -379,9 +420,11 @@ export default function BolsaXMedico() {
               <thead>
                 <tr style={{ background: '#0D5BA9' }}>
                   <th style={TH}>#</th>
-                  <th style={{ ...TH, textAlign: 'left', minWidth: '200px' }}>Médico</th>
-                  <th style={TH}>Total</th>
-                  {CATS.map(c => <th key={c.key} style={{ ...TH, whiteSpace: 'nowrap' }}>{c.label}</th>)}
+                  <SortTh col="nombre_medico" label="Médico" sortCol={sortCol} sortDir={sortDir} onSort={handleSort} align="left" minWidth="200px" />
+                  <SortTh col="total"         label="Total"  sortCol={sortCol} sortDir={sortDir} onSort={handleSort} />
+                  {CATS.map(c => (
+                    <SortTh key={c.key} col={c.key} label={c.label} sortCol={sortCol} sortDir={sortDir} onSort={handleSort} noWrap />
+                  ))}
                   <th style={{ ...TH, minWidth: '140px' }}>Avance</th>
                 </tr>
                 <tr style={{ background: '#1e40af' }}>
@@ -397,7 +440,16 @@ export default function BolsaXMedico() {
               <tbody>
                 {[...medicos]
                   .filter(m => !busquedaNombre || (m.nombre_medico || '').toLowerCase().includes(busquedaNombre.toLowerCase()))
-                  .sort((a, b) => filtroCat ? n(b[filtroCat]) - n(a[filtroCat]) : n(b.total) - n(a.total))
+                  .sort((a, b) => {
+                    const col = filtroCat || sortCol;
+                    const dir = filtroCat ? 'desc' : sortDir;
+                    if (col === 'nombre_medico') {
+                      const cmp = (a.nombre_medico || '').localeCompare(b.nombre_medico || '', 'es');
+                      return dir === 'asc' ? cmp : -cmp;
+                    }
+                    const cmp = n(a[col]) - n(b[col]);
+                    return dir === 'asc' ? cmp : -cmp;
+                  })
                   .map((m, idx) => {
                     const rowBg = idx % 2 === 0 ? '#fff' : '#fafafa';
                     return (
