@@ -1223,7 +1223,7 @@ public class SolicitudBolsaController {
      * @return solicitud creada
      */
     @PostMapping("/crear-adicional")
-    @CheckMBACPermission(pagina = "/citas/gestion-asegurado", accion = "crear")
+    @CheckMBACPermission(pagina = "/citas/citas-pendientes", accion = "crear")
     public ResponseEntity<SolicitudBolsaDTO> crearSolicitudAdicional(
             @RequestBody @jakarta.validation.Valid CrearSolicitudAdicionalRequest request,
             @AuthenticationPrincipal UserDetails userDetails) {
