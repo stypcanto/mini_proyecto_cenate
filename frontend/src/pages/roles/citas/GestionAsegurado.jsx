@@ -3119,10 +3119,10 @@ CENATE de Essalud`;
                                       className="flex-1 px-3 py-2 border-2 border-purple-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-purple-600 text-sm"
                                     >
                                       <option value="">HH</option>
-                                      {Array.from({ length: 14 }, (_, i) => i + 7).map(h => {
+                                      {Array.from({ length: 17 }, (_, i) => i + 7).map(h => {
                                         const h24 = String(h).padStart(2, '0');
                                         const period = h < 12 ? 'am' : 'pm';
-                                        const h12 = h > 12 ? h - 12 : h;
+                                        const h12 = h === 12 ? 12 : h > 12 ? h - 12 : h;
                                         return (
                                           <option key={h24} value={h24}>
                                             {String(h12).padStart(2, '0')} {period}
