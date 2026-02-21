@@ -1755,11 +1755,22 @@ export default function MisPacientes() {
     }
 
     // PRIORIDAD 3: Si NO hay filtro ATENCIÓN, usa el filtro ASIGNACIÓN (comportamiento anterior)
-    if (!p.fechaAsignacion) return false;
+    // v1.74.7: Si fechaAsignacion es null pero hay fechaAtencion, usar fechaAtencion como fallback
+    const hoy = obtenerHoyEnLima();
+
+    if (!p.fechaAsignacion) {
+      // Fallback: si tiene fechaAtencion, comparar con hoy
+      if (p.fechaAtencion) {
+        const fechaAt = extraerFecha(p.fechaAtencion);
+        if (filtroRangoFecha === 'todos' || filtroRangoFecha === 'hoy') {
+          return fechaAt === hoy;
+        }
+      }
+      return false;
+    }
 
     // v1.67.4: Extraer fecha y calcular HOY en Lima (UTC-5)
     const fechaAsignacion = extraerFecha(p.fechaAsignacion);
-    const hoy = obtenerHoyEnLima();
 
     // Por default, filtroRangoFecha es 'todos', pero queremos comportamiento de 'hoy'
     if (filtroRangoFecha === 'todos' || filtroRangoFecha === 'hoy') {
