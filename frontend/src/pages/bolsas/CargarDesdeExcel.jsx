@@ -771,7 +771,7 @@ export default function CargarDesdeExcel() {
         setFile(null);
         setTipoBolesaId(null);
         setIsImported(false);
-        navigate('/bolsas/solicitudes');
+        navigate('/bolsas/solicitudespendientes');
       }, 5000);
 
     } catch (error) {
@@ -825,7 +825,7 @@ export default function CargarDesdeExcel() {
       setTipoBolesaId(null);
       setReporteDeduplicacion(null);
       setIsImported(false);
-      navigate('/bolsas/solicitudes');
+      navigate('/bolsas/solicitudespendientes');
     }, 5000);
   };
 

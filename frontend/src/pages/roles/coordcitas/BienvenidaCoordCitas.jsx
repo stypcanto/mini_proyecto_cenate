@@ -104,7 +104,7 @@ export default function BienvenidaCoordCitas() {
               title="Solicitudes de Bolsas"
               description="Revisa y gestiona las solicitudes de pacientes pendientes de asignación"
               color="blue"
-              action={() => navigate("/bolsas/solicitudes")}
+              action={() => navigate("/bolsas/solicitudespendientes")}
             />
 
             {/* Card 2: Atenciones Clínicas */}
@@ -184,7 +184,7 @@ export default function BienvenidaCoordCitas() {
         {/* Botón de acción principal */}
         <div className="flex justify-center pt-4">
           <button
-            onClick={() => navigate("/bolsas/solicitudes")}
+            onClick={() => navigate("/bolsas/solicitudespendientes")}
             className="flex items-center gap-3 bg-gradient-to-r from-blue-600 to-teal-600 hover:from-blue-700 hover:to-teal-700 text-white px-8 py-3 rounded-xl font-semibold shadow-lg transition-all transform hover:scale-105"
           >
             <span>Comenzar a Gestionar</span>

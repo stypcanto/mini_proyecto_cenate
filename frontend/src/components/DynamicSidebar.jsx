@@ -985,8 +985,13 @@ function DynamicModuleSection({ modulo, colorConfig, location, toggleSection, op
         <div className="ml-3 pl-3 border-l-2 border-slate-700/50 space-y-1 animate-fadeIn">
           {paginas.sort((a, b) => {
             // Orden alfabético para módulos específicos
-            if (nombreModulo.toLowerCase().includes('gestión territorial') || nombreModulo.toLowerCase().includes('gestion territorial')) {
-              return (a.nombre || '').localeCompare(b.nombre || '');
+            if (
+              nombreModulo.toLowerCase().includes('gestión territorial') ||
+              nombreModulo.toLowerCase().includes('gestion territorial') ||
+              nombreModulo.toLowerCase().includes('bolsas de pacientes') ||
+              nombreModulo.toLowerCase().includes('bolsa')
+            ) {
+              return (a.nombre || '').localeCompare(b.nombre || '', 'es', { sensitivity: 'base' });
             }
             // Para otros módulos, mantener el orden original
             return (a.orden || 0) - (b.orden || 0);

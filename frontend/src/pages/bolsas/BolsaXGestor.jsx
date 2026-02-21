@@ -216,6 +216,17 @@ export default function BolsaXGestor() {
   const [error, setError]                   = useState('');
   const [filtroCat, setFiltroCat]           = useState(null);
   const [busquedaNombre, setBusquedaNombre] = useState('');
+  const [sortCol, setSortCol]               = useState('nombre_gestora');
+  const [sortDir, setSortDir]               = useState('asc');
+
+  const handleSort = (col) => {
+    if (sortCol === col) {
+      setSortDir(d => d === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortCol(col);
+      setSortDir(col === 'nombre_gestora' ? 'asc' : 'desc');
+    }
+  };
 
   // ── Filtro por calendario ─────────────────────────────────
   const [fechaSeleccionada, setFechaSeleccionada] = useState(null);
@@ -495,10 +506,16 @@ export default function BolsaXGestor() {
               <thead>
                 <tr style={{ background: '#0D5BA9' }}>
                   <th style={TH}>#</th>
-                  <th style={{ ...TH, textAlign: 'left', minWidth: '180px' }}>Gestora</th>
-                  <th style={TH}>Total</th>
+                  <th style={{ ...TH, textAlign: 'left', minWidth: '180px' }}>
+                    <SortBtn label="Gestora" col="nombre_gestora" sortCol={sortCol} sortDir={sortDir} onSort={handleSort} />
+                  </th>
+                  <th style={TH}>
+                    <SortBtn label="Total" col="total" sortCol={sortCol} sortDir={sortDir} onSort={handleSort} />
+                  </th>
                   {CATS.map(c => (
-                    <th key={c.key} style={{ ...TH, whiteSpace: 'nowrap' }}>{c.label}</th>
+                    <th key={c.key} style={{ ...TH, whiteSpace: 'nowrap' }}>
+                      <SortBtn label={c.label} col={c.key} sortCol={sortCol} sortDir={sortDir} onSort={handleSort} />
+                    </th>
                   ))}
                   <th style={{ ...TH, minWidth: '140px' }}>Avance</th>
                 </tr>
@@ -515,7 +532,11 @@ export default function BolsaXGestor() {
               <tbody>
                 {[...gestoras]
                   .filter(g => !busquedaNombre || (g.nombre_gestora || '').toLowerCase().includes(busquedaNombre.toLowerCase()))
-                  .sort((a, b) => filtroCat ? n(b[filtroCat]) - n(a[filtroCat]) : (a.nombre_gestora || '').localeCompare(b.nombre_gestora || '', 'es', { sensitivity: 'base' }))
+                  .sort((a, b) => {
+                    const dir = sortDir === 'asc' ? 1 : -1;
+                    if (sortCol === 'nombre_gestora') return dir * (a.nombre_gestora || '').localeCompare(b.nombre_gestora || '', 'es', { sensitivity: 'base' });
+                    return dir * (n(a[sortCol]) - n(b[sortCol]));
+                  })
                   .map((g, idx) => {
                     const rowBg = idx % 2 === 0 ? '#fff' : '#fafafa';
                     return (
