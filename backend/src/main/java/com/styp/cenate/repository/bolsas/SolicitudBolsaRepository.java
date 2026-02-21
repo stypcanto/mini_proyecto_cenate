@@ -171,7 +171,8 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
                sb.condicion_medica, sb.fecha_atencion_medica,
                COALESCE(CONCAT(med.nom_pers, ' ', med.ape_pater_pers, ' ', med.ape_mater_pers), '') as nombre_medico,
                sb.id_ipress_atencion, COALESCE(di2.cod_ipress, '') as cod_ipress_atencion,
-               COALESCE(di2.desc_ipress, '') as desc_ipress_atencion
+               COALESCE(di2.desc_ipress, '') as desc_ipress_atencion,
+               COALESCE(CONCAT(pcg.nom_pers, ' ', pcg.ape_pater_pers, ' ', pcg.ape_mater_pers), ug.name_user) as nombre_gestora
         FROM dim_solicitud_bolsa sb
         LEFT JOIN dim_tipos_bolsas tb ON sb.id_bolsa = tb.id_tipo_bolsa
         LEFT JOIN dim_ipress di ON sb.id_ipress = di.id_ipress
@@ -182,6 +183,8 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
         LEFT JOIN dim_usuarios u ON sb.usuario_cambio_estado_id = u.id_user
         LEFT JOIN dim_personal_cnt pc ON u.id_user = pc.id_usuario
         LEFT JOIN dim_personal_cnt med ON sb.id_personal = med.id_pers
+        LEFT JOIN dim_usuarios ug ON sb.responsable_gestora_id = ug.id_user
+        LEFT JOIN dim_personal_cnt pcg ON ug.id_user = pcg.id_usuario
         WHERE sb.activo = true
         ORDER BY CASE WHEN COALESCE(deg.cod_estado_cita, 'PENDIENTE_CITA') = 'PENDIENTE_CITA' THEN 0
                       WHEN COALESCE(deg.cod_estado_cita, 'PENDIENTE_CITA') = 'CITADO' THEN 1
@@ -229,7 +232,8 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
                sb.condicion_medica, sb.fecha_atencion_medica,
                COALESCE(CONCAT(med.nom_pers, ' ', med.ape_pater_pers, ' ', med.ape_mater_pers), '') as nombre_medico,
                sb.id_ipress_atencion, COALESCE(di2.cod_ipress, '') as cod_ipress_atencion,
-               COALESCE(di2.desc_ipress, '') as desc_ipress_atencion
+               COALESCE(di2.desc_ipress, '') as desc_ipress_atencion,
+               COALESCE(CONCAT(pcg.nom_pers, ' ', pcg.ape_pater_pers, ' ', pcg.ape_mater_pers), ug.name_user) as nombre_gestora
         FROM dim_solicitud_bolsa sb
         LEFT JOIN dim_tipos_bolsas tb ON sb.id_bolsa = tb.id_tipo_bolsa
         LEFT JOIN dim_ipress di ON sb.id_ipress = di.id_ipress
@@ -240,6 +244,8 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
         LEFT JOIN dim_usuarios u ON sb.usuario_cambio_estado_id = u.id_user
         LEFT JOIN dim_personal_cnt pc ON u.id_user = pc.id_usuario
         LEFT JOIN dim_personal_cnt med ON sb.id_personal = med.id_pers
+        LEFT JOIN dim_usuarios ug ON sb.responsable_gestora_id = ug.id_user
+        LEFT JOIN dim_personal_cnt pcg ON ug.id_user = pcg.id_usuario
         WHERE sb.activo = true
           AND (:bolsaNombre IS NULL OR POSITION(',' || LOWER(COALESCE(tb.desc_tipo_bolsa, '')) || ',' IN ',' || LOWER(:bolsaNombre) || ',') > 0)
           AND (:macrorregion IS NULL OR dm.desc_macro = :macrorregion)
@@ -1033,6 +1039,77 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
      * @param fechaHasta fecha fin (NULL = sin filtro)
      * @return lista de estadísticas por médico
      */
+    // ========================================================================
+    // 📊 BOLSA X GESTORA - Estadísticas agrupadas por gestora de citas
+    // ========================================================================
+
+    /**
+     * Estadísticas de pacientes agrupados por gestora de citas
+     * Agrupa por responsable_gestora_id y calcula conteos por categoría de estado
+     *
+     * @return lista de BolsaXGestoraDTO con id_gestora, nombre_gestora y conteos
+     */
+    @Query(value = """
+        SELECT
+          ug.id_user as id_gestora,
+          COALESCE(CONCAT(pcg.nom_pers,' ',pcg.ape_pater_pers,' ',pcg.ape_mater_pers), ug.name_user) as nombre_gestora,
+          COUNT(*) as total,
+          SUM(CASE WHEN sb.estado_gestion_citas_id IS NULL
+                     OR eg.cod_estado_cita IN ('PENDIENTE_CITA','PENDIENTE')
+               THEN 1 ELSE 0 END) as por_citar,
+          SUM(CASE WHEN eg.cod_estado_cita IN ('CITADO','EN_PROCESO') THEN 1 ELSE 0 END) as citados,
+          SUM(CASE WHEN eg.cod_estado_cita IN ('NO_CONTESTA','APAGADO','TEL_SIN_SERVICIO','REPROG_FALLIDA')
+               THEN 1 ELSE 0 END) as en_seguimiento,
+          SUM(CASE WHEN eg.cod_estado_cita IN ('HOSPITALIZADO','HC_BLOQUEADA','NO_GRUPO_ETARIO','PARTICULAR')
+               THEN 1 ELSE 0 END) as observados,
+          SUM(CASE WHEN eg.cod_estado_cita IN ('YA_NO_REQUIERE','SIN_VIGENCIA','FALLECIDO','NO_DESEA','NUM_NO_EXISTE','NO_IPRESS_CENATE','ANULADO','ANULADA','DESERCION')
+               THEN 1 ELSE 0 END) as cerrados,
+          SUM(CASE WHEN eg.cod_estado_cita IN ('ATENDIDO','ATENDIDO_PRESENCIAL','ATENDIDO_IPRESS')
+               THEN 1 ELSE 0 END) as atendidos
+        FROM dim_solicitud_bolsa sb
+        JOIN dim_usuarios ug ON sb.responsable_gestora_id = ug.id_user
+        LEFT JOIN dim_personal_cnt pcg ON ug.id_user = pcg.id_usuario
+        LEFT JOIN dim_estados_gestion_citas eg ON sb.estado_gestion_citas_id = eg.id_estado_cita
+        WHERE sb.activo = true AND sb.responsable_gestora_id IS NOT NULL
+        GROUP BY ug.id_user, ug.name_user, pcg.nom_pers, pcg.ape_pater_pers, pcg.ape_mater_pers
+        ORDER BY total DESC
+        """, nativeQuery = true)
+    List<Object[]> estadisticasPorGestora();
+
+    /**
+     * Estadísticas por gestora filtradas por rango de fecha de asignación
+     */
+    @Query(value = """
+        SELECT
+          ug.id_user as id_gestora,
+          COALESCE(CONCAT(pcg.nom_pers,' ',pcg.ape_pater_pers,' ',pcg.ape_mater_pers), ug.name_user) as nombre_gestora,
+          COUNT(*) as total,
+          SUM(CASE WHEN sb.estado_gestion_citas_id IS NULL
+                     OR eg.cod_estado_cita IN ('PENDIENTE_CITA','PENDIENTE')
+               THEN 1 ELSE 0 END) as por_citar,
+          SUM(CASE WHEN eg.cod_estado_cita IN ('CITADO','EN_PROCESO') THEN 1 ELSE 0 END) as citados,
+          SUM(CASE WHEN eg.cod_estado_cita IN ('NO_CONTESTA','APAGADO','TEL_SIN_SERVICIO','REPROG_FALLIDA')
+               THEN 1 ELSE 0 END) as en_seguimiento,
+          SUM(CASE WHEN eg.cod_estado_cita IN ('HOSPITALIZADO','HC_BLOQUEADA','NO_GRUPO_ETARIO','PARTICULAR')
+               THEN 1 ELSE 0 END) as observados,
+          SUM(CASE WHEN eg.cod_estado_cita IN ('YA_NO_REQUIERE','SIN_VIGENCIA','FALLECIDO','NO_DESEA','NUM_NO_EXISTE','NO_IPRESS_CENATE','ANULADO','ANULADA','DESERCION')
+               THEN 1 ELSE 0 END) as cerrados,
+          SUM(CASE WHEN eg.cod_estado_cita IN ('ATENDIDO','ATENDIDO_PRESENCIAL','ATENDIDO_IPRESS')
+               THEN 1 ELSE 0 END) as atendidos
+        FROM dim_solicitud_bolsa sb
+        JOIN dim_usuarios ug ON sb.responsable_gestora_id = ug.id_user
+        LEFT JOIN dim_personal_cnt pcg ON ug.id_user = pcg.id_usuario
+        LEFT JOIN dim_estados_gestion_citas eg ON sb.estado_gestion_citas_id = eg.id_estado_cita
+        WHERE sb.activo = true AND sb.responsable_gestora_id IS NOT NULL
+          AND (CAST(:fechaDesde AS VARCHAR) IS NULL OR DATE(sb.fecha_asignacion AT TIME ZONE 'America/Lima') >= CAST(:fechaDesde AS DATE))
+          AND (CAST(:fechaHasta AS VARCHAR) IS NULL OR DATE(sb.fecha_asignacion AT TIME ZONE 'America/Lima') <= CAST(:fechaHasta AS DATE))
+        GROUP BY ug.id_user, ug.name_user, pcg.nom_pers, pcg.ape_pater_pers, pcg.ape_mater_pers
+        ORDER BY total DESC
+        """, nativeQuery = true)
+    List<Object[]> estadisticasPorGestoraFiltrado(
+        @org.springframework.data.repository.query.Param("fechaDesde") String fechaDesde,
+        @org.springframework.data.repository.query.Param("fechaHasta") String fechaHasta);
+
     @Query(value = """
         SELECT
             p.id_pers as idPers,

@@ -349,6 +349,12 @@ export const componentRegistry = {
     requiredAction: 'ver',
   },
 
+  // ✅ v1.77.0: Renombrado de Gestionar Citas → Citas Pendientes
+  '/citas/citas-pendientes': {
+    component: lazy(() => import('../pages/roles/citas/GestionAsegurado')),
+    requiredAction: 'ver',
+  },
+  // Alias para compatibilidad con enlaces existentes
   '/citas/gestion-asegurado': {
     component: lazy(() => import('../pages/roles/citas/GestionAsegurado')),
     requiredAction: 'ver',
@@ -356,6 +362,11 @@ export const componentRegistry = {
 
   '/citas/bolsa-pacientes': {
     component: lazy(() => import('../pages/roles/citas/BolsaPacientesAsignados')),
+    requiredAction: 'ver',
+  },
+
+  '/citas/citas-agendadas': {
+    component: lazy(() => import('../pages/roles/citas/CitasAgendadas')),
     requiredAction: 'ver',
   },
 
@@ -520,6 +531,12 @@ export const componentRegistry = {
   '/bolsas/estadisticas': {
     component: lazy(() => import('../pages/bolsas/EstadisticasDashboard')),
     requiredAction: 'ver',
+  },
+
+  '/bolsas/bolsa-x-gestor': {
+    component: lazy(() => import('../pages/bolsas/BolsaXGestor')),
+    requiredAction: 'ver',
+    requiredRoles: ['SUPERADMIN', 'COORDINADOR_GESTION_CITAS', 'GESTOR DE CITAS', 'COORD. GESTION CITAS'],
   },
 
   '/bolsas/historial': {

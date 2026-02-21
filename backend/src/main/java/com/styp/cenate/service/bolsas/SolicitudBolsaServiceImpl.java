@@ -689,6 +689,7 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
             Long idIpressAtencion = row.length > 41 ? toLongSafe("id_ipress_atencion", row[41]) : null;
             String codIpressAtencion = row.length > 42 ? (String) row[42] : null;
             String descIpressAtencion = row.length > 43 ? (String) row[43] : null;
+            String nombreGestora = row.length > 44 ? (String) row[44] : null;
 
             return SolicitudBolsaDTO.builder()
                     .idSolicitud(toLongSafe("id_solicitud", row[0]))
@@ -736,6 +737,7 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
                     .idIpressAtencion(idIpressAtencion)    // NEW v1.15.0 - id_ipress_atencion (índice 38)
                     .codIpressAtencion(codIpressAtencion)  // NEW v1.15.0 - cod_ipress_atencion (índice 39)
                     .descIpressAtencion(descIpressAtencion) // NEW v1.15.0 - desc_ipress_atencion (índice 40)
+                    .nombreGestora(nombreGestora)           // nombre gestora desde JOIN dim_usuarios
                     .build();
         } catch (Exception e) {
             log.error("Error mapeando resultado SQL en índice. Error: {}", e.getMessage(), e);
@@ -2252,7 +2254,15 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
                 }
 
                 boolean tieneRolGestor = usuario.getRoles().stream()
-                    .anyMatch(r -> r.getDescRol() != null && "GESTOR DE CITAS".equalsIgnoreCase(r.getDescRol()));
+                    .anyMatch(r -> {
+                        if (r.getDescRol() == null) return false;
+                        String rol = r.getDescRol().toUpperCase().trim();
+                        return rol.contains("GESTOR") ||
+                               rol.contains("GESTION CITAS") ||
+                               rol.contains("GESTION_CITAS") ||
+                               rol.contains("COORD. GESTION") ||
+                               rol.contains("COORD_GESTION");
+                    });
 
                 if (!tieneRolGestor) {
                     continue;
@@ -3276,6 +3286,64 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
         return solicitudes.stream()
             .map(SolicitudBolsaMapper::toDTO)
             .collect(Collectors.toList());
+    }
+
+    /**
+     * Obtiene estadísticas de pacientes agrupados por gestora de citas
+     */
+    @Override
+    @Transactional(readOnly = true)
+    public List<com.styp.cenate.dto.bolsas.BolsaXGestoraDTO> obtenerEstadisticasPorGestora() {
+        log.info("📊 Obteniendo estadísticas por gestora de citas...");
+
+        List<Object[]> rows = solicitudRepository.estadisticasPorGestora();
+
+        List<com.styp.cenate.dto.bolsas.BolsaXGestoraDTO> result = new ArrayList<>();
+        for (Object[] row : rows) {
+            result.add(com.styp.cenate.dto.bolsas.BolsaXGestoraDTO.builder()
+                .idGestora(row[0] != null ? ((Number) row[0]).longValue() : null)
+                .nombreGestora(row[1] != null ? row[1].toString() : "Sin nombre")
+                .total(row[2] != null ? ((Number) row[2]).longValue() : 0L)
+                .porCitar(row[3] != null ? ((Number) row[3]).longValue() : 0L)
+                .citados(row[4] != null ? ((Number) row[4]).longValue() : 0L)
+                .enSeguimiento(row[5] != null ? ((Number) row[5]).longValue() : 0L)
+                .observados(row[6] != null ? ((Number) row[6]).longValue() : 0L)
+                .cerrados(row[7] != null ? ((Number) row[7]).longValue() : 0L)
+                .atendidos(row[8] != null ? ((Number) row[8]).longValue() : 0L)
+                .build());
+        }
+
+        log.info("✅ Estadísticas por gestora: {} gestoras encontradas", result.size());
+        return result;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<com.styp.cenate.dto.bolsas.BolsaXGestoraDTO> obtenerEstadisticasPorGestora(String fechaDesde, String fechaHasta) {
+        log.info("📊 Estadísticas por gestora con filtro fechas: {} → {}", fechaDesde, fechaHasta);
+
+        List<Object[]> rows = solicitudRepository.estadisticasPorGestoraFiltrado(
+            (fechaDesde != null && !fechaDesde.isEmpty()) ? fechaDesde : null,
+            (fechaHasta != null && !fechaHasta.isEmpty()) ? fechaHasta : null
+        );
+
+        List<com.styp.cenate.dto.bolsas.BolsaXGestoraDTO> result = new ArrayList<>();
+        for (Object[] row : rows) {
+            result.add(com.styp.cenate.dto.bolsas.BolsaXGestoraDTO.builder()
+                .idGestora(row[0] != null ? ((Number) row[0]).longValue() : null)
+                .nombreGestora(row[1] != null ? row[1].toString() : "Sin nombre")
+                .total(row[2] != null ? ((Number) row[2]).longValue() : 0L)
+                .porCitar(row[3] != null ? ((Number) row[3]).longValue() : 0L)
+                .citados(row[4] != null ? ((Number) row[4]).longValue() : 0L)
+                .enSeguimiento(row[5] != null ? ((Number) row[5]).longValue() : 0L)
+                .observados(row[6] != null ? ((Number) row[6]).longValue() : 0L)
+                .cerrados(row[7] != null ? ((Number) row[7]).longValue() : 0L)
+                .atendidos(row[8] != null ? ((Number) row[8]).longValue() : 0L)
+                .build());
+        }
+
+        log.info("✅ Estadísticas filtradas: {} gestoras", result.size());
+        return result;
     }
 
     /**

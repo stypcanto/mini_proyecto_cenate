@@ -84,8 +84,6 @@ export default function GestionAsegurado() {
   // ============================================================================
   const [searchTerm, setSearchTerm] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
-  const [filtroMacrorregion, setFiltroMacrorregion] = useState("todas");
-  const [filtroRed, setFiltroRed] = useState("todas");
   const [filtroIpress, setFiltroIpress] = useState("todas");
   const [filtroEspecialidad, setFiltroEspecialidad] = useState("todas");
   const [filtroTipoCita, setFiltroTipoCita] = useState("todas");
@@ -104,8 +102,6 @@ export default function GestionAsegurado() {
   const [cargandoIpress, setCargandoIpress] = useState(false);
 
   // 📅 Filtros de rango de fechas (v1.43.3)
-  const [filtroFechaIngresoInicio, setFiltroFechaIngresoInicio] = useState("");
-  const [filtroFechaIngresoFin, setFiltroFechaIngresoFin] = useState("");
   const [filtroFechaAsignacionInicio, setFiltroFechaAsignacionInicio] = useState("");
   const [filtroFechaAsignacionFin, setFiltroFechaAsignacionFin] = useState("");
 
@@ -341,14 +337,6 @@ export default function GestionAsegurado() {
       let url = `${API_BASE}/bolsas/solicitudes/mi-bandeja`;
       const params = new URLSearchParams();
 
-      console.log("📅 DEBUG Filtros de fecha crudos:");
-      console.log("   - filtroFechaIngresoInicio:", filtroFechaIngresoInicio, "tipo:", typeof filtroFechaIngresoInicio);
-      console.log("   - filtroFechaIngresoFin:", filtroFechaIngresoFin, "tipo:", typeof filtroFechaIngresoFin);
-      console.log("   - filtroFechaAsignacionInicio:", filtroFechaAsignacionInicio, "tipo:", typeof filtroFechaAsignacionInicio);
-      console.log("   - filtroFechaAsignacionFin:", filtroFechaAsignacionFin, "tipo:", typeof filtroFechaAsignacionFin);
-
-      if (filtroFechaIngresoInicio) params.append('fechaIngresoInicio', filtroFechaIngresoInicio);
-      if (filtroFechaIngresoFin) params.append('fechaIngresoFin', filtroFechaIngresoFin);
       if (filtroFechaAsignacionInicio) params.append('fechaAsignacionInicio', filtroFechaAsignacionInicio);
       if (filtroFechaAsignacionFin) params.append('fechaAsignacionFin', filtroFechaAsignacionFin);
 
@@ -466,7 +454,11 @@ export default function GestionAsegurado() {
         return fechaB - fechaA; // Descendente
       });
 
-      setPacientesAsignados(pacientes);
+      // Excluir estados que pertenecen a "Citas Agendadas"
+      const ESTADOS_AGENDADAS = ['HOSPITALIZADO', 'NO_IPRESS_CENATE', 'NUM_NO_EXISTE', 'YA_NO_REQUIERE',
+                                  'CITADO', 'SIN_VIGENCIA', 'FALLECIDO', 'ATENDIDO_IPRESS'];
+      const pacientesPendientes = pacientes.filter(p => !ESTADOS_AGENDADAS.includes(p.codigoEstado));
+      setPacientesAsignados(pacientesPendientes);
 
       // 📅 Cargar datos guardados de citas en el estado citasAgendadas
       const citasGuardadas = {};
@@ -807,10 +799,24 @@ export default function GestionAsegurado() {
   // ========================================================================
 
   const abrirModalMensajeCita = async (paciente) => {
-    if (!paciente.fechaAtencion || !paciente.horaAtencion) {
+    // Intentar recuperar fecha/hora desde citasAgendadas si no está en el objeto
+    let fechaAtencion = paciente.fechaAtencion;
+    let horaAtencion  = paciente.horaAtencion;
+
+    if ((!fechaAtencion || !horaAtencion) && citasAgendadas[paciente.id]?.fecha) {
+      const datetimeStr = citasAgendadas[paciente.id].fecha; // "YYYY-MM-DDTHH:mm"
+      const [f, h] = datetimeStr.split("T");
+      fechaAtencion = f || fechaAtencion;
+      horaAtencion  = h || horaAtencion;
+    }
+
+    if (!fechaAtencion || !horaAtencion) {
       toast.error("❌ El paciente debe tener fecha y hora de cita agendada");
       return;
     }
+
+    // Enriquecer paciente con fecha/hora resueltos
+    paciente = { ...paciente, fechaAtencion, horaAtencion };
 
     // Obtener nombre del médico - buscar en múltiples lugares
     let pacienteConMedico = { ...paciente };
@@ -1393,7 +1399,7 @@ CENATE de Essalud`;
     console.log("📅 Filtros de fecha cambiados, recargando pacientes...");
     fetchPacientesAsignados();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filtroFechaIngresoInicio, filtroFechaIngresoFin, filtroFechaAsignacionInicio, filtroFechaAsignacionFin]);
+  }, [filtroFechaAsignacionInicio, filtroFechaAsignacionFin]);
 
   // Debounce search - actualizar debouncedSearch después de 300ms sin escribir
   useEffect(() => {
@@ -1504,6 +1510,9 @@ CENATE de Essalud`;
   const esBolsaReprogramacion = filtroTipoBolsa !== "todas" && 
     tiposBolsas.find(tb => String(tb.idTipoBolsa) === String(filtroTipoBolsa))?.descTipoBolsa?.toLowerCase().includes("reprogram");
 
+  // Estados que "pasan" a citas-agendadas — siempre excluidos de esta vista
+  const ESTADOS_AGENDADOS = ['CITADO', 'YA_NO_REQUIERE', 'SIN_VIGENCIA', 'FALLECIDO', 'ATENDIDO_IPRESS'];
+
   // ============================================================================
   // FUNCIÓN DE FILTRADO ESPECIALIZADO
   // ============================================================================
@@ -1528,16 +1537,6 @@ CENATE de Essalud`;
       }
       return tiempo === filtroPrioridad107;
     })();
-
-    // 🌎 Filtro Macrorregión
-    const macrorregionMatch =
-      filtroMacrorregion === "todas" ||
-      paciente.macrorregion === filtroMacrorregion;
-
-    // 🌐 Filtro Red
-    const redMatch =
-      filtroRed === "todas" ||
-      paciente.red === filtroRed;
 
     // 🏥 Filtro IPRESS
     const ipressMatch =
@@ -1566,17 +1565,19 @@ CENATE de Essalud`;
       (paciente.codigoEstado !== "CITADO" &&
        paciente.codigoEstado !== "ATENDIDO_IPRESS");
 
+    // 🎓 Excluir pacientes que ya pasaron a citas-agendadas
+    const noEnCitasAgendadas = !ESTADOS_AGENDADOS.includes(paciente.codigoEstado);
+
     return (
       searchMatch &&
       bolsaMatch &&
       prioridadMatch &&
-      macrorregionMatch &&
-      redMatch &&
       ipressMatch &&
       especialidadMatch &&
       tipoCitaMatch &&
       estadoMatch &&
-      pendienteMatch
+      pendienteMatch &&
+      noEnCitasAgendadas
     );
   });
 
@@ -1614,23 +1615,24 @@ CENATE de Essalud`;
   // ============================================================================
   // CALCULAR OPCIONES DISPONIBLES PARA FILTROS
   // ============================================================================
-  const macrorregionesUnicas = [
-    ...new Set(pacientesAsignados
-      .map((p) => p.macrorregion)
-      .filter((m) => m))
-  ].sort();
-
-  const redesUnicas = [
-    ...new Set(pacientesAsignados
-      .map((p) => p.red)
-      .filter((r) => r))
-  ].sort();
-
   const ipressUnicas = [
     ...new Set(pacientesAsignados
       .map((p) => p.descIpress)
       .filter((i) => i))
   ].sort();
+
+  // 📋 Estados únicos presentes en la tabla actual (para dropdown de filtro)
+  const estadosEnTabla = React.useMemo(() => {
+    const map = new Map();
+    pacientesAsignados.forEach(p => {
+      if (p.codigoEstado && !map.has(p.codigoEstado)) {
+        map.set(p.codigoEstado, p.descEstadoCita || p.codigoEstado);
+      }
+    });
+    return Array.from(map.entries())
+      .map(([codigo, descripcion]) => ({ codigo, descripcion }))
+      .sort((a, b) => a.descripcion.localeCompare(b.descripcion, 'es'));
+  }, [pacientesAsignados]);
 
   // 🏥 Especialidades disponibles para importación (v1.46.5 + v1.71.1)
   const especialidadesDisponibles = [
@@ -1967,44 +1969,6 @@ CENATE de Essalud`;
                     <div className="space-y-3 pt-3 border-t border-gray-200">
                       {/* Dropdowns */}
                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
-                        {/* Macrorregión */}
-                        <div>
-                          <label className="text-xs font-semibold text-gray-600 block mb-1">
-                            Macrorregión
-                          </label>
-                          <select
-                            value={filtroMacrorregion}
-                            onChange={(e) => setFiltroMacrorregion(e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                          >
-                            <option value="todas">Todas las macrorregiones</option>
-                            {macrorregionesUnicas.map((m) => (
-                              <option key={m} value={m}>
-                                {m}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-
-                        {/* Red */}
-                        <div>
-                          <label className="text-xs font-semibold text-gray-600 block mb-1">
-                            Red
-                          </label>
-                          <select
-                            value={filtroRed}
-                            onChange={(e) => setFiltroRed(e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                          >
-                            <option value="todas">Todas las redes</option>
-                            {redesUnicas.map((r) => (
-                              <option key={r} value={r}>
-                                {r}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-
                         {/* IPRESS */}
                         <div>
                           <label className="text-xs font-semibold text-gray-600 block mb-1">
@@ -2073,7 +2037,7 @@ CENATE de Essalud`;
                             className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                           >
                             <option value="todos">Todos los estados</option>
-                            {estadosDisponibles.map((e) => (
+                            {estadosEnTabla.map((e) => (
                               <option key={e.codigo} value={e.codigo}>
                                 {e.descripcion}
                               </option>
@@ -2084,33 +2048,6 @@ CENATE de Essalud`;
 
                       {/* 📅 Filtros de Rango de Fechas (v1.43.3) */}
                       <div className="border-t border-gray-200 pt-3">
-                        {/* F. INGRESO BOLSA */}
-                        <div className="mb-3">
-                          <label className="text-xs font-semibold text-orange-600 block mb-2 flex items-center gap-1">
-                            📅 Rango de Fechas - F. Ingreso Bolsa
-                          </label>
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                            <div>
-                              <label className="text-xs font-semibold text-gray-600 block mb-1">Desde</label>
-                              <input
-                                type="date"
-                                value={filtroFechaIngresoInicio}
-                                onChange={(e) => setFiltroFechaIngresoInicio(e.target.value)}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
-                              />
-                            </div>
-                            <div>
-                              <label className="text-xs font-semibold text-gray-600 block mb-1">Hasta</label>
-                              <input
-                                type="date"
-                                value={filtroFechaIngresoFin}
-                                onChange={(e) => setFiltroFechaIngresoFin(e.target.value)}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
-                              />
-                            </div>
-                          </div>
-                        </div>
-
                         {/* F. ASIGNACIÓN */}
                         <div>
                           <label className="text-xs font-semibold text-blue-600 block mb-2 flex items-center gap-1">
@@ -2146,14 +2083,10 @@ CENATE de Essalud`;
                             setSearchTerm("");
                             setFiltroTipoBolsa("todas");
                             setFiltroPrioridad107("todas");
-                            setFiltroMacrorregion("todas");
-                            setFiltroRed("todas");
                             setFiltroIpress("todas");
                             setFiltroEspecialidad("todas");
                             setFiltroTipoCita("todas");
                             setFiltroEstado("todos");
-                            setFiltroFechaIngresoInicio("");
-                            setFiltroFechaIngresoFin("");
                             setFiltroFechaAsignacionInicio("");
                             setFiltroFechaAsignacionFin("");
                           }}
@@ -2178,12 +2111,6 @@ CENATE de Essalud`;
                           className="w-4 h-4 cursor-pointer"
                           title={selectedRows.size === pacientesFiltrados.length ? "Deseleccionar todo" : "Seleccionar todo"}
                         />
-                      </th>
-                      <th className="px-2 py-2 text-left text-[10px] font-bold uppercase">
-                        Estado de Bolsa
-                      </th>
-                      <th className="px-3 py-2 text-left text-[10px] font-bold uppercase">
-                        F. Ingreso Bolsa
                       </th>
                       <th className="px-3 py-2 text-left text-[10px] font-bold uppercase">
                         F. Asignación
@@ -2227,18 +2154,6 @@ CENATE de Essalud`;
                       <th className="px-2 py-2 text-left text-[10px] font-bold uppercase">
                         Estado de Gestora
                       </th>
-                      <th className="px-2 py-2 text-left text-[10px] font-bold uppercase">
-                        F. Atención Méd.
-                      </th>
-                      <th className="px-2 py-2 text-left text-[10px] font-bold uppercase">
-                        Est. Atención
-                      </th>
-                      <th className="px-2 py-2 text-left text-[10px] font-bold uppercase">
-                        F. Cambio
-                      </th>
-                      <th className="px-2 py-2 text-left text-[10px] font-bold uppercase">
-                        Usuario
-                      </th>
                       <th className="px-2 py-2 text-center text-[10px] font-bold uppercase">
                         Acc.
                       </th>
@@ -2266,45 +2181,6 @@ CENATE de Essalud`;
                             }`}
                           />
                         </td>
-                        {/* ESTADO DE BOLSA */}
-                        <td className="px-2 py-1.5">
-                          <span className={`px-2 py-1 rounded-lg text-[10px] font-medium inline-block ${
-                            paciente.estado === "PENDIENTE"
-                              ? "bg-yellow-100 text-yellow-800"
-                              : paciente.estado === "OBSERVADO"
-                              ? "bg-blue-100 text-blue-800"
-                              : paciente.estado === "ATENDIDO"
-                              ? "bg-green-100 text-green-800"
-                              : "bg-gray-100 text-gray-800"
-                          }`}>
-                            {paciente.estado || "Sin estado"}
-                          </span>
-                        </td>
-                        {/* F. INGRESO BOLSA - Siempre usar fecha_solicitud del API mi-bandeja */}
-                        <td className="px-3 py-2">
-                          {(() => {
-                            // v1.68.1: Siempre usar fechaSolicitud (devuelto por API mi-bandeja)
-                            const fechaMostrar = paciente.fechaSolicitud;
-
-                            return fechaMostrar && fechaMostrar !== "-" ? (
-                              <div className="bg-orange-50 rounded p-1.5 border-l-4 border-orange-600">
-                                <div className="flex items-center gap-1 mb-0.5">
-                                  <Calendar size={12} className="text-orange-600 flex-shrink-0" />
-                                  <span className="text-xs font-bold text-orange-600 uppercase tracking-tight">Ingreso</span>
-                                </div>
-                                <div className="text-xs font-semibold text-orange-900">
-                                  {new Date(fechaMostrar).toLocaleDateString('es-PE', { day: '2-digit', month: '2-digit', year: 'numeric' })}
-                                </div>
-                                <div className="text-xs text-orange-600 font-medium">
-                                  {formatearTiempoRelativo(fechaMostrar)}
-                                </div>
-                              </div>
-                            ) : (
-                              <div className="text-gray-400 italic text-xs py-0.5">—</div>
-                            );
-                          })()}
-                        </td>
-
                         {/* F. ASIGNACIÓN */}
                         <td className="px-3 py-2">
                           {paciente.fechaAsignacion && paciente.fechaAsignacion !== "-" ? (
@@ -2684,55 +2560,6 @@ CENATE de Essalud`;
                             </span>
                           )}
                         </td>
-                        {/* FECHA ATENCIÓN MÉDICA */}
-                        <td className="px-2 py-1.5 text-[10px] font-medium">
-                          {paciente.fechaAtencionMedica ? (
-                            <span className="text-indigo-700">
-                              {new Date(paciente.fechaAtencionMedica).toLocaleDateString('es-PE', { day: '2-digit', month: '2-digit', year: 'numeric' })}{' '}
-                              {new Date(paciente.fechaAtencionMedica).toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit' })}
-                            </span>
-                          ) : (
-                            <span className="text-gray-300 italic">—</span>
-                          )}
-                        </td>
-                        {/* ESTADO/CONDICIÓN ATENCIÓN MÉDICA */}
-                        <td className="px-2 py-1.5">
-                          {paciente.condicionMedica ? (
-                            <span className={`px-2 py-0.5 rounded-lg text-[10px] font-medium inline-block ${
-                              paciente.condicionMedica === 'Atendido'
-                                ? 'bg-emerald-100 text-emerald-800'
-                                : paciente.condicionMedica === 'Deserción' || paciente.condicionMedica === 'Desercion'
-                                ? 'bg-red-100 text-red-800'
-                                : paciente.condicionMedica === 'Pendiente'
-                                ? 'bg-amber-100 text-amber-800'
-                                : 'bg-gray-100 text-gray-700'
-                            }`}>
-                              {paciente.condicionMedica}
-                            </span>
-                          ) : (
-                            <span className="text-gray-300 italic text-[10px]">—</span>
-                          )}
-                        </td>
-                        {/* FECHA CAMBIO ESTADO - Auditoría v3.3.1 */}
-                        <td className="px-2 py-1.5 text-gray-700 text-[10px] font-medium">
-                          {paciente.fechaCambioEstado ? (
-                            <span className="text-blue-700">
-                              {formatearTiempoRelativo(paciente.fechaCambioEstado)}
-                            </span>
-                          ) : (
-                            <span className="text-gray-300 italic">—</span>
-                          )}
-                        </td>
-                        {/* USUARIO CAMBIO ESTADO - Auditoría v3.3.1 */}
-                        <td className="px-2 py-1.5 text-slate-600 text-xs">
-                          {paciente.usuarioCambioEstado ? (
-                            <span className="text-gray-900 font-medium">
-                              {paciente.usuarioCambioEstado}
-                            </span>
-                          ) : (
-                            <span className="text-gray-400 italic">—</span>
-                          )}
-                        </td>
                         {/* COLUMNA ACCIONES - Lápiz para editar + Guardar/Cancelar */}
                         <td className="px-2 py-1.5 text-center">
                           {pacienteEditandoEstado === paciente.id ? (
@@ -2797,11 +2624,11 @@ CENATE de Essalud`;
                               >
                                 <Smartphone className="w-4 h-4" strokeWidth={2} />
                               </button>
-                              {paciente.fechaAtencion && paciente.horaAtencion && (
+                              {(paciente.codigoEstado === "CITADO" || (paciente.fechaAtencion && paciente.horaAtencion)) && (
                                 <button
                                   onClick={() => abrirModalMensajeCita(paciente)}
                                   className="bg-purple-600 hover:bg-purple-700 text-white p-2 rounded transition-colors"
-                                  title="Enviar mensaje de cita formateado"
+                                  title="Enviar mensaje de cita por WhatsApp"
                                 >
                                   <MessageCircle className="w-4 h-4" strokeWidth={2} />
                                 </button>
