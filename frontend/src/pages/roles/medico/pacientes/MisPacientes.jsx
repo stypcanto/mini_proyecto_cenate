@@ -432,9 +432,36 @@ export default function MisPacientes() {
   const [fichaOpen, setFichaOpen] = useState({
     patologias: false, dispositivos: false, imc: true,
     tratamiento: false, adherencia: false, riesgo: false, controlado: false,
-    morisky: false, observaciones: false, videos: false,
+    morisky: false, observaciones: false, videos: false, mediciones: true,
   });
   const [videosSeleccionados, setVideosSeleccionados] = useState([]);
+  // ✅ v1.76.1: Última medición — Presión Arterial y Glucosa
+  const [paSistolica, setPaSistolica] = useState('');
+  const [paDiastolica, setPaDiastolica] = useState('');
+  const [glucosa, setGlucosa] = useState('');
+  const clasificacionPA = useMemo(() => {
+    const s = parseInt(paSistolica); const d = parseInt(paDiastolica);
+    if (!s || !d) return null;
+    // Validación fisiológica: diastólica debe ser menor que sistólica
+    if (d >= s) return { label: 'Valor inválido: diastólica debe ser menor que sistólica', color: 'error' };
+    // Clasificación según AHA 2026
+    // Estadio 2: PAS ≥140 O PAD ≥90
+    if (s >= 140 || d >= 90) return { label: 'Hipertensión Estadio 2', color: 'red' };
+    // Estadio 1: PAS 130–139 O PAD 80–89
+    if (s >= 130 || d >= 80) return { label: 'Hipertensión Estadio 1', color: 'orange' };
+    // Elevada: PAS 120–129 Y PAD <80
+    if (s >= 120 && s <= 129 && d < 80) return { label: 'Elevada', color: 'amber' };
+    // Normal: PAS <120 Y PAD <80
+    return { label: 'Normal', color: 'green' };
+  }, [paSistolica, paDiastolica]);
+  const clasificacionGlucosa = useMemo(() => {
+    const g = parseInt(glucosa);
+    if (!g) return null;
+    if (g < 80)   return { label: 'Hipoglucemia', color: 'red' };
+    if (g <= 130) return { label: 'Normal', color: 'green' };
+    if (g <= 179) return { label: 'Elevada', color: 'amber' };
+    return { label: 'Alta (posprandial)', color: 'red' };
+  }, [glucosa]);
   const toggleFicha = (key) => setFichaOpen(prev => ({ ...prev, [key]: !prev[key] }));
 
   // ✅ v1.75.0: Peso y Talla para calcular IMC automáticamente
@@ -1553,6 +1580,8 @@ export default function MisPacientes() {
           adherencia: adherenciaMorisky || adherenciaEnfermeria || null,
           nivelRiesgo: nivelRiesgoEnfermeria || null,
           controlado: controladoEnfermeria || null,
+          presionArterial: (paSistolica && paDiastolica && clasificacionPA?.color !== 'error') ? `${paSistolica}/${paDiastolica}` : null,
+          glucosa: glucosa || null,
           observaciones: observacionesEnfermeria || null,
         })
       };
@@ -1608,6 +1637,9 @@ export default function MisPacientes() {
       setControladoEnfermeria('');
       setObservacionesEnfermeria('');
       setVideosSeleccionados([]);
+      setPaSistolica('');
+      setPaDiastolica('');
+      setGlucosa('');
       setShowFichaEnfermeriaModal(false);
     } catch (error) {
       console.error('Error registrando atención:', error);
@@ -3564,32 +3596,6 @@ export default function MisPacientes() {
             {/* Body scrollable */}
             <div className="overflow-y-auto flex-1 px-5 py-4 space-y-3">
 
-              {/* Otras Patologías */}
-              <div className="border border-gray-200 rounded-xl overflow-hidden">
-                <button
-                  onClick={() => toggleFicha('patologias')}
-                  className="w-full flex items-center justify-between px-4 py-2.5 bg-gray-50 hover:bg-gray-100 transition-colors text-sm font-semibold text-gray-700"
-                >
-                  <span className="flex items-center gap-2">🩺 Otras Patologías</span>
-                  <span>{fichaOpen.patologias ? '▲' : '▼'}</span>
-                </button>
-                {fichaOpen.patologias && (
-                  <div className="px-4 py-3 flex flex-wrap gap-2">
-                    {['NINGUNO','DM','HTA','OBESIDAD','DISLIPIDEMIA','ERC','ARTRITIS','DEPRESIÓN'].map(op => (
-                      <button
-                        key={op}
-                        onClick={() => toggleOtraPatologia(op)}
-                        className={`px-3 py-1 rounded-full text-xs font-semibold border transition-all ${
-                          otraPatologia.includes(op)
-                            ? op === 'NINGUNO' ? 'bg-gray-600 text-white border-gray-600' : 'bg-blue-600 text-white border-blue-600'
-                            : 'bg-white text-gray-700 border-gray-300 hover:border-blue-400'
-                        }`}
-                      >{op}</button>
-                    ))}
-                  </div>
-                )}
-              </div>
-
               {/* Control de Dispositivos */}
               <div className="border border-gray-200 rounded-xl overflow-hidden">
                 <button
@@ -3678,71 +3684,32 @@ export default function MisPacientes() {
                 )}
               </div>
 
-              {/* Tratamiento */}
-              <div className="border border-gray-200 rounded-xl overflow-hidden">
-                <button
-                  onClick={() => toggleFicha('tratamiento')}
-                  className="w-full flex items-center justify-between px-4 py-2.5 bg-gray-50 hover:bg-gray-100 transition-colors text-sm font-semibold text-gray-700"
-                >
-                  <span className="flex items-center gap-2">💊 Tratamiento</span>
-                  <span>{fichaOpen.tratamiento ? '▲' : '▼'}</span>
-                </button>
-                {fichaOpen.tratamiento && (
-                  <div className="px-4 py-3 flex flex-wrap gap-2">
-                    {['INSULINA','HIPOGLICEMIANTE ORAL','ANTIHIPERTENSIVO','DIURÉTICO','NINGUNO'].map(op => (
-                      <button key={op} onClick={() => setTratamientoEnfermeria(tratamientoEnfermeria === op ? '' : op)}
-                        className={`px-3 py-1 rounded-full text-xs font-semibold border transition-all ${
-                          tratamientoEnfermeria === op ? 'bg-purple-600 text-white border-purple-600' : 'bg-white text-gray-700 border-gray-300 hover:border-purple-400'
-                        }`}>{op}</button>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              {/* Morisky (Adherencia) */}
+              {/* Adherencia */}
               <div className="border border-gray-200 rounded-xl overflow-hidden">
                 <button
                   onClick={() => toggleFicha('morisky')}
                   className="w-full flex items-center justify-between px-4 py-2.5 bg-gray-50 hover:bg-gray-100 transition-colors text-sm font-semibold text-gray-700"
                 >
-                  <span className="flex items-center gap-2">📋 Adherencia — Escala de Morisky</span>
+                  <span className="flex items-center gap-2">📋 Adherencia</span>
                   <span>{fichaOpen.morisky ? '▲' : '▼'}</span>
                 </button>
                 {fichaOpen.morisky && (
-                  <div className="px-4 py-3 space-y-3">
+                  <div className="px-4 py-3 flex gap-2">
                     {[
-                      '¿Olvida tomar sus medicamentos?',
-                      '¿Olvida tomar sus medicamentos a la hora indicada?',
-                      'Cuando se siente bien, ¿deja de tomar sus medicamentos?',
-                      'Cuando se siente mal, ¿deja de tomar sus medicamentos?',
-                    ].map((pregunta, idx) => (
-                      <div key={idx}>
-                        <p className="text-xs text-gray-700 font-medium mb-1">{idx + 1}. {pregunta}</p>
-                        <div className="flex gap-2">
-                          {[{label:'Sí', val:true}, {label:'No', val:false}].map(({label, val}) => (
-                            <button key={label} onClick={() => {
-                              const nuevo = [...moriskyRespuestas];
-                              nuevo[idx] = moriskyRespuestas[idx] === val ? null : val;
-                              setMoriskyRespuestas(nuevo);
-                            }}
-                              className={`flex-1 py-1.5 rounded-lg text-xs font-semibold border transition-all ${
-                                moriskyRespuestas[idx] === val
-                                  ? val ? 'bg-red-500 text-white border-red-500' : 'bg-green-600 text-white border-green-600'
-                                  : 'bg-white text-gray-600 border-gray-300 hover:border-gray-400'
-                              }`}>{label}</button>
-                          ))}
-                        </div>
-                      </div>
+                      { val: 'ALTA',  color: 'bg-green-600' },
+                      { val: 'MEDIA', color: 'bg-amber-500' },
+                      { val: 'BAJA',  color: 'bg-red-600'   },
+                    ].map(({ val, color }) => (
+                      <button
+                        key={val}
+                        onClick={() => setAdherenciaEnfermeria(adherenciaEnfermeria === val ? '' : val)}
+                        className={`flex-1 py-2 rounded-xl text-sm font-bold border-2 transition-all ${
+                          adherenciaEnfermeria === val
+                            ? `${color} text-white border-transparent`
+                            : 'bg-white text-gray-700 border-gray-200 hover:border-gray-400'
+                        }`}
+                      >{val}</button>
                     ))}
-                    {adherenciaMorisky && (
-                      <div className={`text-center py-2 rounded-xl font-bold text-sm ${
-                        adherenciaMorisky === 'ALTA' ? 'bg-green-100 text-green-800' :
-                        adherenciaMorisky === 'MEDIA' ? 'bg-amber-100 text-amber-800' :
-                        'bg-red-100 text-red-800'
-                      }`}>
-                        Adherencia: {adherenciaMorisky}
-                      </div>
-                    )}
                   </div>
                 )}
               </div>
@@ -3787,6 +3754,132 @@ export default function MisPacientes() {
                             : 'bg-white text-gray-700 border-gray-200 hover:border-gray-400'
                         }`}>{op}</button>
                     ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Última Medición */}
+              <div className="border border-indigo-200 rounded-xl overflow-hidden">
+                <button
+                  onClick={() => toggleFicha('mediciones')}
+                  className="w-full flex items-center justify-between px-4 py-2.5 bg-indigo-50 hover:bg-indigo-100 transition-colors text-sm font-semibold text-indigo-800"
+                >
+                  <span className="flex items-center gap-2">
+                    📊 Última Medición
+                    {((paSistolica && paDiastolica) || glucosa) && (
+                      <span className="bg-indigo-600 text-white text-xs font-bold px-2 py-0.5 rounded-full">
+                        {[paSistolica && paDiastolica ? `PA ${paSistolica}/${paDiastolica}` : null, glucosa ? `Glu ${glucosa}` : null].filter(Boolean).join(' · ')}
+                      </span>
+                    )}
+                  </span>
+                  <span>{fichaOpen.mediciones ? '▲' : '▼'}</span>
+                </button>
+                {fichaOpen.mediciones && (
+                  <div className="px-4 py-4 space-y-4">
+
+                    {/* Presión Arterial */}
+                    <div>
+                      <p className="text-xs font-bold text-gray-600 uppercase tracking-wider mb-2 flex items-center gap-1">
+                        🩺 Presión Arterial <span className="text-gray-400 font-normal normal-case">(mmHg)</span>
+                      </p>
+                      <div className="flex items-center gap-2">
+                        <div className="flex-1">
+                          <label className="text-xs text-gray-500 mb-1 block">Sistólica</label>
+                          <input
+                            type="number" min="60" max="250" step="1"
+                            inputMode="numeric"
+                            value={paSistolica}
+                            onChange={e => setPaSistolica(e.target.value)}
+                            placeholder="120"
+                            className={`w-full px-3 py-2.5 border rounded-lg text-sm text-center font-bold focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400 ${
+                              clasificacionPA?.color === 'error' ? 'border-red-400 bg-red-50' : 'border-gray-300'
+                            }`}
+                          />
+                        </div>
+                        <span className="text-2xl font-light text-gray-400 mt-4">/</span>
+                        <div className="flex-1">
+                          <label className="text-xs text-gray-500 mb-1 block">Diastólica</label>
+                          <input
+                            type="number" min="40" max="150" step="1"
+                            inputMode="numeric"
+                            value={paDiastolica}
+                            onChange={e => setPaDiastolica(e.target.value)}
+                            placeholder="80"
+                            className={`w-full px-3 py-2.5 border rounded-lg text-sm text-center font-bold focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400 ${
+                              clasificacionPA?.color === 'error' ? 'border-red-400 bg-red-50' : 'border-gray-300'
+                            }`}
+                          />
+                        </div>
+                      </div>
+                      {clasificacionPA && (
+                        <div className={`mt-2 flex items-center justify-between px-3 py-2 rounded-lg text-xs font-bold ${
+                          clasificacionPA.color === 'error'  ? 'bg-red-50 text-red-700 border border-red-400' :
+                          clasificacionPA.color === 'green'  ? 'bg-green-50 text-green-700 border border-green-200' :
+                          clasificacionPA.color === 'amber'  ? 'bg-amber-50 text-amber-700 border border-amber-200' :
+                          clasificacionPA.color === 'orange' ? 'bg-orange-50 text-orange-700 border border-orange-200' :
+                          'bg-red-50 text-red-700 border border-red-200'
+                        }`}>
+                          {clasificacionPA.color === 'error'
+                            ? <span className="flex items-center gap-1">⚠️ {clasificacionPA.label}</span>
+                            : <><span>{paSistolica}/{paDiastolica} mmHg</span><span>{clasificacionPA.label}</span></>
+                          }
+                        </div>
+                      )}
+                      <div className="mt-2 rounded-lg overflow-hidden border border-gray-200 text-xs">
+                        <div className="bg-gray-100 px-3 py-1 font-bold text-gray-600 flex justify-between">
+                          <span>Categoría</span>
+                          <span className="flex gap-6"><span>PAS (mmHg)</span><span>PAD (mmHg)</span></span>
+                        </div>
+                        {[
+                          { cat: 'Normal',                 pas: '< 120',    op: 'y', pad: '< 80',  color: 'text-green-700' },
+                          { cat: 'Elevada',                pas: '120–129',  op: 'y', pad: '< 80',  color: 'text-amber-700' },
+                          { cat: 'Hipertensión Estadio 1', pas: '130–139',  op: 'o', pad: '80–89', color: 'text-orange-700' },
+                          { cat: 'Hipertensión Estadio 2', pas: '≥ 140',    op: 'o', pad: '≥ 90',  color: 'text-red-700' },
+                        ].map(row => (
+                          <div key={row.cat} className={`px-3 py-1 flex justify-between border-t border-gray-100 font-medium ${row.color}`}>
+                            <span>{row.cat}</span>
+                            <span className="flex gap-2 items-center">
+                              <span className="w-16 text-right">{row.pas}</span>
+                              <span className="w-4 text-center text-gray-400">{row.op}</span>
+                              <span className="w-14 text-right">{row.pad}</span>
+                            </span>
+                          </div>
+                        ))}
+                        <div className="bg-gray-50 px-3 py-1 text-gray-400 border-t border-gray-100 text-center">
+                          Según AHA 2026
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Glucosa */}
+                    <div>
+                      <p className="text-xs font-bold text-gray-600 uppercase tracking-wider mb-2 flex items-center gap-1">
+                        🩸 Glucosa <span className="text-gray-400 font-normal normal-case">(mg/dL)</span>
+                      </p>
+                      <div className="flex items-center gap-3">
+                        <input
+                          type="number" min="20" max="600" step="1"
+                          inputMode="numeric"
+                          value={glucosa}
+                          onChange={e => setGlucosa(e.target.value)}
+                          placeholder="100"
+                          className="w-36 px-3 py-2.5 border border-gray-300 rounded-lg text-sm text-center font-bold focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400"
+                        />
+                        <span className="text-sm text-gray-500">mg/dL</span>
+                      </div>
+                      {clasificacionGlucosa && (
+                        <div className={`mt-2 flex items-center justify-between px-3 py-2 rounded-lg text-xs font-bold ${
+                          clasificacionGlucosa.color === 'green' ? 'bg-green-50 text-green-700 border border-green-200' :
+                          clasificacionGlucosa.color === 'amber' ? 'bg-amber-50 text-amber-700 border border-amber-200' :
+                          'bg-red-50 text-red-700 border border-red-200'
+                        }`}>
+                          <span>{glucosa} mg/dL</span>
+                          <span>{clasificacionGlucosa.label}</span>
+                        </div>
+                      )}
+                      <p className="text-xs text-gray-400 mt-1.5">ADA 2026 — Ayunas: 80–130 mg/dL normal · Posprandial: &lt;180 mg/dL</p>
+                    </div>
+
                   </div>
                 )}
               </div>
@@ -3874,7 +3967,7 @@ export default function MisPacientes() {
                     {fichaOpen.videos && (
                       <div className="px-4 py-3 space-y-3">
                         {condicionesActivas.length === 0 && (
-                          <p className="text-xs text-gray-500 italic">Seleccione HTA o DM en "Otras Patologías" para filtrar videos relevantes.</p>
+                          <p className="text-xs text-gray-500 italic">Mostrando todos los videos disponibles (HTA y DM).</p>
                         )}
                         <div className="space-y-1.5">
                           {videosFiltrados.map(video => (
