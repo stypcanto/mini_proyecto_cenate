@@ -1,5 +1,6 @@
 package com.styp.cenate.service.bolsas;
 
+import com.styp.cenate.dto.bolsas.BolsaXGestoraDTO;
 import com.styp.cenate.dto.bolsas.SolicitudBolsaDTO;
 import com.styp.cenate.dto.bolsas.CrearSolicitudAdicionalRequest;
 import org.springframework.web.multipart.MultipartFile;
@@ -235,15 +236,11 @@ public interface SolicitudBolsaService {
 
     /**
      * Obtiene estadísticas de pacientes agrupados por gestora de citas
-     * @return lista de estadísticas por gestora
+     * Calcula total, pendientes, citados, atendidos y anulados por gestora
+     *
+     * @return lista de BolsaXGestoraDTO ordenada por total desc
      */
-    List<com.styp.cenate.dto.bolsas.BolsaXGestoraDTO> obtenerEstadisticasPorGestora();
+    List<BolsaXGestoraDTO> obtenerEstadisticasPorGestora();
 
-    /**
-     * Obtiene estadísticas de pacientes agrupados por gestora con filtro de fechas
-     * @param fechaDesde fecha inicio (nullable)
-     * @param fechaHasta fecha fin (nullable)
-     * @return lista de estadísticas por gestora filtradas
-     */
-    List<com.styp.cenate.dto.bolsas.BolsaXGestoraDTO> obtenerEstadisticasPorGestora(String fechaDesde, String fechaHasta);
+    List<BolsaXGestoraDTO> obtenerEstadisticasPorGestora(String fechaDesde, String fechaHasta);
 }

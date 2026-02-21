@@ -1,5 +1,6 @@
 package com.styp.cenate.api.bolsas;
 
+import com.styp.cenate.dto.bolsas.BolsaXGestoraDTO;
 import com.styp.cenate.dto.bolsas.SolicitudBolsaDTO;
 import com.styp.cenate.dto.bolsas.ActualizarEstadoCitaDTO;
 import com.styp.cenate.dto.bolsas.CrearSolicitudAdicionalRequest;
@@ -507,11 +508,30 @@ public class SolicitudBolsaController {
 
         try {
             // 1. Buscar el ID de la especialidad por nombre (case-insensitive)
+            //    Primero intenta match exacto; si no encuentra, usa LIKE (contiene)
             Optional<Especialidad> especialidadOpt = especialidadRepository
                     .findByDescServicioIgnoreCase(especialidad);
 
             if (especialidadOpt.isEmpty()) {
-                log.warn("⚠️ Especialidad no encontrada: {}", especialidad);
+                log.info("🔍 Match exacto no encontrado para '{}', intentando búsqueda LIKE...", especialidad);
+                List<Especialidad> listaLike = especialidadRepository
+                        .findByDescServicioContainingIgnoreCase(especialidad);
+                if (!listaLike.isEmpty()) {
+                    especialidadOpt = Optional.of(listaLike.get(0));
+                    log.info("✅ Match LIKE encontrado: '{}'", especialidadOpt.get().getDescServicio());
+                } else {
+                    // Fallback: búsqueda sin acentos (Enfermería = ENFERMERIA)
+                    List<Especialidad> sinAcentos = especialidadRepository
+                            .buscarPorNombreSinAcentos(especialidad);
+                    if (!sinAcentos.isEmpty()) {
+                        especialidadOpt = Optional.of(sinAcentos.get(0));
+                        log.info("✅ Match sin acentos encontrado: '{}'", especialidadOpt.get().getDescServicio());
+                    }
+                }
+            }
+
+            if (especialidadOpt.isEmpty()) {
+                log.warn("⚠️ Especialidad no encontrada en DB: '{}'", especialidad);
                 return ResponseEntity.ok()
                         .body(Map.of("status", "success", "data", Collections.emptyList()));
             }
@@ -571,7 +591,7 @@ public class SolicitudBolsaController {
      * @return mensaje de éxito
      */
     @PatchMapping("/{id}/asignar")
-    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'COORD. GESTION CITAS')")
+    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'COORD. GESTION CITAS', 'GESTOR DE CITAS')")
     //@CheckMBACPermission(pagina = "/modulos/bolsas/solicitudes", accion = "asignar")
     public ResponseEntity<?> asignarGestora(
             @PathVariable Long id,
@@ -1229,6 +1249,31 @@ public class SolicitudBolsaController {
         log.info("🔍 GET /api/bolsas/solicitudes/buscar-dni/{}", dni);
         List<SolicitudBolsaDTO> solicitudes = solicitudBolsaService.buscarPorDni(dni);
         return ResponseEntity.ok(solicitudes);
+    }
+
+    /**
+     * Obtiene estadísticas de pacientes agrupados por gestora de citas
+     * GET /api/bolsas/solicitudes/estadisticas/por-gestora
+     *
+     * Solo accesible para SUPERADMIN y COORD. GESTION CITAS
+     *
+     * @return lista de BolsaXGestoraDTO con conteos por estado por gestora
+     */
+    @GetMapping("/estadisticas/por-gestora")
+    @PreAuthorize("hasAnyRole('SUPERADMIN', 'COORD. GESTION CITAS', 'GESTOR DE CITAS')")
+    public ResponseEntity<?> obtenerEstadisticasPorGestora(
+            @RequestParam(required = false) String fechaDesde,
+            @RequestParam(required = false) String fechaHasta) {
+        try {
+            log.info("📊 GET /api/bolsas/solicitudes/estadisticas/por-gestora fechaDesde={} fechaHasta={}", fechaDesde, fechaHasta);
+            List<BolsaXGestoraDTO> estadisticas = (fechaDesde != null || fechaHasta != null)
+                ? solicitudBolsaService.obtenerEstadisticasPorGestora(fechaDesde, fechaHasta)
+                : solicitudBolsaService.obtenerEstadisticasPorGestora();
+            return ResponseEntity.ok(estadisticas);
+        } catch (Exception e) {
+            log.error("❌ Error al obtener estadísticas por gestora: ", e);
+            return ResponseEntity.status(500).body(Map.of("error", "Error al obtener estadísticas por gestora"));
+        }
     }
 
 }

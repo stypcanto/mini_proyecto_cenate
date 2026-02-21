@@ -942,6 +942,22 @@ export const obtenerRedPorId = async (id) => {
 };
 
 /**
+ * Obtiene estadísticas de pacientes agrupados por gestora de citas
+ * GET /api/bolsas/solicitudes/estadisticas/por-gestora
+ * Solo accesible para SUPERADMIN y COORD. GESTION CITAS
+ * @returns {Promise<Array>} - Lista de BolsaXGestoraDTO
+ */
+export const obtenerEstadisticasPorGestora = async () => {
+  try {
+    const response = await apiClient.get(`${API_BASE_URL}/solicitudes/estadisticas/por-gestora`, true);
+    return response;
+  } catch (error) {
+    console.error('Error al obtener estadísticas por gestora:', error);
+    throw error;
+  }
+};
+
+/**
  * 🔎 Obtiene todas las especialidades únicas pobladas en la tabla (v1.42.0)
  * GET /api/bolsas/solicitudes/especialidades
  * Usado para llenar dinámicamente el filtro de especialidades
@@ -1138,4 +1154,7 @@ export default {
 
   // FILTROS DINÁMICOS (v1.42.0)
   obtenerEspecialidadesUnicas, // NEW: Obtener todas las especialidades únicas de la tabla
+
+  // BOLSA X GESTOR
+  obtenerEstadisticasPorGestora,
 };

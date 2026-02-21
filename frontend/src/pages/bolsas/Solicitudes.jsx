@@ -339,6 +339,7 @@ export default function Solicitudes() {
   useEffect(() => {
     if (modalAsignarGestora && gestoras.length === 0) {
       console.log('👤 Modal abierto, reintentando cargar gestoras...');
+      setIsLoadingGestoras(true);
       (async () => {
         try {
           const gestorasData = await bolsasService.obtenerGestorasDisponibles();
@@ -354,6 +355,8 @@ export default function Solicitudes() {
           console.log('✅ Gestoras recargadas:', gestorasArray.length);
         } catch (error) {
           console.error('❌ Error recargando gestoras:', error);
+        } finally {
+          setIsLoadingGestoras(false);
         }
       })();
     }
@@ -489,11 +492,7 @@ export default function Solicitudes() {
       const solicitudesEnriquecidas = (solicitudesData || []).map((solicitud, idx) => {
         try {
           // NEW v2.4.0: Mapear responsable_gestora_id a gestora nombre desde lista de gestoras
-          let gestoraAsignadaNombre = null;
-          if (solicitud.responsable_gestora_id && gestoras && gestoras.length > 0) {
-            const gestoraEncontrada = gestoras.find(g => g.id === solicitud.responsable_gestora_id);
-            gestoraAsignadaNombre = gestoraEncontrada ? gestoraEncontrada.nombre : null;
-          }
+          const gestoraAsignadaNombre = solicitud.nombre_gestora || null;
 
           // Formatear fecha de asignación si existe (con hora, sin segundos)
           const fechaAsignacionFormato = solicitud.fecha_asignacion
@@ -697,11 +696,7 @@ export default function Solicitudes() {
         // Procesar solicitudes (MISMO MAPEO QUE ANTES)
         const solicitudesEnriquecidas = (solicitudesData || []).map((solicitud, idx) => {
           try {
-            let gestoraAsignadaNombre = null;
-            if (solicitud.responsable_gestora_id && gestoras && gestoras.length > 0) {
-              const gestoraEncontrada = gestoras.find(g => g.id === solicitud.responsable_gestora_id);
-              gestoraAsignadaNombre = gestoraEncontrada ? gestoraEncontrada.nombre : null;
-            }
+            const gestoraAsignadaNombre = solicitud.nombre_gestora || null;
 
             const fechaAsignacionFormato = solicitud.fecha_asignacion
               ? new Date(solicitud.fecha_asignacion).toLocaleString('es-PE', {
@@ -878,11 +873,7 @@ export default function Solicitudes() {
         // Procesar solicitudes y enriquecer con nombres de catálogos (mismo mapeo que antes)
         const solicitudesEnriquecidas = (solicitudesData || []).map((solicitud, idx) => {
           try {
-            let gestoraAsignadaNombre = null;
-            if (solicitud.responsable_gestora_id && gestoras && gestoras.length > 0) {
-              const gestoraEncontrada = gestoras.find(g => g.id === solicitud.responsable_gestora_id);
-              gestoraAsignadaNombre = gestoraEncontrada ? gestoraEncontrada.nombre : null;
-            }
+            const gestoraAsignadaNombre = solicitud.nombre_gestora || null;
 
             const fechaAsignacionFormato = solicitud.fecha_asignacion
               ? new Date(solicitud.fecha_asignacion).toLocaleString('es-PE', {
@@ -2505,7 +2496,12 @@ export default function Solicitudes() {
                     </div>
                   )}
 
-                  {gestoras.length === 0 ? (
+                  {isLoadingGestoras ? (
+                    <div className="text-center py-12">
+                      <div className="inline-block w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mb-3" />
+                      <p className="text-gray-500 text-sm">Cargando gestoras disponibles...</p>
+                    </div>
+                  ) : gestoras.length === 0 ? (
                     <div className="text-center py-12">
                       <p className="text-gray-500">❌ No hay gestoras disponibles en el sistema</p>
                     </div>

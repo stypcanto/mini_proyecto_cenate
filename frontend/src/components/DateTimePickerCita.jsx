@@ -1,30 +1,105 @@
 /**
  * DateTimePickerCita - Date/Time Picker Profesional para Citas Médicas
- * Requisitos:
  * - Bloquear fechas pasadas
  * - Entrada manual con máscara DD/MM/AAAA
- * - Intervalos de 15 minutos para hora
- * - Validación de disponibilidad async
- * - Custom styling (azul corporativo)
- * - Z-index correcto
+ * - Intervalos de 5 minutos — picker de dos paneles (Hora + Minuto)
+ * - Portal a document.body para escapar overflow:hidden de tablas
  */
 
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
+import ReactDOM from "react-dom";
 import { ChevronLeft, ChevronRight, Clock, Calendar } from "lucide-react";
 import toast from "react-hot-toast";
 
-const HORAS = [
-  "08:00", "08:15", "08:30", "08:45",
-  "09:00", "09:15", "09:30", "09:45",
-  "10:00", "10:15", "10:30", "10:45",
-  "11:00", "11:15", "11:30", "11:45",
-  "12:00", "12:15", "12:30", "12:45",
-  "13:00", "13:15", "13:30", "13:45",
-  "14:00", "14:15", "14:30", "14:45",
-  "15:00", "15:15", "15:30", "15:45",
-  "16:00", "16:15", "16:30", "16:45",
-  "17:00", "17:15", "17:30", "17:45",
+const HORAS_PANEL = [
+  { valor: 8,  label: "8 AM"  },
+  { valor: 9,  label: "9 AM"  },
+  { valor: 10, label: "10 AM" },
+  { valor: 11, label: "11 AM" },
+  { valor: 12, label: "12 PM" },
+  { valor: 13, label: "1 PM"  },
+  { valor: 14, label: "2 PM"  },
+  { valor: 15, label: "3 PM"  },
+  { valor: 16, label: "4 PM"  },
+  { valor: 17, label: "5 PM"  },
+  { valor: 18, label: "6 PM"  },
+  { valor: 19, label: "7 PM"  },
+  { valor: 20, label: "8 PM"  },
+  { valor: 21, label: "9 PM"  },
+  { valor: 22, label: "10 PM" },
+  { valor: 23, label: "11 PM" },
+  { valor: 0,  label: "12 AM" },
 ];
+
+const MINUTOS_PANEL = [0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55];
+
+const formatAMPM = (hora24) => {
+  if (!hora24) return "--:--";
+  const [hStr, mStr] = hora24.split(":");
+  let h = parseInt(hStr, 10);
+  const m = mStr;
+  if (h === 0)  return `12:${m} AM`;
+  if (h < 12)  return `${h}:${m} AM`;
+  if (h === 12) return `12:${m} PM`;
+  return `${h - 12}:${m} PM`;
+};
+
+// ─── Portal flotante ────────────────────────────────────────────────────────
+function FloatingPanel({ anchorRef, align = "left", children, onClose }) {
+  const [pos, setPos] = useState({ top: 0, left: 0, width: 0 });
+  const panelRef = useRef(null);
+
+  const recalc = useCallback(() => {
+    if (!anchorRef.current) return;
+    const rect = anchorRef.current.getBoundingClientRect();
+    const scrollY = window.scrollY || document.documentElement.scrollTop;
+    const scrollX = window.scrollX || document.documentElement.scrollLeft;
+    setPos({
+      top:   rect.bottom + scrollY + 4,
+      left:  align === "right"
+               ? rect.right + scrollX
+               : rect.left + scrollX,
+      width: rect.width,
+    });
+  }, [anchorRef, align]);
+
+  useEffect(() => {
+    recalc();
+    window.addEventListener("resize", recalc);
+    window.addEventListener("scroll", recalc, true);
+    return () => {
+      window.removeEventListener("resize", recalc);
+      window.removeEventListener("scroll", recalc, true);
+    };
+  }, [recalc]);
+
+  // Cerrar al click fuera
+  useEffect(() => {
+    const handler = (e) => {
+      if (
+        panelRef.current && !panelRef.current.contains(e.target) &&
+        anchorRef.current && !anchorRef.current.contains(e.target)
+      ) {
+        onClose();
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [anchorRef, onClose]);
+
+  const style =
+    align === "right"
+      ? { position: "absolute", top: pos.top, right: window.innerWidth - pos.left, zIndex: 99999 }
+      : { position: "absolute", top: pos.top, left: pos.left, zIndex: 99999 };
+
+  return ReactDOM.createPortal(
+    <div ref={panelRef} style={style}>
+      {children}
+    </div>,
+    document.body
+  );
+}
+// ────────────────────────────────────────────────────────────────────────────
 
 export default function DateTimePickerCita({
   value = "",
@@ -34,16 +109,19 @@ export default function DateTimePickerCita({
   onValidationChange = () => {},
 }) {
   const [mostrarCalendario, setMostrarCalendario] = useState(false);
-  const [mostrarHoras, setMostrarHoras] = useState(false);
-  const [fechaInput, setFechaInput] = useState("");
-  const [horaSeleccionada, setHoraSeleccionada] = useState("");
-  const [mesActual, setMesActual] = useState(new Date());
-  const [validacionError, setValidacionError] = useState("");
-  const [validando, setValidando] = useState(false);
-  const containerRef = useRef(null);
-  const calendarRef = useRef(null);
+  const [mostrarHoras, setMostrarHoras]           = useState(false);
+  const [fechaInput, setFechaInput]               = useState("");
+  const [horaSeleccionada, setHoraSeleccionada]   = useState("");
+  const [horaElegida, setHoraElegida]             = useState(null);
+  const [mesActual, setMesActual]                 = useState(new Date());
+  const [validacionError, setValidacionError]     = useState("");
+  const [validando, setValidando]                 = useState(false);
 
-  // Parse value en formato "YYYY-MM-DDTHH:mm"
+  const containerRef  = useRef(null);
+  const fechaTrigger  = useRef(null);  // ancla para el calendario
+  const horaTrigger   = useRef(null);  // ancla para el picker de hora
+
+  // Sincronizar value externo
   useEffect(() => {
     if (value) {
       const [fecha, hora] = value.split("T");
@@ -52,72 +130,44 @@ export default function DateTimePickerCita({
         setFechaInput(`${día}/${mes}/${año}`);
       }
       if (hora) {
-        setHoraSeleccionada(hora);
+        setHoraSeleccionada(hora.slice(0, 5));
+        setHoraElegida(parseInt(hora.split(":")[0], 10));
       }
     } else {
       setFechaInput("");
       setHoraSeleccionada("");
+      setHoraElegida(null);
     }
   }, [value]);
 
-  // Cerrar calendarios al hacer click fuera
-  useEffect(() => {
-    function handleClickOutside(event) {
-      if (containerRef.current && !containerRef.current.contains(event.target)) {
-        setMostrarCalendario(false);
-        setMostrarHoras(false);
-      }
-    }
-
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
-
-  // Formatear entrada con máscara DD/MM/AAAA
+  // Máscara DD/MM/AAAA
   const handleFechaInput = (e) => {
-    let valor = e.target.value.replace(/\D/g, "");
-
-    if (valor.length <= 2) {
-      setFechaInput(valor);
-    } else if (valor.length <= 4) {
-      setFechaInput(`${valor.slice(0, 2)}/${valor.slice(2)}`);
-    } else {
-      setFechaInput(`${valor.slice(0, 2)}/${valor.slice(2, 4)}/${valor.slice(4, 8)}`);
-    }
+    let v = e.target.value.replace(/\D/g, "");
+    if (v.length <= 2)      setFechaInput(v);
+    else if (v.length <= 4) setFechaInput(`${v.slice(0,2)}/${v.slice(2)}`);
+    else                    setFechaInput(`${v.slice(0,2)}/${v.slice(2,4)}/${v.slice(4,8)}`);
   };
 
-  // Convertir DD/MM/AAAA a Date
   const parseFecha = (str) => {
-    const match = str.match(/(\d{2})\/(\d{2})\/(\d{4})/);
-    if (!match) return null;
-    const [, día, mes, año] = match;
-    return new Date(parseInt(año), parseInt(mes) - 1, parseInt(día));
+    const m = str.match(/(\d{2})\/(\d{2})\/(\d{4})/);
+    if (!m) return null;
+    return new Date(parseInt(m[3]), parseInt(m[2]) - 1, parseInt(m[1]));
   };
 
-  // Validar fecha pasada
-  const esFechaPasada = (fecha) => {
-    const hoy = new Date();
-    hoy.setHours(0, 0, 0, 0);
-    return fecha < hoy;
+  const esFechaPasada = (f) => {
+    const hoy = new Date(); hoy.setHours(0,0,0,0); return f < hoy;
   };
 
-  // Validar disponibilidad del médico (async)
   const validarDisponibilidad = async (fecha, hora) => {
     if (!idMedico || !fecha || !hora) return true;
-
     setValidando(true);
     try {
-      const response = await fetch(
+      const res = await fetch(
         `/api/citas/validar-disponibilidad/${idMedico}?fecha=${fecha}&hora=${hora}`,
-        {
-          headers: {
-            "Authorization": `Bearer ${localStorage.getItem("token")}`,
-          },
-        }
+        { headers: { Authorization: `Bearer ${localStorage.getItem("token")}` } }
       );
-
-      if (response.ok) {
-        const data = await response.json();
+      if (res.ok) {
+        const data = await res.json();
         if (!data.disponible) {
           setValidacionError(`❌ Médico no disponible a las ${hora}`);
           onValidationChange(false);
@@ -127,9 +177,7 @@ export default function DateTimePickerCita({
       setValidacionError("");
       onValidationChange(true);
       return true;
-    } catch (error) {
-      console.error("Error validando disponibilidad:", error);
-      // En caso de error, permitir continuar
+    } catch {
       setValidacionError("");
       onValidationChange(true);
       return true;
@@ -138,130 +186,87 @@ export default function DateTimePickerCita({
     }
   };
 
-  // Seleccionar fecha del calendario
   const seleccionarFecha = async (día) => {
     const nuevaFecha = new Date(mesActual);
     nuevaFecha.setDate(día);
-
-    // Validar fecha pasada
-    if (esFechaPasada(nuevaFecha)) {
-      toast.error("No se pueden agendar citas en fechas pasadas");
-      return;
-    }
-
-    const año = nuevaFecha.getFullYear();
-    const mes = String(nuevaFecha.getMonth() + 1).padStart(2, "0");
+    if (esFechaPasada(nuevaFecha)) { toast.error("No se pueden agendar citas en fechas pasadas"); return; }
+    const año     = nuevaFecha.getFullYear();
+    const mes     = String(nuevaFecha.getMonth() + 1).padStart(2, "0");
     const día_str = String(día).padStart(2, "0");
-
     setFechaInput(`${día_str}/${mes}/${año}`);
-    // ✅ CERRAR CALENDARIO INMEDIATAMENTE después de seleccionar
     setMostrarCalendario(false);
-    // ✅ ABRIR SELECTOR DE HORAS automáticamente
     setMostrarHoras(true);
-
-    // ✅ NOTIFICAR AL PADRE que se seleccionó fecha (aunque no haya hora aún)
-    // Formato: YYYY-MM-DDTHH:mm (usando hora actual si no hay seleccionada)
+    setHoraElegida(null);
     const horaActual = horaSeleccionada || "08:00";
     onChange(`${año}-${mes}-${día_str}T${horaActual}`);
-    console.log(`📅 Fecha seleccionada y notificada: ${año}-${mes}-${día_str}T${horaActual}`);
-
-    // Si hay hora seleccionada, validar disponibilidad
-    if (horaSeleccionada) {
-      await validarDisponibilidad(`${año}-${mes}-${día_str}`, horaSeleccionada);
-    }
+    if (horaSeleccionada) await validarDisponibilidad(`${año}-${mes}-${día_str}`, horaSeleccionada);
   };
 
-  // Seleccionar hora
-  const seleccionarHora = async (hora) => {
-    const fecha = parseFecha(fechaInput);
-    if (!fecha) {
-      toast.error("Selecciona una fecha primero");
-      return;
-    }
+  const elegirHora = (h) => setHoraElegida(h);
 
+  const elegirMinuto = async (m) => {
+    const fecha = parseFecha(fechaInput);
+    if (!fecha) { toast.error("Selecciona una fecha primero"); return; }
+    const hh   = String(horaElegida).padStart(2, "0");
+    const mm   = String(m).padStart(2, "0");
+    const hora = `${hh}:${mm}`;
     setHoraSeleccionada(hora);
     setMostrarHoras(false);
-
-    // Validar disponibilidad
+    setHoraElegida(null);
     const año = fecha.getFullYear();
     const mes = String(fecha.getMonth() + 1).padStart(2, "0");
     const día = String(fecha.getDate()).padStart(2, "0");
-
-    const disponible = await validarDisponibilidad(
-      `${año}-${mes}-${día}`,
-      hora
-    );
-
-    if (disponible) {
-      // Emitir valor al padre
-      onChange(`${año}-${mes}-${día}T${hora}`);
-    }
+    const ok = await validarDisponibilidad(`${año}-${mes}-${día}`, hora);
+    if (ok) onChange(`${año}-${mes}-${día}T${hora}`);
   };
 
-  // Generar días del calendario
   const generarDíasCalendario = () => {
-    const año = mesActual.getFullYear();
-    const mes = mesActual.getMonth();
-    const primerDía = new Date(año, mes, 1);
-    const últimoDía = new Date(año, mes + 1, 0);
-    const diasDelMes = [];
-
-    // Días vacíos antes del primer día
-    for (let i = 0; i < primerDía.getDay(); i++) {
-      diasDelMes.push(null);
-    }
-
-    // Días del mes
-    for (let i = 1; i <= últimoDía.getDate(); i++) {
-      diasDelMes.push(i);
-    }
-
-    return diasDelMes;
+    const año = mesActual.getFullYear(), mes = mesActual.getMonth();
+    const primer = new Date(año, mes, 1), ultimo = new Date(año, mes + 1, 0);
+    const dias = [];
+    for (let i = 0; i < primer.getDay(); i++) dias.push(null);
+    for (let i = 1; i <= ultimo.getDate(); i++) dias.push(i);
+    return dias;
   };
 
   const diasCalendario = generarDíasCalendario();
   const fecha = parseFecha(fechaInput);
-  const esHoy = fecha && fecha.toDateString() === new Date().toDateString();
+  const minutoActual =
+    horaSeleccionada && horaElegida === parseInt(horaSeleccionada.split(":")[0], 10)
+      ? parseInt(horaSeleccionada.split(":")[1], 10)
+      : null;
 
   return (
-    <div ref={containerRef} className="relative overflow-visible">
-      {/* MENSAJE INFORMATIVO si está deshabilitado */}
+    <div ref={containerRef} className="relative">
       {disabled && (
         <div className="text-xs text-amber-600 mb-2 flex items-center gap-1">
           ℹ️ <strong>Selecciona un médico primero</strong> para agendar fecha/hora
         </div>
       )}
 
-      {/* CÁPSULA UNIFICADA: Fecha + Hora */}
+      {/* CÁPSULA Fecha + Hora */}
       <div
         className={`flex items-center border-2 rounded-lg transition-all ${
-          validacionError
-            ? "border-red-500 bg-red-50"
-            : disabled
-            ? "border-gray-300 bg-gray-100"
-            : "border-blue-400 focus-within:ring-2 focus-within:ring-blue-500"
+          validacionError  ? "border-red-500 bg-red-50"
+          : disabled       ? "border-gray-300 bg-gray-100"
+                           : "border-blue-400 focus-within:ring-2 focus-within:ring-blue-500"
         }`}
       >
-        {/* FECHA - Lado Izquierdo */}
-        <div className="flex-1 px-3">
+        {/* FECHA */}
+        <div className="flex-1 px-3" ref={fechaTrigger}>
           {fechaInput ? (
-            // Mostrar fecha seleccionada como texto (similar a la hora)
             <button
               type="button"
               disabled={disabled}
               onClick={() => !disabled && setMostrarCalendario(!mostrarCalendario)}
-              className={`w-full py-2 text-sm font-medium flex items-center justify-center gap-1.5 transition-colors focus:outline-none ${
-                disabled
-                  ? "text-gray-400 cursor-not-allowed"
-                  : "text-gray-900 hover:text-blue-700"
+              className={`w-full py-2 text-sm font-medium flex items-center justify-center gap-1.5 focus:outline-none transition-colors ${
+                disabled ? "text-gray-400 cursor-not-allowed" : "text-gray-900 hover:text-blue-700"
               }`}
-              title="Cambiar fecha"
             >
               <Calendar className="w-4 h-4" strokeWidth={2} />
               <span className="font-semibold">{fechaInput}</span>
             </button>
           ) : (
-            // Input para escribir la fecha manualmente
             <input
               type="text"
               value={fechaInput}
@@ -277,139 +282,190 @@ export default function DateTimePickerCita({
           )}
         </div>
 
-        {/* SEPARADOR VERTICAL */}
-        <div className="h-6 w-px bg-gray-300"></div>
+        <div className="h-6 w-px bg-gray-300" />
 
-        {/* HORA - Lado Derecho */}
-        <div className="w-24 px-3">
+        {/* HORA */}
+        <div className="w-28 px-3" ref={horaTrigger}>
           <button
             type="button"
             disabled={disabled || !fecha}
-            onClick={() => !disabled && setMostrarHoras(!mostrarHoras)}
-            className={`w-full py-2 text-sm font-medium flex items-center justify-center gap-1.5 transition-colors focus:outline-none ${
+            onClick={() => {
+              if (!disabled && fecha) {
+                setMostrarHoras(!mostrarHoras);
+                setHoraElegida(null);
+              }
+            }}
+            className={`w-full py-2 text-sm font-medium flex items-center justify-center gap-1.5 focus:outline-none transition-colors ${
               disabled || !fecha
                 ? "text-gray-400 cursor-not-allowed"
-                : horaSeleccionada
-                ? "text-gray-900 hover:text-blue-700"
+                : horaSeleccionada ? "text-gray-900 hover:text-blue-700"
                 : "text-gray-500 hover:text-blue-600"
             }`}
-            title={fecha ? "Seleccionar hora (intervalos de 15 min)" : "Selecciona fecha primero"}
+            title={fecha ? "Seleccionar hora" : "Selecciona fecha primero"}
           >
             <Clock className="w-4 h-4" strokeWidth={2} />
-            <span className="font-semibold">{horaSeleccionada || "--:--"}</span>
+            <span className="font-semibold">
+              {horaSeleccionada ? formatAMPM(horaSeleccionada) : "--:--"}
+            </span>
           </button>
         </div>
       </div>
 
-      {/* MENSAJE DE ERROR */}
+      {/* Error */}
       {validacionError && (
-        <div className="absolute top-full left-0 mt-2 bg-red-100 border border-red-500 text-red-700 text-xs px-3 py-2 rounded-lg whitespace-nowrap shadow-lg z-40">
-          ❌ {validacionError}
+        <div className="mt-1 bg-red-100 border border-red-500 text-red-700 text-xs px-3 py-2 rounded-lg">
+          {validacionError}
         </div>
       )}
 
-      {/* Calendario Flotante */}
+      {/* ── CALENDARIO (portal) ── */}
       {mostrarCalendario && !disabled && (
-        <div
-          ref={calendarRef}
-          className="absolute top-12 left-0 bg-white border-2 border-blue-400 rounded-lg shadow-2xl p-4 z-[9999]"
-          style={{ minWidth: "320px" }}
+        <FloatingPanel
+          anchorRef={fechaTrigger}
+          align="left"
+          onClose={() => setMostrarCalendario(false)}
         >
-          {/* Header */}
-          <div className="flex justify-between items-center mb-4">
-            <button
-              onClick={() =>
-                setMesActual(new Date(mesActual.getFullYear(), mesActual.getMonth() - 1))
-              }
-              className="p-1 hover:bg-gray-100 rounded"
-            >
-              <ChevronLeft className="w-4 h-4" />
-            </button>
-            <h3 className="font-semibold text-sm">
-              {mesActual.toLocaleDateString("es-PE", {
-                month: "long",
-                year: "numeric",
-              })}
-            </h3>
-            <button
-              onClick={() =>
-                setMesActual(new Date(mesActual.getFullYear(), mesActual.getMonth() + 1))
-              }
-              className="p-1 hover:bg-gray-100 rounded"
-            >
-              <ChevronRight className="w-4 h-4" />
-            </button>
-          </div>
-
-          {/* Días de la semana */}
-          <div className="grid grid-cols-7 gap-1 mb-2">
-            {["Do", "Lu", "Ma", "Mi", "Ju", "Vi", "Sa"].map((día) => (
-              <div key={día} className="text-center text-xs font-bold text-gray-600 h-8 flex items-center justify-center">
-                {día}
-              </div>
-            ))}
-          </div>
-
-          {/* Días */}
-          <div className="grid grid-cols-7 gap-1">
-            {diasCalendario.map((día, idx) => {
-              const esSeleccionado = día && fecha &&
-                día === fecha.getDate() &&
-                mesActual.getMonth() === fecha.getMonth() &&
-                mesActual.getFullYear() === fecha.getFullYear();
-
-              const esPasado = día && esFechaPasada(new Date(mesActual.getFullYear(), mesActual.getMonth(), día));
-
-              return (
-                <button
-                  key={idx}
-                  onClick={() => día && !esPasado && seleccionarFecha(día)}
-                  disabled={!día || esPasado}
-                  className={`h-8 rounded text-sm font-medium transition-colors ${
-                    !día
-                      ? ""
-                      : esPasado
-                      ? "text-gray-300 cursor-not-allowed"
-                      : esSeleccionado
-                      ? "bg-blue-600 text-white hover:bg-blue-700"
-                      : "hover:bg-blue-100 text-gray-700"
-                  }`}
-                >
-                  {día}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      )}
-
-      {/* Selector de Horas */}
-      {mostrarHoras && !disabled && fecha && (
-        <div className="absolute top-12 right-0 bg-white border-2 border-blue-400 rounded-lg shadow-2xl p-3 z-[9999]" style={{ maxWidth: "200px" }}>
-          <h4 className="text-xs font-bold text-gray-700 mb-2">Intervalos de 15 min</h4>
-          <div className="grid grid-cols-2 gap-2 max-h-64 overflow-y-auto">
-            {HORAS.map((hora) => (
-              <button
-                key={hora}
-                onClick={() => seleccionarHora(hora)}
-                disabled={validando}
-                className={`px-2 py-1.5 rounded text-xs font-medium transition-colors ${
-                  horaSeleccionada === hora
-                    ? "bg-blue-600 text-white"
-                    : "bg-gray-100 text-gray-700 hover:bg-blue-100"
-                } disabled:opacity-50`}
-              >
-                {hora}
+          <div className="bg-white border-2 border-blue-400 rounded-xl shadow-2xl p-4" style={{ minWidth: 320 }}>
+            <div className="flex justify-between items-center mb-4">
+              <button onClick={() => setMesActual(new Date(mesActual.getFullYear(), mesActual.getMonth() - 1))} className="p-1 hover:bg-gray-100 rounded">
+                <ChevronLeft className="w-4 h-4" />
               </button>
-            ))}
+              <h3 className="font-semibold text-sm capitalize">
+                {mesActual.toLocaleDateString("es-PE", { month: "long", year: "numeric" })}
+              </h3>
+              <button onClick={() => setMesActual(new Date(mesActual.getFullYear(), mesActual.getMonth() + 1))} className="p-1 hover:bg-gray-100 rounded">
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="grid grid-cols-7 gap-1 mb-2">
+              {["Do","Lu","Ma","Mi","Ju","Vi","Sa"].map(d => (
+                <div key={d} className="text-center text-xs font-bold text-gray-600 h-8 flex items-center justify-center">{d}</div>
+              ))}
+            </div>
+
+            <div className="grid grid-cols-7 gap-1">
+              {diasCalendario.map((día, idx) => {
+                const esSeleccionado = día && fecha &&
+                  día === fecha.getDate() &&
+                  mesActual.getMonth() === fecha.getMonth() &&
+                  mesActual.getFullYear() === fecha.getFullYear();
+                const esPasado = día && esFechaPasada(new Date(mesActual.getFullYear(), mesActual.getMonth(), día));
+                return (
+                  <button
+                    key={idx}
+                    onClick={() => día && !esPasado && seleccionarFecha(día)}
+                    disabled={!día || esPasado}
+                    className={`h-8 rounded text-sm font-medium transition-colors ${
+                      !día ? "" : esPasado ? "text-gray-300 cursor-not-allowed"
+                        : esSeleccionado ? "bg-blue-600 text-white"
+                        : "hover:bg-blue-100 text-gray-700"
+                    }`}
+                  >
+                    {día}
+                  </button>
+                );
+              })}
+            </div>
           </div>
-        </div>
+        </FloatingPanel>
       )}
 
-      {/* Indicador de Validación */}
+      {/* ── PICKER DOS PANELES (portal) ── */}
+      {mostrarHoras && !disabled && fecha && (
+        <FloatingPanel
+          anchorRef={horaTrigger}
+          align="right"
+          onClose={() => { setMostrarHoras(false); setHoraElegida(null); }}
+        >
+          <div className="bg-white border-2 border-blue-400 rounded-xl shadow-2xl overflow-hidden" style={{ minWidth: 340 }}>
+            {/* Cabecera */}
+            <div className="bg-blue-600 px-4 py-2 flex items-center gap-2">
+              <Clock className="w-4 h-4 text-white" strokeWidth={2} />
+              <span className="text-white text-xs font-semibold tracking-wide">
+                {horaElegida === null
+                  ? "1. Elige la hora"
+                  : `2. Elige los minutos — ${HORAS_PANEL.find(h => h.valor === horaElegida)?.label}`}
+              </span>
+              {horaElegida !== null && (
+                <button
+                  onClick={() => setHoraElegida(null)}
+                  className="ml-auto text-blue-200 hover:text-white text-xs underline"
+                >
+                  ← volver
+                </button>
+              )}
+            </div>
+
+            <div className="flex">
+              {/* Panel Horas */}
+              <div className="w-1/2 border-r border-gray-200 p-3">
+                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">Hora</p>
+                <div className="grid grid-cols-3 gap-1">
+                  {HORAS_PANEL.map(({ valor, label }) => {
+                    const esActiva = horaElegida === valor;
+                    const esActual = horaSeleccionada && parseInt(horaSeleccionada.split(":")[0], 10) === valor;
+                    return (
+                      <button
+                        key={valor}
+                        onClick={() => elegirHora(valor)}
+                        className={`py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                          esActiva  ? "bg-blue-600 text-white shadow-md scale-105"
+                          : esActual ? "bg-blue-100 text-blue-700 ring-1 ring-blue-400"
+                          : "bg-gray-100 text-gray-700 hover:bg-blue-50 hover:text-blue-700"
+                        }`}
+                      >
+                        {label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Panel Minutos */}
+              <div className="w-1/2 p-3">
+                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">Minutos</p>
+                {horaElegida === null ? (
+                  <div className="flex items-center justify-center min-h-[80px]">
+                    <p className="text-xs text-gray-400 text-center leading-relaxed">
+                      ← Selecciona<br />la hora primero
+                    </p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-3 gap-1">
+                    {MINUTOS_PANEL.map((m) => (
+                      <button
+                        key={m}
+                        onClick={() => elegirMinuto(m)}
+                        disabled={validando}
+                        className={`py-1.5 rounded-lg text-xs font-semibold transition-all disabled:opacity-50 ${
+                          minutoActual === m
+                            ? "bg-blue-600 text-white shadow-md scale-105"
+                            : "bg-gray-100 text-gray-700 hover:bg-blue-50 hover:text-blue-700"
+                        }`}
+                      >
+                        :{String(m).padStart(2, "0")}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Footer */}
+            {horaSeleccionada && (
+              <div className="bg-gray-50 border-t border-gray-200 px-4 py-2 flex items-center justify-between">
+                <span className="text-xs text-gray-500">Hora actual:</span>
+                <span className="text-xs font-bold text-blue-700">{formatAMPM(horaSeleccionada)}</span>
+              </div>
+            )}
+          </div>
+        </FloatingPanel>
+      )}
+
       {validando && (
         <div className="text-xs text-blue-600 mt-1 flex items-center gap-1">
-          <div className="w-2 h-2 bg-blue-600 rounded-full animate-pulse"></div>
+          <div className="w-2 h-2 bg-blue-600 rounded-full animate-pulse" />
           Validando disponibilidad...
         </div>
       )}

@@ -27,4 +27,16 @@ public interface EspecialidadRepository extends JpaRepository<Especialidad, Long
 
     // 🏥 v1.46.8: Buscar especialidad por nombre (sin case)
     Optional<Especialidad> findByDescServicioIgnoreCase(String descServicio);
+
+    // 🏥 v1.46.9: Buscar especialidad por nombre que contenga el texto (LIKE)
+    List<Especialidad> findByDescServicioContainingIgnoreCase(String descServicio);
+
+    // 🏥 v1.46.9: Buscar usando unaccent para ignorar tildes (Enfermería = ENFERMERIA)
+    @Query(value = """
+        SELECT * FROM dim_servicio_essi
+        WHERE unaccent(lower(desc_servicio)) LIKE unaccent(lower(CONCAT('%', :texto, '%')))
+        ORDER BY desc_servicio ASC
+        LIMIT 5
+        """, nativeQuery = true)
+    List<Especialidad> buscarPorNombreSinAcentos(@Param("texto") String texto);
 }
