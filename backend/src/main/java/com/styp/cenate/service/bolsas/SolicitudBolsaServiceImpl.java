@@ -3400,6 +3400,55 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
         return result;
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public List<com.styp.cenate.dto.bolsas.BolsaXMedicoDTO> obtenerEstadisticasPorMedico() {
+        log.info("📊 Obteniendo estadísticas por médico...");
+        List<Object[]> rows = solicitudRepository.estadisticasPorMedico();
+        List<com.styp.cenate.dto.bolsas.BolsaXMedicoDTO> result = new ArrayList<>();
+        for (Object[] row : rows) {
+            result.add(com.styp.cenate.dto.bolsas.BolsaXMedicoDTO.builder()
+                .idMedico(row[0] != null ? ((Number) row[0]).longValue() : null)
+                .nombreMedico(row[1] != null ? row[1].toString() : "Sin nombre")
+                .total(row[2] != null ? ((Number) row[2]).longValue() : 0L)
+                .porCitar(row[3] != null ? ((Number) row[3]).longValue() : 0L)
+                .citados(row[4] != null ? ((Number) row[4]).longValue() : 0L)
+                .enSeguimiento(row[5] != null ? ((Number) row[5]).longValue() : 0L)
+                .observados(row[6] != null ? ((Number) row[6]).longValue() : 0L)
+                .cerrados(row[7] != null ? ((Number) row[7]).longValue() : 0L)
+                .atendidos(row[8] != null ? ((Number) row[8]).longValue() : 0L)
+                .build());
+        }
+        log.info("✅ Estadísticas por médico: {} médicos", result.size());
+        return result;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<com.styp.cenate.dto.bolsas.BolsaXMedicoDTO> obtenerEstadisticasPorMedico(String fechaDesde, String fechaHasta) {
+        log.info("📊 Estadísticas por médico con filtro: {} → {}", fechaDesde, fechaHasta);
+        List<Object[]> rows = solicitudRepository.estadisticasPorMedicoFiltrado(
+            (fechaDesde != null && !fechaDesde.isEmpty()) ? fechaDesde : null,
+            (fechaHasta != null && !fechaHasta.isEmpty()) ? fechaHasta : null
+        );
+        List<com.styp.cenate.dto.bolsas.BolsaXMedicoDTO> result = new ArrayList<>();
+        for (Object[] row : rows) {
+            result.add(com.styp.cenate.dto.bolsas.BolsaXMedicoDTO.builder()
+                .idMedico(row[0] != null ? ((Number) row[0]).longValue() : null)
+                .nombreMedico(row[1] != null ? row[1].toString() : "Sin nombre")
+                .total(row[2] != null ? ((Number) row[2]).longValue() : 0L)
+                .porCitar(row[3] != null ? ((Number) row[3]).longValue() : 0L)
+                .citados(row[4] != null ? ((Number) row[4]).longValue() : 0L)
+                .enSeguimiento(row[5] != null ? ((Number) row[5]).longValue() : 0L)
+                .observados(row[6] != null ? ((Number) row[6]).longValue() : 0L)
+                .cerrados(row[7] != null ? ((Number) row[7]).longValue() : 0L)
+                .atendidos(row[8] != null ? ((Number) row[8]).longValue() : 0L)
+                .build());
+        }
+        log.info("✅ Estadísticas por médico filtradas: {} médicos", result.size());
+        return result;
+    }
+
     /**
      * Genera número de solicitud único con formato: IMP-YYYYMMDD-NNNN
      */

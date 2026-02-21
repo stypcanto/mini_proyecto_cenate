@@ -1147,6 +1147,65 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
     List<Object[]> conteoPorFecha(
         @org.springframework.data.repository.query.Param("mes") String mes);
 
+    /**
+     * Estadísticas de pacientes agrupadas por médico asignado (id_personal)
+     */
+    @Query(value = """
+        SELECT
+          pc.id_pers as id_medico,
+          COALESCE(CONCAT(pc.nom_pers,' ',pc.ape_pater_pers,' ',pc.ape_mater_pers), 'Sin nombre') as nombre_medico,
+          COUNT(*) as total,
+          SUM(CASE WHEN sb.estado_gestion_citas_id IS NULL
+                     OR eg.cod_estado_cita IN ('PENDIENTE_CITA','PENDIENTE')
+               THEN 1 ELSE 0 END) as por_citar,
+          SUM(CASE WHEN eg.cod_estado_cita IN ('CITADO','EN_PROCESO') THEN 1 ELSE 0 END) as citados,
+          SUM(CASE WHEN eg.cod_estado_cita IN ('NO_CONTESTA','APAGADO','TEL_SIN_SERVICIO','REPROG_FALLIDA')
+               THEN 1 ELSE 0 END) as en_seguimiento,
+          SUM(CASE WHEN eg.cod_estado_cita IN ('HOSPITALIZADO','HC_BLOQUEADA','NO_GRUPO_ETARIO','PARTICULAR')
+               THEN 1 ELSE 0 END) as observados,
+          SUM(CASE WHEN eg.cod_estado_cita IN ('YA_NO_REQUIERE','SIN_VIGENCIA','FALLECIDO','NO_DESEA','NUM_NO_EXISTE','NO_IPRESS_CENATE','ANULADO','ANULADA','DESERCION')
+               THEN 1 ELSE 0 END) as cerrados,
+          SUM(CASE WHEN eg.cod_estado_cita IN ('ATENDIDO','ATENDIDO_PRESENCIAL','ATENDIDO_IPRESS')
+               THEN 1 ELSE 0 END) as atendidos
+        FROM dim_solicitud_bolsa sb
+        JOIN dim_personal_cnt pc ON sb.id_personal = pc.id_pers
+        LEFT JOIN dim_estados_gestion_citas eg ON sb.estado_gestion_citas_id = eg.id_estado_cita
+        WHERE sb.activo = true AND sb.id_personal IS NOT NULL
+        GROUP BY pc.id_pers, pc.nom_pers, pc.ape_pater_pers, pc.ape_mater_pers
+        ORDER BY total DESC
+        """, nativeQuery = true)
+    List<Object[]> estadisticasPorMedico();
+
+    @Query(value = """
+        SELECT
+          pc.id_pers as id_medico,
+          COALESCE(CONCAT(pc.nom_pers,' ',pc.ape_pater_pers,' ',pc.ape_mater_pers), 'Sin nombre') as nombre_medico,
+          COUNT(*) as total,
+          SUM(CASE WHEN sb.estado_gestion_citas_id IS NULL
+                     OR eg.cod_estado_cita IN ('PENDIENTE_CITA','PENDIENTE')
+               THEN 1 ELSE 0 END) as por_citar,
+          SUM(CASE WHEN eg.cod_estado_cita IN ('CITADO','EN_PROCESO') THEN 1 ELSE 0 END) as citados,
+          SUM(CASE WHEN eg.cod_estado_cita IN ('NO_CONTESTA','APAGADO','TEL_SIN_SERVICIO','REPROG_FALLIDA')
+               THEN 1 ELSE 0 END) as en_seguimiento,
+          SUM(CASE WHEN eg.cod_estado_cita IN ('HOSPITALIZADO','HC_BLOQUEADA','NO_GRUPO_ETARIO','PARTICULAR')
+               THEN 1 ELSE 0 END) as observados,
+          SUM(CASE WHEN eg.cod_estado_cita IN ('YA_NO_REQUIERE','SIN_VIGENCIA','FALLECIDO','NO_DESEA','NUM_NO_EXISTE','NO_IPRESS_CENATE','ANULADO','ANULADA','DESERCION')
+               THEN 1 ELSE 0 END) as cerrados,
+          SUM(CASE WHEN eg.cod_estado_cita IN ('ATENDIDO','ATENDIDO_PRESENCIAL','ATENDIDO_IPRESS')
+               THEN 1 ELSE 0 END) as atendidos
+        FROM dim_solicitud_bolsa sb
+        JOIN dim_personal_cnt pc ON sb.id_personal = pc.id_pers
+        LEFT JOIN dim_estados_gestion_citas eg ON sb.estado_gestion_citas_id = eg.id_estado_cita
+        WHERE sb.activo = true AND sb.id_personal IS NOT NULL
+          AND (CAST(:fechaDesde AS VARCHAR) IS NULL OR DATE(sb.fecha_asignacion AT TIME ZONE 'America/Lima') >= CAST(:fechaDesde AS DATE))
+          AND (CAST(:fechaHasta AS VARCHAR) IS NULL OR DATE(sb.fecha_asignacion AT TIME ZONE 'America/Lima') <= CAST(:fechaHasta AS DATE))
+        GROUP BY pc.id_pers, pc.nom_pers, pc.ape_pater_pers, pc.ape_mater_pers
+        ORDER BY total DESC
+        """, nativeQuery = true)
+    List<Object[]> estadisticasPorMedicoFiltrado(
+        @org.springframework.data.repository.query.Param("fechaDesde") String fechaDesde,
+        @org.springframework.data.repository.query.Param("fechaHasta") String fechaHasta);
+
     @Query(value = """
         SELECT
             p.id_pers as idPers,

@@ -13,7 +13,7 @@ import apiClient from '../../lib/apiClient';
 import {
   Users, RefreshCw, CalendarCheck, PhoneMissed,
   AlertCircle, CheckCircle2, XCircle, Clock, Calendar,
-  ChevronLeft, ChevronRight, Search,
+  ChevronLeft, ChevronRight, Search, ArrowUp, ArrowDown, ArrowUpDown,
 } from 'lucide-react';
 
 // ── Categorías de estado ──────────────────────────────────────
@@ -179,6 +179,32 @@ function Badge({ valor, accent, bg }) {
 function mesActual() {
   const h = new Date();
   return `${h.getFullYear()}-${String(h.getMonth() + 1).padStart(2, '0')}`;
+}
+
+// ── Botón de ordenamiento de columna ──────────────────────────
+function SortBtn({ label, col, sortCol, sortDir, onSort }) {
+  const active = sortCol === col;
+  const Icon = active ? (sortDir === 'asc' ? ArrowUp : ArrowDown) : ArrowUpDown;
+  return (
+    <button
+      onClick={() => onSort(col)}
+      title={active ? (sortDir === 'asc' ? 'Ascendente — clic para descendente' : 'Descendente — clic para ascendente') : `Ordenar por ${label}`}
+      style={{
+        display: 'inline-flex', alignItems: 'center', gap: '5px',
+        background: active ? 'rgba(255,255,255,0.18)' : 'transparent',
+        border: active ? '1px solid rgba(255,255,255,0.35)' : '1px solid transparent',
+        borderRadius: '5px', cursor: 'pointer', color: '#fff',
+        fontWeight: '700', fontSize: '10px', textTransform: 'uppercase',
+        letterSpacing: '0.06em', padding: '3px 6px', transition: 'background 0.15s, border 0.15s',
+        whiteSpace: 'nowrap',
+      }}
+      onMouseEnter={e => { if (!active) e.currentTarget.style.background = 'rgba(255,255,255,0.10)'; }}
+      onMouseLeave={e => { if (!active) e.currentTarget.style.background = 'transparent'; }}
+    >
+      {label}
+      <Icon size={11} strokeWidth={active ? 2.5 : 1.8} style={{ opacity: active ? 1 : 0.45, flexShrink: 0 }} />
+    </button>
+  );
 }
 
 // ══════════════════════════════════════════════════════════════

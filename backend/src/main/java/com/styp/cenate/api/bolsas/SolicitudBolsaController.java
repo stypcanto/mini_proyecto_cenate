@@ -1304,6 +1304,27 @@ public class SolicitudBolsaController {
         }
     }
 
+    /**
+     * Estadísticas de pacientes agrupadas por médico asignado
+     * GET /api/bolsas/solicitudes/estadisticas/por-medico
+     */
+    @GetMapping("/estadisticas/por-medico")
+    @PreAuthorize("hasAnyRole('SUPERADMIN', 'COORD. GESTION CITAS', 'GESTOR DE CITAS')")
+    public ResponseEntity<?> obtenerEstadisticasPorMedico(
+            @RequestParam(required = false) String fechaDesde,
+            @RequestParam(required = false) String fechaHasta) {
+        try {
+            log.info("📊 GET /api/bolsas/solicitudes/estadisticas/por-medico fechaDesde={} fechaHasta={}", fechaDesde, fechaHasta);
+            var estadisticas = (fechaDesde != null || fechaHasta != null)
+                ? solicitudBolsaService.obtenerEstadisticasPorMedico(fechaDesde, fechaHasta)
+                : solicitudBolsaService.obtenerEstadisticasPorMedico();
+            return ResponseEntity.ok(estadisticas);
+        } catch (Exception e) {
+            log.error("❌ Error al obtener estadísticas por médico: ", e);
+            return ResponseEntity.status(500).body(Map.of("error", "Error al obtener estadísticas por médico"));
+        }
+    }
+
     @GetMapping("/estadisticas/por-gestora")
     @PreAuthorize("hasAnyRole('SUPERADMIN', 'COORD. GESTION CITAS', 'GESTOR DE CITAS')")
     public ResponseEntity<?> obtenerEstadisticasPorGestora(

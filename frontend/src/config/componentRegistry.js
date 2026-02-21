@@ -512,7 +512,7 @@ export const componentRegistry = {
     requiredAction: 'ver',
   },
 
-  '/bolsas/solicitudes': {
+  '/bolsas/solicitudespendientes': {
     component: lazy(() => import('../pages/bolsas/Solicitudes')),
     requiredAction: 'ver',
   },

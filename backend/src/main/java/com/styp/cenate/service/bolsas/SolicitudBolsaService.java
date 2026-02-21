@@ -257,4 +257,7 @@ public interface SolicitudBolsaService {
      * @return lista de mapas {fecha, total} para el calendario
      */
     List<java.util.Map<String, Object>> obtenerConteoPorFecha(String mes);
+
+    List<com.styp.cenate.dto.bolsas.BolsaXMedicoDTO> obtenerEstadisticasPorMedico();
+    List<com.styp.cenate.dto.bolsas.BolsaXMedicoDTO> obtenerEstadisticasPorMedico(String fechaDesde, String fechaHasta);
 }
