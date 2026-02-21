@@ -3092,48 +3092,80 @@ CENATE de Essalud`;
                                   />
                                 </div>
 
-                                {/* Campo Hora - Select con intervalos de 15 minutos */}
+                                {/* Campo Hora - Dos selects: Hora + Minutos cada 5 min */}
                                 <div>
                                   <label className="text-xs text-gray-700 font-medium">Hora</label>
-                                  <select
-                                    value={fechaHoraCitaSeleccionada?.split('T')[1] || ''}
-                                    onChange={(e) => {
-                                      const horaSeleccionada = e.target.value;
-                                      const fechaActual = fechaHoraCitaSeleccionada?.split('T')[0] || '';
-                                      const hoy = new Date().toISOString().slice(0, 10);
-                                      
-                                      // Si es hoy, validar que la hora no sea anterior a ahora
-                                      if (fechaActual === hoy) {
-                                        const ahora = new Date();
-                                        const horaAhora = `${String(ahora.getHours()).padStart(2, '0')}:${String(ahora.getMinutes()).padStart(2, '0')}`;
-                                        
-                                        if (horaSeleccionada < horaAhora) {
-                                          toast.error("❌ No puedes seleccionar una hora anterior a la actual");
-                                          return;
+                                  <div className="flex gap-2 items-center">
+                                    {/* Select Hora */}
+                                    <select
+                                      value={fechaHoraCitaSeleccionada?.split('T')[1]?.split(':')[0] || ''}
+                                      onChange={(e) => {
+                                        const hh = e.target.value;
+                                        const mm = fechaHoraCitaSeleccionada?.split('T')[1]?.split(':')[1] || '00';
+                                        if (!hh) return;
+                                        const horaSeleccionada = `${hh}:${mm}`;
+                                        const fechaActual = fechaHoraCitaSeleccionada?.split('T')[0] || '';
+                                        const hoy = new Date().toISOString().slice(0, 10);
+                                        if (fechaActual === hoy) {
+                                          const ahora = new Date();
+                                          const horaAhora = `${String(ahora.getHours()).padStart(2, '0')}:${String(ahora.getMinutes()).padStart(2, '0')}`;
+                                          if (horaSeleccionada < horaAhora) {
+                                            toast.error("❌ Hora anterior a la actual");
+                                            return;
+                                          }
                                         }
-                                      }
-                                      
-                                      setFechaHoraCitaSeleccionada(fechaActual ? `${fechaActual}T${horaSeleccionada}` : horaSeleccionada);
-                                    }}
-                                    className="w-full px-3 py-2 border-2 border-purple-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-purple-600 text-sm"
-                                  >
-                                    <option value="">Seleccionar hora...</option>
-                                    {Array.from({ length: (24 * 60) / 15 }, (_, i) => {
-                                      const totalMin = i * 15;
-                                      const h24 = Math.floor(totalMin / 60);
-                                      const m = String(totalMin % 60).padStart(2, '0');
-                                      const value = `${String(h24).padStart(2, '0')}:${m}`;
-                                      const period = h24 < 12 ? 'a.m.' : 'p.m.';
-                                      const h12 = h24 === 0 ? 12 : h24 > 12 ? h24 - 12 : h24;
-                                      const label = `${String(h12).padStart(2, '0')}:${m} ${period}`;
-                                      return { value, label };
-                                    }).filter(t => t.value >= '08:00').map(({ value, label }) => (
-                                      <option key={value} value={value}>{label}</option>
-                                    ))}
-                                  </select>
+                                        setFechaHoraCitaSeleccionada(fechaActual ? `${fechaActual}T${horaSeleccionada}` : horaSeleccionada);
+                                      }}
+                                      className="flex-1 px-3 py-2 border-2 border-purple-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-purple-600 text-sm"
+                                    >
+                                      <option value="">HH</option>
+                                      {Array.from({ length: 14 }, (_, i) => i + 7).map(h => {
+                                        const h24 = String(h).padStart(2, '0');
+                                        const period = h < 12 ? 'am' : 'pm';
+                                        const h12 = h > 12 ? h - 12 : h;
+                                        return (
+                                          <option key={h24} value={h24}>
+                                            {String(h12).padStart(2, '0')} {period}
+                                          </option>
+                                        );
+                                      })}
+                                    </select>
+
+                                    <span className="text-purple-600 font-bold text-lg leading-none">:</span>
+
+                                    {/* Select Minutos (cada 5 min) */}
+                                    <select
+                                      value={fechaHoraCitaSeleccionada?.split('T')[1]?.split(':')[1] || ''}
+                                      onChange={(e) => {
+                                        const mm = e.target.value;
+                                        const hh = fechaHoraCitaSeleccionada?.split('T')[1]?.split(':')[0] || '';
+                                        if (!hh) { toast.error("❌ Selecciona primero la hora"); return; }
+                                        const horaSeleccionada = `${hh}:${mm}`;
+                                        const fechaActual = fechaHoraCitaSeleccionada?.split('T')[0] || '';
+                                        const hoy = new Date().toISOString().slice(0, 10);
+                                        if (fechaActual === hoy) {
+                                          const ahora = new Date();
+                                          const horaAhora = `${String(ahora.getHours()).padStart(2, '0')}:${String(ahora.getMinutes()).padStart(2, '0')}`;
+                                          if (horaSeleccionada < horaAhora) {
+                                            toast.error("❌ Hora anterior a la actual");
+                                            return;
+                                          }
+                                        }
+                                        setFechaHoraCitaSeleccionada(fechaActual ? `${fechaActual}T${horaSeleccionada}` : horaSeleccionada);
+                                      }}
+                                      className="flex-1 px-3 py-2 border-2 border-purple-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-purple-600 text-sm"
+                                    >
+                                      <option value="">MM</option>
+                                      {[0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55].map(m => (
+                                        <option key={m} value={String(m).padStart(2, '0')}>
+                                          :{String(m).padStart(2, '0')}
+                                        </option>
+                                      ))}
+                                    </select>
+                                  </div>
                                 </div>
                               </div>
-                              <p className="text-xs text-gray-600 mt-2">✅ Selecciona fecha (desde hoy) y hora (intervalos de 15 minutos)</p>
+                              <p className="text-xs text-gray-600 mt-2">✅ Selecciona fecha (desde hoy) y hora en intervalos de 5 minutos</p>
                             </div>
                           </div>
 
