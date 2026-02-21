@@ -139,6 +139,28 @@ public class AtencionClinica {
     private String modalidadInterconsulta; // 'PRESENCIAL' o 'VIRTUAL'
 
     // =====================================================================
+    // ✅ v1.76.0: FICHA DE ENFERMERÍA
+    // =====================================================================
+
+    @Column(name = "otra_patologia", columnDefinition = "TEXT")
+    private String otraPatologia;
+
+    @Column(name = "control_enfermeria", columnDefinition = "TEXT")
+    private String controlEnfermeria;
+
+    @Column(name = "adherencia_morisky", length = 10)
+    private String adherenciaMorisky;
+
+    @Column(name = "nivel_riesgo", length = 10)
+    private String nivelRiesgo;
+
+    @Column(name = "controlado", length = 5)
+    private String controlado;
+
+    @Column(name = "glucosa", precision = 6, scale = 1)
+    private BigDecimal glucosa;
+
+    // =====================================================================
     // TELEMONITOREO
     // =====================================================================
 

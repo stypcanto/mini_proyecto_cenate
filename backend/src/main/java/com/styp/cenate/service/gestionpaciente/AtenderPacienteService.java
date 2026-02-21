@@ -1,10 +1,12 @@
 package com.styp.cenate.service.gestionpaciente;
 
 import com.styp.cenate.dto.AtenderPacienteRequest;
+import com.styp.cenate.model.AtencionClinica;
 import com.styp.cenate.model.Asegurado;
 import com.styp.cenate.model.PersonalCnt;
 import com.styp.cenate.model.Usuario;
 import com.styp.cenate.model.bolsas.SolicitudBolsa;
+import com.styp.cenate.repository.AtencionClinicaRepository;
 import com.styp.cenate.repository.AseguradoRepository;
 import com.styp.cenate.repository.UsuarioRepository;
 import com.styp.cenate.repository.bolsas.SolicitudBolsaRepository;
@@ -16,6 +18,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import jakarta.persistence.EntityManager;
+import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -40,6 +43,7 @@ public class AtenderPacienteService {
     private final EntityManager entityManager;
     private final DimServicioEssiRepository servicioEssiRepository;
     private final TrazabilidadClinicaService trazabilidadClinicaService;  // ✅ v1.81.0
+    private final AtencionClinicaRepository atencionClinicaRepository;    // ✅ v1.76.0
 
     @Transactional
     public void atenderPaciente(Long idSolicitudBolsa, String especialidadActual, AtenderPacienteRequest request) {
@@ -80,6 +84,9 @@ public class AtenderPacienteService {
             solicitudOriginal.setCondicionMedica("Atendido");
             guardarSolicitudConTransaccion(solicitudOriginal);
             log.info("✅ Solicitud original marcada como Atendido");
+
+            // ✅ v1.76.0: Guardar Ficha de Enfermería en atencion_clinica si hay datos
+            guardarFichaEnfermeria(request, solicitudOriginal, fechaAtencionMedica);
 
             // ✅ v1.81.0: Registrar atención en historial centralizado
             try {
@@ -276,6 +283,91 @@ public class AtenderPacienteService {
         } catch (Exception e) {
             log.error("❌ [v1.103.5] Error CRÍTICO creando bolsa Interconsulta: {}", e.getMessage(), e);
             throw new RuntimeException("Error creando bolsa de Interconsulta: " + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * ✅ v1.76.0: Guarda los datos de la Ficha de Enfermería en atencion_clinica.
+     * Solo persiste si al menos un campo de la ficha tiene valor.
+     */
+    private void guardarFichaEnfermeria(AtenderPacienteRequest request,
+                                        SolicitudBolsa solicitud,
+                                        OffsetDateTime fechaAtencion) {
+        boolean tieneDatosEnfermeria =
+                request.getControlEnfermeria() != null ||
+                request.getImcValor() != null ||
+                request.getPesoKg() != null ||
+                request.getTallaMt() != null ||
+                request.getAdherencia() != null ||
+                request.getNivelRiesgo() != null ||
+                request.getControlado() != null ||
+                request.getObservaciones() != null ||
+                request.getPresionArterial() != null ||
+                request.getGlucosa() != null;
+
+        if (!tieneDatosEnfermeria) {
+            log.debug("ℹ️ [v1.76.0] Sin datos de Ficha Enfermería — omitiendo guardado");
+            return;
+        }
+
+        try {
+            Long idPersonal = obtenerIdMedicoActual();
+
+            // Convertir talla de metros → centímetros
+            BigDecimal tallaCm = null;
+            if (request.getTallaMt() != null) {
+                try {
+                    BigDecimal tallaMetros = new BigDecimal(request.getTallaMt());
+                    tallaCm = tallaMetros.multiply(BigDecimal.valueOf(100));
+                } catch (NumberFormatException ignored) {}
+            }
+
+            BigDecimal pesoKg = null;
+            if (request.getPesoKg() != null) {
+                try { pesoKg = new BigDecimal(request.getPesoKg()); } catch (NumberFormatException ignored) {}
+            }
+
+            BigDecimal imcValor = null;
+            if (request.getImcValor() != null) {
+                try { imcValor = new BigDecimal(request.getImcValor()); } catch (NumberFormatException ignored) {}
+            }
+
+            // Convertir glucosa a BigDecimal
+            BigDecimal glucosaValor = null;
+            if (request.getGlucosa() != null) {
+                try { glucosaValor = new BigDecimal(request.getGlucosa()); } catch (NumberFormatException ignored) {}
+            }
+
+            AtencionClinica ficha = AtencionClinica.builder()
+                    .pkAsegurado(solicitud.getPacienteDni())
+                    .fechaAtencion(fechaAtencion)
+                    .idIpress(solicitud.getIdIpress() != null ? solicitud.getIdIpress() : 0L)
+                    .idServicio(solicitud.getIdServicio())
+                    .idTipoAtencion(5L)  // 5 = ENFERMERÍA
+                    // Signos vitales
+                    .pesoKg(pesoKg)
+                    .tallaCm(tallaCm)
+                    .imc(imcValor)
+                    .presionArterial(request.getPresionArterial())
+                    .glucosa(glucosaValor)
+                    // Datos clínicos
+                    .observacionesGenerales(request.getObservaciones())
+                    // Ficha enfermería específica
+                    .controlEnfermeria(request.getControlEnfermeria())
+                    .adherenciaMorisky(request.getAdherencia())
+                    .nivelRiesgo(request.getNivelRiesgo())
+                    .controlado(request.getControlado())
+                    // Auditoría
+                    .idPersonalCreador(idPersonal != null ? idPersonal : 0L)
+                    .tieneOrdenInterconsulta(false)
+                    .requiereTelemonitoreo(false)
+                    .build();
+
+            atencionClinicaRepository.save(ficha);
+            log.info("✅ [v1.76.0] Ficha de Enfermería guardada en atencion_clinica para DNI: {}",
+                    solicitud.getPacienteDni());
+        } catch (Exception e) {
+            log.warn("⚠️ [v1.76.0] Error guardando Ficha Enfermería (no bloquea la atención): {}", e.getMessage());
         }
     }
 

@@ -169,7 +169,7 @@ export default function BienvenidaMedico() {
         <div className="mb-6">
           <div className="bg-gradient-to-r from-blue-700 via-blue-600 to-cyan-600 rounded-2xl p-6 text-white shadow-lg overflow-hidden relative">
             <div className="absolute top-2 right-3 text-5xl opacity-15">🏥</div>
-            <h2 className="text-2xl md:text-3xl font-bold mb-2 tracking-tight">Panel Médico - Tu Espacio de Trabajo</h2>
+            <h2 className="text-2xl md:text-3xl font-bold mb-2 tracking-tight">Panel del Profesional de Salud</h2>
             <p className="text-blue-100 text-sm mb-4 leading-snug">
               Accede a tus pacientes, gestiona tu disponibilidad y consulta tus reportes de desempeño en telemedicina CENATE.
             </p>
