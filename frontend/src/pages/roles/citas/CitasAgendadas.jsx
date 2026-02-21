@@ -272,7 +272,14 @@ export default function CitasAgendadas() {
           tipoCita:                s.tipo_cita                 || s.tipoCita                || '—',
           nomMedico:               s.nombre_medico_asignado    || s.nombreMedicoAsignado    || s.nom_medico || s.nomMedico || null,
         }))
-        .filter(p => ESTADOS_AGENDADOS.includes(p.codigoEstado));
+        // Incluir: estados agendados O cualquiera que tenga fecha de atención asignada
+        .filter(p => ESTADOS_AGENDADOS.includes(p.codigoEstado) || p.fechaAtencion)
+        // Ordenar de más reciente a más antiguo
+        .sort((a, b) => {
+          const fa = a.fechaAtencion ? new Date(a.fechaAtencion) : new Date(0);
+          const fb = b.fechaAtencion ? new Date(b.fechaAtencion) : new Date(0);
+          return fb - fa;
+        });
 
       setPacientes(procesados);
     } catch (err) {
@@ -283,7 +290,12 @@ export default function CitasAgendadas() {
     }
   };
 
-  useEffect(() => { cargar(); }, []);
+  useEffect(() => {
+    cargar();
+    // Auto-refresh cada 60s para capturar nuevas importaciones
+    const interval = setInterval(cargar, 60_000);
+    return () => clearInterval(interval);
+  }, []);
 
   // ── KPIs ───────────────────────────────────────────────────
   const kpis = useMemo(() => {

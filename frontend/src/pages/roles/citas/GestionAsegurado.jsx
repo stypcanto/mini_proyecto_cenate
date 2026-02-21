@@ -1296,7 +1296,8 @@ CENATE de Essalud`;
             descIpress: asegurado.casAdscripcion || asegurado.nombreIpress, // Usar código, fallback a nombre
             tipoCita: "TELECONSULTA",
             origen: "Importación Manual",
-            codEstadoCita: "01",
+            // Si tiene fecha + médico asignado → CITADO automáticamente, sino pendiente
+            codEstadoCita: (fechaHoraCitaSeleccionada && medicoSeleccionado) ? "CITADO" : "01",
             usuarioCreacion: user?.id,
             especialidad: especialidadSeleccionada, // ✅ v1.46.5: Agregar especialidad
             // ✅ v1.46.9: Agregar médico y fecha de cita si se seleccionaron
