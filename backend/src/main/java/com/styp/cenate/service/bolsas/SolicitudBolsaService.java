@@ -232,4 +232,18 @@ public interface SolicitudBolsaService {
      * @return lista de solicitudes encontradas (vacía si no existe)
      */
     List<SolicitudBolsaDTO> buscarPorDni(String dni);
+
+    /**
+     * Obtiene estadísticas de pacientes agrupados por gestora de citas
+     * @return lista de estadísticas por gestora
+     */
+    List<com.styp.cenate.dto.bolsas.BolsaXGestoraDTO> obtenerEstadisticasPorGestora();
+
+    /**
+     * Obtiene estadísticas de pacientes agrupados por gestora con filtro de fechas
+     * @param fechaDesde fecha inicio (nullable)
+     * @param fechaHasta fecha fin (nullable)
+     * @return lista de estadísticas por gestora filtradas
+     */
+    List<com.styp.cenate.dto.bolsas.BolsaXGestoraDTO> obtenerEstadisticasPorGestora(String fechaDesde, String fechaHasta);
 }
