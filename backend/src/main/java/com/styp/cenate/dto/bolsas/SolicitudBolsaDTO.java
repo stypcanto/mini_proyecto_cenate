@@ -190,6 +190,10 @@ public class SolicitudBolsaDTO {
     @JsonProperty("desc_ipress_atencion")
     private String descIpressAtencion;
 
+    // 👤 NOMBRE GESTORA (enriquecido via JOIN dim_usuarios)
+    @JsonProperty("nombre_gestora")
+    private String nombreGestora;
+
     // 🔔 AUDITORÍA
     @JsonProperty("activo")
     private Boolean activo;
