@@ -518,12 +518,12 @@ export const componentRegistry = {
   },
 
   '/bolsas/bolsa-x-medico': {
-    component: lazy(() => import('../pages/bolsas/Solicitudes')),
+    component: lazy(() => import('../pages/bolsas/BolsaXMedico')),
     requiredAction: 'ver',
   },
 
   '/modulos/bolsas/bolsa-x-medico': {
-    component: lazy(() => import('../pages/bolsas/Solicitudes')),
+    component: lazy(() => import('../pages/bolsas/BolsaXMedico')),
     requiredAction: 'ver',
   },
 
