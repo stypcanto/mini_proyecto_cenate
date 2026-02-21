@@ -187,7 +187,8 @@ export const obtenerSolicitudesPaginado = async (
   busqueda = null,
   fechaInicio = null,
   fechaFin = null,
-  condicionMedica = null   // v1.74.0: Filtro por condicion_medica (PADOMI)
+  condicionMedica = null,   // v1.74.0: Filtro por condicion_medica (PADOMI)
+  gestoraId = null          // v1.70.x: Filtro por gestora asignada (ID)
 ) => {
   try {
     // Construir query string dinámico
@@ -212,6 +213,7 @@ export const obtenerSolicitudesPaginado = async (
     if (fechaInicio && fechaInicio.trim()) params.append('fechaInicio', fechaInicio.trim());
     if (fechaFin && fechaFin.trim()) params.append('fechaFin', fechaFin.trim());
     if (condicionMedica && condicionMedica.trim()) params.append('condicionMedica', condicionMedica.trim());
+    if (gestoraId !== null && gestoraId !== undefined) params.append('gestoraId', gestoraId);
 
     const finalUrl = `${API_BASE_URL}/solicitudes?${params.toString()}`;
     console.log('🌐 URL de solicitud:', finalUrl);
@@ -443,6 +445,19 @@ export const obtenerEstadisticasPorIpress = async () => {
     return response;
   } catch (error) {
     console.error('Error al obtener estadísticas por IPRESS:', error);
+    throw error;
+  }
+};
+
+/**
+ * Obtiene estadísticas por IPRESS de Atención
+ */
+export const obtenerEstadisticasPorIpressAtencion = async () => {
+  try {
+    const response = await apiClient.get(`${API_BASE_URL}/estadisticas/por-ipress-atencion`, true);
+    return response;
+  } catch (error) {
+    console.error('Error al obtener estadísticas por IPRESS Atención:', error);
     throw error;
   }
 };
@@ -884,6 +899,22 @@ export const obtenerEstadosGestion = async () => {
 };
 
 /**
+ * ✅ v1.105.0: Actualiza la IPRESS de Atención de una solicitud
+ * @param {number} idSolicitud - ID de la solicitud
+ * @param {number|null} idIpressAtencion - ID de la nueva IPRESS (null para limpiar)
+ */
+export const actualizarIpressAtencion = async (idSolicitud, idIpressAtencion) => {
+  try {
+    const params = idIpressAtencion ? `?idIpressAtencion=${idIpressAtencion}` : '';
+    const response = await apiClient.patch(`/bolsas/solicitudes/${idSolicitud}/ipress-atencion${params}`, {}, true);
+    return response;
+  } catch (error) {
+    console.error(`Error al actualizar IPRESS Atención de solicitud ${idSolicitud}:`, error);
+    throw error;
+  }
+};
+
+/**
  * Obtiene todos los IPRESS
  * @returns {Promise<Array>} - Listado de IPRESS
  */
@@ -1111,6 +1142,7 @@ export default {
   obtenerEstadisticasPorEstado,
   obtenerEstadisticasPorEspecialidad,
   obtenerEstadisticasPorIpress,
+  obtenerEstadisticasPorIpressAtencion,
   obtenerEstadisticasPorTipoCita,
   obtenerEstadisticasPorTipoBolsa,
   obtenerEvolutionTemporal,

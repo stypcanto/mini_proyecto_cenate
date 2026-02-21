@@ -1,9 +1,10 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Plus, Search, Phone, ChevronDown, Circle, Eye, Users, UserPlus, Download, FileText, FolderOpen, ListChecks, Upload, AlertCircle, Edit, X } from 'lucide-react';
 import PageHeader from '../../components/PageHeader';
 import StatCard from '../../components/StatCard';
 import ListHeader from '../../components/ListHeader';
-import bolsasService from '../../services/bolsasService';
+import bolsasService, { actualizarIpressAtencion } from '../../services/bolsasService';
+import ipressService from '../../services/ipressService';
 import { usePermisos } from '../../context/PermisosContext';
 import ModalResultadosImportacion from '../../components/modals/ModalResultadosImportacion'; // ✅ NUEVO v1.19.0
 import FilaSolicitud from './FilaSolicitud'; // 🚀 v2.6.0: Componente memorizado para filas
@@ -67,7 +68,7 @@ function generarCodigoBolsa(nombreBolsa) {
 }
 
 export default function Solicitudes() {
-  const REGISTROS_POR_PAGINA = 100;
+  const [registrosPorPagina, setRegistrosPorPagina] = useState(100);
   const { esSuperAdmin } = usePermisos();
 
   const [solicitudes, setSolicitudes] = useState([]);
@@ -79,6 +80,7 @@ export default function Solicitudes() {
   const [especialidadesActivas, setEspecialidadesActivas] = useState([]); // Especialidades desde backend (v1.42.0)
   const [errorEspecialidades, setErrorEspecialidades] = useState(null); // Error al cargar especialidades (v1.42.0)
   const [estadisticasIpress, setEstadisticasIpress] = useState([]);
+  const [estadisticasIpressAtencion, setEstadisticasIpressAtencion] = useState([]);
   const [estadisticasTipoCita, setEstadisticasTipoCita] = useState([]);
 
   const [isLoading, setIsLoading] = useState(true); // Inicia con loader por defecto
@@ -87,11 +89,13 @@ export default function Solicitudes() {
   const [filtroBolsa, setFiltroBolsa] = useState([]); // [] = todas las bolsas (multi-select)
   const [filtroRed, setFiltroRed] = useState('todas');
   const [filtroIpress, setFiltroIpress] = useState('todas');
+  const [filtroIpressAtencion, setFiltroIpressAtencion] = useState('todas');
   const [filtroMacrorregion, setFiltroMacrorregion] = useState('todas');
   const [filtroEspecialidad, setFiltroEspecialidad] = useState('todas');
   const [filtroEstado, setFiltroEstado] = useState('todos'); // Mostrar todos los estados por defecto
   const [filtroTipoCita, setFiltroTipoCita] = useState('todas');
   const [filtroAsignacion, setFiltroAsignacion] = useState('todos');  // ✅ v1.42.0: Filtro asignación (cards clickeables)
+  const [filtroGestoraId, setFiltroGestoraId] = useState(null);        // Filtro por gestora asignada (ID)
   const [filtroFechaInicio, setFiltroFechaInicio] = useState('');     // ✅ v1.66.0: Filtro rango de fechas - inicio
   const [filtroFechaFin, setFiltroFechaFin] = useState('');           // ✅ v1.66.0: Filtro rango de fechas - fin
   const [cardSeleccionado, setCardSeleccionado] = useState(null);     // ✅ v1.42.0: Rastrear card activo
@@ -168,6 +172,13 @@ export default function Solicitudes() {
 
   // Estado para modal de cambiar bolsa
   const [modalCambiarBolsa, setModalCambiarBolsa] = useState(false);
+
+  // ✅ v1.105.0: Modal IPRESS Atención
+  const [modalIpressAtencion, setModalIpressAtencion]       = useState(false);
+  const [iprессBusqueda, setIpressBusqueda]                 = useState('');
+  const [ipressResultados, setIpressResultados]             = useState([]);
+  const [ipressSeleccionada, setIpressSeleccionada]         = useState(null);
+  const [loadingIpress, setLoadingIpress]                   = useState(false);
   const [bolsaNuevaSeleccionada, setBolsaNuevaSeleccionada] = useState(null);
   const [bolsasDisponibles, setBolsasDisponibles] = useState([]);
   const [tiposBolsasActivos, setTiposBolsasActivos] = useState([]); // Tipos de bolsas activos (catálogo)
@@ -269,10 +280,11 @@ export default function Solicitudes() {
       console.log('📊 Cargando ESTADÍSTICAS DE FILTROS en paralelo (4 llamadas)...');
       (async () => {
         try {
-          // 4 llamadas en paralelo (más rápido que 1 consolidada lenta)
-          const [bolsas, ipress, tipoCita, estado] = await Promise.all([
+          // 5 llamadas en paralelo
+          const [bolsas, ipress, ipressAtencion, tipoCita, estado] = await Promise.all([
             bolsasService.obtenerEstadisticasPorTipoBolsa().catch(() => []),
             bolsasService.obtenerEstadisticasPorIpress().catch(() => []),
+            bolsasService.obtenerEstadisticasPorIpressAtencion().catch(() => []),
             bolsasService.obtenerEstadisticasPorTipoCita().catch(() => []),
             bolsasService.obtenerEstadisticasPorEstado().catch(() => [])
           ]);
@@ -280,6 +292,7 @@ export default function Solicitudes() {
           if (isMountedRef.current) {
             setEstadisticasTipoBolsa(bolsas || []);
             setEstadisticasIpress(ipress || []);
+            setEstadisticasIpressAtencion(ipressAtencion || []);
             setEstadisticasTipoCita(tipoCita || []);
             setEstadisticasGlobales(estado || []);
 
@@ -319,7 +332,7 @@ export default function Solicitudes() {
     });
     setCurrentPage(1); // Reset a página 1
     cargarSolicitudesConFiltros(); // Cargar CON FILTROS desde el backend
-  }, [filtroBolsa, filtroMacrorregion, filtroRed, filtroIpress, filtroEspecialidad, filtroEstado, filtroTipoCita, filtroAsignacion, searchTerm, filtroFechaInicio, filtroFechaFin]);
+  }, [filtroBolsa, filtroMacrorregion, filtroRed, filtroIpress, filtroIpressAtencion, filtroEspecialidad, filtroEstado, filtroTipoCita, filtroAsignacion, filtroGestoraId, searchTerm, filtroFechaInicio, filtroFechaFin]);
 
   // ============================================================================
   // 📦 EFFECT 4: Cargar SIGUIENTE PÁGINA cuando cambia currentPage (v2.5.2 - Server-side pagination)
@@ -332,6 +345,13 @@ export default function Solicitudes() {
       cargarSolicitudesPaginadas(pageIndex);
     }
   }, [currentPage, catalogosCargados]);
+
+  // ✅ v1.76.0: Recargar cuando cambia registrosPorPagina
+  useEffect(() => {
+    if (!catalogosCargados) return;
+    setCurrentPage(1);
+    cargarSolicitudesConFiltros();
+  }, [registrosPorPagina]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ============================================================================
   // 📦 EFFECT 5: Recargar gestoras cuando se abre el modal
@@ -452,7 +472,7 @@ export default function Solicitudes() {
     try {
       console.log('📡 Llamando a bolsasService.obtenerSolicitudesPaginado()...');
       // v2.5.1: Usar endpoint paginado para mejorar performance (25 registros por página)
-      const response = await bolsasService.obtenerSolicitudesPaginado(0, REGISTROS_POR_PAGINA);
+      const response = await bolsasService.obtenerSolicitudesPaginado(0, registrosPorPagina);
       console.log('📥 Respuesta recibida:', response);
       console.log('📊 Tipo de respuesta:', typeof response);
 
@@ -662,18 +682,21 @@ export default function Solicitudes() {
 
       const response = await bolsasService.obtenerSolicitudesPaginado(
         0, // page 0 (primera página cuando cambian los filtros)
-        REGISTROS_POR_PAGINA,
+        registrosPorPagina,
         filtroBolsa.length === 0 ? null : filtroBolsa.join(','),
         filtroMacrorregion === 'todas' ? null : filtroMacrorregion,
         filtroRed === 'todas' ? null : filtroRed,
         filtroIpress === 'todas' ? null : filtroIpress,
         filtroEspecialidad === 'todas' ? null : filtroEspecialidad,
         filtroEstado === 'todos' ? null : filtroEstado,
+        filtroIpressAtencion === 'todas' ? null : filtroIpressAtencion,
         filtroTipoCita === 'todas' ? null : filtroTipoCita,
         asignacionFinal,
         searchTerm.trim() || null,
         filtroFechaInicio || null,
-        filtroFechaFin || null
+        filtroFechaFin || null,
+        null,              // condicionMedica
+        filtroGestoraId    // gestoraId
       );
 
       console.log('📥 Respuesta con filtros recibida:', response);
@@ -841,18 +864,21 @@ export default function Solicitudes() {
       // IMPORTANTE: Pasar los filtros actuales para mantener la consistencia
       const response = await bolsasService.obtenerSolicitudesPaginado(
         pageIndex,
-        REGISTROS_POR_PAGINA,
+        registrosPorPagina,
         filtroBolsa.length === 0 ? null : filtroBolsa.join(','),
         filtroMacrorregion === 'todas' ? null : filtroMacrorregion,
         filtroRed === 'todas' ? null : filtroRed,
         filtroIpress === 'todas' ? null : filtroIpress,
         filtroEspecialidad === 'todas' ? null : filtroEspecialidad,
         filtroEstado === 'todos' ? null : filtroEstado,
+        filtroIpressAtencion === 'todas' ? null : filtroIpressAtencion,
         filtroTipoCita === 'todas' ? null : filtroTipoCita,
         filtroAsignacion === 'todos' ? null : filtroAsignacion,
         searchTerm.trim() || null,
         filtroFechaInicio || null,
-        filtroFechaFin || null
+        filtroFechaFin || null,
+        null,              // condicionMedica
+        filtroGestoraId    // gestoraId
       );
       console.log('📥 Respuesta página recibida:', response);
 
@@ -1181,7 +1207,7 @@ export default function Solicitudes() {
 
   // Calcular paginación (v2.6.0 - Server-side pagination integrada)
   const totalRegistros = totalElementos > 0 ? totalElementos : solicitudes.length;
-  const totalPaginas = Math.ceil(totalRegistros / REGISTROS_POR_PAGINA);
+  const totalPaginas = Math.ceil(totalRegistros / registrosPorPagina);
   // Los registros mostrados son directamente `solicitudes` (ya paginados y filtrados desde el backend)
   const solicitudesPaginadas = solicitudes;
 
@@ -1195,44 +1221,41 @@ export default function Solicitudes() {
       setCardSeleccionado(null);
       setFiltroEstado('todos');
       setFiltroAsignacion('todos');
+      setFiltroGestoraId(null);
     } else {
-      // Seleccionar este card → aplicar filtro correspondiente
-      console.log('✅ Seleccionando card:', cardType);
+      // Seleccionar este card → limpiar TODOS los filtros para que la tabla concuerde con el número del card
       setCardSeleccionado(cardType);
+      setFiltroBolsa([]);
+      setFiltroIpress('todas');
+      setFiltroEspecialidad('todas');
+      setFiltroTipoCita('todas');
+      setFiltroGestoraId(null);
+      setFiltroFechaInicio('');
+      setFiltroFechaFin('');
+      setSearchTerm('');
 
       switch (cardType) {
         case 'total':
-          // Total Pacientes → limpiar todos los filtros
-          console.log('🔄 Total Pacientes - limpiando filtros');
           setFiltroEstado('todos');
           setFiltroAsignacion('todos');
           break;
         case 'pendiente':
-          // Pendiente Citar → filtrar por estado PENDIENTE_CITA
-          console.log('⏳ Pendiente Citar - filtroEstado=PENDIENTE_CITA');
           setFiltroEstado('PENDIENTE_CITA');
           setFiltroAsignacion('todos');
           break;
         case 'citado':
-          // Citados → filtrar por estado CITADO
-          console.log('📞 Citados - filtroEstado=CITADO');
           setFiltroEstado('CITADO');
           setFiltroAsignacion('todos');
           break;
         case 'asignado':
-          // Casos Asignados → filtrar por asignación = asignados
-          console.log('👥 Casos Asignados - filtroAsignacion=asignados');
           setFiltroEstado('todos');
           setFiltroAsignacion('asignados');
           break;
         case 'sin_asignar':
-          // Sin Asignar → filtrar por asignación = sin_asignar
-          console.log('🔲 Sin Asignar - filtroAsignacion=sin_asignar');
           setFiltroEstado('todos');
           setFiltroAsignacion('sin_asignar');
           break;
         default:
-          console.warn('⚠️ Caso no reconocido:', cardType);
           break;
       }
     }
@@ -1453,6 +1476,50 @@ export default function Solicitudes() {
     } catch (error) {
       console.error('Error actualizando teléfonos:', error);
       alert('Error al actualizar los teléfonos. Intenta nuevamente.');
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  // ✅ v1.105.0: Abrir modal IPRESS Atención
+  const handleAbrirIpressAtencion = useCallback((solicitud) => {
+    setSolicitudSeleccionada(solicitud);
+    setIpressSeleccionada(null);
+    setIpressBusqueda('');
+    setIpressResultados([]);
+    setModalIpressAtencion(true);
+  }, []);
+
+  // Buscar IPRESS en tiempo real
+  const handleBuscarIpress = async (termino) => {
+    setIpressBusqueda(termino);
+    if (termino.trim().length < 2) { setIpressResultados([]); return; }
+    setLoadingIpress(true);
+    try {
+      const resultados = await ipressService.buscar(termino);
+      setIpressResultados(resultados.slice(0, 10));
+    } catch (e) {
+      console.error('Error buscando IPRESS:', e);
+    } finally {
+      setLoadingIpress(false);
+    }
+  };
+
+  // Guardar IPRESS Atención seleccionada
+  const handleGuardarIpressAtencion = async () => {
+    if (!ipressSeleccionada) { alert('Selecciona una IPRESS'); return; }
+    setIsProcessing(true);
+    try {
+      await actualizarIpressAtencion(
+        solicitudSeleccionada.idSolicitud || solicitudSeleccionada.id,
+        ipressSeleccionada.id
+      );
+      alert(`IPRESS Atención actualizada: ${ipressSeleccionada.descIpress}`);
+      setModalIpressAtencion(false);
+      cargarSolicitudes();
+    } catch (error) {
+      console.error('Error actualizando IPRESS Atención:', error);
+      alert('Error al actualizar. Intenta nuevamente.');
     } finally {
       setIsProcessing(false);
     }
@@ -1867,6 +1934,25 @@ export default function Solicitudes() {
           }
         `}</style>
 
+        {/* Banner filtro activo por card */}
+        {cardSeleccionado && cardSeleccionado !== 'total' && (
+          <div className="mb-3 flex items-center gap-2 px-4 py-2 bg-blue-50 border border-blue-200 rounded-lg text-sm text-blue-800 font-medium">
+            <span>Filtrado por card:</span>
+            <span className="font-bold">
+              {cardSeleccionado === 'pendiente' && '⏳ Pendiente Citar'}
+              {cardSeleccionado === 'citado' && '📞 Citados'}
+              {cardSeleccionado === 'asignado' && '👥 Casos Asignados'}
+              {cardSeleccionado === 'sin_asignar' && '🔲 Sin Asignar'}
+            </span>
+            <button
+              onClick={() => { setCardSeleccionado(null); setFiltroEstado('todos'); setFiltroAsignacion('todos'); }}
+              className="ml-auto text-blue-500 hover:text-blue-700 font-bold text-xs underline"
+            >
+              Quitar filtro
+            </button>
+          </div>
+        )}
+
         {/* Sección de Lista de Pacientes */}
         <div className="bg-white rounded-lg shadow-md overflow-hidden">
           {/* Header con título y botón toggle */}
@@ -1920,40 +2006,27 @@ export default function Solicitudes() {
                   })
               },
               {
-                name: "Macrorregión",
-                value: filtroMacrorregion,
-                onChange: (e) => setFiltroMacrorregion(e.target.value),
-                options: [
-                  { label: `Todas las macrorregiones (${totalElementos})`, value: "todas" },
-                  ...macrorregionesUnicas
-                    .filter(macro => countWithFilters('macro', macro) > 0)
-                    .map(macro => ({
-                      label: `${macro} (${countWithFilters('macro', macro)})`,
-                      value: macro
-                    }))
-                ]
-              },
-              {
-                name: "Redes",
-                value: filtroRed,
-                onChange: (e) => setFiltroRed(e.target.value),
-                options: [
-                  { label: `Todas las redes (${totalElementos})`, value: "todas" },
-                  ...redesUnicas
-                    .filter(red => countWithFilters('red', red) > 0)
-                    .map(red => ({
-                      label: `${red} (${countWithFilters('red', red)})`,
-                      value: red
-                    }))
-                ]
-              },
-              {
-                name: "IPRESS",
+                name: "IPRESS - Adscripción",
                 value: filtroIpress,
                 onChange: (e) => setFiltroIpress(e.target.value),
                 options: [
-                  { label: `Todas las IPRESS (${totalElementos})`, value: "todas" },
+                  { label: `Todas (${totalElementos})`, value: "todas" },
                   ...estadisticasIpress
+                    .filter(i => i.total > 0)
+                    .sort((a, b) => b.total - a.total)
+                    .map(i => ({
+                      label: `${i.nombreIpress} (${i.total})`,
+                      value: i.nombreIpress
+                    }))
+                ]
+              },
+              {
+                name: "IPRESS - Atención",
+                value: filtroIpressAtencion,
+                onChange: (e) => setFiltroIpressAtencion(e.target.value),
+                options: [
+                  { label: `Todas`, value: "todas" },
+                  ...estadisticasIpressAtencion
                     .filter(i => i.total > 0)
                     .sort((a, b) => b.total - a.total)
                     .map(i => ({
@@ -2000,19 +2073,48 @@ export default function Solicitudes() {
                     value: esp
                   }))
                 ]
+              },
+              {
+                name: "Gestora Asignada",
+                value: filtroGestoraId === null ? "todas" : filtroGestoraId === "sin_asignar" ? "sin_asignar" : String(filtroGestoraId),
+                onChange: (e) => {
+                  const val = e.target.value;
+                  if (val === "todas") {
+                    setFiltroGestoraId(null);
+                    setFiltroAsignacion("todos");
+                  } else if (val === "sin_asignar") {
+                    setFiltroGestoraId(null);
+                    setFiltroAsignacion("sin_asignar");
+                  } else {
+                    setFiltroAsignacion("todos");
+                    setFiltroGestoraId(Number(val));
+                  }
+                },
+                options: [
+                  { label: "Todas las gestoras", value: "todas" },
+                  { label: "Sin gestora asignada", value: "sin_asignar" },
+                  ...gestoras
+                    .filter(g => g && g.id && g.nombre)
+                    .map(g => ({
+                      label: g.nombre,
+                      value: String(g.id)
+                    }))
+                ]
               }
             ]}
             onClearFilters={() => {
               setFiltroBolsa([]);
-              setFiltroMacrorregion('todas');
-              setFiltroRed('todas');
               setFiltroIpress('todas');
+              setFiltroIpressAtencion('todas');
               setFiltroEspecialidad('todas');
               setFiltroEstado('todos');
               setFiltroTipoCita('todas');
+              setFiltroAsignacion('todos');
+              setFiltroGestoraId(null);
               setFiltroFechaInicio('');
               setFiltroFechaFin('');
               setSearchTerm('');
+              setCardSeleccionado(null);
             }}
           />
           </div>
@@ -2038,6 +2140,49 @@ export default function Solicitudes() {
                   onChange={(e) => setFiltroFechaFin(e.target.value)}
                   className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all hover:border-gray-400 font-medium"
                 />
+              </div>
+            </div>
+          </div>
+
+          {/* ✅ v1.76.0: Filtro Pacientes Nuevos + Selector de registros por página */}
+          <div className="px-2 py-1">
+            <div className="flex flex-wrap items-center gap-3">
+              {/* Botón Pacientes Nuevos */}
+              <button
+                onClick={() => {
+                  if (filtroEstado === 'PENDIENTE_CITA') {
+                    setFiltroEstado('todos');
+                  } else {
+                    setFiltroEstado('PENDIENTE_CITA');
+                  }
+                }}
+                className="flex items-center gap-2 px-4 py-2 rounded-lg border text-xs font-semibold transition-all"
+                style={filtroEstado === 'PENDIENTE_CITA'
+                  ? { background: '#16a34a', color: '#fff', borderColor: '#16a34a' }
+                  : { background: '#f0fdf4', color: '#16a34a', borderColor: '#86efac' }}
+                title="Muestra solo los pacientes nuevos que ingresaron a la bolsa (sin cita asignada aún)"
+              >
+                <span>🆕</span>
+                {filtroEstado === 'PENDIENTE_CITA' ? '✓ Pacientes Nuevos' : 'Ver Pacientes Nuevos'}
+              </button>
+
+              {/* Selector de registros por página */}
+              <div className="flex items-center gap-2 ml-auto">
+                <span className="text-xs font-semibold text-gray-600">Registros por página:</span>
+                <div className="flex gap-1">
+                  {[10, 20, 50, 100].map(n => (
+                    <button
+                      key={n}
+                      onClick={() => setRegistrosPorPagina(n)}
+                      className="w-10 h-8 text-xs font-bold rounded-lg border transition-all"
+                      style={registrosPorPagina === n
+                        ? { background: '#0A5BA9', color: '#fff', borderColor: '#0A5BA9' }
+                        : { background: '#f8fafc', color: '#374151', borderColor: '#d1d5db' }}
+                    >
+                      {n}
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
           </div>
@@ -2229,9 +2374,17 @@ export default function Solicitudes() {
               </div>
             ) : solicitudes.length > 0 ? (
               <>
-              <div className="bg-blue-50 border border-blue-200 rounded px-3 py-1.5 mb-2 text-xs text-blue-700 flex items-center gap-1">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                <span><strong>Paciente:</strong> Género - Nombres del Paciente (Edad)</span>
+              <div className="flex flex-wrap items-center gap-2 mb-2">
+                {/* Leyenda formato paciente */}
+                <div className="bg-blue-50 border border-blue-200 rounded px-3 py-1.5 text-xs text-blue-700 flex items-center gap-1">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                  <span><strong>Paciente:</strong> Género - Nombres del Paciente (Edad)</span>
+                </div>
+                {/* Leyenda lápiz IPRESS Atención */}
+                <div className="bg-amber-50 border border-amber-200 rounded px-3 py-1.5 text-xs text-amber-700 flex items-center gap-1.5">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536M9 11l6.536-6.536a2 2 0 112.828 2.828L11.828 13.828A2 2 0 0110 14H9v-1a2 2 0 01.172-.768z" /></svg>
+                  <span><strong>IPRESS Atención</strong> — el lápiz <svg xmlns="http://www.w3.org/2000/svg" className="inline h-3 w-3 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536M9 11l6.536-6.536a2 2 0 112.828 2.828L11.828 13.828A2 2 0 0110 14H9v-1a2 2 0 01.172-.768z" /></svg> permite asignar o cambiar la IPRESS donde se atenderá al paciente</span>
+                </div>
               </div>
               <table className="w-full border-collapse">
                 <thead className="bg-[#0D5BA9] text-white sticky top-0 z-40">
@@ -2280,6 +2433,7 @@ export default function Solicitudes() {
                       onAbrirAsignarGestora={handleAbrirAsignarGestora}
                       onEliminarAsignacion={handleEliminarAsignacionGestora}
                       onAbrirEnviarRecordatorio={handleAbrirEnviarRecordatorio}
+                      onAbrirIpressAtencion={handleAbrirIpressAtencion}
                       isProcessing={isProcessing}
                       getEstadoBadge={getEstadoBadge}
                     />
@@ -2290,17 +2444,34 @@ export default function Solicitudes() {
               {/* 📄 PAGINACIÓN v2.5.2 - Server-side pagination */}
               {solicitudes.length > 0 && (
                 <div className="flex items-center justify-between px-6 py-4 bg-gray-50 border-t border-gray-200">
-                  <div className="text-sm text-gray-600 font-medium">
-                    {/* Calcular rango real para server-side pagination */}
-                    {(() => {
-                      const registroInicio = (currentPage - 1) * REGISTROS_POR_PAGINA + 1;
-                      const registroFin = Math.min(currentPage * REGISTROS_POR_PAGINA, totalRegistros);
-                      return (
-                        <>
-                          Mostrando <span className="font-bold text-gray-900">{registroInicio}</span> - <span className="font-bold text-gray-900">{registroFin}</span> de <span className="font-bold text-gray-900">{totalRegistros}</span> registros
-                        </>
-                      );
-                    })()}
+                  <div className="flex items-center gap-3">
+                    <div className="text-sm text-gray-600 font-medium">
+                      {(() => {
+                        const registroInicio = (currentPage - 1) * registrosPorPagina + 1;
+                        const registroFin = Math.min(currentPage * registrosPorPagina, totalRegistros);
+                        return (
+                          <>
+                            Mostrando <span className="font-bold text-gray-900">{registroInicio}</span>–<span className="font-bold text-gray-900">{registroFin}</span> de <span className="font-bold text-gray-900">{totalRegistros}</span>
+                          </>
+                        );
+                      })()}
+                    </div>
+                    {/* Selector compacto de registros por página en el footer */}
+                    <div className="flex items-center gap-1">
+                      <span className="text-xs text-gray-500">por pág.:</span>
+                      {[10, 20, 50, 100].map(n => (
+                        <button
+                          key={n}
+                          onClick={() => setRegistrosPorPagina(n)}
+                          className="w-8 h-6 text-xs font-bold rounded border transition-all"
+                          style={registrosPorPagina === n
+                            ? { background: '#0A5BA9', color: '#fff', borderColor: '#0A5BA9' }
+                            : { background: '#fff', color: '#374151', borderColor: '#d1d5db' }}
+                        >
+                          {n}
+                        </button>
+                      ))}
+                    </div>
                   </div>
 
                   <div className="flex items-center gap-2">
@@ -2406,6 +2577,104 @@ export default function Solicitudes() {
                   onClick={handleGuardarCambiarTelefono}
                   disabled={isProcessing}
                   className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md font-semibold disabled:opacity-50"
+                >
+                  {isProcessing ? 'Guardando...' : 'Guardar'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ====== MODAL: IPRESS ATENCIÓN (v1.105.0) ====== */}
+        {modalIpressAtencion && (
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+               onClick={(e) => { if (e.target === e.currentTarget) setModalIpressAtencion(false); }}>
+            <div className="bg-white rounded-xl shadow-2xl w-full max-w-md">
+              {/* Header */}
+              <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+                <div>
+                  <h2 className="text-base font-bold text-gray-900">🏥 IPRESS de Atención</h2>
+                  <p className="text-xs text-gray-500 mt-0.5">
+                    Paciente: <span className="font-semibold text-gray-700">{solicitudSeleccionada?.paciente}</span>
+                  </p>
+                </div>
+                <button onClick={() => setModalIpressAtencion(false)} className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400">
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              <div className="px-6 py-5 space-y-4">
+                {/* Actual */}
+                <div className="bg-gray-50 rounded-lg px-4 py-3 text-sm">
+                  <p className="text-xs text-gray-400 mb-1">Actual</p>
+                  <p className="font-semibold text-purple-700">
+                    {solicitudSeleccionada?.codIpressAtencion && solicitudSeleccionada.codIpressAtencion !== 'N/A'
+                      ? `${solicitudSeleccionada.codIpressAtencion} - ${solicitudSeleccionada.ipressAtencion}`
+                      : 'Sin IPRESS de atención registrada'}
+                  </p>
+                </div>
+
+                {/* Buscador */}
+                <div>
+                  <label className="text-xs font-semibold text-gray-600 uppercase tracking-widest mb-1.5 block">
+                    Buscar nueva IPRESS
+                  </label>
+                  <input
+                    type="text"
+                    value={iprессBusqueda}
+                    onChange={(e) => handleBuscarIpress(e.target.value)}
+                    placeholder="Escribe nombre o código de IPRESS..."
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#0A5BA9]/30 focus:border-[#0A5BA9]"
+                    autoFocus
+                  />
+                </div>
+
+                {/* Resultados */}
+                {loadingIpress && (
+                  <p className="text-xs text-gray-400 text-center py-2">Buscando...</p>
+                )}
+                {!loadingIpress && ipressResultados.length > 0 && (
+                  <div className="border border-gray-200 rounded-lg overflow-hidden max-h-48 overflow-y-auto">
+                    {ipressResultados.map((ip) => (
+                      <button
+                        key={ip.id}
+                        onClick={() => { setIpressSeleccionada(ip); setIpressBusqueda(ip.descIpress); setIpressResultados([]); }}
+                        className={`w-full text-left px-4 py-2.5 text-sm border-b border-gray-100 last:border-b-0 hover:bg-[#0A5BA9]/5 transition-colors ${
+                          ipressSeleccionada?.id === ip.id ? 'bg-[#0A5BA9]/10 font-semibold text-[#0A5BA9]' : 'text-gray-800'
+                        }`}
+                      >
+                        <span className="font-semibold text-[#0A5BA9] mr-2">{ip.codIpress}</span>
+                        {ip.descIpress}
+                      </button>
+                    ))}
+                  </div>
+                )}
+
+                {/* Seleccionada */}
+                {ipressSeleccionada && (
+                  <div className="bg-[#0A5BA9]/5 border border-[#0A5BA9]/20 rounded-lg px-4 py-3 flex items-center gap-3">
+                    <span className="text-lg">✅</span>
+                    <div>
+                      <p className="text-xs text-[#0A5BA9]/70">Seleccionada</p>
+                      <p className="text-sm font-bold text-[#0A5BA9]">{ipressSeleccionada.codIpress} - {ipressSeleccionada.descIpress}</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Footer */}
+              <div className="flex gap-3 px-6 py-4 border-t border-gray-100">
+                <button
+                  onClick={() => setModalIpressAtencion(false)}
+                  disabled={isProcessing}
+                  className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 font-semibold hover:bg-gray-50 disabled:opacity-50 text-sm"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={handleGuardarIpressAtencion}
+                  disabled={isProcessing || !ipressSeleccionada}
+                  className="flex-1 px-4 py-2 bg-[#0A5BA9] hover:bg-[#083d78] text-white rounded-lg font-semibold disabled:opacity-50 text-sm transition-colors"
                 >
                   {isProcessing ? 'Guardando...' : 'Guardar'}
                 </button>

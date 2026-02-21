@@ -438,17 +438,18 @@ public class SolicitudBolsaController {
             @RequestParam(required = false) String fechaInicio,
             @RequestParam(required = false) String fechaFin,
             @RequestParam(required = false) String condicionMedica,
+            @RequestParam(required = false) Long gestoraId,
             @PageableDefault(size = 100, page = 0) Pageable pageable) {
 
         // Si hay algún filtro, usar búsqueda con filtros
         if (bolsa != null || macrorregion != null || red != null || ipress != null ||
             especialidad != null || estado != null || ipressAtencion != null || tipoCita != null ||
             asignacion != null || busqueda != null || fechaInicio != null || fechaFin != null ||
-            condicionMedica != null) {
+            condicionMedica != null || gestoraId != null) {
             log.info("🔍 Solicitud con filtros - Bolsa: {}, Macro: {}, Red: {}, IPRESS: {}, Especialidad: {}, Estado: {}, IPRESSAtencion: {}, TipoCita: {}, Asignación: {}, Búsqueda: {}, FechaInicio: {}, FechaFin: {}, CondicionMedica: {}",
                 bolsa, macrorregion, red, ipress, especialidad, estado, ipressAtencion, tipoCita, asignacion, busqueda, fechaInicio, fechaFin, condicionMedica);
             return ResponseEntity.ok(solicitudBolsaService.listarConFiltros(
-                    bolsa, macrorregion, red, ipress, especialidad, estado, ipressAtencion, tipoCita, asignacion, busqueda, fechaInicio, fechaFin, condicionMedica, pageable));
+                    bolsa, macrorregion, red, ipress, especialidad, estado, ipressAtencion, tipoCita, asignacion, busqueda, fechaInicio, fechaFin, condicionMedica, gestoraId, pageable));
         }
 
         // Sin filtros, listar todas (comportamiento anterior)
@@ -943,6 +944,29 @@ public class SolicitudBolsaController {
             return ResponseEntity.badRequest().body(
                 Map.of("error", "Error: " + e.getMessage())
             );
+        }
+    }
+
+    /**
+     * ✅ v1.105.0: Actualiza la IPRESS de Atención de una solicitud
+     * PATCH /api/bolsas/solicitudes/{id}/ipress-atencion
+     */
+    @PatchMapping("/{id}/ipress-atencion")
+    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'COORD. GESTION CITAS', 'GESTOR DE CITAS')")
+    public ResponseEntity<?> actualizarIpressAtencion(
+            @PathVariable Long id,
+            @RequestParam(value = "idIpressAtencion", required = false) Long idIpressAtencion) {
+        try {
+            log.info("🏥 PATCH ipress-atencion solicitud {} → idIpress: {}", id, idIpressAtencion);
+            solicitudBolsaService.actualizarIpressAtencion(id, idIpressAtencion);
+            return ResponseEntity.ok(Map.of(
+                "mensaje", "IPRESS de Atención actualizada exitosamente",
+                "idSolicitud", id,
+                "idIpressAtencion", idIpressAtencion != null ? idIpressAtencion : ""
+            ));
+        } catch (Exception e) {
+            log.error("Error al actualizar IPRESS Atención: ", e);
+            return ResponseEntity.badRequest().body(Map.of("error", "Error: " + e.getMessage()));
         }
     }
 

@@ -114,6 +114,15 @@ public class GestionPacienteDTO {
     @JsonProperty("motivoLlamadoBolsa")
     private String motivoLlamadoBolsa;  // Razón/motivo de la llamada o atención
 
+    // 🏥 v1.105.0: IPRESS de Atención (diferente a la IPRESS de adscripción del asegurado)
+    // Proviene de dim_solicitud_bolsa.id_ipress_atencion → dim_ipress.desc_ipress
+    @JsonProperty("ipressAtencion")
+    private String ipressAtencion;
+
+    // 🏷️ CENACRON (enriquecido via JOIN con paciente_estrategia)
+    @JsonProperty("esCenacron")
+    private Boolean esCenacron;
+
     /**
      * Calcula la edad a partir de la fecha de nacimiento
      */

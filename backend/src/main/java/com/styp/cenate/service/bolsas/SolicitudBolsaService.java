@@ -83,6 +83,7 @@ public interface SolicitudBolsaService {
             String fechaInicio,
             String fechaFin,
             String condicionMedica,
+            Long gestoraId,
             org.springframework.data.domain.Pageable pageable);
 
     /**
@@ -167,6 +168,13 @@ public interface SolicitudBolsaService {
      * @throws ResourceNotFoundException si solicitud no existe
      */
     void actualizarTelefonos(Long idSolicitud, String telefonoPrincipal, String telefonoAlterno);
+
+    /**
+     * ✅ v1.105.0: Actualiza la IPRESS de Atención de una solicitud
+     * @param idSolicitud ID de la solicitud
+     * @param idIpressAtencion ID de la nueva IPRESS de atención (null para limpiar)
+     */
+    void actualizarIpressAtencion(Long idSolicitud, Long idIpressAtencion);
 
     /**
      * Obtiene solicitudes asignadas a la gestora actual (Mi Bandeja)

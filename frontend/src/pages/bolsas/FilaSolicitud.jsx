@@ -1,5 +1,5 @@
 import React from 'react';
-import { Phone, Users, UserPlus, Download, FileText, X, Calendar } from 'lucide-react';
+import { Phone, Users, UserPlus, Download, FileText, X, Calendar, Pencil } from 'lucide-react';
 
 /**
  * 🚀 v2.6.0 - Componente MEMORIZADO para cada fila de tabla
@@ -14,6 +14,7 @@ function FilaSolicitud({
   onAbrirAsignarGestora,
   onEliminarAsignacion,
   onAbrirEnviarRecordatorio,
+  onAbrirIpressAtencion,
   isProcessing,
   getEstadoBadge,
 }) {
@@ -118,9 +119,29 @@ function FilaSolicitud({
       <td className="px-3 py-3 text-sm text-gray-900 max-w-xs truncate" title={solicitud.ipress}>
         <span className="font-semibold text-blue-600">{solicitud.codigoIpress}</span> - {solicitud.ipress || 'N/A'}
       </td>
-      {/* IPRESS - ATENCIÓN (v1.15.0) */}
-      <td className="px-3 py-3 text-sm text-gray-900 max-w-xs truncate" title={solicitud.ipressAtencion}>
-        <span className="font-semibold text-purple-600">{solicitud.codIpressAtencion || 'N/A'}</span> - {solicitud.ipressAtencion || 'N/A'}
+      {/* IPRESS - ATENCIÓN (v1.105.0: editable por COORD. GESTION CITAS) */}
+      <td className="px-3 py-3 text-sm text-gray-900 max-w-xs">
+        <div className="flex items-center gap-2 group">
+          <div className="flex-1 truncate" title={solicitud.ipressAtencion}>
+            {solicitud.codIpressAtencion && solicitud.codIpressAtencion !== 'N/A' ? (
+              <>
+                <span className="font-semibold text-purple-600">{solicitud.codIpressAtencion}</span>
+                <span className="text-gray-700"> - {solicitud.ipressAtencion}</span>
+              </>
+            ) : (
+              <span className="text-gray-400 italic text-xs">Sin asignar</span>
+            )}
+          </div>
+          {onAbrirIpressAtencion && (
+            <button
+              onClick={() => onAbrirIpressAtencion(solicitud)}
+              className="p-1 rounded hover:bg-[#0A5BA9]/15 text-[#0A5BA9]/60 hover:text-[#0A5BA9] flex-shrink-0 transition-colors"
+              title="Editar IPRESS de Atención"
+            >
+              <Pencil className="w-3.5 h-3.5" />
+            </button>
+          )}
+        </div>
       </td>
       <td className="px-3 py-3 text-sm text-gray-900">{solicitud.red || 'Sin Red'}</td>
 
@@ -289,11 +310,11 @@ function FilaSolicitud({
 
 // ✨ Memorizar: solo re-renderizar si las props cambian
 export default React.memo(FilaSolicitud, (prevProps, nextProps) => {
-  // Comparación custom comparando por ID y valores en lugar de referencias
   return (
     prevProps.solicitud?.id === nextProps.solicitud?.id &&
     prevProps.isChecked === nextProps.isChecked &&
     prevProps.isProcessing === nextProps.isProcessing &&
-    prevProps.getEstadoBadge === nextProps.getEstadoBadge
+    prevProps.getEstadoBadge === nextProps.getEstadoBadge &&
+    prevProps.onAbrirIpressAtencion === nextProps.onAbrirIpressAtencion
   );
 });

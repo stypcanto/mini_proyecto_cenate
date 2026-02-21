@@ -56,6 +56,14 @@ public interface SolicitudBolsaEstadisticasService {
     List<EstadisticasPorIpressDTO> obtenerEstadisticasPorIpress();
 
     /**
+     * Obtiene estadísticas agrupadas por IPRESS de Atención (id_ipress_atencion)
+     * Solo incluye registros que tienen IPRESS de Atención asignada
+     *
+     * @return Lista de EstadisticasPorIpressDTO con nombreIpress y total
+     */
+    List<EstadisticasPorIpressDTO> obtenerEstadisticasPorIpressAtencion();
+
+    /**
      * Obtiene estadísticas agrupadas por tipo de cita
      * Tipos: PRESENCIAL, TELECONSULTA, VIDEOCONFERENCIA
      *

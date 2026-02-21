@@ -21,6 +21,7 @@ import com.styp.cenate.repository.RedRepository;
 import com.styp.cenate.repository.TipoBolsaRepository;
 import com.styp.cenate.repository.UsuarioRepository;
 import com.styp.cenate.repository.PersonalCntRepository;
+import com.styp.cenate.repository.PacienteEstrategiaRepository;
 import com.styp.cenate.exception.ResourceNotFoundException;
 import com.styp.cenate.exception.ValidationException;
 import lombok.RequiredArgsConstructor;
@@ -76,6 +77,7 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
     private final RedRepository redRepository;
     private final TipoBolsaRepository tipoBolsaRepository;
     private final UsuarioRepository usuarioRepository;
+    private final PacienteEstrategiaRepository pacienteEstrategiaRepository;
 
     @PersistenceContext
     private EntityManager entityManager;
@@ -2357,6 +2359,21 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
             telAlternoAnterior, solicitud.getPacienteTelefonoAlterno());
     }
 
+    @Override
+    @Transactional
+    public void actualizarIpressAtencion(Long idSolicitud, Long idIpressAtencion) {
+        log.info("🏥 Actualizando IPRESS Atención de solicitud {} → idIpress: {}", idSolicitud, idIpressAtencion);
+
+        SolicitudBolsa solicitud = solicitudRepository.findById(idSolicitud)
+            .orElseThrow(() -> new ResourceNotFoundException("Solicitud " + idSolicitud + " no encontrada"));
+
+        Long ipressAnterior = solicitud.getIdIpressAtencion();
+        solicitud.setIdIpressAtencion(idIpressAtencion);
+        solicitudRepository.save(solicitud);
+
+        log.info("✅ IPRESS Atención actualizada en solicitud {}. {} → {}", idSolicitud, ipressAnterior, idIpressAtencion);
+    }
+
     /**
      * ✅ NUEVA v2.2.0: Analiza el Excel y detecta DNI duplicados ANTES de procesar
      * Aplica estrategia KEEP_FIRST: mantiene primer DNI, descarta duplicados
@@ -2541,14 +2558,34 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
             List<SolicitudBolsaDTO> dtoList = solicitudes.stream()
                 .map(this::mapSolicitudBolsaToDTO)
                 .collect(Collectors.toList());
-            
+
             // LOG: Verificar dto mapeado
             if (!dtoList.isEmpty()) {
                 SolicitudBolsaDTO primerDto = dtoList.get(0);
-                log.info("   🔍 Primer DTO mapeado: idBolsa={}, descTipoBolsa={}", 
+                log.info("   🔍 Primer DTO mapeado: idBolsa={}, descTipoBolsa={}",
                     primerDto.getIdBolsa(), primerDto.getDescTipoBolsa());
             }
-            
+
+            // 5️⃣ ENRIQUECER CON FLAG CENACRON (consulta masiva para evitar N+1)
+            try {
+                List<String> todosLosDnis = dtoList.stream()
+                    .map(SolicitudBolsaDTO::getPacienteDni)
+                    .filter(dni -> dni != null && !dni.isBlank())
+                    .distinct()
+                    .collect(Collectors.toList());
+
+                if (!todosLosDnis.isEmpty()) {
+                    List<String> dnisCenacron = pacienteEstrategiaRepository
+                        .findDnisPertenecentesAEstrategia(todosLosDnis, "CENACRON");
+                    Set<String> setCenacron = new HashSet<>(dnisCenacron);
+                    log.info("   🏷️ CENACRON: {} pacientes identificados de {} DNIs consultados",
+                        setCenacron.size(), todosLosDnis.size());
+                    dtoList.forEach(dto -> dto.setEsCenacron(setCenacron.contains(dto.getPacienteDni())));
+                }
+            } catch (Exception ex) {
+                log.warn("⚠️ No se pudo enriquecer flag CENACRON: {}", ex.getMessage());
+            }
+
             return dtoList;
 
         } catch (ResourceNotFoundException e) {
@@ -2770,6 +2807,7 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
             String fechaInicio,
             String fechaFin,
             String condicionMedica,
+            Long gestoraId,
             org.springframework.data.domain.Pageable pageable) {
         try {
             log.info("🔍 Listando solicitudes con filtros - Bolsa: {}, Macro: {}, Red: {}, IPRESS: {}, Especialidad: {}, Estado: {}, IPRESSAtencion: {}, TipoCita: {}, Asignación: {}, Búsqueda: {}, FechaInicio: {}, FechaFin: {}",
@@ -2793,11 +2831,11 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
             // Llamar al repository con filtros
             List<Object[]> resultados = solicitudRepository.findAllWithFiltersAndPagination(
                     bolsaNombreFinal, macrorFinal, redFinal, ipressFinal, especialidadFinal,
-                    estadoCod, ipressAtencionFinal, tipoCitaFinal, asignacionFinal, busquedaFinal, fechaInicioFinal, fechaFinFinal, condicionMedicaFinal, pageable);
+                    estadoCod, ipressAtencionFinal, tipoCitaFinal, asignacionFinal, busquedaFinal, fechaInicioFinal, fechaFinFinal, condicionMedicaFinal, gestoraId, pageable);
 
             long total = solicitudRepository.countWithFilters(
                     bolsaNombreFinal, macrorFinal, redFinal, ipressFinal, especialidadFinal,
-                    estadoCod, ipressAtencionFinal, tipoCitaFinal, asignacionFinal, busquedaFinal, fechaInicioFinal, fechaFinFinal, condicionMedicaFinal);
+                    estadoCod, ipressAtencionFinal, tipoCitaFinal, asignacionFinal, busquedaFinal, fechaInicioFinal, fechaFinFinal, condicionMedicaFinal, gestoraId);
 
             // Mapear a DTOs
             List<SolicitudBolsaDTO> dtos = resultados.stream()

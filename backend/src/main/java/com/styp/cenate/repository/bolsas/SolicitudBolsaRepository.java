@@ -267,6 +267,7 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
           AND (:condicionMedica IS NULL
                OR (:condicionMedica != 'Sin atención' AND COALESCE(TRIM(sb.condicion_medica), '') = :condicionMedica)
                OR (:condicionMedica = 'Sin atención' AND (sb.condicion_medica IS NULL OR TRIM(sb.condicion_medica) = '')))
+          AND (:gestoraId IS NULL OR sb.responsable_gestora_id = :gestoraId)
         ORDER BY CASE WHEN COALESCE(deg.cod_estado_cita, 'PENDIENTE_CITA') = 'PENDIENTE_CITA' THEN 0
                       WHEN COALESCE(deg.cod_estado_cita, 'PENDIENTE_CITA') = 'CITADO' THEN 1
                       ELSE 2 END, sb.fecha_solicitud DESC
@@ -286,6 +287,7 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
             @org.springframework.data.repository.query.Param("fechaInicio") String fechaInicio,
             @org.springframework.data.repository.query.Param("fechaFin") String fechaFin,
             @org.springframework.data.repository.query.Param("condicionMedica") String condicionMedica,
+            @org.springframework.data.repository.query.Param("gestoraId") Long gestoraId,
             org.springframework.data.domain.Pageable pageable);
 
     /**
@@ -323,6 +325,7 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
           AND (:condicionMedica IS NULL
                OR (:condicionMedica != 'Sin atención' AND COALESCE(TRIM(sb.condicion_medica), '') = :condicionMedica)
                OR (:condicionMedica = 'Sin atención' AND (sb.condicion_medica IS NULL OR TRIM(sb.condicion_medica) = '')))
+          AND (:gestoraId IS NULL OR sb.responsable_gestora_id = :gestoraId)
         """, nativeQuery = true)
     long countWithFilters(
             @org.springframework.data.repository.query.Param("bolsaNombre") String bolsaNombre,
@@ -337,8 +340,8 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
             @org.springframework.data.repository.query.Param("busqueda") String busqueda,
             @org.springframework.data.repository.query.Param("fechaInicio") String fechaInicio,
             @org.springframework.data.repository.query.Param("fechaFin") String fechaFin,
-            @org.springframework.data.repository.query.Param("condicionMedica") String condicionMedica)
-            ;
+            @org.springframework.data.repository.query.Param("condicionMedica") String condicionMedica,
+            @org.springframework.data.repository.query.Param("gestoraId") Long gestoraId);
 
     /**
      * Cuenta total de solicitudes activas (para calcular páginas totales)
@@ -517,6 +520,22 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
         ORDER BY total DESC
         """, nativeQuery = true)
     List<Map<String, Object>> estadisticasPorIpress();
+
+    /**
+     * Estadísticas por IPRESS de Atención (id_ipress_atencion)
+     * Agrupa por la IPRESS donde se atenderá al paciente
+     */
+    @Query(value = """
+        SELECT
+            di.desc_ipress AS nombre_ipress,
+            COUNT(sb.id_solicitud) AS total
+        FROM dim_solicitud_bolsa sb
+        LEFT JOIN dim_ipress di ON sb.id_ipress_atencion = di.id_ipress
+        WHERE sb.activo = true AND sb.id_ipress_atencion IS NOT NULL
+        GROUP BY di.desc_ipress
+        ORDER BY total DESC
+        """, nativeQuery = true)
+    List<Map<String, Object>> estadisticasPorIpressAtencion();
 
     /**
      * 4️⃣ Estadísticas por tipo de cita

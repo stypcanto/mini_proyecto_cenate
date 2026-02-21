@@ -186,6 +186,17 @@ public class SolicitudBolsaEstadisticasController {
         return ResponseEntity.ok(datos);
     }
 
+    /**
+     * Estadísticas por IPRESS de Atención
+     * GET /api/bolsas/estadisticas/por-ipress-atencion
+     */
+    @GetMapping("/por-ipress-atencion")
+    public ResponseEntity<List<EstadisticasPorIpressDTO>> obtenerEstadisticasPorIpressAtencion() {
+        log.info("GET /api/bolsas/estadisticas/por-ipress-atencion");
+        List<EstadisticasPorIpressDTO> datos = estadisticasService.obtenerEstadisticasPorIpressAtencion();
+        return ResponseEntity.ok(datos);
+    }
+
     // ========================================================================
     // 📞 POR TIPO DE CITA
     // ========================================================================

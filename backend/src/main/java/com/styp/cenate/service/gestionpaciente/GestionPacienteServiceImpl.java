@@ -16,6 +16,7 @@ import com.styp.cenate.repository.IpressRepository;
 import com.styp.cenate.repository.PersonalCntRepository;
 import com.styp.cenate.repository.TeleECGImagenRepository;
 import com.styp.cenate.repository.UsuarioRepository;
+import com.styp.cenate.repository.PacienteEstrategiaRepository;
 import com.styp.cenate.repository.bolsas.SolicitudBolsaRepository;
 import com.styp.cenate.repository.chatbot.SolicitudCitaRepository;
 import com.styp.cenate.service.trazabilidad.TrazabilidadClinicaService;
@@ -59,6 +60,7 @@ public class GestionPacienteServiceImpl implements IGestionPacienteService {
     private final TeleECGImagenRepository teleECGImagenRepository;
     private final JdbcTemplate jdbcTemplate;  // ✅ v1.78.0: Para consultas directas de especialidad
     private final TrazabilidadClinicaService trazabilidadClinicaService;  // ✅ v1.81.0: Para registrar en historial centralizado
+    private final PacienteEstrategiaRepository pacienteEstrategiaRepository;
 
     @Override
     @Transactional
@@ -472,9 +474,29 @@ public class GestionPacienteServiceImpl implements IGestionPacienteService {
             // Si vinieron del primer query (SolicitudBolsa), retornar esos registros como DTOs
             if (!solicitudesBolsa.isEmpty()) {
                 log.info("✅ Retornando pacientes desde solicitudesBolsa (dim_solicitud_bolsa)");
-                return solicitudesBolsa.stream()
+                List<GestionPacienteDTO> dtoList = solicitudesBolsa.stream()
                     .map(this::bolsaToGestionDTO)
                     .collect(Collectors.toList());
+
+                // 🏷️ Enriquecer con flag CENACRON (consulta masiva para evitar N+1)
+                try {
+                    List<String> todosLosDnis = dtoList.stream()
+                        .map(GestionPacienteDTO::getNumDoc)
+                        .filter(dni -> dni != null && !dni.isBlank())
+                        .distinct()
+                        .collect(Collectors.toList());
+                    if (!todosLosDnis.isEmpty()) {
+                        List<String> dnisCenacron = pacienteEstrategiaRepository
+                            .findDnisPertenecentesAEstrategia(todosLosDnis, "CENACRON");
+                        Set<String> setCenacron = new java.util.HashSet<>(dnisCenacron);
+                        log.info("   🏷️ CENACRON: {} pacientes identificados de {} DNIs", setCenacron.size(), todosLosDnis.size());
+                        dtoList.forEach(dto -> dto.setEsCenacron(setCenacron.contains(dto.getNumDoc())));
+                    }
+                } catch (Exception ex) {
+                    log.warn("⚠️ No se pudo enriquecer flag CENACRON en MisPacientes: {}", ex.getMessage());
+                }
+
+                return dtoList;
             }
 
             // Si vinieron del fallback (SolicitudCita), buscar en GestionPaciente
@@ -703,11 +725,24 @@ public class GestionPacienteServiceImpl implements IGestionPacienteService {
             log.warn("Error enriqueciendo datos: {}", e.getMessage());
         }
 
+        // 🏥 v1.105.0: Obtener nombre de IPRESS de Atención desde id_ipress_atencion
+        String ipressAtencionNombre = null;
+        try {
+            if (bolsa.getIdIpressAtencion() != null) {
+                ipressAtencionNombre = ipressRepository.findById(bolsa.getIdIpressAtencion())
+                    .map(ipress -> ipress.getDescIpress())
+                    .orElse(null);
+            }
+        } catch (Exception e) {
+            log.warn("No se pudo obtener IPRESS de atención ID {}: {}", bolsa.getIdIpressAtencion(), e.getMessage());
+        }
+
         Map<String, Object> result = new HashMap<>();
         result.put("ipressNombre", ipressNombre);
         result.put("enfermedadesCronicas", enfermedadesCronicas);
         result.put("telefonoPrincipal", telefonoPrincipal);
         result.put("telefonoAlterno", telefonoAlterno);
+        result.put("ipressAtencionNombre", ipressAtencionNombre);
         return result;
     }
 
@@ -745,6 +780,7 @@ public class GestionPacienteServiceImpl implements IGestionPacienteService {
         String[] enfermedadesCronicas = (String[]) enriquecimiento.get("enfermedadesCronicas");
         String telefonoEnriquecido = (String) enriquecimiento.get("telefonoPrincipal");
         String telefonoAlternoEnriquecido = (String) enriquecimiento.get("telefonoAlterno");
+        String ipressAtencionNombre = (String) enriquecimiento.get("ipressAtencionNombre");
 
         // ✅ v1.64.0: Aplicar valores por defecto para Bolsa 107
         String condicion = bolsa.getCondicionMedica() != null ? bolsa.getCondicionMedica() : "Pendiente";
@@ -796,6 +832,7 @@ public class GestionPacienteServiceImpl implements IGestionPacienteService {
             .esUrgente(esUrgente)  // ✅ v1.76.0: Flag de urgencia del ECG más reciente
             .especialidadMedico(especialidadMedico)  // ✅ v1.76.0: Especialidad del médico asignado
             .motivoLlamadoBolsa(bolsa.getMotivoLlamadoBolsa())  // ✅ v1.104.0: Motivo de llamada o atención
+            .ipressAtencion(ipressAtencionNombre)  // ✅ v1.105.0: IPRESS donde se atenderá al paciente
             .build();
     }
 
