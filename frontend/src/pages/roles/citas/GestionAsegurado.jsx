@@ -3046,9 +3046,9 @@ CENATE de Essalud`;
                               <select
                                 value={medicoSeleccionado}
                                 onChange={(e) => setMedicoSeleccionado(e.target.value)}
-                                disabled={!especialidadSeleccionada || medicosDisponibles.length === 0}
+                                disabled={!especialidadSeleccionada}
                                 className={`w-full px-3 py-2.5 border-2 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-blue-600 text-sm font-medium transition-all ${
-                                  !especialidadSeleccionada || medicosDisponibles.length === 0
+                                  !especialidadSeleccionada
                                     ? "bg-gray-100 border-gray-300 text-gray-500 cursor-not-allowed"
                                     : medicoSeleccionado
                                     ? "bg-white border-blue-500 text-blue-900"
@@ -3059,7 +3059,7 @@ CENATE de Essalud`;
                                   {!especialidadSeleccionada
                                     ? "⚠️ Primero selecciona una especialidad / servicio"
                                     : medicosDisponibles.length === 0
-                                    ? "⚠️ No hay profesionales disponibles"
+                                    ? "Sin profesional asignado (se asignará después)"
                                     : "Seleccionar profesional (opcional)"}
                                 </option>
                                 {medicosDisponibles.map((medico) => (
