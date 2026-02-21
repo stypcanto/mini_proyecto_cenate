@@ -65,6 +65,12 @@ public class TrazabilidadClinicaService {
         log.info("📋 [v1.81.0] Registrando atención en historial - DNI: {}, Origen: {}",
                  request.getDniAsegurado(), request.getOrigenModulo());
 
+        // ✅ v1.103.7: id_ipress es FK NOT NULL — si es null no se puede registrar
+        if (request.getIdIpress() == null) {
+            log.warn("⚠️ [v1.103.7] Omitiendo registro historial: id_ipress es null para DNI: {}", request.getDniAsegurado());
+            return null;
+        }
+
         try {
             // 1. Obtener asegurado por DNI
             Asegurado asegurado = aseguradoRepository.findByDocPaciente(request.getDniAsegurado())

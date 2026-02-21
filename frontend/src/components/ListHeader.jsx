@@ -147,30 +147,30 @@ export default function ListHeader({
 
   return (
     <div className="p-3 border-b border-gray-200 bg-gradient-to-b from-gray-50 to-white">
-      <div className="flex items-center justify-between mb-2">
-        <h2 className="text-lg font-bold text-gray-800">{title}</h2>
-      </div>
-
-      {/* Búsqueda */}
-      <div className="mb-2">
-        <div className="relative">
-          <Search size={18} className="absolute left-3 top-2.5 text-gray-400" />
-          <input
-            type="text"
-            placeholder={searchPlaceholder}
-            value={searchValue}
-            onChange={onSearchChange}
-            className="w-full pl-10 pr-4 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-xs font-medium transition-all"
-          />
+      {title && (
+        <div className="flex items-center justify-between mb-2">
+          <h2 className="text-lg font-bold text-gray-800">{title}</h2>
         </div>
-      </div>
+      )}
 
       {/* Filtros */}
       <div className="space-y-1.5">
-        {/* Primera fila: Bolsas + Botón Limpiar */}
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-2">
-          <div className="md:col-span-4 relative">
-            <label className="block text-xs font-semibold text-gray-600 mb-1">{firstFilter?.name}</label>
+        {/* Primera fila: Búsqueda + Primer filtro (Bolsas) + Botón Limpiar */}
+        <div className="flex items-center gap-2">
+          {/* Buscador */}
+          <div className="relative flex-shrink-0 w-48">
+            <Search size={18} className="absolute left-3 top-2.5 text-gray-400" />
+            <input
+              type="text"
+              placeholder={searchPlaceholder}
+              value={searchValue}
+              onChange={onSearchChange}
+              className="w-full pl-10 pr-4 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-xs font-medium transition-all"
+            />
+          </div>
+
+          {/* Primer filtro */}
+          <div className="flex-1 min-w-0">
             {isMultiSelect ? (
               <MultiSelectDropdown filter={firstFilter} />
             ) : (
@@ -192,10 +192,10 @@ export default function ListHeader({
           </div>
 
           {/* Botón Limpiar Filtros */}
-          <div className="flex items-end">
+          <div className="flex-shrink-0">
             <button
               onClick={onClearFilters}
-              className="w-full px-3 py-2 bg-gray-500 hover:bg-gray-600 text-white rounded-lg font-medium flex items-center justify-center gap-1.5 transition-all shadow-md hover:shadow-lg text-xs whitespace-nowrap"
+              className="px-3 py-2 bg-gray-500 hover:bg-gray-600 text-white rounded-lg font-medium flex items-center justify-center gap-1.5 transition-all shadow-md hover:shadow-lg text-xs whitespace-nowrap"
             >
               <RotateCcw size={16} />
               Limpiar
@@ -203,7 +203,7 @@ export default function ListHeader({
           </div>
         </div>
 
-        {/* Segunda fila: Macrorregión | Redes | IPRESS | Especialidades (4 columnas) */}
+        {/* Segunda fila: IPRESS | Estado | Tipo de Cita | Especialidades (4 columnas) */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-2">
           {filters.slice(1, 5).map((filter, index) => (
             <div key={index + 1} className="relative">
@@ -228,7 +228,7 @@ export default function ListHeader({
 
         {/* Tercera fila: Tipo de Cita | Estado | Filtros adicionales */}
         {filters.length > 5 && (
-          <div className={`grid grid-cols-1 ${filters.length === 6 ? 'md:grid-cols-2' : 'md:grid-cols-3'} gap-2`}>
+          <div className={`grid grid-cols-1 ${filters.slice(5).length <= 2 ? 'md:grid-cols-2' : 'md:grid-cols-3'} gap-2`}>
             {filters.slice(5).map((filter, index) => (
               <div key={index + 5} className="relative">
                 <label className="block text-xs font-semibold text-gray-600 mb-1">{filter.name}</label>

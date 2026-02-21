@@ -332,7 +332,7 @@ export default function Solicitudes() {
     });
     setCurrentPage(1); // Reset a página 1
     cargarSolicitudesConFiltros(); // Cargar CON FILTROS desde el backend
-  }, [filtroBolsa, filtroMacrorregion, filtroRed, filtroIpress, filtroIpressAtencion, filtroEspecialidad, filtroEstado, filtroTipoCita, filtroAsignacion, filtroGestoraId, searchTerm, filtroFechaInicio, filtroFechaFin]);
+  }, [filtroBolsa, filtroMacrorregion, filtroRed, filtroIpress, filtroIpressAtencion, filtroEspecialidad, filtroEstado, filtroTipoCita, filtroAsignacion, filtroGestoraId, searchTerm, filtroFechaInicio, filtroFechaFin, registrosPorPagina]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ============================================================================
   // 📦 EFFECT 4: Cargar SIGUIENTE PÁGINA cuando cambia currentPage (v2.5.2 - Server-side pagination)
@@ -345,13 +345,6 @@ export default function Solicitudes() {
       cargarSolicitudesPaginadas(pageIndex);
     }
   }, [currentPage, catalogosCargados]);
-
-  // ✅ v1.76.0: Recargar cuando cambia registrosPorPagina
-  useEffect(() => {
-    if (!catalogosCargados) return;
-    setCurrentPage(1);
-    cargarSolicitudesConFiltros();
-  }, [registrosPorPagina]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ============================================================================
   // 📦 EFFECT 5: Recargar gestoras cuando se abre el modal

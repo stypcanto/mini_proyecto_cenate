@@ -203,6 +203,24 @@ const gestionPacientesService = {
         }
     },
 
+    obtenerControlesEnfermeria: async (dni) => {
+        try {
+            return await apiClient.get(`${BASE_ENDPOINT}/paciente/${dni}/controles-enfermeria`, true);
+        } catch (error) {
+            console.warn(`Error obteniendo controles enfermería para DNI ${dni}:`, error);
+            return [];
+        }
+    },
+
+    obtenerInfoAsegurado: async (dni) => {
+        try {
+            return await apiClient.get(`/asegurados/por-dni/${dni}`, true);
+        } catch (error) {
+            console.warn(`Error obteniendo info asegurado DNI ${dni}:`, error);
+            return {};
+        }
+    },
+
     // ========================================================================
     // Generar enlace de WhatsApp
     // ========================================================================

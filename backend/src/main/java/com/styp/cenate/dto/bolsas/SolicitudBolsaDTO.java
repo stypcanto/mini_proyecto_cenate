@@ -196,4 +196,8 @@ public class SolicitudBolsaDTO {
     // 🔔 AUDITORÍA
     @JsonProperty("activo")
     private Boolean activo;
+
+    // 🏷️ CENACRON (enriquecido via JOIN con paciente_estrategia)
+    @JsonProperty("es_cenacron")
+    private Boolean esCenacron;
 }

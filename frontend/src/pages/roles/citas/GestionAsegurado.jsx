@@ -75,6 +75,10 @@ export default function GestionAsegurado() {
   const [lastRefreshTime, setLastRefreshTime] = useState(new Date());
   const [estadosDisponibles, setEstadosDisponibles] = useState([]);
 
+  // 🏷️ CENACRON: ID de la estrategia y modal de registro
+  const [cenacronEstrategiaId, setCenacronEstrategiaId] = useState(null);
+  const [modalCenacron, setModalCenacron] = useState({ visible: false, paciente: null, guardando: false });
+
   // ✅ v1.109.10: Paginación - 100 registros por página
   const REGISTROS_POR_PAGINA = 100;
   const [currentPage, setCurrentPage] = useState(1);
@@ -422,7 +426,7 @@ export default function GestionAsegurado() {
           especialidad: solicitud.especialidad || "-",
           idServicio: solicitud.id_servicio || solicitud.idServicio || null, // ID numérico del servicio
           tipoCita: solicitud.tipo_cita || solicitud.tipoCita || "-",
-          descIpress: solicitud.desc_ipress || solicitud.descIpress || "-",
+          descIpress: solicitud.desc_ipress_atencion || solicitud.descIpressAtencion || solicitud.desc_ipress || solicitud.descIpress || "-",
           descEstadoCita: descEstadoFinal,
           codigoEstado: codigoEstado, // Guardar también el código para comparaciones
           estado: solicitud.estado || null, // ✅ Campo estado de la bolsa (v1.70.0)
@@ -444,6 +448,8 @@ export default function GestionAsegurado() {
           tiempoInicioSintomas: solicitud.tiempo_inicio_sintomas || solicitud.tiempoInicioSintomas || null,
           consentimientoInformado: solicitud.consentimiento_informado || solicitud.consentimientoInformado || null,
           prioridad: solicitud.prioridad || null,
+          esCenacron: solicitud.es_cenacron === true || solicitud.esCenacron === true,
+          pacienteId: solicitud.paciente_id || solicitud.pacienteId || null,
         };
       });
 
@@ -513,6 +519,36 @@ export default function GestionAsegurado() {
   };
 
   // Abrir modal para actualizar teléfono
+  // 🏷️ CENACRON: Registrar paciente en el programa
+  const confirmarRegistroCenacron = async () => {
+    const { paciente } = modalCenacron;
+    if (!paciente || !cenacronEstrategiaId) return;
+    const pkAsegurado = paciente.pacienteId || paciente.pacienteDni;
+    if (!pkAsegurado) { toast.error("No se encontró el ID del paciente"); return; }
+
+    setModalCenacron(prev => ({ ...prev, guardando: true }));
+    try {
+      const response = await fetch(`${API_BASE}/paciente-estrategia`, {
+        method: "POST",
+        headers: getHeaders(),
+        body: JSON.stringify({ pkAsegurado, idEstrategia: cenacronEstrategiaId }),
+      });
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({}));
+        throw new Error(err.message || `Error ${response.status}`);
+      }
+      // Actualizar badge en tabla localmente
+      setPacientesAsignados(prev =>
+        prev.map(p => p.id === paciente.id ? { ...p, esCenacron: true } : p)
+      );
+      toast.success(`✅ ${paciente.pacienteNombre} registrado en CENACRON`);
+      setModalCenacron({ visible: false, paciente: null, guardando: false });
+    } catch (err) {
+      toast.error(`Error al registrar en CENACRON: ${err.message}`);
+      setModalCenacron(prev => ({ ...prev, guardando: false }));
+    }
+  };
+
   const abrirModalTelefono = (paciente) => {
     setModalTelefono({
       visible: true,
@@ -1402,6 +1438,18 @@ CENATE de Essalud`;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filtroFechaAsignacionInicio, filtroFechaAsignacionFin]);
 
+  // 🏷️ Cargar ID de estrategia CENACRON al montar (una sola vez)
+  useEffect(() => {
+    fetch(`${API_BASE}/admin/estrategias-institucionales/activas`)
+      .then(r => r.ok ? r.json() : [])
+      .then(lista => {
+        const cenacron = lista.find(e => e.codEstrategia === "CENACRON" || e.sigla === "CENACRON");
+        if (cenacron) setCenacronEstrategiaId(cenacron.idEstrategia);
+      })
+      .catch(() => {});
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // Debounce search - actualizar debouncedSearch después de 300ms sin escribir
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -2222,6 +2270,11 @@ CENATE de Essalud`;
                         {/* PACIENTE */}
                         <td className="px-3 py-2 text-sm min-w-max">
                           <div className="font-bold text-gray-900 text-base whitespace-nowrap">{paciente.pacienteNombre}</div>
+                          {paciente.esCenacron && (
+                            <span className="inline-flex items-center gap-1 mt-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-purple-100 text-purple-700 border border-purple-300">
+                              ♾ CENACRON
+                            </span>
+                          )}
                           <div className="text-xs text-gray-500 mt-1">
                             <span className="inline-block">{paciente.pacienteSexo || "N/D"}</span>
                             <span className="mx-1">•</span>
@@ -2634,6 +2687,16 @@ CENATE de Essalud`;
                                   <MessageCircle className="w-4 h-4" strokeWidth={2} />
                                 </button>
                               )}
+                              {/* 🏷️ Registrar en CENACRON (solo si no pertenece aún) */}
+                              {!paciente.esCenacron && cenacronEstrategiaId && (
+                                <button
+                                  onClick={() => setModalCenacron({ visible: true, paciente, guardando: false })}
+                                  className="bg-purple-100 hover:bg-purple-200 text-purple-700 border border-purple-300 p-2 rounded transition-colors"
+                                  title="Registrar en programa CENACRON"
+                                >
+                                  <span className="text-xs font-bold leading-none">♾</span>
+                                </button>
+                              )}
                             </div>
                           )}
                         </td>
@@ -2717,6 +2780,63 @@ CENATE de Essalud`;
           </div>
         )}
       </div>
+
+      {/* 🏷️ Modal Registrar en CENACRON */}
+      {modalCenacron.visible && modalCenacron.paciente && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-sm w-full">
+            {/* Header */}
+            <div className="bg-gradient-to-r from-purple-600 to-purple-800 rounded-t-2xl px-6 py-4 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className="text-2xl">♾</span>
+                <h3 className="text-white font-bold text-base">Registrar en CENACRON</h3>
+              </div>
+              <button
+                onClick={() => setModalCenacron({ visible: false, paciente: null, guardando: false })}
+                className="text-white/70 hover:text-white transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            {/* Body */}
+            <div className="px-6 py-5">
+              <p className="text-sm text-gray-600 mb-4">
+                ¿Confirma el registro del siguiente paciente en el programa <strong className="text-purple-700">CENACRON</strong>?
+              </p>
+              <div className="bg-purple-50 border border-purple-200 rounded-xl p-4 mb-5">
+                <p className="font-bold text-gray-900 text-base leading-tight">{modalCenacron.paciente.pacienteNombre}</p>
+                <p className="text-sm text-gray-500 mt-1">DNI: {modalCenacron.paciente.pacienteDni}</p>
+              </div>
+              <p className="text-xs text-gray-400 mb-5">
+                Una vez registrado, el badge CENACRON aparecerá en la tabla y todos los profesionales podrán identificarlo.
+              </p>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setModalCenacron({ visible: false, paciente: null, guardando: false })}
+                  disabled={modalCenacron.guardando}
+                  className="flex-1 py-2.5 rounded-xl border border-gray-300 text-gray-700 font-semibold text-sm hover:bg-gray-50 transition-colors disabled:opacity-50"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={confirmarRegistroCenacron}
+                  disabled={modalCenacron.guardando}
+                  className="flex-1 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-sm transition-colors disabled:opacity-60 flex items-center justify-center gap-2"
+                >
+                  {modalCenacron.guardando ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      Registrando...
+                    </>
+                  ) : (
+                    <>♾ Confirmar registro</>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Modal Actualizar Teléfono */}
       {modalTelefono.visible && (

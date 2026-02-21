@@ -151,6 +151,17 @@ public interface AtencionClinicaRepository extends JpaRepository<AtencionClinica
         boolean existsByPkAsegurado(String pkAsegurado);
 
         /**
+         * Buscar controles de enfermería (id_tipo_atencion = 5) de un asegurado
+         * Ordenados por fecha_atencion descendente (más reciente primero)
+         *
+         * @param pkAsegurado    DNI del asegurado
+         * @param idTipoAtencion 5L = ENFERMERÍA
+         * @return Lista de atenciones de enfermería
+         */
+        List<AtencionClinica> findByPkAseguradoAndIdTipoAtencionOrderByFechaAtencionDesc(
+                        String pkAsegurado, Long idTipoAtencion);
+
+        /**
          * Obtener la atención anterior más reciente de un paciente antes de una fecha
          * específica
          * Útil para comparaciones y análisis de tendencias

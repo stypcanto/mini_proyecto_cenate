@@ -67,7 +67,7 @@ public class PacienteEstrategiaController {
      * POST /api/paciente-estrategia
      */
     @PostMapping
-    @PreAuthorize("hasAnyRole('MEDICO', 'ENFERMERIA', 'COORDINADOR', 'ADMIN', 'SUPERADMIN')")
+    @PreAuthorize("hasAnyRole('MEDICO', 'ENFERMERIA', 'COORDINADOR', 'ADMIN', 'SUPERADMIN') or hasAnyAuthority('ROLE_COORD. GESTION CITAS', 'ROLE_COORDINADOR GESTION CITAS')")
     @Operation(summary = "Asignar estrategia a paciente",
             description = "Asigna una estrategia a un paciente. Solo permite una asignación ACTIVA por estrategia.")
     public ResponseEntity<Map<String, Object>> asignarEstrategia(

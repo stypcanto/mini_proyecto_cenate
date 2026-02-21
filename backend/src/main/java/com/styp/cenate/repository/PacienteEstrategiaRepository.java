@@ -178,4 +178,22 @@ public interface PacienteEstrategiaRepository extends JpaRepository<PacienteEstr
             @Param("estado") String estado,
             Pageable pageable
     );
+
+    /**
+     * Obtiene los DNIs de pacientes que pertenecen ACTIVAMENTE a una estrategia específica,
+     * dado un conjunto de DNIs a verificar (consulta masiva para evitar N+1 queries).
+     * Busca por SIGLA (ej: "CENACRON") ya que cod_estrategia es "EST-001", "EST-002", etc.
+     *
+     * @param pkAseguradoList Lista de DNIs/pk_asegurado de pacientes a verificar
+     * @param sigla           Sigla de la estrategia (ej: "CENACRON", "TELECAM")
+     * @return Lista de pk_asegurado que pertenecen activamente a la estrategia
+     */
+    @Query("SELECT pe.pkAsegurado FROM PacienteEstrategia pe " +
+           "WHERE pe.pkAsegurado IN :pkAseguradoList " +
+           "AND pe.estrategia.sigla = :sigla " +
+           "AND pe.estado = 'ACTIVO'")
+    List<String> findDnisPertenecentesAEstrategia(
+            @Param("pkAseguradoList") List<String> pkAseguradoList,
+            @Param("sigla") String sigla
+    );
 }

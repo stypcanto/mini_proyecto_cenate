@@ -5,6 +5,10 @@ import com.styp.cenate.dto.AtenderPacienteRequest;
 import com.styp.cenate.dto.EspecialidadSelectDTO;
 import com.styp.cenate.dto.MedicoTeleurgenciasDTO;
 import com.styp.cenate.dto.teleekgs.TeleECGImagenDTO;
+import com.styp.cenate.model.AtencionClinica;
+import com.styp.cenate.model.Asegurado;
+import com.styp.cenate.repository.AtencionClinicaRepository;
+import com.styp.cenate.repository.AseguradoRepository;
 import com.styp.cenate.service.gestionpaciente.IGestionPacienteService;
 import com.styp.cenate.service.gestionpaciente.AtenderPacienteService;
 import com.styp.cenate.service.teleekgs.TeleECGService;
@@ -40,6 +44,8 @@ public class GestionPacienteController {
     private final DimServicioEssiRepository servicioEssiRepository;
     private final AtenderPacienteValidator atenderPacienteValidator;
     private final TeleECGService teleECGService;
+    private final AtencionClinicaRepository atencionClinicaRepository;
+    private final AseguradoRepository aseguradoRepository;
 
     @PostConstruct
     public void init() {
@@ -445,6 +451,42 @@ public class GestionPacienteController {
                 "error", "Error al actualizar: " + e.getMessage(),
                 "timestamp", System.currentTimeMillis()
             ));
+        }
+    }
+
+    // ✅ v1.78.3: Historial de controles de enfermería por DNI
+    @GetMapping("/paciente/{dni}/controles-enfermeria")
+    public ResponseEntity<List<Map<String, Object>>> obtenerControlesEnfermeria(@PathVariable String dni) {
+        try {
+            log.info("GET /api/gestion-pacientes/paciente/{}/controles-enfermeria", dni);
+            // ✅ v1.103.7: pk_asegurado es UUID — resolver desde DNI antes de consultar
+            String pkAsegurado = aseguradoRepository.findByDocPaciente(dni)
+                    .map(Asegurado::getPkAsegurado)
+                    .orElse(dni); // fallback a DNI para registros legacy
+            List<AtencionClinica> controles = atencionClinicaRepository
+                    .findByPkAseguradoAndIdTipoAtencionOrderByFechaAtencionDesc(pkAsegurado, 5L);
+
+            List<Map<String, Object>> resultado = controles.stream().map(a -> {
+                Map<String, Object> item = new java.util.LinkedHashMap<>();
+                item.put("idAtencion", a.getIdAtencion());
+                item.put("fechaAtencion", a.getFechaAtencion());
+                item.put("presionArterial", a.getPresionArterial());
+                item.put("glucosa", a.getGlucosa());
+                item.put("pesoKg", a.getPesoKg());
+                item.put("tallaCm", a.getTallaCm());
+                item.put("imc", a.getImc());
+                item.put("controlEnfermeria", a.getControlEnfermeria());
+                item.put("adherenciaMorisky", a.getAdherenciaMorisky());
+                item.put("nivelRiesgo", a.getNivelRiesgo());
+                item.put("controlado", a.getControlado());
+                item.put("observaciones", a.getObservacionesGenerales());
+                return item;
+            }).toList();
+
+            return ResponseEntity.ok(resultado);
+        } catch (Exception e) {
+            log.error("❌ Error obteniendo controles enfermería para DNI {}: {}", dni, e.getMessage());
+            return ResponseEntity.ok(List.of());
         }
     }
 

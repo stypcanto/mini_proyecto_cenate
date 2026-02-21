@@ -27,4 +27,5 @@ public class AseguradoDTO {
     private String nombreIpress;  // Nombre de la IPRESS desde dim_ipress
     private String nombreRed;  // Nombre de la Red desde dim_red
     private String periodo;
+    private Boolean pacienteCronico; // ✅ Pertenece a CENACRON (paciente crónico)
 }

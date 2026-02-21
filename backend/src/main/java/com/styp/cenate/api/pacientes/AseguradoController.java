@@ -53,14 +53,21 @@ public class AseguradoController {
     @GetMapping
     public ResponseEntity<Map<String, Object>> getAsegurados(
             @RequestParam(name="page", defaultValue = "0") int page,
-            @RequestParam(name="size", defaultValue = "25") int size) {
-        
+            @RequestParam(name="size", defaultValue = "25") int size,
+            @RequestParam(required = false) Boolean cenacron) {
+
         try {
-            log.info("📊 Listando asegurados - Página: {}, Tamaño: {}", page, size);
-            
+            log.info("📊 Listando asegurados - Página: {}, Tamaño: {}, CENACRON: {}", page, size, cenacron);
+
+            StringBuilder whereClause = new StringBuilder();
+            List<Object> params = new ArrayList<>();
+            if (Boolean.TRUE.equals(cenacron)) {
+                whereClause.append(" WHERE a.paciente_cronico = true");
+            }
+
             // Consulta para obtener el total de registros
-            String countSql = "SELECT COUNT(*) FROM asegurados";
-            Integer totalElements = jdbcTemplate.queryForObject(countSql, Integer.class);
+            String countSql = "SELECT COUNT(*) FROM asegurados a LEFT JOIN dim_ipress di ON a.cas_adscripcion = di.cod_ipress" + whereClause;
+            Integer totalElements = jdbcTemplate.queryForObject(countSql, Integer.class, params.toArray());
             
             if (totalElements == null) {
                 totalElements = 0;
@@ -68,10 +75,10 @@ public class AseguradoController {
             
             // Calcular offset
             int offset = page * size;
-            
+
             // Consulta paginada con JOIN a dim_ipress y dim_red
             String sql = """
-                SELECT 
+                SELECT
                     a.pk_asegurado,
                     a.doc_paciente,
                     a.paciente,
@@ -82,17 +89,22 @@ public class AseguradoController {
                     a.tel_celular,
                     a.tipo_seguro,
                     a.cas_adscripcion,
+                    a.paciente_cronico,
                     di.desc_ipress as nombre_ipress,
                     dr.desc_red as nombre_red,
                     a.periodo
                 FROM asegurados a
                 LEFT JOIN dim_ipress di ON a.cas_adscripcion = di.cod_ipress
                 LEFT JOIN dim_red dr ON di.id_red = dr.id_red
+                """ + whereClause + """
                 ORDER BY a.doc_paciente
                 LIMIT ? OFFSET ?
             """;
-            
-            List<Map<String, Object>> asegurados = jdbcTemplate.queryForList(sql, size, offset);
+
+            List<Object> allParams = new ArrayList<>(params);
+            allParams.add(size);
+            allParams.add(offset);
+            List<Map<String, Object>> asegurados = jdbcTemplate.queryForList(sql, allParams.toArray());
             
             // Formatear los datos para camelCase que espera el frontend
             asegurados.forEach(asegurado -> {
@@ -100,21 +112,17 @@ public class AseguradoController {
                 asegurado.put("docPaciente", asegurado.get("doc_paciente"));
                 asegurado.put("paciente", asegurado.get("paciente"));
                 asegurado.put("fecnacimpaciente", asegurado.get("fecnacimpaciente"));
-                
-                // ✅ Calcular y agregar la edad
                 asegurado.put("edad", calcularEdad(asegurado.get("fecnacimpaciente")));
-                
                 asegurado.put("sexo", asegurado.get("sexo"));
                 asegurado.put("tipoPaciente", asegurado.get("tipo_paciente"));
                 asegurado.put("telFijo", asegurado.get("tel_fijo"));
                 asegurado.put("telCelular", asegurado.get("tel_celular"));
                 asegurado.put("tipoSeguro", asegurado.get("tipo_seguro"));
                 asegurado.put("casAdscripcion", asegurado.get("cas_adscripcion"));
+                asegurado.put("pacienteCronico", Boolean.TRUE.equals(asegurado.get("paciente_cronico")));
                 asegurado.put("nombreIpress", asegurado.get("nombre_ipress"));
                 asegurado.put("nombreRed", asegurado.get("nombre_red"));
                 asegurado.put("periodo", asegurado.get("periodo"));
-                
-                // Eliminar keys con snake_case
                 asegurado.remove("pk_asegurado");
                 asegurado.remove("doc_paciente");
                 asegurado.remove("tipo_paciente");
@@ -122,13 +130,14 @@ public class AseguradoController {
                 asegurado.remove("tel_celular");
                 asegurado.remove("tipo_seguro");
                 asegurado.remove("cas_adscripcion");
+                asegurado.remove("paciente_cronico");
                 asegurado.remove("nombre_ipress");
                 asegurado.remove("nombre_red");
             });
-            
+
             // Calcular el número total de páginas
             int totalPages = (int) Math.ceil((double) totalElements / size);
-            
+
             // Construir respuesta en formato Page de Spring
             Map<String, Object> response = new HashMap<>();
             response.put("content", asegurados);
@@ -140,7 +149,7 @@ public class AseguradoController {
             response.put("first", page == 0);
             response.put("last", page >= totalPages - 1);
             response.put("empty", asegurados.isEmpty());
-            
+
             log.info("✅ Devolviendo {} asegurados de un total de {}", asegurados.size(), totalElements);
             
             return ResponseEntity.ok(response);
@@ -228,27 +237,35 @@ public class AseguradoController {
             @RequestParam String q,
             @RequestParam(required = false) Integer idRed,
             @RequestParam(required = false) String codIpress,
+            @RequestParam(required = false) Boolean cenacron,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "25") int size) {
-        
+
         try {
-            log.info("🔍 Buscando asegurado por documento: '{}'", q);
-            
-            // Búsqueda exacta por número de documento (8 dígitos)
-            StringBuilder whereClause = new StringBuilder("WHERE a.doc_paciente = ?");
+            log.info("🔍 Buscando asegurado: '{}', CENACRON: {}", q, cenacron);
+
+            // Búsqueda por DNI o nombre (ILIKE para nombre parcial)
+            StringBuilder whereClause = new StringBuilder(
+                "WHERE (a.doc_paciente = ? OR UPPER(a.paciente) LIKE UPPER(?))");
             List<Object> params = new ArrayList<>();
             params.add(q.trim());
-            
+            params.add("%" + q.trim() + "%");
+
             // Filtro por Red
             if (idRed != null) {
                 whereClause.append(" AND di.id_red = ?");
                 params.add(idRed);
             }
-            
+
             // Filtro por IPRESS
             if (codIpress != null && !codIpress.trim().isEmpty()) {
                 whereClause.append(" AND a.cas_adscripcion = ?");
                 params.add(codIpress);
+            }
+
+            // Filtro CENACRON
+            if (Boolean.TRUE.equals(cenacron)) {
+                whereClause.append(" AND a.paciente_cronico = true");
             }
             
             // Consulta para obtener el total de registros
@@ -264,7 +281,7 @@ public class AseguradoController {
             
             // Consulta paginada con JOIN a dim_ipress
             String sql = """
-                SELECT 
+                SELECT
                     a.pk_asegurado,
                     a.doc_paciente,
                     a.paciente,
@@ -275,6 +292,7 @@ public class AseguradoController {
                     a.tel_celular,
                     a.tipo_seguro,
                     a.cas_adscripcion,
+                    a.paciente_cronico,
                     di.desc_ipress as nombre_ipress,
                     dr.desc_red as nombre_red,
                     a.periodo
@@ -299,21 +317,17 @@ public class AseguradoController {
                 asegurado.put("docPaciente", asegurado.get("doc_paciente"));
                 asegurado.put("paciente", asegurado.get("paciente"));
                 asegurado.put("fecnacimpaciente", asegurado.get("fecnacimpaciente"));
-                
-                // ✅ Calcular y agregar la edad
                 asegurado.put("edad", calcularEdad(asegurado.get("fecnacimpaciente")));
-                
                 asegurado.put("sexo", asegurado.get("sexo"));
                 asegurado.put("tipoPaciente", asegurado.get("tipo_paciente"));
                 asegurado.put("telFijo", asegurado.get("tel_fijo"));
                 asegurado.put("telCelular", asegurado.get("tel_celular"));
                 asegurado.put("tipoSeguro", asegurado.get("tipo_seguro"));
                 asegurado.put("casAdscripcion", asegurado.get("cas_adscripcion"));
+                asegurado.put("pacienteCronico", Boolean.TRUE.equals(asegurado.get("paciente_cronico")));
                 asegurado.put("nombreIpress", asegurado.get("nombre_ipress"));
                 asegurado.put("nombreRed", asegurado.get("nombre_red"));
                 asegurado.put("periodo", asegurado.get("periodo"));
-                
-                // Eliminar keys con snake_case
                 asegurado.remove("pk_asegurado");
                 asegurado.remove("doc_paciente");
                 asegurado.remove("tipo_paciente");
@@ -321,6 +335,7 @@ public class AseguradoController {
                 asegurado.remove("tel_celular");
                 asegurado.remove("tipo_seguro");
                 asegurado.remove("cas_adscripcion");
+                asegurado.remove("paciente_cronico");
                 asegurado.remove("nombre_ipress");
             });
             
@@ -377,6 +392,7 @@ public class AseguradoController {
                     a.correo_electronico,
                     a.tipo_seguro,
                     a.cas_adscripcion,
+                    a.paciente_cronico,
                     di.desc_ipress as nombre_ipress,
                     di.direc_ipress as direccion_ipress,
                     dt.desc_tip_ipress as tipo_ipress,
@@ -421,6 +437,7 @@ public class AseguradoController {
             infoAsegurado.put("correoElectronico", asegurado.get("correo_electronico"));
             infoAsegurado.put("casAdscripcion", asegurado.get("cas_adscripcion"));
             infoAsegurado.put("periodo", asegurado.get("periodo"));
+            infoAsegurado.put("pacienteCronico", Boolean.TRUE.equals(asegurado.get("paciente_cronico")));
             response.put("asegurado", infoAsegurado);
             
             // Información de la IPRESS
@@ -687,7 +704,8 @@ public class AseguradoController {
                     tel_celular = ?,
                     tipo_seguro = ?,
                     cas_adscripcion = ?,
-                    correo_electronico = ?
+                    correo_electronico = ?,
+                    paciente_cronico = ?
                 WHERE pk_asegurado = ?
             """;
 
@@ -701,6 +719,7 @@ public class AseguradoController {
                     aseguradoDTO.getTipoSeguro(),
                     aseguradoDTO.getCasAdscripcion(),
                     aseguradoDTO.getCorreoElectronico(),
+                    Boolean.TRUE.equals(aseguradoDTO.getPacienteCronico()),
                     pkAsegurado
             );
             
@@ -714,7 +733,7 @@ public class AseguradoController {
             
             // Devolver el asegurado actualizado con información completa
             String selectSql = """
-                SELECT 
+                SELECT
                     a.pk_asegurado,
                     a.doc_paciente,
                     a.paciente,
@@ -725,6 +744,7 @@ public class AseguradoController {
                     a.tel_celular,
                     a.tipo_seguro,
                     a.cas_adscripcion,
+                    a.paciente_cronico,
                     di.desc_ipress as nombre_ipress,
                     dr.desc_red as nombre_red,
                     a.periodo
@@ -733,9 +753,9 @@ public class AseguradoController {
                 LEFT JOIN dim_red dr ON di.id_red = dr.id_red
                 WHERE a.pk_asegurado = ?
             """;
-            
+
             Map<String, Object> asegurado = jdbcTemplate.queryForMap(selectSql, pkAsegurado);
-            
+
             // Formatear respuesta
             Map<String, Object> response = new HashMap<>();
             response.put("pkAsegurado", asegurado.get("pk_asegurado"));
@@ -749,6 +769,7 @@ public class AseguradoController {
             response.put("telCelular", asegurado.get("tel_celular"));
             response.put("tipoSeguro", asegurado.get("tipo_seguro"));
             response.put("casAdscripcion", asegurado.get("cas_adscripcion"));
+            response.put("pacienteCronico", Boolean.TRUE.equals(asegurado.get("paciente_cronico")));
             response.put("nombreIpress", asegurado.get("nombre_ipress"));
             response.put("nombreRed", asegurado.get("nombre_red"));
             response.put("periodo", asegurado.get("periodo"));
@@ -1217,6 +1238,97 @@ public class AseguradoController {
             log.error("❌ Error al resolver duplicado", e);
             return ResponseEntity.internalServerError()
                 .body(Map.of("error", "Error al resolver duplicado: " + e.getMessage()));
+        }
+    }
+
+    /**
+     * ✅ v1.78.5: Obtener datos completos de un asegurado por DNI
+     * Usado en modal de detalles de MisPacientes para mostrar info enriquecida
+     * GET /api/asegurados/por-dni/{docPaciente}
+     */
+    @GetMapping("/por-dni/{docPaciente}")
+    public ResponseEntity<?> obtenerPorDni(@PathVariable String docPaciente) {
+        try {
+            String sql = """
+                SELECT
+                    a.pk_asegurado,
+                    a.doc_paciente,
+                    a.paciente,
+                    a.fecnacimpaciente,
+                    a.sexo,
+                    a.tipo_paciente,
+                    a.tel_fijo,
+                    a.tel_celular,
+                    a.tipo_seguro,
+                    a.cas_adscripcion,
+                    a.periodo,
+                    a.correo_electronico,
+                    a.paciente_cronico,
+                    a.enfermedad_cronica,
+                    COALESCE(sb.tipo_documento, 'DNI') as tipo_documento,
+                    di.desc_ipress   as nombre_ipress,
+                    di.direc_ipress  as direccion_ipress,
+                    dt.desc_tip_ipress as tipo_ipress,
+                    dn.desc_niv_aten   as nivel_atencion,
+                    dr.desc_red        as nombre_red
+                FROM asegurados a
+                LEFT JOIN LATERAL (
+                    SELECT tipo_documento FROM dim_solicitud_bolsa
+                    WHERE paciente_dni = a.doc_paciente AND activo = true
+                    ORDER BY fecha_solicitud DESC LIMIT 1
+                ) sb ON true
+                LEFT JOIN dim_ipress di ON a.cas_adscripcion = di.cod_ipress
+                LEFT JOIN dim_tipo_ipress dt ON di.id_tip_ipress = dt.id_tip_ipress
+                LEFT JOIN dim_nivel_atencion dn ON di.id_niv_aten = dn.id_niv_aten
+                LEFT JOIN dim_red dr ON di.id_red = dr.id_red
+                WHERE a.doc_paciente = ?
+                ORDER BY a.vigencia DESC
+                LIMIT 1
+                """;
+
+            List<Map<String, Object>> rows = jdbcTemplate.queryForList(sql, docPaciente);
+            if (rows.isEmpty()) {
+                return ResponseEntity.ok(Map.of());
+            }
+
+            Map<String, Object> row = rows.get(0);
+            Map<String, Object> result = new java.util.LinkedHashMap<>();
+            // Datos asegurado
+            result.put("pkAsegurado", row.get("pk_asegurado"));
+            result.put("docPaciente", row.get("doc_paciente"));
+            result.put("paciente", row.get("paciente"));
+            result.put("fecnacimpaciente", row.get("fecnacimpaciente"));
+            result.put("edad", calcularEdad(row.get("fecnacimpaciente")));
+            result.put("sexo", row.get("sexo"));
+            result.put("tipoPaciente", row.get("tipo_paciente"));
+            result.put("telFijo", row.get("tel_fijo"));
+            result.put("telCelular", row.get("tel_celular"));
+            result.put("tipoSeguro", row.get("tipo_seguro"));
+            result.put("periodo", row.get("periodo"));
+            result.put("correoElectronico", row.get("correo_electronico"));
+            result.put("pacienteCronico", Boolean.TRUE.equals(row.get("paciente_cronico")));
+            // ✅ enfermedad_cronica es text[] en PostgreSQL — convertir a String[]
+            Object enf = row.get("enfermedad_cronica");
+            if (enf instanceof java.sql.Array) {
+                try { result.put("enfermedadCronica", ((java.sql.Array) enf).getArray()); }
+                catch (Exception ignored) { result.put("enfermedadCronica", null); }
+            } else {
+                result.put("enfermedadCronica", null);
+            }
+            result.put("tipoDocumento", row.get("tipo_documento"));
+            // Datos IPRESS adscripción
+            result.put("codAdscripcion", row.get("cas_adscripcion"));
+            result.put("nombreIpress", row.get("nombre_ipress"));
+            result.put("direccionIpress", row.get("direccion_ipress"));
+            result.put("tipoIpress", row.get("tipo_ipress"));
+            result.put("nivelAtencion", row.get("nivel_atencion"));
+            result.put("nombreRed", row.get("nombre_red"));
+
+            log.info("✅ Asegurado encontrado por DNI: {}", docPaciente);
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            log.error("❌ Error obteniendo asegurado por DNI {}: {}", docPaciente, e.getMessage());
+            return ResponseEntity.ok(Map.of());
         }
     }
 }

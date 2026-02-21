@@ -52,6 +52,7 @@ export default function BuscarAsegurado() {
   const [todasIpress, setTodasIpress] = useState([]);
   const [selectedRed, setSelectedRed] = useState("");
   const [selectedIpress, setSelectedIpress] = useState("");
+  const [soloCenacron, setSoloCenacron] = useState(false);
   const [loadingFiltros, setLoadingFiltros] = useState(false);
 
   // 📋 Estados para tipos de documento
@@ -84,7 +85,8 @@ export default function BuscarAsegurado() {
     correoElectronico: '',
     tipoSeguro: 'TITULAR',
     casAdscripcion: '',
-    periodo: new Date().getFullYear().toString()
+    periodo: new Date().getFullYear().toString(),
+    pacienteCronico: false
   });
   const [loadingForm, setLoadingForm] = useState(false);
 
@@ -123,10 +125,10 @@ export default function BuscarAsegurado() {
 
   // ✅ Resetear página cuando cambian los filtros
   useEffect(() => {
-    if (selectedRed || selectedIpress) {
+    if (selectedRed || selectedIpress || soloCenacron) {
       setCurrentPage(0);
     }
-  }, [selectedRed, selectedIpress]);
+  }, [selectedRed, selectedIpress, soloCenacron]);
 
   // ✅ Debounce para la búsqueda
   useEffect(() => {
@@ -143,7 +145,7 @@ export default function BuscarAsegurado() {
   // Cargar asegurados con paginación
   useEffect(() => {
     cargarAsegurados();
-  }, [currentPage, debouncedSearchValue, selectedRed, selectedIpress]);
+  }, [currentPage, debouncedSearchValue, selectedRed, selectedIpress, soloCenacron]);
 
   // 🔍 Validar DNI en tiempo real cuando tiene 8 dígitos (solo cuando está creando)
   useEffect(() => {
@@ -222,10 +224,13 @@ export default function BuscarAsegurado() {
         let params = `q=${encodeURIComponent(debouncedSearchValue)}&page=${currentPage}&size=${pageSize}`;
         if (selectedRed) params += `&idRed=${selectedRed}`;
         if (selectedIpress) params += `&codIpress=${encodeURIComponent(selectedIpress)}`;
+        if (soloCenacron) params += `&cenacron=true`;
 
         response = await apiClient.get(`/asegurados/buscar?${params}`, true);
       } else {
-        response = await apiClient.get(`/asegurados?page=${currentPage}&size=${pageSize}`, true);
+        let params = `page=${currentPage}&size=${pageSize}`;
+        if (soloCenacron) params += `&cenacron=true`;
+        response = await apiClient.get(`/asegurados?${params}`, true);
       }
 
       setAsegurados(response.content || []);
@@ -282,6 +287,7 @@ export default function BuscarAsegurado() {
   const limpiarFiltros = () => {
     setSelectedRed("");
     setSelectedIpress("");
+    setSoloCenacron(false);
     setSearchValue("");
     setCurrentPage(0);
   };
@@ -334,7 +340,8 @@ export default function BuscarAsegurado() {
       correoElectronico: '',
       tipoSeguro: 'TITULAR',
       casAdscripcion: '',
-      periodo: new Date().getFullYear().toString()
+      periodo: new Date().getFullYear().toString(),
+      pacienteCronico: false
     });
     setDniStatus(null);
     setDniMessage("");
@@ -376,7 +383,8 @@ export default function BuscarAsegurado() {
         correoElectronico: response.asegurado.correoElectronico || '',
         tipoSeguro: response.asegurado.tipoSeguro || 'TITULAR',
         casAdscripcion: response.asegurado.casAdscripcion || '',
-        periodo: response.asegurado.periodo || new Date().getFullYear().toString()
+        periodo: response.asegurado.periodo || new Date().getFullYear().toString(),
+        pacienteCronico: Boolean(response.asegurado.pacienteCronico)
       });
       setShowFormModal(true);
     } catch (error) {
@@ -401,7 +409,8 @@ export default function BuscarAsegurado() {
       correoElectronico: '',
       tipoSeguro: 'TITULAR',
       casAdscripcion: '',
-      periodo: new Date().getFullYear().toString()
+      periodo: new Date().getFullYear().toString(),
+      pacienteCronico: false
     });
     setDniStatus(null);
     setDniMessage("");
@@ -544,14 +553,14 @@ export default function BuscarAsegurado() {
               <h3 className="text-base font-semibold text-slate-900">
                 Filtros y Búsqueda
               </h3>
-              { (selectedRed || selectedIpress || searchValue) && (
+              { (selectedRed || selectedIpress || searchValue || soloCenacron) && (
                 <span className="bg-emerald-100 text-emerald-800 text-xs font-medium px-2 py-0.5 rounded-full">
                   Activos
                 </span>
               ) }
             </div>
             <div className="flex items-center gap-2">
-              { (selectedRed || selectedIpress || searchValue) && (
+              { (selectedRed || selectedIpress || searchValue || soloCenacron) && (
                 <span
                   onClick={ (e) => {
                     e.stopPropagation();
@@ -578,101 +587,85 @@ export default function BuscarAsegurado() {
           </button>
 
           { filtrosAbiertos && (
-            <div className="px-4 pb-4 space-y-4 border-t border-slate-100">
-              {/* Filtros por Red e IPRESS */ }
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-4">
-                <div>
-                  <label className="block text-xs font-medium text-slate-700 mb-1.5">
-                    <Network className="w-3 h-3 inline mr-1" />
-                    Filtrar por Red
+            <div className="px-4 py-3 border-t border-slate-100 space-y-2">
+              {/* Fila 1: Red · IPRESS · CENACRON */}
+              <div className="flex flex-wrap items-end gap-3">
+                <div className="flex-1 min-w-[160px]">
+                  <label className="block text-xs font-medium text-slate-500 mb-1">
+                    <Network className="w-3 h-3 inline mr-1" />Red
                   </label>
                   <select
                     value={ selectedRed }
                     onChange={ (e) => setSelectedRed(e.target.value) }
                     disabled={ loadingFiltros }
-                    className="w-full px-3 py-2 text-sm border-2 border-slate-200 rounded-lg text-slate-900
-                             focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100
-                             transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full px-2.5 py-1.5 text-sm border border-slate-200 rounded-lg text-slate-900
+                             focus:outline-none focus:border-emerald-500 transition-all disabled:opacity-50"
                   >
                     <option value="">Todas las redes</option>
                     { redes.map((red) => (
-                      <option key={ red.idRed } value={ red.idRed }>
-                        { red.descRed }
-                      </option>
+                      <option key={ red.idRed } value={ red.idRed }>{ red.descRed }</option>
                     )) }
                   </select>
                 </div>
 
-                <div>
-                  <label className="block text-xs font-medium text-slate-700 mb-1.5">
-                    <Building2 className="w-3 h-3 inline mr-1" />
-                    Filtrar por IPRESS
+                <div className="flex-1 min-w-[180px]">
+                  <label className="block text-xs font-medium text-slate-500 mb-1">
+                    <Building2 className="w-3 h-3 inline mr-1" />IPRESS
                   </label>
                   <select
                     value={ selectedIpress }
                     onChange={ (e) => setSelectedIpress(e.target.value) }
                     disabled={ !selectedRed || loadingFiltros }
-                    className="w-full px-3 py-2 text-sm border-2 border-slate-200 rounded-lg text-slate-900
-                             focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100
-                             transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full px-2.5 py-1.5 text-sm border border-slate-200 rounded-lg text-slate-900
+                             focus:outline-none focus:border-emerald-500 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    <option value="">
-                      { selectedRed ? 'Todas las IPRESS de esta red' : 'Selecciona una red primero' }
-                    </option>
+                    <option value="">{ selectedRed ? 'Todas las IPRESS' : 'Selecciona una red' }</option>
                     { ipress.map((i) => (
                       <option key={ i.codIpress } value={ i.codIpress }>
-                        { i.descIpress } (Cód: { i.codIpress })
+                        { i.descIpress } ({ i.codIpress })
                       </option>
                     )) }
                   </select>
                 </div>
+
+                <div className="flex-shrink-0 pb-0.5">
+                  <button
+                    type="button"
+                    onClick={ () => { setSoloCenacron(v => !v); setCurrentPage(0); } }
+                    className={ `inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-semibold border-2 transition-all whitespace-nowrap
+                      ${soloCenacron
+                        ? 'bg-purple-600 border-purple-600 text-white'
+                        : 'bg-white border-slate-200 text-slate-600 hover:border-purple-400 hover:text-purple-600'
+                      }` }
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>
+                    </svg>
+                    Solo CENACRON
+                  </button>
+                </div>
               </div>
 
-              {/* Búsqueda Unificada */ }
-              <div>
-                <label className="block text-xs font-medium text-slate-700 mb-1.5">
-                  <Search className="w-3 h-3 inline mr-1" />
-                  Buscar Asegurado
-                </label>
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                  <input
-                    type="text"
-                    value={ searchValue }
-                    onChange={ (e) => setSearchValue(e.target.value) }
-                    placeholder="Buscar por DNI o nombre completo..."
-                    className="w-full pl-10 pr-3 py-2 text-sm border-2 border-slate-200 rounded-lg text-slate-900 
-                             focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 
-                             transition-all"
-                  />
-                  { searchValue !== debouncedSearchValue && searchValue.trim() && (
-                    <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                      <Loader className="w-4 h-4 text-emerald-600 animate-spin" />
-                    </div>
-                  ) }
-                </div>
-                <p className="text-xs text-slate-500 mt-1.5">
-                  💡 Búsqueda en toda la base de datos. La búsqueda se realiza automáticamente mientras escribes.
-                </p>
+              {/* Fila 2: Buscador */}
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                <input
+                  type="text"
+                  value={ searchValue }
+                  onChange={ (e) => setSearchValue(e.target.value) }
+                  placeholder="Buscar por DNI o nombre completo..."
+                  className="w-full pl-10 pr-8 py-1.5 text-sm border border-slate-200 rounded-lg text-slate-900
+                           focus:outline-none focus:border-emerald-500 transition-all"
+                />
+                { searchValue !== debouncedSearchValue && searchValue.trim()
+                  ? <Loader className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-emerald-600 animate-spin" />
+                  : searchValue && (
+                    <button onClick={ () => setSearchValue('') } className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  )
+                }
               </div>
-
-              {/* Indicador de filtros activos */ }
-              { (selectedRed || selectedIpress) && (
-                <div className="flex flex-wrap gap-2 pt-2 border-t border-slate-100">
-                  { selectedRed && (
-                    <span className="inline-flex items-center gap-1 px-2 py-1 bg-emerald-100 text-emerald-800 rounded-full text-xs font-medium">
-                      <Network className="w-3 h-3" />
-                      { redes.find(r => r.idRed === parseInt(selectedRed))?.descRed }
-                    </span>
-                  ) }
-                  { selectedIpress && (
-                    <span className="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-medium">
-                      <Building2 className="w-3 h-3" />
-                      { ipress.find(i => i.codIpress === selectedIpress)?.descIpress }
-                    </span>
-                  ) }
-                </div>
-              ) }
             </div>
           ) }
         </div>
@@ -744,8 +737,16 @@ export default function BuscarAsegurado() {
                             { asegurado.docPaciente || "-" }
                           </td>
                           <td className="px-3 py-3">
-                            <div className="text-sm text-slate-900 font-medium" title={ asegurado.paciente }>
-                              { asegurado.paciente || "-" }
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span className="text-sm text-slate-900 font-medium" title={ asegurado.paciente }>
+                                { asegurado.paciente || "-" }
+                              </span>
+                              { asegurado.pacienteCronico && (
+                                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-purple-600 text-white leading-none">
+                                  <svg xmlns="http://www.w3.org/2000/svg" width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                                  CENACRON
+                                </span>
+                              ) }
                             </div>
                             <div className="text-xs text-slate-500 mt-1">
                               { asegurado.sexo === 'M' ? '👨 M' :
@@ -1030,6 +1031,21 @@ export default function BuscarAsegurado() {
                         <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-emerald-100 text-emerald-800">
                           { detalleAsegurado.asegurado.periodo || "No especificado" }
                         </span>
+                      </p>
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-slate-600">Programa CENACRON</label>
+                      <p className="text-base text-slate-900 mt-1">
+                        { detalleAsegurado.asegurado.pacienteCronico ? (
+                          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-bold bg-purple-600 text-white shadow-sm">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                            CENACRON
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-slate-100 text-slate-500">
+                            No pertenece
+                          </span>
+                        )}
                       </p>
                     </div>
                   </div>
@@ -1419,6 +1435,37 @@ export default function BuscarAsegurado() {
                       : 'Ingresa solo el año (4 dígitos). Ejemplo: 2025' }
                   </p>
                 </div>
+              </div>
+
+              {/* 🏥 CENACRON */}
+              <div className="border-2 border-slate-200 rounded-lg p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-semibold text-slate-700">
+                      🏥 Paciente CENACRON
+                    </p>
+                    <p className="text-xs text-slate-500 mt-0.5">
+                      Indica si el asegurado pertenece al programa de pacientes crónicos CENACRON
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={ () => setFormularioData(prev => ({ ...prev, pacienteCronico: !prev.pacienteCronico })) }
+                    className={ `relative inline-flex h-7 w-14 items-center rounded-full transition-colors focus:outline-none
+                      ${ formularioData.pacienteCronico ? 'bg-blue-600' : 'bg-slate-300' }` }
+                    aria-pressed={ formularioData.pacienteCronico }
+                  >
+                    <span
+                      className={ `inline-block h-5 w-5 transform rounded-full bg-white shadow-md transition-transform
+                        ${ formularioData.pacienteCronico ? 'translate-x-8' : 'translate-x-1' }` }
+                    />
+                  </button>
+                </div>
+                { formularioData.pacienteCronico && (
+                  <p className="text-xs text-blue-600 font-medium mt-2">
+                    ✅ El asegurado pertenece a CENACRON
+                  </p>
+                ) }
               </div>
 
               <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-200">

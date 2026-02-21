@@ -237,6 +237,7 @@ export default function CitasAgendadas() {
   const [filtroIpress, setFiltroIpress]     = useState('');
   const [filtroEspec, setFiltroEspec]       = useState('');
   const [filtroMedico, setFiltroMedico]     = useState('');
+  const [filtroCenacron, setFiltroCenacron] = useState(''); // '' = todos | 'si' = solo CENACRON | 'no' = sin CENACRON
   const [fechaSeleccionada, setFechaSelec]  = useState(null);
   const [mostrarFiltros, setMostrarFiltros] = useState(false);
   const [pagina, setPagina]                 = useState(1);
@@ -268,9 +269,10 @@ export default function CitasAgendadas() {
           codigoEstado:            s.cod_estado_cita           || s.codEstadoCita           || '—',
           fechaAtencion:           s.fecha_atencion            || s.fechaAtencion           || null,
           horaAtencion:            s.hora_atencion             || s.horaAtencion            || null,
-          descIpress:              s.desc_ipress               || s.descIpress              || '—',
+          descIpress:              s.desc_ipress_atencion      || s.descIpressAtencion      || s.desc_ipress || s.descIpress || '—',
           tipoCita:                s.tipo_cita                 || s.tipoCita                || '—',
           nomMedico:               s.nombre_medico_asignado    || s.nombreMedicoAsignado    || s.nom_medico || s.nomMedico || null,
+          esCenacron:              s.es_cenacron === true      || s.esCenacron === true,
         }))
         // Incluir: estados agendados O cualquiera que tenga fecha de atención asignada
         .filter(p => ESTADOS_AGENDADOS.includes(p.codigoEstado) || p.fechaAtencion)
@@ -334,10 +336,10 @@ export default function CitasAgendadas() {
     return Array.from(set).sort();
   }, [pacientes]);
 
-  const hayFiltrosActivos = filtroIpress || filtroEspec || filtroMedico || fechaSeleccionada;
+  const hayFiltrosActivos = filtroIpress || filtroEspec || filtroMedico || filtroCenacron || fechaSeleccionada;
 
   const limpiarFiltros = () => {
-    setFiltroIpress(''); setFiltroEspec(''); setFiltroMedico(''); setFechaSelec(null);
+    setFiltroIpress(''); setFiltroEspec(''); setFiltroMedico(''); setFiltroCenacron(''); setFechaSelec(null);
     setPagina(1);
   };
 
@@ -350,14 +352,17 @@ export default function CitasAgendadas() {
       const matchIpress   = !filtroIpress || p.descIpress === filtroIpress;
       const matchEspec    = !filtroEspec  || p.especialidad === filtroEspec;
       const matchMedico   = !filtroMedico || p.nomMedico === filtroMedico;
+      const matchCenacron = !filtroCenacron
+        || (filtroCenacron === 'si' && p.esCenacron === true)
+        || (filtroCenacron === 'no' && !p.esCenacron);
       const matchFecha    = !fechaSeleccionada || (p.fechaAtencion && (
         p.fechaAtencion.includes('T')
           ? p.fechaAtencion.split('T')[0] === fechaSeleccionada
           : p.fechaAtencion.substring(0, 10) === fechaSeleccionada
       ));
-      return matchBusqueda && matchEstado && matchIpress && matchEspec && matchMedico && matchFecha;
+      return matchBusqueda && matchEstado && matchIpress && matchEspec && matchMedico && matchCenacron && matchFecha;
     });
-  }, [pacientes, busqueda, filtroEstado, filtroIpress, filtroEspec, filtroMedico, fechaSeleccionada]);
+  }, [pacientes, busqueda, filtroEstado, filtroIpress, filtroEspec, filtroMedico, filtroCenacron, fechaSeleccionada]);
 
   const totalPaginas = Math.max(1, Math.ceil(filtrados.length / PAGE_SIZE));
   const paginaActual = filtrados.slice((pagina - 1) * PAGE_SIZE, pagina * PAGE_SIZE);
@@ -590,7 +595,7 @@ CENATE de Essalud`;
               Filtros
               {hayFiltrosActivos && (
                 <span style={{ background: '#0D5BA9', color: '#fff', borderRadius: '10px', padding: '1px 7px', fontSize: '11px', fontWeight: '700' }}>
-                  {[filtroIpress, filtroEspec, filtroMedico, fechaSeleccionada].filter(Boolean).length}
+                  {[filtroIpress, filtroEspec, filtroMedico, filtroCenacron, fechaSeleccionada].filter(Boolean).length}
                 </span>
               )}
             </button>
@@ -629,6 +634,17 @@ CENATE de Essalud`;
                   style={{ width: '100%', padding: '8px 10px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '13px', color: '#374151', background: '#fff', outline: 'none', cursor: 'pointer' }}>
                   <option value="">Todos los profesionales</option>
                   {listaMedicos.map(m => <option key={m} value={m}>{m}</option>)}
+                </select>
+              </div>
+              <div>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '11px', fontWeight: '600', color: '#7e22ce', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '6px' }}>
+                  ♾ Programa CENACRON
+                </label>
+                <select value={filtroCenacron} onChange={e => handleFiltro(setFiltroCenacron)(e.target.value)}
+                  style={{ width: '100%', padding: '8px 10px', border: '1px solid ' + (filtroCenacron ? '#d8b4fe' : '#d1d5db'), borderRadius: '8px', fontSize: '13px', color: filtroCenacron ? '#7e22ce' : '#374151', background: filtroCenacron ? '#faf5ff' : '#fff', outline: 'none', cursor: 'pointer', fontWeight: filtroCenacron ? '600' : 'normal' }}>
+                  <option value="">Todos los pacientes</option>
+                  <option value="si">♾ Solo CENACRON</option>
+                  <option value="no">Sin CENACRON</option>
                 </select>
               </div>
             </div>
@@ -726,6 +742,11 @@ CENATE de Essalud`;
 
                           <td style={{ padding: '10px 12px', minWidth: '150px' }}>
                             <div style={{ fontWeight: '600', color: '#0f172a', fontSize: '13px' }}>{p.pacienteNombre}</div>
+                            {p.esCenacron && (
+                              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '3px', marginTop: '3px', padding: '1px 8px', borderRadius: '999px', fontSize: '10px', fontWeight: '700', background: '#f3e8ff', color: '#7e22ce', border: '1px solid #d8b4fe' }}>
+                                ♾ CENACRON
+                              </span>
+                            )}
                             {(p.pacienteSexo || p.pacienteEdad) && (
                               <div style={{ fontSize: '11px', color: '#94a3b8', marginTop: '2px' }}>
                                 {[p.pacienteSexo, p.pacienteEdad ? `${p.pacienteEdad} años` : null].filter(Boolean).join(' · ')}
