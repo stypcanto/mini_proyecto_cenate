@@ -517,6 +517,11 @@ export const componentRegistry = {
     requiredAction: 'ver',
   },
 
+  '/bolsas/bolsa-x-medico': {
+    component: lazy(() => import('../pages/bolsas/Solicitudes')),
+    requiredAction: 'ver',
+  },
+
   '/bolsas/mi-bandeja': {
     component: lazy(() => import('../pages/bolsas/MiBandeja')),
     requiredAction: 'ver',

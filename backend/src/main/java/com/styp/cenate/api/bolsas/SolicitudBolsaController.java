@@ -593,7 +593,7 @@ public class SolicitudBolsaController {
      */
     @PatchMapping("/{id}/asignar")
     @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'COORD. GESTION CITAS', 'GESTOR DE CITAS')")
-    //@CheckMBACPermission(pagina = "/modulos/bolsas/solicitudes", accion = "asignar")
+    //@CheckMBACPermission(pagina = "/modulos/bolsas/bolsa-x-medico", accion = "asignar")
     public ResponseEntity<?> asignarGestora(
             @PathVariable Long id,
             @RequestParam(value = "idGestora", required = false) Long idGestora) {
@@ -920,7 +920,7 @@ public class SolicitudBolsaController {
      * @return mensaje de éxito
      */
     @PutMapping("/{id}")
-    @CheckMBACPermission(pagina = "/modulos/bolsas/solicitudes", accion = "actualizar")
+    @CheckMBACPermission(pagina = "/modulos/bolsas/bolsa-x-medico", accion = "actualizar")
     public ResponseEntity<?> actualizarTelefonos(
             @PathVariable Long id,
             @RequestParam(value = "pacienteTelefono", required = false) String pacienteTelefono,
