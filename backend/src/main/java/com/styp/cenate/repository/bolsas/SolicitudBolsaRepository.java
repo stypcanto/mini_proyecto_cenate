@@ -1129,6 +1129,24 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
         @org.springframework.data.repository.query.Param("fechaDesde") String fechaDesde,
         @org.springframework.data.repository.query.Param("fechaHasta") String fechaHasta);
 
+    /**
+     * Conteo de asignaciones por día para un mes dado (formato: 'YYYY-MM')
+     * Retorna [{fecha, total}] para mostrar badges en el calendario
+     */
+    @Query(value = """
+        SELECT
+          DATE(sb.fecha_asignacion AT TIME ZONE 'America/Lima') as fecha,
+          COUNT(*) as total
+        FROM dim_solicitud_bolsa sb
+        WHERE sb.activo = true
+          AND sb.responsable_gestora_id IS NOT NULL
+          AND TO_CHAR(DATE(sb.fecha_asignacion AT TIME ZONE 'America/Lima'), 'YYYY-MM') = :mes
+        GROUP BY DATE(sb.fecha_asignacion AT TIME ZONE 'America/Lima')
+        ORDER BY fecha
+        """, nativeQuery = true)
+    List<Object[]> conteoPorFecha(
+        @org.springframework.data.repository.query.Param("mes") String mes);
+
     @Query(value = """
         SELECT
             p.id_pers as idPers,

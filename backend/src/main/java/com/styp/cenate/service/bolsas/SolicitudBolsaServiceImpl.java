@@ -3384,6 +3384,22 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
         return result;
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public List<java.util.Map<String, Object>> obtenerConteoPorFecha(String mes) {
+        log.info("📅 Conteo asignaciones por fecha, mes: {}", mes);
+        List<Object[]> rows = solicitudRepository.conteoPorFecha(mes);
+        List<java.util.Map<String, Object>> result = new ArrayList<>();
+        for (Object[] row : rows) {
+            result.add(java.util.Map.of(
+                "fecha", row[0] != null ? row[0].toString() : "",
+                "total", row[1] != null ? ((Number) row[1]).longValue() : 0L
+            ));
+        }
+        log.info("✅ Conteo por fecha: {} días con datos", result.size());
+        return result;
+    }
+
     /**
      * Genera número de solicitud único con formato: IMP-YYYYMMDD-NNNN
      */

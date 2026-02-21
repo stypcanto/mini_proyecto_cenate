@@ -1283,6 +1283,27 @@ public class SolicitudBolsaController {
      *
      * @return lista de BolsaXGestoraDTO con conteos por estado por gestora
      */
+    /**
+     * Conteo de pacientes asignados por día para un mes dado
+     * GET /api/bolsas/solicitudes/estadisticas/conteo-por-fecha?mes=YYYY-MM
+     */
+    @GetMapping("/estadisticas/conteo-por-fecha")
+    @PreAuthorize("hasAnyRole('SUPERADMIN', 'COORD. GESTION CITAS', 'GESTOR DE CITAS')")
+    public ResponseEntity<?> obtenerConteoPorFecha(
+            @RequestParam(required = false) String mes) {
+        try {
+            if (mes == null || mes.isEmpty()) {
+                mes = java.time.LocalDate.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM"));
+            }
+            log.info("📅 GET /api/bolsas/solicitudes/estadisticas/conteo-por-fecha mes={}", mes);
+            var resultado = solicitudBolsaService.obtenerConteoPorFecha(mes);
+            return ResponseEntity.ok(resultado);
+        } catch (Exception e) {
+            log.error("❌ Error al obtener conteo por fecha: ", e);
+            return ResponseEntity.status(500).body(Map.of("error", "Error al obtener conteo por fecha"));
+        }
+    }
+
     @GetMapping("/estadisticas/por-gestora")
     @PreAuthorize("hasAnyRole('SUPERADMIN', 'COORD. GESTION CITAS', 'GESTOR DE CITAS')")
     public ResponseEntity<?> obtenerEstadisticasPorGestora(

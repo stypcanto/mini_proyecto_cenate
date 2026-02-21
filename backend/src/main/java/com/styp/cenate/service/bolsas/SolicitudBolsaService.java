@@ -251,4 +251,10 @@ public interface SolicitudBolsaService {
     List<BolsaXGestoraDTO> obtenerEstadisticasPorGestora();
 
     List<BolsaXGestoraDTO> obtenerEstadisticasPorGestora(String fechaDesde, String fechaHasta);
+
+    /**
+     * Conteo de pacientes asignados por día para un mes dado (YYYY-MM)
+     * @return lista de mapas {fecha, total} para el calendario
+     */
+    List<java.util.Map<String, Object>> obtenerConteoPorFecha(String mes);
 }

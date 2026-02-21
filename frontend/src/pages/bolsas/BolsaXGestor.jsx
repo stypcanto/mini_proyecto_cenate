@@ -1,18 +1,19 @@
 /**
  * BolsaXGestor.jsx
  * Vista "Bolsa x Gestor" — distribución de pacientes por gestora de citas
- * v3.0 – Filtro temporal: Hoy / Esta semana / Este mes / Rango personalizado
+ * v4.0 – Filtro por calendario con badges de conteo por día
  *
  * Acceso: SUPERADMIN, COORDINADOR_GESTION_CITAS
  * Datos: GET /api/bolsas/solicitudes/estadisticas/por-gestora?fechaDesde=&fechaHasta=
+ *        GET /api/bolsas/solicitudes/estadisticas/conteo-por-fecha?mes=YYYY-MM
  */
 
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import apiClient from '../../lib/apiClient';
 import {
   Users, RefreshCw, CalendarCheck, PhoneMissed,
   AlertCircle, CheckCircle2, XCircle, Clock, Calendar,
-  ChevronDown,
+  ChevronLeft, ChevronRight, Search,
 } from 'lucide-react';
 
 // ── Categorías de estado ──────────────────────────────────────
@@ -25,43 +26,111 @@ const CATS = [
   { key: 'atendidos',      label: 'Atendidos',        desc: 'Atención completada',           accent: '#10b981', bg: '#f0fdf4', border: '#bbf7d0', icon: CheckCircle2  },
 ];
 
-// ── Opciones de período ───────────────────────────────────────
-const PERIODOS = [
-  { key: 'todo',    label: 'Todo' },
-  { key: 'hoy',     label: 'Hoy' },
-  { key: 'semana',  label: 'Esta semana' },
-  { key: 'mes',     label: 'Este mes' },
-  { key: 'rango',   label: 'Rango' },
-];
-
 // ── Helpers de fecha ─────────────────────────────────────────
-const toISO = (d) => d.toISOString().slice(0, 10); // 'YYYY-MM-DD'
+const toISO = (d) => d.toISOString().slice(0, 10);
+const HOY = toISO(new Date());
 
-function calcularRango(periodo) {
-  const hoy = new Date();
-  if (periodo === 'hoy') {
-    const s = toISO(hoy);
-    return { desde: s, hasta: s };
-  }
-  if (periodo === 'semana') {
-    const dow = hoy.getDay(); // 0=dom
-    const lunes = new Date(hoy);
-    lunes.setDate(hoy.getDate() - ((dow + 6) % 7));
-    return { desde: toISO(lunes), hasta: toISO(hoy) };
-  }
-  if (periodo === 'mes') {
-    const inicio = new Date(hoy.getFullYear(), hoy.getMonth(), 1);
-    return { desde: toISO(inicio), hasta: toISO(hoy) };
-  }
-  return { desde: null, hasta: null };
-}
+const DIAS_SEMANA = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+const MESES_ES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
 
-function labelPeriodo(periodo, rangoDesde, rangoHasta) {
-  if (periodo === 'hoy')    return `Hoy (${toISO(new Date())})`;
-  if (periodo === 'semana') return `Esta semana`;
-  if (periodo === 'mes')    return `${new Date().toLocaleString('es-PE', { month: 'long', year: 'numeric' })}`;
-  if (periodo === 'rango' && rangoDesde && rangoHasta) return `${rangoDesde} → ${rangoHasta}`;
-  return 'Todos los tiempos';
+// ── Componente calendario con badges ──────────────────────────
+function CalendarioFechas({ fechaSeleccionada, onSelectFecha, conteoPorFecha, onMesCambio }) {
+  const hoyObj = new Date();
+  const [anio, setAnio] = useState(hoyObj.getFullYear());
+  const [mes, setMes]   = useState(hoyObj.getMonth());
+
+  const primerDia = new Date(anio, mes, 1).getDay();
+  const diasEnMes = new Date(anio, mes + 1, 0).getDate();
+
+  const padDia = (d) => String(d).padStart(2, '0');
+  const padMes = (m) => String(m + 1).padStart(2, '0');
+
+  const irAtras = () => {
+    const nm = mes === 0 ? 11 : mes - 1;
+    const na = mes === 0 ? anio - 1 : anio;
+    setMes(nm); setAnio(na);
+    onMesCambio(`${na}-${padMes(nm)}`);
+  };
+  const irAdelante = () => {
+    const nm = mes === 11 ? 0 : mes + 1;
+    const na = mes === 11 ? anio + 1 : anio;
+    setMes(nm); setAnio(na);
+    onMesCambio(`${na}-${padMes(nm)}`);
+  };
+
+  return (
+    <div style={{ background: '#fff', border: '1.5px solid #0D5BA9', borderRadius: '12px', overflow: 'hidden', minWidth: '280px', boxShadow: '0 4px 16px rgba(13,91,169,0.12)' }}>
+      {/* Cabecera mes/año */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', background: '#f0f7ff', borderBottom: '1px solid #bfdbfe' }}>
+        <button onClick={irAtras} style={{ border: 'none', background: 'none', cursor: 'pointer', padding: '4px', display: 'flex', color: '#0D5BA9' }}>
+          <ChevronLeft size={18} />
+        </button>
+        <span style={{ fontWeight: '700', fontSize: '14px', color: '#1e3a5f' }}>
+          {MESES_ES[mes]} De {anio}
+        </span>
+        <button onClick={irAdelante} style={{ border: 'none', background: 'none', cursor: 'pointer', padding: '4px', display: 'flex', color: '#0D5BA9' }}>
+          <ChevronRight size={18} />
+        </button>
+      </div>
+
+      {/* Encabezado días semana */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', padding: '8px 8px 0', gap: '2px' }}>
+        {DIAS_SEMANA.map(d => (
+          <div key={d} style={{ textAlign: 'center', fontSize: '10px', fontWeight: '700', color: '#94a3b8', padding: '2px 0' }}>{d}</div>
+        ))}
+      </div>
+
+      {/* Días del mes */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', padding: '4px 8px 10px', gap: '2px' }}>
+        {Array.from({ length: primerDia }, (_, i) => <div key={`e${i}`} />)}
+        {Array.from({ length: diasEnMes }, (_, idx) => {
+          const dia      = idx + 1;
+          const fechaStr = `${anio}-${padMes(mes)}-${padDia(dia)}`;
+          const conteo   = conteoPorFecha[fechaStr] || 0;
+          const esHoy    = fechaStr === HOY;
+          const activo   = fechaStr === fechaSeleccionada;
+          return (
+            <button
+              key={fechaStr}
+              onClick={() => onSelectFecha(activo ? null : fechaStr)}
+              title={conteo > 0 ? `${conteo} pacientes asignados` : fechaStr}
+              style={{
+                display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                padding: '4px 2px', borderRadius: '8px', minHeight: '40px', cursor: 'pointer',
+                border: esHoy ? '2px solid #0D5BA9' : '2px solid transparent',
+                background: activo ? '#0D5BA9' : conteo > 0 ? '#eff6ff' : 'transparent',
+                color: activo ? '#fff' : '#1e293b', transition: 'all 0.1s',
+              }}
+            >
+              <span style={{ fontSize: '12px', fontWeight: (esHoy || activo) ? '800' : '500', lineHeight: 1 }}>{dia}</span>
+              {conteo > 0 && (
+                <span style={{
+                  marginTop: '2px', minWidth: '18px', height: '18px', borderRadius: '50%',
+                  fontSize: '9px', fontWeight: '800', display: 'flex', alignItems: 'center',
+                  justifyContent: 'center', lineHeight: 1, padding: '0 3px',
+                  background: activo ? 'rgba(255,255,255,0.3)' : '#0D5BA9', color: '#fff',
+                }}>
+                  {conteo > 9 ? '9+' : conteo}
+                </span>
+              )}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Botón limpiar selección */}
+      {fechaSeleccionada && (
+        <div style={{ padding: '0 8px 10px', textAlign: 'center' }}>
+          <button
+            onClick={() => onSelectFecha(null)}
+            style={{ fontSize: '11px', color: '#0D5BA9', background: 'none', border: '1px solid #bfdbfe', borderRadius: '6px', padding: '4px 12px', cursor: 'pointer', fontWeight: '600' }}
+          >
+            Ver todos los tiempos
+          </button>
+        </div>
+      )}
+    </div>
+  );
 }
 
 // ── Helpers numéricos ─────────────────────────────────────────
@@ -106,38 +175,60 @@ function Badge({ valor, accent, bg }) {
   );
 }
 
+// ── Mes actual en formato YYYY-MM ─────────────────────────────
+function mesActual() {
+  const h = new Date();
+  return `${h.getFullYear()}-${String(h.getMonth() + 1).padStart(2, '0')}`;
+}
+
 // ══════════════════════════════════════════════════════════════
 // Componente principal
 // ══════════════════════════════════════════════════════════════
 export default function BolsaXGestor() {
-  const [gestoras, setGestoras]       = useState([]);
-  const [loading, setLoading]         = useState(true);
-  const [error, setError]             = useState('');
-  const [filtroCat, setFiltroCat]     = useState(null);
+  const [gestoras, setGestoras]             = useState([]);
+  const [loading, setLoading]               = useState(true);
+  const [error, setError]                   = useState('');
+  const [filtroCat, setFiltroCat]           = useState(null);
+  const [busquedaNombre, setBusquedaNombre] = useState('');
 
-  // ── Filtro temporal ──────────────────────────────────────
-  const [periodo, setPeriodo]         = useState('todo');
-  const [rangoDesde, setRangoDesde]   = useState('');
-  const [rangoHasta, setRangoHasta]   = useState('');
-  const [showRango, setShowRango]     = useState(false);
+  // ── Filtro por calendario ─────────────────────────────────
+  const [fechaSeleccionada, setFechaSeleccionada] = useState(null);
+  const [conteoPorFecha, setConteoPorFecha]       = useState({});
+  const [showCalendario, setShowCalendario]        = useState(false);
+  const calendarioRef = useRef(null);
 
-  const cargar = useCallback(async (pd = periodo, desde = rangoDesde, hasta = rangoHasta) => {
+  // Cerrar calendario al hacer clic fuera
+  useEffect(() => {
+    const handler = (e) => {
+      if (calendarioRef.current && !calendarioRef.current.contains(e.target)) {
+        setShowCalendario(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
+
+  // Cargar conteos por fecha (badges del calendario)
+  const cargarConteos = useCallback(async (mes) => {
+    try {
+      const data = await apiClient.get(`/bolsas/solicitudes/estadisticas/conteo-por-fecha?mes=${mes}`, true);
+      if (Array.isArray(data)) {
+        const mapa = {};
+        data.forEach(({ fecha, total }) => { mapa[fecha] = Number(total); });
+        setConteoPorFecha(mapa);
+      }
+    } catch (err) {
+      console.error('Error cargando conteo por fecha:', err);
+    }
+  }, []);
+
+  // Cargar estadísticas por gestora
+  const cargar = useCallback(async (fecha) => {
     setLoading(true);
     setError('');
     try {
       let url = '/bolsas/solicitudes/estadisticas/por-gestora';
-      const params = new URLSearchParams();
-
-      if (pd !== 'todo' && pd !== 'rango') {
-        const { desde: d, hasta: h } = calcularRango(pd);
-        if (d) params.set('fechaDesde', d);
-        if (h) params.set('fechaHasta', h);
-      } else if (pd === 'rango') {
-        if (desde) params.set('fechaDesde', desde);
-        if (hasta) params.set('fechaHasta', hasta);
-      }
-
-      if (params.toString()) url += `?${params.toString()}`;
+      if (fecha) url += `?fechaDesde=${fecha}&fechaHasta=${fecha}`;
       const data = await apiClient.get(url, true);
       setGestoras(Array.isArray(data) ? data : []);
     } catch (err) {
@@ -146,19 +237,19 @@ export default function BolsaXGestor() {
     } finally {
       setLoading(false);
     }
-  }, [periodo, rangoDesde, rangoHasta]);
+  }, []);
 
-  useEffect(() => { cargar(); }, []); // carga inicial
+  // Carga inicial
+  useEffect(() => {
+    cargar(null);
+    cargarConteos(mesActual());
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const handlePeriodo = (pd) => {
-    setPeriodo(pd);
-    setShowRango(pd === 'rango');
+  const handleSelectFecha = (fecha) => {
+    setFechaSeleccionada(fecha);
     setFiltroCat(null);
-    if (pd !== 'rango') cargar(pd, '', '');
-  };
-
-  const aplicarRango = () => {
-    if (rangoDesde && rangoHasta) cargar('rango', rangoDesde, rangoHasta);
+    cargar(fecha);
+    if (fecha) setShowCalendario(false);
   };
 
   // ── Totales ───────────────────────────────────────────────
@@ -172,7 +263,7 @@ export default function BolsaXGestor() {
     return t;
   }, [gestoras]);
 
-  const etiquetaPeriodo = labelPeriodo(periodo, rangoDesde, rangoHasta);
+  const etiquetaPeriodo = fechaSeleccionada || 'Todos los tiempos';
 
   // ── Loading skeleton ─────────────────────────────────────
   if (loading) return (
@@ -180,7 +271,7 @@ export default function BolsaXGestor() {
       <div style={{ height: '32px', background: '#f1f5f9', borderRadius: '8px', width: '220px', animation: 'pulse 1.5s infinite' }} />
       <div style={{ height: '52px', background: '#f1f5f9', borderRadius: '10px', animation: 'pulse 1.5s infinite' }} />
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '10px' }}>
-        {[...Array(7)].map((_, i) => <div key={i} style={{ height: '80px', background: '#f1f5f9', borderRadius: '12px', animation: 'pulse 1.5s infinite' }} />)}
+        {Array.from({ length: 7 }, (_, i) => <div key={i} style={{ height: '80px', background: '#f1f5f9', borderRadius: '12px', animation: 'pulse 1.5s infinite' }} />)}
       </div>
       <div style={{ height: '300px', background: '#f1f5f9', borderRadius: '12px', animation: 'pulse 1.5s infinite' }} />
       <style>{`@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.5} }`}</style>
@@ -196,7 +287,7 @@ export default function BolsaXGestor() {
           <strong>Error al cargar datos</strong>
           <p style={{ margin: '4px 0 0', fontSize: '13px' }}>{error}</p>
         </div>
-        <button onClick={() => cargar()} style={{ padding: '8px 16px', background: '#b91c1c', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', fontSize: '13px' }}>
+        <button onClick={() => cargar(fechaSeleccionada)} style={{ padding: '8px 16px', background: '#b91c1c', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', fontSize: '13px' }}>
           Reintentar
         </button>
       </div>
@@ -220,88 +311,68 @@ export default function BolsaXGestor() {
           </div>
         </div>
         <button
-          onClick={() => cargar()}
+          onClick={() => cargar(fechaSeleccionada)}
           style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 16px', borderRadius: '8px', border: '1px solid #e2e8f0', background: '#fff', color: '#475569', fontSize: '13px', fontWeight: '500', cursor: 'pointer' }}
         >
           <RefreshCw size={14} /> Actualizar
         </button>
       </div>
 
-      {/* ── Filtro temporal ─────────────────────────────────── */}
-      <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+      {/* ── Filtro por calendario ────────────────────────────── */}
+      <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '14px 16px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
           <Calendar size={15} color="#64748b" />
-          <span style={{ fontSize: '12px', fontWeight: '600', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Período de asignación</span>
+          <span style={{ fontSize: '12px', fontWeight: '600', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Fecha de asignación</span>
 
-          <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginLeft: '4px' }}>
-            {PERIODOS.map(p => {
-              const activo = periodo === p.key;
-              return (
-                <button
-                  key={p.key}
-                  onClick={() => handlePeriodo(p.key)}
-                  style={{
-                    padding: '5px 14px', borderRadius: '20px', fontSize: '12px', fontWeight: '600',
-                    cursor: 'pointer', transition: 'all 0.15s',
-                    background: activo ? '#0D5BA9' : '#f8fafc',
-                    color: activo ? '#fff' : '#475569',
-                    border: `1.5px solid ${activo ? '#0D5BA9' : '#e2e8f0'}`,
-                    boxShadow: activo ? '0 2px 8px rgba(13,91,169,0.3)' : 'none',
-                  }}
-                >
-                  {p.key === 'rango' && <Calendar size={11} style={{ marginRight: '4px', verticalAlign: 'middle' }} />}
-                  {p.label}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Selector de rango personalizado */}
-        {showRango && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap', paddingTop: '6px', borderTop: '1px solid #f1f5f9' }}>
-            <span style={{ fontSize: '12px', color: '#64748b', fontWeight: '500' }}>Desde</span>
-            <input
-              type="date"
-              value={rangoDesde}
-              onChange={e => setRangoDesde(e.target.value)}
-              style={{ padding: '6px 10px', border: '1.5px solid #cbd5e1', borderRadius: '8px', fontSize: '13px', color: '#1e293b', outline: 'none', cursor: 'pointer' }}
-            />
-            <span style={{ fontSize: '12px', color: '#64748b', fontWeight: '500' }}>Hasta</span>
-            <input
-              type="date"
-              value={rangoHasta}
-              min={rangoDesde}
-              onChange={e => setRangoHasta(e.target.value)}
-              style={{ padding: '6px 10px', border: '1.5px solid #cbd5e1', borderRadius: '8px', fontSize: '13px', color: '#1e293b', outline: 'none', cursor: 'pointer' }}
-            />
+          {/* Botón selector de fecha */}
+          <div ref={calendarioRef} style={{ position: 'relative' }}>
             <button
-              onClick={aplicarRango}
-              disabled={!rangoDesde || !rangoHasta}
+              onClick={() => setShowCalendario(v => !v)}
               style={{
-                padding: '6px 18px', borderRadius: '8px', fontSize: '12px', fontWeight: '600', cursor: 'pointer',
-                background: rangoDesde && rangoHasta ? '#0D5BA9' : '#e2e8f0',
-                color: rangoDesde && rangoHasta ? '#fff' : '#94a3b8',
-                border: 'none', transition: 'all 0.15s',
+                display: 'flex', alignItems: 'center', gap: '8px',
+                padding: '6px 14px', borderRadius: '8px', cursor: 'pointer',
+                border: `1.5px solid ${showCalendario || fechaSeleccionada ? '#0D5BA9' : '#cbd5e1'}`,
+                background: showCalendario || fechaSeleccionada ? '#eff6ff' : '#f8fafc',
+                color: fechaSeleccionada ? '#0D5BA9' : '#475569',
+                fontSize: '13px', fontWeight: '600', transition: 'all 0.15s',
               }}
             >
-              Aplicar
+              <Calendar size={14} color={fechaSeleccionada ? '#0D5BA9' : '#64748b'} />
+              {fechaSeleccionada || 'Seleccionar fecha'}
+              <ChevronRight size={14} style={{ transform: showCalendario ? 'rotate(90deg)' : 'none', transition: 'transform 0.2s', color: '#94a3b8' }} />
             </button>
-            {(rangoDesde || rangoHasta) && (
-              <button
-                onClick={() => { setRangoDesde(''); setRangoHasta(''); }}
-                style={{ padding: '6px 12px', borderRadius: '8px', fontSize: '12px', cursor: 'pointer', background: 'none', border: '1px solid #e2e8f0', color: '#64748b' }}
-              >
-                Limpiar
-              </button>
+
+            {showCalendario && (
+              <div style={{ position: 'absolute', top: 'calc(100% + 8px)', left: 0, zIndex: 50 }}>
+                <CalendarioFechas
+                  fechaSeleccionada={fechaSeleccionada}
+                  onSelectFecha={handleSelectFecha}
+                  conteoPorFecha={conteoPorFecha}
+                  onMesCambio={(mes) => cargarConteos(mes)}
+                />
+              </div>
             )}
           </div>
-        )}
+
+          {/* Chip fecha seleccionada con botón eliminar */}
+          {fechaSeleccionada && (
+            <button
+              onClick={() => handleSelectFecha(null)}
+              style={{
+                display: 'flex', alignItems: 'center', gap: '4px',
+                padding: '4px 10px', borderRadius: '20px',
+                background: '#0D5BA9', color: '#fff',
+                border: 'none', cursor: 'pointer', fontSize: '12px', fontWeight: '600',
+              }}
+            >
+              {fechaSeleccionada} <XCircle size={13} style={{ opacity: 0.8 }} />
+            </button>
+          )}
+        </div>
       </div>
 
       {/* ── KPI Cards ────────────────────────────────────────── */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '10px' }}>
-        {/* Total */}
         <div style={{ background: '#0D5BA9', borderRadius: '12px', padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: '4px', boxShadow: '0 2px 8px rgba(13,91,169,0.25)' }}>
           <span style={{ fontSize: '11px', fontWeight: '600', color: 'rgba(255,255,255,0.75)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Total Asignados</span>
           <span style={{ fontSize: '30px', fontWeight: '800', color: '#fff', lineHeight: 1 }}>{totales.total.toLocaleString()}</span>
@@ -358,12 +429,38 @@ export default function BolsaXGestor() {
         ) : null;
       })()}
 
+      {/* ── Buscador por nombre ──────────────────────────────── */}
+      <div style={{ position: 'relative', maxWidth: '320px' }}>
+        <Search size={15} color="#94a3b8" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
+        <input
+          type="text"
+          placeholder="Buscar gestora..."
+          value={busquedaNombre}
+          onChange={e => setBusquedaNombre(e.target.value)}
+          style={{
+            width: '100%', boxSizing: 'border-box',
+            padding: '8px 12px 8px 36px',
+            border: '1.5px solid #e2e8f0', borderRadius: '8px',
+            fontSize: '13px', color: '#1e293b', outline: 'none',
+            background: '#fff',
+          }}
+        />
+        {busquedaNombre && (
+          <button
+            onClick={() => setBusquedaNombre('')}
+            style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', display: 'flex', padding: 0 }}
+          >
+            <XCircle size={15} />
+          </button>
+        )}
+      </div>
+
       {/* ── Tabla ────────────────────────────────────────────── */}
       {gestoras.length === 0 ? (
         <div style={{ background: '#f8fafc', border: '1px dashed #cbd5e1', borderRadius: '12px', padding: '48px', textAlign: 'center', color: '#94a3b8' }}>
           <Users size={40} style={{ opacity: 0.2, marginBottom: '12px' }} />
-          <p style={{ margin: 0, fontSize: '15px' }}>No hay datos para el período seleccionado</p>
-          <p style={{ margin: '6px 0 0', fontSize: '12px', color: '#cbd5e1' }}>Prueba con otro rango de fechas</p>
+          <p style={{ margin: 0, fontSize: '15px' }}>No hay datos para la fecha seleccionada</p>
+          <p style={{ margin: '6px 0 0', fontSize: '12px', color: '#cbd5e1' }}>Selecciona otra fecha en el calendario</p>
         </div>
       ) : (
         <div style={{ background: '#fff', borderRadius: '12px', border: '1px solid #e2e8f0', overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
@@ -391,7 +488,8 @@ export default function BolsaXGestor() {
               </thead>
               <tbody>
                 {[...gestoras]
-                  .sort((a, b) => filtroCat ? n(b[filtroCat]) - n(a[filtroCat]) : n(b.total) - n(a.total))
+                  .filter(g => !busquedaNombre || (g.nombre_gestora || '').toLowerCase().includes(busquedaNombre.toLowerCase()))
+                  .sort((a, b) => filtroCat ? n(b[filtroCat]) - n(a[filtroCat]) : (a.nombre_gestora || '').localeCompare(b.nombre_gestora || '', 'es', { sensitivity: 'base' }))
                   .map((g, idx) => {
                     const rowBg = idx % 2 === 0 ? '#fff' : '#fafafa';
                     return (
@@ -468,7 +566,7 @@ export default function BolsaXGestor() {
             );
           })}
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px', color: '#374151', borderLeft: '1px solid #e2e8f0', paddingLeft: '12px' }}>
-            <span style={{ fontWeight: '600', color: '#475569' }}>Filtro temporal:</span>
+            <span style={{ fontWeight: '600', color: '#475569' }}>Filtro:</span>
             <span style={{ color: '#64748b' }}>Basado en fecha de asignación del paciente a la gestora</span>
           </div>
         </div>
