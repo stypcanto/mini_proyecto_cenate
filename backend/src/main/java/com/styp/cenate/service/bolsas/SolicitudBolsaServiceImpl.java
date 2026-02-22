@@ -6,6 +6,7 @@ import com.styp.cenate.dto.bolsas.ReporteDuplicadosDTO;
 import com.styp.cenate.dto.bolsas.CrearSolicitudAdicionalRequest;
 import com.styp.cenate.mapper.SolicitudBolsaMapper;
 import com.styp.cenate.model.bolsas.SolicitudBolsa;
+import com.styp.cenate.model.bolsas.DimSolicitudBolsasGeneral;
 import com.styp.cenate.model.bolsas.TipoErrorImportacion;
 import com.styp.cenate.model.Asegurado;
 import com.styp.cenate.model.DimServicioEssi;
@@ -14,6 +15,7 @@ import com.styp.cenate.model.Red;
 import com.styp.cenate.model.TipoBolsa;
 import com.styp.cenate.model.Usuario;
 import com.styp.cenate.repository.bolsas.SolicitudBolsaRepository;
+import com.styp.cenate.repository.bolsas.DimSolicitudBolsasGeneralRepository;
 import com.styp.cenate.repository.AseguradoRepository;
 import com.styp.cenate.repository.DimServicioEssiRepository;
 import com.styp.cenate.repository.IpressRepository;
@@ -24,6 +26,7 @@ import com.styp.cenate.repository.PersonalCntRepository;
 import com.styp.cenate.repository.PacienteEstrategiaRepository;
 import com.styp.cenate.exception.ResourceNotFoundException;
 import com.styp.cenate.exception.ValidationException;
+import com.styp.cenate.service.ApplicationErrorLogService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.poi.ss.usermodel.Cell;
@@ -40,6 +43,7 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 
 import java.io.IOException;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.time.format.DateTimeFormatter;
@@ -78,6 +82,8 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
     private final TipoBolsaRepository tipoBolsaRepository;
     private final UsuarioRepository usuarioRepository;
     private final PacienteEstrategiaRepository pacienteEstrategiaRepository;
+    private final ApplicationErrorLogService errorLogService;
+    private final DimSolicitudBolsasGeneralRepository dimSolicitudBolsasGeneralRepository;
 
     @PersistenceContext
     private EntityManager entityManager;
@@ -407,6 +413,34 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
                     // Guardar solicitud (número ya pre-validado en procesarFilaExcel)
                     try {
                         solicitudRepository.save(solicitud);
+                        
+                        // ✅ Guardar también en DimSolicitudBolsasGeneral
+                        try {
+                            DimSolicitudBolsasGeneral dimSolicitud = DimSolicitudBolsasGeneral.builder()
+                                .idCarga(idHistorial)
+                                .idBolsa(idBolsa)
+                                .idServicio(idServicio)
+                                .fechaPreferidaNoAtendida(solicitud.getFechaPreferidaNoAtendida())
+                                .tipoDocumento(rowDTO.tipoDocumento())
+                                .dni(rowDTO.dni())
+                                .asegurado(rowDTO.nombreCompleto())
+                                .sexo(rowDTO.sexo())
+                                .fechaNacimiento(solicitud.getFechaNacimiento())
+                                .telefonoPrincipal(rowDTO.telefonoPrincipal())
+                                .telefonoAlterno(rowDTO.telefonoAlterno())
+                                .correo(rowDTO.correo())
+                                .codIpressAdscripcion(rowDTO.codigoIpress())
+                                .ipressAtencion(rowDTO.ipressAtencion())
+                                .tipoCita(rowDTO.tipoCita())
+                                .build();
+                            
+                            log.info("💾 [FILA {}] Guardando en DimSolicitudBolsasGeneral: DNI={}", filaNumero, rowDTO.dni());
+                            dimSolicitudBolsasGeneralRepository.save(dimSolicitud);
+                            log.info("✅ [FILA {}] DimSolicitudBolsasGeneral guardada exitosamente", filaNumero);
+                        } catch (Exception e) {
+                            log.error("❌ [FILA {}] Error guardando en DimSolicitudBolsasGeneral: {}", filaNumero, e.getMessage(), e);
+                        }
+                        
                         filasOk++;
                         log.info("✅ [FILA {}] Solicitud guardada exitosamente | DNI: {} | Bolsa: {} | Número: {}",
                             filaNumero, rowDTO.dni(), idBolsa, solicitud.getNumeroSolicitud());
@@ -431,6 +465,32 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
                             solicitud
                         );
 
+                        // ✅ NUEVO: Registrar error en application_error_log (método genérico)
+                        try {
+                            String constraintName = extraerConstraintName(e);
+                            String tipoViolacion = extraerTipoViolacion(e);
+                            errorLogService.logError(
+                                "DATABASE",
+                                tipoViolacion,
+                                e,
+                                null, // request - se pasa desde controller si está disponible
+                                usuarioCarga,
+                                Map.of(
+                                    "archivo", file.getOriginalFilename(),
+                                    "fila", filaNumero,
+                                    "dni", rowDTO.dni(),
+                                    "bolsa_id", idBolsa,
+                                    "servicio_id", idServicio,
+                                    "historial_id", idHistorial,
+                                    "numero_solicitud", solicitud.getNumeroSolicitud() != null ? solicitud.getNumeroSolicitud() : "N/A",
+                                    "constraint_name", constraintName,
+                                    "table_name", "dim_solicitud_bolsa"
+                                )
+                            );
+                        } catch (Exception logEx) {
+                            log.warn("⚠️ No se pudo registrar error en application_error_log: {}", logEx.getMessage());
+                        }
+
                         // ✅ CRÍTICO: Limpiar la sesión para prevenir "transaction aborted"
                         try {
                             entityManager.clear();
@@ -447,6 +507,27 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
 
                     // Generar mensaje de error en español basado en el tipo de excepción
                     String mensajeEnEspanol = generarMensajeErrorEnEspanol(filaNumero, rowDTO, e);
+
+                    // ✅ NUEVO: Registrar error genérico en application_error_log
+                    try {
+                        errorLogService.logError(
+                            "BUSINESS",
+                            "IMPORT_ROW_ERROR",
+                            e,
+                            null, // request
+                            usuarioCarga,
+                            Map.of(
+                                "archivo", file.getOriginalFilename(),
+                                "fila", filaNumero,
+                                "dni", rowDTO != null ? rowDTO.dni() : "N/A",
+                                "bolsa_id", idBolsa,
+                                "servicio_id", idServicio,
+                                "historial_id", idHistorial
+                            )
+                        );
+                    } catch (Exception logEx) {
+                        log.warn("⚠️ No se pudo registrar error en application_error_log: {}", logEx.getMessage());
+                    }
 
                     otros_errores.add(Map.of(
                         "fila", filaNumero,
@@ -3464,4 +3545,63 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
         return String.format("IMP-%s-%04d", fecha, contador + 1);
     }
 
-}
+    // ============================================================================
+    // 🔧 MÉTODO AUXILIAR: Extraer nombre del constraint de la excepción
+    // ============================================================================
+    private String extraerConstraintName(org.springframework.dao.DataIntegrityViolationException e) {
+        String mensaje = e.getMessage();
+        if (mensaje == null) {
+            return "unknown_constraint";
+        }
+
+        // Buscar patrón: constraint "nombre_constraint"
+        if (mensaje.contains("constraint \"")) {
+            int inicio = mensaje.indexOf("constraint \"") + 12;
+            int fin = mensaje.indexOf("\"", inicio);
+            if (fin > inicio) {
+                return mensaje.substring(inicio, fin);
+            }
+        }
+
+        // Buscar patrón alternativo: violates foreign key constraint "nombre"
+        if (mensaje.contains("violates foreign key constraint \"")) {
+            int inicio = mensaje.indexOf("violates foreign key constraint \"") + 34;
+            int fin = mensaje.indexOf("\"", inicio);
+            if (fin > inicio) {
+                return mensaje.substring(inicio, fin);
+            }
+        }
+
+        // Si no encuentra, devolver genérico
+        return "unknown_constraint";
+    }
+
+    /**
+     * Extrae el tipo de violación de constraint del mensaje de error SQL
+     * Detecta: FK_VIOLATION, UNIQUE_VIOLATION, NOT_NULL_VIOLATION, CHECK_VIOLATION
+     */
+    private String extraerTipoViolacion(org.springframework.dao.DataIntegrityViolationException e) {
+        String mensaje = e.getMessage() != null ? e.getMessage().toUpperCase() : "";
+        
+        // Verificar por texto del mensaje
+        if (mensaje.contains("FOREIGN KEY")) {
+            return "FK_VIOLATION";
+        } else if (mensaje.contains("UNIQUE") || mensaje.contains("duplicate key")) {
+            return "UNIQUE_VIOLATION";
+        } else if (mensaje.contains("NOT NULL")) {
+            return "NOT_NULL_VIOLATION";
+        } else if (mensaje.contains("CHECK")) {
+            return "CHECK_VIOLATION";
+        }
+        
+        // Verificar por SQLState
+        if (mensaje.contains("23503")) {
+            return "FK_VIOLATION"; // SQLState 23503 = FK violation
+        } else if (mensaje.contains("23505")) {
+            return "UNIQUE_VIOLATION"; // SQLState 23505 = UNIQUE violation
+        } else if (mensaje.contains("23502")) {
+            return "NOT_NULL_VIOLATION"; // SQLState 23502 = NOT NULL violation
+        }
+        
+        return "CONSTRAINT_VIOLATION"; // Genérico si no se identifica
+    }}

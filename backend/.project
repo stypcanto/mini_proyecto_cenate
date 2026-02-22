@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <projectDescription>
-	<name>cenate</name>
+	<name>cenate-backend</name>
 	<comment>CENATE API - Sistema de Gestión v1.34.0 (Solicitudes de Bolsa v1.6.0 + Estados Gestión Citas v1.33.0 + Tele-ECG v1.24.0)</comment>
 	<projects>
 	</projects>
@@ -15,6 +15,11 @@
 			<arguments>
 			</arguments>
 		</buildCommand>
+		<buildCommand>
+			<name>org.springframework.ide.eclipse.boot.validation.springbootbuilder</name>
+			<arguments>
+			</arguments>
+		</buildCommand>
 	</buildSpec>
 	<natures>
 		<nature>org.eclipse.jdt.core.javanature</nature>
@@ -22,7 +27,7 @@
 	</natures>
 	<filteredResources>
 		<filter>
-			<id>1771254198040</id>
+			<id>1</id>
 			<name></name>
 			<type>30</type>
 			<matcher>
