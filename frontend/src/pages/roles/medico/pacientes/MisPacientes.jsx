@@ -2430,7 +2430,7 @@ export default function MisPacientes() {
                     <th className="px-2 py-1 text-left">Condición</th>
                     <th className="px-2 py-1 text-left">Observaciones</th>
                     <th className="px-2 py-1 text-left">🔔 Motivo Llamada</th>
-                    <th className="px-2 py-1 text-left">Fecha Asignación</th>
+                    <th className="px-2 py-1 text-left">Fecha y Hora Cita</th>
                     <th className="px-2 py-1 text-left">Fecha Atención</th>
                     {/* ✅ v1.66.4: Columna para visualizar ECGs (SOLO CARDIÓLOGOS) */}
                     {esCardiologo && (
@@ -2570,7 +2570,7 @@ export default function MisPacientes() {
                         )}
                       </td>
                       <td className="px-2 py-1 text-gray-600 text-xs whitespace-nowrap">
-                        {formatearFechaHumana(paciente.fechaAsignacion)}
+                        {formatearFechaHumana(paciente.fechaAtencion)}
                       </td>
                       <td className="px-2 py-1 text-gray-600 text-xs whitespace-nowrap">
                         {formatearFechaHumana(paciente.fechaAtencion)}
