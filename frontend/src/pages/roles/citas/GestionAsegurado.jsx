@@ -3208,7 +3208,7 @@ CENATE de Essalud`;
                                       const horaActual = fechaHoraCitaSeleccionada?.split('T')[1] || '';
                                       setFechaHoraCitaSeleccionada(horaActual ? `${fechaSeleccionada}T${horaActual}` : fechaSeleccionada);
                                     }}
-                                    min={new Date().toISOString().slice(0, 10)}
+                                    min={(() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; })()}
                                     className="w-full px-3 py-2 border-2 border-purple-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-purple-600 text-sm"
                                   />
                                 </div>
@@ -3226,7 +3226,7 @@ CENATE de Essalud`;
                                         if (!hh) return;
                                         const horaSeleccionada = `${hh}:${mm}`;
                                         const fechaActual = fechaHoraCitaSeleccionada?.split('T')[0] || '';
-                                        const hoy = new Date().toISOString().slice(0, 10);
+                                        const hoy = (() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; })();
                                         if (fechaActual === hoy) {
                                           const ahora = new Date();
                                           const horaAhora = `${String(ahora.getHours()).padStart(2, '0')}:${String(ahora.getMinutes()).padStart(2, '0')}`;
@@ -3263,7 +3263,7 @@ CENATE de Essalud`;
                                         if (!hh) { toast.error("❌ Selecciona primero la hora"); return; }
                                         const horaSeleccionada = `${hh}:${mm}`;
                                         const fechaActual = fechaHoraCitaSeleccionada?.split('T')[0] || '';
-                                        const hoy = new Date().toISOString().slice(0, 10);
+                                        const hoy = (() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; })();
                                         if (fechaActual === hoy) {
                                           const ahora = new Date();
                                           const horaAhora = `${String(ahora.getHours()).padStart(2, '0')}:${String(ahora.getMinutes()).padStart(2, '0')}`;
@@ -3297,7 +3297,7 @@ CENATE de Essalud`;
                               if (fechaHoraCitaSeleccionada) {
                                 const fechaSeleccionada = fechaHoraCitaSeleccionada.split('T')[0];
                                 const ahora = new Date();
-                                const hoy = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate()).toISOString().slice(0, 10);
+                                const hoy = `${ahora.getFullYear()}-${String(ahora.getMonth()+1).padStart(2,'0')}-${String(ahora.getDate()).padStart(2,'0')}`;
                                 
                                 if (fechaSeleccionada < hoy) {
                                   toast.error("❌ No puedes citar a una fecha anterior a hoy");

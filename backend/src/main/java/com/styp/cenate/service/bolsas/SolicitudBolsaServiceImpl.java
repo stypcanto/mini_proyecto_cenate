@@ -3283,7 +3283,7 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
             .numeroSolicitud(numeroSolicitud)
             .pacienteDni(request.getPacienteDni())
             .pacienteNombre(request.getPacienteNombre())
-            .pacienteId(request.getPacienteDni()) // Usar DNI como ID de paciente
+            .pacienteId(asegurado.getPkAsegurado()) // ✅ fix: usar pk_asegurado (FK real), no el DNI
             .pacienteSexo(request.getPacienteSexo())
             .pacienteTelefono(request.getPacienteTelefono())
             .pacienteTelefonoAlterno(request.getPacienteTelefonoAlterno())
