@@ -1220,8 +1220,32 @@ CENATE de Essalud`;
 
     setCargandoBusqueda(true);
     try {
+      const dni = termino.trim();
+
+      // ✅ Optimización: búsqueda directa por DNI exacto (más rápida)
+      const responseByDoc = await fetch(
+        `${API_BASE}/asegurados/doc/${encodeURIComponent(dni)}`,
+        {
+          method: "GET",
+          headers: getHeaders(),
+        }
+      );
+
+      if (responseByDoc.ok) {
+        const asegurado = await responseByDoc.json();
+        const resultados = asegurado ? [asegurado] : [];
+        console.log(`🔍 Búsqueda directa por DNI encontró ${resultados.length} resultado(s)`);
+        setResultadosBusqueda(resultados);
+        return;
+      }
+
+      // Si no existe por DNI exacto, fallback al endpoint general
+      if (responseByDoc.status !== 404) {
+        console.warn("⚠️ /doc/{dni} devolvió estado", responseByDoc.status, "- usando fallback /buscar");
+      }
+
       const response = await fetch(
-        `${API_BASE}/asegurados/buscar?q=${encodeURIComponent(termino)}&size=10`,
+        `${API_BASE}/asegurados/buscar?q=${encodeURIComponent(dni)}&size=1`,
         {
           method: "GET",
           headers: getHeaders(),
@@ -1231,7 +1255,7 @@ CENATE de Essalud`;
       if (response.ok) {
         const data = await response.json();
         const asegurados = data?.content || [];
-        console.log(`🔍 Búsqueda encontró ${asegurados.length} resultados`);
+        console.log(`🔍 Fallback /buscar encontró ${asegurados.length} resultados`);
         setResultadosBusqueda(asegurados);
       } else {
         console.error("Error en búsqueda:", response.status);
