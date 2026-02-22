@@ -135,6 +135,51 @@ export default function GestionAsegurado() {
   const [fechaHoraCitaSeleccionada, setFechaHoraCitaSeleccionada] = useState(""); // v1.46.7: Fecha/Hora en modal
   const [medicosDisponibles, setMedicosDisponibles] = useState([]); // v1.46.7: Médicos por especialidad
 
+  const formatearNombreEspecialista = (medico) => {
+    const apellidoPaterno = (medico?.apellidoPaterno || medico?.apPaterno || "").trim();
+    const apellidoMaterno = (medico?.apellidoMaterno || medico?.apMaterno || "").trim();
+    const nombres = (medico?.nombres || "").trim();
+
+    if (apellidoPaterno && apellidoMaterno && nombres) {
+      return `${apellidoPaterno} ${apellidoMaterno}, ${nombres}`;
+    }
+
+    const nombreCompleto = (medico?.nombre || "").trim().replace(/\s+/g, " ");
+    if (!nombreCompleto) return "Sin nombre";
+
+    const partes = nombreCompleto.split(" ");
+    if (partes.length >= 3) {
+      const apellidos = partes.slice(-2).join(" ");
+      const nombresInferidos = partes.slice(0, -2).join(" ");
+      return `${apellidos}, ${nombresInferidos}`;
+    }
+
+    return nombreCompleto;
+  };
+
+  const formatearLabelEspecialista = (medico) => {
+    const numeroDocumento =
+      medico?.documento || medico?.numDocPers || medico?.numeroDocumento || "Sin documento";
+    return `${formatearNombreEspecialista(medico)} - DNI: ${numeroDocumento}`;
+  };
+
+  const obtenerApellidoPaternoParaOrden = (medico) => {
+    const apellidoPaterno = (medico?.apellidoPaterno || medico?.apPaterno || "").trim();
+    if (apellidoPaterno) return apellidoPaterno;
+
+    const nombreCompleto = (medico?.nombre || "").trim().replace(/\s+/g, " ");
+    if (!nombreCompleto) return "";
+
+    const partes = nombreCompleto.split(" ");
+    if (partes.length >= 3) {
+      return partes[partes.length - 2];
+    }
+    if (partes.length === 2) {
+      return partes[1];
+    }
+    return partes[0] || "";
+  };
+
   // 🔧 API_BASE dinámico basado en el host actual o variable de entorno
   const getApiBase = () => {
     // Prioridad: variable de entorno > window.location
@@ -1321,7 +1366,16 @@ CENATE de Essalud`;
 
       if (response.ok) {
         const result = await response.json();
-        setMedicosDisponibles(result.data || []);
+        const medicosOrdenados = [...(result.data || [])].sort((a, b) => {
+          const apA = obtenerApellidoPaternoParaOrden(a);
+          const apB = obtenerApellidoPaternoParaOrden(b);
+          const cmpApellido = apA.localeCompare(apB, "es", { sensitivity: "base" });
+          if (cmpApellido !== 0) return cmpApellido;
+          return formatearNombreEspecialista(a).localeCompare(formatearNombreEspecialista(b), "es", {
+            sensitivity: "base",
+          });
+        });
+        setMedicosDisponibles(medicosOrdenados);
         console.log(`✅ Cargados ${result.data?.length || 0} médicos para ${especialidad}`);
       } else {
         console.error("Error al cargar médicos:", response.statusText);
@@ -3228,7 +3282,7 @@ CENATE de Essalud`;
                                 </option>
                                 {medicosDisponibles.map((medico) => (
                                   <option key={medico.idPers} value={medico.idPers}>
-                                    {medico.nombre} - DNI: {medico.documento}
+                                    {formatearLabelEspecialista(medico)}
                                   </option>
                                 ))}
                               </select>

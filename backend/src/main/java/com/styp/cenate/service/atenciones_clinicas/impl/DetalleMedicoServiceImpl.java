@@ -9,6 +9,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.text.Normalizer;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -36,6 +37,7 @@ public class DetalleMedicoServiceImpl implements DetalleMedicoService {
             
             // Convertir a DTOs
             return medicos.stream()
+                    .sorted(this::compararPorApellidosYNombres)
                     .map(this::convertirADTO)
                     .collect(Collectors.toList());
             
@@ -166,4 +168,28 @@ public class DetalleMedicoServiceImpl implements DetalleMedicoService {
 
                 .build();
     }
+
+            private int compararPorApellidosYNombres(PersonalCnt a, PersonalCnt b) {
+            int cmpPaterno = normalizarParaOrden(a.getApePaterPers())
+                .compareTo(normalizarParaOrden(b.getApePaterPers()));
+            if (cmpPaterno != 0) return cmpPaterno;
+
+            int cmpMaterno = normalizarParaOrden(a.getApeMaterPers())
+                .compareTo(normalizarParaOrden(b.getApeMaterPers()));
+            if (cmpMaterno != 0) return cmpMaterno;
+
+            int cmpNombres = normalizarParaOrden(a.getNomPers())
+                .compareTo(normalizarParaOrden(b.getNomPers()));
+            if (cmpNombres != 0) return cmpNombres;
+
+            return normalizarParaOrden(a.getNombreCompleto())
+                .compareTo(normalizarParaOrden(b.getNombreCompleto()));
+            }
+
+            private String normalizarParaOrden(String texto) {
+            if (texto == null || texto.isBlank()) return "";
+            String sinAcentos = Normalizer.normalize(texto, Normalizer.Form.NFD)
+                .replaceAll("\\p{M}", "");
+            return sinAcentos.trim().toUpperCase();
+            }
 }
