@@ -383,7 +383,7 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
 
                     // Procesar y validar fila
                     SolicitudBolsa solicitud = procesarFilaExcel(
-                        rowDTO, idBolsa, idServicio, usuarioCarga
+                        rowDTO, idBolsa, idServicio, usuarioCarga, idHistorial
                     );
 
                     // ============================================================================
@@ -1149,7 +1149,8 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
             SolicitudBolsaExcelRowDTO row,
             Long idBolsa,
             Long idServicio,
-            String usuarioCarga) {
+            String usuarioCarga,
+            Long idHistorial) {
 
         String pacienteIdGenerado = row.dni(); // El pacienteId es el DNI (pk_asegurado)
         String pacienteNombre = "Paciente " + row.dni();
@@ -1316,6 +1317,7 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
             .codigoAdscripcion(row.codigoIpress())
             .idIpress(idIpress)
             .idIpressAtencion(idIpressAtencion)  // ✅ v1.15.0: IPRESS ATENCIÓN - FK a dim_ipress.id_ipress
+            .idCargaExcel(idHistorial)  // ✅ Guardar ID de la carga Excel
             .estado("PENDIENTE")
             .estadoGestionCitasId(11L)  // ✅ ID 11: Estado "Pendiente Cita" en dim_estados_gestion_citas
             .activo(true)
