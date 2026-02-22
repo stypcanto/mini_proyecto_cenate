@@ -39,6 +39,7 @@ import {
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { formatearTiempoRelativo } from "../../../utils/dateUtils";
+import { logRespuestaConsola } from "../../../utils/consoleResponseLogger";
 
 
 export default function GestionAsegurado() {
@@ -1233,6 +1234,15 @@ CENATE de Essalud`;
 
       if (responseByDoc.ok) {
         const asegurado = await responseByDoc.json();
+        logRespuestaConsola({
+          titulo: "Consulta DNI",
+          endpoint: `${API_BASE}/asegurados/doc/${encodeURIComponent(dni)}`,
+          method: "GET",
+          enviado: { dni },
+          status: responseByDoc.status,
+          devuelto: asegurado,
+          fuente: "/asegurados/doc",
+        });
         const resultados = asegurado ? [asegurado] : [];
         console.log(`🔍 Búsqueda directa por DNI encontró ${resultados.length} resultado(s)`);
         setResultadosBusqueda(resultados);
@@ -1254,6 +1264,15 @@ CENATE de Essalud`;
 
       if (response.ok) {
         const data = await response.json();
+        logRespuestaConsola({
+          titulo: "Consulta DNI",
+          endpoint: `${API_BASE}/asegurados/buscar?q=${encodeURIComponent(dni)}&size=1`,
+          method: "GET",
+          enviado: { dni, q: dni, size: 1 },
+          status: response.status,
+          devuelto: data,
+          fuente: "/asegurados/buscar (fallback)",
+        });
         const asegurados = data?.content || [];
         console.log(`🔍 Fallback /buscar encontró ${asegurados.length} resultados`);
         setResultadosBusqueda(asegurados);

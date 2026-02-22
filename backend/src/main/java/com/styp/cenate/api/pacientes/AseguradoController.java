@@ -8,7 +8,9 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.web.bind.annotation.*;
 
 import java.sql.Date;
+import java.sql.Timestamp;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.Period;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -33,17 +35,33 @@ public class AseguradoController {
         if (fechaNacimiento == null) {
             return null;
         }
-        
+
         LocalDate fechaNac;
         if (fechaNacimiento instanceof java.sql.Date) {
             fechaNac = ((java.sql.Date) fechaNacimiento).toLocalDate();
+        } else if (fechaNacimiento instanceof Timestamp) {
+            fechaNac = ((Timestamp) fechaNacimiento).toLocalDateTime().toLocalDate();
+        } else if (fechaNacimiento instanceof LocalDateTime) {
+            fechaNac = ((LocalDateTime) fechaNacimiento).toLocalDate();
         } else if (fechaNacimiento instanceof LocalDate) {
             fechaNac = (LocalDate) fechaNacimiento;
+        } else if (fechaNacimiento instanceof String) {
+            String valor = ((String) fechaNacimiento).trim();
+            if (valor.isEmpty()) {
+                return null;
+            }
+            try {
+                // Acepta formatos comunes: yyyy-MM-dd y yyyy-MM-ddTHH:mm:ss
+                fechaNac = LocalDate.parse(valor.length() >= 10 ? valor.substring(0, 10) : valor);
+            } catch (Exception ex) {
+                return null;
+            }
         } else {
             return null;
         }
-        
-        return Period.between(fechaNac, LocalDate.now()).getYears();
+
+        int edad = Period.between(fechaNac, LocalDate.now()).getYears();
+        return edad >= 0 ? edad : null;
     }
 
     /**
@@ -208,6 +226,7 @@ public class AseguradoController {
             response.put("docPaciente", asegurado.get("doc_paciente"));
             response.put("paciente", asegurado.get("paciente"));
             response.put("fecnacimpaciente", asegurado.get("fecnacimpaciente"));
+            response.put("edad", calcularEdad(asegurado.get("fecnacimpaciente")));
             response.put("sexo", asegurado.get("sexo"));
             response.put("tipoPaciente", asegurado.get("tipo_paciente"));
             response.put("telFijo", asegurado.get("tel_fijo"));
