@@ -108,15 +108,22 @@ public class CoordinadorMedicoServiceImpl implements ICoordinadorMedicoService {
     @Override
     @Transactional
     public void reasignarPaciente(Long idSolicitud, Long nuevoMedicoId) {
-        String areaTrabajo = obtenerAreaDelCoordinadorActual();
+        // Obtener área solo si está disponible (COORDINADOR tiene área; GESTOR DE CITAS puede no tenerla)
+        String areaTrabajo = null;
+        try {
+            areaTrabajo = obtenerAreaDelCoordinadorActual();
+        } catch (RuntimeException e) {
+            log.warn("Usuario sin área de trabajo asignada, omitiendo validación de área: {}", e.getMessage());
+        }
 
-        // Validar que el nuevo médico pertenece al área
+        // Validar que el nuevo profesional existe
         PersonalCnt nuevoMedico = personalCntRepository.findById(nuevoMedicoId)
-            .orElseThrow(() -> new RuntimeException("Médico no encontrado: " + nuevoMedicoId));
+            .orElseThrow(() -> new RuntimeException("Profesional no encontrado: " + nuevoMedicoId));
 
-        if (!areaTrabajo.equals(nuevoMedico.getAreaTrabajo())) {
+        // Solo validar área si el usuario tiene área asignada (Coordinador Médico con área)
+        if (areaTrabajo != null && !areaTrabajo.equals(nuevoMedico.getAreaTrabajo())) {
             throw new RuntimeException(
-                String.format("El médico %s no pertenece al área %s",
+                String.format("El profesional %s no pertenece al área %s",
                     nuevoMedico.getNombreCompleto(), areaTrabajo)
             );
         }
@@ -129,8 +136,8 @@ public class CoordinadorMedicoServiceImpl implements ICoordinadorMedicoService {
         solicitud.setFechaAsignacion(OffsetDateTime.now());
         solicitudBolsaRepository.save(solicitud);
 
-        log.info("Reasignación: Solicitud {} de médico {} a médico {} en área {}",
-            idSolicitud, medicoAnterior, nuevoMedicoId, areaTrabajo);
+        log.info("Reasignación: Solicitud {} de profesional {} a profesional {} (área: {})",
+            idSolicitud, medicoAnterior, nuevoMedicoId, areaTrabajo != null ? areaTrabajo : "N/A");
     }
 
     // ========================================================================
