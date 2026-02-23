@@ -141,6 +141,21 @@ export const importarSolicitudesDesdeExcel = async (formData) => {
 };
 
 /**
+ * 🚀 v1.79.1: Obtiene TODOS los registros gestionados (SolicitudesAtendidas)
+ * Endpoint optimizado sin subconsultas correlacionadas.
+ * @returns {Promise<Array>} - Lista completa de registros gestionados
+ */
+export const obtenerGestionados = async () => {
+  try {
+    const response = await apiClient.get(`${API_BASE_URL}/solicitudes/gestionados`, true);
+    return response;
+  } catch (error) {
+    console.error('Error al obtener gestionados:', error);
+    throw error;
+  }
+};
+
+/**
  * Obtiene todas las solicitudes de bolsas (sin paginación)
  * DEPRECATED: Usar obtenerSolicitudesPaginado() para nuevas implementaciones
  * @returns {Promise<Array>} - Listado de solicitudes
@@ -188,7 +203,8 @@ export const obtenerSolicitudesPaginado = async (
   fechaInicio = null,
   fechaFin = null,
   condicionMedica = null,   // v1.74.0: Filtro por condicion_medica (PADOMI)
-  gestoraId = null          // v1.70.x: Filtro por gestora asignada (ID)
+  gestoraId = null,         // v1.70.x: Filtro por gestora asignada (ID)
+  estadoBolsa = null        // Filtro por estado de bolsa (PENDIENTE, APROBADA, RECHAZADA)
 ) => {
   try {
     // Construir query string dinámico
@@ -214,6 +230,7 @@ export const obtenerSolicitudesPaginado = async (
     if (fechaFin && fechaFin.trim()) params.append('fechaFin', fechaFin.trim());
     if (condicionMedica && condicionMedica.trim()) params.append('condicionMedica', condicionMedica.trim());
     if (gestoraId !== null && gestoraId !== undefined) params.append('gestoraId', gestoraId);
+    if (estadoBolsa && estadoBolsa !== 'todos') params.append('estadoBolsa', estadoBolsa);
 
     const finalUrl = `${API_BASE_URL}/solicitudes?${params.toString()}`;
     console.log('🌐 URL de solicitud:', finalUrl);
@@ -704,6 +721,26 @@ export const asignarAGestora = async (id, gestoraId, gestoraNombre) => {
 };
 
 /**
+ * Asigna una gestora a múltiples solicitudes en una sola llamada HTTP (bulk)
+ * @param {number[]} ids      - Lista de IDs de solicitudes
+ * @param {number}  gestoraId - ID de la gestora a asignar
+ * @returns {Promise<Object>} - { actualizados, mensaje }
+ */
+export const asignarGestoraMasivo = async (ids, gestoraId) => {
+  try {
+    const response = await apiClient.post(
+      `${API_BASE_URL}/solicitudes/asignar-gestora-masivo`,
+      { ids, idGestora: gestoraId },
+      true
+    );
+    return response;
+  } catch (error) {
+    console.error('Error en asignación masiva de gestora:', error);
+    throw error;
+  }
+};
+
+/**
  * Obtiene lista de gestoras disponibles (rol GESTOR_DE_CITAS)
  * @returns {Promise<Object>} - Lista de gestoras con id, nombre, activo
  */
@@ -1127,6 +1164,7 @@ export default {
   // Solicitudes
   importarSolicitudesDesdeExcel,
   obtenerSolicitudes,
+  obtenerGestionados,          // v1.79.1: Endpoint optimizado para SolicitudesAtendidas
   obtenerSolicitudesPaginado, // NEW v2.5.1: Paginación server-side
   obtenerSolicitudPorId,
   crearSolicitud,
@@ -1160,6 +1198,7 @@ export default {
 
   // NUEVOS - Fase 1
   asignarAGestora,
+  asignarGestoraMasivo, // v1.65.0: Asignación bulk (1 sola llamada HTTP)
   obtenerGestorasDisponibles, // NEW v2.4.0: Lista de gestoras disponibles
   cambiarTelefono,
   actualizarTelefonos, // NEW v2.5.0: Actualizar teléfono principal y/o alterno

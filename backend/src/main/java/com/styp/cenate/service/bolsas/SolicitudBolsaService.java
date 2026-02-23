@@ -84,6 +84,7 @@ public interface SolicitudBolsaService {
             String fechaFin,
             String condicionMedica,
             Long gestoraId,
+            String estadoBolsa,
             org.springframework.data.domain.Pageable pageable);
 
     /**
@@ -95,6 +96,14 @@ public interface SolicitudBolsaService {
      * Asigna una gestora a una solicitud
      */
     void asignarGestora(Long idSolicitud, Long idGestora);
+
+    /**
+     * Asigna una gestora a múltiples solicitudes en una sola operación (bulk)
+     * @param ids       lista de IDs de solicitudes a asignar
+     * @param idGestora ID del usuario gestora
+     * @return cantidad de registros actualizados
+     */
+    int asignarGestoraMasivo(List<Long> ids, Long idGestora);
 
     /**
      * Elimina la asignación de gestora (deja en null)

@@ -229,6 +229,78 @@ public class SolicitudBolsaController {
     }
 
     /**
+     * 🚀 v1.79.1: Obtiene TODOS los registros gestionados (para SolicitudesAtendidas)
+     * GET /api/bolsas/solicitudes/gestionados
+     *
+     * Query optimizada sin subconsultas correlacionadas → mucho más rápido.
+     * Devuelve lista completa; el filtrado/paginación se hace en el frontend (client-side).
+     */
+    @GetMapping("/gestionados")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<?> listarGestionados() {
+        try {
+            log.info("🚀 GET /api/bolsas/solicitudes/gestionados — carga optimizada");
+            List<Object[]> rows = solicitudRepository.findAllGestionadosList();
+
+            List<java.util.Map<String, Object>> result = rows.stream().map(r -> {
+                java.util.Map<String, Object> m = new java.util.HashMap<>();
+                m.put("id_solicitud",              r[0]);
+                m.put("numero_solicitud",           r[1]);
+                m.put("paciente_id",               r[2]);
+                m.put("paciente_nombre",            r[3]);
+                m.put("paciente_dni",               r[4]);
+                m.put("especialidad",               r[5]);
+                m.put("fecha_preferida_no_atendida",r[6]);
+                m.put("tipo_documento",             r[7]);
+                m.put("fecha_nacimiento",           r[8]);
+                m.put("paciente_sexo",              r[9]);
+                m.put("paciente_telefono",          r[10]);
+                m.put("paciente_telefono_alterno",  r[11]);
+                m.put("paciente_email",             r[12]);
+                m.put("codigo_ipress",              r[13]);
+                m.put("tipo_cita",                  r[14]);
+                m.put("id_bolsa",                   r[15]);
+                m.put("desc_tipo_bolsa",            r[16]);
+                m.put("id_servicio",                r[17]);
+                m.put("codigo_adscripcion",         r[18]);
+                m.put("id_ipress",                  r[19]);
+                m.put("estado",                     r[20]);
+                m.put("cod_estado_cita",            r[21]);
+                m.put("desc_estado_cita",           r[22]);
+                m.put("fecha_solicitud",            r[23]);
+                m.put("fecha_actualizacion",        r[24]);
+                m.put("estado_gestion_citas_id",    r[25]);
+                m.put("activo",                     r[26]);
+                m.put("desc_ipress",                r[27]);
+                m.put("desc_red",                   r[28]);
+                m.put("desc_macro",                 r[29]);
+                m.put("responsable_gestora_id",     r[30]);
+                m.put("fecha_asignacion",           r[31]);
+                m.put("fecha_cambio_estado",        r[32]);
+                m.put("usuario_cambio_estado_id",   r[33]);
+                m.put("nombre_usuario_cambio_estado", r[34]);
+                m.put("fecha_atencion",             r[35]);
+                m.put("hora_atencion",              r[36]);
+                m.put("id_personal",                r[37]);
+                m.put("condicion_medica",           r[38]);
+                m.put("fecha_atencion_medica",      r[39]);
+                m.put("nombre_medico_asignado",     r[40]);
+                m.put("id_ipress_atencion",         r[41]);
+                m.put("cod_ipress_atencion",        r[42]);
+                m.put("desc_ipress_atencion",       r[43]);
+                m.put("nombre_gestora",             r[44]);
+                return m;
+            }).collect(java.util.stream.Collectors.toList());
+
+            log.info("✅ Gestionados cargados: {} registros", result.size());
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            log.error("❌ Error en /gestionados: ", e);
+            return ResponseEntity.status(500).body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    /**
      * Obtiene lista de gestoras disponibles (usuarios con rol GESTOR_DE_CITAS)
      * GET /api/bolsas/solicitudes/gestoras-disponibles
      *
@@ -458,17 +530,18 @@ public class SolicitudBolsaController {
             @RequestParam(required = false) String fechaFin,
             @RequestParam(required = false) String condicionMedica,
             @RequestParam(required = false) Long gestoraId,
+            @RequestParam(required = false) String estadoBolsa,
             @PageableDefault(size = 100, page = 0) Pageable pageable) {
 
         // Si hay algún filtro, usar búsqueda con filtros
         if (bolsa != null || macrorregion != null || red != null || ipress != null ||
             especialidad != null || estado != null || ipressAtencion != null || tipoCita != null ||
             asignacion != null || busqueda != null || fechaInicio != null || fechaFin != null ||
-            condicionMedica != null || gestoraId != null) {
-            log.info("🔍 Solicitud con filtros - Bolsa: {}, Macro: {}, Red: {}, IPRESS: {}, Especialidad: {}, Estado: {}, IPRESSAtencion: {}, TipoCita: {}, Asignación: {}, Búsqueda: {}, FechaInicio: {}, FechaFin: {}, CondicionMedica: {}",
-                bolsa, macrorregion, red, ipress, especialidad, estado, ipressAtencion, tipoCita, asignacion, busqueda, fechaInicio, fechaFin, condicionMedica);
+            condicionMedica != null || gestoraId != null || estadoBolsa != null) {
+            log.info("🔍 Solicitud con filtros - Bolsa: {}, Macro: {}, Red: {}, IPRESS: {}, Especialidad: {}, Estado: {}, IPRESSAtencion: {}, TipoCita: {}, Asignación: {}, Búsqueda: {}, FechaInicio: {}, FechaFin: {}, CondicionMedica: {}, EstadoBolsa: {}",
+                bolsa, macrorregion, red, ipress, especialidad, estado, ipressAtencion, tipoCita, asignacion, busqueda, fechaInicio, fechaFin, condicionMedica, estadoBolsa);
             return ResponseEntity.ok(solicitudBolsaService.listarConFiltros(
-                    bolsa, macrorregion, red, ipress, especialidad, estado, ipressAtencion, tipoCita, asignacion, busqueda, fechaInicio, fechaFin, condicionMedica, gestoraId, pageable));
+                    bolsa, macrorregion, red, ipress, especialidad, estado, ipressAtencion, tipoCita, asignacion, busqueda, fechaInicio, fechaFin, condicionMedica, gestoraId, estadoBolsa, pageable));
         }
 
         // Sin filtros, listar todas (comportamiento anterior)
@@ -1111,6 +1184,74 @@ public class SolicitudBolsaController {
             return ResponseEntity.status(500).body(
                 Map.of("error", "Error interno del servidor: " + e.getMessage())
             );
+        }
+    }
+
+    /**
+     * Asigna una gestora a múltiples solicitudes en una sola operación (bulk)
+     * POST /api/bolsas/solicitudes/asignar-gestora-masivo
+     *
+     * Body: { "ids": [1, 2, 3, ...], "idGestora": 5 }
+     * Response: { "actualizados": 47, "gestoraNombre": "Apellido, Nombre" }
+     *
+     * Roles permitidos: SUPERADMIN, ADMIN, COORD. GESTION CITAS, GESTOR DE CITAS
+     */
+    @PostMapping("/asignar-gestora-masivo")
+    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'COORD. GESTION CITAS', 'GESTOR DE CITAS')")
+    public ResponseEntity<?> asignarGestoraMasivo(@RequestBody Map<String, Object> payload) {
+        try {
+            Object idsObj = payload.get("ids");
+            Object idGestoraObj = payload.get("idGestora");
+
+            if (idsObj == null) {
+                return ResponseEntity.badRequest().body(Map.of("error", "No se proporcionó el campo 'ids'"));
+            }
+            if (idGestoraObj == null) {
+                return ResponseEntity.badRequest().body(Map.of("error", "No se proporcionó el campo 'idGestora'"));
+            }
+
+            // Convertir ids a List<Long> de forma segura
+            List<Long> ids = new ArrayList<>();
+            if (idsObj instanceof List<?>) {
+                for (Object obj : (List<?>) idsObj) {
+                    if (obj instanceof Number) {
+                        ids.add(((Number) obj).longValue());
+                    } else if (obj instanceof String) {
+                        try {
+                            ids.add(Long.parseLong((String) obj));
+                        } catch (NumberFormatException ex) {
+                            log.warn("⚠️ No se pudo parsear ID: {}", obj);
+                        }
+                    }
+                }
+            }
+
+            if (ids.isEmpty()) {
+                return ResponseEntity.badRequest().body(Map.of("error", "No se proporcionaron IDs válidos"));
+            }
+
+            Long idGestora = idGestoraObj instanceof Number
+                ? ((Number) idGestoraObj).longValue()
+                : Long.parseLong(idGestoraObj.toString());
+
+            log.info("👥 [BULK] Asignando gestora {} a {} solicitudes", idGestora, ids.size());
+            int actualizados = solicitudBolsaService.asignarGestoraMasivo(ids, idGestora);
+            log.info("✅ [BULK] {} solicitudes asignadas a gestora {}", actualizados, idGestora);
+
+            return ResponseEntity.ok(Map.of(
+                "mensaje", actualizados + " solicitud(es) asignada(s) exitosamente",
+                "actualizados", actualizados
+            ));
+
+        } catch (com.styp.cenate.exception.ResourceNotFoundException e) {
+            log.error("❌ Recurso no encontrado: ", e);
+            return ResponseEntity.status(404).body(Map.of("error", e.getMessage()));
+        } catch (com.styp.cenate.exception.ValidationException e) {
+            log.error("❌ Error de validación: ", e);
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        } catch (Exception e) {
+            log.error("❌ Error en asignación masiva: ", e);
+            return ResponseEntity.status(500).body(Map.of("error", "Error interno: " + e.getMessage()));
         }
     }
 

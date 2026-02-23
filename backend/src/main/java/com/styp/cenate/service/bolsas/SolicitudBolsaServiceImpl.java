@@ -979,6 +979,44 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
 
     @Override
     @Transactional
+    public int asignarGestoraMasivo(List<Long> ids, Long idGestora) {
+        log.info("🔄 [BULK] Asignando gestora {} a {} solicitudes", idGestora, ids.size());
+
+        if (ids == null || ids.isEmpty()) {
+            throw new ValidationException("La lista de IDs no puede estar vacía");
+        }
+
+        // Validar que la gestora existe y tiene el rol correcto
+        Usuario gestora = usuarioRepository.findById(idGestora)
+            .orElseThrow(() -> new ResourceNotFoundException(
+                "Usuario " + idGestora + " no encontrado"
+            ));
+
+        boolean tieneRolGestora = gestora.getRoles().stream()
+            .anyMatch(rol -> rol.getDescRol() != null && "GESTOR DE CITAS".equals(rol.getDescRol().toUpperCase()));
+
+        if (!tieneRolGestora) {
+            throw new ValidationException(
+                "El usuario " + gestora.getNameUser() + " no tiene el rol GESTOR DE CITAS"
+            );
+        }
+
+        if (gestora.getStatUser() == null || (!gestora.getStatUser().equalsIgnoreCase("A") && !gestora.getStatUser().equalsIgnoreCase("ACTIVO"))) {
+            throw new ValidationException(
+                "La gestora " + gestora.getNameUser() + " no está activa"
+            );
+        }
+
+        int actualizados = solicitudRepository.asignarGestoraMasivo(ids, idGestora, java.time.OffsetDateTime.now());
+
+        log.info("✅ [BULK] {} de {} solicitudes asignadas a gestora {} ({})",
+            actualizados, ids.size(), idGestora, gestora.getNameUser());
+
+        return actualizados;
+    }
+
+    @Override
+    @Transactional
     public void eliminarAsignacionGestora(Long idSolicitud) {
         log.info("🗑️ Eliminando asignación de gestora en solicitud {}", idSolicitud);
 
@@ -2891,10 +2929,11 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
             String fechaFin,
             String condicionMedica,
             Long gestoraId,
+            String estadoBolsa,
             org.springframework.data.domain.Pageable pageable) {
         try {
-            log.info("🔍 Listando solicitudes con filtros - Bolsa: {}, Macro: {}, Red: {}, IPRESS: {}, Especialidad: {}, Estado: {}, IPRESSAtencion: {}, TipoCita: {}, Asignación: {}, Búsqueda: {}, FechaInicio: {}, FechaFin: {}",
-                bolsaNombre, macrorregion, red, ipress, especialidad, estadoCodigo, ipressAtencion, tipoCita, asignacion, busqueda, fechaInicio, fechaFin);
+            log.info("🔍 Listando solicitudes con filtros - Bolsa: {}, Macro: {}, Red: {}, IPRESS: {}, Especialidad: {}, Estado: {}, IPRESSAtencion: {}, TipoCita: {}, Asignación: {}, Búsqueda: {}, FechaInicio: {}, FechaFin: {}, EstadoBolsa: {}",
+                bolsaNombre, macrorregion, red, ipress, especialidad, estadoCodigo, ipressAtencion, tipoCita, asignacion, busqueda, fechaInicio, fechaFin, estadoBolsa);
 
             // Convertir "todas"/"todos" a null para ignorar ese filtro
             String bolsaNombreFinal = (bolsaNombre == null || "todas".equals(bolsaNombre) || bolsaNombre.trim().isEmpty()) ? null : bolsaNombre.trim();
@@ -2910,15 +2949,16 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
             String fechaInicioFinal = (fechaInicio == null || fechaInicio.trim().isEmpty()) ? null : fechaInicio.trim();
             String fechaFinFinal = (fechaFin == null || fechaFin.trim().isEmpty()) ? null : fechaFin.trim();
             String condicionMedicaFinal = (condicionMedica == null || condicionMedica.trim().isEmpty()) ? null : condicionMedica.trim();
+            String estadoBolsaFinal = (estadoBolsa == null || "todos".equals(estadoBolsa) || estadoBolsa.trim().isEmpty()) ? null : estadoBolsa.trim();
 
             // Llamar al repository con filtros
             List<Object[]> resultados = solicitudRepository.findAllWithFiltersAndPagination(
                     bolsaNombreFinal, macrorFinal, redFinal, ipressFinal, especialidadFinal,
-                    estadoCod, ipressAtencionFinal, tipoCitaFinal, asignacionFinal, busquedaFinal, fechaInicioFinal, fechaFinFinal, condicionMedicaFinal, gestoraId, pageable);
+                    estadoCod, ipressAtencionFinal, tipoCitaFinal, asignacionFinal, busquedaFinal, fechaInicioFinal, fechaFinFinal, condicionMedicaFinal, gestoraId, estadoBolsaFinal, pageable);
 
             long total = solicitudRepository.countWithFilters(
                     bolsaNombreFinal, macrorFinal, redFinal, ipressFinal, especialidadFinal,
-                    estadoCod, ipressAtencionFinal, tipoCitaFinal, asignacionFinal, busquedaFinal, fechaInicioFinal, fechaFinFinal, condicionMedicaFinal, gestoraId);
+                    estadoCod, ipressAtencionFinal, tipoCitaFinal, asignacionFinal, busquedaFinal, fechaInicioFinal, fechaFinFinal, condicionMedicaFinal, gestoraId, estadoBolsaFinal);
 
             // Mapear a DTOs
             List<SolicitudBolsaDTO> dtos = resultados.stream()

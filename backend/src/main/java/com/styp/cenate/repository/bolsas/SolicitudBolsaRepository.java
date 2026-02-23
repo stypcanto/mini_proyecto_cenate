@@ -3,9 +3,11 @@ package com.styp.cenate.repository.bolsas;
 import com.styp.cenate.model.bolsas.SolicitudBolsa;
 import com.styp.cenate.dto.bolsas.SolicitudBolsaDTO;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
+import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -252,7 +254,7 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
           AND (:red IS NULL OR dr.desc_red = :red)
           AND (:ipress IS NULL OR di.desc_ipress = :ipress)
           AND (:especialidad IS NULL OR LOWER(COALESCE(sb.especialidad, '')) LIKE LOWER(CONCAT('%', :especialidad, '%')))
-          AND (:estadoCodigo IS NULL OR UPPER(COALESCE(deg.cod_estado_cita, 'PENDIENTE_CITA')) = UPPER(:estadoCodigo))
+          AND (:estadoCodigo IS NULL OR POSITION(',' || UPPER(COALESCE(deg.cod_estado_cita, 'PENDIENTE_CITA')) || ',' IN ',' || UPPER(:estadoCodigo) || ',') > 0)
           AND (:ipressAtencion IS NULL OR LOWER(COALESCE(di2.desc_ipress, '')) LIKE LOWER(CONCAT('%', :ipressAtencion, '%')))
           AND (:tipoCita IS NULL OR UPPER(COALESCE(sb.tipo_cita, 'N/A')) = UPPER(:tipoCita))
           AND (CASE
@@ -268,6 +270,7 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
                OR (:condicionMedica != 'Sin atención' AND COALESCE(TRIM(sb.condicion_medica), '') = :condicionMedica)
                OR (:condicionMedica = 'Sin atención' AND (sb.condicion_medica IS NULL OR TRIM(sb.condicion_medica) = '')))
           AND (:gestoraId IS NULL OR sb.responsable_gestora_id = :gestoraId)
+          AND (:estadoBolsa IS NULL OR UPPER(COALESCE(sb.estado, '')) = UPPER(:estadoBolsa))
         ORDER BY CASE WHEN COALESCE(deg.cod_estado_cita, 'PENDIENTE_CITA') = 'PENDIENTE_CITA' THEN 0
                       WHEN COALESCE(deg.cod_estado_cita, 'PENDIENTE_CITA') = 'CITADO' THEN 1
                       ELSE 2 END, sb.fecha_solicitud DESC
@@ -288,6 +291,7 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
             @org.springframework.data.repository.query.Param("fechaFin") String fechaFin,
             @org.springframework.data.repository.query.Param("condicionMedica") String condicionMedica,
             @org.springframework.data.repository.query.Param("gestoraId") Long gestoraId,
+            @org.springframework.data.repository.query.Param("estadoBolsa") String estadoBolsa,
             org.springframework.data.domain.Pageable pageable);
 
     /**
@@ -310,7 +314,7 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
           AND (:red IS NULL OR dr.desc_red = :red)
           AND (:ipress IS NULL OR di.desc_ipress = :ipress)
           AND (:especialidad IS NULL OR LOWER(COALESCE(sb.especialidad, '')) LIKE LOWER(CONCAT('%', :especialidad, '%')))
-          AND (:estadoCodigo IS NULL OR UPPER(COALESCE(deg.cod_estado_cita, 'PENDIENTE_CITA')) = UPPER(:estadoCodigo))
+          AND (:estadoCodigo IS NULL OR POSITION(',' || UPPER(COALESCE(deg.cod_estado_cita, 'PENDIENTE_CITA')) || ',' IN ',' || UPPER(:estadoCodigo) || ',') > 0)
           AND (:ipressAtencion IS NULL OR LOWER(COALESCE(di2.desc_ipress, '')) LIKE LOWER(CONCAT('%', :ipressAtencion, '%')))
           AND (:tipoCita IS NULL OR UPPER(COALESCE(sb.tipo_cita, 'N/A')) = UPPER(:tipoCita))
           AND (CASE
@@ -326,6 +330,7 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
                OR (:condicionMedica != 'Sin atención' AND COALESCE(TRIM(sb.condicion_medica), '') = :condicionMedica)
                OR (:condicionMedica = 'Sin atención' AND (sb.condicion_medica IS NULL OR TRIM(sb.condicion_medica) = '')))
           AND (:gestoraId IS NULL OR sb.responsable_gestora_id = :gestoraId)
+          AND (:estadoBolsa IS NULL OR UPPER(COALESCE(sb.estado, '')) = UPPER(:estadoBolsa))
         """, nativeQuery = true)
     long countWithFilters(
             @org.springframework.data.repository.query.Param("bolsaNombre") String bolsaNombre,
@@ -341,7 +346,8 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
             @org.springframework.data.repository.query.Param("fechaInicio") String fechaInicio,
             @org.springframework.data.repository.query.Param("fechaFin") String fechaFin,
             @org.springframework.data.repository.query.Param("condicionMedica") String condicionMedica,
-            @org.springframework.data.repository.query.Param("gestoraId") Long gestoraId);
+            @org.springframework.data.repository.query.Param("gestoraId") Long gestoraId,
+            @org.springframework.data.repository.query.Param("estadoBolsa") String estadoBolsa);
 
     /**
      * Cuenta total de solicitudes activas (para calcular páginas totales)
@@ -1302,6 +1308,78 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
         @org.springframework.data.repository.query.Param("areaTrabajo") String areaTrabajo,
         @org.springframework.data.repository.query.Param("fechaDesde") java.time.OffsetDateTime fechaDesde,
         @org.springframework.data.repository.query.Param("fechaHasta") java.time.OffsetDateTime fechaHasta
+    );
+
+    // ========================================================================
+    // 🆕 v1.65.0: ASIGNACIÓN MASIVA A GESTORA (bulk update en 1 sola query)
+    // ========================================================================
+
+    /**
+     * 🚀 v1.79.1: Lista TODOS los registros gestionados (estados != PENDIENTE_CITA y != NO_CONTESTA)
+     * Optimizado para SolicitudesAtendidas: sin subconsultas correlacionadas, sin paginación.
+     * Mucho más rápido que findAllWithFiltersAndPagination con size=9999.
+     *
+     * @return lista completa de registros gestionados
+     */
+    @Query(value = """
+        SELECT sb.id_solicitud, sb.numero_solicitud, sb.paciente_id, sb.paciente_nombre,
+               sb.paciente_dni, sb.especialidad, sb.fecha_preferida_no_atendida,
+               sb.tipo_documento, sb.fecha_nacimiento, sb.paciente_sexo,
+               sb.paciente_telefono, sb.paciente_telefono_alterno,
+               sb.paciente_email,
+               sb.codigo_ipress, sb.tipo_cita,
+               sb.id_bolsa, tb.desc_tipo_bolsa,
+               sb.id_servicio, sb.codigo_adscripcion, sb.id_ipress,
+               sb.estado, COALESCE(deg.cod_estado_cita, 'PENDIENTE_CITA') as cod_estado_cita,
+               COALESCE(deg.desc_estado_cita, 'Paciente nuevo que ingresó a la bolsa') as desc_estado_cita,
+               sb.fecha_solicitud, sb.fecha_actualizacion,
+               sb.estado_gestion_citas_id, sb.activo,
+               di.desc_ipress, dr.desc_red, dm.desc_macro,
+               sb.responsable_gestora_id, sb.fecha_asignacion,
+               sb.fecha_cambio_estado, sb.usuario_cambio_estado_id,
+               COALESCE(CONCAT(pc.nom_pers, ' ', pc.ape_pater_pers, ' ', pc.ape_mater_pers), u.name_user, 'Sin asignar') as nombre_usuario_cambio_estado,
+               sb.fecha_atencion,
+               sb.hora_atencion,
+               sb.id_personal,
+               sb.condicion_medica, sb.fecha_atencion_medica,
+               COALESCE(CONCAT(med.nom_pers, ' ', med.ape_pater_pers, ' ', med.ape_mater_pers), '') as nombre_medico,
+               sb.id_ipress_atencion, COALESCE(di2.cod_ipress, '') as cod_ipress_atencion,
+               COALESCE(di2.desc_ipress, '') as desc_ipress_atencion,
+               COALESCE(CONCAT(pcg.nom_pers, ' ', pcg.ape_pater_pers, ' ', pcg.ape_mater_pers), ug.name_user) as nombre_gestora
+        FROM dim_solicitud_bolsa sb
+        LEFT JOIN dim_tipos_bolsas tb ON sb.id_bolsa = tb.id_tipo_bolsa
+        LEFT JOIN dim_ipress di ON sb.id_ipress = di.id_ipress
+        LEFT JOIN dim_ipress di2 ON sb.id_ipress_atencion = di2.id_ipress
+        LEFT JOIN dim_red dr ON di.id_red = dr.id_red
+        LEFT JOIN dim_macroregion dm ON dr.id_macro = dm.id_macro
+        LEFT JOIN dim_estados_gestion_citas deg ON sb.estado_gestion_citas_id = deg.id_estado_cita
+        LEFT JOIN dim_usuarios u ON sb.usuario_cambio_estado_id = u.id_user
+        LEFT JOIN dim_personal_cnt pc ON u.id_user = pc.id_usuario
+        LEFT JOIN dim_personal_cnt med ON sb.id_personal = med.id_pers
+        LEFT JOIN dim_usuarios ug ON sb.responsable_gestora_id = ug.id_user
+        LEFT JOIN dim_personal_cnt pcg ON ug.id_user = pcg.id_usuario
+        WHERE sb.activo = true
+          AND sb.estado_gestion_citas_id IS NOT NULL
+          AND deg.cod_estado_cita NOT IN ('PENDIENTE_CITA', 'NO_CONTESTA')
+        ORDER BY sb.fecha_cambio_estado DESC NULLS LAST
+        """, nativeQuery = true)
+    List<Object[]> findAllGestionadosList();
+
+    /**
+     * Asigna una gestora a múltiples solicitudes en una sola operación SQL
+     * Actualiza responsable_gestora_id y fecha_asignacion para todos los IDs dados
+     *
+     * @param ids       lista de IDs de solicitudes a actualizar
+     * @param idGestora ID del usuario gestora a asignar
+     * @param ahora     timestamp de asignación
+     * @return cantidad de registros actualizados
+     */
+    @Modifying
+    @Query("UPDATE SolicitudBolsa s SET s.responsableGestoraId = :idGestora, s.fechaAsignacion = :ahora WHERE s.idSolicitud IN :ids AND s.activo = true")
+    int asignarGestoraMasivo(
+        @org.springframework.data.repository.query.Param("ids") List<Long> ids,
+        @org.springframework.data.repository.query.Param("idGestora") Long idGestora,
+        @org.springframework.data.repository.query.Param("ahora") OffsetDateTime ahora
     );
 
 }
