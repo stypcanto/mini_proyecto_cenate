@@ -522,6 +522,11 @@ export const componentRegistry = {
     requiredAction: 'ver',
   },
 
+  '/bolsas/pacientes-rechazados': {
+    component: lazy(() => import('../pages/bolsas/PacientesRechazados')),
+    requiredAction: 'ver',
+  },
+
   '/bolsas/bolsa-x-medico': {
     component: lazy(() => import('../pages/bolsas/BolsaXMedico')),
     requiredAction: 'ver',
@@ -658,6 +663,14 @@ export const componentRegistry = {
 
   '/mesa-ayuda/estadisticas': {
     component: lazy(() => import('../pages/mesa-ayuda/EstadisticasMesaAyuda')),
+    requiredAction: 'ver',
+  },
+
+  // ========================================================================
+  // 👩‍⚕️ ENFERMERÍA
+  // ========================================================================
+  '/enfermeria/trazabilidad-recitas': {
+    component: lazy(() => import('../pages/enfermeria/TrazabilidadRecitasInterconsultas')),
     requiredAction: 'ver',
   },
 };

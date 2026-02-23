@@ -7,6 +7,8 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Map;
@@ -1389,6 +1391,93 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
         @org.springframework.data.repository.query.Param("ids") List<Long> ids,
         @org.springframework.data.repository.query.Param("idGestora") Long idGestora,
         @org.springframework.data.repository.query.Param("ahora") OffsetDateTime ahora
+    );
+
+    /**
+     * Cambia el estado de múltiples solicitudes en una sola operación (bulk)
+     * Reutilizable para cualquier cambio de estado masivo
+     *
+     * @param ids      lista de IDs de solicitudes a actualizar
+     * @param idEstado ID del nuevo estado de gestión de citas
+     * @return cantidad de registros actualizados
+     */
+    @Modifying
+    @Query("UPDATE SolicitudBolsa s SET s.estadoGestionCitasId = :idEstado, s.fechaCambioEstado = CURRENT_TIMESTAMP WHERE s.idSolicitud IN :ids AND s.activo = true")
+    int cambiarEstadoMasivo(
+        @org.springframework.data.repository.query.Param("ids") List<Long> ids,
+        @org.springframework.data.repository.query.Param("idEstado") Long idEstado
+    );
+
+    /**
+     * ✅ Trazabilidad de Recitas e Interconsultas para Coordinadora de Enfermería
+     * Recupera recitas/interconsultas con datos del profesional que las generó.
+     * Estrategia dual: FK directa (idsolicitudgeneracion) o correlación por timestamp.
+     */
+    @Query(value = """
+        SELECT
+            recita.id_solicitud,
+            recita.numero_solicitud,
+            recita.tipo_cita,
+            recita.paciente_dni,
+            recita.paciente_nombre,
+            recita.especialidad                                              AS especialidad_destino,
+            recita.fecha_solicitud,
+            recita.estado,
+            COALESCE(d1.cod_estado_cita,  'PENDIENTE_CITA') AS cod_estado,
+            COALESCE(d1.desc_estado_cita, 'Pendiente')      AS desc_estado,
+            COALESCE(orig_d.numero_solicitud, orig_t.numero_solicitud)       AS solicitud_origen,
+            COALESCE(orig_d.id_personal,      orig_t.id_personal)           AS id_personal_creador,
+            pc.ape_pater_pers || ' ' || pc.ape_mater_pers || ', ' || pc.nom_pers AS medico_creador,
+            umed.name_user                                                   AS usuario_creador,
+            COALESCE(orig_d.fecha_atencion_medica, orig_t.fecha_atencion_medica) AS fecha_atencion_origen,
+            COALESCE(orig_d.especialidad, orig_t.especialidad)               AS especialidad_origen,
+            recita.fecha_preferida_no_atendida                               AS fecha_preferida,
+            COALESCE(tb.desc_tipo_bolsa, 'Bolsa de recita/interconsulta')    AS origen_bolsa
+        FROM dim_solicitud_bolsa recita
+        LEFT JOIN dim_tipos_bolsas tb   ON tb.id_tipo_bolsa = recita.id_bolsa
+        LEFT JOIN dim_solicitud_bolsa orig_d
+               ON orig_d.id_solicitud = recita.idsolicitudgeneracion
+        LEFT JOIN LATERAL (
+            SELECT h.numero_solicitud, h.id_personal, h.fecha_atencion_medica, h.especialidad
+            FROM   dim_solicitud_bolsa h
+            WHERE  h.paciente_dni = recita.paciente_dni
+              AND  h.id_personal IS NOT NULL
+              AND  UPPER(h.tipo_cita) NOT IN ('RECITA','INTERCONSULTA')
+              AND  h.fecha_atencion_medica IS NOT NULL
+              AND  ABS(EXTRACT(EPOCH FROM (h.fecha_atencion_medica - recita.fecha_solicitud))) < 120
+            ORDER BY ABS(EXTRACT(EPOCH FROM (h.fecha_atencion_medica - recita.fecha_solicitud)))
+            LIMIT 1
+        ) orig_t ON recita.idsolicitudgeneracion IS NULL
+        LEFT JOIN dim_estados_gestion_citas d1 ON d1.id_estado_cita = recita.estado_gestion_citas_id
+        LEFT JOIN dim_personal_cnt pc   ON pc.id_pers = COALESCE(orig_d.id_personal, orig_t.id_personal)
+        LEFT JOIN dim_usuarios umed     ON umed.id_user = pc.id_usuario
+        WHERE UPPER(recita.tipo_cita) IN ('RECITA','INTERCONSULTA')
+          AND recita.activo = true
+          AND recita.id_bolsa = 11
+          AND (:busqueda    IS NULL OR recita.paciente_dni    ILIKE '%' || :busqueda || '%'
+                                   OR recita.paciente_nombre  ILIKE '%' || :busqueda || '%')
+          AND (:fechaInicio IS NULL OR recita.fecha_solicitud >= CAST(:fechaInicio AS date))
+          AND (:fechaFin    IS NULL OR recita.fecha_solicitud <  CAST(:fechaFin    AS date) + 1)
+          AND (:tipoCita    IS NULL OR UPPER(recita.tipo_cita) = UPPER(:tipoCita))
+        ORDER BY recita.fecha_solicitud DESC
+        """,
+        countQuery = """
+        SELECT COUNT(*) FROM dim_solicitud_bolsa recita
+        WHERE UPPER(recita.tipo_cita) IN ('RECITA','INTERCONSULTA')
+          AND recita.activo = true AND recita.id_bolsa = 11
+          AND (:busqueda    IS NULL OR recita.paciente_dni    ILIKE '%' || :busqueda    || '%'
+                                   OR recita.paciente_nombre  ILIKE '%' || :busqueda    || '%')
+          AND (:fechaInicio IS NULL OR recita.fecha_solicitud >= CAST(:fechaInicio AS date))
+          AND (:fechaFin    IS NULL OR recita.fecha_solicitud <  CAST(:fechaFin    AS date) + 1)
+          AND (:tipoCita    IS NULL OR UPPER(recita.tipo_cita) = UPPER(:tipoCita))
+        """,
+        nativeQuery = true)
+    Page<Object[]> obtenerTrazabilidadRecitasInterconsultas(
+        @org.springframework.data.repository.query.Param("busqueda")    String busqueda,
+        @org.springframework.data.repository.query.Param("fechaInicio") String fechaInicio,
+        @org.springframework.data.repository.query.Param("fechaFin")    String fechaFin,
+        @org.springframework.data.repository.query.Param("tipoCita")    String tipoCita,
+        Pageable pageable
     );
 
 }

@@ -1080,7 +1080,7 @@ public class SolicitudBolsaController {
      * PATCH /api/bolsas/solicitudes/{id}/fecha-preferida?fecha=2026-03-15
      */
     @PatchMapping("/{id}/fecha-preferida")
-    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'COORDINADOR', 'COORD. GESTION CITAS', 'GESTOR DE CITAS')")
+    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'COORDINADOR', 'COORD. GESTION CITAS', 'GESTOR DE CITAS', 'COORD. ENFERMERIA')")
     public ResponseEntity<?> actualizarFechaPreferida(
             @PathVariable Long id,
             @RequestParam(value = "fecha", required = false) String fechaStr) {
@@ -1610,6 +1610,32 @@ public class SolicitudBolsaController {
         } catch (Exception e) {
             log.error("❌ Error al obtener estadísticas por gestora: ", e);
             return ResponseEntity.status(500).body(Map.of("error", "Error al obtener estadísticas por gestora"));
+        }
+    }
+
+    @GetMapping("/trazabilidad-recitas")
+    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'COORD. ENFERMERIA')")
+    public ResponseEntity<?> obtenerTrazabilidadRecitas(
+            @RequestParam(required = false) String busqueda,
+            @RequestParam(required = false) String fechaInicio,
+            @RequestParam(required = false) String fechaFin,
+            @RequestParam(required = false) String tipoCita,
+            @RequestParam(defaultValue = "0")  int page,
+            @RequestParam(defaultValue = "25") int size) {
+        try {
+            log.info("🔎 GET /api/bolsas/solicitudes/trazabilidad-recitas busqueda={} tipoCita={}", busqueda, tipoCita);
+            var pageable = org.springframework.data.domain.PageRequest.of(page, size);
+            var resultado = solicitudBolsaService.obtenerTrazabilidadRecitas(
+                busqueda, fechaInicio, fechaFin, tipoCita, pageable);
+            return ResponseEntity.ok(Map.of(
+                "solicitudes",  resultado.getContent(),
+                "total",        resultado.getTotalElements(),
+                "totalPaginas", resultado.getTotalPages(),
+                "pagina",       page
+            ));
+        } catch (Exception e) {
+            log.error("❌ Error trazabilidad recitas: ", e);
+            return ResponseEntity.status(500).body(Map.of("error", e.getMessage()));
         }
     }
 

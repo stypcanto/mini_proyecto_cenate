@@ -291,4 +291,16 @@ public interface SolicitudBolsaService {
 
     List<com.styp.cenate.dto.bolsas.BolsaXMedicoDTO> obtenerEstadisticasPorMedico();
     List<com.styp.cenate.dto.bolsas.BolsaXMedicoDTO> obtenerEstadisticasPorMedico(String fechaDesde, String fechaHasta);
+
+    /**
+     * Trazabilidad de recitas e interconsultas generadas para Coordinadora de Enfermería.
+     * Incluye quién las generó, para qué paciente y con qué especialidad.
+     */
+    org.springframework.data.domain.Page<Map<String, Object>> obtenerTrazabilidadRecitas(
+        String busqueda,
+        String fechaInicio,
+        String fechaFin,
+        String tipoCita,
+        org.springframework.data.domain.Pageable pageable
+    );
 }

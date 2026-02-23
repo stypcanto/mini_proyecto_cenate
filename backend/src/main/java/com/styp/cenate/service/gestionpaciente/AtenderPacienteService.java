@@ -229,6 +229,7 @@ public class AtenderPacienteService {
                 // ✅ v1.103.9: Sin gestora — va a bolsas/solicitudes para ser asignada, NO a citas-agendadas
                 .fechaAsignacion(OffsetDateTime.now())
                 .fechaPreferidaNoAtendida(fechaPreferida.toLocalDate()) // ✅ Fecha preferida calculada (hoy + días)
+                .idsolicitudgeneracion(solicitudOriginal.getIdSolicitud()) // ✅ FK trazabilidad
                 .activo(true)
                 .build();
 
@@ -286,6 +287,7 @@ public class AtenderPacienteService {
                 .idServicio(idServicioInterconsulta) // ✅ v1.47.3 Asignar idServicio para permitir selector de médicos
                 // ✅ v1.103.9: Sin gestora — va a bolsas/solicitudes para ser asignada, NO a citas-agendadas
                 .fechaAsignacion(OffsetDateTime.now())
+                .idsolicitudgeneracion(solicitudOriginal.getIdSolicitud()) // ✅ FK trazabilidad
                 .activo(true)
                 .build();
 
