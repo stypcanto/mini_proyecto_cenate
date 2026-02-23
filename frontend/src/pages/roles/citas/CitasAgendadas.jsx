@@ -449,9 +449,11 @@ function AutocompleteInput({ value, onChange, options, placeholder = 'Escribir n
 export default function CitasAgendadas() {
   // Detectar modo coordinador de enfermería (distinto endpoint y vista)
   const _user = getUser();
+  console.log('🔍 [CitasAgendadas] user.roles:', _user?.roles);
   const esCoordEnfermeria = Array.isArray(_user?.roles) && _user.roles.some(
     r => r.toUpperCase().includes('COORD') && r.toUpperCase().includes('ENFERM')
   );
+  console.log('🔍 [CitasAgendadas] esCoordEnfermeria:', esCoordEnfermeria);
 
   const [pacientes, setPacientes]           = useState([]);
   const [loading, setLoading]               = useState(true);
