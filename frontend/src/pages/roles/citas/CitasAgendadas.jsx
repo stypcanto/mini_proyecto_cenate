@@ -332,6 +332,118 @@ function SearchableSelect({ value, onChange, options }) {
   );
 }
 
+// ── AutocompleteInput ────────────────────────────────────────
+function AutocompleteInput({ value, onChange, options, placeholder = 'Escribir nombre...' }) {
+  const [inputText, setInputText] = useState('');
+  const [isOpen, setIsOpen]       = useState(false);
+  const containerRef = useRef(null);
+
+  // Sync: cuando value se limpia externamente, limpiar el input
+  useEffect(() => {
+    if (!value) setInputText('');
+  }, [value]);
+
+  useEffect(() => {
+    const handler = (e) => {
+      if (containerRef.current && !containerRef.current.contains(e.target)) {
+        setIsOpen(false);
+        // Si hay un valor seleccionado, restaurar su nombre al salir
+        if (value) {
+          const sel = options.find(o => String(o.value) === String(value));
+          if (sel) setInputText(sel.label);
+        } else {
+          setInputText('');
+        }
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [value, options]);
+
+  const filtered = inputText.trim() === ''
+    ? options
+    : options.filter(o => o.label.toLowerCase().includes(inputText.toLowerCase()));
+
+  const handleInput = (e) => {
+    setInputText(e.target.value);
+    setIsOpen(true);
+    if (!e.target.value) onChange('');
+  };
+
+  const handleSelect = (opt) => {
+    setInputText(opt.label);
+    onChange(opt.value);
+    setIsOpen(false);
+  };
+
+  const handleClear = () => {
+    setInputText('');
+    onChange('');
+    setIsOpen(false);
+  };
+
+  return (
+    <div ref={containerRef} style={{ position: 'relative' }}>
+      <div style={{ position: 'relative' }}>
+        <Search size={14} style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: value ? '#3b82f6' : '#9ca3af', flexShrink: 0 }} />
+        <input
+          type="text"
+          value={inputText}
+          onChange={handleInput}
+          onFocus={() => setIsOpen(true)}
+          placeholder={placeholder}
+          style={{
+            width: '100%', boxSizing: 'border-box',
+            paddingLeft: '32px', paddingRight: value ? '32px' : '10px',
+            paddingTop: '10px', paddingBottom: '10px',
+            border: `1px solid ${value ? '#3b82f6' : '#d1d5db'}`,
+            borderRadius: '8px', fontSize: '13px',
+            color: '#0f172a', outline: 'none',
+            background: value ? '#eff6ff' : '#fff',
+            fontWeight: value ? '600' : 'normal',
+          }}
+        />
+        {(inputText || value) && (
+          <button
+            type="button"
+            onClick={handleClear}
+            style={{ position: 'absolute', right: '8px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', color: '#9ca3af', padding: 0 }}
+          >
+            <X size={14} />
+          </button>
+        )}
+      </div>
+
+      {isOpen && filtered.length > 0 && (
+        <div style={{ position: 'absolute', zIndex: 9999, width: '100%', marginTop: '2px', background: '#fff', border: '2px solid #d1d5db', borderRadius: '8px', boxShadow: '0 4px 16px rgba(0,0,0,0.14)', maxHeight: '220px', overflowY: 'auto' }}>
+          {filtered.map(opt => (
+            <div
+              key={opt.value}
+              onMouseDown={e => e.preventDefault()}
+              onClick={() => handleSelect(opt)}
+              style={{
+                padding: '9px 12px', fontSize: '13px', cursor: 'pointer',
+                background: String(opt.value) === String(value) ? '#eff6ff' : 'transparent',
+                color: String(opt.value) === String(value) ? '#1d4ed8' : '#374151',
+                fontWeight: String(opt.value) === String(value) ? '600' : 'normal',
+              }}
+              onMouseEnter={e => { if (String(opt.value) !== String(value)) e.currentTarget.style.background = '#f8fafc'; }}
+              onMouseLeave={e => { if (String(opt.value) !== String(value)) e.currentTarget.style.background = 'transparent'; }}
+            >
+              {opt.label}
+            </div>
+          ))}
+        </div>
+      )}
+      {isOpen && filtered.length === 0 && inputText && (
+        <div style={{ position: 'absolute', zIndex: 9999, width: '100%', marginTop: '2px', background: '#fff', border: '2px solid #d1d5db', borderRadius: '8px', boxShadow: '0 4px 16px rgba(0,0,0,0.14)', padding: '10px 12px', fontSize: '12px', color: '#9ca3af', fontStyle: 'italic' }}>
+          Sin resultados para "{inputText}"
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── Componente principal ──────────────────────────────────────
 export default function CitasAgendadas() {
   const [pacientes, setPacientes]           = useState([]);
@@ -1270,16 +1382,11 @@ CENATE de Essalud`;
                       No se encontraron profesionales para esta especialidad.
                     </div>
                   ) : (
-                    <select
+                    <AutocompleteInput
                       value={nuevoMedicoIdGrupo}
-                      onChange={e => setNuevoMedicoIdGrupo(e.target.value)}
-                      style={{ width: '100%', padding: '10px 12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '13px', color: nuevoMedicoIdGrupo ? '#0f172a' : '#9ca3af', outline: 'none', cursor: 'pointer', background: '#fff' }}
-                    >
-                      <option value="">-- Seleccionar profesional --</option>
-                      {medicosReasignar.map(m => (
-                        <option key={m.idPers} value={m.idPers}>{m.nombre || `ID: ${m.idPers}`}</option>
-                      ))}
-                    </select>
+                      onChange={setNuevoMedicoIdGrupo}
+                      options={medicosReasignar.map(m => ({ value: m.idPers, label: m.nombre || `ID: ${m.idPers}` }))}
+                    />
                   )}
                 </div>
               )}
@@ -1378,18 +1485,11 @@ CENATE de Essalud`;
                   No se encontraron profesionales disponibles para esta especialidad.
                 </div>
               ) : (
-                <select
+                <AutocompleteInput
                   value={nuevoMedicoId}
-                  onChange={e => setNuevoMedicoId(e.target.value)}
-                  style={{ width: '100%', padding: '10px 12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '13px', color: nuevoMedicoId ? '#0f172a' : '#9ca3af', outline: 'none', cursor: 'pointer', background: '#fff' }}
-                >
-                  <option value="">-- Seleccionar profesional --</option>
-                  {medicosReasignar.map(m => (
-                    <option key={m.idPers} value={m.idPers}>
-                      {m.nombre || `ID: ${m.idPers}`}
-                    </option>
-                  ))}
-                </select>
+                  onChange={setNuevoMedicoId}
+                  options={medicosReasignar.map(m => ({ value: m.idPers, label: m.nombre || `ID: ${m.idPers}` }))}
+                />
               )}
             </div>
 
