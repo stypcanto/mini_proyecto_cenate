@@ -31,4 +31,13 @@ public interface DetalleMedicoService {
      * @return DTO con información del médico
      */
     DetalleMedicoDTO obtenerDetalleMedico(Long idPers);
+
+    /**
+     * Obtiene médicos activos cuya profesión (per_pers) contiene el texto dado.
+     * Ejemplo: obtenerMedicosPorProfesion("NUTRICION") → devuelve NUTRICIONISTAS
+     *
+     * @param profesion texto de búsqueda (ej: "NUTRICION", "PSICO")
+     * @return Lista de DTOs de médicos que coinciden
+     */
+    List<DetalleMedicoDTO> obtenerMedicosPorProfesion(String profesion);
 }

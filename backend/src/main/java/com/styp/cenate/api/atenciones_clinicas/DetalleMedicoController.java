@@ -120,6 +120,34 @@ public class DetalleMedicoController {
 	}
 
 	/**
+	 * Obtiene médicos activos cuya profesión contiene el texto dado.
+	 * Ejemplo: /por-profesion?profesion=NUTRICION → devuelve NUTRICIONISTAS
+	 *
+	 * GET /api/atenciones-clinicas/detalle-medico/por-profesion?profesion=NUTRICION
+	 *
+	 * @param profesion texto a buscar en per_pers (case-insensitive)
+	 * @return Lista de médicos cuya profesión coincide
+	 */
+	@GetMapping("/por-profesion")
+	public ResponseEntity<?> obtenerMedicosPorProfesion(@RequestParam String profesion) {
+
+		log.info("📥 Solicitud: Obtener médicos por profesión que contiene: '{}'", profesion);
+
+		try {
+			List<DetalleMedicoDTO> medicos = detalleMedicoService.obtenerMedicosPorProfesion(profesion);
+
+			log.info("✅ Se retornaron {} médicos para profesión '{}'", medicos.size(), profesion);
+
+			return ResponseEntity.ok().body(new ApiResponse("success", "Médicos obtenidos correctamente", medicos));
+
+		} catch (Exception e) {
+			log.error("❌ Error al obtener médicos por profesión '{}': {}", profesion, e.getMessage(), e);
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+					.body(new ApiResponse("error", "Error al obtener médicos: " + e.getMessage(), null));
+		}
+	}
+
+	/**
 	 * Clase auxiliar para respuestas API estándar
 	 */
 	public static class ApiResponse {

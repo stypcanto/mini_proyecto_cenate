@@ -635,6 +635,15 @@ public class SolicitudBolsaController {
             List<DetalleMedicoDTO> medicos = detalleMedicoService
                     .obtenerMedicosPorServicio(idServicio);
 
+            // 2b. Fallback por profesión: si no hay médicos por id_servicio,
+            //     buscar por per_pers (ej: "NUTRICION" → encuentra "NUTRICIONISTA")
+            if (medicos.isEmpty()) {
+                log.info("⚠️ 0 médicos encontrados por id_servicio={} para '{}'. Buscando por profesión (per_pers)...",
+                        idServicio, especialidad);
+                medicos = detalleMedicoService.obtenerMedicosPorProfesion(especialidad);
+                log.info("   → Fallback per_pers encontró {} médico(s)", medicos.size());
+            }
+
             // 3. Formatear para el frontend (solo campos necesarios)
             List<Map<String, Object>> medicosList = new ArrayList<>();
             for (DetalleMedicoDTO m : medicos) {

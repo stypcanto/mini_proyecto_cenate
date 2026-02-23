@@ -301,6 +301,40 @@ export default function GestionAsegurado() {
   };
 
   // ============================================================================
+  // 🏥 CARGAR MÉDICOS POR ESPECIALIDAD (TEXTO) — usa fetch-doctors-by-specialty
+  // Prioridad: especialidad texto > id_servicio numérico
+  // ============================================================================
+  const obtenerMedicosPorEspecialidadTexto = async (especialidad) => {
+    if (!especialidad || especialidad === "-") return;
+
+    const cacheKey = `ESP:${especialidad}`;
+
+    if (medicosPorServicio[cacheKey]) return; // ya cacheado
+
+    setCargandoMedicos(true);
+    try {
+      const response = await fetch(
+        `${getApiBase()}/bolsas/solicitudes/fetch-doctors-by-specialty?especialidad=${encodeURIComponent(especialidad)}`,
+        { method: "POST", headers: getHeaders() }
+      );
+
+      if (response.ok) {
+        const result = await response.json();
+        const medicos = result.data || [];
+        console.log(`✅ [por-especialidad] ${medicos.length} médicos para '${especialidad}'`);
+        setMedicosPorServicio(prev => ({ ...prev, [cacheKey]: medicos }));
+      } else {
+        setMedicosPorServicio(prev => ({ ...prev, [cacheKey]: [] }));
+      }
+    } catch (error) {
+      console.error(`❌ Error cargando médicos por especialidad '${especialidad}':`, error);
+      setMedicosPorServicio(prev => ({ ...prev, [`ESP:${especialidad}`]: [] }));
+    } finally {
+      setCargandoMedicos(false);
+    }
+  };
+
+  // ============================================================================
   // 🏥 CARGAR MÉDICOS POR SERVICIO (DINÁMICO) - SOPORTA TELEECG
   // ============================================================================
   const obtenerMedicosPorServicio = async (idServicio, descTipoBolsa = "") => {
@@ -910,18 +944,24 @@ export default function GestionAsegurado() {
 
     // ✅ v1.50.2: Cargar médicos si falta idServicio o es TeleECG
     const esTeleECG = paciente.descTipoBolsa && paciente.descTipoBolsa.toUpperCase().includes("TELEECG");
-    const cacheKey = esTeleECG ? "TELEECG" : paciente.idServicio;
+    const tieneEspTexto = paciente.especialidad && paciente.especialidad !== "-";
+    const cacheKey = esTeleECG ? "TELEECG" : (tieneEspTexto ? `ESP:${paciente.especialidad}` : paciente.idServicio);
 
-    if ((paciente.idServicio || esTeleECG) && !medicosPorServicio[cacheKey]) {
-      console.log("📥 Cargando médicos para:", esTeleECG ? "TeleECG" : "servicio " + paciente.idServicio);
+    if (esTeleECG && !medicosPorServicio["TELEECG"]) {
+      await obtenerMedicosPorServicio(null, paciente.descTipoBolsa);
+    } else if (tieneEspTexto && !medicosPorServicio[cacheKey]) {
+      console.log("📥 Cargando médicos para especialidad:", paciente.especialidad);
+      await obtenerMedicosPorEspecialidadTexto(paciente.especialidad);
+    } else if (paciente.idServicio && !medicosPorServicio[cacheKey]) {
+      console.log("📥 Cargando médicos para servicio:", paciente.idServicio);
       await obtenerMedicosPorServicio(paciente.idServicio, paciente.descTipoBolsa);
     }
 
     // Opción 1: Buscar en citasAgendadas (si el usuario acababa de seleccionar)
     const citaAgendada = citasAgendadas[paciente.id];
-    if (citaAgendada && citaAgendada.especialista && paciente.idServicio) {
-      const medicos = medicosPorServicio[paciente.idServicio] || [];
-      console.log(`   - Médicos en servicio ${paciente.idServicio}:`, medicos);
+    if (citaAgendada && citaAgendada.especialista) {
+      const medicos = medicosPorServicio[cacheKey] || [];
+      console.log(`   - Médicos en caché '${cacheKey}':`, medicos.length);
       const medicoEncontrado = medicos.find(m => m.idPers === citaAgendada.especialista);
 
       if (medicoEncontrado) {
@@ -934,15 +974,13 @@ export default function GestionAsegurado() {
 
     // Opción 2: Si paciente ya tiene idPersonal (médico guardado previamente)
     if (!pacienteConMedico.nombreMedico && paciente.idPersonal) {
-      if (paciente.idServicio) {
-        const medicos = medicosPorServicio[paciente.idServicio] || [];
-        const medicoEncontrado = medicos.find(m => m.idPers === paciente.idPersonal);
-        if (medicoEncontrado) {
-          // ✅ v1.50.3: Usar 'nombre' field directamente del DetalleMedicoDTO
-          const nombre = medicoEncontrado.nombre || "Por asignar";
-          pacienteConMedico.nombreMedico = nombre;
-          console.log("   ✅ Médico encontrado en idPersonal:", nombre);
-        }
+      const medicos = medicosPorServicio[cacheKey] || [];
+      const medicoEncontrado = medicos.find(m => m.idPers === paciente.idPersonal);
+      if (medicoEncontrado) {
+        // ✅ v1.50.3: Usar 'nombre' field directamente del DetalleMedicoDTO
+        const nombre = medicoEncontrado.nombre || "Por asignar";
+        pacienteConMedico.nombreMedico = nombre;
+        console.log("   ✅ Médico encontrado en idPersonal:", nombre);
       }
     }
 
@@ -1603,20 +1641,24 @@ CENATE de Essalud`;
     if (pacientesAsignados.length === 0) return;
 
     const serviciosConMedicos = new Set();
+    const especialidadesConMedicos = new Set();
     let tieneTeleECG = false;
 
-    // Recolectar todos los idServicio únicos y detectar TeleECG
+    // Recolectar especialidades y servicios únicos con médico asignado
     pacientesAsignados.forEach(paciente => {
-      // Detectar TeleECG
       const esTeleECG = paciente.descTipoBolsa && paciente.descTipoBolsa.toUpperCase().includes("TELEECG");
       if (esTeleECG) {
         tieneTeleECG = true;
+        return;
       }
 
-      // Recolectar servicios normales que tienen idPersonal
-      if (paciente.idPersonal && paciente.idServicio && !serviciosConMedicos.has(paciente.idServicio) && !esTeleECG) {
-        serviciosConMedicos.add(paciente.idServicio);
-        console.log(`👨‍⚕️ Paciente ${paciente.pacienteNombre} tiene idPersonal ${paciente.idPersonal}, cargando médicos del servicio ${paciente.idServicio}`);
+      if (paciente.idPersonal) {
+        // Preferir búsqueda por especialidad texto si está disponible
+        if (paciente.especialidad && paciente.especialidad !== "-") {
+          especialidadesConMedicos.add(paciente.especialidad);
+        } else if (paciente.idServicio) {
+          serviciosConMedicos.add(paciente.idServicio);
+        }
       }
     });
 
@@ -1626,7 +1668,16 @@ CENATE de Essalud`;
       obtenerMedicosPorServicio(null, "BOLSA_TELEECG");
     }
 
-    // Cargar médicos para cada servicio normal
+    // Cargar médicos por especialidad (texto) — nueva lógica preferida
+    especialidadesConMedicos.forEach(esp => {
+      const cacheKey = `ESP:${esp}`;
+      if (!medicosPorServicio[cacheKey]) {
+        console.log(`🔄 Precargando médicos para especialidad '${esp}'...`);
+        obtenerMedicosPorEspecialidadTexto(esp);
+      }
+    });
+
+    // Cargar médicos por idServicio para los que no tienen especialidad texto
     serviciosConMedicos.forEach(idServicio => {
       if (!medicosPorServicio[idServicio]) {
         console.log(`🔄 Obteniendo médicos del servicio ${idServicio}...`);
@@ -2476,7 +2527,8 @@ CENATE de Essalud`;
                           {(() => {
                             const idServicio = paciente.idServicio;
                             const esTeleECG = paciente.descTipoBolsa && paciente.descTipoBolsa.toUpperCase().includes("TELEECG");
-                            const cacheKey = esTeleECG ? "TELEECG" : idServicio;
+                            const tieneEsp = paciente.especialidad && paciente.especialidad !== "-";
+                            const cacheKey = esTeleECG ? "TELEECG" : (tieneEsp ? `ESP:${paciente.especialidad}` : idServicio);
                             const medicos = medicosPorServicio[cacheKey] || [];
                             const seleccionadoId = citasAgendadas[paciente.id]?.especialista;
                             const medicoSeleccionado = medicos.find(m => m.idPers === seleccionadoId);
@@ -2493,10 +2545,21 @@ CENATE de Essalud`;
                             (() => {
                               const idServicio = paciente.idServicio;
                               const esTeleECG = paciente.descTipoBolsa && paciente.descTipoBolsa.toUpperCase().includes("TELEECG");
+                              const tieneEsp = paciente.especialidad && paciente.especialidad !== "-";
+                              // Prioridad: especialidad texto > idServicio numérico
+                              const cacheKey = esTeleECG ? "TELEECG" : (tieneEsp ? `ESP:${paciente.especialidad}` : idServicio);
                               const esValidoNumerico = idServicio && !isNaN(idServicio);
-                              const cacheKey = esTeleECG ? "TELEECG" : idServicio;
 
-                              if ((esValidoNumerico || esTeleECG)) {
+                              // Disparar carga si aún no está en caché
+                              if (esTeleECG) {
+                                if (!medicosPorServicio["TELEECG"] && !cargandoMedicos) {
+                                  obtenerMedicosPorServicio(null, paciente.descTipoBolsa);
+                                }
+                              } else if (tieneEsp) {
+                                if (!medicosPorServicio[cacheKey] && !cargandoMedicos) {
+                                  obtenerMedicosPorEspecialidadTexto(paciente.especialidad);
+                                }
+                              } else if (esValidoNumerico) {
                                 if (!medicosPorServicio[cacheKey] && !cargandoMedicos) {
                                   obtenerMedicosPorServicio(idServicio, paciente.descTipoBolsa);
                                 }
@@ -2506,10 +2569,11 @@ CENATE de Essalud`;
                               const hayMedicos = medicos.length > 0;
                               const seleccionadoId = citasAgendadas[paciente.id]?.especialista;
                               const medicoSeleccionado = medicos.find(m => m.idPers === seleccionadoId);
+                              const puedeCargar = esTeleECG || tieneEsp || esValidoNumerico;
 
                               return (
                                 <>
-                                  {esValidoNumerico || esTeleECG ? (
+                                  {puedeCargar ? (
                                     <div className="space-y-1">
                                       {cargandoMedicos && !medicosPorServicio[cacheKey] ? (
                                         <div className="text-center py-1">
@@ -2571,7 +2635,7 @@ CENATE de Essalud`;
                                     </div>
                                   ) : (
                                     <div className="bg-gray-100 border border-gray-300 rounded px-2 py-1.5 text-center">
-                                      <span className="text-xs text-gray-500">Sin servicio asignado</span>
+                                      <span className="text-xs text-gray-500">Sin profesional disponible</span>
                                     </div>
                                   )}
                                 </>
@@ -2582,7 +2646,8 @@ CENATE de Essalud`;
                             (() => {
                               const idServicio = paciente.idServicio;
                               const esTeleECG = paciente.descTipoBolsa && paciente.descTipoBolsa.toUpperCase().includes("TELEECG");
-                              const cacheKey = esTeleECG ? "TELEECG" : idServicio;
+                              const tieneEsp = paciente.especialidad && paciente.especialidad !== "-";
+                              const cacheKey = esTeleECG ? "TELEECG" : (tieneEsp ? `ESP:${paciente.especialidad}` : idServicio);
                               const medicos = medicosPorServicio[cacheKey] || [];
                               const seleccionadoId = citasAgendadas[paciente.id]?.especialista;
                               const medicoSeleccionado = medicos.find(m => m.idPers === seleccionadoId);

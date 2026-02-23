@@ -169,4 +169,19 @@ public interface PersonalCntRepository extends JpaRepository<PersonalCnt, Long> 
 	       "AND (UPPER(p.regimenLaboral.descRegLab) LIKE '%CAS%' OR UPPER(p.regimenLaboral.descRegLab) LIKE '%728%')")
 	List<PersonalCnt> findAllCENATEPersonalWithServicio();
 
+	/**
+	 * Busca personal activo cuya profesión (per_pers) contiene el texto dado.
+	 * Utilizado como fallback cuando la búsqueda por id_servicio no retorna resultados.
+	 * Ejemplo: buscarPorProfesion("NUTRICION") encuentra registros con per_pers = 'NUTRICIONISTA'
+	 *
+	 * @param profesion texto a buscar (case-insensitive, búsqueda contains)
+	 * @return lista de personal activo cuya profesión contiene el texto
+	 */
+	@Query("SELECT p FROM PersonalCnt p " +
+	       "LEFT JOIN FETCH p.servicioEssi " +
+	       "LEFT JOIN FETCH p.area " +
+	       "WHERE p.statPers = 'A' " +
+	       "AND UPPER(COALESCE(p.perPers, '')) LIKE UPPER(CONCAT('%', :profesion, '%'))")
+	List<PersonalCnt> findActivosByPerPersContaining(@org.springframework.data.repository.query.Param("profesion") String profesion);
+
 }

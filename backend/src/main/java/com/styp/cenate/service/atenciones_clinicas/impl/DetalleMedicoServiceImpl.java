@@ -78,6 +78,26 @@ public class DetalleMedicoServiceImpl implements DetalleMedicoService {
     }
 
     @Override
+    public List<DetalleMedicoDTO> obtenerMedicosPorProfesion(String profesion) {
+        log.info("🔍 Buscando médicos activos con profesión que contiene: '{}'", profesion);
+
+        try {
+            List<PersonalCnt> medicos = personalCntRepository.findActivosByPerPersContaining(profesion);
+
+            log.info("✅ Se encontraron {} médicos con profesión '{}' en per_pers", medicos.size(), profesion);
+
+            return medicos.stream()
+                    .sorted(this::compararPorApellidosYNombres)
+                    .map(this::convertirADTO)
+                    .collect(Collectors.toList());
+
+        } catch (Exception e) {
+            log.error("❌ Error buscando médicos por profesión '{}': {}", profesion, e.getMessage(), e);
+            return new java.util.ArrayList<>();
+        }
+    }
+
+    @Override
     public DetalleMedicoDTO obtenerDetalleMedico(Long idPers) {
         log.info("🔍 Buscando detalles del médico ID: {}", idPers);
 
