@@ -29,6 +29,7 @@ import {
   UserCheck,
   ChevronDown,
   Pencil,
+  Check,
 } from "lucide-react";
 import toast from "react-hot-toast";
 
@@ -467,11 +468,63 @@ export default function CitasAgendadas() {
   // ── Editar fecha/hora de cita ──
   const [modalEditarFecha, setModalEditarFecha] = useState({ visible: false, paciente: null, fecha: '', hora: '' });
   const [guardandoFecha, setGuardandoFecha]     = useState(false);
+  // ── Editar teléfonos inline ──
+  const [editandoTel, setEditandoTel]           = useState(null); // id del paciente editando
+  const [telEdit, setTelEdit]                   = useState({ tel1: '', tel2: '' });
+  const [guardandoTel, setGuardandoTel]         = useState(false);
   // ── Reasignación en grupo ──
   const [modalGrupo, setModalGrupo]             = useState(false);
   const [especialidadGrupo, setEspecialidadGrupo] = useState('');
   const [nuevoMedicoIdGrupo, setNuevoMedicoIdGrupo] = useState('');
   const [progresoGrupo, setProgresoGrupo]       = useState({ activo: false, total: 0, ok: 0, err: 0 });
+
+  // ── Guardar teléfonos ──────────────────────────────────────
+  const guardarTelefono = async (pacienteDni) => {
+    setGuardandoTel(true);
+    try {
+      const token = getToken();
+      const headers = { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` };
+
+      // Paso 1: obtener datos completos del asegurado (para tener pkAsegurado y todos los campos)
+      const resGet = await fetch(`/api/asegurados/por-dni/${pacienteDni}`, { headers });
+      if (!resGet.ok) throw new Error(`GET HTTP ${resGet.status}`);
+      const asegurado = await resGet.json();
+
+      if (!asegurado.pkAsegurado) throw new Error('No se encontró pkAsegurado');
+
+      // Paso 2: PUT con todos los campos existentes, solo actualizando teléfonos
+      const resPut = await fetch(`/api/asegurados/${encodeURIComponent(asegurado.pkAsegurado)}`, {
+        method: 'PUT',
+        headers,
+        body: JSON.stringify({
+          paciente:         asegurado.paciente,
+          fecnacimpaciente: asegurado.fecnacimpaciente,
+          sexo:             asegurado.sexo,
+          tipoPaciente:     asegurado.tipoPaciente,
+          telFijo:          telEdit.tel1.trim(),
+          telCelular:       telEdit.tel2.trim(),
+          tipoSeguro:       asegurado.tipoSeguro,
+          casAdscripcion:   asegurado.codAdscripcion || asegurado.casAdscripcion,
+          correoElectronico: asegurado.correoElectronico,
+          pacienteCronico:  asegurado.pacienteCronico,
+        }),
+      });
+      if (!resPut.ok) throw new Error(`PUT HTTP ${resPut.status}`);
+
+      // Actualizar estado local
+      setPacientes(prev => prev.map(p =>
+        p.pacienteDni === pacienteDni
+          ? { ...p, pacienteTelefono: telEdit.tel1.trim() || null, pacienteTelefonoAlterno: telEdit.tel2.trim() || null }
+          : p
+      ));
+      setEditandoTel(null);
+      toast.success('Teléfono actualizado correctamente');
+    } catch (err) {
+      toast.error('No se pudo actualizar el teléfono');
+    } finally {
+      setGuardandoTel(false);
+    }
+  };
 
   // ── Carga ──────────────────────────────────────────────────
   const cargar = async () => {
@@ -1177,19 +1230,75 @@ CENATE de Essalud`;
                             <span style={{ fontFamily: 'monospace', fontWeight: '700', color: '#1d4ed8', background: '#eff6ff', padding: '2px 8px', borderRadius: '6px', fontSize: '13px' }}>{p.pacienteDni}</span>
                           </td>
 
-                          <td style={{ padding: '10px 12px', minWidth: '120px' }}>
-                            {p.pacienteTelefono ? (
-                              <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-                                <a href={`https://wa.me/${telNumero(p.pacienteTelefono)}`} target="_blank" rel="noopener noreferrer" style={{ display: 'flex', alignItems: 'center', gap: '5px', color: '#15803d', fontWeight: '600', fontSize: '12px', textDecoration: 'none' }}>
-                                  <Phone size={12} />{p.pacienteTelefono}
-                                </a>
-                                {p.pacienteTelefonoAlterno && (
-                                  <a href={`https://wa.me/${telNumero(p.pacienteTelefonoAlterno)}`} target="_blank" rel="noopener noreferrer" style={{ display: 'flex', alignItems: 'center', gap: '5px', color: '#16a34a', fontSize: '11px', textDecoration: 'none', opacity: 0.8 }}>
-                                    <Phone size={11} />{p.pacienteTelefonoAlterno}
-                                  </a>
-                                )}
+                          <td style={{ padding: '10px 12px', minWidth: '140px' }}>
+                            {editandoTel === p.id ? (
+                              /* ── MODO EDICIÓN ── */
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                <input
+                                  autoFocus
+                                  type="tel"
+                                  placeholder="Teléfono principal"
+                                  value={telEdit.tel1}
+                                  onChange={e => setTelEdit(v => ({ ...v, tel1: e.target.value }))}
+                                  onKeyDown={e => { if (e.key === 'Escape') setEditandoTel(null); }}
+                                  style={{ width: '100%', padding: '4px 7px', border: '1px solid #3b82f6', borderRadius: '6px', fontSize: '12px', outline: 'none', boxSizing: 'border-box' }}
+                                />
+                                <input
+                                  type="tel"
+                                  placeholder="Teléfono alterno"
+                                  value={telEdit.tel2}
+                                  onChange={e => setTelEdit(v => ({ ...v, tel2: e.target.value }))}
+                                  onKeyDown={e => { if (e.key === 'Escape') setEditandoTel(null); }}
+                                  style={{ width: '100%', padding: '4px 7px', border: '1px solid #d1d5db', borderRadius: '6px', fontSize: '12px', outline: 'none', boxSizing: 'border-box' }}
+                                />
+                                <div style={{ display: 'flex', gap: '4px', marginTop: '2px' }}>
+                                  <button
+                                    onClick={() => guardarTelefono(p.pacienteDni)}
+                                    disabled={guardandoTel}
+                                    title="Guardar"
+                                    style={{ flex: 1, padding: '3px 0', background: '#16a34a', color: '#fff', border: 'none', borderRadius: '5px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '3px', fontSize: '11px', fontWeight: '600' }}
+                                  >
+                                    <Check size={11} />{guardandoTel ? '…' : 'Guardar'}
+                                  </button>
+                                  <button
+                                    onClick={() => setEditandoTel(null)}
+                                    title="Cancelar"
+                                    style={{ padding: '3px 7px', background: '#f1f5f9', color: '#64748b', border: '1px solid #e2e8f0', borderRadius: '5px', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
+                                  >
+                                    <X size={11} />
+                                  </button>
+                                </div>
                               </div>
-                            ) : <span style={{ color: '#d1d5db', fontSize: '12px' }}>—</span>}
+                            ) : (
+                              /* ── MODO VISUALIZACIÓN ── */
+                              <div style={{ display: 'flex', alignItems: 'flex-start', gap: '4px' }}>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', flex: 1 }}>
+                                  {p.pacienteTelefono ? (
+                                    <>
+                                      <a href={`https://wa.me/${telNumero(p.pacienteTelefono)}`} target="_blank" rel="noopener noreferrer" style={{ display: 'flex', alignItems: 'center', gap: '5px', color: '#15803d', fontWeight: '600', fontSize: '12px', textDecoration: 'none' }}>
+                                        <Phone size={12} />{p.pacienteTelefono}
+                                      </a>
+                                      {p.pacienteTelefonoAlterno && (
+                                        <a href={`https://wa.me/${telNumero(p.pacienteTelefonoAlterno)}`} target="_blank" rel="noopener noreferrer" style={{ display: 'flex', alignItems: 'center', gap: '5px', color: '#16a34a', fontSize: '11px', textDecoration: 'none', opacity: 0.8 }}>
+                                          <Phone size={11} />{p.pacienteTelefonoAlterno}
+                                        </a>
+                                      )}
+                                    </>
+                                  ) : (
+                                    <span style={{ color: '#d1d5db', fontSize: '12px' }}>—</span>
+                                  )}
+                                </div>
+                                <button
+                                  onClick={() => { setEditandoTel(p.id); setTelEdit({ tel1: p.pacienteTelefono || '', tel2: p.pacienteTelefonoAlterno || '' }); }}
+                                  title="Editar teléfono"
+                                  style={{ flexShrink: 0, padding: '3px', background: 'transparent', border: 'none', cursor: 'pointer', color: '#94a3b8', borderRadius: '4px', display: 'flex', alignItems: 'center' }}
+                                  onMouseEnter={e => { e.currentTarget.style.color = '#3b82f6'; e.currentTarget.style.background = '#eff6ff'; }}
+                                  onMouseLeave={e => { e.currentTarget.style.color = '#94a3b8'; e.currentTarget.style.background = 'transparent'; }}
+                                >
+                                  <Pencil size={12} />
+                                </button>
+                              </div>
+                            )}
                           </td>
 
                           {/* PROF. DE SALUD */}

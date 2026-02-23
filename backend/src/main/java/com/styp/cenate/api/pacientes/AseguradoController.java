@@ -1261,6 +1261,50 @@ public class AseguradoController {
     }
 
     /**
+     * Actualizar solo los teléfonos de un asegurado por DNI
+     * PATCH /api/asegurados/por-dni/{docPaciente}/telefonos
+     * Body: { "telFijo": "987000000", "telCelular": "987111111" }
+     */
+    @PatchMapping("/por-dni/{docPaciente}/telefonos")
+    public ResponseEntity<?> actualizarTelefonosPorDni(
+            @PathVariable String docPaciente,
+            @RequestBody Map<String, String> body) {
+        try {
+            String telFijo    = body.getOrDefault("telFijo",    null);
+            String telCelular = body.getOrDefault("telCelular", null);
+
+            log.info("📞 Actualizando teléfonos para DNI: {} → fijo={}, celular={}", docPaciente, telFijo, telCelular);
+
+            // Intentar actualizar registro activo (vigencia = true)
+            String sql = "UPDATE asegurados SET tel_fijo = ?, tel_celular = ? WHERE doc_paciente = ? AND vigencia = true";
+            int rows = jdbcTemplate.update(sql, telFijo, telCelular, docPaciente);
+
+            if (rows == 0) {
+                // Fallback: actualizar cualquier registro con ese DNI
+                String sqlFallback = "UPDATE asegurados SET tel_fijo = ?, tel_celular = ? WHERE doc_paciente = ?";
+                rows = jdbcTemplate.update(sqlFallback, telFijo, telCelular, docPaciente);
+            }
+
+            if (rows == 0) {
+                log.warn("⚠️ No se encontró asegurado con DNI: {}", docPaciente);
+                return ResponseEntity.notFound().build();
+            }
+
+            log.info("✅ Teléfonos actualizados ({} registro/s) para DNI: {}", rows, docPaciente);
+            return ResponseEntity.ok(Map.of(
+                "docPaciente", docPaciente,
+                "telFijo",    telFijo != null ? telFijo : "",
+                "telCelular", telCelular != null ? telCelular : "",
+                "actualizados", rows
+            ));
+        } catch (Exception e) {
+            log.error("❌ Error actualizando teléfonos para DNI {}: {}", docPaciente, e.getMessage());
+            return ResponseEntity.internalServerError()
+                .body(Map.of("error", "Error al actualizar teléfonos: " + e.getMessage()));
+        }
+    }
+
+    /**
      * ✅ v1.78.5: Obtener datos completos de un asegurado por DNI
      * Usado en modal de detalles de MisPacientes para mostrar info enriquecida
      * GET /api/asegurados/por-dni/{docPaciente}
