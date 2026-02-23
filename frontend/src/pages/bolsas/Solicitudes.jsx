@@ -272,23 +272,30 @@ export default function Solicitudes() {
   // ============================================================================
 
   // ============================================================================
-  // 📦 EFFECT 2.6a: Cargar ESTADÍSTICAS DE TARJETAS inmediatamente (no espera catálogos)
+  // 📦 EFFECT 2.6a: Cargar ESTADÍSTICAS DE TARJETAS + ESTADOS DE GESTORA (en paralelo, inmediato)
   // ============================================================================
-  // v1.65.1: Desacoplado de catalogosCargados para que las tarjetas carguen lo antes posible.
-  // Solo carga por-estado (tarjetas KPI) y por-tipo-bolsa (filtro Bolsas) — ambas ligeras y cacheadas.
+  // v1.65.2: Carga lista de estados (listaEstadosGestion) aquí en vez de en cargarCatalogos(),
+  // para que el dropdown "Estado de Gestora" aparezca sin esperar obtenerIpress() (lento).
   useEffect(() => {
-    console.log('📊 [2.6a] Cargando estadísticas de tarjetas y bolsas en paralelo...');
+    console.log('📊 [2.6a] Cargando estadísticas de tarjetas, bolsas y estados en paralelo...');
     (async () => {
       try {
-        const [estado, bolsas] = await Promise.all([
+        const [estado, bolsas, estadosGestion] = await Promise.all([
           bolsasService.obtenerEstadisticasPorEstado().catch(() => []),
           bolsasService.obtenerEstadisticasPorTipoBolsa().catch(() => []),
+          bolsasService.obtenerEstadosGestion().catch(() => []),
         ]);
         if (isMountedRef.current) {
           setEstadisticasGlobales(estado || []);
           setEstadisticasTipoBolsa(bolsas || []);
           setEstadisticasCargadas(true);
-          console.log('✅ [2.6a] Tarjetas KPI cargadas');
+          if (estadosGestion && Array.isArray(estadosGestion) && estadosGestion.length > 0) {
+            const estadosPorCodigo = {};
+            estadosGestion.forEach(e => { estadosPorCodigo[e.codEstadoCita] = e; });
+            setCacheEstados(estadosPorCodigo);
+            setListaEstadosGestion(estadosGestion);
+          }
+          console.log('✅ [2.6a] Tarjetas KPI y estados de gestora cargados');
         }
       } catch (error) {
         console.error('❌ [2.6a] Error cargando tarjetas:', error);
@@ -298,30 +305,28 @@ export default function Solicitudes() {
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ============================================================================
-  // 📦 EFFECT 2.6b: Cargar ESTADÍSTICAS DE IPRESS para filtros (después de catálogos)
+  // 📦 EFFECT 2.6b: Cargar ESTADÍSTICAS DE IPRESS para filtros (en paralelo, no espera catálogos)
   // ============================================================================
-  // v1.65.1: Carga diferida — solo cuando los catálogos están listos (no bloquea tarjetas).
-  // Eliminada llamada a obtenerEstadisticasPorTipoCita() — era unused (el filtro usa opciones hardcodeadas).
+  // v1.65.2: Desacoplado de catalogosCargados → carga en paralelo junto con 2.6a.
+  // Antes esperaba a que los 5 endpoints de cargarCatalogos() terminaran (lento).
   useEffect(() => {
-    if (catalogosCargados) {
-      console.log('📊 [2.6b] Cargando estadísticas de IPRESS para filtros...');
-      (async () => {
-        try {
-          const [ipress, ipressAtencion] = await Promise.all([
-            bolsasService.obtenerEstadisticasPorIpress().catch(() => []),
-            bolsasService.obtenerEstadisticasPorIpressAtencion().catch(() => []),
-          ]);
-          if (isMountedRef.current) {
-            setEstadisticasIpress(ipress || []);
-            setEstadisticasIpressAtencion(ipressAtencion || []);
-            console.log('✅ [2.6b] Stats IPRESS para filtros cargadas');
-          }
-        } catch (error) {
-          console.error('❌ [2.6b] Error cargando stats IPRESS:', error);
+    console.log('📊 [2.6b] Cargando estadísticas de IPRESS para filtros...');
+    (async () => {
+      try {
+        const [ipress, ipressAtencion] = await Promise.all([
+          bolsasService.obtenerEstadisticasPorIpress().catch(() => []),
+          bolsasService.obtenerEstadisticasPorIpressAtencion().catch(() => []),
+        ]);
+        if (isMountedRef.current) {
+          setEstadisticasIpress(ipress || []);
+          setEstadisticasIpressAtencion(ipressAtencion || []);
+          console.log('✅ [2.6b] Stats IPRESS para filtros cargadas');
         }
-      })();
-    }
-  }, [catalogosCargados]);
+      } catch (error) {
+        console.error('❌ [2.6b] Error cargando stats IPRESS:', error);
+      }
+    })();
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ============================================================================
   // 📦 EFFECT 3: Filtrado AUTOMÁTICO cuando cambian los filtros (v2.6.0 - UX: instant filtering)
