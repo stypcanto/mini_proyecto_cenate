@@ -5,7 +5,7 @@
 // Módulo: Gestión de Citas | Ruta: /citas/citas-agendadas
 // ============================================================
 
-import React, { useState, useEffect, useMemo, useCallback } from "react";
+import React, { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { getToken } from "../../../constants/auth";
 import {
   CalendarCheck,
@@ -27,6 +27,8 @@ import {
   FileDown,
   CheckSquare,
   UserCheck,
+  ChevronDown,
+  Pencil,
 } from "lucide-react";
 import toast from "react-hot-toast";
 
@@ -229,6 +231,107 @@ function CalendarioCitas({ citasPorFecha, fechaSeleccionada, onSeleccionar }) {
   );
 }
 
+// ── SearchableSelect ──────────────────────────────────────────
+function SearchableSelect({ value, onChange, options }) {
+  const [isOpen, setIsOpen]       = useState(false);
+  const [searchText, setSearchText] = useState('');
+  const containerRef = useRef(null);
+  const inputRef     = useRef(null);
+
+  useEffect(() => {
+    const handler = (e) => {
+      if (containerRef.current && !containerRef.current.contains(e.target)) {
+        setIsOpen(false); setSearchText('');
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
+
+  useEffect(() => { if (isOpen && inputRef.current) inputRef.current.focus(); }, [isOpen]);
+
+  const filtered = searchText.trim() === ''
+    ? options
+    : options.filter(o => o.label.toLowerCase().includes(searchText.toLowerCase()));
+
+  const selectedOption = options.find(o => o.value === value);
+  const isFiltered     = !!value;
+
+  return (
+    <div ref={containerRef} style={{ position: 'relative' }}>
+      <button
+        type="button"
+        onClick={() => setIsOpen(v => !v)}
+        style={{
+          width: '100%', padding: '8px 10px',
+          border: `1px solid ${isFiltered ? '#3b82f6' : '#d1d5db'}`,
+          borderRadius: '8px', fontSize: '13px',
+          color: isFiltered ? '#1d4ed8' : '#374151',
+          background: isFiltered ? '#eff6ff' : '#fff',
+          cursor: 'pointer', display: 'flex', alignItems: 'center',
+          justifyContent: 'space-between', gap: '4px', outline: 'none',
+          fontWeight: isFiltered ? '600' : 'normal',
+        }}
+      >
+        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1, textAlign: 'left' }}>
+          {selectedOption ? selectedOption.label : options[0]?.label || 'Todas'}
+        </span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '2px', flexShrink: 0 }}>
+          {isFiltered && (
+            <span
+              onClick={e => { e.stopPropagation(); onChange(''); setSearchText(''); }}
+              style={{ color: '#3b82f6', cursor: 'pointer', display: 'flex' }}
+            >
+              <X size={12} />
+            </span>
+          )}
+          <ChevronDown size={14} style={{ color: '#9ca3af', transform: isOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s' }} />
+        </div>
+      </button>
+
+      {isOpen && (
+        <div style={{ position: 'absolute', zIndex: 9999, width: '100%', minWidth: '220px', marginTop: '2px', background: '#fff', border: '2px solid #d1d5db', borderRadius: '8px', boxShadow: '0 4px 16px rgba(0,0,0,0.12)' }}>
+          <div style={{ padding: '8px', borderBottom: '1px solid #f1f5f9' }}>
+            <div style={{ position: 'relative' }}>
+              <Search size={13} style={{ position: 'absolute', left: '8px', top: '50%', transform: 'translateY(-50%)', color: '#9ca3af' }} />
+              <input
+                ref={inputRef}
+                type="text"
+                value={searchText}
+                onChange={e => setSearchText(e.target.value)}
+                placeholder="Escribir para filtrar..."
+                style={{ width: '100%', boxSizing: 'border-box', paddingLeft: '28px', paddingRight: '8px', paddingTop: '6px', paddingBottom: '6px', border: '1px solid #d1d5db', borderRadius: '6px', fontSize: '12px', outline: 'none' }}
+              />
+            </div>
+          </div>
+          <div style={{ maxHeight: '210px', overflowY: 'auto' }}>
+            {filtered.length === 0 ? (
+              <div style={{ padding: '10px 12px', fontSize: '12px', color: '#9ca3af', fontStyle: 'italic' }}>Sin resultados</div>
+            ) : (
+              filtered.map(opt => (
+                <div
+                  key={String(opt.value)}
+                  onClick={() => { onChange(opt.value); setIsOpen(false); setSearchText(''); }}
+                  style={{
+                    padding: '8px 12px', fontSize: '13px', cursor: 'pointer',
+                    background: opt.value === value ? '#eff6ff' : 'transparent',
+                    color: opt.value === value ? '#1d4ed8' : '#374151',
+                    fontWeight: opt.value === value ? '600' : 'normal',
+                  }}
+                  onMouseEnter={e => { if (opt.value !== value) e.currentTarget.style.background = '#f8fafc'; }}
+                  onMouseLeave={e => { if (opt.value !== value) e.currentTarget.style.background = 'transparent'; }}
+                >
+                  {opt.label}
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── Componente principal ──────────────────────────────────────
 export default function CitasAgendadas() {
   const [pacientes, setPacientes]           = useState([]);
@@ -249,6 +352,9 @@ export default function CitasAgendadas() {
   const [cargandoMedicos, setCargandoMedicos]   = useState(false);
   const [nuevoMedicoId, setNuevoMedicoId]       = useState('');
   const [reasignando, setReasignando]           = useState(false);
+  // ── Editar fecha/hora de cita ──
+  const [modalEditarFecha, setModalEditarFecha] = useState({ visible: false, paciente: null, fecha: '', hora: '' });
+  const [guardandoFecha, setGuardandoFecha]     = useState(false);
   // ── Reasignación en grupo ──
   const [modalGrupo, setModalGrupo]             = useState(false);
   const [especialidadGrupo, setEspecialidadGrupo] = useState('');
@@ -331,20 +437,38 @@ export default function CitasAgendadas() {
     return mapa;
   }, [pacientes]);
 
-  // ── Listas dinámicas para filtros ─────────────────────────
-  const listaIpress = useMemo(() => {
-    const set = new Set(pacientes.map(p => p.descIpress).filter(v => v && v !== '—'));
-    return Array.from(set).sort();
+  // ── Opciones con conteos para filtros searchable ──────────
+  const opcionesIpress = useMemo(() => {
+    const counts = {};
+    pacientes.forEach(p => { if (p.descIpress && p.descIpress !== '—') counts[p.descIpress] = (counts[p.descIpress] || 0) + 1; });
+    return [
+      { label: `Todas las IPRESS (${pacientes.length})`, value: '' },
+      ...Object.entries(counts)
+        .sort(([a], [b]) => a.localeCompare(b, 'es', { sensitivity: 'base' }))
+        .map(([ip, cnt]) => ({ label: `${ip} (${cnt})`, value: ip })),
+    ];
   }, [pacientes]);
 
-  const listaEspec = useMemo(() => {
-    const set = new Set(pacientes.map(p => p.especialidad).filter(v => v && v !== '—'));
-    return Array.from(set).sort();
+  const opcionesEspec = useMemo(() => {
+    const counts = {};
+    pacientes.forEach(p => { if (p.especialidad && p.especialidad !== '—') counts[p.especialidad] = (counts[p.especialidad] || 0) + 1; });
+    return [
+      { label: `Todas las especialidades (${pacientes.length})`, value: '' },
+      ...Object.entries(counts)
+        .sort(([a], [b]) => a.localeCompare(b, 'es', { sensitivity: 'base' }))
+        .map(([esp, cnt]) => ({ label: `${esp} (${cnt})`, value: esp })),
+    ];
   }, [pacientes]);
 
-  const listaMedicos = useMemo(() => {
-    const set = new Set(pacientes.map(p => p.nomMedico).filter(Boolean));
-    return Array.from(set).sort();
+  const opcionesMedico = useMemo(() => {
+    const counts = {};
+    pacientes.forEach(p => { if (p.nomMedico) counts[p.nomMedico] = (counts[p.nomMedico] || 0) + 1; });
+    return [
+      { label: `Todos los profesionales (${pacientes.length})`, value: '' },
+      ...Object.entries(counts)
+        .sort(([a], [b]) => a.localeCompare(b, 'es', { sensitivity: 'base' }))
+        .map(([med, cnt]) => ({ label: `${med} (${cnt})`, value: med })),
+    ];
   }, [pacientes]);
 
   const hayFiltrosActivos = filtroIpress || filtroEspec || filtroMedico || filtroCenacron || fechaSeleccionada;
@@ -414,6 +538,42 @@ export default function CitasAgendadas() {
   };
 
   const limpiarSeleccion = () => setSeleccionados(new Set());
+
+  // ── Editar fecha/hora ───────────────────────────────────────
+  const abrirModalEditarFecha = (p) => {
+    const fecha = p.fechaAtencion ? p.fechaAtencion.substring(0, 10) : '';
+    const hora  = p.horaAtencion  ? p.horaAtencion.substring(0, 5)  : '';
+    setModalEditarFecha({ visible: true, paciente: p, fecha, hora });
+  };
+
+  const guardarFechaHora = async () => {
+    const { paciente, fecha, hora } = modalEditarFecha;
+    if (!fecha) { toast.error('Selecciona una fecha'); return; }
+    setGuardandoFecha(true);
+    try {
+      const token = getToken();
+      const res = await fetch(`/api/bolsas/solicitudes/${paciente.id}/estado-y-cita`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({
+          nuevoEstadoCodigo: paciente.codigoEstado,
+          fechaAtencion: fecha,
+          horaAtencion:  hora || null,
+        }),
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      setPacientes(prev => prev.map(p =>
+        p.id === paciente.id ? { ...p, fechaAtencion: fecha, horaAtencion: hora || null } : p
+      ));
+      setModalEditarFecha({ visible: false, paciente: null, fecha: '', hora: '' });
+      toast.success('Fecha y hora actualizadas');
+    } catch (err) {
+      console.error('Error actualizando fecha/hora:', err);
+      toast.error('No se pudo actualizar la fecha');
+    } finally {
+      setGuardandoFecha(false);
+    }
+  };
 
   const filasSeleccionadas = useMemo(
     () => filtrados.filter(p => seleccionados.has(p.id ?? p.pacienteDni)),
@@ -747,29 +907,29 @@ CENATE de Essalud`;
             <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '16px', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px' }}>
               <div>
                 <label style={{ display: 'block', fontSize: '11px', fontWeight: '600', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '6px' }}>IPRESS</label>
-                <select value={filtroIpress} onChange={e => handleFiltro(setFiltroIpress)(e.target.value)}
-                  style={{ width: '100%', padding: '8px 10px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '13px', color: '#374151', background: '#fff', outline: 'none', cursor: 'pointer' }}>
-                  <option value="">Todas las IPRESS</option>
-                  {listaIpress.map(ip => <option key={ip} value={ip}>{ip}</option>)}
-                </select>
+                <SearchableSelect
+                  value={filtroIpress}
+                  onChange={v => handleFiltro(setFiltroIpress)(v)}
+                  options={opcionesIpress}
+                />
               </div>
               <div>
                 <label style={{ display: 'block', fontSize: '11px', fontWeight: '600', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '6px' }}>Especialidad</label>
-                <select value={filtroEspec} onChange={e => handleFiltro(setFiltroEspec)(e.target.value)}
-                  style={{ width: '100%', padding: '8px 10px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '13px', color: '#374151', background: '#fff', outline: 'none', cursor: 'pointer' }}>
-                  <option value="">Todas las especialidades</option>
-                  {listaEspec.map(es => <option key={es} value={es}>{es}</option>)}
-                </select>
+                <SearchableSelect
+                  value={filtroEspec}
+                  onChange={v => handleFiltro(setFiltroEspec)(v)}
+                  options={opcionesEspec}
+                />
               </div>
               <div>
                 <label style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '11px', fontWeight: '600', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '6px' }}>
                   <User size={11} /> Profesional de Salud
                 </label>
-                <select value={filtroMedico} onChange={e => handleFiltro(setFiltroMedico)(e.target.value)}
-                  style={{ width: '100%', padding: '8px 10px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '13px', color: '#374151', background: '#fff', outline: 'none', cursor: 'pointer' }}>
-                  <option value="">Todos los profesionales</option>
-                  {listaMedicos.map(m => <option key={m} value={m}>{m}</option>)}
-                </select>
+                <SearchableSelect
+                  value={filtroMedico}
+                  onChange={v => handleFiltro(setFiltroMedico)(v)}
+                  options={opcionesMedico}
+                />
               </div>
               <div>
                 <label style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '11px', fontWeight: '600', color: '#7e22ce', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '6px' }}>
@@ -939,12 +1099,25 @@ CENATE de Essalud`;
                           <td style={{ padding: '10px 12px', color: '#475569', fontSize: '12px' }}>{p.especialidad}</td>
 
                           <td style={{ padding: '10px 12px' }}>
-                            {p.fechaAtencion ? (
-                              <div>
-                                <div style={{ fontWeight: '600', color: '#1e293b', fontSize: '13px' }}>{fmtFecha(p.fechaAtencion)}</div>
-                                {p.horaAtencion && <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#64748b', fontSize: '11px', marginTop: '2px' }}><Clock size={11} />{p.horaAtencion.substring(0, 5)}</div>}
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                              <div style={{ flex: 1 }}>
+                                {p.fechaAtencion ? (
+                                  <>
+                                    <div style={{ fontWeight: '600', color: '#1e293b', fontSize: '13px' }}>{fmtFecha(p.fechaAtencion)}</div>
+                                    {p.horaAtencion && <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#64748b', fontSize: '11px', marginTop: '2px' }}><Clock size={11} />{p.horaAtencion.substring(0, 5)}</div>}
+                                  </>
+                                ) : <span style={{ color: '#d1d5db', fontSize: '12px' }}>—</span>}
                               </div>
-                            ) : <span style={{ color: '#d1d5db', fontSize: '12px' }}>—</span>}
+                              <button
+                                onClick={() => abrirModalEditarFecha(p)}
+                                title="Editar fecha y hora de cita"
+                                style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '26px', height: '26px', borderRadius: '6px', background: '#f1f5f9', border: '1px solid #e2e8f0', cursor: 'pointer', color: '#64748b', flexShrink: 0, transition: 'all 0.15s' }}
+                                onMouseEnter={e => { e.currentTarget.style.background = '#e0f2fe'; e.currentTarget.style.color = '#0369a1'; e.currentTarget.style.borderColor = '#7dd3fc'; }}
+                                onMouseLeave={e => { e.currentTarget.style.background = '#f1f5f9'; e.currentTarget.style.color = '#64748b'; e.currentTarget.style.borderColor = '#e2e8f0'; }}
+                              >
+                                <Pencil size={12} strokeWidth={2} />
+                              </button>
+                            </div>
                           </td>
 
                           <td style={{ padding: '10px 12px', color: '#475569', fontSize: '12px', maxWidth: '160px' }}>
@@ -1274,6 +1447,86 @@ CENATE de Essalud`;
               </button>
               <button onClick={enviarWA} style={{ flex: 2, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '10px', borderRadius: '10px', border: 'none', background: '#16a34a', color: '#fff', fontSize: '13px', fontWeight: '600', cursor: 'pointer' }}>
                 <Send size={15} /> Enviar por WhatsApp
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Modal Editar Fecha / Hora Cita ── */}
+      {modalEditarFecha.visible && (
+        <div
+          style={{ position: 'fixed', inset: 0, zIndex: 10000, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }}
+          onClick={e => { if (e.target === e.currentTarget && !guardandoFecha) setModalEditarFecha({ visible: false, paciente: null, fecha: '', hora: '' }); }}
+        >
+          <div style={{ background: '#fff', borderRadius: '16px', width: '100%', maxWidth: '400px', boxShadow: '0 20px 60px rgba(0,0,0,0.3)', overflow: 'hidden' }}>
+
+            {/* Cabecera */}
+            <div style={{ background: '#0369a1', padding: '16px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <CalendarDays size={20} color="#fff" strokeWidth={2} />
+                <div>
+                  <p style={{ margin: 0, fontSize: '15px', fontWeight: '700', color: '#fff' }}>Editar Fecha y Hora</p>
+                  <p style={{ margin: 0, fontSize: '12px', color: 'rgba(255,255,255,0.75)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '220px' }}>
+                    {modalEditarFecha.paciente?.pacienteNombre}
+                  </p>
+                </div>
+              </div>
+              {!guardandoFecha && (
+                <button
+                  onClick={() => setModalEditarFecha({ visible: false, paciente: null, fecha: '', hora: '' })}
+                  style={{ background: 'rgba(255,255,255,0.2)', border: 'none', borderRadius: '8px', padding: '6px', cursor: 'pointer', display: 'flex', color: '#fff' }}
+                >
+                  <X size={18} />
+                </button>
+              )}
+            </div>
+
+            {/* Cuerpo */}
+            <div style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <div>
+                <label style={{ display: 'block', fontSize: '11px', fontWeight: '600', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '6px' }}>
+                  Fecha de Cita *
+                </label>
+                <input
+                  type="date"
+                  value={modalEditarFecha.fecha}
+                  onChange={e => setModalEditarFecha(prev => ({ ...prev, fecha: e.target.value }))}
+                  style={{ width: '100%', padding: '10px 12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px', color: '#1e293b', outline: 'none', boxSizing: 'border-box' }}
+                />
+              </div>
+              <div>
+                <label style={{ display: 'block', fontSize: '11px', fontWeight: '600', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '6px' }}>
+                  Hora de Cita <span style={{ fontWeight: 400, textTransform: 'none', color: '#94a3b8' }}>(opcional)</span>
+                </label>
+                <input
+                  type="time"
+                  value={modalEditarFecha.hora}
+                  onChange={e => setModalEditarFecha(prev => ({ ...prev, hora: e.target.value }))}
+                  style={{ width: '100%', padding: '10px 12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px', color: '#1e293b', outline: 'none', boxSizing: 'border-box' }}
+                />
+              </div>
+            </div>
+
+            {/* Pie */}
+            <div style={{ padding: '0 24px 24px', display: 'flex', gap: '10px' }}>
+              <button
+                onClick={() => setModalEditarFecha({ visible: false, paciente: null, fecha: '', hora: '' })}
+                disabled={guardandoFecha}
+                style={{ flex: 1, padding: '10px', borderRadius: '8px', border: '1px solid #e2e8f0', background: '#f8fafc', color: '#64748b', fontSize: '13px', fontWeight: '600', cursor: guardandoFecha ? 'not-allowed' : 'pointer' }}
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={guardarFechaHora}
+                disabled={guardandoFecha || !modalEditarFecha.fecha}
+                style={{ flex: 2, padding: '10px', borderRadius: '8px', border: 'none', background: guardandoFecha || !modalEditarFecha.fecha ? '#94a3b8' : '#0369a1', color: '#fff', fontSize: '13px', fontWeight: '700', cursor: guardandoFecha || !modalEditarFecha.fecha ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', transition: 'background 0.15s' }}
+                onMouseEnter={e => { if (!guardandoFecha && modalEditarFecha.fecha) e.currentTarget.style.background = '#0284c7'; }}
+                onMouseLeave={e => { if (!guardandoFecha && modalEditarFecha.fecha) e.currentTarget.style.background = '#0369a1'; }}
+              >
+                {guardandoFecha
+                  ? <><RefreshCw size={14} className="animate-spin" /> Guardando...</>
+                  : <><CalendarDays size={14} /> Guardar cambios</>}
               </button>
             </div>
           </div>
