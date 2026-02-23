@@ -520,7 +520,7 @@ CENATE de Essalud`;
       );
       if (res.ok) {
         const data = await res.json();
-        setMedicosReasignar(data.data || []);
+        setMedicosReasignar((data.data || []).sort((a, b) => (a.nombre || '').localeCompare(b.nombre || '', 'es', { sensitivity: 'base' })));
       }
     } catch (err) {
       console.error('Error cargando médicos:', err);
@@ -590,7 +590,7 @@ CENATE de Essalud`;
       );
       if (res.ok) {
         const data = await res.json();
-        setMedicosReasignar(data.data || []);
+        setMedicosReasignar((data.data || []).sort((a, b) => (a.nombre || '').localeCompare(b.nombre || '', 'es', { sensitivity: 'base' })));
       } else {
         setMedicosReasignar([]);
       }
