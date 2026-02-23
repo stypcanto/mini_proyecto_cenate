@@ -601,7 +601,7 @@ export default function MisPacientes() {
 
   // ============ v1.49.0: FILTROS AVANZADOS ============
   const [filtroIpress, setFiltroIpress] = useState('');
-  const [filtroRangoFecha, setFiltroRangoFecha] = useState('hoy');
+  const [filtroRangoFecha, setFiltroRangoFecha] = useState('todos');
   const [fechaDesde, setFechaDesde] = useState('');
   const [fechaHasta, setFechaHasta] = useState('');
   const [ipressDisponibles, setIpressDisponibles] = useState([]);
@@ -1883,10 +1883,12 @@ export default function MisPacientes() {
     const hoy = obtenerHoyEnLima();
 
     if (!p.fechaAsignacion) {
+      // 'todos' incluye pacientes sin fechaAsignacion
+      if (filtroRangoFecha === 'todos') return true;
       // Fallback: si tiene fechaAtencion, comparar con hoy
       if (p.fechaAtencion) {
         const fechaAt = extraerFecha(p.fechaAtencion);
-        if (filtroRangoFecha === 'todos' || filtroRangoFecha === 'hoy') {
+        if (filtroRangoFecha === 'hoy') {
           return fechaAt === hoy;
         }
       }
@@ -1896,8 +1898,12 @@ export default function MisPacientes() {
     // v1.67.4: Extraer fecha y calcular HOY en Lima (UTC-5)
     const fechaAsignacion = extraerFecha(p.fechaAsignacion);
 
-    // Por default, filtroRangoFecha es 'todos', pero queremos comportamiento de 'hoy'
-    if (filtroRangoFecha === 'todos' || filtroRangoFecha === 'hoy') {
+    // 'todos' muestra todos los pacientes asignados sin restricción de fecha
+    if (filtroRangoFecha === 'todos') {
+      return true;
+    }
+
+    if (filtroRangoFecha === 'hoy') {
       return fechaAsignacion === hoy;
     }
 
@@ -2081,7 +2087,7 @@ export default function MisPacientes() {
                 <div className="flex gap-6 text-center">
                   <div>
                     <p className="text-3xl font-bold text-white">{pacientesFiltradosPorFecha.length}</p>
-                    <p className="text-xs text-white/80 font-medium mt-1">Hoy</p>
+                    <p className="text-xs text-white/80 font-medium mt-1">Total</p>
                   </div>
                   <div className="w-px bg-white/20"></div>
                   <div>
@@ -2100,7 +2106,7 @@ export default function MisPacientes() {
           <button
             onClick={() => {
               setFiltroEstado('');
-              setFiltroRangoFecha('hoy');
+              setFiltroRangoFecha('todos');
               setFechaDesde('');
               setFechaHasta('');
               setFechaAtencionSeleccionada('');
@@ -2213,7 +2219,7 @@ export default function MisPacientes() {
               <div className="text-left">
                 <h3 className="text-sm font-bold text-gray-900">Filtros de Búsqueda</h3>
                 <p className="text-[11px] text-gray-500">
-                  {filtroEstado || filtroBolsa || filtroIpress || filtroRangoFecha !== 'hoy' ?
+                  {filtroEstado || filtroBolsa || filtroIpress || filtroRangoFecha !== 'todos' ?
                     '✅ Con filtros aplicados' :
                     'Sin filtros activos'}
                 </p>
@@ -2223,14 +2229,14 @@ export default function MisPacientes() {
             {/* Botones de acción */}
             <div className="flex items-center gap-2">
               {/* Botón Limpiar (siempre visible) */}
-              {(busqueda || filtroEstado || filtroBolsa || filtroIpress || filtroRangoFecha !== 'hoy') && (
+              {(busqueda || filtroEstado || filtroBolsa || filtroIpress || filtroRangoFecha !== 'todos') && (
                 <button
                   onClick={() => {
                     setBusqueda('');
                     setFiltroEstado('');
                     setFiltroBolsa('');
                     setFiltroIpress('');
-                    setFiltroRangoFecha('hoy');
+                    setFiltroRangoFecha('todos');
                     setFechaDesde('');
                     setFechaHasta('');
                     setFechaAtencionSeleccionada('');
@@ -2363,7 +2369,7 @@ export default function MisPacientes() {
                   if (fecha) {
                     setFiltroRangoFecha('personalizado');
                   } else {
-                    setFiltroRangoFecha('hoy'); // Limpiar = volver a hoy
+                    setFiltroRangoFecha('todos'); // Limpiar = volver a todos
                   }
                 }}
                 fechasConAsignaciones={fechasConAsignaciones}
@@ -2424,14 +2430,14 @@ export default function MisPacientes() {
             <p className="text-gray-700 font-semibold text-base mb-2">
               {fechaSeleccionadaCalendario
                 ? `No hay pacientes programados para atender el ${parsearFechaLocal(fechaSeleccionadaCalendario).toLocaleDateString('es-ES', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' })}`
-                : (filtroRangoFecha === 'todos' || filtroRangoFecha === 'hoy' ? 'No hay pacientes programados para atender hoy' : 'No hay pacientes en el período seleccionado')
+                : (filtroRangoFecha === 'todos' ? 'No tienes pacientes asignados' : 'No hay pacientes en el período seleccionado')
               }
             </p>
             <p className="text-gray-500 text-sm mb-6">
               {fechaSeleccionadaCalendario
                 ? 'Intenta seleccionando otra fecha desde el calendario'
-                : (filtroRangoFecha === 'todos' || filtroRangoFecha === 'hoy'
-                  ? 'Selecciona otra fecha desde el calendario "ASIGNACIÓN"'
+                : (filtroRangoFecha === 'todos'
+                  ? 'Aún no tienes pacientes asignados'
                   : 'Intenta seleccionando otro período o ajustando los filtros.')
               }
             </p>
