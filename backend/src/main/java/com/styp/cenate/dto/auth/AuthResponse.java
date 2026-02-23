@@ -24,4 +24,15 @@ public class AuthResponse {
     private String message;
     private String especialidad;  // ✅ v1.77.0: Especialidad del médico (Cardiología, etc.)
     private String nombreIpress;  // 🏥 Nombre de la IPRESS (solo usuarios externos)
+    
+    // 🆕 v1.78.0: Información del personal desde dim_personal_cnt
+    private Long idPers;           // ID del personal (id_pers)
+    private String descRegLab;     // Descripción del régimen laboral (dim_regimen_laboral)
+    private Long idRegLab;         // ID del régimen laboral
+    private String descArea;       // Descripción del área (dim_area)
+    private Long idArea;           // ID del área
+    private String descIpress;     // Descripción del IPRESS (dim_ipress)
+    private Long idIpress;         // ID del IPRESS
+    private String descServicio;   // Descripción del servicio (dim_servicio_essi)
+    private Long idServicio;       // ID del servicio
 }

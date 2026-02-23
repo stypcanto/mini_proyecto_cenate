@@ -83,6 +83,16 @@ export const AuthProvider = ({ children }) => {
             requiereCambioPassword: payload.requiereCambioPassword || false,
             especialidad: payload.especialidad || null,  // ✅ v1.77.0: Especialidad del médico
             nombreIpress: payload.nombre_ipress || null,  // 🏥 IPRESS restaurada del JWT
+            // 🆕 v1.78.0: No disponible en JWT (se obtiene en login)
+            idPers: null,
+            descRegLab: null,
+            idRegLab: null,
+            descArea: null,
+            idArea: null,
+            descIpress: null,
+            idIpress: null,
+            descServicio: null,
+            idServicio: null,
             token
           };
 
@@ -167,6 +177,16 @@ export const AuthProvider = ({ children }) => {
       requiereCambioPassword: data.requiereCambioPassword || false,
       especialidad: data.especialidad || payload.especialidad || null,  // ✅ v1.77.0: Especialidad del médico
       nombreIpress: data.nombreIpress || null,  // 🏥 Nombre IPRESS para usuarios externos
+      // 🆕 v1.78.0: Información del personal con IDs y descripciones
+      idPers: data.idPers || null,             // ID del personal
+      descRegLab: data.descRegLab || null,     // Descripción del régimen laboral
+      idRegLab: data.idRegLab || null,         // ID del régimen laboral
+      descArea: data.descArea || null,         // Descripción del área
+      idArea: data.idArea || null,             // ID del área
+      descIpress: data.descIpress || null,     // Descripción del IPRESS
+      idIpress: data.idIpress || null,         // ID del IPRESS
+      descServicio: data.descServicio || null, // Descripción del servicio
+      idServicio: data.idServicio || null,     // ID del servicio
       token: jwt
     };
 

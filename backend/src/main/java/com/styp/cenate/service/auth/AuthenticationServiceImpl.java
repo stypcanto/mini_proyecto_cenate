@@ -23,6 +23,7 @@ import org.springframework.security.core.userdetails.User;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.annotation.Propagation;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -51,7 +52,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     // 🔐 LOGIN MBAC
     // =========================================================
     @Override
-    @Transactional
+    @Transactional(readOnly = true)
     public AuthResponse authenticate(AuthRequest request) {
         log.info("🔑 Intento de autenticación para: {}", request.getUsername());
 
@@ -121,18 +122,31 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         String especialidad = null;
 
         // 🏥 Obtener nombre de la IPRESS para usuarios externos
-        String nombreIpress = null;
-        try {
-            nombreIpress = jdbcTemplate.queryForObject(
-                "SELECT i.desc_ipress FROM public.dim_personal_externo pe " +
-                "JOIN public.dim_ipress i ON pe.id_ipress = i.id_ipress " +
-                "WHERE pe.id_user = ?",
-                String.class,
-                user.getIdUser()
-            );
-            log.info("🏥 IPRESS encontrada para usuario {}: {}", user.getIdUser(), nombreIpress);
-        } catch (Exception e) {
-            log.info("ℹ️ No se encontró IPRESS para usuario {}: {}", user.getIdUser(), e.getMessage());
+        String nombreIpress = obtenerNombreIpress(user.getIdUser());
+
+        // 🆕 v1.78.0: Obtener información del personal (régimen laboral, área, IPRESS, servicio)
+        Long idPers = null;
+        String descRegLab = null;
+        Long idRegLab = null;
+        String descArea = null;
+        Long idArea = null;
+        String descIpress = null;
+        Long idIpress = null;
+        String descServicio = null;
+        Long idServicio = null;
+
+        var personalInfo = obtenerInfoPersonal(user);
+        
+        if (!personalInfo.isEmpty()) {
+            idPers = personalInfo.get("id_pers") != null ? ((Number) personalInfo.get("id_pers")).longValue() : null;
+            idRegLab = personalInfo.get("id_reg_lab") != null ? ((Number) personalInfo.get("id_reg_lab")).longValue() : null;
+            descRegLab = (String) personalInfo.get("desc_regimen_laboral");
+            idArea = personalInfo.get("id_area") != null ? ((Number) personalInfo.get("id_area")).longValue() : null;
+            descArea = (String) personalInfo.get("desc_area");
+            idIpress = personalInfo.get("id_ipress") != null ? ((Number) personalInfo.get("id_ipress")).longValue() : null;
+            descIpress = (String) personalInfo.get("desc_ipress");
+            idServicio = personalInfo.get("id_servicio") != null ? ((Number) personalInfo.get("id_servicio")).longValue() : null;
+            descServicio = (String) personalInfo.get("desc_servicio");
         }
 
         Map<String, Object> claims = new HashMap<>();
@@ -194,6 +208,15 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                 .sessionId(sessionId)  // 🆕 ID de sesión para tracking
                 .especialidad(especialidad)  // ✅ v1.77.0: Especialidad del médico
                 .nombreIpress(nombreIpress)  // 🏥 Nombre de la IPRESS (solo externos)
+                .idPers(idPers)  // 🆕 v1.78.0: ID del personal
+                .descRegLab(descRegLab)  // 🆕 v1.78.0: Régimen laboral
+                .idRegLab(idRegLab)  // 🆕 v1.78.0: ID del régimen laboral
+                .descArea(descArea)  // 🆕 v1.78.0: Área
+                .idArea(idArea)  // 🆕 v1.78.0: ID del área
+                .descIpress(descIpress)  // 🆕 v1.78.0: IPRESS
+                .idIpress(idIpress)  // 🆕 v1.78.0: ID del IPRESS
+                .descServicio(descServicio)  // 🆕 v1.78.0: Servicio
+                .idServicio(idServicio)  // 🆕 v1.78.0: ID del servicio
                 .message("Inicio de sesión exitoso")
                 .build();
     }
@@ -309,25 +332,57 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     // =========================================================
     // 📷 OBTENER FOTO DEL USUARIO
     // =========================================================
+    // 🏥 OBTENER NOMBRE IPRESS PARA USUARIOS EXTERNOS (INDEPENDIENTE)
+    // =========================================================
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    private String obtenerNombreIpress(Long userId) {
+        try {
+            var iPressList = jdbcTemplate.queryForList(
+                "SELECT i.desc_ipress FROM public.dim_personal_externo pe " +
+                "JOIN public.dim_ipress i ON pe.id_ipress = i.id_ipress " +
+                "WHERE pe.id_user = ?",
+                String.class,
+                userId
+            );
+            if (!iPressList.isEmpty()) {
+                String nombreIpress = iPressList.get(0);
+                log.debug("🏥 IPRESS encontrada para usuario {}: {}", userId, nombreIpress);
+                return nombreIpress;
+            } else {
+                log.debug("ℹ️ No se encontró IPRESS para usuario {}", userId);
+            }
+        } catch (Exception e) {
+            log.debug("ℹ️ Error al buscar IPRESS para usuario {}: {}", userId, e.getMessage());
+        }
+        return null;
+    }
+
+    // =========================================================
+    // 🔐 OBTENER FOTO DEL USUARIO (INDEPENDIENTE)
+    // =========================================================
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     private String obtenerFotoUsuario(Long userId) {
         log.info("📷 Buscando foto para usuario ID: {}", userId);
         try {
             // Buscar primero en dim_personal_cnt
-            String fotoPersonalCnt = jdbcTemplate.queryForObject(
+            var fotoList = jdbcTemplate.queryForList(
                 "SELECT foto_pers FROM public.dim_personal_cnt WHERE id_usuario = ? AND foto_pers IS NOT NULL",
                 String.class,
                 userId
             );
-            if (fotoPersonalCnt != null && !fotoPersonalCnt.trim().isEmpty()) {
-                // Si ya contiene la URL completa (/api/fotos-perfil/...), devolverla tal cual
-                if (fotoPersonalCnt.startsWith("/api/")) {
-                    log.info("✅ Foto URL encontrada en dim_personal_cnt: {}", fotoPersonalCnt);
-                    return fotoPersonalCnt;
+            if (!fotoList.isEmpty()) {
+                String fotoPersonalCnt = fotoList.get(0);
+                if (fotoPersonalCnt != null && !fotoPersonalCnt.trim().isEmpty()) {
+                    // Si ya contiene la URL completa (/api/fotos-perfil/...), devolverla tal cual
+                    if (fotoPersonalCnt.startsWith("/api/")) {
+                        log.info("✅ Foto URL encontrada en dim_personal_cnt: {}", fotoPersonalCnt);
+                        return fotoPersonalCnt;
+                    }
+                    // Si solo es nombre de archivo, construir la URL
+                    String fotoUrl = "/api/fotos-perfil/" + fotoPersonalCnt;
+                    log.info("✅ Foto encontrada en dim_personal_cnt: {} -> URL: {}", fotoPersonalCnt, fotoUrl);
+                    return fotoUrl;
                 }
-                // Si solo es nombre de archivo, construir la URL
-                String fotoUrl = "/api/fotos-perfil/" + fotoPersonalCnt;
-                log.info("✅ Foto encontrada en dim_personal_cnt: {} -> URL: {}", fotoPersonalCnt, fotoUrl);
-                return fotoUrl;
             }
         } catch (Exception e) {
             log.debug("No se encontró foto en dim_personal_cnt para usuario {}: {}", userId, e.getMessage());
@@ -335,21 +390,24 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 
         try {
             // Buscar en dim_personal_externo (si no se encontró en personal_cnt)
-            String fotoPersonalExt = jdbcTemplate.queryForObject(
+            var fotoList = jdbcTemplate.queryForList(
                 "SELECT foto_ext FROM public.dim_personal_externo WHERE id_usuario = ? AND foto_ext IS NOT NULL",
                 String.class,
                 userId
             );
-            if (fotoPersonalExt != null && !fotoPersonalExt.trim().isEmpty()) {
-                // Si ya contiene la URL completa (/api/fotos-perfil/...), devolverla tal cual
-                if (fotoPersonalExt.startsWith("/api/")) {
-                    log.info("✅ Foto URL encontrada en dim_personal_externo: {}", fotoPersonalExt);
-                    return fotoPersonalExt;
+            if (!fotoList.isEmpty()) {
+                String fotoPersonalExt = fotoList.get(0);
+                if (fotoPersonalExt != null && !fotoPersonalExt.trim().isEmpty()) {
+                    // Si ya contiene la URL completa (/api/fotos-perfil/...), devolverla tal cual
+                    if (fotoPersonalExt.startsWith("/api/")) {
+                        log.info("✅ Foto URL encontrada en dim_personal_externo: {}", fotoPersonalExt);
+                        return fotoPersonalExt;
+                    }
+                    // Si solo es nombre de archivo, construir la URL
+                    String fotoUrl = "/api/fotos-perfil/" + fotoPersonalExt;
+                    log.info("✅ Foto encontrada en dim_personal_externo: {} -> URL: {}", fotoPersonalExt, fotoUrl);
+                    return fotoUrl;
                 }
-                // Si solo es nombre de archivo, construir la URL
-                String fotoUrl = "/api/fotos-perfil/" + fotoPersonalExt;
-                log.info("✅ Foto encontrada en dim_personal_externo: {} -> URL: {}", fotoPersonalExt, fotoUrl);
-                return fotoUrl;
             }
         } catch (Exception e) {
             log.debug("No se encontró foto en dim_personal_externo para usuario {}", userId);
@@ -358,5 +416,111 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         // Si no se encontró foto, retornar null
         log.info("⚠️ No se encontró foto para usuario ID: {}", userId);
         return null;
+    }
+
+    // 🆕 v1.78.0: Obtener información del personal de forma segura (sin afectar transacción principal)
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    private java.util.Map<String, Object> obtenerInfoPersonal(Usuario usuario) {
+        java.util.Map<String, Object> resultado = new java.util.HashMap<>();
+        try {
+            if (usuario == null) {
+                log.warn("⚠️ Usuario es null, no se puede obtener información personal");
+                return resultado;
+            }
+            
+            Long userId = usuario.getIdUser();
+            log.info("🔍 ========== DEBUGGING obtenerInfoPersonal ==========");
+            log.info("🔍 Usuario ID: {}", userId);
+            log.info("🔍 Username: {}", usuario.getNameUser());
+            
+            // PASO 1: Ver si existe ALGÚN registro en dim_personal_cnt para este usuario
+            try {
+                var allPersonal = jdbcTemplate.queryForList(
+                    "SELECT id_usuario, id_pers, num_doc_pers FROM public.dim_personal_cnt WHERE id_usuario IS NOT NULL LIMIT 5"
+                );
+                log.info("📊 Primeros 5 registros en dim_personal_cnt: {}", allPersonal);
+            } catch (Exception e) {
+                log.warn("⚠️ Error al listar dim_personal_cnt: {}", e.getMessage());
+            }
+            
+            // PASO 2: Buscar el registro por id_usuario (NO id_user)
+            log.info("🔎 Buscando usuario ID {} en dim_personal_cnt...", userId);
+            var docList = jdbcTemplate.queryForList(
+                "SELECT id_pers, num_doc_pers, id_reg_lab, id_area, id_ipress, id_servicio FROM public.dim_personal_cnt WHERE id_usuario = ?",
+                new Object[]{userId}
+            );
+            
+            if (docList.isEmpty()) {
+                log.error("❌ NO ENCONTRADO: Usuario {} NO existe en dim_personal_cnt con id_user", userId);
+                log.error("❌ Posible causa: la relación no es por id_user, sino por otro campo");
+                // Intentar ver si hay registros con información del usuario
+                var anyRecords = jdbcTemplate.queryForList(
+                    "SELECT COUNT(*) as count FROM public.dim_personal_cnt"
+                );
+                log.error("❌ Total de registros en dim_personal_cnt: {}", anyRecords);
+                return resultado;
+            }
+            
+            log.info("✅ ENCONTRADO: Usuario {} SÍ existe en dim_personal_cnt", userId);
+            var record = docList.get(0);
+            Long idPers = ((Number) record.get("id_pers")).longValue();
+            String numDocPers = (String) record.get("num_doc_pers");
+            log.info("✅ id_pers: {}, num_doc_pers: {}", idPers, numDocPers);
+            
+            // PASO 3: Ejecutar query con JOINs usando id_pers
+            log.info("📝 Ejecutando query JOINs con id_pers={}", idPers);
+            
+            var personalInfoList = jdbcTemplate.query(
+                "SELECT " +
+                "  dpc.id_pers, " +
+                "  dpc.id_reg_lab, " +
+                "  drl.desc_reg_lab, " +
+                "  dpc.id_area, " +
+                "  da.desc_area, " +
+                "  dpc.id_ipress, " +
+                "  di.desc_ipress, " +
+                "  dpc.id_servicio, " +
+                "  dse.desc_servicio " +
+                "FROM public.dim_personal_cnt dpc " +
+                "LEFT JOIN public.dim_regimen_laboral drl ON dpc.id_reg_lab = drl.id_reg_lab " +
+                "LEFT JOIN public.dim_area da ON dpc.id_area = da.id_area " +
+                "LEFT JOIN public.dim_ipress di ON dpc.id_ipress = di.id_ipress " +
+                "LEFT JOIN public.dim_servicio_essi dse ON dpc.id_servicio = dse.id_servicio " +
+                "WHERE dpc.id_pers = ? " +
+                "LIMIT 1",
+                new Object[]{idPers},
+                (rs, rowNum) -> {
+                    java.util.Map<String, Object> map = new java.util.HashMap<>();
+                    map.put("id_pers", rs.getObject("id_pers"));
+                    map.put("id_reg_lab", rs.getObject("id_reg_lab"));
+                    map.put("desc_regimen_laboral", rs.getString("desc_reg_lab"));
+                    map.put("id_area", rs.getObject("id_area"));
+                    map.put("desc_area", rs.getString("desc_area"));
+                    map.put("id_ipress", rs.getObject("id_ipress"));
+                    map.put("desc_ipress", rs.getString("desc_ipress"));
+                    map.put("id_servicio", rs.getObject("id_servicio"));
+                    map.put("desc_servicio", rs.getString("desc_servicio"));
+                    return map;
+                }
+            );
+
+            if (!personalInfoList.isEmpty()) {
+                resultado = personalInfoList.get(0);
+                log.info("✅✅✅ Info Personal FINAL - ID Pers: {}, RegLab: {} ({}), Area: {} ({}), IPRESS: {} ({}), Servicio: {} ({})", 
+                    resultado.get("id_pers"),
+                    resultado.get("id_reg_lab"), resultado.get("desc_regimen_laboral"),
+                    resultado.get("id_area"), resultado.get("desc_area"),
+                    resultado.get("id_ipress"), resultado.get("desc_ipress"),
+                    resultado.get("id_servicio"), resultado.get("desc_servicio")
+                );
+            } else {
+                log.error("❌ No se obtuvieron datos con JOINs para id_pers={}", idPers);
+            }
+            
+            log.info("🔍 ========== FIN DEBUGGING obtenerInfoPersonal ==========");
+        } catch (Exception e) {
+            log.error("❌ EXCEPCIÓN en obtenerInfoPersonal: {}", e.getMessage(), e);
+        }
+        return resultado;
     }
 }

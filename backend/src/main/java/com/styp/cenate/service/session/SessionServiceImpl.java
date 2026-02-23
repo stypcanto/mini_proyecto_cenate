@@ -8,6 +8,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.annotation.Propagation;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
@@ -29,7 +30,7 @@ public class SessionServiceImpl implements SessionService {
     private final AuditLogService auditLogService;
 
     @Override
-    @Transactional
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public String registrarNuevaSesion(Long userId, String username, String ipAddress, String userAgent) {
         // Generar ID único de sesión
         String sessionId = UUID.randomUUID().toString();
