@@ -1,9 +1,9 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Plus, Search, Phone, ChevronDown, Circle, Eye, Users, UserPlus, Download, FileText, FolderOpen, ListChecks, Upload, AlertCircle, Edit, X } from 'lucide-react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { Plus, Search, Phone, ChevronDown, ChevronUp, Circle, Eye, Users, UserPlus, Download, FileText, FolderOpen, ListChecks, Upload, AlertCircle, Edit, X, AlertTriangle, Clock, UserCheck, Database } from 'lucide-react';
 import PageHeader from '../../components/PageHeader';
 import StatCard from '../../components/StatCard';
 import ListHeader from '../../components/ListHeader';
-import bolsasService, { actualizarIpressAtencion } from '../../services/bolsasService';
+import bolsasService, { actualizarIpressAtencion, asignarGestoraMasivo } from '../../services/bolsasService';
 import ipressService from '../../services/ipressService';
 import { usePermisos } from '../../context/PermisosContext';
 import ModalResultadosImportacion from '../../components/modals/ModalResultadosImportacion'; // ✅ NUEVO v1.19.0
@@ -68,7 +68,7 @@ function generarCodigoBolsa(nombreBolsa) {
 }
 
 export default function Solicitudes() {
-  const [registrosPorPagina, setRegistrosPorPagina] = useState(100);
+  const [registrosPorPagina, setRegistrosPorPagina] = useState(20);
   const { esSuperAdmin } = usePermisos();
 
   const [solicitudes, setSolicitudes] = useState([]);
@@ -77,11 +77,12 @@ export default function Solicitudes() {
 
   // NEW v2.5.8: Estadísticas de filtros del backend (análisis de TODA la tabla)
   const [estadisticasTipoBolsa, setEstadisticasTipoBolsa] = useState([]);
+  // estadisticasTipoCita eliminado (v1.65.1) — el filtro Tipo de Cita usa opciones hardcodeadas
   const [especialidadesActivas, setEspecialidadesActivas] = useState([]); // Especialidades desde backend (v1.42.0)
   const [errorEspecialidades, setErrorEspecialidades] = useState(null); // Error al cargar especialidades (v1.42.0)
   const [estadisticasIpress, setEstadisticasIpress] = useState([]);
   const [estadisticasIpressAtencion, setEstadisticasIpressAtencion] = useState([]);
-  const [estadisticasTipoCita, setEstadisticasTipoCita] = useState([]);
+  // estadisticasTipoCita eliminado (v1.65.1) — el filtro usa opciones hardcodeadas
 
   const [isLoading, setIsLoading] = useState(true); // Inicia con loader por defecto
   const [estadisticasCargadas, setEstadisticasCargadas] = useState(false); // ✅ v1.42.0: Rastrear carga de estadísticas
@@ -100,7 +101,9 @@ export default function Solicitudes() {
   const [filtroFechaFin, setFiltroFechaFin] = useState('');           // ✅ v1.66.0: Filtro rango de fechas - fin
   const [cardSeleccionado, setCardSeleccionado] = useState(null);     // ✅ v1.42.0: Rastrear card activo
   const [selectedRows, setSelectedRows] = useState(new Set());
+  const [modoSeleccionTotal, setModoSeleccionTotal] = useState(false); // v1.65.0: "Seleccionar todos los X que coinciden"
   const [currentPage, setCurrentPage] = useState(1);
+  const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' }); // v1.80.0: Ordenamiento de columnas
 
   // Cache de catálogos para evitar N+1 queries
   const [cacheEstados, setCacheEstados] = useState({});
@@ -269,41 +272,52 @@ export default function Solicitudes() {
   // ============================================================================
 
   // ============================================================================
-  // 📦 EFFECT 2.6: Cargar ESTADÍSTICAS DE FILTROS EN PARALELO
+  // 📦 EFFECT 2.6a: Cargar ESTADÍSTICAS DE TARJETAS inmediatamente (no espera catálogos)
   // ============================================================================
-  // 🚀 Estrategia: Usar 4 llamadas paralelas en Promise.all
-  // Antes: 7 HTTP requests secuenciales = muy lento
-  // Ahora: 4 HTTP requests en PARALELO = 4x más rápido
-  // Nota: endpoint /filtros consolidado omitido porque tarda más que 4 paralelas
+  // v1.65.1: Desacoplado de catalogosCargados para que las tarjetas carguen lo antes posible.
+  // Solo carga por-estado (tarjetas KPI) y por-tipo-bolsa (filtro Bolsas) — ambas ligeras y cacheadas.
+  useEffect(() => {
+    console.log('📊 [2.6a] Cargando estadísticas de tarjetas y bolsas en paralelo...');
+    (async () => {
+      try {
+        const [estado, bolsas] = await Promise.all([
+          bolsasService.obtenerEstadisticasPorEstado().catch(() => []),
+          bolsasService.obtenerEstadisticasPorTipoBolsa().catch(() => []),
+        ]);
+        if (isMountedRef.current) {
+          setEstadisticasGlobales(estado || []);
+          setEstadisticasTipoBolsa(bolsas || []);
+          setEstadisticasCargadas(true);
+          console.log('✅ [2.6a] Tarjetas KPI cargadas');
+        }
+      } catch (error) {
+        console.error('❌ [2.6a] Error cargando tarjetas:', error);
+        if (isMountedRef.current) setEstadisticasCargadas(true);
+      }
+    })();
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ============================================================================
+  // 📦 EFFECT 2.6b: Cargar ESTADÍSTICAS DE IPRESS para filtros (después de catálogos)
+  // ============================================================================
+  // v1.65.1: Carga diferida — solo cuando los catálogos están listos (no bloquea tarjetas).
+  // Eliminada llamada a obtenerEstadisticasPorTipoCita() — era unused (el filtro usa opciones hardcodeadas).
   useEffect(() => {
     if (catalogosCargados) {
-      console.log('📊 Cargando ESTADÍSTICAS DE FILTROS en paralelo (4 llamadas)...');
+      console.log('📊 [2.6b] Cargando estadísticas de IPRESS para filtros...');
       (async () => {
         try {
-          // 5 llamadas en paralelo
-          const [bolsas, ipress, ipressAtencion, tipoCita, estado] = await Promise.all([
-            bolsasService.obtenerEstadisticasPorTipoBolsa().catch(() => []),
+          const [ipress, ipressAtencion] = await Promise.all([
             bolsasService.obtenerEstadisticasPorIpress().catch(() => []),
             bolsasService.obtenerEstadisticasPorIpressAtencion().catch(() => []),
-            bolsasService.obtenerEstadisticasPorTipoCita().catch(() => []),
-            bolsasService.obtenerEstadisticasPorEstado().catch(() => [])
           ]);
-
           if (isMountedRef.current) {
-            setEstadisticasTipoBolsa(bolsas || []);
             setEstadisticasIpress(ipress || []);
             setEstadisticasIpressAtencion(ipressAtencion || []);
-            setEstadisticasTipoCita(tipoCita || []);
-            setEstadisticasGlobales(estado || []);
-
-            // ✅ v1.42.0: Marcar que las estadísticas están cargadas
-            setEstadisticasCargadas(true);
-            console.log('✅ Estadísticas cargadas en paralelo');
+            console.log('✅ [2.6b] Stats IPRESS para filtros cargadas');
           }
         } catch (error) {
-          console.error('❌ Error cargando estadísticas:', error);
-          // Incluso si falla, permitir cargar solicitudes
-          setEstadisticasCargadas(true);
+          console.error('❌ [2.6b] Error cargando stats IPRESS:', error);
         }
       })();
     }
@@ -331,6 +345,8 @@ export default function Solicitudes() {
       filtroFechaInicio, filtroFechaFin
     });
     setCurrentPage(1); // Reset a página 1
+    setModoSeleccionTotal(false); // v1.65.0: Limpiar modo selección total al cambiar filtros
+    setSelectedRows(new Set()); // Limpiar selección al cambiar filtros
     cargarSolicitudesConFiltros(); // Cargar CON FILTROS desde el backend
   }, [filtroBolsa, filtroMacrorregion, filtroRed, filtroIpress, filtroIpressAtencion, filtroEspecialidad, filtroEstado, filtroTipoCita, filtroAsignacion, filtroGestoraId, searchTerm, filtroFechaInicio, filtroFechaFin, registrosPorPagina]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -340,6 +356,8 @@ export default function Solicitudes() {
   useEffect(() => {
     if (catalogosCargados && currentPage > 1) {
       console.log('📄 Cambio de página detectado:', currentPage);
+      setModoSeleccionTotal(false); // v1.65.0: Limpiar modo selección total al cambiar página
+      setSelectedRows(new Set()); // Limpiar selección al cambiar página
       // currentPage es 1-based, pero backend espera 0-based
       const pageIndex = currentPage - 1;
       cargarSolicitudesPaginadas(pageIndex);
@@ -1204,6 +1222,50 @@ export default function Solicitudes() {
   // Los registros mostrados son directamente `solicitudes` (ya paginados y filtrados desde el backend)
   const solicitudesPaginadas = solicitudes;
 
+  // ✅ v1.80.0: Ordenamiento client-side de la página actual
+  const handleSort = useCallback((key) => {
+    setSortConfig(prev => ({
+      key,
+      direction: prev.key === key && prev.direction === 'asc' ? 'desc' : 'asc',
+    }));
+  }, []);
+
+  const SortIcon = ({ columnKey }) => {
+    const isActive = sortConfig.key === columnKey;
+    if (!isActive) return <span className="ml-1 text-white/30 text-xs">⇅</span>;
+    return sortConfig.direction === 'asc'
+      ? <span className="ml-1 text-yellow-300 font-bold">↑</span>
+      : <span className="ml-1 text-yellow-300 font-bold">↓</span>;
+  };
+
+  // Mapa de columna → campo raw ISO para ordenar fechas correctamente
+  const SORT_RAW_FIELD = {
+    fechaSolicitud: 'fecha_solicitud',
+    fechaAsignacion: 'fecha_solicitud',
+    fechaAtencionMedica: 'fecha_atencion_medica',
+    fechaHoraCita: 'fecha_atencion',
+  };
+
+  const sortedSolicitudesPaginadas = useMemo(() => {
+    if (!sortConfig.key) return solicitudesPaginadas;
+    const rawField = SORT_RAW_FIELD[sortConfig.key];
+    return [...solicitudesPaginadas].sort((a, b) => {
+      let aVal = rawField ? (a[rawField] ?? '') : (a[sortConfig.key] ?? '');
+      let bVal = rawField ? (b[rawField] ?? '') : (b[sortConfig.key] ?? '');
+      // Comparar como fechas si el campo raw es ISO
+      if (rawField && aVal && bVal) {
+        return sortConfig.direction === 'asc'
+          ? new Date(aVal) - new Date(bVal)
+          : new Date(bVal) - new Date(aVal);
+      }
+      if (typeof aVal === 'string') aVal = aVal.toLowerCase();
+      if (typeof bVal === 'string') bVal = bVal.toLowerCase();
+      if (aVal < bVal) return sortConfig.direction === 'asc' ? -1 : 1;
+      if (aVal > bVal) return sortConfig.direction === 'asc' ? 1 : -1;
+      return 0;
+    });
+  }, [solicitudesPaginadas, sortConfig]);
+
   // ✅ v1.42.0: Manejador para clics en cards de estadísticas
   const handleCardClick = (cardType) => {
     console.log('📊 handleCardClick - cardType:', cardType, 'cardSeleccionado actual:', cardSeleccionado);
@@ -1234,10 +1296,6 @@ export default function Solicitudes() {
           break;
         case 'pendiente':
           setFiltroEstado('PENDIENTE_CITA');
-          setFiltroAsignacion('todos');
-          break;
-        case 'citado':
-          setFiltroEstado('CITADO');
           setFiltroAsignacion('todos');
           break;
         case 'asignado':
@@ -1545,49 +1603,45 @@ export default function Solicitudes() {
 
     setIsProcessing(true);
     try {
-      // ✅ NUEVO: Detectar si es asignación múltiple (selectedRows.size > 1) o individual
-      if (selectedRows.size > 1) {
-        // ASIGNACIÓN MASIVA: Asignar todos los seleccionados
-        console.log(`📋 Asignando ${selectedRows.size} solicitudes a ${gestoraData.nombre}`);
-        let asignacionesExitosas = 0;
-        let asignacionesFallidas = 0;
+      const gestoraId = Number(gestoraSeleccionada);
 
-        for (const solicitudId of selectedRows) {
-          try {
-            const solicitud = solicitudes.find(s => s.idSolicitud === solicitudId);
-            await bolsasService.asignarAGestora(
-              solicitudId,
-              Number(gestoraSeleccionada),
-              gestoraData.nombre
-            );
-            asignacionesExitosas++;
-          } catch (error) {
-            console.error(`Error asignando solicitud ${solicitudId}:`, error);
-            asignacionesFallidas++;
-          }
+      if (modoSeleccionTotal) {
+        // MODO SELECCIÓN TOTAL: asignar todos los de la página actual (ya filtrados)
+        const todosIds = solicitudes.map(s => s.idSolicitud || s.id).filter(Boolean);
+        console.log(`📋 [BULK TOTAL] Asignando ${todosIds.length} solicitudes a ${gestoraData.nombre}`);
+        const resultado = await asignarGestoraMasivo(todosIds, gestoraId);
+        const actualizados = resultado?.actualizados ?? todosIds.length;
+        alert(`✅ ${actualizados} solicitudes asignadas a ${gestoraData.nombre}`);
+      } else if (selectedRows.size >= 1) {
+        const ids = Array.from(selectedRows);
+        if (ids.length === 1) {
+          // ASIGNACIÓN INDIVIDUAL
+          await bolsasService.asignarAGestora(ids[0], gestoraId, gestoraData.nombre);
+          alert('✅ Solicitud asignada correctamente a ' + gestoraData.nombre);
+        } else {
+          // ASIGNACIÓN MASIVA (bulk) — 1 sola llamada HTTP
+          console.log(`📋 [BULK] Asignando ${ids.length} solicitudes a ${gestoraData.nombre}`);
+          const resultado = await asignarGestoraMasivo(ids, gestoraId);
+          const actualizados = resultado?.actualizados ?? ids.length;
+          alert(`✅ ${actualizados} solicitudes asignadas a ${gestoraData.nombre}`);
         }
-
-        alert(
-          `✅ Asignaciones completadas:\n` +
-          `${asignacionesExitosas} solicitudes asignadas a ${gestoraData.nombre}\n` +
-          (asignacionesFallidas > 0 ? `⚠️ ${asignacionesFallidas} solicitudes con error` : '')
-        );
       } else {
-        // ASIGNACIÓN INDIVIDUAL: Una sola solicitud
+        // Fallback: asignación individual desde solicitudSeleccionada
         await bolsasService.asignarAGestora(
           solicitudSeleccionada.idSolicitud || solicitudSeleccionada.id,
-          Number(gestoraSeleccionada),
+          gestoraId,
           gestoraData.nombre
         );
         alert('✅ Solicitud asignada correctamente a ' + gestoraData.nombre);
       }
 
       setModalAsignarGestora(false);
-      setGestoraSeleccionada(null); // Limpiar selección
-      setSelectedRows(new Set()); // Limpiar selecciones después de asignar
+      setGestoraSeleccionada(null);
+      setSelectedRows(new Set());
+      setModoSeleccionTotal(false);
       setTimeout(() => {
-        cargarSolicitudesConFiltros(); // Recargar solicitudes manteniendo filtros actuales
-      }, 300); // Pequeño delay para asegurar que el backend procese la asignación
+        cargarSolicitudesConFiltros();
+      }, 300);
     } catch (error) {
       console.error('Error asignando gestora:', error);
       alert('❌ Error al asignar la gestora. Intenta nuevamente.');
@@ -1803,111 +1857,150 @@ export default function Solicitudes() {
         {/* Tarjetas de Estadísticas - Siempre Visible */}
         <div className="mb-8">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Estadísticas de Solicitudes</h3>
-          <div className="grid grid-cols-1 md:grid-cols-5 gap-4 animate-fade-in">
-            {/* Total Pacientes - Azul */}
-            <div
-              onClick={() => handleCardClick('total')}
-              className={`bg-gradient-to-br from-blue-600 to-blue-700 rounded-lg shadow-lg p-6 text-white transform hover:scale-110 hover:-translate-y-1 transition-all duration-300 hover:shadow-2xl cursor-pointer group overflow-hidden relative ${
-                cardSeleccionado === 'total' ? 'ring-4 ring-blue-300 shadow-2xl scale-110 -translate-y-1' : ''
-              }`}
-            >
-              <div className="absolute inset-0 bg-gradient-to-tr from-white/0 to-white/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-lg pointer-events-none"></div>
-              <div className="relative z-10 flex items-center justify-between mb-4">
-                <span className="text-blue-100 font-semibold">Total Pacientes</span>
-                <span className="text-2xl group-hover:scale-125 transition-transform duration-300">👥</span>
-              </div>
-              <div className="relative z-10 text-3xl font-bold group-hover:text-blue-100 transition-colors duration-300">
-                {estadisticas.total === null ? (
-                  <span className="inline-block animate-pulse text-sm">⟳ Cargando...</span>
-                ) : (
-                  estadisticas.total
-                )}
-              </div>
-            </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 animate-fade-in">
 
-            {/* Pendiente Citar - Naranja */}
-            <div
-              onClick={() => handleCardClick('pendiente')}
-              className={`bg-gradient-to-br from-orange-500 to-orange-600 rounded-lg shadow-lg p-6 text-white transform hover:scale-110 hover:-translate-y-1 transition-all duration-300 hover:shadow-2xl cursor-pointer group overflow-hidden relative ${
-                cardSeleccionado === 'pendiente' ? 'ring-4 ring-orange-300 shadow-2xl scale-110 -translate-y-1' : ''
-              }`}
-            >
-              <div className="absolute inset-0 bg-gradient-to-tr from-white/0 to-white/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-lg pointer-events-none"></div>
-              <div className="relative z-10 flex items-center justify-between mb-4">
-                <span className="text-orange-100 font-semibold">Pendiente Citar</span>
-                <span className="text-2xl group-hover:scale-125 transition-transform duration-300">⏳</span>
-              </div>
-              <div className="relative z-10 text-3xl font-bold group-hover:text-orange-100 transition-colors duration-300">
-                {estadisticas.pendientes === null ? (
-                  <span className="inline-block animate-pulse text-sm">⟳ Cargando...</span>
-                ) : (
-                  estadisticas.pendientes
-                )}
-              </div>
-            </div>
-
-            {/* Citados - Púrpura */}
-            <div
-              onClick={() => handleCardClick('citado')}
-              className={`bg-gradient-to-br from-purple-600 to-purple-700 rounded-lg shadow-lg p-6 text-white transform hover:scale-110 hover:-translate-y-1 transition-all duration-300 hover:shadow-2xl cursor-pointer group overflow-hidden relative ${
-                cardSeleccionado === 'citado' ? 'ring-4 ring-purple-300 shadow-2xl scale-110 -translate-y-1' : ''
-              }`}
-            >
-              <div className="absolute inset-0 bg-gradient-to-tr from-white/0 to-white/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-lg pointer-events-none"></div>
-              <div className="relative z-10 flex items-center justify-between mb-4">
-                <span className="text-purple-100 font-semibold">Citados</span>
-                <span className="text-2xl group-hover:scale-125 transition-transform duration-300">📞</span>
-              </div>
-              <div className="relative z-10 text-3xl font-bold group-hover:text-purple-100 transition-colors duration-300">
-                {estadisticas.citados === null ? (
-                  <span className="inline-block animate-pulse text-sm">⟳ Cargando...</span>
-                ) : (
-                  estadisticas.citados
-                )}
-              </div>
-            </div>
-
-            {/* Casos Asignados - Verde */}
-            <div
-              onClick={() => handleCardClick('asignado')}
-              className={`bg-gradient-to-br from-green-600 to-green-700 rounded-lg shadow-lg p-6 text-white transform hover:scale-110 hover:-translate-y-1 transition-all duration-300 hover:shadow-2xl cursor-pointer group overflow-hidden relative ${
-                cardSeleccionado === 'asignado' ? 'ring-4 ring-green-300 shadow-2xl scale-110 -translate-y-1' : ''
-              }`}
-            >
-              <div className="absolute inset-0 bg-gradient-to-tr from-white/0 to-white/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-lg pointer-events-none"></div>
-              <div className="relative z-10 flex items-center justify-between mb-4">
-                <span className="text-green-100 font-semibold">Casos Asignados</span>
-                <span className="text-2xl group-hover:scale-125 transition-transform duration-300">👥</span>
-              </div>
-              <div className="relative z-10 text-3xl font-bold group-hover:text-green-100 transition-colors duration-300">
-                {estadisticas.asignados === null ? (
-                  <span className="inline-block animate-pulse text-sm">⟳ Cargando...</span>
-                ) : (
-                  estadisticas.asignados
-                )}
-              </div>
-            </div>
-
-            {/* Sin Asignar - Gris */}
+            {/* 1. Sin Gestora — Rojo (ACCIÓN URGENTE) */}
             <div
               onClick={() => handleCardClick('sin_asignar')}
-              className={`bg-gradient-to-br from-gray-600 to-gray-700 rounded-lg shadow-lg p-6 text-white transform hover:scale-110 hover:-translate-y-1 transition-all duration-300 hover:shadow-2xl cursor-pointer group overflow-hidden relative ${
-                cardSeleccionado === 'sin_asignar' ? 'ring-4 ring-gray-300 shadow-2xl scale-110 -translate-y-1' : ''
-              }`}
+              className={`rounded-xl p-6 text-white cursor-pointer group overflow-hidden relative
+                transition-[transform,box-shadow,opacity] duration-200 ease-out
+                hover:scale-[1.02] hover:-translate-y-0.5
+                ${cardSeleccionado === 'sin_asignar' ? 'ring-2 ring-white/50 scale-[1.02] -translate-y-0.5' : ''}`}
+              style={{
+                background: 'linear-gradient(135deg, #dc2626 0%, #b91c1c 45%, #991b1b 100%)',
+                boxShadow: cardSeleccionado === 'sin_asignar'
+                  ? '0 20px 40px -8px rgba(153,27,27,0.65), inset 0 1px 0 rgba(255,255,255,0.15)'
+                  : '0 4px 20px -4px rgba(153,27,27,0.45), inset 0 1px 0 rgba(255,255,255,0.12)'
+              }}
             >
-              <div className="absolute inset-0 bg-gradient-to-tr from-white/0 to-white/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-lg pointer-events-none"></div>
-              <div className="relative z-10 flex items-center justify-between mb-4">
-                <span className="text-gray-100 font-semibold">Sin Asignar</span>
-                <span className="text-2xl group-hover:scale-125 transition-transform duration-300">🔲</span>
-              </div>
-              <div className="relative z-10 text-3xl font-bold group-hover:text-gray-100 transition-colors duration-300">
-                {estadisticas.sinAsignar === null ? (
-                  <span className="inline-block animate-pulse text-sm">⟳ Cargando...</span>
-                ) : (
-                  estadisticas.sinAsignar
-                )}
+              {/* Vignette permanente — profundidad en reposo */}
+              <div className="absolute inset-0 rounded-xl pointer-events-none"
+                style={{ background: 'linear-gradient(to bottom, rgba(0,0,0,0) 0%, rgba(0,0,0,0.18) 100%)' }} />
+              {/* Gloss diagonal — visible solo en hover */}
+              <div className="absolute inset-0 rounded-xl pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+                style={{ background: 'linear-gradient(135deg, rgba(255,255,255,0.18) 0%, rgba(255,255,255,0) 55%)' }} />
+              <div className="relative z-10">
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-xs font-semibold uppercase tracking-[0.12em] text-white/75">Sin Gestora</span>
+                  <div className="w-9 h-9 rounded-lg bg-white/15 flex items-center justify-center flex-shrink-0">
+                    <AlertTriangle className="w-4 h-4 text-white" strokeWidth={2.5} />
+                  </div>
+                </div>
+                <div className="text-5xl font-bold text-white leading-none mb-2"
+                  style={{ fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.02em' }}>
+                  {estadisticas.sinAsignar === null
+                    ? <span className="text-2xl opacity-50 animate-pulse">—</span>
+                    : estadisticas.sinAsignar.toLocaleString('es-PE')}
+                </div>
+                <div className="text-xs text-white/60 font-medium">Requieren asignación</div>
               </div>
             </div>
+
+            {/* 2. Pendiente Citar — Naranja (EN COLA) */}
+            <div
+              onClick={() => handleCardClick('pendiente')}
+              className={`rounded-xl p-6 text-white cursor-pointer group overflow-hidden relative
+                transition-[transform,box-shadow,opacity] duration-200 ease-out
+                hover:scale-[1.02] hover:-translate-y-0.5
+                ${cardSeleccionado === 'pendiente' ? 'ring-2 ring-white/50 scale-[1.02] -translate-y-0.5' : ''}`}
+              style={{
+                background: 'linear-gradient(135deg, #f97316 0%, #ea580c 45%, #c2410c 100%)',
+                boxShadow: cardSeleccionado === 'pendiente'
+                  ? '0 20px 40px -8px rgba(194,65,12,0.65), inset 0 1px 0 rgba(255,255,255,0.15)'
+                  : '0 4px 20px -4px rgba(194,65,12,0.45), inset 0 1px 0 rgba(255,255,255,0.12)'
+              }}
+            >
+              <div className="absolute inset-0 rounded-xl pointer-events-none"
+                style={{ background: 'linear-gradient(to bottom, rgba(0,0,0,0) 0%, rgba(0,0,0,0.18) 100%)' }} />
+              <div className="absolute inset-0 rounded-xl pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+                style={{ background: 'linear-gradient(135deg, rgba(255,255,255,0.18) 0%, rgba(255,255,255,0) 55%)' }} />
+              <div className="relative z-10">
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-xs font-semibold uppercase tracking-[0.12em] text-white/75">Pendiente Citar</span>
+                  <div className="w-9 h-9 rounded-lg bg-white/15 flex items-center justify-center flex-shrink-0">
+                    <Clock className="w-4 h-4 text-white" strokeWidth={2.5} />
+                  </div>
+                </div>
+                <div className="text-5xl font-bold text-white leading-none mb-2"
+                  style={{ fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.02em' }}>
+                  {estadisticas.pendientes === null
+                    ? <span className="text-2xl opacity-50 animate-pulse">—</span>
+                    : estadisticas.pendientes.toLocaleString('es-PE')}
+                </div>
+                <div className="text-xs text-white/60 font-medium">Esperando llamada</div>
+              </div>
+            </div>
+
+            {/* 3. Con Gestora — Verde (EN PROGRESO) */}
+            <div
+              onClick={() => handleCardClick('asignado')}
+              className={`rounded-xl p-6 text-white cursor-pointer group overflow-hidden relative
+                transition-[transform,box-shadow,opacity] duration-200 ease-out
+                hover:scale-[1.02] hover:-translate-y-0.5
+                ${cardSeleccionado === 'asignado' ? 'ring-2 ring-white/50 scale-[1.02] -translate-y-0.5' : ''}`}
+              style={{
+                background: 'linear-gradient(135deg, #16a34a 0%, #15803d 45%, #166534 100%)',
+                boxShadow: cardSeleccionado === 'asignado'
+                  ? '0 20px 40px -8px rgba(22,101,52,0.65), inset 0 1px 0 rgba(255,255,255,0.15)'
+                  : '0 4px 20px -4px rgba(22,101,52,0.45), inset 0 1px 0 rgba(255,255,255,0.12)'
+              }}
+            >
+              <div className="absolute inset-0 rounded-xl pointer-events-none"
+                style={{ background: 'linear-gradient(to bottom, rgba(0,0,0,0) 0%, rgba(0,0,0,0.18) 100%)' }} />
+              <div className="absolute inset-0 rounded-xl pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+                style={{ background: 'linear-gradient(135deg, rgba(255,255,255,0.18) 0%, rgba(255,255,255,0) 55%)' }} />
+              <div className="relative z-10">
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-xs font-semibold uppercase tracking-[0.12em] text-white/75">Con Gestora</span>
+                  <div className="w-9 h-9 rounded-lg bg-white/15 flex items-center justify-center flex-shrink-0">
+                    <UserCheck className="w-4 h-4 text-white" strokeWidth={2.5} />
+                  </div>
+                </div>
+                <div className="text-5xl font-bold text-white leading-none mb-2"
+                  style={{ fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.02em' }}>
+                  {estadisticas.asignados === null
+                    ? <span className="text-2xl opacity-50 animate-pulse">—</span>
+                    : estadisticas.asignados.toLocaleString('es-PE')}
+                </div>
+                <div className="text-xs text-white/60 font-medium">Gestora asignada</div>
+              </div>
+            </div>
+
+            {/* 4. Total en Bolsa — Azul (REFERENCIA GLOBAL) */}
+            <div
+              onClick={() => handleCardClick('total')}
+              className={`rounded-xl p-6 text-white cursor-pointer group overflow-hidden relative
+                transition-[transform,box-shadow,opacity] duration-200 ease-out
+                hover:scale-[1.02] hover:-translate-y-0.5
+                ${cardSeleccionado === 'total' ? 'ring-2 ring-white/50 scale-[1.02] -translate-y-0.5' : ''}`}
+              style={{
+                background: 'linear-gradient(135deg, #1d4ed8 0%, #1e40af 45%, #1e3a8a 100%)',
+                boxShadow: cardSeleccionado === 'total'
+                  ? '0 20px 40px -8px rgba(30,58,138,0.65), inset 0 1px 0 rgba(255,255,255,0.15)'
+                  : '0 4px 20px -4px rgba(30,58,138,0.45), inset 0 1px 0 rgba(255,255,255,0.12)'
+              }}
+            >
+              <div className="absolute inset-0 rounded-xl pointer-events-none"
+                style={{ background: 'linear-gradient(to bottom, rgba(0,0,0,0) 0%, rgba(0,0,0,0.18) 100%)' }} />
+              <div className="absolute inset-0 rounded-xl pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+                style={{ background: 'linear-gradient(135deg, rgba(255,255,255,0.18) 0%, rgba(255,255,255,0) 55%)' }} />
+              <div className="relative z-10">
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-xs font-semibold uppercase tracking-[0.12em] text-white/75">Total en Bolsa</span>
+                  <div className="w-9 h-9 rounded-lg bg-white/15 flex items-center justify-center flex-shrink-0">
+                    <Database className="w-4 h-4 text-white" strokeWidth={2.5} />
+                  </div>
+                </div>
+                <div className="text-5xl font-bold text-white leading-none mb-2"
+                  style={{ fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.02em' }}>
+                  {estadisticas.total === null
+                    ? <span className="text-2xl opacity-50 animate-pulse">—</span>
+                    : estadisticas.total.toLocaleString('es-PE')}
+                </div>
+                <div className="text-xs text-white/60 font-medium">Todos los estados</div>
+              </div>
+            </div>
+
           </div>
         </div>
 
@@ -1932,10 +2025,9 @@ export default function Solicitudes() {
           <div className="mb-3 flex items-center gap-2 px-4 py-2 bg-blue-50 border border-blue-200 rounded-lg text-sm text-blue-800 font-medium">
             <span>Filtrado por card:</span>
             <span className="font-bold">
+              {cardSeleccionado === 'sin_asignar' && '🚨 Sin Gestora'}
               {cardSeleccionado === 'pendiente' && '⏳ Pendiente Citar'}
-              {cardSeleccionado === 'citado' && '📞 Citados'}
-              {cardSeleccionado === 'asignado' && '👥 Casos Asignados'}
-              {cardSeleccionado === 'sin_asignar' && '🔲 Sin Asignar'}
+              {cardSeleccionado === 'asignado' && '✅ Con Gestora'}
             </span>
             <button
               onClick={() => { setCardSeleccionado(null); setFiltroEstado('todos'); setFiltroAsignacion('todos'); }}
@@ -2000,13 +2092,14 @@ export default function Solicitudes() {
               },
               {
                 name: "IPRESS - Adscripción",
+                searchable: true,
                 value: filtroIpress,
                 onChange: (e) => setFiltroIpress(e.target.value),
                 options: [
                   { label: `Todas (${totalElementos})`, value: "todas" },
                   ...estadisticasIpress
                     .filter(i => i.total > 0)
-                    .sort((a, b) => b.total - a.total)
+                    .sort((a, b) => (a.nombreIpress || '').localeCompare(b.nombreIpress || '', 'es', { sensitivity: 'base' }))
                     .map(i => ({
                       label: `${i.nombreIpress} (${i.total})`,
                       value: i.nombreIpress
@@ -2015,13 +2108,14 @@ export default function Solicitudes() {
               },
               {
                 name: "IPRESS - Atención",
+                searchable: true,
                 value: filtroIpressAtencion,
                 onChange: (e) => setFiltroIpressAtencion(e.target.value),
                 options: [
                   { label: `Todas`, value: "todas" },
                   ...estadisticasIpressAtencion
                     .filter(i => i.total > 0)
-                    .sort((a, b) => b.total - a.total)
+                    .sort((a, b) => (a.nombreIpress || '').localeCompare(b.nombreIpress || '', 'es', { sensitivity: 'base' }))
                     .map(i => ({
                       label: `${i.nombreIpress} (${i.total})`,
                       value: i.nombreIpress
@@ -2030,21 +2124,31 @@ export default function Solicitudes() {
               },
               {
                 name: "Estado de Gestora",
+                searchable: true,
                 value: filtroEstado,
                 onChange: (e) => setFiltroEstado(e.target.value),
-                options: [
-                  { label: `Todos los estados (${totalElementos})`, value: "todos" },
-                  ...listaEstadosGestion.map(estado => {
-                    const count = countWithFilters('estado', estado.codEstadoCita);
-                    return {
-                      label: `${estado.descEstadoCita} (${count})`,
-                      value: estado.codEstadoCita
-                    };
-                  })
-                ]
+                options: (() => {
+                  const statsMap = {};
+                  if (estadisticasGlobales && Array.isArray(estadisticasGlobales)) {
+                    estadisticasGlobales.forEach(stat => {
+                      if (stat.estado) statsMap[stat.estado.toUpperCase()] = stat.cantidad || 0;
+                    });
+                  }
+                  return [
+                    { label: `Todos los estados (${totalElementos})`, value: "todos" },
+                    ...listaEstadosGestion.map(estado => {
+                      const count = statsMap[estado.codEstadoCita?.toUpperCase()] ?? 0;
+                      return {
+                        label: `${estado.descEstadoCita} (${count})`,
+                        value: estado.codEstadoCita
+                      };
+                    })
+                  ];
+                })()
               },
               {
                 name: "Tipo de Cita",
+                searchable: true,
                 value: filtroTipoCita,
                 onChange: (e) => setFiltroTipoCita(e.target.value),
                 options: [
@@ -2057,6 +2161,7 @@ export default function Solicitudes() {
               },
               {
                 name: "Especialidades",
+                searchable: true,
                 value: filtroEspecialidad,
                 onChange: (e) => setFiltroEspecialidad(e.target.value),
                 options: [
@@ -2069,6 +2174,7 @@ export default function Solicitudes() {
               },
               {
                 name: "Gestora Asignada",
+                searchable: true,
                 value: filtroGestoraId === null ? "todas" : filtroGestoraId === "sin_asignar" ? "sin_asignar" : String(filtroGestoraId),
                 onChange: (e) => {
                   const val = e.target.value;
@@ -2200,7 +2306,7 @@ export default function Solicitudes() {
           {/* Botones de acción: asignar gestora, descargar, cambiar bolsa, limpiar y borrar */}
           {(selectedRows.size > 0 || solicitudes.length > 0) && (
             <div className="flex justify-end gap-3 flex-wrap">
-                {selectedRows.size > 1 && !seleccionarTodas && (
+                {(selectedRows.size >= 1 || modoSeleccionTotal) && !seleccionarTodas && (
                   <button
                     onClick={() => {
                       setGestoraSeleccionada(null);
@@ -2210,7 +2316,9 @@ export default function Solicitudes() {
                     title="Asignar los pacientes seleccionados a una gestora de citas"
                   >
                     <UserPlus size={22} className="font-bold" />
-                    Asignar a Gestora ({selectedRows.size})
+                    {modoSeleccionTotal
+                      ? `Asignar todos (${totalElementos})`
+                      : `Asignar a Gestora (${selectedRows.size})`}
                   </button>
                 )}
 
@@ -2390,33 +2498,77 @@ export default function Solicitudes() {
                         className="w-5 h-5 cursor-pointer"
                       />
                     </th>
-                    {/* Columnas - Orden optimizado v2.1.0 + v1.68.0: F. Ingreso Bolsa primera */}
-                    <th className="px-3 py-3 text-left text-sm font-bold uppercase tracking-wider whitespace-nowrap">F. Ingreso Bolsa</th>
-                    <th className="px-3 py-3 text-left text-sm font-bold uppercase tracking-wider whitespace-nowrap">Estado de Bolsa</th>
-                    <th className="px-3 py-3 text-left text-sm font-bold uppercase tracking-wider whitespace-nowrap">Origen de la Bolsa</th>
-                    <th className="px-3 py-3 text-left text-sm font-bold uppercase tracking-wider whitespace-nowrap">Fecha Preferida</th>
-                    <th className="px-3 py-3 text-left text-sm font-bold uppercase tracking-wider whitespace-nowrap">T-N° Documento</th>
-                    <th className="px-3 py-3 text-left text-sm font-bold uppercase tracking-wider whitespace-nowrap">Paciente</th>
-                    <th className="px-3 py-3 text-left text-sm font-bold uppercase tracking-wider whitespace-nowrap">Teléfonos</th>
-                    <th className="px-3 py-3 text-left text-sm font-bold uppercase tracking-wider whitespace-nowrap">Tipo de Cita</th>
-                    <th className="px-3 py-3 text-left text-sm font-bold uppercase tracking-wider whitespace-nowrap">Especialidad</th>
-                    <th className="px-3 py-3 text-left text-sm font-bold uppercase tracking-wider whitespace-nowrap">IPRESS - Adscripción</th>
-                    <th className="px-3 py-3 text-left text-sm font-bold uppercase tracking-wider whitespace-nowrap">IPRESS - Atención</th>
-                    <th className="px-3 py-3 text-left text-sm font-bold uppercase tracking-wider whitespace-nowrap">Red</th>
-                    <th className="px-3 py-3 text-left text-sm font-bold uppercase tracking-wider whitespace-nowrap">Estado de Gestora</th>
-                    <th className="px-3 py-3 text-left text-sm font-bold uppercase tracking-wider whitespace-nowrap">F/H Cita</th>
-                    <th className="px-3 py-3 text-left text-sm font-bold uppercase tracking-wider whitespace-nowrap">Médico Asignado</th>
-                    <th className="px-3 py-3 text-left text-sm font-bold uppercase tracking-wider whitespace-nowrap">Est. Atención Médica</th>
-                    <th className="px-3 py-3 text-left text-sm font-bold uppercase tracking-wider whitespace-nowrap">F. Atención Méd.</th>
-                    <th className="px-3 py-3 text-left text-sm font-bold uppercase tracking-wider whitespace-nowrap">Fecha Asignación</th>
-                    <th className="px-3 py-3 text-left text-sm font-bold uppercase tracking-wider whitespace-nowrap">Gestora Asignada</th>
-                    <th className="px-3 py-3 text-left text-sm font-bold uppercase tracking-wider whitespace-nowrap">Usuario Cambio Estado</th>
+                    {/* Columnas - Orden optimizado v2.1.0 + v1.68.0: F. Ingreso Bolsa primera | v1.80.0: Ordenamiento */}
+                    {[
+                      { label: 'F. Ingreso Bolsa', key: 'fechaSolicitud' },
+                      { label: 'Estado de Bolsa', key: 'estado' },
+                      { label: 'Origen de la Bolsa', key: 'nombreBolsa' },
+                      { label: 'Fecha Preferida', key: 'fechaPreferidaNoAtendida' },
+                      { label: 'T-N° Documento', key: 'dni' },
+                      { label: 'Paciente', key: 'paciente' },
+                      { label: 'Teléfonos', key: 'telefono' },
+                      { label: 'Tipo de Cita', key: 'tipoCita' },
+                      { label: 'Especialidad', key: 'especialidad' },
+                      { label: 'IPRESS - Adscripción', key: 'ipress' },
+                      { label: 'IPRESS - Atención', key: 'ipressAtencion' },
+                      { label: 'Red', key: 'red' },
+                      { label: 'Estado de Gestora', key: 'estadoDisplay' },
+                      { label: 'F/H Cita', key: 'fechaHoraCita' },
+                      { label: 'Médico Asignado', key: 'nombreMedicoAsignado' },
+                      { label: 'Est. Atención Médica', key: 'condicionMedica' },
+                      { label: 'F. Atención Méd.', key: 'fechaAtencionMedica' },
+                      { label: 'Fecha Asignación', key: 'fechaAsignacion' },
+                      { label: 'Gestora Asignada', key: 'gestoraAsignada' },
+                      { label: 'Usuario Cambio Estado', key: 'usuarioCambioEstado' },
+                    ].map(({ label, key }) => {
+                      const isActive = sortConfig.key === key;
+                      return (
+                        <th
+                          key={key}
+                          onClick={() => handleSort(key)}
+                          className={`px-3 py-3 text-left text-sm font-bold uppercase tracking-wider whitespace-nowrap cursor-pointer select-none transition-colors
+                            ${isActive ? 'bg-[#073f7a]' : 'bg-[#0D5BA9] hover:bg-[#0a4f96]'}`}
+                        >
+                          {label}<SortIcon columnKey={key} />
+                        </th>
+                      );
+                    })}
                     <th className="px-3 py-3 text-center text-sm font-bold uppercase tracking-wider whitespace-nowrap">Acciones</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {/* 🚀 v2.6.0: Componente memorizado para máxima performance */}
-                  {solicitudesPaginadas.map((solicitud) => (
+                  {/* v1.65.0: Banner "Seleccionar todos los X" (patrón Gmail) */}
+                  {selectedRows.size === solicitudes.length && solicitudes.length > 0 && totalElementos > solicitudes.length && (
+                    <tr>
+                      <td colSpan={99} className="px-0 py-0">
+                        <div className="flex items-center justify-center gap-3 bg-blue-50 border-y border-blue-200 py-2 px-4 text-sm text-blue-800">
+                          {modoSeleccionTotal ? (
+                            <>
+                              <span className="font-medium">✅ Los {totalElementos} registros que coinciden están seleccionados.</span>
+                              <button
+                                onClick={() => { setModoSeleccionTotal(false); setSelectedRows(new Set()); }}
+                                className="underline text-blue-600 hover:text-blue-800 font-medium"
+                              >
+                                Cancelar selección
+                              </button>
+                            </>
+                          ) : (
+                            <>
+                              <span>Los {solicitudes.length} registros de esta página están seleccionados.</span>
+                              <button
+                                onClick={() => setModoSeleccionTotal(true)}
+                                className="underline text-blue-600 hover:text-blue-800 font-semibold"
+                              >
+                                Seleccionar los {totalElementos} registros que coinciden
+                              </button>
+                            </>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  )}
+                  {/* 🚀 v2.6.0: Componente memorizado para máxima performance | v1.80.0: Ordenamiento */}
+                  {sortedSolicitudesPaginadas.map((solicitud) => (
                     <FilaSolicitud
                       key={solicitud.id}
                       solicitud={solicitud}

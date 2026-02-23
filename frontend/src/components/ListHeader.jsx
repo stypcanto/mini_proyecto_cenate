@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Search, ChevronDown, RotateCcw, Check } from 'lucide-react';
+import { Search, ChevronDown, RotateCcw, Check, X } from 'lucide-react';
 
 /**
  * 🔍 Componente Reutilizable: ListHeader
@@ -14,6 +14,116 @@ import { Search, ChevronDown, RotateCcw, Check } from 'lucide-react';
  * - filters: array - Array de objetos filtro {name, value, onChange, options: [{label, value}], multiSelect?: boolean, onMultiChange?: (values) => void}
  * - onClearFilters: function - Callback para limpiar todos los filtros
  */
+
+function SearchableSelect({ filter }) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [searchText, setSearchText] = useState('');
+  const containerRef = useRef(null);
+  const inputRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (containerRef.current && !containerRef.current.contains(event.target)) {
+        setIsOpen(false);
+        setSearchText('');
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  useEffect(() => {
+    if (isOpen && inputRef.current) {
+      inputRef.current.focus();
+    }
+  }, [isOpen]);
+
+  const allOptions = filter.options || [];
+  const filtered = searchText.trim() === ''
+    ? allOptions
+    : allOptions.filter(o =>
+        o.label.toLowerCase().includes(searchText.toLowerCase())
+      );
+
+  const selectedOption = allOptions.find(o => o.value === filter.value);
+  const isFiltered = filter.value && filter.value !== 'todas';
+
+  const handleSelect = (value) => {
+    filter.onChange({ target: { value } });
+    setIsOpen(false);
+    setSearchText('');
+  };
+
+  const handleClear = (e) => {
+    e.stopPropagation();
+    filter.onChange({ target: { value: 'todas' } });
+    setSearchText('');
+  };
+
+  return (
+    <div ref={containerRef} className="relative">
+      <button
+        type="button"
+        onClick={() => setIsOpen(!isOpen)}
+        className={`w-full px-3 py-2 border-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-xs text-left cursor-pointer bg-white font-medium transition-all hover:border-gray-400 flex items-center justify-between gap-1 ${
+          isFiltered ? 'border-blue-400 text-blue-700' : 'border-gray-300 text-gray-700'
+        }`}
+      >
+        <span className="truncate flex-1">
+          {selectedOption ? selectedOption.label : allOptions[0]?.label || 'Todas'}
+        </span>
+        <div className="flex items-center gap-1 flex-shrink-0">
+          {isFiltered && (
+            <span
+              onClick={handleClear}
+              className="text-blue-400 hover:text-blue-600 cursor-pointer"
+            >
+              <X size={12} />
+            </span>
+          )}
+          <ChevronDown size={16} className={`text-gray-400 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+        </div>
+      </button>
+
+      {isOpen && (
+        <div className="absolute z-50 w-full mt-1 bg-white border-2 border-gray-300 rounded-lg shadow-lg">
+          {/* Input de búsqueda */}
+          <div className="p-2 border-b border-gray-200">
+            <div className="relative">
+              <Search size={13} className="absolute left-2 top-2 text-gray-400" />
+              <input
+                ref={inputRef}
+                type="text"
+                value={searchText}
+                onChange={(e) => setSearchText(e.target.value)}
+                placeholder="Escribir para filtrar..."
+                className="w-full pl-7 pr-3 py-1.5 border border-gray-300 rounded text-xs focus:outline-none focus:ring-1 focus:ring-blue-400"
+              />
+            </div>
+          </div>
+          {/* Lista de opciones */}
+          <div className="max-h-52 overflow-y-auto">
+            {filtered.length === 0 ? (
+              <div className="px-3 py-2 text-xs text-gray-400 italic">Sin resultados</div>
+            ) : (
+              filtered.map((option) => (
+                <div
+                  key={option.value}
+                  onClick={() => handleSelect(option.value)}
+                  className={`px-3 py-1.5 text-xs cursor-pointer hover:bg-blue-50 truncate ${
+                    option.value === filter.value ? 'bg-blue-100 text-blue-700 font-semibold' : 'text-gray-700'
+                  }`}
+                >
+                  {option.label}
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
 
 function MultiSelectDropdown({ filter }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -208,30 +318,9 @@ export default function ListHeader({
           {filters.slice(1, 5).map((filter, index) => (
             <div key={index + 1} className="relative">
               <label className="block text-xs font-semibold text-gray-600 mb-1">{filter.name}</label>
-              <div className="relative">
-                <select
-                  value={filter.value}
-                  onChange={filter.onChange}
-                  className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-xs appearance-none cursor-pointer bg-white font-medium transition-all hover:border-gray-400"
-                >
-                  {filter.options?.map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
-                <ChevronDown size={16} className="absolute right-2 top-2.5 text-gray-400 pointer-events-none" />
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {/* Tercera fila: Tipo de Cita | Estado | Filtros adicionales */}
-        {filters.length > 5 && (
-          <div className={`grid grid-cols-1 ${filters.slice(5).length <= 2 ? 'md:grid-cols-2' : 'md:grid-cols-3'} gap-2`}>
-            {filters.slice(5).map((filter, index) => (
-              <div key={index + 5} className="relative">
-                <label className="block text-xs font-semibold text-gray-600 mb-1">{filter.name}</label>
+              {filter.searchable ? (
+                <SearchableSelect filter={filter} />
+              ) : (
                 <div className="relative">
                   <select
                     value={filter.value}
@@ -246,6 +335,35 @@ export default function ListHeader({
                   </select>
                   <ChevronDown size={16} className="absolute right-2 top-2.5 text-gray-400 pointer-events-none" />
                 </div>
+              )}
+            </div>
+          ))}
+        </div>
+
+        {/* Tercera fila: Tipo de Cita | Estado | Filtros adicionales */}
+        {filters.length > 5 && (
+          <div className={`grid grid-cols-1 ${filters.slice(5).length <= 2 ? 'md:grid-cols-2' : 'md:grid-cols-3'} gap-2`}>
+            {filters.slice(5).map((filter, index) => (
+              <div key={index + 5} className="relative">
+                <label className="block text-xs font-semibold text-gray-600 mb-1">{filter.name}</label>
+                {filter.searchable ? (
+                  <SearchableSelect filter={filter} />
+                ) : (
+                  <div className="relative">
+                    <select
+                      value={filter.value}
+                      onChange={filter.onChange}
+                      className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-xs appearance-none cursor-pointer bg-white font-medium transition-all hover:border-gray-400"
+                    >
+                      {filter.options?.map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </select>
+                    <ChevronDown size={16} className="absolute right-2 top-2.5 text-gray-400 pointer-events-none" />
+                  </div>
+                )}
               </div>
             ))}
           </div>
