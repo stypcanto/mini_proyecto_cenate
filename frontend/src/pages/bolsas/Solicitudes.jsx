@@ -272,18 +272,19 @@ export default function Solicitudes() {
   // ============================================================================
 
   // ============================================================================
-  // 📦 EFFECT 2.6a: Cargar ESTADÍSTICAS DE TARJETAS + ESTADOS DE GESTORA (en paralelo, inmediato)
+  // 📦 EFFECT 2.6a: Cargar ESTADÍSTICAS + DROPDOWNS rápidos (en paralelo, inmediato)
   // ============================================================================
-  // v1.65.2: Carga lista de estados (listaEstadosGestion) aquí en vez de en cargarCatalogos(),
-  // para que el dropdown "Estado de Gestora" aparezca sin esperar obtenerIpress() (lento).
+  // v1.65.3: Mueve Estado de Gestora y Gestora Asignada fuera de cargarCatalogos()
+  // para que sus dropdowns aparezcan sin esperar obtenerIpress() (lento).
   useEffect(() => {
-    console.log('📊 [2.6a] Cargando estadísticas de tarjetas, bolsas y estados en paralelo...');
+    console.log('📊 [2.6a] Cargando estadísticas, estados y gestoras en paralelo...');
     (async () => {
       try {
-        const [estado, bolsas, estadosGestion] = await Promise.all([
+        const [estado, bolsas, estadosGestion, gestorasData] = await Promise.all([
           bolsasService.obtenerEstadisticasPorEstado().catch(() => []),
           bolsasService.obtenerEstadisticasPorTipoBolsa().catch(() => []),
           bolsasService.obtenerEstadosGestion().catch(() => []),
+          bolsasService.obtenerGestorasDisponibles().catch(() => []),
         ]);
         if (isMountedRef.current) {
           setEstadisticasGlobales(estado || []);
@@ -295,7 +296,11 @@ export default function Solicitudes() {
             setCacheEstados(estadosPorCodigo);
             setListaEstadosGestion(estadosGestion);
           }
-          console.log('✅ [2.6a] Tarjetas KPI y estados de gestora cargados');
+          const gestorasArray = Array.isArray(gestorasData)
+            ? gestorasData
+            : (gestorasData?.gestoras ?? []);
+          setGestoras(gestorasArray);
+          console.log('✅ [2.6a] Tarjetas KPI, estados y gestoras cargados');
         }
       } catch (error) {
         console.error('❌ [2.6a] Error cargando tarjetas:', error);
