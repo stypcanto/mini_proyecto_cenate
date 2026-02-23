@@ -12,6 +12,8 @@ import { ChevronLeft, ChevronRight, Clock, Calendar } from "lucide-react";
 import toast from "react-hot-toast";
 
 const HORAS_PANEL = [
+  { valor: 6,  label: "6 AM"  },
+  { valor: 7,  label: "7 AM"  },
   { valor: 8,  label: "8 AM"  },
   { valor: 9,  label: "9 AM"  },
   { valor: 10, label: "10 AM" },
