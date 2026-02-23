@@ -18,6 +18,7 @@ public class AuthResponse {
     private String foto;  // 📷 URL completa de la foto del usuario
     private List<String> roles;
     private List<String> permisos;
+    private List<MappingRolDTO> mappingRoles;  // 🆕 Mapeo codigo-descripcion de roles
     private Boolean requiereCambioPassword; // 🔑 Debe cambiar contraseña y actualizar datos
     private String sessionId;  // 🆕 ID de la sesión activa
     private String message;

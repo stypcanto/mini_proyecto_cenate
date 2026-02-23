@@ -4,6 +4,7 @@ import com.styp.cenate.dto.UsuarioCreateRequest;
 import com.styp.cenate.dto.UsuarioResponse;
 import com.styp.cenate.dto.auth.AuthRequest;
 import com.styp.cenate.dto.auth.AuthResponse;
+import com.styp.cenate.dto.auth.MappingRolDTO;
 import com.styp.cenate.dto.mbac.PermisoUsuarioResponseDTO;
 import com.styp.cenate.exception.WeakPasswordException;
 import com.styp.cenate.model.Rol;
@@ -73,6 +74,17 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         var roles = user.getRoles().stream()
                 .map(Rol::getDescRol)
                 .collect(Collectors.toList());
+
+        // 🆕 Mapeo de roles (codigo + descripcion)
+        var mappingRoles = user.getRoles().stream()
+                .map(rol -> MappingRolDTO.builder()
+                        .codigo(rol.getIdRol())
+                        .descripcion(rol.getDescRol())
+                        .codigoNormalizado(rol.getDescRol().toUpperCase().replaceAll("\\s+", "_"))
+                        .build())
+                .collect(Collectors.toList());
+        
+        log.info("📋 Mapping Roles: {}", mappingRoles);
 
         
         
@@ -176,6 +188,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                 .nombreCompleto(user.getNombreCompleto())  // ✅ Nombre y apellido del usuario
                 .foto(fotoUrl)  // 📷 URL completa de la foto
                 .roles(roles)
+                .mappingRoles(mappingRoles)  // 🆕 Mapeo codigo-descripcion de roles
                 .permisos(null)
                 .requiereCambioPassword(user.getRequiereCambioPassword() != null ? user.getRequiereCambioPassword() : false)  // 🔑 Flag de primer acceso
                 .sessionId(sessionId)  // 🆕 ID de sesión para tracking

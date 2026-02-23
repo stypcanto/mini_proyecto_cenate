@@ -76,6 +76,7 @@ export const AuthProvider = ({ children }) => {
             id: Number(userId),
             username: payload.username || payload.preferred_username || payload.sub,
             roles: normalizeRoles(payload.roles || payload.authorities || []),
+            mappingRoles: [],  // 🆕 No disponible en JWT (se obtiene en login)
             permisos: payload.permisos || [],
             nombreCompleto: payload.nombre_completo || payload.name || payload.username || payload.sub || "",
             foto: payload.foto || null,  // 📷 Foto restaurada del JWT
@@ -159,6 +160,7 @@ export const AuthProvider = ({ children }) => {
         id: Number(userId),
       username: payload.username || data.username || username,
       roles: normalizeRoles(payload.roles || data.roles || []),
+      mappingRoles: data.mappingRoles || [],  // 🆕 Mapeo codigo-descripcion de roles
       permisos: payload.permisos || data.permisos || [],
       nombreCompleto: data.nombreCompleto || data.nombre_completo || payload.nombre_completo,
       foto: data.foto || payload.foto || null,  // 📷 URL de la foto del usuario
