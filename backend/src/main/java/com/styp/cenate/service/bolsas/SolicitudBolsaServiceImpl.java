@@ -3724,4 +3724,37 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
         }
         
         return "CONSTRAINT_VIOLATION"; // Genérico si no se identifica
-    }}
+    }
+
+    @Override
+    @org.springframework.transaction.annotation.Transactional(readOnly = true)
+    public org.springframework.data.domain.Page<java.util.Map<String, Object>> obtenerTrazabilidadRecitas(
+            String busqueda, String fechaInicio, String fechaFin,
+            String tipoCita, org.springframework.data.domain.Pageable pageable) {
+
+        org.springframework.data.domain.Page<Object[]> rows =
+            solicitudRepository.obtenerTrazabilidadRecitasInterconsultas(
+                busqueda, fechaInicio, fechaFin, tipoCita, pageable);
+
+        return rows.map(row -> {
+            java.util.Map<String, Object> m = new java.util.LinkedHashMap<>();
+            m.put("idSolicitud",         row[0]);
+            m.put("numeroSolicitud",     row[1]);
+            m.put("tipoCita",            row[2]);
+            m.put("pacienteDni",         row[3]);
+            m.put("pacienteNombre",      row[4]);
+            m.put("especialidadDestino", row[5]);
+            m.put("fechaSolicitud",      row[6]);
+            m.put("estado",              row[7]);
+            m.put("codEstado",           row[8]);
+            m.put("descEstado",          row[9]);
+            m.put("solicitudOrigen",     row[10]);
+            m.put("idPersonalCreador",   row[11]);
+            m.put("medicoCreador",       row[12]);
+            m.put("usuarioCreador",      row[13]);
+            m.put("fechaAtencionOrigen", row[14]);
+            m.put("especialidadOrigen",  row[15]);
+            return m;
+        });
+    }
+}
