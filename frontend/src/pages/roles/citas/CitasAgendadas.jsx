@@ -6,7 +6,7 @@
 // ============================================================
 
 import React, { useState, useEffect, useMemo, useCallback, useRef } from "react";
-import { getToken } from "../../../constants/auth";
+import { getToken, getUser } from "../../../constants/auth";
 import {
   CalendarCheck,
   Search,
@@ -447,6 +447,12 @@ function AutocompleteInput({ value, onChange, options, placeholder = 'Escribir n
 
 // ── Componente principal ──────────────────────────────────────
 export default function CitasAgendadas() {
+  // Detectar modo coordinador de enfermería (distinto endpoint y vista)
+  const _user = getUser();
+  const esCoordEnfermeria = Array.isArray(_user?.roles) && _user.roles.some(
+    r => r.toUpperCase().includes('COORD') && r.toUpperCase().includes('ENFERM')
+  );
+
   const [pacientes, setPacientes]           = useState([]);
   const [loading, setLoading]               = useState(true);
   const [busqueda, setBusqueda]             = useState('');
@@ -531,7 +537,10 @@ export default function CitasAgendadas() {
     setLoading(true);
     try {
       const token = getToken();
-      const res = await fetch('/api/bolsas/solicitudes/mi-bandeja', {
+      const endpoint = esCoordEnfermeria
+        ? '/api/bolsas/solicitudes/bandeja-enfermeria-coordinador'
+        : '/api/bolsas/solicitudes/mi-bandeja';
+      const res = await fetch(endpoint, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -967,7 +976,7 @@ CENATE de Essalud`;
           <div>
             <h1 style={{ margin: 0, fontSize: '20px', fontWeight: '700', color: '#0f172a' }}>Citas Agendadas</h1>
             <p style={{ margin: '2px 0 0', fontSize: '12px', color: '#64748b' }}>
-              Producción de citas gestionadas
+              {esCoordEnfermeria ? 'Vista coordinadora — todos los pacientes de enfermería' : 'Producción de citas gestionadas'}
               {!loading && <span style={{ marginLeft: '6px', fontWeight: '600', color: '#0D5BA9' }}>· {pacientes.length} paciente{pacientes.length !== 1 ? 's' : ''} procesados</span>}
             </p>
           </div>
@@ -1186,7 +1195,10 @@ CENATE de Essalud`;
                           style={{ width: '15px', height: '15px', cursor: 'pointer', accentColor: '#fff' }}
                         />
                       </th>
-                      {['Paciente', 'DNI', 'Teléfono', 'Prof. de Salud', 'Especialidad', 'Fecha / Hora Cita', 'IPRESS', 'Estado', 'Acc.'].map((h, i) => (
+                      {(esCoordEnfermeria
+                        ? ['Paciente', 'DNI', 'Teléfono', 'Enfermera asignada', 'Especialidad', 'Fecha / Hora Cita', 'IPRESS', 'Estado', 'Acc.']
+                        : ['Paciente', 'DNI', 'Teléfono', 'Prof. de Salud', 'Especialidad', 'Fecha / Hora Cita', 'IPRESS', 'Estado', 'Acc.']
+                      ).map((h, i) => (
                         <th key={h} style={{ padding: '10px 12px', textAlign: i === 8 ? 'center' : 'left', fontSize: '10px', fontWeight: '700', color: '#e0f2fe', textTransform: 'uppercase', letterSpacing: '0.06em', whiteSpace: 'nowrap', width: i === 8 ? '90px' : 'auto' }}>
                           {h}
                         </th>

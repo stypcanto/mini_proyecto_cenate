@@ -1001,6 +1001,15 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
     List<SolicitudBolsa> findByIdPersonalAndActivoTrue(Long idPersonal);
 
     /**
+     * 🆕 Busca solicitudes activas asignadas a cualquiera de los profesionales de la lista
+     * Usado por COORD. ENFERMERIA para ver todas las citas de enfermeras bajo su supervisión
+     *
+     * @param idPersonalList lista de id_pers de las enfermeras
+     * @return lista de solicitudes activas asignadas a alguna enfermera de la lista
+     */
+    List<SolicitudBolsa> findByIdPersonalInAndActivoTrue(List<Long> idPersonalList);
+
+    /**
      * 🔧 v1.78.1: Obtener TODOS los pacientes asignados a un médico (sin filtro activo)
      * Usado por MisPacientes para mostrar tanto pacientes activos como inactivos/completados
      *

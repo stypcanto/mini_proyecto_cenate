@@ -491,6 +491,33 @@ public class SolicitudBolsaController {
     }
 
     /**
+     * 🆕 Obtiene todas las solicitudes asignadas a enfermeras (para COORD. ENFERMERIA)
+     * GET /api/bolsas/solicitudes/bandeja-enfermeria-coordinador
+     *
+     * Solo accesible para SUPERADMIN y COORD. ENFERMERIA
+     * Retorna todos los pacientes donde id_personal corresponde a un usuario con rol ENFERMERIA
+     */
+    @GetMapping("/bandeja-enfermeria-coordinador")
+    @PreAuthorize("hasAnyRole('SUPERADMIN', 'COORD. ENFERMERIA')")
+    public ResponseEntity<?> obtenerBandejaEnfermeriaCoordinador() {
+        try {
+            log.info("👩‍⚕️ GET /api/bolsas/solicitudes/bandeja-enfermeria-coordinador");
+            List<SolicitudBolsaDTO> solicitudes = solicitudBolsaService.obtenerBandejaEnfermeriaCoordinador();
+            log.info("✅ Bandeja coord. enfermería: {} pacientes", solicitudes.size());
+            return ResponseEntity.ok(Map.of(
+                "total", solicitudes.size(),
+                "solicitudes", solicitudes,
+                "mensaje", solicitudes.isEmpty()
+                    ? "No hay pacientes asignados a enfermeras"
+                    : solicitudes.size() + " paciente(s) asignado(s) a enfermeras"
+            ));
+        } catch (Exception e) {
+            log.error("❌ Error en bandeja-enfermeria-coordinador: ", e);
+            return ResponseEntity.status(500).body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    /**
      * Obtiene todas las solicitudes activas CON PAGINACIÓN
      * GET /api/bolsas/solicitudes?page=0&size=100
      *

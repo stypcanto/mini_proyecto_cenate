@@ -2719,6 +2719,50 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
     }
 
     /**
+     * 🆕 Obtiene todas las solicitudes asignadas a enfermeras (para COORD. ENFERMERIA)
+     * Filtra por id_personal IN (id_pers de usuarios con rol ENFERMERIA) Y activo = true
+     */
+    @Override
+    @Transactional(readOnly = true)
+    public List<SolicitudBolsaDTO> obtenerBandejaEnfermeriaCoordinador() {
+        log.info("👩‍⚕️ Obteniendo bandeja COORD. ENFERMERIA — buscando usuarios con rol ENFERMERIA...");
+        try {
+            // 1. Obtener todos los usuarios con rol ENFERMERIA y sus datos de personal
+            List<Usuario> enfermeras = usuarioRepository.findByRolWithPersonalData("ENFERMERIA");
+            log.info("   → {} enfermera(s) encontradas con rol ENFERMERIA", enfermeras.size());
+
+            // 2. Extraer id_pers de cada enfermera
+            List<Long> idPersonalList = enfermeras.stream()
+                .filter(u -> u.getPersonalCnt() != null && u.getPersonalCnt().getIdPers() != null)
+                .map(u -> u.getPersonalCnt().getIdPers())
+                .collect(Collectors.toList());
+
+            log.info("   → {} id_pers extraídos: {}", idPersonalList.size(), idPersonalList);
+
+            if (idPersonalList.isEmpty()) {
+                log.warn("   ⚠️ Ninguna enfermera tiene id_pers registrado en dim_personal_cnt");
+                return List.of();
+            }
+
+            // 3. Obtener solicitudes activas asignadas a cualquier enfermera
+            List<SolicitudBolsa> solicitudes = solicitudRepository.findByIdPersonalInAndActivoTrue(idPersonalList);
+            log.info("   → {} solicitudes encontradas para {}", solicitudes.size(), idPersonalList);
+
+            // 4. Mapear a DTO (reutilizando el mapper existente con datos enriquecidos)
+            List<SolicitudBolsaDTO> resultado = solicitudes.stream()
+                .map(this::mapSolicitudBolsaToDTO)
+                .collect(Collectors.toList());
+
+            log.info("✅ Bandeja COORD. ENFERMERIA: {} pacientes", resultado.size());
+            return resultado;
+
+        } catch (Exception e) {
+            log.error("❌ Error obteniendo bandeja de coordinador de enfermería: ", e);
+            throw new RuntimeException("Error al obtener bandeja de enfermería: " + e.getMessage(), e);
+        }
+    }
+
+    /**
      * Mapea una SolicitudBolsa a SolicitudBolsaDTO con datos enriquecidos
      * v1.41.1: Incluye descriptions de IPRESS y Estado de Cita para Mi Bandeja
      * Método auxiliar para obtenerSolicitudesAsignadasAGestora()

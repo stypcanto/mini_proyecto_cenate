@@ -195,6 +195,14 @@ public interface SolicitudBolsaService {
     List<SolicitudBolsaDTO> obtenerSolicitudesAsignadasAGestora();
 
     /**
+     * 🆕 Obtiene todas las solicitudes asignadas a enfermeras (para COORD. ENFERMERIA)
+     * Filtra por id_personal IN (ids de usuarios con rol ENFERMERIA) Y activo = true
+     *
+     * @return lista de solicitudes de todos los pacientes asignados a enfermeras
+     */
+    List<SolicitudBolsaDTO> obtenerBandejaEnfermeriaCoordinador();
+
+    /**
      * 🔎 Obtiene todas las especialidades únicas pobladas en la tabla
      * v1.42.0: Para llenar dinámicamente el filtro de especialidades
      * Retorna SOLO especialidades no-vacías ordenadas alfabéticamente
