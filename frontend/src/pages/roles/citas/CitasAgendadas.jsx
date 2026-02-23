@@ -26,6 +26,7 @@ import {
   CalendarDays,
   FileDown,
   CheckSquare,
+  UserCheck,
 } from "lucide-react";
 import toast from "react-hot-toast";
 
@@ -243,6 +244,11 @@ export default function CitasAgendadas() {
   const [pagina, setPagina]                 = useState(1);
   const [modalWA, setModalWA]               = useState({ visible: false, paciente: null, preview: '' });
   const [seleccionados, setSeleccionados]   = useState(new Set());
+  const [modalReasignar, setModalReasignar] = useState({ visible: false, paciente: null });
+  const [medicosReasignar, setMedicosReasignar] = useState([]);
+  const [cargandoMedicos, setCargandoMedicos]   = useState(false);
+  const [nuevoMedicoId, setNuevoMedicoId]       = useState('');
+  const [reasignando, setReasignando]           = useState(false);
 
   // ── Carga ──────────────────────────────────────────────────
   const cargar = async () => {
@@ -494,6 +500,54 @@ CENATE de Essalud`;
     navigator.clipboard.writeText(modalWA.preview).then(() => toast.success('Mensaje copiado al portapapeles'));
   };
 
+  // ── Reasignar Profesional ─────────────────────────────────
+  const abrirModalReasignar = async (p) => {
+    setNuevoMedicoId('');
+    setMedicosReasignar([]);
+    setModalReasignar({ visible: true, paciente: p });
+    if (!p.especialidad || p.especialidad === '—') return;
+    setCargandoMedicos(true);
+    try {
+      const token = getToken();
+      const res = await fetch(
+        `/api/bolsas/solicitudes/fetch-doctors-by-specialty?especialidad=${encodeURIComponent(p.especialidad)}`,
+        { method: 'POST', headers: { Authorization: `Bearer ${token}` } }
+      );
+      if (res.ok) {
+        const data = await res.json();
+        setMedicosReasignar(data.data || []);
+      }
+    } catch (err) {
+      console.error('Error cargando médicos:', err);
+    } finally {
+      setCargandoMedicos(false);
+    }
+  };
+
+  const confirmarReasignacion = async () => {
+    if (!nuevoMedicoId) { toast.error('Selecciona un profesional'); return; }
+    const { paciente } = modalReasignar;
+    if (!paciente?.id) { toast.error('No se pudo identificar la solicitud'); return; }
+    setReasignando(true);
+    try {
+      const token = getToken();
+      const res = await fetch('/api/coordinador-medico/reasignar-paciente', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ idSolicitud: paciente.id, nuevoMedicoId: Number(nuevoMedicoId) }),
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      toast.success('Profesional reasignado correctamente');
+      setModalReasignar({ visible: false, paciente: null });
+      await cargar();
+    } catch (err) {
+      console.error('Error reasignando:', err);
+      toast.error('No se pudo reasignar el profesional');
+    } finally {
+      setReasignando(false);
+    }
+  };
+
   // ── Render ─────────────────────────────────────────────────
   return (
     <div style={{ padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
@@ -715,7 +769,7 @@ CENATE de Essalud`;
                         />
                       </th>
                       {['Paciente', 'DNI', 'Teléfono', 'Prof. de Salud', 'Especialidad', 'Fecha / Hora Cita', 'IPRESS', 'Estado', 'Acc.'].map((h, i) => (
-                        <th key={h} style={{ padding: '10px 12px', textAlign: i === 8 ? 'center' : 'left', fontSize: '10px', fontWeight: '700', color: '#e0f2fe', textTransform: 'uppercase', letterSpacing: '0.06em', whiteSpace: 'nowrap', width: i === 8 ? '52px' : 'auto' }}>
+                        <th key={h} style={{ padding: '10px 12px', textAlign: i === 8 ? 'center' : 'left', fontSize: '10px', fontWeight: '700', color: '#e0f2fe', textTransform: 'uppercase', letterSpacing: '0.06em', whiteSpace: 'nowrap', width: i === 8 ? '90px' : 'auto' }}>
                           {h}
                         </th>
                       ))}
@@ -811,18 +865,31 @@ CENATE de Essalud`;
                           </td>
 
                           {/* ACCIONES */}
-                          <td style={{ padding: '10px 12px', textAlign: 'center', width: '52px' }}>
-                            {esCitado && (
-                              <button
-                                onClick={() => abrirModalWA(p)}
-                                title="Enviar mensaje de cita por WhatsApp"
-                                style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '32px', height: '32px', borderRadius: '8px', background: '#7c3aed', border: 'none', cursor: 'pointer', color: '#fff', transition: 'background 0.15s' }}
-                                onMouseEnter={e => e.currentTarget.style.background = '#6d28d9'}
-                                onMouseLeave={e => e.currentTarget.style.background = '#7c3aed'}
-                              >
-                                <MessageCircle size={15} strokeWidth={2} />
-                              </button>
-                            )}
+                          <td style={{ padding: '10px 12px', textAlign: 'center', width: '90px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
+                              {esCitado && (
+                                <button
+                                  onClick={() => abrirModalWA(p)}
+                                  title="Enviar mensaje de cita por WhatsApp"
+                                  style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '32px', height: '32px', borderRadius: '8px', background: '#7c3aed', border: 'none', cursor: 'pointer', color: '#fff', transition: 'background 0.15s' }}
+                                  onMouseEnter={e => e.currentTarget.style.background = '#6d28d9'}
+                                  onMouseLeave={e => e.currentTarget.style.background = '#7c3aed'}
+                                >
+                                  <MessageCircle size={15} strokeWidth={2} />
+                                </button>
+                              )}
+                              {esCitado && (
+                                <button
+                                  onClick={() => abrirModalReasignar(p)}
+                                  title="Reasignar profesional de salud"
+                                  style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '32px', height: '32px', borderRadius: '8px', background: '#0369a1', border: 'none', cursor: 'pointer', color: '#fff', transition: 'background 0.15s' }}
+                                  onMouseEnter={e => e.currentTarget.style.background = '#0284c7'}
+                                  onMouseLeave={e => e.currentTarget.style.background = '#0369a1'}
+                                >
+                                  <UserCheck size={15} strokeWidth={2} />
+                                </button>
+                              )}
+                            </div>
                           </td>
                         </tr>
                       );
@@ -852,6 +919,93 @@ CENATE de Essalud`;
           </div>
         </div>
       </div>
+
+      {/* ── Modal Reasignar Profesional ── */}
+      {modalReasignar.visible && (
+        <div
+          style={{ position: 'fixed', inset: 0, zIndex: 9999, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }}
+          onClick={e => { if (e.target === e.currentTarget) setModalReasignar({ visible: false, paciente: null }); }}
+        >
+          <div style={{ background: '#fff', borderRadius: '16px', width: '100%', maxWidth: '480px', boxShadow: '0 20px 60px rgba(0,0,0,0.3)', overflow: 'hidden' }}>
+            {/* Cabecera */}
+            <div style={{ background: '#0369a1', padding: '16px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <UserCheck size={20} color="#fff" strokeWidth={2} />
+                <div>
+                  <p style={{ margin: 0, fontSize: '15px', fontWeight: '700', color: '#fff' }}>Reasignar Profesional</p>
+                  <p style={{ margin: 0, fontSize: '12px', color: 'rgba(255,255,255,0.75)' }}>
+                    {modalReasignar.paciente?.pacienteNombre} · DNI {modalReasignar.paciente?.pacienteDni}
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setModalReasignar({ visible: false, paciente: null })}
+                style={{ background: 'rgba(255,255,255,0.2)', border: 'none', borderRadius: '8px', padding: '6px', cursor: 'pointer', display: 'flex', color: '#fff' }}
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* Cuerpo */}
+            <div style={{ padding: '20px' }}>
+              {/* Info actual */}
+              <div style={{ background: '#f0f9ff', border: '1px solid #bae6fd', borderRadius: '10px', padding: '12px 14px', marginBottom: '16px' }}>
+                <p style={{ margin: '0 0 4px', fontSize: '11px', fontWeight: '600', color: '#0369a1', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Profesional actual</p>
+                <p style={{ margin: 0, fontSize: '13px', fontWeight: '600', color: '#0f172a' }}>
+                  {modalReasignar.paciente?.nomMedico || <em style={{ color: '#94a3b8' }}>Sin asignar</em>}
+                </p>
+                <p style={{ margin: '4px 0 0', fontSize: '12px', color: '#64748b' }}>
+                  Especialidad: <strong>{modalReasignar.paciente?.especialidad}</strong>
+                </p>
+              </div>
+
+              {/* Selector nuevo profesional */}
+              <label style={{ display: 'block', fontSize: '11px', fontWeight: '600', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '8px' }}>
+                Nuevo profesional de salud
+              </label>
+              {cargandoMedicos ? (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '12px', border: '1px solid #e2e8f0', borderRadius: '8px', color: '#94a3b8', fontSize: '13px' }}>
+                  <RefreshCw size={14} className="animate-spin" /> Cargando profesionales...
+                </div>
+              ) : medicosReasignar.length === 0 ? (
+                <div style={{ padding: '12px', border: '1px solid #fecaca', borderRadius: '8px', background: '#fef2f2', color: '#dc2626', fontSize: '13px' }}>
+                  No se encontraron profesionales disponibles para esta especialidad.
+                </div>
+              ) : (
+                <select
+                  value={nuevoMedicoId}
+                  onChange={e => setNuevoMedicoId(e.target.value)}
+                  style={{ width: '100%', padding: '10px 12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '13px', color: nuevoMedicoId ? '#0f172a' : '#9ca3af', outline: 'none', cursor: 'pointer', background: '#fff' }}
+                >
+                  <option value="">-- Seleccionar profesional --</option>
+                  {medicosReasignar.map(m => (
+                    <option key={m.idPers} value={m.idPers}>
+                      {m.nombre || `ID: ${m.idPers}`}
+                    </option>
+                  ))}
+                </select>
+              )}
+            </div>
+
+            {/* Pie */}
+            <div style={{ padding: '12px 20px 16px', display: 'flex', gap: '10px', borderTop: '1px solid #f1f5f9' }}>
+              <button
+                onClick={() => setModalReasignar({ visible: false, paciente: null })}
+                style={{ flex: 1, padding: '10px', borderRadius: '10px', border: '1px solid #e2e8f0', background: '#f8fafc', color: '#475569', fontSize: '13px', fontWeight: '500', cursor: 'pointer' }}
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={confirmarReasignacion}
+                disabled={reasignando || !nuevoMedicoId}
+                style={{ flex: 2, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '10px', borderRadius: '10px', border: 'none', background: nuevoMedicoId && !reasignando ? '#0369a1' : '#cbd5e1', color: '#fff', fontSize: '13px', fontWeight: '600', cursor: nuevoMedicoId && !reasignando ? 'pointer' : 'not-allowed', transition: 'background 0.15s' }}
+              >
+                {reasignando ? <><RefreshCw size={14} className="animate-spin" /> Reasignando...</> : <><UserCheck size={15} /> Confirmar Reasignación</>}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── Modal WhatsApp ── */}
       {modalWA.visible && (
