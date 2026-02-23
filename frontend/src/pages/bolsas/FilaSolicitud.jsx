@@ -136,7 +136,7 @@ function FilaSolicitud({
             {onEditarFechaPreferida && (
               <button
                 onClick={handleAbrirEdicionFecha}
-                className="p-1 rounded opacity-0 group-hover:opacity-100 hover:bg-blue-100 text-blue-500 transition-opacity flex-shrink-0"
+                className="p-1 rounded hover:bg-blue-100 text-blue-400 hover:text-blue-600 flex-shrink-0 transition-colors"
                 title="Editar fecha preferida"
                 disabled={isProcessing}
               >
