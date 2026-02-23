@@ -258,7 +258,8 @@ export default function MisPacientes() {
   }, [authUser]);
 
   // ✅ v1.109.25: Formatear nombre del profesional con título según rol
-  const formatearNombreDoctor = (nombreCompleto, roles = []) => {
+  // especialidad: texto libre (ej: "NUTRICION", "NUTRICIONISTA") — tiene prioridad sobre roles
+  const formatearNombreDoctor = (nombreCompleto, roles = [], especialidad = '') => {
     if (!nombreCompleto) return 'Prof. Profesional';
 
     // Lista de nombres femeninos comunes en Perú
@@ -278,10 +279,30 @@ export default function MisPacientes() {
     const nombreLower = nombreCompleto.toLowerCase();
     const esFemenino = nombresFemeninos.some(nf => nombreLower.includes(nf));
 
-    // Título según rol
+    // Título: primero revisar la especialidad (profesión real), luego el rol de sistema
+    const espUpper = (especialidad || '').toUpperCase();
     const rolesUpper = (roles || []).map(r => r.toUpperCase());
     let titulo;
-    if (rolesUpper.includes('MEDICO') || rolesUpper.includes('MÉDICO')) {
+
+    if (espUpper.includes('NUTRI')) {
+      // NUTRICIONISTA / NUTRICION
+      titulo = esFemenino ? 'Nut.' : 'Nut.';
+    } else if (espUpper.includes('PSICO')) {
+      // PSICOLOGO / PSICOLOGIA
+      titulo = esFemenino ? 'Psic.' : 'Psic.';
+    } else if (espUpper.includes('OBSTE')) {
+      // OBSTETRA / OBSTETRICIA
+      titulo = esFemenino ? 'Obs.' : 'Obs.';
+    } else if (espUpper.includes('ENFER')) {
+      // ENFERMERA / ENFERMERIA
+      titulo = esFemenino ? 'Enf.' : 'Enf.';
+    } else if (espUpper.includes('FARMAC')) {
+      titulo = esFemenino ? 'Q.F.' : 'Q.F.';
+    } else if (espUpper.includes('TERAPIA') || espUpper.includes('TERAPISTA') || espUpper.includes('TERAPI')) {
+      titulo = esFemenino ? 'Lic.' : 'Lic.';
+    } else if (espUpper.includes('LABORAT') || espUpper.includes('RADIOL')) {
+      titulo = esFemenino ? 'Lic.' : 'Lic.';
+    } else if (rolesUpper.includes('MEDICO') || rolesUpper.includes('MÉDICO')) {
       titulo = esFemenino ? 'Dra.' : 'Dr.';
     } else if (rolesUpper.includes('OBSTETRA')) {
       titulo = esFemenino ? 'Obs.' : 'Obs.';
@@ -2018,6 +2039,17 @@ export default function MisPacientes() {
                   <div className="flex items-baseline gap-3 mb-2">
                     <p className="text-sm font-semibold text-white/80 uppercase tracking-wider">
                       {(() => {
+                        // Prioridad: especialidad real (per_pers) > rol de sistema
+                        const esp = (doctorInfo?.especialidad || authUser?.especialidad || '').toUpperCase();
+                        if (esp.includes('NUTRI')) return 'Nutricionista';
+                        if (esp.includes('PSICO')) return 'Psicólogo';
+                        if (esp.includes('OBSTE')) return 'Obstetra';
+                        if (esp.includes('ENFER')) return 'Enfermería';
+                        if (esp.includes('FARMAC')) return 'Farmacia';
+                        if (esp.includes('TERAPIA') || esp.includes('TERAPISTA')) return 'Terapista';
+                        if (esp.includes('LABORAT')) return 'Laboratorio';
+                        if (esp.includes('RADIOL')) return 'Radiología';
+                        // Fallback por rol de sistema
                         const roles = (authUser?.roles || []).map(r => r.toUpperCase());
                         if (roles.includes('MEDICO') || roles.includes('MÉDICO')) return 'Médico';
                         if (roles.includes('ENFERMERIA') || roles.includes('ENFERMERÍA')) return 'Enfermería';
@@ -2036,7 +2068,7 @@ export default function MisPacientes() {
                       ● En línea
                     </span>
                   </div>
-                  <h2 className="text-2xl font-bold text-white mb-1">{formatearNombreDoctor(doctorInfo?.nombre || authUser?.nombre, authUser?.roles)}</h2>
+                  <h2 className="text-2xl font-bold text-white mb-1">{formatearNombreDoctor(doctorInfo?.nombre || authUser?.nombre, authUser?.roles, doctorInfo?.especialidad || authUser?.especialidad || '')}</h2>
                   {doctorInfo?.especialidad && (
                     <div className="flex items-center gap-2 text-white/90 text-sm font-medium">
                       <Stethoscope className="w-4 h-4" />
