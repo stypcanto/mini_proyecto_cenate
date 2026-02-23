@@ -122,7 +122,7 @@ public class CoordinadorMedicoController {
      * @return mensaje de confirmación
      */
     @PostMapping("/reasignar-paciente")
-    @CheckMBACPermission(pagina = "/citas/gestion-asegurado", accion = "editar")
+    @CheckMBACPermission(pagina = "/citas/citas-agendadas", accion = "editar")
     public ResponseEntity<Map<String, String>> reasignarPaciente(
             @RequestBody ReasignarPacienteRequest request) {
 
