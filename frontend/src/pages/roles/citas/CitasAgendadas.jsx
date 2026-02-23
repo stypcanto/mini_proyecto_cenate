@@ -249,6 +249,11 @@ export default function CitasAgendadas() {
   const [cargandoMedicos, setCargandoMedicos]   = useState(false);
   const [nuevoMedicoId, setNuevoMedicoId]       = useState('');
   const [reasignando, setReasignando]           = useState(false);
+  // ── Reasignación en grupo ──
+  const [modalGrupo, setModalGrupo]             = useState(false);
+  const [especialidadGrupo, setEspecialidadGrupo] = useState('');
+  const [nuevoMedicoIdGrupo, setNuevoMedicoIdGrupo] = useState('');
+  const [progresoGrupo, setProgresoGrupo]       = useState({ activo: false, total: 0, ok: 0, err: 0 });
 
   // ── Carga ──────────────────────────────────────────────────
   const cargar = async () => {
@@ -548,6 +553,82 @@ CENATE de Essalud`;
     }
   };
 
+  // ── Reasignación en grupo ─────────────────────────────────
+  // Pacientes seleccionados que están en estado CITADO
+  const citadosSeleccionados = useMemo(
+    () => filasSeleccionadas.filter(p => p.codigoEstado === 'CITADO'),
+    [filasSeleccionadas]
+  );
+
+  // Especialidades únicas de los citados seleccionados
+  const especialidadesGrupo = useMemo(() => {
+    const set = new Set(citadosSeleccionados.map(p => p.especialidad).filter(e => e && e !== '—'));
+    return Array.from(set).sort();
+  }, [citadosSeleccionados]);
+
+  const abrirModalGrupo = () => {
+    if (citadosSeleccionados.length === 0) {
+      toast.error('Ninguno de los seleccionados está en estado Citado');
+      return;
+    }
+    setNuevoMedicoIdGrupo('');
+    setMedicosReasignar([]);
+    const esp = especialidadesGrupo.length === 1 ? especialidadesGrupo[0] : '';
+    setEspecialidadGrupo(esp);
+    setModalGrupo(true);
+    if (esp) cargarMedicosGrupo(esp);
+  };
+
+  const cargarMedicosGrupo = async (esp) => {
+    if (!esp) { setMedicosReasignar([]); return; }
+    setCargandoMedicos(true);
+    try {
+      const token = getToken();
+      const res = await fetch(
+        `/api/bolsas/solicitudes/fetch-doctors-by-specialty?especialidad=${encodeURIComponent(esp)}`,
+        { method: 'POST', headers: { Authorization: `Bearer ${token}` } }
+      );
+      if (res.ok) {
+        const data = await res.json();
+        setMedicosReasignar(data.data || []);
+      } else {
+        setMedicosReasignar([]);
+      }
+    } catch {
+      setMedicosReasignar([]);
+    } finally {
+      setCargandoMedicos(false);
+    }
+  };
+
+  const confirmarReasignacionGrupo = async () => {
+    if (!nuevoMedicoIdGrupo) { toast.error('Selecciona un profesional'); return; }
+    const pacientesACambiar = especialidadGrupo
+      ? citadosSeleccionados.filter(p => p.especialidad === especialidadGrupo)
+      : citadosSeleccionados;
+    const total = pacientesACambiar.length;
+    setProgresoGrupo({ activo: true, total, ok: 0, err: 0 });
+    const token = getToken();
+    let ok = 0, err = 0;
+    for (const p of pacientesACambiar) {
+      try {
+        const res = await fetch('/api/coordinador-medico/reasignar-paciente', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ idSolicitud: p.id, nuevoMedicoId: Number(nuevoMedicoIdGrupo) }),
+        });
+        if (res.ok) { ok++; } else { err++; }
+      } catch { err++; }
+      setProgresoGrupo({ activo: true, total, ok, err });
+    }
+    setProgresoGrupo({ activo: false, total, ok, err });
+    if (ok > 0) toast.success(`${ok} paciente${ok !== 1 ? 's' : ''} reasignado${ok !== 1 ? 's' : ''} correctamente`);
+    if (err > 0) toast.error(`${err} no se pudieron reasignar`);
+    setModalGrupo(false);
+    limpiarSeleccion();
+    await cargar();
+  };
+
   // ── Render ─────────────────────────────────────────────────
   return (
     <div style={{ padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
@@ -731,6 +812,18 @@ CENATE de Essalud`;
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 {totalPaginas > 1 && <span style={{ fontSize: '12px', color: '#94a3b8' }}>Página {pagina} de {totalPaginas}</span>}
+                {seleccionados.size > 0 && (
+                  <button
+                    onClick={abrirModalGrupo}
+                    title={`Reasignar profesional a ${citadosSeleccionados.length} citado${citadosSeleccionados.length !== 1 ? 's' : ''} seleccionado${citadosSeleccionados.length !== 1 ? 's' : ''}`}
+                    style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '7px 14px', borderRadius: '8px', border: '1px solid #0369a1', background: '#0369a1', color: '#fff', fontSize: '12px', fontWeight: '600', cursor: 'pointer', transition: 'all 0.15s' }}
+                    onMouseEnter={e => e.currentTarget.style.background = '#0284c7'}
+                    onMouseLeave={e => e.currentTarget.style.background = '#0369a1'}
+                  >
+                    <UserCheck size={14} />
+                    Reasignar grupo ({citadosSeleccionados.length})
+                  </button>
+                )}
                 <button
                   onClick={exportarExcel}
                   disabled={seleccionados.size === 0}
@@ -919,6 +1012,146 @@ CENATE de Essalud`;
           </div>
         </div>
       </div>
+
+      {/* ── Modal Reasignación en Grupo ── */}
+      {modalGrupo && (
+        <div
+          style={{ position: 'fixed', inset: 0, zIndex: 9999, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }}
+          onClick={e => { if (e.target === e.currentTarget && !progresoGrupo.activo) setModalGrupo(false); }}
+        >
+          <div style={{ background: '#fff', borderRadius: '16px', width: '100%', maxWidth: '520px', boxShadow: '0 20px 60px rgba(0,0,0,0.3)', overflow: 'hidden' }}>
+            {/* Cabecera */}
+            <div style={{ background: '#0369a1', padding: '16px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <UserCheck size={20} color="#fff" strokeWidth={2} />
+                <div>
+                  <p style={{ margin: 0, fontSize: '15px', fontWeight: '700', color: '#fff' }}>Reasignación en Grupo</p>
+                  <p style={{ margin: 0, fontSize: '12px', color: 'rgba(255,255,255,0.75)' }}>
+                    {citadosSeleccionados.length} paciente{citadosSeleccionados.length !== 1 ? 's' : ''} en estado Citado
+                    {filasSeleccionadas.length > citadosSeleccionados.length && (
+                      <span> · {filasSeleccionadas.length - citadosSeleccionados.length} ignorado{filasSeleccionadas.length - citadosSeleccionados.length !== 1 ? 's' : ''} (no citados)</span>
+                    )}
+                  </p>
+                </div>
+              </div>
+              {!progresoGrupo.activo && (
+                <button onClick={() => setModalGrupo(false)} style={{ background: 'rgba(255,255,255,0.2)', border: 'none', borderRadius: '8px', padding: '6px', cursor: 'pointer', display: 'flex', color: '#fff' }}>
+                  <X size={18} />
+                </button>
+              )}
+            </div>
+
+            {/* Cuerpo */}
+            <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+
+              {/* Lista compacta de pacientes */}
+              <div>
+                <p style={{ margin: '0 0 8px', fontSize: '11px', fontWeight: '600', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                  Pacientes a reasignar ({citadosSeleccionados.length})
+                </p>
+                <div style={{ maxHeight: '120px', overflowY: 'auto', border: '1px solid #e2e8f0', borderRadius: '8px', background: '#f8fafc' }}>
+                  {citadosSeleccionados.map((p, i) => (
+                    <div key={p.id ?? i} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '7px 12px', borderBottom: i < citadosSeleccionados.length - 1 ? '1px solid #f1f5f9' : 'none' }}>
+                      <span style={{ fontFamily: 'monospace', fontSize: '11px', fontWeight: '700', color: '#1d4ed8', background: '#eff6ff', padding: '1px 6px', borderRadius: '4px', flexShrink: 0 }}>{p.pacienteDni}</span>
+                      <span style={{ fontSize: '12px', color: '#0f172a', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.pacienteNombre}</span>
+                      <span style={{ fontSize: '11px', color: '#94a3b8', flexShrink: 0 }}>{p.especialidad}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Selector de Especialidad (si hay varias) */}
+              {especialidadesGrupo.length > 1 && (
+                <div>
+                  <label style={{ display: 'block', fontSize: '11px', fontWeight: '600', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '6px' }}>
+                    Especialidad para buscar profesional
+                  </label>
+                  <select
+                    value={especialidadGrupo}
+                    onChange={e => { setEspecialidadGrupo(e.target.value); setNuevoMedicoIdGrupo(''); cargarMedicosGrupo(e.target.value); }}
+                    style={{ width: '100%', padding: '10px 12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '13px', color: especialidadGrupo ? '#0f172a' : '#9ca3af', outline: 'none', cursor: 'pointer', background: '#fff' }}
+                  >
+                    <option value="">-- Seleccionar especialidad --</option>
+                    {especialidadesGrupo.map(e => <option key={e} value={e}>{e}</option>)}
+                  </select>
+                  {especialidadGrupo && (
+                    <p style={{ margin: '4px 0 0', fontSize: '11px', color: '#f59e0b' }}>
+                      ⚠ Solo se reasignarán los pacientes de la especialidad seleccionada ({citadosSeleccionados.filter(p => p.especialidad === especialidadGrupo).length} de {citadosSeleccionados.length})
+                    </p>
+                  )}
+                </div>
+              )}
+
+              {/* Selector de Profesional */}
+              {(especialidadesGrupo.length === 1 || especialidadGrupo) && (
+                <div>
+                  <label style={{ display: 'block', fontSize: '11px', fontWeight: '600', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '6px' }}>
+                    Nuevo profesional de salud
+                  </label>
+                  {cargandoMedicos ? (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '12px', border: '1px solid #e2e8f0', borderRadius: '8px', color: '#94a3b8', fontSize: '13px' }}>
+                      <RefreshCw size={14} className="animate-spin" /> Cargando profesionales...
+                    </div>
+                  ) : medicosReasignar.length === 0 ? (
+                    <div style={{ padding: '12px', border: '1px solid #fecaca', borderRadius: '8px', background: '#fef2f2', color: '#dc2626', fontSize: '13px' }}>
+                      No se encontraron profesionales para esta especialidad.
+                    </div>
+                  ) : (
+                    <select
+                      value={nuevoMedicoIdGrupo}
+                      onChange={e => setNuevoMedicoIdGrupo(e.target.value)}
+                      style={{ width: '100%', padding: '10px 12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '13px', color: nuevoMedicoIdGrupo ? '#0f172a' : '#9ca3af', outline: 'none', cursor: 'pointer', background: '#fff' }}
+                    >
+                      <option value="">-- Seleccionar profesional --</option>
+                      {medicosReasignar.map(m => (
+                        <option key={m.idPers} value={m.idPers}>{m.nombre || `ID: ${m.idPers}`}</option>
+                      ))}
+                    </select>
+                  )}
+                </div>
+              )}
+
+              {/* Barra de progreso */}
+              {progresoGrupo.activo && (
+                <div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
+                    <span style={{ fontSize: '12px', fontWeight: '600', color: '#0369a1' }}>
+                      Procesando... {progresoGrupo.ok + progresoGrupo.err} de {progresoGrupo.total}
+                    </span>
+                    <span style={{ fontSize: '12px', color: '#64748b' }}>
+                      ✅ {progresoGrupo.ok} · ❌ {progresoGrupo.err}
+                    </span>
+                  </div>
+                  <div style={{ background: '#e2e8f0', borderRadius: '99px', height: '8px', overflow: 'hidden' }}>
+                    <div style={{ height: '100%', borderRadius: '99px', background: '#0369a1', transition: 'width 0.3s ease', width: `${Math.round(((progresoGrupo.ok + progresoGrupo.err) / progresoGrupo.total) * 100)}%` }} />
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Pie */}
+            <div style={{ padding: '12px 20px 16px', display: 'flex', gap: '10px', borderTop: '1px solid #f1f5f9' }}>
+              <button
+                onClick={() => setModalGrupo(false)}
+                disabled={progresoGrupo.activo}
+                style={{ flex: 1, padding: '10px', borderRadius: '10px', border: '1px solid #e2e8f0', background: '#f8fafc', color: '#475569', fontSize: '13px', fontWeight: '500', cursor: progresoGrupo.activo ? 'not-allowed' : 'pointer', opacity: progresoGrupo.activo ? 0.5 : 1 }}
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={confirmarReasignacionGrupo}
+                disabled={progresoGrupo.activo || !nuevoMedicoIdGrupo}
+                style={{ flex: 2, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '10px', borderRadius: '10px', border: 'none', background: nuevoMedicoIdGrupo && !progresoGrupo.activo ? '#0369a1' : '#cbd5e1', color: '#fff', fontSize: '13px', fontWeight: '600', cursor: nuevoMedicoIdGrupo && !progresoGrupo.activo ? 'pointer' : 'not-allowed', transition: 'background 0.15s' }}
+              >
+                {progresoGrupo.activo
+                  ? <><RefreshCw size={14} className="animate-spin" /> Procesando...</>
+                  : <><UserCheck size={15} /> Reasignar {especialidadGrupo ? citadosSeleccionados.filter(p => p.especialidad === especialidadGrupo).length : citadosSeleccionados.length} paciente{citadosSeleccionados.length !== 1 ? 's' : ''}</>
+                }
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── Modal Reasignar Profesional ── */}
       {modalReasignar.visible && (
