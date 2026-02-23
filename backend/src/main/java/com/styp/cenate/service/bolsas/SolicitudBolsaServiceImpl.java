@@ -15,6 +15,7 @@ import com.styp.cenate.model.Red;
 import com.styp.cenate.model.TipoBolsa;
 import com.styp.cenate.model.Usuario;
 import com.styp.cenate.repository.bolsas.SolicitudBolsaRepository;
+import com.styp.cenate.repository.bolsas.DimEstadosGestionCitasRepository;
 import com.styp.cenate.repository.bolsas.DimSolicitudBolsasGeneralRepository;
 import com.styp.cenate.repository.AseguradoRepository;
 import com.styp.cenate.repository.DimServicioEssiRepository;
@@ -73,6 +74,7 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
     private static final String PHONE_VALIDATION_ERROR = "Formato de teléfono inválido. Solo se permiten números, +, (), - y espacios";
 
     private final SolicitudBolsaRepository solicitudRepository;
+    private final DimEstadosGestionCitasRepository dimEstadosGestionCitasRepository;
     private final AuditErrorImportacionService auditErrorService;
     private final AseguradoRepository aseguradoRepository;
     private final PersonalCntRepository personalCntRepository;
@@ -1136,6 +1138,26 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
         }
 
         return totalBorrados;
+    }
+
+    @Override
+    @Transactional
+    public int rechazarMasivo(List<Long> ids) {
+        if (ids == null || ids.isEmpty()) {
+            log.warn("⚠️ Lista vacía de IDs para rechazar");
+            return 0;
+        }
+
+        log.info("❌ Iniciando rechazo masivo de {} solicitudes", ids.size());
+
+        com.styp.cenate.model.bolsas.DimEstadosGestionCitas estado =
+            dimEstadosGestionCitasRepository.findByCodigoEstado("RECHAZADO")
+                .orElseThrow(() -> new RuntimeException("Estado RECHAZADO no encontrado en BD"));
+
+        int actualizados = solicitudRepository.cambiarEstadoMasivo(ids, estado.getIdEstado());
+
+        log.info("✅ {} solicitudes marcadas como RECHAZADO", actualizados);
+        return actualizados;
     }
 
     @Override
@@ -2478,6 +2500,18 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
             idSolicitud,
             telPrincipalAnterior, solicitud.getPacienteTelefono(),
             telAlternoAnterior, solicitud.getPacienteTelefonoAlterno());
+    }
+
+    @Override
+    @Transactional
+    public void actualizarFechaPreferida(Long idSolicitud, java.time.LocalDate fecha) {
+        log.info("📅 Actualizando fecha preferida de solicitud {} → {}", idSolicitud, fecha);
+        SolicitudBolsa solicitud = solicitudRepository.findById(idSolicitud)
+            .orElseThrow(() -> new ResourceNotFoundException("Solicitud " + idSolicitud + " no encontrada"));
+        java.time.LocalDate anterior = solicitud.getFechaPreferidaNoAtendida();
+        solicitud.setFechaPreferidaNoAtendida(fecha);
+        solicitudRepository.save(solicitud);
+        log.info("✅ Fecha preferida actualizada en solicitud {}. {} → {}", idSolicitud, anterior, fecha);
     }
 
     @Override

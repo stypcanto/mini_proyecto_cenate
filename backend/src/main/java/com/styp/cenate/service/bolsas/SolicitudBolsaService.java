@@ -129,6 +129,13 @@ public interface SolicitudBolsaService {
     int eliminarMultiples(List<Long> ids);
 
     /**
+     * Marca múltiples solicitudes como RECHAZADO en una sola operación (bulk)
+     * @param ids lista de IDs de solicitudes a rechazar
+     * @return cantidad de registros actualizados
+     */
+    int rechazarMasivo(List<Long> ids);
+
+    /**
      * Obtiene asegurados nuevos detectados (que no existen en tabla asegurados)
      * Busca solicitudes con nombre "Paciente DNI" e identifica los DNIs faltantes
      */
@@ -184,6 +191,13 @@ public interface SolicitudBolsaService {
      * @param idIpressAtencion ID de la nueva IPRESS de atención (null para limpiar)
      */
     void actualizarIpressAtencion(Long idSolicitud, Long idIpressAtencion);
+
+    /**
+     * Actualiza la fecha preferida de una solicitud
+     * @param idSolicitud ID de la solicitud
+     * @param fecha nueva fecha preferida (null para limpiar)
+     */
+    void actualizarFechaPreferida(Long idSolicitud, java.time.LocalDate fecha);
 
     /**
      * Obtiene solicitudes asignadas a la gestora actual (Mi Bandeja)

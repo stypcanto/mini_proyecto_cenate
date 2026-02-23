@@ -3,7 +3,7 @@ import { Plus, Search, Phone, ChevronDown, ChevronUp, Circle, Eye, Users, UserPl
 import PageHeader from '../../components/PageHeader';
 import StatCard from '../../components/StatCard';
 import ListHeader from '../../components/ListHeader';
-import bolsasService, { actualizarIpressAtencion, asignarGestoraMasivo } from '../../services/bolsasService';
+import bolsasService, { actualizarIpressAtencion, actualizarFechaPreferida, asignarGestoraMasivo } from '../../services/bolsasService';
 import ipressService from '../../services/ipressService';
 import { usePermisos } from '../../context/PermisosContext';
 import ModalResultadosImportacion from '../../components/modals/ModalResultadosImportacion'; // ✅ NUEVO v1.19.0
@@ -1551,6 +1551,28 @@ export default function Solicitudes() {
     setModalIpressAtencion(true);
   }, []);
 
+  // Guardar fecha preferida editada inline desde FilaSolicitud
+  const handleEditarFechaPreferida = useCallback(async (solicitud, fechaISO) => {
+    try {
+      await actualizarFechaPreferida(solicitud.id, fechaISO);
+      // Actualizar el estado local sin recargar toda la tabla
+      const fechaMostrar = fechaISO
+        ? (() => { const [y, m, d] = fechaISO.split('-'); return `${d}/${m}/${y}`; })()
+        : 'N/A';
+      setSolicitudes(prev => prev.map(s =>
+        s.id === solicitud.id ? { ...s, fechaPreferidaNoAtendida: fechaMostrar } : s
+      ));
+      import('react-hot-toast').then(({ default: toast }) =>
+        toast.success('Fecha preferida actualizada')
+      );
+    } catch (e) {
+      console.error('Error actualizando fecha preferida:', e);
+      import('react-hot-toast').then(({ default: toast }) =>
+        toast.error('Error al actualizar la fecha')
+      );
+    }
+  }, []);
+
   // Buscar IPRESS en tiempo real
   const handleBuscarIpress = async (termino) => {
     setIpressBusqueda(termino);
@@ -2589,6 +2611,7 @@ export default function Solicitudes() {
                       onEliminarAsignacion={handleEliminarAsignacionGestora}
                       onAbrirEnviarRecordatorio={handleAbrirEnviarRecordatorio}
                       onAbrirIpressAtencion={handleAbrirIpressAtencion}
+                      onEditarFechaPreferida={handleEditarFechaPreferida}
                       isProcessing={isProcessing}
                       getEstadoBadge={getEstadoBadge}
                     />
