@@ -1,11 +1,14 @@
 /**
  * BolsaXGestor.jsx
  * Vista "Bolsa x Gestor" — distribución de pacientes por gestora de citas
- * v4.0 – Filtro por calendario con badges de conteo por día
+ * v5.0 – Drill-down con panel lateral: ver pacientes + reasignar gestora
  *
  * Acceso: SUPERADMIN, COORDINADOR_GESTION_CITAS
  * Datos: GET /api/bolsas/solicitudes/estadisticas/por-gestora?fechaDesde=&fechaHasta=
  *        GET /api/bolsas/solicitudes/estadisticas/conteo-por-fecha?mes=YYYY-MM
+ *        GET /api/bolsas/solicitudes?gestoraId={id}&size=500
+ *        GET /api/bolsas/solicitudes/gestoras-disponibles
+ *        POST /api/bolsas/solicitudes/asignar-gestora-masivo
  */
 
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
@@ -14,6 +17,7 @@ import {
   Users, RefreshCw, CalendarCheck, PhoneMissed,
   AlertCircle, CheckCircle2, XCircle, Clock, Calendar,
   ChevronLeft, ChevronRight, Search, ArrowUp, ArrowDown, ArrowUpDown,
+  UserCheck, ChevronDown, Loader2, ArrowRightLeft, X,
 } from 'lucide-react';
 
 // ── Categorías de estado ──────────────────────────────────────
@@ -25,6 +29,16 @@ const CATS = [
   { key: 'cerrados',       label: 'Cerrados',         desc: 'Fallecido / Sin vigencia / No desea', accent: '#ef4444', bg: '#fef2f2', border: '#fecaca', icon: XCircle },
   { key: 'atendidos',      label: 'Atendidos',        desc: 'Atención completada',           accent: '#10b981', bg: '#f0fdf4', border: '#bbf7d0', icon: CheckCircle2  },
 ];
+
+// Códigos de estado agrupados por categoría (para filtrar en drawer)
+const COD_POR_CAT = {
+  por_citar:      ['PENDIENTE_CITA', 'PENDIENTE', null],
+  citados:        ['CITADO', 'EN_PROCESO'],
+  en_seguimiento: ['NO_CONTESTA', 'APAGADO', 'TEL_SIN_SERVICIO', 'REPROG_FALLIDA'],
+  observados:     ['HOSPITALIZADO', 'HC_BLOQUEADA', 'NO_GRUPO_ETARIO', 'PARTICULAR'],
+  cerrados:       ['YA_NO_REQUIERE', 'SIN_VIGENCIA', 'FALLECIDO', 'NO_DESEA', 'NUM_NO_EXISTE', 'NO_IPRESS_CENATE', 'ANULADO', 'ANULADA', 'DESERCION'],
+  atendidos:      ['ATENDIDO', 'ATENDIDO_PRESENCIAL', 'ATENDIDO_IPRESS'],
+};
 
 // ── Helpers de fecha ─────────────────────────────────────────
 const toISO = (d) => d.toISOString().slice(0, 10);
@@ -60,7 +74,6 @@ function CalendarioFechas({ fechaSeleccionada, onSelectFecha, conteoPorFecha, on
 
   return (
     <div style={{ background: '#fff', border: '1.5px solid #0D5BA9', borderRadius: '12px', overflow: 'hidden', minWidth: '280px', boxShadow: '0 4px 16px rgba(13,91,169,0.12)' }}>
-      {/* Cabecera mes/año */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', background: '#f0f7ff', borderBottom: '1px solid #bfdbfe' }}>
         <button onClick={irAtras} style={{ border: 'none', background: 'none', cursor: 'pointer', padding: '4px', display: 'flex', color: '#0D5BA9' }}>
           <ChevronLeft size={18} />
@@ -72,15 +85,11 @@ function CalendarioFechas({ fechaSeleccionada, onSelectFecha, conteoPorFecha, on
           <ChevronRight size={18} />
         </button>
       </div>
-
-      {/* Encabezado días semana */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', padding: '8px 8px 0', gap: '2px' }}>
         {DIAS_SEMANA.map(d => (
           <div key={d} style={{ textAlign: 'center', fontSize: '10px', fontWeight: '700', color: '#94a3b8', padding: '2px 0' }}>{d}</div>
         ))}
       </div>
-
-      {/* Días del mes */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', padding: '4px 8px 10px', gap: '2px' }}>
         {Array.from({ length: primerDia }, (_, i) => <div key={`e${i}`} />)}
         {Array.from({ length: diasEnMes }, (_, idx) => {
@@ -117,8 +126,6 @@ function CalendarioFechas({ fechaSeleccionada, onSelectFecha, conteoPorFecha, on
           );
         })}
       </div>
-
-      {/* Botón limpiar selección */}
       {fechaSeleccionada && (
         <div style={{ padding: '0 8px 10px', textAlign: 'center' }}>
           <button
@@ -207,6 +214,569 @@ function SortBtn({ label, col, sortCol, sortDir, onSort }) {
   );
 }
 
+// ── AutocompleteInput para selector de gestora destino ────────
+function AutocompleteGestora({ gestoras, value, onChange, placeholder }) {
+  const [texto, setTexto]         = useState('');
+  const [abierto, setAbierto]     = useState(false);
+  const [iniciado, setIniciado]   = useState(false);
+  const ref                       = useRef(null);
+
+  // Sincronizar cuando value cambia externamente
+  useEffect(() => {
+    if (!value) { setTexto(''); setIniciado(false); return; }
+    const found = gestoras.find(g => String(g.id) === String(value));
+    if (found) setTexto(found.nombre);
+  }, [value, gestoras]);
+
+  useEffect(() => {
+    const handler = (e) => {
+      if (ref.current && !ref.current.contains(e.target)) setAbierto(false);
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
+
+  const filtradas = useMemo(() => {
+    if (!iniciado || !texto.trim()) return gestoras.slice(0, 30);
+    return gestoras
+      .filter(g => g.nombre.toLowerCase().includes(texto.toLowerCase()))
+      .slice(0, 20);
+  }, [texto, gestoras, iniciado]);
+
+  return (
+    <div ref={ref} style={{ position: 'relative' }}>
+      <div style={{ position: 'relative' }}>
+        <input
+          type="text"
+          value={texto}
+          placeholder={placeholder || 'Buscar gestora...'}
+          onChange={e => { setTexto(e.target.value); setIniciado(true); setAbierto(true); onChange(null); }}
+          onFocus={() => setAbierto(true)}
+          style={{
+            width: '100%', boxSizing: 'border-box',
+            padding: '9px 32px 9px 12px',
+            border: `1.5px solid ${value ? '#0D5BA9' : '#cbd5e1'}`,
+            borderRadius: '8px', fontSize: '13px', outline: 'none',
+            background: value ? '#f0f7ff' : '#fff', color: '#1e293b',
+          }}
+        />
+        {texto ? (
+          <button
+            onMouseDown={e => { e.preventDefault(); setTexto(''); onChange(null); setIniciado(false); setAbierto(false); }}
+            style={{ position: 'absolute', right: '8px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', display: 'flex', padding: 0 }}
+          >
+            <X size={14} />
+          </button>
+        ) : (
+          <ChevronDown size={14} style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8', pointerEvents: 'none' }} />
+        )}
+      </div>
+      {abierto && filtradas.length > 0 && (
+        <div style={{
+          position: 'absolute', top: 'calc(100% + 4px)', left: 0, right: 0, zIndex: 200,
+          background: '#fff', border: '1.5px solid #bfdbfe', borderRadius: '10px',
+          boxShadow: '0 8px 24px rgba(13,91,169,0.18)', maxHeight: '220px', overflowY: 'auto',
+        }}>
+          {filtradas.map(g => (
+            <div
+              key={g.id}
+              onMouseDown={e => { e.preventDefault(); setTexto(g.nombre); onChange(String(g.id)); setAbierto(false); setIniciado(false); }}
+              style={{
+                padding: '9px 14px', cursor: 'pointer', fontSize: '13px',
+                color: String(g.id) === String(value) ? '#0D5BA9' : '#1e293b',
+                background: String(g.id) === String(value) ? '#eff6ff' : 'transparent',
+                fontWeight: String(g.id) === String(value) ? '600' : '400',
+                borderBottom: '1px solid #f1f5f9',
+              }}
+              onMouseEnter={e => { if (String(g.id) !== String(value)) e.currentTarget.style.background = '#f8fafc'; }}
+              onMouseLeave={e => { if (String(g.id) !== String(value)) e.currentTarget.style.background = 'transparent'; }}
+            >
+              {g.nombre}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ══════════════════════════════════════════════════════════════
+// Panel Drawer — detalle de pacientes de una gestora
+// ══════════════════════════════════════════════════════════════
+function DrawerGestora({ gestora, onClose, onReasignacionExitosa }) {
+  const [pacientes,       setPacientes]       = useState([]);
+  const [loading,         setLoading]         = useState(true);
+  const [busqueda,        setBusqueda]        = useState('');
+  const [filtroCat,       setFiltroCat]       = useState(null); // null = todos
+  const [seleccionados,   setSeleccionados]   = useState(new Set());
+  const [gestoras,        setGestoras]        = useState([]);
+  const [modalAbierto,    setModalAbierto]    = useState(false);
+  const [gestoraDestino,  setGestoraDestino]  = useState(null);
+  const [reasignando,     setReasignando]     = useState(false);
+  const [progreso,        setProgreso]        = useState({ ok: 0, err: 0, total: 0 });
+
+  // Cargar pacientes de la gestora
+  useEffect(() => {
+    const cargar = async () => {
+      setLoading(true);
+      try {
+        const data = await apiClient.get(
+          `/bolsas/solicitudes?gestoraId=${gestora.id_gestora}&size=500`, true
+        );
+        const lista = data?.content ?? data ?? [];
+        setPacientes(Array.isArray(lista) ? lista : []);
+      } catch (e) {
+        console.error('Error cargando pacientes de gestora:', e);
+        setPacientes([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+    cargar();
+  }, [gestora.id_gestora]);
+
+  // Cargar gestoras disponibles para selector
+  useEffect(() => {
+    const cargar = async () => {
+      try {
+        const data = await apiClient.get('/bolsas/solicitudes/gestoras-disponibles', true);
+        const lista = Array.isArray(data) ? data : (data?.gestoras ?? []);
+        // Excluir la gestora actual
+        setGestoras(lista.filter(g => String(g.id) !== String(gestora.id_gestora)));
+      } catch (e) {
+        console.error('Error cargando gestoras disponibles:', e);
+      }
+    };
+    cargar();
+  }, [gestora.id_gestora]);
+
+  // Categoría de un paciente
+  const categoriaDe = (p) => {
+    const cod = p.cod_estado_cita || null;
+    for (const [cat, codes] of Object.entries(COD_POR_CAT)) {
+      if (codes.includes(cod)) return cat;
+    }
+    return 'por_citar';
+  };
+
+  // Lista filtrada
+  const pacientesFiltrados = useMemo(() => {
+    return pacientes.filter(p => {
+      const matchCat = !filtroCat || categoriaDe(p) === filtroCat;
+      const matchBusq = !busqueda || (
+        (p.paciente_nombre || '').toLowerCase().includes(busqueda.toLowerCase()) ||
+        (p.paciente_dni || '').includes(busqueda)
+      );
+      return matchCat && matchBusq;
+    });
+  }, [pacientes, filtroCat, busqueda]);
+
+  // Conteos por categoría
+  const conteosCat = useMemo(() => {
+    const c = {};
+    CATS.forEach(cat => { c[cat.key] = 0; });
+    pacientes.forEach(p => { const cat = categoriaDe(p); if (c[cat] !== undefined) c[cat]++; });
+    return c;
+  }, [pacientes]);
+
+  const todosSeleccionados = pacientesFiltrados.length > 0 &&
+    pacientesFiltrados.every(p => seleccionados.has(p.id_solicitud));
+
+  const toggleTodos = () => {
+    if (todosSeleccionados) {
+      const nuevo = new Set(seleccionados);
+      pacientesFiltrados.forEach(p => nuevo.delete(p.id_solicitud));
+      setSeleccionados(nuevo);
+    } else {
+      const nuevo = new Set(seleccionados);
+      pacientesFiltrados.forEach(p => nuevo.add(p.id_solicitud));
+      setSeleccionados(nuevo);
+    }
+  };
+
+  const toggleUno = (id) => {
+    const nuevo = new Set(seleccionados);
+    nuevo.has(id) ? nuevo.delete(id) : nuevo.add(id);
+    setSeleccionados(nuevo);
+  };
+
+  const abrirModal = () => {
+    setGestoraDestino(null);
+    setProgreso({ ok: 0, err: 0, total: 0 });
+    setModalAbierto(true);
+  };
+
+  const confirmarReasignacion = async () => {
+    if (!gestoraDestino || seleccionados.size === 0) return;
+    const ids = Array.from(seleccionados);
+    setReasignando(true);
+    setProgreso({ ok: 0, err: 0, total: ids.length });
+
+    try {
+      const API_BASE = process.env.REACT_APP_API_BASE || 'http://localhost:8080/api';
+      const token = localStorage.getItem('token');
+      const res = await fetch(`${API_BASE}/bolsas/solicitudes/asignar-gestora-masivo`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ ids, idGestora: Number(gestoraDestino) }),
+      });
+      if (res.ok) {
+        setProgreso({ ok: ids.length, err: 0, total: ids.length });
+        setTimeout(() => {
+          setModalAbierto(false);
+          setReasignando(false);
+          setSeleccionados(new Set());
+          onReasignacionExitosa();
+          onClose();
+        }, 1200);
+      } else {
+        setProgreso({ ok: 0, err: ids.length, total: ids.length });
+        setReasignando(false);
+      }
+    } catch (e) {
+      console.error('Error reasignando:', e);
+      setProgreso({ ok: 0, err: ids.length, total: ids.length });
+      setReasignando(false);
+    }
+  };
+
+  const gestoraDestNombre = gestoras.find(g => String(g.id) === String(gestoraDestino))?.nombre;
+
+  return (
+    <>
+      {/* Overlay semitransparente */}
+      <div
+        onClick={onClose}
+        style={{
+          position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.45)',
+          zIndex: 80, backdropFilter: 'blur(2px)',
+          animation: 'fadeIn 0.2s ease',
+        }}
+      />
+
+      {/* Panel lateral */}
+      <div style={{
+        position: 'fixed', top: 0, right: 0, bottom: 0,
+        width: 'min(680px, 95vw)',
+        background: '#fff', zIndex: 90,
+        display: 'flex', flexDirection: 'column',
+        boxShadow: '-8px 0 40px rgba(0,0,0,0.18)',
+        animation: 'slideInRight 0.25s ease',
+      }}>
+
+        {/* ── Cabecera ─────────────────────────────────────── */}
+        <div style={{ background: '#0D5BA9', padding: '16px 20px', flexShrink: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <div style={{ width: '38px', height: '38px', borderRadius: '50%', background: 'rgba(255,255,255,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '15px', fontWeight: '800', color: '#fff', flexShrink: 0 }}>
+                {(gestora.nombre_gestora || 'G').charAt(0).toUpperCase()}
+              </div>
+              <div>
+                <div style={{ color: '#fff', fontWeight: '700', fontSize: '15px', lineHeight: 1.2 }}>
+                  {gestora.nombre_gestora || 'Sin nombre'}
+                </div>
+                <div style={{ color: 'rgba(255,255,255,0.7)', fontSize: '11px', marginTop: '2px' }}>
+                  {n(gestora.total).toLocaleString()} pacientes asignados
+                </div>
+              </div>
+            </div>
+            <button onClick={onClose} style={{ background: 'rgba(255,255,255,0.15)', border: 'none', borderRadius: '8px', cursor: 'pointer', color: '#fff', display: 'flex', padding: '6px' }}>
+              <X size={18} />
+            </button>
+          </div>
+
+          {/* Mini KPIs por estado */}
+          <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+            {CATS.map(c => {
+              const val = n(gestora[c.key]);
+              if (!val) return null;
+              const activo = filtroCat === c.key;
+              return (
+                <button
+                  key={c.key}
+                  onClick={() => setFiltroCat(prev => prev === c.key ? null : c.key)}
+                  title={`Filtrar: ${c.label}`}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: '4px',
+                    padding: '3px 10px', borderRadius: '20px', border: 'none', cursor: 'pointer',
+                    background: activo ? '#fff' : 'rgba(255,255,255,0.18)',
+                    color: activo ? c.accent : '#fff',
+                    fontWeight: '700', fontSize: '11px', transition: 'all 0.15s',
+                  }}
+                >
+                  <span>{val.toLocaleString()}</span>
+                  <span style={{ fontWeight: '400', opacity: activo ? 1 : 0.85 }}>{c.label}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* ── Barra de búsqueda + acciones ─────────────────── */}
+        <div style={{ padding: '12px 16px', borderBottom: '1px solid #f1f5f9', flexShrink: 0, background: '#fafafa', display: 'flex', gap: '10px', alignItems: 'center' }}>
+          <div style={{ position: 'relative', flex: 1 }}>
+            <Search size={14} color="#94a3b8" style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
+            <input
+              type="text"
+              placeholder="Buscar por nombre o DNI..."
+              value={busqueda}
+              onChange={e => setBusqueda(e.target.value)}
+              style={{ width: '100%', boxSizing: 'border-box', padding: '7px 10px 7px 30px', border: '1.5px solid #e2e8f0', borderRadius: '8px', fontSize: '12px', outline: 'none', background: '#fff' }}
+            />
+          </div>
+          {seleccionados.size > 0 && (
+            <button
+              onClick={abrirModal}
+              style={{
+                display: 'flex', alignItems: 'center', gap: '6px',
+                padding: '7px 14px', borderRadius: '8px', border: 'none', cursor: 'pointer',
+                background: '#0D5BA9', color: '#fff', fontWeight: '600', fontSize: '12px',
+                whiteSpace: 'nowrap', flexShrink: 0,
+              }}
+            >
+              <ArrowRightLeft size={13} />
+              Reasignar ({seleccionados.size})
+            </button>
+          )}
+        </div>
+
+        {/* ── Tabla de pacientes ───────────────────────────── */}
+        <div style={{ flex: 1, overflowY: 'auto' }}>
+          {loading ? (
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '200px', gap: '12px', color: '#64748b' }}>
+              <Loader2 size={28} color="#0D5BA9" style={{ animation: 'spin 1s linear infinite' }} />
+              <span style={{ fontSize: '13px' }}>Cargando pacientes...</span>
+            </div>
+          ) : pacientesFiltrados.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '48px 24px', color: '#94a3b8' }}>
+              <Users size={36} style={{ opacity: 0.2, marginBottom: '10px' }} />
+              <p style={{ margin: 0, fontSize: '14px' }}>
+                {filtroCat ? `No hay pacientes en "${CATS.find(c=>c.key===filtroCat)?.label}"` : 'No hay pacientes para esta gestora'}
+              </p>
+            </div>
+          ) : (
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>
+              <thead>
+                <tr style={{ background: '#f8fafc', position: 'sticky', top: 0, zIndex: 10 }}>
+                  <th style={{ padding: '10px 12px', borderBottom: '2px solid #e2e8f0', width: '36px' }}>
+                    <input
+                      type="checkbox"
+                      checked={todosSeleccionados}
+                      onChange={toggleTodos}
+                      style={{ cursor: 'pointer', width: '14px', height: '14px', accentColor: '#0D5BA9' }}
+                      title={todosSeleccionados ? 'Deseleccionar todos' : 'Seleccionar todos'}
+                    />
+                  </th>
+                  <th style={{ padding: '10px 12px', borderBottom: '2px solid #e2e8f0', textAlign: 'left', fontWeight: '700', color: '#475569', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Paciente</th>
+                  <th style={{ padding: '10px 12px', borderBottom: '2px solid #e2e8f0', textAlign: 'left', fontWeight: '700', color: '#475569', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Especialidad</th>
+                  <th style={{ padding: '10px 12px', borderBottom: '2px solid #e2e8f0', textAlign: 'center', fontWeight: '700', color: '#475569', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Estado</th>
+                </tr>
+              </thead>
+              <tbody>
+                {pacientesFiltrados.map((p, idx) => {
+                  const cat        = categoriaDe(p);
+                  const catInfo    = CATS.find(c => c.key === cat);
+                  const selec      = seleccionados.has(p.id_solicitud);
+                  const rowBg      = selec ? '#eff6ff' : idx % 2 === 0 ? '#fff' : '#fafafa';
+                  return (
+                    <tr
+                      key={p.id_solicitud}
+                      onClick={() => toggleUno(p.id_solicitud)}
+                      style={{ background: rowBg, cursor: 'pointer', borderBottom: '1px solid #f1f5f9', transition: 'background 0.1s' }}
+                      onMouseEnter={e => { if (!selec) e.currentTarget.style.background = '#f0f7ff'; }}
+                      onMouseLeave={e => { e.currentTarget.style.background = rowBg; }}
+                    >
+                      <td style={{ padding: '9px 12px', textAlign: 'center' }}>
+                        <input
+                          type="checkbox"
+                          checked={selec}
+                          onChange={() => toggleUno(p.id_solicitud)}
+                          onClick={e => e.stopPropagation()}
+                          style={{ cursor: 'pointer', width: '14px', height: '14px', accentColor: '#0D5BA9' }}
+                        />
+                      </td>
+                      <td style={{ padding: '9px 12px' }}>
+                        <div style={{ fontWeight: '600', color: '#1e293b', lineHeight: 1.3 }}>
+                          {p.paciente_nombre || 'Sin nombre'}
+                        </div>
+                        <div style={{ color: '#94a3b8', fontSize: '11px', marginTop: '1px' }}>
+                          DNI: {p.paciente_dni || '—'} · {p.desc_ipress || '—'}
+                        </div>
+                      </td>
+                      <td style={{ padding: '9px 12px', color: '#475569', fontSize: '11px' }}>
+                        {p.especialidad || '—'}
+                      </td>
+                      <td style={{ padding: '9px 12px', textAlign: 'center' }}>
+                        <span style={{
+                          display: 'inline-block', padding: '2px 8px', borderRadius: '20px',
+                          background: catInfo?.bg, color: catInfo?.accent,
+                          fontWeight: '600', fontSize: '10px', whiteSpace: 'nowrap',
+                        }}>
+                          {p.desc_estado_cita || catInfo?.label || 'Por Citar'}
+                        </span>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          )}
+        </div>
+
+        {/* ── Footer con resumen de selección ─────────────── */}
+        {!loading && pacientesFiltrados.length > 0 && (
+          <div style={{
+            padding: '12px 16px', borderTop: '1px solid #e2e8f0', background: '#f8fafc',
+            flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          }}>
+            <span style={{ fontSize: '12px', color: '#64748b' }}>
+              {pacientesFiltrados.length.toLocaleString()} pacientes
+              {filtroCat && ` en ${CATS.find(c=>c.key===filtroCat)?.label}`}
+              {seleccionados.size > 0 && (
+                <strong style={{ color: '#0D5BA9', marginLeft: '6px' }}>
+                  · {seleccionados.size} seleccionados
+                </strong>
+              )}
+            </span>
+            <div style={{ display: 'flex', gap: '8px' }}>
+              {seleccionados.size > 0 && (
+                <button
+                  onClick={() => setSeleccionados(new Set())}
+                  style={{ fontSize: '11px', color: '#64748b', background: 'none', border: '1px solid #e2e8f0', borderRadius: '6px', padding: '4px 10px', cursor: 'pointer' }}
+                >
+                  Limpiar selección
+                </button>
+              )}
+              <button
+                onClick={toggleTodos}
+                style={{ fontSize: '11px', color: '#0D5BA9', background: 'none', border: '1px solid #bfdbfe', borderRadius: '6px', padding: '4px 10px', cursor: 'pointer', fontWeight: '600' }}
+              >
+                {todosSeleccionados ? 'Deseleccionar todos' : 'Seleccionar todos'}
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* ── Modal de confirmación de reasignación ──────────── */}
+      {modalAbierto && (
+        <div style={{
+          position: 'fixed', inset: 0, zIndex: 100,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          background: 'rgba(15,23,42,0.6)',
+          animation: 'fadeIn 0.15s ease',
+        }}>
+          <div style={{
+            background: '#fff', borderRadius: '16px', width: '420px', maxWidth: '95vw',
+            boxShadow: '0 20px 60px rgba(0,0,0,0.25)',
+            overflow: 'visible',
+            animation: 'slideUp 0.2s ease',
+          }}>
+            {/* Header */}
+            <div style={{ background: '#0D5BA9', borderRadius: '16px 16px 0 0', padding: '16px 20px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <ArrowRightLeft size={18} color="#fff" />
+              <div style={{ flex: 1 }}>
+                <div style={{ color: '#fff', fontWeight: '700', fontSize: '14px' }}>Reasignar pacientes</div>
+                <div style={{ color: 'rgba(255,255,255,0.7)', fontSize: '11px' }}>
+                  {seleccionados.size} pacientes de {gestora.nombre_gestora}
+                </div>
+              </div>
+              <button onClick={() => setModalAbierto(false)} style={{ background: 'rgba(255,255,255,0.15)', border: 'none', borderRadius: '6px', cursor: 'pointer', color: '#fff', display: 'flex', padding: '4px' }}>
+                <X size={16} />
+              </button>
+            </div>
+
+            <div style={{ padding: '20px' }}>
+              {/* Resumen */}
+              <div style={{ background: '#f0f7ff', border: '1px solid #bfdbfe', borderRadius: '10px', padding: '12px 14px', marginBottom: '16px', display: 'flex', gap: '12px', alignItems: 'center' }}>
+                <UserCheck size={20} color="#0D5BA9" style={{ flexShrink: 0 }} />
+                <div style={{ fontSize: '12px', color: '#1e40af' }}>
+                  Se moverán <strong>{seleccionados.size} pacientes</strong> de{' '}
+                  <strong>{gestora.nombre_gestora}</strong> a la gestora que selecciones.
+                </div>
+              </div>
+
+              {/* Selector gestora destino */}
+              <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', color: '#374151', marginBottom: '6px' }}>
+                Gestora destino
+              </label>
+              <div style={{ position: 'relative', zIndex: 150 }}>
+                <AutocompleteGestora
+                  gestoras={gestoras}
+                  value={gestoraDestino}
+                  onChange={setGestoraDestino}
+                  placeholder="Escribe para buscar gestora..."
+                />
+              </div>
+
+              {/* Barra de progreso */}
+              {reasignando && (
+                <div style={{ marginTop: '16px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px', fontSize: '11px', color: '#64748b' }}>
+                    <span>Reasignando...</span>
+                    <span>{progreso.ok + progreso.err} / {progreso.total}</span>
+                  </div>
+                  <div style={{ height: '8px', background: '#f1f5f9', borderRadius: '8px', overflow: 'hidden' }}>
+                    <div style={{
+                      height: '100%',
+                      width: `${progreso.total ? ((progreso.ok + progreso.err) / progreso.total) * 100 : 0}%`,
+                      background: progreso.err > 0 ? '#ef4444' : '#10b981',
+                      borderRadius: '8px', transition: 'width 0.3s',
+                    }} />
+                  </div>
+                  {progreso.ok === progreso.total && progreso.total > 0 && (
+                    <div style={{ marginTop: '8px', display: 'flex', alignItems: 'center', gap: '6px', color: '#10b981', fontSize: '12px', fontWeight: '600' }}>
+                      <CheckCircle2 size={14} /> Reasignación completada
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Botones */}
+              {!reasignando && (
+                <div style={{ display: 'flex', gap: '10px', marginTop: '20px' }}>
+                  <button
+                    onClick={() => setModalAbierto(false)}
+                    style={{ flex: 1, padding: '9px', borderRadius: '8px', border: '1px solid #e2e8f0', background: '#fff', color: '#475569', fontSize: '13px', cursor: 'pointer', fontWeight: '500' }}
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    onClick={confirmarReasignacion}
+                    disabled={!gestoraDestino}
+                    style={{
+                      flex: 2, padding: '9px', borderRadius: '8px', border: 'none', cursor: gestoraDestino ? 'pointer' : 'not-allowed',
+                      background: gestoraDestino ? '#0D5BA9' : '#e2e8f0',
+                      color: gestoraDestino ? '#fff' : '#94a3b8',
+                      fontSize: '13px', fontWeight: '700', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
+                    }}
+                  >
+                    <ArrowRightLeft size={14} />
+                    Confirmar reasignación
+                    {gestoraDestNombre && (
+                      <span style={{ fontWeight: '400', fontSize: '11px', opacity: 0.85 }}>
+                        → {gestoraDestNombre.split(' ')[0]}
+                      </span>
+                    )}
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Animaciones */}
+      <style>{`
+        @keyframes slideInRight { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        @keyframes fadeIn       { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes slideUp      { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        @keyframes spin         { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+      `}</style>
+    </>
+  );
+}
+
 // ══════════════════════════════════════════════════════════════
 // Componente principal
 // ══════════════════════════════════════════════════════════════
@@ -219,6 +789,9 @@ export default function BolsaXGestor() {
   const [sortCol, setSortCol]               = useState('nombre_gestora');
   const [sortDir, setSortDir]               = useState('asc');
 
+  // Drawer
+  const [gestoraDrawer, setGestoraDrawer]   = useState(null);
+
   const handleSort = (col) => {
     if (sortCol === col) {
       setSortDir(d => d === 'asc' ? 'desc' : 'asc');
@@ -228,13 +801,11 @@ export default function BolsaXGestor() {
     }
   };
 
-  // ── Filtro por calendario ─────────────────────────────────
   const [fechaSeleccionada, setFechaSeleccionada] = useState(null);
   const [conteoPorFecha, setConteoPorFecha]       = useState({});
   const [showCalendario, setShowCalendario]        = useState(false);
   const calendarioRef = useRef(null);
 
-  // Cerrar calendario al hacer clic fuera
   useEffect(() => {
     const handler = (e) => {
       if (calendarioRef.current && !calendarioRef.current.contains(e.target)) {
@@ -245,7 +816,6 @@ export default function BolsaXGestor() {
     return () => document.removeEventListener('mousedown', handler);
   }, []);
 
-  // Cargar conteos por fecha (badges del calendario)
   const cargarConteos = useCallback(async (mes) => {
     try {
       const data = await apiClient.get(`/bolsas/solicitudes/estadisticas/conteo-por-fecha?mes=${mes}`, true);
@@ -259,7 +829,6 @@ export default function BolsaXGestor() {
     }
   }, []);
 
-  // Cargar estadísticas por gestora
   const cargar = useCallback(async (fecha) => {
     setLoading(true);
     setError('');
@@ -276,7 +845,6 @@ export default function BolsaXGestor() {
     }
   }, []);
 
-  // Carga inicial
   useEffect(() => {
     cargar(null);
     cargarConteos(mesActual());
@@ -289,7 +857,6 @@ export default function BolsaXGestor() {
     if (fecha) setShowCalendario(false);
   };
 
-  // ── Totales ───────────────────────────────────────────────
   const totales = useMemo(() => {
     const t = { total: 0 };
     CATS.forEach(c => { t[c.key] = 0; });
@@ -302,7 +869,6 @@ export default function BolsaXGestor() {
 
   const etiquetaPeriodo = fechaSeleccionada || 'Todos los tiempos';
 
-  // ── Loading skeleton ─────────────────────────────────────
   if (loading) return (
     <div style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
       <div style={{ height: '32px', background: '#f1f5f9', borderRadius: '8px', width: '220px', animation: 'pulse 1.5s infinite' }} />
@@ -315,7 +881,6 @@ export default function BolsaXGestor() {
     </div>
   );
 
-  // ── Error ────────────────────────────────────────────────
   if (error) return (
     <div style={{ padding: '24px' }}>
       <div style={{ background: '#fee2e2', border: '1px solid #fca5a5', borderRadius: '12px', padding: '20px', color: '#b91c1c', display: 'flex', alignItems: 'center', gap: '12px' }}>
@@ -343,7 +908,8 @@ export default function BolsaXGestor() {
           <div>
             <h2 style={{ margin: 0, fontSize: '20px', fontWeight: '700', color: '#0f172a' }}>Bolsa x Gestor</h2>
             <p style={{ margin: '2px 0 0', fontSize: '12px', color: '#64748b' }}>
-              {etiquetaPeriodo} · <strong style={{ color: '#0D5BA9' }}>{totales.total.toLocaleString()}</strong> pacientes · {gestoras.length} gestoras
+              {etiquetaPeriodo} · <strong style={{ color: '#0D5BA9' }}>{totales.total.toLocaleString()}</strong> pacientes · {gestoras.length} gestoras ·{' '}
+              <span style={{ color: '#94a3b8' }}>Clic en una fila para ver detalle y reasignar</span>
             </p>
           </div>
         </div>
@@ -360,8 +926,6 @@ export default function BolsaXGestor() {
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
           <Calendar size={15} color="#64748b" />
           <span style={{ fontSize: '12px', fontWeight: '600', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Fecha de asignación</span>
-
-          {/* Botón selector de fecha */}
           <div ref={calendarioRef} style={{ position: 'relative' }}>
             <button
               onClick={() => setShowCalendario(v => !v)}
@@ -378,7 +942,6 @@ export default function BolsaXGestor() {
               {fechaSeleccionada || 'Seleccionar fecha'}
               <ChevronRight size={14} style={{ transform: showCalendario ? 'rotate(90deg)' : 'none', transition: 'transform 0.2s', color: '#94a3b8' }} />
             </button>
-
             {showCalendario && (
               <div style={{ position: 'absolute', top: 'calc(100% + 8px)', left: 0, zIndex: 50 }}>
                 <CalendarioFechas
@@ -390,8 +953,6 @@ export default function BolsaXGestor() {
               </div>
             )}
           </div>
-
-          {/* Chip fecha seleccionada con botón eliminar */}
           {fechaSeleccionada && (
             <button
               onClick={() => handleSelectFecha(null)}
@@ -415,7 +976,6 @@ export default function BolsaXGestor() {
           <span style={{ fontSize: '30px', fontWeight: '800', color: '#fff', lineHeight: 1 }}>{totales.total.toLocaleString()}</span>
           <span style={{ fontSize: '10px', color: 'rgba(255,255,255,0.6)' }}>{gestoras.length} gestoras</span>
         </div>
-
         {CATS.map(c => {
           const Icono = c.icon;
           const activo = filtroCat === c.key;
@@ -450,7 +1010,6 @@ export default function BolsaXGestor() {
         })}
       </div>
 
-      {/* Chip filtro categoría activo */}
       {filtroCat && (() => {
         const c = CATS.find(x => x.key === filtroCat);
         return c ? (
@@ -542,9 +1101,11 @@ export default function BolsaXGestor() {
                     return (
                       <tr
                         key={g.id_gestora}
-                        style={{ borderBottom: '1px solid #f1f5f9', background: rowBg }}
-                        onMouseEnter={e => { e.currentTarget.style.background = '#eff6ff'; }}
-                        onMouseLeave={e => { e.currentTarget.style.background = rowBg; }}
+                        onClick={() => setGestoraDrawer(g)}
+                        title="Clic para ver detalle y reasignar pacientes"
+                        style={{ borderBottom: '1px solid #f1f5f9', background: rowBg, cursor: 'pointer', transition: 'background 0.12s' }}
+                        onMouseEnter={e => { e.currentTarget.style.background = '#eff6ff'; e.currentTarget.style.boxShadow = 'inset 3px 0 0 #0D5BA9'; }}
+                        onMouseLeave={e => { e.currentTarget.style.background = rowBg; e.currentTarget.style.boxShadow = 'none'; }}
                       >
                         <td style={{ padding: '11px 14px', textAlign: 'center', color: '#94a3b8', fontWeight: '600', fontSize: '12px' }}>{idx + 1}</td>
                         <td style={{ padding: '11px 14px' }}>
@@ -555,7 +1116,7 @@ export default function BolsaXGestor() {
                             <div>
                               <div style={{ fontWeight: '600', color: '#1e293b', fontSize: '13px' }}>{g.nombre_gestora || 'Sin nombre'}</div>
                               <div style={{ fontSize: '10px', color: '#94a3b8', marginTop: '1px' }}>
-                                {pct(n(g.citados) + n(g.atendidos), n(g.total))}% avanzado
+                                {pct(n(g.citados) + n(g.atendidos), n(g.total))}% avanzado · ver detalle →
                               </div>
                             </div>
                           </div>
@@ -618,6 +1179,15 @@ export default function BolsaXGestor() {
           </div>
         </div>
       </div>
+
+      {/* ── Drawer lateral ────────────────────────────────────── */}
+      {gestoraDrawer && (
+        <DrawerGestora
+          gestora={gestoraDrawer}
+          onClose={() => setGestoraDrawer(null)}
+          onReasignacionExitosa={() => cargar(fechaSeleccionada)}
+        />
+      )}
     </div>
   );
 }
