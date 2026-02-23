@@ -41,6 +41,9 @@ public class HistorialCargaBolsas {
     @Column(name = "usuario_carga", length = 100)
     private String usuarioCarga;
 
+    @Column(name = "id_user")
+    private Long idUser;
+
     @Column(name = "estado_carga", length = 20)
     @Builder.Default
     private String estadoCarga = "RECIBIDO";

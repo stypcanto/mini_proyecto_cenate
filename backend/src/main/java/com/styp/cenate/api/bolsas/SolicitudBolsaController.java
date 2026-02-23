@@ -116,10 +116,29 @@ public class SolicitudBolsaController {
                 ));
             }
 
+            // ✅ Obtener el id_user del usuario logueado desde dim_usuarios
+            Long idUserLogueado = null;
+            try {
+                var auth = SecurityContextHolder.getContext().getAuthentication();
+                if (auth != null && auth.isAuthenticated()) {
+                    String username = auth.getName();
+                    Optional<Usuario> usuarioOpt = usuarioRepository.findByNameUser(username);
+                    if (usuarioOpt.isPresent()) {
+                        idUserLogueado = usuarioOpt.get().getIdUser();
+                        log.info("👤 Usuario logueado: {} (id_user: {})", username, idUserLogueado);
+                    } else {
+                        log.warn("⚠️ Usuario autenticado '{}' no encontrado en dim_usuarios", username);
+                    }
+                }
+            } catch (Exception e) {
+                log.warn("⚠️ No se pudo obtener id_user del usuario logueado: {}", e.getMessage());
+            }
+
             historial = HistorialCargaBolsas.builder()
                 .nombreArchivo(file.getOriginalFilename())
                 .hashArchivo(hashArchivo)
                 .usuarioCarga(usuarioCarga)
+                .idUser(idUserLogueado)
                 .estadoCarga("PROCESANDO")
                 .fechaReporte(LocalDate.now())
                 .totalFilas(0)

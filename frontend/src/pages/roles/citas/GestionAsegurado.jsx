@@ -39,6 +39,7 @@ import {
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { formatearTiempoRelativo } from "../../../utils/dateUtils";
+import { logRespuestaConsola } from "../../../utils/consoleResponseLogger";
 
 
 export default function GestionAsegurado() {
@@ -133,6 +134,51 @@ export default function GestionAsegurado() {
   const [medicoSeleccionado, setMedicoSeleccionado] = useState(""); // v1.46.7: Médico en modal
   const [fechaHoraCitaSeleccionada, setFechaHoraCitaSeleccionada] = useState(""); // v1.46.7: Fecha/Hora en modal
   const [medicosDisponibles, setMedicosDisponibles] = useState([]); // v1.46.7: Médicos por especialidad
+
+  const formatearNombreEspecialista = (medico) => {
+    const apellidoPaterno = (medico?.apellidoPaterno || medico?.apPaterno || "").trim();
+    const apellidoMaterno = (medico?.apellidoMaterno || medico?.apMaterno || "").trim();
+    const nombres = (medico?.nombres || "").trim();
+
+    if (apellidoPaterno && apellidoMaterno && nombres) {
+      return `${apellidoPaterno} ${apellidoMaterno}, ${nombres}`;
+    }
+
+    const nombreCompleto = (medico?.nombre || "").trim().replace(/\s+/g, " ");
+    if (!nombreCompleto) return "Sin nombre";
+
+    const partes = nombreCompleto.split(" ");
+    if (partes.length >= 3) {
+      const apellidos = partes.slice(-2).join(" ");
+      const nombresInferidos = partes.slice(0, -2).join(" ");
+      return `${apellidos}, ${nombresInferidos}`;
+    }
+
+    return nombreCompleto;
+  };
+
+  const formatearLabelEspecialista = (medico) => {
+    const numeroDocumento =
+      medico?.documento || medico?.numDocPers || medico?.numeroDocumento || "Sin documento";
+    return `${formatearNombreEspecialista(medico)} - DNI: ${numeroDocumento}`;
+  };
+
+  const obtenerApellidoPaternoParaOrden = (medico) => {
+    const apellidoPaterno = (medico?.apellidoPaterno || medico?.apPaterno || "").trim();
+    if (apellidoPaterno) return apellidoPaterno;
+
+    const nombreCompleto = (medico?.nombre || "").trim().replace(/\s+/g, " ");
+    if (!nombreCompleto) return "";
+
+    const partes = nombreCompleto.split(" ");
+    if (partes.length >= 3) {
+      return partes[partes.length - 2];
+    }
+    if (partes.length === 2) {
+      return partes[1];
+    }
+    return partes[0] || "";
+  };
 
   // 🔧 API_BASE dinámico basado en el host actual o variable de entorno
   const getApiBase = () => {
@@ -1220,8 +1266,41 @@ CENATE de Essalud`;
 
     setCargandoBusqueda(true);
     try {
+      const dni = termino.trim();
+
+      // ✅ Optimización: búsqueda directa por DNI exacto (más rápida)
+      const responseByDoc = await fetch(
+        `${API_BASE}/asegurados/doc/${encodeURIComponent(dni)}`,
+        {
+          method: "GET",
+          headers: getHeaders(),
+        }
+      );
+
+      if (responseByDoc.ok) {
+        const asegurado = await responseByDoc.json();
+        logRespuestaConsola({
+          titulo: "Consulta DNI",
+          endpoint: `${API_BASE}/asegurados/doc/${encodeURIComponent(dni)}`,
+          method: "GET",
+          enviado: { dni },
+          status: responseByDoc.status,
+          devuelto: asegurado,
+          fuente: "/asegurados/doc",
+        });
+        const resultados = asegurado ? [asegurado] : [];
+        console.log(`🔍 Búsqueda directa por DNI encontró ${resultados.length} resultado(s)`);
+        setResultadosBusqueda(resultados);
+        return;
+      }
+
+      // Si no existe por DNI exacto, fallback al endpoint general
+      if (responseByDoc.status !== 404) {
+        console.warn("⚠️ /doc/{dni} devolvió estado", responseByDoc.status, "- usando fallback /buscar");
+      }
+
       const response = await fetch(
-        `${API_BASE}/asegurados/buscar?q=${encodeURIComponent(termino)}&size=10`,
+        `${API_BASE}/asegurados/buscar?q=${encodeURIComponent(dni)}&size=1`,
         {
           method: "GET",
           headers: getHeaders(),
@@ -1230,8 +1309,17 @@ CENATE de Essalud`;
 
       if (response.ok) {
         const data = await response.json();
+        logRespuestaConsola({
+          titulo: "Consulta DNI",
+          endpoint: `${API_BASE}/asegurados/buscar?q=${encodeURIComponent(dni)}&size=1`,
+          method: "GET",
+          enviado: { dni, q: dni, size: 1 },
+          status: response.status,
+          devuelto: data,
+          fuente: "/asegurados/buscar (fallback)",
+        });
         const asegurados = data?.content || [];
-        console.log(`🔍 Búsqueda encontró ${asegurados.length} resultados`);
+        console.log(`🔍 Fallback /buscar encontró ${asegurados.length} resultados`);
         setResultadosBusqueda(asegurados);
       } else {
         console.error("Error en búsqueda:", response.status);
@@ -1278,7 +1366,16 @@ CENATE de Essalud`;
 
       if (response.ok) {
         const result = await response.json();
-        setMedicosDisponibles(result.data || []);
+        const medicosOrdenados = [...(result.data || [])].sort((a, b) => {
+          const apA = obtenerApellidoPaternoParaOrden(a);
+          const apB = obtenerApellidoPaternoParaOrden(b);
+          const cmpApellido = apA.localeCompare(apB, "es", { sensitivity: "base" });
+          if (cmpApellido !== 0) return cmpApellido;
+          return formatearNombreEspecialista(a).localeCompare(formatearNombreEspecialista(b), "es", {
+            sensitivity: "base",
+          });
+        });
+        setMedicosDisponibles(medicosOrdenados);
         console.log(`✅ Cargados ${result.data?.length || 0} médicos para ${especialidad}`);
       } else {
         console.error("Error al cargar médicos:", response.statusText);
@@ -3185,7 +3282,7 @@ CENATE de Essalud`;
                                 </option>
                                 {medicosDisponibles.map((medico) => (
                                   <option key={medico.idPers} value={medico.idPers}>
-                                    {medico.nombre} - DNI: {medico.documento}
+                                    {formatearLabelEspecialista(medico)}
                                   </option>
                                 ))}
                               </select>
