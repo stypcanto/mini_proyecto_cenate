@@ -33,14 +33,16 @@ public class EstadisticasDiagnosticoController {
      *
      * @param idMacroregion ID de la macroregión (opcional)
      * @param idRed ID de la red (opcional)
+     * @param estado estado del formulario (opcional): EN_PROCESO, ENVIADO, APROBADO, RECHAZADO
      * @return Lista de estadísticas por red + resumen general
      */
     @GetMapping("/por-red")
     public ResponseEntity<?> obtenerEstadisticasPorRed(
             @org.springframework.web.bind.annotation.RequestParam(required = false) Long idMacroregion,
-            @org.springframework.web.bind.annotation.RequestParam(required = false) Long idRed) {
+            @org.springframework.web.bind.annotation.RequestParam(required = false) Long idRed,
+            @org.springframework.web.bind.annotation.RequestParam(required = false) String estado) {
 
-        log.info("📊 Obteniendo estadísticas - Macroregión: {}, Red: {}", idMacroregion, idRed);
+        log.info("📊 Obteniendo estadísticas - Macroregión: {}, Red: {}, Estado: {}", idMacroregion, idRed, estado);
 
         try {
             // Construir WHERE dinámico
@@ -55,6 +57,11 @@ public class EstadisticasDiagnosticoController {
             if (idRed != null) {
                 whereClause.append(" AND r.id_red = ?");
                 params.add(idRed);
+            }
+
+            if (estado != null && !estado.isEmpty()) {
+                whereClause.append(" AND f.estado = ?");
+                params.add(estado);
             }
 
             // Query para estadísticas por red

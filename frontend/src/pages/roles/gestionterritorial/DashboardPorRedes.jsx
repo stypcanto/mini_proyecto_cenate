@@ -28,6 +28,15 @@ export default function DashboardPorRedes() {
   const [redes, setRedes] = useState([]);
   const [filtroMacroregion, setFiltroMacroregion] = useState("");
   const [filtroRed, setFiltroRed] = useState("");
+  const [filtroEstado, setFiltroEstado] = useState(""); // 🆕 Nuevo filtro
+
+  // 🆕 Estados disponibles para los formularios
+  const ESTADOS_DISPONIBLES = [
+    { value: "EN_PROCESO", label: "En Proceso" },
+    { value: "ENVIADO", label: "Enviado" },
+    { value: "APROBADO", label: "Aprobado" },
+    { value: "RECHAZADO", label: "Rechazado" },
+  ];
 
   // ================================================================
   // FUNCIONES DE CARGA
@@ -73,12 +82,16 @@ export default function DashboardPorRedes() {
         params.push(`idRed=${filtroRed}`);
       }
 
+      if (filtroEstado) {
+        params.push(`estado=${filtroEstado}`);
+      }
+
       if (params.length > 0) {
         url += `?${params.join("&")}`;
       }
 
       console.log("🔍 Cargando estadísticas con URL:", url);
-      console.log("🔍 Filtros actuales:", { filtroMacroregion, filtroRed });
+      console.log("🔍 Filtros actuales:", { filtroMacroregion, filtroRed, filtroEstado });
 
       const response = await api.get(url);
       console.log("📊 Respuesta recibida:", response);
@@ -87,7 +100,7 @@ export default function DashboardPorRedes() {
       setEstadisticas(response.estadisticas_por_red || []);
       setResumen(response.resumen_general || null);
 
-      if (!filtroMacroregion && !filtroRed) {
+      if (!filtroMacroregion && !filtroRed && !filtroEstado) {
         toast.success("Estadísticas cargadas correctamente");
       } else {
         toast.success(`Filtrado: ${response.estadisticas_por_red?.length || 0} redes encontradas`);
@@ -100,12 +113,13 @@ export default function DashboardPorRedes() {
     } finally {
       setLoading(false);
     }
-  }, [filtroMacroregion, filtroRed]);
+  }, [filtroMacroregion, filtroRed, filtroEstado]);
 
   const limpiarFiltros = () => {
     console.log("🧹 Limpiando filtros");
     setFiltroMacroregion("");
     setFiltroRed("");
+    setFiltroEstado("");
   };
 
   const cargarDetalleRed = async (idRed) => {
@@ -310,8 +324,31 @@ export default function DashboardPorRedes() {
                 </select>
               </div>
 
+              {/* Filtro Estado */}
+              <div className="flex-1 min-w-[250px]">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Estado
+                </label>
+                <select
+                  value={filtroEstado}
+                  onChange={(e) => {
+                    const valor = e.target.value;
+                    console.log("📊 Usuario seleccionó estado:", valor);
+                    setFiltroEstado(valor);
+                  }}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                >
+                  <option value="">Todos los Estados</option>
+                  {ESTADOS_DISPONIBLES.map((estado) => (
+                    <option key={estado.value} value={estado.value}>
+                      {estado.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
               {/* Botón limpiar filtros */}
-              {(filtroMacroregion || filtroRed) && (
+              {(filtroMacroregion || filtroRed || filtroEstado) && (
                 <div className="flex-shrink-0 pt-7">
                   <button
                     onClick={limpiarFiltros}
