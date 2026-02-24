@@ -1,6 +1,7 @@
 // src/pages/coordinador/gestion-periodos-disponibilidad/components/ModalAperturarPeriodo.jsx
 import React, { useEffect, useMemo, useState } from "react";
 import { XCircle } from "lucide-react";
+import { useAuth } from "../../../../../context/AuthContext";
 import {
   monthNames,
   yyyymmFromYearMonth,
@@ -9,17 +10,77 @@ import {
 } from "../utils/ui";
 
 export default function ModalAperturarPeriodo({ onClose, onCrear }) {
+  const { user } = useAuth();
+  
   const now = new Date();
   const [mes, setMes] = useState(now.getMonth()); // 0-11
   const [anio, setAnio] = useState(now.getFullYear());
 
   const [fechaInicio, setFechaInicio] = useState(firstDayOfMonth(anio, mes));
   const [fechaFin, setFechaFin] = useState(lastDayOfMonth(anio, mes));
+  const [idArea, setIdArea] = useState("");
 
   useEffect(() => {
     setFechaInicio(firstDayOfMonth(anio, mes));
     setFechaFin(lastDayOfMonth(anio, mes));
   }, [anio, mes]);
+
+  // 🆕 Extraer áreas de los roles SOLO para coordinadores (IDs: 33, 35, 15)
+  // Si es SUPERADMIN o ADMIN, mostrar todas las 3 áreas
+  const COORDINATOR_ROLE_IDS = [33, 35, 15]; // IDs de roles coordinadores permitidos
+  
+  const areasDisponibles = useMemo(() => {
+    console.log("🔍 DEBUG areasDisponibles - user:", user);
+    console.log("🔍 DEBUG areasDisponibles - user?.roles:", user?.roles);
+    console.log("🔍 DEBUG areasDisponibles - user?.mappingRoles:", user?.mappingRoles);
+    
+    // 🆕 Si es SUPERADMIN o ADMIN, mostrar todas las 3 áreas
+    const isSuperAdmin = user?.roles?.includes("SUPERADMIN") || user?.roles?.includes("ADMIN");
+    console.log("🔍 ¿Es SUPERADMIN/ADMIN?:", isSuperAdmin);
+    
+    if (isSuperAdmin) {
+      console.log("✅ Usuario es SUPERADMIN/ADMIN, mostrando todas las áreas");
+      return [
+        { id: 2, descripcion: "SGDT - SERVICIO DE MEDICINA GENERAL - TELEURGENCIAS Y TELETRIAJE" },
+        { id: 3, descripcion: "SGDT - SERVICIO DE TELE APOYO AL DIAGNOSTICO" },
+        { id: 13, descripcion: "SGDT - SERVICIO DE MEDICINA ESPECIALIZADA" }
+      ];
+    }
+    
+    // Si no es SUPERADMIN, obtener áreas de los roles coordinadores
+    if (!user?.mappingRoles || !Array.isArray(user.mappingRoles)) {
+      console.log("⚠️ mappingRoles no disponible o no es array");
+      return [];
+    }
+    
+    console.log("✅ mappingRoles encontrado:", user.mappingRoles);
+    
+    // Filtrar solo roles coordinadores y obtener áreas únicas
+    const areasSet = new Set();
+    user.mappingRoles.forEach((rol) => {
+      console.log("📌 Procesando rol:", rol);
+      if (COORDINATOR_ROLE_IDS.includes(rol.codigo) && rol.idArea) {
+        console.log("✅ Rol válido, agregando área:", { id: rol.idArea, descripcion: rol.descripcionArea });
+        areasSet.add(JSON.stringify({
+          id: rol.idArea,
+          descripcion: rol.descripcionArea || `Área ${rol.idArea}`,
+        }));
+      } else {
+        console.log("❌ Rol no válido o sin idArea");
+      }
+    });
+    
+    const resultado = Array.from(areasSet).map((areaJson) => JSON.parse(areaJson));
+    console.log("🎯 Áreas disponibles finales:", resultado);
+    return resultado;
+  }, [user?.roles, user?.mappingRoles]);
+
+  // Pre-seleccionar el área si hay solo una
+  useEffect(() => {
+    if (areasDisponibles.length === 1 && !idArea) {
+      setIdArea(String(areasDisponibles[0].id));
+    }
+  }, [areasDisponibles, idArea]);
 
   const years = useMemo(() => {
     const base = now.getFullYear();
@@ -31,7 +92,7 @@ export default function ModalAperturarPeriodo({ onClose, onCrear }) {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (!fechaInicio || !fechaFin) return;
+    if (!fechaInicio || !fechaFin || !idArea) return;
 
     if (new Date(fechaInicio) > new Date(fechaFin)) {
       window.alert("La fecha de inicio no puede ser mayor a la fecha fin.");
@@ -43,6 +104,7 @@ export default function ModalAperturarPeriodo({ onClose, onCrear }) {
       descripcion,
       fechaInicio,
       fechaFin,
+      idArea: parseInt(idArea), // 🆕 Pasar el idArea seleccionado
       instrucciones: null,
     });
   };
@@ -95,6 +157,33 @@ export default function ModalAperturarPeriodo({ onClose, onCrear }) {
                 ))}
               </select>
             </div>
+          </div>
+
+          {/* 🆕 Combo para seleccionar área */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Selecciona el Área
+              {areasDisponibles.length > 1 ? " *" : ""}
+            </label>
+            {areasDisponibles.length > 0 ? (
+              <select
+                value={idArea}
+                onChange={(e) => setIdArea(e.target.value)}
+                required={areasDisponibles.length > 0}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+              >
+                <option value="">-- Selecciona un área --</option>
+                {areasDisponibles.map((area) => (
+                  <option key={area.id} value={area.id}>
+                    SGDT - {area.descripcion}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <div className="w-full px-3 py-2 border border-red-300 rounded-lg bg-red-50 text-red-800 text-sm">
+                ❌ No tienes áreas asignadas
+              </div>
+            )}
           </div>
 
           <div className="grid grid-cols-2 gap-3">

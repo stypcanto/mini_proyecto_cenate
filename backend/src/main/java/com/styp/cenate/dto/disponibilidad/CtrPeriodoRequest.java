@@ -24,8 +24,8 @@ public class CtrPeriodoRequest {
     @Pattern(regexp = "^[0-9]{6}$", message = "El periodo debe tener formato YYYYMM (6 dígitos)")
     private String periodo;
 
-    // idArea se obtiene automáticamente del backend usando dim_personal_cnt
-    // No se requiere enviar desde el frontend
+    @NotNull(message = "El área es obligatoria")
+    private Long idArea; // 🆕 Ahora es requerido desde el frontend
 
     @NotNull(message = "La fecha de inicio es obligatoria")
     private LocalDate fechaInicio;
