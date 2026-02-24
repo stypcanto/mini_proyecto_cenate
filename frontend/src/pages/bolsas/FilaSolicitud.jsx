@@ -157,6 +157,16 @@ function FilaSolicitud({
           <span className="mx-1">•</span>
           <span className="inline-block">{solicitud.edad} años</span>
         </div>
+        {/* Motivo de interconsulta/recita — extrae texto entre paréntesis de la especialidad */}
+        {(solicitud.tipoCita === 'INTERCONSULTA' || solicitud.tipoCita === 'RECITA') && (() => {
+          const match = solicitud.especialidad?.match(/\(([^)]+)\)/);
+          if (!match) return null;
+          return (
+            <div className="mt-1 text-xs text-orange-700 font-medium bg-orange-50 rounded px-1.5 py-0.5 inline-block">
+              Motivo: {match[1]}
+            </div>
+          );
+        })()}
       </td>
       <td className="px-3 py-2">
         <div className="bg-green-50 rounded p-1.5 border-l-4 border-green-600">
@@ -195,8 +205,10 @@ function FilaSolicitud({
         </span>
       </td>
 
-      {/* ESPECIALIDAD Y UBICACIÓN */}
-      <td className="px-3 py-3 text-sm text-gray-900">{solicitud.especialidad}</td>
+      {/* ESPECIALIDAD Y UBICACIÓN — muestra solo la especialidad sin el motivo entre paréntesis */}
+      <td className="px-3 py-3 text-sm text-gray-900">
+        {solicitud.especialidad?.replace(/\s*\([^)]*\)/, '').trim() || solicitud.especialidad}
+      </td>
       <td className="px-3 py-3 text-sm text-gray-900 max-w-xs truncate" title={solicitud.ipress}>
         <span className="font-semibold text-blue-600">{solicitud.codigoIpress}</span> - {solicitud.ipress || 'N/A'}
       </td>
