@@ -678,7 +678,7 @@ export default function MisECGsRecientes({
 
               {/* Etiqueta */}
               <span className="text-xs md:text-sm font-semibold text-white/90 line-clamp-2">
-                Pacientes con EKG
+                Pendientes
               </span>
             </div>
           </button>
