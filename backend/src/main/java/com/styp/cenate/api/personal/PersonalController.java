@@ -240,7 +240,7 @@ public class PersonalController {
     // 🔍 BUSCAR PERSONAL POR NÚMERO DE DOCUMENTO
     // ============================================================
     @GetMapping("/buscar/{numeroDocumento}")
-    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'COORDINADOR', 'COORDINADOR_CITAS', 'GESTOR_CITAS')")
+    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'COORDINADOR', 'COORDINADOR_CITAS', 'GESTOR_CITAS', 'COORD. GESTION CITAS', 'GESTOR DE CITAS')")
     public ResponseEntity<?> buscarPorDocumento(@PathVariable String numeroDocumento) {
         log.info("🔍 Buscando personal por documento: {}", numeroDocumento);
         
