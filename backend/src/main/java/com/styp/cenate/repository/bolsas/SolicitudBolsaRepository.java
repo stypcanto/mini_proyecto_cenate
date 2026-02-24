@@ -1013,14 +1013,13 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
 
     /**
      * 🔧 v1.78.1: Obtener TODOS los pacientes asignados a un médico (sin filtro activo)
-     * Excluye RECITAS/INTERCONSULTAS generadas por el profesional (id_bolsa=11) porque
-     * esos registros van a /bolsas/solicitudespendientes esperando ser asignados a otro profesional.
+     * Las RECITA/INTERCONSULTA generadas quedan con id_personal=NULL hasta que el coordinador
+     * las asigne, por lo que no aparecen en este listado.
      *
      * @param idPersonal ID del personal médico (doctor)
-     * @return lista de TODAS las solicitudes asignadas al médico (sin recitas/interconsultas generadas)
+     * @return lista de TODAS las solicitudes asignadas al médico
      */
-    @Query("SELECT s FROM SolicitudBolsa s WHERE s.idPersonal = :idPersonal " +
-           "AND NOT (s.idBolsa = 11 AND s.tipoCita IN ('RECITA', 'INTERCONSULTA'))")
+    @Query("SELECT s FROM SolicitudBolsa s WHERE s.idPersonal = :idPersonal")
     List<SolicitudBolsa> findByIdPersonal(@org.springframework.data.repository.query.Param("idPersonal") Long idPersonal);
 
     /**
@@ -1034,8 +1033,7 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
     @Query("SELECT COUNT(s) FROM SolicitudBolsa s WHERE " +
            "s.idPersonal = :idPersonal AND " +
            "s.condicionMedica = 'Pendiente' AND " +
-           "s.activo = true AND " +
-           "NOT (s.idBolsa = 11 AND s.tipoCita IN ('RECITA', 'INTERCONSULTA'))")
+           "s.activo = true")
     long countByIdPersonalAndCondicionPendiente(@org.springframework.data.repository.query.Param("idPersonal") Long idPersonal);
 
     /**

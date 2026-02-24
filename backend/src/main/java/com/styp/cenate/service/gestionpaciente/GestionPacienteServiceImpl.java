@@ -837,6 +837,8 @@ public class GestionPacienteServiceImpl implements IGestionPacienteService {
             .especialidadMedico(especialidadMedico)  // ✅ v1.76.0: Especialidad del médico asignado
             .motivoLlamadoBolsa(bolsa.getMotivoLlamadoBolsa())  // ✅ v1.104.0: Motivo de llamada o atención
             .ipressAtencion(ipressAtencionNombre)  // ✅ v1.105.0: IPRESS donde se atenderá al paciente
+            .tipoCita(bolsa.getTipoCita())          // Tipo: TELECONSULTA, INTERCONSULTA, RECITA
+            .especialidad(bolsa.getEspecialidad())  // Para INTERCONSULTA incluye motivo: "ESP (MOTIVO)"
             .build();
     }
 

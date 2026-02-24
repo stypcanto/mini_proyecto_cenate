@@ -677,7 +677,7 @@ export default function TrazabilidadRecitasInterconsultas() {
                 <tr className="bg-[#0a5ba9] text-white">
                   {[
                     'F. Generación', 'Tipo', 'Paciente', 'DNI',
-                    'Especialidad', 'Origen bolsa', 'Fecha preferida',
+                    'Especialidad', 'Motivo interconsulta', 'Origen bolsa', 'Fecha preferida',
                     'Creado por', 'Estado'
                   ].map(h => (
                     <th key={h} className="px-3 py-2.5 text-left text-xs font-semibold whitespace-nowrap">
@@ -714,9 +714,32 @@ export default function TrazabilidadRecitasInterconsultas() {
                       {f.pacienteDni || '—'}
                     </td>
 
-                    {/* Especialidad */}
+                    {/* Especialidad — para INTERCONSULTA muestra solo la especialidad sin el motivo */}
                     <td className="px-3 py-2.5 text-xs text-gray-700 whitespace-nowrap">
-                      {f.especialidadDestino || '—'}
+                      {(() => {
+                        if (!f.especialidadDestino) return '—';
+                        if (f.tipoCita === 'INTERCONSULTA') {
+                          const match = f.especialidadDestino.match(/^(.+?)\s*\((.+?)\)\s*$/);
+                          return match ? match[1] : f.especialidadDestino;
+                        }
+                        return f.especialidadDestino;
+                      })()}
+                    </td>
+
+                    {/* Motivo interconsulta — solo para INTERCONSULTA con motivo entre paréntesis */}
+                    <td className="px-3 py-2.5 text-xs whitespace-nowrap">
+                      {(() => {
+                        if (f.tipoCita !== 'INTERCONSULTA' || !f.especialidadDestino) {
+                          return <span className="text-gray-400">—</span>;
+                        }
+                        const match = f.especialidadDestino.match(/^.+?\((.+?)\)\s*$/);
+                        if (!match) return <span className="text-gray-400">—</span>;
+                        return (
+                          <span className="inline-flex px-2 py-0.5 rounded-full text-[11px] font-medium bg-blue-100 text-blue-700 border border-blue-200">
+                            {match[1].trim()}
+                          </span>
+                        );
+                      })()}
                     </td>
 
                     {/* Origen bolsa */}

@@ -234,7 +234,8 @@ public class AtenderPacienteService {
                 .fechaAsignacion(OffsetDateTime.now())
                 .fechaPreferidaNoAtendida(fechaPreferida.toLocalDate()) // ✅ Fecha preferida calculada (hoy + días)
                 .idsolicitudgeneracion(solicitudOriginal.getIdSolicitud()) // ✅ FK trazabilidad
-                .idPersonal(obtenerIdMedicoActual()) // ✅ Creador directo (usuario autenticado)
+                // id_personal = NULL: el coordinador asignará al profesional desde /bolsas/solicitudespendientes
+                // La trazabilidad del creador se obtiene via id_atencion_clinica.id_personal_creador
                 .idAtencionClinica(idAtencionClinica) // ✅ v6.0.0: FK directa → atencion_clinica
                 .activo(true)
                 .build();
@@ -294,7 +295,8 @@ public class AtenderPacienteService {
                 // ✅ v1.103.9: Sin gestora — va a bolsas/solicitudes para ser asignada, NO a citas-agendadas
                 .fechaAsignacion(OffsetDateTime.now())
                 .idsolicitudgeneracion(solicitudOriginal.getIdSolicitud()) // ✅ FK trazabilidad
-                .idPersonal(obtenerIdMedicoActual()) // ✅ Creador directo (usuario autenticado)
+                // id_personal = NULL: el coordinador asignará al profesional desde /bolsas/solicitudespendientes
+                // La trazabilidad del creador se obtiene via id_atencion_clinica.id_personal_creador
                 .idAtencionClinica(idAtencionClinica) // ✅ v6.0.0: FK directa → atencion_clinica
                 .activo(true)
                 .build();

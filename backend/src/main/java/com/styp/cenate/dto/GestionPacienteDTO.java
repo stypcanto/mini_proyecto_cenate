@@ -123,6 +123,13 @@ public class GestionPacienteDTO {
     @JsonProperty("esCenacron")
     private Boolean esCenacron;
 
+    // 📋 TIPO DE CITA y ESPECIALIDAD (desde dim_solicitud_bolsa)
+    @JsonProperty("tipoCita")
+    private String tipoCita;  // TELECONSULTA, INTERCONSULTA, RECITA
+
+    @JsonProperty("especialidad")
+    private String especialidad;  // Para INTERCONSULTA: "MEDICINA GENERAL (SIN LABORATORIOS)"
+
     /**
      * Calcula la edad a partir de la fecha de nacimiento
      */
