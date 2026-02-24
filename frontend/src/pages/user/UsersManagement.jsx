@@ -32,6 +32,15 @@ import { areaService } from '../../services/areaService';
 import { regimenService } from '../../services/regimenService';
 
 // ============================================================
+// 🔧 FUNCIÓN: Convierte texto a Title Case (primera letra mayúscula, resto minúscula)
+// Ej: "ERICK TEST TEST" → "Erick Test Test"
+// ============================================================
+const toTitleCase = (str) => {
+  if (!str) return str;
+  return str.toLowerCase().replace(/\b\w/g, (c) => c.toUpperCase());
+};
+
+// ============================================================
 // 🔧 FUNCIONES AUXILIARES PARA TIPO DE PERSONAL
 // ============================================================
 const getTipoPersonal = (user) => {
@@ -909,16 +918,22 @@ const UsersManagement = () => {
       let total = 0;
       let totalPagesCount = 0;
 
+      // Normaliza el nombre_completo a Title Case en todos los usuarios
+      const normalize = (arr) => arr.map(u => ({
+        ...u,
+        nombre_completo: toTitleCase(u.nombre_completo)
+      }));
+
       if (Array.isArray(usersResponse)) {
         // Si la respuesta es un array directo (formato antiguo)
         console.warn('⚠️ La respuesta es un array, no un objeto paginado. Usando formato antiguo.');
-        usersData = usersResponse.slice(0, pageSize);
+        usersData = normalize(usersResponse.slice(0, pageSize));
         total = usersResponse.length;
         totalPagesCount = Math.ceil(total / pageSize);
       } else if (usersResponse.content && Array.isArray(usersResponse.content)) {
         // Si la respuesta es un objeto paginado (formato nuevo)
         // Servidor ya filtra y pagina — usar directamente el contenido
-        usersData = usersResponse.content;
+        usersData = normalize(usersResponse.content);
         total = usersResponse.totalElements || usersResponse.total || 0;
         totalPagesCount = usersResponse.totalPages || Math.ceil(total / pageSize);
       } else {
