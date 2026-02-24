@@ -20,6 +20,14 @@ export default function ModalAperturarPeriodo({ onClose, onCrear, aniosDisponibl
   const [fechaFin, setFechaFin] = useState(lastDayOfMonth(anio, mes));
   const [idArea, setIdArea] = useState("");
 
+  // 🆕 Calcular fecha mínima (01/01/2026) y máxima (hoy + 6 meses)
+  const minFechaInicio = "2026-01-01";
+  const maxFechaInicio = useMemo(() => {
+    const fecha = new Date(now);
+    fecha.setMonth(fecha.getMonth() + 6);
+    return fecha.toISOString().split("T")[0]; // YYYY-MM-DD
+  }, [now]);
+
   useEffect(() => {
     setFechaInicio(firstDayOfMonth(anio, mes));
     setFechaFin(lastDayOfMonth(anio, mes));
@@ -94,6 +102,12 @@ export default function ModalAperturarPeriodo({ onClose, onCrear, aniosDisponibl
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!fechaInicio || !fechaFin || !idArea) return;
+
+    // 🆕 Validar rango de fecha inicio
+    if (fechaInicio < minFechaInicio) {
+      window.alert("La fecha de inicio no puede ser anterior a enero 2026 (01/01/2026).");
+      return;
+    }
 
     if (new Date(fechaInicio) > new Date(fechaFin)) {
       window.alert("La fecha de inicio no puede ser mayor a la fecha fin.");
@@ -195,6 +209,7 @@ export default function ModalAperturarPeriodo({ onClose, onCrear, aniosDisponibl
                 required
                 value={fechaInicio}
                 onChange={(e) => setFechaInicio(e.target.value)}
+                min={minFechaInicio}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
               />
             </div>
@@ -206,6 +221,7 @@ export default function ModalAperturarPeriodo({ onClose, onCrear, aniosDisponibl
                 required
                 value={fechaFin}
                 onChange={(e) => setFechaFin(e.target.value)}
+                min={minFechaInicio}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
               />
             </div>

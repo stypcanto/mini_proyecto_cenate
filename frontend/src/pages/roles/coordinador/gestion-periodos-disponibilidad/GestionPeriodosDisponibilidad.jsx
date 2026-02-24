@@ -484,11 +484,10 @@ export default function GestionPeriodosDisponibilidad() {
         </div>
 
         {activeTab === "periodos" && (
-          <div className="grid grid-cols-4 gap-2 mb-4">
+          <div className="grid grid-cols-3 gap-2 mb-4">
             <CardStat title="Períodos" value={stats.total} subtitle="Total registrados" icon={<Calendar className="w-4 h-4" />} tone="blue" />
             <CardStat title="Abiertos" value={stats.abiertos} subtitle="En captura" icon={<Calendar className="w-4 h-4" />} tone="green" />
             <CardStat title="Cerrados" value={stats.cerrados} subtitle="Históricos" icon={<Calendar className="w-4 h-4" />} tone="orange" />
-            <CardStat title="En Validación" value={stats.enValidacion} subtitle="Por revisar" icon={<Calendar className="w-4 h-4" />} tone="purple" />
           </div>
         )}
 

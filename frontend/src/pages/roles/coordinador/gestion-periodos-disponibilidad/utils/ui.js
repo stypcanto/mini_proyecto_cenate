@@ -81,9 +81,11 @@ export const yesNoPill = (yes) => (
 
 export const getEstadoBadgeDefault = (estado) => {
   const badges = {
+    ABIERTO: "bg-green-100 text-green-800 border-green-300",
+    CERRADO: "bg-red-100 text-red-800 border-red-300",
+    REABIERTO: "bg-blue-100 text-blue-800 border-blue-300",
     BORRADOR: "bg-yellow-100 text-yellow-800 border-yellow-300",
     ACTIVO: "bg-green-100 text-green-800 border-green-300",
-    CERRADO: "bg-red-100 text-red-800 border-red-300",
     ENVIADO: "bg-blue-100 text-blue-800 border-blue-300",
     REVISADO: "bg-purple-100 text-purple-800 border-purple-300",
     APROBADA: "bg-emerald-100 text-emerald-800 border-emerald-300",
