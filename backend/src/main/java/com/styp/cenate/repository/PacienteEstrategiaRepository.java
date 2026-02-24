@@ -196,4 +196,21 @@ public interface PacienteEstrategiaRepository extends JpaRepository<PacienteEstr
             @Param("pkAseguradoList") List<String> pkAseguradoList,
             @Param("sigla") String sigla
     );
+
+    /**
+     * Obtiene la asignación ACTIVA de un paciente buscando por SIGLA de la estrategia.
+     * Usado en el flujo de Baja CENACRON donde no se conoce el id_estrategia numérico.
+     *
+     * @param pkAsegurado DNI/pk_asegurado del paciente
+     * @param sigla       Sigla de la estrategia (ej: "CENACRON")
+     * @return Optional con la asignación activa si existe
+     */
+    @Query("SELECT pe FROM PacienteEstrategia pe " +
+           "WHERE pe.pkAsegurado = :pkAsegurado " +
+           "AND pe.estrategia.sigla = :sigla " +
+           "AND pe.estado = 'ACTIVO'")
+    Optional<PacienteEstrategia> findAsignacionActivaPorSigla(
+            @Param("pkAsegurado") String pkAsegurado,
+            @Param("sigla") String sigla
+    );
 }

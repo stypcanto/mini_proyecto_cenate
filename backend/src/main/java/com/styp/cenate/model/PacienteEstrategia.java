@@ -59,6 +59,15 @@ public class PacienteEstrategia {
     private Usuario usuarioAsigno;
 
     /**
+     * Usuario que solicitó la baja/retiro del paciente de la estrategia.
+     * Registrado en el momento de la desvinculación para auditoría.
+     * NULL en registros históricos anteriores a v6.2.0.
+     */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "id_usuario_desvinculo")
+    private Usuario usuarioDesvinculo;
+
+    /**
      * Fecha y hora de inicio de la asignación
      */
     @Column(name = "fecha_asignacion", nullable = false)

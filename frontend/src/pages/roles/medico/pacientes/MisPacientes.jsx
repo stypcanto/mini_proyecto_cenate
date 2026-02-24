@@ -32,7 +32,8 @@ import {
   Ticket,
   Copy,
   Edit2,
-  AlertTriangle
+  AlertTriangle,
+  UserMinus
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import gestionPacientesService from '../../../../services/gestionPacientesService';
@@ -499,6 +500,13 @@ export default function MisPacientes() {
 
   const [especialidades, setEspecialidades] = useState([]);
   const [notasAccion, setNotasAccion] = useState('');
+
+  // CENACRON: Modal Dar de Baja
+  const [showBajaCenacronModal, setShowBajaCenacronModal] = useState(false);
+  const [pacienteBajaCenacron, setPacienteBajaCenacron] = useState(null);
+  const [bajaTipo, setBajaTipo] = useState('PROGRAMA_COMPLETO');
+  const [bajaMotivo, setBajaMotivo] = useState('');
+  const [procesandoBaja, setProcesandoBaja] = useState(false);
 
   // ✅ v1.74.0: Estados para Ficha de Enfermería
   const [otraPatologia, setOtraPatologia] = useState([]);           // multi: NEUROPATIA, RETINOPATIA, PIE DIABETICA, ERC, NINGUNO
@@ -1526,6 +1534,43 @@ export default function MisPacientes() {
       'Rechazado': 'bg-purple-100 text-purple-700 border-purple-300' // ✅ v1.92.0: Morado para rechazos
     };
     return colores[condicion] || 'bg-gray-100 text-gray-700 border-gray-200';
+  };
+
+  const abrirBajaCenacron = (paciente) => {
+    setPacienteBajaCenacron(paciente);
+    setBajaTipo('PROGRAMA_COMPLETO');
+    setBajaMotivo('');
+    setShowBajaCenacronModal(true);
+  };
+
+  const confirmarBajaCenacron = async () => {
+    if (!bajaMotivo.trim() || bajaMotivo.trim().length < 5) {
+      toast.error('Debe ingresar un motivo de baja (mínimo 5 caracteres)');
+      return;
+    }
+    if (!pacienteBajaCenacron?.pkAsegurado) {
+      toast.error('No se pudo identificar al paciente');
+      return;
+    }
+    setProcesandoBaja(true);
+    try {
+      await gestionPacientesService.bajaCenacron(
+        pacienteBajaCenacron.pkAsegurado,
+        bajaTipo,
+        bajaMotivo.trim()
+      );
+      toast.success('Paciente dado de baja del programa CENACRON');
+      setShowBajaCenacronModal(false);
+      setPacienteBajaCenacron(null);
+      setBajaMotivo('');
+      // Refrescar lista de pacientes
+      cargarPacientes();
+    } catch (err) {
+      const msg = err?.response?.data?.error || err?.message || 'Error al dar de baja';
+      toast.error(msg);
+    } finally {
+      setProcesandoBaja(false);
+    }
   };
 
   const abrirAccion = (paciente) => {
@@ -2622,9 +2667,18 @@ export default function MisPacientes() {
                           <div className="flex flex-col gap-0 min-w-0 leading-tight">
                             <div className="font-semibold text-gray-900 text-[13px]">{formatearNombrePaciente(paciente.apellidosNombres)}</div>
                             {paciente.esCenacron && (
-                              <span className="inline-flex items-center gap-1 mt-0.5 px-2 py-0.5 rounded-full text-[10px] font-bold bg-purple-100 text-purple-700 border border-purple-300 w-fit">
-                                ♾ CENACRON
-                              </span>
+                              <div className="inline-flex items-center gap-1 mt-0.5 w-fit">
+                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-purple-100 text-purple-700 border border-purple-300">
+                                  ♾ CENACRON
+                                </span>
+                                <button
+                                  onClick={(e) => { e.stopPropagation(); abrirBajaCenacron(paciente); }}
+                                  title="Dar de baja del programa CENACRON"
+                                  className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-red-100 text-red-600 hover:bg-red-200 transition-colors"
+                                >
+                                  <UserMinus className="w-2.5 h-2.5" strokeWidth={2.5} />
+                                </button>
+                              </div>
                             )}
                             {/* Badge tipo de cita: solo si NO es TELECONSULTA (que es el tipo estándar) */}
                             {paciente.tipoCita && paciente.tipoCita !== 'TELECONSULTA' && (() => {
@@ -5377,6 +5431,138 @@ export default function MisPacientes() {
           </div>
         );
       })()}
+
+      {/* ===== MODAL DAR DE BAJA CENACRON ===== */}
+      {showBajaCenacronModal && pacienteBajaCenacron && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md">
+
+            {/* Header */}
+            <div className="flex items-center justify-between px-6 pt-5 pb-3">
+              <div className="flex items-center gap-2">
+                <UserMinus className="w-5 h-5 text-red-600" strokeWidth={2} />
+                <h2 className="text-lg font-bold text-red-600">Dar de Baja del Programa</h2>
+              </div>
+              <button
+                onClick={() => setShowBajaCenacronModal(false)}
+                className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors text-gray-400"
+              >
+                <X className="w-4 h-4" strokeWidth={2.5} />
+              </button>
+            </div>
+            <p className="px-6 pb-4 text-sm text-gray-500">
+              Retire al paciente <span className="font-semibold text-gray-700">{formatearNombrePaciente(pacienteBajaCenacron.apellidosNombres)}</span> del programa de pacientes crónicos.
+            </p>
+
+            {/* Card del paciente */}
+            <div className="mx-6 mb-5 p-4 rounded-xl bg-blue-50 border border-blue-100 flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center flex-shrink-0">
+                <Users className="w-5 h-5 text-white" strokeWidth={2} />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="font-bold text-gray-900 text-sm truncate">{formatearNombrePaciente(pacienteBajaCenacron.apellidosNombres)}</p>
+                <p className="text-xs text-gray-500">DNI: {pacienteBajaCenacron.numDoc}</p>
+              </div>
+              <div className="flex gap-3 text-xs text-gray-600 flex-shrink-0">
+                <span className="px-2 py-1 bg-white rounded-lg border border-gray-200">
+                  Programa: <span className="font-semibold text-purple-700">CENACRON</span>
+                </span>
+              </div>
+            </div>
+
+            <div className="px-6 space-y-5">
+              {/* Tipo de Baja */}
+              <div>
+                <p className="text-sm font-semibold text-gray-700 mb-3">Tipo de Baja <span className="text-red-500">*</span></p>
+                <div className="space-y-2">
+                  {[
+                    {
+                      value: 'PROGRAMA_COMPLETO',
+                      label: 'Salir del Programa Completo de Crónicos',
+                      desc: 'El paciente será removido completamente del programa CENACRON y de todas las especialidades asociadas. No recibirá más seguimiento médico dentro del programa.',
+                    },
+                    {
+                      value: 'SOLO_ESPECIALIDAD',
+                      label: 'Salir Solo de la Especialidad',
+                      desc: 'El paciente será removido únicamente de la especialidad actual, pero continuará en el programa CENACRON con otras condiciones crónicas activas.',
+                    },
+                  ].map((opt) => (
+                    <label
+                      key={opt.value}
+                      className={`flex items-start gap-3 p-3 rounded-xl border-2 cursor-pointer transition-colors ${
+                        bajaTipo === opt.value
+                          ? 'border-blue-500 bg-blue-50'
+                          : 'border-gray-200 hover:border-gray-300'
+                      }`}
+                    >
+                      <input
+                        type="radio"
+                        name="bajaTipo"
+                        value={opt.value}
+                        checked={bajaTipo === opt.value}
+                        onChange={() => setBajaTipo(opt.value)}
+                        className="mt-0.5 accent-blue-600 flex-shrink-0"
+                      />
+                      <div>
+                        <p className="text-sm font-semibold text-gray-800">{opt.label}</p>
+                        <p className="text-xs text-gray-500 mt-0.5">{opt.desc}</p>
+                      </div>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              {/* Motivo */}
+              <div>
+                <p className="text-sm font-semibold text-gray-700 mb-1.5">Motivo de Baja <span className="text-red-500">*</span></p>
+                <textarea
+                  rows={3}
+                  value={bajaMotivo}
+                  onChange={(e) => setBajaMotivo(e.target.value)}
+                  placeholder="Describa el motivo por el cual se da de baja al paciente del programa..."
+                  className="w-full px-3 py-2.5 text-sm border border-gray-300 rounded-xl resize-none focus:outline-none focus:ring-2 focus:ring-red-400 focus:border-transparent"
+                  maxLength={500}
+                />
+                <p className="text-[11px] text-gray-400 mt-1">Especifique claramente la razón de la baja para el registro médico.</p>
+              </div>
+
+              {/* Advertencia */}
+              <div className="flex items-start gap-2 p-3 bg-amber-50 border-l-4 border-amber-400 rounded-r-xl">
+                <AlertTriangle className="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5" strokeWidth={2} />
+                <div>
+                  <p className="text-sm font-semibold text-amber-800">Advertencia</p>
+                  <p className="text-xs text-amber-700 mt-0.5">
+                    Esta acción eliminará al paciente de la lista de pacientes crónicos según la opción seleccionada. Esta acción no se puede deshacer.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="flex gap-3 px-6 py-5 mt-2">
+              <button
+                onClick={() => setShowBajaCenacronModal(false)}
+                disabled={procesandoBaja}
+                className="flex-1 py-2.5 border border-gray-300 rounded-xl text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={confirmarBajaCenacron}
+                disabled={procesandoBaja || bajaMotivo.trim().length < 5}
+                className="flex-1 py-2.5 bg-red-600 hover:bg-red-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded-xl text-sm font-semibold transition-colors flex items-center justify-center gap-2"
+              >
+                {procesandoBaja ? (
+                  <Loader className="w-4 h-4 animate-spin" />
+                ) : (
+                  <UserMinus className="w-4 h-4" strokeWidth={2} />
+                )}
+                Confirmar Baja
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   );

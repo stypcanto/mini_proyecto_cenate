@@ -82,4 +82,16 @@ public class PacienteEstrategiaResponse {
      * ID del usuario que asignó
      */
     private Long idUsuarioAsigno;
+
+    /**
+     * Nombre completo del usuario que solicitó la baja/retiro.
+     * Null si la desvinculación fue por el flujo antiguo (sin auditoría).
+     */
+    private String usuarioDesvinculoNombre;
+
+    /**
+     * ID del usuario que solicitó la baja/retiro.
+     * Null si la desvinculación fue por el flujo antiguo (sin auditoría).
+     */
+    private Long idUsuarioDesvinculo;
 }

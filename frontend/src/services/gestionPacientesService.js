@@ -257,6 +257,19 @@ const gestionPacientesService = {
     /**
      * Generar enlace de WhatsApp para enviar mensaje
      */
+    /**
+     * ⭐ CENACRON: Dar de baja a un paciente del programa CENACRON
+     * PUT /api/paciente-estrategia/baja-cenacron/{pkAsegurado}
+     * Registra el usuario que solicitó el retiro (auditoría)
+     */
+    bajaCenacron: async (pkAsegurado, tipoBaja, motivoBaja) => {
+        return await apiClient.put(
+            `/paciente-estrategia/baja-cenacron/${pkAsegurado}`,
+            { tipoBaja, motivoBaja },
+            true
+        );
+    },
+
     generarEnlaceWhatsApp: (telefono, mensaje = '') => {
         // Limpiar el teléfono (quitar espacios, guiones, etc.)
         const telefonoLimpio = telefono.replace(/\D/g, '');

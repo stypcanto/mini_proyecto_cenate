@@ -276,6 +276,12 @@ public class PacienteEstrategiaServiceImpl implements PacienteEstrategiaService 
                 .idUsuarioAsigno(asignacion.getUsuarioAsigno() != null
                         ? asignacion.getUsuarioAsigno().getIdUser()
                         : null)
+                .usuarioDesvinculoNombre(asignacion.getUsuarioDesvinculo() != null
+                        ? asignacion.getUsuarioDesvinculo().getNombreCompleto()
+                        : null)
+                .idUsuarioDesvinculo(asignacion.getUsuarioDesvinculo() != null
+                        ? asignacion.getUsuarioDesvinculo().getIdUser()
+                        : null)
                 .build();
     }
 }

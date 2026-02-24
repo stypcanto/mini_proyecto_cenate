@@ -1,8 +1,12 @@
 package com.styp.cenate.api;
 
 import com.styp.cenate.dto.AsignarEstrategiaRequest;
+import com.styp.cenate.dto.BajaCenacronRequest;
 import com.styp.cenate.dto.DesasignarEstrategiaRequest;
 import com.styp.cenate.dto.PacienteEstrategiaResponse;
+import com.styp.cenate.model.PacienteEstrategia;
+import com.styp.cenate.model.Usuario;
+import com.styp.cenate.repository.PacienteEstrategiaRepository;
 import com.styp.cenate.service.PacienteEstrategiaService;
 import com.styp.cenate.repository.UsuarioRepository;
 import io.swagger.v3.oas.annotations.Operation;
@@ -20,6 +24,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -61,6 +66,7 @@ public class PacienteEstrategiaController {
 
     private final PacienteEstrategiaService pacienteEstrategiaService;
     private final UsuarioRepository usuarioRepository;
+    private final PacienteEstrategiaRepository pacienteEstrategiaRepository;
 
     /**
      * Asigna una estrategia a un paciente
@@ -112,6 +118,121 @@ public class PacienteEstrategiaController {
             Map<String, Object> error = new HashMap<>();
             error.put("success", false);
             error.put("error", "Error interno del servidor");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
+        }
+    }
+
+    /**
+     * Da de baja a un paciente del programa CENACRON con auditoría del solicitante.
+     * PUT /api/paciente-estrategia/baja-cenacron/{pkAsegurado}
+     *
+     * Diferencias respecto a /{id}/desasignar:
+     * - Recibe el pkAsegurado (DNI/CIP) en lugar del id_asignacion numérico.
+     * - Busca internamente la asignación ACTIVA por sigla 'CENACRON'.
+     * - Registra el usuario autenticado como responsable del retiro (auditoría).
+     * - Distingue semánticamente entre baja total y salida de especialidad.
+     *
+     * Tipos de baja:
+     *   PROGRAMA_COMPLETO  → estado = INACTIVO  (el paciente abandona el programa)
+     *   SOLO_ESPECIALIDAD  → estado = COMPLETADO (puede reingresarse a otra especialidad)
+     *
+     * @param pkAsegurado DNI o CIP del paciente asegurado
+     * @param request     Tipo de baja y motivo clínico/administrativo
+     * @param userDetails Principal de seguridad del usuario autenticado (para auditoría)
+     */
+    @PutMapping("/baja-cenacron/{pkAsegurado}")
+    @PreAuthorize("hasAnyRole('MEDICO', 'ENFERMERIA', 'COORDINADOR', 'ADMIN', 'SUPERADMIN')")
+    @Operation(
+        summary = "Dar de baja del programa CENACRON",
+        description = "Desvincula a un paciente del programa CENACRON con registro de auditoría. " +
+                      "Busca la asignación activa por sigla 'CENACRON'. " +
+                      "PROGRAMA_COMPLETO → INACTIVO (baja definitiva). " +
+                      "SOLO_ESPECIALIDAD → COMPLETADO (puede reingresarse)."
+    )
+    public ResponseEntity<Map<String, Object>> bajaCenacron(
+            @PathVariable String pkAsegurado,
+            @Valid @RequestBody BajaCenacronRequest request,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        try {
+            log.info("Procesando baja CENACRON. Paciente: {}, TipoBaja: {}, UsuarioSolicita: {}",
+                    pkAsegurado, request.getTipoBaja(),
+                    userDetails != null ? userDetails.getUsername() : "desconocido");
+
+            // 1. Buscar la asignación CENACRON activa del paciente (por sigla)
+            PacienteEstrategia asignacion = pacienteEstrategiaRepository
+                    .findAsignacionActivaPorSigla(pkAsegurado, "CENACRON")
+                    .orElseThrow(() -> new IllegalArgumentException(
+                            "El paciente no tiene una asignación CENACRON activa"
+                    ));
+
+            // 2. Resolver el usuario autenticado para registrar la auditoría
+            Usuario usuarioDesvinculo = null;
+            if (userDetails != null) {
+                usuarioDesvinculo = usuarioRepository.findByNameUser(userDetails.getUsername())
+                        .orElse(null);
+                if (usuarioDesvinculo == null) {
+                    log.warn("Usuario autenticado '{}' no encontrado en dim_usuarios. " +
+                             "La baja se registrará sin auditor.", userDetails.getUsername());
+                }
+            }
+
+            // 3. Determinar el nuevo estado según el tipo de baja
+            //    PROGRAMA_COMPLETO → INACTIVO  (sale del programa, baja definitiva)
+            //    SOLO_ESPECIALIDAD → COMPLETADO (sale de especialidad, puede reingresarse)
+            String nuevoEstado = "PROGRAMA_COMPLETO".equals(request.getTipoBaja())
+                    ? "INACTIVO"
+                    : "COMPLETADO";
+
+            // 4. Aplicar la desvinculación con auditoría completa
+            asignacion.setEstado(nuevoEstado);
+            asignacion.setFechaDesvinculacion(LocalDateTime.now());
+            asignacion.setObservacionDesvinculacion(request.getMotivoBaja());
+            asignacion.setUsuarioDesvinculo(usuarioDesvinculo);
+
+            asignacion = pacienteEstrategiaRepository.save(asignacion);
+
+            log.info("Baja CENACRON completada. Paciente: {}, NuevoEstado: {}, Auditor: {}",
+                    pkAsegurado, nuevoEstado,
+                    usuarioDesvinculo != null ? usuarioDesvinculo.getNombreCompleto() : "sin_auditor");
+
+            // 5. Construir respuesta con datos de auditoría
+            Map<String, Object> data = new HashMap<>();
+            data.put("idAsignacion", asignacion.getIdAsignacion());
+            data.put("pkAsegurado", asignacion.getPkAsegurado());
+            data.put("estrategia", asignacion.getEstrategia().getSigla());
+            data.put("estadoAnterior", "ACTIVO");
+            data.put("estadoNuevo", asignacion.getEstado());
+            data.put("tipoBaja", request.getTipoBaja());
+            data.put("motivoBaja", asignacion.getObservacionDesvinculacion());
+            data.put("fechaDesvinculacion", asignacion.getFechaDesvinculacion());
+            data.put("usuarioDesvinculoNombre",
+                    usuarioDesvinculo != null ? usuarioDesvinculo.getNombreCompleto() : null);
+            data.put("idUsuarioDesvinculo",
+                    usuarioDesvinculo != null ? usuarioDesvinculo.getIdUser() : null);
+
+            String mensajeConfirmacion = "PROGRAMA_COMPLETO".equals(request.getTipoBaja())
+                    ? "Paciente dado de baja del programa CENACRON exitosamente"
+                    : "Paciente desvinculado de la especialidad CENACRON. Puede ser reingresado.";
+
+            Map<String, Object> resultado = new HashMap<>();
+            resultado.put("success", true);
+            resultado.put("data", data);
+            resultado.put("message", mensajeConfirmacion);
+
+            return ResponseEntity.ok(resultado);
+
+        } catch (IllegalArgumentException e) {
+            log.warn("Baja CENACRON rechazada. Paciente: {}, Motivo: {}", pkAsegurado, e.getMessage());
+            Map<String, Object> error = new HashMap<>();
+            error.put("success", false);
+            error.put("error", e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
+
+        } catch (Exception e) {
+            log.error("Error inesperado al procesar baja CENACRON. Paciente: {}", pkAsegurado, e);
+            Map<String, Object> error = new HashMap<>();
+            error.put("success", false);
+            error.put("error", "Error interno del servidor al procesar la baja CENACRON");
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
         }
     }
