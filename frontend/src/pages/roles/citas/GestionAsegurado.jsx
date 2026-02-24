@@ -134,6 +134,10 @@ export default function GestionAsegurado() {
   const [medicoSeleccionado, setMedicoSeleccionado] = useState(""); // v1.46.7: Médico en modal
   const [fechaHoraCitaSeleccionada, setFechaHoraCitaSeleccionada] = useState(""); // v1.46.7: Fecha/Hora en modal
   const [medicosDisponibles, setMedicosDisponibles] = useState([]); // v1.46.7: Médicos por especialidad
+  const [busquedaProfesional, setBusquedaProfesional] = useState(""); // autocomplete profesional
+  const [mostrarDropdownProfes, setMostrarDropdownProfes] = useState(false);
+  const [busquedaEspecialidad, setBusquedaEspecialidad] = useState(""); // autocomplete especialidad
+  const [mostrarDropdownEsp, setMostrarDropdownEsp] = useState(false);
 
   const formatearNombreEspecialista = (medico) => {
     const apellidoPaterno = (medico?.apellidoPaterno || medico?.apPaterno || "").trim();
@@ -1433,6 +1437,8 @@ CENATE de Essalud`;
       setMedicosDisponibles([]);
       setMedicoSeleccionado("");
     }
+    setBusquedaProfesional("");
+    setMostrarDropdownProfes(false);
   }, [especialidadSeleccionada]);
 
   // ============================================================================
@@ -1493,6 +1499,10 @@ CENATE de Essalud`;
       setEspecialidadSeleccionada(""); // ✅ v1.46.5: Resetear especialidad
       setMedicoSeleccionado(""); // ✅ v1.46.7: Resetear médico
       setFechaHoraCitaSeleccionada(""); // ✅ v1.46.7: Resetear fecha/hora
+      setBusquedaProfesional("");
+      setMostrarDropdownProfes(false);
+      setBusquedaEspecialidad("");
+      setMostrarDropdownEsp(false);
       await fetchPacientesAsignados();
     } catch (error) {
       console.error("Error importando paciente:", error);
@@ -3296,61 +3306,164 @@ CENATE de Essalud`;
                               <label className="block text-sm font-semibold text-gray-800 mb-2">
                                 📋 Especialidad / Servicio <span className="text-red-600 text-lg">*</span>
                               </label>
-                              <select
-                                value={especialidadSeleccionada}
-                                onChange={(e) => setEspecialidadSeleccionada(e.target.value)}
-                                className={`w-full px-3 py-2.5 border-2 rounded-lg focus:ring-2 focus:ring-green-600 focus:border-green-600 text-sm font-medium transition-all ${
-                                  especialidadSeleccionada
-                                    ? "bg-white border-green-500 text-green-900"
-                                    : "bg-green-50 border-green-300 text-gray-500"
-                                }`}
-                              >
-                                <option value="" disabled className="text-gray-400">
-                                  🔴 Seleccionar especialidad (obligatorio)
-                                </option>
-                                <optgroup label="── Especialidades Médicas ──">
-                                  {["CARDIOLOGIA","DERMATOLOGIA","HEMATOLOGIA","MEDICINA GENERAL","NEUROLOGIA","OFTALMOLOGIA","PEDIATRIA","PSIQUIATRIA"].map((esp) => (
-                                    <option key={esp} value={esp} className="text-gray-900">✓ {esp}</option>
-                                  ))}
-                                </optgroup>
-                                <optgroup label="── Otros Servicios ──">
-                                  {["ENFERMERIA","NUTRICION","PSICOLOGIA","TERAPIA FISICA","TERAPIA DE LENGUAJE","S/E"].map((esp) => (
-                                    <option key={esp} value={esp} className="text-gray-900">✓ {esp}</option>
-                                  ))}
-                                </optgroup>
-                              </select>
+                              {(() => {
+                                const ESPECIALIDADES_MEDICAS = ["CARDIOLOGIA","DERMATOLOGIA","HEMATOLOGIA","MEDICINA GENERAL","NEUROLOGIA","OFTALMOLOGIA","PEDIATRIA","PSIQUIATRIA"];
+                                const OTROS_SERVICIOS = ["ENFERMERIA","NUTRICION","PSICOLOGIA","TERAPIA FISICA","TERAPIA DE LENGUAJE","S/E"];
+                                const TODAS = [...ESPECIALIDADES_MEDICAS, ...OTROS_SERVICIOS];
+                                const terminoEsp = busquedaEspecialidad.toLowerCase().trim();
+                                const filtradas = terminoEsp ? TODAS.filter(e => e.toLowerCase().includes(terminoEsp)) : TODAS;
+                                return (
+                                  <div className="relative">
+                                    <input
+                                      type="text"
+                                      value={busquedaEspecialidad}
+                                      onChange={(e) => {
+                                        setBusquedaEspecialidad(e.target.value);
+                                        setMostrarDropdownEsp(true);
+                                        if (!e.target.value) {
+                                          setEspecialidadSeleccionada("");
+                                          setMedicoSeleccionado("");
+                                          setBusquedaProfesional("");
+                                        }
+                                      }}
+                                      onFocus={() => setMostrarDropdownEsp(true)}
+                                      onBlur={() => setTimeout(() => setMostrarDropdownEsp(false), 150)}
+                                      placeholder="🔴 Buscar especialidad (obligatorio)..."
+                                      className={`w-full px-3 py-2.5 border-2 rounded-lg focus:ring-2 focus:ring-green-600 focus:border-green-600 text-sm font-medium transition-all ${
+                                        especialidadSeleccionada
+                                          ? "bg-white border-green-500 text-green-900"
+                                          : "bg-green-50 border-green-300 text-gray-500"
+                                      }`}
+                                    />
+                                    {mostrarDropdownEsp && (
+                                      <ul className="absolute z-50 w-full bg-white border border-gray-300 rounded-lg shadow-lg mt-1 max-h-56 overflow-y-auto text-sm">
+                                        {filtradas.length === 0 ? (
+                                          <li className="px-3 py-2 text-gray-400 italic">Sin resultados para "{busquedaEspecialidad}"</li>
+                                        ) : (
+                                          <>
+                                            {filtradas.filter(e => ["CARDIOLOGIA","DERMATOLOGIA","HEMATOLOGIA","MEDICINA GENERAL","NEUROLOGIA","OFTALMOLOGIA","PEDIATRIA","PSIQUIATRIA"].includes(e)).length > 0 && (
+                                              <>
+                                                <li className="px-3 py-1 text-xs font-bold text-gray-400 uppercase tracking-wide bg-gray-50 border-b">── Especialidades Médicas ──</li>
+                                                {filtradas.filter(e => ["CARDIOLOGIA","DERMATOLOGIA","HEMATOLOGIA","MEDICINA GENERAL","NEUROLOGIA","OFTALMOLOGIA","PEDIATRIA","PSIQUIATRIA"].includes(e)).map(esp => (
+                                                  <li
+                                                    key={esp}
+                                                    onMouseDown={() => {
+                                                      setEspecialidadSeleccionada(esp);
+                                                      setBusquedaEspecialidad(esp);
+                                                      setMostrarDropdownEsp(false);
+                                                      setMedicoSeleccionado("");
+                                                      setBusquedaProfesional("");
+                                                    }}
+                                                    className={`px-3 py-2 cursor-pointer hover:bg-green-50 ${especialidadSeleccionada === esp ? "bg-green-100 font-semibold text-green-900" : "text-gray-800"}`}
+                                                  >
+                                                    ✓ {esp}
+                                                  </li>
+                                                ))}
+                                              </>
+                                            )}
+                                            {filtradas.filter(e => ["ENFERMERIA","NUTRICION","PSICOLOGIA","TERAPIA FISICA","TERAPIA DE LENGUAJE","S/E"].includes(e)).length > 0 && (
+                                              <>
+                                                <li className="px-3 py-1 text-xs font-bold text-gray-400 uppercase tracking-wide bg-gray-50 border-b border-t mt-1">── Otros Servicios ──</li>
+                                                {filtradas.filter(e => ["ENFERMERIA","NUTRICION","PSICOLOGIA","TERAPIA FISICA","TERAPIA DE LENGUAJE","S/E"].includes(e)).map(esp => (
+                                                  <li
+                                                    key={esp}
+                                                    onMouseDown={() => {
+                                                      setEspecialidadSeleccionada(esp);
+                                                      setBusquedaEspecialidad(esp);
+                                                      setMostrarDropdownEsp(false);
+                                                      setMedicoSeleccionado("");
+                                                      setBusquedaProfesional("");
+                                                    }}
+                                                    className={`px-3 py-2 cursor-pointer hover:bg-green-50 ${especialidadSeleccionada === esp ? "bg-green-100 font-semibold text-green-900" : "text-gray-800"}`}
+                                                  >
+                                                    ✓ {esp}
+                                                  </li>
+                                                ))}
+                                              </>
+                                            )}
+                                          </>
+                                        )}
+                                      </ul>
+                                    )}
+                                  </div>
+                                );
+                              })()}
                             </div>
 
-                            {/* 👨‍⚕️ Profesional de Salud - v1.46.8: Select dinámico por especialidad */}
+                            {/* 👨‍⚕️ Profesional de Salud - autocomplete */}
                             <div className="col-span-2 bg-blue-50 p-3 rounded-lg border-2 border-blue-300">
                               <label className="block text-sm font-semibold text-gray-800 mb-2">
                                 👨‍⚕️ Profesional de Salud
                               </label>
-                              <select
-                                value={medicoSeleccionado}
-                                onChange={(e) => setMedicoSeleccionado(e.target.value)}
-                                disabled={!especialidadSeleccionada}
-                                className={`w-full px-3 py-2.5 border-2 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-blue-600 text-sm font-medium transition-all ${
-                                  !especialidadSeleccionada
-                                    ? "bg-gray-100 border-gray-300 text-gray-500 cursor-not-allowed"
-                                    : medicoSeleccionado
-                                    ? "bg-white border-blue-500 text-blue-900"
-                                    : "bg-white border-blue-300 text-gray-700"
-                                }`}
-                              >
-                                <option value="">
-                                  {!especialidadSeleccionada
-                                    ? "⚠️ Primero selecciona una especialidad / servicio"
-                                    : medicosDisponibles.length === 0
-                                    ? "Sin profesional asignado (se asignará después)"
-                                    : "Seleccionar profesional (opcional)"}
-                                </option>
-                                {medicosDisponibles.map((medico) => (
-                                  <option key={medico.idPers} value={medico.idPers}>
-                                    {formatearLabelEspecialista(medico)}
-                                  </option>
-                                ))}
-                              </select>
+                              {!especialidadSeleccionada ? (
+                                <div className="w-full px-3 py-2.5 border-2 border-gray-300 rounded-lg bg-gray-100 text-gray-500 text-sm">
+                                  ⚠️ Primero selecciona una especialidad / servicio
+                                </div>
+                              ) : (
+                                <div className="relative">
+                                  <input
+                                    type="text"
+                                    value={busquedaProfesional}
+                                    onChange={(e) => {
+                                      setBusquedaProfesional(e.target.value);
+                                      setMostrarDropdownProfes(true);
+                                      if (!e.target.value) setMedicoSeleccionado("");
+                                    }}
+                                    onFocus={() => setMostrarDropdownProfes(true)}
+                                    onBlur={() => setTimeout(() => setMostrarDropdownProfes(false), 150)}
+                                    placeholder={medicosDisponibles.length === 0 ? "Sin profesionales disponibles" : "Buscar por nombre o DNI..."}
+                                    disabled={medicosDisponibles.length === 0}
+                                    className={`w-full px-3 py-2.5 border-2 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-blue-600 text-sm font-medium transition-all ${
+                                      medicoSeleccionado
+                                        ? "bg-white border-blue-500 text-blue-900"
+                                        : "bg-white border-blue-300 text-gray-700"
+                                    }`}
+                                  />
+                                  {mostrarDropdownProfes && medicosDisponibles.length > 0 && (() => {
+                                    const termino = busquedaProfesional.toLowerCase().trim();
+                                    const filtrados = termino
+                                      ? medicosDisponibles.filter(m =>
+                                          formatearLabelEspecialista(m).toLowerCase().includes(termino)
+                                        )
+                                      : medicosDisponibles;
+                                    return filtrados.length > 0 ? (
+                                      <ul className="absolute z-50 w-full bg-white border border-gray-300 rounded-lg shadow-lg mt-1 max-h-56 overflow-y-auto text-sm">
+                                        <li
+                                          className="px-3 py-2 text-gray-400 italic cursor-pointer hover:bg-gray-50"
+                                          onMouseDown={() => {
+                                            setMedicoSeleccionado("");
+                                            setBusquedaProfesional("");
+                                            setMostrarDropdownProfes(false);
+                                          }}
+                                        >
+                                          Seleccionar profesional (opcional)
+                                        </li>
+                                        {filtrados.map((medico) => (
+                                          <li
+                                            key={medico.idPers}
+                                            onMouseDown={() => {
+                                              setMedicoSeleccionado(String(medico.idPers));
+                                              setBusquedaProfesional(formatearLabelEspecialista(medico));
+                                              setMostrarDropdownProfes(false);
+                                            }}
+                                            className={`px-3 py-2 cursor-pointer hover:bg-blue-50 ${
+                                              String(medicoSeleccionado) === String(medico.idPers)
+                                                ? "bg-blue-100 font-semibold text-blue-900"
+                                                : "text-gray-800"
+                                            }`}
+                                          >
+                                            {formatearLabelEspecialista(medico)}
+                                          </li>
+                                        ))}
+                                      </ul>
+                                    ) : (
+                                      <ul className="absolute z-50 w-full bg-white border border-gray-300 rounded-lg shadow-lg mt-1 text-sm">
+                                        <li className="px-3 py-2 text-gray-400 italic">Sin resultados para "{busquedaProfesional}"</li>
+                                      </ul>
+                                    );
+                                  })()}
+                                </div>
+                              )}
                             </div>
 
                             {/* 📅 Fecha y Hora de Cita - v1.46.7 */}
