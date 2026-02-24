@@ -301,6 +301,13 @@ public interface SolicitudBolsaService {
         String fechaInicio,
         String fechaFin,
         String tipoCita,
+        Long idPersonal,
         org.springframework.data.domain.Pageable pageable
     );
+
+    /** Lista de profesionales que generaron recitas/interconsultas con conteo total. */
+    List<Map<String, Object>> listarEnfermerasTrazabilidad();
+
+    /** Fechas únicas con conteo, para pintar el calendario de filtros. */
+    List<Map<String, Object>> obtenerFechasConRecitas();
 }

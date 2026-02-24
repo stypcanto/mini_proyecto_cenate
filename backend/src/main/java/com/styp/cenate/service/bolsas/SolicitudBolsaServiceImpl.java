@@ -3730,11 +3730,12 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
     @org.springframework.transaction.annotation.Transactional(readOnly = true)
     public org.springframework.data.domain.Page<java.util.Map<String, Object>> obtenerTrazabilidadRecitas(
             String busqueda, String fechaInicio, String fechaFin,
-            String tipoCita, org.springframework.data.domain.Pageable pageable) {
+            String tipoCita, Long idPersonal,
+            org.springframework.data.domain.Pageable pageable) {
 
         org.springframework.data.domain.Page<Object[]> rows =
             solicitudRepository.obtenerTrazabilidadRecitasInterconsultas(
-                busqueda, fechaInicio, fechaFin, tipoCita, pageable);
+                busqueda, fechaInicio, fechaFin, tipoCita, idPersonal, pageable);
 
         return rows.map(row -> {
             java.util.Map<String, Object> m = new java.util.LinkedHashMap<>();
@@ -3758,5 +3759,28 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
             m.put("origenBolsa",         row[17]);
             return m;
         });
+    }
+
+    @Override
+    @org.springframework.transaction.annotation.Transactional(readOnly = true)
+    public java.util.List<java.util.Map<String, Object>> listarEnfermerasTrazabilidad() {
+        return solicitudRepository.listarEnfermerasTrazabilidad().stream().map(row -> {
+            java.util.Map<String, Object> m = new java.util.LinkedHashMap<>();
+            m.put("idPersonal", row[0]);
+            m.put("nombre",     row[1]);
+            m.put("total",      row[2]);
+            return m;
+        }).toList();
+    }
+
+    @Override
+    @org.springframework.transaction.annotation.Transactional(readOnly = true)
+    public java.util.List<java.util.Map<String, Object>> obtenerFechasConRecitas() {
+        return solicitudRepository.fechasConRecitasInterconsultas().stream().map(row -> {
+            java.util.Map<String, Object> m = new java.util.LinkedHashMap<>();
+            m.put("fecha", row[0]);
+            m.put("total", row[1]);
+            return m;
+        }).toList();
     }
 }

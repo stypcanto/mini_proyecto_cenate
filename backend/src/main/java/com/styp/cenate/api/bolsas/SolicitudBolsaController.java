@@ -1620,13 +1620,14 @@ public class SolicitudBolsaController {
             @RequestParam(required = false) String fechaInicio,
             @RequestParam(required = false) String fechaFin,
             @RequestParam(required = false) String tipoCita,
+            @RequestParam(required = false) Long idPersonal,
             @RequestParam(defaultValue = "0")  int page,
             @RequestParam(defaultValue = "25") int size) {
         try {
-            log.info("🔎 GET /api/bolsas/solicitudes/trazabilidad-recitas busqueda={} tipoCita={}", busqueda, tipoCita);
+            log.info("🔎 GET /api/bolsas/solicitudes/trazabilidad-recitas busqueda={} tipoCita={} idPersonal={}", busqueda, tipoCita, idPersonal);
             var pageable = org.springframework.data.domain.PageRequest.of(page, size);
             var resultado = solicitudBolsaService.obtenerTrazabilidadRecitas(
-                busqueda, fechaInicio, fechaFin, tipoCita, pageable);
+                busqueda, fechaInicio, fechaFin, tipoCita, idPersonal, pageable);
             return ResponseEntity.ok(Map.of(
                 "solicitudes",  resultado.getContent(),
                 "total",        resultado.getTotalElements(),
@@ -1635,6 +1636,28 @@ public class SolicitudBolsaController {
             ));
         } catch (Exception e) {
             log.error("❌ Error trazabilidad recitas: ", e);
+            return ResponseEntity.status(500).body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    @GetMapping("/trazabilidad-recitas/enfermeras")
+    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'COORD. ENFERMERIA')")
+    public ResponseEntity<?> listarEnfermerasTrazabilidad() {
+        try {
+            return ResponseEntity.ok(solicitudBolsaService.listarEnfermerasTrazabilidad());
+        } catch (Exception e) {
+            log.error("❌ Error listando enfermeras trazabilidad: ", e);
+            return ResponseEntity.status(500).body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    @GetMapping("/trazabilidad-recitas/fechas")
+    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'COORD. ENFERMERIA')")
+    public ResponseEntity<?> obtenerFechasConRecitas() {
+        try {
+            return ResponseEntity.ok(solicitudBolsaService.obtenerFechasConRecitas());
+        } catch (Exception e) {
+            log.error("❌ Error obteniendo fechas con recitas: ", e);
             return ResponseEntity.status(500).body(Map.of("error", e.getMessage()));
         }
     }

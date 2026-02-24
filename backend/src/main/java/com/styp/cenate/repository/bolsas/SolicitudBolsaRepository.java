@@ -1456,20 +1456,35 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
           AND recita.id_bolsa = 11
           AND (:busqueda    IS NULL OR recita.paciente_dni    ILIKE '%' || :busqueda || '%'
                                    OR recita.paciente_nombre  ILIKE '%' || :busqueda || '%')
-          AND (:fechaInicio IS NULL OR recita.fecha_solicitud >= CAST(:fechaInicio AS date))
-          AND (:fechaFin    IS NULL OR recita.fecha_solicitud <  CAST(:fechaFin    AS date) + 1)
+          AND (:fechaInicio IS NULL OR recita.fecha_preferida_no_atendida >= CAST(:fechaInicio AS date))
+          AND (:fechaFin    IS NULL OR recita.fecha_preferida_no_atendida <= CAST(:fechaFin    AS date))
           AND (:tipoCita    IS NULL OR UPPER(recita.tipo_cita) = UPPER(:tipoCita))
-        ORDER BY recita.fecha_solicitud DESC
+          AND (:idPersonal  IS NULL OR COALESCE(orig_d.id_personal, orig_t.id_personal) = CAST(:idPersonal AS bigint))
+        ORDER BY recita.fecha_preferida_no_atendida DESC NULLS LAST, recita.fecha_solicitud DESC
         """,
         countQuery = """
-        SELECT COUNT(*) FROM dim_solicitud_bolsa recita
+        SELECT COUNT(*)
+        FROM dim_solicitud_bolsa recita
+        LEFT JOIN dim_solicitud_bolsa orig_d ON orig_d.id_solicitud = recita.idsolicitudgeneracion
+        LEFT JOIN LATERAL (
+            SELECT h.id_personal
+            FROM   dim_solicitud_bolsa h
+            WHERE  h.paciente_dni = recita.paciente_dni
+              AND  h.id_personal IS NOT NULL
+              AND  UPPER(h.tipo_cita) NOT IN ('RECITA','INTERCONSULTA')
+              AND  h.fecha_atencion_medica IS NOT NULL
+              AND  ABS(EXTRACT(EPOCH FROM (h.fecha_atencion_medica - recita.fecha_solicitud))) < 120
+            ORDER BY ABS(EXTRACT(EPOCH FROM (h.fecha_atencion_medica - recita.fecha_solicitud)))
+            LIMIT 1
+        ) orig_t ON recita.idsolicitudgeneracion IS NULL
         WHERE UPPER(recita.tipo_cita) IN ('RECITA','INTERCONSULTA')
           AND recita.activo = true AND recita.id_bolsa = 11
           AND (:busqueda    IS NULL OR recita.paciente_dni    ILIKE '%' || :busqueda    || '%'
                                    OR recita.paciente_nombre  ILIKE '%' || :busqueda    || '%')
-          AND (:fechaInicio IS NULL OR recita.fecha_solicitud >= CAST(:fechaInicio AS date))
-          AND (:fechaFin    IS NULL OR recita.fecha_solicitud <  CAST(:fechaFin    AS date) + 1)
+          AND (:fechaInicio IS NULL OR recita.fecha_preferida_no_atendida >= CAST(:fechaInicio AS date))
+          AND (:fechaFin    IS NULL OR recita.fecha_preferida_no_atendida <= CAST(:fechaFin    AS date))
           AND (:tipoCita    IS NULL OR UPPER(recita.tipo_cita) = UPPER(:tipoCita))
+          AND (:idPersonal  IS NULL OR COALESCE(orig_d.id_personal, orig_t.id_personal) = CAST(:idPersonal AS bigint))
         """,
         nativeQuery = true)
     Page<Object[]> obtenerTrazabilidadRecitasInterconsultas(
@@ -1477,8 +1492,56 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
         @org.springframework.data.repository.query.Param("fechaInicio") String fechaInicio,
         @org.springframework.data.repository.query.Param("fechaFin")    String fechaFin,
         @org.springframework.data.repository.query.Param("tipoCita")    String tipoCita,
+        @org.springframework.data.repository.query.Param("idPersonal")  Long idPersonal,
         Pageable pageable
     );
+
+    /**
+     * Lista de enfermeras/profesionales que generaron recitas/interconsultas,
+     * con la cantidad total de casos de cada una.
+     */
+    @Query(value = """
+        SELECT
+            COALESCE(orig_d.id_personal, orig_t.id_personal)                AS id_personal,
+            pc.ape_pater_pers || ' ' || pc.ape_mater_pers || ', ' || pc.nom_pers AS nombre,
+            COUNT(*)                                                         AS total
+        FROM dim_solicitud_bolsa recita
+        LEFT JOIN dim_solicitud_bolsa orig_d ON orig_d.id_solicitud = recita.idsolicitudgeneracion
+        LEFT JOIN LATERAL (
+            SELECT h.id_personal
+            FROM   dim_solicitud_bolsa h
+            WHERE  h.paciente_dni = recita.paciente_dni
+              AND  h.id_personal IS NOT NULL
+              AND  UPPER(h.tipo_cita) NOT IN ('RECITA','INTERCONSULTA')
+              AND  h.fecha_atencion_medica IS NOT NULL
+              AND  ABS(EXTRACT(EPOCH FROM (h.fecha_atencion_medica - recita.fecha_solicitud))) < 120
+            ORDER BY ABS(EXTRACT(EPOCH FROM (h.fecha_atencion_medica - recita.fecha_solicitud)))
+            LIMIT 1
+        ) orig_t ON recita.idsolicitudgeneracion IS NULL
+        LEFT JOIN dim_personal_cnt pc ON pc.id_pers = COALESCE(orig_d.id_personal, orig_t.id_personal)
+        WHERE UPPER(recita.tipo_cita) IN ('RECITA','INTERCONSULTA')
+          AND recita.activo = true
+          AND recita.id_bolsa = 11
+          AND COALESCE(orig_d.id_personal, orig_t.id_personal) IS NOT NULL
+        GROUP BY COALESCE(orig_d.id_personal, orig_t.id_personal),
+                 pc.ape_pater_pers, pc.ape_mater_pers, pc.nom_pers
+        ORDER BY total DESC
+        """, nativeQuery = true)
+    List<Object[]> listarEnfermerasTrazabilidad();
+
+    /** Fechas preferidas únicas con conteo de recitas/interconsultas (para marcar el calendario). */
+    @Query(value = """
+        SELECT recita.fecha_preferida_no_atendida AS fecha,
+               COUNT(*) AS total
+        FROM dim_solicitud_bolsa recita
+        WHERE UPPER(recita.tipo_cita) IN ('RECITA','INTERCONSULTA')
+          AND recita.activo = true
+          AND recita.id_bolsa = 11
+          AND recita.fecha_preferida_no_atendida IS NOT NULL
+        GROUP BY recita.fecha_preferida_no_atendida
+        ORDER BY fecha DESC
+        """, nativeQuery = true)
+    List<Object[]> fechasConRecitasInterconsultas();
 
 }
 

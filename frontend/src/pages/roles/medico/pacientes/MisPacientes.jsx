@@ -395,7 +395,6 @@ export default function MisPacientes() {
     const mes = String(limaTime.getUTCMonth() + 1).padStart(2, '0');
     const día = String(limaTime.getUTCDate()).padStart(2, '0');
     const hoyEnLima = `${año}-${mes}-${día}`;
-    console.log(`🕐 HOY EN LIMA (UTC-5): ${hoyEnLima}, UTC: ${ahora.toISOString().split('T')[0]}`);
     return hoyEnLima;
   };
 
@@ -466,9 +465,11 @@ export default function MisPacientes() {
   const [expandRecita, setExpandRecita] = useState(false);
 
   const [tieneInterconsulta, setTieneInterconsulta] = useState(false);
-  const [interconsultasLista, setInterconsultasLista] = useState([]); // ✅ v1.75.0: múltiples interconsultas
-  const [interconsultaSelector, setInterconsultaSelector] = useState(''); // selector temporal
+  const [interconsultasLista, setInterconsultasLista] = useState([]); // items: string (no-enfermería) | {especialidad, motivo} (enfermería)
+  const [interconsultaSelector, setInterconsultaSelector] = useState(''); // selector temporal especialidad
+  const [interconsultaMotivoSelector, setInterconsultaMotivoSelector] = useState(''); // selector temporal motivo (solo enfermería)
   const [expandInterconsulta, setExpandInterconsulta] = useState(false);
+  const [motivosInterconsulta, setMotivosInterconsulta] = useState([]); // cargado desde BD (solo enfermería)
 
   const [esCronico, setEsCronico] = useState(false);
   const [enfermedadesCronicas, setEnfermedadesCronicas] = useState([]);
@@ -484,6 +485,10 @@ export default function MisPacientes() {
   const [controlesEnfermeria, setControlesEnfermeria] = useState([]);
   const [loadingControles, setLoadingControles] = useState(false);
   const [controlesExpandido, setControlesExpandido] = useState(null);
+  // ✅ v1.79.0: Edición inline de control de enfermería del día
+  const [editandoControl, setEditandoControl] = useState(null); // idAtencion en edición
+  const [editForm, setEditForm] = useState({});
+  const [guardandoControl, setGuardandoControl] = useState(false);
   // ✅ v1.76.0: Buscador por fecha en tab Enfermería
   const [fechaFiltroEnf, setFechaFiltroEnf] = useState(null);      // 'YYYY-MM-DD' o null
   const [showCalEnf, setShowCalEnf] = useState(false);
@@ -590,6 +595,35 @@ export default function MisPacientes() {
       return key === fechaFiltroEnf;
     });
   }, [controlesEnfermeria, fechaFiltroEnf]);
+
+  // ✅ v1.79.0: Helper para verificar si una fecha es hoy (Lima)
+  const esHoy = (fechaIso) => {
+    if (!fechaIso) return false;
+    const hoy = new Date().toLocaleDateString('es-PE', { timeZone: 'America/Lima', year: 'numeric', month: '2-digit', day: '2-digit' });
+    const fecha = new Date(fechaIso).toLocaleDateString('es-PE', { timeZone: 'America/Lima', year: 'numeric', month: '2-digit', day: '2-digit' });
+    return hoy === fecha;
+  };
+
+  // ✅ v1.79.0: Guardar edición de control de enfermería
+  const guardarEdicionControl = async () => {
+    if (!editandoControl) return;
+    setGuardandoControl(true);
+    try {
+      await gestionPacientesService.actualizarControlEnfermeria(editandoControl, editForm);
+      // Actualizar el registro en el estado local sin recargar todo
+      setControlesEnfermeria(prev => prev.map(c =>
+        c.idAtencion === editandoControl ? { ...c, ...editForm } : c
+      ));
+      setEditandoControl(null);
+      setEditForm({});
+      toast.success('✅ Control de enfermería actualizado');
+    } catch (err) {
+      const msg = err?.message || 'Error al guardar cambios';
+      toast.error(msg);
+    } finally {
+      setGuardandoControl(false);
+    }
+  };
 
   // ✅ v1.75.0: Observaciones libres de enfermería
   const [observacionesEnfermeria, setObservacionesEnfermeria] = useState('');
@@ -701,6 +735,16 @@ export default function MisPacientes() {
   useEffect(() => {
     cargarEspecialidades();
   }, []);
+
+  // Cargar motivos de interconsulta desde BD (solo si es enfermería)
+  useEffect(() => {
+    if (!esEnfermeria) return;
+    gestionPacientesService.obtenerMotivosInterconsulta()
+      .then(data => {
+        if (Array.isArray(data)) setMotivosInterconsulta(data);
+      })
+      .catch(err => console.error('Error cargando motivos interconsulta:', err));
+  }, [esEnfermeria]);
 
   // ✅ v1.104.0: Cargar pacientes con timeout - no esperar indefinidamente si especialidades falla
   useEffect(() => {
@@ -1457,7 +1501,7 @@ export default function MisPacientes() {
   const abrirAccion = (paciente) => {
     setPacienteSeleccionado(paciente);
     setModalAccion('cambiarEstado');
-    setEstadoSeleccionado('Pendiente'); // Por defecto
+    setEstadoSeleccionado(paciente?.condicion || 'Pendiente'); // Preseleccionar estado actual
     setRazonDesercion('');
     setNotasAccion('');
     // Pre-cargar enfermedades crónicas existentes del paciente
@@ -1691,7 +1735,11 @@ export default function MisPacientes() {
         tieneRecita,
         recitaDias: tieneRecita ? recitaDias : null,
         tieneInterconsulta: tieneInterconsulta && interconsultasLista.length > 0,
-        interconsultaEspecialidad: (tieneInterconsulta && interconsultasLista.length > 0) ? interconsultasLista.join(', ') : null,
+        interconsultaEspecialidad: (tieneInterconsulta && interconsultasLista.length > 0)
+          ? (esEnfermeria
+              ? interconsultasLista.map(item => `${item.especialidad} (${item.motivo})`).join(', ')
+              : interconsultasLista.join(', '))
+          : null,
         esCronico,
         enfermedades: esCronico ? enfermedadesCronicas : [],
         // ✅ v1.47.2: Sin otroDetalle - solo respuestas cerradas (Hipertensión, Diabetes)
@@ -1700,6 +1748,8 @@ export default function MisPacientes() {
           controlEnfermeria: controlEnfermeria.length > 0 ? controlEnfermeria.join(', ') : null,
           imc: categoriaIMC || null,
           imcValor: imcCalculado || null,
+          pesoKg: pesoKg || null,
+          tallaMt: tallaMt || null,
           adherencia: adherenciaMorisky || adherenciaEnfermeria || null,
           nivelRiesgo: nivelRiesgoEnfermeria || null,
           controlado: controladoEnfermeria || null,
@@ -1743,6 +1793,7 @@ export default function MisPacientes() {
       setTieneInterconsulta(false);
       setInterconsultasLista([]);
       setInterconsultaSelector('');
+      setInterconsultaMotivoSelector('');
       setEsCronico(false);
       setExpandCronico(false);
       setEnfermedadesCronicas([]);
@@ -2897,63 +2948,125 @@ export default function MisPacientes() {
                         {/* Chips de especialidades agregadas */}
                         {interconsultasLista.length > 0 && (
                           <div className="flex flex-wrap gap-1.5 mb-2">
-                            {interconsultasLista.map((esp, i) => (
-                              <span
-                                key={i}
-                                className="inline-flex items-center gap-1 px-2.5 py-1 bg-blue-600 text-white text-xs font-semibold rounded-full"
-                              >
-                                {esp}
-                                <button
-                                  type="button"
-                                  onClick={() => setInterconsultasLista(prev => prev.filter((_, j) => j !== i))}
-                                  className="ml-0.5 hover:bg-blue-500 rounded-full w-3.5 h-3.5 flex items-center justify-center transition-colors"
-                                  title={`Quitar ${esp}`}
+                            {interconsultasLista.map((item, i) => {
+                              const label = esEnfermeria ? item.especialidad : item;
+                              const motivo = esEnfermeria ? item.motivo : null;
+                              return (
+                                <span
+                                  key={i}
+                                  className="inline-flex items-center gap-1 px-2.5 py-1 bg-blue-600 text-white text-xs font-semibold rounded-full"
                                 >
-                                  ✕
-                                </button>
-                              </span>
-                            ))}
+                                  <span>{label}</span>
+                                  {motivo && (
+                                    <span className="bg-blue-800 text-blue-100 text-[10px] px-1.5 py-0.5 rounded-full ml-1">
+                                      {motivo}
+                                    </span>
+                                  )}
+                                  <button
+                                    type="button"
+                                    onClick={() => setInterconsultasLista(prev => prev.filter((_, j) => j !== i))}
+                                    className="ml-0.5 hover:bg-blue-500 rounded-full w-3.5 h-3.5 flex items-center justify-center transition-colors"
+                                    title={`Quitar ${label}`}
+                                  >
+                                    ✕
+                                  </button>
+                                </span>
+                              );
+                            })}
                           </div>
                         )}
 
-                        {/* Selector + botón Agregar */}
-                        <div className="flex gap-2">
+                        {/* Selector especialidad */}
+                        <div className="flex gap-2 mb-0">
                           <select
                             value={interconsultaSelector}
-                            onChange={(e) => setInterconsultaSelector(e.target.value)}
+                            onChange={(e) => {
+                              setInterconsultaSelector(e.target.value);
+                              setInterconsultaMotivoSelector(''); // reset motivo al cambiar especialidad
+                            }}
                             className="flex-1 px-3 py-2 border-2 border-blue-400 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm font-semibold text-blue-900 bg-white"
                           >
                             <option value="">Selecciona especialidad...</option>
                             {especialidades
-                              .filter(esp => !interconsultasLista.includes(esp.descServicio))
+                              .filter(esp => !interconsultasLista.some(item =>
+                                esEnfermeria ? item.especialidad === esp.descServicio : item === esp.descServicio
+                              ))
                               .map(esp => (
                                 <option key={esp.id} value={esp.descServicio}>
                                   {esp.descServicio}
                                 </option>
                               ))}
                           </select>
-                          <button
-                            type="button"
-                            disabled={!interconsultaSelector}
-                            onClick={() => {
-                              if (interconsultaSelector && !interconsultasLista.includes(interconsultaSelector)) {
-                                setInterconsultasLista(prev => [...prev, interconsultaSelector]);
-                                setInterconsultaSelector('');
-                              }
-                            }}
-                            className={`px-3 py-2 rounded-lg text-sm font-bold transition-all ${
-                              interconsultaSelector
-                                ? 'bg-blue-600 text-white hover:bg-blue-700 cursor-pointer'
-                                : 'bg-blue-200 text-blue-400 cursor-not-allowed'
-                            }`}
-                          >
-                            + Agregar
-                          </button>
                         </div>
+
+                        {/* Selector motivo (solo ENFERMERIA) — aparece cuando hay especialidad seleccionada */}
+                        {esEnfermeria && interconsultaSelector && (
+                          <div className="mt-2 p-2 bg-blue-100 rounded-lg border border-blue-300 animate-in slide-in-from-top-1">
+                            <label className="text-[11px] font-bold text-blue-800 block mb-1">
+                              Motivo de interconsulta para <span className="text-blue-700">{interconsultaSelector}</span>
+                            </label>
+                            <div className="flex gap-2">
+                              <select
+                                value={interconsultaMotivoSelector}
+                                onChange={(e) => setInterconsultaMotivoSelector(e.target.value)}
+                                className="flex-1 px-3 py-2 border-2 border-blue-400 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm font-semibold text-blue-900 bg-white"
+                              >
+                                <option value="">Selecciona motivo...</option>
+                                {motivosInterconsulta.map(m => (
+                                  <option key={m.idMotivo} value={m.descripcion}>
+                                    {m.descripcion}
+                                  </option>
+                                ))}
+                              </select>
+                              <button
+                                type="button"
+                                disabled={!interconsultaMotivoSelector}
+                                onClick={() => {
+                                  if (interconsultaSelector && interconsultaMotivoSelector) {
+                                    setInterconsultasLista(prev => [...prev, { especialidad: interconsultaSelector, motivo: interconsultaMotivoSelector }]);
+                                    setInterconsultaSelector('');
+                                    setInterconsultaMotivoSelector('');
+                                  }
+                                }}
+                                className={`px-3 py-2 rounded-lg text-sm font-bold transition-all whitespace-nowrap ${
+                                  interconsultaMotivoSelector
+                                    ? 'bg-blue-600 text-white hover:bg-blue-700 cursor-pointer'
+                                    : 'bg-blue-200 text-blue-400 cursor-not-allowed'
+                                }`}
+                              >
+                                + Agregar
+                              </button>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Botón Agregar para rol NO-enfermería */}
+                        {!esEnfermeria && (
+                          <div className="flex gap-2 mt-2">
+                            <div className="flex-1" />
+                            <button
+                              type="button"
+                              disabled={!interconsultaSelector}
+                              onClick={() => {
+                                if (interconsultaSelector && !interconsultasLista.includes(interconsultaSelector)) {
+                                  setInterconsultasLista(prev => [...prev, interconsultaSelector]);
+                                  setInterconsultaSelector('');
+                                }
+                              }}
+                              className={`px-3 py-2 rounded-lg text-sm font-bold transition-all ${
+                                interconsultaSelector
+                                  ? 'bg-blue-600 text-white hover:bg-blue-700 cursor-pointer'
+                                  : 'bg-blue-200 text-blue-400 cursor-not-allowed'
+                              }`}
+                            >
+                              + Agregar
+                            </button>
+                          </div>
+                        )}
 
                         {interconsultasLista.length === 0 && (
                           <p className="text-[11px] text-blue-500 mt-1.5 text-center">
-                            Selecciona una especialidad y presiona &quot;+ Agregar&quot;
+                            Selecciona {esEnfermeria ? 'especialidad y motivo' : 'una especialidad'} y presiona &quot;+ Agregar&quot;
                           </p>
                         )}
                       </div>
@@ -4071,6 +4184,8 @@ export default function MisPacientes() {
                   ) : (
                     controlesEnfermeriaFiltrados.map((control, idx) => {
                       const isOpen = controlesExpandido === control.idAtencion;
+                      const isEditing = editandoControl === control.idAtencion;
+                      const puedeEditar = esHoy(control.fechaAtencion);
                       const fecha = control.fechaAtencion ? new Date(control.fechaAtencion) : null;
                       const fechaLabel = fecha
                         ? fecha.toLocaleDateString('es-PE', { day: '2-digit', month: 'long', year: 'numeric', timeZone: 'America/Lima' })
@@ -4081,19 +4196,19 @@ export default function MisPacientes() {
                       return (
                         <div key={control.idAtencion} className="border border-gray-200 rounded-lg overflow-hidden">
                           {/* Cabecera acordeón */}
-                          <button
-                            onClick={() => setControlesExpandido(isOpen ? null : control.idAtencion)}
-                            className={`w-full flex items-center justify-between px-4 py-3 text-left transition-colors ${
-                              isOpen ? 'bg-[#0A5BA9] text-white' : 'bg-gray-50 hover:bg-gray-100 text-gray-900'
-                            }`}
-                          >
-                            <div className="flex items-center gap-3">
+                          <div className={`flex items-center justify-between px-4 py-3 transition-colors ${
+                            isOpen ? 'bg-[#0A5BA9] text-white' : 'bg-gray-50 text-gray-900'
+                          }`}>
+                            <button
+                              onClick={() => setControlesExpandido(isOpen ? null : control.idAtencion)}
+                              className="flex items-center gap-3 flex-1 text-left"
+                            >
                               <div>
                                 <p className="text-sm font-semibold">{fechaLabel}</p>
                                 {horaLabel && <p className={`text-xs ${isOpen ? 'text-blue-200' : 'text-gray-500'}`}>{horaLabel}</p>}
                               </div>
-                            </div>
-                            <div className="flex items-center gap-3">
+                            </button>
+                            <div className="flex items-center gap-2">
                               {control.presionArterial && (
                                 <span className={`text-xs px-2 py-0.5 rounded-full font-semibold ${isOpen ? 'bg-white/20 text-white' : 'bg-gray-100 text-gray-700'}`}>
                                   PA {control.presionArterial}
@@ -4104,9 +4219,20 @@ export default function MisPacientes() {
                                   Glu {control.glucosa} mg/dL
                                 </span>
                               )}
-                              <span className={`text-base transition-transform ${isOpen ? 'rotate-180 text-white' : 'text-gray-400'}`}>▼</span>
+                              {puedeEditar && isOpen && !isEditing && (
+                                <button
+                                  onClick={(e) => { e.stopPropagation(); setEditandoControl(control.idAtencion); const normControlado = /^s[ií]/i.test(control.controlado || '') ? 'SI' : (control.controlado ? 'NO' : ''); setEditForm({ presionArterial: control.presionArterial || '', glucosa: control.glucosa ?? '', pesoKg: control.pesoKg ?? '', tallaCm: control.tallaCm ?? '', imc: control.imc ?? '', controlEnfermeria: control.controlEnfermeria || '', adherenciaMorisky: control.adherenciaMorisky || '', nivelRiesgo: control.nivelRiesgo || '', controlado: normControlado, observaciones: control.observaciones || '' }); }}
+                                  className="flex items-center gap-1 text-xs bg-white/20 hover:bg-white/30 text-white border border-white/30 rounded px-2 py-1 font-medium transition-colors"
+                                  title="Editar este registro"
+                                >
+                                  ✏️ Editar
+                                </button>
+                              )}
+                              <button onClick={() => setControlesExpandido(isOpen ? null : control.idAtencion)} className="ml-1">
+                                <span className={`text-base transition-transform ${isOpen ? 'rotate-180 text-white' : 'text-gray-400'}`}>▼</span>
+                              </button>
                             </div>
-                          </button>
+                          </div>
 
                           {/* Detalle expandido */}
                           {isOpen && (
@@ -4115,16 +4241,17 @@ export default function MisPacientes() {
                               {/* 1. ESTADO CLÍNICO — lo más importante primero */}
                               {(control.controlado || control.nivelRiesgo) && (
                                 <div className="flex gap-2">
-                                  {control.controlado && (
-                                    <div className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-lg font-bold text-sm border ${
-                                      control.controlado === 'SI'
-                                        ? 'bg-green-50 border-green-200 text-green-700'
-                                        : 'bg-red-50 border-red-200 text-red-700'
-                                    }`}>
-                                      <span>{control.controlado === 'SI' ? '✓' : '✗'}</span>
-                                      <span>{control.controlado === 'SI' ? 'Paciente Controlado' : 'No Controlado'}</span>
-                                    </div>
-                                  )}
+                                  {control.controlado && (() => {
+                                    const esControlado = /^s[ií]/i.test(control.controlado);
+                                    return (
+                                      <div className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-lg font-bold text-sm border ${
+                                        esControlado ? 'bg-green-50 border-green-200 text-green-700' : 'bg-red-50 border-red-200 text-red-700'
+                                      }`}>
+                                        <span>{esControlado ? '✓' : '✗'}</span>
+                                        <span>{esControlado ? 'Paciente Controlado' : 'No Controlado'}</span>
+                                      </div>
+                                    );
+                                  })()}
                                   {control.nivelRiesgo && (
                                     <div className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-lg font-bold text-sm border ${
                                       control.nivelRiesgo === 'BAJO' ? 'bg-green-50 border-green-200 text-green-700' :
@@ -4243,6 +4370,91 @@ export default function MisPacientes() {
                                 <div className="bg-gray-50 rounded-lg p-3 border-l-4 border-gray-400">
                                   <p className="text-xs font-semibold text-gray-500 uppercase mb-1">Observaciones</p>
                                   <p className="text-gray-800 italic text-sm leading-relaxed">{control.observaciones}</p>
+                                </div>
+                              )}
+
+                              {/* ✅ v1.79.0: FORMULARIO DE EDICIÓN INLINE (solo registros del día) */}
+                              {isEditing && (
+                                <div className="mt-3 border-t border-blue-200 pt-3 space-y-3">
+                                  <p className="text-xs font-bold text-blue-700 uppercase tracking-wide">✏️ Editando registro</p>
+
+                                  {/* Signos vitales */}
+                                  <div className="grid grid-cols-2 gap-2">
+                                    <div>
+                                      <label className="text-xs text-gray-500 font-medium">Presión Arterial (SIS/DIA)</label>
+                                      <input type="text" placeholder="ej: 120/80" value={editForm.presionArterial || ''} onChange={e => setEditForm(f => ({ ...f, presionArterial: e.target.value }))}
+                                        className="w-full mt-0.5 border border-gray-300 rounded px-2 py-1.5 text-sm focus:outline-none focus:border-blue-500" />
+                                    </div>
+                                    <div>
+                                      <label className="text-xs text-gray-500 font-medium">Glucosa (mg/dL)</label>
+                                      <input type="number" placeholder="ej: 105" value={editForm.glucosa ?? ''} onChange={e => setEditForm(f => ({ ...f, glucosa: e.target.value }))}
+                                        className="w-full mt-0.5 border border-gray-300 rounded px-2 py-1.5 text-sm focus:outline-none focus:border-blue-500" />
+                                    </div>
+                                    <div>
+                                      <label className="text-xs text-gray-500 font-medium">Peso (kg)</label>
+                                      <input type="number" step="0.1" placeholder="ej: 72.5" value={editForm.pesoKg ?? ''} onChange={e => setEditForm(f => ({ ...f, pesoKg: e.target.value }))}
+                                        className="w-full mt-0.5 border border-gray-300 rounded px-2 py-1.5 text-sm focus:outline-none focus:border-blue-500" />
+                                    </div>
+                                    <div>
+                                      <label className="text-xs text-gray-500 font-medium">Talla (cm)</label>
+                                      <input type="number" step="0.1" placeholder="ej: 165" value={editForm.tallaCm ?? ''} onChange={e => setEditForm(f => ({ ...f, tallaCm: e.target.value }))}
+                                        className="w-full mt-0.5 border border-gray-300 rounded px-2 py-1.5 text-sm focus:outline-none focus:border-blue-500" />
+                                    </div>
+                                  </div>
+
+                                  {/* Adherencia */}
+                                  <div>
+                                    <label className="text-xs text-gray-500 font-medium">Adherencia (Morisky)</label>
+                                    <select value={editForm.adherenciaMorisky || ''} onChange={e => setEditForm(f => ({ ...f, adherenciaMorisky: e.target.value }))}
+                                      className="w-full mt-0.5 border border-gray-300 rounded px-2 py-1.5 text-sm focus:outline-none focus:border-blue-500">
+                                      <option value="">-- Seleccionar --</option>
+                                      <option value="ALTA">ALTA</option>
+                                      <option value="MEDIA">MEDIA</option>
+                                      <option value="BAJA">BAJA</option>
+                                    </select>
+                                  </div>
+
+                                  {/* Nivel de riesgo y Controlado */}
+                                  <div className="grid grid-cols-2 gap-2">
+                                    <div>
+                                      <label className="text-xs text-gray-500 font-medium">Nivel de Riesgo</label>
+                                      <select value={editForm.nivelRiesgo || ''} onChange={e => setEditForm(f => ({ ...f, nivelRiesgo: e.target.value }))}
+                                        className="w-full mt-0.5 border border-gray-300 rounded px-2 py-1.5 text-sm focus:outline-none focus:border-blue-500">
+                                        <option value="">-- Seleccionar --</option>
+                                        <option value="BAJO">BAJO</option>
+                                        <option value="MEDIO">MEDIO</option>
+                                        <option value="ALTO">ALTO</option>
+                                      </select>
+                                    </div>
+                                    <div>
+                                      <label className="text-xs text-gray-500 font-medium">Controlado</label>
+                                      <select value={editForm.controlado || ''} onChange={e => setEditForm(f => ({ ...f, controlado: e.target.value }))}
+                                        className="w-full mt-0.5 border border-gray-300 rounded px-2 py-1.5 text-sm focus:outline-none focus:border-blue-500">
+                                        <option value="">-- Seleccionar --</option>
+                                        <option value="SI">SI</option>
+                                        <option value="NO">NO</option>
+                                      </select>
+                                    </div>
+                                  </div>
+
+                                  {/* Observaciones */}
+                                  <div>
+                                    <label className="text-xs text-gray-500 font-medium">Observaciones</label>
+                                    <textarea rows={2} value={editForm.observaciones || ''} onChange={e => setEditForm(f => ({ ...f, observaciones: e.target.value }))}
+                                      className="w-full mt-0.5 border border-gray-300 rounded px-2 py-1.5 text-sm focus:outline-none focus:border-blue-500 resize-none" />
+                                  </div>
+
+                                  {/* Botones */}
+                                  <div className="flex gap-2 justify-end pt-1">
+                                    <button onClick={() => { setEditandoControl(null); setEditForm({}); }}
+                                      className="px-3 py-1.5 text-sm text-gray-600 border border-gray-300 rounded hover:bg-gray-50 transition">
+                                      Cancelar
+                                    </button>
+                                    <button onClick={guardarEdicionControl} disabled={guardandoControl}
+                                      className="px-4 py-1.5 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 transition font-semibold disabled:opacity-60">
+                                      {guardandoControl ? 'Guardando...' : '✓ Guardar'}
+                                    </button>
+                                  </div>
                                 </div>
                               )}
 

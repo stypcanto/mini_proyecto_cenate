@@ -212,6 +212,10 @@ const gestionPacientesService = {
         }
     },
 
+    actualizarControlEnfermeria: async (idAtencion, datos) => {
+        return await apiClient.put(`${BASE_ENDPOINT}/atencion/${idAtencion}/enfermeria`, datos, true);
+    },
+
     obtenerInfoAsegurado: async (dni) => {
         try {
             return await apiClient.get(`/asegurados/por-dni/${dni}`, true);
@@ -241,6 +245,13 @@ const gestionPacientesService = {
             console.warn('⚠️ [v1.89.8] Error obteniendo batch de ECGs:', error);
             return {};
         }
+    },
+
+    /**
+     * v1.0.0: Obtener motivos de interconsulta predefinidos (para rol ENFERMERÍA)
+     */
+    obtenerMotivosInterconsulta: async () => {
+        return await apiClient.get(`${BASE_ENDPOINT}/motivos-interconsulta`, true);
     },
 
     /**
