@@ -1426,7 +1426,7 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
             COALESCE(d1.cod_estado_cita,  'PENDIENTE_CITA') AS cod_estado,
             COALESCE(d1.desc_estado_cita, 'Pendiente')      AS desc_estado,
             COALESCE(orig_d.numero_solicitud, orig_t.numero_solicitud)       AS solicitud_origen,
-            COALESCE(orig_d.id_personal,      orig_t.id_personal)           AS id_personal_creador,
+            COALESCE(recita.id_personal, orig_d.id_personal, orig_t.id_personal, ac_fk.id_personal_creador, orig_ac.id_personal) AS id_personal_creador,
             pc.ape_pater_pers || ' ' || pc.ape_mater_pers || ', ' || pc.nom_pers AS medico_creador,
             umed.name_user                                                   AS usuario_creador,
             COALESCE(orig_d.fecha_atencion_medica, orig_t.fecha_atencion_medica) AS fecha_atencion_origen,
@@ -1448,8 +1448,19 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
             ORDER BY ABS(EXTRACT(EPOCH FROM (h.fecha_atencion_medica - recita.fecha_solicitud)))
             LIMIT 1
         ) orig_t ON recita.idsolicitudgeneracion IS NULL
+        LEFT JOIN atencion_clinica ac_fk
+               ON ac_fk.id_atencion = recita.id_atencion_clinica
+        LEFT JOIN LATERAL (
+            SELECT ac.id_personal_creador AS id_personal
+            FROM   atencion_clinica ac
+            WHERE  ac.pk_asegurado = recita.paciente_id
+              AND  ac.fecha_atencion >= recita.fecha_solicitud - INTERVAL '2 minutes'
+              AND  ac.fecha_atencion <= recita.fecha_solicitud + INTERVAL '30 minutes'
+            ORDER BY ABS(EXTRACT(EPOCH FROM (ac.fecha_atencion - recita.fecha_solicitud)))
+            LIMIT 1
+        ) orig_ac ON COALESCE(recita.id_personal, orig_d.id_personal, orig_t.id_personal, ac_fk.id_personal_creador) IS NULL
         LEFT JOIN dim_estados_gestion_citas d1 ON d1.id_estado_cita = recita.estado_gestion_citas_id
-        LEFT JOIN dim_personal_cnt pc   ON pc.id_pers = COALESCE(orig_d.id_personal, orig_t.id_personal)
+        LEFT JOIN dim_personal_cnt pc   ON pc.id_pers = COALESCE(recita.id_personal, orig_d.id_personal, orig_t.id_personal, ac_fk.id_personal_creador, orig_ac.id_personal)
         LEFT JOIN dim_usuarios umed     ON umed.id_user = pc.id_usuario
         WHERE UPPER(recita.tipo_cita) IN ('RECITA','INTERCONSULTA')
           AND recita.activo = true
@@ -1459,7 +1470,8 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
           AND (:fechaInicio IS NULL OR recita.fecha_preferida_no_atendida >= CAST(:fechaInicio AS date))
           AND (:fechaFin    IS NULL OR recita.fecha_preferida_no_atendida <= CAST(:fechaFin    AS date))
           AND (:tipoCita    IS NULL OR UPPER(recita.tipo_cita) = UPPER(:tipoCita))
-          AND (:idPersonal  IS NULL OR COALESCE(orig_d.id_personal, orig_t.id_personal) = CAST(:idPersonal AS bigint))
+          AND (:idPersonal  IS NULL OR COALESCE(recita.id_personal, orig_d.id_personal, orig_t.id_personal, ac_fk.id_personal_creador, orig_ac.id_personal) = CAST(:idPersonal AS bigint))
+          AND (orig_d.id_bolsa IS NULL OR orig_d.id_bolsa != 10)
         ORDER BY recita.fecha_preferida_no_atendida DESC NULLS LAST, recita.fecha_solicitud DESC
         """,
         countQuery = """
@@ -1477,6 +1489,16 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
             ORDER BY ABS(EXTRACT(EPOCH FROM (h.fecha_atencion_medica - recita.fecha_solicitud)))
             LIMIT 1
         ) orig_t ON recita.idsolicitudgeneracion IS NULL
+        LEFT JOIN LATERAL (
+            SELECT ac.id_personal_creador AS id_personal
+            FROM   atencion_clinica ac
+            WHERE  ac.pk_asegurado = recita.paciente_id
+              AND  ac.fecha_atencion >= recita.fecha_solicitud - INTERVAL '2 minutes'
+              AND  ac.fecha_atencion <= recita.fecha_solicitud + INTERVAL '30 minutes'
+            ORDER BY ABS(EXTRACT(EPOCH FROM (ac.fecha_atencion - recita.fecha_solicitud)))
+            LIMIT 1
+        ) orig_ac ON COALESCE(recita.id_personal, orig_d.id_personal, orig_t.id_personal) IS NULL
+        LEFT JOIN atencion_clinica ac_fk ON ac_fk.id_atencion = recita.id_atencion_clinica
         WHERE UPPER(recita.tipo_cita) IN ('RECITA','INTERCONSULTA')
           AND recita.activo = true AND recita.id_bolsa = 11
           AND (:busqueda    IS NULL OR recita.paciente_dni    ILIKE '%' || :busqueda    || '%'
@@ -1484,7 +1506,8 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
           AND (:fechaInicio IS NULL OR recita.fecha_preferida_no_atendida >= CAST(:fechaInicio AS date))
           AND (:fechaFin    IS NULL OR recita.fecha_preferida_no_atendida <= CAST(:fechaFin    AS date))
           AND (:tipoCita    IS NULL OR UPPER(recita.tipo_cita) = UPPER(:tipoCita))
-          AND (:idPersonal  IS NULL OR COALESCE(orig_d.id_personal, orig_t.id_personal) = CAST(:idPersonal AS bigint))
+          AND (:idPersonal  IS NULL OR COALESCE(recita.id_personal, orig_d.id_personal, orig_t.id_personal, ac_fk.id_personal_creador, orig_ac.id_personal) = CAST(:idPersonal AS bigint))
+          AND (orig_d.id_bolsa IS NULL OR orig_d.id_bolsa != 10)
         """,
         nativeQuery = true)
     Page<Object[]> obtenerTrazabilidadRecitasInterconsultas(
@@ -1502,7 +1525,7 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
      */
     @Query(value = """
         SELECT
-            COALESCE(orig_d.id_personal, orig_t.id_personal)                AS id_personal,
+            COALESCE(recita.id_personal, orig_d.id_personal, orig_t.id_personal, orig_ac.id_personal) AS id_personal,
             pc.ape_pater_pers || ' ' || pc.ape_mater_pers || ', ' || pc.nom_pers AS nombre,
             COUNT(*)                                                         AS total
         FROM dim_solicitud_bolsa recita
@@ -1518,16 +1541,64 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
             ORDER BY ABS(EXTRACT(EPOCH FROM (h.fecha_atencion_medica - recita.fecha_solicitud)))
             LIMIT 1
         ) orig_t ON recita.idsolicitudgeneracion IS NULL
-        LEFT JOIN dim_personal_cnt pc ON pc.id_pers = COALESCE(orig_d.id_personal, orig_t.id_personal)
+        LEFT JOIN LATERAL (
+            SELECT ac.id_personal_creador AS id_personal
+            FROM   atencion_clinica ac
+            WHERE  ac.pk_asegurado = recita.paciente_id
+              AND  ac.fecha_atencion >= recita.fecha_solicitud - INTERVAL '2 minutes'
+              AND  ac.fecha_atencion <= recita.fecha_solicitud + INTERVAL '30 minutes'
+            ORDER BY ABS(EXTRACT(EPOCH FROM (ac.fecha_atencion - recita.fecha_solicitud)))
+            LIMIT 1
+        ) orig_ac ON COALESCE(recita.id_personal, orig_d.id_personal, orig_t.id_personal) IS NULL
+        LEFT JOIN dim_personal_cnt pc ON pc.id_pers = COALESCE(recita.id_personal, orig_d.id_personal, orig_t.id_personal, orig_ac.id_personal)
         WHERE UPPER(recita.tipo_cita) IN ('RECITA','INTERCONSULTA')
           AND recita.activo = true
           AND recita.id_bolsa = 11
-          AND COALESCE(orig_d.id_personal, orig_t.id_personal) IS NOT NULL
-        GROUP BY COALESCE(orig_d.id_personal, orig_t.id_personal),
+          AND COALESCE(recita.id_personal, orig_d.id_personal, orig_t.id_personal, orig_ac.id_personal) IS NOT NULL
+          AND (orig_d.id_bolsa IS NULL OR orig_d.id_bolsa != 10)
+        GROUP BY COALESCE(recita.id_personal, orig_d.id_personal, orig_t.id_personal, orig_ac.id_personal),
                  pc.ape_pater_pers, pc.ape_mater_pers, pc.nom_pers
         ORDER BY total DESC
         """, nativeQuery = true)
     List<Object[]> listarEnfermerasTrazabilidad();
+
+    /** KPIs globales de trazabilidad: total, recitas, interconsultas, sin creador. */
+    @Query(value = """
+        SELECT
+            COUNT(*)                                                                      AS total,
+            COUNT(*) FILTER (WHERE UPPER(recita.tipo_cita) = 'RECITA')                   AS recitas,
+            COUNT(*) FILTER (WHERE UPPER(recita.tipo_cita) = 'INTERCONSULTA')             AS interconsultas,
+            COUNT(*) FILTER (
+                WHERE COALESCE(recita.id_personal, orig_d.id_personal, orig_t.id_personal, orig_ac.id_personal) IS NULL
+            )                                                                             AS sin_creador
+        FROM dim_solicitud_bolsa recita
+        LEFT JOIN dim_solicitud_bolsa orig_d ON orig_d.id_solicitud = recita.idsolicitudgeneracion
+        LEFT JOIN LATERAL (
+            SELECT h.id_personal
+            FROM   dim_solicitud_bolsa h
+            WHERE  h.paciente_dni = recita.paciente_dni
+              AND  h.id_personal IS NOT NULL
+              AND  UPPER(h.tipo_cita) NOT IN ('RECITA','INTERCONSULTA')
+              AND  h.fecha_atencion_medica IS NOT NULL
+              AND  ABS(EXTRACT(EPOCH FROM (h.fecha_atencion_medica - recita.fecha_solicitud))) < 120
+            ORDER BY ABS(EXTRACT(EPOCH FROM (h.fecha_atencion_medica - recita.fecha_solicitud)))
+            LIMIT 1
+        ) orig_t ON recita.idsolicitudgeneracion IS NULL
+        LEFT JOIN LATERAL (
+            SELECT ac.id_personal_creador AS id_personal
+            FROM   atencion_clinica ac
+            WHERE  ac.pk_asegurado = recita.paciente_id
+              AND  ac.fecha_atencion >= recita.fecha_solicitud - INTERVAL '2 minutes'
+              AND  ac.fecha_atencion <= recita.fecha_solicitud + INTERVAL '30 minutes'
+            ORDER BY ABS(EXTRACT(EPOCH FROM (ac.fecha_atencion - recita.fecha_solicitud)))
+            LIMIT 1
+        ) orig_ac ON COALESCE(recita.id_personal, orig_d.id_personal, orig_t.id_personal) IS NULL
+        WHERE UPPER(recita.tipo_cita) IN ('RECITA','INTERCONSULTA')
+          AND recita.activo = true
+          AND recita.id_bolsa = 11
+          AND (orig_d.id_bolsa IS NULL OR orig_d.id_bolsa != 10)
+        """, nativeQuery = true)
+    Map<String, Object> kpisTrazabilidad();
 
     /** Fechas preferidas únicas con conteo de recitas/interconsultas (para marcar el calendario). */
     @Query(value = """

@@ -12,7 +12,7 @@ import com.styp.cenate.repository.AseguradoRepository;
 import com.styp.cenate.service.gestionpaciente.IGestionPacienteService;
 import com.styp.cenate.service.gestionpaciente.AtenderPacienteService;
 import com.styp.cenate.service.teleekgs.TeleECGService;
-import com.styp.cenate.model.bolsas.DimMotivoInterconsulta;
+import com.styp.cenate.dto.bolsas.MotivoInterconsultaDTO;
 import com.styp.cenate.repository.DimServicioEssiRepository;
 import com.styp.cenate.repository.bolsas.DimMotivoInterconsultaRepository;
 import com.styp.cenate.security.mbac.CheckMBACPermission;
@@ -550,9 +550,18 @@ public class GestionPacienteController {
 
     // ✅ v1.0.0: Obtener motivos de interconsulta (para rol ENFERMERIA)
     @GetMapping("/motivos-interconsulta")
-    public ResponseEntity<List<DimMotivoInterconsulta>> obtenerMotivosInterconsulta() {
+    public ResponseEntity<List<MotivoInterconsultaDTO>> obtenerMotivosInterconsulta() {
         try {
-            List<DimMotivoInterconsulta> motivos = motivoInterconsultaRepository.findByActivoTrueOrderByOrdenAsc();
+            List<MotivoInterconsultaDTO> motivos = motivoInterconsultaRepository.findByActivoTrueOrderByOrdenAsc()
+                    .stream()
+                    .map(m -> MotivoInterconsultaDTO.builder()
+                            .id(m.getId())
+                            .codigo(m.getCodigo())
+                            .descripcion(m.getDescripcion())
+                            .activo(m.getActivo())
+                            .orden(m.getOrden())
+                            .build())
+                    .toList();
             return ResponseEntity.ok(motivos);
         } catch (Exception e) {
             log.error("❌ Error obteniendo motivos de interconsulta: {}", e.getMessage(), e);

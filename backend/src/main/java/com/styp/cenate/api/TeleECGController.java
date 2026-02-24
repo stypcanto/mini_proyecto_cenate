@@ -1078,13 +1078,15 @@ public class TeleECGController {
                 atenderPacienteService.crearBolsaRecita(
                     solicitudBase,
                     request.getEspecialidad(),
-                    request.getDias() != null ? request.getDias() : 90  // Default 3 meses = 90 días
+                    request.getDias() != null ? request.getDias() : 90,  // Default 3 meses = 90 días
+                    null  // TeleECG no pasa por atencion_clinica de enfermería
                 );
                 log.info("✅ Bolsa RECITA creada para especialidad: {}", request.getEspecialidad());
             } else if ("INTERCONSULTA".equals(request.getTipo())) {
                 atenderPacienteService.crearBolsaInterconsulta(
                     solicitudBase,
-                    request.getEspecialidad()
+                    request.getEspecialidad(),
+                    null  // TeleECG no pasa por atencion_clinica de enfermería
                 );
                 log.info("✅ Bolsa INTERCONSULTA creada para especialidad: {}", request.getEspecialidad());
             } else {

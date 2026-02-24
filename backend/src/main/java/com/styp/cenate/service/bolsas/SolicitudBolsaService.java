@@ -310,4 +310,7 @@ public interface SolicitudBolsaService {
 
     /** Fechas únicas con conteo, para pintar el calendario de filtros. */
     List<Map<String, Object>> obtenerFechasConRecitas();
+
+    /** KPIs globales de trazabilidad (total tabla, no solo página actual). */
+    Map<String, Object> obtenerKpisTrazabilidad();
 }

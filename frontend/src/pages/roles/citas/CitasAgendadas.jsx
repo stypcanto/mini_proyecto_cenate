@@ -25,7 +25,6 @@ import {
   User,
   CalendarDays,
   FileDown,
-  CheckSquare,
   UserCheck,
   ChevronDown,
   Pencil,
@@ -469,6 +468,8 @@ export default function CitasAgendadas() {
   const [modalWA, setModalWA]               = useState({ visible: false, paciente: null, preview: '' });
   const [seleccionados, setSeleccionados]   = useState(new Set());
   const [modalReasignar, setModalReasignar] = useState({ visible: false, paciente: null });
+  const [modalRechazar, setModalRechazar]   = useState(false);
+  const [rechazando, setRechazando]         = useState(false);
   const [medicosReasignar, setMedicosReasignar] = useState([]);
   const [cargandoMedicos, setCargandoMedicos]   = useState(false);
   const [nuevoMedicoId, setNuevoMedicoId]       = useState('');
@@ -714,6 +715,30 @@ export default function CitasAgendadas() {
   };
 
   const limpiarSeleccion = () => setSeleccionados(new Set());
+
+  // ── Rechazar en grupo ─────────────────────────────────────
+  const confirmarRechazo = async () => {
+    setRechazando(true);
+    const ids = filasSeleccionadas.map(p => p.id).filter(Boolean);
+    try {
+      const token = getToken();
+      const res = await fetch('/api/bolsas/solicitudes/rechazar-masivo', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ ids }),
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      toast.success(`${data.actualizados ?? ids.length} paciente(s) marcados como rechazados`);
+      limpiarSeleccion();
+      setModalRechazar(false);
+      await cargar();
+    } catch {
+      toast.error('Error al rechazar pacientes');
+    } finally {
+      setRechazando(false);
+    }
+  };
 
   // ── Editar fecha/hora ───────────────────────────────────────
   const abrirModalEditarFecha = (p) => {
@@ -1158,6 +1183,18 @@ CENATE de Essalud`;
                   >
                     <UserCheck size={14} />
                     Reasignar grupo ({citadosSeleccionados.length})
+                  </button>
+                )}
+                {filasSeleccionadas.length >= 1 && (
+                  <button
+                    onClick={() => setModalRechazar(true)}
+                    title={`Rechazar ${filasSeleccionadas.length} paciente${filasSeleccionadas.length !== 1 ? 's' : ''} seleccionado${filasSeleccionadas.length !== 1 ? 's' : ''}`}
+                    style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '7px 14px', borderRadius: '8px', border: '1px solid #dc2626', background: '#dc2626', color: '#fff', fontSize: '12px', fontWeight: '600', cursor: 'pointer', transition: 'all 0.15s' }}
+                    onMouseEnter={e => e.currentTarget.style.background = '#b91c1c'}
+                    onMouseLeave={e => e.currentTarget.style.background = '#dc2626'}
+                  >
+                    <XCircle size={14} />
+                    Rechazar ({filasSeleccionadas.length})
                   </button>
                 )}
                 <button
@@ -1630,6 +1667,73 @@ CENATE de Essalud`;
                 style={{ flex: 2, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '10px', borderRadius: '10px', border: 'none', background: nuevoMedicoId && !reasignando ? '#0369a1' : '#cbd5e1', color: '#fff', fontSize: '13px', fontWeight: '600', cursor: nuevoMedicoId && !reasignando ? 'pointer' : 'not-allowed', transition: 'background 0.15s' }}
               >
                 {reasignando ? <><RefreshCw size={14} className="animate-spin" /> Reasignando...</> : <><UserCheck size={15} /> Confirmar Reasignación</>}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Modal Rechazar en Grupo ── */}
+      {modalRechazar && (
+        <div
+          style={{ position: 'fixed', inset: 0, zIndex: 9999, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }}
+          onClick={e => { if (e.target === e.currentTarget && !rechazando) setModalRechazar(false); }}
+        >
+          <div style={{ background: '#fff', borderRadius: '16px', width: '100%', maxWidth: '500px', boxShadow: '0 20px 60px rgba(0,0,0,0.3)' }}>
+            {/* Cabecera */}
+            <div style={{ background: '#dc2626', padding: '14px 20px', borderRadius: '16px 16px 0 0', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <XCircle size={20} color="#fff" strokeWidth={2} />
+                <div>
+                  <p style={{ margin: 0, fontSize: '15px', fontWeight: '700', color: '#fff' }}>
+                    Rechazar {filasSeleccionadas.length} paciente{filasSeleccionadas.length !== 1 ? 's' : ''}
+                  </p>
+                  <p style={{ margin: 0, fontSize: '12px', color: 'rgba(255,255,255,0.8)' }}>
+                    Pasarán a "Pacientes Rechazados" en Bolsas
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => { if (!rechazando) setModalRechazar(false); }}
+                style={{ background: 'rgba(255,255,255,0.2)', border: 'none', borderRadius: '8px', padding: '6px', cursor: 'pointer', display: 'flex', color: '#fff' }}
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* Lista de pacientes */}
+            <div style={{ padding: '16px 20px', maxHeight: '260px', overflowY: 'auto' }}>
+              <p style={{ margin: '0 0 10px', fontSize: '13px', color: '#374151', fontWeight: '600' }}>
+                Pacientes seleccionados:
+              </p>
+              <ul style={{ margin: 0, padding: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                {filasSeleccionadas.map(p => (
+                  <li key={p.id ?? p.pacienteDni} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 12px', borderRadius: '8px', background: '#fef2f2', border: '1px solid #fecaca' }}>
+                    <span style={{ fontSize: '13px', color: '#1f2937', fontWeight: '500' }}>{p.pacienteNombre}</span>
+                    <span style={{ fontSize: '12px', color: '#6b7280', fontFamily: 'monospace' }}>{p.pacienteDni}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {/* Pie */}
+            <div style={{ padding: '12px 20px 16px', display: 'flex', gap: '10px', borderTop: '1px solid #f1f5f9' }}>
+              <button
+                onClick={() => setModalRechazar(false)}
+                disabled={rechazando}
+                style={{ flex: 1, padding: '10px', borderRadius: '10px', border: '1px solid #e2e8f0', background: '#f8fafc', color: '#475569', fontSize: '13px', fontWeight: '500', cursor: rechazando ? 'not-allowed' : 'pointer' }}
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={confirmarRechazo}
+                disabled={rechazando}
+                style={{ flex: 2, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '10px', borderRadius: '10px', border: 'none', background: rechazando ? '#fca5a5' : '#dc2626', color: '#fff', fontSize: '13px', fontWeight: '600', cursor: rechazando ? 'not-allowed' : 'pointer', transition: 'background 0.15s' }}
+              >
+                {rechazando
+                  ? <><RefreshCw size={14} className="animate-spin" /> Rechazando...</>
+                  : <><XCircle size={15} /> Confirmar rechazo ({filasSeleccionadas.length})</>
+                }
               </button>
             </div>
           </div>

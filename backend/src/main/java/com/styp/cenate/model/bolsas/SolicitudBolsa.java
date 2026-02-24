@@ -223,6 +223,14 @@ public class SolicitudBolsa {
     private Long idsolicitudgeneracion;
 
     // ============================================================================
+    // 🔗 TRAZABILIDAD v6.0.0: FK directa hacia la atencion_clinica que originó
+    //    esta RECITA/INTERCONSULTA. Permite identificar al creador sin correlación
+    //    por timestamp. NULL para registros históricos o solicitudes sin atención.
+    // ============================================================================
+    @Column(name = "id_atencion_clinica")
+    private Long idAtencionClinica;
+
+    // ============================================================================
     // 📞 MOTIVO DE LLAMADA (v1.68.2 - 2026-02-13)
     // ============================================================================
     @Column(name = "motivo_llamada_bolsa", length = 500)

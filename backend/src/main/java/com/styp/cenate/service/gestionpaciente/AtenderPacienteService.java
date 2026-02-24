@@ -89,7 +89,8 @@ public class AtenderPacienteService {
             log.info("✅ Solicitud original marcada como Atendido");
 
             // ✅ v1.76.0: Guardar Ficha de Enfermería en atencion_clinica si hay datos
-            guardarFichaEnfermeria(request, solicitudOriginal, fechaAtencionMedica, asegurado);
+            // ✅ v6.0.0: Capturar id_atencion para vincularlo a RECITA/INTERCONSULTA (FK directa)
+            Long idAtencionClinica = guardarFichaEnfermeria(request, solicitudOriginal, fechaAtencionMedica, asegurado);
 
             // ✅ v1.81.0: Registrar atención en historial centralizado
             try {
@@ -110,7 +111,7 @@ public class AtenderPacienteService {
                 if (existeRecitaParaPaciente(pkAseguradoFinal)) {
                     log.warn("⚠️ [v1.47.1] Recita ya existe para el paciente: {}", pkAseguradoFinal);
                 } else {
-                    crearBolsaRecitaConTransaccion(solicitudOriginal, especialidadActual, request.getRecitaDias());
+                    crearBolsaRecitaConTransaccion(solicitudOriginal, especialidadActual, request.getRecitaDias(), idAtencionClinica);
                     log.info("✅ Nueva bolsa RECITA creada - visible solo para gestora de citas");
                 }
             }
@@ -129,7 +130,7 @@ public class AtenderPacienteService {
                         log.warn("⚠️ [v1.75.0] Interconsulta de '{}' ya existe para el paciente: {}",
                                 especialidadTrimmed, pkAseguradoFinal);
                     } else {
-                        crearBolsaInterconsultaConTransaccion(solicitudOriginal, especialidadTrimmed);
+                        crearBolsaInterconsultaConTransaccion(solicitudOriginal, especialidadTrimmed, idAtencionClinica);
                         log.info("✅ [v1.75.0] Nueva bolsa INTERCONSULTA creada para especialidad: '{}'", especialidadTrimmed);
                     }
                 }
@@ -148,13 +149,13 @@ public class AtenderPacienteService {
     }
 
     @Transactional
-    private void crearBolsaRecitaConTransaccion(SolicitudBolsa solicitudOriginal, String especialidad, Integer dias) {
-        crearBolsaRecita(solicitudOriginal, especialidad, dias);
+    private void crearBolsaRecitaConTransaccion(SolicitudBolsa solicitudOriginal, String especialidad, Integer dias, Long idAtencionClinica) {
+        crearBolsaRecita(solicitudOriginal, especialidad, dias, idAtencionClinica);
     }
 
     @Transactional
-    private void crearBolsaInterconsultaConTransaccion(SolicitudBolsa solicitudOriginal, String especialidad) {
-        crearBolsaInterconsulta(solicitudOriginal, especialidad);
+    private void crearBolsaInterconsultaConTransaccion(SolicitudBolsa solicitudOriginal, String especialidad, Long idAtencionClinica) {
+        crearBolsaInterconsulta(solicitudOriginal, especialidad, idAtencionClinica);
     }
 
     /**
@@ -183,7 +184,7 @@ public class AtenderPacienteService {
     }
 
 
-    public void crearBolsaRecita(SolicitudBolsa solicitudOriginal, String especialidad, Integer dias) {
+    public void crearBolsaRecita(SolicitudBolsa solicitudOriginal, String especialidad, Integer dias, Long idAtencionClinica) {
         log.info("📋 [v1.47.2] Creando bolsa RECITA para días: {}", dias);
 
         // ✅ v1.47.2: Recita usa especialidad del médico (solicitud original), NO la de Interconsulta
@@ -230,6 +231,8 @@ public class AtenderPacienteService {
                 .fechaAsignacion(OffsetDateTime.now())
                 .fechaPreferidaNoAtendida(fechaPreferida.toLocalDate()) // ✅ Fecha preferida calculada (hoy + días)
                 .idsolicitudgeneracion(solicitudOriginal.getIdSolicitud()) // ✅ FK trazabilidad
+                .idPersonal(obtenerIdMedicoActual()) // ✅ Creador directo (usuario autenticado)
+                .idAtencionClinica(idAtencionClinica) // ✅ v6.0.0: FK directa → atencion_clinica
                 .activo(true)
                 .build();
 
@@ -243,11 +246,11 @@ public class AtenderPacienteService {
         }
     }
 
-    public void crearBolsaInterconsulta(SolicitudBolsa solicitudOriginal, String especialidad) {
+    public void crearBolsaInterconsulta(SolicitudBolsa solicitudOriginal, String especialidad, Long idAtencionClinica) {
         log.info("📋 [v1.47.1] Creando bolsa INTERCONSULTA para especialidad: {}", especialidad);
 
-        // ✅ v1.47.1: Usar BOLSA_GESTORA (10) en lugar de BOLSA_GENERADA_X_PROFESIONAL (11)
-        // para permitir múltiples interconsultas de diferentes especialidades sin violar UNIQUE constraint
+        // ✅ v1.75.0: usa BOLSA_GENERADA_X_PROFESIONAL (11) — igual que RECITA
+        // El UNIQUE constraint antiguo fue resuelto (1 fila por especialidad), ya no se necesita BOLSA_GESTORA (10)
         ZonedDateTime zonedDateTime = Instant.now().atZone(ZoneId.of("America/Lima"));
 
         // ✅ v1.47.3: Buscar idServicio por especialidad para permitir asignación de médico
@@ -288,6 +291,8 @@ public class AtenderPacienteService {
                 // ✅ v1.103.9: Sin gestora — va a bolsas/solicitudes para ser asignada, NO a citas-agendadas
                 .fechaAsignacion(OffsetDateTime.now())
                 .idsolicitudgeneracion(solicitudOriginal.getIdSolicitud()) // ✅ FK trazabilidad
+                .idPersonal(obtenerIdMedicoActual()) // ✅ Creador directo (usuario autenticado)
+                .idAtencionClinica(idAtencionClinica) // ✅ v6.0.0: FK directa → atencion_clinica
                 .activo(true)
                 .build();
 
@@ -302,11 +307,13 @@ public class AtenderPacienteService {
     }
 
     /**
-     * ✅ v1.76.0 / v1.103.7: Guarda los datos de la Ficha de Enfermería en atencion_clinica.
+     * ✅ v1.76.0 / v1.103.7 / v6.0.0: Guarda los datos de la Ficha de Enfermería en atencion_clinica.
      * Solo persiste si al menos un campo de la ficha tiene valor.
      * v1.103.7: Corregido FK violations (pk_asegurado UUID, id_ipress lookup, id_personal_creador guard)
+     * v6.0.0:   Retorna el id_atencion generado para vincularlo a RECITA/INTERCONSULTA (FK directa).
+     *           Retorna null si no hay datos de enfermería o si ocurre un error.
      */
-    private void guardarFichaEnfermeria(AtenderPacienteRequest request,
+    private Long guardarFichaEnfermeria(AtenderPacienteRequest request,
                                         SolicitudBolsa solicitud,
                                         OffsetDateTime fechaAtencion,
                                         Asegurado asegurado) {
@@ -324,14 +331,14 @@ public class AtenderPacienteService {
 
         if (!tieneDatosEnfermeria) {
             log.debug("ℹ️ [v1.76.0] Sin datos de Ficha Enfermería — omitiendo guardado");
-            return;
+            return null;
         }
 
         // ✅ v1.103.7: Obtener id_personal_creador — FK obligatorio
         Long idPersonal = obtenerIdMedicoActual();
         if (idPersonal == null) {
             log.warn("⚠️ [v1.103.7] No se puede guardar Ficha Enfermería: idPersonalCreador es null (médico sin PersonalCnt)");
-            return;
+            return null;
         }
 
         // ✅ v1.103.7: Resolver id_ipress — FK obligatorio
@@ -344,7 +351,7 @@ public class AtenderPacienteService {
         }
         if (idIpress == null) {
             log.warn("⚠️ [v1.103.7] No se puede guardar Ficha Enfermería: id_ipress no encontrado para DNI: {}", solicitud.getPacienteDni());
-            return;
+            return null;
         }
 
         // ✅ v1.103.7: Usar pk_asegurado UUID (FK a asegurados.pk_asegurado), NO el DNI
@@ -395,15 +402,17 @@ public class AtenderPacienteService {
                     .requiereTelemonitoreo(false)
                     .build();
 
-            atencionClinicaRepository.save(ficha);
-            log.info("✅ [v1.103.7] Ficha de Enfermería guardada para DNI: {} / UUID: {}",
-                    solicitud.getPacienteDni(), asegurado.getPkAsegurado());
+            AtencionClinica guardada = atencionClinicaRepository.save(ficha);
+            log.info("✅ [v6.0.0] Ficha de Enfermería guardada — id_atencion: {} / DNI: {} / UUID: {}",
+                    guardada.getIdAtencion(), solicitud.getPacienteDni(), asegurado.getPkAsegurado());
+            return guardada.getIdAtencion(); // ✅ v6.0.0: Retornar id para FK en RECITA/INTERCONSULTA
         } catch (Exception e) {
             // ✅ v1.103.7: Limpiar entidad de la sesión Hibernate para evitar "null identifier" en flush posterior
             if (ficha != null) {
                 try { entityManager.detach(ficha); } catch (Exception ignored) {}
             }
             log.warn("⚠️ [v1.103.7] Error guardando Ficha Enfermería (no bloquea la atención): {}", e.getMessage());
+            return null;
         }
     }
 

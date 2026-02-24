@@ -1832,6 +1832,7 @@ export default function MisPacientes() {
       setTieneRecita(false);
       setRecitaDias(7);
       setTieneInterconsulta(false);
+      setExpandInterconsulta(false);
       setInterconsultasLista([]);
       setInterconsultaSelector('');
       setInterconsultaMotivoSelector('');

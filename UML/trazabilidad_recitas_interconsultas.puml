@@ -1,0 +1,110 @@
+@startuml CENATE_Trazabilidad
+
+skinparam backgroundColor #FAFAFA
+skinparam class {
+  BackgroundColor #EBF3FB
+  BorderColor #2471A3
+  HeaderBackgroundColor #1A5276
+  HeaderFontColor white
+  FontSize 12
+}
+skinparam note {
+  BackgroundColor #FEF9E7
+  BorderColor #D4AC0D
+}
+skinparam arrow {
+  Color #2471A3
+  FontSize 11
+}
+skinparam linetype ortho
+
+' ===================== ENTIDADES =====================
+
+class dim_solicitud_bolsa {
+  + id_solicitud : BIGINT <<PK>>
+  --
+  numero_solicitud : VARCHAR
+  tipo_cita : VARCHAR
+  paciente_dni : VARCHAR
+  paciente_id  : VARCHAR
+  especialidad : VARCHAR
+  estado : VARCHAR
+  id_bolsa : BIGINT <<FK→dim_tipos_bolsas>>
+  fecha_solicitud : TIMESTAMPTZ
+  fecha_preferida_no_atendida : DATE
+  activo : BOOLEAN
+  --
+  <<Trazabilidad>>
+  id_personal : BIGINT <<FK→dim_personal_cnt>>
+  idsolicitudgeneracion : BIGINT <<FK→self>>
+  id_atencion_clinica : BIGINT <<FK→atencion_clinica>> ★v6
+}
+
+class atencion_clinica {
+  + id_atencion : BIGINT <<PK>>
+  --
+  pk_asegurado : VARCHAR
+  fecha_atencion : TIMESTAMPTZ
+  id_ipress : BIGINT
+  id_servicio : BIGINT
+  id_tipo_atencion : BIGINT
+  peso_kg / talla_cm / imc : DECIMAL
+  presion_arterial : VARCHAR
+  nivel_riesgo : VARCHAR
+  control_enfermeria : TEXT
+  --
+  <<Auditoría>>
+  id_personal_creador : BIGINT <<FK→dim_personal_cnt>>
+}
+
+class dim_personal_cnt {
+  + id_pers : BIGINT <<PK>>
+  --
+  ape_pater_pers : VARCHAR
+  ape_mater_pers : VARCHAR
+  nom_pers : VARCHAR
+  id_usuario : BIGINT
+}
+
+class dim_tipos_bolsas {
+  + id_tipo_bolsa : BIGINT <<PK>>
+  --
+  desc_tipo_bolsa : VARCHAR
+}
+
+class dim_estados_gestion_citas {
+  + id_estado_cita : BIGINT <<PK>>
+  --
+  cod_estado_cita : VARCHAR
+  desc_estado_cita : VARCHAR
+}
+
+' ===================== RELACIONES =====================
+
+dim_solicitud_bolsa "RECITA/INT\n(idsolicitudgeneracion)" -right-> "solicitud original\n(id_solicitud)" dim_solicitud_bolsa : "auto-referencia\nbolsa origen"
+
+dim_solicitud_bolsa "id_atencion_clinica\n★ v6.0.0" -down-> "id_atencion" atencion_clinica : "FK directa\n(nuevo)"
+
+dim_solicitud_bolsa "id_personal" ..> "id_pers" dim_personal_cnt : "creador directo\n(nuevos registros)"
+
+atencion_clinica "id_personal_creador" -right-> "id_pers" dim_personal_cnt : "quién atendió"
+
+dim_solicitud_bolsa "id_bolsa" ..> "id_tipo_bolsa" dim_tipos_bolsas
+
+dim_solicitud_bolsa "estado_gestion_citas_id" ..> "id_estado_cita" dim_estados_gestion_citas
+
+note bottom of dim_solicitud_bolsa
+  Registros RECITA/INTERCONSULTA:
+  id_bolsa = 11 (BOLSA_GENERADA_X_PROFESIONAL)
+  tipo_cita IN ('RECITA','INTERCONSULTA')
+  id_atencion_clinica → enlace directo al creador ★
+end note
+
+note right of atencion_clinica
+  Guardada por enfermera
+  durante la consulta.
+  id_personal_creador = quién
+  generó la RECITA/INT
+end note
+
+@enduml

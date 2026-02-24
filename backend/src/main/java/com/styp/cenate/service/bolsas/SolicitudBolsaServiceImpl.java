@@ -3775,6 +3775,18 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
 
     @Override
     @org.springframework.transaction.annotation.Transactional(readOnly = true)
+    public java.util.Map<String, Object> obtenerKpisTrazabilidad() {
+        java.util.Map<String, Object> row = solicitudRepository.kpisTrazabilidad();
+        java.util.Map<String, Object> m = new java.util.LinkedHashMap<>();
+        m.put("total",          row.get("total"));
+        m.put("recitas",        row.get("recitas"));
+        m.put("interconsultas", row.get("interconsultas"));
+        m.put("sinCreador",     row.get("sin_creador"));
+        return m;
+    }
+
+    @Override
+    @org.springframework.transaction.annotation.Transactional(readOnly = true)
     public java.util.List<java.util.Map<String, Object>> obtenerFechasConRecitas() {
         return solicitudRepository.fechasConRecitasInterconsultas().stream().map(row -> {
             java.util.Map<String, Object> m = new java.util.LinkedHashMap<>();

@@ -1651,6 +1651,17 @@ public class SolicitudBolsaController {
         }
     }
 
+    @GetMapping("/trazabilidad-recitas/kpis")
+    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'COORD. ENFERMERIA')")
+    public ResponseEntity<?> obtenerKpisTrazabilidad() {
+        try {
+            return ResponseEntity.ok(solicitudBolsaService.obtenerKpisTrazabilidad());
+        } catch (Exception e) {
+            log.error("❌ Error KPIs trazabilidad: ", e);
+            return ResponseEntity.status(500).body(Map.of("error", e.getMessage()));
+        }
+    }
+
     @GetMapping("/trazabilidad-recitas/fechas")
     @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'COORD. ENFERMERIA')")
     public ResponseEntity<?> obtenerFechasConRecitas() {

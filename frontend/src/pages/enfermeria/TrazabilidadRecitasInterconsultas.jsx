@@ -1,18 +1,170 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   Search, GitBranch, RefreshCw, ChevronLeft, ChevronRight,
-  Calendar, Filter, User, FileText, Pencil, Check, X
+  Calendar, Filter, FileText, ClipboardList, Stethoscope,
+  Pencil, Check, X, AlertCircle
 } from 'lucide-react';
 
 /**
- * TrazabilidadRecitasInterconsultas v1.0.0
- * Vista de Coordinadora de Enfermería: quién generó cada recita/interconsulta,
- * para qué paciente y con qué especialidad destino.
- *
- * Endpoint: GET /api/bolsas/solicitudes/trazabilidad-recitas
+ * TrazabilidadRecitasInterconsultas v2.0.0
+ * Vista Coordinadora de Enfermería — quién generó cada recita/interconsulta.
+ * Diseño estándar CENATE: header coloreado, KPIs, filtros, tabla zebra.
  */
 
 const PAGE_SIZE = 25;
+
+// ─── Calendario de rango ──────────────────────────────────────────────────────
+const DIAS = ['Lu', 'Ma', 'Mi', 'Ju', 'Vi', 'Sá', 'Do'];
+const MESES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio',
+               'Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+
+function toYMD(d) {
+  if (!d) return null;
+  const p = d instanceof Date ? d : new Date(d + 'T12:00:00');
+  return `${p.getFullYear()}-${String(p.getMonth()+1).padStart(2,'0')}-${String(p.getDate()).padStart(2,'0')}`;
+}
+
+function RangoFechas({ inicio, fin, onCambio, fechasConDatos = new Map() }) {
+  const [open, setOpen] = useState(false);
+  const [hover, setHover] = useState(null);
+  const today = new Date();
+  const [mes, setMes] = useState(today.getMonth());
+  const [anio, setAnio] = useState(today.getFullYear());
+  const ref = useRef(null);
+
+  // cerrar al hacer click fuera
+  useEffect(() => {
+    function onClick(e) { if (ref.current && !ref.current.contains(e.target)) setOpen(false); }
+    document.addEventListener('mousedown', onClick);
+    return () => document.removeEventListener('mousedown', onClick);
+  }, []);
+
+  function diasDelMes(m, a) {
+    const primero = new Date(a, m, 1);
+    const ultimo  = new Date(a, m + 1, 0);
+    // lunes = 0
+    const offset = (primero.getDay() + 6) % 7;
+    const celdas = [];
+    for (let i = 0; i < offset; i++) celdas.push(null);
+    for (let d = 1; d <= ultimo.getDate(); d++) celdas.push(new Date(a, m, d));
+    return celdas;
+  }
+
+  function handleDia(d) {
+    const ymd = toYMD(d);
+    if (!inicio || (inicio && fin)) {
+      onCambio(ymd, null);
+    } else {
+      if (ymd < inicio) onCambio(ymd, inicio);
+      else              onCambio(inicio, ymd);
+      setOpen(false);
+      setHover(null);
+    }
+  }
+
+  function inRango(d) {
+    const ymd = toYMD(d);
+    const end = hover || fin;
+    if (!inicio || !end) return false;
+    const [a, b] = inicio <= end ? [inicio, end] : [end, inicio];
+    return ymd > a && ymd < b;
+  }
+  function esInicio(d)    { return toYMD(d) === inicio; }
+  function esFin(d)      { return toYMD(d) === fin; }
+  function esHoy(d)      { return toYMD(d) === toYMD(today); }
+  function conteoFecha(d) { return fechasConDatos.get(toYMD(d)) ?? 0; }
+
+  const label = inicio && fin
+    ? `${inicio.split('-').reverse().join('/')} — ${fin.split('-').reverse().join('/')}`
+    : inicio
+    ? `Desde ${inicio.split('-').reverse().join('/')}`
+    : 'F. preferida';
+
+  return (
+    <div className="relative" ref={ref}>
+      <label className="block text-xs font-semibold text-gray-600 mb-1">
+        <Calendar size={11} className="inline mr-1" />F. Preferida
+      </label>
+      <button
+        type="button"
+        onClick={() => setOpen(v => !v)}
+        className="flex items-center gap-2 py-2 px-3 text-sm border border-gray-300 rounded-lg bg-white hover:border-[#0a5ba9] focus:outline-none focus:ring-2 focus:ring-[#0a5ba9] whitespace-nowrap"
+      >
+        <Calendar size={14} className="text-gray-400" />
+        <span className={inicio ? 'text-gray-800' : 'text-gray-400'}>{label}</span>
+        {(inicio || fin) && (
+          <span
+            role="button"
+            onClick={e => { e.stopPropagation(); onCambio(null, null); }}
+            className="ml-1 text-gray-400 hover:text-red-500"
+          >✕</span>
+        )}
+      </button>
+
+      {open && (
+        <div className="absolute z-50 mt-1 bg-white border border-gray-200 rounded-xl shadow-lg p-3 w-72">
+          {/* Navegación mes */}
+          <div className="flex items-center justify-between mb-2">
+            <button onClick={() => { if (mes === 0) { setMes(11); setAnio(a => a-1); } else setMes(m => m-1); }}
+              className="p-1 rounded hover:bg-gray-100"><ChevronLeft size={14}/></button>
+            <span className="text-sm font-semibold text-gray-700">{MESES[mes]} {anio}</span>
+            <button onClick={() => { if (mes === 11) { setMes(0); setAnio(a => a+1); } else setMes(m => m+1); }}
+              className="p-1 rounded hover:bg-gray-100"><ChevronRight size={14}/></button>
+          </div>
+
+          {/* Días de semana */}
+          <div className="grid grid-cols-7 mb-1">
+            {DIAS.map(d => (
+              <div key={d} className="text-center text-xs font-semibold text-gray-400 py-0.5">{d}</div>
+            ))}
+          </div>
+
+          {/* Celdas */}
+          <div className="grid grid-cols-7">
+            {diasDelMes(mes, anio).map((d, i) => {
+              if (!d) return <div key={`e${i}`} />;
+              const enRango   = inRango(d);
+              const esI       = esInicio(d);
+              const esF       = esFin(d);
+              const esH    = esHoy(d);
+              const selec  = esI || esF;
+              const conteo = conteoFecha(d);
+              const label  = conteo > 9 ? '9+' : conteo > 0 ? String(conteo) : null;
+              return (
+                <button
+                  key={i}
+                  type="button"
+                  onClick={() => handleDia(d)}
+                  onMouseEnter={() => inicio && !fin && setHover(toYMD(d))}
+                  onMouseLeave={() => setHover(null)}
+                  className={[
+                    'relative text-xs py-0.5 rounded transition-colors flex flex-col items-center leading-none gap-0.5',
+                    selec   ? 'bg-[#0a5ba9] text-white font-bold' :
+                    enRango ? 'bg-blue-100 text-[#0a5ba9]' :
+                    conteo > 0 ? 'bg-blue-50 text-[#0a5ba9] font-semibold ring-1 ring-[#0a5ba9]/30' :
+                    esH ? 'border border-[#0a5ba9] text-[#0a5ba9] font-semibold' :
+                    'hover:bg-gray-100 text-gray-700',
+                  ].join(' ')}
+                >
+                  <span>{d.getDate()}</span>
+                  {label && (
+                    <span className={`text-[9px] font-bold leading-none ${selec ? 'text-white/90' : 'text-[#0a5ba9]'}`}>
+                      {label}
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+
+          {inicio && !fin && (
+            <p className="text-xs text-gray-400 text-center mt-2">Selecciona la fecha final</p>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
 
 function getToken() {
   return (
@@ -37,196 +189,399 @@ function formatFecha(val) {
       day: '2-digit', month: '2-digit', year: 'numeric',
       hour: '2-digit', minute: '2-digit',
     });
-  } catch {
-    return String(val);
-  }
+  } catch { return String(val); }
 }
 
+function formatFechaSolo(val) {
+  if (!val) return null;
+  try {
+    return new Date(val + 'T12:00:00').toLocaleDateString('es-PE', {
+      day: '2-digit', month: '2-digit', year: 'numeric',
+    });
+  } catch { return null; }
+}
+
+// ─── Badges ──────────────────────────────────────────────────────────────────
+
 function BadgeTipo({ tipo }) {
-  const esRecita = tipo?.toUpperCase() === 'RECITA';
-  return (
-    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold ${
-      esRecita
-        ? 'bg-blue-100 text-blue-700'
-        : 'bg-orange-100 text-orange-700'
-    }`}>
-      {tipo || '—'}
-    </span>
-  );
+  const t = tipo?.toUpperCase();
+  if (t === 'RECITA')
+    return <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold bg-blue-100 text-blue-700 border border-blue-200">RECITA</span>;
+  if (t === 'INTERCONSULTA')
+    return <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold bg-orange-100 text-orange-700 border border-orange-200">INTERCONSULTA</span>;
+  return <span className="text-xs text-gray-400">—</span>;
 }
 
 function BadgeEstado({ cod, desc }) {
-  const colores = {
-    PENDIENTE_CITA: 'bg-gray-100 text-gray-600',
-    CITADO:         'bg-blue-100 text-blue-700',
-    ATENDIDO:       'bg-green-100 text-green-700',
-    NO_ASISTIO:     'bg-red-100 text-red-600',
-    RECHAZADO:      'bg-red-100 text-red-600',
+  const map = {
+    PENDIENTE_CITA: 'bg-gray-100 text-gray-600 border-gray-200',
+    CITADO:         'bg-blue-100 text-blue-700 border-blue-200',
+    ATENDIDO:       'bg-green-100 text-green-700 border-green-200',
+    NO_ASISTIO:     'bg-red-100 text-red-600 border-red-200',
+    RECHAZADO:      'bg-red-100 text-red-600 border-red-200',
   };
-  const cls = colores[cod] || 'bg-gray-100 text-gray-600';
+  const cls = map[cod] || 'bg-gray-100 text-gray-600 border-gray-200';
+  const label = (cod || desc || '—').split('_')[0];
   return (
-    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${cls}`}>
-      {desc || cod || '—'}
+    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border ${cls}`}>
+      {label}
     </span>
   );
 }
 
-function BadgeCreador({ nombre }) {
-  if (!nombre) return <span className="text-xs text-gray-400 italic">Sin datos</span>;
+// ─── Celda de fecha preferida editable ───────────────────────────────────────
+
+function CeldaFechaPreferida({ fila, onGuardar }) {
+  const [editando,   setEditando]   = useState(false);
+  const [fechaInput, setFechaInput] = useState('');
+  const [guardando,  setGuardando]  = useState(false);
+  const inputRef = useRef(null);
+
+  const abrir = () => {
+    setFechaInput(fila.fechaPreferida ? fila.fechaPreferida.split('T')[0] : '');
+    setEditando(true);
+    setTimeout(() => inputRef.current?.showPicker?.(), 50);
+  };
+
+  const guardar = async () => {
+    setGuardando(true);
+    await onGuardar(fila.idSolicitud, fechaInput || null);
+    setGuardando(false);
+    setEditando(false);
+  };
+
+  if (editando) {
+    return (
+      <div className="flex items-center gap-1 min-w-max">
+        <input
+          ref={inputRef}
+          type="date"
+          value={fechaInput}
+          onChange={e => setFechaInput(e.target.value)}
+          onKeyDown={e => {
+            if (e.key === 'Enter') guardar();
+            if (e.key === 'Escape') setEditando(false);
+          }}
+          autoFocus
+          className="text-xs border border-blue-400 rounded px-1.5 py-1 focus:outline-none focus:ring-2 focus:ring-[#0a5ba9] bg-white"
+        />
+        <button
+          onClick={guardar}
+          disabled={guardando}
+          className="p-1 rounded hover:bg-green-100 text-green-600 disabled:opacity-50"
+          title="Guardar"
+        >
+          <Check size={13} />
+        </button>
+        <button
+          onClick={() => setEditando(false)}
+          className="p-1 rounded hover:bg-red-100 text-red-500"
+          title="Cancelar"
+        >
+          <X size={13} />
+        </button>
+      </div>
+    );
+  }
+
+  const fechaDisplay = formatFechaSolo(fila.fechaPreferida);
   return (
-    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700">
-      <User size={10} />
-      {nombre}
-    </span>
+    <div className="flex items-center gap-1 group">
+      <span className={fechaDisplay ? 'text-xs font-semibold text-[#0a5ba9]' : 'text-xs text-gray-400 italic'}>
+        {fechaDisplay || 'Sin fecha'}
+      </span>
+      <button
+        onClick={abrir}
+        className="p-1 rounded hover:bg-blue-100 text-blue-400 hover:text-[#0a5ba9] transition-colors"
+        title="Editar fecha preferida"
+      >
+        <Pencil size={11} />
+      </button>
+    </div>
   );
 }
+
+// ─── Buscador de enfermera con autocomplete ───────────────────────────────────
+
+function BuscadorEnfermera({ value, onChange }) {
+  const [lista,    setLista]    = useState([]);
+  const [texto,    setTexto]    = useState('');
+  const [open,     setOpen]     = useState(false);
+  const [cargando, setCargando] = useState(false);
+  const ref = useRef(null);
+
+  // cargar lista al montar
+  useEffect(() => {
+    setCargando(true);
+    fetch(`${API_BASE}/bolsas/solicitudes/trazabilidad-recitas/enfermeras`, {
+      headers: { Authorization: `Bearer ${getToken()}` },
+    })
+      .then(r => r.json())
+      .then(data => setLista(Array.isArray(data) ? data : []))
+      .catch(() => {})
+      .finally(() => setCargando(false));
+  }, []);
+
+  // cerrar al click fuera
+  useEffect(() => {
+    function h(e) { if (ref.current && !ref.current.contains(e.target)) setOpen(false); }
+    document.addEventListener('mousedown', h);
+    return () => document.removeEventListener('mousedown', h);
+  }, []);
+
+  const seleccionado = lista.find(e => String(e.idPersonal) === String(value));
+  const filtradas = texto.trim()
+    ? lista.filter(e => e.nombre?.toLowerCase().includes(texto.trim().toLowerCase()))
+    : lista;
+
+  function seleccionar(item) {
+    onChange(item ? String(item.idPersonal) : '');
+    setTexto('');
+    setOpen(false);
+  }
+
+  return (
+    <div className="relative min-w-[220px]" ref={ref}>
+      <label className="block text-xs font-semibold text-gray-600 mb-1">
+        <Search size={11} className="inline mr-1" />Enfermera / Profesional
+      </label>
+
+      {/* campo principal */}
+      <div
+        className={`flex items-center gap-1 py-2 px-3 text-sm border rounded-lg bg-white cursor-text
+          ${open ? 'border-[#0a5ba9] ring-2 ring-[#0a5ba9]/20' : 'border-gray-300 hover:border-[#0a5ba9]'}`}
+        onClick={() => setOpen(true)}
+      >
+        {seleccionado && !open ? (
+          <>
+            <span className="flex-1 truncate text-gray-800 text-xs">{seleccionado.nombre}</span>
+            <span className="text-xs bg-[#0a5ba9] text-white rounded-full px-1.5 py-0.5 font-bold">{seleccionado.total}</span>
+            <button
+              type="button"
+              onClick={e => { e.stopPropagation(); seleccionar(null); }}
+              className="text-gray-400 hover:text-red-500 ml-1"
+            >✕</button>
+          </>
+        ) : (
+          <input
+            autoFocus={open}
+            type="text"
+            value={texto}
+            placeholder={seleccionado ? seleccionado.nombre : cargando ? 'Cargando…' : 'Buscar profesional…'}
+            onChange={e => { setTexto(e.target.value); setOpen(true); }}
+            className="flex-1 outline-none bg-transparent text-sm min-w-0"
+          />
+        )}
+      </div>
+
+      {/* dropdown */}
+      {open && (
+        <div className="absolute z-50 mt-1 w-full bg-white border border-gray-200 rounded-xl shadow-lg max-h-60 overflow-y-auto">
+          {filtradas.length === 0 ? (
+            <div className="px-3 py-4 text-xs text-gray-400 text-center">Sin resultados</div>
+          ) : (
+            filtradas.map(item => (
+              <button
+                key={item.idPersonal}
+                type="button"
+                onClick={() => seleccionar(item)}
+                className={`w-full flex items-center justify-between px-3 py-2 text-left hover:bg-blue-50 transition-colors
+                  ${String(item.idPersonal) === String(value) ? 'bg-blue-50 font-semibold' : ''}`}
+              >
+                <span className="text-xs text-gray-800 truncate flex-1">{item.nombre}</span>
+                <span className="ml-2 text-xs font-bold text-[#0a5ba9] bg-blue-100 rounded-full px-2 py-0.5 whitespace-nowrap">
+                  {item.total} caso{item.total !== 1 ? 's' : ''}
+                </span>
+              </button>
+            ))
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Componente principal ─────────────────────────────────────────────────────
 
 export default function TrazabilidadRecitasInterconsultas() {
-  const [filas,          setFilas]          = useState([]);
-  const [total,          setTotal]          = useState(0);
-  const [isLoading,      setIsLoading]      = useState(true);
-  const [errorMessage,   setErrorMessage]   = useState('');
+  const [filas,        setFilas]        = useState([]);
+  const [total,        setTotal]        = useState(0);
+  const [isLoading,    setIsLoading]    = useState(true);
+  const [errorMessage, setErrorMessage] = useState('');
 
   const [searchTerm,        setSearchTerm]        = useState('');
   const [filtroTipo,        setFiltroTipo]        = useState('');
   const [filtroFechaInicio, setFiltroFechaInicio] = useState('');
   const [filtroFechaFin,    setFiltroFechaFin]    = useState('');
-
-  // Edición inline de fecha preferida
-  const [editandoFechaId,   setEditandoFechaId]   = useState(null);
-  const [fechaInputEdicion, setFechaInputEdicion] = useState('');
+  const [filtroEnfermera,   setFiltroEnfermera]   = useState('');
+  const [fechasConDatos,    setFechasConDatos]    = useState(new Map());
+  const [kpis,              setKpis]              = useState({ total: 0, recitas: 0, interconsultas: 0, sinCreador: 0 });
 
   const [currentPage, setCurrentPage] = useState(1);
 
   const isMountedRef = useRef(true);
   const isFirstLoad  = useRef(true);
 
+  // Cargar KPIs globales y fechas al montar
+  useEffect(() => {
+    const headers = { Authorization: `Bearer ${getToken()}` };
+    fetch(`${API_BASE}/bolsas/solicitudes/trazabilidad-recitas/kpis`, { headers })
+      .then(r => r.json())
+      .then(data => setKpis({
+        total:          Number(data.total          ?? 0),
+        recitas:        Number(data.recitas        ?? 0),
+        interconsultas: Number(data.interconsultas ?? 0),
+        sinCreador:     Number(data.sinCreador     ?? 0),
+      }))
+      .catch(() => {});
+
+    fetch(`${API_BASE}/bolsas/solicitudes/trazabilidad-recitas/fechas`, { headers })
+      .then(r => r.json())
+      .then(data => {
+        if (Array.isArray(data))
+          setFechasConDatos(new Map(data.map(d => [String(d.fecha).substring(0, 10), Number(d.total)])));
+      })
+      .catch(() => {});
+  }, []);
+
   useEffect(() => {
     isMountedRef.current = true;
     cargar(1);
     return () => { isMountedRef.current = false; };
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, []); // eslint-disable-line
 
   useEffect(() => {
     if (isFirstLoad.current) { isFirstLoad.current = false; return; }
     setCurrentPage(1);
     cargar(1);
-  }, [filtroFechaInicio, filtroFechaFin, filtroTipo, searchTerm]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [filtroFechaInicio, filtroFechaFin, filtroTipo, searchTerm, filtroEnfermera]); // eslint-disable-line
 
   useEffect(() => {
     if (currentPage > 1) cargar(currentPage);
-  }, [currentPage]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [currentPage]); // eslint-disable-line
 
   const cargar = useCallback(async (page = 1) => {
     setIsLoading(true);
     setErrorMessage('');
     try {
-      const params = new URLSearchParams();
-      params.set('page', page - 1);
-      params.set('size', PAGE_SIZE);
-      if (searchTerm.trim())       params.set('busqueda',    searchTerm.trim());
-      if (filtroFechaInicio)       params.set('fechaInicio', filtroFechaInicio);
-      if (filtroFechaFin)          params.set('fechaFin',    filtroFechaFin);
-      if (filtroTipo)              params.set('tipoCita',    filtroTipo);
+      const p = new URLSearchParams();
+      p.set('page', page - 1);
+      p.set('size', PAGE_SIZE);
+      if (searchTerm.trim())  p.set('busqueda',    searchTerm.trim());
+      if (filtroFechaInicio)  p.set('fechaInicio', filtroFechaInicio);
+      if (filtroFechaFin)     p.set('fechaFin',    filtroFechaFin);
+      if (filtroTipo)         p.set('tipoCita',    filtroTipo);
+      if (filtroEnfermera)    p.set('idPersonal',  filtroEnfermera);
 
-      const res = await fetch(`${API_BASE}/bolsas/solicitudes/trazabilidad-recitas?${params}`, {
+      const res = await fetch(`${API_BASE}/bolsas/solicitudes/trazabilidad-recitas?${p}`, {
         headers: { Authorization: `Bearer ${getToken()}` },
       });
-
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
-
       if (!isMountedRef.current) return;
       setFilas(data.solicitudes || []);
       setTotal(data.total ?? 0);
     } catch (e) {
-      console.error('❌ Error trazabilidad recitas:', e);
-      if (isMountedRef.current)
-        setErrorMessage('Error al cargar la trazabilidad. Intenta nuevamente.');
+      console.error('❌ Error trazabilidad:', e);
+      if (isMountedRef.current) setErrorMessage('Error al cargar los datos. Intenta nuevamente.');
     } finally {
       if (isMountedRef.current) setIsLoading(false);
     }
-  }, [searchTerm, filtroFechaInicio, filtroFechaFin, filtroTipo]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [searchTerm, filtroFechaInicio, filtroFechaFin, filtroTipo, filtroEnfermera]); // eslint-disable-line
+
+  const limpiarFiltros = () => {
+    setSearchTerm('');
+    setFiltroTipo('');
+    setFiltroFechaInicio('');
+    setFiltroFechaFin('');
+    setFiltroEnfermera('');
+  };
+
+  const guardarFechaPreferida = async (idSolicitud, fecha) => {
+    try {
+      const p = new URLSearchParams();
+      if (fecha) p.set('fecha', fecha);
+      const res = await fetch(`${API_BASE}/bolsas/solicitudes/${idSolicitud}/fecha-preferida?${p}`, {
+        method: 'PATCH',
+        headers: { Authorization: `Bearer ${getToken()}` },
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      setFilas(prev => prev.map(f =>
+        f.idSolicitud === idSolicitud ? { ...f, fechaPreferida: fecha || null } : f
+      ));
+    } catch (e) {
+      console.error('❌ Error guardando fecha:', e);
+    }
+  };
 
   const totalPaginas = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
-  const handleBusqueda = (e) => {
-    if (e.key === 'Enter') {
-      setCurrentPage(1);
-      cargar(1);
-    }
-  };
-
-  const abrirEdicionFecha = (fila) => {
-    setEditandoFechaId(fila.idSolicitud);
-    setFechaInputEdicion(fila.fechaPreferida ? fila.fechaPreferida.split('T')[0] : '');
-  };
-
-  const guardarFechaPreferida = async (idSolicitud) => {
-    try {
-      const params = new URLSearchParams();
-      if (fechaInputEdicion) params.set('fecha', fechaInputEdicion);
-      const res = await fetch(
-        `${API_BASE}/bolsas/solicitudes/${idSolicitud}/fecha-preferida?${params}`,
-        { method: 'PATCH', headers: { Authorization: `Bearer ${getToken()}` } }
-      );
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      // Actualizar localmente sin recargar toda la tabla
-      setFilas(prev => prev.map(f =>
-        f.idSolicitud === idSolicitud
-          ? { ...f, fechaPreferida: fechaInputEdicion || null }
-          : f
-      ));
-    } catch (e) {
-      console.error('❌ Error guardando fecha preferida:', e);
-    } finally {
-      setEditandoFechaId(null);
-    }
-  };
+  // ─── Render ───────────────────────────────────────────────────────────────
 
   return (
     <div className="min-h-screen bg-gray-50 p-4 md:p-6">
 
-      {/* Encabezado */}
-      <div className="mb-6">
-        <div className="flex items-center gap-3 mb-1">
-          <div className="p-2 bg-indigo-100 rounded-xl">
-            <GitBranch size={22} className="text-indigo-600" />
+      {/* ── Encabezado ─────────────────────────────────────────────────────── */}
+      <div className="mb-5">
+        <div className="flex items-center gap-3">
+          <div className="p-2.5 bg-blue-100 rounded-xl">
+            <GitBranch size={22} className="text-[#0a5ba9]" />
           </div>
           <div>
             <h1 className="text-xl font-bold text-gray-800">Trazabilidad Recitas / Interconsultas</h1>
-            <p className="text-sm text-gray-500">
-              Historial de recitas e interconsultas — quién las generó, para qué paciente
-            </p>
+            <p className="text-sm text-gray-500">Historial de recitas e interconsultas — quién las generó y para cuándo</p>
           </div>
         </div>
       </div>
 
-      {/* KPI */}
-      <div className="mb-5 inline-flex items-center gap-2 bg-white border border-indigo-200 rounded-xl px-4 py-3 shadow-sm">
-        <FileText size={18} className="text-indigo-500" />
-        <span className="text-sm text-gray-600">Total registros:</span>
-        <span className="text-lg font-bold text-indigo-600">{total.toLocaleString('es-PE')}</span>
+      {/* ── KPIs ───────────────────────────────────────────────────────────── */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
+        <div className="bg-white rounded-xl border border-gray-200 shadow-sm px-4 py-3 flex items-center gap-3">
+          <div className="p-2 bg-blue-50 rounded-lg"><FileText size={16} className="text-[#0a5ba9]" /></div>
+          <div>
+            <p className="text-xs text-gray-500">Total</p>
+            <p className="text-xl font-bold text-gray-800">{kpis.total.toLocaleString('es-PE')}</p>
+          </div>
+        </div>
+        <div className="bg-white rounded-xl border border-blue-100 shadow-sm px-4 py-3 flex items-center gap-3">
+          <div className="p-2 bg-blue-50 rounded-lg"><ClipboardList size={16} className="text-blue-600" /></div>
+          <div>
+            <p className="text-xs text-gray-500">Recitas</p>
+            <p className="text-xl font-bold text-blue-700">{kpis.recitas.toLocaleString('es-PE')}</p>
+          </div>
+        </div>
+        <div className="bg-white rounded-xl border border-orange-100 shadow-sm px-4 py-3 flex items-center gap-3">
+          <div className="p-2 bg-orange-50 rounded-lg"><Stethoscope size={16} className="text-orange-600" /></div>
+          <div>
+            <p className="text-xs text-gray-500">Interconsultas</p>
+            <p className="text-xl font-bold text-orange-700">{kpis.interconsultas.toLocaleString('es-PE')}</p>
+          </div>
+        </div>
+        <div className="bg-white rounded-xl border border-gray-200 shadow-sm px-4 py-3 flex items-center gap-3">
+          <div className="p-2 bg-gray-100 rounded-lg"><AlertCircle size={16} className="text-gray-500" /></div>
+          <div>
+            <p className="text-xs text-gray-500">Sin creador</p>
+            <p className="text-xl font-bold text-gray-600">{kpis.sinCreador.toLocaleString('es-PE')}</p>
+          </div>
+        </div>
       </div>
 
-      {/* Filtros */}
+      {/* ── Filtros ────────────────────────────────────────────────────────── */}
       <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-4 mb-5">
         <div className="flex flex-wrap gap-3 items-end">
 
           {/* Búsqueda */}
           <div className="flex-1 min-w-[200px]">
-            <label className="block text-xs font-semibold text-gray-600 mb-1">
-              Buscar por DNI o nombre
-            </label>
+            <label className="block text-xs font-semibold text-gray-600 mb-1">Buscar por DNI o nombre</label>
             <div className="relative">
               <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
               <input
                 type="text"
                 value={searchTerm}
                 onChange={e => setSearchTerm(e.target.value)}
-                onKeyDown={handleBusqueda}
+                onKeyDown={e => e.key === 'Enter' && (setCurrentPage(1), cargar(1))}
                 placeholder="DNI o nombre del paciente..."
-                className="w-full pl-9 pr-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400"
+                className="w-full pl-9 pr-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0a5ba9]"
               />
             </div>
           </div>
@@ -234,50 +589,46 @@ export default function TrazabilidadRecitasInterconsultas() {
           {/* Tipo */}
           <div className="min-w-[160px]">
             <label className="block text-xs font-semibold text-gray-600 mb-1">
-              <Filter size={12} className="inline mr-1" />Tipo
+              <Filter size={11} className="inline mr-1" />Tipo
             </label>
             <select
               value={filtroTipo}
               onChange={e => setFiltroTipo(e.target.value)}
-              className="w-full py-2 px-3 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400"
+              className="w-full py-2 px-3 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0a5ba9]"
             >
-              <option value="">Todos</option>
+              <option value="">Todos los tipos</option>
               <option value="RECITA">RECITA</option>
               <option value="INTERCONSULTA">INTERCONSULTA</option>
             </select>
           </div>
 
-          {/* Fecha inicio */}
-          <div>
-            <label className="block text-xs font-semibold text-gray-600 mb-1">
-              <Calendar size={12} className="inline mr-1" />Desde
-            </label>
-            <input
-              type="date"
-              value={filtroFechaInicio}
-              onChange={e => setFiltroFechaInicio(e.target.value)}
-              className="py-2 px-3 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400"
-            />
-          </div>
+          {/* Enfermera / profesional */}
+          <BuscadorEnfermera
+            value={filtroEnfermera}
+            onChange={setFiltroEnfermera}
+          />
 
-          {/* Fecha fin */}
-          <div>
-            <label className="block text-xs font-semibold text-gray-600 mb-1">
-              <Calendar size={12} className="inline mr-1" />Hasta
-            </label>
-            <input
-              type="date"
-              value={filtroFechaFin}
-              onChange={e => setFiltroFechaFin(e.target.value)}
-              className="py-2 px-3 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400"
-            />
-          </div>
+          {/* Rango de fechas — calendario */}
+          <RangoFechas
+            inicio={filtroFechaInicio}
+            fin={filtroFechaFin}
+            onCambio={(ini, fin) => { setFiltroFechaInicio(ini); setFiltroFechaFin(fin); }}
+            fechasConDatos={fechasConDatos}
+          />
+
+          {/* Limpiar */}
+          <button
+            onClick={limpiarFiltros}
+            className="py-2 px-4 text-sm border border-gray-300 rounded-lg bg-white text-gray-600 hover:bg-gray-50 transition"
+          >
+            Limpiar
+          </button>
 
           {/* Actualizar */}
           <button
             onClick={() => { setCurrentPage(1); cargar(1); }}
             disabled={isLoading}
-            className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white text-sm rounded-lg hover:bg-indigo-700 disabled:opacity-50"
+            className="py-2 px-4 text-sm bg-[#0a5ba9] hover:bg-[#0d4e90] text-white rounded-lg flex items-center gap-2 transition disabled:opacity-50"
           >
             <RefreshCw size={14} className={isLoading ? 'animate-spin' : ''} />
             Actualizar
@@ -285,155 +636,144 @@ export default function TrazabilidadRecitasInterconsultas() {
         </div>
       </div>
 
-      {/* Error */}
-      {errorMessage && (
-        <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
-          {errorMessage}
-        </div>
-      )}
-
-      {/* Tabla */}
+      {/* ── Tabla ──────────────────────────────────────────────────────────── */}
       <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead className="bg-gray-50 border-b border-gray-200">
-              <tr>
-                {[
-                  'F. Generación', 'Tipo', 'Paciente', 'DNI',
-                  'Especialidad destino', 'Origen de la bolsa', 'Fecha preferida',
-                  'Creado por', 'Usuario', 'Solicitud origen', 'Estado'
-                ].map(h => (
-                  <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-gray-600 whitespace-nowrap">
-                    {h}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100">
-              {isLoading ? (
-                <tr>
-                  <td colSpan={11} className="px-4 py-10 text-center text-gray-400">
-                    <RefreshCw size={20} className="animate-spin mx-auto mb-2" />
-                    Cargando trazabilidad...
-                  </td>
+
+        {/* Barra de estado */}
+        <div className="px-4 py-3 border-b border-gray-100 bg-gray-50 flex items-center justify-between">
+          <span className="text-sm font-semibold text-gray-700">
+            {isLoading ? 'Cargando...' : `${total.toLocaleString('es-PE')} registro${total !== 1 ? 's' : ''}`}
+          </span>
+          <span className="text-xs text-gray-500">Página {currentPage} de {totalPaginas}</span>
+        </div>
+
+        {/* Error */}
+        {errorMessage && (
+          <div className="p-4 text-center text-red-600 text-sm flex items-center justify-center gap-2">
+            <AlertCircle size={16} /> {errorMessage}
+          </div>
+        )}
+
+        {/* Loading */}
+        {isLoading && !errorMessage && (
+          <div className="p-10 text-center text-gray-500 text-sm flex items-center justify-center gap-2">
+            <RefreshCw size={16} className="animate-spin" /> Cargando trazabilidad...
+          </div>
+        )}
+
+        {/* Sin datos */}
+        {!isLoading && !errorMessage && filas.length === 0 && (
+          <div className="p-12 text-center">
+            <GitBranch size={40} className="mx-auto mb-3 text-gray-300" />
+            <p className="text-gray-500 text-sm">No se encontraron registros con los filtros aplicados</p>
+          </div>
+        )}
+
+        {/* Tabla datos */}
+        {!isLoading && !errorMessage && filas.length > 0 && (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="bg-[#0a5ba9] text-white">
+                  {[
+                    'F. Generación', 'Tipo', 'Paciente', 'DNI',
+                    'Especialidad', 'Origen bolsa', 'Fecha preferida',
+                    'Creado por', 'Estado'
+                  ].map(h => (
+                    <th key={h} className="px-3 py-2.5 text-left text-xs font-semibold whitespace-nowrap">
+                      {h}
+                    </th>
+                  ))}
                 </tr>
-              ) : filas.length === 0 ? (
-                <tr>
-                  <td colSpan={11} className="px-4 py-10 text-center text-gray-400">
-                    No se encontraron registros con los filtros aplicados.
-                  </td>
-                </tr>
-              ) : (
-                filas.map((f, i) => (
-                  <tr key={f.idSolicitud ?? i} className="hover:bg-gray-50 transition-colors">
-                    <td className="px-4 py-3 text-gray-700 whitespace-nowrap">
+              </thead>
+              <tbody>
+                {filas.map((f, idx) => (
+                  <tr
+                    key={f.idSolicitud ?? idx}
+                    className={`border-b border-gray-100 hover:bg-blue-50 transition-colors ${
+                      idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'
+                    }`}
+                  >
+                    {/* F. Generación */}
+                    <td className="px-3 py-2.5 text-xs text-gray-600 whitespace-nowrap">
                       {formatFecha(f.fechaSolicitud)}
                     </td>
-                    <td className="px-4 py-3">
+
+                    {/* Tipo */}
+                    <td className="px-3 py-2.5">
                       <BadgeTipo tipo={f.tipoCita} />
                     </td>
-                    <td className="px-4 py-3 font-medium text-gray-800 max-w-[200px] truncate" title={f.pacienteNombre}>
-                      {f.pacienteNombre || '—'}
+
+                    {/* Paciente */}
+                    <td className="px-3 py-2.5 font-medium text-gray-800 text-xs max-w-[180px]">
+                      <span title={f.pacienteNombre} className="block truncate">{f.pacienteNombre || '—'}</span>
                     </td>
-                    <td className="px-4 py-3 text-gray-600 font-mono text-xs">
+
+                    {/* DNI */}
+                    <td className="px-3 py-2.5 text-xs font-mono text-gray-700 whitespace-nowrap">
                       {f.pacienteDni || '—'}
                     </td>
-                    <td className="px-4 py-3 text-gray-700">
+
+                    {/* Especialidad */}
+                    <td className="px-3 py-2.5 text-xs text-gray-700 whitespace-nowrap">
                       {f.especialidadDestino || '—'}
                     </td>
-                    <td className="px-4 py-3 text-xs text-gray-600">
+
+                    {/* Origen bolsa */}
+                    <td className="px-3 py-2.5 text-xs text-gray-500">
                       {f.origenBolsa || '—'}
                     </td>
-                    <td className="px-4 py-3 whitespace-nowrap">
-                      {editandoFechaId === f.idSolicitud ? (
-                        <div className="flex items-center gap-1">
-                          <input
-                            type="date"
-                            value={fechaInputEdicion}
-                            onChange={e => setFechaInputEdicion(e.target.value)}
-                            onKeyDown={e => {
-                              if (e.key === 'Enter') guardarFechaPreferida(f.idSolicitud);
-                              if (e.key === 'Escape') setEditandoFechaId(null);
-                            }}
-                            autoFocus
-                            className="text-xs border border-indigo-400 rounded px-1.5 py-1 focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
-                          />
-                          <button
-                            onClick={() => guardarFechaPreferida(f.idSolicitud)}
-                            className="p-1 rounded hover:bg-green-100 text-green-600"
-                            title="Guardar"
-                          >
-                            <Check size={13} />
-                          </button>
-                          <button
-                            onClick={() => setEditandoFechaId(null)}
-                            className="p-1 rounded hover:bg-red-100 text-red-500"
-                            title="Cancelar"
-                          >
-                            <X size={13} />
-                          </button>
-                        </div>
+
+                    {/* Fecha preferida — editable */}
+                    <td className="px-3 py-2.5">
+                      <CeldaFechaPreferida fila={f} onGuardar={guardarFechaPreferida} />
+                    </td>
+
+                    {/* Creado por */}
+                    <td className="px-3 py-2.5 text-xs whitespace-nowrap">
+                      {f.medicoCreador ? (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-green-100 text-green-700 font-medium border border-green-200">
+                          {f.medicoCreador}
+                        </span>
                       ) : (
-                        <div className="flex items-center gap-1 group">
-                          <span className={`text-xs font-medium ${f.fechaPreferida ? 'text-indigo-700' : 'text-gray-400 italic'}`}>
-                            {f.fechaPreferida
-                              ? new Date(f.fechaPreferida + 'T12:00:00').toLocaleDateString('es-PE', {
-                                  day: '2-digit', month: '2-digit', year: 'numeric'
-                                })
-                              : 'Sin fecha'}
-                          </span>
-                          <button
-                            onClick={() => abrirEdicionFecha(f)}
-                            className="p-1 rounded hover:bg-indigo-100 text-indigo-400 hover:text-indigo-600 transition-colors"
-                            title="Editar fecha preferida"
-                          >
-                            <Pencil size={12} />
-                          </button>
-                        </div>
+                        <span className="text-gray-400 italic">Sin datos</span>
                       )}
                     </td>
-                    <td className="px-4 py-3">
-                      <BadgeCreador nombre={f.medicoCreador} />
-                    </td>
-                    <td className="px-4 py-3 text-xs text-gray-500">
-                      {f.usuarioCreador || '—'}
-                    </td>
-                    <td className="px-4 py-3 text-xs text-gray-500 font-mono">
-                      {f.solicitudOrigen || '—'}
-                    </td>
-                    <td className="px-4 py-3">
+
+                    {/* Estado */}
+                    <td className="px-3 py-2.5">
                       <BadgeEstado cod={f.codEstado} desc={f.descEstado} />
                     </td>
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
 
-        {/* Paginación */}
-        {!isLoading && filas.length > 0 && (
-          <div className="px-4 py-3 border-t border-gray-100 flex items-center justify-between text-sm text-gray-600">
-            <span>
-              Mostrando {(currentPage - 1) * PAGE_SIZE + 1}–{Math.min(currentPage * PAGE_SIZE, total)} de {total.toLocaleString('es-PE')} registros
+        {/* ── Paginación ─────────────────────────────────────────────────── */}
+        {!isLoading && totalPaginas > 1 && (
+          <div className="px-4 py-3 border-t border-gray-100 flex items-center justify-between text-sm">
+            <span className="text-xs text-gray-500">
+              Mostrando {(currentPage - 1) * PAGE_SIZE + 1}–{Math.min(currentPage * PAGE_SIZE, total)} de {total.toLocaleString('es-PE')}
             </span>
             <div className="flex items-center gap-1">
               <button
                 onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
                 disabled={currentPage <= 1}
-                className="p-1.5 rounded-lg hover:bg-gray-100 disabled:opacity-40"
+                className="flex items-center gap-1 px-3 py-1.5 text-xs border border-gray-300 rounded-lg disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-50 transition"
               >
-                <ChevronLeft size={16} />
+                <ChevronLeft size={14} /> Anterior
               </button>
-              <span className="px-3 py-1 bg-indigo-50 text-indigo-700 rounded-lg font-medium">
+              <span className="px-3 py-1.5 text-xs bg-blue-50 text-[#0a5ba9] rounded-lg font-semibold border border-blue-200">
                 {currentPage} / {totalPaginas}
               </span>
               <button
                 onClick={() => setCurrentPage(p => Math.min(totalPaginas, p + 1))}
                 disabled={currentPage >= totalPaginas}
-                className="p-1.5 rounded-lg hover:bg-gray-100 disabled:opacity-40"
+                className="flex items-center gap-1 px-3 py-1.5 text-xs border border-gray-300 rounded-lg disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-50 transition"
               >
-                <ChevronRight size={16} />
+                Siguiente <ChevronRight size={14} />
               </button>
             </div>
           </div>
