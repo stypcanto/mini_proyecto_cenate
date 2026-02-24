@@ -2041,57 +2041,46 @@ export default function MisPacientes() {
       return fechaAtencion === fechaAtencionSeleccionada;
     }
 
-    // PRIORIDAD 3: Si NO hay filtro ATENCIÓN, usa el filtro ASIGNACIÓN (comportamiento anterior)
-    // v1.74.7: Si fechaAsignacion es null pero hay fechaAtencion, usar fechaAtencion como fallback
+    // PRIORIDAD 3: Filtrar por FECHA DE ATENCIÓN (cita) — si no tiene, usar fechaAsignacion como fallback
     const hoy = obtenerHoyEnLima();
 
-    if (!p.fechaAsignacion) {
-      // 'todos' incluye pacientes sin fechaAsignacion
-      if (filtroRangoFecha === 'todos') return true;
-      // Fallback: si tiene fechaAtencion, comparar con hoy
-      if (p.fechaAtencion) {
-        const fechaAt = extraerFecha(p.fechaAtencion);
-        if (filtroRangoFecha === 'hoy') {
-          return fechaAt === hoy;
-        }
-      }
-      return false;
+    // Usar fechaAtencion como referencia principal; fallback a fechaAsignacion
+    const fechaRef = p.fechaAtencion
+      ? extraerFecha(p.fechaAtencion)
+      : (p.fechaAsignacion ? extraerFecha(p.fechaAsignacion) : null);
+
+    if (!fechaRef) {
+      return filtroRangoFecha === 'todos';
     }
 
-    // v1.67.4: Extraer fecha y calcular HOY en Lima (UTC-5)
-    const fechaAsignacion = extraerFecha(p.fechaAsignacion);
-
-    // 'todos' muestra todos los pacientes asignados sin restricción de fecha
     if (filtroRangoFecha === 'todos') {
       return true;
     }
 
     if (filtroRangoFecha === 'hoy') {
-      return fechaAsignacion === hoy;
+      return fechaRef === hoy;
     }
 
     if (filtroRangoFecha === 'ayer') {
-      // Calcular ayer en Lima (restar 1 día a la fecha de hoy en Lima)
       const hoyDate = new Date(hoy);
       const ayerDate = new Date(hoyDate.getTime() - 86400000);
       const ayer = `${ayerDate.getFullYear()}-${String(ayerDate.getMonth() + 1).padStart(2, '0')}-${String(ayerDate.getDate()).padStart(2, '0')}`;
-      return fechaAsignacion === ayer;
+      return fechaRef === ayer;
     }
 
     if (filtroRangoFecha === '7dias') {
-      // Calcular hace 7 días en Lima
       const hoyDate = new Date(hoy);
       const hace7diasDate = new Date(hoyDate.getTime() - 7 * 86400000);
       const hace7dias = `${hace7diasDate.getFullYear()}-${String(hace7diasDate.getMonth() + 1).padStart(2, '0')}-${String(hace7diasDate.getDate()).padStart(2, '0')}`;
-      return fechaAsignacion >= hace7dias && fechaAsignacion <= hoy;
+      return fechaRef >= hace7dias && fechaRef <= hoy;
     }
 
     if (filtroRangoFecha === 'personalizado') {
       const desde = fechaDesde || null;
       const hasta = fechaHasta || null;
-      if (desde && hasta) {
-        return fechaAsignacion >= desde && fechaAsignacion <= hasta;
-      }
+      if (desde && hasta) return fechaRef >= desde && fechaRef <= hasta;
+      if (desde) return fechaRef >= desde;
+      if (hasta) return fechaRef <= hasta;
       return true;
     }
 
