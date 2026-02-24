@@ -68,6 +68,9 @@ const esExterno = (user) => {
 };
 
 const UsersManagement = () => {
+  // Caché de IPRESS para no pedir dos veces el mismo endpoint
+  const ipressCacheRef = useRef(null);
+
   const [activeTab, setActiveTab] = useState('usuarios');
   const [viewMode, setViewMode] = useState('table');
   const [users, setUsers] = useState([]);
@@ -1030,10 +1033,14 @@ const UsersManagement = () => {
       });
 
       // 🚀 PAGINACIÓN: Usar endpoint con paginación para mejor rendimiento
+      // Reutilizar IPRESS del caché si ya fue cargado antes
       const [usersResponse, ipressResponse] = await Promise.all([
         api.get(`/usuarios/all-personal?${params.toString()}`, true),
-        api.get('/ipress', true)
+        ipressCacheRef.current ? Promise.resolve(ipressCacheRef.current) : api.get('/ipress', true)
       ]);
+      if (!ipressCacheRef.current && ipressResponse) {
+        ipressCacheRef.current = ipressResponse;
+      }
 
       console.log('📥 Respuesta del servidor (usuarios):', usersResponse);
       console.log('📥 Respuesta del servidor (ipress):', ipressResponse);
@@ -1177,11 +1184,14 @@ const UsersManagement = () => {
     try {
       console.log('🔄 Cargando todos los usuarios para filtros...');
 
-      // Cargar usuarios e IPRESS en paralelo
+      // Cargar usuarios y reutilizar IPRESS del caché si ya está disponible
       const [usersResponse, ipressResponse] = await Promise.all([
         api.get('/usuarios/all-personal?page=0&size=2000&sortBy=createdAt&direction=DESC', true),
-        api.get('/ipress', true)
+        ipressCacheRef.current ? Promise.resolve(ipressCacheRef.current) : api.get('/ipress', true)
       ]);
+      if (!ipressCacheRef.current && ipressResponse) {
+        ipressCacheRef.current = ipressResponse;
+      }
 
       // Extraer datos
       let usersData = [];
@@ -1223,11 +1233,16 @@ const UsersManagement = () => {
   }, []);
 
   useEffect(() => {
+    // Carga prioritaria: tabla principal + datos básicos
     loadUsers();
     loadRoles();
     loadAreas();
-    loadRegimenes();        // 🆕 Cargar regímenes
-    loadAllUsersForFilters(); // 🆕 Cargar todos los usuarios para dropdowns (profesiones y especialidades se generan dinámicamente)
+    loadRegimenes();
+    // Diferir la carga pesada (2000 usuarios para dropdowns) para no bloquear el render inicial
+    const timer = setTimeout(() => {
+      loadAllUsersForFilters();
+    }, 2500);
+    return () => clearTimeout(timer);
   }, [loadUsers, loadRoles, loadAreas, loadRegimenes, loadAllUsersForFilters]);
 
   // 🚀 Resetear a primera página cuando cambian filtros o búsqueda (sin recargar del servidor)
