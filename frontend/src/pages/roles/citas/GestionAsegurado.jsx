@@ -123,6 +123,29 @@ export default function GestionAsegurado() {
   const [cargandoMedicos, setCargandoMedicos] = useState(false);
 
   // ============================================================================
+  // 🆕 ESTADO PARA AGREGAR NUEVO ASEGURADO
+  // ============================================================================
+  const [modalNuevoAsegurado, setModalNuevoAsegurado] = useState(false);
+  const [nuevoAsegurado, setNuevoAsegurado] = useState({
+    tipoDocumento: "DNI",
+    documento: "",
+    nombreCompleto: "",
+    fechaNacimiento: "",
+    sexo: "M",
+    tipoPaciente: "Titular",
+    telefonoPrincipal: "",
+    telefonoAlterno: "",
+    correo: "",
+    tipoSeguro: "Titular",
+    casAdscripcion: "",
+    periodo: String(new Date().getFullYear()),
+    pacienteCenacron: false,
+  });
+  const [ipressDisponibles, setIpressDisponibles] = useState([]);
+  const [dniValidacion, setDniValidacion] = useState(null); // null | "validando" | "ok" | "duplicado"
+  const [guardandoAsegurado, setGuardandoAsegurado] = useState(false);
+
+  // ============================================================================
   // 🔧 ESTADO PARA IMPORTACIÓN DE PACIENTES ADICIONALES (v1.46.0)
   // ============================================================================
   const [modalImportar, setModalImportar] = useState(false);
@@ -2013,6 +2036,28 @@ CENATE de Essalud`;
               </div>
               <div className="flex gap-2 items-center">
                 <button
+                  onClick={() => {
+                    setNuevoAsegurado({
+                      tipoDocumento: "DNI", documento: "", nombreCompleto: "",
+                      fechaNacimiento: "", sexo: "M", tipoPaciente: "Titular",
+                      telefonoPrincipal: "", telefonoAlterno: "", correo: "",
+                      tipoSeguro: "Titular", casAdscripcion: "",
+                      periodo: String(new Date().getFullYear()), pacienteCenacron: false,
+                    });
+                    setDniValidacion(null);
+                    // Cargar IPRESS al abrir
+                    fetch(`${API_BASE}/asegurados/filtros/ipress`, { headers: { Authorization: `Bearer ${getToken()}` } })
+                      .then(r => r.json()).then(d => setIpressDisponibles(d || [])).catch(() => {});
+                    setModalNuevoAsegurado(true);
+                  }}
+                  className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors shadow-sm font-medium"
+                  title="Registrar un nuevo asegurado en el sistema"
+                >
+                  <Plus className="w-4 h-4" />
+                  Agregar Asegurado
+                </button>
+
+                <button
                   onClick={() => setModalImportar(true)}
                   className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors shadow-sm font-medium"
                   title="Importar paciente desde base de asegurados"
@@ -3598,6 +3643,312 @@ CENATE de Essalud`;
                   )}
                 </div>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ================================================================ */}
+      {/* 🆕 MODAL AGREGAR NUEVO ASEGURADO                               */}
+      {/* ================================================================ */}
+      {modalNuevoAsegurado && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            {/* Header */}
+            <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-4 flex items-center justify-between rounded-t-xl sticky top-0 z-10">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center">
+                  <Plus className="w-5 h-5 text-white" />
+                </div>
+                <h2 className="text-xl font-bold text-white">Agregar Nuevo Asegurado</h2>
+              </div>
+              <button onClick={() => setModalNuevoAsegurado(false)} className="text-white/80 hover:text-white transition-colors">
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+
+            {/* Body */}
+            <div className="p-6 space-y-5">
+              {/* Fila 1: Tipo de Documento + Documento */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1">
+                    🪪 Tipo de Documento <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    value={nuevoAsegurado.tipoDocumento}
+                    onChange={e => setNuevoAsegurado(p => ({ ...p, tipoDocumento: e.target.value }))}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
+                  >
+                    <option value="DNI">DNI</option>
+                    <option value="CE">Carné de Extranjería</option>
+                    <option value="PAS">Pasaporte</option>
+                  </select>
+                  <p className="text-xs text-gray-400 mt-1">Selecciona el tipo de documento</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1">
+                    🪪 Documento <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="12345678"
+                    maxLength={20}
+                    value={nuevoAsegurado.documento}
+                    onChange={e => {
+                      const val = e.target.value.replace(/\D/g, "").slice(0, 20);
+                      setNuevoAsegurado(p => ({ ...p, documento: val }));
+                      // Validar DNI en tiempo real
+                      if (val.length >= 8) {
+                        setDniValidacion("validando");
+                        fetch(`${API_BASE}/asegurados/validar-dni/${val}`, { headers: { Authorization: `Bearer ${getToken()}` } })
+                          .then(r => r.json())
+                          .then(d => setDniValidacion(d.disponible ? "ok" : "duplicado"))
+                          .catch(() => setDniValidacion(null));
+                      } else {
+                        setDniValidacion(null);
+                      }
+                    }}
+                    className={`w-full border rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 ${
+                      dniValidacion === "duplicado" ? "border-red-400 bg-red-50" :
+                      dniValidacion === "ok" ? "border-green-400 bg-green-50" : "border-gray-300"
+                    }`}
+                  />
+                  {dniValidacion === "validando" && <p className="text-xs text-blue-500 mt-1">Validando...</p>}
+                  {dniValidacion === "ok" && <p className="text-xs text-green-600 mt-1">✅ Disponible</p>}
+                  {dniValidacion === "duplicado" && <p className="text-xs text-red-600 mt-1">❌ Ya está registrado</p>}
+                </div>
+              </div>
+
+              {/* Fila 2: Nombre Completo + Fecha de Nacimiento */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1">
+                    👤 Nombre Completo <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Juan Pérez García"
+                    value={nuevoAsegurado.nombreCompleto}
+                    onChange={e => setNuevoAsegurado(p => ({ ...p, nombreCompleto: e.target.value.toUpperCase() }))}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1">
+                    📅 Fecha de Nacimiento <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="date"
+                    value={nuevoAsegurado.fechaNacimiento}
+                    onChange={e => setNuevoAsegurado(p => ({ ...p, fechaNacimiento: e.target.value }))}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+              </div>
+
+              {/* Fila 3: Sexo + Tipo de Paciente */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1">
+                    Sexo <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    value={nuevoAsegurado.sexo}
+                    onChange={e => setNuevoAsegurado(p => ({ ...p, sexo: e.target.value }))}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
+                  >
+                    <option value="M">Masculino</option>
+                    <option value="F">Femenino</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1">
+                    👤 Tipo de Paciente <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    value={nuevoAsegurado.tipoPaciente}
+                    onChange={e => setNuevoAsegurado(p => ({ ...p, tipoPaciente: e.target.value }))}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
+                  >
+                    <option value="Titular">Titular</option>
+                    <option value="Derechohabiente">Derechohabiente</option>
+                    <option value="Pensionista">Pensionista</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Fila 4: Teléfono principal + Alterno */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1">
+                    📱 Teléfono móvil principal <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="tel"
+                    placeholder="999888777"
+                    maxLength={15}
+                    value={nuevoAsegurado.telefonoPrincipal}
+                    onChange={e => setNuevoAsegurado(p => ({ ...p, telefonoPrincipal: e.target.value.replace(/\D/g, "") }))}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1">
+                    📞 Teléfono celular o fijo alterno
+                  </label>
+                  <input
+                    type="tel"
+                    placeholder="987654321"
+                    maxLength={15}
+                    value={nuevoAsegurado.telefonoAlterno}
+                    onChange={e => setNuevoAsegurado(p => ({ ...p, telefonoAlterno: e.target.value.replace(/\D/g, "") }))}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+              </div>
+
+              {/* Fila 5: Correo + Tipo de Seguro */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1">
+                    ✉️ Correo Electrónico
+                  </label>
+                  <input
+                    type="email"
+                    placeholder="ejemplo@correo.com"
+                    value={nuevoAsegurado.correo}
+                    onChange={e => setNuevoAsegurado(p => ({ ...p, correo: e.target.value }))}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1">
+                    🛡️ Tipo de Seguro <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    value={nuevoAsegurado.tipoSeguro}
+                    onChange={e => setNuevoAsegurado(p => ({ ...p, tipoSeguro: e.target.value }))}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
+                  >
+                    <option value="Titular">Titular</option>
+                    <option value="Derechohabiente">Derechohabiente</option>
+                    <option value="Pensionista">Pensionista</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Fila 6: IPRESS + Periodo */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1">
+                    🏥 IPRESS <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    value={nuevoAsegurado.casAdscripcion}
+                    onChange={e => setNuevoAsegurado(p => ({ ...p, casAdscripcion: e.target.value }))}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
+                  >
+                    <option value="">Selecciona una IPRESS</option>
+                    {ipressDisponibles.map(ip => (
+                      <option key={ip.codIpress || ip.id} value={ip.codIpress || ip.cod_ipress}>
+                        {ip.descIpress || ip.desc_ipress || ip.nombre}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1">
+                    📅 Periodo <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="2026"
+                    maxLength={4}
+                    value={nuevoAsegurado.periodo}
+                    onChange={e => setNuevoAsegurado(p => ({ ...p, periodo: e.target.value.replace(/\D/g, "").slice(0, 4) }))}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  />
+                  <p className="text-xs text-gray-400 mt-1">Ingresa solo el año (4 dígitos). Ejemplo: 2025</p>
+                </div>
+              </div>
+
+              {/* Toggle CENACRON */}
+              <div className="flex items-center justify-between p-4 border border-gray-200 rounded-xl bg-gray-50">
+                <div>
+                  <p className="text-sm font-semibold text-gray-800">🏥 Paciente CENACRON</p>
+                  <p className="text-xs text-gray-500 mt-0.5">Indica si el asegurado pertenece al programa de pacientes crónicos CENACRON</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setNuevoAsegurado(p => ({ ...p, pacienteCenacron: !p.pacienteCenacron }))}
+                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${
+                    nuevoAsegurado.pacienteCenacron ? "bg-blue-600" : "bg-gray-300"
+                  }`}
+                >
+                  <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                    nuevoAsegurado.pacienteCenacron ? "translate-x-6" : "translate-x-1"
+                  }`} />
+                </button>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="px-6 py-4 border-t border-gray-100 flex justify-end gap-3 bg-gray-50 rounded-b-xl">
+              <button
+                onClick={() => setModalNuevoAsegurado(false)}
+                disabled={guardandoAsegurado}
+                className="px-5 py-2.5 border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-100 transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                disabled={guardandoAsegurado || dniValidacion === "duplicado" || dniValidacion === "validando"}
+                onClick={async () => {
+                  const a = nuevoAsegurado;
+                  if (!a.documento || !a.nombreCompleto || !a.fechaNacimiento || !a.telefonoPrincipal || !a.casAdscripcion || !a.periodo) {
+                    toast.error("Completa todos los campos obligatorios (*)");
+                    return;
+                  }
+                  if (dniValidacion === "duplicado") { toast.error("El DNI ya está registrado"); return; }
+                  setGuardandoAsegurado(true);
+                  try {
+                    const payload = {
+                      docPaciente: a.documento,
+                      paciente: a.nombreCompleto,
+                      fecnacimpaciente: a.fechaNacimiento,
+                      sexo: a.sexo,
+                      tipoPaciente: a.tipoPaciente,
+                      telCelular: a.telefonoPrincipal,
+                      telFijo: a.telefonoAlterno || null,
+                      correoElectronico: a.correo || null,
+                      tipoSeguro: a.tipoSeguro,
+                      casAdscripcion: a.casAdscripcion,
+                      periodo: a.periodo,
+                      pacienteCronico: a.pacienteCenacron,
+                    };
+                    const res = await fetch(`${API_BASE}/asegurados`, {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json", Authorization: `Bearer ${getToken()}` },
+                      body: JSON.stringify(payload),
+                    });
+                    if (!res.ok) {
+                      const err = await res.json().catch(() => ({}));
+                      throw new Error(err.mensaje || err.error || "Error al crear asegurado");
+                    }
+                    toast.success(`✅ Asegurado ${a.nombreCompleto} creado correctamente`);
+                    setModalNuevoAsegurado(false);
+                  } catch (err) {
+                    toast.error(`❌ ${err.message}`);
+                  } finally {
+                    setGuardandoAsegurado(false);
+                  }
+                }}
+                className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {guardandoAsegurado ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
+                Crear Asegurado
+              </button>
             </div>
           </div>
         </div>
