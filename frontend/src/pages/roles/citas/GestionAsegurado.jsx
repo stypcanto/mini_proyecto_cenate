@@ -2518,9 +2518,7 @@ CENATE de Essalud`;
                           </td>
                         )}
                         <td className="px-2 py-1.5 text-slate-600">
-                          {pacienteEditandoEstado === paciente.id
-                            ? citasAgendadas[paciente.id]?.especialidad || "Seleccionar médico"
-                            : paciente.especialidad}
+                          {paciente.especialidad}
                         </td>
                         {/* DNI MÉDICO - COLUMNA SEPARADA */}
                         <td className="px-2 py-1.5 text-slate-600">
@@ -2533,9 +2531,9 @@ CENATE de Essalud`;
                             const seleccionadoId = citasAgendadas[paciente.id]?.especialista;
                             const medicoSeleccionado = medicos.find(m => m.idPers === seleccionadoId);
 
-                            return medicoSeleccionado && medicoSeleccionado.numDocPers
-                              ? medicoSeleccionado.numDocPers
-                              : "-";
+                            if (!medicoSeleccionado) return "-";
+                            const dniMed = String(medicoSeleccionado.documento || medicoSeleccionado.numDocPers || "").trim();
+                            return dniMed || "-";
                           })()}
                         </td>
                         {/* ESPECIALISTA - CARGADO DINÁMICAMENTE - EDITABLE EN MODO EDICIÓN */}
@@ -2588,11 +2586,13 @@ CENATE de Essalud`;
                                             // Buscar el médico seleccionado para obtener su especialidad
                                             const medicoElegido = medicos.find(m => m.idPers === idPers);
                                             console.log(`👨‍⚕️ Médico seleccionado:`, medicoElegido);
-                                            console.log(`📊 Campos disponibles: especialidad=${medicoElegido?.especialidad}, descArea=${medicoElegido?.descArea}, perPers=${medicoElegido?.perPers}`);
+                                            console.log(`📊 Campos disponibles: numDocPers="${medicoElegido?.numDocPers}", colegPers="${medicoElegido?.colegPers}", especialidad=${medicoElegido?.especialidad}, descArea=${medicoElegido?.descArea}, perPers=${medicoElegido?.perPers}`);
 
-                                            // Extraer especialidad: especialidad (del backend) > descArea > "SIN ESPECIALIDAD"
+                                            // Extraer especialidad: del DTO completo > del paciente > "SIN ESPECIALIDAD"
+                                            // Nota: fetch-doctors-by-specialty devuelve DTO simplificado {idPers, nombre, documento}
                                             const especialidadMedico = medicoElegido?.especialidad ||
                                                                       medicoElegido?.descArea ||
+                                                                      paciente.especialidad ||
                                                                       "SIN ESPECIALIDAD";
 
                                             console.log(`📋 Especialidad final cargada: ${especialidadMedico}`);

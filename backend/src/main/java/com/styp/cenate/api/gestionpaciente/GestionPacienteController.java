@@ -12,7 +12,9 @@ import com.styp.cenate.repository.AseguradoRepository;
 import com.styp.cenate.service.gestionpaciente.IGestionPacienteService;
 import com.styp.cenate.service.gestionpaciente.AtenderPacienteService;
 import com.styp.cenate.service.teleekgs.TeleECGService;
+import com.styp.cenate.model.bolsas.DimMotivoInterconsulta;
 import com.styp.cenate.repository.DimServicioEssiRepository;
+import com.styp.cenate.repository.bolsas.DimMotivoInterconsultaRepository;
 import com.styp.cenate.security.mbac.CheckMBACPermission;
 import com.styp.cenate.validation.AtenderPacienteValidator;
 import jakarta.annotation.PostConstruct;
@@ -28,6 +30,9 @@ import org.springframework.validation.BindingResult;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.List;
 import java.util.Map;
 
@@ -46,6 +51,7 @@ public class GestionPacienteController {
     private final TeleECGService teleECGService;
     private final AtencionClinicaRepository atencionClinicaRepository;
     private final AseguradoRepository aseguradoRepository;
+    private final DimMotivoInterconsultaRepository motivoInterconsultaRepository;
 
     @PostConstruct
     public void init() {
@@ -487,6 +493,70 @@ public class GestionPacienteController {
         } catch (Exception e) {
             log.error("❌ Error obteniendo controles enfermería para DNI {}: {}", dni, e.getMessage());
             return ResponseEntity.ok(List.of());
+        }
+    }
+
+    // ✅ v1.79.0: Editar control de enfermería del mismo día
+    @PutMapping("/atencion/{idAtencion}/enfermeria")
+    public ResponseEntity<?> actualizarControlEnfermeria(
+            @PathVariable Long idAtencion,
+            @RequestBody Map<String, Object> body) {
+        try {
+            log.info("PUT /api/gestion-pacientes/atencion/{}/enfermeria", idAtencion);
+
+            AtencionClinica atencion = atencionClinicaRepository.findById(idAtencion)
+                    .orElseThrow(() -> new RuntimeException("Atención no encontrada: " + idAtencion));
+
+            // Verificar que el registro sea del día actual (zona Lima)
+            if (atencion.getFechaAtencion() == null) {
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                        .body(Map.of("error", "Registro sin fecha de atención"));
+            }
+            LocalDate hoy = LocalDate.now(ZoneId.of("America/Lima"));
+            LocalDate fechaRegistro = atencion.getFechaAtencion()
+                    .atZoneSameInstant(ZoneId.of("America/Lima"))
+                    .toLocalDate();
+            if (!fechaRegistro.equals(hoy)) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(Map.of("error", "Solo se puede editar registros del día actual"));
+            }
+
+            if (body.containsKey("presionArterial")) atencion.setPresionArterial((String) body.get("presionArterial"));
+            if (body.containsKey("glucosa") && body.get("glucosa") != null)
+                atencion.setGlucosa(new BigDecimal(body.get("glucosa").toString()));
+            if (body.containsKey("pesoKg") && body.get("pesoKg") != null)
+                atencion.setPesoKg(new BigDecimal(body.get("pesoKg").toString()));
+            if (body.containsKey("tallaCm") && body.get("tallaCm") != null)
+                atencion.setTallaCm(new BigDecimal(body.get("tallaCm").toString()));
+            if (body.containsKey("imc") && body.get("imc") != null)
+                atencion.setImc(new BigDecimal(body.get("imc").toString()));
+            if (body.containsKey("controlEnfermeria")) atencion.setControlEnfermeria((String) body.get("controlEnfermeria"));
+            if (body.containsKey("adherenciaMorisky")) atencion.setAdherenciaMorisky((String) body.get("adherenciaMorisky"));
+            if (body.containsKey("nivelRiesgo")) atencion.setNivelRiesgo((String) body.get("nivelRiesgo"));
+            if (body.containsKey("controlado")) atencion.setControlado((String) body.get("controlado"));
+            if (body.containsKey("observaciones")) atencion.setObservacionesGenerales((String) body.get("observaciones"));
+
+            atencionClinicaRepository.save(atencion);
+            log.info("✅ Control enfermería actualizado: idAtencion={}", idAtencion);
+            return ResponseEntity.ok(Map.of("status", "ok", "idAtencion", idAtencion));
+
+        } catch (Exception e) {
+            log.error("❌ Error actualizando control enfermería {}: {}", idAtencion, e.getMessage(), e);
+            String msg = e.getMessage() != null ? e.getMessage() : "Error interno al actualizar enfermería";
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", msg));
+        }
+    }
+
+    // ✅ v1.0.0: Obtener motivos de interconsulta (para rol ENFERMERIA)
+    @GetMapping("/motivos-interconsulta")
+    public ResponseEntity<List<DimMotivoInterconsulta>> obtenerMotivosInterconsulta() {
+        try {
+            List<DimMotivoInterconsulta> motivos = motivoInterconsultaRepository.findByActivoTrueOrderByOrdenAsc();
+            return ResponseEntity.ok(motivos);
+        } catch (Exception e) {
+            log.error("❌ Error obteniendo motivos de interconsulta: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
 

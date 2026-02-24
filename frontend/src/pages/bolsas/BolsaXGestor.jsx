@@ -413,26 +413,19 @@ function DrawerGestora({ gestora, onClose, onReasignacionExitosa }) {
     setProgreso({ ok: 0, err: 0, total: ids.length });
 
     try {
-      const API_BASE = process.env.REACT_APP_API_BASE || 'http://localhost:8080/api';
-      const token = localStorage.getItem('token');
-      const res = await fetch(`${API_BASE}/bolsas/solicitudes/asignar-gestora-masivo`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ ids, idGestora: Number(gestoraDestino) }),
-      });
-      if (res.ok) {
-        setProgreso({ ok: ids.length, err: 0, total: ids.length });
-        setTimeout(() => {
-          setModalAbierto(false);
-          setReasignando(false);
-          setSeleccionados(new Set());
-          onReasignacionExitosa();
-          onClose();
-        }, 1200);
-      } else {
-        setProgreso({ ok: 0, err: ids.length, total: ids.length });
+      await apiClient.post(
+        '/bolsas/solicitudes/asignar-gestora-masivo',
+        { ids, idGestora: Number(gestoraDestino) },
+        true,
+      );
+      setProgreso({ ok: ids.length, err: 0, total: ids.length });
+      setTimeout(() => {
+        setModalAbierto(false);
         setReasignando(false);
-      }
+        setSeleccionados(new Set());
+        onReasignacionExitosa();
+        onClose();
+      }, 1200);
     } catch (e) {
       console.error('Error reasignando:', e);
       setProgreso({ ok: 0, err: ids.length, total: ids.length });

@@ -1,5 +1,5 @@
-import React from 'react';
-import { Phone, Users, UserPlus, Download, FileText, X, Calendar, Pencil } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import { Phone, Users, UserPlus, Download, FileText, X, Calendar, Pencil, Check } from 'lucide-react';
 
 /**
  * 🚀 v2.6.0 - Componente MEMORIZADO para cada fila de tabla
@@ -15,9 +15,38 @@ function FilaSolicitud({
   onEliminarAsignacion,
   onAbrirEnviarRecordatorio,
   onAbrirIpressAtencion,
+  onEditarFechaPreferida,
   isProcessing,
   getEstadoBadge,
 }) {
+  const [editandoFecha, setEditandoFecha] = useState(false);
+  const [fechaInput, setFechaInput] = useState('');
+  const inputFechaRef = useRef(null);
+
+  // Abre el input de fecha convirtiendo el valor mostrado (dd/mm/yyyy o N/A) a yyyy-mm-dd
+  const handleAbrirEdicionFecha = () => {
+    const actual = solicitud.fechaPreferidaNoAtendida;
+    if (actual && actual !== 'N/A') {
+      const partes = actual.split('/');
+      setFechaInput(`${partes[2]}-${partes[1]}-${partes[0]}`);
+    } else {
+      setFechaInput('');
+    }
+    setEditandoFecha(true);
+    setTimeout(() => inputFechaRef.current?.showPicker?.(), 50);
+  };
+
+  const handleGuardarFecha = () => {
+    if (onEditarFechaPreferida) {
+      onEditarFechaPreferida(solicitud, fechaInput || null);
+    }
+    setEditandoFecha(false);
+  };
+
+  const handleCancelarFecha = () => {
+    setEditandoFecha(false);
+  };
+
   return (
     <tr className={`border-b transition-colors duration-200 hover:bg-blue-50 ${
       isChecked
@@ -64,7 +93,59 @@ function FilaSolicitud({
         <span className="font-medium text-gray-900">{solicitud.descBolsa || solicitud.nombreBolsa || 'Sin clasificar'}</span>
       </td>
 
-      <td className="px-3 py-3 text-sm text-gray-700">{solicitud.fechaPreferidaNoAtendida}</td>
+      {/* FECHA PREFERIDA - Editable con calendario inline */}
+      <td className="px-3 py-3 text-sm text-gray-700">
+        {editandoFecha ? (
+          <div className="flex items-center gap-1 min-w-max">
+            <input
+              ref={inputFechaRef}
+              type="date"
+              value={fechaInput}
+              onChange={(e) => setFechaInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') handleGuardarFecha();
+                if (e.key === 'Escape') handleCancelarFecha();
+              }}
+              className="text-xs border border-blue-400 rounded px-1.5 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+              autoFocus
+            />
+            <button
+              onClick={handleGuardarFecha}
+              className="p-1 rounded hover:bg-green-100 text-green-600"
+              title="Guardar"
+            >
+              <Check className="w-3.5 h-3.5" />
+            </button>
+            <button
+              onClick={handleCancelarFecha}
+              className="p-1 rounded hover:bg-red-100 text-red-500"
+              title="Cancelar"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        ) : (
+          <div className="flex items-center gap-1 group">
+            <span className={solicitud.fechaPreferidaNoAtendida && solicitud.fechaPreferidaNoAtendida !== 'N/A'
+              ? 'text-gray-800 font-medium'
+              : 'text-gray-400 italic text-xs'}>
+              {solicitud.fechaPreferidaNoAtendida && solicitud.fechaPreferidaNoAtendida !== 'N/A'
+                ? solicitud.fechaPreferidaNoAtendida
+                : 'Sin fecha'}
+            </span>
+            {onEditarFechaPreferida && (
+              <button
+                onClick={handleAbrirEdicionFecha}
+                className="p-1 rounded hover:bg-blue-100 text-blue-400 hover:text-blue-600 flex-shrink-0 transition-colors"
+                title="Editar fecha preferida"
+                disabled={isProcessing}
+              >
+                <Pencil className="w-3 h-3" />
+              </button>
+            )}
+          </div>
+        )}
+      </td>
       <td className="px-3 py-2 text-sm min-w-max">
         <div className="text-xs text-gray-600 font-semibold">{solicitud.tipoDocumento}</div>
         <div className="font-bold text-blue-600 mt-1 text-base">{solicitud.dni}</div>
@@ -312,9 +393,11 @@ function FilaSolicitud({
 export default React.memo(FilaSolicitud, (prevProps, nextProps) => {
   return (
     prevProps.solicitud?.id === nextProps.solicitud?.id &&
+    prevProps.solicitud?.fechaPreferidaNoAtendida === nextProps.solicitud?.fechaPreferidaNoAtendida &&
     prevProps.isChecked === nextProps.isChecked &&
     prevProps.isProcessing === nextProps.isProcessing &&
     prevProps.getEstadoBadge === nextProps.getEstadoBadge &&
-    prevProps.onAbrirIpressAtencion === nextProps.onAbrirIpressAtencion
+    prevProps.onAbrirIpressAtencion === nextProps.onAbrirIpressAtencion &&
+    prevProps.onEditarFechaPreferida === nextProps.onEditarFechaPreferida
   );
 });

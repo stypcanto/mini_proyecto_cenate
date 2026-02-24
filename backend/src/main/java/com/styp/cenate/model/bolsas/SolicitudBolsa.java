@@ -217,6 +217,12 @@ public class SolicitudBolsa {
     private String observacionesMedicas;
 
     // ============================================================================
+    // 🔗 TRAZABILIDAD: FK hacia la solicitud original que generó esta recita/interconsulta
+    // ============================================================================
+    @Column(name = "idsolicitudgeneracion")
+    private Long idsolicitudgeneracion;
+
+    // ============================================================================
     // 📞 MOTIVO DE LLAMADA (v1.68.2 - 2026-02-13)
     // ============================================================================
     @Column(name = "motivo_llamada_bolsa", length = 500)

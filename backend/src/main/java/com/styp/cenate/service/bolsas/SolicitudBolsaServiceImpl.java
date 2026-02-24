@@ -15,6 +15,7 @@ import com.styp.cenate.model.Red;
 import com.styp.cenate.model.TipoBolsa;
 import com.styp.cenate.model.Usuario;
 import com.styp.cenate.repository.bolsas.SolicitudBolsaRepository;
+import com.styp.cenate.repository.bolsas.DimEstadosGestionCitasRepository;
 import com.styp.cenate.repository.bolsas.DimSolicitudBolsasGeneralRepository;
 import com.styp.cenate.repository.AseguradoRepository;
 import com.styp.cenate.repository.DimServicioEssiRepository;
@@ -73,6 +74,7 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
     private static final String PHONE_VALIDATION_ERROR = "Formato de teléfono inválido. Solo se permiten números, +, (), - y espacios";
 
     private final SolicitudBolsaRepository solicitudRepository;
+    private final DimEstadosGestionCitasRepository dimEstadosGestionCitasRepository;
     private final AuditErrorImportacionService auditErrorService;
     private final AseguradoRepository aseguradoRepository;
     private final PersonalCntRepository personalCntRepository;
@@ -1136,6 +1138,26 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
         }
 
         return totalBorrados;
+    }
+
+    @Override
+    @Transactional
+    public int rechazarMasivo(List<Long> ids) {
+        if (ids == null || ids.isEmpty()) {
+            log.warn("⚠️ Lista vacía de IDs para rechazar");
+            return 0;
+        }
+
+        log.info("❌ Iniciando rechazo masivo de {} solicitudes", ids.size());
+
+        com.styp.cenate.model.bolsas.DimEstadosGestionCitas estado =
+            dimEstadosGestionCitasRepository.findByCodigoEstado("RECHAZADO")
+                .orElseThrow(() -> new RuntimeException("Estado RECHAZADO no encontrado en BD"));
+
+        int actualizados = solicitudRepository.cambiarEstadoMasivo(ids, estado.getIdEstado());
+
+        log.info("✅ {} solicitudes marcadas como RECHAZADO", actualizados);
+        return actualizados;
     }
 
     @Override
@@ -2482,6 +2504,18 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
 
     @Override
     @Transactional
+    public void actualizarFechaPreferida(Long idSolicitud, java.time.LocalDate fecha) {
+        log.info("📅 Actualizando fecha preferida de solicitud {} → {}", idSolicitud, fecha);
+        SolicitudBolsa solicitud = solicitudRepository.findById(idSolicitud)
+            .orElseThrow(() -> new ResourceNotFoundException("Solicitud " + idSolicitud + " no encontrada"));
+        java.time.LocalDate anterior = solicitud.getFechaPreferidaNoAtendida();
+        solicitud.setFechaPreferidaNoAtendida(fecha);
+        solicitudRepository.save(solicitud);
+        log.info("✅ Fecha preferida actualizada en solicitud {}. {} → {}", idSolicitud, anterior, fecha);
+    }
+
+    @Override
+    @Transactional
     public void actualizarIpressAtencion(Long idSolicitud, Long idIpressAtencion) {
         log.info("🏥 Actualizando IPRESS Atención de solicitud {} → idIpress: {}", idSolicitud, idIpressAtencion);
 
@@ -2715,6 +2749,50 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
         } catch (Exception e) {
             log.error("❌ Error obteniendo bandeja de gestora: ", e);
             throw new RuntimeException("Error al obtener solicitudes asignadas: " + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * 🆕 Obtiene todas las solicitudes asignadas a enfermeras (para COORD. ENFERMERIA)
+     * Filtra por id_personal IN (id_pers de usuarios con rol ENFERMERIA) Y activo = true
+     */
+    @Override
+    @Transactional(readOnly = true)
+    public List<SolicitudBolsaDTO> obtenerBandejaEnfermeriaCoordinador() {
+        log.info("👩‍⚕️ Obteniendo bandeja COORD. ENFERMERIA — buscando usuarios con rol ENFERMERIA...");
+        try {
+            // 1. Obtener todos los usuarios con rol ENFERMERIA y sus datos de personal
+            List<Usuario> enfermeras = usuarioRepository.findByRolWithPersonalData("ENFERMERIA");
+            log.info("   → {} enfermera(s) encontradas con rol ENFERMERIA", enfermeras.size());
+
+            // 2. Extraer id_pers de cada enfermera
+            List<Long> idPersonalList = enfermeras.stream()
+                .filter(u -> u.getPersonalCnt() != null && u.getPersonalCnt().getIdPers() != null)
+                .map(u -> u.getPersonalCnt().getIdPers())
+                .collect(Collectors.toList());
+
+            log.info("   → {} id_pers extraídos: {}", idPersonalList.size(), idPersonalList);
+
+            if (idPersonalList.isEmpty()) {
+                log.warn("   ⚠️ Ninguna enfermera tiene id_pers registrado en dim_personal_cnt");
+                return List.of();
+            }
+
+            // 3. Obtener solicitudes activas asignadas a cualquier enfermera
+            List<SolicitudBolsa> solicitudes = solicitudRepository.findByIdPersonalInAndActivoTrue(idPersonalList);
+            log.info("   → {} solicitudes encontradas para {}", solicitudes.size(), idPersonalList);
+
+            // 4. Mapear a DTO (reutilizando el mapper existente con datos enriquecidos)
+            List<SolicitudBolsaDTO> resultado = solicitudes.stream()
+                .map(this::mapSolicitudBolsaToDTO)
+                .collect(Collectors.toList());
+
+            log.info("✅ Bandeja COORD. ENFERMERIA: {} pacientes", resultado.size());
+            return resultado;
+
+        } catch (Exception e) {
+            log.error("❌ Error obteniendo bandeja de coordinador de enfermería: ", e);
+            throw new RuntimeException("Error al obtener bandeja de enfermería: " + e.getMessage(), e);
         }
     }
 
@@ -3646,4 +3724,63 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
         }
         
         return "CONSTRAINT_VIOLATION"; // Genérico si no se identifica
-    }}
+    }
+
+    @Override
+    @org.springframework.transaction.annotation.Transactional(readOnly = true)
+    public org.springframework.data.domain.Page<java.util.Map<String, Object>> obtenerTrazabilidadRecitas(
+            String busqueda, String fechaInicio, String fechaFin,
+            String tipoCita, Long idPersonal,
+            org.springframework.data.domain.Pageable pageable) {
+
+        org.springframework.data.domain.Page<Object[]> rows =
+            solicitudRepository.obtenerTrazabilidadRecitasInterconsultas(
+                busqueda, fechaInicio, fechaFin, tipoCita, idPersonal, pageable);
+
+        return rows.map(row -> {
+            java.util.Map<String, Object> m = new java.util.LinkedHashMap<>();
+            m.put("idSolicitud",         row[0]);
+            m.put("numeroSolicitud",     row[1]);
+            m.put("tipoCita",            row[2]);
+            m.put("pacienteDni",         row[3]);
+            m.put("pacienteNombre",      row[4]);
+            m.put("especialidadDestino", row[5]);
+            m.put("fechaSolicitud",      row[6]);
+            m.put("estado",              row[7]);
+            m.put("codEstado",           row[8]);
+            m.put("descEstado",          row[9]);
+            m.put("solicitudOrigen",     row[10]);
+            m.put("idPersonalCreador",   row[11]);
+            m.put("medicoCreador",       row[12]);
+            m.put("usuarioCreador",      row[13]);
+            m.put("fechaAtencionOrigen", row[14]);
+            m.put("especialidadOrigen",  row[15]);
+            m.put("fechaPreferida",      row[16]);
+            m.put("origenBolsa",         row[17]);
+            return m;
+        });
+    }
+
+    @Override
+    @org.springframework.transaction.annotation.Transactional(readOnly = true)
+    public java.util.List<java.util.Map<String, Object>> listarEnfermerasTrazabilidad() {
+        return solicitudRepository.listarEnfermerasTrazabilidad().stream().map(row -> {
+            java.util.Map<String, Object> m = new java.util.LinkedHashMap<>();
+            m.put("idPersonal", row[0]);
+            m.put("nombre",     row[1]);
+            m.put("total",      row[2]);
+            return m;
+        }).toList();
+    }
+
+    @Override
+    @org.springframework.transaction.annotation.Transactional(readOnly = true)
+    public java.util.List<java.util.Map<String, Object>> obtenerFechasConRecitas() {
+        return solicitudRepository.fechasConRecitasInterconsultas().stream().map(row -> {
+            java.util.Map<String, Object> m = new java.util.LinkedHashMap<>();
+            m.put("fecha", row[0]);
+            m.put("total", row[1]);
+            return m;
+        }).toList();
+    }
+}

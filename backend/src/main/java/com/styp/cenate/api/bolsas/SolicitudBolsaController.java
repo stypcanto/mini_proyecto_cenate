@@ -491,6 +491,33 @@ public class SolicitudBolsaController {
     }
 
     /**
+     * 🆕 Obtiene todas las solicitudes asignadas a enfermeras (para COORD. ENFERMERIA)
+     * GET /api/bolsas/solicitudes/bandeja-enfermeria-coordinador
+     *
+     * Solo accesible para SUPERADMIN y COORD. ENFERMERIA
+     * Retorna todos los pacientes donde id_personal corresponde a un usuario con rol ENFERMERIA
+     */
+    @GetMapping("/bandeja-enfermeria-coordinador")
+    @PreAuthorize("hasAnyRole('SUPERADMIN', 'COORD. ENFERMERIA')")
+    public ResponseEntity<?> obtenerBandejaEnfermeriaCoordinador() {
+        try {
+            log.info("👩‍⚕️ GET /api/bolsas/solicitudes/bandeja-enfermeria-coordinador");
+            List<SolicitudBolsaDTO> solicitudes = solicitudBolsaService.obtenerBandejaEnfermeriaCoordinador();
+            log.info("✅ Bandeja coord. enfermería: {} pacientes", solicitudes.size());
+            return ResponseEntity.ok(Map.of(
+                "total", solicitudes.size(),
+                "solicitudes", solicitudes,
+                "mensaje", solicitudes.isEmpty()
+                    ? "No hay pacientes asignados a enfermeras"
+                    : solicitudes.size() + " paciente(s) asignado(s) a enfermeras"
+            ));
+        } catch (Exception e) {
+            log.error("❌ Error en bandeja-enfermeria-coordinador: ", e);
+            return ResponseEntity.status(500).body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    /**
      * Obtiene todas las solicitudes activas CON PAGINACIÓN
      * GET /api/bolsas/solicitudes?page=0&size=100
      *
@@ -1049,6 +1076,32 @@ public class SolicitudBolsaController {
     }
 
     /**
+     * Actualiza la fecha preferida de una solicitud
+     * PATCH /api/bolsas/solicitudes/{id}/fecha-preferida?fecha=2026-03-15
+     */
+    @PatchMapping("/{id}/fecha-preferida")
+    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'COORDINADOR', 'COORD. GESTION CITAS', 'GESTOR DE CITAS', 'COORD. ENFERMERIA')")
+    public ResponseEntity<?> actualizarFechaPreferida(
+            @PathVariable Long id,
+            @RequestParam(value = "fecha", required = false) String fechaStr) {
+        try {
+            java.time.LocalDate fecha = (fechaStr != null && !fechaStr.isBlank())
+                ? java.time.LocalDate.parse(fechaStr)
+                : null;
+            log.info("📅 PATCH fecha-preferida solicitud {} → {}", id, fecha);
+            solicitudBolsaService.actualizarFechaPreferida(id, fecha);
+            return ResponseEntity.ok(Map.of(
+                "mensaje", "Fecha preferida actualizada exitosamente",
+                "idSolicitud", id,
+                "fechaPreferida", fechaStr != null ? fechaStr : ""
+            ));
+        } catch (Exception e) {
+            log.error("Error al actualizar fecha preferida: ", e);
+            return ResponseEntity.badRequest().body(Map.of("error", "Error: " + e.getMessage()));
+        }
+    }
+
+    /**
      * ✅ v1.105.0: Actualiza la IPRESS de Atención de una solicitud
      * PATCH /api/bolsas/solicitudes/{id}/ipress-atencion
      */
@@ -1193,6 +1246,55 @@ public class SolicitudBolsaController {
             return ResponseEntity.status(500).body(
                 Map.of("error", "Error interno del servidor: " + e.getMessage())
             );
+        }
+    }
+
+    /**
+     * Marca múltiples solicitudes como RECHAZADO en una sola operación (bulk)
+     * POST /api/bolsas/solicitudes/rechazar-masivo
+     *
+     * Body: { "ids": [1, 2, 3] }
+     * Response: { "actualizados": 3 }
+     *
+     * Roles permitidos: SUPERADMIN, ADMIN, COORD. GESTION CITAS, GESTOR DE CITAS
+     */
+    @PostMapping("/rechazar-masivo")
+    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'COORD. GESTION CITAS', 'GESTOR DE CITAS')")
+    public ResponseEntity<?> rechazarMasivo(@RequestBody Map<String, Object> payload) {
+        try {
+            Object idsObj = payload.get("ids");
+            if (idsObj == null) {
+                return ResponseEntity.badRequest().body(Map.of("error", "No se proporcionó el campo 'ids'"));
+            }
+
+            List<Long> ids = new ArrayList<>();
+            if (idsObj instanceof List<?>) {
+                for (Object obj : (List<?>) idsObj) {
+                    if (obj instanceof Number) {
+                        ids.add(((Number) obj).longValue());
+                    } else if (obj instanceof String) {
+                        try { ids.add(Long.parseLong((String) obj)); }
+                        catch (NumberFormatException e) { log.warn("⚠️ No se pudo parsear ID: {}", obj); }
+                    }
+                }
+            }
+
+            if (ids.isEmpty()) {
+                return ResponseEntity.badRequest().body(Map.of("error", "No se proporcionaron IDs válidos para rechazar"));
+            }
+
+            log.info("❌ Rechazando {} solicitudes: {}", ids.size(), ids);
+            int actualizados = solicitudBolsaService.rechazarMasivo(ids);
+
+            log.info("✅ {} solicitudes marcadas como RECHAZADO", actualizados);
+            return ResponseEntity.ok(Map.of("actualizados", actualizados));
+
+        } catch (RuntimeException e) {
+            log.error("❌ Error al rechazar solicitudes: {}", e.getMessage());
+            return ResponseEntity.status(500).body(Map.of("error", e.getMessage()));
+        } catch (Exception e) {
+            log.error("❌ Error inesperado al rechazar solicitudes: ", e);
+            return ResponseEntity.status(500).body(Map.of("error", "Error interno del servidor"));
         }
     }
 
@@ -1508,6 +1610,55 @@ public class SolicitudBolsaController {
         } catch (Exception e) {
             log.error("❌ Error al obtener estadísticas por gestora: ", e);
             return ResponseEntity.status(500).body(Map.of("error", "Error al obtener estadísticas por gestora"));
+        }
+    }
+
+    @GetMapping("/trazabilidad-recitas")
+    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'COORD. ENFERMERIA')")
+    public ResponseEntity<?> obtenerTrazabilidadRecitas(
+            @RequestParam(required = false) String busqueda,
+            @RequestParam(required = false) String fechaInicio,
+            @RequestParam(required = false) String fechaFin,
+            @RequestParam(required = false) String tipoCita,
+            @RequestParam(required = false) Long idPersonal,
+            @RequestParam(defaultValue = "0")  int page,
+            @RequestParam(defaultValue = "25") int size) {
+        try {
+            log.info("🔎 GET /api/bolsas/solicitudes/trazabilidad-recitas busqueda={} tipoCita={} idPersonal={}", busqueda, tipoCita, idPersonal);
+            var pageable = org.springframework.data.domain.PageRequest.of(page, size);
+            var resultado = solicitudBolsaService.obtenerTrazabilidadRecitas(
+                busqueda, fechaInicio, fechaFin, tipoCita, idPersonal, pageable);
+            return ResponseEntity.ok(Map.of(
+                "solicitudes",  resultado.getContent(),
+                "total",        resultado.getTotalElements(),
+                "totalPaginas", resultado.getTotalPages(),
+                "pagina",       page
+            ));
+        } catch (Exception e) {
+            log.error("❌ Error trazabilidad recitas: ", e);
+            return ResponseEntity.status(500).body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    @GetMapping("/trazabilidad-recitas/enfermeras")
+    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'COORD. ENFERMERIA')")
+    public ResponseEntity<?> listarEnfermerasTrazabilidad() {
+        try {
+            return ResponseEntity.ok(solicitudBolsaService.listarEnfermerasTrazabilidad());
+        } catch (Exception e) {
+            log.error("❌ Error listando enfermeras trazabilidad: ", e);
+            return ResponseEntity.status(500).body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    @GetMapping("/trazabilidad-recitas/fechas")
+    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'COORD. ENFERMERIA')")
+    public ResponseEntity<?> obtenerFechasConRecitas() {
+        try {
+            return ResponseEntity.ok(solicitudBolsaService.obtenerFechasConRecitas());
+        } catch (Exception e) {
+            log.error("❌ Error obteniendo fechas con recitas: ", e);
+            return ResponseEntity.status(500).body(Map.of("error", e.getMessage()));
         }
     }
 

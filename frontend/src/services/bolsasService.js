@@ -952,6 +952,22 @@ export const actualizarIpressAtencion = async (idSolicitud, idIpressAtencion) =>
 };
 
 /**
+ * Actualiza la fecha preferida de una solicitud
+ * @param {number} idSolicitud - ID de la solicitud
+ * @param {string|null} fecha - Fecha en formato YYYY-MM-DD (null para limpiar)
+ */
+export const actualizarFechaPreferida = async (idSolicitud, fecha) => {
+  try {
+    const params = fecha ? `?fecha=${fecha}` : '';
+    const response = await apiClient.patch(`/bolsas/solicitudes/${idSolicitud}/fecha-preferida${params}`, {}, true);
+    return response;
+  } catch (error) {
+    console.error(`Error al actualizar fecha preferida de solicitud ${idSolicitud}:`, error);
+    throw error;
+  }
+};
+
+/**
  * Obtiene todos los IPRESS
  * @returns {Promise<Array>} - Listado de IPRESS
  */
