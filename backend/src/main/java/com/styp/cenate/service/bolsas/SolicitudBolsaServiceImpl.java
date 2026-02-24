@@ -11,6 +11,7 @@ import com.styp.cenate.model.bolsas.TipoErrorImportacion;
 import com.styp.cenate.model.Asegurado;
 import com.styp.cenate.model.DimServicioEssi;
 import com.styp.cenate.model.Ipress;
+import com.styp.cenate.model.PersonalCnt;
 import com.styp.cenate.model.Red;
 import com.styp.cenate.model.TipoBolsa;
 import com.styp.cenate.model.Usuario;
@@ -2709,17 +2710,41 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
                 );
             }
 
-            // 4️⃣ MAPEAR A DTOs CON ENRIQUECIMIENTO
-            List<SolicitudBolsaDTO> dtoList = solicitudes.stream()
-                .map(this::mapSolicitudBolsaToDTO)
+            // 4️⃣ PRE-CARGAR LOOKUPS EN BATCH (evita N+1: ~4 queries en lugar de 4×N)
+            Set<Long> idIpressSet = solicitudes.stream()
+                .filter(s -> s.getIdIpress() != null)
+                .map(SolicitudBolsa::getIdIpress)
+                .collect(Collectors.toSet());
+            Set<Long> idBolsaSet = solicitudes.stream()
+                .filter(s -> s.getIdBolsa() != null)
+                .map(SolicitudBolsa::getIdBolsa)
+                .collect(Collectors.toSet());
+            List<String> dniList = solicitudes.stream()
+                .filter(s -> s.getPacienteDni() != null && !s.getPacienteDni().isBlank())
+                .map(SolicitudBolsa::getPacienteDni)
+                .distinct()
                 .collect(Collectors.toList());
+            Set<Long> idPersonalSet = solicitudes.stream()
+                .filter(s -> s.getIdPersonal() != null)
+                .map(SolicitudBolsa::getIdPersonal)
+                .collect(Collectors.toSet());
 
-            // LOG: Verificar dto mapeado
-            if (!dtoList.isEmpty()) {
-                SolicitudBolsaDTO primerDto = dtoList.get(0);
-                log.info("   🔍 Primer DTO mapeado: idBolsa={}, descTipoBolsa={}",
-                    primerDto.getIdBolsa(), primerDto.getDescTipoBolsa());
-            }
+            Map<Long, Ipress> ipressMap = ipressRepository.findAllById(idIpressSet).stream()
+                .collect(Collectors.toMap(Ipress::getIdIpress, i -> i));
+            Map<Long, TipoBolsa> tipoBolsaMap = tipoBolsaRepository.findAllById(idBolsaSet).stream()
+                .collect(Collectors.toMap(TipoBolsa::getIdTipoBolsa, tb -> tb));
+            Map<String, Asegurado> aseguradoMap = aseguradoRepository.findByDocPacienteIn(dniList).stream()
+                .collect(Collectors.toMap(Asegurado::getDocPaciente, a -> a));
+            Map<Long, PersonalCnt> personalMap = personalCntRepository.findAllById(idPersonalSet).stream()
+                .collect(Collectors.toMap(PersonalCnt::getIdPers, p -> p));
+
+            log.info("   📦 Batch cargado: {} IPRESS, {} TipoBolsa, {} Asegurados, {} Personal",
+                ipressMap.size(), tipoBolsaMap.size(), aseguradoMap.size(), personalMap.size());
+
+            // 4️⃣ MAPEAR A DTOs CON ENRIQUECIMIENTO (sin queries por fila)
+            List<SolicitudBolsaDTO> dtoList = solicitudes.stream()
+                .map(s -> mapSolicitudBolsaToDTOBatch(s, ipressMap, tipoBolsaMap, aseguradoMap, personalMap))
+                .collect(Collectors.toList());
 
             // 5️⃣ ENRIQUECER CON FLAG CENACRON (consulta masiva para evitar N+1)
             try {
@@ -2782,9 +2807,37 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
             List<SolicitudBolsa> solicitudes = solicitudRepository.findByIdPersonalInAndActivoTrue(idPersonalList);
             log.info("   → {} solicitudes encontradas para {}", solicitudes.size(), idPersonalList);
 
-            // 4. Mapear a DTO (reutilizando el mapper existente con datos enriquecidos)
+            // 4. Pre-cargar lookups en batch (evita N+1)
+            Set<Long> idIpressSet = solicitudes.stream()
+                .filter(s -> s.getIdIpress() != null)
+                .map(SolicitudBolsa::getIdIpress)
+                .collect(Collectors.toSet());
+            Set<Long> idBolsaSet = solicitudes.stream()
+                .filter(s -> s.getIdBolsa() != null)
+                .map(SolicitudBolsa::getIdBolsa)
+                .collect(Collectors.toSet());
+            List<String> dniList = solicitudes.stream()
+                .filter(s -> s.getPacienteDni() != null && !s.getPacienteDni().isBlank())
+                .map(SolicitudBolsa::getPacienteDni)
+                .distinct()
+                .collect(Collectors.toList());
+            Set<Long> idPersonalSet = solicitudes.stream()
+                .filter(s -> s.getIdPersonal() != null)
+                .map(SolicitudBolsa::getIdPersonal)
+                .collect(Collectors.toSet());
+
+            Map<Long, Ipress> ipressMap = ipressRepository.findAllById(idIpressSet).stream()
+                .collect(Collectors.toMap(Ipress::getIdIpress, i -> i));
+            Map<Long, TipoBolsa> tipoBolsaMap = tipoBolsaRepository.findAllById(idBolsaSet).stream()
+                .collect(Collectors.toMap(TipoBolsa::getIdTipoBolsa, tb -> tb));
+            Map<String, Asegurado> aseguradoMap = aseguradoRepository.findByDocPacienteIn(dniList).stream()
+                .collect(Collectors.toMap(Asegurado::getDocPaciente, a -> a));
+            Map<Long, PersonalCnt> personalMap = personalCntRepository.findAllById(idPersonalSet).stream()
+                .collect(Collectors.toMap(PersonalCnt::getIdPers, p -> p));
+
+            // 4. Mapear a DTO usando batch maps (sin queries por fila)
             List<SolicitudBolsaDTO> resultado = solicitudes.stream()
-                .map(this::mapSolicitudBolsaToDTO)
+                .map(s -> mapSolicitudBolsaToDTOBatch(s, ipressMap, tipoBolsaMap, aseguradoMap, personalMap))
                 .collect(Collectors.toList());
 
             log.info("✅ Bandeja COORD. ENFERMERIA: {} pacientes", resultado.size());
@@ -2794,6 +2847,120 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
             log.error("❌ Error obteniendo bandeja de coordinador de enfermería: ", e);
             throw new RuntimeException("Error al obtener bandeja de enfermería: " + e.getMessage(), e);
         }
+    }
+
+    /**
+     * Versión batch de mapSolicitudBolsaToDTO: usa Maps pre-cargados en lugar de
+     * queries individuales por fila, eliminando el problema N+1.
+     * Úsalo en lugar de mapSolicitudBolsaToDTO cuando el caller pre-carga los lookups.
+     */
+    private SolicitudBolsaDTO mapSolicitudBolsaToDTOBatch(
+            SolicitudBolsa solicitud,
+            Map<Long, Ipress> ipressMap,
+            Map<Long, TipoBolsa> tipoBolsaMap,
+            Map<String, Asegurado> aseguradoMap,
+            Map<Long, PersonalCnt> personalMap) {
+
+        java.time.LocalDate fechaNacimiento = solicitud.getFechaNacimiento();
+        String descIpress = null;
+        String pacienteTelefono = solicitud.getPacienteTelefono();
+        String pacienteTelefonoAlterno = solicitud.getPacienteTelefonoAlterno();
+        String pacienteDni = solicitud.getPacienteDni();
+
+        // Enriquecer desde aseguradoMap (sin query por fila)
+        if ((fechaNacimiento == null || solicitud.getIdIpress() == null || isBlank(pacienteTelefono))
+                && !isBlank(pacienteDni)) {
+            Asegurado asegurado = aseguradoMap.get(pacienteDni);
+            if (asegurado != null) {
+                if (isBlank(pacienteTelefono) && !isBlank(asegurado.getTelFijo())) {
+                    pacienteTelefono = asegurado.getTelFijo();
+                }
+                if (isBlank(pacienteTelefonoAlterno) && !isBlank(asegurado.getTelCelular())) {
+                    pacienteTelefonoAlterno = asegurado.getTelCelular();
+                }
+                if (fechaNacimiento == null && asegurado.getFecnacimpaciente() != null) {
+                    fechaNacimiento = asegurado.getFecnacimpaciente();
+                }
+                if (solicitud.getIdIpress() == null && !isBlank(asegurado.getCasAdscripcion())) {
+                    // Buscar en ipressMap por código (recorrer es O(n) de IPRESS, que son pocos)
+                    String codigoIpress = asegurado.getCasAdscripcion().trim();
+                    descIpress = ipressMap.values().stream()
+                        .filter(ip -> codigoIpress.equals(ip.getCodIpress()))
+                        .map(Ipress::getDescIpress)
+                        .findFirst()
+                        .orElse(codigoIpress);
+                }
+            }
+        }
+
+        // IPRESS desde map (sin query por fila)
+        if (solicitud.getIdIpress() != null) {
+            Ipress ipress = ipressMap.get(solicitud.getIdIpress());
+            if (ipress != null) descIpress = ipress.getDescIpress();
+        }
+
+        // TipoBolsa desde map (sin query por fila)
+        String descTipoBolsa = null;
+        if (solicitud.getIdBolsa() != null) {
+            TipoBolsa tipoBolsa = tipoBolsaMap.get(solicitud.getIdBolsa());
+            if (tipoBolsa != null) descTipoBolsa = tipoBolsa.getDescTipoBolsa();
+        }
+
+        // Nombre médico desde map (sin query por fila)
+        String nombreMedico = null;
+        if (solicitud.getIdPersonal() != null) {
+            PersonalCnt p = personalMap.get(solicitud.getIdPersonal());
+            if (p != null) {
+                nombreMedico = (p.getNomPers() + " "
+                    + (p.getApePaterPers() != null ? p.getApePaterPers() : "") + " "
+                    + (p.getApeMaterPers() != null ? p.getApeMaterPers() : "")).trim();
+            }
+        }
+
+        return SolicitudBolsaDTO.builder()
+            .idSolicitud(solicitud.getIdSolicitud())
+            .numeroSolicitud(solicitud.getNumeroSolicitud())
+            .pacienteId(solicitud.getPacienteId())
+            .pacienteNombre(solicitud.getPacienteNombre())
+            .pacienteDni(solicitud.getPacienteDni())
+            .especialidad(solicitud.getEspecialidad())
+            .fechaPreferidaNoAtendida(solicitud.getFechaPreferidaNoAtendida())
+            .tipoDocumento(solicitud.getTipoDocumento())
+            .fechaNacimiento(fechaNacimiento)
+            .pacienteSexo(solicitud.getPacienteSexo())
+            .pacienteTelefono(pacienteTelefono)
+            .pacienteTelefonoAlterno(pacienteTelefonoAlterno)
+            .pacienteEmail(solicitud.getPacienteEmail())
+            .pacienteEdad(calcularEdad(fechaNacimiento))
+            .codigoIpressAdscripcion(solicitud.getCodigoIpressAdscripcion())
+            .tipoCita(solicitud.getTipoCita())
+            .tiempoInicioSintomas(solicitud.getTiempoInicioSintomas())
+            .consentimientoInformado(solicitud.getConsentimientoInformado())
+            .idBolsa(solicitud.getIdBolsa())
+            .descTipoBolsa(descTipoBolsa)
+            .idServicio(solicitud.getIdServicio())
+            .codigoAdscripcion(solicitud.getCodigoAdscripcion())
+            .idIpress(solicitud.getIdIpress())
+            .descIpress(descIpress)
+            .estado(solicitud.getEstado())
+            .codEstadoCita(solicitud.getEstadoGestionCitas() != null ? solicitud.getEstadoGestionCitas().getCodigoEstado() : null)
+            .descEstadoCita(solicitud.getEstadoGestionCitas() != null ? solicitud.getEstadoGestionCitas().getDescripcionEstado() : "PENDIENTE")
+            .fechaSolicitud(solicitud.getFechaSolicitud())
+            .fechaActualizacion(solicitud.getFechaActualizacion())
+            .estadoGestionCitasId(solicitud.getEstadoGestionCitasId())
+            .activo(solicitud.getActivo())
+            .responsableGestoraId(solicitud.getResponsableGestoraId())
+            .fechaAsignacion(solicitud.getFechaAsignacion())
+            .fechaCambioEstado(solicitud.getFechaCambioEstado())
+            .usuarioCambioEstadoId(solicitud.getUsuarioCambioEstadoId())
+            .nombreUsuarioCambioEstado(obtenerNombreCompleto(solicitud.getUsuarioCambioEstado()))
+            .fechaAtencion(solicitud.getFechaAtencion())
+            .horaAtencion(solicitud.getHoraAtencion())
+            .idPersonal(solicitud.getIdPersonal())
+            .nombreMedicoAsignado(nombreMedico)
+            .condicionMedica(solicitud.getCondicionMedica())
+            .fechaAtencionMedica(solicitud.getFechaAtencionMedica())
+            .build();
     }
 
     /**

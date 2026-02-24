@@ -635,7 +635,7 @@ export default function MisPacientes() {
 
   // ============ v1.49.0: FILTROS AVANZADOS ============
   const [filtroIpress, setFiltroIpress] = useState('');
-  const [filtroRangoFecha, setFiltroRangoFecha] = useState('todos');
+  const [filtroRangoFecha, setFiltroRangoFecha] = useState('hoy');
   const [fechaDesde, setFechaDesde] = useState('');
   const [fechaHasta, setFechaHasta] = useState('');
   const [ipressDisponibles, setIpressDisponibles] = useState([]);
@@ -1772,14 +1772,29 @@ export default function MisPacientes() {
 
       const idParaAtender = pacienteSeleccionado.idSolicitudBolsa || pacienteSeleccionado.idGestion;
 
+      // Auto-agregar interconsulta pendiente (si el usuario seleccionó pero olvidó clic "+ Agregar")
+      let listaFinal = interconsultasLista;
+      if (tieneInterconsulta && interconsultaSelector) {
+        const yaAgregada = esEnfermeria
+          ? listaFinal.some(item => item.especialidad === interconsultaSelector && item.motivo === interconsultaMotivoSelector)
+          : listaFinal.includes(interconsultaSelector);
+        if (!yaAgregada) {
+          if (esEnfermeria && interconsultaMotivoSelector) {
+            listaFinal = [...listaFinal, { especialidad: interconsultaSelector, motivo: interconsultaMotivoSelector }];
+          } else if (!esEnfermeria) {
+            listaFinal = [...listaFinal, interconsultaSelector];
+          }
+        }
+      }
+
       const payload = {
         tieneRecita,
         recitaDias: tieneRecita ? recitaDias : null,
-        tieneInterconsulta: tieneInterconsulta && interconsultasLista.length > 0,
-        interconsultaEspecialidad: (tieneInterconsulta && interconsultasLista.length > 0)
+        tieneInterconsulta: tieneInterconsulta && listaFinal.length > 0,
+        interconsultaEspecialidad: (tieneInterconsulta && listaFinal.length > 0)
           ? (esEnfermeria
-              ? interconsultasLista.map(item => `${item.especialidad} (${item.motivo})`).join(', ')
-              : interconsultasLista.join(', '))
+              ? listaFinal.map(item => `${item.especialidad} (${item.motivo})`).join(', ')
+              : listaFinal.join(', '))
           : null,
         esCronico,
         enfermedades: esCronico ? enfermedadesCronicas : [],
@@ -2611,6 +2626,31 @@ export default function MisPacientes() {
                                 ♾ CENACRON
                               </span>
                             )}
+                            {/* Badge tipo de cita: solo si NO es TELECONSULTA (que es el tipo estándar) */}
+                            {paciente.tipoCita && paciente.tipoCita !== 'TELECONSULTA' && (() => {
+                              const tipoColores = {
+                                INTERCONSULTA: 'bg-blue-100 text-blue-700 border-blue-300',
+                                RECITA: 'bg-green-100 text-green-700 border-green-300',
+                              };
+                              // Para INTERCONSULTA: extraer motivo de "ESPECIALIDAD (MOTIVO)"
+                              let motivoInterconsulta = null;
+                              if (paciente.tipoCita === 'INTERCONSULTA' && paciente.especialidad) {
+                                const match = paciente.especialidad.match(/^.+?\((.+)\)$/);
+                                if (match) motivoInterconsulta = match[1].trim();
+                              }
+                              return (
+                                <div className="flex flex-col gap-0.5 mt-0.5">
+                                  <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold border w-fit ${tipoColores[paciente.tipoCita] || 'bg-gray-100 text-gray-600 border-gray-300'}`}>
+                                    {paciente.tipoCita === 'INTERCONSULTA' ? '↗ INTERCONSULTA' : paciente.tipoCita}
+                                  </span>
+                                  {motivoInterconsulta && (
+                                    <span className="text-[10px] text-blue-600 font-medium">
+                                      Motivo: {motivoInterconsulta}
+                                    </span>
+                                  )}
+                                </div>
+                              );
+                            })()}
                             <div className="text-gray-400 text-[11px]">DNI: {paciente.numDoc}</div>
                           </div>
                         </div>
