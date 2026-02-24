@@ -46,7 +46,7 @@ const FiltersPanel = ({ filters, setFilters, searchTerm, setSearchTerm, onNewUse
   // Obtener filtros activos con sus valores para mostrar badges
   const activeFiltersList = useMemo(() => {
     const list = [];
-    if (searchTerm) list.push({ key: 'search', label: `Búsqueda: "${searchTerm}"`, value: searchTerm });
+    if (searchTerm) list.push({ key: 'search', label: 'DNI/CE', value: searchTerm });
     if (filters.rol) list.push({ key: 'rol', label: 'Rol', value: filters.rol });
     if (filters.institucion) list.push({ key: 'institucion', label: 'Tipo', value: filters.institucion });
     if (filters.estado) list.push({ key: 'estado', label: 'Estado', value: filters.estado });
@@ -255,21 +255,23 @@ const FiltersPanel = ({ filters, setFilters, searchTerm, setSearchTerm, onNewUse
                   <div className="h-1 w-1 rounded-full bg-blue-500"></div>
                   Filtros de Usuario
                 </h4>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3">
-                  {/* Búsqueda */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3">
+                  {/* Búsqueda por DNI / CE */}
                   <div className="group relative">
                     <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-purple-500/5 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                     <div className="relative bg-white rounded-lg p-3 border-2 border-gray-200 hover:border-blue-400 transition-all duration-300 shadow-sm hover:shadow-md h-full">
                       <label className="block mb-2 text-xs font-bold text-gray-700 uppercase tracking-wider flex items-center gap-1.5">
                         <Search className="w-3.5 h-3.5 text-blue-500" strokeWidth={2.5} />
-                        Búsqueda
+                        DNI / CE
                       </label>
                       <div className="relative">
                         <input
                           type="text"
-                          placeholder="DNI / Nombre..."
+                          inputMode="numeric"
+                          placeholder="Nro. documento..."
                           value={searchTerm}
-                          onChange={(e) => setSearchTerm(e.target.value)}
+                          onChange={(e) => setSearchTerm(e.target.value.replace(/\D/g, ''))}
+                          maxLength={12}
                           className="w-full pl-2 pr-6 py-1.5 bg-gray-50 border border-gray-300 rounded-lg text-xs text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
                         />
                         {searchTerm && (

@@ -101,7 +101,6 @@ const UsersManagement = () => {
   });
   const [searchTerm, setSearchTerm] = useState('');
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
-  const [isSearching, setIsSearching] = useState(false);
 
   const [showCrearUsuarioModal, setShowCrearUsuarioModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -120,28 +119,21 @@ const UsersManagement = () => {
   // 🆕 Toast para notificaciones
   const { showToast, ToastComponent } = useToast();
 
-  // 🚀 Debounce del searchTerm para evitar búsquedas en cada teclazo
+  // 🚀 Debounce del searchTerm (300ms)
   useEffect(() => {
-    // Si hay texto escrito, activar estado de búsqueda
-    if (searchTerm !== debouncedSearchTerm) {
-      setIsSearching(true);
-    }
-
     const timer = setTimeout(() => {
       setDebouncedSearchTerm(searchTerm);
-      setIsSearching(false); // Desactivar cuando termina el debounce
-    }, 300); // Reducido a 300ms para mejor UX
-
+    }, 300);
     return () => clearTimeout(timer);
-  }, [searchTerm, debouncedSearchTerm]);
+  }, [searchTerm]);
 
   // 🚀 Refs para mantener valores actuales sin causar recargas
   const filtersRef = useRef(filters);
-  const searchTermRef = useRef(debouncedSearchTerm); // Usar debouncedSearchTerm en lugar de searchTerm
+  const searchTermRef = useRef(debouncedSearchTerm);
 
   useEffect(() => {
     filtersRef.current = filters;
-    searchTermRef.current = debouncedSearchTerm; // Usar debouncedSearchTerm
+    searchTermRef.current = debouncedSearchTerm;
   }, [filters, debouncedSearchTerm]);
 
   // ============================================================
@@ -277,26 +269,6 @@ const UsersManagement = () => {
     // Aplicar TODOS los filtros EXCEPTO el filtro de RED e IPRESS
     let usuariosParaRedes = [...baseUsers];
 
-    // 🔍 Búsqueda general
-    if (searchTerm && searchTerm.trim() !== '') {
-      const searchLower = searchTerm.toLowerCase().trim();
-      usuariosParaRedes = usuariosParaRedes.filter(user => {
-        const nombreCompleto = (user.nombre_completo || '').toLowerCase();
-        const username = (user.username || '').toLowerCase();
-        const numeroDocumento = (user.numero_documento || user.num_doc_pers || '').toString().toLowerCase();
-        const nombreIpress = (user.nombre_ipress || user.descIpress || '').toLowerCase();
-        const emailPersonal = (user.correo_personal || user.correoPersonal || '').toLowerCase();
-        const emailCorporativo = (user.correo_corporativo || user.correo_institucional || user.correoCorporativo || user.correoInstitucional || '').toLowerCase();
-
-        return nombreCompleto.includes(searchLower) ||
-          username.includes(searchLower) ||
-          numeroDocumento.includes(searchLower) ||
-          nombreIpress.includes(searchLower) ||
-          emailPersonal.includes(searchLower) ||
-          emailCorporativo.includes(searchLower);
-      });
-    }
-
     // Aplicar filtros de rol, tipo, estado, mes, área, fechas...
     if (filters.rol && filters.rol !== '') {
       usuariosParaRedes = usuariosParaRedes.filter(user => {
@@ -335,7 +307,7 @@ const UsersManagement = () => {
 
     // Generar lista de REDES de los usuarios filtrados
     return getRedesListFromUsers(usuariosParaRedes);
-  }, [allUsersForFilters, users, searchTerm, filters.rol, filters.institucion, filters.estado, filters.area, getRedesListFromUsers]);
+  }, [allUsersForFilters, users, filters.rol, filters.institucion, filters.estado, filters.area, getRedesListFromUsers]);
 
   // ============================================================
   // 🚀 LISTA DE PROFESIONES: Dinámica según filtros activos (SIN filtro de PROFESIÓN)
@@ -345,26 +317,6 @@ const UsersManagement = () => {
 
     // Aplicar TODOS los filtros EXCEPTO el filtro de PROFESIÓN
     let usuariosParaProfesiones = [...baseUsers];
-
-    // 🔍 Búsqueda general
-    if (searchTerm && searchTerm.trim() !== '') {
-      const searchLower = searchTerm.toLowerCase().trim();
-      usuariosParaProfesiones = usuariosParaProfesiones.filter(user => {
-        const nombreCompleto = (user.nombre_completo || '').toLowerCase();
-        const username = (user.username || '').toLowerCase();
-        const numeroDocumento = (user.numero_documento || user.num_doc_pers || '').toString().toLowerCase();
-        const nombreIpress = (user.nombre_ipress || user.descIpress || '').toLowerCase();
-        const emailPersonal = (user.correo_personal || user.correoPersonal || '').toLowerCase();
-        const emailCorporativo = (user.correo_corporativo || user.correo_institucional || user.correoCorporativo || user.correoInstitucional || '').toLowerCase();
-
-        return nombreCompleto.includes(searchLower) ||
-          username.includes(searchLower) ||
-          numeroDocumento.includes(searchLower) ||
-          nombreIpress.includes(searchLower) ||
-          emailPersonal.includes(searchLower) ||
-          emailCorporativo.includes(searchLower);
-      });
-    }
 
     // Aplicar filtros de rol, tipo, estado, mes, área, red, ipress, regimen, especialidad...
     if (filters.rol && filters.rol !== '') {
@@ -432,7 +384,7 @@ const UsersManagement = () => {
 
     // Generar lista de PROFESIONES de los usuarios filtrados
     return getProfesionesListFromUsers(usuariosParaProfesiones);
-  }, [allUsersForFilters, users, searchTerm, filters.rol, filters.institucion, filters.estado, filters.area, filters.red, filters.ipress, filters.regimen, filters.especialidad, getProfesionesListFromUsers]);
+  }, [allUsersForFilters, users, filters.rol, filters.institucion, filters.estado, filters.area, filters.red, filters.ipress, filters.regimen, filters.especialidad, getProfesionesListFromUsers]);
 
   // ============================================================
   // 🚀 LISTA DE ESPECIALIDADES: Dinámica según filtros activos (SIN filtro de ESPECIALIDAD)
@@ -442,26 +394,6 @@ const UsersManagement = () => {
 
     // Aplicar TODOS los filtros EXCEPTO el filtro de ESPECIALIDAD
     let usuariosParaEspecialidades = [...baseUsers];
-
-    // 🔍 Búsqueda general
-    if (searchTerm && searchTerm.trim() !== '') {
-      const searchLower = searchTerm.toLowerCase().trim();
-      usuariosParaEspecialidades = usuariosParaEspecialidades.filter(user => {
-        const nombreCompleto = (user.nombre_completo || '').toLowerCase();
-        const username = (user.username || '').toLowerCase();
-        const numeroDocumento = (user.numero_documento || user.num_doc_pers || '').toString().toLowerCase();
-        const nombreIpress = (user.nombre_ipress || user.descIpress || '').toLowerCase();
-        const emailPersonal = (user.correo_personal || user.correoPersonal || '').toLowerCase();
-        const emailCorporativo = (user.correo_corporativo || user.correo_institucional || user.correoCorporativo || user.correoInstitucional || '').toLowerCase();
-
-        return nombreCompleto.includes(searchLower) ||
-          username.includes(searchLower) ||
-          numeroDocumento.includes(searchLower) ||
-          nombreIpress.includes(searchLower) ||
-          emailPersonal.includes(searchLower) ||
-          emailCorporativo.includes(searchLower);
-      });
-    }
 
     // Aplicar filtros de rol, tipo, estado, mes, área, red, ipress, regimen, profesion...
     if (filters.rol && filters.rol !== '') {
@@ -529,7 +461,7 @@ const UsersManagement = () => {
 
     // Generar lista de ESPECIALIDADES de los usuarios filtrados
     return getEspecialidadesListFromUsers(usuariosParaEspecialidades);
-  }, [allUsersForFilters, users, searchTerm, filters.rol, filters.institucion, filters.estado, filters.area, filters.red, filters.ipress, filters.regimen, filters.profesion, getEspecialidadesListFromUsers]);
+  }, [allUsersForFilters, users, filters.rol, filters.institucion, filters.estado, filters.area, filters.red, filters.ipress, filters.regimen, filters.profesion, getEspecialidadesListFromUsers]);
 
   // ============================================================
   // 🚀 LISTA DE IPRESS: Dinámica según filtros activos (SIN filtro de IPRESS, pero CON filtro de RED)
@@ -540,26 +472,6 @@ const UsersManagement = () => {
 
     // Aplicar TODOS los filtros EXCEPTO el filtro de IPRESS
     let usuariosParaIpress = [...baseUsers];
-
-    // 🔍 Búsqueda general
-    if (searchTerm && searchTerm.trim() !== '') {
-      const searchLower = searchTerm.toLowerCase().trim();
-      usuariosParaIpress = usuariosParaIpress.filter(user => {
-        const nombreCompleto = (user.nombre_completo || '').toLowerCase();
-        const username = (user.username || '').toLowerCase();
-        const numeroDocumento = (user.numero_documento || user.num_doc_pers || '').toString().toLowerCase();
-        const nombreIpress = (user.nombre_ipress || user.descIpress || '').toLowerCase();
-        const emailPersonal = (user.correo_personal || user.correoPersonal || '').toLowerCase();
-        const emailCorporativo = (user.correo_corporativo || user.correo_institucional || user.correoCorporativo || user.correoInstitucional || '').toLowerCase();
-
-        return nombreCompleto.includes(searchLower) ||
-          username.includes(searchLower) ||
-          numeroDocumento.includes(searchLower) ||
-          nombreIpress.includes(searchLower) ||
-          emailPersonal.includes(searchLower) ||
-          emailCorporativo.includes(searchLower);
-      });
-    }
 
     // 🔍 Filtro por Rol
     if (filters.rol && filters.rol !== '') {
@@ -700,7 +612,7 @@ const UsersManagement = () => {
 
     // Generar lista de IPRESS de los usuarios filtrados
     return getIpressListFromUsers(usuariosParaIpress);
-  }, [allUsersForFilters, users, searchTerm, filters.rol, filters.institucion, filters.estado, filters.mesCumpleanos, filters.area, filters.red, filters.fechaRegistroDesde, filters.fechaRegistroHasta, getIpressListFromUsers]);
+  }, [allUsersForFilters, users, filters.rol, filters.institucion, filters.estado, filters.mesCumpleanos, filters.area, filters.red, filters.fechaRegistroDesde, filters.fechaRegistroHasta, getIpressListFromUsers]);
 
   // ============================================================
   // 🔧 FUNCIÓN AUXILIAR: Aplicar filtros a una lista de usuarios
@@ -720,15 +632,6 @@ const UsersManagement = () => {
     }
 
     let filtered = [...usersList];
-
-    // 🔍 Búsqueda por DNI / CE únicamente
-    if (debouncedSearchTerm && debouncedSearchTerm.trim() !== '') {
-      const searchTrim = debouncedSearchTerm.trim();
-      filtered = filtered.filter(user => {
-        const numeroDocumento = (user.numero_documento || user.num_doc_pers || user.numeroDocumento || '').toString();
-        return numeroDocumento.includes(searchTrim);
-      });
-    }
 
     // 🔍 Filtro por Rol
     if (filters.rol && filters.rol !== '') {
@@ -931,7 +834,7 @@ const UsersManagement = () => {
     }
 
     return filtered;
-  }, [debouncedSearchTerm, filters]);
+  }, [filters]);
 
   // ============================================================
   // 🔍 FILTRADO: Aplicar filtros a los usuarios
@@ -959,7 +862,6 @@ const UsersManagement = () => {
 
       // 🔍 Usar valores actuales de los filtros desde las refs
       const currentFilters = filtersRef.current;
-      const currentSearchTerm = searchTermRef.current;
 
       // 🚀 FILTROS SERVER-SIDE: El backend filtra y pagina — sin cargas masivas
       const params = new URLSearchParams({
@@ -969,8 +871,11 @@ const UsersManagement = () => {
         direction: sortDirection
       });
 
+      // Agregar búsqueda por DNI / CE
+      const currentSearch = searchTermRef.current;
+      if (currentSearch && currentSearch.trim()) params.append('busqueda', currentSearch.trim());
+
       // Agregar filtros opcionales (el backend los aplica en la BD)
-      if (currentSearchTerm && currentSearchTerm.trim()) params.append('busqueda', currentSearchTerm.trim());
       if (currentFilters.rol) params.append('rol', currentFilters.rol);
       if (currentFilters.estado) params.append('estado', currentFilters.estado);
       if (currentFilters.area) params.append('area', currentFilters.area);
@@ -1123,7 +1028,7 @@ const UsersManagement = () => {
     }
   }, [filters, debouncedSearchTerm]);
 
-  // 🚀 FILTROS SERVER-SIDE: Recargar desde BD cuando cambia cualquier filtro (página ya en 0)
+  // 🚀 FILTROS SERVER-SIDE: Recargar desde BD cuando cambia cualquier filtro o búsqueda (página ya en 0)
   useEffect(() => {
     // El backend aplica los filtros directamente en SQL — no hay carga masiva
     loadUsers();
@@ -1392,7 +1297,6 @@ const UsersManagement = () => {
                 <UsersTable
                   users={ paginatedUsers }
                   loading={ loading }
-                  isSearching={ isSearching }
                   onViewDetail={ handleVerDetalle }
                   onEdit={ handleEditarUsuario }
                   onDelete={ handleEliminarUsuario }
@@ -1422,7 +1326,6 @@ const UsersManagement = () => {
                 <UsersCards
                   users={ paginatedUsers }
                   loading={ loading }
-                  isSearching={ isSearching }
                   onViewDetail={ handleVerDetalle }
                   onEdit={ handleEditarUsuario }
                   onDelete={ handleEliminarUsuario }

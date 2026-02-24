@@ -96,7 +96,7 @@ public interface PersonalCntRepository extends JpaRepository<PersonalCnt, Long> 
 	 * Evita queries N+1 al cargar todas las relaciones en una sola query.
 	 */
 	@EntityGraph(attributePaths = {
-			"usuario", "usuario.roles", "tipoDocumento", "regimenLaboral", 
+			"usuario", "usuario.roles", "tipoDocumento", "regimenLaboral",
 			"area", "ipress", "profesiones", "profesiones.profesion",
 			"profesiones.servicioEssi", // ✅ Incluir especialidad/servicio ESSI
 			"tipos", "tipos.tipoPersonal" // ✅ Incluir tipos de profesional
@@ -121,58 +121,62 @@ public interface PersonalCntRepository extends JpaRepository<PersonalCnt, Long> 
 	 * Fase 1: Obtiene personal filtrado con paginación real en BD.
 	 * Usa @EntityGraph con SOLO @ManyToOne (sin colecciones) para evitar paginación en memoria.
 	 * Los filtros son opcionales: si el parámetro es NULL, la condición no aplica.
+	 *
+	 * Fix PostgreSQL type inference:
+	 * - CAST(:param AS String)       → cast(? as varchar)       para parámetros String nullable
+	 * - CAST(:param AS OffsetDateTime) → cast(? as timestamptz) para parámetros temporales nullable
 	 */
 	@EntityGraph(attributePaths = {
 			"usuario", "tipoDocumento", "regimenLaboral", "area", "ipress", "servicioEssi"
 	})
 	@Query(value =
-			"SELECT DISTINCT p FROM PersonalCnt p " +
-			"LEFT JOIN p.usuario u " +
-			"LEFT JOIN u.roles r " +
-			"LEFT JOIN p.area a " +
-			"LEFT JOIN p.ipress ip " +
-			"LEFT JOIN ip.red rd " +
-			"LEFT JOIN p.regimenLaboral rl " +
-			"LEFT JOIN p.servicioEssi se " +
-			"LEFT JOIN p.profesiones ppRef " +
-			"LEFT JOIN ppRef.profesion pf " +
-			"WHERE " +
-			"  (:busqueda IS NULL OR LOWER(COALESCE(p.numDocPers,'')) LIKE CONCAT('%', LOWER(COALESCE(:busqueda, '')), '%')) " +
-			"  AND (:rol IS NULL OR LOWER(r.descRol) = LOWER(COALESCE(:rol, ''))) " +
-			"  AND (:statPers IS NULL OR p.statPers = :statPers) " +
-			"  AND (:descArea IS NULL OR LOWER(COALESCE(a.descArea,'')) LIKE CONCAT('%', LOWER(COALESCE(:descArea, '')), '%')) " +
-			"  AND (:descIpress IS NULL OR LOWER(COALESCE(ip.descIpress,'')) LIKE CONCAT('%', LOWER(COALESCE(:descIpress, '')), '%')) " +
-			"  AND (:descRed IS NULL OR LOWER(COALESCE(rd.descripcion,'')) = LOWER(COALESCE(:descRed, ''))) " +
-			"  AND (:descRegimen IS NULL OR LOWER(COALESCE(rl.descRegLab,'')) LIKE CONCAT('%', LOWER(COALESCE(:descRegimen, '')), '%')) " +
-			"  AND (:descProfesion IS NULL OR LOWER(COALESCE(pf.descProf,'')) LIKE CONCAT('%', LOWER(COALESCE(:descProfesion, '')), '%')) " +
-			"  AND (:descEspecialidad IS NULL OR LOWER(COALESCE(se.descServicio,'')) LIKE CONCAT('%', LOWER(COALESCE(:descEspecialidad, '')), '%')) " +
-			"  AND (:mesNacimiento IS NULL OR EXTRACT(MONTH FROM p.fechNaciPers) = :mesNacimiento) " +
-			"  AND (:createdAtFrom IS NULL OR p.createdAt >= :createdAtFrom) " +
-			"  AND (:createdAtTo IS NULL OR p.createdAt <= :createdAtTo)",
-			countQuery =
-			"SELECT COUNT(DISTINCT p) FROM PersonalCnt p " +
-			"LEFT JOIN p.usuario u " +
-			"LEFT JOIN u.roles r " +
-			"LEFT JOIN p.area a " +
-			"LEFT JOIN p.ipress ip " +
-			"LEFT JOIN ip.red rd " +
-			"LEFT JOIN p.regimenLaboral rl " +
-			"LEFT JOIN p.servicioEssi se " +
-			"LEFT JOIN p.profesiones ppRef " +
-			"LEFT JOIN ppRef.profesion pf " +
-			"WHERE " +
-			"  (:busqueda IS NULL OR LOWER(COALESCE(p.numDocPers,'')) LIKE CONCAT('%', LOWER(COALESCE(:busqueda, '')), '%')) " +
-			"  AND (:rol IS NULL OR LOWER(r.descRol) = LOWER(COALESCE(:rol, ''))) " +
-			"  AND (:statPers IS NULL OR p.statPers = :statPers) " +
-			"  AND (:descArea IS NULL OR LOWER(COALESCE(a.descArea,'')) LIKE CONCAT('%', LOWER(COALESCE(:descArea, '')), '%')) " +
-			"  AND (:descIpress IS NULL OR LOWER(COALESCE(ip.descIpress,'')) LIKE CONCAT('%', LOWER(COALESCE(:descIpress, '')), '%')) " +
-			"  AND (:descRed IS NULL OR LOWER(COALESCE(rd.descripcion,'')) = LOWER(COALESCE(:descRed, ''))) " +
-			"  AND (:descRegimen IS NULL OR LOWER(COALESCE(rl.descRegLab,'')) LIKE CONCAT('%', LOWER(COALESCE(:descRegimen, '')), '%')) " +
-			"  AND (:descProfesion IS NULL OR LOWER(COALESCE(pf.descProf,'')) LIKE CONCAT('%', LOWER(COALESCE(:descProfesion, '')), '%')) " +
-			"  AND (:descEspecialidad IS NULL OR LOWER(COALESCE(se.descServicio,'')) LIKE CONCAT('%', LOWER(COALESCE(:descEspecialidad, '')), '%')) " +
-			"  AND (:mesNacimiento IS NULL OR EXTRACT(MONTH FROM p.fechNaciPers) = :mesNacimiento) " +
-			"  AND (:createdAtFrom IS NULL OR p.createdAt >= :createdAtFrom) " +
-			"  AND (:createdAtTo IS NULL OR p.createdAt <= :createdAtTo)")
+		"SELECT DISTINCT p FROM PersonalCnt p " +
+		"LEFT JOIN p.usuario u " +
+		"LEFT JOIN u.roles r " +
+		"LEFT JOIN p.area a " +
+		"LEFT JOIN p.ipress ip " +
+		"LEFT JOIN ip.red rd " +
+		"LEFT JOIN p.regimenLaboral rl " +
+		"LEFT JOIN p.servicioEssi se " +
+		"LEFT JOIN p.profesiones ppRef " +
+		"LEFT JOIN ppRef.profesion pf " +
+		"WHERE " +
+		"  (:busqueda IS NULL OR LOWER(COALESCE(p.numDocPers,'')) LIKE CONCAT('%', LOWER(COALESCE(CAST(:busqueda AS String), '')), '%')) " +
+		"  AND (:rol IS NULL OR LOWER(r.descRol) = LOWER(COALESCE(CAST(:rol AS String), ''))) " +
+		"  AND (:statPers IS NULL OR p.statPers = :statPers) " +
+		"  AND (:descArea IS NULL OR LOWER(COALESCE(a.descArea,'')) LIKE CONCAT('%', LOWER(COALESCE(CAST(:descArea AS String), '')), '%')) " +
+		"  AND (:descIpress IS NULL OR LOWER(COALESCE(ip.descIpress,'')) LIKE CONCAT('%', LOWER(COALESCE(CAST(:descIpress AS String), '')), '%')) " +
+		"  AND (:descRed IS NULL OR LOWER(COALESCE(rd.descripcion,'')) = LOWER(COALESCE(CAST(:descRed AS String), ''))) " +
+		"  AND (:descRegimen IS NULL OR LOWER(COALESCE(rl.descRegLab,'')) LIKE CONCAT('%', LOWER(COALESCE(CAST(:descRegimen AS String), '')), '%')) " +
+		"  AND (:descProfesion IS NULL OR LOWER(COALESCE(pf.descProf,'')) LIKE CONCAT('%', LOWER(COALESCE(CAST(:descProfesion AS String), '')), '%')) " +
+		"  AND (:descEspecialidad IS NULL OR LOWER(COALESCE(se.descServicio,'')) LIKE CONCAT('%', LOWER(COALESCE(CAST(:descEspecialidad AS String), '')), '%')) " +
+		"  AND (:mesNacimiento IS NULL OR EXTRACT(MONTH FROM p.fechNaciPers) = :mesNacimiento) " +
+		"  AND (CAST(:createdAtFrom AS OffsetDateTime) IS NULL OR p.createdAt >= :createdAtFrom) " +
+		"  AND (CAST(:createdAtTo AS OffsetDateTime) IS NULL OR p.createdAt <= :createdAtTo)",
+		countQuery =
+		"SELECT COUNT(DISTINCT p) FROM PersonalCnt p " +
+		"LEFT JOIN p.usuario u " +
+		"LEFT JOIN u.roles r " +
+		"LEFT JOIN p.area a " +
+		"LEFT JOIN p.ipress ip " +
+		"LEFT JOIN ip.red rd " +
+		"LEFT JOIN p.regimenLaboral rl " +
+		"LEFT JOIN p.servicioEssi se " +
+		"LEFT JOIN p.profesiones ppRef " +
+		"LEFT JOIN ppRef.profesion pf " +
+		"WHERE " +
+		"  (:busqueda IS NULL OR LOWER(COALESCE(p.numDocPers,'')) LIKE CONCAT('%', LOWER(COALESCE(CAST(:busqueda AS String), '')), '%')) " +
+		"  AND (:rol IS NULL OR LOWER(r.descRol) = LOWER(COALESCE(CAST(:rol AS String), ''))) " +
+		"  AND (:statPers IS NULL OR p.statPers = :statPers) " +
+		"  AND (:descArea IS NULL OR LOWER(COALESCE(a.descArea,'')) LIKE CONCAT('%', LOWER(COALESCE(CAST(:descArea AS String), '')), '%')) " +
+		"  AND (:descIpress IS NULL OR LOWER(COALESCE(ip.descIpress,'')) LIKE CONCAT('%', LOWER(COALESCE(CAST(:descIpress AS String), '')), '%')) " +
+		"  AND (:descRed IS NULL OR LOWER(COALESCE(rd.descripcion,'')) = LOWER(COALESCE(CAST(:descRed AS String), ''))) " +
+		"  AND (:descRegimen IS NULL OR LOWER(COALESCE(rl.descRegLab,'')) LIKE CONCAT('%', LOWER(COALESCE(CAST(:descRegimen AS String), '')), '%')) " +
+		"  AND (:descProfesion IS NULL OR LOWER(COALESCE(pf.descProf,'')) LIKE CONCAT('%', LOWER(COALESCE(CAST(:descProfesion AS String), '')), '%')) " +
+		"  AND (:descEspecialidad IS NULL OR LOWER(COALESCE(se.descServicio,'')) LIKE CONCAT('%', LOWER(COALESCE(CAST(:descEspecialidad AS String), '')), '%')) " +
+		"  AND (:mesNacimiento IS NULL OR EXTRACT(MONTH FROM p.fechNaciPers) = :mesNacimiento) " +
+		"  AND (CAST(:createdAtFrom AS OffsetDateTime) IS NULL OR p.createdAt >= :createdAtFrom) " +
+		"  AND (CAST(:createdAtTo AS OffsetDateTime) IS NULL OR p.createdAt <= :createdAtTo)")
 	Page<PersonalCnt> findAllWithFilters(
 			@org.springframework.data.repository.query.Param("busqueda") String busqueda,
 			@org.springframework.data.repository.query.Param("rol") String rol,
