@@ -27,6 +27,7 @@ import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * ✅ v1.47.0: Servicio para registrar atención médica completa
@@ -61,11 +62,19 @@ public class AtenderPacienteService {
             String pkAsegurado = solicitudOriginal.getPacienteDni();
             // ✅ Fix: asegurado es opcional — pacientes cargados sin registro en tabla asegurados
             // no deben bloquear el registro de atención (recita/interconsulta siguen funcionando)
-            Asegurado asegurado = aseguradoRepository.findByDocPaciente(solicitudOriginal.getPacienteDni())
-                    .orElse(null);
-            if (asegurado == null) {
-                log.warn("⚠️ Asegurado no encontrado con DNI: {} — se omiten enfermedades crónicas y ficha enfermería", pkAsegurado);
+            // ✅ v1.103.10: Fallback con cero a la izquierda (ej: 5273317 → 05273317)
+            Optional<Asegurado> aseguradoOpt = aseguradoRepository.findByDocPaciente(pkAsegurado);
+            if (aseguradoOpt.isEmpty()) {
+                try {
+                    String dniPadded = String.format("%08d", Long.parseLong(pkAsegurado.trim()));
+                    if (!dniPadded.equals(pkAsegurado)) {
+                        log.info("🔍 [v1.103.10] Reintentando con DNI paddeado: {} → {}", pkAsegurado, dniPadded);
+                        aseguradoOpt = aseguradoRepository.findByDocPaciente(dniPadded);
+                    }
+                } catch (NumberFormatException ignored) {}
             }
+            // Si aún no existe, crear el asegurado automáticamente con datos de dim_solicitud_bolsa
+            Asegurado asegurado = aseguradoOpt.orElseGet(() -> crearAseguradoDesdeSolicitud(solicitudOriginal));
 
             // ✅ v1.47.0: IMPORTANTE - Marcar la solicitud original como "Atendido"
             log.info("✅ Marcando solicitud original {} como Atendido", idSolicitudBolsa);
@@ -77,7 +86,7 @@ public class AtenderPacienteService {
             solicitudOriginal.setFechaAtencionMedica(fechaAtencionMedica);
             log.info("✅ fechaAtencionMedica registrada: {}", fechaAtencionMedica);
 
-            // ✅ v1.47.2: Guardar enfermedades crónicas PRIMERO (solo si asegurado existe)
+            // ✅ v1.47.2: Guardar enfermedades crónicas PRIMERO
             if (asegurado != null && request.getEsCronico() != null && request.getEsCronico() && request.getEnfermedades() != null && !request.getEnfermedades().isEmpty()) {
                 String[] enfermedadesArray = request.getEnfermedades().toArray(new String[0]);
                 log.info("🏥 Guardando enfermedades: {}", String.join(", ", enfermedadesArray));
@@ -341,13 +350,9 @@ public class AtenderPacienteService {
                 request.getPresionArterial() != null ||
                 request.getGlucosa() != null;
 
-        if (asegurado == null) {
-            log.debug("ℹ️ [v1.76.0] Asegurado null — omitiendo Ficha Enfermería");
-            return null;
-        }
 
-        if (!tieneDatosEnfermeria) {
-            log.debug("ℹ️ [v1.76.0] Sin datos de Ficha Enfermería — omitiendo guardado");
+        if (asegurado == null || !tieneDatosEnfermeria) {
+            log.debug("ℹ️ [v1.76.0] Sin datos de Ficha Enfermería o asegurado null — omitiendo guardado");
             return null;
         }
 
@@ -435,6 +440,33 @@ public class AtenderPacienteService {
 
     private String generarNumeroSolicitud(String prefijo) {
         return prefijo + "-" + System.currentTimeMillis();
+    }
+
+    /**
+     * Crea un registro en la tabla asegurados a partir de los datos de dim_solicitud_bolsa.
+     * Se invoca automáticamente cuando el paciente no existe en asegurados.
+     * Campos mapeados: DNI → pk_asegurado + doc_paciente, nombre, sexo, teléfono, cas_adscripcion.
+     */
+    @Transactional
+    private Asegurado crearAseguradoDesdeSolicitud(SolicitudBolsa solicitud) {
+        String dni = solicitud.getPacienteDni();
+        log.info("🆕 Creando asegurado automáticamente para DNI: {}", dni);
+        try {
+            Asegurado nuevo = new Asegurado();
+            nuevo.setPkAsegurado(dni);
+            nuevo.setDocPaciente(dni);
+            nuevo.setPaciente(solicitud.getPacienteNombre());
+            nuevo.setSexo(solicitud.getPacienteSexo());
+            nuevo.setTelCelular(solicitud.getPacienteTelefono());
+            nuevo.setCasAdscripcion(solicitud.getCodigoAdscripcion());
+            nuevo.setVigencia(true);
+            Asegurado guardado = aseguradoRepository.save(nuevo);
+            log.info("✅ Asegurado creado: DNI={}, nombre={}", dni, nuevo.getPaciente());
+            return guardado;
+        } catch (Exception e) {
+            log.warn("⚠️ No se pudo crear asegurado para DNI {}: {}", dni, e.getMessage());
+            return null;
+        }
     }
 
     // =====================================================================
