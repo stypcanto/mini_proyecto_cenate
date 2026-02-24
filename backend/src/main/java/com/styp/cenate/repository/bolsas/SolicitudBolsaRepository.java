@@ -1472,7 +1472,7 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
           AND (:fechaFin    IS NULL OR recita.fecha_preferida_no_atendida <= CAST(:fechaFin    AS date))
           AND (:tipoCita    IS NULL OR UPPER(recita.tipo_cita) = UPPER(:tipoCita))
           AND (:idPersonal  IS NULL OR COALESCE(recita.id_personal, orig_d.id_personal, orig_t.id_personal, ac_fk.id_personal_creador, orig_ac.id_personal) = CAST(:idPersonal AS bigint))
-        ORDER BY recita.fecha_preferida_no_atendida DESC NULLS LAST, recita.fecha_solicitud DESC
+        ORDER BY recita.fecha_solicitud DESC NULLS LAST, recita.fecha_preferida_no_atendida DESC NULLS LAST
         """,
         countQuery = """
         SELECT COUNT(*)

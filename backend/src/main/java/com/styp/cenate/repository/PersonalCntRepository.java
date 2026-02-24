@@ -272,4 +272,18 @@ public interface PersonalCntRepository extends JpaRepository<PersonalCnt, Long> 
 	       "AND UPPER(COALESCE(p.perPers, '')) LIKE UPPER(CONCAT('%', :profesion, '%'))")
 	List<PersonalCnt> findActivosByPerPersContaining(@org.springframework.data.repository.query.Param("profesion") String profesion);
 
+	/**
+	 * Obtiene personal activo asociado a usuarios con los roles de enfermería indicados.
+	 * Identifica enfermeras por su rol de usuario (ENFERMERIA id=4, COORD. ENFERMERIA id=36),
+	 * ya que el campo per_pers guarda períodos, no profesiones.
+	 */
+	@Query("SELECT DISTINCT p FROM PersonalCnt p " +
+	       "JOIN p.usuario u " +
+	       "JOIN u.roles r " +
+	       "WHERE p.statPers = 'A' " +
+	       "AND r.idRol IN :idRoles " +
+	       "ORDER BY p.apePaterPers, p.apeMaterPers, p.nomPers")
+	List<PersonalCnt> findEnfermerasActivasByRoles(
+	    @org.springframework.data.repository.query.Param("idRoles") List<Integer> idRoles);
+
 }

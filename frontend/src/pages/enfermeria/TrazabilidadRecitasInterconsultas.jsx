@@ -418,6 +418,7 @@ export default function TrazabilidadRecitasInterconsultas() {
   const [kpis,              setKpis]              = useState({ total: 0, recitas: 0, interconsultas: 0, sinCreador: 0 });
 
   const [currentPage, setCurrentPage] = useState(1);
+  const [sortDir,     setSortDir]     = useState('desc'); // 'desc' | 'asc'
 
   const isMountedRef = useRef(true);
   const isFirstLoad  = useRef(true);

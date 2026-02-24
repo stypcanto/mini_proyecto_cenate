@@ -59,8 +59,13 @@ public class AtenderPacienteService {
                     .orElseThrow(() -> new RuntimeException("Solicitud no encontrada"));
 
             String pkAsegurado = solicitudOriginal.getPacienteDni();
+            // ✅ Fix: asegurado es opcional — pacientes cargados sin registro en tabla asegurados
+            // no deben bloquear el registro de atención (recita/interconsulta siguen funcionando)
             Asegurado asegurado = aseguradoRepository.findByDocPaciente(solicitudOriginal.getPacienteDni())
-                    .orElseThrow(() -> new RuntimeException("Asegurado no encontrado con DNI: " + pkAsegurado));
+                    .orElse(null);
+            if (asegurado == null) {
+                log.warn("⚠️ Asegurado no encontrado con DNI: {} — se omiten enfermedades crónicas y ficha enfermería", pkAsegurado);
+            }
 
             // ✅ v1.47.0: IMPORTANTE - Marcar la solicitud original como "Atendido"
             log.info("✅ Marcando solicitud original {} como Atendido", idSolicitudBolsa);
@@ -72,8 +77,8 @@ public class AtenderPacienteService {
             solicitudOriginal.setFechaAtencionMedica(fechaAtencionMedica);
             log.info("✅ fechaAtencionMedica registrada: {}", fechaAtencionMedica);
 
-            // ✅ v1.47.2: Guardar enfermedades crónicas PRIMERO
-            if (request.getEsCronico() != null && request.getEsCronico() && request.getEnfermedades() != null && !request.getEnfermedades().isEmpty()) {
+            // ✅ v1.47.2: Guardar enfermedades crónicas PRIMERO (solo si asegurado existe)
+            if (asegurado != null && request.getEsCronico() != null && request.getEsCronico() && request.getEnfermedades() != null && !request.getEnfermedades().isEmpty()) {
                 String[] enfermedadesArray = request.getEnfermedades().toArray(new String[0]);
                 log.info("🏥 Guardando enfermedades: {}", String.join(", ", enfermedadesArray));
                 asegurado.setEnfermedadCronica(enfermedadesArray);
@@ -335,6 +340,11 @@ public class AtenderPacienteService {
                 request.getObservaciones() != null ||
                 request.getPresionArterial() != null ||
                 request.getGlucosa() != null;
+
+        if (asegurado == null) {
+            log.debug("ℹ️ [v1.76.0] Asegurado null — omitiendo Ficha Enfermería");
+            return null;
+        }
 
         if (!tieneDatosEnfermeria) {
             log.debug("ℹ️ [v1.76.0] Sin datos de Ficha Enfermería — omitiendo guardado");

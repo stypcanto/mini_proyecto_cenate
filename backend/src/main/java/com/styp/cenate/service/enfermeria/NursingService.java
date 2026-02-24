@@ -1,9 +1,13 @@
 package com.styp.cenate.service.enfermeria;
 
+import com.styp.cenate.dto.enfermeria.EnfermeraSimpleDto;
 import com.styp.cenate.dto.enfermeria.NursingAttendRequest;
 import com.styp.cenate.dto.enfermeria.NursingWorklistDto;
+import com.styp.cenate.dto.enfermeria.RescatarPacienteDto;
 import com.styp.cenate.model.AtencionClinica;
+import com.styp.cenate.model.PersonalCnt;
 import com.styp.cenate.model.chatbot.SolicitudCita;
+import com.styp.cenate.model.bolsas.SolicitudBolsa;
 import com.styp.cenate.model.enfermeria.AtencionEnfermeria;
 import com.styp.cenate.model.enfermeria.PacienteInterconsulta;
 import com.styp.cenate.repository.AtencionClinicaRepository;
@@ -12,6 +16,8 @@ import com.styp.cenate.repository.enfermeria.AtencionEnfermeriaRepository;
 import com.styp.cenate.repository.enfermeria.PacienteInterconsultaRepository;
 import com.styp.cenate.repository.UsuarioRepository;
 import com.styp.cenate.repository.IpressRepository;
+import com.styp.cenate.repository.PersonalCntRepository;
+import com.styp.cenate.repository.bolsas.SolicitudBolsaRepository;
 import com.styp.cenate.model.Usuario;
 import com.styp.cenate.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
@@ -43,6 +49,8 @@ public class NursingService {
     private final com.styp.cenate.repository.AseguradoRepository aseguradoRepository;
     private final UsuarioRepository usuarioRepository;
     private final IpressRepository ipressRepository;
+    private final SolicitudBolsaRepository solicitudBolsaRepository;
+    private final PersonalCntRepository personalCntRepository;
 
     private static final Long ESTADO_CITA_PROGRAMADO = 1L; // Asumiendo ID 1 = Programado/Confirmado
     // TODO: Confirmar si CENACRON se identifica por idEstrategia
@@ -506,6 +514,101 @@ public class NursingService {
         if (dias <= 60)
             return "ROJO";
         return "NEGRO";
+    }
+
+    // =========================================================================
+    // 🆘 RESCATE DE PACIENTES — COORDINADORA ENFERMERÍA
+    // =========================================================================
+
+    /**
+     * Busca solicitudes de bolsa por DNI del paciente.
+     * Retorna todos los registros independientemente de su estado.
+     * @Transactional evita LazyInitializationException al mapear entidades.
+     */
+    @Transactional(readOnly = true)
+    public List<RescatarPacienteDto> buscarPacientesPorDni(String dni) {
+        log.info("🔍 GET /api/enfermeria/pacientes/buscar - DNI: {}", dni);
+        List<SolicitudBolsa> solicitudes = solicitudBolsaRepository.findByPacienteDni(dni.trim());
+        log.info("✅ Encontradas {} solicitudes para DNI {}", solicitudes.size(), dni);
+        return solicitudes.stream()
+                .map(this::mapToRescatarDto)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Rescata un paciente: cambia condición médica a "Pendiente", estado a "PENDIENTE"
+     * y limpia fecha_atencion_medica. Opcionalmente reasigna enfermera.
+     */
+    @Transactional
+    public RescatarPacienteDto rescatarPaciente(Long idSolicitud, Long idPersonal) {
+        log.info("🆘 PUT /api/enfermeria/pacientes/{}/rescatar - idPersonal: {}", idSolicitud, idPersonal);
+
+        SolicitudBolsa solicitud = solicitudBolsaRepository.findById(idSolicitud)
+                .orElseThrow(() -> new ResourceNotFoundException("Solicitud no encontrada: " + idSolicitud));
+
+        String estadoAnterior = solicitud.getCondicionMedica();
+        solicitud.setCondicionMedica("Pendiente");
+        solicitud.setEstado("PENDIENTE");
+        solicitud.setFechaAtencionMedica(null);
+
+        if (idPersonal != null) {
+            solicitud.setIdPersonal(idPersonal);
+        }
+
+        SolicitudBolsa guardado = solicitudBolsaRepository.save(solicitud);
+        log.info("✅ Paciente {} rescatado: condicion_medica {} → Pendiente", idSolicitud, estadoAnterior);
+        return mapToRescatarDto(guardado);
+    }
+
+    /**
+     * Lista el personal activo con rol ENFERMERIA o COORD. ENFERMERIA.
+     * Se identifica por la relación usuario → rol, no por per_pers (que guarda períodos).
+     */
+    @Transactional(readOnly = true)
+    public List<EnfermeraSimpleDto> listarEnfermeras() {
+        log.info("📋 GET /api/enfermeria/enfermeras");
+        // Los roles de enfermería son id_rol=4 (ENFERMERIA) y id_rol=36 (COORD. ENFERMERIA)
+        List<PersonalCnt> enfermeras = personalCntRepository.findEnfermerasActivasByRoles(List.of(4, 36));
+        log.info("✅ Encontradas {} enfermeras activas", enfermeras.size());
+        return enfermeras.stream()
+                .map(p -> EnfermeraSimpleDto.builder()
+                        .idPersonal(p.getIdPers())
+                        .nombreCompleto(String.join(" ",
+                                p.getApePaterPers() != null ? p.getApePaterPers() : "",
+                                p.getApeMaterPers() != null ? p.getApeMaterPers() : "",
+                                p.getNomPers() != null ? p.getNomPers() : "").trim())
+                        .numDoc(p.getNumDocPers())
+                        .build())
+                .collect(Collectors.toList());
+    }
+
+    private RescatarPacienteDto mapToRescatarDto(SolicitudBolsa s) {
+        String nombreEnfermera = null;
+        if (s.getIdPersonal() != null) {
+            try {
+                nombreEnfermera = personalCntRepository.findById(s.getIdPersonal())
+                        .map(p -> String.join(" ",
+                                p.getApePaterPers() != null ? p.getApePaterPers() : "",
+                                p.getApeMaterPers() != null ? p.getApeMaterPers() : "",
+                                p.getNomPers() != null ? p.getNomPers() : "").trim())
+                        .orElse(null);
+            } catch (Exception e) {
+                log.warn("⚠️ No se pudo obtener nombre de enfermera id_pers={}: {}", s.getIdPersonal(), e.getMessage());
+            }
+        }
+        return RescatarPacienteDto.builder()
+                .idSolicitud(s.getIdSolicitud())
+                .pacienteNombre(s.getPacienteNombre())
+                .pacienteDni(s.getPacienteDni())
+                .condicionMedica(s.getCondicionMedica())
+                .estado(s.getEstado())
+                .idPersonal(s.getIdPersonal())
+                .nombreEnfermera(nombreEnfermera)
+                .fechaAtencionMedica(s.getFechaAtencionMedica())
+                .especialidad(s.getEspecialidad())
+                .idBolsa(s.getIdBolsa())
+                .numeroSolicitud(s.getNumeroSolicitud())
+                .build();
     }
 
     /**
