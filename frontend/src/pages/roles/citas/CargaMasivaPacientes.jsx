@@ -195,13 +195,15 @@ export default function CargaMasivaPacientes() {
       });
       if (res.ok) {
         const data = await res.json();
-        const p = Array.isArray(data) ? data[0] : data;
+        // El backend devuelve { found: true, data: { idPersonal, apellidoPaterno, apellidoMaterno, nombres, ... } }
+        const p = data?.data ?? (Array.isArray(data) ? data[0] : data);
         if (p) {
           setMedico({
-            idPers: p.idPers ?? p.id_pers ?? p.idpers,
+            idPers: p.idPersonal ?? p.idPers ?? p.id_pers ?? p.idpers,
             nombre:
               p.nombreCompleto ??
               p.nombre_completo ??
+              [p.apellidoPaterno, p.apellidoMaterno, p.nombres].filter(Boolean).join(" ") ??
               [p.apePaterPers, p.apeMaterPers, p.nomPers].filter(Boolean).join(" ") ??
               "—",
           });
