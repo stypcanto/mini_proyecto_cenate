@@ -205,7 +205,7 @@ export default function CargaMasivaPacientes() {
   // ── Buscar profesional ───────────────────────────────────
   async function buscarProfesional(dni) {
     try {
-      const res = await fetch(`${getApiBaseUrl()}/api/personal/buscar/${dni}`, {
+      const res = await fetch(`${getApiBaseUrl()}/personal/buscar/${dni}`, {
         headers: { Authorization: `Bearer ${getToken()}` },
       });
       if (res.ok) {
@@ -270,7 +270,7 @@ export default function CargaMasivaPacientes() {
       }));
 
       const res = await fetch(
-        `${getApiBaseUrl()}/api/bolsas/solicitudes/carga-masiva-pacientes`,
+        `${getApiBaseUrl()}/bolsas/solicitudes/carga-masiva-pacientes`,
         {
           method: "POST",
           headers: {
