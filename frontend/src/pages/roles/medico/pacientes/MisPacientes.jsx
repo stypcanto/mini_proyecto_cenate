@@ -639,7 +639,7 @@ export default function MisPacientes() {
   const [fechaDesde, setFechaDesde] = useState('');
   const [fechaHasta, setFechaHasta] = useState('');
   const [ipressDisponibles, setIpressDisponibles] = useState([]);
-  const [ordenarPor, setOrdenarPor] = useState('reciente');
+  const [ordenarPor, setOrdenarPor] = useState('antiguo');
 
   // ✅ v1.66.0: CALENDARIO PROFESIONAL DE ASIGNACIONES
   const [fechaSeleccionadaCalendario, setFechaSeleccionadaCalendario] = useState(null);
@@ -1187,18 +1187,18 @@ export default function MisPacientes() {
       });
     }
 
-    // 6. NUEVO: Ordenamiento
+    // 6. Ordenamiento por Fecha y Hora de Cita (fechaAtencion)
     if (ordenarPor === 'reciente') {
       resultados.sort((a, b) => {
-        if (!a.fechaAsignacion) return 1;
-        if (!b.fechaAsignacion) return -1;
-        return new Date(b.fechaAsignacion) - new Date(a.fechaAsignacion);
+        if (!a.fechaAtencion) return 1;
+        if (!b.fechaAtencion) return -1;
+        return new Date(b.fechaAtencion) - new Date(a.fechaAtencion);
       });
     } else if (ordenarPor === 'antiguo') {
       resultados.sort((a, b) => {
-        if (!a.fechaAsignacion) return 1;
-        if (!b.fechaAsignacion) return -1;
-        return new Date(a.fechaAsignacion) - new Date(b.fechaAsignacion);
+        if (!a.fechaAtencion) return 1;
+        if (!b.fechaAtencion) return -1;
+        return new Date(a.fechaAtencion) - new Date(b.fechaAtencion);
       });
     }
 
@@ -2358,7 +2358,7 @@ export default function MisPacientes() {
                     setFechaDesde('');
                     setFechaHasta('');
                     setFechaAtencionSeleccionada('');
-                    setOrdenarPor('reciente');
+                    setOrdenarPor('antiguo');
                     toast.success('✨ Filtros limpiados');
                   }}
                   title="Limpiar todos los filtros"
@@ -2532,8 +2532,8 @@ export default function MisPacientes() {
                   onChange={(e) => setOrdenarPor(e.target.value)}
                   className="w-full h-[34px] px-3 text-sm bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-green-400 focus:border-transparent transition-all shadow-sm hover:border-slate-400"
                 >
-                  <option value="reciente">Más recientes primero</option>
-                  <option value="antiguo">Más antiguos primero</option>
+                  <option value="antiguo">Hora cita ↑ (más temprano primero)</option>
+                  <option value="reciente">Hora cita ↓ (más tarde primero)</option>
                 </select>
               </div>
             </div>
@@ -2754,7 +2754,7 @@ export default function MisPacientes() {
                         {formatearFechaHumana(paciente.fechaAtencion)}
                       </td>
                       <td className="px-2 py-1 text-gray-600 text-xs whitespace-nowrap">
-                        {formatearFechaHumana(paciente.fechaAtencion)}
+                        {formatearFechaHumana(paciente.fechaAtencionMedica)}
                       </td>
 
                       {/* ✅ v1.80.0: Columna - Ver imágenes ECG (SOLO CARDIÓLOGOS) + Estados */}
