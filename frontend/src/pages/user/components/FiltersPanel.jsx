@@ -217,36 +217,6 @@ const FiltersPanel = ({ filters, setFilters, searchTerm, setSearchTerm, onNewUse
           }`}
         >
           <div className="px-5 pb-5 bg-gradient-to-b from-gray-50/50 to-white border-t border-gray-200/60">
-            {/* Buscador principal - Estilo Apple */}
-            <div className="pt-4 pb-3">
-              <label className="block mb-2 text-sm font-semibold text-gray-800 flex items-center gap-2">
-                <div className="p-1.5 bg-blue-50 rounded-lg">
-                  <Search className="w-4 h-4 text-blue-600" strokeWidth={2.5} />
-                </div>
-                Búsqueda General
-              </label>
-              <div className="relative group">
-                <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 to-purple-500/10 rounded-xl blur-xl opacity-0 group-focus-within:opacity-100 transition-opacity duration-300"></div>
-                <div className="relative">
-                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4.5 h-4.5 text-gray-400 group-focus-within:text-blue-600 transition-all duration-200 pointer-events-none z-10" strokeWidth={2} />
-                  <input
-                    type="text"
-                    placeholder="Buscar por DNI / CE..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full pl-11 pr-4 py-2.5 bg-white/90 backdrop-blur-sm border-2 border-gray-200 rounded-xl text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all duration-200 shadow-sm hover:border-gray-300 hover:shadow-md focus:shadow-lg"
-                  />
-                  {searchTerm && (
-                    <button
-                      onClick={() => setSearchTerm('')}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-all duration-200"
-                    >
-                      <X className="w-4 h-4" strokeWidth={2.5} />
-                    </button>
-                  )}
-                </div>
-              </div>
-            </div>
 
             {/* Badges de filtros activos - Visualización estilo Apple */}
             {activeFiltersList.length > 0 && (
@@ -285,7 +255,31 @@ const FiltersPanel = ({ filters, setFilters, searchTerm, setSearchTerm, onNewUse
                   <div className="h-1 w-1 rounded-full bg-blue-500"></div>
                   Filtros de Usuario
                 </h4>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3">
+                  {/* Búsqueda */}
+                  <div className="group relative">
+                    <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-purple-500/5 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                    <div className="relative bg-white rounded-lg p-3 border-2 border-gray-200 hover:border-blue-400 transition-all duration-300 shadow-sm hover:shadow-md h-full">
+                      <label className="block mb-2 text-xs font-bold text-gray-700 uppercase tracking-wider flex items-center gap-1.5">
+                        <Search className="w-3.5 h-3.5 text-blue-500" strokeWidth={2.5} />
+                        Búsqueda
+                      </label>
+                      <div className="relative">
+                        <input
+                          type="text"
+                          placeholder="DNI / Nombre..."
+                          value={searchTerm}
+                          onChange={(e) => setSearchTerm(e.target.value)}
+                          className="w-full pl-2 pr-6 py-1.5 bg-gray-50 border border-gray-300 rounded-lg text-xs text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+                        />
+                        {searchTerm && (
+                          <button onClick={() => setSearchTerm('')} className="absolute right-1.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                            <X className="w-3.5 h-3.5" strokeWidth={2.5} />
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
                   {/* Rol */}
                   <div className="group relative">
                     <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-purple-500/5 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
