@@ -256,6 +256,7 @@ public class AtenderPacienteService {
         // ✅ v1.75.0: usa BOLSA_GENERADA_X_PROFESIONAL (11) — igual que RECITA
         // El UNIQUE constraint antiguo fue resuelto (1 fila por especialidad), ya no se necesita BOLSA_GESTORA (10)
         ZonedDateTime zonedDateTime = Instant.now().atZone(ZoneId.of("America/Lima"));
+        ZonedDateTime fechaPreferidaInterconsulta = zonedDateTime.plusDays(30); // 30 días por defecto para interconsultas
 
         // ✅ v1.47.3: Buscar idServicio por especialidad para permitir asignación de médico
         Long idServicioInterconsulta = null;
@@ -294,6 +295,7 @@ public class AtenderPacienteService {
                 .idServicio(idServicioInterconsulta) // ✅ v1.47.3 Asignar idServicio para permitir selector de médicos
                 // ✅ v1.103.9: Sin gestora — va a bolsas/solicitudes para ser asignada, NO a citas-agendadas
                 .fechaAsignacion(OffsetDateTime.now())
+                .fechaPreferidaNoAtendida(fechaPreferidaInterconsulta.toLocalDate()) // ✅ Fecha preferida (hoy + 30 días)
                 .idsolicitudgeneracion(solicitudOriginal.getIdSolicitud()) // ✅ FK trazabilidad
                 // id_personal = NULL: el coordinador asignará al profesional desde /bolsas/solicitudespendientes
                 // La trazabilidad del creador se obtiene via id_atencion_clinica.id_personal_creador
