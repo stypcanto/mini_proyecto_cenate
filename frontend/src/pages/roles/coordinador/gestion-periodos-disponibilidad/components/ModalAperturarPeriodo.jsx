@@ -9,7 +9,7 @@ import {
   lastDayOfMonth,
 } from "../utils/ui";
 
-export default function ModalAperturarPeriodo({ onClose, onCrear }) {
+export default function ModalAperturarPeriodo({ onClose, onCrear, aniosDisponibles = [] }) {
   const { user } = useAuth();
   
   const now = new Date();
@@ -82,9 +82,10 @@ export default function ModalAperturarPeriodo({ onClose, onCrear }) {
     }
   }, [areasDisponibles, idArea]);
 
+  // 🔄 Mostrar solo año actual + 1 año siguiente
   const years = useMemo(() => {
     const base = now.getFullYear();
-    return Array.from({ length: 6 }, (_, i) => base - 2 + i);
+    return [base, base + 1];
   }, [now]);
 
   const periodoCodigo = yyyymmFromYearMonth(anio, mes);

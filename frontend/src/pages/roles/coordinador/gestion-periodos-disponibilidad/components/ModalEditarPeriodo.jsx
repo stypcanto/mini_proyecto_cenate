@@ -1,6 +1,42 @@
 import React, { useState, useEffect } from "react";
 import { Calendar, X, Save } from "lucide-react";
 
+// 🆕 Función segura para convertir ISO a YYYY-MM-DD sin problemas de zona horaria
+function formatToDateInput(isoString) {
+  if (!isoString) return "";
+  
+  // Si ya está en formato YYYY-MM-DD, devolverlo
+  if (isoString.match(/^\d{4}-\d{2}-\d{2}$/)) {
+    return isoString;
+  }
+  
+  // 🆕 Extraer directamente YYYY-MM-DD de la string ISO sin conversión de zona horaria
+  const dateMatch = isoString.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (dateMatch) {
+    return `${dateMatch[1]}-${dateMatch[2]}-${dateMatch[3]}`;
+  }
+  
+  // Fallback: usar el método anterior si falla el regex
+  const date = new Date(isoString);
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  
+  return `${year}-${month}-${day}`;
+}
+
+// 🆕 Función para formatear fecha ISO a formato local (DD/M/YYYY) sin zona horaria
+function formatToLocaleDateString(isoString) {
+  if (!isoString) return "—";
+  
+  // Extraer YYYY-MM-DD sin conversión de zona horaria
+  const dateStr = formatToDateInput(isoString);
+  if (!dateStr) return "—";
+  
+  const [year, month, day] = dateStr.split('-');
+  return `${day}/${month}/${year}`;
+}
+
 export default function ModalEditarPeriodo({ periodo, onClose, onGuardar }) {
   const [fechaInicio, setFechaInicio] = useState("");
   const [fechaFin, setFechaFin] = useState("");
@@ -11,11 +47,11 @@ export default function ModalEditarPeriodo({ periodo, onClose, onGuardar }) {
     console.log("Periodo recibido en modal:", periodo);
     
     if (periodo) {
-      // Extraer solo la parte de fecha (YYYY-MM-DD) para el input type="date"
-      const inicio = periodo.fechaInicio ? periodo.fechaInicio.split('T')[0] : "";
-      const fin = periodo.fechaFin ? periodo.fechaFin.split('T')[0] : "";
+      // 🆕 Usar función segura para extraer fechas
+      const inicio = formatToDateInput(periodo.fechaInicio);
+      const fin = formatToDateInput(periodo.fechaFin);
       
-      console.log("Fechas extraídas:");
+      console.log("Fechas extraídas (seguras):");
       console.log("  - fechaInicio:", inicio);
       console.log("  - fechaFin:", fin);
       
@@ -39,22 +75,20 @@ export default function ModalEditarPeriodo({ periodo, onClose, onGuardar }) {
 
     setGuardando(true);
     try {
-      // Agregar la hora al formato de fecha
-      const fechaInicioCompleta = `${fechaInicio} 00:00:00`;
-      const fechaFinCompleta = `${fechaFin} 23:59:59`;
-      
+      // 🆕 Enviar fechas en formato YYYY-MM-DD (LocalDate en Java)
       const payload = {
-        fechaInicio: fechaInicioCompleta,
-        fechaFin: fechaFinCompleta,
+        periodo: periodo.periodo,
+        idArea: periodo.idArea,
+        fechaInicio: fechaInicio,  // YYYY-MM-DD
+        fechaFin: fechaFin,        // YYYY-MM-DD
       };
       
       console.log("%c💾 GUARDAR EDICIÓN - Payload preparado", "color: #059669; font-weight: bold; font-size: 14px;");
-      console.log("🆔 ID Periodo:", periodo.idPeriodo || periodo.idDisponibilidad);
+      console.log("🆔 Periodo:", periodo.periodo);
       console.log("📦 Payload que se enviará:");
       console.table(payload);
       
-      const idPeriodo = periodo.idPeriodoRegDisp || periodo.idPeriodo || periodo.idDisponibilidad;
-      await onGuardar(idPeriodo, payload);
+      await onGuardar(periodo, payload);
       onClose();
     } catch (error) {
       console.error("Error al guardar:", error);
@@ -136,13 +170,13 @@ export default function ModalEditarPeriodo({ periodo, onClose, onGuardar }) {
               <div>
                 <p className="text-gray-600">Inicio:</p>
                 <p className="font-semibold text-gray-900">
-                  {periodo.fechaInicio ? new Date(periodo.fechaInicio).toLocaleDateString('es-ES') : "—"}
+                  {formatToLocaleDateString(periodo.fechaInicio)}
                 </p>
               </div>
               <div>
                 <p className="text-gray-600">Cierre:</p>
                 <p className="font-semibold text-gray-900">
-                  {periodo.fechaFin ? new Date(periodo.fechaFin).toLocaleDateString('es-ES') : "—"}
+                  {formatToLocaleDateString(periodo.fechaFin)}
                 </p>
               </div>
             </div>

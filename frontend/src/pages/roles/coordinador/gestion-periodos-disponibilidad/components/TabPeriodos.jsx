@@ -3,7 +3,6 @@ import {
   Calendar,
   Loader2,
   Plus,
-  Eye,
   CheckCircle2,
   XCircle,
   ChevronDown,
@@ -19,7 +18,6 @@ export default function TabPeriodos({
   loading,
   onTogglePeriodo,
   onCrearPeriodo,
-  onVerDetallePeriodo,
   getEstadoBadge,
   onEditarPeriodo,
   onEliminarPeriodo,
@@ -107,7 +105,6 @@ export default function TabPeriodos({
               >
                 <option value="TODOS">Todos</option>
                 <option value="ABIERTO">Abierto</option>
-                <option value="EN_VALIDACION">En Validación</option>
                 <option value="CERRADO">Cerrado</option>
                 <option value="REABIERTO">Reabierto</option>
               </select>
@@ -281,14 +278,6 @@ export default function TabPeriodos({
                       </td>
                       <td className="px-3 py-2">
                         <div className="flex items-center justify-center gap-1">
-                          <button
-                            onClick={() => onVerDetallePeriodo?.(p)}
-                            className="inline-flex items-center gap-1 px-2 py-1 bg-blue-600 text-white text-xs font-medium rounded hover:bg-blue-700 transition-colors"
-                            title="Ver detalle"
-                          >
-                            <Eye className="w-3 h-3" />
-                          </button>
-                          
                           {/* Botón Editar - disponible si está ABIERTO o REABIERTO */}
                           <button
                             onClick={() => onEditarPeriodo?.(p)}

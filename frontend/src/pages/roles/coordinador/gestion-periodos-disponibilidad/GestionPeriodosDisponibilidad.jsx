@@ -11,6 +11,7 @@ import TabDisponibilidades from "./components/TabDisponibilidades";
 import ModalAperturarPeriodo from "./components/ModalAperturarPeriodo";
 import ModalEditarPeriodo from "./components/ModalEditarPeriodo";
 import ModalConfirmarEliminacion from "./components/ModalConfirmarEliminacion";
+import ModalReabrirPeriodo from "./components/ModalReabrirPeriodo";
 import CardStat from "./components/CardStat";
 
 import { getEstadoBadgeDefault } from "./utils/ui";
@@ -39,6 +40,9 @@ export default function GestionPeriodosDisponibilidad() {
   const [periodoAEliminar, setPeriodoAEliminar] = useState(null);
   const [eliminando, setEliminando] = useState(false);
 
+  const [showReabrirModal, setShowReabrirModal] = useState(false);
+  const [periodoAReabrir, setPeriodoAReabrir] = useState(null);
+
   const [showDetalleModal, setShowDetalleModal] = useState(false);
   const [loadingDetalle, setLoadingDetalle] = useState(false);
   const [disponibilidadDetalle, setDisponibilidadDetalle] = useState(null);
@@ -55,7 +59,7 @@ export default function GestionPeriodosDisponibilidad() {
 
   // Filtros específicos para periodos
   const [filtrosPeriodos, setFiltrosPeriodos] = useState({
-    estado: "TODOS", // TODOS, ABIERTO, EN_VALIDACION, CERRADO, REABIERTO
+    estado: "TODOS", // TODOS, ABIERTO, CERRADO, REABIERTO
     idArea: "TODOS", // TODOS, 2, 3, 13
     propietario: "TODOS", // TODOS, MIS_PERIODOS
     anio: new Date().getFullYear(), // Año actual por defecto
@@ -236,9 +240,25 @@ export default function GestionPeriodosDisponibilidad() {
   const handleTogglePeriodo = async (periodoObj) => {
     const actual = periodoObj?.estado;
     // Alternar entre ABIERTO y CERRADO
+    // Si está CERRADO, cambiar a REABIERTO (no ABIERTO)
     const nuevoEstado = actual === ESTADO_PERIODO.ABIERTO || actual === ESTADO_PERIODO.REABIERTO 
       ? ESTADO_PERIODO.CERRADO 
-      : ESTADO_PERIODO.ABIERTO;
+      : ESTADO_PERIODO.REABIERTO;
+
+    // 🆕 Si es REABIERTO, mostrar modal para seleccionar fecha fin
+    if (nuevoEstado === ESTADO_PERIODO.REABIERTO) {
+      setPeriodoAReabrir(periodoObj);
+      setShowReabrirModal(true);
+      return;
+    }
+
+    // 🆕 Confirmación al cerrar un período
+    if (nuevoEstado === ESTADO_PERIODO.CERRADO) {
+      const confirmed = window.confirm(
+        `¿Está seguro de que desea cerrar el período ${periodoObj.periodo}?\n\nEsta acción no se puede deshacer fácilmente.`
+      );
+      if (!confirmed) return;
+    }
 
     try {
       // Usar clave compuesta (periodo, idArea)
@@ -246,11 +266,55 @@ export default function GestionPeriodosDisponibilidad() {
       await periodoMedicoDisponibilidadService.cambiarEstado(periodo, idArea, nuevoEstado);
       await cargarPeriodos();
       if (activeTab === "disponibilidades") await cargarDisponibilidades();
-      window.alert(`Período ${nuevoEstado === ESTADO_PERIODO.ABIERTO ? 'abierto' : 'cerrado'} correctamente`);
+      
+      // 🆕 Mensaje dinámico según el estado
+      const mensajeEstado = nuevoEstado === ESTADO_PERIODO.CERRADO 
+        ? 'cerrado' 
+        : nuevoEstado === ESTADO_PERIODO.REABIERTO 
+        ? 'reabierto' 
+        : 'abierto';
+      window.alert(`Período ${mensajeEstado} correctamente`);
     } catch (err) {
       console.error(err);
       const errorMessage = err.message || "Error desconocido al cambiar estado del período";
       window.alert(`Error al cambiar estado del período:\n\n${errorMessage}`);
+    }
+  };
+
+  const handleConfirmarReabrir = async (nuevaFechaFin) => {
+    if (!periodoAReabrir) return;
+
+    try {
+      const { periodo, idArea } = periodoAReabrir;
+      
+      // 1️⃣ Cambiar estado a REABIERTO
+      await periodoMedicoDisponibilidadService.cambiarEstado(periodo, idArea, ESTADO_PERIODO.REABIERTO);
+      
+      // 2️⃣ Actualizar la fecha fin con la nueva fecha seleccionada
+      // Obtener la fecha inicio del período actual (para mantenerla)
+      const fechaInicioActual = periodoAReabrir.fechaInicio 
+        ? new Date(periodoAReabrir.fechaInicio).toISOString().split('T')[0]
+        : new Date().toISOString().split('T')[0];
+      
+      const updateData = {
+        periodo: periodoAReabrir.periodo,
+        idArea: periodoAReabrir.idArea,
+        fechaInicio: fechaInicioActual,
+        fechaFin: nuevaFechaFin, // YYYY-MM-DD (nueva fecha seleccionada)
+      };
+      await periodoMedicoDisponibilidadService.actualizar(periodo, idArea, updateData);
+      
+      setShowReabrirModal(false);
+      setPeriodoAReabrir(null);
+      
+      await cargarPeriodos();
+      if (activeTab === "disponibilidades") await cargarDisponibilidades();
+      
+      window.alert(`Período reabierto correctamente con fecha fin: ${nuevaFechaFin}`);
+    } catch (err) {
+      console.error(err);
+      const errorMessage = err.message || "Error desconocido al reabrir el período";
+      window.alert(`Error al reabrir el período:\n\n${errorMessage}`);
     }
   };
 
@@ -490,7 +554,7 @@ export default function GestionPeriodosDisponibilidad() {
         )}
 
         {showAperturarModal && (
-          <ModalAperturarPeriodo onClose={() => setShowAperturarModal(false)} onCrear={handleAperturarPeriodo} />
+          <ModalAperturarPeriodo onClose={() => setShowAperturarModal(false)} onCrear={handleAperturarPeriodo} aniosDisponibles={aniosDisponibles} />
         )}
 
         {showEditarModal && periodoAEditar && (
@@ -514,6 +578,17 @@ export default function GestionPeriodosDisponibilidad() {
             }}
             onConfirmar={handleConfirmarEliminacion}
             eliminando={eliminando}
+          />
+        )}
+
+        {showReabrirModal && periodoAReabrir && (
+          <ModalReabrirPeriodo
+            periodoObj={periodoAReabrir}
+            onClose={() => {
+              setShowReabrirModal(false);
+              setPeriodoAReabrir(null);
+            }}
+            onConfirmar={handleConfirmarReabrir}
           />
         )}
 

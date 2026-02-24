@@ -314,7 +314,8 @@ public class GestionPacienteController {
 
     @PostMapping("/{id}/atendido")
     //@CheckMBACPermission(pagina = "/roles/medico/pacientes", accion = "editar", mensajeDenegado = "No tiene permiso para registrar atención")
-    public ResponseEntity<Map<String, String>> atenderPaciente(
+    public ResponseEntity<?> atenderPaciente(
+    //public ResponseEntity<Map<String, String>> atenderPaciente(
             @PathVariable @Min(1) Long id,
             @RequestBody @Valid AtenderPacienteRequest request,
             BindingResult bindingResult

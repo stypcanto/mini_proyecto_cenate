@@ -117,7 +117,7 @@ public interface CtrPeriodoRepository extends JpaRepository<CtrPeriodo, CtrPerio
     @Query("""
             SELECT DISTINCT CAST(SUBSTRING(p.id.periodo, 1, 4) AS integer)
             FROM CtrPeriodo p
-            WHERE p.estado IN ('ABIERTO', 'EN_VALIDACION', 'REABIERTO')
+            WHERE p.estado IN ('ABIERTO', 'EN_VALIDACION', 'REABIERTO', 'CERRADO')
             ORDER BY CAST(SUBSTRING(p.id.periodo, 1, 4) AS integer) DESC
             """)
     List<Integer> listarAniosDisponibles();
