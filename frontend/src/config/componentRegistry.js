@@ -370,6 +370,11 @@ export const componentRegistry = {
     requiredAction: 'ver',
   },
 
+  '/citas/carga-masiva-pacientes': {
+    component: lazy(() => import('../pages/roles/citas/CargaMasivaPacientes')),
+    requiredAction: 'ver',
+  },
+
   // ========================================================================
   // 📋 COORDINADOR DE GESTIÓN DE CITAS
   // ========================================================================
@@ -671,6 +676,10 @@ export const componentRegistry = {
   // ========================================================================
   '/enfermeria/trazabilidad-recitas': {
     component: lazy(() => import('../pages/enfermeria/TrazabilidadRecitasInterconsultas')),
+    requiredAction: 'ver',
+  },
+  '/enfermeria/rescatar-paciente': {
+    component: lazy(() => import('../pages/enfermeria/RescatarPacienteEnfermeria')),
     requiredAction: 'ver',
   },
 };

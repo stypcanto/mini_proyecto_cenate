@@ -4,6 +4,7 @@ import com.styp.cenate.dto.bolsas.BolsaXGestoraDTO;
 import com.styp.cenate.dto.bolsas.SolicitudBolsaDTO;
 import com.styp.cenate.dto.bolsas.ActualizarEstadoCitaDTO;
 import com.styp.cenate.dto.bolsas.CrearSolicitudAdicionalRequest;
+import com.styp.cenate.dto.bolsas.CargaMasivaRequest;
 import com.styp.cenate.model.bolsas.HistorialCargaBolsas;
 import com.styp.cenate.repository.bolsas.HistorialCargaBolsasRepository;
 import com.styp.cenate.service.bolsas.SolicitudBolsaService;
@@ -1658,6 +1659,31 @@ public class SolicitudBolsaController {
             return ResponseEntity.ok(solicitudBolsaService.obtenerKpisTrazabilidad());
         } catch (Exception e) {
             log.error("❌ Error KPIs trazabilidad: ", e);
+            return ResponseEntity.status(500).body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    /**
+     * Carga masiva de pacientes desde JSON (datos leídos del Excel en el frontend)
+     * POST /api/bolsas/solicitudes/carga-masiva-pacientes
+     *
+     * Roles: SUPERADMIN, ADMIN, GESTOR DE CITAS, COORD. GESTION CITAS
+     *
+     * @param request datos del profesional + lista de pacientes
+     * @return mapa con: total, insertados, duplicados, errores, detalleErrores
+     */
+    @PostMapping("/carga-masiva-pacientes")
+    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'GESTOR DE CITAS', 'COORD. GESTION CITAS')")
+    public ResponseEntity<?> cargaMasivaPacientes(@RequestBody CargaMasivaRequest request) {
+        try {
+            log.info("📤 POST /api/bolsas/solicitudes/carga-masiva-pacientes - personal: {}, filas: {}",
+                request.getIdPersonal(),
+                request.getPacientes() != null ? request.getPacientes().size() : 0);
+            var resultado = solicitudBolsaService.cargaMasivaPacientes(request);
+            log.info("✅ Carga masiva completada - {}", resultado);
+            return ResponseEntity.ok(resultado);
+        } catch (Exception e) {
+            log.error("❌ Error carga masiva: ", e);
             return ResponseEntity.status(500).body(Map.of("error", e.getMessage()));
         }
     }

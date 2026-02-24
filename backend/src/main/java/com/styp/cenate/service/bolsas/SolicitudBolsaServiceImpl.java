@@ -3962,4 +3962,114 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
             return m;
         }).toList();
     }
+
+    // ============================================================================
+    // 📤 CARGA MASIVA DESDE EXCEL (v1.65.0)
+    // Reemplaza el proceso manual SQL+Python por un endpoint REST
+    // ============================================================================
+    @Override
+    @Transactional
+    public Map<String, Object> cargaMasivaPacientes(com.styp.cenate.dto.bolsas.CargaMasivaRequest request) {
+        if (request.getPacientes() == null || request.getPacientes().isEmpty()) {
+            return Map.of("total", 0, "insertados", 0, "duplicados", 0, "errores", 0, "detalleErrores", List.of());
+        }
+
+        int total = request.getPacientes().size();
+        int insertados = 0;
+        int duplicados = 0;
+        List<String> detalleErrores = new ArrayList<>();
+        List<SolicitudBolsa> toInsert = new ArrayList<>();
+        long baseTs = System.currentTimeMillis();
+
+        Long idPersonal = request.getIdPersonal();
+        String especialidad = request.getEspecialidad() != null ? request.getEspecialidad() : "ENFERMERIA";
+        Long idServicio = request.getIdServicio() != null ? request.getIdServicio() : 56L;
+        Long responsableGestoraId = request.getResponsableGestoraId() != null ? request.getResponsableGestoraId() : 688L;
+        Long idBolsa = 10L;
+
+        for (int i = 0; i < request.getPacientes().size(); i++) {
+            com.styp.cenate.dto.bolsas.CargaMasivaRequest.PacienteExcelRow row = request.getPacientes().get(i);
+            try {
+                if (row.getDocPaciente() == null || row.getDocPaciente().isBlank()) {
+                    detalleErrores.add("Fila " + (i + 1) + ": DNI vacío");
+                    continue;
+                }
+                String dni = row.getDocPaciente().trim();
+
+                // 1. Insertar en asegurados ON CONFLICT DO NOTHING
+                entityManager.createNativeQuery(
+                    "INSERT INTO asegurados (pk_asegurado, doc_paciente) VALUES (:dni, :dni) ON CONFLICT DO NOTHING"
+                ).setParameter("dni", dni).executeUpdate();
+
+                // 2. Verificar duplicado (mismo id_bolsa + paciente_id)
+                if (solicitudRepository.existsByIdBolsaAndPacienteId(idBolsa, dni)) {
+                    log.debug("⚠️ Duplicado detectado: bolsa={}, dni={}", idBolsa, dni);
+                    duplicados++;
+                    continue;
+                }
+
+                // 3. Parsear hora de cita
+                java.time.LocalTime horaAtencion = null;
+                try {
+                    if (row.getHoraCita() != null && !row.getHoraCita().isBlank()) {
+                        String horaStr = row.getHoraCita().trim();
+                        if (horaStr.length() > 8) horaStr = horaStr.substring(0, 8);
+                        horaAtencion = java.time.LocalTime.parse(horaStr);
+                    }
+                } catch (Exception e) {
+                    log.warn("⚠️ No se pudo parsear hora '{}' para DNI {}: {}", row.getHoraCita(), dni, e.getMessage());
+                }
+
+                // 4. Construir la entidad
+                String numeroSolicitud = "REC-" + (baseTs + i);
+                SolicitudBolsa solicitud = SolicitudBolsa.builder()
+                    .numeroSolicitud(numeroSolicitud)
+                    .idBolsa(idBolsa)
+                    .idPersonal(idPersonal)
+                    .pacienteDni(dni)
+                    .pacienteId(dni)
+                    .pacienteNombre(row.getPaciente() != null ? row.getPaciente().trim() : "")
+                    .pacienteSexo(row.getSexo())
+                    .pacienteTelefono(row.getTelMovil())
+                    .codigoAdscripcion(row.getCasAdscripcion())
+                    .codigoIpressAdscripcion(row.getIpressAtencion())
+                    .horaAtencion(horaAtencion)
+                    .tipoCita(row.getTipoCita())
+                    .especialidad(especialidad)
+                    .idServicio(idServicio)
+                    .responsableGestoraId(responsableGestoraId)
+                    .estado("PENDIENTE")
+                    .estadoGestionCitasId(1L)
+                    .activo(true)
+                    .fechaAtencion(LocalDate.now())
+                    .fechaSolicitud(OffsetDateTime.now())
+                    .fechaActualizacion(OffsetDateTime.now())
+                    .fechaAsignacion(OffsetDateTime.now())
+                    .build();
+
+                toInsert.add(solicitud);
+                insertados++;
+
+            } catch (Exception e) {
+                String dni = row.getDocPaciente() != null ? row.getDocPaciente() : "?";
+                log.error("❌ Error procesando fila {} (DNI {}): {}", i + 1, dni, e.getMessage());
+                detalleErrores.add("Fila " + (i + 1) + " (DNI " + dni + "): " + e.getMessage());
+            }
+        }
+
+        if (!toInsert.isEmpty()) {
+            solicitudRepository.saveAll(toInsert);
+            entityManager.flush();
+            log.info("✅ Carga masiva: {} insertados, {} duplicados, {} errores de {} total",
+                insertados, duplicados, detalleErrores.size(), total);
+        }
+
+        Map<String, Object> resultado = new HashMap<>();
+        resultado.put("total", total);
+        resultado.put("insertados", insertados);
+        resultado.put("duplicados", duplicados);
+        resultado.put("errores", detalleErrores.size());
+        resultado.put("detalleErrores", detalleErrores);
+        return resultado;
+    }
 }

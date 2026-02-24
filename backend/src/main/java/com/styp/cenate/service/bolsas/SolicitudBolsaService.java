@@ -3,6 +3,7 @@ package com.styp.cenate.service.bolsas;
 import com.styp.cenate.dto.bolsas.BolsaXGestoraDTO;
 import com.styp.cenate.dto.bolsas.SolicitudBolsaDTO;
 import com.styp.cenate.dto.bolsas.CrearSolicitudAdicionalRequest;
+import com.styp.cenate.dto.bolsas.CargaMasivaRequest;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
@@ -313,4 +314,18 @@ public interface SolicitudBolsaService {
 
     /** KPIs globales de trazabilidad (total tabla, no solo página actual). */
     Map<String, Object> obtenerKpisTrazabilidad();
+
+    /**
+     * Carga masiva de pacientes desde Excel (v1.65.0)
+     * Reemplaza el flujo manual SQL+Python por un endpoint REST.
+     *
+     * Por cada PacienteExcelRow:
+     *   1. Inserta el DNI en asegurados (ON CONFLICT DO NOTHING)
+     *   2. Verifica duplicado en dim_solicitud_bolsa (id_bolsa + paciente_id)
+     *   3. Si no existe, crea SolicitudBolsa con los valores del Excel + valores fijos
+     *
+     * @param request datos del profesional + lista de pacientes
+     * @return mapa con: total, insertados, duplicados, errores, detalleErrores
+     */
+    Map<String, Object> cargaMasivaPacientes(CargaMasivaRequest request);
 }
