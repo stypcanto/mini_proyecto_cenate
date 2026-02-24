@@ -38,7 +38,19 @@ public interface UsuarioService {
      * @return Map con los datos paginados: content (List), totalElements, totalPages, currentPage, size
      */
     Map<String, Object> getAllPersonal(int page, int size, String sortBy, String direction);
-    
+
+    /**
+     * Obtiene personal de CENATE con filtros opcionales y paginación real en BD.
+     * Utiliza el patrón de carga en dos fases para evitar paginación en memoria con colecciones.
+     */
+    Map<String, Object> getAllPersonalFiltrado(
+            int page, int size, String sortBy, String direction,
+            String busqueda, String rol, String estado,
+            String area, String ipress, String red, String regimen,
+            String profesion, String especialidad, String institucion,
+            Integer mesNacimiento,
+            java.time.OffsetDateTime createdAtFrom, java.time.OffsetDateTime createdAtTo);
+
     UsuarioResponse getUserById(Long id);
     UsuarioResponse getUserByUsername(String username);
     UsuarioResponse obtenerDetalleUsuarioExtendido(String username);

@@ -58,17 +58,84 @@ public class UsuarioController {
 		return ResponseEntity.ok(usuarioService.getAllUsers());
 	}
 
-	/** 🔹 Obtener TODO el personal de CENATE (con y sin usuario) - Paginado */
+	/** Obtener TODO el personal de CENATE (con y sin usuario) - Paginado con filtros opcionales server-side */
 	@GetMapping("/all-personal")
 	public ResponseEntity<Map<String, Object>> getAllPersonal(
 			@RequestParam(name = "page", defaultValue = "0") int page,
-			@RequestParam(name = "size", defaultValue = "7") int size, // 7 usuarios por página por defecto
+			@RequestParam(name = "size", defaultValue = "7") int size,
 			@RequestParam(name = "sortBy", defaultValue = "idPers") String sortBy,
-			@RequestParam(name = "direction", defaultValue = "asc") String direction) {
-		log.info("📋 Consultando personal de CENATE - Página: {}, Tamaño: {}, Orden: {} {}",
-				page, size, sortBy, direction);
+			@RequestParam(name = "direction", defaultValue = "asc") String direction,
+			@RequestParam(name = "busqueda", required = false) String busqueda,
+			@RequestParam(name = "rol", required = false) String rol,
+			@RequestParam(name = "estado", required = false) String estado,
+			@RequestParam(name = "area", required = false) String area,
+			@RequestParam(name = "ipress", required = false) String ipress,
+			@RequestParam(name = "red", required = false) String red,
+			@RequestParam(name = "regimen", required = false) String regimen,
+			@RequestParam(name = "profesion", required = false) String profesion,
+			@RequestParam(name = "especialidad", required = false) String especialidad,
+			@RequestParam(name = "institucion", required = false) String institucion,
+			@RequestParam(name = "mesCumpleanos", required = false) String mesCumpleanos,
+			@RequestParam(name = "fechaRegistroDesde", required = false) String fechaRegistroDesde,
+			@RequestParam(name = "fechaRegistroHasta", required = false) String fechaRegistroHasta) {
 
-		Map<String, Object> response = usuarioService.getAllPersonal(page, size, sortBy, direction);
+		log.info("Consultando personal de CENATE - Página: {}, Tamaño: {}, Filtros activos: {}",
+				page, size,
+				busqueda != null || rol != null || estado != null || area != null || ipress != null);
+
+		// Convertir mes de cumpleaños de nombre a número (Enero=1, ..., Diciembre=12)
+		Integer mesNacimiento = null;
+		if (mesCumpleanos != null && !mesCumpleanos.isBlank()) {
+			String[] meses = {"Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
+					"Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"};
+			for (int i = 0; i < meses.length; i++) {
+				if (meses[i].equalsIgnoreCase(mesCumpleanos.trim())) {
+					mesNacimiento = i + 1; // EXTRACT(MONTH) retorna 1-12
+					break;
+				}
+			}
+		}
+
+		// Convertir fechas de string ISO (yyyy-MM-dd) a OffsetDateTime
+		java.time.OffsetDateTime createdAtFrom = null;
+		java.time.OffsetDateTime createdAtTo = null;
+		try {
+			if (fechaRegistroDesde != null && !fechaRegistroDesde.isBlank()) {
+				createdAtFrom = java.time.LocalDate.parse(fechaRegistroDesde.trim())
+						.atStartOfDay().atOffset(java.time.ZoneOffset.UTC);
+			}
+			if (fechaRegistroHasta != null && !fechaRegistroHasta.isBlank()) {
+				createdAtTo = java.time.LocalDate.parse(fechaRegistroHasta.trim())
+						.atTime(23, 59, 59).atOffset(java.time.ZoneOffset.UTC);
+			}
+		} catch (Exception e) {
+			log.warn("Error al parsear fechas de filtro: {}", e.getMessage());
+		}
+
+		// Determinar si hay algún filtro activo para elegir el método de consulta
+		boolean hayFiltros = (busqueda != null && !busqueda.isBlank()) ||
+				(rol != null && !rol.isBlank()) ||
+				(estado != null && !estado.isBlank()) ||
+				(area != null && !area.isBlank()) ||
+				(ipress != null && !ipress.isBlank()) ||
+				(red != null && !red.isBlank()) ||
+				(regimen != null && !regimen.isBlank()) ||
+				(profesion != null && !profesion.isBlank()) ||
+				(especialidad != null && !especialidad.isBlank()) ||
+				(institucion != null && !institucion.isBlank()) ||
+				mesNacimiento != null ||
+				createdAtFrom != null || createdAtTo != null;
+
+		Map<String, Object> response;
+		if (hayFiltros) {
+			response = usuarioService.getAllPersonalFiltrado(
+					page, size, sortBy, direction,
+					busqueda, rol, estado, area, ipress, red, regimen,
+					profesion, especialidad, institucion,
+					mesNacimiento, createdAtFrom, createdAtTo);
+		} else {
+			response = usuarioService.getAllPersonal(page, size, sortBy, direction);
+		}
 		return ResponseEntity.ok(response);
 	}
 

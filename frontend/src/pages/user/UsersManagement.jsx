@@ -68,6 +68,9 @@ const esExterno = (user) => {
 };
 
 const UsersManagement = () => {
+  // Ref para controlar si los datos de filtros ya fueron cargados
+  const filterDataLoadedRef = useRef(false);
+
   const [activeTab, setActiveTab] = useState('usuarios');
   const [viewMode, setViewMode] = useState('table');
   const [users, setUsers] = useState([]);
@@ -955,34 +958,12 @@ const UsersManagement = () => {
   }, [users, applyFilters]);
 
   // ============================================================
-  // 🚀 PAGINACIÓN LOCAL: Paginar los resultados filtrados
+  // 🚀 PAGINACIÓN SERVER-SIDE: Los datos ya vienen paginados y filtrados del servidor
   // ============================================================
   const paginatedUsers = useMemo(() => {
-    const hasActiveFilters = debouncedSearchTerm ||
-      (filters.rol && filters.rol !== '') ||
-      (filters.institucion && filters.institucion !== '') ||
-      (filters.estado && filters.estado !== '') ||
-      (filters.mesCumpleanos && filters.mesCumpleanos !== '') ||
-      (filters.area && filters.area !== '') ||
-      (filters.red && filters.red !== '') ||
-      (filters.ipress && filters.ipress !== '') ||
-      (filters.regimen && filters.regimen !== '') ||
-      (filters.profesion && filters.profesion !== '') ||
-      (filters.especialidad && filters.especialidad !== '') ||
-      (filters.fechaRegistroDesde && filters.fechaRegistroDesde !== '') ||
-      (filters.fechaRegistroHasta && filters.fechaRegistroHasta !== '');
-
-    // Si hay filtros activos, paginar localmente sobre los resultados filtrados
-    // Si no hay filtros, usar todos los usuarios (ya vienen paginados del servidor)
-    if (hasActiveFilters) {
-      const startIndex = currentPage * pageSize;
-      const endIndex = startIndex + pageSize;
-      return filteredUsers.slice(startIndex, endIndex);
-    }
-
-    // Sin filtros, devolver todos los usuarios (ya están paginados del servidor)
+    // El backend ya paginó y filtró — simplemente devolver los usuarios actuales
     return filteredUsers;
-  }, [filteredUsers, currentPage, pageSize, debouncedSearchTerm, filters]);
+  }, [filteredUsers]);
 
   // ============================================================
   // 🔄 CARGA DE USUARIOS Y ROLES (PAGINADO)
@@ -996,47 +977,34 @@ const UsersManagement = () => {
       const currentFilters = filtersRef.current;
       const currentSearchTerm = searchTermRef.current;
 
-      // 🔍 Si hay filtros activos, cargar TODOS los usuarios para buscar en toda la base de datos
-      const hasActiveFilters = currentSearchTerm ||
-        (currentFilters.rol && currentFilters.rol !== '') ||
-        (currentFilters.institucion && currentFilters.institucion !== '') ||
-        (currentFilters.estado && currentFilters.estado !== '') ||
-        (currentFilters.mesCumpleanos && currentFilters.mesCumpleanos !== '') ||
-        (currentFilters.area && currentFilters.area !== '') ||
-        (currentFilters.red && currentFilters.red !== '') ||
-        (currentFilters.ipress && currentFilters.ipress !== '') ||
-        (currentFilters.regimen && currentFilters.regimen !== '') ||
-        (currentFilters.profesion && currentFilters.profesion !== '') ||
-        (currentFilters.especialidad && currentFilters.especialidad !== '') ||
-        (currentFilters.fechaRegistroDesde && currentFilters.fechaRegistroDesde !== '') ||
-        (currentFilters.fechaRegistroHasta && currentFilters.fechaRegistroHasta !== '');
-
-      // Si hay filtros, cargar más usuarios para buscar en toda la base de datos
-      // Si es búsqueda por DNI (solo números), cargar más registros (2000)
-      // Si son otros filtros, cargar 1000
-      // Si no hay filtros, usar paginación normal (7 usuarios)
-      const isDNISearch = currentSearchTerm && /^\d+$/.test(currentSearchTerm.trim());
-      const sizeToLoad = isDNISearch ? 2000 : (hasActiveFilters ? 1000 : pageSize);
-      const pageToLoad = hasActiveFilters ? 0 : currentPage;
-
-      console.log('🔄 Cargando usuarios - Página:', pageToLoad, 'Tamaño:', sizeToLoad, 'Filtros activos:', hasActiveFilters, 'Forzar recarga:', forceReload);
-
-      // 🚀 PAGINACIÓN: Construir URL con parámetros de paginación
+      // 🚀 FILTROS SERVER-SIDE: El backend filtra y pagina — sin cargas masivas
       const params = new URLSearchParams({
-        page: pageToLoad.toString(),
-        size: sizeToLoad.toString(),
+        page: currentPage.toString(),
+        size: pageSize.toString(),
         sortBy: sortBy,
         direction: sortDirection
       });
 
-      // 🚀 PAGINACIÓN: Usar endpoint con paginación para mejor rendimiento
-      const [usersResponse, ipressResponse] = await Promise.all([
-        api.get(`/usuarios/all-personal?${params.toString()}`, true),
-        api.get('/ipress', true)
-      ]);
+      // Agregar filtros opcionales (el backend los aplica en la BD)
+      if (currentSearchTerm && currentSearchTerm.trim()) params.append('busqueda', currentSearchTerm.trim());
+      if (currentFilters.rol) params.append('rol', currentFilters.rol);
+      if (currentFilters.estado) params.append('estado', currentFilters.estado);
+      if (currentFilters.area) params.append('area', currentFilters.area);
+      if (currentFilters.ipress) params.append('ipress', currentFilters.ipress);
+      if (currentFilters.red) params.append('red', currentFilters.red);
+      if (currentFilters.regimen) params.append('regimen', currentFilters.regimen);
+      if (currentFilters.profesion) params.append('profesion', currentFilters.profesion);
+      if (currentFilters.especialidad) params.append('especialidad', currentFilters.especialidad);
+      if (currentFilters.institucion) params.append('institucion', currentFilters.institucion);
+      if (currentFilters.mesCumpleanos) params.append('mesCumpleanos', currentFilters.mesCumpleanos);
+      if (currentFilters.fechaRegistroDesde) params.append('fechaRegistroDesde', currentFilters.fechaRegistroDesde);
+      if (currentFilters.fechaRegistroHasta) params.append('fechaRegistroHasta', currentFilters.fechaRegistroHasta);
+
+      console.log('🔄 Cargando usuarios (server-side) - Página:', currentPage, 'Tamaño:', pageSize, 'Params:', params.toString());
+
+      const usersResponse = await api.get(`/usuarios/all-personal?${params.toString()}`, true);
 
       console.log('📥 Respuesta del servidor (usuarios):', usersResponse);
-      console.log('📥 Respuesta del servidor (ipress):', ipressResponse);
 
       // 🔍 DEBUG: Verificar estructura de la respuesta
       if (!usersResponse) {
@@ -1055,14 +1023,13 @@ const UsersManagement = () => {
       if (Array.isArray(usersResponse)) {
         // Si la respuesta es un array directo (formato antiguo)
         console.warn('⚠️ La respuesta es un array, no un objeto paginado. Usando formato antiguo.');
-        // Si hay filtros, guardar TODOS los usuarios; si no, limitar a pageSize
-        usersData = hasActiveFilters ? usersResponse : usersResponse.slice(0, pageSize);
+        usersData = usersResponse.slice(0, pageSize);
         total = usersResponse.length;
         totalPagesCount = Math.ceil(total / pageSize);
       } else if (usersResponse.content && Array.isArray(usersResponse.content)) {
         // Si la respuesta es un objeto paginado (formato nuevo)
-        // Si hay filtros, guardar TODOS los usuarios cargados; si no, limitar a pageSize
-        usersData = hasActiveFilters ? usersResponse.content : usersResponse.content.slice(0, pageSize);
+        // Servidor ya filtra y pagina — usar directamente el contenido
+        usersData = usersResponse.content;
         total = usersResponse.totalElements || usersResponse.total || 0;
         totalPagesCount = usersResponse.totalPages || Math.ceil(total / pageSize);
       } else {
@@ -1073,55 +1040,12 @@ const UsersManagement = () => {
         return;
       }
 
-      console.log('✅ Usuarios extraídos:', usersData.length, 'de', total, 'total (solicitados:', sizeToLoad, ', filtros activos:', hasActiveFilters, ')');
+      console.log('✅ Usuarios extraídos (server-side filtrado):', usersData.length, 'de', total, 'total');
 
-      // Si no hay filtros activos, actualizar totales del servidor
-      // Si hay filtros, los totales se calcularán después de filtrar
-      if (!hasActiveFilters) {
-        setTotalElements(total);
-        setTotalPages(totalPagesCount);
-      }
-
-      // 🚀 OPTIMIZACIÓN: Crear Map de IPRESS para búsqueda O(1) en lugar de O(n)
-      const ipressMap = new Map();
-      if (Array.isArray(ipressResponse)) {
-        ipressResponse.forEach(ip => {
-          if (ip.idIpress) {
-            ipressMap.set(ip.idIpress, ip);
-          }
-        });
-      }
-
-      // 🚀 OPTIMIZACIÓN: Asociar cada usuario con su IPRESS usando Map (O(1) vs O(n))
-      const usersWithIpress = usersData.map(user => {
-        // Intentar con ambos nombres de campo posibles
-        const ipressId = user.idIpress || user.id_ipress;
-
-        if (ipressId && ipressMap.has(ipressId)) {
-          const ipress = ipressMap.get(ipressId);
-          return {
-            ...user,
-            nombre_ipress: ipress.descIpress,
-            codigo_ipress: ipress.codIpress
-          };
-        }
-        return user;
-      });
-
-      // 🚀 Si hay filtros activos, guardar todos los usuarios cargados (se filtrarán después)
-      // Si no hay filtros, limitar a pageSize
-      const finalUsers = hasActiveFilters ? usersWithIpress : usersWithIpress.slice(0, pageSize);
-
-      console.log('✅ Usuarios procesados:', finalUsers.length, '(esperados:', hasActiveFilters ? 'todos para filtrar' : pageSize, ')');
-
-      setUsers(finalUsers);
-
-      // Si hay filtros activos, los totales se calcularán después de filtrar
-      // Si no hay filtros, usar los totales del servidor
-      if (!hasActiveFilters) {
-        setTotalElements(total);
-        setTotalPages(totalPagesCount);
-      }
+      // 🚀 Totales siempre vienen del servidor (filtrado server-side)
+      setTotalElements(total);
+      setTotalPages(totalPagesCount);
+      setUsers(usersData);
     } catch (err) {
       console.error('❌ Error al cargar usuarios:', err);
       console.error('❌ Detalles del error:', err.message, err.stack);
@@ -1177,11 +1101,8 @@ const UsersManagement = () => {
     try {
       console.log('🔄 Cargando todos los usuarios para filtros...');
 
-      // Cargar usuarios e IPRESS en paralelo
-      const [usersResponse, ipressResponse] = await Promise.all([
-        api.get('/usuarios/all-personal?page=0&size=2000&sortBy=createdAt&direction=DESC', true),
-        api.get('/ipress', true)
-      ]);
+      // 🚀 IPRESS ya viene embebido en cada usuario — solo una llamada
+      const usersResponse = await api.get('/usuarios/all-personal?page=0&size=2000&sortBy=createdAt&direction=DESC', true);
 
       // Extraer datos
       let usersData = [];
@@ -1191,43 +1112,24 @@ const UsersManagement = () => {
         usersData = usersResponse.content;
       }
 
-      // Crear Map de IPRESS para búsqueda O(1)
-      const ipressMap = new Map();
-      if (Array.isArray(ipressResponse)) {
-        ipressResponse.forEach(ip => {
-          if (ip.idIpress) {
-            ipressMap.set(ip.idIpress, ip);
-          }
-        });
-      }
-
-      // Asociar cada usuario con su IPRESS
-      const usersWithIpress = usersData.map(user => {
-        const ipressId = user.idIpress || user.id_ipress;
-        if (ipressId && ipressMap.has(ipressId)) {
-          const ipress = ipressMap.get(ipressId);
-          return {
-            ...user,
-            nombre_ipress: ipress.descIpress,
-            codigo_ipress: ipress.codIpress
-          };
-        }
-        return user;
-      });
-
-      console.log('✅ Cargados', usersWithIpress.length, 'usuarios para filtros');
-      setAllUsersForFilters(usersWithIpress);
+      console.log('✅ Cargados', usersData.length, 'usuarios para filtros');
+      setAllUsersForFilters(usersData);
     } catch (error) {
       console.error('❌ Error al cargar usuarios para filtros:', error);
     }
   }, []);
 
   useEffect(() => {
+    // Carga prioritaria: tabla principal + datos básicos
     loadUsers();
     loadRoles();
     loadAreas();
-    loadRegimenes();        // 🆕 Cargar regímenes
-    loadAllUsersForFilters(); // 🆕 Cargar todos los usuarios para dropdowns (profesiones y especialidades se generan dinámicamente)
+    loadRegimenes();
+    // Diferir la carga pesada (2000 usuarios para dropdowns) para no bloquear el render inicial
+    const timer = setTimeout(() => {
+      loadAllUsersForFilters();
+    }, 2500);
+    return () => clearTimeout(timer);
   }, [loadUsers, loadRoles, loadAreas, loadRegimenes, loadAllUsersForFilters]);
 
   // 🚀 Resetear a primera página cuando cambian filtros o búsqueda (sin recargar del servidor)
@@ -1237,58 +1139,12 @@ const UsersManagement = () => {
     }
   }, [filters, debouncedSearchTerm]);
 
-  // 🚀 Cargar todos los usuarios cuando se activan filtros por primera vez
+  // 🚀 FILTROS SERVER-SIDE: Recargar desde BD cuando cambia cualquier filtro (página ya en 0)
   useEffect(() => {
-    const hasActiveFilters = debouncedSearchTerm ||
-      (filters.rol && filters.rol !== '') ||
-      (filters.institucion && filters.institucion !== '') ||
-      (filters.estado && filters.estado !== '') ||
-      (filters.mesCumpleanos && filters.mesCumpleanos !== '') ||
-      (filters.area && filters.area !== '') ||
-      (filters.red && filters.red !== '') ||
-      (filters.ipress && filters.ipress !== '') ||
-      (filters.regimen && filters.regimen !== '') ||
-      (filters.profesion && filters.profesion !== '') ||
-      (filters.especialidad && filters.especialidad !== '') ||
-      (filters.fechaRegistroDesde && filters.fechaRegistroDesde !== '') ||
-      (filters.fechaRegistroHasta && filters.fechaRegistroHasta !== '');
-
-    // Si hay filtros activos y tenemos menos usuarios de los necesarios, cargar más
-    const isDNISearch = debouncedSearchTerm && /^\d+$/.test(debouncedSearchTerm.trim());
-    const requiredSize = isDNISearch ? 2000 : 1000;
-
-    if (hasActiveFilters && users.length < requiredSize) {
-      console.log('🔍 Filtros activos detectados, cargando', requiredSize, 'usuarios para buscar en toda la base de datos...');
-      loadUsers(true);
-    }
+    // El backend aplica los filtros directamente en SQL — no hay carga masiva
+    loadUsers();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [debouncedSearchTerm, filters.rol, filters.institucion, filters.estado, filters.mesCumpleanos, filters.area, filters.red, filters.ipress, filters.regimen, filters.profesion, filters.especialidad, filters.fechaRegistroDesde, filters.fechaRegistroHasta]); // Solo cuando cambian los filtros
-
-  // 🚀 Actualizar totales cuando hay filtros activos (basándose en filteredUsers)
-  useEffect(() => {
-    const hasActiveFilters = debouncedSearchTerm ||
-      (filters.rol && filters.rol !== '') ||
-      (filters.institucion && filters.institucion !== '') ||
-      (filters.estado && filters.estado !== '') ||
-      (filters.mesCumpleanos && filters.mesCumpleanos !== '') ||
-      (filters.area && filters.area !== '') ||
-      (filters.red && filters.red !== '') ||
-      (filters.ipress && filters.ipress !== '') ||
-      (filters.regimen && filters.regimen !== '') ||
-      (filters.profesion && filters.profesion !== '') ||
-      (filters.especialidad && filters.especialidad !== '') ||
-      (filters.fechaRegistroDesde && filters.fechaRegistroDesde !== '') ||
-      (filters.fechaRegistroHasta && filters.fechaRegistroHasta !== '');
-
-    if (hasActiveFilters) {
-      // Calcular totales basándose en los resultados filtrados
-      const filteredCount = filteredUsers.length;
-      const totalPagesCount = Math.ceil(filteredCount / pageSize);
-      setTotalElements(filteredCount);
-      setTotalPages(totalPagesCount);
-      console.log('🔍 Filtros activos - Total filtrado:', filteredCount, 'Páginas:', totalPagesCount);
-    }
-  }, [filteredUsers, debouncedSearchTerm, filters, pageSize]);
+  }, [debouncedSearchTerm, filters.rol, filters.institucion, filters.estado, filters.mesCumpleanos, filters.area, filters.red, filters.ipress, filters.regimen, filters.profesion, filters.especialidad, filters.fechaRegistroDesde, filters.fechaRegistroHasta]);
 
   // 🚀 Función para actualizar manualmente la tabla
   const handleRefresh = useCallback(() => {
@@ -1318,31 +1174,7 @@ const UsersManagement = () => {
   }, [sortBy, sortDirection]);
 
 
-  // 🚀 Actualizar totales cuando hay filtros activos
-  useEffect(() => {
-    const hasActiveFilters = searchTerm ||
-      (filters.rol && filters.rol !== '') ||
-      (filters.institucion && filters.institucion !== '') ||
-      (filters.estado && filters.estado !== '') ||
-      (filters.mesCumpleanos && filters.mesCumpleanos !== '') ||
-      (filters.area && filters.area !== '') ||
-      (filters.red && filters.red !== '') ||
-      (filters.ipress && filters.ipress !== '') ||
-      (filters.regimen && filters.regimen !== '') ||
-      (filters.profesion && filters.profesion !== '') ||
-      (filters.especialidad && filters.especialidad !== '');
-
-    if (hasActiveFilters) {
-      // Calcular totales basados en usuarios filtrados
-      const filtered = applyFilters(users);
-      const totalFiltered = filtered.length;
-      const totalPagesFiltered = Math.ceil(totalFiltered / pageSize);
-
-      setTotalElements(totalFiltered);
-      setTotalPages(totalPagesFiltered);
-    }
-    // Si no hay filtros activos, los totales se actualizarán en loadUsers
-  }, [users, applyFilters, pageSize, searchTerm, filters]);
+  // 🚀 Los totales siempre vienen del servidor (server-side filtering eliminó el cálculo local)
 
   // ============================================================
   // 🆕 SELECCIÓN MÚLTIPLE

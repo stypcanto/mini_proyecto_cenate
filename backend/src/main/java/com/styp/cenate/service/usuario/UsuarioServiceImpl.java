@@ -680,6 +680,125 @@ public class UsuarioServiceImpl implements UsuarioService {
 		return response;
 	}
 
+	@Override
+	@Transactional(readOnly = true)
+	public Map<String, Object> getAllPersonalFiltrado(
+			int page, int size, String sortBy, String direction,
+			String busqueda, String rol, String estado,
+			String area, String ipress, String red, String regimen,
+			String profesion, String especialidad, String institucion,
+			Integer mesNacimiento,
+			java.time.OffsetDateTime createdAtFrom, java.time.OffsetDateTime createdAtTo) {
+
+		log.info("getAllPersonalFiltrado - Página: {}, Tamaño: {}, Búsqueda: {}, Rol: {}, Estado: {}, Área: {}, IPRESS: {}",
+				page, size, busqueda, rol, estado, area, ipress);
+
+		// Validar parámetros
+		if (page < 0) page = 0;
+		if (size < 1) size = 7;
+		if (size > 100) size = 100; // Límite razonable con filtros server-side
+
+		// Mapear estado frontend → statPers BD ('ACTIVO' → 'A', 'INACTIVO' → 'I')
+		String statPers = null;
+		if ("ACTIVO".equalsIgnoreCase(estado)) statPers = "A";
+		else if ("INACTIVO".equalsIgnoreCase(estado)) statPers = "I";
+
+		// Manejar institucion: 'Interno' → solo CENATE por nombre de IPRESS
+		String descIpressFilter = (ipress != null && !ipress.isBlank()) ? ipress.trim() : null;
+		if ("Interno".equalsIgnoreCase(institucion) && descIpressFilter == null) {
+			descIpressFilter = "CENTRO NACIONAL DE TELEMEDICINA";
+		}
+
+		// Normalizar strings vacíos a null para que el JPQL filtre correctamente
+		String busquedaParam       = (busqueda    != null && !busqueda.isBlank())    ? busqueda.trim()    : null;
+		String rolParam            = (rol         != null && !rol.isBlank())         ? rol.trim()         : null;
+		String descAreaParam       = (area        != null && !area.isBlank())        ? area.trim()        : null;
+		String descIpressParam     = descIpressFilter;
+		String descRedParam        = (red         != null && !red.isBlank())         ? red.trim()         : null;
+		String descRegimenParam    = (regimen     != null && !regimen.isBlank())     ? regimen.trim()     : null;
+		String descProfesionParam  = (profesion   != null && !profesion.isBlank())   ? profesion.trim()   : null;
+		String descEspecialidadParam = (especialidad != null && !especialidad.isBlank()) ? especialidad.trim() : null;
+
+		// Crear Pageable con ordenamiento
+		org.springframework.data.domain.Sort.Direction sortDir = "desc".equalsIgnoreCase(direction)
+				? org.springframework.data.domain.Sort.Direction.DESC
+				: org.springframework.data.domain.Sort.Direction.ASC;
+		String sortField = mapSortField(sortBy);
+		org.springframework.data.domain.Sort sort;
+		try {
+			sort = org.springframework.data.domain.Sort.by(sortDir, sortField);
+		} catch (Exception e) {
+			log.warn("Error al crear sort con campo '{}', usando idPers por defecto: {}", sortField, e.getMessage());
+			sort = org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Direction.ASC, "idPers");
+		}
+		org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(page, size, sort);
+
+		// === FASE 1: Obtener página con filtros aplicados en BD ===
+		org.springframework.data.domain.Page<PersonalCnt> personalPage = personalCntRepository.findAllWithFilters(
+				busquedaParam, rolParam, statPers,
+				descAreaParam, descIpressParam, descRedParam, descRegimenParam,
+				descProfesionParam, descEspecialidadParam,
+				mesNacimiento, createdAtFrom, createdAtTo,
+				pageable);
+
+		log.info("Filtrado - Página {}/{} - {} registros de {} total",
+				page + 1, personalPage.getTotalPages(),
+				personalPage.getNumberOfElements(), personalPage.getTotalElements());
+
+		List<PersonalCnt> personalList = new java.util.ArrayList<>(personalPage.getContent());
+
+		// === FASE 2: Cargar colecciones (profesiones, tipos) para los IDs de la página ===
+		if (!personalList.isEmpty()) {
+			List<Long> ids = personalList.stream().map(PersonalCnt::getIdPers).collect(Collectors.toList());
+			// Esta query enriquece las entidades en L1 cache con las colecciones
+			personalCntRepository.findByIdsWithRelations(ids);
+			log.info("Colecciones cargadas en batch para {} registros", ids.size());
+		}
+
+		// === Permisos en batch ===
+		List<Long> userIdsConUsuario = personalList.stream()
+				.filter(p -> p.getUsuario() != null && p.getUsuario().getIdUser() != null)
+				.map(p -> p.getUsuario().getIdUser()).distinct().collect(Collectors.toList());
+
+		Map<Long, Set<String>> permisosMap = new HashMap<>();
+		if (!userIdsConUsuario.isEmpty()) {
+			try {
+				Map<Long, List<PermisoUsuarioResponseDTO>> permisosPorUsuario = permisosService
+						.obtenerPermisosPorUsuarios(userIdsConUsuario);
+				for (Long userId : userIdsConUsuario) {
+					List<PermisoUsuarioResponseDTO> permisos = permisosPorUsuario.getOrDefault(userId,
+							Collections.emptyList());
+					Set<String> rutas = permisos.stream().map(PermisoUsuarioResponseDTO::getRutaPagina)
+							.collect(Collectors.toSet());
+					permisosMap.put(userId, rutas);
+				}
+			} catch (Exception e) {
+				log.error("Error al cargar permisos en batch: {}", e.getMessage());
+				for (Long userId : userIdsConUsuario) {
+					permisosMap.put(userId, Collections.emptySet());
+				}
+			}
+		}
+
+		final Map<Long, Set<String>> permisosFinal = permisosMap;
+		List<UsuarioResponse> content = personalList.stream()
+				.map(p -> convertPersonalCntToResponse(p, permisosFinal))
+				.collect(Collectors.toList());
+
+		Map<String, Object> response = new HashMap<>();
+		response.put("content", content);
+		response.put("totalElements", personalPage.getTotalElements());
+		response.put("totalPages", personalPage.getTotalPages());
+		response.put("size", size);
+		response.put("number", page);
+		response.put("first", personalPage.isFirst());
+		response.put("last", personalPage.isLast());
+		response.put("empty", personalPage.isEmpty());
+
+		log.info("getAllPersonalFiltrado completado: {} usuarios en respuesta", content.size());
+		return response;
+	}
+
 	/**
 	 * Mapea el campo de ordenamiento del frontend al campo de la entidad Nota:
 	 * Evitamos campos de relaciones (como usuario.nameUser) para evitar problemas
