@@ -180,6 +180,40 @@ Nuevo módulo completo para gestionar solicitudes de especialidades médicas de 
 
 ---
 
+## 🏥 MÓDULO CENACRON — Gestión de Pacientes Crónicos (Planificado)
+
+**⭐ Documento Maestro:** [`spec/modules/cenacron/README.md`](spec/modules/cenacron/README.md)
+
+### 🎯 Descripción
+Estrategia Nacional de Gestión de Pacientes Crónicos (HTA, Diabetes, EPOC, Asma, Insuficiencia Cardíaca, ERC).
+Flujo multidisciplinario con 4 visitas anuales por paciente (ciclos de 3 meses).
+
+### 👥 Actores (Ingreso Y Retiro)
+- **Gestor de Citas** — Admisión inicial, agenda citas, puerta de entrada/salida
+- **Médico General** — Gatekeeper: valida si el paciente pertenece al programa
+- **Enfermería** — Seguimiento, control SLA, derivación a especialistas
+
+### 📋 Fases de Implementación
+| Fase | Alcance | Estado |
+|------|---------|--------|
+| **Fase 1** | Gestor de Citas: Admisión + Retiro | 📋 Pendiente |
+| **Fase 2** | Médico General: Validación + Retiro | 📋 Pendiente |
+| **Fase 3** | Enfermería: Seguimiento + Semáforos SLA | 📋 Pendiente |
+| **Fase 4** | Nutrición + Psicología + Ciclos recurrentes | 📋 Pendiente |
+
+### 📊 Datos (Propuestos)
+- **Tabla principal:** `paciente_cenacron_journey`
+- **Interconsultas:** `paciente_cenacron_interconsultas`
+- **Estados:** ADMISION_PENDIENTE → PENDIENTE_MED_GENERAL → VALIDADO → PENDIENTE_ENFERMERIA → VISITA_COMPLETADA
+- **Semáforo SLA:** 🟢 <15d | 🟡 15-30d | 🔴 30-60d | ⚫ >60d
+
+### 🔐 Acceso (MBAC)
+- **Gestor de Citas:** Admisión y retiro de pacientes
+- **Médico General:** Validación y atención
+- **Enfermería:** Seguimiento y semáforo
+
+---
+
 ## � MÓDULO GESTIÓN DE PERÍODOS DE DISPONIBILIDAD (v1.64.0)
 
 **⭐ Documento Maestro:** [`docs/periodo-medico/README.md`](docs/periodo-medico/README.md)
@@ -227,6 +261,7 @@ Módulo para gestionar los períodos durante los cuales los médicos registran s
 | **🔍 QA/Support** | [`spec/troubleshooting/README.md`](spec/troubleshooting/README.md) |
 | **🔐 Security** | [`plan/01_Seguridad_Auditoria/`](plan/01_Seguridad_Auditoria/) |
 | **🤖 AI/Spring AI** | [`plan/06_Integracion_Spring_AI/`](plan/06_Integracion_Spring_AI/) |
+| **🏥 CENACRON** | [`spec/modules/cenacron/README.md`](spec/modules/cenacron/README.md) |
 
 ### Carpetas de Documentación
 
@@ -241,6 +276,7 @@ Módulo para gestionar los períodos durante los cuales los médicos registran s
 | **spec/uml/** | Diagramas UML |
 | **plan/** | Planificación (8 carpetas) |
 | **checklist/** | Historial, Reportes, Análisis |
+| **spec/modules/** | Módulos funcionales (CENACRON, Bolsas, TeleECG, Trazabilidad) |
 
 ---
 
