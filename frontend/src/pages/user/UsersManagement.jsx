@@ -721,28 +721,12 @@ const UsersManagement = () => {
 
     let filtered = [...usersList];
 
-    // 🔍 Búsqueda general (nombre, usuario, documento, IPRESS, email)
+    // 🔍 Búsqueda por DNI / CE únicamente
     if (debouncedSearchTerm && debouncedSearchTerm.trim() !== '') {
-      const searchLower = debouncedSearchTerm.trim();
-      console.log('🔍 Buscando:', searchLower, 'en', usersList.length, 'usuarios');
+      const searchTrim = debouncedSearchTerm.trim();
       filtered = filtered.filter(user => {
-        const nombreCompleto = (user.nombre_completo || '').toLowerCase();
-        const username = (user.username || user.nameUser || '').toString();
         const numeroDocumento = (user.numero_documento || user.num_doc_pers || user.numeroDocumento || '').toString();
-        const nombreIpress = (user.nombre_ipress || user.descIpress || user.nombreIpress || '').toLowerCase();
-        // 📧 Campos de email (personal y corporativo) - Backend envía en snake_case
-        const emailPersonal = (user.correo_personal || user.correoPersonal || '').toLowerCase();
-        const emailCorporativo = (user.correo_corporativo || user.correo_institucional || user.correoCorporativo || user.correoInstitucional || '').toLowerCase();
-
-        // Búsqueda case-insensitive para texto, exacta para números (DNI)
-        const searchLowerCase = searchLower.toLowerCase();
-
-        return nombreCompleto.includes(searchLowerCase) ||
-          username.includes(searchLower) || // DNI: búsqueda exacta
-          numeroDocumento.includes(searchLower) || // DNI alternativo: búsqueda exacta
-          nombreIpress.includes(searchLowerCase) ||
-          emailPersonal.includes(searchLowerCase) ||
-          emailCorporativo.includes(searchLowerCase);
+        return numeroDocumento.includes(searchTrim);
       });
     }
 

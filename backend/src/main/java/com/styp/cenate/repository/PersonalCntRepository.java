@@ -137,17 +137,15 @@ public interface PersonalCntRepository extends JpaRepository<PersonalCnt, Long> 
 			"LEFT JOIN p.profesiones ppRef " +
 			"LEFT JOIN ppRef.profesion pf " +
 			"WHERE " +
-			"  (:busqueda IS NULL OR (" +
-			"    LOWER(CONCAT(COALESCE(p.nomPers,''), ' ', COALESCE(p.apePaterPers,''), ' ', COALESCE(p.apeMaterPers,''))) LIKE LOWER(CONCAT('%', :busqueda, '%')) " +
-			"    OR LOWER(COALESCE(p.numDocPers,'')) LIKE LOWER(CONCAT('%', :busqueda, '%')))) " +
-			"  AND (:rol IS NULL OR LOWER(r.descRol) = LOWER(:rol)) " +
+			"  (:busqueda IS NULL OR LOWER(COALESCE(p.numDocPers,'')) LIKE CONCAT('%', LOWER(COALESCE(:busqueda, '')), '%')) " +
+			"  AND (:rol IS NULL OR LOWER(r.descRol) = LOWER(COALESCE(:rol, ''))) " +
 			"  AND (:statPers IS NULL OR p.statPers = :statPers) " +
-			"  AND (:descArea IS NULL OR LOWER(COALESCE(a.descArea,'')) LIKE LOWER(CONCAT('%', :descArea, '%'))) " +
-			"  AND (:descIpress IS NULL OR LOWER(COALESCE(ip.descIpress,'')) LIKE LOWER(CONCAT('%', :descIpress, '%'))) " +
-			"  AND (:descRed IS NULL OR LOWER(COALESCE(rd.descripcion,'')) = LOWER(:descRed)) " +
-			"  AND (:descRegimen IS NULL OR LOWER(COALESCE(rl.descRegLab,'')) LIKE LOWER(CONCAT('%', :descRegimen, '%'))) " +
-			"  AND (:descProfesion IS NULL OR LOWER(COALESCE(pf.descProf,'')) LIKE LOWER(CONCAT('%', :descProfesion, '%'))) " +
-			"  AND (:descEspecialidad IS NULL OR LOWER(COALESCE(se.descServicio,'')) LIKE LOWER(CONCAT('%', :descEspecialidad, '%'))) " +
+			"  AND (:descArea IS NULL OR LOWER(COALESCE(a.descArea,'')) LIKE CONCAT('%', LOWER(COALESCE(:descArea, '')), '%')) " +
+			"  AND (:descIpress IS NULL OR LOWER(COALESCE(ip.descIpress,'')) LIKE CONCAT('%', LOWER(COALESCE(:descIpress, '')), '%')) " +
+			"  AND (:descRed IS NULL OR LOWER(COALESCE(rd.descripcion,'')) = LOWER(COALESCE(:descRed, ''))) " +
+			"  AND (:descRegimen IS NULL OR LOWER(COALESCE(rl.descRegLab,'')) LIKE CONCAT('%', LOWER(COALESCE(:descRegimen, '')), '%')) " +
+			"  AND (:descProfesion IS NULL OR LOWER(COALESCE(pf.descProf,'')) LIKE CONCAT('%', LOWER(COALESCE(:descProfesion, '')), '%')) " +
+			"  AND (:descEspecialidad IS NULL OR LOWER(COALESCE(se.descServicio,'')) LIKE CONCAT('%', LOWER(COALESCE(:descEspecialidad, '')), '%')) " +
 			"  AND (:mesNacimiento IS NULL OR EXTRACT(MONTH FROM p.fechNaciPers) = :mesNacimiento) " +
 			"  AND (:createdAtFrom IS NULL OR p.createdAt >= :createdAtFrom) " +
 			"  AND (:createdAtTo IS NULL OR p.createdAt <= :createdAtTo)",
@@ -163,17 +161,15 @@ public interface PersonalCntRepository extends JpaRepository<PersonalCnt, Long> 
 			"LEFT JOIN p.profesiones ppRef " +
 			"LEFT JOIN ppRef.profesion pf " +
 			"WHERE " +
-			"  (:busqueda IS NULL OR (" +
-			"    LOWER(CONCAT(COALESCE(p.nomPers,''), ' ', COALESCE(p.apePaterPers,''), ' ', COALESCE(p.apeMaterPers,''))) LIKE LOWER(CONCAT('%', :busqueda, '%')) " +
-			"    OR LOWER(COALESCE(p.numDocPers,'')) LIKE LOWER(CONCAT('%', :busqueda, '%')))) " +
-			"  AND (:rol IS NULL OR LOWER(r.descRol) = LOWER(:rol)) " +
+			"  (:busqueda IS NULL OR LOWER(COALESCE(p.numDocPers,'')) LIKE CONCAT('%', LOWER(COALESCE(:busqueda, '')), '%')) " +
+			"  AND (:rol IS NULL OR LOWER(r.descRol) = LOWER(COALESCE(:rol, ''))) " +
 			"  AND (:statPers IS NULL OR p.statPers = :statPers) " +
-			"  AND (:descArea IS NULL OR LOWER(COALESCE(a.descArea,'')) LIKE LOWER(CONCAT('%', :descArea, '%'))) " +
-			"  AND (:descIpress IS NULL OR LOWER(COALESCE(ip.descIpress,'')) LIKE LOWER(CONCAT('%', :descIpress, '%'))) " +
-			"  AND (:descRed IS NULL OR LOWER(COALESCE(rd.descripcion,'')) = LOWER(:descRed)) " +
-			"  AND (:descRegimen IS NULL OR LOWER(COALESCE(rl.descRegLab,'')) LIKE LOWER(CONCAT('%', :descRegimen, '%'))) " +
-			"  AND (:descProfesion IS NULL OR LOWER(COALESCE(pf.descProf,'')) LIKE LOWER(CONCAT('%', :descProfesion, '%'))) " +
-			"  AND (:descEspecialidad IS NULL OR LOWER(COALESCE(se.descServicio,'')) LIKE LOWER(CONCAT('%', :descEspecialidad, '%'))) " +
+			"  AND (:descArea IS NULL OR LOWER(COALESCE(a.descArea,'')) LIKE CONCAT('%', LOWER(COALESCE(:descArea, '')), '%')) " +
+			"  AND (:descIpress IS NULL OR LOWER(COALESCE(ip.descIpress,'')) LIKE CONCAT('%', LOWER(COALESCE(:descIpress, '')), '%')) " +
+			"  AND (:descRed IS NULL OR LOWER(COALESCE(rd.descripcion,'')) = LOWER(COALESCE(:descRed, ''))) " +
+			"  AND (:descRegimen IS NULL OR LOWER(COALESCE(rl.descRegLab,'')) LIKE CONCAT('%', LOWER(COALESCE(:descRegimen, '')), '%')) " +
+			"  AND (:descProfesion IS NULL OR LOWER(COALESCE(pf.descProf,'')) LIKE CONCAT('%', LOWER(COALESCE(:descProfesion, '')), '%')) " +
+			"  AND (:descEspecialidad IS NULL OR LOWER(COALESCE(se.descServicio,'')) LIKE CONCAT('%', LOWER(COALESCE(:descEspecialidad, '')), '%')) " +
 			"  AND (:mesNacimiento IS NULL OR EXTRACT(MONTH FROM p.fechNaciPers) = :mesNacimiento) " +
 			"  AND (:createdAtFrom IS NULL OR p.createdAt >= :createdAtFrom) " +
 			"  AND (:createdAtTo IS NULL OR p.createdAt <= :createdAtTo)")
