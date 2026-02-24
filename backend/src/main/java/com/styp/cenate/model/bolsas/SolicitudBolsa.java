@@ -34,11 +34,7 @@ import com.styp.cenate.model.Usuario;
 @Entity
 @Table(
     name = "dim_solicitud_bolsa",
-    schema = "public",
-    uniqueConstraints = @UniqueConstraint(
-        name = "solicitud_paciente_unique",
-        columnNames = {"id_bolsa", "paciente_id"}
-    )
+    schema = "public"
 )
 @Getter
 @Setter
