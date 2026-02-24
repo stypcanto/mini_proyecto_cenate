@@ -835,6 +835,39 @@ export default function CargaMasivaPacientes() {
             </div>
           </div>
 
+          {/* Detalle duplicados */}
+          {resultado.detalleDuplicados?.length > 0 && (
+            <div className="bg-amber-50 border border-amber-200 rounded-2xl p-5">
+              <div className="flex items-center gap-2 text-amber-700 font-semibold text-sm mb-1">
+                <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                Pacientes no cargados — ya existían en el sistema
+              </div>
+              <p className="text-amber-600 text-xs mb-3">
+                Estos {resultado.detalleDuplicados.length} paciente{resultado.detalleDuplicados.length !== 1 ? "s" : ""} ya están registrados en la bolsa y no fueron insertados nuevamente.
+              </p>
+              <div className="rounded-xl overflow-hidden border border-amber-200">
+                <table className="w-full text-xs">
+                  <thead>
+                    <tr className="bg-amber-100">
+                      <th className="px-4 py-2 text-left font-semibold text-amber-700 uppercase tracking-wide">#</th>
+                      <th className="px-4 py-2 text-left font-semibold text-amber-700 uppercase tracking-wide">DNI</th>
+                      <th className="px-4 py-2 text-left font-semibold text-amber-700 uppercase tracking-wide">Paciente</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-amber-100">
+                    {resultado.detalleDuplicados.map((d, i) => (
+                      <tr key={i} className="bg-white hover:bg-amber-50 transition-colors">
+                        <td className="px-4 py-2 text-amber-500 font-mono">{i + 1}</td>
+                        <td className="px-4 py-2 font-mono text-gray-600">{d.dni}</td>
+                        <td className="px-4 py-2 text-gray-700 font-medium">{d.nombre}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
           {/* Detalle errores */}
           {resultado.detalleErrores?.length > 0 && (
             <div className="bg-red-50 border border-red-200 rounded-2xl p-5">

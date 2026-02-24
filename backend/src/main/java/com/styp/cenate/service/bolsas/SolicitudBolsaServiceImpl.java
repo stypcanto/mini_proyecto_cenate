@@ -3978,6 +3978,7 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
         int insertados = 0;
         int duplicados = 0;
         List<String> detalleErrores = new ArrayList<>();
+        List<Map<String, String>> detalleDuplicados = new ArrayList<>();
         List<SolicitudBolsa> toInsert = new ArrayList<>();
         long baseTs = System.currentTimeMillis();
 
@@ -4005,6 +4006,10 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
                 if (solicitudRepository.existsByIdBolsaAndPacienteId(idBolsa, dni)) {
                     log.debug("⚠️ Duplicado detectado: bolsa={}, dni={}", idBolsa, dni);
                     duplicados++;
+                    Map<String, String> dup = new HashMap<>();
+                    dup.put("dni", dni);
+                    dup.put("nombre", row.getPaciente() != null ? row.getPaciente().trim() : "—");
+                    detalleDuplicados.add(dup);
                     continue;
                 }
 
@@ -4068,6 +4073,7 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
         resultado.put("total", total);
         resultado.put("insertados", insertados);
         resultado.put("duplicados", duplicados);
+        resultado.put("detalleDuplicados", detalleDuplicados);
         resultado.put("errores", detalleErrores.size());
         resultado.put("detalleErrores", detalleErrores);
         return resultado;
