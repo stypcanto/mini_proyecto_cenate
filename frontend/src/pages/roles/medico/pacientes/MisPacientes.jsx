@@ -2925,8 +2925,10 @@ export default function MisPacientes() {
                     {/* Chip 1: Recita */}
                     <button
                       onClick={() => {
-                        setTieneRecita(!tieneRecita);
-                        setExpandRecita(!expandRecita);
+                        const nuevoValor = !tieneRecita;
+                        setTieneRecita(nuevoValor);
+                        setExpandRecita(nuevoValor);
+                        if (nuevoValor && esEnfermeria) setRecitaDias(30);
                       }}
                       className={`p-4 rounded-xl transition-all cursor-pointer text-center font-semibold border-2
                         focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-green-400 ${
@@ -3015,8 +3017,8 @@ export default function MisPacientes() {
                           onChange={(e) => setRecitaDias(parseInt(e.target.value))}
                           className="w-full px-3 py-2 border-2 border-green-400 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 text-sm font-semibold text-green-900 bg-white appearance-none cursor-pointer"
                         >
-                          <option value={7}>7 días</option>
-                          <option value={15}>15 días</option>
+                          {!esEnfermeria && <option value={7}>7 días</option>}
+                          {!esEnfermeria && <option value={15}>15 días</option>}
                           <option value={30}>1 mes</option>
                           <option value={60}>2 meses</option>
                           <option value={90}>3 meses</option>
