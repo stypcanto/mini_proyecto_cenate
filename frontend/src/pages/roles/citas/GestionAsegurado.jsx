@@ -141,7 +141,6 @@ export default function GestionAsegurado() {
     periodo: String(new Date().getFullYear()),
     pacienteCenacron: false,
   });
-  const [ipressDisponibles, setIpressDisponibles] = useState([]);
   const [dniValidacion, setDniValidacion] = useState(null); // null | "validando" | "ok" | "duplicado"
   const [guardandoAsegurado, setGuardandoAsegurado] = useState(false);
 
