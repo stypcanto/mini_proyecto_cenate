@@ -97,6 +97,7 @@ export default function Solicitudes() {
   const [filtroTipoCita, setFiltroTipoCita] = useState('todas');
   const [filtroAsignacion, setFiltroAsignacion] = useState('todos');  // ✅ v1.42.0: Filtro asignación (cards clickeables)
   const [filtroGestoraId, setFiltroGestoraId] = useState(null);        // Filtro por gestora asignada (ID)
+  const [filtroEstadoBolsa, setFiltroEstadoBolsa] = useState('todos'); // ✅ v1.67.0: Filtro estado de bolsa (PENDIENTE, OBSERVADO, ATENDIDO)
   const [filtroFechaInicio, setFiltroFechaInicio] = useState('');     // ✅ v1.66.0: Filtro rango de fechas - inicio
   const [filtroFechaFin, setFiltroFechaFin] = useState('');           // ✅ v1.66.0: Filtro rango de fechas - fin
   const [cardSeleccionado, setCardSeleccionado] = useState(null);     // ✅ v1.42.0: Rastrear card activo
@@ -358,7 +359,7 @@ export default function Solicitudes() {
     setModoSeleccionTotal(false); // v1.65.0: Limpiar modo selección total al cambiar filtros
     setSelectedRows(new Set()); // Limpiar selección al cambiar filtros
     cargarSolicitudesConFiltros(); // Cargar CON FILTROS desde el backend
-  }, [filtroBolsa, filtroMacrorregion, filtroRed, filtroIpress, filtroIpressAtencion, filtroEspecialidad, filtroEstado, filtroTipoCita, filtroAsignacion, filtroGestoraId, searchTerm, filtroFechaInicio, filtroFechaFin, registrosPorPagina]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [filtroBolsa, filtroMacrorregion, filtroRed, filtroIpress, filtroIpressAtencion, filtroEspecialidad, filtroEstado, filtroTipoCita, filtroAsignacion, filtroGestoraId, filtroEstadoBolsa, searchTerm, filtroFechaInicio, filtroFechaFin, registrosPorPagina]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ============================================================================
   // 📦 EFFECT 4: Cargar SIGUIENTE PÁGINA cuando cambia currentPage (v2.5.2 - Server-side pagination)
@@ -717,7 +718,8 @@ export default function Solicitudes() {
         filtroFechaInicio || null,
         filtroFechaFin || null,
         null,              // condicionMedica
-        filtroGestoraId    // gestoraId
+        filtroGestoraId,   // gestoraId
+        filtroEstadoBolsa === 'todos' ? null : filtroEstadoBolsa  // estadoBolsa
       );
 
       console.log('📥 Respuesta con filtros recibida:', response);
@@ -899,7 +901,8 @@ export default function Solicitudes() {
         filtroFechaInicio || null,
         filtroFechaFin || null,
         null,              // condicionMedica
-        filtroGestoraId    // gestoraId
+        filtroGestoraId,   // gestoraId
+        filtroEstadoBolsa === 'todos' ? null : filtroEstadoBolsa  // estadoBolsa
       );
       console.log('📥 Respuesta página recibida:', response);
 
@@ -1287,6 +1290,7 @@ export default function Solicitudes() {
       setFiltroEstado('todos');
       setFiltroAsignacion('todos');
       setFiltroGestoraId(null);
+      setFiltroEstadoBolsa('todos');
     } else {
       // Seleccionar este card → limpiar TODOS los filtros para que la tabla concuerde con el número del card
       setCardSeleccionado(cardType);
@@ -1295,6 +1299,7 @@ export default function Solicitudes() {
       setFiltroEspecialidad('todas');
       setFiltroTipoCita('todas');
       setFiltroGestoraId(null);
+      setFiltroEstadoBolsa('todos');
       setFiltroFechaInicio('');
       setFiltroFechaFin('');
       setSearchTerm('');
@@ -2205,6 +2210,18 @@ export default function Solicitudes() {
                 ]
               },
               {
+                name: "Estado de Bolsa",
+                searchable: false,
+                value: filtroEstadoBolsa,
+                onChange: (e) => setFiltroEstadoBolsa(e.target.value),
+                options: [
+                  { label: "Todos", value: "todos" },
+                  { label: "Pendiente", value: "PENDIENTE" },
+                  { label: "Observado", value: "OBSERVADO" },
+                  { label: "Atendido", value: "ATENDIDO" }
+                ]
+              },
+              {
                 name: "Gestora Asignada",
                 searchable: true,
                 value: filtroGestoraId === null ? "todas" : filtroGestoraId === "sin_asignar" ? "sin_asignar" : String(filtroGestoraId),
@@ -2242,6 +2259,7 @@ export default function Solicitudes() {
               setFiltroTipoCita('todas');
               setFiltroAsignacion('todos');
               setFiltroGestoraId(null);
+              setFiltroEstadoBolsa('todos');
               setFiltroFechaInicio('');
               setFiltroFechaFin('');
               setSearchTerm('');
