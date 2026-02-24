@@ -70,6 +70,19 @@ function cellToString(val) {
   return String(val).trim();
 }
 
+// Convierte fracción decimal de Excel (ej: 0.6979 → "16:45:00")
+function excelTimeToString(val) {
+  if (val == null || val === "") return "";
+  if (typeof val === "number" && val >= 0 && val < 1) {
+    const totalSeconds = Math.round(val * 86400);
+    const h = Math.floor(totalSeconds / 3600);
+    const m = Math.floor((totalSeconds % 3600) / 60);
+    const s = totalSeconds % 60;
+    return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
+  }
+  return String(val).trim();
+}
+
 // ── Subcomponente Accordion ──────────────────────────────────
 function Accordion({ icon, title, children, defaultOpen = false }) {
   const [open, setOpen] = useState(defaultOpen);
@@ -163,7 +176,9 @@ export default function CargaMasivaPacientes() {
           .filter((r) => r.some((c) => c !== ""))
           .map((r) => {
             const obj = {};
-            headers.forEach((h, i) => { obj[h] = cellToString(r[i]); });
+            headers.forEach((h, i) => {
+              obj[h] = h === "HORA_CITA" ? excelTimeToString(r[i]) : cellToString(r[i]);
+            });
             return obj;
           });
 
