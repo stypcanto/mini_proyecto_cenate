@@ -90,6 +90,21 @@ export default function GestionPeriodosDisponibilidad() {
       
       let data = Array.isArray(response) ? response : (response?.data || []);
       
+      // 🆕 Si el usuario es coordinador (NO SUPERADMIN/ADMIN), filtrar automáticamente por sus áreas
+      const isSuperAdmin = user?.roles?.includes("SUPERADMIN") || user?.roles?.includes("ADMIN");
+      if (!isSuperAdmin && user?.mappingRoles) {
+        const areasDelUsuario = new Set();
+        user.mappingRoles.forEach(rol => {
+          if (rol.idArea) {
+            areasDelUsuario.add(rol.idArea);
+          }
+        });
+        
+        if (areasDelUsuario.size > 0) {
+          data = data.filter(p => areasDelUsuario.has(p.idArea));
+        }
+      }
+      
       // Filtrar por año si está seleccionado
       if (filtrosPeriodos.anio) {
         data = data.filter((p) => {
@@ -242,13 +257,12 @@ export default function GestionPeriodosDisponibilidad() {
   const handleAperturarPeriodo = async (nuevoPeriodo) => {
     try {
       // Preparar los datos según el formato esperado por el backend
-      // Nota: idArea se obtiene automáticamente del backend usando dim_personal_cnt
       const fechaInicio = nuevoPeriodo.fechaInicio.split('T')[0]; // Solo la fecha sin hora
       const fechaFin = nuevoPeriodo.fechaFin.split('T')[0];
       
       const requestData = {
         periodo: nuevoPeriodo.periodo,
-        // idArea se obtiene automáticamente del usuario autenticado (dim_personal_cnt)
+        idArea: nuevoPeriodo.idArea, // 🆕 Incluir el área seleccionada
         fechaInicio: fechaInicio,
         fechaFin: fechaFin,
         estado: "ABIERTO",
@@ -460,6 +474,7 @@ export default function GestionPeriodosDisponibilidad() {
             filtros={filtrosPeriodos}
             onFiltrosChange={setFiltrosPeriodos}
             aniosDisponibles={aniosDisponibles}
+            user={user} // 🆕 Pasar el user para filtros dinámicos
           />
         ) : (
           <TabDisponibilidades

@@ -10,6 +10,7 @@ import com.styp.cenate.model.CtrPeriodoId;
 import com.styp.cenate.model.PersonalCnt;
 import com.styp.cenate.repository.PersonalCntRepository;
 import com.styp.cenate.repository.disponibilidad.CtrPeriodoRepository;
+import com.styp.cenate.repository.AreaRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -35,6 +36,7 @@ public class CtrPeriodoServiceImpl implements CtrPeriodoService {
 
     private final CtrPeriodoRepository repository;
     private final PersonalCntRepository personalCntRepository;
+    private final AreaRepository areaRepository;
 
     /**
      * Obtiene los datos del personal del usuario autenticado desde dim_personal_cnt.
@@ -118,29 +120,29 @@ public class CtrPeriodoServiceImpl implements CtrPeriodoService {
     @Override
     @Transactional
     public CtrPeriodoResponse crear(CtrPeriodoRequest request, Long coordinadorId) {
-        log.info("Creando nuevo periodo: {} con usuario autenticado ID: {}", request.getPeriodo(), coordinadorId);
+        log.info("Creando nuevo periodo: {} con área ID: {} por usuario autenticado ID: {}", 
+                request.getPeriodo(), request.getIdArea(), coordinadorId);
 
-        // Obtener id_area desde dim_personal_cnt usando el id_usuario autenticado
-        PersonalCnt personal = obtenerPersonalDelUsuario(coordinadorId);
-
-        Long idAreaDelPersonal = personal.getArea() != null ? personal.getArea().getIdArea() : null;
-        if (idAreaDelPersonal == null) {
-            throw new BusinessException("El usuario autenticado no tiene un área asignada en dim_personal_cnt");
+        // Usar idArea del request (seleccionado por el usuario desde el frontend)
+        Long idArea = request.getIdArea();
+        if (idArea == null) {
+            throw new BusinessException("El área es obligatoria para crear un periodo");
         }
 
-        log.info("Usuario ID: {} tiene área ID: {} (desde dim_personal_cnt)", coordinadorId, idAreaDelPersonal);
+        // Obtener el Area entity
+        Area area = areaRepository.findById(idArea)
+                .orElseThrow(() -> new BusinessException(
+                        String.format("El área %d no existe", idArea)));
 
         validarFechas(request);
 
-        if (repository.existsByPeriodoAndArea(request.getPeriodo(), idAreaDelPersonal)) {
+        if (repository.existsByPeriodoAndArea(request.getPeriodo(), idArea)) {
             throw new BusinessException(String.format(
-                    "Ya existe un periodo %s para el área %d", request.getPeriodo(), idAreaDelPersonal));
+                    "Ya existe un periodo %s para el área %d", request.getPeriodo(), idArea));
         }
 
-        Area area = personal.getArea(); // Ya tenemos el área desde el personal
-
-        // Crear entity directamente con el idArea obtenido del personal
-        CtrPeriodo entity = CtrPeriodoMapper.toEntity(request, area, idAreaDelPersonal, coordinadorId);
+        // Crear entity con el idArea proporcionado
+        CtrPeriodo entity = CtrPeriodoMapper.toEntity(request, area, idArea, coordinadorId);
         entity = repository.save(entity);
 
         log.info("Periodo creado: {} para área: {} por usuario ID: {}", 

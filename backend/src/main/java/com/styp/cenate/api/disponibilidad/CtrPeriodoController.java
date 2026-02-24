@@ -23,6 +23,11 @@ import java.util.Map;
  * Tabla: ctr_periodo
  *
  * Base URL: /api/ctr-periodos
+ * 
+ * 🔐 ROLES AUTORIZADOS (solo IDs 33, 35, 15):
+ *   - 33: COORD. TELE URGENCIAS Y TRIAJE (Área 2)
+ *   - 35: COORD. TELE APOYO AL DIAGNOSTICO (Área 3)
+ *   - 15: COORD. ESPECIALIDADES (Área 13)
  */
 @RestController
 @RequestMapping("/api/ctr-periodos")
@@ -115,9 +120,9 @@ public class CtrPeriodoController {
     		@AuthenticationPrincipal UserDetails userDetails) {
         Long coordinadorId = obtenerIdUsuario(userDetails);
         
-        // idArea se obtiene automáticamente desde dim_personal_cnt en el service
-        log.info("Creando periodo: {} por usuario ID: {} (área se obtiene de dim_personal_cnt)", 
-                request.getPeriodo(), coordinadorId);
+        // 🆕 idArea ahora viene seleccionado por el usuario en el frontend
+        log.info("Creando periodo: {} para área: {} por usuario ID: {}", 
+                request.getPeriodo(), request.getIdArea(), coordinadorId);
         
         CtrPeriodoResponse response = service.crear(request, coordinadorId);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);

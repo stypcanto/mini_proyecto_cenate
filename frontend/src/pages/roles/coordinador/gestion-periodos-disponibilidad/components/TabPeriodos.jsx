@@ -26,6 +26,7 @@ export default function TabPeriodos({
   filtros,
   onFiltrosChange,
   aniosDisponibles = [new Date().getFullYear()],
+  user, // 🆕 Agregar user como prop
 }) {
   const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
 
@@ -117,16 +118,11 @@ export default function TabPeriodos({
               <label className="block text-xs font-semibold text-gray-700 mb-1.5">
                 Área
               </label>
-              <select
-                value={filtros.idArea || "TODOS"}
-                onChange={(e) => onFiltrosChange({ ...filtros, idArea: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              >
-                <option value="TODOS">Todas las áreas</option>
-                <option value="2">SGDT - SERVICIO DE MEDICINA GENERAL - TELEURGENCIAS Y TELETRIAJE</option>
-                <option value="3">SGDT - SERVICIO DE TELE APOYO AL DIAGNÓSTICO</option>
-                <option value="13">SGDT - SERVICIO DE MEDICINA ESPECIALIZADA</option>
-              </select>
+              <AreaFilterSelect 
+                user={user}
+                value={filtros.idArea}
+                onChange={(idArea) => onFiltrosChange({ ...filtros, idArea })}
+              />
             </div>
 
             {/* Filtro Propietario */}
@@ -350,5 +346,49 @@ export default function TabPeriodos({
         </div>
       )}
     </div>
+  );
+}
+
+// 🆕 Componente para renderizar dinámicamente el filtro de área
+function AreaFilterSelect({ user, value, onChange }) {
+  const COORDINATOR_ROLE_IDS = [33, 35, 15];
+  const ALL_AREAS = [
+    { id: 2, descripcion: "SGDT - SERVICIO DE MEDICINA GENERAL - TELEURGENCIAS Y TELETRIAJE" },
+    { id: 3, descripcion: "SGDT - SERVICIO DE TELE APOYO AL DIAGNÓSTICO" },
+    { id: 13, descripcion: "SGDT - SERVICIO DE MEDICINA ESPECIALIZADA" }
+  ];
+
+  // Determinar si es SUPERADMIN/ADMIN o coordinador
+  const isSuperAdmin = user?.roles?.includes("SUPERADMIN") || user?.roles?.includes("ADMIN");
+  
+  // Si es SUPERADMIN, mostrar todas las áreas
+  const availableAreas = isSuperAdmin 
+    ? ALL_AREAS 
+    : (user?.mappingRoles || [])
+        .filter(rol => COORDINATOR_ROLE_IDS.includes(rol.codigo) && rol.idArea)
+        .map(rol => ({
+          id: rol.idArea,
+          descripcion: rol.descripcionArea || `Área ${rol.idArea}`
+        }));
+
+  // Deduplicar áreas
+  const uniqueAreas = Array.from(new Map(availableAreas.map(a => [a.id, a])).values());
+  
+  // Si el coordinador tiene solo 1 área, no mostrar "TODOS"
+  const showTodos = isSuperAdmin || uniqueAreas.length > 1;
+
+  return (
+    <select
+      value={value || "TODOS"}
+      onChange={(e) => onChange(e.target.value)}
+      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+    >
+      {showTodos && <option value="TODOS">Todas las áreas</option>}
+      {uniqueAreas.map(area => (
+        <option key={area.id} value={area.id}>
+          {area.descripcion}
+        </option>
+      ))}
+    </select>
   );
 }
