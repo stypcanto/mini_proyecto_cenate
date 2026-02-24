@@ -1149,19 +1149,45 @@ public class GestionPacienteServiceImpl implements IGestionPacienteService {
 
                     if (!ecgs.isEmpty()) {
                         List<com.styp.cenate.dto.teleekgs.TeleECGImagenDTO> ecgDtos = ecgs.stream()
-                                .map(ecg -> com.styp.cenate.dto.teleekgs.TeleECGImagenDTO.builder()
-                                        .idImagen(ecg.getIdImagen())
-                                        .numDocPaciente(ecg.getNumDocPaciente())
-                                        .estado(ecg.getEstado())
-                                        .evaluacion(ecg.getEvaluacion())
-                                        .fechaEnvio(ecg.getFechaEnvio())
-                                        .fechaEvaluacion(ecg.getFechaEvaluacion())
-                                        .descripcionEvaluacion(ecg.getDescripcionEvaluacion())
-                                        .build())
+                                .map(ecg -> {
+                                    // ✅ IMPORTANTE: Asegurar que evaluacion nunca es NULL
+                                    String evaluacionValue = ecg.getEvaluacion() != null ? ecg.getEvaluacion() : "SIN_EVALUAR";
+                                    boolean isEvaluated = !evaluacionValue.equals("SIN_EVALUAR");
+                                    
+                                    log.debug("🔍 [ECG-DEBUG] ID:{} Estado:{} Evaluacion:{} (raw:{}) FechaEval:{} HasDescripcion:{} IsEvaluated:{}",
+                                        ecg.getIdImagen(),
+                                        ecg.getEstado(),
+                                        evaluacionValue,
+                                        ecg.getEvaluacion(),
+                                        ecg.getFechaEvaluacion() != null ? "YES" : "NO",
+                                        ecg.getDescripcionEvaluacion() != null && !ecg.getDescripcionEvaluacion().isEmpty() ? "YES" : "NO",
+                                        isEvaluated ? "✅" : "❌"
+                                    );
+                                    
+                                    return com.styp.cenate.dto.teleekgs.TeleECGImagenDTO.builder()
+                                            .idImagen(ecg.getIdImagen())
+                                            .numDocPaciente(ecg.getNumDocPaciente())
+                                            .estado(ecg.getEstado())
+                                            .evaluacion(evaluacionValue)  // ✅ Nunca será NULL
+                                            .fechaEnvio(ecg.getFechaEnvio())
+                                            .fechaEvaluacion(ecg.getFechaEvaluacion())
+                                            .descripcionEvaluacion(ecg.getDescripcionEvaluacion())
+                                            .notaClinicaHallazgos(ecg.getNotaClinicaHallazgos())
+                                            .notaClinicaObservaciones(ecg.getNotaClinicaObservaciones())
+                                            .statImagen(ecg.getStatImagen())
+                                            .build();
+                                })
                                 .collect(Collectors.toList());
 
                         resultado.put(dni, ecgDtos);
-                        log.debug("✅ [v1.89.8] DNI {} - {} ECGs cargados", dni, ecgDtos.size());
+                        
+                        long evaluadasCount = ecgDtos.stream()
+                                .filter(d -> d.getEvaluacion() != null && !d.getEvaluacion().equals("SIN_EVALUAR"))
+                                .count();
+                        
+                        log.info("✅ [v1.89.8] DNI {} - {} ECGs cargados ({} evaluadas)", dni, ecgDtos.size(), evaluadasCount);
+                    } else {
+                        log.debug("⚠️ [v1.89.8] DNI {} - sin ECGs en BD", dni);
                     }
                 } catch (Exception e) {
                     log.warn("⚠️ [v1.89.8] Error obteniendo ECGs para DNI {}: {}", dni, e.getMessage());

@@ -977,6 +977,17 @@ export default function MisPacientes() {
         const imagenes = ecgsPorPaciente[dni];
 
         if (imagenes && Array.isArray(imagenes)) {
+          // ✅ DEBUG: Loguear imágenes recibidas
+          console.log(`📸 [DEBUG] DNI ${dni} tiene ${imagenes.length} imagen(es):`, imagenes.map(img => ({
+            id: img.idImagen || img.id_imagen,
+            evaluacion: img.evaluacion,
+            estado: img.estado,
+            statImagen: img.statImagen || img.stat_imagen,
+            fechaEnvio: img.fechaEnvio || img.fecha_envio,
+            fechaEvaluacion: img.fechaEvaluacion || img.fecha_evaluacion,
+            descripcionEvaluacion: img.descripcionEvaluacion || img.descripcion_evaluacion
+          })));
+
           // ✅ v1.92.0: Detectar imágenes rechazadas (estado OBSERVADA)
           const imagenesRechazadas = imagenes.filter(
             img => img && img.estado === 'OBSERVADA'
@@ -994,24 +1005,43 @@ export default function MisPacientes() {
             console.log(`⚠️ Paciente ${dni} tiene ${imagenesRechazadas.length} imagen(es) rechazada(s)`);
           }
 
-          // Obtener la última evaluación
-          const evaluadas = imagenes.filter(
-            img => img && img.evaluacion && img.evaluacion !== 'SIN_EVALUAR'
-          );
+          // ✅ v1.92.1: FILTRO MEJORADO - Más explícito y robusto
+          // Criterio: evaluacion está poblada Y no es 'SIN_EVALUAR'
+          const evaluadas = imagenes.filter(img => {
+            if (!img) {
+              console.log(`  🔍 [EVAL FILTER] imagen null ➜ ❌ EXCLUDE`);
+              return false;
+            }
+            
+            const evalValue = img.evaluacion || '';
+            const isEvaluated = evalValue && evalValue.trim() !== '' && evalValue !== 'SIN_EVALUAR';
+            
+            console.log(`  🔍 [EVAL FILTER] ID ${img.idImagen || img.id_imagen}: evaluacion="${evalValue}" (trim="${evalValue.trim()}", notEmpty=${evalValue.trim() !== ''}, notSinEvaluar=${evalValue !== 'SIN_EVALUAR'}) ➜ ${isEvaluated ? '✅ EVALUADA' : '❌ SIN EVALUAR'}`);
+            
+            return isEvaluated;
+          });
+
+          console.log(`  📊 [v1.92.1] Resumen DNI ${dni}: total=${imagenes.length}, evaluadas=${evaluadas.length}, rechazadas=${imagenesRechazadas.length}`);
 
           if (evaluadas.length > 0) {
             const ultima = evaluadas[evaluadas.length - 1];
+            console.log(`✅ [DEBUG] DNI ${dni} - EVALUADA encontrada:`, { 
+              tipo: ultima.evaluacion, 
+              fecha: ultima.fechaEvaluacion || ultima.fecha_evaluacion,
+              hasDescripcion: !!ultima.descripcionEvaluacion || !!ultima.descripcion_evaluacion
+            });
             estados[dni] = {
               estado: 'EVALUADO',
               datos: {
                 evaluacion: ultima.evaluacion || '',
-                descripcion: ultima.descripcion_evaluacion || ultima.descripcionEvaluacion || '',
-                fecha: ultima.fechaEvaluacion || '',
-                hallazgos: ultima.hallazgos || '',
-                observacionesClinicas: ultima.observacionesClinicas || ''
+                descripcion: ultima.descripcionEvaluacion || ultima.descripcion_evaluacion || '',
+                fecha: ultima.fechaEvaluacion || ultima.fecha_evaluacion || '',
+                hallazgos: ultima.notaClinicaHallazgos || ultima.nota_clinica_hallazgos || '',
+                observacionesClinicas: ultima.notaClinicaObservaciones || ultima.nota_clinica_observaciones || ''
               }
             };
           } else {
+            console.log(`⚠️ [DEBUG] DNI ${dni} - NO tiene evaluación (PENDIENTE). Valores de evaluacion encontrados:`, imagenes.map(i => i.evaluacion));
             estados[dni] = { estado: 'PENDIENTE' };
           }
         } else {
@@ -1024,7 +1054,7 @@ export default function MisPacientes() {
 
       const endTime = performance.now();
       const tiempoMs = (endTime - startTime).toFixed(0);
-      console.log(`✅ [v1.89.8] Estados cargados en ${tiempoMs}ms`);
+      console.log(`✅ [v1.89.8] Estados cargados en ${tiempoMs}ms - Total pacientes con estados:`, Object.keys(estados).length);
     } catch (error) {
       console.error('❌ [v1.89.8] Error cargando estados evaluación:', error);
     }
@@ -1589,9 +1619,19 @@ export default function MisPacientes() {
         })
       );
 
-      // Preparar objeto ECG para el modal CON TODAS LAS IMÁGENES
+      // ✅ v1.90.1: CORREGIR ESTRUCTURA - El modal espera estos campos en el nivel superior
+      // Para que ModalEvaluacionECG pueda acceder a num_doc_paciente, nombres_paciente, etc.
       const ecgParaModal = {
         imagenes: imagenesConContenido,  // ✅ ARRAY DE TODAS LAS IMÁGENES
+        // ✅ CAMPOS PRINCIPALES para el modal
+        num_doc_paciente: paciente.numDoc,
+        nombrePaciente: paciente.apellidosNombres,
+        // ✅ CAMPOS ALTERNATIVOS (en caso de que el modal espere snake_case)
+        nombres_paciente: paciente.apellidosNombres,
+        apellidos_paciente: '',
+        nombre_ipress: paciente.nombreIpress || paciente.ipress || '',
+        codigo_ipress: paciente.codigoIpress || '',
+        // ✅ COMPATIBILIDAD: paciente anidado (para código legacy)
         paciente: {
           numDoc: paciente.numDoc,
           nombres: paciente.apellidosNombres,
@@ -1599,6 +1639,7 @@ export default function MisPacientes() {
         },
       };
 
+      console.log('📋 [DEBUG] Datos para modal:', ecgParaModal);
       setEcgActual(ecgParaModal);
       setCargandoECG(false);
 

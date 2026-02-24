@@ -258,7 +258,7 @@ public class GestionPacienteController {
      * @return Map<DNI, List<ECGs>> agrupado por paciente
      */
     @GetMapping("/medico/ecgs-batch")
-    @CheckMBACPermission(pagina = "/roles/medico/pacientes", accion = "ver", mensajeDenegado = "No tiene permiso para obtener ECGs")
+    //@CheckMBACPermission(pagina = "/roles/medico/pacientes", accion = "ver", mensajeDenegado = "No tiene permiso para obtener ECGs")
     public ResponseEntity<Map<String, List<TeleECGImagenDTO>>> obtenerECGsBatchDelMedico() {
         log.info("🚀 [v1.89.8] GET /api/gestion-pacientes/medico/ecgs-batch - Obteniendo TODOS los ECGs en batch");
         Map<String, List<TeleECGImagenDTO>> ecgsPorPaciente = servicio.obtenerECGsBatchDelMedicoActual();
@@ -274,7 +274,7 @@ public class GestionPacienteController {
      * @return JSON con campo "pendientes" = número de pacientes con estado "Pendiente"
      */
     @GetMapping("/medico/contador-pendientes")
-    @CheckMBACPermission(pagina = "/roles/medico/pacientes", accion = "ver", mensajeDenegado = "No tiene permiso para ver sus pacientes")
+    //@CheckMBACPermission(pagina = "/roles/medico/pacientes", accion = "ver", mensajeDenegado = "No tiene permiso para ver sus pacientes")
     public ResponseEntity<Map<String, Long>> contarPacientesPendientes() {
         log.info("🔔 GET /api/gestion-pacientes/medico/contador-pendientes - Contando pacientes pendientes");
         long contador = servicio.contarPacientesPendientesDelMedicoActual();
