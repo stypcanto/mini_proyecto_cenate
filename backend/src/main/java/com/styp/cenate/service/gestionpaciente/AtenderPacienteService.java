@@ -49,8 +49,9 @@ public class AtenderPacienteService {
     private final IpressRepository ipressRepository;                       // ✅ v1.103.7: FK lookup
 
     @Transactional
-    public void atenderPaciente(Long idSolicitudBolsa, String especialidadActual, AtenderPacienteRequest request) {
+    public List<String> atenderPaciente(Long idSolicitudBolsa, String especialidadActual, AtenderPacienteRequest request) {
         log.info("🏥 [v1.103.6] Registrando atención - Solicitud: {}", idSolicitudBolsa);
+        List<String> interconsultasOmitidas = new java.util.ArrayList<>();
 
         try {
             // 1. Obtener solicitud original
@@ -129,6 +130,7 @@ public class AtenderPacienteService {
                     if (existeInterconsultaParaPaciente(pkAseguradoFinal, especialidadTrimmed)) {
                         log.warn("⚠️ [v1.75.0] Interconsulta de '{}' ya existe para el paciente: {}",
                                 especialidadTrimmed, pkAseguradoFinal);
+                        interconsultasOmitidas.add(especialidadTrimmed);
                     } else {
                         crearBolsaInterconsultaConTransaccion(solicitudOriginal, especialidadTrimmed, idAtencionClinica);
                         log.info("✅ [v1.75.0] Nueva bolsa INTERCONSULTA creada para especialidad: '{}'", especialidadTrimmed);
@@ -137,6 +139,7 @@ public class AtenderPacienteService {
             }
 
             log.info("✅ [v1.103.6] Atención registrada completamente - Enfermedades crónicas guardadas en tabla asegurados");
+            return interconsultasOmitidas;
         } catch (Exception e) {
             log.error("❌ [v1.103.6] Error crítico registrando atención: {}", e.getMessage(), e);
             throw new RuntimeException("Error al registrar atención: " + e.getMessage(), e);
