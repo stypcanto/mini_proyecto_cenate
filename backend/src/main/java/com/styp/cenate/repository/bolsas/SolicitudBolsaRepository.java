@@ -1013,12 +1013,14 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
 
     /**
      * 🔧 v1.78.1: Obtener TODOS los pacientes asignados a un médico (sin filtro activo)
-     * Usado por MisPacientes para mostrar tanto pacientes activos como inactivos/completados
+     * Excluye RECITAS/INTERCONSULTAS generadas por el profesional (id_bolsa=11) porque
+     * esos registros van a /bolsas/solicitudespendientes esperando ser asignados a otro profesional.
      *
      * @param idPersonal ID del personal médico (doctor)
-     * @return lista de TODAS las solicitudes asignadas al médico
+     * @return lista de TODAS las solicitudes asignadas al médico (sin recitas/interconsultas generadas)
      */
-    @Query("SELECT s FROM SolicitudBolsa s WHERE s.idPersonal = :idPersonal")
+    @Query("SELECT s FROM SolicitudBolsa s WHERE s.idPersonal = :idPersonal " +
+           "AND NOT (s.idBolsa = 11 AND s.tipoCita IN ('RECITA', 'INTERCONSULTA'))")
     List<SolicitudBolsa> findByIdPersonal(@org.springframework.data.repository.query.Param("idPersonal") Long idPersonal);
 
     /**
@@ -1032,7 +1034,8 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
     @Query("SELECT COUNT(s) FROM SolicitudBolsa s WHERE " +
            "s.idPersonal = :idPersonal AND " +
            "s.condicionMedica = 'Pendiente' AND " +
-           "s.activo = true")
+           "s.activo = true AND " +
+           "NOT (s.idBolsa = 11 AND s.tipoCita IN ('RECITA', 'INTERCONSULTA'))")
     long countByIdPersonalAndCondicionPendiente(@org.springframework.data.repository.query.Param("idPersonal") Long idPersonal);
 
     /**
@@ -1471,7 +1474,6 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
           AND (:fechaFin    IS NULL OR recita.fecha_preferida_no_atendida <= CAST(:fechaFin    AS date))
           AND (:tipoCita    IS NULL OR UPPER(recita.tipo_cita) = UPPER(:tipoCita))
           AND (:idPersonal  IS NULL OR COALESCE(recita.id_personal, orig_d.id_personal, orig_t.id_personal, ac_fk.id_personal_creador, orig_ac.id_personal) = CAST(:idPersonal AS bigint))
-          AND (orig_d.id_bolsa IS NULL OR orig_d.id_bolsa != 10)
         ORDER BY recita.fecha_preferida_no_atendida DESC NULLS LAST, recita.fecha_solicitud DESC
         """,
         countQuery = """
@@ -1507,7 +1509,6 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
           AND (:fechaFin    IS NULL OR recita.fecha_preferida_no_atendida <= CAST(:fechaFin    AS date))
           AND (:tipoCita    IS NULL OR UPPER(recita.tipo_cita) = UPPER(:tipoCita))
           AND (:idPersonal  IS NULL OR COALESCE(recita.id_personal, orig_d.id_personal, orig_t.id_personal, ac_fk.id_personal_creador, orig_ac.id_personal) = CAST(:idPersonal AS bigint))
-          AND (orig_d.id_bolsa IS NULL OR orig_d.id_bolsa != 10)
         """,
         nativeQuery = true)
     Page<Object[]> obtenerTrazabilidadRecitasInterconsultas(
@@ -1555,7 +1556,6 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
           AND recita.activo = true
           AND recita.id_bolsa = 11
           AND COALESCE(recita.id_personal, orig_d.id_personal, orig_t.id_personal, orig_ac.id_personal) IS NOT NULL
-          AND (orig_d.id_bolsa IS NULL OR orig_d.id_bolsa != 10)
         GROUP BY COALESCE(recita.id_personal, orig_d.id_personal, orig_t.id_personal, orig_ac.id_personal),
                  pc.ape_pater_pers, pc.ape_mater_pers, pc.nom_pers
         ORDER BY total DESC
@@ -1596,7 +1596,6 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
         WHERE UPPER(recita.tipo_cita) IN ('RECITA','INTERCONSULTA')
           AND recita.activo = true
           AND recita.id_bolsa = 11
-          AND (orig_d.id_bolsa IS NULL OR orig_d.id_bolsa != 10)
         """, nativeQuery = true)
     Map<String, Object> kpisTrazabilidad();
 
