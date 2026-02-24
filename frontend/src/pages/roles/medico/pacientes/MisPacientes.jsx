@@ -1803,7 +1803,17 @@ export default function MisPacientes() {
       console.log('🏥 [v1.74.0] Registrando atención:', payload);
 
       // 1️⃣ Registrar atención médica
-      await gestionPacientesService.atenderPaciente(idParaAtender, payload);
+      const atencionResp = await gestionPacientesService.atenderPaciente(idParaAtender, payload);
+      const omitidas = atencionResp?.data?.interconsultasOmitidas;
+      if (omitidas && omitidas.length > 0) {
+        omitidas.forEach(esp => {
+          toast(`⚠️ La interconsulta de "${esp}" ya existe para este paciente y no fue duplicada.`, {
+            icon: '⚠️',
+            style: { background: '#FEF3C7', color: '#92400E', border: '1px solid #F59E0B' },
+            duration: 5000,
+          });
+        });
+      }
 
       // 2️⃣ Cambiar estado a Atendido en la BD
       await gestionPacientesService.actualizarCondicion(

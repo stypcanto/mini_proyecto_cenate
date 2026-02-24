@@ -346,11 +346,14 @@ public class GestionPacienteController {
             : "General"; // Fallback a especialidad general
 
         try {
-            atenderPacienteService.atenderPaciente(id, especialidad, request);
-            return ResponseEntity.ok(Map.of(
-                "mensaje", "Atención registrada correctamente",
-                "solicitudId", id.toString()
-            ));
+            List<String> omitidas = atenderPacienteService.atenderPaciente(id, especialidad, request);
+            java.util.Map<String, Object> response = new java.util.HashMap<>();
+            response.put("mensaje", "Atención registrada correctamente");
+            response.put("solicitudId", id.toString());
+            if (!omitidas.isEmpty()) {
+                response.put("interconsultasOmitidas", omitidas);
+            }
+            return ResponseEntity.ok(response);
         } catch (Exception e) {
             log.error("❌ [v1.103.5] Error atendiendo paciente {}: {}", id, e.getMessage(), e);
             return ResponseEntity.status(500).body(Map.of(
