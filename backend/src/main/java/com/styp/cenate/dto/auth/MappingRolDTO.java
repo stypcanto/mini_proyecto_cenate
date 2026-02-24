@@ -17,4 +17,6 @@ public class MappingRolDTO {
     private Integer codigo;          // ID del rol (idRol)
     private String descripcion;      // Descripción del rol (descRol)
     private String codigoNormalizado; // Código normalizado (ej: COORDINADOR_ESPECIALIDADES)
+    private Long idArea;             // 🆕 ID del área asociada al rol
+    private String descripcionArea;  // 🆕 Descripción del área
 }

@@ -45,42 +45,42 @@ public class CtrPeriodoController {
     // ============================================================
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'COORDINADOR')")
+    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'COORDINADOR', 'COORD. TELE URGENCIAS Y TRIAJE', 'COORD. TELE APOYO AL DIAGNOSTICO', 'COORD. ESPECIALIDADES')")
     public ResponseEntity<List<CtrPeriodoResponse>> listarTodos() {
         log.info("Listando todos los periodos de control");
         return ResponseEntity.ok(service.listarTodos());
     }
 
     @GetMapping("/abiertos")
-    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'COORDINADOR')")
+    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'COORDINADOR', 'COORD. TELE URGENCIAS Y TRIAJE', 'COORD. TELE APOYO AL DIAGNOSTICO', 'COORD. ESPECIALIDADES')")
     public ResponseEntity<List<CtrPeriodoResponse>> listarAbiertos() {
         log.info("Listando periodos de control abiertos");
         return ResponseEntity.ok(service.listarAbiertos());
     }
 
     @GetMapping("/vigentes")
-    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'COORDINADOR')")
+    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'COORDINADOR', 'COORD. TELE URGENCIAS Y TRIAJE', 'COORD. TELE APOYO AL DIAGNOSTICO', 'COORD. ESPECIALIDADES')")
     public ResponseEntity<List<CtrPeriodoResponse>> listarVigentes() {
         log.info("Listando periodos de control vigentes");
         return ResponseEntity.ok(service.listarVigentes());
     }
 
     @GetMapping("/anios")
-    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'COORDINADOR')")
+    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'COORDINADOR', 'COORD. TELE URGENCIAS Y TRIAJE', 'COORD. TELE APOYO AL DIAGNOSTICO', 'COORD. ESPECIALIDADES')")
     public ResponseEntity<List<Integer>> listarAnios() {
         log.info("Listando años disponibles");
         return ResponseEntity.ok(service.listarAnios());
     }
 
     @GetMapping("/area/{idArea}")
-    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'COORDINADOR')")
+    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'COORDINADOR', 'COORD. TELE URGENCIAS Y TRIAJE', 'COORD. TELE APOYO AL DIAGNOSTICO', 'COORD. ESPECIALIDADES')")
     public ResponseEntity<List<CtrPeriodoResponse>> listarPorArea(@PathVariable("idArea") Long idArea) {
         log.info("Listando periodos para área: {}", idArea);
         return ResponseEntity.ok(service.listarPorArea(idArea));
     }
 
     @GetMapping("/area/{idArea}/estado/{estado}")
-    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'COORDINADOR')")
+    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'COORDINADOR', 'COORD. TELE URGENCIAS Y TRIAJE', 'COORD. TELE APOYO AL DIAGNOSTICO', 'COORD. ESPECIALIDADES')")
     public ResponseEntity<List<CtrPeriodoResponse>> listarPorAreaYEstado(
             @PathVariable("idArea") Long idArea,
             @PathVariable("estado") String estado) {
@@ -89,7 +89,7 @@ public class CtrPeriodoController {
     }
 
     @GetMapping("/area/{idArea}/anios")
-    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'COORDINADOR')")
+    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'COORDINADOR', 'COORD. TELE URGENCIAS Y TRIAJE', 'COORD. TELE APOYO AL DIAGNOSTICO', 'COORD. ESPECIALIDADES')")
     public ResponseEntity<List<Integer>> listarAniosPorArea(@PathVariable("idArea") Long idArea) {
         log.info("Listando años para área: {}", idArea);
         return ResponseEntity.ok(service.listarAniosPorArea(idArea));
@@ -100,7 +100,7 @@ public class CtrPeriodoController {
     // ============================================================
 
     @GetMapping("/{periodo}/area/{idArea}")
-    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'COORDINADOR')")
+    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'COORDINADOR', 'COORD. TELE URGENCIAS Y TRIAJE', 'COORD. TELE APOYO AL DIAGNOSTICO', 'COORD. ESPECIALIDADES')")
     public ResponseEntity<CtrPeriodoResponse> obtenerPorId(
             @PathVariable("periodo") String periodo,
             @PathVariable("idArea") Long idArea) {
@@ -109,7 +109,7 @@ public class CtrPeriodoController {
     }
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'COORDINADOR')")
+    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'COORDINADOR', 'COORD. TELE URGENCIAS Y TRIAJE', 'COORD. TELE APOYO AL DIAGNOSTICO', 'COORD. ESPECIALIDADES')")
     public ResponseEntity<CtrPeriodoResponse> crear(
             @Valid @RequestBody CtrPeriodoRequest request,
     		@AuthenticationPrincipal UserDetails userDetails) {
@@ -124,7 +124,7 @@ public class CtrPeriodoController {
     }
 
     @PutMapping("/{periodo}/area/{idArea}")
-    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'COORDINADOR')")
+    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'COORDINADOR', 'COORD. TELE URGENCIAS Y TRIAJE', 'COORD. TELE APOYO AL DIAGNOSTICO', 'COORD. ESPECIALIDADES')")
     public ResponseEntity<CtrPeriodoResponse> actualizar(
             @PathVariable("periodo") String periodo,
             @PathVariable("idArea") Long idArea,
@@ -137,7 +137,7 @@ public class CtrPeriodoController {
     }
 
     @PutMapping("/{periodo}/area/{idArea}/estado")
-    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'COORDINADOR')")
+    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'COORDINADOR', 'COORD. TELE URGENCIAS Y TRIAJE', 'COORD. TELE APOYO AL DIAGNOSTICO', 'COORD. ESPECIALIDADES')")
     public ResponseEntity<CtrPeriodoResponse> cambiarEstado(
             @PathVariable("periodo") String periodo,
             @PathVariable("idArea") Long idArea,
@@ -152,7 +152,7 @@ public class CtrPeriodoController {
     }
 
     @DeleteMapping("/{periodo}/area/{idArea}")
-    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'COORDINADOR')")
+    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'COORDINADOR', 'COORD. TELE URGENCIAS Y TRIAJE', 'COORD. TELE APOYO AL DIAGNOSTICO', 'COORD. ESPECIALIDADES')")
     public ResponseEntity<Void> eliminar(
             @PathVariable("periodo") String periodo,
             @PathVariable("idArea") Long idArea) {

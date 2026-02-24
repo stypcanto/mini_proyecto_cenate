@@ -76,13 +76,22 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                 .map(Rol::getDescRol)
                 .collect(Collectors.toList());
 
-        // 🆕 Mapeo de roles (codigo + descripcion)
+        // 🆕 Mapeo de roles (codigo + descripcion + area info)
         var mappingRoles = user.getRoles().stream()
-                .map(rol -> MappingRolDTO.builder()
-                        .codigo(rol.getIdRol())
-                        .descripcion(rol.getDescRol())
-                        .codigoNormalizado(rol.getDescRol().toUpperCase().replaceAll("\\s+", "_"))
-                        .build())
+                .map(rol -> {
+                    var builder = MappingRolDTO.builder()
+                            .codigo(rol.getIdRol())
+                            .descripcion(rol.getDescRol())
+                            .codigoNormalizado(rol.getDescRol().toUpperCase().replaceAll("\\s+", "_"));
+                    
+                    // Agregar información del área si existe
+                    if (rol.getArea() != null) {
+                        builder.idArea(rol.getArea().getIdArea());
+                        builder.descripcionArea(rol.getArea().getDescArea());
+                    }
+                    
+                    return builder.build();
+                })
                 .collect(Collectors.toList());
         
         log.info("📋 Mapping Roles: {}", mappingRoles);
