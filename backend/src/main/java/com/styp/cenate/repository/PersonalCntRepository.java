@@ -118,6 +118,94 @@ public interface PersonalCntRepository extends JpaRepository<PersonalCnt, Long> 
 	Page<PersonalCnt> findAllWithRelations(Pageable pageable);
 
 	/**
+	 * Fase 1: Obtiene personal filtrado con paginación real en BD.
+	 * Usa @EntityGraph con SOLO @ManyToOne (sin colecciones) para evitar paginación en memoria.
+	 * Los filtros son opcionales: si el parámetro es NULL, la condición no aplica.
+	 */
+	@EntityGraph(attributePaths = {
+			"usuario", "tipoDocumento", "regimenLaboral", "area", "ipress", "servicioEssi"
+	})
+	@Query(value =
+			"SELECT DISTINCT p FROM PersonalCnt p " +
+			"LEFT JOIN p.usuario u " +
+			"LEFT JOIN u.roles r " +
+			"LEFT JOIN p.area a " +
+			"LEFT JOIN p.ipress ip " +
+			"LEFT JOIN ip.red rd " +
+			"LEFT JOIN p.regimenLaboral rl " +
+			"LEFT JOIN p.servicioEssi se " +
+			"LEFT JOIN p.profesiones ppRef " +
+			"LEFT JOIN ppRef.profesion pf " +
+			"WHERE " +
+			"  (:busqueda IS NULL OR (" +
+			"    LOWER(CONCAT(COALESCE(p.nomPers,''), ' ', COALESCE(p.apePaterPers,''), ' ', COALESCE(p.apeMaterPers,''))) LIKE LOWER(CONCAT('%', :busqueda, '%')) " +
+			"    OR LOWER(COALESCE(p.numDocPers,'')) LIKE LOWER(CONCAT('%', :busqueda, '%')))) " +
+			"  AND (:rol IS NULL OR LOWER(r.descRol) = LOWER(:rol)) " +
+			"  AND (:statPers IS NULL OR p.statPers = :statPers) " +
+			"  AND (:descArea IS NULL OR LOWER(COALESCE(a.descArea,'')) LIKE LOWER(CONCAT('%', :descArea, '%'))) " +
+			"  AND (:descIpress IS NULL OR LOWER(COALESCE(ip.descIpress,'')) LIKE LOWER(CONCAT('%', :descIpress, '%'))) " +
+			"  AND (:descRed IS NULL OR LOWER(COALESCE(rd.descripcion,'')) = LOWER(:descRed)) " +
+			"  AND (:descRegimen IS NULL OR LOWER(COALESCE(rl.descRegLab,'')) LIKE LOWER(CONCAT('%', :descRegimen, '%'))) " +
+			"  AND (:descProfesion IS NULL OR LOWER(COALESCE(pf.descProf,'')) LIKE LOWER(CONCAT('%', :descProfesion, '%'))) " +
+			"  AND (:descEspecialidad IS NULL OR LOWER(COALESCE(se.descServicio,'')) LIKE LOWER(CONCAT('%', :descEspecialidad, '%'))) " +
+			"  AND (:mesNacimiento IS NULL OR EXTRACT(MONTH FROM p.fechNaciPers) = :mesNacimiento) " +
+			"  AND (:createdAtFrom IS NULL OR p.createdAt >= :createdAtFrom) " +
+			"  AND (:createdAtTo IS NULL OR p.createdAt <= :createdAtTo)",
+			countQuery =
+			"SELECT COUNT(DISTINCT p) FROM PersonalCnt p " +
+			"LEFT JOIN p.usuario u " +
+			"LEFT JOIN u.roles r " +
+			"LEFT JOIN p.area a " +
+			"LEFT JOIN p.ipress ip " +
+			"LEFT JOIN ip.red rd " +
+			"LEFT JOIN p.regimenLaboral rl " +
+			"LEFT JOIN p.servicioEssi se " +
+			"LEFT JOIN p.profesiones ppRef " +
+			"LEFT JOIN ppRef.profesion pf " +
+			"WHERE " +
+			"  (:busqueda IS NULL OR (" +
+			"    LOWER(CONCAT(COALESCE(p.nomPers,''), ' ', COALESCE(p.apePaterPers,''), ' ', COALESCE(p.apeMaterPers,''))) LIKE LOWER(CONCAT('%', :busqueda, '%')) " +
+			"    OR LOWER(COALESCE(p.numDocPers,'')) LIKE LOWER(CONCAT('%', :busqueda, '%')))) " +
+			"  AND (:rol IS NULL OR LOWER(r.descRol) = LOWER(:rol)) " +
+			"  AND (:statPers IS NULL OR p.statPers = :statPers) " +
+			"  AND (:descArea IS NULL OR LOWER(COALESCE(a.descArea,'')) LIKE LOWER(CONCAT('%', :descArea, '%'))) " +
+			"  AND (:descIpress IS NULL OR LOWER(COALESCE(ip.descIpress,'')) LIKE LOWER(CONCAT('%', :descIpress, '%'))) " +
+			"  AND (:descRed IS NULL OR LOWER(COALESCE(rd.descripcion,'')) = LOWER(:descRed)) " +
+			"  AND (:descRegimen IS NULL OR LOWER(COALESCE(rl.descRegLab,'')) LIKE LOWER(CONCAT('%', :descRegimen, '%'))) " +
+			"  AND (:descProfesion IS NULL OR LOWER(COALESCE(pf.descProf,'')) LIKE LOWER(CONCAT('%', :descProfesion, '%'))) " +
+			"  AND (:descEspecialidad IS NULL OR LOWER(COALESCE(se.descServicio,'')) LIKE LOWER(CONCAT('%', :descEspecialidad, '%'))) " +
+			"  AND (:mesNacimiento IS NULL OR EXTRACT(MONTH FROM p.fechNaciPers) = :mesNacimiento) " +
+			"  AND (:createdAtFrom IS NULL OR p.createdAt >= :createdAtFrom) " +
+			"  AND (:createdAtTo IS NULL OR p.createdAt <= :createdAtTo)")
+	Page<PersonalCnt> findAllWithFilters(
+			@org.springframework.data.repository.query.Param("busqueda") String busqueda,
+			@org.springframework.data.repository.query.Param("rol") String rol,
+			@org.springframework.data.repository.query.Param("statPers") String statPers,
+			@org.springframework.data.repository.query.Param("descArea") String descArea,
+			@org.springframework.data.repository.query.Param("descIpress") String descIpress,
+			@org.springframework.data.repository.query.Param("descRed") String descRed,
+			@org.springframework.data.repository.query.Param("descRegimen") String descRegimen,
+			@org.springframework.data.repository.query.Param("descProfesion") String descProfesion,
+			@org.springframework.data.repository.query.Param("descEspecialidad") String descEspecialidad,
+			@org.springframework.data.repository.query.Param("mesNacimiento") Integer mesNacimiento,
+			@org.springframework.data.repository.query.Param("createdAtFrom") java.time.OffsetDateTime createdAtFrom,
+			@org.springframework.data.repository.query.Param("createdAtTo") java.time.OffsetDateTime createdAtTo,
+			org.springframework.data.domain.Pageable pageable);
+
+	/**
+	 * Fase 2: Carga entidades completas (con colecciones) para IDs específicos.
+	 * No usa paginación, por lo que @EntityGraph con colecciones no causa problemas.
+	 */
+	@EntityGraph(attributePaths = {
+			"usuario", "usuario.roles", "tipoDocumento", "regimenLaboral",
+			"area", "ipress", "profesiones", "profesiones.profesion",
+			"profesiones.servicioEssi", "tipos", "tipos.tipoPersonal"
+	})
+	@Query("SELECT p FROM PersonalCnt p WHERE p.idPers IN :ids")
+	List<PersonalCnt> findByIdsWithRelations(
+			@org.springframework.data.repository.query.Param("ids") List<Long> ids);
+
+	/**
 	 * Obtiene todos los médicos asociados a un servicio (especialidad) específico.
 	 *
 	 * @param idServicio identificador del servicio ESSI
