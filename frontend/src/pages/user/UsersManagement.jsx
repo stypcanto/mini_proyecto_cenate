@@ -68,8 +68,8 @@ const esExterno = (user) => {
 };
 
 const UsersManagement = () => {
-  // Caché de IPRESS para no pedir dos veces el mismo endpoint
-  const ipressCacheRef = useRef(null);
+  // Ref para controlar si los datos de filtros ya fueron cargados
+  const filterDataLoadedRef = useRef(false);
 
   const [activeTab, setActiveTab] = useState('usuarios');
   const [viewMode, setViewMode] = useState('table');
@@ -1032,18 +1032,10 @@ const UsersManagement = () => {
         direction: sortDirection
       });
 
-      // 🚀 PAGINACIÓN: Usar endpoint con paginación para mejor rendimiento
-      // Reutilizar IPRESS del caché si ya fue cargado antes
-      const [usersResponse, ipressResponse] = await Promise.all([
-        api.get(`/usuarios/all-personal?${params.toString()}`, true),
-        ipressCacheRef.current ? Promise.resolve(ipressCacheRef.current) : api.get('/ipress', true)
-      ]);
-      if (!ipressCacheRef.current && ipressResponse) {
-        ipressCacheRef.current = ipressResponse;
-      }
+      // 🚀 Solo una llamada: IPRESS ya viene embebido en cada usuario (nombre_ipress, codigo_ipress)
+      const usersResponse = await api.get(`/usuarios/all-personal?${params.toString()}`, true);
 
       console.log('📥 Respuesta del servidor (usuarios):', usersResponse);
-      console.log('📥 Respuesta del servidor (ipress):', ipressResponse);
 
       // 🔍 DEBUG: Verificar estructura de la respuesta
       if (!usersResponse) {
@@ -1089,35 +1081,8 @@ const UsersManagement = () => {
         setTotalPages(totalPagesCount);
       }
 
-      // 🚀 OPTIMIZACIÓN: Crear Map de IPRESS para búsqueda O(1) en lugar de O(n)
-      const ipressMap = new Map();
-      if (Array.isArray(ipressResponse)) {
-        ipressResponse.forEach(ip => {
-          if (ip.idIpress) {
-            ipressMap.set(ip.idIpress, ip);
-          }
-        });
-      }
-
-      // 🚀 OPTIMIZACIÓN: Asociar cada usuario con su IPRESS usando Map (O(1) vs O(n))
-      const usersWithIpress = usersData.map(user => {
-        // Intentar con ambos nombres de campo posibles
-        const ipressId = user.idIpress || user.id_ipress;
-
-        if (ipressId && ipressMap.has(ipressId)) {
-          const ipress = ipressMap.get(ipressId);
-          return {
-            ...user,
-            nombre_ipress: ipress.descIpress,
-            codigo_ipress: ipress.codIpress
-          };
-        }
-        return user;
-      });
-
-      // 🚀 Si hay filtros activos, guardar todos los usuarios cargados (se filtrarán después)
-      // Si no hay filtros, limitar a pageSize
-      const finalUsers = hasActiveFilters ? usersWithIpress : usersWithIpress.slice(0, pageSize);
+      // 🚀 IPRESS ya viene embebido en cada usuario (nombre_ipress, codigo_ipress) — sin enriquecimiento extra
+      const finalUsers = hasActiveFilters ? usersData : usersData.slice(0, pageSize);
 
       console.log('✅ Usuarios procesados:', finalUsers.length, '(esperados:', hasActiveFilters ? 'todos para filtrar' : pageSize, ')');
 
@@ -1184,14 +1149,8 @@ const UsersManagement = () => {
     try {
       console.log('🔄 Cargando todos los usuarios para filtros...');
 
-      // Cargar usuarios y reutilizar IPRESS del caché si ya está disponible
-      const [usersResponse, ipressResponse] = await Promise.all([
-        api.get('/usuarios/all-personal?page=0&size=2000&sortBy=createdAt&direction=DESC', true),
-        ipressCacheRef.current ? Promise.resolve(ipressCacheRef.current) : api.get('/ipress', true)
-      ]);
-      if (!ipressCacheRef.current && ipressResponse) {
-        ipressCacheRef.current = ipressResponse;
-      }
+      // 🚀 IPRESS ya viene embebido en cada usuario — solo una llamada
+      const usersResponse = await api.get('/usuarios/all-personal?page=0&size=2000&sortBy=createdAt&direction=DESC', true);
 
       // Extraer datos
       let usersData = [];
@@ -1201,32 +1160,8 @@ const UsersManagement = () => {
         usersData = usersResponse.content;
       }
 
-      // Crear Map de IPRESS para búsqueda O(1)
-      const ipressMap = new Map();
-      if (Array.isArray(ipressResponse)) {
-        ipressResponse.forEach(ip => {
-          if (ip.idIpress) {
-            ipressMap.set(ip.idIpress, ip);
-          }
-        });
-      }
-
-      // Asociar cada usuario con su IPRESS
-      const usersWithIpress = usersData.map(user => {
-        const ipressId = user.idIpress || user.id_ipress;
-        if (ipressId && ipressMap.has(ipressId)) {
-          const ipress = ipressMap.get(ipressId);
-          return {
-            ...user,
-            nombre_ipress: ipress.descIpress,
-            codigo_ipress: ipress.codIpress
-          };
-        }
-        return user;
-      });
-
-      console.log('✅ Cargados', usersWithIpress.length, 'usuarios para filtros');
-      setAllUsersForFilters(usersWithIpress);
+      console.log('✅ Cargados', usersData.length, 'usuarios para filtros');
+      setAllUsersForFilters(usersData);
     } catch (error) {
       console.error('❌ Error al cargar usuarios para filtros:', error);
     }
