@@ -86,10 +86,15 @@ public class GestionPacienteDTO {
     @JsonSerialize(using = OffsetDateTimeSerializer.class)
     private OffsetDateTime fechaAsignacion;
 
-    // Fecha de atención médica (cuando se marca como Atendido o Deserción)
+    // Fecha de la CITA (fecha_atencion + hora_atencion combinados)
     @JsonProperty("fechaAtencion")
     @JsonSerialize(using = OffsetDateTimeSerializer.class)
     private OffsetDateTime fechaAtencion;
+
+    // Fecha real de atención médica (cuando el médico marca como Atendido/Deserción)
+    @JsonProperty("fechaAtencionMedica")
+    @JsonSerialize(using = OffsetDateTimeSerializer.class)
+    private OffsetDateTime fechaAtencionMedica;
 
     // ✅ v1.50.0: Enfermedades crónicas del paciente (desde asegurado_enfermedad_cronica)
     private String[] enfermedadCronica;

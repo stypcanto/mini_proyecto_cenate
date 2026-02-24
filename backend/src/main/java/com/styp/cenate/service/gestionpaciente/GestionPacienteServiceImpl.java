@@ -829,6 +829,7 @@ public class GestionPacienteServiceImpl implements IGestionPacienteService {
                         : java.time.LocalTime.MIDNIGHT)
                     .atOffset(java.time.ZoneOffset.of("-05:00"))
                 : null)  // ✅ v1.80.0: Incluir hora_atencion en fechaAtencion (fecha+hora de la cita)
+            .fechaAtencionMedica(bolsa.getFechaAtencionMedica())  // Cuándo el médico realmente atendió
             .enfermedadCronica(enfermedadesCronicas)  // ✅ v1.50.0: Incluir enfermedades crónicas
             .tiempoInicioSintomas(tiempoSintomas)  // ✅ v1.64.0: Con valor por defecto "> 72 hrs."
             .consentimientoInformado(consentimiento)  // ✅ v1.64.0: Con valores por defecto según condición
