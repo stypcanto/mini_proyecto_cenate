@@ -36,17 +36,17 @@ public class ControlHorariosServiceImpl implements ControlHorariosService {
                     .map(e -> "'" + e + "'")
                     .collect(Collectors.joining(","));
 
-            String sql = "SELECT DISTINCT cp.periodo, cp.id_area, da.desc_area, cp.estado, " +
+            String sql = "SELECT cp.periodo, cp.id_area, da.desc_area, TRIM(cp.estado) as estado, " +
                     "cp.fecha_inicio, cp.fecha_fin, " +
                     "COUNT(DISTINCT ch.id_ctr_horario) as total_horarios " +
                     "FROM public.ctr_periodo cp " +
                     "JOIN public.dim_area da ON cp.id_area = da.id_area " +
                     "LEFT JOIN public.ctr_horario ch ON cp.periodo = ch.periodo AND cp.id_area = ch.id_area " +
-                    "WHERE cp.estado IN (" + estadosSQL + ") " +
-                    "GROUP BY cp.periodo, cp.id_area, da.desc_area, cp.estado, cp.fecha_inicio, cp.fecha_fin " +
-                    "ORDER BY cp.periodo DESC, cp.id_area";
+                    "WHERE TRIM(cp.estado) IN (" + estadosSQL + ") " +
+                    "GROUP BY cp.periodo, cp.id_area, da.desc_area, TRIM(cp.estado), cp.fecha_inicio, cp.fecha_fin " +
+                    "ORDER BY cp.periodo ASC, cp.id_area";
 
-            return jdbcTemplate.query(sql, (rs, rowNum) ->
+            List<PeriodoDisponibleDTO> resultado = jdbcTemplate.query(sql, (rs, rowNum) ->
                     PeriodoDisponibleDTO.builder()
                             .periodo(rs.getString("periodo"))
                             .idArea(rs.getLong("id_area"))
@@ -57,6 +57,12 @@ public class ControlHorariosServiceImpl implements ControlHorariosService {
                             .fechaFin(rs.getObject("fecha_fin", java.time.LocalDate.class))
                             .build()
             );
+            
+            log.info("✅ Períodos retornados: {} registros", resultado.size());
+            resultado.forEach(p -> log.debug("   - Periodo: {}, Estado: {}, Area: {}, Fechas: {} a {}", 
+                p.getPeriodo(), p.getEstado(), p.getDescArea(), p.getFechaInicio(), p.getFechaFin()));
+            
+            return resultado;
 
         } catch (Exception e) {
             log.error("❌ Error obteniendo períodos disponibles: {}", e.getMessage());

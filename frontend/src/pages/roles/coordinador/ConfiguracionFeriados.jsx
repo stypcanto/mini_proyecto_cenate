@@ -53,6 +53,7 @@ const ConfiguracionFeriados = () => {
         }
       });
 
+      console.log('📊 Períodos obtenidos del API:', JSON.stringify(periodosResponse.data, null, 2));
       setPeriodos(periodosResponse.data || []);
 
       // Cargar todos los horarios
@@ -247,9 +248,10 @@ const ConfiguracionFeriados = () => {
               <tr className="bg-blue-600 text-white">
                 <th className="px-6 py-3 text-left text-sm font-semibold">Año</th>
                 <th className="px-6 py-3 text-left text-sm font-semibold">Periodo</th>
+                <th className="px-6 py-3 text-left text-sm font-semibold">Área</th>
                 <th className="px-6 py-3 text-left text-sm font-semibold">Solicitud</th>
-                <th className="px-6 py-3 text-left text-sm font-semibold">Fecha de Apertura</th>
-                <th className="px-6 py-3 text-left text-sm font-semibold">Fecha de Cierre</th>
+                <th className="px-6 py-3 text-left text-sm font-semibold">Fecha Inicio</th>
+                <th className="px-6 py-3 text-left text-sm font-semibold">Fecha Fin</th>
                 <th className="px-6 py-3 text-left text-sm font-semibold">Estado</th>
                 <th className="px-6 py-3 text-left text-sm font-semibold">Acción</th>
               </tr>
@@ -257,15 +259,16 @@ const ConfiguracionFeriados = () => {
             <tbody>
               {datosFiltrados.length === 0 ? (
                 <tr>
-                  <td colSpan="7" className="px-6 py-8 text-center text-gray-500">
+                  <td colSpan="8" className="px-6 py-8 text-center text-gray-500">
                     No hay datos disponibles
                   </td>
                 </tr>
               ) : (
                 datosFiltrados.map((p) => (
-                  <tr key={p.periodo} className="border-t border-gray-200 hover:bg-gray-50">
+                  <tr key={`${p.periodo}-${p.idArea}`} className="border-t border-gray-200 hover:bg-gray-50">
                     <td className="px-6 py-4 text-sm text-gray-900">{p.periodo.substring(0, 4)}</td>
                     <td className="px-6 py-4 text-sm text-gray-900">{p.periodo}</td>
+                    <td className="px-6 py-4 text-sm text-gray-900">{p.descArea || '—'}</td>
                     <td className="px-6 py-4 text-sm text-gray-900">—</td>
                     <td className="px-6 py-4 text-sm text-gray-900">{formatDate(p.fechaInicio)}</td>
                     <td className="px-6 py-4 text-sm text-gray-900">{formatDate(p.fechaFin)}</td>
