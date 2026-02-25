@@ -248,9 +248,10 @@ const ModalNuevaSolicitud = ({ periodo, onClose, onSuccess }) => {
                 <button
                   type="button"
                   onClick={handlePrevMonth}
-                  className="p-3 hover:bg-gray-200 rounded-lg transition"
+                  disabled
+                  className="p-3 rounded-lg transition opacity-30 cursor-not-allowed text-gray-400"
                 >
-                  <ChevronLeft className="w-8 h-8 text-gray-600" />
+                  <ChevronLeft className="w-8 h-8" />
                 </button>
                 <h3 className="text-4xl font-bold text-blue-600 text-center flex-1">
                   {monthNames[currentMonth.getMonth()]} {currentMonth.getFullYear()}
@@ -258,9 +259,10 @@ const ModalNuevaSolicitud = ({ periodo, onClose, onSuccess }) => {
                 <button
                   type="button"
                   onClick={handleNextMonth}
-                  className="p-3 hover:bg-gray-200 rounded-lg transition"
+                  disabled
+                  className="p-3 rounded-lg transition opacity-30 cursor-not-allowed text-gray-400"
                 >
-                  <ChevronRight className="w-8 h-8 text-gray-600" />
+                  <ChevronRight className="w-8 h-8" />
                 </button>
               </div>
 
