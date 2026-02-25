@@ -1162,6 +1162,26 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
     }
 
     @Override
+    @Transactional
+    public int rechazarMasivoConMotivo(List<Long> ids, String motivo) {
+        if (ids == null || ids.isEmpty()) {
+            log.warn("⚠️ Lista vacía de IDs para anular");
+            return 0;
+        }
+
+        log.info("❌ Anulando {} solicitudes con motivo: {}", ids.size(), motivo);
+
+        com.styp.cenate.model.bolsas.DimEstadosGestionCitas estado =
+            dimEstadosGestionCitasRepository.findByCodigoEstado("RECHAZADO")
+                .orElseThrow(() -> new RuntimeException("Estado RECHAZADO no encontrado en BD"));
+
+        int actualizados = solicitudRepository.cambiarEstadoMasivoConMotivo(ids, estado.getIdEstado(), motivo);
+
+        log.info("✅ {} solicitudes anuladas con motivo registrado", actualizados);
+        return actualizados;
+    }
+
+    @Override
     public List<Map<String, Object>> obtenerAseguradosNuevos() {
         log.info("Buscando asegurados nuevos detectados...");
 
@@ -2822,9 +2842,10 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
             }
 
             // 4️⃣ PRE-CARGAR LOOKUPS EN BATCH (evita N+1: ~4 queries en lugar de 4×N)
+            // Incluir tanto IPRESS adscripción como IPRESS atención en el mismo mapa
             Set<Long> idIpressSet = solicitudes.stream()
-                .filter(s -> s.getIdIpress() != null)
-                .map(SolicitudBolsa::getIdIpress)
+                .flatMap(s -> java.util.stream.Stream.of(s.getIdIpress(), s.getIdIpressAtencion()))
+                .filter(id -> id != null)
                 .collect(Collectors.toSet());
             Set<Long> idBolsaSet = solicitudes.stream()
                 .filter(s -> s.getIdBolsa() != null)
@@ -2919,9 +2940,10 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
             log.info("   → {} solicitudes encontradas para {}", solicitudes.size(), idPersonalList);
 
             // 4. Pre-cargar lookups en batch (evita N+1)
+            // Incluir IPRESS adscripción e IPRESS atención en el mismo mapa
             Set<Long> idIpressSet = solicitudes.stream()
-                .filter(s -> s.getIdIpress() != null)
-                .map(SolicitudBolsa::getIdIpress)
+                .flatMap(s -> java.util.stream.Stream.of(s.getIdIpress(), s.getIdIpressAtencion()))
+                .filter(id -> id != null)
                 .collect(Collectors.toSet());
             Set<Long> idBolsaSet = solicitudes.stream()
                 .filter(s -> s.getIdBolsa() != null)
@@ -3004,10 +3026,17 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
             }
         }
 
-        // IPRESS desde map (sin query por fila)
+        // IPRESS adscripción desde map (sin query por fila)
         if (solicitud.getIdIpress() != null) {
             Ipress ipress = ipressMap.get(solicitud.getIdIpress());
             if (ipress != null) descIpress = ipress.getDescIpress();
+        }
+
+        // IPRESS atención desde map — prioridad en columna IPRESS del frontend
+        String descIpressAtencion = null;
+        if (solicitud.getIdIpressAtencion() != null) {
+            Ipress ipressAt = ipressMap.get(solicitud.getIdIpressAtencion());
+            if (ipressAt != null) descIpressAtencion = ipressAt.getDescIpress();
         }
 
         // TipoBolsa desde map (sin query por fila)
@@ -3053,6 +3082,8 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
             .codigoAdscripcion(solicitud.getCodigoAdscripcion())
             .idIpress(solicitud.getIdIpress())
             .descIpress(descIpress)
+            .idIpressAtencion(solicitud.getIdIpressAtencion())
+            .descIpressAtencion(descIpressAtencion)
             .estado(solicitud.getEstado())
             .codEstadoCita(solicitud.getEstadoGestionCitas() != null ? solicitud.getEstadoGestionCitas().getCodigoEstado() : null)
             .descEstadoCita(solicitud.getEstadoGestionCitas() != null ? solicitud.getEstadoGestionCitas().getDescripcionEstado() : "PENDIENTE")
@@ -3717,6 +3748,29 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
     }
 
     @Override
+    @Transactional(readOnly = true)
+    public java.util.List<SolicitudBolsaDTO> buscarAsignacionesPorDni(String pacienteDni) {
+        return solicitudRepository.findByPacienteDniAndActivoTrue(pacienteDni)
+            .stream()
+            .map(sol -> {
+                // Acceder a la relación lazy dentro de la transacción activa
+                String descEstado = null;
+                if (sol.getEstadoGestionCitas() != null) {
+                    try { descEstado = sol.getEstadoGestionCitas().getDescripcionEstado(); } catch (Exception ignored) {}
+                }
+                SolicitudBolsaDTO dto = SolicitudBolsaMapper.toDTO(sol);
+                if (sol.getIdPersonal() != null) {
+                    dto.setNombreMedicoAsignado(obtenerNombreMedico(sol.getIdPersonal()));
+                }
+                if (descEstado != null) {
+                    dto.setDescEstadoCita(descEstado);
+                }
+                return dto;
+            })
+            .collect(java.util.stream.Collectors.toList());
+    }
+
+    @Override
     @Transactional
     public SolicitudBolsaDTO crearSolicitudAdicional(CrearSolicitudAdicionalRequest request, String username) {
         log.info("📝 Creando solicitud adicional para DNI: {}", request.getPacienteDni());
@@ -3759,7 +3813,16 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
             }
         }
 
-        // 4. UPSERT: si ya existe registro sin profesional asignado, actualizarlo; si no, crear nuevo
+        // 4. Determinar estado: CITADO si hay médico + fecha, sino PENDIENTE_CITA
+        boolean tieneMediacoCitado = request.getIdPersonal() != null && request.getFechaAtencion() != null;
+        com.styp.cenate.model.bolsas.DimEstadosGestionCitas estadoCita = tieneMediacoCitado
+            ? dimEstadosGestionCitasRepository.findByCodigoEstado("CITADO").orElse(null)
+            : null;
+        Long idEstadoCita = (estadoCita != null) ? estadoCita.getIdEstado() : 1L;
+        log.info("🎯 Estado determinado: {} (id={}) - tieneMediacoCitado={}",
+            tieneMediacoCitado ? "CITADO" : "PENDIENTE_CITA", idEstadoCita, tieneMediacoCitado);
+
+        // 5. UPSERT: si ya existe registro sin profesional asignado, actualizarlo; si no, crear nuevo
         Optional<SolicitudBolsa> existenteOpt = solicitudRepository
             .findFirstByPacienteDniAndActivoTrueOrderByFechaSolicitudDesc(request.getPacienteDni());
 
@@ -3773,10 +3836,26 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
             existente.setHoraAtencion(request.getHoraAtencion());
             existente.setEspecialidad(request.getEspecialidad());
             existente.setTipoCita(request.getTipoCita());
+            existente.setEstadoGestionCitasId(idEstadoCita);
+            existente.setFechaCambioEstado(OffsetDateTime.now());
             if (responsableGestoraId != null) existente.setResponsableGestoraId(responsableGestoraId);
             guardado = solicitudRepository.save(existente);
-            log.info("✅ Solicitud actualizada: {} - Profesional ID: {}", guardado.getIdSolicitud(), request.getIdPersonal());
+            log.info("✅ Solicitud actualizada: {} - Estado: {} - Profesional ID: {}", guardado.getIdSolicitud(), idEstadoCita, request.getIdPersonal());
         } else {
+            // Resolver IPRESS adscripción desde el asegurado (código → ID)
+            String codigoAdscripcion = asegurado.getCasAdscripcion();
+            Long idIpressAdscripcion = null;
+            if (codigoAdscripcion != null && !codigoAdscripcion.isBlank()) {
+                try {
+                    idIpressAdscripcion = ipressRepository.findByCodIpress(codigoAdscripcion.trim())
+                        .map(Ipress::getIdIpress).orElse(null);
+                } catch (Exception e) {
+                    log.warn("⚠️ No se encontró IPRESS para código {}: {}", codigoAdscripcion, e.getMessage());
+                }
+            }
+            // IPRESS Atención = siempre CENATE (id_ipress = 2) para citas creadas desde este modal
+            final Long ID_IPRESS_CENATE = 2L;
+
             // Crear nueva solicitud
             String numeroSolicitud2 = generarNumeroSolicitud();
             SolicitudBolsa nuevaSolicitud = SolicitudBolsa.builder()
@@ -3785,14 +3864,23 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
                 .pacienteNombre(request.getPacienteNombre())
                 .pacienteId(asegurado.getPkAsegurado())
                 .pacienteSexo(request.getPacienteSexo())
-                .pacienteTelefono(request.getPacienteTelefono())
-                .pacienteTelefonoAlterno(request.getPacienteTelefonoAlterno())
-                .codigoIpressAdscripcion(request.getDescIpress())
-                .codigoAdscripcion(request.getDescIpress())
+                .pacienteTelefono(
+                    (request.getPacienteTelefono() != null && !request.getPacienteTelefono().isBlank())
+                        ? request.getPacienteTelefono()
+                        : asegurado.getTelCelular() != null ? asegurado.getTelCelular() : asegurado.getTelFijo())
+                .pacienteTelefonoAlterno(
+                    (request.getPacienteTelefonoAlterno() != null && !request.getPacienteTelefonoAlterno().isBlank())
+                        ? request.getPacienteTelefonoAlterno()
+                        : asegurado.getTelFijo() != null ? asegurado.getTelFijo() : asegurado.getTelCelular())
+                .codigoIpressAdscripcion(codigoAdscripcion)
+                .codigoAdscripcion(codigoAdscripcion)
+                .idIpress(idIpressAdscripcion)
+                .idIpressAtencion(ID_IPRESS_CENATE)
                 .tipoCita(request.getTipoCita())
                 .especialidad(request.getEspecialidad())
                 .estado("PENDIENTE")
-                .estadoGestionCitasId(1L)
+                .estadoGestionCitasId(idEstadoCita)
+                .fechaCambioEstado(tieneMediacoCitado ? OffsetDateTime.now() : null)
                 .idBolsa(10L)
                 .idServicio(idServicio)
                 .idPersonal(request.getIdPersonal())
@@ -3804,7 +3892,7 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
                 .activo(true)
                 .build();
             guardado = solicitudRepository.save(nuevaSolicitud);
-            log.info("✅ Solicitud adicional creada: {} - Asignada a gestor ID: {}", guardado.getIdSolicitud(), responsableGestoraId);
+            log.info("✅ Solicitud adicional creada: {} - Estado: {} - Gestor ID: {}", guardado.getIdSolicitud(), idEstadoCita, responsableGestoraId);
         }
 
         // 6. Mapear a DTO
@@ -4118,6 +4206,7 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
         Long idServicio = request.getIdServicio() != null ? request.getIdServicio() : 56L;
         Long responsableGestoraId = request.getResponsableGestoraId() != null ? request.getResponsableGestoraId() : 688L;
         Long idBolsa = 10L;
+        LocalDate fechaCita = request.getFechaCita() != null ? request.getFechaCita() : LocalDate.now();
 
         for (int i = 0; i < request.getPacientes().size(); i++) {
             com.styp.cenate.dto.bolsas.CargaMasivaRequest.PacienteExcelRow row = request.getPacientes().get(i);
@@ -4177,7 +4266,7 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
                     .estado("PENDIENTE")
                     .estadoGestionCitasId(1L)
                     .activo(true)
-                    .fechaAtencion(LocalDate.now())
+                    .fechaAtencion(fechaCita)
                     .fechaSolicitud(OffsetDateTime.now())
                     .fechaActualizacion(OffsetDateTime.now())
                     .fechaAsignacion(OffsetDateTime.now())

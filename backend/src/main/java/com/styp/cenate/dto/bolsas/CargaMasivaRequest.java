@@ -2,6 +2,7 @@ package com.styp.cenate.dto.bolsas;
 
 import lombok.Data;
 import java.util.List;
+import java.time.LocalDate;
 
 /**
  * Request DTO para carga masiva de pacientes desde Excel (v1.65.0)
@@ -26,6 +27,12 @@ public class CargaMasivaRequest {
 
     /** ID del usuario gestora responsable */
     private Long responsableGestoraId = 688L;
+
+    /**
+     * Fecha de la cita para todos los pacientes de la carga (YYYY-MM-DD).
+     * Si es null, se usa la fecha del día de carga.
+     */
+    private LocalDate fechaCita;
 
     /** Lista de pacientes leídos desde el Excel */
     private List<PacienteExcelRow> pacientes;

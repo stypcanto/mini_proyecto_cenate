@@ -24,6 +24,7 @@ import {
   FileDown,
   Eye,
   Users,
+  Calendar,
 } from "lucide-react";
 import { getToken } from "../../../constants/auth";
 import { getApiBaseUrl } from "../../../utils/apiUrlHelper";
@@ -54,7 +55,7 @@ const DEFAULTS_INFO = [
   { campo: "id_servicio",            valor: "56",          desc: "ENFERMERÍA (cod F11)"                },
   { campo: "responsable_gestora_id", valor: "688",         desc: "Gestora: Claudia Lizbeth Valencia"   },
   { campo: "estado",                 valor: "PENDIENTE",   desc: "Estado inicial"                      },
-  { campo: "fecha_atencion",         valor: "Hoy",         desc: "Fecha del día de carga"              },
+  { campo: "fecha_atencion",         valor: "Seleccionada", desc: "Fecha elegida antes de cargar"      },
 ];
 
 const REQ_COUNT  = COL_INFO.filter((c) => c.req).length;
@@ -120,6 +121,8 @@ export default function CargaMasivaPacientes() {
   const [medico, setMedico]                 = useState(null);
   const [validationErrors, setValidationErrors] = useState([]);
   const [resultado, setResultado]           = useState(null);
+  const [fechaCita, setFechaCita]           = useState("");   // vacío → usuario debe elegir
+  const [showConfirm, setShowConfirm]       = useState(false);
   const inputRef = useRef(null);
 
   // ── Descargar plantilla ──────────────────────────────────
@@ -247,14 +250,18 @@ export default function CargaMasivaPacientes() {
     setState("idle");
     setFileName(""); setRows([]); setDniMedico("");
     setMedico(null); setValidationErrors([]); setResultado(null);
+    setFechaCita("");
+    setShowConfirm(false);
   }
 
-  // ── Enviar al backend ────────────────────────────────────
-  async function handleCargar() {
-    if (!medico?.idPers) {
-      toast.error("No se pudo identificar al profesional (DNI: " + dniMedico + ")");
-      return;
-    }
+  // ── Abre modal de confirmación ───────────────────────────
+  function handleCargar() {
+    setShowConfirm(true);
+  }
+
+  // ── Ejecutar carga (tras confirmar) ─────────────────────
+  async function ejecutarCarga() {
+    setShowConfirm(false);
     setState("loading");
     try {
       const pacientes = rows.map((r) => ({
@@ -277,7 +284,7 @@ export default function CargaMasivaPacientes() {
             "Content-Type": "application/json",
             Authorization: `Bearer ${getToken()}`,
           },
-          body: JSON.stringify({ idPersonal: medico.idPers, pacientes }),
+          body: JSON.stringify({ idPersonal: medico.idPers, fechaCita, pacientes }),
         }
       );
       const data = await res.json();
@@ -291,11 +298,120 @@ export default function CargaMasivaPacientes() {
     }
   }
 
+  // ── Fecha formateada para mostrar ───────────────────────
+  const fechaLegible = fechaCita
+    ? new Date(fechaCita + "T12:00:00").toLocaleDateString("es-PE", {
+        weekday: "long", year: "numeric", month: "long", day: "numeric",
+      })
+    : "";
+
   // ════════════════════════════════════════════════════════
   // RENDER
   // ════════════════════════════════════════════════════════
   return (
     <div className="min-h-screen bg-gray-50 p-6">
+
+      {/* ══════════════════════════════════════════════════
+          MODAL DE CONFIRMACIÓN
+      ══════════════════════════════════════════════════ */}
+      {showConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          {/* Overlay */}
+          <div
+            className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+            onClick={() => setShowConfirm(false)}
+          />
+          {/* Card */}
+          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 overflow-hidden">
+            {/* Franja superior azul */}
+            <div className="bg-[#0a5ba9] px-6 py-4 flex items-center gap-3">
+              <div className="w-9 h-9 bg-white/20 rounded-xl flex items-center justify-center flex-shrink-0">
+                <Upload className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <p className="text-white font-bold text-base leading-tight">
+                  Confirmar carga masiva
+                </p>
+                <p className="text-white/70 text-xs mt-0.5">
+                  Revisa los datos antes de continuar
+                </p>
+              </div>
+            </div>
+
+            {/* Cuerpo */}
+            <div className="px-6 py-5 space-y-4">
+
+              {/* Profesional */}
+              <div className="bg-gray-50 rounded-xl border border-gray-100 p-4">
+                <p className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-2">
+                  Profesional asignado
+                </p>
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 bg-[#0a5ba9] rounded-full flex items-center justify-center flex-shrink-0">
+                    <span className="text-white font-bold text-sm">
+                      {medico?.nombre?.charAt(0).toUpperCase()}
+                    </span>
+                  </div>
+                  <div>
+                    <p className="font-semibold text-gray-800 text-sm">{medico?.nombre}</p>
+                    <p className="text-gray-400 text-xs font-mono">DNI {dniMedico}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Fecha */}
+              <div className="bg-amber-50 rounded-xl border border-amber-200 p-4 flex items-center gap-3">
+                <Calendar className="w-5 h-5 text-amber-600 flex-shrink-0" />
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-widest text-amber-500 mb-0.5">
+                    Fecha de las citas
+                  </p>
+                  <p className="font-bold text-amber-800 text-sm capitalize">{fechaLegible}</p>
+                </div>
+              </div>
+
+              {/* Conteo */}
+              <div className="bg-blue-50 rounded-xl border border-blue-100 p-4 flex items-center justify-between">
+                <div className="flex items-center gap-2 text-blue-700">
+                  <Users className="w-4 h-4" />
+                  <span className="text-sm font-semibold">Pacientes a cargar</span>
+                </div>
+                <span className="text-2xl font-bold text-[#0a5ba9]">{rows.length}</span>
+              </div>
+
+              <div className="bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-700 leading-relaxed text-center">
+                Se cargarán{" "}
+                <strong className="text-[#0a5ba9]">{rows.length} paciente{rows.length !== 1 ? "s" : ""}</strong>{" "}
+                al profesional{" "}
+                <strong className="text-gray-900">{medico?.nombre}</strong>{" "}
+                para la fecha{" "}
+                <strong className="text-amber-700 capitalize">{fechaLegible}</strong>.
+                <br />
+                <span className="text-xs text-gray-400 mt-1 block">
+                  Los duplicados serán omitidos automáticamente.
+                </span>
+              </div>
+            </div>
+
+            {/* Acciones */}
+            <div className="px-6 pb-6 flex gap-3">
+              <button
+                onClick={() => setShowConfirm(false)}
+                className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold py-2.5 rounded-xl transition-all duration-200 text-sm"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={ejecutarCarga}
+                className="flex-1 bg-[#0a5ba9] hover:bg-[#0d4e90] text-white font-semibold py-2.5 rounded-xl transition-all duration-200 text-sm flex items-center justify-center gap-2 shadow-sm"
+              >
+                <CheckCircle className="w-4 h-4" />
+                Sí, cargar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── HEADER ──────────────────────────────────────── */}
       <div className="flex items-center gap-4 mb-8">
@@ -323,14 +439,53 @@ export default function CargaMasivaPacientes() {
             {/* Columna izquierda — Acordeones */}
             <div className="flex-1 space-y-3 min-w-0">
 
-              {/* Acordeón 1: Columnas del Excel */}
+              {/* Acordeón 1: ¿De dónde descargo los datos? — PRIMERO y ABIERTO */}
+              <Accordion
+                icon={<Download className="w-4 h-4 text-green-600" />}
+                title="¿De dónde descargo los datos?"
+                defaultOpen={true}
+              >
+                <div className="mt-4 space-y-4">
+                  {/* Instrucción */}
+                  <div className="bg-green-50 border border-green-200 rounded-xl p-4">
+                    <p className="text-sm font-semibold text-green-800 mb-1">
+                      Descarga desde Explotadatos
+                    </p>
+                    <p className="text-sm text-green-700 leading-relaxed">
+                      Ingresa a <span className="font-bold">Explotadatos</span> y descarga el reporte de citas programadas.
+                      El archivo descargado contiene las columnas necesarias para realizar la carga masiva.
+                      Usa el enlace que se muestra en la imagen de ejemplo a continuación.
+                    </p>
+                  </div>
+
+                  {/* Imagen de ejemplo */}
+                  <div className="rounded-xl overflow-hidden border border-gray-200 shadow-sm">
+                    <div className="bg-gray-50 px-4 py-2 border-b border-gray-200 flex items-center gap-2">
+                      <Eye className="w-3.5 h-3.5 text-gray-400" />
+                      <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                        Ejemplo — Enlace de descarga en Explotadatos
+                      </span>
+                    </div>
+                    <img
+                      src="/images/Enlace_Descarga_Citas.jpeg"
+                      alt="Ejemplo de enlace de descarga en Explotadatos"
+                      className="w-full object-contain"
+                    />
+                  </div>
+
+                  <p className="text-xs text-gray-400 text-center">
+                    Localiza el enlace de descarga marcado en la imagen y descarga el Excel de citas.
+                  </p>
+                </div>
+              </Accordion>
+
+              {/* Acordeón 2: Columnas del Excel */}
               <Accordion
                 icon={<Info className="w-4 h-4 text-blue-500" />}
                 title="Columnas del Excel"
-                defaultOpen={true}
+                defaultOpen={false}
               >
                 <div className="mt-4 space-y-2">
-                  {/* Pills de columnas */}
                   <div className="flex flex-wrap gap-2">
                     {COL_INFO.map((c) => (
                       <div
@@ -347,8 +502,6 @@ export default function CargaMasivaPacientes() {
                       </div>
                     ))}
                   </div>
-
-                  {/* Leyenda + descripción expandida */}
                   <div className="flex items-center gap-4 pt-2">
                     <span className="flex items-center gap-1.5 text-xs text-gray-500">
                       <span className="w-1.5 h-1.5 rounded-full bg-red-400 inline-block" />
@@ -359,29 +512,19 @@ export default function CargaMasivaPacientes() {
                       Opcional
                     </span>
                   </div>
-
-                  {/* Tabla detallada */}
                   <div className="mt-3 rounded-xl overflow-hidden border border-gray-100">
                     <table className="w-full text-xs">
                       <thead>
                         <tr className="bg-gray-50">
-                          <th className="px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-widest text-gray-400">
-                            Columna
-                          </th>
-                          <th className="px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-widest text-gray-400">
-                            Descripción
-                          </th>
+                          <th className="px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-widest text-gray-400">Columna</th>
+                          <th className="px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-widest text-gray-400">Descripción</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-gray-50">
                         {COL_INFO.map((c) => (
                           <tr key={c.col} className="hover:bg-gray-50 transition-colors duration-150">
-                            <td className="px-4 py-2.5 font-mono text-sm text-gray-700 font-medium whitespace-nowrap">
-                              {c.col}
-                            </td>
-                            <td className="px-4 py-2.5 text-sm text-gray-600">
-                              {c.desc}
-                            </td>
+                            <td className="px-4 py-2.5 font-mono text-sm text-gray-700 font-medium whitespace-nowrap">{c.col}</td>
+                            <td className="px-4 py-2.5 text-sm text-gray-600">{c.desc}</td>
                           </tr>
                         ))}
                       </tbody>
@@ -390,17 +533,14 @@ export default function CargaMasivaPacientes() {
                 </div>
               </Accordion>
 
-              {/* Acordeón 2: Valores aplicados automáticamente */}
+              {/* Acordeón 3: Valores aplicados automáticamente */}
               <Accordion
                 icon={<FileSpreadsheet className="w-4 h-4 text-blue-500" />}
                 title="Valores aplicados automáticamente"
               >
                 <div className="mt-4 grid grid-cols-2 gap-2">
                   {DEFAULTS_INFO.map((d) => (
-                    <div
-                      key={d.campo}
-                      className="bg-gray-50 rounded-xl border border-gray-100 p-3"
-                    >
+                    <div key={d.campo} className="bg-gray-50 rounded-xl border border-gray-100 p-3">
                       <p className="font-mono text-xs text-gray-400">{d.campo}</p>
                       <p className="font-semibold text-gray-800 text-sm mt-0.5">{d.valor}</p>
                       <p className="text-gray-400 text-xs mt-0.5">{d.desc}</p>
@@ -409,7 +549,7 @@ export default function CargaMasivaPacientes() {
                 </div>
               </Accordion>
 
-              {/* Acordeón 3: Requisitos */}
+              {/* Acordeón 4: Requisitos */}
               <Accordion
                 icon={<CheckCircle className="w-4 h-4 text-blue-500" />}
                 title="Requisitos antes de cargar"
@@ -432,6 +572,7 @@ export default function CargaMasivaPacientes() {
                   ))}
                 </ul>
               </Accordion>
+
             </div>
 
             {/* Columna derecha — Tarjeta plantilla (fixed width) */}
@@ -474,13 +615,17 @@ export default function CargaMasivaPacientes() {
                 </div>
 
                 {/* Botón descargar */}
-                <button
-                  onClick={handleDescargarPlantilla}
-                  className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-2.5 px-4 rounded-xl transition-all duration-200 flex items-center justify-center gap-2 text-sm shadow-sm"
-                >
-                  <Download className="w-4 h-4" />
-                  Descargar Plantilla
-                </button>
+                <div className="relative">
+                  {/* Ring pulsante exterior */}
+                  <span className="absolute inset-0 rounded-xl bg-green-400 opacity-20 animate-ping pointer-events-none" />
+                  <button
+                    onClick={handleDescargarPlantilla}
+                    className="relative w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-2.5 px-4 rounded-xl transition-all duration-200 flex items-center justify-center gap-2 text-sm shadow-md hover:shadow-green-200 hover:scale-[1.02]"
+                  >
+                    <Download className="w-4 h-4 animate-bounce" />
+                    Descargar Plantilla
+                  </button>
+                </div>
                 <p className="text-xs text-gray-400 text-center mt-2.5">
                   Incluye una fila de muestra
                 </p>
@@ -496,7 +641,7 @@ export default function CargaMasivaPacientes() {
             className={`rounded-2xl border-2 border-dashed transition-all duration-200 p-12
               ${isDragging
                 ? "border-blue-400 bg-blue-50 scale-[1.005]"
-                : "border-gray-200 bg-gradient-to-b from-gray-50 to-white hover:border-blue-300 hover:bg-blue-50/30"
+                : "border-blue-200 bg-blue-50/40 hover:border-blue-400 hover:bg-blue-50/60"
               }`}
           >
             <div className="flex flex-col items-center">
@@ -648,6 +793,49 @@ export default function CargaMasivaPacientes() {
             </div>
           </div>
 
+          {/* ── Fecha de la cita ─── */}
+          <div className={`rounded-2xl border-2 shadow-sm p-5 transition-all duration-200
+            ${fechaCita
+              ? "bg-amber-50 border-amber-300"
+              : "bg-amber-50 border-amber-400 ring-2 ring-amber-200"
+            }`}
+          >
+            <div className="flex items-center gap-2 mb-3">
+              <Calendar className="w-4 h-4 text-amber-600 flex-shrink-0" />
+              <p className="text-sm font-bold text-amber-700">
+                ¿Para qué fecha son las citas?
+              </p>
+              {!fechaCita && (
+                <span className="ml-auto text-xs bg-red-100 text-red-600 border border-red-300 px-2 py-0.5 rounded-full font-bold animate-pulse">
+                  ⚠ Selecciona una fecha para continuar
+                </span>
+              )}
+              {fechaCita && (
+                <span className="ml-auto text-xs bg-green-100 text-green-700 border border-green-200 px-2 py-0.5 rounded-full font-semibold">
+                  ✓ Fecha seleccionada
+                </span>
+              )}
+            </div>
+            <p className="text-xs text-gray-500 mb-3">
+              Esta fecha se asignará como <span className="font-mono font-semibold">fecha_atencion</span> para todos los pacientes de esta carga.
+            </p>
+            <input
+              type="date"
+              value={fechaCita}
+              onChange={(e) => setFechaCita(e.target.value)}
+              className={`w-full rounded-xl px-4 py-2.5 text-sm text-gray-800 focus:outline-none transition-all duration-200
+                ${fechaCita
+                  ? "border-2 border-amber-300 focus:ring-2 focus:ring-amber-400 focus:border-amber-400 bg-white"
+                  : "border-2 border-red-300 focus:ring-2 focus:ring-red-300 focus:border-red-400 bg-white"
+                }`}
+            />
+            {fechaCita && (
+              <p className="mt-2 text-xs text-amber-600 font-semibold capitalize">
+                {fechaLegible}
+              </p>
+            )}
+          </div>
+
           {/* ── Tabla preview ─── */}
           <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
             <div className="px-5 py-3 border-b border-gray-100 flex items-center gap-2 bg-gray-50">
@@ -710,7 +898,7 @@ export default function CargaMasivaPacientes() {
             <div className="flex items-center gap-3">
               <button
                 onClick={handleCargar}
-                disabled={!medico?.idPers}
+                disabled={!medico?.idPers || !fechaCita}
                 className="flex-1 bg-[#0a5ba9] hover:bg-[#0d4e90] disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed text-white font-semibold py-3 px-6 rounded-xl transition-all duration-200 flex items-center justify-center gap-2 text-sm shadow-sm"
               >
                 <Upload className="w-4 h-4" />
@@ -727,7 +915,13 @@ export default function CargaMasivaPacientes() {
             {!medico?.idPers && (
               <div className="mt-3 flex items-center justify-center gap-1.5 text-amber-600 text-xs bg-amber-50 border border-amber-200 rounded-xl px-3 py-2">
                 <Loader2 className="w-3.5 h-3.5 animate-spin flex-shrink-0" />
-                Esperando datos del profesional antes de habilitar la carga…
+                Verificando datos del profesional…
+              </div>
+            )}
+            {medico?.idPers && !fechaCita && (
+              <div className="mt-3 flex items-center justify-center gap-1.5 text-red-600 text-xs bg-red-50 border border-red-200 rounded-xl px-3 py-2 font-semibold">
+                <Calendar className="w-3.5 h-3.5 flex-shrink-0" />
+                Debes seleccionar la fecha de la cita para habilitar la carga
               </div>
             )}
           </div>
@@ -780,6 +974,17 @@ export default function CargaMasivaPacientes() {
                   {resultado.duplicados} duplicado{resultado.duplicados !== 1 ? "s" : ""} · {" "}
                   {resultado.total} total
                 </p>
+                {fechaCita && (
+                  <p className={`text-xs mt-1 flex items-center gap-1 ${resultado.errores === 0 ? "text-green-500" : "text-amber-500"}`}>
+                    <Calendar className="w-3 h-3" />
+                    Fecha de cita:{" "}
+                    <span className="font-semibold">
+                      {new Date(fechaCita + "T12:00:00").toLocaleDateString("es-PE", {
+                        weekday: "long", year: "numeric", month: "long", day: "numeric",
+                      })}
+                    </span>
+                  </p>
+                )}
               </div>
             </div>
 
