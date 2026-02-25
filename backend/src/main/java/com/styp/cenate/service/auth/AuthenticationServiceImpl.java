@@ -165,6 +165,17 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         claims.put("roles", roles);
         claims.put("permisos", null);
         claims.put("nombre_completo", user.getNombreCompleto());  // ✅ Nombre y apellido
+        claims.put("mappingRoles", mappingRoles);  // 🆕 Mapeo de roles completo
+        claims.put("idPers", idPers);  // 🆕 ID del personal
+        claims.put("descRegLab", descRegLab);  // 🆕 Descripción régimen laboral
+        claims.put("idRegLab", idRegLab);  // 🆕 ID del régimen laboral
+        claims.put("descArea", descArea);  // 🆕 Descripción del área
+        claims.put("idArea", idArea);  // 🆕 ID del área
+        claims.put("descIpress", descIpress);  // 🆕 Descripción IPRESS
+        claims.put("idIpress", idIpress);  // 🆕 ID del IPRESS
+        claims.put("descServicio", descServicio);  // 🆕 Descripción del servicio
+        claims.put("idServicio", idServicio);  // 🆕 ID del servicio
+        claims.put("idGrupoProg", idGrupoProg);  // 🆕 ID del grupo programático
         if (especialidad != null) {
             claims.put("especialidad", especialidad);  // ✅ v1.77.0: Especialidad del médico
         }
