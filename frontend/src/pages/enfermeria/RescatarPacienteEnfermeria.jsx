@@ -2,13 +2,15 @@ import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import {
   Search, RefreshCw, AlertCircle, LifeBuoy, X,
-  CheckCircle, User
+  CheckCircle, User, ArrowRightLeft, Ban
 } from 'lucide-react';
 
 /**
- * RescatarPacienteEnfermeria v1.0.0
- * Coordinadora de Enfermería — Recuperar pacientes con estado "Deserción"
- * y reasignarlos con estado "Pendiente".
+ * RescatarPacienteEnfermeria v2.0.0
+ * Coordinadora de Enfermería — Reasignar pacientes PENDIENTES a otro profesional.
+ * - Si está PENDIENTE → permite reasignar a otro profesional.
+ * - Si está ATENDIDO → muestra aviso de que no se puede reasignar.
+ * - Si está en Deserción → mantiene funcionalidad de rescate original.
  */
 
 function getToken() {
@@ -72,7 +74,7 @@ function BadgeEstado({ valor }) {
   );
 }
 
-// ─── Select de enfermera flotante (escapa overflow del modal via portal) ──────
+// ─── Select de profesional flotante (escapa overflow del modal via portal) ──────
 
 function SelectEnfermera({ value, onChange, enfermeras }) {
   const [query,   setQuery]   = useState('');
@@ -108,7 +110,6 @@ function SelectEnfermera({ value, onChange, enfermeras }) {
     setOpen(false);
   };
 
-  // Cerrar al hacer click fuera
   useEffect(() => {
     if (!open) return;
     const handler = (e) => {
@@ -131,7 +132,7 @@ function SelectEnfermera({ value, onChange, enfermeras }) {
           value={query}
           onChange={e => { setQuery(e.target.value); openDropdown(); }}
           onFocus={openDropdown}
-          placeholder="Escribe para buscar enfermera..."
+          placeholder="Escribe para buscar profesional..."
           autoComplete="off"
           className="w-full pl-8 pr-8 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0a5ba9] bg-white"
         />
@@ -157,14 +158,6 @@ function SelectEnfermera({ value, onChange, enfermeras }) {
           }}
           className="bg-white border border-gray-200 rounded-xl shadow-2xl overflow-hidden"
         >
-          {/* Opción: sin cambio */}
-          <div
-            onMouseDown={() => { onChange(''); setQuery(''); setOpen(false); }}
-            className="px-3 py-2 text-xs text-gray-400 italic cursor-pointer hover:bg-gray-50 border-b border-gray-100"
-          >
-            — Sin cambio (mantener actual) —
-          </div>
-
           <div className="max-h-48 overflow-y-auto">
             {filtered.length === 0 ? (
               <div className="px-3 py-3 text-xs text-gray-400 text-center">
@@ -210,10 +203,11 @@ function Toast({ mensaje, tipo, onClose }) {
   );
 }
 
-// ─── Modal de confirmación ────────────────────────────────────────────────────
+// ─── Modal de reasignación ───────────────────────────────────────────────────
 
-function ModalRescatar({ paciente, enfermeras, onConfirmar, onCerrar, guardando }) {
+function ModalReasignar({ paciente, enfermeras, onConfirmar, onCerrar, guardando }) {
   const [idPersonalSeleccionado, setIdPersonalSeleccionado] = useState('');
+  const esDeserccion = (paciente.condicionMedica || '').toLowerCase().includes('deserci');
 
   return (
     <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/40">
@@ -222,8 +216,10 @@ function ModalRescatar({ paciente, enfermeras, onConfirmar, onCerrar, guardando 
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 bg-[#0a5ba9] text-white">
           <div className="flex items-center gap-2">
-            <LifeBuoy size={20} />
-            <span className="font-bold text-base">Rescatar Paciente</span>
+            <ArrowRightLeft size={20} />
+            <span className="font-bold text-base">
+              {esDeserccion ? 'Rescatar y Reasignar Paciente' : 'Reasignar Paciente'}
+            </span>
           </div>
           <button onClick={onCerrar} className="p-1 rounded-lg hover:bg-white/20 transition">
             <X size={18} />
@@ -246,7 +242,7 @@ function ModalRescatar({ paciente, enfermeras, onConfirmar, onCerrar, guardando 
                 <p className="font-semibold text-gray-800 font-mono mt-0.5">{paciente.pacienteDni}</p>
               </div>
               <div>
-                <span className="text-gray-500">Condición actual:</span>
+                <span className="text-gray-500">Condicion actual:</span>
                 <div className="mt-0.5"><BadgeCondicion valor={paciente.condicionMedica} /></div>
               </div>
               <div>
@@ -261,20 +257,25 @@ function ModalRescatar({ paciente, enfermeras, onConfirmar, onCerrar, guardando 
               )}
               {paciente.nombreEnfermera && (
                 <div className="col-span-2">
-                  <span className="text-gray-500">Enfermera asignada:</span>
+                  <span className="text-gray-500">Profesional asignado actual:</span>
                   <p className="font-medium text-gray-700 mt-0.5">{paciente.nombreEnfermera}</p>
                 </div>
               )}
             </div>
           </div>
 
-          {/* Acción que se realizará */}
+          {/* Info de cambios */}
           <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 text-xs text-amber-800">
-            <p className="font-semibold mb-1">Se realizarán los siguientes cambios:</p>
+            <p className="font-semibold mb-1">Se realizara el siguiente cambio:</p>
             <ul className="space-y-0.5 list-disc list-inside text-amber-700">
-              <li>Condición médica → <strong>Pendiente</strong></li>
-              <li>Estado → <strong>PENDIENTE</strong></li>
-              <li>Fecha de atención médica → <strong>se limpiará</strong></li>
+              <li>Se reasignara a un <strong>nuevo profesional</strong></li>
+              {esDeserccion && (
+                <>
+                  <li>Condicion medica → <strong>Pendiente</strong></li>
+                  <li>Estado → <strong>PENDIENTE</strong></li>
+                  <li>Fecha de atencion medica → <strong>se limpiara</strong></li>
+                </>
+              )}
             </ul>
           </div>
 
@@ -282,7 +283,7 @@ function ModalRescatar({ paciente, enfermeras, onConfirmar, onCerrar, guardando 
           <div>
             <label className="block text-xs font-semibold text-gray-700 mb-1.5">
               <User size={12} className="inline mr-1" />
-              Reasignar enfermera <span className="font-normal text-gray-400">(opcional)</span>
+              Nuevo profesional asignado <span className="font-normal text-red-500">*</span>
             </label>
             <SelectEnfermera
               value={idPersonalSeleccionado}
@@ -303,13 +304,13 @@ function ModalRescatar({ paciente, enfermeras, onConfirmar, onCerrar, guardando 
           </button>
           <button
             onClick={() => onConfirmar(idPersonalSeleccionado || null)}
-            disabled={guardando}
+            disabled={guardando || !idPersonalSeleccionado}
             className="flex items-center gap-2 px-5 py-2 text-sm bg-[#0a5ba9] hover:bg-[#0d4e90] text-white rounded-lg font-semibold transition disabled:opacity-50"
           >
             {guardando ? (
-              <><RefreshCw size={14} className="animate-spin" /> Rescatando...</>
+              <><RefreshCw size={14} className="animate-spin" /> Reasignando...</>
             ) : (
-              <><LifeBuoy size={14} /> Confirmar Rescate</>
+              <><ArrowRightLeft size={14} /> Confirmar Reasignacion</>
             )}
           </button>
         </div>
@@ -333,7 +334,7 @@ export default function RescatarPacienteEnfermeria() {
 
   const [toast, setToast] = useState(null);
 
-  // Cargar lista de enfermeras al montar
+  // Cargar lista de profesionales al montar
   useEffect(() => {
     fetch(`${API_BASE}/enfermeria/enfermeras`, {
       headers: { Authorization: `Bearer ${getToken()}` },
@@ -361,46 +362,10 @@ export default function RescatarPacienteEnfermeria() {
       setResultados(Array.isArray(data) ? data : []);
       setYaBuscado(true);
     } catch (e) {
-      console.error('❌ Error al buscar:', e);
-      setErrorBusca('No se pudo realizar la búsqueda. Intenta nuevamente.');
+      console.error('Error al buscar:', e);
+      setErrorBusca('No se pudo realizar la busqueda. Intenta nuevamente.');
     } finally {
       setBuscando(false);
-    }
-  };
-
-  const confirmarRescate = async (idPersonalNuevo) => {
-    if (!pacienteSeleccionado) return;
-    setGuardando(true);
-
-    try {
-      const body = {};
-      if (idPersonalNuevo) body.idPersonal = Number(idPersonalNuevo);
-
-      const res = await fetch(
-        `${API_BASE}/enfermeria/pacientes/${pacienteSeleccionado.idSolicitud}/rescatar`,
-        {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${getToken()}`,
-          },
-          body: JSON.stringify(body),
-        }
-      );
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const actualizado = await res.json();
-
-      // Actualizar fila en tabla local
-      setResultados(prev =>
-        prev.map(r => r.idSolicitud === actualizado.idSolicitud ? actualizado : r)
-      );
-      setPacienteSeleccionado(null);
-      setToast({ mensaje: `Paciente ${actualizado.pacienteNombre} rescatado exitosamente.`, tipo: 'exito' });
-    } catch (e) {
-      console.error('❌ Error al rescatar:', e);
-      setToast({ mensaje: 'Error al rescatar el paciente. Intenta nuevamente.', tipo: 'error' });
-    } finally {
-      setGuardando(false);
     }
   };
 
@@ -409,7 +374,73 @@ export default function RescatarPacienteEnfermeria() {
     return c.includes('deserci') || c.includes('desercio');
   };
 
-  const totalDesercion = resultados.filter(r => esDeserccion(r.condicionMedica)).length;
+  const esPendiente = (estado) => (estado || '').toUpperCase() === 'PENDIENTE';
+  const esAtendido = (estado) => (estado || '').toUpperCase() === 'ATENDIDO';
+
+  const puedeReasignar = (r) => esPendiente(r.estado) || esDeserccion(r.condicionMedica);
+  const sinAsignar = (r) => !r.idPersonal && !r.nombreEnfermera;
+
+  const handleClickReasignar = (r) => {
+    if (esAtendido(r.estado)) {
+      setToast({
+        mensaje: `No se puede reasignar a ${r.pacienteNombre}: el paciente ya fue ATENDIDO.`,
+        tipo: 'error'
+      });
+      return;
+    }
+    setPacienteSeleccionado(r);
+  };
+
+  const confirmarReasignacion = async (idPersonalNuevo) => {
+    if (!pacienteSeleccionado || !idPersonalNuevo) return;
+    setGuardando(true);
+
+    const esRescate = esDeserccion(pacienteSeleccionado.condicionMedica);
+
+    try {
+      // Si es desercion, usar endpoint rescatar (cambia estado + reasigna)
+      // Si es pendiente, usar endpoint reasignar (solo reasigna)
+      const endpoint = esRescate
+        ? `${API_BASE}/enfermeria/pacientes/${pacienteSeleccionado.idSolicitud}/rescatar`
+        : `${API_BASE}/enfermeria/pacientes/${pacienteSeleccionado.idSolicitud}/reasignar`;
+
+      const body = { idPersonal: Number(idPersonalNuevo) };
+
+      const res = await fetch(endpoint, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${getToken()}`,
+        },
+        body: JSON.stringify(body),
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => null);
+        const errorMsg = errorData?.error || `HTTP ${res.status}`;
+        throw new Error(errorMsg);
+      }
+
+      const actualizado = await res.json();
+
+      // Actualizar fila en tabla local
+      setResultados(prev =>
+        prev.map(r => r.idSolicitud === actualizado.idSolicitud ? actualizado : r)
+      );
+      setPacienteSeleccionado(null);
+
+      const accion = esRescate ? 'rescatado y reasignado' : 'reasignado';
+      setToast({ mensaje: `Paciente ${actualizado.pacienteNombre} ${accion} exitosamente.`, tipo: 'exito' });
+    } catch (e) {
+      console.error('Error al reasignar:', e);
+      setToast({ mensaje: e.message || 'Error al reasignar el paciente. Intenta nuevamente.', tipo: 'error' });
+    } finally {
+      setGuardando(false);
+    }
+  };
+
+  const totalPendientes = resultados.filter(r => puedeReasignar(r)).length;
+  const totalAtendidos = resultados.filter(r => esAtendido(r.estado)).length;
 
   return (
     <div className="min-h-screen bg-gray-50 p-4 md:p-6">
@@ -417,13 +448,13 @@ export default function RescatarPacienteEnfermeria() {
       {/* ── Encabezado ─────────────────────────────────────────────────────── */}
       <div className="mb-5">
         <div className="flex items-center gap-3">
-          <div className="p-2.5 bg-red-100 rounded-xl">
-            <LifeBuoy size={22} className="text-red-600" />
+          <div className="p-2.5 bg-blue-100 rounded-xl">
+            <ArrowRightLeft size={22} className="text-blue-600" />
           </div>
           <div>
-            <h1 className="text-xl font-bold text-gray-800">Rescatar Paciente</h1>
+            <h1 className="text-xl font-bold text-gray-800">Reasignar Paciente</h1>
             <p className="text-sm text-gray-500">
-              Recupera pacientes en estado Deserción y los reasigna con estado Pendiente
+              Reasigna pacientes pendientes a otro profesional. Los pacientes ya atendidos no pueden ser reasignados.
             </p>
           </div>
         </div>
@@ -473,17 +504,24 @@ export default function RescatarPacienteEnfermeria() {
         <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
 
           {/* Barra de estado */}
-          <div className="px-4 py-3 border-b border-gray-100 bg-gray-50 flex items-center justify-between">
+          <div className="px-4 py-3 border-b border-gray-100 bg-gray-50 flex items-center justify-between flex-wrap gap-2">
             <span className="text-sm font-semibold text-gray-700">
               {resultados.length === 0
                 ? 'Sin resultados'
                 : `${resultados.length} registro${resultados.length !== 1 ? 's' : ''} encontrado${resultados.length !== 1 ? 's' : ''}`}
             </span>
-            {totalDesercion > 0 && (
-              <span className="text-xs font-semibold text-red-600 bg-red-50 border border-red-200 rounded-full px-2.5 py-0.5">
-                {totalDesercion} en Deserción
-              </span>
-            )}
+            <div className="flex gap-2">
+              {totalPendientes > 0 && (
+                <span className="text-xs font-semibold text-blue-600 bg-blue-50 border border-blue-200 rounded-full px-2.5 py-0.5">
+                  {totalPendientes} reasignable{totalPendientes !== 1 ? 's' : ''}
+                </span>
+              )}
+              {totalAtendidos > 0 && (
+                <span className="text-xs font-semibold text-green-600 bg-green-50 border border-green-200 rounded-full px-2.5 py-0.5">
+                  {totalAtendidos} atendido{totalAtendidos !== 1 ? 's' : ''}
+                </span>
+              )}
+            </div>
           </div>
 
           {/* Sin datos */}
@@ -502,7 +540,7 @@ export default function RescatarPacienteEnfermeria() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="bg-[#0a5ba9] text-white">
-                    {['N° Solicitud', 'Paciente', 'DNI', 'Especialidad', 'Condición Médica', 'Estado', 'Enfermera Asignada', 'Acción'].map(h => (
+                    {['N Solicitud', 'Paciente', 'DNI', 'Especialidad', 'Condicion Medica', 'Estado', 'Profesional Asignado', 'Accion'].map(h => (
                       <th key={h} className="px-3 py-2.5 text-left text-xs font-semibold whitespace-nowrap">{h}</th>
                     ))}
                   </tr>
@@ -513,7 +551,7 @@ export default function RescatarPacienteEnfermeria() {
                       key={r.idSolicitud}
                       className={`border-b border-gray-100 hover:bg-blue-50 transition-colors ${
                         idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'
-                      } ${esDeserccion(r.condicionMedica) ? 'ring-1 ring-inset ring-red-200' : ''}`}
+                      } ${esAtendido(r.estado) ? 'opacity-60' : ''}`}
                     >
                       <td className="px-3 py-2.5 text-xs font-mono text-gray-500 whitespace-nowrap">
                         {r.numeroSolicitud || `#${r.idSolicitud}`}
@@ -544,12 +582,19 @@ export default function RescatarPacienteEnfermeria() {
                         )}
                       </td>
                       <td className="px-3 py-2.5 whitespace-nowrap">
-                        {esDeserccion(r.condicionMedica) ? (
-                          <button
-                            onClick={() => setPacienteSeleccionado(r)}
-                            className="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-red-600 hover:bg-red-700 text-white rounded-lg font-semibold transition"
+                        {esAtendido(r.estado) ? (
+                          <span
+                            className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-gray-400 cursor-not-allowed"
+                            title="No se puede reasignar: paciente ya atendido"
                           >
-                            <LifeBuoy size={13} /> Rescatar
+                            <Ban size={13} /> Atendido
+                          </span>
+                        ) : puedeReasignar(r) ? (
+                          <button
+                            onClick={() => handleClickReasignar(r)}
+                            className="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-[#0a5ba9] hover:bg-[#0d4e90] text-white rounded-lg font-semibold transition"
+                          >
+                            <ArrowRightLeft size={13} /> Reasignar
                           </button>
                         ) : (
                           <span className="text-xs text-gray-400 italic">—</span>
@@ -566,10 +611,10 @@ export default function RescatarPacienteEnfermeria() {
 
       {/* ── Modal ──────────────────────────────────────────────────────────── */}
       {pacienteSeleccionado && (
-        <ModalRescatar
+        <ModalReasignar
           paciente={pacienteSeleccionado}
           enfermeras={enfermeras}
-          onConfirmar={confirmarRescate}
+          onConfirmar={confirmarReasignacion}
           onCerrar={() => setPacienteSeleccionado(null)}
           guardando={guardando}
         />

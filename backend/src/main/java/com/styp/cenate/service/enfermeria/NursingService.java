@@ -561,6 +561,37 @@ public class NursingService {
     }
 
     /**
+     * Reasigna un paciente PENDIENTE a otro profesional.
+     * Solo permite reasignar si el estado es PENDIENTE.
+     * Si ya está ATENDIDO, lanza IllegalStateException.
+     */
+    @Transactional
+    public RescatarPacienteDto reasignarPaciente(Long idSolicitud, Long idPersonalNuevo) {
+        log.info("🔄 PUT /api/enfermeria/pacientes/{}/reasignar - idPersonalNuevo: {}", idSolicitud, idPersonalNuevo);
+
+        SolicitudBolsa solicitud = solicitudBolsaRepository.findById(idSolicitud)
+                .orElseThrow(() -> new ResourceNotFoundException("Solicitud no encontrada: " + idSolicitud));
+
+        String estadoActual = (solicitud.getEstado() != null) ? solicitud.getEstado().toUpperCase() : "";
+
+        if ("ATENDIDO".equals(estadoActual)) {
+            throw new IllegalStateException("No se puede reasignar: el paciente ya fue ATENDIDO.");
+        }
+
+        if (!"PENDIENTE".equals(estadoActual)) {
+            throw new IllegalStateException(
+                    "Solo se puede reasignar pacientes en estado PENDIENTE. Estado actual: " + solicitud.getEstado());
+        }
+
+        Long idPersonalAnterior = solicitud.getIdPersonal();
+        solicitud.setIdPersonal(idPersonalNuevo);
+
+        SolicitudBolsa guardado = solicitudBolsaRepository.save(solicitud);
+        log.info("✅ Paciente {} reasignado: id_personal {} → {}", idSolicitud, idPersonalAnterior, idPersonalNuevo);
+        return mapToRescatarDto(guardado);
+    }
+
+    /**
      * Lista el personal activo con rol ENFERMERIA o COORD. ENFERMERIA.
      * Se identifica por la relación usuario → rol, no por per_pers (que guarda períodos).
      */
