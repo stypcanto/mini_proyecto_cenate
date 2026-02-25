@@ -1,52 +1,314 @@
 // ============================================================================
-// 📅 ConfiguracionFeriados - Configuración de Días Feriados
+// 📅 ConfiguracionFeriados - Solicitudes por Periodo (Horarios)
 // ----------------------------------------------------------------------------
-// Módulo para gestionar los días feriados del sistema
-// Estado: Placeholder - Pendiente de implementación
+// Módulo para gestionar solicitudes y registro de horarios por período
+// Estado: v1.79.0 - Control de Horarios Médicos
 // ============================================================================
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
+import { Eye, Plus, AlertCircle, Loader, RefreshCw } from 'lucide-react';
+import ModalNuevaSolicitud from '../../../components/control_horarios/ModalNuevaSolicitud';
+import ModalEditarSolicitud from '../../../components/control_horarios/ModalEditarSolicitud';
+import ModalConsultarSolicitud from '../../../components/control_horarios/ModalConsultarSolicitud';
 
 const ConfiguracionFeriados = () => {
+  const [periodos, setPeriodos] = useState([]);
+  const [horarios, setHorarios] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  
+  // Filtros
+  const [tipoPeriodos, setTipoPeriodos] = useState('todos');
+  const [anio, setAnio] = useState(new Date().getFullYear().toString());
+  const [periodo, setPeriodo] = useState('todos');
+  const [estado, setEstado] = useState('todos');
+  
+  // Modales
+  const [showModalNuevaSolicitud, setShowModalNuevaSolicitud] = useState(false);
+  const [showModalEditar, setShowModalEditar] = useState(false);
+  const [showModalConsultar, setShowModalConsultar] = useState(false);
+  const [selectedPeriodo, setSelectedPeriodo] = useState(null);
+  const [selectedHorario, setSelectedHorario] = useState(null);
+
+  // Cargar datos al montar
+  useEffect(() => {
+    cargarDatos();
+  }, []);
+
+  const cargarDatos = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      const token = localStorage.getItem('token') || localStorage.getItem('auth.token');
+
+      // Obtener períodos
+      const periodosResponse = await axios.get('/api/control-horarios/periodos', {
+        params: { 
+          estados: ['ABIERTO', 'REABIERTO', 'CERRADO'].join(',')
+        },
+        headers: {
+          'Authorization': token ? `Bearer ${token}` : '',
+          'Content-Type': 'application/json'
+        }
+      });
+
+      setPeriodos(periodosResponse.data || []);
+
+      // Cargar todos los horarios
+      if (periodosResponse.data && periodosResponse.data.length > 0) {
+        const allHorarios = [];
+        for (const p of periodosResponse.data) {
+          try {
+            const horariosResponse = await axios.get('/api/control-horarios/horarios', {
+              params: { periodo: p.periodo },
+              headers: {
+                'Authorization': token ? `Bearer ${token}` : '',
+                'Content-Type': 'application/json'
+              }
+            });
+            if (horariosResponse.data) {
+              allHorarios.push(...horariosResponse.data);
+            }
+          } catch (err) {
+            console.error(`Error cargando horarios para período ${p.periodo}:`, err);
+          }
+        }
+        setHorarios(allHorarios);
+      }
+    } catch (err) {
+      console.error('Error cargando datos:', err);
+      setError('Error al cargar los datos');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleIniciarSolicitud = (p) => {
+    setSelectedPeriodo(p);
+    setShowModalNuevaSolicitud(true);
+  };
+
+  const handleEditarSolicitud = (h) => {
+    setSelectedHorario(h);
+    setShowModalEditar(true);
+  };
+
+  const handleConsultarSolicitud = (h) => {
+    setSelectedHorario(h);
+    setShowModalConsultar(true);
+  };
+
+  const handleModalSuccess = () => {
+    setShowModalNuevaSolicitud(false);
+    setShowModalEditar(false);
+    cargarDatos();
+  };
+
+  // Obtener años de los períodos
+  const anos = [...new Set(periodos.map(p => p.periodo.substring(0, 4)))].sort().reverse();
+
+  // Filtrar datos
+  const datosFiltrados = periodos.filter(p => {
+    if (anio !== 'todos' && !p.periodo.startsWith(anio)) return false;
+    if (periodo !== 'todos' && p.periodo !== periodo) return false;
+    if (estado !== 'todos' && p.estado?.toLowerCase() !== estado.toLowerCase()) return false;
+    return true;
+  });
+
+  // Badge de estado
+  const getEstadoBadge = (est) => {
+    const baseClasses = 'inline-block px-3 py-1 rounded-full text-xs font-medium';
+    const estadoLower = est?.toLowerCase().replace(/\s+/g, '');
+    
+    if (estadoLower === 'abierto') {
+      return <span className={`${baseClasses} bg-blue-100 text-blue-800`}>ABIERTO</span>;
+    } else if (estadoLower === 'reabierto') {
+      return <span className={`${baseClasses} bg-purple-100 text-purple-800`}>REABIERTO</span>;
+    } else if (estadoLower === 'cerrado') {
+      return <span className={`${baseClasses} bg-gray-100 text-gray-800`}>CERRADO</span>;
+    } else if (estadoLower === 'enviado') {
+      return <span className={`${baseClasses} bg-green-100 text-green-800`}>ENVIADO</span>;
+    } else if (estadoLower === 'sinsolicitud') {
+      return <span className={`${baseClasses} bg-yellow-100 text-yellow-800`}>SIN SOLICITUD</span>;
+    }
+    return <span className={`${baseClasses} bg-gray-100 text-gray-800`}>{est}</span>;
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 p-6">
-      {/* Header */}
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-800">
-          Configuración de Feriados
-        </h1>
-        <p className="text-gray-600 mt-1">
-          Gestión de días feriados del sistema
-        </p>
+      {/* Header Azul */}
+      <div className="flex items-center justify-between bg-blue-600 text-white rounded-lg p-6 mb-6">
+        <div className="flex items-center gap-2">
+          <span className="text-2xl">📋</span>
+          <div>
+            <h1 className="text-xl font-bold">Solicitudes por Periodo</h1>
+            <p className="text-blue-100 text-sm">Usa Iniciar para registrar turnos por calendario.</p>
+          </div>
+        </div>
+        <button
+          onClick={cargarDatos}
+          disabled={loading}
+          className="bg-white text-blue-600 px-4 py-2 rounded-lg font-medium flex items-center gap-2 hover:bg-blue-50 disabled:opacity-50"
+        >
+          <RefreshCw className="w-4 h-4" />
+          Actualizar
+        </button>
       </div>
 
-      {/* Contenido placeholder */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
-        <div className="text-center">
-          <div className="mx-auto w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mb-4">
-            <svg
-              className="w-8 h-8 text-blue-600"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
+      {/* Filtros */}
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-6">
+        <div className="grid grid-cols-4 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Tipo de periodos</label>
+            <select
+              value={tipoPeriodos}
+              onChange={(e) => setTipoPeriodos(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-              />
-            </svg>
+              <option value="todos">Todos</option>
+            </select>
           </div>
-          <h2 className="text-xl font-semibold text-gray-800 mb-2">
-            Módulo en Desarrollo
-          </h2>
-          <p className="text-gray-500 max-w-md mx-auto">
-            El módulo de configuración de feriados está siendo desarrollado.
-            Próximamente podrás gestionar los días feriados del calendario.
-          </p>
+          
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Año</label>
+            <select
+              value={anio}
+              onChange={(e) => setAnio(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            >
+              <option value="todos">Todos los años</option>
+              {anos.map(a => (
+                <option key={a} value={a}>{a}</option>
+              ))}
+            </select>
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Periodo</label>
+            <select
+              value={periodo}
+              onChange={(e) => setPeriodo(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            >
+              <option value="todos">Todos los períodos</option>
+              {periodos.map(p => (
+                <option key={p.periodo} value={p.periodo}>{p.periodo}</option>
+              ))}
+            </select>
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Estado</label>
+            <select
+              value={estado}
+              onChange={(e) => setEstado(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            >
+              <option value="todos">Todos</option>
+              <option value="abierto">ABIERTO</option>
+              <option value="reabierto">REABIERTO</option>
+              <option value="cerrado">CERRADO</option>
+            </select>
+          </div>
         </div>
       </div>
+
+      {/* Error Message */}
+      {error && (
+        <div className="mb-6 bg-red-50 border border-red-200 rounded-lg p-4 flex items-start gap-3">
+          <AlertCircle className="w-5 h-5 text-red-600 mt-0.5 flex-shrink-0" />
+          <div>
+            <h3 className="font-medium text-red-800">Error</h3>
+            <p className="text-red-700 text-sm">{error}</p>
+          </div>
+        </div>
+      )}
+
+      {/* Loading */}
+      {loading && (
+        <div className="flex justify-center items-center py-12">
+          <Loader className="w-6 h-6 text-blue-600 animate-spin" />
+        </div>
+      )}
+
+      {/* Tabla */}
+      {!loading && (
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+          <table className="w-full">
+            <thead>
+              <tr className="bg-blue-600 text-white">
+                <th className="px-6 py-3 text-left text-sm font-semibold">Año</th>
+                <th className="px-6 py-3 text-left text-sm font-semibold">Periodo</th>
+                <th className="px-6 py-3 text-left text-sm font-semibold">Solicitud</th>
+                <th className="px-6 py-3 text-left text-sm font-semibold">Fecha de Apertura</th>
+                <th className="px-6 py-3 text-left text-sm font-semibold">Fecha de Cierre</th>
+                <th className="px-6 py-3 text-left text-sm font-semibold">Estado</th>
+                <th className="px-6 py-3 text-left text-sm font-semibold">Acción</th>
+              </tr>
+            </thead>
+            <tbody>
+              {datosFiltrados.length === 0 ? (
+                <tr>
+                  <td colSpan="7" className="px-6 py-8 text-center text-gray-500">
+                    No hay datos disponibles
+                  </td>
+                </tr>
+              ) : (
+                datosFiltrados.map((p) => (
+                  <tr key={p.periodo} className="border-t border-gray-200 hover:bg-gray-50">
+                    <td className="px-6 py-4 text-sm text-gray-900">{p.periodo.substring(0, 4)}</td>
+                    <td className="px-6 py-4 text-sm text-gray-900">{p.periodo}</td>
+                    <td className="px-6 py-4 text-sm text-gray-900">—</td>
+                    <td className="px-6 py-4 text-sm text-gray-900">—</td>
+                    <td className="px-6 py-4 text-sm text-gray-900">—</td>
+                    <td className="px-6 py-4 text-sm">{getEstadoBadge(p.estado)}</td>
+                    <td className="px-6 py-4 text-sm">
+                      <button
+                        onClick={() => handleIniciarSolicitud(p)}
+                        className="text-blue-600 hover:text-blue-800 font-medium flex items-center gap-1"
+                      >
+                        <Plus className="w-4 h-4" />
+                        Iniciar
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {/* Nota al pie */}
+      <div className="mt-4 text-xs text-gray-600">
+        * Al iniciar/editar, se muestra detalle del período (sin combo) y registro por calendario.
+      </div>
+
+      {/* Modales */}
+      {showModalNuevaSolicitud && (
+        <ModalNuevaSolicitud
+          periodo={selectedPeriodo}
+          onClose={() => setShowModalNuevaSolicitud(false)}
+          onSuccess={handleModalSuccess}
+        />
+      )}
+
+      {showModalEditar && selectedHorario && (
+        <ModalEditarSolicitud
+          horario={selectedHorario}
+          onClose={() => setShowModalEditar(false)}
+          onSuccess={handleModalSuccess}
+        />
+      )}
+
+      {showModalConsultar && selectedHorario && (
+        <ModalConsultarSolicitud
+          horario={selectedHorario}
+          onClose={() => setShowModalConsultar(false)}
+        />
+      )}
     </div>
   );
 };

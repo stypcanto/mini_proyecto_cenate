@@ -67,6 +67,12 @@ public class CtrHorario {
     private Area area;
 
     /**
+     * Grupo Programático
+     */
+    @Column(name = "id_grupo_prog", nullable = false)
+    private Long idGrupoProg;
+
+    /**
      * Régimen laboral
      */
     @ManyToOne(fetch = FetchType.LAZY)
