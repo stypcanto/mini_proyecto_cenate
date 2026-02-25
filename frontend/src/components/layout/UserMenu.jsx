@@ -2,19 +2,47 @@
 // 👤 UserMenu.jsx – Menú desplegable de usuario (avatar + información)
 // ========================================================================
 
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { useAuth } from "../../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { LogOut, ChevronUp, ChevronDown, User } from "lucide-react";
+
+const AvatarMujer = ({ className = "" }) => (
+  <svg className={className} viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="20" cy="14" r="7" fill="currentColor" opacity="0.9"/>
+    {/* Cabello femenino */}
+    <path d="M13 12 Q13 6 20 6 Q27 6 27 12 Q25 8 20 8 Q15 8 13 12Z" fill="currentColor"/>
+    <path d="M12 14 Q11 18 13 20" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+    <path d="M28 14 Q29 18 27 20" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+    {/* Cuerpo */}
+    <path d="M8 38 Q8 28 20 28 Q32 28 32 38" fill="currentColor" opacity="0.85"/>
+  </svg>
+);
+
+const AvatarVaron = ({ className = "" }) => (
+  <svg className={className} viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="20" cy="14" r="7" fill="currentColor" opacity="0.9"/>
+    {/* Cuerpo más ancho para varón */}
+    <path d="M6 38 Q6 27 20 27 Q34 27 34 38" fill="currentColor" opacity="0.85"/>
+  </svg>
+);
 
 export default function UserMenu() {
   const { user, logout } = useAuth() || {};
   const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
+  const [fotoError, setFotoError] = useState(false);
 
   if (!user) return null;
 
   const isIpress = user?.roles?.[0] === "INSTITUCION_EX";
+
+  // Solo primer nombre y primer apellido paterno: "Maria Quispe Evangelista..." → "Maria Quispe"
+  const nombreCorto = (nombre) => {
+    if (!nombre) return "";
+    const partes = nombre.trim().split(/\s+/);
+    return partes.slice(0, 2).join(" ");
+  };
 
   const handleLogout = () => {
     if (logout) logout();
@@ -36,23 +64,23 @@ export default function UserMenu() {
       >
         {/* Avatar */}
         <div className="w-9 h-9 rounded-full bg-white/20 overflow-hidden flex items-center justify-center border border-white/30 flex-shrink-0">
-          {user?.foto ? (
+          {user?.foto && !fotoError ? (
             <img
               src={user.foto}
               alt={user.nombreCompleto}
               className="w-full h-full object-cover"
+              onError={() => setFotoError(true)}
             />
-          ) : (
-            <span className="text-white font-bold text-sm">
-              {user?.nombreCompleto?.charAt(0)?.toUpperCase()}
-            </span>
-          )}
+          ) : user?.sexo === 'F'
+            ? <AvatarMujer className="w-6 h-6 text-pink-300" />
+            : <AvatarVaron className="w-6 h-6 text-blue-300" />
+          }
         </div>
 
         {/* Nombre y subtítulo */}
         <div className="hidden md:flex flex-col items-start">
           <span className="text-sm text-white font-semibold leading-tight">
-            {user?.nombreCompleto || user?.username}
+            {nombreCorto(user?.nombreCompleto) || user?.username}
           </span>
           <span className="text-[11px] text-white/65 leading-tight">
             {isIpress
@@ -78,13 +106,17 @@ export default function UserMenu() {
           {/* Cabecera */}
           <div className="flex items-center gap-3 px-4 py-3 bg-slate-50 border-b border-gray-100">
             <div className="w-9 h-9 rounded-full bg-slate-200 overflow-hidden flex items-center justify-center flex-shrink-0">
-              {user?.foto ? (
-                <img src={user.foto} alt={user.nombreCompleto} className="w-full h-full object-cover" />
-              ) : (
-                <span className="text-slate-600 font-bold text-sm">
-                  {user?.nombreCompleto?.charAt(0)?.toUpperCase()}
-                </span>
-              )}
+              {user?.foto && !fotoError ? (
+                <img
+                  src={user.foto}
+                  alt={user.nombreCompleto}
+                  className="w-full h-full object-cover"
+                  onError={() => setFotoError(true)}
+                />
+              ) : user?.sexo === 'F'
+                ? <AvatarMujer className="w-7 h-7 text-pink-400" />
+                : <AvatarVaron className="w-7 h-7 text-blue-500" />
+              }
             </div>
 
             <div className="flex-1 min-w-0">

@@ -174,6 +174,7 @@ export const AuthProvider = ({ children }) => {
       permisos: payload.permisos || data.permisos || [],
       nombreCompleto: data.nombreCompleto || data.nombre_completo || payload.nombre_completo,
       foto: data.foto || payload.foto || null,  // 📷 URL de la foto del usuario
+      sexo: data.sexo || null,  // "M" o "F"
       requiereCambioPassword: data.requiereCambioPassword || false,
       especialidad: data.especialidad || payload.especialidad || null,  // ✅ v1.77.0: Especialidad del médico
       nombreIpress: data.nombreIpress || null,  // 🏥 Nombre IPRESS para usuarios externos

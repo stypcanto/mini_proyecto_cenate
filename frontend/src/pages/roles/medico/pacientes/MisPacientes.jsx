@@ -33,7 +33,8 @@ import {
   Copy,
   Edit2,
   AlertTriangle,
-  UserMinus
+  UserMinus,
+  UserPlus
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import gestionPacientesService from '../../../../services/gestionPacientesService';
@@ -450,6 +451,8 @@ export default function MisPacientes() {
   const [loading, setLoading] = useState(true);
   const [busqueda, setBusqueda] = useState('');
   const [filtroEstado, setFiltroEstado] = useState('');
+  const [turno, setTurno] = useState(null); // null | 'MANANA' | 'TARDE'
+  const [filtroCenacron, setFiltroCenacron] = useState(''); // '' | 'si' | 'no'
   const [modalAccion, setModalAccion] = useState(null);
   const [pacienteSeleccionado, setPacienteSeleccionado] = useState(null);
   const [procesando, setProcesando] = useState(false);
@@ -507,6 +510,11 @@ export default function MisPacientes() {
   const [bajaTipo, setBajaTipo] = useState('PROGRAMA_COMPLETO');
   const [bajaMotivo, setBajaMotivo] = useState('');
   const [procesandoBaja, setProcesandoBaja] = useState(false);
+
+  // CENACRON: Modal Asignar al Programa
+  const [showAsignarCenacronModal, setShowAsignarCenacronModal] = useState(false);
+  const [pacienteAsignarCenacron, setPacienteAsignarCenacron] = useState(null);
+  const [procesandoAsignacion, setProcesandoAsignacion] = useState(false);
 
   // ✅ v1.74.0: Estados para Ficha de Enfermería
   const [otraPatologia, setOtraPatologia] = useState([]);           // multi: NEUROPATIA, RETINOPATIA, PIE DIABETICA, ERC, NINGUNO
@@ -1210,8 +1218,12 @@ export default function MisPacientes() {
       });
     }
 
+    // Filtro CENACRON
+    if (filtroCenacron === 'si') resultados = resultados.filter(p => p.esCenacron === true);
+    if (filtroCenacron === 'no') resultados = resultados.filter(p => !p.esCenacron);
+
     return resultados;
-  }, [pacientes, busqueda, filtroEstado, filtroBolsa, filtroIpress, filtroRangoFecha, fechaDesde, fechaHasta, ordenarPor]);
+  }, [pacientes, busqueda, filtroEstado, filtroBolsa, filtroIpress, filtroRangoFecha, fechaDesde, fechaHasta, ordenarPor, filtroCenacron]);
 
   const formatearFecha = (fecha) => {
     if (!fecha) return '-';
@@ -1570,6 +1582,31 @@ export default function MisPacientes() {
       toast.error(msg);
     } finally {
       setProcesandoBaja(false);
+    }
+  };
+
+  const abrirAsignarCenacron = (paciente) => {
+    setPacienteAsignarCenacron(paciente);
+    setShowAsignarCenacronModal(true);
+  };
+
+  const confirmarAsignarCenacron = async () => {
+    if (!pacienteAsignarCenacron?.pkAsegurado) {
+      toast.error('No se pudo identificar al paciente para asignar al programa');
+      return;
+    }
+    setProcesandoAsignacion(true);
+    try {
+      await gestionPacientesService.inscribirCenacron(pacienteAsignarCenacron.pkAsegurado);
+      toast.success('Paciente inscrito en el programa CENACRON');
+      setShowAsignarCenacronModal(false);
+      setPacienteAsignarCenacron(null);
+      cargarPacientes();
+    } catch (err) {
+      const msg = err?.response?.data?.error || err?.message || 'Error al inscribir al programa';
+      toast.error(msg);
+    } finally {
+      setProcesandoAsignacion(false);
     }
   };
 
@@ -2085,6 +2122,18 @@ export default function MisPacientes() {
     }
 
     return true;
+  }).filter(p => {
+    // ✅ Filtro por turno: MANANA 07:00–13:59 / TARDE 14:00–20:59 (hora Lima)
+    if (!turno) return true;
+    const ref = p.fechaAtencion || p.fechaAsignacion;
+    if (!ref) return false;
+    try {
+      const hora = new Date(ref).toLocaleString('en-US', { timeZone: 'America/Lima', hour: 'numeric', hour12: false });
+      const h = parseInt(hora, 10);
+      if (turno === 'MANANA') return h >= 7 && h < 14;
+      if (turno === 'TARDE')  return h >= 14 && h < 21;
+    } catch { return false; }
+    return true;
   });
 
   const toggleEnfermedad = (enfermedad) => {
@@ -2464,25 +2513,21 @@ export default function MisPacientes() {
             </div>
           </div>
 
-          {/* FILA 2: Tipo de Bolsa + IPRESS + Asignación + Atención (4-column symmetric grid) */}
+          {/* FILA 2: IPRESS + CENACRON + Asignación + Atención */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-3 items-start">
-            {/* Filtro Tipo de Bolsa - 1 column */}
+            {/* Filtro CENACRON */}
             <div>
               <label className="block text-[11px] font-semibold text-gray-600 mb-1 uppercase tracking-wide">
-                <span className="inline-block w-3.5 h-3.5 mr-1.5 text-purple-500">📦</span>
-                Bolsa
+                ♾️ CENACRON
               </label>
               <select
-                value={filtroBolsa}
-                onChange={(e) => setFiltroBolsa(e.target.value)}
-                className="w-full h-[34px] px-3 text-sm bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-400 focus:border-transparent transition-all shadow-sm hover:border-slate-400"
+                value={filtroCenacron}
+                onChange={(e) => setFiltroCenacron(e.target.value)}
+                className="w-full h-[34px] px-3 text-sm bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-400 focus:border-transparent transition-all shadow-sm hover:border-slate-400"
               >
-                <option value="">Todas</option>
-                {bolsasDisponibles.map((bolsa) => (
-                  <option key={bolsa.id} value={bolsa.id.toString()}>
-                    {bolsa.nombre}
-                  </option>
-                ))}
+                <option value="">Todos</option>
+                <option value="si">Solo CENACRON</option>
+                <option value="no">No CENACRON</option>
               </select>
             </div>
 
@@ -2530,49 +2575,46 @@ export default function MisPacientes() {
 
           </div>
 
-          {/* FILA 3: Rango Personalizado (condicional) */}
-          {filtroRangoFecha === 'personalizado' && (
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-3 pt-3 mt-1 pl-3 border-l-4 border-green-500 bg-green-50/40 rounded-r-lg">
-              <div>
-                <label className="block text-[11px] font-semibold text-gray-600 mb-1 uppercase tracking-wide">
-                  📅 Desde
-                </label>
-                <input
-                  type="date"
-                  value={fechaDesde}
-                  onChange={(e) => setFechaDesde(e.target.value)}
-                  className="w-full h-[34px] px-3 text-sm bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-green-400 focus:border-transparent transition-all shadow-sm hover:border-slate-400"
-                />
-              </div>
-
-              <div>
-                <label className="block text-[11px] font-semibold text-gray-600 mb-1 uppercase tracking-wide">
-                  📅 Hasta
-                </label>
-                <input
-                  type="date"
-                  value={fechaHasta}
-                  onChange={(e) => setFechaHasta(e.target.value)}
-                  className="w-full h-[34px] px-3 text-sm bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-green-400 focus:border-transparent transition-all shadow-sm hover:border-slate-400"
-                />
-              </div>
-
-              <div className="md:col-span-2">
-                <label className="block text-[11px] font-semibold text-gray-600 mb-1 uppercase tracking-wide">
-                  Ordenar por
-                </label>
-                <select
-                  value={ordenarPor}
-                  onChange={(e) => setOrdenarPor(e.target.value)}
-                  className="w-full h-[34px] px-3 text-sm bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-green-400 focus:border-transparent transition-all shadow-sm hover:border-slate-400"
-                >
-                  <option value="antiguo">Hora cita ↑ (más temprano primero)</option>
-                  <option value="reciente">Hora cita ↓ (más tarde primero)</option>
-                </select>
-              </div>
             </div>
           )}
-            </div>
+        </div>
+
+        {/* ── Selector de turno ───────────────────────────────── */}
+        <div className="flex items-center gap-3 px-1 py-2 flex-wrap">
+          <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Turno:</span>
+          {[
+            { key: 'MANANA', emoji: '☀️', label: 'Mañana', sub: '7:00 – 13:59' },
+            { key: 'TARDE',  emoji: '🌆', label: 'Tarde',  sub: '14:00 – 20:59' },
+          ].map(({ key, emoji, label, sub }) => {
+            const activo = turno === key;
+            return (
+              <button
+                key={key}
+                onClick={() => setTurno(activo ? null : key)}
+                className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold border transition-all ${
+                  activo
+                    ? 'bg-[#0A5BA9] text-white border-[#0A5BA9] shadow-md'
+                    : 'bg-white text-gray-600 border-gray-300 hover:border-[#0A5BA9] hover:text-[#0A5BA9]'
+                }`}
+              >
+                <span>{emoji}</span>
+                <span>{label}</span>
+                <span className={`text-xs ${activo ? 'text-blue-200' : 'text-gray-400'}`}>({sub})</span>
+              </button>
+            );
+          })}
+          {turno && (
+            <button
+              onClick={() => setTurno(null)}
+              className="text-xs text-gray-400 hover:text-gray-600 underline transition-colors"
+            >
+              Ver todos los turnos
+            </button>
+          )}
+          {turno && (
+            <span className="ml-auto text-xs text-gray-500 font-medium">
+              {pacientesFiltradosPorFecha.length} paciente{pacientesFiltradosPorFecha.length !== 1 ? 's' : ''} en este turno
+            </span>
           )}
         </div>
 
@@ -2626,6 +2668,8 @@ export default function MisPacientes() {
                     {esCardiologo && (
                       <th className="px-2 py-1 text-center">Atender Lectura EKG</th>
                     )}
+                    <th className="px-2 py-1 text-center whitespace-nowrap">Programa</th>
+
                     {/* ✅ v1.64.0: Columna FINAL de Generación de Ticket */}
                     <th className="px-2 py-1 text-center">
                       <div className="flex items-center justify-center gap-1">
@@ -2862,6 +2906,24 @@ export default function MisPacientes() {
                           </div>
                         </td>
                       )}
+                      {/* Columna Programa CENACRON */}
+                      <td className="px-2 py-1 text-center">
+                        {paciente.esCenacron ? (
+                          <span className="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full text-[9px] font-bold bg-gray-200 text-gray-600 border border-gray-300 whitespace-nowrap">
+                            ♾ CENACRON
+                          </span>
+                        ) : (
+                          <button
+                            onClick={(e) => { e.stopPropagation(); abrirAsignarCenacron(paciente); }}
+                            title="Inscribir al programa CENACRON"
+                            className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-[10px] font-medium text-gray-400 border border-dashed border-gray-300 hover:border-purple-400 hover:text-purple-600 hover:bg-purple-50 transition-all duration-150"
+                          >
+                            <UserPlus className="w-2.5 h-2.5" strokeWidth={2} />
+                            Inscribir
+                          </button>
+                        )}
+                      </td>
+
                       {/* ✅ v1.65.0: COLUMNA FINAL - Ticket Mesa de Ayuda con estado */}
                       <td className="px-2 py-1 text-center">
                         <div className="flex flex-col items-center gap-1">
@@ -5420,6 +5482,76 @@ export default function MisPacientes() {
           </div>
         );
       })()}
+
+      {/* ===== MODAL ASIGNAR A CENACRON ===== */}
+      {showAsignarCenacronModal && pacienteAsignarCenacron && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md">
+            {/* Header */}
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-full bg-purple-100 flex items-center justify-center">
+                  <UserPlus className="w-4 h-4 text-purple-600" strokeWidth={2} />
+                </div>
+                <h2 className="text-lg font-bold text-purple-700">Asignar al Programa</h2>
+              </div>
+              <button onClick={() => setShowAsignarCenacronModal(false)} className="text-gray-400 hover:text-gray-600 transition-colors">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Body */}
+            <div className="px-6 py-5 space-y-4">
+              {/* Info del paciente */}
+              <div className="flex items-center gap-3 p-3 rounded-xl bg-purple-50 border border-purple-100">
+                <div className="w-10 h-10 rounded-full bg-purple-200 flex items-center justify-center flex-shrink-0">
+                  <span className="text-purple-700 font-bold text-sm">
+                    {pacienteAsignarCenacron.apellidosNombres?.charAt(0) || '?'}
+                  </span>
+                </div>
+                <div className="min-w-0">
+                  <p className="font-semibold text-gray-800 text-sm truncate">{pacienteAsignarCenacron.apellidosNombres}</p>
+                  <p className="text-xs text-gray-500">DNI: {pacienteAsignarCenacron.numDoc}</p>
+                </div>
+                <span className="ml-auto flex-shrink-0 px-2 py-0.5 rounded-full text-[10px] font-bold bg-purple-100 text-purple-700 border border-purple-300">
+                  CENACRON
+                </span>
+              </div>
+
+              <p className="text-sm text-gray-600">
+                El paciente será inscrito en el programa <span className="font-semibold text-purple-700">CENACRON</span> de gestión de pacientes crónicos y recibirá seguimiento multidisciplinario.
+              </p>
+            </div>
+
+            {/* Footer */}
+            <div className="px-6 py-4 border-t border-gray-100 flex gap-3">
+              <button
+                onClick={() => setShowAsignarCenacronModal(false)}
+                className="flex-1 px-4 py-2.5 rounded-xl border border-gray-300 text-gray-700 font-medium text-sm hover:bg-gray-50 transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={confirmarAsignarCenacron}
+                disabled={procesandoAsignacion}
+                className="flex-1 px-4 py-2.5 rounded-xl bg-purple-600 text-white font-semibold text-sm hover:bg-purple-700 disabled:opacity-60 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
+              >
+                {procesandoAsignacion ? (
+                  <>
+                    <Loader className="w-4 h-4 animate-spin" />
+                    Asignando...
+                  </>
+                ) : (
+                  <>
+                    <UserPlus className="w-4 h-4" />
+                    Confirmar Asignación
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ===== MODAL DAR DE BAJA CENACRON ===== */}
       {showBajaCenacronModal && pacienteBajaCenacron && (

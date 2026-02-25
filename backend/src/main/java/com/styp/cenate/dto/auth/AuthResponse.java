@@ -16,6 +16,7 @@ public class AuthResponse {
     private String username;
     private String nombreCompleto;
     private String foto;  // 📷 URL completa de la foto del usuario
+    private String sexo;  // Género del usuario: "M" o "F"
     private List<String> roles;
     private List<String> permisos;
     private List<MappingRolDTO> mappingRoles;  // 🆕 Mapeo codigo-descripcion de roles
