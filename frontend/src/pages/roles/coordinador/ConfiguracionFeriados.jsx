@@ -106,8 +106,21 @@ const ConfiguracionFeriados = () => {
     cargarDatos();
   };
 
-  // Obtener años de los períodos
-  const anos = [...new Set(periodos.map(p => p.periodo.substring(0, 4)))].sort().reverse();
+  // Obtener años de los períodos (ascendente)
+  const anos = [...new Set(periodos.map(p => p.periodo.substring(0, 4)))].sort();
+
+  // Obtener períodos únicos para un año específico
+  const getPeriodosPorAno = (anoSeleccionado) => {
+    if (anoSeleccionado === 'todos') {
+      return [...new Set(periodos.map(p => p.periodo))].sort();
+    }
+    return [...new Set(periodos
+      .filter(p => p.periodo.substring(0, 4) === anoSeleccionado)
+      .map(p => p.periodo))]
+      .sort();
+  };
+
+  const periodosDelAno = getPeriodosPorAno(anio);
 
   // Filtrar datos
   const datosFiltrados = periodos.filter(p => {
@@ -135,23 +148,62 @@ const ConfiguracionFeriados = () => {
     }
   };
 
+  // Obtener nombre del mes (202602 -> Febrero)
+  const getNombreMes = (periodo) => {
+    const meses = [
+      'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+      'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
+    ];
+    const mes = parseInt(periodo.substring(4, 6)) - 1; // Extraer mes (posiciones 4-5) y convertir a índice
+    const nombreMes = meses[mes] || 'Inválido';
+    return `${nombreMes} (${periodo})`;
+  };
+
   // Badge de estado
   const getEstadoBadge = (est) => {
-    const baseClasses = 'inline-block px-3 py-1 rounded-full text-xs font-medium';
     const estadoLower = est?.toLowerCase().replace(/\s+/g, '');
     
-    if (estadoLower === 'abierto') {
-      return <span className={`${baseClasses} bg-blue-100 text-blue-800`}>ABIERTO</span>;
-    } else if (estadoLower === 'reabierto') {
-      return <span className={`${baseClasses} bg-purple-100 text-purple-800`}>REABIERTO</span>;
-    } else if (estadoLower === 'cerrado') {
-      return <span className={`${baseClasses} bg-gray-100 text-gray-800`}>CERRADO</span>;
-    } else if (estadoLower === 'enviado') {
-      return <span className={`${baseClasses} bg-green-100 text-green-800`}>ENVIADO</span>;
-    } else if (estadoLower === 'sinsolicitud') {
-      return <span className={`${baseClasses} bg-yellow-100 text-yellow-800`}>SIN SOLICITUD</span>;
-    }
-    return <span className={`${baseClasses} bg-gray-100 text-gray-800`}>{est}</span>;
+    const badgeStyles = {
+      abierto: {
+        container: 'inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold shadow-md hover:shadow-lg transition-shadow',
+        background: 'bg-emerald-500',
+        text: 'text-white',
+        icon: '✓'
+      },
+      reabierto: {
+        container: 'inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold shadow-md hover:shadow-lg transition-shadow',
+        background: 'bg-amber-500',
+        text: 'text-white',
+        icon: '↻'
+      },
+      cerrado: {
+        container: 'inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold shadow-md hover:shadow-lg transition-shadow',
+        background: 'bg-slate-500',
+        text: 'text-white',
+        icon: '◆'
+      },
+      enviado: {
+        container: 'inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold shadow-md hover:shadow-lg transition-shadow',
+        background: 'bg-cyan-500',
+        text: 'text-white',
+        icon: '→'
+      },
+      sinsolicitud: {
+        container: 'inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold shadow-md hover:shadow-lg transition-shadow',
+        background: 'bg-yellow-500',
+        text: 'text-white',
+        icon: '!'
+      }
+    };
+
+    const style = badgeStyles[estadoLower] || badgeStyles.cerrado;
+
+    return (
+      <span className={`${style.container} ${style.background} ${style.text}`}>
+        <span className="text-base">{style.icon}</span>
+        {est}
+      </span>
+    );
   };
 
   return (
@@ -182,7 +234,10 @@ const ConfiguracionFeriados = () => {
             <label className="block text-sm font-medium text-gray-700 mb-2">Año</label>
             <select
               value={anio}
-              onChange={(e) => setAnio(e.target.value)}
+              onChange={(e) => {
+                setAnio(e.target.value);
+                setPeriodo('todos'); // Reset período cuando cambia el año
+              }}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             >
               <option value="todos">Todos los años</option>
@@ -197,12 +252,23 @@ const ConfiguracionFeriados = () => {
             <select
               value={periodo}
               onChange={(e) => setPeriodo(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              disabled={anio === 'todos'}
+              className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                anio === 'todos' 
+                  ? 'border-gray-300 bg-gray-100 text-gray-500 cursor-not-allowed' 
+                  : 'border-gray-300'
+              }`}
             >
-              <option value="todos">Todos los períodos</option>
-              {periodos.map(p => (
-                <option key={p.periodo} value={p.periodo}>{p.periodo}</option>
-              ))}
+              {anio === 'todos' ? (
+                <option value="todos">Seleccione un año primero</option>
+              ) : (
+                <>
+                  <option value="todos">Todos los períodos</option>
+                  {periodosDelAno.map(p => (
+                    <option key={p} value={p}>{getNombreMes(p)}</option>
+                  ))}
+                </>
+              )}
             </select>
           </div>
           
