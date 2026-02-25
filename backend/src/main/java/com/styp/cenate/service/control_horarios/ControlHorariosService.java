@@ -13,18 +13,20 @@ public interface ControlHorariosService {
 
     /**
      * Obtener períodos disponibles (ABIERTO, REABIERTO, CERRADO)
+     * Incluye la solicitud (id_ctr_horario) del médico autenticado si existe
      */
-    List<PeriodoDisponibleDTO> obtenerPeriodosDisponibles(List<String> estados);
-
-    /**
-     * Obtener horarios registrados para un período
-     */
-    List<CtrHorarioDTO> obtenerHorariosPorPeriodo(String periodo);
+    List<PeriodoDisponibleDTO> obtenerPeriodosDisponibles(List<String> estados, String token);
 
     /**
      * Crear nueva solicitud de horario
      */
     CtrHorarioDTO crearSolicitud(CreateCtrHorarioRequest request);
+
+    /**
+     * Obtener el ID de solicitud (id_ctr_horario) del médico autenticado para un período
+     * Cruza ctr_horario con ctr_periodo filtrando por usuario autenticado
+     */
+    Long obtenerSolicitudDelMedico(String periodo, Long idArea);
 
     /**
      * Actualizar solicitud de horario

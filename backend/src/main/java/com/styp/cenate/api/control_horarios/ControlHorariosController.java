@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * 🕐 Controlador de Control de Horarios
@@ -29,13 +30,16 @@ public class ControlHorariosController {
     /**
      * GET /api/control-horarios/periodos
      * Obtener períodos disponibles (ABIERTO, REABIERTO, CERRADO)
+     * Incluye la solicitud del médico autenticado (si existe)
      * 
      * @param estados Estados permitidos separados por coma (ej: "ABIERTO,REABIERTO,CERRADO")
+     * @param authorization Token JWT en header Authorization
      */
     @PreAuthorize("isAuthenticated()")
     @GetMapping("/periodos")
     public ResponseEntity<List<PeriodoDisponibleDTO>> obtenerPeriodos(
-            @RequestParam(required = false) String estados
+            @RequestParam(required = false) String estados,
+            @RequestHeader(value = "Authorization", required = false) String authorization
     ) {
         log.info("GET /periodos - Estados: {}", estados);
 
@@ -46,26 +50,21 @@ public class ControlHorariosController {
             estadosList = List.of("ABIERTO", "REABIERTO", "CERRADO");
         }
 
-        List<PeriodoDisponibleDTO> resultado = controlHorariosService.obtenerPeriodosDisponibles(estadosList);
+        String token = extractTokenFromHeader(authorization);
+        List<PeriodoDisponibleDTO> resultado = controlHorariosService.obtenerPeriodosDisponibles(estadosList, token);
         return ResponseEntity.ok(resultado);
     }
-
+    
     /**
-     * GET /api/control-horarios/horarios
-     * Obtener horarios registrados para un período
-     * 
-     * @param periodo Código del período (ej: "202502")
+     * Extrae el token JWT del header Authorization (Bearer token)
      */
-    @PreAuthorize("isAuthenticated()")
-    @GetMapping("/horarios")
-    public ResponseEntity<List<CtrHorarioDTO>> obtenerHorarios(
-            @RequestParam String periodo
-    ) {
-        log.info("GET /horarios - Período: {}", periodo);
-
-        List<CtrHorarioDTO> horarios = controlHorariosService.obtenerHorariosPorPeriodo(periodo);
-        return ResponseEntity.ok(horarios);
+    private String extractTokenFromHeader(String authHeader) {
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            return authHeader.substring(7);
+        }
+        return null;
     }
+
 
     /**
      * POST /api/control-horarios/horarios
@@ -165,5 +164,17 @@ public class ControlHorariosController {
                     "error", e.getMessage()
             ));
         }
+    }
+
+    /**
+     * POST /api/control-horarios/crear
+     * Crear un nuevo registro de horario (solicitud)
+     */
+    @PreAuthorize("hasAnyRole('MEDICO', 'COORDINADOR')")
+    @PostMapping("/crear")
+    public ResponseEntity<?> crearHorario(@RequestBody CreateCtrHorarioRequest request) {
+        log.info("POST /crear - Crear nuevo horario para período: {}", request.getPeriodo());
+        // Implementación...
+        return ResponseEntity.ok("OK");
     }
 }

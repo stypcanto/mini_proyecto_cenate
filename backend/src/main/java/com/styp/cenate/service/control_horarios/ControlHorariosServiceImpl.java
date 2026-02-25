@@ -5,8 +5,11 @@ import com.styp.cenate.dto.control_horarios.CreateCtrHorarioRequest;
 import com.styp.cenate.dto.control_horarios.PeriodoDisponibleDTO;
 import com.styp.cenate.model.CtrHorario;
 import com.styp.cenate.repository.CtrHorarioRepository;
+import com.styp.cenate.security.service.JwtUtil;
+import io.jsonwebtoken.Claims;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -25,108 +28,81 @@ public class ControlHorariosServiceImpl implements ControlHorariosService {
 
     private final CtrHorarioRepository ctrHorarioRepository;
     private final JdbcTemplate jdbcTemplate;
+    private final JwtUtil jwtUtil;
 
     @Override
-    public List<PeriodoDisponibleDTO> obtenerPeriodosDisponibles(List<String> estados) {
+    public List<PeriodoDisponibleDTO> obtenerPeriodosDisponibles(List<String> estados, String token) {
         log.info("📋 Obteniendo períodos disponibles con estados: {}", estados);
 
         try {
-            // Query para obtener períodos de ctr_periodo con sus estados
+            // Extraer idPers del token JWT
+            Long idPers = null;
+            
+            if (token != null && !token.isEmpty()) {
+                try {
+                    Claims claims = jwtUtil.extractAllClaims(token);
+                    Object idPersObj = claims.get("idPers");
+                    if (idPersObj != null) {
+                        idPers = ((Number) idPersObj).longValue();
+                        log.debug("📌 Médico autenticado - idPers: {}", idPers);
+                    }
+                } catch (Exception e) {
+                    log.warn("⚠️ No se pudo extraer idPers del token: {}", e.getMessage());
+                }
+            } else {
+                log.warn("⚠️ Token no proporcionado");
+            }
+
+            // Query para obtener períodos de ctr_periodo con sus estados Y la solicitud del médico
             String estadosSQL = estados.stream()
                     .map(e -> "'" + e + "'")
                     .collect(Collectors.joining(","));
 
             String sql = "SELECT cp.periodo, cp.id_area, da.desc_area, TRIM(cp.estado) as estado, " +
                     "cp.fecha_inicio, cp.fecha_fin, " +
-                    "COUNT(DISTINCT ch.id_ctr_horario) as total_horarios " +
+                    "COUNT(DISTINCT ch.id_ctr_horario) as total_horarios, " +
+                    "ch_med.id_ctr_horario as id_solicitud " +
                     "FROM public.ctr_periodo cp " +
                     "JOIN public.dim_area da ON cp.id_area = da.id_area " +
                     "LEFT JOIN public.ctr_horario ch ON cp.periodo = ch.periodo AND cp.id_area = ch.id_area " +
+                    "LEFT JOIN public.ctr_horario ch_med ON cp.periodo = ch_med.periodo " +
+                    "      AND cp.id_area = ch_med.id_area " +
+                    "      AND ch_med.id_pers = ? " +
                     "WHERE TRIM(cp.estado) IN (" + estadosSQL + ") " +
-                    "GROUP BY cp.periodo, cp.id_area, da.desc_area, TRIM(cp.estado), cp.fecha_inicio, cp.fecha_fin " +
+                    "GROUP BY cp.periodo, cp.id_area, da.desc_area, TRIM(cp.estado), cp.fecha_inicio, cp.fecha_fin, ch_med.id_ctr_horario " +
                     "ORDER BY cp.periodo ASC, cp.id_area";
 
-            List<PeriodoDisponibleDTO> resultado = jdbcTemplate.query(sql, (rs, rowNum) ->
-                    PeriodoDisponibleDTO.builder()
-                            .periodo(rs.getString("periodo"))
-                            .idArea(rs.getLong("id_area"))
-                            .descArea(rs.getString("desc_area"))
-                            .estado(rs.getString("estado"))
-                            .totalHorarios(rs.getInt("total_horarios"))
-                            .fechaInicio(rs.getObject("fecha_inicio", java.time.LocalDate.class))
-                            .fechaFin(rs.getObject("fecha_fin", java.time.LocalDate.class))
-                            .build()
+            log.debug("🔄 SQL con idPers: {}", idPers);
+
+            List<PeriodoDisponibleDTO> resultado = jdbcTemplate.query(
+                    sql, 
+                    new Object[]{idPers},
+                    (rs, rowNum) -> {
+                        Object idSolicitudObj = rs.getObject("id_solicitud");
+                        Long idCtrHorario = idSolicitudObj != null ? ((Number) idSolicitudObj).longValue() : null;
+                        
+                        return PeriodoDisponibleDTO.builder()
+                                .periodo(rs.getString("periodo"))
+                                .idArea(rs.getLong("id_area"))
+                                .descArea(rs.getString("desc_area"))
+                                .estado(rs.getString("estado"))
+                                .totalHorarios(rs.getInt("total_horarios"))
+                                .fechaInicio(rs.getObject("fecha_inicio", java.time.LocalDate.class))
+                                .fechaFin(rs.getObject("fecha_fin", java.time.LocalDate.class))
+                                .idCtrHorario(idCtrHorario)
+                                .tieneSolicitud(idCtrHorario != null)
+                                .build();
+                    }
             );
             
             log.info("✅ Períodos retornados: {} registros", resultado.size());
-            resultado.forEach(p -> log.debug("   - Periodo: {}, Estado: {}, Area: {}, Fechas: {} a {}", 
-                p.getPeriodo(), p.getEstado(), p.getDescArea(), p.getFechaInicio(), p.getFechaFin()));
+            resultado.forEach(p -> log.debug("   - Periodo: {}, Estado: {}, Area: {}, Solicitud: {}", 
+                p.getPeriodo(), p.getEstado(), p.getDescArea(), p.getIdCtrHorario()));
             
             return resultado;
 
         } catch (Exception e) {
-            log.error("❌ Error obteniendo períodos disponibles: {}", e.getMessage());
-            return List.of();
-        }
-    }
-
-    @Override
-    public List<CtrHorarioDTO> obtenerHorariosPorPeriodo(String periodo) {
-        log.info("🕐 Obteniendo horarios para período: {}", periodo);
-
-        try {
-            String sql = """
-                SELECT
-                    ch.id_ctr_horario,
-                    ch.periodo,
-                    ch.id_area,
-                    da.desc_area,
-                    ch.id_grupo_prog,
-                    ch.id_pers,
-                    COALESCE(dpc.nom_pers, '') as nom_pers,
-                    ch.id_reg_lab,
-                    drl.desc_reg_lab,
-                    ch.id_servicio,
-                    COALESCE(dse.desc_servicio, '') as desc_servicio,
-                    ch.turnos_totales,
-                    ch.turnos_validos,
-                    ch.horas_totales,
-                    ch.observaciones,
-                    ch.created_at,
-                    ch.updated_at
-                FROM public.ctr_horario ch
-                LEFT JOIN public.dim_area da ON ch.id_area = da.id_area
-                LEFT JOIN public.dim_personal_cnt dpc ON ch.id_pers = dpc.id_pers
-                LEFT JOIN public.dim_regimen_laboral drl ON ch.id_reg_lab = drl.id_reg_lab
-                LEFT JOIN public.dim_servicio_essi dse ON ch.id_servicio = dse.id_servicio
-                WHERE ch.periodo = ?
-                ORDER BY dpc.nom_pers
-            """;
-
-            return jdbcTemplate.query(sql, new Object[]{periodo}, (rs, rowNum) ->
-                    CtrHorarioDTO.builder()
-                            .idCtrHorario(rs.getLong("id_ctr_horario"))
-                            .periodo(rs.getString("periodo"))
-                            .idArea(rs.getLong("id_area"))
-                            .descArea(rs.getString("desc_area"))
-                            .idGrupoProg(rs.getLong("id_grupo_prog"))
-                            .idPers(rs.getLong("id_pers"))
-                            .nomPers(rs.getString("nom_pers"))
-                            .idRegLab(rs.getLong("id_reg_lab"))
-                            .descRegLab(rs.getString("desc_reg_lab"))
-                            .idServicio(rs.getLong("id_servicio"))
-                            .descServicio(rs.getString("desc_servicio"))
-                            .turnosTotales(rs.getInt("turnos_totales"))
-                            .turnosValidos(rs.getInt("turnos_validos"))
-                            .horasTotales(rs.getBigDecimal("horas_totales"))
-                            .observaciones(rs.getString("observaciones"))
-                            .createdAt(rs.getTimestamp("created_at").toLocalDateTime())
-                            .updatedAt(rs.getTimestamp("updated_at").toLocalDateTime())
-                            .build()
-            );
-
-        } catch (Exception e) {
-            log.error("❌ Error obteniendo horarios para período {}: {}", periodo, e.getMessage());
+            log.error("❌ Error obteniendo períodos disponibles: {}", e.getMessage(), e);
             return List.of();
         }
     }
@@ -167,12 +143,48 @@ public class ControlHorariosServiceImpl implements ControlHorariosService {
                     request.getObservaciones()
             );
 
-            // Obtener el registro creado
-            return obtenerHorariosPorPeriodo(request.getPeriodo()).stream()
-                    .filter(h -> h.getIdPers().equals(request.getIdPers()) && 
-                               h.getPeriodo().equals(request.getPeriodo()))
-                    .findFirst()
-                    .orElseThrow(() -> new RuntimeException("No se pudo recuperar la solicitud creada"));
+            // Obtener el registro creado con un query simple
+            String selectSql = """
+                SELECT ch.id_ctr_horario, ch.periodo, ch.id_area, da.desc_area,
+                       ch.id_grupo_prog, ch.id_pers, dpc.nom_pers, ch.id_reg_lab,
+                       drl.desc_reg_lab, ch.id_servicio, dse.desc_servicio,
+                       ch.turnos_totales, ch.turnos_validos, ch.horas_totales,
+                       ch.observaciones, ch.created_at, ch.updated_at
+                FROM public.ctr_horario ch
+                LEFT JOIN public.dim_area da ON ch.id_area = da.id_area
+                LEFT JOIN public.dim_personal_cnt dpc ON ch.id_pers = dpc.id_pers
+                LEFT JOIN public.dim_regimen_laboral drl ON ch.id_reg_lab = drl.id_reg_lab
+                LEFT JOIN public.dim_servicio_essi dse ON ch.id_servicio = dse.id_servicio
+                WHERE ch.periodo = ? AND ch.id_pers = ?
+                ORDER BY ch.created_at DESC
+                LIMIT 1
+            """;
+
+            CtrHorarioDTO horario = jdbcTemplate.queryForObject(selectSql,
+                    new Object[]{request.getPeriodo(), request.getIdPers()},
+                    (rs, rowNum) -> CtrHorarioDTO.builder()
+                            .idCtrHorario(rs.getLong("id_ctr_horario"))
+                            .periodo(rs.getString("periodo"))
+                            .idArea(rs.getLong("id_area"))
+                            .descArea(rs.getString("desc_area"))
+                            .idGrupoProg(rs.getLong("id_grupo_prog"))
+                            .idPers(rs.getLong("id_pers"))
+                            .nomPers(rs.getString("nom_pers"))
+                            .idRegLab(rs.getLong("id_reg_lab"))
+                            .descRegLab(rs.getString("desc_reg_lab"))
+                            .idServicio(rs.getLong("id_servicio"))
+                            .descServicio(rs.getString("desc_servicio"))
+                            .turnosTotales(rs.getInt("turnos_totales"))
+                            .turnosValidos(rs.getInt("turnos_validos"))
+                            .horasTotales(rs.getBigDecimal("horas_totales"))
+                            .observaciones(rs.getString("observaciones"))
+                            .createdAt(rs.getTimestamp("created_at").toLocalDateTime())
+                            .updatedAt(rs.getTimestamp("updated_at").toLocalDateTime())
+                            .build()
+            );
+
+            log.info("✅ Solicitud creada exitosamente: {}", horario.getIdCtrHorario());
+            return horario;
 
         } catch (Exception e) {
             log.error("❌ Error creando solicitud: {}", e.getMessage());
@@ -304,5 +316,11 @@ public class ControlHorariosServiceImpl implements ControlHorariosService {
                 .createdAt(horario.getCreatedAt() != null ? horario.getCreatedAt().toLocalDateTime() : null)
                 .updatedAt(horario.getUpdatedAt() != null ? horario.getUpdatedAt().toLocalDateTime() : null)
                 .build();
+    }
+
+    @Override
+    public Long obtenerSolicitudDelMedico(String periodo, Long idArea) {
+        // Este método quedó deprecado - la solicitud se obtiene en obtenerPeriodosDisponibles()
+        return null;
     }
 }

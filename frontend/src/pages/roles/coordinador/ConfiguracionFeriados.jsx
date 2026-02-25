@@ -11,10 +11,10 @@ import { Eye, Plus, AlertCircle, Loader, RefreshCw } from 'lucide-react';
 import ModalNuevaSolicitud from '../../../components/control_horarios/ModalNuevaSolicitud';
 import ModalEditarSolicitud from '../../../components/control_horarios/ModalEditarSolicitud';
 import ModalConsultarSolicitud from '../../../components/control_horarios/ModalConsultarSolicitud';
+import { logRespuestaConsola } from '../../../utils/consoleResponseLogger';
 
 const ConfiguracionFeriados = () => {
   const [periodos, setPeriodos] = useState([]);
-  const [horarios, setHorarios] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   
@@ -53,31 +53,40 @@ const ConfiguracionFeriados = () => {
         }
       });
 
+      // Logging detallado según estándar respuestaconsola
+      logRespuestaConsola({
+        titulo: '✅ Períodos cargados exitosamente',
+        endpoint: '/api/control-horarios/periodos',
+        method: 'GET',
+        enviado: JSON.stringify({ estados: 'ABIERTO,REABIERTO,CERRADO' }),
+        status: periodosResponse.status,
+        devuelto: JSON.stringify(periodosResponse.data),
+        fuente: 'ConfiguracionFeriados.jsx',
+        identificador: periodosResponse.data?.length || 0,
+        etiquetaIdentificador: 'Total períodos'
+      });
+
       console.log('📊 Períodos obtenidos del API:', JSON.stringify(periodosResponse.data, null, 2));
       setPeriodos(periodosResponse.data || []);
 
-      // Cargar todos los horarios
-      if (periodosResponse.data && periodosResponse.data.length > 0) {
-        const allHorarios = [];
-        for (const p of periodosResponse.data) {
-          try {
-            const horariosResponse = await axios.get('/api/control-horarios/horarios', {
-              params: { periodo: p.periodo },
-              headers: {
-                'Authorization': token ? `Bearer ${token}` : '',
-                'Content-Type': 'application/json'
-              }
-            });
-            if (horariosResponse.data) {
-              allHorarios.push(...horariosResponse.data);
-            }
-          } catch (err) {
-            console.error(`Error cargando horarios para período ${p.periodo}:`, err);
-          }
-        }
-        setHorarios(allHorarios);
-      }
     } catch (err) {
+      // Logging detallado de error según estándar respuestaconsola
+      logRespuestaConsola({
+        titulo: '❌ Error cargando períodos',
+        endpoint: '/api/control-horarios/periodos',
+        method: 'GET',
+        enviado: JSON.stringify({ estados: 'ABIERTO,REABIERTO,CERRADO' }),
+        status: err.response?.status || 'Error de conexión',
+        devuelto: JSON.stringify({
+          error: err.response?.data || err.message,
+          statusText: err.response?.statusText,
+          fullError: err.toString()
+        }),
+        fuente: 'ConfiguracionFeriados.jsx',
+        identificador: err.response?.status || 'sin-status',
+        etiquetaIdentificador: 'Error'
+      });
+      
       console.error('Error cargando datos:', err);
       setError('Error al cargar los datos');
     } finally {
@@ -335,7 +344,7 @@ const ConfiguracionFeriados = () => {
                     <td className="px-6 py-4 text-sm text-gray-900">{p.periodo.substring(0, 4)}</td>
                     <td className="px-6 py-4 text-sm text-gray-900">{p.periodo}</td>
                     <td className="px-6 py-4 text-sm text-gray-900">{p.descArea || '—'}</td>
-                    <td className="px-6 py-4 text-sm text-gray-900">—</td>
+                    <td className="px-6 py-4 text-sm text-gray-900">{p.idCtrHorario || '—'}</td>
                     <td className="px-6 py-4 text-sm text-gray-900">{formatDate(p.fechaInicio)}</td>
                     <td className="px-6 py-4 text-sm text-gray-900">{formatDate(p.fechaFin)}</td>
                     <td className="px-6 py-4 text-sm">{getEstadoBadge(p.estado)}</td>

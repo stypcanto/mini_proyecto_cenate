@@ -22,4 +22,6 @@ public class PeriodoDisponibleDTO {
     private int totalHorarios;           // Total de horarios registrados para este período
     private LocalDate fechaInicio;       // Fecha de inicio del período
     private LocalDate fechaFin;          // Fecha de fin del período
+    private Long idCtrHorario;           // ID de la solicitud del médico (puede ser null)
+    private Boolean tieneSolicitud;      // Indica si el médico ya registró solicitud
 }
