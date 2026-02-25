@@ -7,21 +7,9 @@
 
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import {
-  BarChart3,
-  Users,
-  TrendingDown,
-  Activity,
-  Search,
-  RefreshCw,
-  X,
-  ChevronLeft,
-  ChevronRight,
-  Download,
-  User,
-  FileText,
-  AlertCircle,
-  Clock,
-  ChevronDown,
+  BarChart3, Users, TrendingDown, Activity, Search, RefreshCw, X,
+  ChevronLeft, ChevronRight, Download, User, AlertCircle, ChevronDown,
+  ChevronRight as ChevRight, Minus, Plus, Calendar, Stethoscope, FileText,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import {
@@ -31,47 +19,47 @@ import {
   obtenerDetallePorMedico,
 } from "../../services/pendientesMensualesService";
 
-// ── Constantes ──────────────────────────────────────────────────────────────
-const PAGE_SIZE = 20;
+// ── Constantes ───────────────────────────────────────────────────────────────
+const PAGE_SIZE   = 20;
 const CENATE_BLUE = "#0D5BA9";
+const AVATAR_COLORS = ["bg-orange-500","bg-green-500","bg-purple-500","bg-blue-500","bg-red-500"];
+const avatarColor   = (i) => AVATAR_COLORS[i % AVATAR_COLORS.length];
 
-const AVATAR_COLORS = [
-  "bg-orange-500",
-  "bg-green-500",
-  "bg-purple-500",
-  "bg-blue-500",
-  "bg-red-500",
-];
-const avatarColor = (idx) => AVATAR_COLORS[idx % AVATAR_COLORS.length];
-
-// ── Helpers ─────────────────────────────────────────────────────────────────
+// ── Helpers ──────────────────────────────────────────────────────────────────
 function fmtFecha(raw) {
   if (!raw) return "—";
   try {
     const d = new Date(raw + "T00:00:00");
     if (isNaN(d.getTime())) return raw;
-    return d.toLocaleDateString("es-PE", {
-      day: "2-digit", month: "2-digit", year: "numeric",
-    });
+    return d.toLocaleDateString("es-PE", { day: "2-digit", month: "2-digit", year: "numeric" });
   } catch { return raw; }
 }
-
-function iniciales(nombre) {
-  if (!nombre) return "?";
-  return nombre.trim().split(/\s+/).slice(0, 2).map((p) => p[0]).join("").toUpperCase();
+function iniciales(n) {
+  if (!n) return "?";
+  return n.trim().split(/\s+/).slice(0,2).map(p => p[0]).join("").toUpperCase();
+}
+function useDebounce(v, ms = 400) {
+  const [d, setD] = useState(v);
+  useEffect(() => { const t = setTimeout(() => setD(v), ms); return () => clearTimeout(t); }, [v, ms]);
+  return d;
 }
 
-function useDebounce(value, delay = 400) {
-  const [deb, setDeb] = useState(value);
-  useEffect(() => {
-    const t = setTimeout(() => setDeb(value), delay);
-    return () => clearTimeout(t);
-  }, [value, delay]);
-  return deb;
+// Agrupar detalle: { [subactividad]: { [servicio]: { [fecha]: [rows] } } }
+function agruparDetalle(rows) {
+  const tree = {};
+  for (const row of rows) {
+    const sa = row.subactividad ?? "SIN SUBACTIVIDAD";
+    const sv = row.servicio     ?? "SIN SERVICIO";
+    const fc = row.fechaCita    ?? "SIN FECHA";
+    if (!tree[sa]) tree[sa] = {};
+    if (!tree[sa][sv]) tree[sa][sv] = {};
+    if (!tree[sa][sv][fc]) tree[sa][sv][fc] = [];
+    tree[sa][sv][fc].push(row);
+  }
+  return tree;
 }
 
 // ── Sub-componentes ──────────────────────────────────────────────────────────
-
 function KpiCard({ icon, label, value, bg = "bg-gray-100", textColor = "text-gray-800", loading }) {
   return (
     <div className={`rounded-xl border border-gray-200 p-4 ${bg} flex items-center gap-4`}>
@@ -89,76 +77,53 @@ function KpiCard({ icon, label, value, bg = "bg-gray-100", textColor = "text-gra
 
 function AbandonoBadge({ value }) {
   const n = typeof value === "number" ? value : parseInt(value) || 0;
-  if (n === 0)  return <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-green-100 text-green-700">Sin abandono</span>;
-  if (n < 5)    return <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-700"><TrendingDown className="w-3 h-3" />{n}</span>;
-  return <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-red-100 text-red-700"><TrendingDown className="w-3 h-3" />{n}</span>;
+  if (n === 0) return <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-green-100 text-green-700">Sin abandono</span>;
+  if (n < 5)   return <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-700"><TrendingDown className="w-3 h-3"/>{n}</span>;
+  return         <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-red-100 text-red-700"><TrendingDown className="w-3 h-3"/>{n}</span>;
 }
 
-function SubactividadBadge({ value }) {
-  if (!value) return <span className="text-gray-400">—</span>;
-  return (
-    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-100 text-blue-700">
-      {value}
-    </span>
-  );
+function SubBadge({ v }) {
+  if (!v) return <span className="text-gray-400">—</span>;
+  return <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-100 text-blue-700">{v}</span>;
 }
 
-// Dropdown con búsqueda interna
+// Dropdown con búsqueda
 function FilterSelect({ label, value, onChange, options, placeholder = "Todos" }) {
   const [open, setOpen] = useState(false);
-  const [q, setQ] = useState("");
-  const ref = useRef(null);
-  const filtered = options.filter((o) => o.toLowerCase().includes(q.toLowerCase()));
-
+  const [q, setQ]       = useState("");
+  const ref             = useRef(null);
+  const filtered        = options.filter(o => o.toLowerCase().includes(q.toLowerCase()));
   useEffect(() => {
-    const h = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
+    const h = e => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
     document.addEventListener("mousedown", h);
     return () => document.removeEventListener("mousedown", h);
   }, []);
-
   return (
     <div className="relative" ref={ref}>
       {label && <label className="block text-xs text-gray-500 mb-1">{label}</label>}
-      <button
-        type="button"
-        onClick={() => setOpen((v) => !v)}
-        className="w-full flex items-center justify-between gap-2 px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white hover:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-200 text-gray-700"
-      >
+      <button type="button" onClick={() => setOpen(v => !v)}
+        className="w-full flex items-center justify-between gap-2 px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white hover:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-200 text-gray-700">
         <span className="truncate">{value || placeholder}</span>
-        <ChevronDown className="w-4 h-4 text-gray-400 flex-shrink-0" />
+        <ChevronDown className="w-4 h-4 text-gray-400 flex-shrink-0"/>
       </button>
       {open && (
         <div className="absolute z-50 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-xl overflow-hidden min-w-[180px]">
           <div className="p-2 border-b border-gray-100">
             <div className="flex items-center gap-2 px-2 py-1 bg-gray-50 rounded-md">
-              <Search className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
-              <input
-                autoFocus
-                value={q}
-                onChange={(e) => setQ(e.target.value)}
-                placeholder="Buscar..."
-                className="flex-1 text-xs bg-transparent outline-none text-gray-700"
-              />
+              <Search className="w-3.5 h-3.5 text-gray-400 flex-shrink-0"/>
+              <input autoFocus value={q} onChange={e => setQ(e.target.value)} placeholder="Buscar..."
+                className="flex-1 text-xs bg-transparent outline-none text-gray-700"/>
             </div>
           </div>
           <ul className="max-h-48 overflow-y-auto divide-y divide-gray-50">
-            <li>
-              <button onClick={() => { onChange(""); setOpen(false); setQ(""); }}
-                className="w-full text-left px-4 py-2 text-sm text-gray-400 hover:bg-gray-50">
-                {placeholder}
-              </button>
-            </li>
-            {filtered.map((opt) => (
-              <li key={opt}>
-                <button onClick={() => { onChange(opt); setOpen(false); setQ(""); }}
-                  className={`w-full text-left px-4 py-2 text-sm hover:bg-blue-50 hover:text-blue-700 ${value === opt ? "bg-blue-50 text-blue-700 font-semibold" : "text-gray-700"}`}>
-                  {opt}
-                </button>
-              </li>
+            <li><button onClick={() => { onChange(""); setOpen(false); setQ(""); }}
+              className="w-full text-left px-4 py-2 text-sm text-gray-400 hover:bg-gray-50">{placeholder}</button></li>
+            {filtered.map(opt => (
+              <li key={opt}><button onClick={() => { onChange(opt); setOpen(false); setQ(""); }}
+                className={`w-full text-left px-4 py-2 text-sm hover:bg-blue-50 hover:text-blue-700 ${value===opt?"bg-blue-50 text-blue-700 font-semibold":"text-gray-700"}`}>
+                {opt}</button></li>
             ))}
-            {filtered.length === 0 && (
-              <li className="px-4 py-3 text-xs text-gray-400 text-center">Sin resultados</li>
-            )}
+            {!filtered.length && <li className="px-4 py-3 text-xs text-gray-400 text-center">Sin resultados</li>}
           </ul>
         </div>
       )}
@@ -166,134 +131,223 @@ function FilterSelect({ label, value, onChange, options, placeholder = "Todos" }
   );
 }
 
-// Drawer detalle de pacientes del médico
-function DrawerMedico({ medico, onClose }) {
-  const [rows, setRows] = useState([]);
-  const [loading, setLoading] = useState(true);
+// ── ÁRBOL JERÁRQUICO ─────────────────────────────────────────────────────────
+// Nodo genérico colapsable
+function TreeNode({ label, icon, indent = 0, badge, defaultOpen = false, children }) {
+  const [open, setOpen] = useState(defaultOpen);
+  const padLeft = indent * 20;
+  return (
+    <div>
+      <button
+        onClick={() => setOpen(v => !v)}
+        className="w-full flex items-center gap-1.5 py-1.5 px-3 hover:bg-blue-50 text-left transition-colors group"
+        style={{ paddingLeft: `${12 + padLeft}px` }}
+      >
+        <span className="flex-shrink-0 w-4 h-4 flex items-center justify-center text-gray-400 group-hover:text-blue-600">
+          {open ? <Minus className="w-3 h-3"/> : <Plus className="w-3 h-3"/>}
+        </span>
+        {icon}
+        <span className="text-sm font-semibold text-gray-800 flex-1 truncate">{label}</span>
+        {badge != null && (
+          <span className="text-xs px-1.5 py-0.5 rounded bg-gray-100 text-gray-500 font-medium flex-shrink-0">{badge}</span>
+        )}
+      </button>
+      {open && <div className="border-l-2 border-gray-100 ml-5">{children}</div>}
+    </div>
+  );
+}
 
-  useEffect(() => {
-    if (!medico?.dniMedico) return;
+// Fila de paciente (hoja del árbol)
+function PacienteRow({ row, indent = 4, onSelect, isSelected }) {
+  const padLeft = indent * 20;
+  return (
+    <button
+      onClick={() => onSelect(row)}
+      className={`w-full flex items-center gap-2.5 py-2 px-3 text-left transition-colors ${isSelected ? "bg-blue-100" : "hover:bg-gray-50"}`}
+      style={{ paddingLeft: `${12 + padLeft}px` }}
+    >
+      <span className="w-3 h-3 flex-shrink-0 rounded-full border-2 border-gray-300" />
+      <span className={`text-sm flex-1 truncate ${isSelected ? "text-blue-700 font-semibold" : "text-gray-700"}`}>
+        {row.paciente ?? row.docPaciente ?? "—"}
+      </span>
+      {row.abandono && row.abandono !== "0" && (
+        <span className="text-xs px-1.5 py-0.5 rounded-full bg-red-100 text-red-600 font-semibold flex-shrink-0">
+          {row.abandono}
+        </span>
+      )}
+    </button>
+  );
+}
+
+// Médico colapsable con carga lazy de detalle
+function MedicoNode({ medico, idx, searchSubact, searchServicio, onPacienteSelect, selectedPaciente }) {
+  const [open, setOpen]       = useState(false);
+  const [detalle, setDetalle] = useState(null);
+  const [loading, setLoading] = useState(false);
+
+  const cargar = async () => {
+    if (detalle !== null) return;
     setLoading(true);
-    obtenerDetallePorMedico(medico.dniMedico)
-      .then(setRows)
-      .catch(() => toast.error("No se pudo cargar el detalle"))
-      .finally(() => setLoading(false));
-  }, [medico?.dniMedico]);
+    try {
+      const rows = await obtenerDetallePorMedico(medico.dniMedico);
+      setDetalle(Array.isArray(rows) ? rows : []);
+    } catch {
+      toast.error("Error al cargar pacientes");
+      setDetalle([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  const totalAbandono = medico?.abandono ?? 0;
+  const handleToggle = () => {
+    if (!open) cargar();
+    setOpen(v => !v);
+  };
+
+  // Filtrar por subactividad / servicio si hay filtros activos
+  const filas = (detalle ?? []).filter(r => {
+    if (searchSubact  && r.subactividad !== searchSubact)  return false;
+    if (searchServicio && r.servicio    !== searchServicio) return false;
+    return true;
+  });
+
+  const tree = agruparDetalle(filas);
 
   return (
-    <>
-      <div className="fixed inset-0 bg-black/30 z-40" onClick={onClose} />
-      <div className="fixed right-0 top-0 h-full w-full max-w-md bg-white shadow-2xl z-50 flex flex-col">
+    <div className="border-b border-gray-100 last:border-0">
+      {/* Fila médico */}
+      <button
+        onClick={handleToggle}
+        className="w-full flex items-center gap-3 px-4 py-3 hover:bg-blue-50 transition-colors text-left group"
+      >
+        <span className="flex-shrink-0 w-4 h-4 flex items-center justify-center text-gray-400 group-hover:text-blue-600">
+          {open ? <Minus className="w-3.5 h-3.5"/> : <Plus className="w-3.5 h-3.5"/>}
+        </span>
+        <div className={`w-9 h-9 rounded-full ${avatarColor(idx)} flex items-center justify-center text-white font-bold text-xs flex-shrink-0`}>
+          {iniciales(medico.profesional)}
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-bold text-gray-900 truncate uppercase">{medico.profesional ?? "—"}</p>
+          <p className="text-xs text-gray-400">DNI: {medico.dniMedico ?? "—"}</p>
+        </div>
+        <div className="flex items-center gap-2 flex-shrink-0">
+          <AbandonoBadge value={medico.abandono} />
+          {loading && <RefreshCw className="w-3.5 h-3.5 animate-spin text-blue-500"/>}
+        </div>
+      </button>
 
-        {/* Header drawer — CENATE Blue */}
+      {/* Árbol de detalle */}
+      {open && (
+        <div className="bg-gray-50 border-t border-gray-100">
+          {loading ? (
+            <div className="flex items-center gap-2 px-8 py-3 text-xs text-gray-400">
+              <RefreshCw className="w-3 h-3 animate-spin"/> Cargando pacientes...
+            </div>
+          ) : filas.length === 0 ? (
+            <p className="px-8 py-3 text-xs text-gray-400 italic">Sin pacientes nominales</p>
+          ) : (
+            Object.entries(tree).map(([subact, servicios]) => (
+              <TreeNode key={subact} label={subact} indent={0}
+                badge={Object.values(servicios).reduce((a, sv) => a + Object.values(sv).reduce((b, f) => b + f.length, 0), 0)}
+                icon={<Activity className="w-3.5 h-3.5 text-blue-500 flex-shrink-0"/>}
+                defaultOpen>
+                {Object.entries(servicios).map(([serv, fechas]) => (
+                  <TreeNode key={serv} label={serv} indent={1}
+                    badge={Object.values(fechas).reduce((a, f) => a + f.length, 0)}
+                    icon={<FileText className="w-3.5 h-3.5 text-purple-500 flex-shrink-0"/>}
+                    defaultOpen>
+                    {Object.entries(fechas).sort().map(([fecha, pacientes]) => (
+                      <TreeNode key={fecha} label={fmtFecha(fecha)} indent={2}
+                        badge={pacientes.length}
+                        icon={<Calendar className="w-3.5 h-3.5 text-orange-500 flex-shrink-0"/>}
+                        defaultOpen>
+                        {pacientes.map((p, pi) => (
+                          <PacienteRow key={p.idDetPend ?? pi} row={p} indent={3}
+                            onSelect={onPacienteSelect}
+                            isSelected={selectedPaciente?.idDetPend === p.idDetPend}
+                          />
+                        ))}
+                      </TreeNode>
+                    ))}
+                  </TreeNode>
+                ))}
+              </TreeNode>
+            ))
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── DRAWER PACIENTE ───────────────────────────────────────────────────────────
+function DrawerPaciente({ paciente, onClose }) {
+  if (!paciente) return null;
+  const sinAbandono = !paciente.abandono || paciente.abandono === "0";
+  return (
+    <>
+      <div className="fixed inset-0 bg-black/30 z-40" onClick={onClose}/>
+      <div className="fixed right-0 top-0 h-full w-full max-w-sm bg-white shadow-2xl z-50 flex flex-col">
+        {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-blue-800"
           style={{ backgroundColor: CENATE_BLUE }}>
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center text-white font-bold text-sm">
-              {iniciales(medico?.profesional)}
+              {iniciales(paciente.paciente)}
             </div>
             <div>
-              <p className="font-semibold text-white text-sm leading-tight">{medico?.profesional ?? "—"}</p>
-              <p className="text-white/60 text-xs">DNI: {medico?.dniMedico ?? "—"}</p>
+              <p className="font-bold text-white text-sm leading-tight">{paciente.paciente ?? "—"}</p>
+              <p className="text-white/60 text-xs">DNI: {paciente.docPaciente ?? "—"}</p>
             </div>
           </div>
           <button onClick={onClose} className="p-1.5 hover:bg-white/10 rounded-lg transition-colors">
-            <X className="w-5 h-5 text-white" />
+            <X className="w-5 h-5 text-white"/>
           </button>
         </div>
 
-        {/* KPIs del médico */}
-        <div className="grid grid-cols-2 gap-3 p-4 border-b border-gray-100">
-          <div className="rounded-xl border border-gray-200 p-3 bg-blue-50 flex items-center gap-3">
-            <div className="p-1.5 bg-white rounded-lg shadow-sm">
-              <Users className="w-4 h-4 text-blue-600" />
-            </div>
-            <div>
-              <p className="text-xs text-gray-500">Pacientes</p>
-              <p className="text-xl font-bold text-blue-700">{loading ? "..." : rows.length}</p>
-            </div>
-          </div>
-          <div className={`rounded-xl border border-gray-200 p-3 flex items-center gap-3 ${totalAbandono === 0 ? "bg-green-50" : totalAbandono < 5 ? "bg-yellow-50" : "bg-red-50"}`}>
-            <div className="p-1.5 bg-white rounded-lg shadow-sm">
-              <TrendingDown className={`w-4 h-4 ${totalAbandono === 0 ? "text-green-600" : totalAbandono < 5 ? "text-yellow-600" : "text-red-600"}`} />
-            </div>
-            <div>
-              <p className="text-xs text-gray-500">Abandonos</p>
-              <p className={`text-xl font-bold ${totalAbandono === 0 ? "text-green-700" : totalAbandono < 5 ? "text-yellow-700" : "text-red-700"}`}>{totalAbandono}</p>
-            </div>
-          </div>
-
-          {/* Servicio & Fecha */}
-          <div className="col-span-2 rounded-xl border border-gray-200 p-3 bg-gray-50">
-            <div className="flex justify-between items-center gap-3 text-sm">
-              <div>
-                <p className="text-xs text-gray-400 mb-0.5">Servicio</p>
-                <p className="font-semibold text-gray-700 truncate max-w-[160px]">{medico?.servicio ?? "—"}</p>
-              </div>
-              <div className="text-right">
-                <p className="text-xs text-gray-400 mb-0.5">Fecha Cita</p>
-                <p className="font-semibold text-gray-700">{fmtFecha(medico?.fechaCita)}</p>
-              </div>
-            </div>
-          </div>
+        {/* Estado de abandono */}
+        <div className={`px-5 py-3 flex items-center gap-2 ${sinAbandono ? "bg-green-50 border-b border-green-100" : "bg-red-50 border-b border-red-100"}`}>
+          {sinAbandono
+            ? <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-semibold bg-green-100 text-green-700">✓ Sin abandono</span>
+            : <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-semibold bg-red-100 text-red-700"><TrendingDown className="w-4 h-4"/> Abandono: {paciente.abandono}</span>
+          }
         </div>
 
-        {/* Lista nominal */}
-        <div className="flex-1 overflow-y-auto">
-          <div className="px-4 pt-3 pb-1">
-            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">
-              Pacientes nominales ({loading ? "..." : rows.length})
-            </p>
-          </div>
-          {loading ? (
-            <div className="p-4 space-y-2">
-              {[...Array(5)].map((_, i) => <div key={i} className="h-12 bg-gray-100 animate-pulse rounded-lg" />)}
+        {/* Detalles */}
+        <div className="flex-1 overflow-y-auto p-5 flex flex-col gap-4">
+
+          <section>
+            <div className="flex items-center gap-1.5 mb-2">
+              <User className="w-4 h-4 text-blue-500"/>
+              <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Paciente</h3>
             </div>
-          ) : rows.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-12 text-gray-400">
-              <AlertCircle className="w-8 h-8 mb-2 opacity-40" />
-              <p className="text-sm">Sin registros nominales</p>
+            <div className="bg-gray-50 rounded-lg p-3 space-y-2">
+              <DRow label="Nombre"     value={paciente.paciente}    />
+              <DRow label="DNI / Doc." value={paciente.docPaciente} mono />
+              <DRow label="Fecha Cita" value={fmtFecha(paciente.fechaCita)} />
             </div>
-          ) : (
-            <div className="divide-y divide-gray-100 px-2 pb-4">
-              {rows.map((row, idx) => (
-                <div key={row.idDetPend ?? idx} className="flex items-center gap-3 py-3 px-2 hover:bg-gray-50 rounded-lg">
-                  <div className={`w-8 h-8 rounded-full ${avatarColor(idx)} flex items-center justify-center text-white font-bold text-xs flex-shrink-0`}>
-                    {iniciales(row.paciente)}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-gray-800 truncate">{row.paciente ?? "—"}</p>
-                    <p className="text-xs text-gray-500">DNI: {row.docPaciente ?? "—"} · {fmtFecha(row.fechaCita)}</p>
-                  </div>
-                  <span className={`text-xs px-2 py-0.5 rounded-full font-semibold flex-shrink-0 ${row.abandono && row.abandono !== "0" ? "bg-red-100 text-red-700" : "bg-green-100 text-green-700"}`}>
-                    {row.abandono || "Ok"}
-                  </span>
-                </div>
-              ))}
+          </section>
+
+          <section>
+            <div className="flex items-center gap-1.5 mb-2">
+              <Stethoscope className="w-4 h-4 text-purple-500"/>
+              <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Profesional asignado</h3>
             </div>
-          )}
+            <div className="bg-gray-50 rounded-lg p-3 space-y-2">
+              <DRow label="Médico"       value={paciente.profesional}   />
+              <DRow label="DNI Médico"   value={paciente.dniMedico}     mono />
+              <DRow label="Servicio"     value={paciente.servicio}      />
+              <DRow label="Subactividad" value={paciente.subactividad}  />
+            </div>
+          </section>
+
         </div>
       </div>
     </>
   );
 }
 
-// ── Sub-componentes Drawer helpers ────────────────────────────────────────
-function Section({ title, icon, children }) {
-  return (
-    <div>
-      <div className="flex items-center gap-1.5 mb-2">
-        {icon}
-        <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wide">{title}</h3>
-      </div>
-      <div className="bg-gray-50 rounded-lg p-3 space-y-2">{children}</div>
-    </div>
-  );
-}
-
-function Row({ label, value, mono = false }) {
+function DRow({ label, value, mono = false }) {
   return (
     <div className="flex justify-between gap-2 text-sm">
       <span className="text-gray-500 shrink-0">{label}</span>
@@ -307,104 +361,117 @@ function Row({ label, value, mono = false }) {
 // ══════════════════════════════════════════════════════════════════════════════
 export default function EstadisticasProgramacion() {
 
-  // ── Estado ────────────────────────────────────────────────────────────────
-  const [tab, setTab]           = useState("resumen");
-  const [kpis, setKpis]         = useState(null);
-  const [kpisLoading, setKL]    = useState(true);
+  const [tab, setTab]         = useState("resumen");
+  const [kpis, setKpis]       = useState(null);
+  const [kpisLoading, setKL]  = useState(true);
 
-  const [rows, setRows]               = useState([]);
-  const [total, setTotal]             = useState(0);
-  const [totalPaginas, setTotalPags]  = useState(0);
-  const [loading, setLoading]         = useState(false);
-  const [pagina, setPagina]           = useState(0);
+  // Tabla nominal
+  const [rows, setRows]             = useState([]);
+  const [total, setTotal]           = useState(0);
+  const [totalPaginas, setTotalPag] = useState(0);
+  const [loading, setLoading]       = useState(false);
+  const [pagina, setPagina]         = useState(0);
+
+  // Resumen (árbol) — lista de consolidado
+  const [consolidado, setConsolidado]         = useState([]);
+  const [loadingResumen, setLoadingResumen]   = useState(false);
+  const [totalResumen, setTotalResumen]       = useState(0);
 
   // Filtros
   const [subactividad, setSubactividad] = useState("");
   const [profesional, setProfesional]   = useState("");
   const [servicio, setServicio]         = useState("");
   const [busqueda, setBusqueda]         = useState("");
-  const [pendingBusqueda, setPending]   = useState("");
+  const [pendingBusq, setPendingBusq]   = useState("");
   const debProfesional = useDebounce(profesional);
 
-  // Opciones dropdowns
-  const [optsSubact, setOptsSubact]   = useState([]);
+  const [optsSubact, setOptsSubact]     = useState([]);
   const [optsServicio, setOptsServicio] = useState([]);
 
-  // Drawer médico
-  const [medicoSel, setMedicoSel] = useState(null);
+  // Selecciones
+  const [pacienteSel, setPacienteSel] = useState(null);
+  const [fechaCorte, setFechaCorte]   = useState(null);
 
-  // Fecha de corte
-  const [fechaCorte, setFechaCorte] = useState(null);
-
-  // ── KPIs ──────────────────────────────────────────────────────────────────
+  // ── KPIs ────────────────────────────────────────────────────────────────
   useEffect(() => {
     setKL(true);
     obtenerKpis()
-      .then((d) => {
+      .then(d => {
         setKpis(d);
-        if (d?.porSubactividad?.length)
-          setOptsSubact(d.porSubactividad.map((s) => s.subactividad).filter(Boolean));
-        if (d?.topServiciosPorAbandonos?.length)
-          setOptsServicio(d.topServiciosPorAbandonos.map((s) => s.servicio).filter(Boolean));
+        if (d?.porSubactividad?.length)       setOptsSubact(d.porSubactividad.map(s => s.subactividad).filter(Boolean));
+        if (d?.topServiciosPorAbandonos?.length) setOptsServicio(d.topServiciosPorAbandonos.map(s => s.servicio).filter(Boolean));
       })
       .catch(() => toast.error("No se pudo cargar los KPIs"))
       .finally(() => setKL(false));
   }, []);
 
-  // ── Fetch tabla ───────────────────────────────────────────────────────────
-  const fetchData = useCallback(async (pg = 0) => {
+  // ── Cargar lista de consolidado (árbol RESUMEN) ────────────────────────
+  const fetchResumen = useCallback(async () => {
+    setLoadingResumen(true);
+    try {
+      // Traer todo el consolidado (sin paginación, tamaño grande)
+      const params = { page: 0, size: 200 };
+      if (subactividad)   params.subactividad  = subactividad;
+      if (servicio)       params.servicio      = servicio;
+      if (debProfesional) params.busqueda      = debProfesional;
+      const result  = await obtenerConsolidado(params);
+      const content = result?.content ?? result ?? [];
+      const list    = Array.isArray(content) ? content : [];
+      setConsolidado(list);
+      setTotalResumen(result?.totalElements ?? list.length ?? 0);
+      if (list.length) setFechaCorte(list[0]?.fechaCita ?? null);
+    } catch (e) {
+      toast.error("Error al cargar resumen");
+      setConsolidado([]);
+    } finally {
+      setLoadingResumen(false);
+    }
+  }, [subactividad, servicio, debProfesional]);
+
+  // ── Cargar datos tabla NOMINAL ─────────────────────────────────────────
+  const fetchNominal = useCallback(async (pg = 0) => {
     setLoading(true);
     try {
-      const params = {
-        subactividad: subactividad || undefined,
-        servicio:     servicio     || undefined,
-        page: pg, size: PAGE_SIZE,
-      };
-
-      let result;
-      if (tab === "resumen") {
-        if (debProfesional) params.busqueda = debProfesional;
-        result = await obtenerConsolidado(params);
-      } else {
-        const q = busqueda || debProfesional || undefined;
-        if (q) params.busqueda = q;
-        result = await obtenerDetalle(params);
-      }
-
+      const params = { page: pg, size: PAGE_SIZE };
+      if (subactividad)   params.subactividad = subactividad;
+      if (servicio)       params.servicio     = servicio;
+      if (busqueda || debProfesional) params.busqueda = busqueda || debProfesional;
+      const result  = await obtenerDetalle(params);
       const content = result?.content ?? result ?? [];
-      const list = Array.isArray(content) ? content : [];
+      const list    = Array.isArray(content) ? content : [];
       setRows(list);
       setTotal(result?.totalElements ?? list.length ?? 0);
-      setTotalPags(result?.totalPages ?? 1);
+      setTotalPag(result?.totalPages ?? 1);
       setPagina(pg);
-      if (pg === 0 && list.length > 0) setFechaCorte(list[0]?.fechaCita ?? null);
-
+      if (pg === 0 && list.length) setFechaCorte(list[0]?.fechaCita ?? null);
     } catch (e) {
-      console.error("❌ fetchData:", e);
-      toast.error("Error al cargar los datos");
+      toast.error("Error al cargar datos");
       setRows([]);
     } finally {
       setLoading(false);
     }
-  }, [tab, subactividad, servicio, busqueda, debProfesional]);
+  }, [subactividad, servicio, busqueda, debProfesional]);
 
-  useEffect(() => { fetchData(0); }, [fetchData]);
+  useEffect(() => {
+    if (tab === "resumen") fetchResumen();
+    else fetchNominal(0);
+  }, [tab, fetchResumen, fetchNominal]);
 
-  // ── Limpiar filtros ───────────────────────────────────────────────────────
+  // ── Filtros helpers ───────────────────────────────────────────────────
   const limpiarFiltros = () => {
     setSubactividad(""); setProfesional(""); setServicio("");
-    setBusqueda(""); setPending(""); setPagina(0);
+    setBusqueda(""); setPendingBusq(""); setPagina(0);
   };
+  const aplicarBusqueda = () => { setBusqueda(pendingBusq.trim()); setPagina(0); };
 
-  const aplicarBusqueda = () => { setBusqueda(pendingBusqueda.trim()); setPagina(0); };
-
-  // ── Exportar CSV ──────────────────────────────────────────────────────────
+  // ── Exportar CSV ──────────────────────────────────────────────────────
   const exportarCSV = () => {
-    if (!rows.length) return toast.error("Sin datos para exportar");
+    const src = tab === "resumen" ? consolidado : rows;
+    if (!src.length) return toast.error("Sin datos para exportar");
     const headers = tab === "resumen"
       ? ["DNI Médico","Profesional","Fecha Cita","Subactividad","Servicio","Abandonos"]
       : ["DNI Médico","Profesional","Fecha Cita","Subactividad","Servicio","DNI Paciente","Paciente","Abandono"];
-    const csvRows = rows.map((r) =>
+    const csvRows = src.map(r =>
       tab === "resumen"
         ? [r.dniMedico, `"${r.profesional}"`, r.fechaCita, r.subactividad, `"${r.servicio}"`, r.abandono].join(",")
         : [r.dniMedico, `"${r.profesional}"`, r.fechaCita, r.subactividad, `"${r.servicio}"`, r.docPaciente, `"${r.paciente}"`, `"${r.abandono}"`].join(",")
@@ -412,21 +479,21 @@ export default function EstadisticasProgramacion() {
     const csv  = [headers.join(","), ...csvRows].join("\n");
     const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
     const url  = URL.createObjectURL(blob);
-    const a    = document.createElement("a");
-    a.href = url; a.download = `pendientes_${tab}_${new Date().toISOString().slice(0,10)}.csv`; a.click();
+    const a    = document.createElement("a"); a.href = url;
+    a.download = `pendientes_${tab}_${new Date().toISOString().slice(0,10)}.csv`; a.click();
     URL.revokeObjectURL(url);
     toast.success("CSV exportado");
   };
 
-  // ── Render ────────────────────────────────────────────────────────────────
+  // ── Render ────────────────────────────────────────────────────────────
   return (
     <div className="min-h-screen bg-gray-50 p-4 md:p-6">
 
-      {/* ── Header ─────────────────────────────────────────────────────────── */}
+      {/* Header */}
       <div className="mb-6 flex items-start justify-between flex-wrap gap-3">
         <div className="flex items-center gap-3">
-          <div className="p-2.5 rounded-xl" style={{ backgroundColor: "#dbeafe" }}>
-            <BarChart3 className="w-6 h-6" style={{ color: CENATE_BLUE }} />
+          <div className="p-2.5 rounded-xl bg-blue-100">
+            <BarChart3 className="w-6 h-6" style={{ color: CENATE_BLUE }}/>
           </div>
           <div>
             <h1 className="text-xl font-bold text-gray-800">Estadísticas de Programación</h1>
@@ -436,237 +503,145 @@ export default function EstadisticasProgramacion() {
             </p>
           </div>
         </div>
-        <button
-          onClick={exportarCSV}
-          className="flex items-center gap-2 px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm text-gray-600 hover:bg-gray-50 transition-colors"
-        >
-          <Download className="w-4 h-4" /> Exportar CSV
+        <button onClick={exportarCSV}
+          className="flex items-center gap-2 px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm text-gray-600 hover:bg-gray-50 transition-colors">
+          <Download className="w-4 h-4"/> Exportar CSV
         </button>
       </div>
 
-      {/* ── KPI Cards ──────────────────────────────────────────────────────── */}
+      {/* KPIs */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <KpiCard
-          icon={<Users className="w-5 h-5 text-blue-600" />}
-          label="Médicos con Pendientes"
-          value={kpis?.totalMedicos}
-          bg="bg-blue-50"
-          textColor="text-blue-700"
-          loading={kpisLoading}
-        />
-        <KpiCard
-          icon={<User className="w-5 h-5 text-cyan-600" />}
-          label="Pacientes Pendientes"
-          value={kpis?.totalPacientes}
-          bg="bg-cyan-50"
-          textColor="text-cyan-700"
-          loading={kpisLoading}
-        />
-        <KpiCard
-          icon={<TrendingDown className="w-5 h-5 text-red-500" />}
-          label="Total Abandonos"
-          value={kpis?.totalAbandonos}
-          bg="bg-red-50"
-          textColor="text-red-700"
-          loading={kpisLoading}
-        />
-        <KpiCard
-          icon={<Activity className="w-5 h-5 text-purple-600" />}
-          label="Subactividades"
-          value={kpis?.porSubactividad?.length}
-          bg="bg-purple-50"
-          textColor="text-purple-700"
-          loading={kpisLoading}
-        />
+        <KpiCard icon={<Users className="w-5 h-5 text-blue-600"/>}      label="Médicos con Pendientes" value={kpis?.totalMedicos}               bg="bg-blue-50"   textColor="text-blue-700"   loading={kpisLoading}/>
+        <KpiCard icon={<User className="w-5 h-5 text-cyan-600"/>}       label="Pacientes Pendientes"   value={kpis?.totalPacientes}              bg="bg-cyan-50"   textColor="text-cyan-700"   loading={kpisLoading}/>
+        <KpiCard icon={<TrendingDown className="w-5 h-5 text-red-500"/>} label="Total Abandonos"        value={kpis?.totalAbandonos}              bg="bg-red-50"    textColor="text-red-700"    loading={kpisLoading}/>
+        <KpiCard icon={<Activity className="w-5 h-5 text-purple-600"/>}  label="Subactividades"         value={kpis?.porSubactividad?.length}     bg="bg-purple-50" textColor="text-purple-700" loading={kpisLoading}/>
       </div>
 
-      {/* ── Tabs RESUMEN / NOMINAL ──────────────────────────────────────────── */}
+      {/* Tabs */}
       <div className="flex rounded-xl overflow-hidden border border-gray-200 mb-4 bg-white shadow-sm w-full max-w-sm">
-        {[
-          { key: "resumen", label: "RESUMEN",  sub: "Por profesional" },
-          { key: "nominal", label: "NOMINAL",  sub: "Por paciente"    },
-        ].map(({ key, label, sub }) => (
-          <button
-            key={key}
-            onClick={() => { setTab(key); setPagina(0); setBusqueda(""); setPending(""); setProfesional(""); }}
+        {[{key:"resumen",label:"RESUMEN",sub:"Vista árbol"},{key:"nominal",label:"NOMINAL",sub:"Por paciente"}].map(({key,label,sub}) => (
+          <button key={key}
+            onClick={() => { setTab(key); setPagina(0); setBusqueda(""); setPendingBusq(""); setProfesional(""); }}
             className="flex-1 py-3 text-center transition-all duration-200 font-bold text-sm tracking-wider uppercase"
-            style={tab === key
-              ? { backgroundColor: CENATE_BLUE, color: "white" }
-              : { backgroundColor: "white", color: CENATE_BLUE }}
-          >
+            style={tab===key ? {backgroundColor:CENATE_BLUE,color:"white"} : {backgroundColor:"white",color:CENATE_BLUE}}>
             {label}
             <span className="block text-[10px] font-normal tracking-normal normal-case opacity-70 mt-0.5">{sub}</span>
           </button>
         ))}
       </div>
 
-      {/* ── Filtros ─────────────────────────────────────────────────────────── */}
+      {/* Filtros */}
       <div className="bg-white rounded-xl border border-gray-200 p-4 mb-5">
         <div className="flex flex-wrap gap-3 items-end">
-
-          {/* Subactividad */}
           <div className="w-44">
-            <FilterSelect
-              label="Subactividad"
-              value={subactividad}
-              onChange={setSubactividad}
-              options={optsSubact}
-              placeholder="Todas"
-            />
+            <FilterSelect label="Subactividad" value={subactividad} onChange={setSubactividad} options={optsSubact} placeholder="Todas"/>
           </div>
-
-          {/* Profesional */}
           <div className="flex-1 min-w-[200px]">
             <label className="block text-xs text-gray-500 mb-1">Profesional de Salud</label>
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-              <input
-                value={profesional}
-                onChange={(e) => setProfesional(e.target.value)}
-                placeholder="Nombre o DNI médico..."
-                className="w-full pl-9 pr-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-200"
-              />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400"/>
+              <input value={profesional} onChange={e => setProfesional(e.target.value)} placeholder="Nombre o DNI médico..."
+                className="w-full pl-9 pr-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-200"/>
             </div>
           </div>
-
-          {/* Servicio */}
           <div className="w-52">
-            <FilterSelect
-              label="Servicio"
-              value={servicio}
-              onChange={setServicio}
-              options={optsServicio}
-              placeholder="Todos"
-            />
+            <FilterSelect label="Servicio" value={servicio} onChange={setServicio} options={optsServicio} placeholder="Todos"/>
           </div>
-
-          {/* Búsqueda paciente (solo nominal) */}
           {tab === "nominal" && (
             <div className="flex-1 min-w-[200px]">
               <label className="block text-xs text-gray-500 mb-1">Buscar Paciente</label>
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                <input
-                  value={pendingBusqueda}
-                  onChange={(e) => setPending(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && aplicarBusqueda()}
-                  placeholder="DNI o nombre del paciente..."
-                  className="w-full pl-9 pr-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-200"
-                />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400"/>
+                <input value={pendingBusq} onChange={e => setPendingBusq(e.target.value)}
+                  onKeyDown={e => e.key==="Enter" && aplicarBusqueda()} placeholder="DNI o nombre del paciente..."
+                  className="w-full pl-9 pr-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-200"/>
               </div>
             </div>
           )}
-
-          {/* Acciones */}
           <div className="flex gap-2">
             {tab === "nominal" && (
-              <button
-                onClick={aplicarBusqueda}
+              <button onClick={aplicarBusqueda}
                 className="flex items-center gap-1.5 px-4 py-2 text-white rounded-lg text-sm font-medium hover:opacity-90 transition-opacity"
-                style={{ backgroundColor: CENATE_BLUE }}
-              >
-                <Search className="w-4 h-4" /> Buscar
+                style={{backgroundColor:CENATE_BLUE}}>
+                <Search className="w-4 h-4"/> Buscar
               </button>
             )}
-            <button
-              onClick={() => fetchData(0)}
-              className="flex items-center gap-1.5 px-3 py-2 bg-gray-100 text-gray-600 rounded-lg text-sm hover:bg-gray-200 transition-colors"
-              title="Actualizar"
-            >
-              <RefreshCw className="w-4 h-4" />
+            <button onClick={() => tab==="resumen" ? fetchResumen() : fetchNominal(0)}
+              className="px-3 py-2 bg-gray-100 text-gray-600 rounded-lg text-sm hover:bg-gray-200 transition-colors" title="Actualizar">
+              <RefreshCw className="w-4 h-4"/>
             </button>
-            <button
-              onClick={limpiarFiltros}
-              className="flex items-center gap-1.5 px-3 py-2 bg-gray-100 text-gray-600 rounded-lg text-sm hover:bg-gray-200 transition-colors"
-              title="Limpiar filtros"
-            >
-              <X className="w-4 h-4" />
+            <button onClick={limpiarFiltros}
+              className="px-3 py-2 bg-gray-100 text-gray-600 rounded-lg text-sm hover:bg-gray-200 transition-colors" title="Limpiar filtros">
+              <X className="w-4 h-4"/>
             </button>
           </div>
         </div>
       </div>
 
-      {/* ── Tabla ───────────────────────────────────────────────────────────── */}
-      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden mb-6">
-
-        {loading ? (
-          <div className="flex items-center justify-center h-48 text-gray-400">
-            <RefreshCw className="w-6 h-6 animate-spin mr-2" /> Cargando datos...
+      {/* ── VISTA ÁRBOL (RESUMEN) ─────────────────────────────────────────── */}
+      {tab === "resumen" && (
+        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+          {/* Info */}
+          <div className="px-5 py-3 border-b border-gray-100 flex items-center justify-between">
+            <p className="text-sm text-gray-500">
+              <span className="font-semibold text-gray-800">{totalResumen.toLocaleString("es-PE")}</span> profesionales · haz clic en el nombre para expandir
+            </p>
+            {loadingResumen && <RefreshCw className="w-4 h-4 animate-spin text-blue-500"/>}
           </div>
-        ) : rows.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-48 text-gray-400 gap-2">
-            <AlertCircle className="w-8 h-8" />
-            <p className="text-sm">Sin resultados para los filtros seleccionados</p>
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
 
-            {/* ── TABLA RESUMEN ─────────────────────────────────────────────── */}
-            {tab === "resumen" && (
+          {loadingResumen ? (
+            <div className="flex items-center justify-center h-48 text-gray-400">
+              <RefreshCw className="w-5 h-5 animate-spin mr-2"/> Cargando...
+            </div>
+          ) : consolidado.length === 0 ? (
+            <div className="flex flex-col items-center justify-center h-48 text-gray-400 gap-2">
+              <AlertCircle className="w-8 h-8"/>
+              <p className="text-sm">Sin resultados</p>
+            </div>
+          ) : (
+            <div className="divide-y divide-gray-100">
+              {consolidado.map((med, idx) => (
+                <MedicoNode
+                  key={med.dniMedico ?? idx}
+                  medico={med}
+                  idx={idx}
+                  searchSubact={subactividad}
+                  searchServicio={servicio}
+                  onPacienteSelect={setPacienteSel}
+                  selectedPaciente={pacienteSel}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── TABLA NOMINAL ─────────────────────────────────────────────────── */}
+      {tab === "nominal" && (
+        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden mb-6">
+          {loading ? (
+            <div className="flex items-center justify-center h-48 text-gray-400">
+              <RefreshCw className="w-6 h-6 animate-spin mr-2"/> Cargando datos...
+            </div>
+          ) : rows.length === 0 ? (
+            <div className="flex flex-col items-center justify-center h-48 text-gray-400 gap-2">
+              <AlertCircle className="w-8 h-8"/>
+              <p className="text-sm">Sin resultados para los filtros seleccionados</p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
               <table className="w-full text-sm">
-                <thead className="sticky top-0 z-10" style={{ backgroundColor: CENATE_BLUE }}>
+                <thead className="sticky top-0 z-10" style={{backgroundColor:CENATE_BLUE}}>
                   <tr>
-                    {["#", "Profesional", "DNI Médico", "Servicio", "Subactividad", "Fecha Cita", "Abandonos", ""].map((h, i) => (
-                      <th key={i} className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider text-white whitespace-nowrap">
-                        {h}
-                      </th>
+                    {["Paciente","DNI Paciente","Médico","Servicio","Subactividad","Fecha Cita","Estado",""].map((h,i) => (
+                      <th key={i} className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider text-white whitespace-nowrap">{h}</th>
                     ))}
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
                   {rows.map((row, idx) => (
-                    <tr key={row.idConsPend ?? idx} className="hover:bg-gray-50 transition-colors duration-200">
-                      <td className="px-6 py-4">
-                        <div className={`w-8 h-8 rounded-full ${avatarColor(idx)} flex items-center justify-center text-white font-bold text-xs`}>
-                          {pagina * PAGE_SIZE + idx + 1}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 font-semibold text-gray-900 max-w-[200px]">
-                        <div className="flex items-center gap-2.5">
-                          <div className={`w-8 h-8 rounded-full ${avatarColor(idx)} flex items-center justify-center text-white font-bold text-xs flex-shrink-0`}>
-                            {iniciales(row.profesional)}
-                          </div>
-                          <span className="truncate">{row.profesional ?? "—"}</span>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 text-gray-600 font-mono text-xs">{row.dniMedico ?? "—"}</td>
-                      <td className="px-6 py-4 text-gray-700 max-w-[180px] truncate" title={row.servicio}>{row.servicio ?? "—"}</td>
-                      <td className="px-6 py-4"><SubactividadBadge value={row.subactividad} /></td>
-                      <td className="px-6 py-4 text-gray-500 whitespace-nowrap">{fmtFecha(row.fechaCita)}</td>
-                      <td className="px-6 py-4"><AbandonoBadge value={row.abandono} /></td>
-                      <td className="px-6 py-4 text-right">
-                        <button
-                          onClick={() => setMedicoSel(row)}
-                          className="text-xs px-3 py-1.5 rounded-lg border font-semibold transition-colors hover:text-white"
-                          style={{ borderColor: CENATE_BLUE, color: CENATE_BLUE }}
-                          onMouseOver={(e) => { e.currentTarget.style.backgroundColor = CENATE_BLUE; e.currentTarget.style.color = "white"; }}
-                          onMouseOut={(e)  => { e.currentTarget.style.backgroundColor = "transparent"; e.currentTarget.style.color = CENATE_BLUE; }}
-                        >
-                          Ver pacientes
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            )}
-
-            {/* ── TABLA NOMINAL ─────────────────────────────────────────────── */}
-            {tab === "nominal" && (
-              <table className="w-full text-sm">
-                <thead className="sticky top-0 z-10" style={{ backgroundColor: CENATE_BLUE }}>
-                  <tr>
-                    {["#", "Paciente", "DNI Paciente", "Médico", "Servicio", "Subactividad", "Fecha Cita", "Estado", ""].map((h, i) => (
-                      <th key={i} className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider text-white whitespace-nowrap">
-                        {h}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-100">
-                  {rows.map((row, idx) => (
-                    <tr key={row.idDetPend ?? idx} className="hover:bg-gray-50 transition-colors duration-200">
-                      <td className="px-6 py-4 text-gray-400 text-xs">{pagina * PAGE_SIZE + idx + 1}</td>
+                    <tr key={row.idDetPend ?? idx} className="hover:bg-gray-50 transition-colors duration-200 cursor-pointer"
+                      onClick={() => setPacienteSel(row)}>
                       <td className="px-6 py-4 font-semibold text-gray-900 max-w-[180px]">
                         <div className="flex items-center gap-2.5">
                           <div className={`w-8 h-8 rounded-full ${avatarColor(idx)} flex items-center justify-center text-white font-bold text-xs flex-shrink-0`}>
@@ -678,95 +653,78 @@ export default function EstadisticasProgramacion() {
                       <td className="px-6 py-4 text-gray-600 font-mono text-xs">{row.docPaciente ?? "—"}</td>
                       <td className="px-6 py-4 text-gray-700 max-w-[160px] truncate" title={row.profesional}>{row.profesional ?? "—"}</td>
                       <td className="px-6 py-4 text-gray-700 max-w-[160px] truncate" title={row.servicio}>{row.servicio ?? "—"}</td>
-                      <td className="px-6 py-4"><SubactividadBadge value={row.subactividad} /></td>
+                      <td className="px-6 py-4"><SubBadge v={row.subactividad}/></td>
                       <td className="px-6 py-4 text-gray-500 whitespace-nowrap">{fmtFecha(row.fechaCita)}</td>
                       <td className="px-6 py-4">
-                        <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold ${row.abandono && row.abandono !== "0" ? "bg-red-100 text-red-700" : "bg-green-100 text-green-700"}`}>
+                        <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold ${row.abandono && row.abandono!=="0" ? "bg-red-100 text-red-700" : "bg-green-100 text-green-700"}`}>
                           {row.abandono || "Activo"}
                         </span>
                       </td>
                       <td className="px-6 py-4 text-right">
-                        <button
-                          onClick={() => setMedicoSel({ dniMedico: row.dniMedico, profesional: row.profesional, servicio: row.servicio, fechaCita: row.fechaCita, abandono: null })}
-                          className="p-1.5 hover:bg-gray-100 rounded-md transition-colors text-gray-500"
-                          title="Ver resumen del médico"
-                        >
-                          <User className="w-4 h-4" />
+                        <button className="p-1.5 hover:bg-gray-100 rounded-md transition-colors text-gray-500" title="Ver detalle">
+                          <User className="w-4 h-4"/>
                         </button>
                       </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
-            )}
-          </div>
-        )}
-
-        {/* ── Paginación ──────────────────────────────────────────────────── */}
-        {!loading && rows.length > 0 && (
-          <div className="flex items-center justify-between px-4 py-3 border-t border-gray-100 text-sm text-gray-500">
-            <span>
-              Mostrando {pagina * PAGE_SIZE + 1}–{Math.min((pagina + 1) * PAGE_SIZE, total)} de{" "}
-              <span className="font-semibold text-gray-800">{total.toLocaleString("es-PE")}</span> registros
-            </span>
-            <div className="flex items-center gap-1">
-              <button
-                onClick={() => fetchData(pagina - 1)}
-                disabled={pagina === 0}
-                className="p-1.5 rounded-lg hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed"
-              >
-                <ChevronLeft className="w-4 h-4" />
-              </button>
-              <span className="px-3 py-1 rounded-lg text-xs font-semibold text-white"
-                style={{ backgroundColor: CENATE_BLUE }}>
-                {pagina + 1} / {totalPaginas || 1}
-              </span>
-              <button
-                onClick={() => fetchData(pagina + 1)}
-                disabled={pagina >= totalPaginas - 1}
-                className="p-1.5 rounded-lg hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed"
-              >
-                <ChevronRight className="w-4 h-4" />
-              </button>
             </div>
-          </div>
-        )}
-      </div>
+          )}
 
-      {/* ── Panel resumen por subactividad ──────────────────────────────────── */}
+          {/* Paginación */}
+          {!loading && rows.length > 0 && (
+            <div className="flex items-center justify-between px-4 py-3 border-t border-gray-100 text-sm text-gray-500">
+              <span>
+                Mostrando {pagina*PAGE_SIZE+1}–{Math.min((pagina+1)*PAGE_SIZE,total)} de{" "}
+                <span className="font-semibold text-gray-800">{total.toLocaleString("es-PE")}</span> registros
+              </span>
+              <div className="flex items-center gap-1">
+                <button onClick={() => fetchNominal(pagina-1)} disabled={pagina===0}
+                  className="p-1.5 rounded-lg hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed">
+                  <ChevronLeft className="w-4 h-4"/>
+                </button>
+                <span className="px-3 py-1 rounded-lg text-xs font-semibold text-white" style={{backgroundColor:CENATE_BLUE}}>
+                  {pagina+1} / {totalPaginas||1}
+                </span>
+                <button onClick={() => fetchNominal(pagina+1)} disabled={pagina>=totalPaginas-1}
+                  className="p-1.5 rounded-lg hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed">
+                  <ChevronRight className="w-4 h-4"/>
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── Panel resumen subactividades ─────────────────────────────────── */}
       {kpis?.porSubactividad?.length > 0 && (
-        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden mt-4">
           <div className="px-5 py-4 border-b border-gray-100 flex items-center gap-2">
-            <Activity className="w-4 h-4" style={{ color: CENATE_BLUE }} />
+            <Activity className="w-4 h-4" style={{color:CENATE_BLUE}}/>
             <h3 className="text-sm font-semibold text-gray-700">Resumen por Subactividad</h3>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead className="bg-gray-50 border-b border-gray-200">
                 <tr>
-                  {["Subactividad", "Médicos", "Abandonos", "Distribución"].map((h) => (
-                    <th key={h} className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                      {h}
-                    </th>
+                  {["Subactividad","Médicos","Abandonos","Distribución"].map(h => (
+                    <th key={h} className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">{h}</th>
                   ))}
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
-                {kpis.porSubactividad.map((s, idx) => {
-                  const pct = kpis.totalAbandonos > 0 ? Math.round((s.abandonos / kpis.totalAbandonos) * 100) : 0;
+                {kpis.porSubactividad.map(s => {
+                  const pct = kpis.totalAbandonos > 0 ? Math.round((s.abandonos/kpis.totalAbandonos)*100) : 0;
                   return (
                     <tr key={s.subactividad} className="hover:bg-gray-50 transition-colors">
-                      <td className="px-6 py-3">
-                        <SubactividadBadge value={s.subactividad} />
-                      </td>
+                      <td className="px-6 py-3"><SubBadge v={s.subactividad}/></td>
                       <td className="px-6 py-3 text-gray-700 font-semibold">{s.medicos}</td>
-                      <td className="px-6 py-3">
-                        <AbandonoBadge value={Number(s.abandonos)} />
-                      </td>
+                      <td className="px-6 py-3"><AbandonoBadge value={Number(s.abandonos)}/></td>
                       <td className="px-6 py-3">
                         <div className="flex items-center gap-2">
                           <div className="flex-1 h-2 rounded-full bg-gray-100 overflow-hidden max-w-[120px]">
-                            <div className="h-full rounded-full" style={{ width: `${pct}%`, backgroundColor: CENATE_BLUE }} />
+                            <div className="h-full rounded-full" style={{width:`${pct}%`,backgroundColor:CENATE_BLUE}}/>
                           </div>
                           <span className="text-xs text-gray-500 w-8 text-right">{pct}%</span>
                         </div>
@@ -780,13 +738,8 @@ export default function EstadisticasProgramacion() {
         </div>
       )}
 
-      {/* ── Drawer médico ─────────────────────────────────────────────────────── */}
-      {medicoSel && (
-        <DrawerMedico
-          medico={medicoSel}
-          onClose={() => setMedicoSel(null)}
-        />
-      )}
+      {/* Drawer detalle paciente */}
+      {pacienteSel && <DrawerPaciente paciente={pacienteSel} onClose={() => setPacienteSel(null)}/>}
     </div>
   );
 }
