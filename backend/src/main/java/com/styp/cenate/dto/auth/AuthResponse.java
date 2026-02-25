@@ -35,4 +35,5 @@ public class AuthResponse {
     private Long idIpress;         // ID del IPRESS
     private String descServicio;   // Descripción del servicio (dim_servicio_essi)
     private Long idServicio;       // ID del servicio
+    private Long idGrupoProg;      // 🆕 ID del grupo programático (id_grupo_prog de dim_personal_cnt)
 }

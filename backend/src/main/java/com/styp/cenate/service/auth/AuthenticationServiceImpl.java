@@ -143,6 +143,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         Long idIpress = null;
         String descServicio = null;
         Long idServicio = null;
+        Long idGrupoProg = null;  // 🆕 ID del grupo programático
 
         var personalInfo = obtenerInfoPersonal(user);
         
@@ -156,6 +157,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
             descIpress = (String) personalInfo.get("desc_ipress");
             idServicio = personalInfo.get("id_servicio") != null ? ((Number) personalInfo.get("id_servicio")).longValue() : null;
             descServicio = (String) personalInfo.get("desc_servicio");
+            idGrupoProg = personalInfo.get("id_grupo_prog") != null ? ((Number) personalInfo.get("id_grupo_prog")).longValue() : null;  // 🆕 Obtener ID del grupo programático
         }
 
         Map<String, Object> claims = new HashMap<>();
@@ -226,6 +228,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                 .idIpress(idIpress)  // 🆕 v1.78.0: ID del IPRESS
                 .descServicio(descServicio)  // 🆕 v1.78.0: Servicio
                 .idServicio(idServicio)  // 🆕 v1.78.0: ID del servicio
+                .idGrupoProg(idGrupoProg)  // 🆕 ID del grupo programático
                 .message("Inicio de sesión exitoso")
                 .build();
     }
@@ -489,7 +492,8 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                 "  dpc.id_ipress, " +
                 "  di.desc_ipress, " +
                 "  dpc.id_servicio, " +
-                "  dse.desc_servicio " +
+                "  dse.desc_servicio, " +
+                "  dpc.id_grupo_prog " +
                 "FROM public.dim_personal_cnt dpc " +
                 "LEFT JOIN public.dim_regimen_laboral drl ON dpc.id_reg_lab = drl.id_reg_lab " +
                 "LEFT JOIN public.dim_area da ON dpc.id_area = da.id_area " +
@@ -509,6 +513,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                     map.put("desc_ipress", rs.getString("desc_ipress"));
                     map.put("id_servicio", rs.getObject("id_servicio"));
                     map.put("desc_servicio", rs.getString("desc_servicio"));
+                    map.put("id_grupo_prog", rs.getObject("id_grupo_prog"));
                     return map;
                 }
             );
