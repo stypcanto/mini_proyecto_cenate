@@ -683,6 +683,7 @@ public class GestionPacienteServiceImpl implements IGestionPacienteService {
         String[] enfermedadesCronicas = null;
         String telefonoPrincipal = null;
         String telefonoAlterno = null;
+        String pkAsegurado = null;
 
         try {
             if (bolsa.getCodigoIpressAdscripcion() != null) {
@@ -707,6 +708,7 @@ public class GestionPacienteServiceImpl implements IGestionPacienteService {
             }
 
             if (asegurado != null) {
+                pkAsegurado = asegurado.getPkAsegurado();
                 if (ipressNombre == null && asegurado.getCasAdscripcion() != null) {
                     ipressNombre = obtenerNombreIpress(asegurado.getCasAdscripcion());
                 }
@@ -743,6 +745,7 @@ public class GestionPacienteServiceImpl implements IGestionPacienteService {
         result.put("telefonoPrincipal", telefonoPrincipal);
         result.put("telefonoAlterno", telefonoAlterno);
         result.put("ipressAtencionNombre", ipressAtencionNombre);
+        result.put("pkAsegurado", pkAsegurado);
         return result;
     }
 
@@ -811,6 +814,7 @@ public class GestionPacienteServiceImpl implements IGestionPacienteService {
         return GestionPacienteDTO.builder()
             .idSolicitudBolsa(bolsa.getIdSolicitud())  // ✅ v1.46.0: Incluir ID de bolsa
             .idBolsa(bolsa.getIdBolsa())  // ✅ v1.63.0: Tipo de bolsa (107, Dengue, etc.)
+            .pkAsegurado((String) enriquecimiento.get("pkAsegurado"))  // ✅ fix: pkAsegurado para baja CENACRON
             .numDoc(bolsa.getPacienteDni())
             .apellidosNombres(bolsa.getPacienteNombre())
             .sexo(bolsa.getPacienteSexo())

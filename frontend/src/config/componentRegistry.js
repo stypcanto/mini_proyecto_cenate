@@ -682,6 +682,10 @@ export const componentRegistry = {
     component: lazy(() => import('../pages/enfermeria/RescatarPacienteEnfermeria')),
     requiredAction: 'ver',
   },
+  '/enfermeria/total-pacientes-enfermeria': {
+    component: lazy(() => import('../pages/enfermeria/TotalPacientesEnfermeria')),
+    requiredAction: 'ver',
+  },
 };
 
 // ========================================================================

@@ -1,6 +1,7 @@
 package com.styp.cenate.api.enfermeria;
 
 import com.styp.cenate.dto.enfermeria.EnfermeraSimpleDto;
+import com.styp.cenate.dto.enfermeria.EnfermeraStatsDto;
 import com.styp.cenate.dto.enfermeria.NursingAttendRequest;
 import com.styp.cenate.dto.enfermeria.NursingWorklistDto;
 import com.styp.cenate.dto.enfermeria.RescatarPacienteDto;
@@ -13,6 +14,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Slf4j
 @RestController
@@ -77,5 +79,49 @@ public class NursingController {
     public ResponseEntity<List<EnfermeraSimpleDto>> listarEnfermeras() {
         log.info("📋 GET /api/enfermeria/enfermeras");
         return ResponseEntity.ok(nursingService.listarEnfermeras());
+    }
+
+    // =========================================================================
+    // 📊 v1.65.0: TOTAL PACIENTES ENFERMERÍA
+    // =========================================================================
+
+    /**
+     * GET /api/enfermeria/estadisticas/por-enfermera?fecha=YYYY-MM-DD
+     * Estadísticas de pacientes (bolsa 3) agrupadas por enfermera.
+     * El parámetro fecha es opcional; si se omite, devuelve todos los registros.
+     */
+    @GetMapping("/estadisticas/por-enfermera")
+    public ResponseEntity<List<EnfermeraStatsDto>> estadisticasPorEnfermera(
+            @RequestParam(required = false) String fecha) {
+        log.info("📊 GET /api/enfermeria/estadisticas/por-enfermera - fecha: {}", fecha);
+        return ResponseEntity.ok(nursingService.obtenerEstadisticasPorEnfermera(fecha));
+    }
+
+    /**
+     * GET /api/enfermeria/pacientes/por-enfermera?idPersonal=&fecha=YYYY-MM-DD
+     * Pacientes (bolsa 3) asignados a una enfermera específica.
+     */
+    @GetMapping("/pacientes/por-enfermera")
+    public ResponseEntity<List<RescatarPacienteDto>> pacientesPorEnfermera(
+            @RequestParam Long idPersonal,
+            @RequestParam(required = false) String fecha) {
+        log.info("📋 GET /api/enfermeria/pacientes/por-enfermera - idPersonal: {}, fecha: {}", idPersonal, fecha);
+        return ResponseEntity.ok(nursingService.obtenerPacientesPorEnfermera(idPersonal, fecha));
+    }
+
+    /**
+     * PUT /api/enfermeria/reasignar-masivo
+     * Body: { "ids": [1,2,3], "idPersonal": 490 }
+     * Reasigna un lote de solicitudes a otra enfermera.
+     */
+    @PutMapping("/reasignar-masivo")
+    public ResponseEntity<Map<String, Object>> reasignarMasivo(@RequestBody Map<String, Object> body) {
+        @SuppressWarnings("unchecked")
+        List<Integer> idsRaw = (List<Integer>) body.get("ids");
+        Long idPersonal = Long.valueOf(body.get("idPersonal").toString());
+        List<Long> ids = idsRaw.stream().map(Integer::longValue).collect(Collectors.toList());
+        log.info("🔄 PUT /api/enfermeria/reasignar-masivo - {} registros → enfermera {}", ids.size(), idPersonal);
+        int actualizados = nursingService.reasignarPacientesMasivo(ids, idPersonal);
+        return ResponseEntity.ok(Map.of("actualizados", actualizados, "ids", ids.size()));
     }
 }

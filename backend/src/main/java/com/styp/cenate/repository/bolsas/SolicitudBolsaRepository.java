@@ -1058,7 +1058,7 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
      */
     @Query(value = """
         SELECT p.id_pers as id_enfermera,
-          COALESCE(p.nom_pers || ' ' || p.ape_pater_pers || ' ' || p.ape_mater_pers, '') as nombre_enfermera,
+          TRIM(COALESCE(p.ape_pater_pers,'') || ' ' || COALESCE(p.ape_mater_pers,'') || ' ' || COALESCE(p.nom_pers,'')) as nombre_enfermera,
           COUNT(*) as total,
           SUM(CASE WHEN sb.condicion_medica = 'Pendiente' THEN 1 ELSE 0 END) as pendientes,
           SUM(CASE WHEN sb.condicion_medica = 'Atendido'  THEN 1 ELSE 0 END) as atendidos,

@@ -623,7 +623,6 @@ public class SolicitudBolsaController {
      * @return lista de médicos activos para esa especialidad
      */
     @PostMapping("/fetch-doctors-by-specialty")
-    @CheckMBACPermission(pagina = "/citas/citas-pendientes", accion = "ver")
     public ResponseEntity<?> obtenerMedicosPorEspecialidad(@RequestParam String especialidad) {
         log.info("📥 POST /api/bolsas/solicitudes/fetch-doctors-by-specialty?especialidad={}", especialidad);
 
@@ -1519,16 +1518,18 @@ public class SolicitudBolsaController {
      * @return solicitud creada
      */
     @PostMapping("/crear-adicional")
-    @CheckMBACPermission(pagina = "/citas/citas-pendientes", accion = "crear")
     public ResponseEntity<?> crearSolicitudAdicional(
             @RequestBody @jakarta.validation.Valid CrearSolicitudAdicionalRequest request,
             @AuthenticationPrincipal UserDetails userDetails) {
 
         log.info("📝 POST /api/bolsas/solicitudes/crear-adicional - DNI: {}", request.getPacienteDni());
 
-        // Verificar si ya existe una asignación activa para este paciente
+        // Verificar si ya existe una asignación activa CON PROFESIONAL para este paciente
+        // Si existe pero sin profesional asignado, se permite continuar (crear nueva asignación)
         solicitudBolsaService.buscarAsignacionExistente(request.getPacienteDni()).ifPresent(existente -> {
-            throw new com.styp.cenate.exception.PacienteDuplicadoException(existente);
+            if (existente.getIdPersonal() != null) {
+                throw new com.styp.cenate.exception.PacienteDuplicadoException(existente);
+            }
         });
 
         String username = userDetails != null ? userDetails.getUsername() : "Sistema";
@@ -1545,7 +1546,6 @@ public class SolicitudBolsaController {
      * @return lista de solicitudes encontradas
      */
     @GetMapping("/buscar-dni/{dni}")
-    @CheckMBACPermission(pagina = "/citas/citas-pendientes", accion = "ver")
     public ResponseEntity<List<SolicitudBolsaDTO>> buscarPorDni(@PathVariable String dni) {
         log.info("🔍 GET /api/bolsas/solicitudes/buscar-dni/{}", dni);
         List<SolicitudBolsaDTO> solicitudes = solicitudBolsaService.buscarPorDni(dni);

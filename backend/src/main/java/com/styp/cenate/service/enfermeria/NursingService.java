@@ -1,6 +1,7 @@
 package com.styp.cenate.service.enfermeria;
 
 import com.styp.cenate.dto.enfermeria.EnfermeraSimpleDto;
+import com.styp.cenate.dto.enfermeria.EnfermeraStatsDto;
 import com.styp.cenate.dto.enfermeria.NursingAttendRequest;
 import com.styp.cenate.dto.enfermeria.NursingWorklistDto;
 import com.styp.cenate.dto.enfermeria.RescatarPacienteDto;
@@ -631,6 +632,64 @@ public class NursingService {
         return usuario.getPersonalCnt().getIdPers();
     }
     
+    // =========================================================================
+    // 📊 v1.65.0: TOTAL PACIENTES ENFERMERÍA
+    // =========================================================================
+
+    /**
+     * Estadísticas de pacientes de enfermería (bolsa 3) agrupadas por enfermera.
+     * @param fecha fecha en formato YYYY-MM-DD, o null para todas las fechas
+     */
+    @Transactional(readOnly = true)
+    public List<EnfermeraStatsDto> obtenerEstadisticasPorEnfermera(String fecha) {
+        log.info("📊 GET /api/enfermeria/estadisticas/por-enfermera - fecha: {}", fecha);
+        List<Object[]> rows = solicitudBolsaRepository.estadisticasPorEnfermera(fecha);
+        return rows.stream().map(r -> EnfermeraStatsDto.builder()
+                .idEnfermera(r[0] != null ? ((Number) r[0]).longValue() : null)
+                .nombreEnfermera(r[1] != null ? r[1].toString() : "")
+                .total(r[2] != null ? ((Number) r[2]).longValue() : 0L)
+                .pendientes(r[3] != null ? ((Number) r[3]).longValue() : 0L)
+                .atendidos(r[4] != null ? ((Number) r[4]).longValue() : 0L)
+                .desercion(r[5] != null ? ((Number) r[5]).longValue() : 0L)
+                .build())
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Pacientes de enfermería (bolsa 3) asignados a una enfermera específica.
+     * @param idPersonal id_pers de la enfermera
+     * @param fecha fecha en formato YYYY-MM-DD, o null para todas las fechas
+     */
+    @Transactional(readOnly = true)
+    public List<RescatarPacienteDto> obtenerPacientesPorEnfermera(Long idPersonal, String fecha) {
+        log.info("📋 GET /api/enfermeria/pacientes/por-enfermera - idPersonal: {}, fecha: {}", idPersonal, fecha);
+        List<Object[]> rows = solicitudBolsaRepository.pacientesPorEnfermera(idPersonal, fecha);
+        String nombreEnfermera = personalCntRepository.findById(idPersonal)
+                .map(p -> String.join(" ",
+                        p.getApePaterPers() != null ? p.getApePaterPers() : "",
+                        p.getApeMaterPers() != null ? p.getApeMaterPers() : "",
+                        p.getNomPers() != null ? p.getNomPers() : "").trim())
+                .orElse(null);
+        return rows.stream().map(r -> RescatarPacienteDto.builder()
+                .idSolicitud(r[0] != null ? ((Number) r[0]).longValue() : null)
+                .pacienteNombre(r[1] != null ? r[1].toString() : "")
+                .pacienteDni(r[2] != null ? r[2].toString() : "")
+                .condicionMedica(r[3] != null ? r[3].toString() : "")
+                .idPersonal(idPersonal)
+                .nombreEnfermera(nombreEnfermera)
+                .build())
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Reasignación masiva de pacientes (solicitudes) a otra enfermera.
+     */
+    @Transactional
+    public int reasignarPacientesMasivo(List<Long> ids, Long idPersonal) {
+        log.info("🔄 PUT /api/enfermeria/reasignar-masivo - {} ids → enfermera {}", ids.size(), idPersonal);
+        return solicitudBolsaRepository.reasignarPacientesMasivo(ids, idPersonal);
+    }
+
     /**
      * Obtener el ID del usuario enfermera logueado
      */
