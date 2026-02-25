@@ -369,6 +369,17 @@ export default function RescatarPacienteEnfermeria() {
     }
   };
 
+  const formatFechaHora = (iso) => {
+    if (!iso) return null;
+    try {
+      const d = new Date(iso);
+      return d.toLocaleString('es-PE', {
+        day: '2-digit', month: '2-digit', year: 'numeric',
+        hour: '2-digit', minute: '2-digit',
+      });
+    } catch { return null; }
+  };
+
   const esDeserccion = (condicion) => {
     const c = (condicion || '').toLowerCase();
     return c.includes('deserci') || c.includes('desercio');
@@ -381,7 +392,8 @@ export default function RescatarPacienteEnfermeria() {
   const sinAsignar = (r) => !r.idPersonal && !r.nombreEnfermera;
 
   const handleClickReasignar = (r) => {
-    if (esAtendido(r.estado)) {
+    // Deserción siempre permite rescatar, aunque el estado sea ATENDIDO
+    if (esAtendido(r.estado) && !esDeserccion(r.condicionMedica)) {
       setToast({
         mensaje: `No se puede reasignar a ${r.pacienteNombre}: el paciente ya fue ATENDIDO.`,
         tipo: 'error'
@@ -551,7 +563,7 @@ export default function RescatarPacienteEnfermeria() {
                       key={r.idSolicitud}
                       className={`border-b border-gray-100 hover:bg-blue-50 transition-colors ${
                         idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'
-                      } ${esAtendido(r.estado) ? 'opacity-60' : ''}`}
+                      } ${esAtendido(r.estado) && !esDeserccion(r.condicionMedica) ? 'opacity-60' : ''}`}
                     >
                       <td className="px-3 py-2.5 text-xs font-mono text-gray-500 whitespace-nowrap">
                         {r.numeroSolicitud || `#${r.idSolicitud}`}
@@ -571,31 +583,39 @@ export default function RescatarPacienteEnfermeria() {
                       <td className="px-3 py-2.5">
                         <BadgeEstado valor={r.estado} />
                       </td>
-                      <td className="px-3 py-2.5 text-xs text-gray-600 whitespace-nowrap">
+                      <td className="px-3 py-2.5 text-xs text-gray-600">
                         {r.nombreEnfermera ? (
-                          <span className="inline-flex items-center gap-1">
-                            <User size={11} className="text-gray-400" />
-                            {r.nombreEnfermera}
-                          </span>
+                          <div className="flex flex-col gap-0.5">
+                            <span className="inline-flex items-center gap-1">
+                              <User size={11} className="text-gray-400 shrink-0" />
+                              {r.nombreEnfermera}
+                            </span>
+                            {esAtendido(r.estado) && r.fechaAtencionMedica && (
+                              <span className="text-[10px] text-green-600 font-medium pl-3.5">
+                                {formatFechaHora(r.fechaAtencionMedica)}
+                              </span>
+                            )}
+                          </div>
                         ) : (
                           <span className="text-gray-400 italic">Sin asignar</span>
                         )}
                       </td>
                       <td className="px-3 py-2.5 whitespace-nowrap">
-                        {esAtendido(r.estado) ? (
+                        {puedeReasignar(r) ? (
+                          <button
+                            onClick={() => handleClickReasignar(r)}
+                            className="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-[#0a5ba9] hover:bg-[#0d4e90] text-white rounded-lg font-semibold transition"
+                          >
+                            <ArrowRightLeft size={13} />
+                            {esDeserccion(r.condicionMedica) ? 'Rescatar' : 'Reasignar'}
+                          </button>
+                        ) : esAtendido(r.estado) ? (
                           <span
                             className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-gray-400 cursor-not-allowed"
                             title="No se puede reasignar: paciente ya atendido"
                           >
                             <Ban size={13} /> Atendido
                           </span>
-                        ) : puedeReasignar(r) ? (
-                          <button
-                            onClick={() => handleClickReasignar(r)}
-                            className="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-[#0a5ba9] hover:bg-[#0d4e90] text-white rounded-lg font-semibold transition"
-                          >
-                            <ArrowRightLeft size={13} /> Reasignar
-                          </button>
                         ) : (
                           <span className="text-xs text-gray-400 italic">—</span>
                         )}

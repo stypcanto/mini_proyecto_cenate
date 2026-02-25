@@ -3622,10 +3622,7 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
 
         log.info("✅ Paciente validado: {} - DNI: {}", asegurado.getPaciente(), request.getPacienteDni());
 
-        // 2. Generar número de solicitud único
-        String numeroSolicitud = generarNumeroSolicitud();
-
-        // 3. Obtener ID del usuario actual para auto-asignación (v1.46.4)
+        // 2. Obtener ID del usuario actual para auto-asignación (v1.46.4)
         log.info("🔍 [Auto-Assign] Buscando usuario con username: '{}'", username);
         Usuario usuarioActual = usuarioRepository.findByNameUserWithFullDetails(username)
             .orElse(null);
@@ -3651,39 +3648,53 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
             }
         }
 
-        // 4. Crear nueva solicitud con campos válidos de la entidad SolicitudBolsa
-        // ✅ v1.46.4: Si codigoIpressAdscripcion es null, pasarlo como null (nullable)
-        // ✅ v1.46.4: Auto-asignar al gestor que realiza la importación
-        // ✅ v1.70.0: Insertar condicion_medica con valor "Pendiente"
-        SolicitudBolsa nuevaSolicitud = SolicitudBolsa.builder()
-            .numeroSolicitud(numeroSolicitud)
-            .pacienteDni(request.getPacienteDni())
-            .pacienteNombre(request.getPacienteNombre())
-            .pacienteId(asegurado.getPkAsegurado()) // ✅ fix: usar pk_asegurado (FK real), no el DNI
-            .pacienteSexo(request.getPacienteSexo())
-            .pacienteTelefono(request.getPacienteTelefono())
-            .pacienteTelefonoAlterno(request.getPacienteTelefonoAlterno())
-            .codigoIpressAdscripcion(request.getDescIpress()) // Puede ser null
-            .codigoAdscripcion(request.getDescIpress()) // Puede ser null (ahora nullable=true)
-            .tipoCita(request.getTipoCita())
-            .especialidad(request.getEspecialidad()) // ✅ v1.46.5 - Especialidad seleccionada por usuario
-            .estado("PENDIENTE")
-            .estadoGestionCitasId(1L) // ID del estado "PENDIENTE CITAR"
-            .idBolsa(10L) // BOLSA_GESTORA (v1.46.4 - usar bolsa de gestora para importados)
-            .idServicio(idServicio) // ✅ v1.47.0 - ID del servicio basado en especialidad
-            .idPersonal(request.getIdPersonal()) // ✅ v1.47.1 - ID del médico especialista
-            .fechaAtencion(request.getFechaAtencion()) // ✅ v1.47.2 - Fecha de atención
-            .horaAtencion(request.getHoraAtencion()) // ✅ v1.47.2 - Hora de atención
-            .condicionMedica("Pendiente") // ✅ v1.70.0 - Inicializar con "Pendiente"
-            .responsableGestoraId(responsableGestoraId) // ✅ Auto-asignar al gestor actual
-            .fechaAsignacion(OffsetDateTime.now()) // ✅ Registrar fecha de asignación
-            .activo(true)
-            .build();
+        // 4. UPSERT: si ya existe registro sin profesional asignado, actualizarlo; si no, crear nuevo
+        Optional<SolicitudBolsa> existenteOpt = solicitudRepository
+            .findFirstByPacienteDniAndActivoTrueOrderByFechaSolicitudDesc(request.getPacienteDni());
 
-        // 5. Guardar
-        SolicitudBolsa guardado = solicitudRepository.save(nuevaSolicitud);
-
-        log.info("✅ Solicitud adicional creada: {} - Asignada a gestor ID: {}", guardado.getIdSolicitud(), responsableGestoraId);
+        SolicitudBolsa guardado;
+        if (existenteOpt.isPresent() && existenteOpt.get().getIdPersonal() == null) {
+            // ✅ Actualizar registro existente sin profesional
+            SolicitudBolsa existente = existenteOpt.get();
+            log.info("🔄 Registro existente sin profesional encontrado (ID: {}). Actualizando...", existente.getIdSolicitud());
+            existente.setIdPersonal(request.getIdPersonal());
+            existente.setFechaAtencion(request.getFechaAtencion());
+            existente.setHoraAtencion(request.getHoraAtencion());
+            existente.setEspecialidad(request.getEspecialidad());
+            existente.setTipoCita(request.getTipoCita());
+            if (responsableGestoraId != null) existente.setResponsableGestoraId(responsableGestoraId);
+            guardado = solicitudRepository.save(existente);
+            log.info("✅ Solicitud actualizada: {} - Profesional ID: {}", guardado.getIdSolicitud(), request.getIdPersonal());
+        } else {
+            // Crear nueva solicitud
+            String numeroSolicitud2 = generarNumeroSolicitud();
+            SolicitudBolsa nuevaSolicitud = SolicitudBolsa.builder()
+                .numeroSolicitud(numeroSolicitud2)
+                .pacienteDni(request.getPacienteDni())
+                .pacienteNombre(request.getPacienteNombre())
+                .pacienteId(asegurado.getPkAsegurado())
+                .pacienteSexo(request.getPacienteSexo())
+                .pacienteTelefono(request.getPacienteTelefono())
+                .pacienteTelefonoAlterno(request.getPacienteTelefonoAlterno())
+                .codigoIpressAdscripcion(request.getDescIpress())
+                .codigoAdscripcion(request.getDescIpress())
+                .tipoCita(request.getTipoCita())
+                .especialidad(request.getEspecialidad())
+                .estado("PENDIENTE")
+                .estadoGestionCitasId(1L)
+                .idBolsa(10L)
+                .idServicio(idServicio)
+                .idPersonal(request.getIdPersonal())
+                .fechaAtencion(request.getFechaAtencion())
+                .horaAtencion(request.getHoraAtencion())
+                .condicionMedica("Pendiente")
+                .responsableGestoraId(responsableGestoraId)
+                .fechaAsignacion(OffsetDateTime.now())
+                .activo(true)
+                .build();
+            guardado = solicitudRepository.save(nuevaSolicitud);
+            log.info("✅ Solicitud adicional creada: {} - Asignada a gestor ID: {}", guardado.getIdSolicitud(), responsableGestoraId);
+        }
 
         // 6. Mapear a DTO
         return SolicitudBolsaMapper.toDTO(guardado);
