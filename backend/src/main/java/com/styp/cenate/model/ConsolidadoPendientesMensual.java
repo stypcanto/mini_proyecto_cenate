@@ -35,4 +35,7 @@ public class ConsolidadoPendientesMensual {
 
     @Column(name = "abandono")
     private Integer abandono;
+
+    @Column(name = "turno")
+    private String turno;
 }

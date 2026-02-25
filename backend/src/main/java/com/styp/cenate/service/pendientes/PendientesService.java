@@ -8,10 +8,12 @@ import org.springframework.data.domain.Pageable;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 
 public interface PendientesService {
 
     Page<ConsolidadoPendientesDTO> obtenerConsolidado(
+        String turno,
         String servicio,
         String subactividad,
         LocalDate fechaDesde,
@@ -20,6 +22,7 @@ public interface PendientesService {
     );
 
     Page<DetallePendientesDTO> obtenerDetalle(
+        String turno,
         String servicio,
         String subactividad,
         String busqueda,
@@ -28,7 +31,9 @@ public interface PendientesService {
         Pageable pageable
     );
 
-    List<DetallePendientesDTO> obtenerDetallePorMedico(String dniMedico);
+    List<DetallePendientesDTO> obtenerDetallePorMedico(String dniMedico, String turno);
 
-    PendientesResumenDTO obtenerKpis();
+    PendientesResumenDTO obtenerKpis(String turno);
+
+    List<Map<String, Object>> obtenerCalendario(String turno);
 }

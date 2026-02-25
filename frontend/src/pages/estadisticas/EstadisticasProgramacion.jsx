@@ -17,6 +17,7 @@ import {
   obtenerConsolidado,
   obtenerDetalle,
   obtenerDetallePorMedico,
+  obtenerCalendario,
 } from "../../services/pendientesMensualesService";
 
 // ── Constantes ───────────────────────────────────────────────────────────────
@@ -34,6 +35,11 @@ function fmtFecha(raw) {
     return d.toLocaleDateString("es-PE", { day: "2-digit", month: "2-digit", year: "numeric" });
   } catch { return raw; }
 }
+function fmtHora(raw) {
+  if (!raw) return null;
+  // raw viene como "HH:MM:SS" desde el backend (LocalTime → Jackson)
+  try { return raw.slice(0, 5); } catch { return raw; }
+}
 function iniciales(n) {
   if (!n) return "?";
   return n.trim().split(/\s+/).slice(0,2).map(p => p[0]).join("").toUpperCase();
@@ -44,17 +50,15 @@ function useDebounce(v, ms = 400) {
   return d;
 }
 
-// Agrupar detalle: { [subactividad]: { [servicio]: { [fecha]: [rows] } } }
+// Agrupar detalle: { [subactividad]: { [servicio]: [rows] } }
 function agruparDetalle(rows) {
   const tree = {};
   for (const row of rows) {
     const sa = row.subactividad ?? "SIN SUBACTIVIDAD";
     const sv = row.servicio     ?? "SIN SERVICIO";
-    const fc = row.fechaCita    ?? "SIN FECHA";
     if (!tree[sa]) tree[sa] = {};
-    if (!tree[sa][sv]) tree[sa][sv] = {};
-    if (!tree[sa][sv][fc]) tree[sa][sv][fc] = [];
-    tree[sa][sv][fc].push(row);
+    if (!tree[sa][sv]) tree[sa][sv] = [];
+    tree[sa][sv].push(row);
   }
   return tree;
 }
@@ -157,39 +161,157 @@ function TreeNode({ label, icon, indent = 0, badge, defaultOpen = false, childre
   );
 }
 
-// Fila de paciente (hoja del árbol)
-function PacienteRow({ row, indent = 4, onSelect, isSelected }) {
+// Fila de servicio — clic abre drawer con lista de pacientes
+function ServicioRow({ serv, pacientes, indent = 1, onClick, isActive }) {
   const padLeft = indent * 20;
   return (
     <button
-      onClick={() => onSelect(row)}
-      className={`w-full flex items-center gap-2.5 py-2 px-3 text-left transition-colors ${isSelected ? "bg-blue-100" : "hover:bg-gray-50"}`}
+      onClick={() => onClick({ serv, pacientes })}
+      className={`w-full flex items-center gap-2 py-2.5 px-3 text-left transition-colors border-l-2 ${
+        isActive ? "bg-blue-50 border-blue-500" : "border-transparent hover:bg-blue-50 hover:border-blue-300"
+      }`}
       style={{ paddingLeft: `${12 + padLeft}px` }}
     >
-      <span className="w-3 h-3 flex-shrink-0 rounded-full border-2 border-gray-300" />
-      <span className={`text-sm flex-1 truncate ${isSelected ? "text-blue-700 font-semibold" : "text-gray-700"}`}>
-        {row.paciente ?? row.docPaciente ?? "—"}
+      <FileText className={`w-3.5 h-3.5 flex-shrink-0 ${isActive ? "text-blue-500" : "text-purple-400"}`}/>
+      <span className={`text-sm flex-1 truncate font-semibold ${isActive ? "text-blue-700" : "text-gray-800"}`}>
+        {serv}
       </span>
-      {row.abandono && row.abandono !== "0" && (
-        <span className="text-xs px-1.5 py-0.5 rounded-full bg-red-100 text-red-600 font-semibold flex-shrink-0">
-          {row.abandono}
-        </span>
-      )}
+      <span className="flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-500 font-semibold flex-shrink-0">
+        <User className="w-3 h-3"/> {pacientes.length}
+      </span>
+      <ChevRight className={`w-3.5 h-3.5 flex-shrink-0 ${isActive ? "text-blue-500" : "text-gray-300"}`}/>
     </button>
   );
 }
 
+// Drawer: lista de pacientes de un servicio (columnas: Paciente | DNI | Fecha Cita | Estado)
+function DrawerListaPacientes({ data, medico, onClose }) {
+  const [q, setQ] = useState("");
+  if (!data) return null;
+  const { serv, pacientes, subact } = data;
+  const filtrados = q.trim()
+    ? pacientes.filter(p => {
+        const t = q.trim().toLowerCase();
+        return (p.paciente ?? "").toLowerCase().includes(t) ||
+               (p.docPaciente ?? "").includes(t);
+      })
+    : pacientes;
+  const totalAbandonos = pacientes.filter(p => p.abandono && p.abandono !== "0").length;
+  return (
+    <>
+      <div className="fixed inset-0 bg-black/30 z-40" onClick={onClose}/>
+      <div className="fixed right-0 top-0 h-full w-full max-w-lg bg-white shadow-2xl z-50 flex flex-col">
+
+        {/* Header */}
+        <div className="px-5 py-4 border-b border-blue-900 flex-shrink-0"
+          style={{ backgroundColor: CENATE_BLUE }}>
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <p className="font-bold text-white text-sm leading-snug truncate">{serv}</p>
+              <p className="text-white/70 text-xs mt-0.5">{subact}</p>
+              <p className="text-white/60 text-xs mt-0.5 truncate">{medico?.profesional}</p>
+            </div>
+            <button onClick={onClose} className="p-1.5 hover:bg-white/10 rounded-lg transition-colors flex-shrink-0">
+              <X className="w-5 h-5 text-white"/>
+            </button>
+          </div>
+          {/* KPIs rápidos */}
+          <div className="flex items-center gap-3 mt-3">
+            <span className="flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full bg-white/20 text-white font-semibold">
+              <Users className="w-3.5 h-3.5"/> {pacientes.length} paciente{pacientes.length !== 1 ? "s" : ""}
+            </span>
+            {totalAbandonos > 0 && (
+              <span className="flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full bg-red-400/40 text-white font-semibold">
+                <TrendingDown className="w-3.5 h-3.5"/> {totalAbandonos} abandono{totalAbandonos !== 1 ? "s" : ""}
+              </span>
+            )}
+          </div>
+        </div>
+
+        {/* Buscador */}
+        <div className="px-4 py-2.5 border-b border-gray-100 flex-shrink-0">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400"/>
+            <input
+              value={q}
+              onChange={e => setQ(e.target.value)}
+              placeholder="Buscar por nombre o DNI..."
+              className="w-full pl-8 pr-8 py-1.5 text-xs border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-200"
+            />
+            {q && (
+              <button onClick={() => setQ("")}
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                <X className="w-3.5 h-3.5"/>
+              </button>
+            )}
+          </div>
+          {q && (
+            <p className="text-[10px] text-gray-400 mt-1">
+              {filtrados.length} de {pacientes.length} pacientes
+            </p>
+          )}
+        </div>
+
+        {/* Tabla de pacientes */}
+        <div className="flex-1 overflow-y-auto">
+          <table className="w-full text-sm">
+            <thead className="sticky top-0 bg-gray-50 border-b border-gray-200 z-10">
+              <tr>
+                <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wide">Paciente / DNI</th>
+                <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wide whitespace-nowrap">Fecha</th>
+                <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wide whitespace-nowrap">Hora</th>
+                <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wide">Estado</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100">
+              {filtrados.length === 0 ? (
+                <tr><td colSpan={4} className="px-4 py-8 text-center text-xs text-gray-400 italic">Sin resultados para "{q}"</td></tr>
+              ) : filtrados.map((p, i) => {
+                const hora = fmtHora(p.horaCita);
+                return (
+                  <tr key={p.idDetPend ?? i} className="hover:bg-gray-50 transition-colors">
+                    <td className="px-4 py-3">
+                      <p className="font-semibold text-gray-900 text-xs leading-snug truncate max-w-[200px]" title={p.paciente}>{p.paciente ?? "—"}</p>
+                      <p className="text-gray-400 text-[10px] font-mono mt-0.5">{p.docPaciente ?? ""}</p>
+                    </td>
+                    <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">{fmtFecha(p.fechaCita)}</td>
+                    <td className="px-4 py-3 whitespace-nowrap">
+                      {hora
+                        ? <span className="inline-flex items-center gap-1 text-xs font-bold text-blue-700 bg-blue-50 px-2 py-0.5 rounded">
+                            <Calendar className="w-3 h-3"/>{hora}
+                          </span>
+                        : <span className="text-[10px] text-gray-300 italic">—</span>
+                      }
+                    </td>
+                    <td className="px-4 py-3">
+                      {p.abandono && p.abandono !== "0"
+                        ? <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full font-semibold bg-red-100 text-red-700"><TrendingDown className="w-2.5 h-2.5"/>{p.abandono}</span>
+                        : <span className="inline-flex text-[10px] px-2 py-0.5 rounded-full font-semibold bg-green-100 text-green-700">Activo</span>
+                      }
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </>
+  );
+}
+
 // Médico colapsable con carga lazy de detalle
-function MedicoNode({ medico, idx, searchSubact, searchServicio, onPacienteSelect, selectedPaciente }) {
-  const [open, setOpen]       = useState(false);
-  const [detalle, setDetalle] = useState(null);
-  const [loading, setLoading] = useState(false);
+function MedicoNode({ medico, idx, searchSubact, searchServicio, turno }) {
+  const [open, setOpen]           = useState(false);
+  const [detalle, setDetalle]     = useState(null);
+  const [loading, setLoading]     = useState(false);
+  const [drawerData, setDrawer]   = useState(null); // { serv, pacientes, subact }
 
   const cargar = async () => {
     if (detalle !== null) return;
     setLoading(true);
     try {
-      const rows = await obtenerDetallePorMedico(medico.dniMedico);
+      const rows = await obtenerDetallePorMedico(medico.dniMedico, turno);
       setDetalle(Array.isArray(rows) ? rows : []);
     } catch {
       toast.error("Error al cargar pacientes");
@@ -206,8 +328,8 @@ function MedicoNode({ medico, idx, searchSubact, searchServicio, onPacienteSelec
 
   // Filtrar por subactividad / servicio si hay filtros activos
   const filas = (detalle ?? []).filter(r => {
-    if (searchSubact  && r.subactividad !== searchSubact)  return false;
-    if (searchServicio && r.servicio    !== searchServicio) return false;
+    if (searchSubact   && r.subactividad !== searchSubact)   return false;
+    if (searchServicio && r.servicio     !== searchServicio) return false;
     return true;
   });
 
@@ -231,12 +353,17 @@ function MedicoNode({ medico, idx, searchSubact, searchServicio, onPacienteSelec
           <p className="text-xs text-gray-400">DNI: {medico.dniMedico ?? "—"}</p>
         </div>
         <div className="flex items-center gap-2 flex-shrink-0">
+          {detalle !== null && (
+            <span className="flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-cyan-100 text-cyan-700 font-semibold">
+              <Users className="w-3 h-3"/> {filas.length}
+            </span>
+          )}
           <AbandonoBadge value={medico.abandono} />
           {loading && <RefreshCw className="w-3.5 h-3.5 animate-spin text-blue-500"/>}
         </div>
       </button>
 
-      {/* Árbol de detalle */}
+      {/* Árbol: Subactividad → Servicio (clic en servicio abre drawer) */}
       {open && (
         <div className="bg-gray-50 border-t border-gray-100">
           {loading ? (
@@ -248,33 +375,34 @@ function MedicoNode({ medico, idx, searchSubact, searchServicio, onPacienteSelec
           ) : (
             Object.entries(tree).map(([subact, servicios]) => (
               <TreeNode key={subact} label={subact} indent={0}
-                badge={Object.values(servicios).reduce((a, sv) => a + Object.values(sv).reduce((b, f) => b + f.length, 0), 0)}
+                badge={Object.values(servicios).reduce((a, sv) => a + sv.length, 0)}
                 icon={<Activity className="w-3.5 h-3.5 text-blue-500 flex-shrink-0"/>}
                 defaultOpen>
-                {Object.entries(servicios).map(([serv, fechas]) => (
-                  <TreeNode key={serv} label={serv} indent={1}
-                    badge={Object.values(fechas).reduce((a, f) => a + f.length, 0)}
-                    icon={<FileText className="w-3.5 h-3.5 text-purple-500 flex-shrink-0"/>}
-                    defaultOpen>
-                    {Object.entries(fechas).sort().map(([fecha, pacientes]) => (
-                      <TreeNode key={fecha} label={fmtFecha(fecha)} indent={2}
-                        badge={pacientes.length}
-                        icon={<Calendar className="w-3.5 h-3.5 text-orange-500 flex-shrink-0"/>}
-                        defaultOpen>
-                        {pacientes.map((p, pi) => (
-                          <PacienteRow key={p.idDetPend ?? pi} row={p} indent={3}
-                            onSelect={onPacienteSelect}
-                            isSelected={selectedPaciente?.idDetPend === p.idDetPend}
-                          />
-                        ))}
-                      </TreeNode>
-                    ))}
-                  </TreeNode>
+                {Object.entries(servicios).map(([serv, pacientes]) => (
+                  <ServicioRow
+                    key={serv}
+                    serv={serv}
+                    pacientes={pacientes}
+                    indent={1}
+                    isActive={drawerData?.serv === serv && drawerData?.subact === subact}
+                    onClick={(d) => setDrawer(prev =>
+                      prev?.serv === d.serv && prev?.subact === subact ? null : { ...d, subact }
+                    )}
+                  />
                 ))}
               </TreeNode>
             ))
           )}
         </div>
+      )}
+
+      {/* Drawer con lista de pacientes del servicio seleccionado */}
+      {drawerData && (
+        <DrawerListaPacientes
+          data={drawerData}
+          medico={medico}
+          onClose={() => setDrawer(null)}
+        />
       )}
     </div>
   );
@@ -356,12 +484,140 @@ function DRow({ label, value, mono = false }) {
   );
 }
 
+// ── CALENDARIO CON BADGES ─────────────────────────────────────────────────────
+const DIAS_SEMANA = ["Dom","Lun","Mar","Mié","Jue","Vie","Sáb"];
+const MESES_ES    = ["Enero","Febrero","Marzo","Abril","Mayo","Junio",
+                     "Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
+
+function CalendarFilter({ conteos = {}, fechaSel, onSelect }) {
+  const hoy = new Date();
+  const [mes, setMes] = useState({ year: hoy.getFullYear(), month: hoy.getMonth() });
+  const [open, setOpen] = useState(false);
+  const ref             = useRef(null);
+
+  // Navegar al mes con más datos cuando llegan conteos
+  useEffect(() => {
+    const fechas = Object.keys(conteos);
+    if (fechas.length) {
+      const d = new Date(fechas[0] + "T00:00:00");
+      setMes({ year: d.getFullYear(), month: d.getMonth() });
+    }
+  }, [conteos]);
+
+  useEffect(() => {
+    const h = e => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
+    document.addEventListener("mousedown", h);
+    return () => document.removeEventListener("mousedown", h);
+  }, []);
+
+  const { year, month } = mes;
+  const firstDay    = new Date(year, month, 1).getDay();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const toKey = d => `${year}-${String(month+1).padStart(2,"0")}-${String(d).padStart(2,"0")}`;
+  const badge = n => n > 9 ? "9+" : String(n);
+  const prevMes = () => setMes(({ year: y, month: m }) => m === 0 ? { year: y-1, month: 11 } : { year: y, month: m-1 });
+  const nextMes = () => setMes(({ year: y, month: m }) => m === 11 ? { year: y+1, month: 0 } : { year: y, month: m+1 });
+
+  const labelSel = fechaSel
+    ? new Date(fechaSel + "T00:00:00").toLocaleDateString("es-PE", { day:"2-digit", month:"2-digit", year:"numeric" })
+    : "Seleccionar fecha";
+
+  return (
+    <div className="relative" ref={ref}>
+      <button
+        onClick={() => setOpen(v => !v)}
+        className={`flex items-center gap-2 px-3 py-2 border rounded-lg text-sm transition-colors bg-white ${
+          fechaSel ? "border-blue-500 text-blue-700 font-semibold" : "border-gray-200 text-gray-600 hover:border-blue-300"
+        }`}
+      >
+        <Calendar className="w-4 h-4 flex-shrink-0"/>
+        <span>{labelSel}</span>
+        {fechaSel
+          ? <span onClick={e => { e.stopPropagation(); onSelect(null); }} className="ml-1 hover:text-red-500 cursor-pointer">
+              <X className="w-3.5 h-3.5"/>
+            </span>
+          : <ChevronDown className="w-3.5 h-3.5 text-gray-400 ml-1"/>
+        }
+      </button>
+
+      {open && (
+        <div className="absolute z-50 mt-1 bg-white border border-gray-200 rounded-xl shadow-2xl p-4 w-80">
+          {/* Header mes */}
+          <div className="flex items-center justify-between mb-3">
+            <button onClick={prevMes} className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors">
+              <ChevronLeft className="w-4 h-4 text-gray-500"/>
+            </button>
+            <span className="text-sm font-bold text-gray-800">
+              {MESES_ES[month]} de {year}
+            </span>
+            <button onClick={nextMes} className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors">
+              <ChevronRight className="w-4 h-4 text-gray-500"/>
+            </button>
+          </div>
+
+          {/* Nombres días */}
+          <div className="grid grid-cols-7 mb-1">
+            {DIAS_SEMANA.map(d => (
+              <div key={d} className="text-center text-[10px] font-semibold text-gray-400 py-1">{d}</div>
+            ))}
+          </div>
+
+          {/* Celdas días */}
+          <div className="grid grid-cols-7 gap-y-1">
+            {Array.from({ length: firstDay }).map((_, i) => <div key={`e-${i}`}/>)}
+            {Array.from({ length: daysInMonth }, (_, i) => i + 1).map(d => {
+              const key  = toKey(d);
+              const cnt  = conteos[key] ?? 0;
+              const isSel   = fechaSel === key;
+              const hasData = cnt > 0;
+              return (
+                <div key={d} className="flex justify-center py-0.5">
+                  <button
+                    onClick={() => { onSelect(isSel ? null : key); setOpen(false); }}
+                    disabled={!hasData}
+                    title={hasData ? `${cnt} pacientes` : undefined}
+                    className={`relative flex flex-col items-center justify-center w-9 h-9 rounded-lg text-xs font-bold transition-all select-none
+                      ${isSel    ? "ring-2 ring-offset-1 ring-blue-400" : ""}
+                      ${hasData  ? "hover:scale-105 cursor-pointer" : "cursor-default"}
+                    `}
+                    style={hasData
+                      ? { backgroundColor: isSel ? "#0D5BA9" : "#1e3a8a", color: "white" }
+                      : { color: "#d1d5db" }
+                    }
+                  >
+                    <span className="leading-none">{d}</span>
+                    {hasData && (
+                      <span className="text-[9px] leading-none font-bold mt-0.5 opacity-80">
+                        {badge(cnt)}
+                      </span>
+                    )}
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+
+          {fechaSel && (
+            <div className="mt-3 pt-2 border-t border-gray-100 flex justify-end">
+              <button onClick={() => { onSelect(null); setOpen(false); }}
+                className="text-xs text-gray-400 hover:text-red-500 transition-colors">
+                Limpiar selección
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ══════════════════════════════════════════════════════════════════════════════
 // COMPONENTE PRINCIPAL
 // ══════════════════════════════════════════════════════════════════════════════
 export default function EstadisticasProgramacion() {
 
   const [tab, setTab]         = useState("resumen");
+  const [turno, setTurno]     = useState("MAÑANA");   // "MAÑANA" | "TARDE"
   const [kpis, setKpis]       = useState(null);
   const [kpisLoading, setKL]  = useState(true);
 
@@ -391,11 +647,18 @@ export default function EstadisticasProgramacion() {
   // Selecciones
   const [pacienteSel, setPacienteSel] = useState(null);
   const [fechaCorte, setFechaCorte]   = useState(null);
+  const [fechaFiltro, setFechaFiltro] = useState(null);
+  const [calConteos, setCalConteos]   = useState({});
 
   // ── KPIs ────────────────────────────────────────────────────────────────
   useEffect(() => {
+    if (turno === "TARDE") {
+      setKpis({ totalMedicos: 0, totalPacientes: 0, totalAbandonos: 0, porSubactividad: [], topServiciosPorAbandonos: [] });
+      setKL(false);
+      return;
+    }
     setKL(true);
-    obtenerKpis()
+    obtenerKpis(turno)
       .then(d => {
         setKpis(d);
         if (d?.porSubactividad?.length)       setOptsSubact(d.porSubactividad.map(s => s.subactividad).filter(Boolean));
@@ -403,17 +666,41 @@ export default function EstadisticasProgramacion() {
       })
       .catch(() => toast.error("No se pudo cargar los KPIs"))
       .finally(() => setKL(false));
-  }, []);
+  }, [turno]);
+
+  // ── Calendario: conteos por fecha ──────────────────────────────────────
+  useEffect(() => {
+    if (turno === "TARDE") { setCalConteos({}); return; }
+    obtenerCalendario(turno)
+      .then(arr => {
+        const map = {};
+        (arr ?? []).forEach(item => {
+          const fecha = item.fecha ?? item[0];
+          const count = item.count ?? item[1];
+          if (fecha) map[String(fecha).trim()] = Number(count);
+        });
+        setCalConteos(map);
+      })
+      .catch(() => {});
+  }, [turno]);
 
   // ── Cargar lista de consolidado (árbol RESUMEN) ────────────────────────
   const fetchResumen = useCallback(async () => {
+    // Turno Tarde aún no tiene tablas — mostrar vacío sin consultar
+    if (turno === "TARDE") {
+      setConsolidado([]);
+      setTotalResumen(0);
+      setLoadingResumen(false);
+      return;
+    }
     setLoadingResumen(true);
     try {
       // Traer todo el consolidado (sin paginación, tamaño grande)
-      const params = { page: 0, size: 200 };
+      const params = { turno, page: 0, size: 200 };
       if (subactividad)   params.subactividad  = subactividad;
       if (servicio)       params.servicio      = servicio;
       if (debProfesional) params.busqueda      = debProfesional;
+      if (fechaFiltro)  { params.fechaDesde = fechaFiltro; params.fechaHasta = fechaFiltro; }
       const result  = await obtenerConsolidado(params);
       const content = result?.content ?? result ?? [];
       const list    = Array.isArray(content) ? content : [];
@@ -426,16 +713,25 @@ export default function EstadisticasProgramacion() {
     } finally {
       setLoadingResumen(false);
     }
-  }, [subactividad, servicio, debProfesional]);
+  }, [turno, subactividad, servicio, debProfesional, fechaFiltro]);
 
   // ── Cargar datos tabla NOMINAL ─────────────────────────────────────────
   const fetchNominal = useCallback(async (pg = 0) => {
+    // Turno Tarde aún no tiene tablas — mostrar vacío sin consultar
+    if (turno === "TARDE") {
+      setRows([]);
+      setTotal(0);
+      setTotalPag(0);
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     try {
-      const params = { page: pg, size: PAGE_SIZE };
+      const params = { turno, page: pg, size: PAGE_SIZE };
       if (subactividad)   params.subactividad = subactividad;
       if (servicio)       params.servicio     = servicio;
       if (busqueda || debProfesional) params.busqueda = busqueda || debProfesional;
+      if (fechaFiltro)    { params.fechaDesde = fechaFiltro; params.fechaHasta = fechaFiltro; }
       const result  = await obtenerDetalle(params);
       const content = result?.content ?? result ?? [];
       const list    = Array.isArray(content) ? content : [];
@@ -450,7 +746,16 @@ export default function EstadisticasProgramacion() {
     } finally {
       setLoading(false);
     }
-  }, [subactividad, servicio, busqueda, debProfesional]);
+  }, [turno, subactividad, servicio, busqueda, debProfesional, fechaFiltro]);
+
+  useEffect(() => {
+    setFechaFiltro(null);
+    setConsolidado([]);
+    setRows([]);
+    setPagina(0);
+    if (tab === "resumen") fetchResumen();
+    else fetchNominal(0);
+  }, [turno]); // eslint-disable-line
 
   useEffect(() => {
     if (tab === "resumen") fetchResumen();
@@ -460,7 +765,7 @@ export default function EstadisticasProgramacion() {
   // ── Filtros helpers ───────────────────────────────────────────────────
   const limpiarFiltros = () => {
     setSubactividad(""); setProfesional(""); setServicio("");
-    setBusqueda(""); setPendingBusq(""); setPagina(0);
+    setBusqueda(""); setPendingBusq(""); setPagina(0); setFechaFiltro(null);
   };
   const aplicarBusqueda = () => { setBusqueda(pendingBusq.trim()); setPagina(0); };
 
@@ -517,6 +822,49 @@ export default function EstadisticasProgramacion() {
         <KpiCard icon={<Activity className="w-5 h-5 text-purple-600"/>}  label="Subactividades"         value={kpis?.porSubactividad?.length}     bg="bg-purple-50" textColor="text-purple-700" loading={kpisLoading}/>
       </div>
 
+      {/* ── Selector de Turno ─────────────────────────────────────────────── */}
+      <div className="flex items-center gap-3 mb-4">
+        <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Turno:</span>
+        <div className="flex rounded-xl overflow-hidden border border-gray-200 shadow-sm bg-white">
+          {/* MAÑANA */}
+          <button
+            onClick={() => { setTurno("MAÑANA"); setPagina(0); }}
+            className={`flex items-center gap-2 px-4 py-2.5 text-sm font-bold transition-all duration-200 ${
+              turno === "MAÑANA"
+                ? "text-white"
+                : "text-amber-600 hover:bg-amber-50"
+            }`}
+            style={turno === "MAÑANA" ? { backgroundColor: CENATE_BLUE } : {}}
+          >
+            <span className="text-base leading-none">☀️</span>
+            <span>Mañana</span>
+            {turno === "MAÑANA" && (
+              <span className="text-[10px] font-normal opacity-80 ml-0.5">
+                {totalResumen > 0 ? `${totalResumen}` : ""}
+              </span>
+            )}
+          </button>
+          {/* TARDE */}
+          <button
+            onClick={() => { setTurno("TARDE"); setPagina(0); }}
+            className={`flex items-center gap-2 px-4 py-2.5 text-sm font-bold transition-all duration-200 border-l border-gray-200 ${
+              turno === "TARDE"
+                ? "text-white"
+                : "text-orange-500 hover:bg-orange-50"
+            }`}
+            style={turno === "TARDE" ? { backgroundColor: "#d97706" } : {}}
+          >
+            <span className="text-base leading-none">🌆</span>
+            <span>Tarde</span>
+            {turno === "TARDE" && consolidado.length === 0 && !loadingResumen && (
+              <span className="text-[10px] font-normal opacity-80 ml-1 bg-white/20 px-1.5 py-0.5 rounded-full">
+                Próximamente
+              </span>
+            )}
+          </button>
+        </div>
+      </div>
+
       {/* Tabs */}
       <div className="flex rounded-xl overflow-hidden border border-gray-200 mb-4 bg-white shadow-sm w-full max-w-sm">
         {[{key:"resumen",label:"RESUMEN",sub:"Vista árbol"},{key:"nominal",label:"NOMINAL",sub:"Por paciente"}].map(({key,label,sub}) => (
@@ -558,6 +906,10 @@ export default function EstadisticasProgramacion() {
               </div>
             </div>
           )}
+          <div>
+            <label className="block text-xs text-gray-500 mb-1">Fecha de Cita</label>
+            <CalendarFilter conteos={calConteos} fechaSel={fechaFiltro} onSelect={setFechaFiltro}/>
+          </div>
           <div className="flex gap-2">
             {tab === "nominal" && (
               <button onClick={aplicarBusqueda}
@@ -589,14 +941,34 @@ export default function EstadisticasProgramacion() {
             {loadingResumen && <RefreshCw className="w-4 h-4 animate-spin text-blue-500"/>}
           </div>
 
+          {turno === "TARDE" && !loadingResumen && (
+            <div className="px-5 py-2.5 bg-amber-50 border-b border-amber-100 flex items-center gap-2">
+              <span className="text-sm">🌆</span>
+              <p className="text-xs text-amber-700 font-medium">
+                Los datos del <strong>Turno Tarde</strong> se cargarán próximamente cuando las tablas estén disponibles.
+              </p>
+            </div>
+          )}
           {loadingResumen ? (
             <div className="flex items-center justify-center h-48 text-gray-400">
               <RefreshCw className="w-5 h-5 animate-spin mr-2"/> Cargando...
             </div>
           ) : consolidado.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-48 text-gray-400 gap-2">
-              <AlertCircle className="w-8 h-8"/>
-              <p className="text-sm">Sin resultados</p>
+            <div className="flex flex-col items-center justify-center h-56 gap-3">
+              {turno === "TARDE" ? (
+                <>
+                  <span className="text-5xl">🌆</span>
+                  <p className="text-sm font-semibold text-gray-600">Turno Tarde — sin datos aún</p>
+                  <p className="text-xs text-gray-400 text-center max-w-xs">
+                    Los datos del turno tarde se cargarán cuando las tablas correspondientes estén disponibles.
+                  </p>
+                </>
+              ) : (
+                <>
+                  <AlertCircle className="w-8 h-8 text-gray-300"/>
+                  <p className="text-sm text-gray-400">Sin resultados</p>
+                </>
+              )}
             </div>
           ) : (
             <div className="divide-y divide-gray-100">
@@ -607,8 +979,7 @@ export default function EstadisticasProgramacion() {
                   idx={idx}
                   searchSubact={subactividad}
                   searchServicio={servicio}
-                  onPacienteSelect={setPacienteSel}
-                  selectedPaciente={pacienteSel}
+                  turno={turno}
                 />
               ))}
             </div>
@@ -624,9 +995,21 @@ export default function EstadisticasProgramacion() {
               <RefreshCw className="w-6 h-6 animate-spin mr-2"/> Cargando datos...
             </div>
           ) : rows.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-48 text-gray-400 gap-2">
-              <AlertCircle className="w-8 h-8"/>
-              <p className="text-sm">Sin resultados para los filtros seleccionados</p>
+            <div className="flex flex-col items-center justify-center h-56 gap-3">
+              {turno === "TARDE" ? (
+                <>
+                  <span className="text-5xl">🌆</span>
+                  <p className="text-sm font-semibold text-gray-600">Turno Tarde — sin datos aún</p>
+                  <p className="text-xs text-gray-400 text-center max-w-xs">
+                    Los datos del turno tarde se cargarán cuando las tablas correspondientes estén disponibles.
+                  </p>
+                </>
+              ) : (
+                <>
+                  <AlertCircle className="w-8 h-8 text-gray-300"/>
+                  <p className="text-sm text-gray-400">Sin resultados para los filtros seleccionados</p>
+                </>
+              )}
             </div>
           ) : (
             <div className="overflow-x-auto">

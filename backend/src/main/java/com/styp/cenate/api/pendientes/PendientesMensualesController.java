@@ -51,10 +51,11 @@ public class PendientesMensualesController {
      */
     @GetMapping("/kpis")
     @PreAuthorize(ROLES_PERMITIDOS)
-    public ResponseEntity<Map<String, Object>> obtenerKpis() {
-        log.info("📊 GET /api/pendientes-mensuales/kpis");
+    public ResponseEntity<Map<String, Object>> obtenerKpis(
+            @RequestParam(defaultValue = "MAÑANA") String turno) {
+        log.info("📊 GET /api/pendientes-mensuales/kpis - turno={}", turno);
         try {
-            PendientesResumenDTO kpis = pendientesService.obtenerKpis();
+            PendientesResumenDTO kpis = pendientesService.obtenerKpis(turno);
             return ok(kpis, "KPIs obtenidos exitosamente");
         } catch (Exception e) {
             log.error("❌ Error al obtener KPIs: {}", e.getMessage(), e);
@@ -73,6 +74,7 @@ public class PendientesMensualesController {
     @GetMapping("/consolidado")
     @PreAuthorize(ROLES_PERMITIDOS)
     public ResponseEntity<Map<String, Object>> obtenerConsolidado(
+            @RequestParam(defaultValue = "MAÑANA") String turno,
             @RequestParam(required = false) String servicio,
             @RequestParam(required = false) String subactividad,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fechaDesde,
@@ -80,13 +82,13 @@ public class PendientesMensualesController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
 
-        log.info("📋 GET /api/pendientes-mensuales/consolidado - servicio={}, subactividad={}, page={}, size={}",
-                servicio, subactividad, page, size);
+        log.info("📋 GET /api/pendientes-mensuales/consolidado - turno={}, servicio={}, subactividad={}, page={}, size={}",
+                turno, servicio, subactividad, page, size);
 
         try {
             Pageable pageable = PageRequest.of(page, size);
             Page<ConsolidadoPendientesDTO> resultado = pendientesService.obtenerConsolidado(
-                    servicio, subactividad, fechaDesde, fechaHasta, pageable);
+                    turno, servicio, subactividad, fechaDesde, fechaHasta, pageable);
             log.info("✅ {} registros encontrados (página {}/{})",
                     resultado.getTotalElements(), page + 1, resultado.getTotalPages());
             return ok(resultado, "Consolidado obtenido exitosamente");
@@ -107,6 +109,7 @@ public class PendientesMensualesController {
     @GetMapping("/detalle")
     @PreAuthorize(ROLES_PERMITIDOS)
     public ResponseEntity<Map<String, Object>> obtenerDetalle(
+            @RequestParam(defaultValue = "MAÑANA") String turno,
             @RequestParam(required = false) String servicio,
             @RequestParam(required = false) String subactividad,
             @RequestParam(required = false) String busqueda,
@@ -115,13 +118,13 @@ public class PendientesMensualesController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
 
-        log.info("📄 GET /api/pendientes-mensuales/detalle - busqueda={}, page={}, size={}",
-                busqueda, page, size);
+        log.info("📄 GET /api/pendientes-mensuales/detalle - turno={}, busqueda={}, page={}, size={}",
+                turno, busqueda, page, size);
 
         try {
             Pageable pageable = PageRequest.of(page, size);
             Page<DetallePendientesDTO> resultado = pendientesService.obtenerDetalle(
-                    servicio, subactividad, busqueda, fechaDesde, fechaHasta, pageable);
+                    turno, servicio, subactividad, busqueda, fechaDesde, fechaHasta, pageable);
             log.info("✅ {} pacientes encontrados", resultado.getTotalElements());
             return ok(resultado, "Detalle obtenido exitosamente");
         } catch (Exception e) {
@@ -141,17 +144,36 @@ public class PendientesMensualesController {
     @GetMapping("/detalle/{dniMedico}")
     @PreAuthorize(ROLES_PERMITIDOS)
     public ResponseEntity<Map<String, Object>> obtenerDetallePorMedico(
-            @PathVariable String dniMedico) {
+            @PathVariable String dniMedico,
+            @RequestParam(defaultValue = "MAÑANA") String turno) {
 
-        log.info("👨‍⚕️ GET /api/pendientes-mensuales/detalle/{}", dniMedico);
+        log.info("👨‍⚕️ GET /api/pendientes-mensuales/detalle/{} - turno={}", dniMedico, turno);
 
         try {
-            List<DetallePendientesDTO> resultado = pendientesService.obtenerDetallePorMedico(dniMedico);
+            List<DetallePendientesDTO> resultado = pendientesService.obtenerDetallePorMedico(dniMedico, turno);
             log.info("✅ {} pacientes para médico {}", resultado.size(), dniMedico);
             return ok(resultado, "Detalle del médico obtenido exitosamente");
         } catch (Exception e) {
             log.error("❌ Error al obtener detalle del médico {}: {}", dniMedico, e.getMessage(), e);
             return error(e.getMessage(), "Error al obtener detalle del médico");
+        }
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // 5. Calendario: conteos de pacientes por fecha
+    // ─────────────────────────────────────────────────────────────────────────
+
+    @GetMapping("/calendar")
+    @PreAuthorize(ROLES_PERMITIDOS)
+    public ResponseEntity<Map<String, Object>> obtenerCalendario(
+            @RequestParam(defaultValue = "MAÑANA") String turno) {
+        log.info("📅 GET /api/pendientes-mensuales/calendar - turno={}", turno);
+        try {
+            List<Map<String, Object>> data = pendientesService.obtenerCalendario(turno);
+            return ok(data, "Calendario obtenido exitosamente");
+        } catch (Exception e) {
+            log.error("❌ Error al obtener calendario: {}", e.getMessage(), e);
+            return error(e.getMessage(), "Error al obtener calendario");
         }
     }
 

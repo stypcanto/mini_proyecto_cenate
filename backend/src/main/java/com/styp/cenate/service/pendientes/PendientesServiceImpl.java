@@ -16,7 +16,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -25,22 +27,29 @@ import java.util.stream.Collectors;
 @Transactional(readOnly = true)
 public class PendientesServiceImpl implements PendientesService {
 
+    private static final String TURNO_DEFAULT = "MAÑANA";
+
     private final ConsolidadoPendientesMensualRepository consolidadoRepo;
     private final DetallePendientesMensualRepository detalleRepo;
 
+    private String normalizarTurno(String turno) {
+        return (turno != null && !turno.isBlank()) ? turno.toUpperCase() : TURNO_DEFAULT;
+    }
+
     @Override
     public Page<ConsolidadoPendientesDTO> obtenerConsolidado(
+            String turno,
             String servicio,
             String subactividad,
             LocalDate fechaDesde,
             LocalDate fechaHasta,
             Pageable pageable) {
 
-        log.info("Buscando consolidado - servicio={}, subactividad={}, fechaDesde={}, fechaHasta={}",
-                servicio, subactividad, fechaDesde, fechaHasta);
+        String t = normalizarTurno(turno);
+        log.info("Buscando consolidado - turno={}, servicio={}, subactividad={}", t, servicio, subactividad);
 
         Page<ConsolidadoPendientesMensual> page = consolidadoRepo.buscarConFiltros(
-                servicio, subactividad, fechaDesde, fechaHasta, pageable
+                t, servicio, subactividad, fechaDesde, fechaHasta, pageable
         );
 
         return page.map(this::toConsolidadoDTO);
@@ -48,6 +57,7 @@ public class PendientesServiceImpl implements PendientesService {
 
     @Override
     public Page<DetallePendientesDTO> obtenerDetalle(
+            String turno,
             String servicio,
             String subactividad,
             String busqueda,
@@ -55,33 +65,36 @@ public class PendientesServiceImpl implements PendientesService {
             LocalDate fechaHasta,
             Pageable pageable) {
 
-        log.info("Buscando detalle - servicio={}, subactividad={}, busqueda={}", servicio, subactividad, busqueda);
+        String t = normalizarTurno(turno);
+        log.info("Buscando detalle - turno={}, servicio={}, subactividad={}, busqueda={}", t, servicio, subactividad, busqueda);
 
         Page<DetallePendientesMensual> page = detalleRepo.buscarConFiltros(
-                servicio, subactividad, busqueda, fechaDesde, fechaHasta, pageable
+                t, servicio, subactividad, busqueda, fechaDesde, fechaHasta, pageable
         );
 
         return page.map(this::toDetalleDTO);
     }
 
     @Override
-    public List<DetallePendientesDTO> obtenerDetallePorMedico(String dniMedico) {
-        log.info("Buscando detalle por médico - dniMedico={}", dniMedico);
-        return detalleRepo.findByDniMedico(dniMedico)
+    public List<DetallePendientesDTO> obtenerDetallePorMedico(String dniMedico, String turno) {
+        String t = normalizarTurno(turno);
+        log.info("Buscando detalle por médico - dniMedico={}, turno={}", dniMedico, t);
+        return detalleRepo.findByDniMedicoAndTurno(dniMedico, t)
                 .stream()
                 .map(this::toDetalleDTO)
                 .collect(Collectors.toList());
     }
 
     @Override
-    public PendientesResumenDTO obtenerKpis() {
-        log.info("Calculando KPIs globales de pendientes mensuales");
+    public PendientesResumenDTO obtenerKpis(String turno) {
+        String t = normalizarTurno(turno);
+        log.info("Calculando KPIs globales - turno={}", t);
 
-        Long totalMedicos = consolidadoRepo.countDistinctMedicos();
-        Long totalPacientes = detalleRepo.countDistinctPacientes();
-        Long totalAbandonos = consolidadoRepo.sumTotalAbandonos();
+        Long totalMedicos   = consolidadoRepo.countDistinctMedicos(t);
+        Long totalPacientes = detalleRepo.countDistinctPacientes(t);
+        Long totalAbandonos = consolidadoRepo.sumTotalAbandonos(t);
 
-        List<Object[]> rawSubactividad = consolidadoRepo.resumenPorSubactividad();
+        List<Object[]> rawSubactividad = consolidadoRepo.resumenPorSubactividad(t);
         List<PendientesResumenDTO.SubactividadResumenDTO> porSubactividad = rawSubactividad.stream()
                 .map(row -> PendientesResumenDTO.SubactividadResumenDTO.builder()
                         .subactividad(row[0] != null ? row[0].toString() : "")
@@ -91,7 +104,7 @@ public class PendientesServiceImpl implements PendientesService {
                 .collect(Collectors.toList());
 
         Pageable top10 = PageRequest.of(0, 10);
-        List<Object[]> rawServicios = consolidadoRepo.resumenPorServicio(top10);
+        List<Object[]> rawServicios = consolidadoRepo.resumenPorServicio(t, top10);
         List<PendientesResumenDTO.ServicioResumenDTO> topServicios = rawServicios.stream()
                 .map(row -> PendientesResumenDTO.ServicioResumenDTO.builder()
                         .servicio(row[0] != null ? row[0].toString() : "")
@@ -107,6 +120,18 @@ public class PendientesServiceImpl implements PendientesService {
                 .porSubactividad(porSubactividad)
                 .topServiciosPorAbandonos(topServicios)
                 .build();
+    }
+
+    @Override
+    public List<Map<String, Object>> obtenerCalendario(String turno) {
+        String t = normalizarTurno(turno);
+        log.info("📅 Calculando conteos por fecha - turno={}", t);
+        return detalleRepo.countPorFecha(t).stream().map(row -> {
+            Map<String, Object> m = new HashMap<>();
+            m.put("fecha", row[0] != null ? row[0].toString() : "");
+            m.put("count", row[1] != null ? ((Number) row[1]).longValue() : 0L);
+            return m;
+        }).collect(Collectors.toList());
     }
 
     // ── Mappers ──────────────────────────────────────────────────────────────
@@ -134,6 +159,7 @@ public class PendientesServiceImpl implements PendientesService {
                 .docPaciente(e.getDocPaciente())
                 .paciente(e.getPaciente())
                 .abandono(e.getAbandono())
+                .horaCita(e.getHoraCita())
                 .build();
     }
 }

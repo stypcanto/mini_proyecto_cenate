@@ -114,7 +114,10 @@
 
 ## 📚 Lectura Recomendada
 
-1. **Recita + Interconsulta (Atención Médica):** 👉 [`15_recita_interconsulta_v1.47.md`](./15_recita_interconsulta_v1.47.md) ⭐ **NUEVO v1.47.2**
+1. **Estadísticas de Programación (Pendientes Mensuales):** 👉 [`19_modulo_pendientes_mensuales.md`](./19_modulo_pendientes_mensuales.md) ⭐ **NUEVO v1.68.x**
+   - Vista árbol Médico→Subactividad→Servicio + Drawer pacientes
+   - CalendarFilter con badges por fecha · Toggle Mañana/Tarde
+2. **Recita + Interconsulta (Atención Médica):** 👉 [`15_recita_interconsulta_v1.47.md`](./15_recita_interconsulta_v1.47.md) ⭐ **NUEVO v1.47.2**
    - Flujo completo de registro de atención médica
    - Crear seguimiento y referencia automáticamente
    - Validaciones y especialidades correctas

@@ -6,6 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
+import java.time.LocalTime;
 
 @Data
 @NoArgsConstructor
@@ -22,4 +23,5 @@ public class DetallePendientesDTO {
     private String docPaciente;
     private String paciente;
     private String abandono;
+    private LocalTime horaCita;
 }

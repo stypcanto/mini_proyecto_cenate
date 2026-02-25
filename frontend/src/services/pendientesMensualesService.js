@@ -2,20 +2,19 @@ import apiClient from '../lib/apiClient';
 
 const BASE = '/pendientes-mensuales';
 
-/**
- * KPIs globales: total médicos, pacientes, abandonos, por subactividad, top servicios
- */
-export const obtenerKpis = async () => {
-  const data = await apiClient.get(`${BASE}/kpis`, true);
+/** KPIs globales filtrados por turno */
+export const obtenerKpis = async (turno = 'MAÑANA') => {
+  const data = await apiClient.get(`${BASE}/kpis?turno=${encodeURIComponent(turno)}`, true);
   return data?.data ?? data;
 };
 
 /**
  * Consolidado por médico (paginado + filtros)
- * @param {Object} params - { servicio, subactividad, fechaDesde, fechaHasta, page, size }
+ * @param {Object} params - { turno, servicio, subactividad, fechaDesde, fechaHasta, page, size }
  */
 export const obtenerConsolidado = async (params = {}) => {
   const qs = new URLSearchParams();
+  qs.append('turno', params.turno ?? 'MAÑANA');
   if (params.servicio)      qs.append('servicio', params.servicio);
   if (params.subactividad)  qs.append('subactividad', params.subactividad);
   if (params.fechaDesde)    qs.append('fechaDesde', params.fechaDesde);
@@ -29,10 +28,11 @@ export const obtenerConsolidado = async (params = {}) => {
 
 /**
  * Detalle nominal (paginado + filtros + búsqueda)
- * @param {Object} params - { servicio, subactividad, busqueda, fechaDesde, fechaHasta, page, size }
+ * @param {Object} params - { turno, servicio, subactividad, busqueda, fechaDesde, fechaHasta, page, size }
  */
 export const obtenerDetalle = async (params = {}) => {
   const qs = new URLSearchParams();
+  qs.append('turno', params.turno ?? 'MAÑANA');
   if (params.servicio)      qs.append('servicio', params.servicio);
   if (params.subactividad)  qs.append('subactividad', params.subactividad);
   if (params.busqueda)      qs.append('busqueda', params.busqueda);
@@ -48,8 +48,19 @@ export const obtenerDetalle = async (params = {}) => {
 /**
  * Detalle de pacientes de un médico específico
  * @param {string} dniMedico
+ * @param {string} turno
  */
-export const obtenerDetallePorMedico = async (dniMedico) => {
-  const data = await apiClient.get(`${BASE}/detalle/${dniMedico}`, true);
+/** Conteos de pacientes por fecha para el calendario */
+export const obtenerCalendario = async (turno = 'MAÑANA') => {
+  const data = await apiClient.get(
+    `/pendientes-mensuales/calendar?turno=${encodeURIComponent(turno)}`, true
+  );
+  return data?.data ?? data;
+};
+
+export const obtenerDetallePorMedico = async (dniMedico, turno = 'MAÑANA') => {
+  const data = await apiClient.get(
+    `${BASE}/detalle/${dniMedico}?turno=${encodeURIComponent(turno)}`, true
+  );
   return data?.data ?? data;
 };

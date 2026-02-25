@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDate;
+import java.time.LocalTime;
 
 @Entity
 @Table(name = "detalle_pendientes_mensual")
@@ -41,4 +42,10 @@ public class DetallePendientesMensual {
 
     @Column(name = "abandono")
     private String abandono;
+
+    @Column(name = "hora_cita")
+    private LocalTime horaCita;
+
+    @Column(name = "turno")
+    private String turno;
 }
