@@ -138,6 +138,14 @@ public interface SolicitudBolsaService {
     int rechazarMasivo(List<Long> ids);
 
     /**
+     * Marca múltiples solicitudes como RECHAZADO guardando el motivo de anulación (v1.69.0)
+     * @param ids    lista de IDs de solicitudes a anular
+     * @param motivo motivo de la anulación
+     * @return cantidad de registros actualizados
+     */
+    int rechazarMasivoConMotivo(List<Long> ids, String motivo);
+
+    /**
      * Obtiene asegurados nuevos detectados (que no existen en tabla asegurados)
      * Busca solicitudes con nombre "Paciente DNI" e identifica los DNIs faltantes
      */
@@ -267,6 +275,9 @@ public interface SolicitudBolsaService {
     SolicitudBolsaDTO crearSolicitudAdicional(CrearSolicitudAdicionalRequest request, String username);
 
     Optional<SolicitudBolsaDTO> buscarAsignacionExistente(String pacienteDni);
+
+    /** v1.67.x: Retorna TODAS las asignaciones activas de un paciente (para validar por especialidad) */
+    java.util.List<SolicitudBolsaDTO> buscarAsignacionesPorDni(String pacienteDni);
 
     /**
      * Buscar solicitudes por DNI de paciente (v1.46.0)

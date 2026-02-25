@@ -32,6 +32,9 @@ public interface SolicitudCitaRepository extends JpaRepository<SolicitudCita, Lo
 
 	boolean existsByPersonal_IdPersAndFechaCitaAndHoraCita(Long idPers, LocalDate fechaCita, LocalTime horaCita);
 
+	/** v1.67.0: Obtener citas de un profesional en una fecha (para horas ocupadas) */
+	List<SolicitudCita> findByPersonal_IdPersAndFechaCita(Long idPers, LocalDate fechaCita);
+
 	// Buscar citas programadas por fecha y estado
 	List<SolicitudCita> findByFechaCitaAndIdEstadoCita(LocalDate fechaCita, Long idEstadoCita);
 

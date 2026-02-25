@@ -1048,6 +1048,12 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
      */
     List<SolicitudBolsa> findByPacienteDni(String pacienteDni);
 
+    /**
+     * v1.67.0: Obtener citas de un profesional en una fecha específica (solo activos)
+     * Usado para calcular horas ocupadas al agendar citas.
+     */
+    List<SolicitudBolsa> findByIdPersonalAndFechaAtencionAndActivoTrue(Long idPersonal, java.time.LocalDate fechaAtencion);
+
     // ========================================================================
     // 📊 v1.65.0: TOTAL PACIENTES ENFERMERÍA — Estadísticas por enfermera
     // ========================================================================
@@ -1491,6 +1497,17 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
     int cambiarEstadoMasivo(
         @org.springframework.data.repository.query.Param("ids") List<Long> ids,
         @org.springframework.data.repository.query.Param("idEstado") Long idEstado
+    );
+
+    /**
+     * Cambia el estado masivo y guarda el motivo de anulación (v1.69.0)
+     */
+    @Modifying
+    @Query("UPDATE SolicitudBolsa s SET s.estadoGestionCitasId = :idEstado, s.fechaCambioEstado = CURRENT_TIMESTAMP, s.motivoAnulacion = :motivo WHERE s.idSolicitud IN :ids AND s.activo = true")
+    int cambiarEstadoMasivoConMotivo(
+        @org.springframework.data.repository.query.Param("ids") List<Long> ids,
+        @org.springframework.data.repository.query.Param("idEstado") Long idEstado,
+        @org.springframework.data.repository.query.Param("motivo") String motivo
     );
 
     /**

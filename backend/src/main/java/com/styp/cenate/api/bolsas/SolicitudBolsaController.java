@@ -1334,8 +1334,12 @@ public class SolicitudBolsaController {
                 return ResponseEntity.badRequest().body(Map.of("error", "No se proporcionaron IDs válidos para rechazar"));
             }
 
-            log.info("❌ Rechazando {} solicitudes: {}", ids.size(), ids);
-            int actualizados = solicitudBolsaService.rechazarMasivo(ids);
+            String motivo = payload.get("motivo") instanceof String m ? m.trim() : null;
+
+            log.info("❌ Anulando {} solicitudes: {} | motivo: {}", ids.size(), ids, motivo);
+            int actualizados = (motivo != null && !motivo.isEmpty())
+                ? solicitudBolsaService.rechazarMasivoConMotivo(ids, motivo)
+                : solicitudBolsaService.rechazarMasivo(ids);
 
             log.info("✅ {} solicitudes marcadas como RECHAZADO", actualizados);
             return ResponseEntity.ok(Map.of("actualizados", actualizados));
@@ -1585,15 +1589,27 @@ public class SolicitudBolsaController {
             @RequestBody @jakarta.validation.Valid CrearSolicitudAdicionalRequest request,
             @AuthenticationPrincipal UserDetails userDetails) {
 
-        log.info("📝 POST /api/bolsas/solicitudes/crear-adicional - DNI: {}", request.getPacienteDni());
+        log.info("📝 POST /api/bolsas/solicitudes/crear-adicional - DNI: {}, Especialidad: {}", request.getPacienteDni(), request.getEspecialidad());
 
-        // Verificar si ya existe una asignación activa CON PROFESIONAL para este paciente
-        // Si existe pero sin profesional asignado, se permite continuar (crear nueva asignación)
-        solicitudBolsaService.buscarAsignacionExistente(request.getPacienteDni()).ifPresent(existente -> {
-            if (existente.getIdPersonal() != null) {
+        // Regla: Un paciente PUEDE tener citas con diferentes especialidades en el mismo día.
+        // Solo se bloquea si ya existe una asignación activa con LA MISMA especialidad
+        // que NO esté en estado terminal (ATENDIDO, CANCELADO, DESERTOR, RESCATADO, RECHAZADO).
+        java.util.List<com.styp.cenate.dto.bolsas.SolicitudBolsaDTO> existentes =
+            solicitudBolsaService.buscarAsignacionesPorDni(request.getPacienteDni());
+
+        java.util.Set<String> estadosTerminales = java.util.Set.of("ATENDIDO", "CANCELADO", "DESERTOR", "RESCATADO", "RECHAZADO", "NO ASISTIO");
+        String especialidadNueva = request.getEspecialidad() != null ? request.getEspecialidad().trim().toUpperCase() : "";
+
+        existentes.stream()
+            .filter(e -> e.getIdPersonal() != null)
+            .filter(e -> !estadosTerminales.contains(e.getEstado() != null ? e.getEstado().toUpperCase() : ""))
+            .filter(e -> especialidadNueva.isEmpty() || especialidadNueva.equals(
+                e.getEspecialidad() != null ? e.getEspecialidad().trim().toUpperCase() : ""))
+            .findFirst()
+            .ifPresent(existente -> {
+                log.warn("⚠️ Paciente {} ya tiene cita activa en {}", request.getPacienteDni(), existente.getEspecialidad());
                 throw new com.styp.cenate.exception.PacienteDuplicadoException(existente);
-            }
-        });
+            });
 
         String username = userDetails != null ? userDetails.getUsername() : "Sistema";
         SolicitudBolsaDTO nuevaSolicitud = solicitudBolsaService.crearSolicitudAdicional(request, username);

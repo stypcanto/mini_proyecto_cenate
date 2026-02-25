@@ -5,7 +5,7 @@
 // Integración real con /api/bolsas/solicitudes/mi-bandeja
 // ========================================================================
 
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../../context/AuthContext";
 import { getToken } from "../../../constants/auth";
@@ -41,6 +41,37 @@ import toast from "react-hot-toast";
 import { formatearTiempoRelativo } from "../../../utils/dateUtils";
 import { logRespuestaConsola } from "../../../utils/consoleResponseLogger";
 
+// ── Tooltip con posición fixed (escapa overflow:hidden) ──────
+function Tooltip({ text, children }) {
+  const [pos, setPos] = React.useState(null);
+  const ref = React.useRef(null);
+  const show = () => {
+    if (!ref.current) return;
+    const r = ref.current.getBoundingClientRect();
+    setPos({ x: r.left + r.width / 2, y: r.top - 8 });
+  };
+  return (
+    <div ref={ref} style={{ display: 'inline-flex' }} onMouseEnter={show} onMouseLeave={() => setPos(null)}>
+      {children}
+      {pos && (
+        <div style={{
+          position: 'fixed', left: pos.x, top: pos.y,
+          transform: 'translate(-50%, -100%)',
+          background: '#1e293b', color: '#fff', fontSize: '11px', fontWeight: '500',
+          whiteSpace: 'nowrap', padding: '4px 9px', borderRadius: '6px',
+          pointerEvents: 'none', boxShadow: '0 2px 8px rgba(0,0,0,0.25)', zIndex: 99999,
+        }}>
+          {text}
+          <div style={{
+            position: 'absolute', top: '100%', left: '50%', transform: 'translateX(-50%)',
+            borderWidth: '4px', borderStyle: 'solid',
+            borderColor: '#1e293b transparent transparent transparent',
+          }} />
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default function GestionAsegurado() {
   const { user } = useAuth();
@@ -123,6 +154,15 @@ export default function GestionAsegurado() {
   const [cargandoMedicos, setCargandoMedicos] = useState(false);
 
   // ============================================================================
+  // 🔍 ESTADO PARA PRE-VALIDACIÓN DE ASEGURADO (v1.67.0)
+  // ============================================================================
+  const [modalPreValidacion, setModalPreValidacion] = useState(false);
+  const [preValidacionDni, setPreValidacionDni] = useState("");
+  const [preValidacionEstado, setPreValidacionEstado] = useState("idle"); // idle | buscando | encontrado | no_encontrado | error
+  const [preValidacionResultado, setPreValidacionResultado] = useState(null);
+  const [preValidacionPaso, setPreValidacionPaso] = useState(1); // 1: búsqueda DNI, 2: formulario cita
+
+  // ============================================================================
   // 🆕 ESTADO PARA AGREGAR NUEVO ASEGURADO
   // ============================================================================
   const [modalNuevoAsegurado, setModalNuevoAsegurado] = useState(false);
@@ -162,6 +202,50 @@ export default function GestionAsegurado() {
   const [mostrarDropdownProfes, setMostrarDropdownProfes] = useState(false);
   const [busquedaEspecialidad, setBusquedaEspecialidad] = useState(""); // autocomplete especialidad
   const [mostrarDropdownEsp, setMostrarDropdownEsp] = useState(false);
+  const [horasOcupadas, setHorasOcupadas] = useState([]); // v1.67.0: Horas ya reservadas del profesional
+
+  // v1.67.1: Drum/wheel picker refs
+  const hourDrumRef = useRef(null);
+  const minuteDrumRef = useRef(null);
+  const DRUM_HOURS = Array.from({ length: 17 }, (_, i) => i + 7); // 07..23
+  const DRUM_MINUTES = [0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55];
+  const DRUM_ITEM_H = 40;
+
+  // Sync drum scroll position when time changes externally
+  useEffect(() => {
+    const time = fechaHoraCitaSeleccionada?.split('T')[1];
+    if (!time) return;
+    const [h, m] = time.split(':').map(Number);
+    const hIdx = DRUM_HOURS.indexOf(h);
+    const mIdx = DRUM_MINUTES.indexOf(m);
+    if (hourDrumRef.current && hIdx >= 0) {
+      hourDrumRef.current.scrollTop = hIdx * DRUM_ITEM_H;
+    }
+    if (minuteDrumRef.current && mIdx >= 0) {
+      minuteDrumRef.current.scrollTop = mIdx * DRUM_ITEM_H;
+    }
+  }, [fechaHoraCitaSeleccionada]); // eslint-disable-line
+
+  const handleDrumScroll = useCallback((drumType) => {
+    const ref = drumType === 'hour' ? hourDrumRef : minuteDrumRef;
+    if (!ref.current) return;
+    clearTimeout(ref.current._scrollTimer);
+    ref.current._scrollTimer = setTimeout(() => {
+      const scrollTop = ref.current.scrollTop;
+      const idx = Math.round(scrollTop / DRUM_ITEM_H);
+      const arr = drumType === 'hour' ? DRUM_HOURS : DRUM_MINUTES;
+      const clamped = Math.max(0, Math.min(idx, arr.length - 1));
+      ref.current.scrollTop = clamped * DRUM_ITEM_H;
+      const fechaActual = fechaHoraCitaSeleccionada?.split('T')[0] || '';
+      if (!fechaActual) return;
+      const time = fechaHoraCitaSeleccionada?.split('T')[1] || '07:00';
+      const [currH, currM] = time.split(':').map(Number);
+      const newH = drumType === 'hour' ? arr[clamped] : currH;
+      const newM = drumType === 'minute' ? arr[clamped] : currM;
+      const slot = `${String(newH).padStart(2,'0')}:${String(newM).padStart(2,'0')}`;
+      setFechaHoraCitaSeleccionada(`${fechaActual}T${slot}`);
+    }, 120);
+  }, [fechaHoraCitaSeleccionada]); // eslint-disable-line
 
   const formatearNombreEspecialista = (medico) => {
     const apellidoPaterno = (medico?.apellidoPaterno || medico?.apPaterno || "").trim();
@@ -1322,6 +1406,45 @@ CENATE de Essalud`;
   };
 
   // ============================================================================
+  // 🔍 PRE-VALIDACIÓN: Buscar si asegurado existe por DNI (v1.67.0)
+  // ============================================================================
+  const buscarPreValidacion = async () => {
+    if (!preValidacionDni || preValidacionDni.length !== 8) return;
+    setPreValidacionEstado("buscando");
+    setPreValidacionResultado(null);
+    try {
+      // Intento 1: búsqueda directa por DNI
+      const res = await fetch(`${API_BASE}/asegurados/doc/${encodeURIComponent(preValidacionDni)}`, {
+        headers: { Authorization: `Bearer ${getToken()}` },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data && (data.docPaciente || data.doc_paciente)) {
+          setPreValidacionResultado(data);
+          setPreValidacionEstado("encontrado");
+          return;
+        }
+      }
+      // Intento 2: búsqueda general
+      const res2 = await fetch(`${API_BASE}/asegurados/buscar?q=${encodeURIComponent(preValidacionDni)}&size=1`, {
+        headers: { Authorization: `Bearer ${getToken()}` },
+      });
+      if (res2.ok) {
+        const data2 = await res2.json();
+        const items = data2?.content || data2?.data || (Array.isArray(data2) ? data2 : []);
+        if (items.length > 0) {
+          setPreValidacionResultado(items[0]);
+          setPreValidacionEstado("encontrado");
+          return;
+        }
+      }
+      setPreValidacionEstado("no_encontrado");
+    } catch {
+      setPreValidacionEstado("error");
+    }
+  };
+
+  // ============================================================================
   // 🔍 BUSCAR ASEGURADOS CON DEBOUNCE (v1.46.0)
   // ============================================================================
   const buscarAseguradosImpl = async (termino) => {
@@ -1465,6 +1588,31 @@ CENATE de Essalud`;
     setMostrarDropdownProfes(false);
   }, [especialidadSeleccionada]);
 
+  // 🕐 v1.67.0: Cargar horas ocupadas cuando cambia profesional o fecha
+  React.useEffect(() => {
+    const fechaActual = fechaHoraCitaSeleccionada?.split('T')[0];
+    if (!medicoSeleccionado || !fechaActual) {
+      setHorasOcupadas([]);
+      return;
+    }
+    const fetchHoras = async () => {
+      try {
+        const token = getToken();
+        const resp = await fetch(
+          `${API_BASE}/bolsas/solicitudes/horas-ocupadas?idPersonal=${medicoSeleccionado}&fecha=${fechaActual}`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        if (resp.ok) {
+          const data = await resp.json();
+          setHorasOcupadas(data.horasOcupadas || []);
+        }
+      } catch (err) {
+        console.error("Error cargando horas ocupadas:", err);
+      }
+    };
+    fetchHoras();
+  }, [medicoSeleccionado, fechaHoraCitaSeleccionada?.split('T')[0]]);
+
   // ============================================================================
   // ➕ IMPORTAR PACIENTE ADICIONAL (v1.46.0) - FIXED v1.46.1
   // ============================================================================
@@ -1494,7 +1642,7 @@ CENATE de Essalud`;
             pacienteSexo: asegurado.sexo,
             pacienteTelefono: asegurado.telCelular || asegurado.telFijo,
             pacienteTelefonoAlterno: asegurado.telFijo || asegurado.telCelular,
-            descIpress: asegurado.casAdscripcion || asegurado.nombreIpress, // Usar código, fallback a nombre
+            descIpress: asegurado.nombreIpress || asegurado.casAdscripcion, // Usar nombre, fallback a código
             tipoCita: "TELECONSULTA",
             origen: "Importación Manual",
             // Si tiene fecha + médico asignado → CITADO automáticamente, sino pendiente
@@ -1520,20 +1668,32 @@ CENATE de Essalud`;
         throw new Error(errorData.message || `Error al crear en dim_solicitud_bolsa (${createBolsaRes.status})`);
       }
 
-      toast.success(`Paciente ${asegurado.paciente} importado a ${especialidadSeleccionada}`);
-
-      // 4. Cerrar modal y recargar tabla
-      setModalImportar(false);
-      setBusquedaAsegurado("");
-      setResultadosBusqueda([]);
-      setEspecialidadSeleccionada(""); // ✅ v1.46.5: Resetear especialidad
-      setMedicoSeleccionado(""); // ✅ v1.46.7: Resetear médico
-      setFechaHoraCitaSeleccionada(""); // ✅ v1.46.7: Resetear fecha/hora
-      setBusquedaProfesional("");
-      setMostrarDropdownProfes(false);
-      setBusquedaEspecialidad("");
-      setMostrarDropdownEsp(false);
-      await fetchPacientesAsignados();
+      // v1.67.0: Si viene del modal pre-validación, mostrar paso de éxito
+      if (modalPreValidacion) {
+        setPreValidacionPaso(3); // Paso 3 = éxito
+        setModalImportar(false);
+        setBusquedaAsegurado("");
+        setResultadosBusqueda([]);
+        await fetchPacientesAsignados();
+      } else {
+        toast.success(`Paciente ${asegurado.paciente} importado a ${especialidadSeleccionada}`);
+        setModalImportar(false);
+        setModalPreValidacion(false);
+        setPreValidacionPaso(1);
+        setPreValidacionDni("");
+        setPreValidacionEstado("idle");
+        setPreValidacionResultado(null);
+        setBusquedaAsegurado("");
+        setResultadosBusqueda([]);
+        setEspecialidadSeleccionada("");
+        setMedicoSeleccionado("");
+        setFechaHoraCitaSeleccionada("");
+        setBusquedaProfesional("");
+        setMostrarDropdownProfes(false);
+        setBusquedaEspecialidad("");
+        setMostrarDropdownEsp(false);
+        await fetchPacientesAsignados();
+      }
     } catch (error) {
       console.error("Error importando paciente:", error);
       const mensaje = error.message || "Error al importar paciente";
@@ -2042,36 +2202,30 @@ CENATE de Essalud`;
                 </p>
               </div>
               <div className="flex gap-2 items-center">
-                <button
-                  onClick={() => {
-                    setNuevoAsegurado({
-                      tipoDocumento: "DNI", documento: "", nombreCompleto: "",
-                      fechaNacimiento: "", sexo: "M", tipoPaciente: "Titular",
-                      telefonoPrincipal: "", telefonoAlterno: "", correo: "",
-                      tipoSeguro: "Titular", casAdscripcion: "",
-                      periodo: String(new Date().getFullYear()), pacienteCenacron: false,
-                    });
-                    setDniValidacion(null);
-                    // Cargar IPRESS al abrir
-                    fetch(`${API_BASE}/asegurados/filtros/ipress`, { headers: { Authorization: `Bearer ${getToken()}` } })
-                      .then(r => r.json()).then(d => setIpressDisponibles(d || [])).catch(() => {});
-                    setModalNuevoAsegurado(true);
-                  }}
-                  className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors shadow-sm font-medium"
-                  title="Registrar un nuevo asegurado en el sistema"
-                >
-                  <Plus className="w-4 h-4" />
-                  Agregar Asegurado
-                </button>
-
-                <button
-                  onClick={() => setModalImportar(true)}
-                  className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors shadow-sm font-medium"
-                  title="Importar paciente desde base de asegurados"
-                >
-                  <UserPlus className="w-4 h-4" />
-                  Importar Paciente
-                </button>
+                <div className="relative group">
+                  <button
+                    onClick={() => {
+                      setPreValidacionDni("");
+                      setPreValidacionEstado("idle");
+                      setPreValidacionResultado(null);
+                      setPreValidacionPaso(1);
+                      setEspecialidadSeleccionada("");
+                      setMedicoSeleccionado("");
+                      setFechaHoraCitaSeleccionada("");
+                      setBusquedaEspecialidad("");
+                      setBusquedaProfesional("");
+                      setModalPreValidacion(true);
+                    }}
+                    className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors shadow-sm font-medium"
+                  >
+                    <Plus className="w-4 h-4" />
+                    Registrar cita adicional
+                  </button>
+                  <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-64 bg-gray-900 text-white text-xs rounded-lg px-3 py-2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50 shadow-lg">
+                    Verifica si el paciente existe en el sistema y agenda una nueva cita. Si no existe, podrás registrarlo primero.
+                    <div className="absolute top-full left-1/2 -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900"></div>
+                  </div>
+                </div>
 
                 <button
                   onClick={() => {
@@ -2878,48 +3032,50 @@ CENATE de Essalud`;
                             // Modo Normal: Mostrar botones de acciones
                             <div className="flex gap-1 justify-center items-center">
                               {/* ✅ v1.67.0: Deshabilitar edición solo si condicionMedica=Atendido */}
-                              <button
-                                onClick={() => {
-                                  setPacienteEditandoEstado(paciente.id);
-                                  setNuevoEstadoSeleccionado(paciente.codigoEstado || "");
-                                }}
-                                disabled={paciente.condicionMedica === "Atendido"}
-                                className={`p-2 rounded transition-colors text-white font-medium flex items-center gap-1 ${
-                                  paciente.condicionMedica === "Atendido"
-                                    ? "bg-gray-400 cursor-not-allowed opacity-50"
-                                    : "bg-blue-600 hover:bg-blue-700"
-                                }`}
-                                title={paciente.condicionMedica === "Atendido" 
-                                  ? "❌ La atención ya fue atendida. No se puede editar."
-                                  : "Editar estado y cita"}
-                              >
-                                <Edit2 className="w-4 h-4" strokeWidth={2} />
-                              </button>
-                              <button
-                                onClick={() => abrirModalTelefono(paciente)}
-                                className="bg-slate-600 hover:bg-slate-700 text-white p-2 rounded transition-colors"
-                                title="Actualizar teléfono"
-                              >
-                                <Smartphone className="w-4 h-4" strokeWidth={2} />
-                              </button>
-                              {(paciente.codigoEstado === "CITADO" || (paciente.fechaAtencion && paciente.horaAtencion)) && (
+                              <Tooltip text={paciente.condicionMedica === "Atendido" ? "Atención ya completada" : "Editar estado y cita"}>
                                 <button
-                                  onClick={() => abrirModalMensajeCita(paciente)}
-                                  className="bg-purple-600 hover:bg-purple-700 text-white p-2 rounded transition-colors"
-                                  title="Enviar mensaje de cita por WhatsApp"
+                                  onClick={() => {
+                                    setPacienteEditandoEstado(paciente.id);
+                                    setNuevoEstadoSeleccionado(paciente.codigoEstado || "");
+                                  }}
+                                  disabled={paciente.condicionMedica === "Atendido"}
+                                  className={`p-2 rounded transition-colors text-white font-medium flex items-center gap-1 ${
+                                    paciente.condicionMedica === "Atendido"
+                                      ? "bg-gray-400 cursor-not-allowed opacity-50"
+                                      : "bg-blue-600 hover:bg-blue-700"
+                                  }`}
                                 >
-                                  <MessageCircle className="w-4 h-4" strokeWidth={2} />
+                                  <Edit2 className="w-4 h-4" strokeWidth={2} />
                                 </button>
+                              </Tooltip>
+                              <Tooltip text="Actualizar teléfono">
+                                <button
+                                  onClick={() => abrirModalTelefono(paciente)}
+                                  className="bg-slate-600 hover:bg-slate-700 text-white p-2 rounded transition-colors"
+                                >
+                                  <Smartphone className="w-4 h-4" strokeWidth={2} />
+                                </button>
+                              </Tooltip>
+                              {(paciente.codigoEstado === "CITADO" || (paciente.fechaAtencion && paciente.horaAtencion)) && (
+                                <Tooltip text="Enviar cita por WhatsApp">
+                                  <button
+                                    onClick={() => abrirModalMensajeCita(paciente)}
+                                    className="bg-purple-600 hover:bg-purple-700 text-white p-2 rounded transition-colors"
+                                  >
+                                    <MessageCircle className="w-4 h-4" strokeWidth={2} />
+                                  </button>
+                                </Tooltip>
                               )}
                               {/* 🏷️ Registrar en CENACRON (solo si no pertenece aún) */}
                               {!paciente.esCenacron && cenacronEstrategiaId && (
-                                <button
-                                  onClick={() => setModalCenacron({ visible: true, paciente, guardando: false })}
-                                  className="bg-purple-100 hover:bg-purple-200 text-purple-700 border border-purple-300 p-2 rounded transition-colors"
-                                  title="Registrar en programa CENACRON"
-                                >
-                                  <span className="text-xs font-bold leading-none">♾</span>
-                                </button>
+                                <Tooltip text="Registrar en programa CENACRON">
+                                  <button
+                                    onClick={() => setModalCenacron({ visible: true, paciente, guardando: false })}
+                                    className="bg-purple-100 hover:bg-purple-200 text-purple-700 border border-purple-300 p-2 rounded transition-colors"
+                                  >
+                                    <span className="text-xs font-bold leading-none">♾</span>
+                                  </button>
+                                </Tooltip>
                               )}
                             </div>
                           )}
@@ -3253,8 +3409,8 @@ CENATE de Essalud`;
                 <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" /></svg>
               </div>
               <div>
-                <h3 className="text-white font-bold text-base">Paciente ya asignado</h3>
-                <p className="text-amber-100 text-xs">Este paciente no puede ser importado nuevamente</p>
+                <h3 className="text-white font-bold text-base">Cita duplicada en la misma especialidad</h3>
+                <p className="text-amber-100 text-xs">No se puede registrar: ya existe una cita activa</p>
               </div>
             </div>
             {/* Contenido */}
@@ -3263,7 +3419,21 @@ CENATE de Essalud`;
                 <p className="font-semibold text-gray-900 text-sm">{duplicadoInfo.paciente}</p>
                 <p className="text-gray-500 text-xs font-mono mt-0.5">DNI: {duplicadoInfo.dni}</p>
               </div>
-              <p className="text-sm text-gray-600">Ya existe una asignación activa con los siguientes datos:</p>
+              {/* Explicación clara del motivo */}
+              <div className="bg-red-50 border border-red-200 rounded-xl p-3 flex items-start gap-2">
+                <svg className="w-4 h-4 text-red-500 mt-0.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" /></svg>
+                <div>
+                  <p className="text-sm font-semibold text-red-700">¿Por qué no se puede registrar?</p>
+                  <p className="text-xs text-red-600 mt-0.5">
+                    Este paciente ya tiene una cita activa en <span className="font-bold">{duplicadoInfo.asignacion?.especialidad || "la misma especialidad"}</span> con estado <span className="font-bold">{duplicadoInfo.asignacion?.desc_estado_cita || duplicadoInfo.asignacion?.descEstadoCita || duplicadoInfo.asignacion?.estado || "activo"}</span>.
+                    Para registrar una nueva cita en esta especialidad, primero debe completarse, cancelarse o atenderse la cita existente.
+                  </p>
+                  <p className="text-xs text-blue-600 mt-1.5 font-medium">
+                    Nota: Puedes citar al paciente en una especialidad diferente sin restricciones.
+                  </p>
+                </div>
+              </div>
+              <p className="text-sm text-gray-600 font-medium">Detalles de la cita existente:</p>
               <div className="grid grid-cols-2 gap-3">
                 <div className="bg-gray-50 rounded-xl p-3 border border-gray-100">
                   <p className="text-xs text-gray-400 uppercase tracking-wide mb-1">Profesional asignado</p>
@@ -3280,13 +3450,26 @@ CENATE de Essalud`;
                 <div className="bg-gray-50 rounded-xl p-3 border border-gray-100">
                   <p className="text-xs text-gray-400 uppercase tracking-wide mb-1">Fecha de atención</p>
                   <p className="text-sm font-semibold text-gray-800">
-                    {duplicadoInfo.asignacion?.fecha_atencion || duplicadoInfo.asignacion?.fechaAtencion || "—"}
+                    {(() => {
+                      const f = duplicadoInfo.asignacion?.fecha_atencion || duplicadoInfo.asignacion?.fechaAtencion;
+                      if (!f) return "—";
+                      const [y, m, d] = f.split('-');
+                      return `${d}/${m}/${y}`;
+                    })()}
                   </p>
                 </div>
                 <div className="bg-gray-50 rounded-xl p-3 border border-gray-100">
                   <p className="text-xs text-gray-400 uppercase tracking-wide mb-1">Hora</p>
                   <p className="text-sm font-semibold text-gray-800">
-                    {duplicadoInfo.asignacion?.hora_atencion || duplicadoInfo.asignacion?.horaAtencion || "—"}
+                    {(() => {
+                      const t = duplicadoInfo.asignacion?.hora_atencion || duplicadoInfo.asignacion?.horaAtencion;
+                      if (!t) return "—";
+                      const [hStr, mStr] = t.split(':');
+                      const h = parseInt(hStr, 10);
+                      const period = h < 12 ? 'a. m.' : 'p. m.';
+                      const h12 = h === 0 ? 12 : h > 12 ? h - 12 : h;
+                      return `${String(h12).padStart(2, '0')}:${mStr} ${period}`;
+                    })()}
                   </p>
                 </div>
                 <div className="col-span-2 bg-gray-50 rounded-xl p-3 border border-gray-100">
@@ -3607,80 +3790,113 @@ CENATE de Essalud`;
                                   />
                                 </div>
 
-                                {/* Campo Hora - Dos selects: Hora + Minutos cada 5 min */}
+                                {/* Drum / Wheel picker de hora (modal importar) */}
                                 <div>
-                                  <label className="text-xs text-gray-700 font-medium">Hora</label>
-                                  <div className="flex gap-2 items-center">
-                                    {/* Select Hora */}
-                                    <select
-                                      value={fechaHoraCitaSeleccionada?.split('T')[1]?.split(':')[0] || ''}
-                                      onChange={(e) => {
-                                        const hh = e.target.value;
-                                        const mm = fechaHoraCitaSeleccionada?.split('T')[1]?.split(':')[1] || '00';
-                                        if (!hh) return;
-                                        const horaSeleccionada = `${hh}:${mm}`;
-                                        const fechaActual = fechaHoraCitaSeleccionada?.split('T')[0] || '';
-                                        const hoy = (() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; })();
-                                        if (fechaActual === hoy) {
-                                          const ahora = new Date();
-                                          const horaAhora = `${String(ahora.getHours()).padStart(2, '0')}:${String(ahora.getMinutes()).padStart(2, '0')}`;
-                                          if (horaSeleccionada < horaAhora) {
-                                            toast.error("❌ Hora anterior a la actual");
-                                            return;
-                                          }
-                                        }
-                                        setFechaHoraCitaSeleccionada(fechaActual ? `${fechaActual}T${horaSeleccionada}` : horaSeleccionada);
-                                      }}
-                                      className="flex-1 px-3 py-2 border-2 border-purple-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-purple-600 text-sm"
-                                    >
-                                      <option value="">HH</option>
-                                      {Array.from({ length: 17 }, (_, i) => i + 7).map(h => {
-                                        const h24 = String(h).padStart(2, '0');
-                                        const period = h < 12 ? 'am' : 'pm';
-                                        const h12 = h === 12 ? 12 : h > 12 ? h - 12 : h;
-                                        return (
-                                          <option key={h24} value={h24}>
-                                            {String(h12).padStart(2, '0')} {period}
-                                          </option>
-                                        );
-                                      })}
-                                    </select>
-
-                                    <span className="text-purple-600 font-bold text-lg leading-none">:</span>
-
-                                    {/* Select Minutos (cada 5 min) */}
-                                    <select
-                                      value={fechaHoraCitaSeleccionada?.split('T')[1]?.split(':')[1] || ''}
-                                      onChange={(e) => {
-                                        const mm = e.target.value;
-                                        const hh = fechaHoraCitaSeleccionada?.split('T')[1]?.split(':')[0] || '';
-                                        if (!hh) { toast.error("❌ Selecciona primero la hora"); return; }
-                                        const horaSeleccionada = `${hh}:${mm}`;
-                                        const fechaActual = fechaHoraCitaSeleccionada?.split('T')[0] || '';
-                                        const hoy = (() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; })();
-                                        if (fechaActual === hoy) {
-                                          const ahora = new Date();
-                                          const horaAhora = `${String(ahora.getHours()).padStart(2, '0')}:${String(ahora.getMinutes()).padStart(2, '0')}`;
-                                          if (horaSeleccionada < horaAhora) {
-                                            toast.error("❌ Hora anterior a la actual");
-                                            return;
-                                          }
-                                        }
-                                        setFechaHoraCitaSeleccionada(fechaActual ? `${fechaActual}T${horaSeleccionada}` : horaSeleccionada);
-                                      }}
-                                      className="flex-1 px-3 py-2 border-2 border-purple-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-purple-600 text-sm"
-                                    >
-                                      <option value="">MM</option>
-                                      {[0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55].map(m => (
-                                        <option key={m} value={String(m).padStart(2, '0')}>
-                                          :{String(m).padStart(2, '0')}
-                                        </option>
-                                      ))}
-                                    </select>
+                                  <label className="text-xs text-gray-700 font-medium mb-2 block">Horario</label>
+                                  {(() => {
+                                    const fechaActual = fechaHoraCitaSeleccionada?.split('T')[0] || '';
+                                    const selSlot = fechaHoraCitaSeleccionada?.split('T')[1] || '';
+                                    const [selH, selM] = selSlot ? selSlot.split(':').map(Number) : [7, 0];
+                                    return (
+                                      <div className="flex gap-2">
+                                        <div className="flex-1">
+                                          <p className="text-center text-xs text-gray-400 mb-1">Hora</p>
+                                          <div className="relative rounded-xl overflow-hidden border-2 border-purple-200 bg-white shadow-inner" style={{ height: DRUM_ITEM_H * 5 }}>
+                                            <div className="absolute inset-x-0 pointer-events-none z-10" style={{ top: DRUM_ITEM_H * 2, height: DRUM_ITEM_H, background: 'rgba(124,58,237,0.12)', borderTop: '2px solid #7c3aed', borderBottom: '2px solid #7c3aed' }} />
+                                            <div className="absolute inset-x-0 top-0 pointer-events-none z-10" style={{ height: DRUM_ITEM_H * 2, background: 'linear-gradient(to bottom, rgba(255,255,255,0.95), rgba(255,255,255,0))' }} />
+                                            <div className="absolute inset-x-0 bottom-0 pointer-events-none z-10" style={{ height: DRUM_ITEM_H * 2, background: 'linear-gradient(to top, rgba(255,255,255,0.95), rgba(255,255,255,0))' }} />
+                                            <div
+                                              ref={hourDrumRef}
+                                              onScroll={() => handleDrumScroll('hour')}
+                                              className="absolute inset-0 overflow-y-scroll"
+                                              style={{ scrollSnapType: 'y mandatory', scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+                                            >
+                                              <div style={{ paddingTop: DRUM_ITEM_H * 2, paddingBottom: DRUM_ITEM_H * 2 }}>
+                                                {DRUM_HOURS.map(h => {
+                                                  const period = h < 12 ? 'a.m.' : 'p.m.';
+                                                  const h12 = h === 12 ? 12 : h > 12 ? h - 12 : h;
+                                                  const isSelected = selH === h;
+                                                  return (
+                                                    <div
+                                                      key={h}
+                                                      style={{ height: DRUM_ITEM_H, scrollSnapAlign: 'center' }}
+                                                      className={`flex items-center justify-center cursor-pointer select-none font-semibold text-sm transition-all ${isSelected ? 'text-purple-700' : 'text-gray-500'}`}
+                                                      onClick={() => {
+                                                        if (!fechaActual) { toast.error("Selecciona primero la fecha"); return; }
+                                                        const slot = `${String(h).padStart(2,'0')}:${String(selM).padStart(2,'0')}`;
+                                                        setFechaHoraCitaSeleccionada(`${fechaActual}T${slot}`);
+                                                        if (hourDrumRef.current) hourDrumRef.current.scrollTop = DRUM_HOURS.indexOf(h) * DRUM_ITEM_H;
+                                                      }}
+                                                    >
+                                                      {String(h12).padStart(2,'0')} {period}
+                                                    </div>
+                                                  );
+                                                })}
+                                              </div>
+                                            </div>
+                                          </div>
+                                        </div>
+                                        <div className="flex items-center justify-center text-2xl font-bold text-purple-400 pb-1">:</div>
+                                        <div className="flex-1">
+                                          <p className="text-center text-xs text-gray-400 mb-1">Minutos</p>
+                                          <div className="relative rounded-xl overflow-hidden border-2 border-purple-200 bg-white shadow-inner" style={{ height: DRUM_ITEM_H * 5 }}>
+                                            <div className="absolute inset-x-0 pointer-events-none z-10" style={{ top: DRUM_ITEM_H * 2, height: DRUM_ITEM_H, background: 'rgba(124,58,237,0.12)', borderTop: '2px solid #7c3aed', borderBottom: '2px solid #7c3aed' }} />
+                                            <div className="absolute inset-x-0 top-0 pointer-events-none z-10" style={{ height: DRUM_ITEM_H * 2, background: 'linear-gradient(to bottom, rgba(255,255,255,0.95), rgba(255,255,255,0))' }} />
+                                            <div className="absolute inset-x-0 bottom-0 pointer-events-none z-10" style={{ height: DRUM_ITEM_H * 2, background: 'linear-gradient(to top, rgba(255,255,255,0.95), rgba(255,255,255,0))' }} />
+                                            <div
+                                              ref={minuteDrumRef}
+                                              onScroll={() => handleDrumScroll('minute')}
+                                              className="absolute inset-0 overflow-y-scroll"
+                                              style={{ scrollSnapType: 'y mandatory', scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+                                            >
+                                              <div style={{ paddingTop: DRUM_ITEM_H * 2, paddingBottom: DRUM_ITEM_H * 2 }}>
+                                                {DRUM_MINUTES.map(m => {
+                                                  const mm = String(m).padStart(2, '0');
+                                                  const slot = `${String(selH).padStart(2,'0')}:${mm}`;
+                                                  const ocupado = horasOcupadas.includes(slot);
+                                                  const isSelected = selM === m;
+                                                  return (
+                                                    <div
+                                                      key={m}
+                                                      style={{ height: DRUM_ITEM_H, scrollSnapAlign: 'center' }}
+                                                      className={`flex items-center justify-center gap-1 cursor-pointer select-none font-semibold text-sm transition-all
+                                                        ${ocupado ? 'text-red-400 cursor-not-allowed' : ''}
+                                                        ${isSelected && !ocupado ? 'text-purple-700' : ''}
+                                                        ${!ocupado && !isSelected ? 'text-gray-500' : ''}`}
+                                                      onClick={() => {
+                                                        if (ocupado) { toast.error("Horario ocupado"); return; }
+                                                        if (!fechaActual) { toast.error("Selecciona primero la fecha"); return; }
+                                                        const newSlot = `${String(selH).padStart(2,'0')}:${mm}`;
+                                                        setFechaHoraCitaSeleccionada(`${fechaActual}T${newSlot}`);
+                                                        if (minuteDrumRef.current) minuteDrumRef.current.scrollTop = DRUM_MINUTES.indexOf(m) * DRUM_ITEM_H;
+                                                      }}
+                                                    >
+                                                      <span>{mm}</span>
+                                                      {ocupado && <span className="text-xs text-red-400">✕</span>}
+                                                    </div>
+                                                  );
+                                                })}
+                                              </div>
+                                            </div>
+                                          </div>
+                                        </div>
+                                      </div>
+                                    );
+                                  })()}
+                                  <div className="mt-2 flex items-center justify-between">
+                                    {fechaHoraCitaSeleccionada?.includes('T') ? (() => {
+                                      const [, timeVal] = fechaHoraCitaSeleccionada.split('T');
+                                      const [hh, mmSel] = timeVal.split(':').map(Number);
+                                      const p = hh < 12 ? 'a. m.' : 'p. m.';
+                                      const h12v = hh === 12 ? 12 : hh > 12 ? hh - 12 : hh;
+                                      const ocupado = horasOcupadas.includes(timeVal);
+                                      return <p className={`text-xs font-semibold ${ocupado ? 'text-red-600' : 'text-purple-700'}`}>{ocupado ? '⚠ Horario ocupado' : `Seleccionado: ${String(h12v).padStart(2,'0')}:${String(mmSel).padStart(2,'0')} ${p}`}</p>;
+                                    })() : <span className="text-xs text-gray-400">Desplaza para seleccionar hora</span>}
+                                    {horasOcupadas.length > 0 && <span className="text-xs text-amber-600 font-medium">{horasOcupadas.length} ocupados</span>}
                                   </div>
                                 </div>
                               </div>
-                              <p className="text-xs text-gray-600 mt-2">✅ Selecciona fecha (desde hoy) y hora en intervalos de 5 minutos</p>
+                              <p className="text-xs text-gray-600 mt-2">Intervalos de 5 minutos, desde hoy</p>
                             </div>
                           </div>
 
@@ -3718,6 +3934,518 @@ CENATE de Essalud`;
                 </div>
               )}
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* ================================================================ */}
+      {/* 🔍 MODAL PRE-VALIDACIÓN DE ASEGURADO (v1.67.0)                 */}
+      {/* ================================================================ */}
+      {modalPreValidacion && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-4xl overflow-hidden transition-all">
+            {/* Header */}
+            <div className="bg-gradient-to-r from-blue-600 to-teal-600 px-6 py-4 flex items-center justify-between rounded-t-xl">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center">
+                  {preValidacionPaso === 3 ? <CheckCircle2 className="w-5 h-5 text-white" /> : <Calendar className="w-5 h-5 text-white" />}
+                </div>
+                <div>
+                  <h2 className="text-lg font-bold text-white">Registrar cita adicional</h2>
+                  <p className="text-blue-100 text-xs">
+                    {preValidacionPaso === 3 ? "Cita registrada correctamente" : "Busca al paciente y completa los datos de la cita"}
+                  </p>
+                </div>
+              </div>
+              <button onClick={() => { setModalPreValidacion(false); setPreValidacionPaso(1); setPreValidacionDni(""); setPreValidacionEstado("idle"); setPreValidacionResultado(null); setEspecialidadSeleccionada(""); setMedicoSeleccionado(""); setFechaHoraCitaSeleccionada(""); setBusquedaEspecialidad(""); setBusquedaProfesional(""); }} className="text-white/80 hover:text-white transition-colors">
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+
+            {/* === PASO 3: Pantalla de éxito === */}
+            {preValidacionPaso === 3 ? (
+              <div className="p-10 text-center space-y-4">
+                <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto">
+                  <CheckCircle2 className="w-10 h-10 text-green-600" />
+                </div>
+                <h3 className="text-xl font-bold text-gray-800">Cita registrada con exito</h3>
+                <p className="text-gray-600">
+                  Se ha colocado una cita adicional para <span className="font-semibold">{preValidacionResultado?.paciente || preValidacionResultado?.nombre}</span> (DNI: {preValidacionResultado?.docPaciente || preValidacionResultado?.doc_paciente}).
+                </p>
+                {fechaHoraCitaSeleccionada && (
+                  <p className="text-sm text-gray-500">
+                    Fecha: <span className="font-medium">{fechaHoraCitaSeleccionada.split('T')[0]}</span>
+                    {fechaHoraCitaSeleccionada.split('T')[1] && <> | Hora: <span className="font-medium">{fechaHoraCitaSeleccionada.split('T')[1]}</span></>}
+                    {busquedaProfesional && <> | Profesional: <span className="font-medium">{busquedaProfesional}</span></>}
+                  </p>
+                )}
+                <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 text-left mx-auto max-w-md">
+                  <div className="flex gap-2 items-start">
+                    <AlertTriangle className="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" />
+                    <p className="text-sm text-amber-700">
+                      <span className="font-semibold">Importante:</span> No te olvides de asegurarte que el paciente tambien este citado en el <span className="font-bold">ESSI</span> en el mismo horario para que el profesional pueda atender.
+                    </p>
+                  </div>
+                </div>
+                <div className="flex gap-3 justify-center pt-4">
+                  <button
+                    onClick={() => {
+                      setPreValidacionPaso(1);
+                      setPreValidacionDni("");
+                      setPreValidacionEstado("idle");
+                      setPreValidacionResultado(null);
+                      setEspecialidadSeleccionada("");
+                      setMedicoSeleccionado("");
+                      setFechaHoraCitaSeleccionada("");
+                      setBusquedaEspecialidad("");
+                      setBusquedaProfesional("");
+                    }}
+                    className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition-colors flex items-center gap-2"
+                  >
+                    <Plus className="w-4 h-4" />
+                    Registrar otra cita
+                  </button>
+                  <button
+                    onClick={() => { setModalPreValidacion(false); setPreValidacionPaso(1); setPreValidacionDni(""); setPreValidacionEstado("idle"); setPreValidacionResultado(null); setEspecialidadSeleccionada(""); setMedicoSeleccionado(""); setFechaHoraCitaSeleccionada(""); setBusquedaEspecialidad(""); setBusquedaProfesional(""); }}
+                    className="px-6 py-2.5 border border-gray-300 text-gray-700 hover:bg-gray-50 rounded-lg font-medium transition-colors"
+                  >
+                    Cerrar
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <>
+                {/* Body: Dos columnas */}
+                <div className="grid grid-cols-2 divide-x divide-gray-200">
+                  {/* ======== COLUMNA IZQUIERDA: Paso 1 - Buscar paciente ======== */}
+                  <div className="p-5 space-y-4">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className={`inline-flex items-center justify-center w-6 h-6 rounded-full text-xs font-bold ${preValidacionEstado === "encontrado" ? "bg-green-600 text-white" : "bg-blue-600 text-white"}`}>1</span>
+                      <span className="text-sm font-semibold text-gray-700">Buscar paciente</span>
+                      {preValidacionEstado === "encontrado" && <CheckCircle2 className="w-4 h-4 text-green-600" />}
+                    </div>
+
+                    {/* Barra de búsqueda DNI */}
+                    <div>
+                      <label className="block text-xs text-gray-500 mb-1.5">Ingresa el DNI del paciente</label>
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          placeholder="Ej: 12345678"
+                          maxLength={8}
+                          value={preValidacionDni}
+                          onChange={e => {
+                            const val = e.target.value.replace(/\D/g, "").slice(0, 8);
+                            setPreValidacionDni(val);
+                            if (val.length < 8) {
+                              setPreValidacionEstado("idle");
+                              setPreValidacionResultado(null);
+                            }
+                          }}
+                          onKeyDown={e => {
+                            if (e.key === "Enter" && preValidacionDni.length === 8 && preValidacionEstado !== "buscando") {
+                              buscarPreValidacion();
+                            }
+                          }}
+                          className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          autoFocus
+                        />
+                        <button
+                          disabled={preValidacionDni.length !== 8 || preValidacionEstado === "buscando"}
+                          onClick={buscarPreValidacion}
+                          className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 text-sm"
+                        >
+                          {preValidacionEstado === "buscando" ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
+                          Buscar
+                        </button>
+                      </div>
+                      {preValidacionDni.length > 0 && preValidacionDni.length < 8 && (
+                        <p className="text-xs text-gray-400 mt-1">Ingresa los 8 digitos del DNI</p>
+                      )}
+                    </div>
+
+                    {/* Resultado: Paciente ENCONTRADO */}
+                    {preValidacionEstado === "encontrado" && preValidacionResultado && (
+                      <div className="border border-green-200 bg-green-50 rounded-xl p-4 space-y-3">
+                        <div className="flex items-center gap-2 mb-1">
+                          <CheckCircle2 className="w-4 h-4 text-green-600" />
+                          <span className="font-semibold text-sm text-green-700">Paciente encontrado</span>
+                        </div>
+                        <div className="bg-white rounded-lg p-3 border border-green-100 space-y-2">
+                          <div className="grid grid-cols-2 gap-x-3 gap-y-1.5">
+                            <div>
+                              <p className="text-xs text-gray-400">DNI</p>
+                              <p className="text-sm font-semibold text-gray-800">{preValidacionResultado.docPaciente || preValidacionResultado.doc_paciente}</p>
+                            </div>
+                            <div>
+                              <p className="text-xs text-gray-400">Edad / Sexo</p>
+                              <p className="text-sm font-semibold text-gray-800">{preValidacionResultado.edad ? `${preValidacionResultado.edad} a.` : "—"} / {preValidacionResultado.sexo === "M" ? "M" : "F"}</p>
+                            </div>
+                          </div>
+                          <div>
+                            <p className="text-xs text-gray-400">Nombre completo</p>
+                            <p className="text-sm font-bold text-gray-800">{preValidacionResultado.paciente || preValidacionResultado.nombre}</p>
+                          </div>
+                          <div className="grid grid-cols-2 gap-x-3 gap-y-1.5">
+                            {(preValidacionResultado.telCelular || preValidacionResultado.telFijo || preValidacionResultado.telefono || preValidacionResultado.telefonoPrincipal) && (
+                              <div>
+                                <p className="text-xs text-gray-400">Telefono</p>
+                                <p className="text-sm font-semibold text-gray-800">{preValidacionResultado.telCelular || preValidacionResultado.telFijo || preValidacionResultado.telefono || preValidacionResultado.telefonoPrincipal}</p>
+                              </div>
+                            )}
+                            {(preValidacionResultado.tipoSeguro || preValidacionResultado.tipo_seguro) && (
+                              <div>
+                                <p className="text-xs text-gray-400">Tipo seguro</p>
+                                <p className="text-sm font-semibold text-gray-800">{preValidacionResultado.tipoSeguro || preValidacionResultado.tipo_seguro}</p>
+                              </div>
+                            )}
+                          </div>
+                          {(preValidacionResultado.casAdscripcion || preValidacionResultado.cas_adscripcion || preValidacionResultado.nombreIpress) && (
+                            <div>
+                              <p className="text-xs text-gray-400">IPRESS adscrita</p>
+                              <p className="text-sm font-semibold text-gray-800">{preValidacionResultado.nombreIpress || preValidacionResultado.casAdscripcion || preValidacionResultado.cas_adscripcion}</p>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Resultado: Paciente NO ENCONTRADO */}
+                    {preValidacionEstado === "no_encontrado" && (
+                      <div className="border border-amber-200 bg-amber-50 rounded-xl p-4 space-y-3">
+                        <div className="flex items-center gap-2 mb-1">
+                          <AlertCircle className="w-4 h-4 text-amber-500" />
+                          <span className="font-semibold text-sm text-amber-700">Paciente no encontrado</span>
+                        </div>
+                        <p className="text-sm text-amber-600">
+                          No se encontro ningun asegurado con DNI <span className="font-bold">{preValidacionDni}</span>.
+                        </p>
+                        <button
+                          onClick={() => {
+                            setModalPreValidacion(false);
+                            setNuevoAsegurado(prev => ({ ...prev, tipoDocumento: "DNI", documento: preValidacionDni, nombreCompleto: "", fechaNacimiento: "", sexo: "M", tipoPaciente: "Titular", telefonoPrincipal: "", telefonoAlterno: "", correo: "", tipoSeguro: "Titular", casAdscripcion: "", periodo: String(new Date().getFullYear()), pacienteCenacron: false }));
+                            setDniValidacion("ok");
+                            fetch(`${API_BASE}/asegurados/filtros/ipress`, { headers: { Authorization: `Bearer ${getToken()}` } })
+                              .then(r => r.json()).then(d => setIpressDisponibles(d || [])).catch(() => {});
+                            setModalNuevoAsegurado(true);
+                          }}
+                          className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition-colors text-sm"
+                        >
+                          <Plus className="w-4 h-4" />
+                          Registrar nuevo paciente
+                        </button>
+                      </div>
+                    )}
+
+                    {/* Resultado: ERROR */}
+                    {preValidacionEstado === "error" && (
+                      <div className="border border-red-200 bg-red-50 rounded-xl p-3 space-y-2">
+                        <div className="flex items-center gap-2 text-red-700">
+                          <XCircle className="w-5 h-5" />
+                          <span className="font-semibold text-sm">Error en la busqueda</span>
+                        </div>
+                        <p className="text-sm text-red-600">No se pudo verificar el DNI. Intenta nuevamente.</p>
+                      </div>
+                    )}
+
+                    {/* Estado idle - Hint */}
+                    {preValidacionEstado === "idle" && preValidacionDni.length === 0 && (
+                      <div className="text-center py-6">
+                        <Search className="w-10 h-10 text-gray-300 mx-auto mb-2" />
+                        <p className="text-sm text-gray-400">Ingresa un DNI para buscar al paciente</p>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* ======== COLUMNA DERECHA: Paso 2 - Datos de la cita (desbloqueo secuencial) ======== */}
+                  <div className={`p-5 space-y-4 ${preValidacionEstado !== "encontrado" ? "opacity-40 pointer-events-none" : ""}`}>
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className={`inline-flex items-center justify-center w-6 h-6 rounded-full text-xs font-bold ${preValidacionEstado === "encontrado" ? "bg-blue-600 text-white" : "bg-gray-300 text-white"}`}>2</span>
+                      <span className="text-sm font-semibold text-gray-700">Datos de la cita</span>
+                    </div>
+
+                    {/* 1. Especialidad / Servicio — siempre habilitado */}
+                    <div className="bg-gradient-to-r from-green-50 to-emerald-50 p-3 rounded-lg border-2 border-green-300">
+                      <label className="block text-sm font-semibold text-gray-800 mb-2">
+                        Especialidad / Servicio <span className="text-red-600 text-lg">*</span>
+                      </label>
+                      {(() => {
+                        const ESPECIALIDADES_MEDICAS = ["CARDIOLOGIA","DERMATOLOGIA","HEMATOLOGIA","MEDICINA GENERAL","NEUROLOGIA","OFTALMOLOGIA","PEDIATRIA","PSIQUIATRIA"];
+                        const OTROS_SERVICIOS = ["ENFERMERIA","NUTRICION","PSICOLOGIA","TERAPIA FISICA","TERAPIA DE LENGUAJE","S/E"];
+                        const TODAS = [...ESPECIALIDADES_MEDICAS, ...OTROS_SERVICIOS];
+                        const terminoEsp = busquedaEspecialidad.toLowerCase().trim();
+                        const filtradas = terminoEsp ? TODAS.filter(e => e.toLowerCase().includes(terminoEsp)) : TODAS;
+                        return (
+                          <div className="relative">
+                            <input
+                              type="text"
+                              value={busquedaEspecialidad}
+                              onChange={(e) => {
+                                setBusquedaEspecialidad(e.target.value);
+                                setMostrarDropdownEsp(true);
+                                if (!e.target.value) {
+                                  setEspecialidadSeleccionada("");
+                                  setMedicoSeleccionado("");
+                                  setBusquedaProfesional("");
+                                }
+                              }}
+                              onFocus={() => setMostrarDropdownEsp(true)}
+                              onBlur={() => setTimeout(() => setMostrarDropdownEsp(false), 150)}
+                              placeholder="Buscar especialidad..."
+                              className={`w-full px-3 py-2 border-2 rounded-lg focus:ring-2 focus:ring-green-600 focus:border-green-600 text-sm font-medium transition-all ${
+                                especialidadSeleccionada ? "bg-white border-green-500 text-green-900" : "bg-green-50 border-green-300 text-gray-500"
+                              }`}
+                            />
+                            {mostrarDropdownEsp && (
+                              <ul className="absolute z-50 w-full bg-white border border-gray-300 rounded-lg shadow-lg mt-1 max-h-48 overflow-y-auto text-sm">
+                                {filtradas.length === 0 ? (
+                                  <li className="px-3 py-2 text-gray-400 italic">Sin resultados</li>
+                                ) : (
+                                  <>
+                                    {filtradas.filter(e => ESPECIALIDADES_MEDICAS.includes(e)).length > 0 && (
+                                      <>
+                                        <li className="px-3 py-1 text-xs font-bold text-gray-400 uppercase tracking-wide bg-gray-50 border-b">Especialidades Medicas</li>
+                                        {filtradas.filter(e => ESPECIALIDADES_MEDICAS.includes(e)).map(esp => (
+                                          <li key={esp} onMouseDown={() => { setEspecialidadSeleccionada(esp); setBusquedaEspecialidad(esp); setMostrarDropdownEsp(false); setMedicoSeleccionado(""); setBusquedaProfesional(""); }}
+                                            className={`px-3 py-2 cursor-pointer hover:bg-green-50 ${especialidadSeleccionada === esp ? "bg-green-100 font-semibold text-green-900" : "text-gray-800"}`}
+                                          >{esp}</li>
+                                        ))}
+                                      </>
+                                    )}
+                                    {filtradas.filter(e => OTROS_SERVICIOS.includes(e)).length > 0 && (
+                                      <>
+                                        <li className="px-3 py-1 text-xs font-bold text-gray-400 uppercase tracking-wide bg-gray-50 border-b border-t mt-1">Otros Servicios</li>
+                                        {filtradas.filter(e => OTROS_SERVICIOS.includes(e)).map(esp => (
+                                          <li key={esp} onMouseDown={() => { setEspecialidadSeleccionada(esp); setBusquedaEspecialidad(esp); setMostrarDropdownEsp(false); setMedicoSeleccionado(""); setBusquedaProfesional(""); }}
+                                            className={`px-3 py-2 cursor-pointer hover:bg-green-50 ${especialidadSeleccionada === esp ? "bg-green-100 font-semibold text-green-900" : "text-gray-800"}`}
+                                          >{esp}</li>
+                                        ))}
+                                      </>
+                                    )}
+                                  </>
+                                )}
+                              </ul>
+                            )}
+                          </div>
+                        );
+                      })()}
+                    </div>
+
+                    {/* 2. Profesional de Salud — bloqueado hasta seleccionar especialidad */}
+                    <div className={`p-3 rounded-lg border-2 transition-all ${!especialidadSeleccionada ? "bg-gray-50 border-gray-200 opacity-50 pointer-events-none" : "bg-blue-50 border-blue-300"}`}>
+                      <label className="block text-sm font-semibold text-gray-800 mb-2">Profesional de Salud</label>
+                      {!especialidadSeleccionada ? (
+                        <div className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg bg-gray-100 text-gray-400 text-sm">Primero selecciona una especialidad</div>
+                      ) : (
+                        <div className="relative">
+                          <input
+                            type="text"
+                            value={busquedaProfesional}
+                            onChange={(e) => { setBusquedaProfesional(e.target.value); setMostrarDropdownProfes(true); if (!e.target.value) setMedicoSeleccionado(""); }}
+                            onFocus={() => setMostrarDropdownProfes(true)}
+                            onBlur={() => setTimeout(() => setMostrarDropdownProfes(false), 150)}
+                            placeholder={medicosDisponibles.length === 0 ? "Sin profesionales disponibles" : "Buscar por nombre o DNI..."}
+                            disabled={medicosDisponibles.length === 0}
+                            className={`w-full px-3 py-2 border-2 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-blue-600 text-sm font-medium transition-all ${
+                              medicoSeleccionado ? "bg-white border-blue-500 text-blue-900" : "bg-white border-blue-300 text-gray-700"
+                            }`}
+                          />
+                          {mostrarDropdownProfes && medicosDisponibles.length > 0 && (() => {
+                            const termino = busquedaProfesional.toLowerCase().trim();
+                            const filtrados = termino ? medicosDisponibles.filter(m => formatearLabelEspecialista(m).toLowerCase().includes(termino)) : medicosDisponibles;
+                            return filtrados.length > 0 ? (
+                              <ul className="absolute z-50 w-full bg-white border border-gray-300 rounded-lg shadow-lg mt-1 max-h-48 overflow-y-auto text-sm">
+                                <li className="px-3 py-2 text-gray-400 italic cursor-pointer hover:bg-gray-50" onMouseDown={() => { setMedicoSeleccionado(""); setBusquedaProfesional(""); setMostrarDropdownProfes(false); }}>
+                                  Seleccionar profesional (opcional)
+                                </li>
+                                {filtrados.map((medico) => (
+                                  <li key={medico.idPers} onMouseDown={() => { setMedicoSeleccionado(String(medico.idPers)); setBusquedaProfesional(formatearLabelEspecialista(medico)); setMostrarDropdownProfes(false); }}
+                                    className={`px-3 py-2 cursor-pointer hover:bg-blue-50 ${String(medicoSeleccionado) === String(medico.idPers) ? "bg-blue-100 font-semibold text-blue-900" : "text-gray-800"}`}
+                                  >
+                                    {formatearLabelEspecialista(medico)}
+                                  </li>
+                                ))}
+                              </ul>
+                            ) : (
+                              <ul className="absolute z-50 w-full bg-white border border-gray-300 rounded-lg shadow-lg mt-1 text-sm">
+                                <li className="px-3 py-2 text-gray-400 italic">Sin resultados para "{busquedaProfesional}"</li>
+                              </ul>
+                            );
+                          })()}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* 3. Fecha y Hora de Cita — bloqueado hasta seleccionar profesional */}
+                    <div className={`p-3 rounded-lg border-2 transition-all ${!medicoSeleccionado ? "bg-gray-50 border-gray-200 opacity-50 pointer-events-none" : "bg-purple-50 border-purple-300"}`}>
+                      <label className="block text-sm font-semibold text-gray-800 mb-2">Fecha y Hora de Cita</label>
+                      {!medicoSeleccionado ? (
+                        <div className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg bg-gray-100 text-gray-400 text-sm">Primero selecciona un profesional</div>
+                      ) : (
+                        <div className="space-y-2">
+                          <div>
+                            <label className="text-xs text-gray-700 font-medium">Fecha</label>
+                            <input
+                              type="date"
+                              value={fechaHoraCitaSeleccionada?.split('T')[0] || ''}
+                              onChange={(e) => {
+                                const fechaSeleccionada = e.target.value;
+                                setFechaHoraCitaSeleccionada(fechaSeleccionada);
+                              }}
+                              min={(() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; })()}
+                              className="w-full px-3 py-2 border-2 border-purple-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-purple-600 text-sm"
+                            />
+                          </div>
+                          {/* Drum / Wheel picker de hora */}
+                          <div>
+                            <label className="text-xs text-gray-700 font-medium mb-2 block">Horario</label>
+                            {(() => {
+                              const fechaActual = fechaHoraCitaSeleccionada?.split('T')[0] || '';
+                              const selSlot = fechaHoraCitaSeleccionada?.split('T')[1] || '';
+                              const [selH, selM] = selSlot ? selSlot.split(':').map(Number) : [7, 0];
+                              return (
+                                <div className="flex gap-2">
+                                  {/* Drum Horas */}
+                                  <div className="flex-1">
+                                    <p className="text-center text-xs text-gray-400 mb-1">Hora</p>
+                                    <div className="relative rounded-xl overflow-hidden border-2 border-purple-200 bg-white shadow-inner" style={{ height: DRUM_ITEM_H * 5 }}>
+                                      {/* Overlay de selección */}
+                                      <div className="absolute inset-x-0 pointer-events-none z-10" style={{ top: DRUM_ITEM_H * 2, height: DRUM_ITEM_H, background: 'rgba(124,58,237,0.12)', borderTop: '2px solid #7c3aed', borderBottom: '2px solid #7c3aed' }} />
+                                      <div className="absolute inset-x-0 top-0 pointer-events-none z-10" style={{ height: DRUM_ITEM_H * 2, background: 'linear-gradient(to bottom, rgba(255,255,255,0.95), rgba(255,255,255,0))' }} />
+                                      <div className="absolute inset-x-0 bottom-0 pointer-events-none z-10" style={{ height: DRUM_ITEM_H * 2, background: 'linear-gradient(to top, rgba(255,255,255,0.95), rgba(255,255,255,0))' }} />
+                                      <div
+                                        ref={hourDrumRef}
+                                        onScroll={() => handleDrumScroll('hour')}
+                                        className="absolute inset-0 overflow-y-scroll"
+                                        style={{ scrollSnapType: 'y mandatory', scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+                                      >
+                                        <div style={{ paddingTop: DRUM_ITEM_H * 2, paddingBottom: DRUM_ITEM_H * 2 }}>
+                                          {DRUM_HOURS.map(h => {
+                                            const period = h < 12 ? 'a.m.' : 'p.m.';
+                                            const h12 = h === 12 ? 12 : h > 12 ? h - 12 : h;
+                                            const isSelected = selH === h;
+                                            return (
+                                              <div
+                                                key={h}
+                                                style={{ height: DRUM_ITEM_H, scrollSnapAlign: 'center' }}
+                                                className={`flex items-center justify-center cursor-pointer select-none font-semibold text-sm transition-all ${isSelected ? 'text-purple-700' : 'text-gray-500'}`}
+                                                onClick={() => {
+                                                  if (!fechaActual) { toast.error("Selecciona primero la fecha"); return; }
+                                                  const slot = `${String(h).padStart(2,'0')}:${String(selM).padStart(2,'0')}`;
+                                                  setFechaHoraCitaSeleccionada(`${fechaActual}T${slot}`);
+                                                  if (hourDrumRef.current) hourDrumRef.current.scrollTop = DRUM_HOURS.indexOf(h) * DRUM_ITEM_H;
+                                                }}
+                                              >
+                                                {String(h12).padStart(2,'0')} {period}
+                                              </div>
+                                            );
+                                          })}
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </div>
+                                  {/* Separador */}
+                                  <div className="flex items-center justify-center text-2xl font-bold text-purple-400 pb-1">:</div>
+                                  {/* Drum Minutos */}
+                                  <div className="flex-1">
+                                    <p className="text-center text-xs text-gray-400 mb-1">Minutos</p>
+                                    <div className="relative rounded-xl overflow-hidden border-2 border-purple-200 bg-white shadow-inner" style={{ height: DRUM_ITEM_H * 5 }}>
+                                      <div className="absolute inset-x-0 pointer-events-none z-10" style={{ top: DRUM_ITEM_H * 2, height: DRUM_ITEM_H, background: 'rgba(124,58,237,0.12)', borderTop: '2px solid #7c3aed', borderBottom: '2px solid #7c3aed' }} />
+                                      <div className="absolute inset-x-0 top-0 pointer-events-none z-10" style={{ height: DRUM_ITEM_H * 2, background: 'linear-gradient(to bottom, rgba(255,255,255,0.95), rgba(255,255,255,0))' }} />
+                                      <div className="absolute inset-x-0 bottom-0 pointer-events-none z-10" style={{ height: DRUM_ITEM_H * 2, background: 'linear-gradient(to top, rgba(255,255,255,0.95), rgba(255,255,255,0))' }} />
+                                      <div
+                                        ref={minuteDrumRef}
+                                        onScroll={() => handleDrumScroll('minute')}
+                                        className="absolute inset-0 overflow-y-scroll"
+                                        style={{ scrollSnapType: 'y mandatory', scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+                                      >
+                                        <div style={{ paddingTop: DRUM_ITEM_H * 2, paddingBottom: DRUM_ITEM_H * 2 }}>
+                                          {DRUM_MINUTES.map(m => {
+                                            const mm = String(m).padStart(2, '0');
+                                            const slot = `${String(selH).padStart(2,'0')}:${mm}`;
+                                            const ocupado = horasOcupadas.includes(slot);
+                                            const isSelected = selM === m;
+                                            return (
+                                              <div
+                                                key={m}
+                                                style={{ height: DRUM_ITEM_H, scrollSnapAlign: 'center' }}
+                                                className={`flex items-center justify-center gap-1 cursor-pointer select-none font-semibold text-sm transition-all
+                                                  ${ocupado ? 'text-red-400 cursor-not-allowed' : ''}
+                                                  ${isSelected && !ocupado ? 'text-purple-700' : ''}
+                                                  ${!ocupado && !isSelected ? 'text-gray-500' : ''}`}
+                                                onClick={() => {
+                                                  if (ocupado) { toast.error("Horario ocupado"); return; }
+                                                  if (!fechaActual) { toast.error("Selecciona primero la fecha"); return; }
+                                                  const newSlot = `${String(selH).padStart(2,'0')}:${mm}`;
+                                                  setFechaHoraCitaSeleccionada(`${fechaActual}T${newSlot}`);
+                                                  if (minuteDrumRef.current) minuteDrumRef.current.scrollTop = DRUM_MINUTES.indexOf(m) * DRUM_ITEM_H;
+                                                }}
+                                              >
+                                                <span>{mm}</span>
+                                                {ocupado && <span className="text-xs text-red-400">✕</span>}
+                                              </div>
+                                            );
+                                          })}
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+                              );
+                            })()}
+                            {/* Slot seleccionado + indicador ocupados */}
+                            <div className="mt-2 flex items-center justify-between">
+                              {fechaHoraCitaSeleccionada?.includes('T') ? (() => {
+                                const [, timeVal] = fechaHoraCitaSeleccionada.split('T');
+                                const [hh, mmSel] = timeVal.split(':').map(Number);
+                                const p = hh < 12 ? 'a. m.' : 'p. m.';
+                                const h12v = hh === 12 ? 12 : hh > 12 ? hh - 12 : hh;
+                                const ocupado = horasOcupadas.includes(timeVal);
+                                return (
+                                  <p className={`text-xs font-semibold ${ocupado ? 'text-red-600' : 'text-purple-700'}`}>
+                                    {ocupado ? '⚠ Horario ocupado' : `Seleccionado: ${String(h12v).padStart(2,'0')}:${String(mmSel).padStart(2,'0')} ${p}`}
+                                  </p>
+                                );
+                              })() : <span className="text-xs text-gray-400">Desplaza para seleccionar hora</span>}
+                              {horasOcupadas.length > 0 && <span className="text-xs text-amber-600 font-medium">{horasOcupadas.length} ocupados</span>}
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Boton Citar Paciente — visible solo cuando hay fecha+hora */}
+                    <button
+                      onClick={() => {
+                        if (!especialidadSeleccionada) { toast.error("Selecciona una especialidad"); return; }
+                        if (!medicoSeleccionado) { toast.error("Selecciona un profesional"); return; }
+                        if (!fechaHoraCitaSeleccionada || !fechaHoraCitaSeleccionada.includes('T')) { toast.error("Selecciona fecha y hora"); return; }
+                        const fechaSeleccionada = fechaHoraCitaSeleccionada.split('T')[0];
+                        const ahora = new Date();
+                        const hoy = `${ahora.getFullYear()}-${String(ahora.getMonth()+1).padStart(2,'0')}-${String(ahora.getDate()).padStart(2,'0')}`;
+                        if (fechaSeleccionada < hoy) { toast.error("No puedes citar a una fecha anterior a hoy"); return; }
+                        importarPacienteAdicional(preValidacionResultado);
+                      }}
+                      disabled={agregandoPaciente || preValidacionEstado !== "encontrado" || !especialidadSeleccionada || !medicoSeleccionado || !fechaHoraCitaSeleccionada?.includes('T')}
+                      className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg font-bold transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+                    >
+                      {agregandoPaciente ? <Loader2 className="w-4 h-4 animate-spin" /> : <Calendar className="w-4 h-4" />}
+                      {agregandoPaciente ? "Citando paciente..." : "Citar Paciente"}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Footer */}
+                <div className="px-6 py-3 border-t border-gray-100 bg-gray-50 rounded-b-xl">
+                  <button
+                    onClick={() => { setModalPreValidacion(false); setPreValidacionPaso(1); setPreValidacionDni(""); setPreValidacionEstado("idle"); setPreValidacionResultado(null); setEspecialidadSeleccionada(""); setMedicoSeleccionado(""); setFechaHoraCitaSeleccionada(""); setBusquedaEspecialidad(""); setBusquedaProfesional(""); }}
+                    className="w-full px-4 py-2 text-gray-600 hover:text-gray-800 text-sm font-medium transition-colors"
+                  >
+                    Cerrar
+                  </button>
+                </div>
+              </>
+            )}
           </div>
         </div>
       )}

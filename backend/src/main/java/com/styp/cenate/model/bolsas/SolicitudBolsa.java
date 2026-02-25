@@ -232,6 +232,12 @@ public class SolicitudBolsa {
     @Column(name = "motivo_llamada_bolsa", length = 500)
     private String motivoLlamadoBolsa;
 
+    // ============================================================================
+    // ❌ MOTIVO DE ANULACIÓN (v1.69.0 - 2026-02-25)
+    // ============================================================================
+    @Column(name = "motivo_anulacion", columnDefinition = "TEXT")
+    private String motivoAnulacion;
+
     @Column(name = "fecha_atencion_medica", columnDefinition = "TIMESTAMP WITH TIME ZONE")
     private OffsetDateTime fechaAtencionMedica;
 

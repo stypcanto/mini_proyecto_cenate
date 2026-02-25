@@ -35,18 +35,19 @@ import toast from "react-hot-toast";
 // ── Constantes ────────────────────────────────────────────────
 const ESTADOS_AGENDADOS = [
   'CITADO', 'YA_NO_REQUIERE', 'SIN_VIGENCIA', 'FALLECIDO', 'ATENDIDO_IPRESS',
-  'HOSPITALIZADO', 'NO_IPRESS_CENATE', 'NUM_NO_EXISTE',
+  'HOSPITALIZADO', 'NO_IPRESS_CENATE', 'NUM_NO_EXISTE', 'RECHAZADO',
 ];
 
 const BADGE = {
-  CITADO:           { label: 'Citado',          bg: 'bg-blue-100',   text: 'text-blue-800',   dot: 'bg-blue-500'   },
-  YA_NO_REQUIERE:   { label: 'Ya no requiere',  bg: 'bg-gray-100',   text: 'text-gray-600',   dot: 'bg-gray-400'   },
-  SIN_VIGENCIA:     { label: 'Sin vigencia',     bg: 'bg-amber-100',  text: 'text-amber-800',  dot: 'bg-amber-400'  },
-  FALLECIDO:        { label: 'Fallecido',        bg: 'bg-red-100',    text: 'text-red-700',    dot: 'bg-red-400'    },
-  ATENDIDO_IPRESS:  { label: 'Atendido IPRESS',  bg: 'bg-green-100',  text: 'text-green-800',  dot: 'bg-green-500'  },
-  HOSPITALIZADO:    { label: 'Hospitalizado',    bg: 'bg-purple-100', text: 'text-purple-800', dot: 'bg-purple-500' },
-  NO_IPRESS_CENATE: { label: 'Otra IPRESS',      bg: 'bg-orange-100', text: 'text-orange-800', dot: 'bg-orange-400' },
-  NUM_NO_EXISTE:    { label: 'Núm. no existe',   bg: 'bg-slate-100',  text: 'text-slate-700',  dot: 'bg-slate-400'  },
+  CITADO:           { label: 'Citado',          bg: 'bg-blue-100',   text: 'text-blue-800',   dot: 'bg-blue-500',   tooltip: null                         },
+  YA_NO_REQUIERE:   { label: 'Ya no requiere',  bg: 'bg-gray-100',   text: 'text-gray-600',   dot: 'bg-gray-400',   tooltip: null                         },
+  SIN_VIGENCIA:     { label: 'Sin vigencia',     bg: 'bg-amber-100',  text: 'text-amber-800',  dot: 'bg-amber-400',  tooltip: null                         },
+  FALLECIDO:        { label: 'Fallecido',        bg: 'bg-red-100',    text: 'text-red-700',    dot: 'bg-red-400',    tooltip: null                         },
+  ATENDIDO_IPRESS:  { label: 'Atendido IPRESS',  bg: 'bg-green-100',  text: 'text-green-800',  dot: 'bg-green-500',  tooltip: null                         },
+  HOSPITALIZADO:    { label: 'Hospitalizado',    bg: 'bg-purple-100', text: 'text-purple-800', dot: 'bg-purple-500', tooltip: null                         },
+  NO_IPRESS_CENATE: { label: 'Otra IPRESS',      bg: 'bg-orange-100', text: 'text-orange-800', dot: 'bg-orange-400', tooltip: null                         },
+  NUM_NO_EXISTE:    { label: 'Núm. no existe',   bg: 'bg-slate-100',  text: 'text-slate-700',  dot: 'bg-slate-400',  tooltip: null                         },
+  RECHAZADO:        { label: 'Anulado',          bg: 'bg-rose-50',    text: 'text-rose-700',   dot: 'bg-rose-400',   tooltip: 'Cita anulada por el gestor' },
 };
 
 const KPI_CONFIG = [
@@ -59,6 +60,7 @@ const KPI_CONFIG = [
   { key: 'HOSPITALIZADO',    label: 'Hospitalizados',    accent: '#7c3aed', bg: '#f5f3ff', border: '#ddd6fe'  },
   { key: 'NO_IPRESS_CENATE', label: 'Otra IPRESS',       accent: '#ea580c', bg: '#fff7ed', border: '#fed7aa'  },
   { key: 'NUM_NO_EXISTE',    label: 'Núm. no existe',    accent: '#475569', bg: '#f8fafc', border: '#cbd5e1'  },
+  { key: 'RECHAZADO',        label: 'Anulados',          accent: '#e11d48', bg: '#fff1f2', border: '#fecdd3'  },
 ];
 
 const PAGE_SIZE = 25;
@@ -75,6 +77,43 @@ const fmtFecha = (fecha) => {
 };
 
 const telNumero = (t) => (t || '').replace(/\D/g, '');
+
+// ── Tooltip ───────────────────────────────────────────────────
+function Tooltip({ text, children }) {
+  const [pos, setPos] = useState(null);
+  const ref = useRef(null);
+
+  const show = () => {
+    if (!ref.current) return;
+    const r = ref.current.getBoundingClientRect();
+    setPos({ x: r.left + r.width / 2, y: r.top - 8 });
+  };
+  const hide = () => setPos(null);
+
+  return (
+    <div ref={ref} style={{ display: 'inline-flex' }} onMouseEnter={show} onMouseLeave={hide}>
+      {children}
+      {pos && (
+        <div style={{
+          position: 'fixed',
+          left: pos.x, top: pos.y,
+          transform: 'translate(-50%, -100%)',
+          background: '#1e293b', color: '#fff',
+          fontSize: '11px', fontWeight: '500', whiteSpace: 'nowrap',
+          padding: '4px 9px', borderRadius: '6px', pointerEvents: 'none',
+          boxShadow: '0 2px 8px rgba(0,0,0,0.25)', zIndex: 99999,
+        }}>
+          {text}
+          <div style={{
+            position: 'absolute', top: '100%', left: '50%', transform: 'translateX(-50%)',
+            borderWidth: '4px', borderStyle: 'solid',
+            borderColor: '#1e293b transparent transparent transparent',
+          }} />
+        </div>
+      )}
+    </div>
+  );
+}
 
 // ── KPI Card ─────────────────────────────────────────────────
 function KpiCard({ label, valor, accent, bg, border, active, onClick }) {
@@ -477,6 +516,10 @@ export default function CitasAgendadas() {
   // ── Editar fecha/hora de cita ──
   const [modalEditarFecha, setModalEditarFecha] = useState({ visible: false, paciente: null, fecha: '', hora: '' });
   const [guardandoFecha, setGuardandoFecha]     = useState(false);
+  // ── Cancelar cita individual ──
+  const [modalCancelar, setModalCancelar]       = useState({ visible: false, paciente: null });
+  const [cancelando, setCancelando]             = useState(false);
+  const [motivoAnulacion, setMotivoAnulacion]   = useState('');
   // ── Editar teléfonos inline ──
   const [editandoTel, setEditandoTel]           = useState(null); // id del paciente editando
   const [telEdit, setTelEdit]                   = useState({ tel1: '', tel2: '' });
@@ -567,6 +610,7 @@ export default function CitasAgendadas() {
           tipoCita:                s.tipo_cita                 || s.tipoCita                || '—',
           nomMedico:               s.nombre_medico_asignado    || s.nombreMedicoAsignado    || s.nom_medico || s.nomMedico || null,
           esCenacron:              s.es_cenacron === true      || s.esCenacron === true,
+          motivoAnulacion:         s.motivo_anulacion          || s.motivoAnulacion         || null,
         }))
         // Incluir: estados agendados O cualquiera que tenga fecha de atención asignada
         .filter(p => ESTADOS_AGENDADOS.includes(p.codigoEstado) || p.fechaAtencion)
@@ -864,6 +908,30 @@ CENATE de Essalud`;
 
   const copiarMensaje = () => {
     navigator.clipboard.writeText(modalWA.preview).then(() => toast.success('Mensaje copiado al portapapeles'));
+  };
+
+  // ── Cancelar cita individual ──────────────────────────────
+  const confirmarCancelarCita = async () => {
+    const p = modalCancelar.paciente;
+    if (!p) return;
+    if (!motivoAnulacion.trim()) { toast.error('Debes ingresar el motivo de anulación'); return; }
+    setCancelando(true);
+    try {
+      const res = await fetch('/api/bolsas/solicitudes/rechazar-masivo', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
+        body: JSON.stringify({ ids: [p.id], motivo: motivoAnulacion.trim() }),
+      });
+      if (!res.ok) throw new Error('Error al cancelar en bolsa');
+      toast.success(`Cita de ${p.pacienteNombre} anulada correctamente`);
+      setModalCancelar({ visible: false, paciente: null });
+      setMotivoAnulacion('');
+      await cargar();
+    } catch (err) {
+      toast.error('Error al anular la cita');
+    } finally {
+      setCancelando(false);
+    }
   };
 
   // ── Reasignar Profesional ─────────────────────────────────
@@ -1188,13 +1256,13 @@ CENATE de Essalud`;
                 {filasSeleccionadas.length >= 1 && (
                   <button
                     onClick={() => setModalRechazar(true)}
-                    title={`Rechazar ${filasSeleccionadas.length} paciente${filasSeleccionadas.length !== 1 ? 's' : ''} seleccionado${filasSeleccionadas.length !== 1 ? 's' : ''}`}
+                    title={`Cancelar citas de ${filasSeleccionadas.length} paciente${filasSeleccionadas.length !== 1 ? 's' : ''} seleccionado${filasSeleccionadas.length !== 1 ? 's' : ''}`}
                     style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '7px 14px', borderRadius: '8px', border: '1px solid #dc2626', background: '#dc2626', color: '#fff', fontSize: '12px', fontWeight: '600', cursor: 'pointer', transition: 'all 0.15s' }}
                     onMouseEnter={e => e.currentTarget.style.background = '#b91c1c'}
                     onMouseLeave={e => e.currentTarget.style.background = '#dc2626'}
                   >
                     <XCircle size={14} />
-                    Rechazar ({filasSeleccionadas.length})
+                    Cancelar citas ({filasSeleccionadas.length})
                   </button>
                 )}
                 <button
@@ -1235,10 +1303,10 @@ CENATE de Essalud`;
                         />
                       </th>
                       {(esCoordEnfermeria
-                        ? ['Paciente', 'DNI', 'Teléfono', 'Enfermera asignada', 'Especialidad', 'Fecha / Hora Cita', 'IPRESS', 'Estado', 'Acc.']
-                        : ['Paciente', 'DNI', 'Teléfono', 'Prof. de Salud', 'Especialidad', 'Fecha / Hora Cita', 'IPRESS', 'Estado', 'Acc.']
+                        ? ['Paciente', 'DNI', 'Teléfono', 'Enfermera asignada', 'Especialidad', 'Fecha / Hora Cita', 'IPRESS', 'Estado', 'Motivo anulación', 'Acc.']
+                        : ['Paciente', 'DNI', 'Teléfono', 'Prof. de Salud', 'Especialidad', 'Fecha / Hora Cita', 'IPRESS', 'Estado', 'Motivo anulación', 'Acc.']
                       ).map((h, i) => (
-                        <th key={h} style={{ padding: '10px 12px', textAlign: i === 8 ? 'center' : 'left', fontSize: '10px', fontWeight: '700', color: '#e0f2fe', textTransform: 'uppercase', letterSpacing: '0.06em', whiteSpace: 'nowrap', width: i === 8 ? '90px' : 'auto' }}>
+                        <th key={h} style={{ padding: '10px 12px', textAlign: i === 9 ? 'center' : 'left', fontSize: '10px', fontWeight: '700', color: '#e0f2fe', textTransform: 'uppercase', letterSpacing: '0.06em', whiteSpace: 'nowrap', width: i === 9 ? '90px' : 'auto' }}>
                           {h}
                         </th>
                       ))}
@@ -1397,35 +1465,68 @@ CENATE de Essalud`;
                           </td>
 
                           <td style={{ padding: '10px 12px' }}>
-                            <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold ${badge.bg} ${badge.text}`}>
-                              <span className={`w-1.5 h-1.5 rounded-full ${badge.dot}`} />{badge.label}
-                            </span>
+                            {badge.tooltip ? (
+                              <Tooltip text={badge.tooltip}>
+                                <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold ${badge.bg} ${badge.text}`} style={{ cursor: 'help' }}>
+                                  <span className={`w-1.5 h-1.5 rounded-full ${badge.dot}`} />{badge.label}
+                                </span>
+                              </Tooltip>
+                            ) : (
+                              <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold ${badge.bg} ${badge.text}`}>
+                                <span className={`w-1.5 h-1.5 rounded-full ${badge.dot}`} />{badge.label}
+                              </span>
+                            )}
+                          </td>
+
+                          {/* MOTIVO ANULACIÓN */}
+                          <td style={{ padding: '10px 12px', maxWidth: '180px' }}>
+                            {p.motivoAnulacion ? (
+                              <span style={{ display: 'block', fontSize: '12px', color: '#be123c', fontStyle: 'italic', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={p.motivoAnulacion}>
+                                {p.motivoAnulacion}
+                              </span>
+                            ) : (
+                              <span style={{ color: '#cbd5e1', fontSize: '11px' }}>—</span>
+                            )}
                           </td>
 
                           {/* ACCIONES */}
                           <td style={{ padding: '10px 12px', textAlign: 'center', width: '90px' }}>
                             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
                               {esCitado && (
-                                <button
-                                  onClick={() => abrirModalWA(p)}
-                                  title="Enviar mensaje de cita por WhatsApp"
-                                  style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '32px', height: '32px', borderRadius: '8px', background: '#7c3aed', border: 'none', cursor: 'pointer', color: '#fff', transition: 'background 0.15s' }}
-                                  onMouseEnter={e => e.currentTarget.style.background = '#6d28d9'}
-                                  onMouseLeave={e => e.currentTarget.style.background = '#7c3aed'}
-                                >
-                                  <MessageCircle size={15} strokeWidth={2} />
-                                </button>
+                                <Tooltip text="Enviar cita por WhatsApp">
+                                  <button
+                                    onClick={() => abrirModalWA(p)}
+                                    style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '32px', height: '32px', borderRadius: '8px', background: '#7c3aed', border: 'none', cursor: 'pointer', color: '#fff', transition: 'background 0.15s' }}
+                                    onMouseEnter={e => e.currentTarget.style.background = '#6d28d9'}
+                                    onMouseLeave={e => e.currentTarget.style.background = '#7c3aed'}
+                                  >
+                                    <MessageCircle size={15} strokeWidth={2} />
+                                  </button>
+                                </Tooltip>
                               )}
                               {esCitado && (
-                                <button
-                                  onClick={() => abrirModalReasignar(p)}
-                                  title="Reasignar profesional de salud"
-                                  style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '32px', height: '32px', borderRadius: '8px', background: '#0369a1', border: 'none', cursor: 'pointer', color: '#fff', transition: 'background 0.15s' }}
-                                  onMouseEnter={e => e.currentTarget.style.background = '#0284c7'}
-                                  onMouseLeave={e => e.currentTarget.style.background = '#0369a1'}
-                                >
-                                  <UserCheck size={15} strokeWidth={2} />
-                                </button>
+                                <Tooltip text="Reasignar profesional de salud">
+                                  <button
+                                    onClick={() => abrirModalReasignar(p)}
+                                    style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '32px', height: '32px', borderRadius: '8px', background: '#0369a1', border: 'none', cursor: 'pointer', color: '#fff', transition: 'background 0.15s' }}
+                                    onMouseEnter={e => e.currentTarget.style.background = '#0284c7'}
+                                    onMouseLeave={e => e.currentTarget.style.background = '#0369a1'}
+                                  >
+                                    <UserCheck size={15} strokeWidth={2} />
+                                  </button>
+                                </Tooltip>
+                              )}
+                              {esCitado && (
+                                <Tooltip text="Cancelar esta cita">
+                                  <button
+                                    onClick={() => setModalCancelar({ visible: true, paciente: p })}
+                                    style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '32px', height: '32px', borderRadius: '8px', background: '#fee2e2', border: '1px solid #fca5a5', cursor: 'pointer', color: '#dc2626', transition: 'all 0.15s' }}
+                                    onMouseEnter={e => { e.currentTarget.style.background = '#dc2626'; e.currentTarget.style.color = '#fff'; e.currentTarget.style.borderColor = '#dc2626'; }}
+                                    onMouseLeave={e => { e.currentTarget.style.background = '#fee2e2'; e.currentTarget.style.color = '#dc2626'; e.currentTarget.style.borderColor = '#fca5a5'; }}
+                                  >
+                                    <XCircle size={15} strokeWidth={2} />
+                                  </button>
+                                </Tooltip>
                               )}
                             </div>
                           </td>
@@ -1686,7 +1787,7 @@ CENATE de Essalud`;
                 <XCircle size={20} color="#fff" strokeWidth={2} />
                 <div>
                   <p style={{ margin: 0, fontSize: '15px', fontWeight: '700', color: '#fff' }}>
-                    Rechazar {filasSeleccionadas.length} paciente{filasSeleccionadas.length !== 1 ? 's' : ''}
+                    Cancelar citas ({filasSeleccionadas.length} paciente{filasSeleccionadas.length !== 1 ? 's' : ''})
                   </p>
                   <p style={{ margin: 0, fontSize: '12px', color: 'rgba(255,255,255,0.8)' }}>
                     Pasarán a "Pacientes Rechazados" en Bolsas
@@ -1731,8 +1832,8 @@ CENATE de Essalud`;
                 style={{ flex: 2, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '10px', borderRadius: '10px', border: 'none', background: rechazando ? '#fca5a5' : '#dc2626', color: '#fff', fontSize: '13px', fontWeight: '600', cursor: rechazando ? 'not-allowed' : 'pointer', transition: 'background 0.15s' }}
               >
                 {rechazando
-                  ? <><RefreshCw size={14} className="animate-spin" /> Rechazando...</>
-                  : <><XCircle size={15} /> Confirmar rechazo ({filasSeleccionadas.length})</>
+                  ? <><RefreshCw size={14} className="animate-spin" /> Cancelando...</>
+                  : <><XCircle size={15} /> Confirmar cancelación ({filasSeleccionadas.length})</>
                 }
               </button>
             </div>
@@ -1854,6 +1955,109 @@ CENATE de Essalud`;
                 {guardandoFecha
                   ? <><RefreshCw size={14} className="animate-spin" /> Guardando...</>
                   : <><CalendarDays size={14} /> Guardar cambios</>}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Modal Cancelar Cita Individual ── */}
+      {modalCancelar.visible && (
+        <div
+          style={{ position: 'fixed', inset: 0, zIndex: 10001, background: 'rgba(0,0,0,0.55)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }}
+          onClick={e => { if (e.target === e.currentTarget && !cancelando) { setModalCancelar({ visible: false, paciente: null }); setMotivoAnulacion(''); } }}
+        >
+          <div style={{ background: '#fff', borderRadius: '16px', width: '100%', maxWidth: '440px', boxShadow: '0 20px 60px rgba(0,0,0,0.3)', overflow: 'hidden' }}>
+            {/* Cabecera */}
+            <div style={{ background: '#dc2626', padding: '16px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderRadius: '16px 16px 0 0' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <XCircle size={20} color="#fff" strokeWidth={2} />
+                <div>
+                  <p style={{ margin: 0, fontSize: '15px', fontWeight: '700', color: '#fff' }}>Cancelar Cita</p>
+                  <p style={{ margin: 0, fontSize: '12px', color: 'rgba(255,255,255,0.8)' }}>Esta acción no se puede deshacer</p>
+                </div>
+              </div>
+              {!cancelando && (
+                <button
+                  onClick={() => { setModalCancelar({ visible: false, paciente: null }); setMotivoAnulacion(''); }}
+                  style={{ background: 'rgba(255,255,255,0.2)', border: 'none', borderRadius: '8px', padding: '6px', cursor: 'pointer', display: 'flex', color: '#fff' }}
+                >
+                  <X size={18} />
+                </button>
+              )}
+            </div>
+
+            {/* Cuerpo */}
+            <div style={{ padding: '20px' }}>
+              <p style={{ margin: '0 0 14px', fontSize: '13px', color: '#374151' }}>
+                ¿Estás seguro de que deseas cancelar la cita de:
+              </p>
+              <div style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: '10px', padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <p style={{ margin: 0, fontSize: '14px', fontWeight: '700', color: '#0f172a' }}>
+                  {modalCancelar.paciente?.paciente || modalCancelar.paciente?.pacienteNombre}
+                </p>
+                <p style={{ margin: 0, fontSize: '12px', color: '#64748b', fontFamily: 'monospace' }}>
+                  DNI: {modalCancelar.paciente?.pacienteDni || modalCancelar.paciente?.dni}
+                </p>
+                {modalCancelar.paciente?.especialidad && (
+                  <p style={{ margin: 0, fontSize: '12px', color: '#475569' }}>
+                    Especialidad: <strong>{modalCancelar.paciente.especialidad}</strong>
+                  </p>
+                )}
+                {modalCancelar.paciente?.nomMedico && (
+                  <p style={{ margin: 0, fontSize: '12px', color: '#475569' }}>
+                    Profesional: <strong>{modalCancelar.paciente.nomMedico}</strong>
+                  </p>
+                )}
+                {modalCancelar.paciente?.fechaAtencion && (
+                  <p style={{ margin: 0, fontSize: '12px', color: '#475569' }}>
+                    Fecha: <strong>{fmtFecha(modalCancelar.paciente.fechaAtencion)}</strong>
+                    {modalCancelar.paciente?.horaAtencion && (
+                      <> · Hora: <strong>{modalCancelar.paciente.horaAtencion?.slice(0, 5)}</strong></>
+                    )}
+                  </p>
+                )}
+              </div>
+              {/* Motivo de anulación - obligatorio */}
+              <div style={{ marginTop: '14px' }}>
+                <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', color: '#374151', marginBottom: '6px' }}>
+                  Motivo de anulación <span style={{ color: '#dc2626' }}>*</span>
+                </label>
+                <textarea
+                  value={motivoAnulacion}
+                  onChange={e => setMotivoAnulacion(e.target.value)}
+                  placeholder="Ej: Paciente solicita cambio de fecha, no puede asistir..."
+                  rows={3}
+                  disabled={cancelando}
+                  style={{ width: '100%', padding: '8px 10px', border: `1px solid ${motivoAnulacion.trim() ? '#d1d5db' : '#fca5a5'}`, borderRadius: '8px', fontSize: '12px', color: '#0f172a', resize: 'vertical', outline: 'none', boxSizing: 'border-box', background: cancelando ? '#f8fafc' : '#fff', fontFamily: 'inherit' }}
+                />
+                {!motivoAnulacion.trim() && (
+                  <p style={{ margin: '4px 0 0', fontSize: '11px', color: '#dc2626' }}>Este campo es obligatorio</p>
+                )}
+              </div>
+              <p style={{ margin: '10px 0 0', fontSize: '12px', color: '#6b7280' }}>
+                El paciente pasará al estado <strong>Anulado</strong> en el sistema de bolsas y podrá ser reagendado posteriormente.
+              </p>
+            </div>
+
+            {/* Pie */}
+            <div style={{ padding: '12px 20px 16px', display: 'flex', gap: '10px', borderTop: '1px solid #f1f5f9' }}>
+              <button
+                onClick={() => { setModalCancelar({ visible: false, paciente: null }); setMotivoAnulacion(''); }}
+                disabled={cancelando}
+                style={{ flex: 1, padding: '10px', borderRadius: '10px', border: '1px solid #e2e8f0', background: '#f8fafc', color: '#475569', fontSize: '13px', fontWeight: '500', cursor: cancelando ? 'not-allowed' : 'pointer' }}
+              >
+                Volver
+              </button>
+              <button
+                onClick={confirmarCancelarCita}
+                disabled={cancelando || !motivoAnulacion.trim()}
+                style={{ flex: 2, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '10px', borderRadius: '10px', border: 'none', background: (cancelando || !motivoAnulacion.trim()) ? '#fca5a5' : '#dc2626', color: '#fff', fontSize: '13px', fontWeight: '600', cursor: (cancelando || !motivoAnulacion.trim()) ? 'not-allowed' : 'pointer', transition: 'background 0.15s' }}
+              >
+                {cancelando
+                  ? <><RefreshCw size={14} className="animate-spin" /> Anulando...</>
+                  : <><XCircle size={15} /> Sí, anular cita</>
+                }
               </button>
             </div>
           </div>

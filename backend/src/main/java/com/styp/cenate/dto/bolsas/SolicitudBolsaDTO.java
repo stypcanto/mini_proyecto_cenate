@@ -200,4 +200,8 @@ public class SolicitudBolsaDTO {
     // 🏷️ CENACRON (enriquecido via JOIN con paciente_estrategia)
     @JsonProperty("es_cenacron")
     private Boolean esCenacron;
+
+    // ❌ MOTIVO DE ANULACIÓN (v1.69.0)
+    @JsonProperty("motivo_anulacion")
+    private String motivoAnulacion;
 }
