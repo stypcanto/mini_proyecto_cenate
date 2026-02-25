@@ -110,13 +110,17 @@ const ConfiguracionFeriados = () => {
 
   // Filtrar datos
   const datosFiltrados = periodos.filter(p => {
-    // Filtro por año
-    if (anio !== 'todos' && !p.periodo.startsWith(anio)) return false;
-    // Filtro por período específico
-    if (periodo !== 'todos' && p.periodo !== periodo) return false;
-    // Filtro por estado
-    if (estado !== 'todos' && p.estado?.toLowerCase() !== estado.toLowerCase()) return false;
-    return true;
+    // Normalizar valores para comparación
+    const periodoAno = p.periodo.substring(0, 4);
+    const periodoEstado = p.estado ? p.estado.trim().toUpperCase() : '';
+    const estadoFiltro = estado.toUpperCase();
+    
+    // Aplicar filtros
+    const pasaFiltroAno = (anio === 'todos' || periodoAno === anio);
+    const pasaFiltroPeriodo = (periodo === 'todos' || p.periodo === periodo);
+    const pasaFiltroEstado = (estado === 'todos' || periodoEstado === estadoFiltro);
+    
+    return pasaFiltroAno && pasaFiltroPeriodo && pasaFiltroEstado;
   });
 
   // Formatear fecha (YYYY-MM-DD a DD/MM/YYYY)
@@ -209,9 +213,9 @@ const ConfiguracionFeriados = () => {
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             >
               <option value="todos">Todos</option>
-              <option value="abierto">ABIERTO</option>
-              <option value="reabierto">REABIERTO</option>
-              <option value="cerrado">CERRADO</option>
+              <option value="ABIERTO">ABIERTO</option>
+              <option value="REABIERTO">REABIERTO</option>
+              <option value="CERRADO">CERRADO</option>
             </select>
           </div>
         </div>
