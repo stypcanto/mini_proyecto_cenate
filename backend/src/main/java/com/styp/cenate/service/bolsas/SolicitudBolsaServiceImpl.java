@@ -3598,6 +3598,13 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
     // ============================================================================
 
     @Override
+    public Optional<SolicitudBolsaDTO> buscarAsignacionExistente(String pacienteDni) {
+        return solicitudRepository
+            .findFirstByPacienteDniAndActivoTrueOrderByFechaSolicitudDesc(pacienteDni)
+            .map(SolicitudBolsaMapper::toDTO);
+    }
+
+    @Override
     @Transactional
     public SolicitudBolsaDTO crearSolicitudAdicional(CrearSolicitudAdicionalRequest request, String username) {
         log.info("📝 Creando solicitud adicional para DNI: {}", request.getPacienteDni());

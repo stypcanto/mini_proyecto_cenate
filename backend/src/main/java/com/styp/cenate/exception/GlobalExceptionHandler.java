@@ -101,7 +101,22 @@ public class GlobalExceptionHandler {
 	}
 
 	// ======================================================
-	// 4️⃣ Contraseñas débiles
+	// 4️⃣ Paciente duplicado — retorna detalles de asignación existente
+	// ======================================================
+	@ExceptionHandler(PacienteDuplicadoException.class)
+	public ResponseEntity<Map<String, Object>> handlePacienteDuplicado(PacienteDuplicadoException ex) {
+		log.warn("⚠️ Paciente duplicado: {}", ex.getMessage());
+		Map<String, Object> response = new HashMap<>();
+		response.put("status", HttpStatus.CONFLICT.value());
+		response.put("error", "paciente_duplicado");
+		response.put("message", ex.getMessage());
+		response.put("asignacionExistente", ex.getAsignacionExistente());
+		response.put("timestamp", LocalDateTime.now().toString());
+		return ResponseEntity.status(HttpStatus.CONFLICT).body(response);
+	}
+
+	// ======================================================
+	// 5️⃣ Contraseñas débiles
 	// ======================================================
 	@ExceptionHandler(WeakPasswordException.class)
 	public ResponseEntity<Map<String, Object>> handleWeakPasswordException(WeakPasswordException ex) {

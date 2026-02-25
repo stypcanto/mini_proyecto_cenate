@@ -9,6 +9,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Optional;
 
 /**
  * Interfaz de servicio para solicitudes de bolsa
@@ -264,6 +265,8 @@ public interface SolicitudBolsaService {
      * @return solicitud creada con número de solicitud asignado
      */
     SolicitudBolsaDTO crearSolicitudAdicional(CrearSolicitudAdicionalRequest request, String username);
+
+    Optional<SolicitudBolsaDTO> buscarAsignacionExistente(String pacienteDni);
 
     /**
      * Buscar solicitudes por DNI de paciente (v1.46.0)

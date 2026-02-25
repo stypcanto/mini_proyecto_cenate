@@ -1520,11 +1520,16 @@ public class SolicitudBolsaController {
      */
     @PostMapping("/crear-adicional")
     @CheckMBACPermission(pagina = "/citas/citas-pendientes", accion = "crear")
-    public ResponseEntity<SolicitudBolsaDTO> crearSolicitudAdicional(
+    public ResponseEntity<?> crearSolicitudAdicional(
             @RequestBody @jakarta.validation.Valid CrearSolicitudAdicionalRequest request,
             @AuthenticationPrincipal UserDetails userDetails) {
 
         log.info("📝 POST /api/bolsas/solicitudes/crear-adicional - DNI: {}", request.getPacienteDni());
+
+        // Verificar si ya existe una asignación activa para este paciente
+        solicitudBolsaService.buscarAsignacionExistente(request.getPacienteDni()).ifPresent(existente -> {
+            throw new com.styp.cenate.exception.PacienteDuplicadoException(existente);
+        });
 
         String username = userDetails != null ? userDetails.getUsername() : "Sistema";
         SolicitudBolsaDTO nuevaSolicitud = solicitudBolsaService.crearSolicitudAdicional(request, username);

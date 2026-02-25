@@ -89,6 +89,8 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
         Long idServicio
     );
 
+    Optional<SolicitudBolsa> findFirstByPacienteDniAndActivoTrueOrderByFechaSolicitudDesc(String pacienteDni);
+
     /**
      * Busca solicitudes por bolsa (activas)
      */
@@ -1045,6 +1047,59 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
      * @return lista de solicitudes para ese DNI
      */
     List<SolicitudBolsa> findByPacienteDni(String pacienteDni);
+
+    // ========================================================================
+    // 📊 v1.65.0: TOTAL PACIENTES ENFERMERÍA — Estadísticas por enfermera
+    // ========================================================================
+
+    /**
+     * Estadísticas de pacientes de enfermería (id_bolsa=3) agrupadas por enfermera.
+     * Soporta filtro opcional por fecha_atencion.
+     */
+    @Query(value = """
+        SELECT p.id_pers as id_enfermera,
+          COALESCE(p.nom_pers || ' ' || p.ape_pater_pers || ' ' || p.ape_mater_pers, '') as nombre_enfermera,
+          COUNT(*) as total,
+          SUM(CASE WHEN sb.condicion_medica = 'Pendiente' THEN 1 ELSE 0 END) as pendientes,
+          SUM(CASE WHEN sb.condicion_medica = 'Atendido'  THEN 1 ELSE 0 END) as atendidos,
+          SUM(CASE WHEN sb.condicion_medica = 'Deserción' THEN 1 ELSE 0 END) as desercion
+        FROM dim_solicitud_bolsa sb
+        JOIN dim_personal_cnt p ON sb.id_personal = p.id_pers
+        WHERE sb.activo = true AND sb.id_bolsa = 3 AND sb.id_personal IS NOT NULL
+          AND (:fecha IS NULL OR DATE(sb.fecha_atencion) = CAST(:fecha AS DATE))
+        GROUP BY p.id_pers, p.nom_pers, p.ape_pater_pers, p.ape_mater_pers
+        ORDER BY total DESC
+        """, nativeQuery = true)
+    List<Object[]> estadisticasPorEnfermera(@org.springframework.data.repository.query.Param("fecha") String fecha);
+
+    /**
+     * Pacientes de enfermería (id_bolsa=3) asignados a una enfermera específica.
+     * Soporta filtro opcional por fecha_atencion.
+     */
+    @Query(value = """
+        SELECT sb.id_solicitud, sb.paciente_nombre, sb.paciente_dni,
+               sb.condicion_medica, sb.fecha_atencion, sb.id_personal
+        FROM dim_solicitud_bolsa sb
+        WHERE sb.activo = true AND sb.id_bolsa = 3
+          AND sb.id_personal = :idPersonal
+          AND (:fecha IS NULL OR DATE(sb.fecha_atencion) = CAST(:fecha AS DATE))
+        ORDER BY sb.paciente_nombre ASC
+        """, nativeQuery = true)
+    List<Object[]> pacientesPorEnfermera(
+        @org.springframework.data.repository.query.Param("idPersonal") Long idPersonal,
+        @org.springframework.data.repository.query.Param("fecha") String fecha
+    );
+
+    /**
+     * Reasignación masiva de solicitudes a otra enfermera.
+     */
+    @Modifying
+    @org.springframework.transaction.annotation.Transactional
+    @Query("UPDATE SolicitudBolsa s SET s.idPersonal = :idPersonal WHERE s.idSolicitud IN :ids AND s.activo = true")
+    int reasignarPacientesMasivo(
+        @org.springframework.data.repository.query.Param("ids") List<Long> ids,
+        @org.springframework.data.repository.query.Param("idPersonal") Long idPersonal
+    );
 
     /**
      * 🆕 v1.46.0: Contar solicitudes entre dos fechas

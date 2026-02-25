@@ -148,6 +148,8 @@ export default function GestionAsegurado() {
   // 🔧 ESTADO PARA IMPORTACIÓN DE PACIENTES ADICIONALES (v1.46.0)
   // ============================================================================
   const [modalImportar, setModalImportar] = useState(false);
+  const [modalDuplicado, setModalDuplicado] = useState(false);
+  const [duplicadoInfo, setDuplicadoInfo] = useState(null);
   const [busquedaAsegurado, setBusquedaAsegurado] = useState("");
   const [resultadosBusqueda, setResultadosBusqueda] = useState([]);
   const [cargandoBusqueda, setCargandoBusqueda] = useState(false);
@@ -1509,6 +1511,12 @@ CENATE de Essalud`;
 
       if (!createBolsaRes.ok) {
         const errorData = await createBolsaRes.json().catch(() => ({}));
+        // 409 = paciente ya asignado → mostrar modal informativo
+        if (createBolsaRes.status === 409 && errorData.error === "paciente_duplicado") {
+          setDuplicadoInfo({ paciente: asegurado.paciente, dni: asegurado.docPaciente, asignacion: errorData.asignacionExistente });
+          setModalDuplicado(true);
+          return;
+        }
         throw new Error(errorData.message || `Error al crear en dim_solicitud_bolsa (${createBolsaRes.status})`);
       }
 
@@ -3235,6 +3243,73 @@ CENATE de Essalud`;
       )}
 
       {/* Modal Importar Paciente Adicional (v1.46.0) */}
+      {/* ── Modal: Paciente ya asignado ─────────────────────────────── */}
+      {modalDuplicado && duplicadoInfo && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[60] p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
+            {/* Header */}
+            <div className="bg-amber-500 px-6 py-4 flex items-center gap-3">
+              <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center flex-shrink-0">
+                <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" /></svg>
+              </div>
+              <div>
+                <h3 className="text-white font-bold text-base">Paciente ya asignado</h3>
+                <p className="text-amber-100 text-xs">Este paciente no puede ser importado nuevamente</p>
+              </div>
+            </div>
+            {/* Contenido */}
+            <div className="px-6 py-5 space-y-4">
+              <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
+                <p className="font-semibold text-gray-900 text-sm">{duplicadoInfo.paciente}</p>
+                <p className="text-gray-500 text-xs font-mono mt-0.5">DNI: {duplicadoInfo.dni}</p>
+              </div>
+              <p className="text-sm text-gray-600">Ya existe una asignación activa con los siguientes datos:</p>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="bg-gray-50 rounded-xl p-3 border border-gray-100">
+                  <p className="text-xs text-gray-400 uppercase tracking-wide mb-1">Profesional asignado</p>
+                  <p className="text-sm font-semibold text-gray-800">
+                    {duplicadoInfo.asignacion?.nombre_medico_asignado || duplicadoInfo.asignacion?.nombreMedicoAsignado || "—"}
+                  </p>
+                </div>
+                <div className="bg-gray-50 rounded-xl p-3 border border-gray-100">
+                  <p className="text-xs text-gray-400 uppercase tracking-wide mb-1">Especialidad</p>
+                  <p className="text-sm font-semibold text-gray-800">
+                    {duplicadoInfo.asignacion?.especialidad || "—"}
+                  </p>
+                </div>
+                <div className="bg-gray-50 rounded-xl p-3 border border-gray-100">
+                  <p className="text-xs text-gray-400 uppercase tracking-wide mb-1">Fecha de atención</p>
+                  <p className="text-sm font-semibold text-gray-800">
+                    {duplicadoInfo.asignacion?.fecha_atencion || duplicadoInfo.asignacion?.fechaAtencion || "—"}
+                  </p>
+                </div>
+                <div className="bg-gray-50 rounded-xl p-3 border border-gray-100">
+                  <p className="text-xs text-gray-400 uppercase tracking-wide mb-1">Hora</p>
+                  <p className="text-sm font-semibold text-gray-800">
+                    {duplicadoInfo.asignacion?.hora_atencion || duplicadoInfo.asignacion?.horaAtencion || "—"}
+                  </p>
+                </div>
+                <div className="col-span-2 bg-gray-50 rounded-xl p-3 border border-gray-100">
+                  <p className="text-xs text-gray-400 uppercase tracking-wide mb-1">Estado actual</p>
+                  <p className="text-sm font-semibold text-gray-800">
+                    {duplicadoInfo.asignacion?.desc_estado_cita || duplicadoInfo.asignacion?.descEstadoCita || duplicadoInfo.asignacion?.estado || "—"}
+                  </p>
+                </div>
+              </div>
+            </div>
+            {/* Footer */}
+            <div className="px-6 pb-5">
+              <button
+                onClick={() => { setModalDuplicado(false); setDuplicadoInfo(null); }}
+                className="w-full bg-gray-900 hover:bg-gray-800 text-white font-semibold py-2.5 rounded-xl text-sm transition-colors"
+              >
+                Entendido
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {modalImportar && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-hidden flex flex-col">
@@ -3672,7 +3747,7 @@ CENATE de Essalud`;
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-1">
-                    🪪 Tipo de Documento <span className="text-red-500">*</span>
+                    Tipo de Documento <span className="text-red-500">*</span>
                   </label>
                   <select
                     value={nuevoAsegurado.tipoDocumento}
@@ -3687,7 +3762,7 @@ CENATE de Essalud`;
                 </div>
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-1">
-                    🪪 Documento <span className="text-red-500">*</span>
+                    Documento <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="text"
@@ -3723,7 +3798,7 @@ CENATE de Essalud`;
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-1">
-                    👤 Nombre Completo <span className="text-red-500">*</span>
+                    Nombre Completo <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="text"
@@ -3735,7 +3810,7 @@ CENATE de Essalud`;
                 </div>
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-1">
-                    📅 Fecha de Nacimiento <span className="text-red-500">*</span>
+                    Fecha de Nacimiento <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="date"
@@ -3763,7 +3838,7 @@ CENATE de Essalud`;
                 </div>
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-1">
-                    👤 Tipo de Paciente <span className="text-red-500">*</span>
+                    Tipo de Paciente <span className="text-red-500">*</span>
                   </label>
                   <select
                     value={nuevoAsegurado.tipoPaciente}
@@ -3781,7 +3856,7 @@ CENATE de Essalud`;
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-1">
-                    📱 Teléfono móvil principal <span className="text-red-500">*</span>
+                    Teléfono móvil principal <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="tel"
@@ -3794,7 +3869,7 @@ CENATE de Essalud`;
                 </div>
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-1">
-                    📞 Teléfono celular o fijo alterno
+                    Teléfono celular o fijo alterno
                   </label>
                   <input
                     type="tel"
@@ -3811,7 +3886,7 @@ CENATE de Essalud`;
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-1">
-                    ✉️ Correo Electrónico
+                    Correo Electrónico
                   </label>
                   <input
                     type="email"
@@ -3823,7 +3898,7 @@ CENATE de Essalud`;
                 </div>
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-1">
-                    🛡️ Tipo de Seguro <span className="text-red-500">*</span>
+                    Tipo de Seguro <span className="text-red-500">*</span>
                   </label>
                   <select
                     value={nuevoAsegurado.tipoSeguro}
@@ -3841,7 +3916,7 @@ CENATE de Essalud`;
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-1">
-                    🏥 IPRESS <span className="text-red-500">*</span>
+                    IPRESS <span className="text-red-500">*</span>
                   </label>
                   <select
                     value={nuevoAsegurado.casAdscripcion}
@@ -3858,7 +3933,7 @@ CENATE de Essalud`;
                 </div>
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-1">
-                    📅 Periodo <span className="text-red-500">*</span>
+                    Periodo <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="text"
@@ -3875,7 +3950,7 @@ CENATE de Essalud`;
               {/* Toggle CENACRON */}
               <div className="flex items-center justify-between p-4 border border-gray-200 rounded-xl bg-gray-50">
                 <div>
-                  <p className="text-sm font-semibold text-gray-800">🏥 Paciente CENACRON</p>
+                  <p className="text-sm font-semibold text-gray-800">Paciente CENACRON</p>
                   <p className="text-xs text-gray-500 mt-0.5">Indica si el asegurado pertenece al programa de pacientes crónicos CENACRON</p>
                 </div>
                 <button
