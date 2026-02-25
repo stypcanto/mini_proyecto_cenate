@@ -1624,6 +1624,117 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
     }
 
     /**
+     * Sincroniza teléfonos desde asegurados → dim_solicitud_bolsa.
+     * Solo actualiza solicitudes activas con teléfono principal vacío/null.
+     * Mapeo: asegurados.tel_fijo → paciente_telefono, asegurados.tel_celular → paciente_telefono_alterno
+     */
+    @Override
+    @Transactional
+    public Map<String, Object> sincronizarTelefonosDesdeAsegurados() {
+        log.info("📞 Iniciando sincronización de teléfonos desde asegurados → dim_solicitud_bolsa...");
+
+        Map<String, Object> resultado = new HashMap<>();
+        int actualizados = 0;
+        int sinTelefonoEnAsegurados = 0;
+        List<String> dnisActualizados = new ArrayList<>();
+
+        try {
+            // 1. Buscar solicitudes activas sin teléfono principal
+            List<SolicitudBolsa> sinTelefono = solicitudRepository.findAll().stream()
+                .filter(s -> Boolean.TRUE.equals(s.getActivo()))
+                .filter(s -> s.getPacienteDni() != null && !s.getPacienteDni().isBlank())
+                .filter(s -> s.getPacienteTelefono() == null || s.getPacienteTelefono().isBlank())
+                .toList();
+
+            log.info("📞 Encontradas {} solicitudes activas sin teléfono principal", sinTelefono.size());
+
+            if (sinTelefono.isEmpty()) {
+                resultado.put("estado", "exito");
+                resultado.put("mensaje", "Todas las solicitudes ya tienen teléfono registrado");
+                resultado.put("total_sin_telefono", 0);
+                resultado.put("actualizados", 0);
+                return resultado;
+            }
+
+            // 2. Obtener DNIs únicos y cargar asegurados en batch
+            List<String> dnis = sinTelefono.stream()
+                .map(SolicitudBolsa::getPacienteDni)
+                .distinct()
+                .toList();
+
+            Map<String, Asegurado> aseguradosMap = aseguradoRepository.findByDocPacienteIn(dnis).stream()
+                .collect(Collectors.toMap(Asegurado::getDocPaciente, a -> a, (a1, a2) -> a1));
+
+            log.info("📞 Cargados {} asegurados para {} DNIs únicos", aseguradosMap.size(), dnis.size());
+
+            // 3. Actualizar teléfonos
+            List<SolicitudBolsa> paraGuardar = new ArrayList<>();
+
+            for (SolicitudBolsa solicitud : sinTelefono) {
+                Asegurado asegurado = aseguradosMap.get(solicitud.getPacienteDni());
+
+                if (asegurado == null) {
+                    sinTelefonoEnAsegurados++;
+                    continue;
+                }
+
+                String telFijo = asegurado.getTelFijo();
+                String telCelular = asegurado.getTelCelular();
+
+                // Si el asegurado tampoco tiene teléfonos, saltar
+                boolean tieneFijo = telFijo != null && !telFijo.isBlank();
+                boolean tieneCelular = telCelular != null && !telCelular.isBlank();
+
+                if (!tieneFijo && !tieneCelular) {
+                    sinTelefonoEnAsegurados++;
+                    continue;
+                }
+
+                // Asignar: tel_fijo como principal, tel_celular como alterno
+                if (tieneFijo) {
+                    solicitud.setPacienteTelefono(telFijo.trim());
+                } else if (tieneCelular) {
+                    // Si solo tiene celular, usarlo como principal
+                    solicitud.setPacienteTelefono(telCelular.trim());
+                }
+
+                if (tieneCelular && tieneFijo) {
+                    // Solo setear alterno si ya pusimos el fijo como principal
+                    solicitud.setPacienteTelefonoAlterno(telCelular.trim());
+                }
+
+                paraGuardar.add(solicitud);
+                dnisActualizados.add(solicitud.getPacienteDni());
+                actualizados++;
+            }
+
+            // 4. Guardar en batch
+            if (!paraGuardar.isEmpty()) {
+                solicitudRepository.saveAll(paraGuardar);
+                log.info("✅ Guardadas {} solicitudes con teléfonos actualizados", paraGuardar.size());
+            }
+
+            resultado.put("estado", "exito");
+            resultado.put("mensaje", String.format("Sincronización completada: %d actualizados, %d sin teléfono en asegurados",
+                actualizados, sinTelefonoEnAsegurados));
+            resultado.put("total_sin_telefono", sinTelefono.size());
+            resultado.put("actualizados", actualizados);
+            resultado.put("sin_telefono_en_asegurados", sinTelefonoEnAsegurados);
+            resultado.put("dnis_actualizados", dnisActualizados.size() <= 50 ? dnisActualizados : dnisActualizados.subList(0, 50));
+            resultado.put("fecha", LocalDateTime.now().toString());
+
+            log.info("✅ Sincronización de teléfonos completada: {}", resultado);
+
+        } catch (Exception e) {
+            log.error("❌ Error sincronizando teléfonos: {}", e.getMessage(), e);
+            resultado.put("estado", "error");
+            resultado.put("mensaje", "Error en sincronización: " + e.getMessage());
+        }
+
+        return resultado;
+    }
+
+    /**
      * Obtiene asegurados sincronizados recientemente (últimas 24 horas)
      * Busca solicitudes nuevas que tengan asegurados vinculados
      */

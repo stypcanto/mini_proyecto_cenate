@@ -320,6 +320,15 @@ public interface SolicitudBolsaService {
     Map<String, Object> obtenerKpisTrazabilidad();
 
     /**
+     * Sincroniza teléfonos desde la tabla asegurados hacia dim_solicitud_bolsa.
+     * Para solicitudes activas que tengan teléfono vacío/null, busca el asegurado
+     * por DNI y copia tel_fijo → paciente_telefono, tel_celular → paciente_telefono_alterno.
+     *
+     * @return reporte con total procesados, actualizados, sin datos en asegurados
+     */
+    Map<String, Object> sincronizarTelefonosDesdeAsegurados();
+
+    /**
      * Carga masiva de pacientes desde Excel (v1.65.0)
      * Reemplaza el flujo manual SQL+Python por un endpoint REST.
      *

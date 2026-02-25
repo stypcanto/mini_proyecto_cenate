@@ -46,6 +46,10 @@ import com.styp.cenate.dto.DetalleMedicoDTO;
 import com.styp.cenate.service.atenciones_clinicas.DetalleMedicoService;
 import com.styp.cenate.model.Usuario;
 import com.styp.cenate.repository.UsuarioRepository;
+import com.styp.cenate.repository.chatbot.SolicitudCitaRepository;
+import com.styp.cenate.model.chatbot.SolicitudCita;
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
 
 /**
  * Controller REST para gestión de solicitudes de bolsa
@@ -68,6 +72,7 @@ public class SolicitudBolsaController {
     private final EspecialidadRepository especialidadRepository; // v1.46.8: Para obtener médicos
     private final DetalleMedicoService detalleMedicoService; // v1.46.8: Para obtener médicos
     private final UsuarioRepository usuarioRepository; // ✅ v1.47.0: Para sincronizar gestora
+    private final SolicitudCitaRepository solicitudCitaRepository; // v1.67.0: Para horas ocupadas
 
     /**
      * Importa solicitudes desde archivo Excel
@@ -690,6 +695,52 @@ public class SolicitudBolsaController {
             log.error("❌ Error al obtener médicos para especialidad {}: {}", especialidad, e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("status", "error", "message", "Error al obtener médicos"));
+        }
+    }
+
+    /**
+     * v1.67.0: Obtener horas ocupadas de un profesional en una fecha
+     * GET /api/bolsas/solicitudes/horas-ocupadas?idPersonal=123&fecha=2026-02-25
+     *
+     * Consulta dim_solicitud_bolsa + solicitud_cita para obtener todas las horas ya reservadas
+     * @param idPersonal ID del profesional de salud
+     * @param fecha fecha en formato yyyy-MM-dd
+     * @return { "horasOcupadas": ["08:00", "09:30", "14:00"] }
+     */
+    @GetMapping("/horas-ocupadas")
+    public ResponseEntity<?> obtenerHorasOcupadas(
+            @RequestParam Long idPersonal,
+            @RequestParam String fecha) {
+        log.info("🕐 GET /horas-ocupadas idPersonal={} fecha={}", idPersonal, fecha);
+        try {
+            LocalDate fechaDate = LocalDate.parse(fecha);
+            DateTimeFormatter hhmm = DateTimeFormatter.ofPattern("HH:mm");
+            java.util.Set<String> horas = new java.util.TreeSet<>();
+
+            // 1. Horas de dim_solicitud_bolsa (fecha_atencion + hora_atencion)
+            List<SolicitudBolsa> bolsas = solicitudRepository
+                    .findByIdPersonalAndFechaAtencionAndActivoTrue(idPersonal, fechaDate);
+            for (SolicitudBolsa b : bolsas) {
+                if (b.getHoraAtencion() != null) {
+                    horas.add(b.getHoraAtencion().format(hhmm));
+                }
+            }
+
+            // 2. Horas de solicitud_cita (fecha_cita + hora_cita)
+            List<SolicitudCita> citas = solicitudCitaRepository
+                    .findByPersonal_IdPersAndFechaCita(idPersonal, fechaDate);
+            for (SolicitudCita c : citas) {
+                if (c.getHoraCita() != null) {
+                    horas.add(c.getHoraCita().format(hhmm));
+                }
+            }
+
+            log.info("✅ {} horas ocupadas para personal {} en {}", horas.size(), idPersonal, fecha);
+            return ResponseEntity.ok(Map.of("horasOcupadas", horas));
+        } catch (Exception e) {
+            log.error("❌ Error obteniendo horas ocupadas: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("status", "error", "message", "Error al obtener horas ocupadas"));
         }
     }
 
@@ -1364,6 +1415,18 @@ public class SolicitudBolsaController {
             log.error("❌ Error en asignación masiva: ", e);
             return ResponseEntity.status(500).body(Map.of("error", "Error interno: " + e.getMessage()));
         }
+    }
+
+    /**
+     * Sincroniza teléfonos vacíos desde la tabla asegurados hacia dim_solicitud_bolsa.
+     * POST /api/bolsas/solicitudes/sincronizar-telefonos
+     */
+    @PostMapping("/sincronizar-telefonos")
+    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'COORDINADOR', 'COORD. GESTION CITAS', 'GESTOR DE CITAS')")
+    public ResponseEntity<?> sincronizarTelefonos() {
+        log.info("📞 Ejecutando sincronización de teléfonos desde asegurados → dim_solicitud_bolsa...");
+        var resultado = solicitudBolsaService.sincronizarTelefonosDesdeAsegurados();
+        return ResponseEntity.ok(resultado);
     }
 
     /**

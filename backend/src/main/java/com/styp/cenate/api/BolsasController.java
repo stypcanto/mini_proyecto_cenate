@@ -227,6 +227,7 @@ public class BolsasController {
         return ResponseEntity.ok(resultado);
     }
 
+
     @GetMapping("/asegurados-sincronizados-reciente")
     @PreAuthorize("hasAnyRole('ADMIN', 'SUPERADMIN', 'COORDINADOR')")
     public ResponseEntity<?> obtenerAseguradosSincronizadosReciente() {

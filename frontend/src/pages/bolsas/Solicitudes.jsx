@@ -130,6 +130,9 @@ export default function Solicitudes() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [importStatus, setImportStatus] = useState(null);
 
+  // Estado para sincronización de teléfonos
+  const [isSyncingPhones, setIsSyncingPhones] = useState(false);
+
   // Estado para importación de Excel
   const [idTipoBolsaSeleccionado, setIdTipoBolsaSeleccionado] = useState('');
   const [idServicioSeleccionado, setIdServicioSeleccionado] = useState('');
@@ -2314,6 +2317,43 @@ export default function Solicitudes() {
                 <span>🆕</span>
                 {filtroEstado === 'PENDIENTE_CITA' ? '✓ Pacientes Nuevos' : 'Ver Pacientes Nuevos'}
               </button>
+
+              {/* Botón Sincronizar Teléfonos desde Asegurados */}
+              <div className="relative group">
+                <button
+                  onClick={async () => {
+                    if (isSyncingPhones) return;
+                    setIsSyncingPhones(true);
+                    try {
+                      const res = await bolsasService.sincronizarTelefonos();
+                      const data = res?.data || res;
+                      const { default: toast } = await import('react-hot-toast');
+                      if (data?.estado === 'exito') {
+                        toast.success(`${data.actualizados} teléfonos actualizados de ${data.total_sin_telefono} sin teléfono`);
+                        if (data.actualizados > 0) cargarSolicitudes();
+                      } else {
+                        toast.error(data?.mensaje || 'Error al sincronizar');
+                      }
+                    } catch (err) {
+                      const { default: toast } = await import('react-hot-toast');
+                      toast.error('Error al sincronizar teléfonos');
+                    } finally {
+                      setIsSyncingPhones(false);
+                    }
+                  }}
+                  disabled={isSyncingPhones}
+                  className="flex items-center gap-2 px-4 py-2 rounded-lg border text-xs font-semibold transition-all"
+                  style={{ background: isSyncingPhones ? '#e5e7eb' : '#eff6ff', color: isSyncingPhones ? '#9ca3af' : '#1d4ed8', borderColor: isSyncingPhones ? '#d1d5db' : '#93c5fd' }}
+                >
+                  <Phone size={14} className={isSyncingPhones ? 'animate-pulse' : ''} />
+                  {isSyncingPhones ? 'Sincronizando...' : 'Sincronizar Teléfonos'}
+                </button>
+                {/* Tooltip */}
+                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50 shadow-lg">
+                  Completa los teléfonos vacíos buscando en la base de asegurados por DNI
+                  <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-800" />
+                </div>
+              </div>
 
               {/* Selector de registros por página */}
               <div className="flex items-center gap-2 ml-auto">

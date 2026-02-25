@@ -1165,6 +1165,21 @@ export const exportarErroresImportacion = async () => {
   }
 };
 
+/**
+ * Sincroniza teléfonos desde la tabla asegurados hacia dim_solicitud_bolsa.
+ * Completa teléfonos faltantes buscando en la BD de asegurados por DNI.
+ * POST /api/bolsas/sincronizar-telefonos
+ */
+const sincronizarTelefonos = async () => {
+  try {
+    const response = await apiClient.post('/bolsas/solicitudes/sincronizar-telefonos', {}, true);
+    return response;
+  } catch (error) {
+    console.error('Error al sincronizar teléfonos:', error);
+    throw error;
+  }
+};
+
 export default {
   // Bolsas
   obtenerBolsas,
@@ -1244,4 +1259,7 @@ export default {
 
   // BOLSA X GESTOR
   obtenerEstadisticasPorGestora,
+
+  // SINCRONIZACIÓN DE TELÉFONOS
+  sincronizarTelefonos,
 };
