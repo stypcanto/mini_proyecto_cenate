@@ -35,6 +35,14 @@ public interface TicketMesaAyudaRepository extends JpaRepository<TicketMesaAyuda
     List<TicketMesaAyuda> findAllByDeletedAtIsNullOrderByFechaCreacionDesc();
 
     /**
+     * Obtener todos los tickets filtrados por una lista de estados
+     * Ordenados por fecha de creación descendente
+     * @param estados Lista de estados a filtrar
+     * @return Lista de tickets
+     */
+    List<TicketMesaAyuda> findByDeletedAtIsNullAndEstadoInOrderByFechaCreacionDesc(List<String> estados);
+
+    /**
      * Obtener todos los tickets con paginación
      * Solo tickets no eliminados (deletedAt IS NULL)
      */

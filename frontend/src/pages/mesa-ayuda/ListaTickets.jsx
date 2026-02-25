@@ -124,7 +124,7 @@ function ListaTickets() {
 
   useEffect(() => {
     fetchTickets();
-  }, [currentPage, pageSize, modoConfig.estadosBackend]);
+  }, [modoConfig.estadosBackend]);
 
   // Cargar lista de personal Mesa de Ayuda al montar
   useEffect(() => {
@@ -164,10 +164,12 @@ function ListaTickets() {
 
       // Usar los estados del modo (pendientes: NUEVO,EN_PROCESO; atendidos: RESUELTO,CERRADO)
       const estadoParam = modoConfig.estadosBackend || null;
-      const response = await mesaAyudaService.obtenerTodos(currentPage, pageSize, estadoParam);
+      // Cargar TODOS los registros SIN paginación en backend para que el filtrado sea 100% en frontend
+      const response = await mesaAyudaService.obtenerTodosSinPaginacion(estadoParam);
 
-      setTickets(response.data.content || []);
-      setTotalPages(response.data.totalPages || 0);
+      // El endpoint retorna un array directo, no un Page
+      setTickets(Array.isArray(response.data) ? response.data : response.data.content || []);
+      setTotalPages(1); // Una única página ya que cargamos toda la data de una vez
     } catch (err) {
       console.error('Error cargando tickets:', err);
       setError('Error al cargar los tickets');

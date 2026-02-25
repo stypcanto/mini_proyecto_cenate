@@ -18,6 +18,8 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import jakarta.annotation.PostConstruct;
@@ -159,6 +161,27 @@ public class TicketMesaAyudaController {
         } else {
             resultado = ticketService.obtenerTodosPaginado(pageable);
         }
+
+        return ResponseEntity.ok(resultado);
+    }
+
+    // ========== OBTENER TODOS SIN PAGINACIÓN ==========
+
+    /**
+     * Obtener TODOS los tickets SIN paginación (para filtrado completo en frontend)
+     *
+     * @param estado Filtro opcional por estado
+     * @return ResponseEntity con lista completa de tickets
+     * @status 200 OK
+     */
+    @GetMapping("/tickets/all")
+    public ResponseEntity<List<TicketMesaAyudaResponseDTO>> obtenerTodosSinPaginacion(
+        @RequestParam(required = false) String estado
+    ) {
+        log.info("GET /api/mesa-ayuda/tickets/all - Obteniendo TODOS los tickets sin paginación");
+        log.debug("  Estado: {}", estado);
+
+        List<TicketMesaAyudaResponseDTO> resultado = ticketService.obtenerTodosSinPaginacion(estado);
 
         return ResponseEntity.ok(resultado);
     }

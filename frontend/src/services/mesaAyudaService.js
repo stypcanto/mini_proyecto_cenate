@@ -21,7 +21,7 @@ export const mesaAyudaService = {
   },
 
   /**
-   * Obtener todos los tickets con paginación
+   * Obtener todos los tickets CON paginación
    * @param {number} page Número de página (default 0)
    * @param {number} size Tamaño de página (default 20)
    * @param {string} estado Filtro por estado (opcional)
@@ -33,6 +33,21 @@ export const mesaAyudaService = {
       url += `&estado=${encodeURIComponent(estado)}`;
     }
     console.log('Fetching all tickets:', { page, size, estado });
+    const response = await apiClient.get(url, true);
+    return { data: response };
+  },
+
+  /**
+   * Obtener TODOS los tickets SIN paginación (para filtrado completo en frontend)
+   * @param {string} estado Filtro por estado (opcional)
+   * @returns {Promise} Lista completa de tickets
+   */
+  obtenerTodosSinPaginacion: async (estado = null) => {
+    let url = `${ENDPOINT}/tickets/all`;
+    if (estado) {
+      url += `?estado=${encodeURIComponent(estado)}`;
+    }
+    console.log('Fetching ALL tickets without pagination:', { estado });
     const response = await apiClient.get(url, true);
     return { data: response };
   },

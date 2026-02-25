@@ -27,6 +27,7 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -224,6 +225,33 @@ public class TicketMesaAyudaService {
         log.debug("Obteniendo todos los tickets");
         return ticketRepository.findAllByDeletedAtIsNullOrderByFechaCreacionDesc()
             .stream()
+            .map(this::toResponseDTO)
+            .collect(Collectors.toList());
+    }
+
+    /**
+     * Obtener TODOS los tickets SIN paginación, opcionalmente filtrados por estado
+     * (Para filtrado completo en el frontend)
+     *
+     * @param estado Estados a filtrar (ej: "RESUELTO,CERRADO"), o null para todos
+     * @return Lista completa de tickets
+     */
+    @Transactional(readOnly = true)
+    public List<TicketMesaAyudaResponseDTO> obtenerTodosSinPaginacion(String estado) {
+        log.debug("Obteniendo TODOS los tickets sin paginación. Estado: {}", estado);
+
+        List<TicketMesaAyuda> tickets;
+
+        if (estado != null && !estado.isBlank()) {
+            // Filtrar por estados específicos
+            List<String> estadosList = Arrays.asList(estado.split(","));
+            tickets = ticketRepository.findByDeletedAtIsNullAndEstadoInOrderByFechaCreacionDesc(estadosList);
+        } else {
+            // Obtener todos sin filtro de estado
+            tickets = ticketRepository.findAllByDeletedAtIsNullOrderByFechaCreacionDesc();
+        }
+
+        return tickets.stream()
             .map(this::toResponseDTO)
             .collect(Collectors.toList());
     }
