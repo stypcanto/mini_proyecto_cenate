@@ -527,6 +527,19 @@ public class TeleECGController {
                 })
                 .collect(Collectors.toList());
 
+            // ✅ LOG JSON: Lo que se envía al frontend
+            try {
+                com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+                // Registrar módulo para manejar LocalDateTime
+                mapper.registerModule(new com.fasterxml.jackson.datatype.jsr310.JavaTimeModule());
+                mapper.disable(com.fasterxml.jackson.databind.SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+                String jsonResponse = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(resultado);
+                log.info("\n\n🔥🔥🔥 JSON ENVIADO AL FRONTEND 🔥🔥🔥\n{}\n🔥🔥🔥 FIN JSON 🔥🔥🔥\n", jsonResponse);
+            } catch (Exception e) {
+                log.warn("⚠️ No se pudo loguear JSON: {}", e.getMessage());
+                log.info("✅ Backend Response - Total asegurados a devolver: {}", resultado.size());
+            }
+
             return ResponseEntity.ok(new ApiResponse<>(
                 true,
                 "ECGs agrupadas por asegurado",

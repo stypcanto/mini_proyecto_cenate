@@ -34,6 +34,7 @@ import toast from 'react-hot-toast';
 import teleecgService from '../../services/teleecgService';
 import * as XLSX from 'xlsx';
 import apiClient from '../../lib/apiClient';
+import { logRespuestaConsola } from '../../utils/consoleResponseLogger';
 
 // ✅ v1.76.5: Función auxiliar para parsear fechas sin offset de timezone
 const parsearFechaSegura = (fechaStr) => {
@@ -147,6 +148,25 @@ export default function MisECGsRecientes({
     try {
       toast.loading('Obteniendo todos los atendidos...');
       const resultado = await teleecgService.listarAgrupoPorAsegurado('', 'ATENDIDA');
+      
+      // ✅ Log CRUDO: Todo lo que devuelve el backend
+      console.log("\n\n");
+      console.log("═══════════════════════════════════════════════════════════");
+      console.log("📦 [BACKEND - DATOS PROCESADOS EN FRONTEND] Array de asegurados:");
+      console.log(JSON.stringify(resultado, null, 2));
+      console.log("═══════════════════════════════════════════════════════════\n\n");
+      
+      logRespuestaConsola({
+        titulo: 'Descarga Atendidos Excel',
+        endpoint: '/api/teleekgs/agrupar-por-asegurado?estado=ATENDIDA',
+        method: 'GET',
+        enviado: { estado: 'ATENDIDA' },
+        status: 200,
+        devuelto: { totalAsegurados: resultado?.length || 0 },
+        fuente: '/teleecgs/ipress-workspace',
+        etiquetaIdentificador: 'Total'
+      });
+      
       toast.dismiss();
 
       if (!resultado || resultado.length === 0) {
@@ -160,13 +180,13 @@ export default function MisECGsRecientes({
         const ultima = imagenes[imagenes.length - 1] || {};
         return {
           '#': i + 1,
-          'DNI': asegurado.dni || ultima.numDocPaciente || '-',
-          'Paciente': asegurado.nombrePaciente || ultima.nombrePaciente || '-',
-          'Edad': asegurado.edad || ultima.edadPaciente || '-',
-          'Género': (asegurado.genero || ultima.generoPaciente) === 'M' ? 'Masculino' : (asegurado.genero || ultima.generoPaciente) === 'F' ? 'Femenino' : '-',
+          'DNI': asegurado.numDocPaciente || ultima.numDocPaciente || '-',
+          'Paciente': asegurado.pacienteNombreCompleto || asegurado.nombresPaciente || ultima.pacienteNombreCompleto || '-',
+          'Edad': asegurado.edadPaciente || ultima.edadPaciente || '-',
+          'Género': (asegurado.generoPaciente || ultima.generoPaciente) === 'M' ? 'Masculino' : (asegurado.generoPaciente || ultima.generoPaciente) === 'F' ? 'Femenino' : '-',
           'Estado': 'Atendida',
           'Cant. Imágenes': imagenes.length || 0,
-          'Evaluación': ultima.evaluacion || '-',
+          'Evaluación': ultima.evaluacion || ultima.evaluacionPrincipal || '-',
           'Fecha EKG': ultima.fechaToma ? formatearFechaExcel(ultima.fechaToma) : '-',
           'Fecha Envío': ultima.fechaEnvio ? formatearFechaExcel(ultima.fechaEnvio) : '-',
         };
@@ -183,6 +203,14 @@ export default function MisECGsRecientes({
       toast.success(`✅ ${resultado.length} pacientes exportados`);
     } catch (e) {
       toast.dismiss();
+      logRespuestaConsola({
+        titulo: 'Descarga Atendidos Excel - ERROR',
+        endpoint: '/api/teleekgs/agrupar-por-asegurado?estado=ATENDIDA',
+        method: 'GET',
+        status: 500,
+        devuelto: { error: e.message },
+        fuente: '/teleecgs/ipress-workspace',
+      });
       toast.error('Error al obtener datos del servidor');
     } finally {
       setDescargandoAtendidos(false);
@@ -196,6 +224,26 @@ export default function MisECGsRecientes({
       toast.loading('Obteniendo datos de evaluaciones...');
       // Obtener todos los pacientes atendidos agrupados con sus evaluaciones
       const resultado = await teleecgService.listarAgrupoPorAsegurado('', 'ATENDIDA');
+      
+      // ✅ Log CRUDO: Todo lo que devuelve el backend
+      console.log("\n\n");
+      console.log("═══════════════════════════════════════════════════════════");
+      console.log("📦 [BACKEND - DATOS PROCESADOS EN FRONTEND - EVALUACIÓN] Array de asegurados:");
+      console.log(JSON.stringify(resultado, null, 2));
+      console.log("═══════════════════════════════════════════════════════════\n\n");
+      
+      logRespuestaConsola({
+        titulo: 'Descarga Por Evaluación Excel',
+        endpoint: '/api/teleekgs/agrupar-por-asegurado?estado=ATENDIDA',
+        method: 'GET',
+        enviado: { estado: 'ATENDIDA', evaluacion: descargaEvaluacion },
+        status: 200,
+        devuelto: { totalAsegurados: resultado?.length || 0 },
+        fuente: '/teleecgs/ipress-workspace',
+        identificador: descargaEvaluacion,
+        etiquetaIdentificador: 'Evaluación'
+      });
+      
       toast.dismiss();
 
       if (!resultado || resultado.length === 0) {
@@ -221,16 +269,16 @@ export default function MisECGsRecientes({
         const ultimaEval = [...imagenes].reverse().find(img => img.evaluacion === descargaEvaluacion);
         return {
           '#': i + 1,
-          'DNI': asegurado.numDoc || asegurado.numDocPaciente || '-',
-          'Paciente': asegurado.nombreCompleto || asegurado.apellidosNombres || '-',
-          'Edad': asegurado.edadPaciente || asegurado.edad || '-',
-          'Género': (asegurado.generoPaciente || asegurado.genero) === 'M' ? 'Masculino' : (asegurado.generoPaciente || asegurado.genero) === 'F' ? 'Femenino' : '-',
+          'DNI': asegurado.numDocPaciente || '-',
+          'Paciente': asegurado.pacienteNombreCompleto || asegurado.nombresPaciente || '-',
+          'Edad': asegurado.edadPaciente || '-',
+          'Género': asegurado.generoPaciente === 'M' ? 'Masculino' : asegurado.generoPaciente === 'F' ? 'Femenino' : '-',
           'Estado': 'Atendida',
           'Evaluación': descargaEvaluacion,
           'Cant. Imágenes': imagenes.length,
-          'Fecha Evaluación': ultimaEval?.fechaEvaluacion ? formatearFechaExcel(ultimaEval.fechaEvaluacion) : '-',
-          'Hallazgos': ultimaEval?.hallazgos || '-',
-          'Observaciones': ultimaEval?.observacionesClinicas || '-',
+          'Fecha Evaluación': ultimaEval?.fechaEnvio ? formatearFechaExcel(ultimaEval.fechaEnvio) : '-',
+          'Hallazgos': ultimaEval?.notaClinicaHallazgos || '-',
+          'Observaciones': ultimaEval?.notaClinicaObservaciones || '-',
         };
       });
 
@@ -245,6 +293,16 @@ export default function MisECGsRecientes({
       toast.success(`✅ ${filtrados.length} pacientes con evaluación ${descargaEvaluacion} exportados`);
     } catch (e) {
       toast.dismiss();
+      logRespuestaConsola({
+        titulo: 'Descarga Por Evaluación Excel - ERROR',
+        endpoint: '/api/teleekgs/agrupar-por-asegurado?estado=ATENDIDA',
+        method: 'GET',
+        status: 500,
+        devuelto: { error: e.message },
+        fuente: '/teleecgs/ipress-workspace',
+        identificador: descargaEvaluacion,
+        etiquetaIdentificador: 'Evaluación'
+      });
       toast.error('Error al generar el Excel: ' + e.message);
     } finally {
       setDescargandoEvaluacion(false);

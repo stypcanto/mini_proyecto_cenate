@@ -607,8 +607,63 @@ const teleecgService = {
       console.log("📋 [LISTAR AGRUPADO]:", url);
 
       const response = await apiClient.get(url, true);
-      console.log("✅ [Agrupadas Cargadas]:", response.data?.length || 0, "asegurados");
-      return response.data || [];
+      
+      // 🔥 LOG COMPLETO: TODA la respuesta del backend (ApiResponse wrapper + data)
+      console.log("\n\n");
+      console.log("🔥🔥🔥 RESPUESTA COMPLETA DEL BACKEND (CON WRAPPER) 🔥🔥🔥");
+      console.log(JSON.stringify(response, null, 2));
+      console.log("🔥🔥🔥 FIN RESPUESTA COMPLETA 🔥🔥🔥");
+      console.log("\n\n");
+      
+      console.log("✅ [Response RAW]:", response);
+      console.log("✅ [Response data]:", response?.data);
+      
+      // ✅ Backend retorna un Array de AseguradoConECGsDTO
+      // Viene en snake_case: { num_doc_paciente, nombres_paciente, ... }
+      let arrayAsegurados = response?.data || [];
+      
+      console.log("✅ [Agrupadas Cargadas]:", arrayAsegurados.length, "asegurados");
+      
+      // 🔍 DEBUG: Mostrar estructura del PRIMER asegurado ANTES de transformar
+      if (arrayAsegurados.length > 0) {
+        console.log("🔍 [PRIMER ASEGURADO - ANTES DE TRANSFORMAR]:", arrayAsegurados[0]);
+        console.log("🔍 [PROPIEDADES]:", Object.keys(arrayAsegurados[0]));
+      }
+      
+      // ✅ v1.106.1: Transformar snake_case a camelCase
+      arrayAsegurados = arrayAsegurados.map((asegurado) => ({
+        // Mapear propiedades snake_case a camelCase
+        numDocPaciente: asegurado.num_doc_paciente || asegurado.numDocPaciente,
+        nombresPaciente: asegurado.nombres_paciente || asegurado.nombresPaciente,
+        apellidosPaciente: asegurado.apellidos_paciente || asegurado.apellidosPaciente,
+        pacienteNombreCompleto: asegurado.paciente_nombre_completo || asegurado.pacienteNombreCompleto,
+        nombreIpress: asegurado.nombre_ipress || asegurado.nombreIpress,
+        codigoIpress: asegurado.codigo_ipress || asegurado.codigoIpress,
+        telefonoPrincipal: asegurado.telefono_principal || asegurado.telefonoPrincipal,
+        edadPaciente: asegurado.edad_paciente || asegurado.edadPaciente,
+        generoPaciente: asegurado.genero_paciente || asegurado.generoPaciente,
+        totalEcgs: asegurado.total_ecgs || asegurado.totalEcgs,
+        fechaPrimerEcg: asegurado.fecha_primer_ecg || asegurado.fechaPrimerEcg,
+        fechaUltimoEcg: asegurado.fecha_ultimo_ecg || asegurado.fechaUltimoEcg,
+        estadoPrincipal: asegurado.estado_principal || asegurado.estadoPrincipal,
+        estadoTransformado: asegurado.estado_transformado || asegurado.estadoTransformado,
+        evaluacionPrincipal: asegurado.evaluacion_principal || asegurado.evaluacionPrincipal,
+        ecgsPendientes: asegurado.ecgs_pendientes || asegurado.ecgsPendientes,
+        ecgsObservadas: asegurado.ecgs_observadas || asegurado.ecgsObservadas,
+        ecgsAtendidas: asegurado.ecgs_atendidas || asegurado.ecgsAtendidas,
+        // ✅ Transformar también la lista anidada de imágenes (mantener como está si ya están transformadas)
+        imagenes: asegurado.imagenes || []
+      }));
+      
+      // 🔍 DEBUG: Mostrar DESPUÉS de transformar
+      if (arrayAsegurados.length > 0) {
+        console.log("🔍 [PRIMER ASEGURADO - DESPUÉS DE TRANSFORMAR]:", arrayAsegurados[0]);
+        console.log("🔍 [numDocPaciente]:", arrayAsegurados[0].numDocPaciente);
+        console.log("🔍 [nombresPaciente]:", arrayAsegurados[0].nombresPaciente);
+        console.log("🔍 [pacienteNombreCompleto]:", arrayAsegurados[0].pacienteNombreCompleto);
+      }
+      
+      return arrayAsegurados;
     } catch (error) {
       console.error("❌ Error al listar agrupadas:", error.message);
       throw error;
