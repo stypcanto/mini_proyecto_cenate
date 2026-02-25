@@ -6,6 +6,7 @@ import com.styp.cenate.dto.DesasignarEstrategiaRequest;
 import com.styp.cenate.dto.PacienteEstrategiaResponse;
 import com.styp.cenate.model.PacienteEstrategia;
 import com.styp.cenate.model.Usuario;
+import com.styp.cenate.repository.AseguradoRepository;
 import com.styp.cenate.repository.PacienteEstrategiaRepository;
 import com.styp.cenate.service.PacienteEstrategiaService;
 import com.styp.cenate.repository.UsuarioRepository;
@@ -67,6 +68,7 @@ public class PacienteEstrategiaController {
     private final PacienteEstrategiaService pacienteEstrategiaService;
     private final UsuarioRepository usuarioRepository;
     private final PacienteEstrategiaRepository pacienteEstrategiaRepository;
+    private final AseguradoRepository aseguradoRepository;
 
     /**
      * Asigna una estrategia a un paciente
@@ -190,6 +192,14 @@ public class PacienteEstrategiaController {
             asignacion.setUsuarioDesvinculo(usuarioDesvinculo);
 
             asignacion = pacienteEstrategiaRepository.save(asignacion);
+
+            // Sincronizar paciente_cronico=false en asegurados al dar de baja
+            try {
+                int filas = aseguradoRepository.actualizarPacienteCronico(pkAsegurado, false);
+                log.info("✅ paciente_cronico=false sincronizado en asegurados para DNI {} ({} fila/s)", pkAsegurado, filas);
+            } catch (Exception exSync) {
+                log.warn("⚠️ No se pudo sincronizar paciente_cronico al dar de baja CENACRON (DNI {}): {}", pkAsegurado, exSync.getMessage());
+            }
 
             log.info("Baja CENACRON completada. Paciente: {}, NuevoEstado: {}, Auditor: {}",
                     pkAsegurado, nuevoEstado,
@@ -474,6 +484,41 @@ public class PacienteEstrategiaController {
 
         } catch (Exception e) {
             log.error("❌ Error al verificar asignación: {}", e.getMessage(), e);
+            Map<String, Object> error = new HashMap<>();
+            error.put("success", false);
+            error.put("error", "Error interno del servidor");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
+        }
+    }
+
+    /**
+     * Lista paginada de bajas del programa CENACRON con datos de auditoría.
+     * GET /api/paciente-estrategia/bajas-cenacron
+     */
+    @GetMapping("/bajas-cenacron")
+    @PreAuthorize("hasAnyRole('SUPERADMIN','ADMIN','COORDINADOR','MEDICO','ENFERMERIA')")
+    @Operation(summary = "Listar bajas CENACRON",
+            description = "Retorna lista paginada de pacientes dados de baja del programa CENACRON " +
+                          "(estados INACTIVO o COMPLETADO) con datos completos de auditoría")
+    public ResponseEntity<Map<String, Object>> listarBajasCenacron(
+            @RequestParam(required = false) String busqueda,
+            @RequestParam(required = false) String estado,
+            @RequestParam(required = false) String fechaInicio,
+            @RequestParam(required = false) String fechaFin,
+            @RequestParam(defaultValue = "0")  int page,
+            @RequestParam(defaultValue = "25") int size) {
+        try {
+            log.info("📋 Listando bajas CENACRON — busqueda={}, estado={}, fechaInicio={}, fechaFin={}, page={}, size={}",
+                    busqueda, estado, fechaInicio, fechaFin, page, size);
+
+            Map<String, Object> resultado = pacienteEstrategiaService
+                    .listarBajasCenacron(busqueda, estado, fechaInicio, fechaFin, page, size);
+
+            resultado.put("success", true);
+            return ResponseEntity.ok(resultado);
+
+        } catch (Exception e) {
+            log.error("❌ Error al listar bajas CENACRON: {}", e.getMessage(), e);
             Map<String, Object> error = new HashMap<>();
             error.put("success", false);
             error.put("error", "Error interno del servidor");

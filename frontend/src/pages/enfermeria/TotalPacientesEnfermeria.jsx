@@ -71,7 +71,7 @@ function Badge({ valor, accent, bg }) {
 }
 
 // ── Selector calendario de fecha ─────────────────────────────
-function SelectorFecha({ fecha, onChange }) {
+function SelectorFecha({ fecha, onChange, diasConDatos = {} }) {
   const [abierto, setAbierto] = useState(false);
   const [anio, setAnio]       = useState(new Date().getFullYear());
   const [mes, setMes]         = useState(new Date().getMonth());
@@ -145,23 +145,34 @@ function SelectorFecha({ fecha, onChange }) {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', padding: '4px 8px 10px', gap: '2px' }}>
             {Array.from({ length: primerDia }, (_, i) => <div key={`e${i}`} />)}
             {Array.from({ length: diasEnMes }, (_, idx) => {
-              const dia      = idx + 1;
-              const fechaStr = `${anio}-${padMes(mes)}-${padDia(dia)}`;
-              const esHoy    = fechaStr === HOY;
-              const activo   = fechaStr === fecha;
+              const dia        = idx + 1;
+              const fechaStr   = `${anio}-${padMes(mes)}-${padDia(dia)}`;
+              const esHoy      = fechaStr === HOY;
+              const activo     = fechaStr === fecha;
+              const totalDia   = diasConDatos[fechaStr];
+              const tieneDatos = !!totalDia;
               return (
                 <button
                   key={fechaStr}
                   onClick={() => { onChange(activo ? null : fechaStr); setAbierto(false); }}
+                  title={tieneDatos ? `${totalDia} pacientes` : undefined}
                   style={{
                     display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-                    padding: '4px 2px', borderRadius: '8px', minHeight: '36px', cursor: 'pointer',
+                    padding: '3px 2px', borderRadius: '8px', minHeight: '38px', cursor: 'pointer',
                     border: esHoy ? '2px solid #0D5BA9' : '2px solid transparent',
-                    background: activo ? '#0D5BA9' : 'transparent',
+                    background: activo ? '#0D5BA9' : tieneDatos ? '#f0f7ff' : 'transparent',
                     color: activo ? '#fff' : '#1e293b', transition: 'all 0.1s',
                   }}
                 >
-                  <span style={{ fontSize: '12px', fontWeight: (esHoy || activo) ? '800' : '500', lineHeight: 1 }}>{dia}</span>
+                  <span style={{ fontSize: '12px', fontWeight: (esHoy || activo || tieneDatos) ? '800' : '400', lineHeight: 1 }}>{dia}</span>
+                  {tieneDatos && (
+                    <span style={{
+                      fontSize: '9px', fontWeight: '700', lineHeight: 1, marginTop: '2px',
+                      color: activo ? '#bfdbfe' : '#0D5BA9',
+                    }}>
+                      {totalDia > 999 ? '999+' : totalDia}
+                    </span>
+                  )}
                 </button>
               );
             })}
@@ -268,7 +279,7 @@ function AutocompleteEnfermera({ enfermeras, value, onChange, placeholder }) {
 // ══════════════════════════════════════════════════════════════
 // Drawer lateral — detalle de pacientes de una enfermera
 // ══════════════════════════════════════════════════════════════
-function DrawerEnfermera({ enfermera, fecha, onClose, onReasignacionExitosa }) {
+function DrawerEnfermera({ enfermera, fecha, turno, onClose, onReasignacionExitosa }) {
   const [pacientes,      setPacientes]      = useState([]);
   const [loading,        setLoading]        = useState(true);
   const [busqueda,       setBusqueda]       = useState('');
@@ -287,6 +298,7 @@ function DrawerEnfermera({ enfermera, fecha, onClose, onReasignacionExitosa }) {
       try {
         let url = `/enfermeria/pacientes/por-enfermera?idPersonal=${enfermera.id_enfermera}`;
         if (fecha) url += `&fecha=${fecha}`;
+        if (turno) url += `&turno=${turno}`;
         const data = await apiClient.get(url, true);
         setPacientes(Array.isArray(data) ? data : []);
       } catch (e) {
@@ -699,6 +711,8 @@ export default function TotalPacientesEnfermeria() {
   const [loading,        setLoading]        = useState(true);
   const [error,          setError]          = useState('');
   const [fecha,          setFecha]          = useState(null);
+  const [diasConDatos,   setDiasConDatos]   = useState({});
+  const [turno,          setTurno]          = useState(null); // null | 'MANANA' | 'TARDE'
   const [busqueda,       setBusqueda]       = useState('');
   const [sortCol,        setSortCol]        = useState('total');
   const [sortDir,        setSortDir]        = useState('desc');
@@ -713,12 +727,15 @@ export default function TotalPacientesEnfermeria() {
     }
   };
 
-  const cargar = useCallback(async (f) => {
+  const cargar = useCallback(async (f, t) => {
     setLoading(true);
     setError('');
     try {
-      let url = '/enfermeria/estadisticas/por-enfermera';
-      if (f) url += `?fecha=${f}`;
+      const params = new URLSearchParams();
+      if (f) params.set('fecha', f);
+      if (t) params.set('turno', t);
+      const qs  = params.toString();
+      const url = '/enfermeria/estadisticas/por-enfermera' + (qs ? `?${qs}` : '');
       const data = await apiClient.get(url, true);
       setEnfermeras(Array.isArray(data) ? data : []);
     } catch (err) {
@@ -729,11 +746,22 @@ export default function TotalPacientesEnfermeria() {
     }
   }, []);
 
-  useEffect(() => { cargar(null); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    cargar(null, null);
+    apiClient.get('/enfermeria/estadisticas/fechas-disponibles', true)
+      .then(data => { if (data && typeof data === 'object') setDiasConDatos(data); })
+      .catch(() => {});
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleSelectFecha = (f) => {
     setFecha(f);
-    cargar(f);
+    cargar(f, turno);
+  };
+
+  const handleTurno = (t) => {
+    const nuevo = turno === t ? null : t;
+    setTurno(nuevo);
+    cargar(fecha, nuevo);
   };
 
   // Totales generales
@@ -797,7 +825,7 @@ export default function TotalPacientesEnfermeria() {
           <div>
             <h2 style={{ margin: 0, fontSize: '20px', fontWeight: '700', color: '#0f172a' }}>Total Pacientes Enfermería</h2>
             <p style={{ margin: '2px 0 0', fontSize: '12px', color: '#64748b' }}>
-              {fecha || 'Todas las fechas'} · <strong style={{ color: '#0D5BA9' }}>{totales.total.toLocaleString()}</strong> pacientes · {enfermeras.length} enfermeras ·{' '}
+              {fecha || 'Todas las fechas'}{turno ? ` · ${turno === 'MANANA' ? '☀️ Mañana' : '🌆 Tarde'}` : ''} · <strong style={{ color: '#0D5BA9' }}>{totales.total.toLocaleString()}</strong> pacientes · {enfermeras.length} enfermeras ·{' '}
               <span style={{ color: '#94a3b8' }}>Clic en una fila para ver detalle y reasignar</span>
             </p>
           </div>
@@ -810,12 +838,13 @@ export default function TotalPacientesEnfermeria() {
         </button>
       </div>
 
-      {/* Filtro por fecha */}
-      <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '14px 16px' }}>
+      {/* Filtros: fecha + turno */}
+      <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+        {/* Fila 1: fecha */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
           <Calendar size={15} color="#64748b" />
           <span style={{ fontSize: '12px', fontWeight: '600', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Fecha de atención</span>
-          <SelectorFecha fecha={fecha} onChange={handleSelectFecha} />
+          <SelectorFecha fecha={fecha} onChange={handleSelectFecha} diasConDatos={diasConDatos} />
           {fecha && (
             <button
               onClick={() => handleSelectFecha(null)}
@@ -827,6 +856,42 @@ export default function TotalPacientesEnfermeria() {
               }}
             >
               {fecha} <XCircle size={13} style={{ opacity: 0.8 }} />
+            </button>
+          )}
+        </div>
+        {/* Fila 2: turno */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+          <span style={{ fontSize: '12px', fontWeight: '600', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Turno</span>
+          {[
+            { key: 'MANANA', label: '☀️ Mañana', sub: '07:00 – 13:59' },
+            { key: 'TARDE',  label: '🌆 Tarde',   sub: '14:00 – 20:59' },
+          ].map(({ key, label, sub }) => {
+            const activo = turno === key;
+            return (
+              <button
+                key={key}
+                onClick={() => handleTurno(key)}
+                title={sub}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: '6px',
+                  padding: '5px 14px', borderRadius: '20px', cursor: 'pointer',
+                  border: `1.5px solid ${activo ? '#0D5BA9' : '#cbd5e1'}`,
+                  background: activo ? '#0D5BA9' : '#f8fafc',
+                  color: activo ? '#fff' : '#475569',
+                  fontSize: '13px', fontWeight: '600', transition: 'all 0.15s',
+                }}
+              >
+                {label}
+                <span style={{ fontSize: '10px', opacity: 0.75 }}>({sub})</span>
+              </button>
+            );
+          })}
+          {turno && (
+            <button
+              onClick={() => handleTurno(turno)}
+              style={{ fontSize: '11px', color: '#64748b', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline' }}
+            >
+              Ver todos los turnos
             </button>
           )}
         </div>
@@ -1039,8 +1104,9 @@ export default function TotalPacientesEnfermeria() {
         <DrawerEnfermera
           enfermera={enfermeraDrawer}
           fecha={fecha}
+          turno={turno}
           onClose={() => setEnfermeraDrawer(null)}
-          onReasignacionExitosa={() => cargar(fecha)}
+          onReasignacionExitosa={() => cargar(fecha, turno)}
         />
       )}
     </div>

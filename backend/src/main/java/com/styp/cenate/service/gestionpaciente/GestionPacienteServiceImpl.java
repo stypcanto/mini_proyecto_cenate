@@ -479,6 +479,8 @@ public class GestionPacienteServiceImpl implements IGestionPacienteService {
                     .collect(Collectors.toList());
 
                 // 🏷️ Enriquecer con flag CENACRON (consulta masiva para evitar N+1)
+                // Fuente 1: paciente_estrategia con estado=ACTIVO
+                // Fuente 2: asegurados.paciente_cronico=true (sincronizado con lista de asegurados)
                 try {
                     List<String> todosLosDnis = dtoList.stream()
                         .map(GestionPacienteDTO::getNumDoc)
@@ -489,7 +491,17 @@ public class GestionPacienteServiceImpl implements IGestionPacienteService {
                         List<String> dnisCenacron = pacienteEstrategiaRepository
                             .findDnisPertenecentesAEstrategia(todosLosDnis, "CENACRON");
                         Set<String> setCenacron = new java.util.HashSet<>(dnisCenacron);
-                        log.info("   🏷️ CENACRON: {} pacientes identificados de {} DNIs", setCenacron.size(), todosLosDnis.size());
+
+                        // Fuente 2: asegurados.paciente_cronico (tabla base — badge en lista de asegurados)
+                        try {
+                            List<String> dnisCronicoAsegurados = aseguradoRepository
+                                .findDnisCronicosByDocPacienteIn(todosLosDnis);
+                            setCenacron.addAll(dnisCronicoAsegurados);
+                        } catch (Exception exCronico) {
+                            log.warn("⚠️ No se pudo consultar paciente_cronico en asegurados: {}", exCronico.getMessage());
+                        }
+
+                        log.info("   🏷️ CENACRON: {} pacientes identificados de {} DNIs (estrategia+asegurados)", setCenacron.size(), todosLosDnis.size());
                         dtoList.forEach(dto -> dto.setEsCenacron(setCenacron.contains(dto.getNumDoc())));
                     }
                 } catch (Exception ex) {

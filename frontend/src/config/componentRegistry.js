@@ -440,6 +440,11 @@ export const componentRegistry = {
     requiredAction: null, // Sin protección MBAC
   },
 
+  '/asegurados/bajas-cenacron': {
+    component: lazy(() => import('../pages/asegurados/BajasCenacron')),
+    requiredAction: null, // Sin protección MBAC adicional
+  },
+
   // ========================================================================
   // 🤖 MÓDULO CHATBOT DE CITAS
   // ========================================================================

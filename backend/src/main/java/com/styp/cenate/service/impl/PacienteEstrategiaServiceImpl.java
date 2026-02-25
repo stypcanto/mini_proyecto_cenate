@@ -1,11 +1,13 @@
 package com.styp.cenate.service.impl;
 
 import com.styp.cenate.dto.AsignarEstrategiaRequest;
+import com.styp.cenate.dto.BajaCenacronListDto;
 import com.styp.cenate.dto.DesasignarEstrategiaRequest;
 import com.styp.cenate.dto.PacienteEstrategiaResponse;
 import com.styp.cenate.model.Usuario;
 import com.styp.cenate.model.EstrategiaInstitucional;
 import com.styp.cenate.model.PacienteEstrategia;
+import com.styp.cenate.repository.AseguradoRepository;
 import com.styp.cenate.repository.PacienteEstrategiaRepository;
 import com.styp.cenate.repository.UsuarioRepository;
 import com.styp.cenate.repository.EstrategiaInstitucionalRepository;
@@ -17,8 +19,11 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
@@ -36,6 +41,7 @@ public class PacienteEstrategiaServiceImpl implements PacienteEstrategiaService 
     private final PacienteEstrategiaRepository pacienteEstrategiaRepository;
     private final EstrategiaInstitucionalRepository estrategiaRepository;
     private final UsuarioRepository usuariosRepository;
+    private final AseguradoRepository aseguradoRepository;
 
     /**
      * Asigna una estrategia a un paciente
@@ -87,6 +93,16 @@ public class PacienteEstrategiaServiceImpl implements PacienteEstrategiaService 
 
         log.info("Estrategia {} asignada exitosamente al paciente {}",
                 request.getIdEstrategia(), request.getPkAsegurado());
+
+        // Sincronizar paciente_cronico en asegurados si la estrategia es CENACRON
+        if ("CENACRON".equalsIgnoreCase(estrategia.getSigla())) {
+            try {
+                int filas = aseguradoRepository.actualizarPacienteCronico(request.getPkAsegurado(), true);
+                log.info("✅ paciente_cronico=true sincronizado en asegurados para DNI {} ({} fila/s)", request.getPkAsegurado(), filas);
+            } catch (Exception ex) {
+                log.warn("⚠️ No se pudo sincronizar paciente_cronico al inscribir CENACRON (DNI {}): {}", request.getPkAsegurado(), ex.getMessage());
+            }
+        }
 
         return mapToResponse(asignacion);
     }
@@ -248,6 +264,60 @@ public class PacienteEstrategiaServiceImpl implements PacienteEstrategiaService 
     public PacienteEstrategia obtenerAsignacionRaw(Long idAsignacion) {
         return pacienteEstrategiaRepository.findById(idAsignacion)
                 .orElseThrow(() -> new IllegalArgumentException("Asignación no encontrada"));
+    }
+
+    /**
+     * Lista paginada de bajas CENACRON con datos de auditoría completos.
+     * Mapea Object[] (índices 0-9) desde la query nativa a BajaCenacronListDto.
+     */
+    @Override
+    @Transactional(readOnly = true)
+    public Map<String, Object> listarBajasCenacron(String busqueda, String estado,
+                                                    String fechaInicio, String fechaFin,
+                                                    int page, int size) {
+        // Normalizar filtros vacíos a null para que la query nativa los ignore
+        String busquedaNorm   = (busqueda   != null && busqueda.isBlank())   ? null : busqueda;
+        String estadoNorm     = (estado     != null && estado.isBlank())     ? null : estado;
+        String fechaInicioNorm = (fechaInicio != null && fechaInicio.isBlank()) ? null : fechaInicio;
+        String fechaFinNorm    = (fechaFin    != null && fechaFin.isBlank())    ? null : fechaFin;
+
+        org.springframework.data.domain.Pageable pageable =
+                org.springframework.data.domain.PageRequest.of(page, size);
+
+        org.springframework.data.domain.Page<Object[]> pageResult =
+                pacienteEstrategiaRepository.findBajasCenacronPaginado(
+                        busquedaNorm, estadoNorm, fechaInicioNorm, fechaFinNorm, pageable);
+
+        List<BajaCenacronListDto> bajas = pageResult.getContent().stream()
+                .map(row -> {
+                    Object diasRaw = row[9];
+                    Long dias = null;
+                    if (diasRaw instanceof BigDecimal bd) {
+                        dias = bd.longValue();
+                    } else if (diasRaw instanceof Number n) {
+                        dias = n.longValue();
+                    }
+                    return BajaCenacronListDto.builder()
+                            .idAsignacion(row[0] != null ? ((Number) row[0]).longValue() : null)
+                            .pkAsegurado(row[1] != null ? row[1].toString() : null)
+                            .nombrePaciente(row[2] != null ? row[2].toString() : null)
+                            .estado(row[3] != null ? row[3].toString() : null)
+                            .motivo(row[4] != null ? row[4].toString() : null)
+                            .fechaAsignacion(row[5] != null ? row[5].toString() : null)
+                            .fechaDesvinculacion(row[6] != null ? row[6].toString() : null)
+                            .usuarioBajaLogin(row[7] != null ? row[7].toString() : null)
+                            .nombreQuienDioBaja(row[8] != null ? row[8].toString().trim() : null)
+                            .diasEnPrograma(dias)
+                            .build();
+                })
+                .collect(Collectors.toList());
+
+        Map<String, Object> resultado = new HashMap<>();
+        resultado.put("bajas", bajas);
+        resultado.put("total", pageResult.getTotalElements());
+        resultado.put("totalPaginas", pageResult.getTotalPages());
+        resultado.put("pagina", page);
+        return resultado;
     }
 
     /**

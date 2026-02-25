@@ -270,6 +270,18 @@ const gestionPacientesService = {
         );
     },
 
+    /**
+     * ⭐ CENACRON: Inscribir a un paciente al programa CENACRON
+     * POST /api/paciente-estrategia
+     */
+    inscribirCenacron: async (pkAsegurado) => {
+        return await apiClient.post(
+            `/paciente-estrategia`,
+            { pkAsegurado, idEstrategia: 1 },
+            true
+        );
+    },
+
     generarEnlaceWhatsApp: (telefono, mensaje = '') => {
         // Limpiar el teléfono (quitar espacios, guiones, etc.)
         const telefonoLimpio = telefono.replace(/\D/g, '');

@@ -1053,8 +1053,12 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
     // ========================================================================
 
     /**
-     * Estadísticas de pacientes de enfermería (id_bolsa=3) agrupadas por enfermera.
-     * Soporta filtro opcional por fecha_atencion.
+     * Estadísticas de pacientes de enfermería (especialidad='ENFERMERIA') agrupadas por enfermera.
+     * Incluye todas las bolsas con especialidad ENFERMERIA (no solo id_bolsa=3).
+     * Soporta filtro opcional por fecha_atencion y turno:
+     *   turno=MANANA → 07:00–13:59 (hora Lima)
+     *   turno=TARDE  → 14:00–20:59 (hora Lima)
+     *   turno=null   → sin filtro de hora
      */
     @Query(value = """
         SELECT p.id_pers as id_enfermera,
@@ -1065,30 +1069,55 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
           SUM(CASE WHEN sb.condicion_medica = 'Deserción' THEN 1 ELSE 0 END) as desercion
         FROM dim_solicitud_bolsa sb
         JOIN dim_personal_cnt p ON sb.id_personal = p.id_pers
-        WHERE sb.activo = true AND sb.id_bolsa = 3 AND sb.id_personal IS NOT NULL
+        WHERE sb.activo = true AND UPPER(sb.especialidad) = 'ENFERMERIA' AND sb.id_personal IS NOT NULL
           AND (:fecha IS NULL OR DATE(sb.fecha_atencion) = CAST(:fecha AS DATE))
+          AND (:turno IS NULL
+               OR (:turno = 'MANANA' AND EXTRACT(HOUR FROM sb.fecha_atencion AT TIME ZONE 'America/Lima') BETWEEN 7 AND 13)
+               OR (:turno = 'TARDE'  AND EXTRACT(HOUR FROM sb.fecha_atencion AT TIME ZONE 'America/Lima') BETWEEN 14 AND 20))
         GROUP BY p.id_pers, p.nom_pers, p.ape_pater_pers, p.ape_mater_pers
         ORDER BY total DESC
         """, nativeQuery = true)
-    List<Object[]> estadisticasPorEnfermera(@org.springframework.data.repository.query.Param("fecha") String fecha);
+    List<Object[]> estadisticasPorEnfermera(
+        @org.springframework.data.repository.query.Param("fecha") String fecha,
+        @org.springframework.data.repository.query.Param("turno") String turno);
 
     /**
-     * Pacientes de enfermería (id_bolsa=3) asignados a una enfermera específica.
-     * Soporta filtro opcional por fecha_atencion.
+     * Pacientes de enfermería (especialidad='ENFERMERIA') asignados a una enfermera específica.
+     * Incluye todas las bolsas con especialidad ENFERMERIA (no solo id_bolsa=3).
+     * Soporta filtro opcional por fecha_atencion y turno.
      */
     @Query(value = """
         SELECT sb.id_solicitud, sb.paciente_nombre, sb.paciente_dni,
                sb.condicion_medica, sb.fecha_atencion, sb.id_personal
         FROM dim_solicitud_bolsa sb
-        WHERE sb.activo = true AND sb.id_bolsa = 3
+        WHERE sb.activo = true AND UPPER(sb.especialidad) = 'ENFERMERIA'
           AND sb.id_personal = :idPersonal
           AND (:fecha IS NULL OR DATE(sb.fecha_atencion) = CAST(:fecha AS DATE))
+          AND (:turno IS NULL
+               OR (:turno = 'MANANA' AND EXTRACT(HOUR FROM sb.fecha_atencion AT TIME ZONE 'America/Lima') BETWEEN 7 AND 13)
+               OR (:turno = 'TARDE'  AND EXTRACT(HOUR FROM sb.fecha_atencion AT TIME ZONE 'America/Lima') BETWEEN 14 AND 20))
         ORDER BY sb.paciente_nombre ASC
         """, nativeQuery = true)
     List<Object[]> pacientesPorEnfermera(
         @org.springframework.data.repository.query.Param("idPersonal") Long idPersonal,
-        @org.springframework.data.repository.query.Param("fecha") String fecha
+        @org.springframework.data.repository.query.Param("fecha") String fecha,
+        @org.springframework.data.repository.query.Param("turno") String turno
     );
+
+    /**
+     * Fechas disponibles con total de pacientes de enfermería.
+     * Usado por el calendario del frontend para pintar días con datos.
+     */
+    @Query(value = """
+        SELECT TO_CHAR(DATE(sb.fecha_atencion), 'YYYY-MM-DD') as fecha, COUNT(*) as total
+        FROM dim_solicitud_bolsa sb
+        WHERE sb.activo = true AND UPPER(sb.especialidad) = 'ENFERMERIA'
+          AND sb.id_personal IS NOT NULL AND sb.fecha_atencion IS NOT NULL
+        GROUP BY DATE(sb.fecha_atencion)
+        ORDER BY fecha DESC
+        LIMIT 90
+        """, nativeQuery = true)
+    List<Object[]> fechasConPacientesEnfermeria();
 
     /**
      * Reasignación masiva de solicitudes a otra enfermera.
@@ -1527,7 +1556,11 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
           AND (:fechaFin    IS NULL OR recita.fecha_preferida_no_atendida <= CAST(:fechaFin    AS date))
           AND (:tipoCita    IS NULL OR UPPER(recita.tipo_cita) = UPPER(:tipoCita))
           AND (:idPersonal  IS NULL OR COALESCE(recita.id_personal, orig_d.id_personal, orig_t.id_personal, ac_fk.id_personal_creador, orig_ac.id_personal) = CAST(:idPersonal AS bigint))
-        ORDER BY recita.fecha_solicitud DESC NULLS LAST, recita.fecha_preferida_no_atendida DESC NULLS LAST
+        ORDER BY
+          CASE WHEN :sortDir = 'asc'  THEN recita.fecha_solicitud END ASC  NULLS LAST,
+          CASE WHEN :sortDir != 'asc' THEN recita.fecha_solicitud END DESC NULLS LAST,
+          CASE WHEN :sortDir = 'asc'  THEN recita.fecha_preferida_no_atendida END ASC  NULLS LAST,
+          CASE WHEN :sortDir != 'asc' THEN recita.fecha_preferida_no_atendida END DESC NULLS LAST
         """,
         countQuery = """
         SELECT COUNT(*)
@@ -1570,6 +1603,7 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
         @org.springframework.data.repository.query.Param("fechaFin")    String fechaFin,
         @org.springframework.data.repository.query.Param("tipoCita")    String tipoCita,
         @org.springframework.data.repository.query.Param("idPersonal")  Long idPersonal,
+        @org.springframework.data.repository.query.Param("sortDir")     String sortDir,
         Pageable pageable
     );
 
