@@ -691,6 +691,14 @@ export const componentRegistry = {
     component: lazy(() => import('../pages/enfermeria/TotalPacientesEnfermeria')),
     requiredAction: 'ver',
   },
+
+  // ========================================================================
+  // 📊 ESTADÍSTICAS DE PROGRAMACIÓN
+  // ========================================================================
+  '/estadisticas/programacion': {
+    component: lazy(() => import('../pages/estadisticas/EstadisticasProgramacion')),
+    requiredAction: 'ver',
+  },
 };
 
 // ========================================================================
