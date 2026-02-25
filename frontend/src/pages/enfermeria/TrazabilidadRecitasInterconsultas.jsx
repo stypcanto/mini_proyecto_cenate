@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   Search, GitBranch, RefreshCw, ChevronLeft, ChevronRight,
   Calendar, Filter, FileText, ClipboardList, Stethoscope,
-  Pencil, Check, X, AlertCircle
+  Pencil, Check, X, AlertCircle, ChevronUp, ChevronDown, ArrowUpDown
 } from 'lucide-react';
 
 /**
@@ -455,7 +455,7 @@ export default function TrazabilidadRecitasInterconsultas() {
     if (isFirstLoad.current) { isFirstLoad.current = false; return; }
     setCurrentPage(1);
     cargar(1);
-  }, [filtroFechaInicio, filtroFechaFin, filtroTipo, searchTerm, filtroEnfermera]); // eslint-disable-line
+  }, [filtroFechaInicio, filtroFechaFin, filtroTipo, searchTerm, filtroEnfermera, sortDir]); // eslint-disable-line
 
   useEffect(() => {
     if (currentPage > 1) cargar(currentPage);
@@ -473,6 +473,7 @@ export default function TrazabilidadRecitasInterconsultas() {
       if (filtroFechaFin)     p.set('fechaFin',    filtroFechaFin);
       if (filtroTipo)         p.set('tipoCita',    filtroTipo);
       if (filtroEnfermera)    p.set('idPersonal',  filtroEnfermera);
+      p.set('sortDir', sortDir);
 
       const res = await fetch(`${API_BASE}/bolsas/solicitudes/trazabilidad-recitas?${p}`, {
         headers: { Authorization: `Bearer ${getToken()}` },
@@ -488,7 +489,7 @@ export default function TrazabilidadRecitasInterconsultas() {
     } finally {
       if (isMountedRef.current) setIsLoading(false);
     }
-  }, [searchTerm, filtroFechaInicio, filtroFechaFin, filtroTipo, filtroEnfermera]); // eslint-disable-line
+  }, [searchTerm, filtroFechaInicio, filtroFechaFin, filtroTipo, filtroEnfermera, sortDir]); // eslint-disable-line
 
   const limpiarFiltros = () => {
     setSearchTerm('');
@@ -676,11 +677,20 @@ export default function TrazabilidadRecitasInterconsultas() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="bg-[#0a5ba9] text-white">
-                  {[
-                    'F. Generación', 'Tipo', 'Paciente', 'DNI',
-                    'Especialidad', 'Motivo interconsulta', 'Origen bolsa', 'Fecha preferida',
-                    'Creado por', 'Estado'
-                  ].map(h => (
+                  {/* F. Generación — ordenable */}
+                  <th
+                    className="px-3 py-2.5 text-left text-xs font-semibold whitespace-nowrap cursor-pointer select-none hover:bg-[#0d4e90] transition-colors"
+                    onClick={() => { setSortDir(d => d === 'desc' ? 'asc' : 'desc'); setCurrentPage(1); }}
+                    title={sortDir === 'desc' ? 'Ordenado: más reciente primero — clic para invertir' : 'Ordenado: más antiguo primero — clic para invertir'}
+                  >
+                    <span className="flex items-center gap-1">
+                      F. Generación
+                      {sortDir === 'desc'
+                        ? <ChevronDown size={13} className="opacity-90" />
+                        : <ChevronUp   size={13} className="opacity-90" />}
+                    </span>
+                  </th>
+                  {['Tipo', 'Paciente', 'DNI', 'Especialidad', 'Motivo interconsulta', 'Origen bolsa', 'Fecha preferida', 'Creado por', 'Estado'].map(h => (
                     <th key={h} className="px-3 py-2.5 text-left text-xs font-semibold whitespace-nowrap">
                       {h}
                     </th>

@@ -3916,12 +3916,13 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
     @org.springframework.transaction.annotation.Transactional(readOnly = true)
     public org.springframework.data.domain.Page<java.util.Map<String, Object>> obtenerTrazabilidadRecitas(
             String busqueda, String fechaInicio, String fechaFin,
-            String tipoCita, Long idPersonal,
+            String tipoCita, Long idPersonal, String sortDir,
             org.springframework.data.domain.Pageable pageable) {
 
+        String dir = (sortDir != null && sortDir.equalsIgnoreCase("asc")) ? "asc" : "desc";
         org.springframework.data.domain.Page<Object[]> rows =
             solicitudRepository.obtenerTrazabilidadRecitasInterconsultas(
-                busqueda, fechaInicio, fechaFin, tipoCita, idPersonal, pageable);
+                busqueda, fechaInicio, fechaFin, tipoCita, idPersonal, dir, pageable);
 
         return rows.map(row -> {
             java.util.Map<String, Object> m = new java.util.LinkedHashMap<>();

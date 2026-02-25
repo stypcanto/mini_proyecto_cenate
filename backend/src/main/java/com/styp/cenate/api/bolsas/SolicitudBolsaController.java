@@ -1627,13 +1627,14 @@ public class SolicitudBolsaController {
             @RequestParam(required = false) String fechaFin,
             @RequestParam(required = false) String tipoCita,
             @RequestParam(required = false) Long idPersonal,
+            @RequestParam(defaultValue = "desc") String sortDir,
             @RequestParam(defaultValue = "0")  int page,
             @RequestParam(defaultValue = "25") int size) {
         try {
-            log.info("🔎 GET /api/bolsas/solicitudes/trazabilidad-recitas busqueda={} tipoCita={} idPersonal={}", busqueda, tipoCita, idPersonal);
+            log.info("🔎 GET /api/bolsas/solicitudes/trazabilidad-recitas busqueda={} tipoCita={} idPersonal={} sortDir={}", busqueda, tipoCita, idPersonal, sortDir);
             var pageable = org.springframework.data.domain.PageRequest.of(page, size);
             var resultado = solicitudBolsaService.obtenerTrazabilidadRecitas(
-                busqueda, fechaInicio, fechaFin, tipoCita, idPersonal, pageable);
+                busqueda, fechaInicio, fechaFin, tipoCita, idPersonal, sortDir, pageable);
             return ResponseEntity.ok(Map.of(
                 "solicitudes",  resultado.getContent(),
                 "total",        resultado.getTotalElements(),

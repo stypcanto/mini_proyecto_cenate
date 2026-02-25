@@ -306,6 +306,7 @@ public interface SolicitudBolsaService {
         String fechaFin,
         String tipoCita,
         Long idPersonal,
+        String sortDir,
         org.springframework.data.domain.Pageable pageable
     );
 

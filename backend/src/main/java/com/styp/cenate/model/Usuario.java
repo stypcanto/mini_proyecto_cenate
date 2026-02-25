@@ -148,6 +148,11 @@ public class Usuario implements UserDetails {
                 : nameUser;
     }
 
+    /** Género del usuario: "M" o "F" (desde PersonalCnt) */
+    public String getGenero() {
+        return (personalCnt != null) ? personalCnt.getGenPers() : null;
+    }
+
     /** Foto del usuario (si tiene PersonalCnt con foto) */
     public String getFotoUrl() {
         if (personalCnt != null && personalCnt.getFotoPers() != null && !personalCnt.getFotoPers().isBlank()) {

@@ -223,6 +223,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                 .username(user.getNameUser())
                 .nombreCompleto(user.getNombreCompleto())  // ✅ Nombre y apellido del usuario
                 .foto(fotoUrl)  // 📷 URL completa de la foto
+                .sexo(user.getGenero())  // M / F
                 .roles(roles)
                 .mappingRoles(mappingRoles)  // 🆕 Mapeo codigo-descripcion de roles
                 .permisos(null)

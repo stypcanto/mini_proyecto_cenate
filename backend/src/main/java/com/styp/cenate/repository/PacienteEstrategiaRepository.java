@@ -213,4 +213,51 @@ public interface PacienteEstrategiaRepository extends JpaRepository<PacienteEstr
             @Param("pkAsegurado") String pkAsegurado,
             @Param("sigla") String sigla
     );
+
+    /**
+     * Lista paginada de bajas CENACRON (estado INACTIVO o COMPLETADO) con datos de auditoría.
+     * Incluye nombre del paciente y datos completos del usuario que generó la baja.
+     */
+    @Query(value = """
+        SELECT pe.id_asignacion,
+               pe.pk_asegurado,
+               a.paciente          AS nombre_paciente,
+               pe.estado,
+               pe.observacion_desvinculacion AS motivo,
+               pe.fecha_asignacion,
+               pe.fecha_desvinculacion,
+               udesv.name_user     AS usuario_baja_login,
+               TRIM(COALESCE(pdesv.ape_pater_pers,'') || ' ' || COALESCE(pdesv.ape_mater_pers,'') || ' ' || COALESCE(pdesv.nom_pers,'')) AS nombre_quien_dio_baja,
+               EXTRACT(EPOCH FROM (pe.fecha_desvinculacion - pe.fecha_asignacion))/86400 AS dias_en_programa
+        FROM paciente_estrategia pe
+        JOIN dim_estrategia_institucional e ON e.id_estrategia = pe.id_estrategia
+        LEFT JOIN asegurados a ON a.doc_paciente = pe.pk_asegurado
+        LEFT JOIN dim_usuarios udesv ON udesv.id_user = pe.id_usuario_desvinculo
+        LEFT JOIN dim_personal_cnt pdesv ON pdesv.id_usuario = udesv.id_user
+        WHERE e.sigla = 'CENACRON'
+          AND pe.estado IN ('INACTIVO','COMPLETADO')
+          AND (:busqueda IS NULL OR pe.pk_asegurado ILIKE '%'||:busqueda||'%'
+                                 OR a.paciente ILIKE '%'||:busqueda||'%')
+          AND (:estado IS NULL OR pe.estado = :estado)
+          AND (:fechaInicio IS NULL OR DATE(pe.fecha_desvinculacion) >= CAST(:fechaInicio AS DATE))
+          AND (:fechaFin    IS NULL OR DATE(pe.fecha_desvinculacion) <= CAST(:fechaFin    AS DATE))
+        ORDER BY pe.fecha_desvinculacion DESC NULLS LAST
+        """,
+        countQuery = """
+        SELECT COUNT(*) FROM paciente_estrategia pe
+        JOIN dim_estrategia_institucional e ON e.id_estrategia = pe.id_estrategia
+        LEFT JOIN asegurados a ON a.doc_paciente = pe.pk_asegurado
+        WHERE e.sigla='CENACRON' AND pe.estado IN ('INACTIVO','COMPLETADO')
+          AND (:busqueda IS NULL OR pe.pk_asegurado ILIKE '%'||:busqueda||'%' OR a.paciente ILIKE '%'||:busqueda||'%')
+          AND (:estado IS NULL OR pe.estado = :estado)
+          AND (:fechaInicio IS NULL OR DATE(pe.fecha_desvinculacion) >= CAST(:fechaInicio AS DATE))
+          AND (:fechaFin    IS NULL OR DATE(pe.fecha_desvinculacion) <= CAST(:fechaFin    AS DATE))
+        """, nativeQuery = true)
+    Page<Object[]> findBajasCenacronPaginado(
+            @Param("busqueda") String busqueda,
+            @Param("estado")   String estado,
+            @Param("fechaInicio") String fechaInicio,
+            @Param("fechaFin")    String fechaFin,
+            Pageable pageable
+    );
 }

@@ -36,6 +36,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -668,13 +669,14 @@ public class NursingService {
     // =========================================================================
 
     /**
-     * Estadísticas de pacientes de enfermería (bolsa 3) agrupadas por enfermera.
+     * Estadísticas de pacientes de enfermería (especialidad='ENFERMERIA', todas las bolsas) agrupadas por enfermera.
      * @param fecha fecha en formato YYYY-MM-DD, o null para todas las fechas
+     * @param turno "MANANA" (07-13h), "TARDE" (14-20h), o null para todos
      */
     @Transactional(readOnly = true)
-    public List<EnfermeraStatsDto> obtenerEstadisticasPorEnfermera(String fecha) {
-        log.info("📊 GET /api/enfermeria/estadisticas/por-enfermera - fecha: {}", fecha);
-        List<Object[]> rows = solicitudBolsaRepository.estadisticasPorEnfermera(fecha);
+    public List<EnfermeraStatsDto> obtenerEstadisticasPorEnfermera(String fecha, String turno) {
+        log.info("📊 GET /api/enfermeria/estadisticas/por-enfermera - fecha: {}, turno: {}", fecha, turno);
+        List<Object[]> rows = solicitudBolsaRepository.estadisticasPorEnfermera(fecha, turno);
         return rows.stream().map(r -> EnfermeraStatsDto.builder()
                 .idEnfermera(r[0] != null ? ((Number) r[0]).longValue() : null)
                 .nombreEnfermera(r[1] != null ? r[1].toString() : "")
@@ -687,14 +689,15 @@ public class NursingService {
     }
 
     /**
-     * Pacientes de enfermería (bolsa 3) asignados a una enfermera específica.
+     * Pacientes de enfermería asignados a una enfermera específica.
      * @param idPersonal id_pers de la enfermera
      * @param fecha fecha en formato YYYY-MM-DD, o null para todas las fechas
+     * @param turno "MANANA", "TARDE", o null
      */
     @Transactional(readOnly = true)
-    public List<RescatarPacienteDto> obtenerPacientesPorEnfermera(Long idPersonal, String fecha) {
-        log.info("📋 GET /api/enfermeria/pacientes/por-enfermera - idPersonal: {}, fecha: {}", idPersonal, fecha);
-        List<Object[]> rows = solicitudBolsaRepository.pacientesPorEnfermera(idPersonal, fecha);
+    public List<RescatarPacienteDto> obtenerPacientesPorEnfermera(Long idPersonal, String fecha, String turno) {
+        log.info("📋 GET /api/enfermeria/pacientes/por-enfermera - idPersonal: {}, fecha: {}, turno: {}", idPersonal, fecha, turno);
+        List<Object[]> rows = solicitudBolsaRepository.pacientesPorEnfermera(idPersonal, fecha, turno);
         String nombreEnfermera = personalCntRepository.findById(idPersonal)
                 .map(p -> String.join(" ",
                         p.getApePaterPers() != null ? p.getApePaterPers() : "",
@@ -710,6 +713,22 @@ public class NursingService {
                 .nombreEnfermera(nombreEnfermera)
                 .build())
                 .collect(Collectors.toList());
+    }
+
+    /**
+     * Fechas disponibles con total de pacientes de enfermería.
+     * Devuelve mapa {fecha(YYYY-MM-DD) → total}.
+     */
+    @Transactional(readOnly = true)
+    public Map<String, Long> obtenerFechasDisponibles() {
+        List<Object[]> rows = solicitudBolsaRepository.fechasConPacientesEnfermeria();
+        Map<String, Long> resultado = new java.util.LinkedHashMap<>();
+        for (Object[] r : rows) {
+            String fecha = r[0] != null ? r[0].toString() : null;
+            Long total   = r[1] != null ? ((Number) r[1]).longValue() : 0L;
+            if (fecha != null) resultado.put(fecha, total);
+        }
+        return resultado;
     }
 
     /**

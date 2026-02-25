@@ -1,6 +1,7 @@
 package com.styp.cenate.service;
 
 import com.styp.cenate.dto.AsignarEstrategiaRequest;
+import com.styp.cenate.dto.BajaCenacronListDto;
 import com.styp.cenate.dto.DesasignarEstrategiaRequest;
 import com.styp.cenate.dto.PacienteEstrategiaResponse;
 import com.styp.cenate.model.PacienteEstrategia;
@@ -8,6 +9,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * Servicio para gestionar la asignación de estrategias a pacientes
@@ -132,4 +134,19 @@ public interface PacienteEstrategiaService {
      * @throws IllegalArgumentException si no existe
      */
     PacienteEstrategia obtenerAsignacionRaw(Long idAsignacion);
+
+    /**
+     * Lista paginada de bajas del programa CENACRON con datos de auditoría.
+     *
+     * @param busqueda   Texto libre: busca en DNI o nombre del paciente
+     * @param estado     Filtro por estado: INACTIVO | COMPLETADO | null = todos
+     * @param fechaInicio Fecha mínima de baja (formato yyyy-MM-dd), puede ser null
+     * @param fechaFin    Fecha máxima de baja (formato yyyy-MM-dd), puede ser null
+     * @param page        Número de página (0-indexed)
+     * @param size        Tamaño de página
+     * @return Mapa con claves: bajas, total, totalPaginas, pagina
+     */
+    Map<String, Object> listarBajasCenacron(String busqueda, String estado,
+                                             String fechaInicio, String fechaFin,
+                                             int page, int size);
 }

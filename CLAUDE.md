@@ -1,9 +1,9 @@
 # CLAUDE.md - Proyecto CENATE
 
 > **Sistema de Telemedicina - EsSalud Perú**
-> **Versión:** v1.64.0 (2026-02-19) 🚀
-> **Última Feature:** v1.64.0 - Filtros Avanzados Gestión Períodos (Estado, Área, Propietario) ✅ (2026-02-19)
-> **Última Feature Base:** v1.62.0 - Notificaciones de Pacientes Pendientes ✅ (2026-02-08)
+> **Versión:** v1.66.x (2026-02-24) 🚀
+> **Última Feature:** v1.66.x - Página Bajas CENACRON con auditoría completa ✅ (2026-02-24)
+> **Última Feature Base:** v1.65.0 - Total Pacientes Enfermería + reasignación masiva ✅ (2026-02-24)
 > **Status:** ✅ Production Ready
 
 ---
@@ -180,7 +180,7 @@ Nuevo módulo completo para gestionar solicitudes de especialidades médicas de 
 
 ---
 
-## 🏥 MÓDULO CENACRON — Gestión de Pacientes Crónicos (Planificado)
+## 🏥 MÓDULO CENACRON — Gestión de Pacientes Crónicos
 
 **⭐ Documento Maestro:** [`spec/modules/cenacron/README.md`](spec/modules/cenacron/README.md)
 
@@ -188,29 +188,37 @@ Nuevo módulo completo para gestionar solicitudes de especialidades médicas de 
 Estrategia Nacional de Gestión de Pacientes Crónicos (HTA, Diabetes, EPOC, Asma, Insuficiencia Cardíaca, ERC).
 Flujo multidisciplinario con 4 visitas anuales por paciente (ciclos de 3 meses).
 
-### 👥 Actores (Ingreso Y Retiro)
-- **Gestor de Citas** — Admisión inicial, agenda citas, puerta de entrada/salida
-- **Médico General** — Gatekeeper: valida si el paciente pertenece al programa
-- **Enfermería** — Seguimiento, control SLA, derivación a especialistas
+### ✅ Funcionalidades Operativas
+- **Inscripción al programa** — Gestor de Citas desde `/roles/citas/gestion-asegurado` (botón `♾ CENACRON` en drawer)
+- **Dar de baja** — Médico/Enfermería desde sus bandejas (estado → `INACTIVO` o `COMPLETADO`)
+- **Badge CENACRON** — Visible en todas las bandejas de profesionales
+- **Historial de bajas** — `/asegurados/bajas-cenacron` con auditoría completa (quién, cuándo, motivo)
+
+### 👥 Actores
+- **Gestor de Citas** — Inscripción al programa (`POST /api/paciente-estrategia`)
+- **Médico General** — Dar de baja (`PUT /api/paciente-estrategia/baja-cenacron/{dni}`)
+- **Enfermería** — Visible badge CENACRON, baja pendiente de implementar plenamente
+
+### 📊 Datos Reales (BD)
+- **Tabla inscripciones:** `paciente_estrategia` (estados: ACTIVO | INACTIVO | COMPLETADO)
+- **Catálogo estrategias:** `dim_estrategia_institucional` (sigla='CENACRON')
+- **Auditoría baja:** columna `id_usuario_desvinculo` + `fecha_desvinculacion` + `observacion_desvinculacion`
+- **Vistas:** `vw_paciente_estrategias_activas`, `vw_historial_estrategias_paciente`
 
 ### 📋 Fases de Implementación
 | Fase | Alcance | Estado |
 |------|---------|--------|
-| **Fase 1** | Gestor de Citas: Admisión + Retiro | 📋 Pendiente |
-| **Fase 2** | Médico General: Validación + Retiro | 📋 Pendiente |
-| **Fase 3** | Enfermería: Seguimiento + Semáforos SLA | 📋 Pendiente |
-| **Fase 4** | Nutrición + Psicología + Ciclos recurrentes | 📋 Pendiente |
-
-### 📊 Datos (Propuestos)
-- **Tabla principal:** `paciente_cenacron_journey`
-- **Interconsultas:** `paciente_cenacron_interconsultas`
-- **Estados:** ADMISION_PENDIENTE → PENDIENTE_MED_GENERAL → VALIDADO → PENDIENTE_ENFERMERIA → VISITA_COMPLETADA
-- **Semáforo SLA:** 🟢 <15d | 🟡 15-30d | 🔴 30-60d | ⚫ >60d
+| **Inscripción** | Gestor de Citas: Admisión al programa | ✅ Operativo |
+| **Baja** | Médico/Enfermería: Dar de baja con motivo | ✅ Operativo |
+| **Historial bajas** | Página auditoría completa de bajas | ✅ Operativo (v1.66.x) |
+| **Validación médico** | Médico: Confirmar elegibilidad CENACRON | 📋 Pendiente |
+| **Seguimiento enfermería** | Semáforo SLA + registro atenciones | 📋 Parcial |
+| **Ciclos recurrentes** | Nutrición + Psicología + reingreso 3 meses | 📋 Pendiente |
 
 ### 🔐 Acceso (MBAC)
-- **Gestor de Citas:** Admisión y retiro de pacientes
-- **Médico General:** Validación y atención
-- **Enfermería:** Seguimiento y semáforo
+- **Gestor de Citas:** Inscripción de pacientes
+- **Médico / Enfermería:** Dar de baja, ver badge CENACRON
+- **Todos los roles:** Ver historial de bajas en `/asegurados/bajas-cenacron` (solo lectura + exportar)
 
 ---
 
@@ -287,12 +295,11 @@ Módulo para gestionar los períodos durante los cuales los médicos registran s
 **👉 Ver historial completo:** [`CHANGELOG-VERSIONES.md`](CHANGELOG-VERSIONES.md)
 
 Versiones recientes:
-- **v1.64.0** - Filtros Avanzados Gestión Períodos (Estado, Área, Propietario) ✅ (2026-02-19) 🆕
+- **v1.66.x** - Bajas CENACRON: página auditoría + fix tabla `dim_estrategia_institucional` ✅ (2026-02-24) 🆕
+- **v1.65.0** - Total Pacientes Enfermería + reasignación masiva ✅ (2026-02-24)
+- **v1.64.0** - Filtros Avanzados Gestión Períodos (Estado, Área, Propietario) ✅ (2026-02-19)
 - **v1.62.0** - Notificaciones de Pacientes Pendientes ✅ (2026-02-08)
 - **v1.58.0** - Módulo de Requerimiento de Especialidades ✅ (2026-02-08)
-- **v1.57.1** - Exportación de Tabla Especialidades (2026-02-07)
-- **v1.56.1** - Filtros Clínicos DNI + Fecha (2026-02-07)
-- **v1.56.3** - Género y Edad en Tabla (2026-02-06)
 
 Para ver detalles de cada versión, abre: [`CHANGELOG-VERSIONES.md`](CHANGELOG-VERSIONES.md)
 
@@ -304,22 +311,25 @@ Para ver detalles de cada versión, abre: [`CHANGELOG-VERSIONES.md`](CHANGELOG-V
 
 ## 🚀 Próximos Pasos
 
-### Fase 1: Arquitectura de Bolsas v1.42.0 (COMPLETADA)
-1. **Universo General** - ✅ `/bolsas/solicitudes` (7,973 registros) + Filtro Especialidades dinámico
+### CENACRON — Funcionalidades pendientes
+- **Validación médico** — Médico confirma si el paciente cumple criterios CENACRON
+- **Semáforo SLA completo** — Enfermería: 🟢<15d | 🟡15-30d | 🔴30-60d | ⚫>60d
+- **Registro de atención de enfermería** — Formulario de seguimiento
+- **Ciclos recurrentes** — Reingreso automático cada 3 meses post visita completa
+
+### Bolsas — Arquitectura v1.42.0 (COMPLETADA)
+1. **Universo General** - ✅ `/bolsas/solicitudes` + Filtro Especialidades dinámico
 2. **Mini-Bolsa Módulo 107** - ✅ Interfaz dedicada con KPIs propios
 3. **Mini-Bolsa Dengue** - ✅ Sistema de búsqueda DNI/CIE-10 independiente
 4. **Template Escalable** - ✅ Patrón documentado para futuras bolsas
 
-### Fase 2: Nuevas Bolsas Especializadas (Futuro)
+### Nuevas Bolsas Especializadas (Futuro)
 - **PADOMI** - Bolsa para atención domiciliaria
 - **Referencia INTER** - Bolsa de referencias entre instituciones
-- **Consulta Externa** - Bolsa de consultas generales
-- (Cada una seguirá el patrón definido en v1.42.0)
 
-### Fase 3: Integraciones Avanzadas
+### Integraciones Avanzadas
 - **Spring AI Chatbot** - Asistente de atención (7 fases)
 - **Analytics Dashboard** - Dashboard consolidado de todas las bolsas
-- **Notificaciones Inteligentes** - Alertas por bolsa y rol
 
 Ver: [`plan/06_Integracion_Spring_AI/`](plan/06_Integracion_Spring_AI/)
 

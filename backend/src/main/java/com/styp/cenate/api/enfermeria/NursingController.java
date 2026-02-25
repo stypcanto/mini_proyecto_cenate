@@ -119,21 +119,34 @@ public class NursingController {
      */
     @GetMapping("/estadisticas/por-enfermera")
     public ResponseEntity<List<EnfermeraStatsDto>> estadisticasPorEnfermera(
-            @RequestParam(required = false) String fecha) {
-        log.info("📊 GET /api/enfermeria/estadisticas/por-enfermera - fecha: {}", fecha);
-        return ResponseEntity.ok(nursingService.obtenerEstadisticasPorEnfermera(fecha));
+            @RequestParam(required = false) String fecha,
+            @RequestParam(required = false) String turno) {
+        log.info("📊 GET /api/enfermeria/estadisticas/por-enfermera - fecha: {}, turno: {}", fecha, turno);
+        return ResponseEntity.ok(nursingService.obtenerEstadisticasPorEnfermera(fecha, turno));
     }
 
     /**
-     * GET /api/enfermeria/pacientes/por-enfermera?idPersonal=&fecha=YYYY-MM-DD
-     * Pacientes (bolsa 3) asignados a una enfermera específica.
+     * GET /api/enfermeria/pacientes/por-enfermera?idPersonal=&fecha=YYYY-MM-DD&turno=MANANA|TARDE
+     * Pacientes de enfermería asignados a una enfermera específica.
      */
     @GetMapping("/pacientes/por-enfermera")
     public ResponseEntity<List<RescatarPacienteDto>> pacientesPorEnfermera(
             @RequestParam Long idPersonal,
-            @RequestParam(required = false) String fecha) {
-        log.info("📋 GET /api/enfermeria/pacientes/por-enfermera - idPersonal: {}, fecha: {}", idPersonal, fecha);
-        return ResponseEntity.ok(nursingService.obtenerPacientesPorEnfermera(idPersonal, fecha));
+            @RequestParam(required = false) String fecha,
+            @RequestParam(required = false) String turno) {
+        log.info("📋 GET /api/enfermeria/pacientes/por-enfermera - idPersonal: {}, fecha: {}, turno: {}", idPersonal, fecha, turno);
+        return ResponseEntity.ok(nursingService.obtenerPacientesPorEnfermera(idPersonal, fecha, turno));
+    }
+
+    /**
+     * GET /api/enfermeria/estadisticas/fechas-disponibles
+     * Retorna mapa {fecha → total} con todas las fechas que tienen pacientes de enfermería asignados.
+     * Usado por el calendario para pintar los días con datos.
+     */
+    @GetMapping("/estadisticas/fechas-disponibles")
+    public ResponseEntity<Map<String, Long>> fechasDisponibles() {
+        log.info("📅 GET /api/enfermeria/estadisticas/fechas-disponibles");
+        return ResponseEntity.ok(nursingService.obtenerFechasDisponibles());
     }
 
     /**
