@@ -3598,6 +3598,7 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
     // ============================================================================
 
     @Override
+    @Transactional(readOnly = true)
     public Optional<SolicitudBolsaDTO> buscarAsignacionExistente(String pacienteDni) {
         return solicitudRepository
             .findFirstByPacienteDniAndActivoTrueOrderByFechaSolicitudDesc(pacienteDni)
