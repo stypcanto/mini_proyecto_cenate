@@ -72,6 +72,33 @@ public class NursingController {
     }
 
     /**
+     * PUT /api/enfermeria/pacientes/{idSolicitud}/reasignar
+     * Reasigna un paciente PENDIENTE a otro profesional.
+     * Body requerido: { "idPersonal": 123 }
+     * Retorna 400 si el paciente ya está ATENDIDO o no está en PENDIENTE.
+     */
+    @PutMapping("/pacientes/{idSolicitud}/reasignar")
+    public ResponseEntity<?> reasignarPaciente(
+            @PathVariable Long idSolicitud,
+            @RequestBody Map<String, Object> body) {
+        Long idPersonal = null;
+        if (body != null && body.get("idPersonal") != null) {
+            idPersonal = Long.valueOf(body.get("idPersonal").toString());
+        }
+        if (idPersonal == null) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Debe seleccionar un profesional para reasignar."));
+        }
+        log.info("🔄 PUT /api/enfermeria/pacientes/{}/reasignar - idPersonal: {}", idSolicitud, idPersonal);
+        try {
+            RescatarPacienteDto resultado = nursingService.reasignarPaciente(idSolicitud, idPersonal);
+            return ResponseEntity.ok(resultado);
+        } catch (IllegalStateException e) {
+            log.warn("⚠️ Reasignación rechazada para solicitud {}: {}", idSolicitud, e.getMessage());
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    /**
      * GET /api/enfermeria/enfermeras
      * Lista el personal activo con profesión de enfermería.
      */
