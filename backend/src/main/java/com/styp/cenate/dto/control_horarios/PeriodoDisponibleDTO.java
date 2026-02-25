@@ -4,6 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import java.time.LocalDate;
 
 /**
  * DTO para listar períodos disponibles
@@ -19,4 +20,6 @@ public class PeriodoDisponibleDTO {
     private String descArea;             // Descripción del área
     private String estado;               // ABIERTO, REABIERTO, CERRADO, etc
     private int totalHorarios;           // Total de horarios registrados para este período
+    private LocalDate fechaInicio;       // Fecha de inicio del período
+    private LocalDate fechaFin;          // Fecha de fin del período
 }

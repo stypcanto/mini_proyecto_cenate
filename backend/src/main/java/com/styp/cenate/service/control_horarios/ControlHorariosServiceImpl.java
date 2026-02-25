@@ -37,12 +37,13 @@ public class ControlHorariosServiceImpl implements ControlHorariosService {
                     .collect(Collectors.joining(","));
 
             String sql = "SELECT DISTINCT cp.periodo, cp.id_area, da.desc_area, cp.estado, " +
+                    "cp.fecha_inicio, cp.fecha_fin, " +
                     "COUNT(DISTINCT ch.id_ctr_horario) as total_horarios " +
                     "FROM public.ctr_periodo cp " +
                     "JOIN public.dim_area da ON cp.id_area = da.id_area " +
                     "LEFT JOIN public.ctr_horario ch ON cp.periodo = ch.periodo AND cp.id_area = ch.id_area " +
                     "WHERE cp.estado IN (" + estadosSQL + ") " +
-                    "GROUP BY cp.periodo, cp.id_area, da.desc_area, cp.estado " +
+                    "GROUP BY cp.periodo, cp.id_area, da.desc_area, cp.estado, cp.fecha_inicio, cp.fecha_fin " +
                     "ORDER BY cp.periodo DESC, cp.id_area";
 
             return jdbcTemplate.query(sql, (rs, rowNum) ->
@@ -52,6 +53,8 @@ public class ControlHorariosServiceImpl implements ControlHorariosService {
                             .descArea(rs.getString("desc_area"))
                             .estado(rs.getString("estado"))
                             .totalHorarios(rs.getInt("total_horarios"))
+                            .fechaInicio(rs.getObject("fecha_inicio", java.time.LocalDate.class))
+                            .fechaFin(rs.getObject("fecha_fin", java.time.LocalDate.class))
                             .build()
             );
 

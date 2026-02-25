@@ -19,7 +19,6 @@ const ConfiguracionFeriados = () => {
   const [error, setError] = useState(null);
   
   // Filtros
-  const [tipoPeriodos, setTipoPeriodos] = useState('todos');
   const [anio, setAnio] = useState(new Date().getFullYear().toString());
   const [periodo, setPeriodo] = useState('todos');
   const [estado, setEstado] = useState('todos');
@@ -111,11 +110,25 @@ const ConfiguracionFeriados = () => {
 
   // Filtrar datos
   const datosFiltrados = periodos.filter(p => {
+    // Filtro por año
     if (anio !== 'todos' && !p.periodo.startsWith(anio)) return false;
+    // Filtro por período específico
     if (periodo !== 'todos' && p.periodo !== periodo) return false;
+    // Filtro por estado
     if (estado !== 'todos' && p.estado?.toLowerCase() !== estado.toLowerCase()) return false;
     return true;
   });
+
+  // Formatear fecha (YYYY-MM-DD a DD/MM/YYYY)
+  const formatDate = (dateString) => {
+    if (!dateString) return '—';
+    try {
+      const [year, month, day] = dateString.split('-');
+      return `${day}/${month}/${year}`;
+    } catch (err) {
+      return dateString || '—';
+    }
+  };
 
   // Badge de estado
   const getEstadoBadge = (est) => {
@@ -159,18 +172,7 @@ const ConfiguracionFeriados = () => {
 
       {/* Filtros */}
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-6">
-        <div className="grid grid-cols-4 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Tipo de periodos</label>
-            <select
-              value={tipoPeriodos}
-              onChange={(e) => setTipoPeriodos(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            >
-              <option value="todos">Todos</option>
-            </select>
-          </div>
-          
+        <div className="grid grid-cols-3 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Año</label>
             <select
@@ -261,8 +263,8 @@ const ConfiguracionFeriados = () => {
                     <td className="px-6 py-4 text-sm text-gray-900">{p.periodo.substring(0, 4)}</td>
                     <td className="px-6 py-4 text-sm text-gray-900">{p.periodo}</td>
                     <td className="px-6 py-4 text-sm text-gray-900">—</td>
-                    <td className="px-6 py-4 text-sm text-gray-900">—</td>
-                    <td className="px-6 py-4 text-sm text-gray-900">—</td>
+                    <td className="px-6 py-4 text-sm text-gray-900">{formatDate(p.fechaInicio)}</td>
+                    <td className="px-6 py-4 text-sm text-gray-900">{formatDate(p.fechaFin)}</td>
                     <td className="px-6 py-4 text-sm">{getEstadoBadge(p.estado)}</td>
                     <td className="px-6 py-4 text-sm">
                       <button

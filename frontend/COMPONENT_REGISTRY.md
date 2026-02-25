@@ -189,6 +189,15 @@ Para rutas como `/user/detail/:id`, usa `pathMatch` para especificar el path sin
 }
 ```
 
+### Ejemplo 5: Configuración de Feriados (Coordinador)
+
+```javascript
+'/roles/coordinador/configuracion-feriados': {
+  component: lazy(() => import('../pages/roles/coordinador/ConfiguracionFeriados')),
+  requiredAction: 'ver',
+}
+```
+
 ---
 
 ## 🔍 Funciones Helper Disponibles
