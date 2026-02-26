@@ -475,11 +475,24 @@ export default function TrazabilidadRecitasInterconsultas() {
       if (filtroEnfermera)    p.set('idPersonal',  filtroEnfermera);
       p.set('sortDir', sortDir);
 
+      console.log('📤 Enviando request a endpoint:', `${API_BASE}/bolsas/solicitudes/trazabilidad-recitas`);
+      console.log('📋 Parámetros:', Object.fromEntries(p));
+
       const res = await fetch(`${API_BASE}/bolsas/solicitudes/trazabilidad-recitas?${p}`, {
         headers: { Authorization: `Bearer ${getToken()}` },
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
+      
+      console.log('✅ RESPUESTA DEL BACKEND - Trazabilidad Recitas:', data);
+      console.log('📊 Total registros:', data.total);
+      console.log('📋 Solicitudes recibidas:', data.solicitudes);
+      if (data.solicitudes && data.solicitudes.length > 0) {
+        console.log('🔍 Estructura del primer registro:', data.solicitudes[0]);
+        console.log('📌 Campo condicionMedica presente:', !!data.solicitudes[0].condicionMedica);
+        console.log('📌 Valor condicionMedica:', data.solicitudes[0].condicionMedica);
+      }
+      
       if (!isMountedRef.current) return;
       setFilas(data.solicitudes || []);
       setTotal(data.total ?? 0);
@@ -690,7 +703,7 @@ export default function TrazabilidadRecitasInterconsultas() {
                         : <ChevronUp   size={13} className="opacity-90" />}
                     </span>
                   </th>
-                  {['Tipo', 'Paciente', 'DNI', 'Especialidad', 'Motivo interconsulta', 'Origen bolsa', 'Fecha preferida', 'Creado por', 'Estado'].map(h => (
+                  {['Tipo', 'Paciente', 'DNI', 'Especialidad', 'Motivo interconsulta', 'Origen bolsa', 'Estado de Bolsa', 'Fecha preferida', 'Creado por', 'Estado', 'Estado de Personal Asistencial'].map(h => (
                     <th key={h} className="px-3 py-2.5 text-left text-xs font-semibold whitespace-nowrap">
                       {h}
                     </th>
@@ -758,6 +771,17 @@ export default function TrazabilidadRecitasInterconsultas() {
                       {f.origenBolsa || '—'}
                     </td>
 
+                    {/* Estado de Bolsa */}
+                    <td className="px-3 py-2.5 text-xs">
+                      {f.estado ? (
+                        <span className="inline-block px-2.5 py-1 rounded-full text-[11px] font-medium bg-indigo-100 text-indigo-800 border border-indigo-300 whitespace-nowrap">
+                          {f.estado}
+                        </span>
+                      ) : (
+                        <span className="text-gray-400 italic">—</span>
+                      )}
+                    </td>
+
                     {/* Fecha preferida — editable */}
                     <td className="px-3 py-2.5">
                       <CeldaFechaPreferida fila={f} onGuardar={guardarFechaPreferida} />
@@ -777,6 +801,17 @@ export default function TrazabilidadRecitasInterconsultas() {
                     {/* Estado */}
                     <td className="px-3 py-2.5">
                       <BadgeEstado cod={f.codEstado} desc={f.descEstado} />
+                    </td>
+
+                    {/* Estado de Personal Asistencial — condicion_medica */}
+                    <td className="px-3 py-2.5 text-xs">
+                      {f.condicionMedica ? (
+                        <span className="inline-block px-2.5 py-1 rounded-full text-[11px] font-medium bg-amber-100 text-amber-800 border border-amber-300 whitespace-nowrap">
+                          {f.condicionMedica}
+                        </span>
+                      ) : (
+                        <span className="text-gray-400 italic">—</span>
+                      )}
                     </td>
                   </tr>
                 ))}

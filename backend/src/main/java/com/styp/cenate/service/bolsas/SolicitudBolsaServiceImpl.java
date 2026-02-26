@@ -4143,6 +4143,7 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
             m.put("especialidadOrigen",  row[15]);
             m.put("fechaPreferida",      row[16]);
             m.put("origenBolsa",         row[17]);
+            m.put("condicionMedica",     row[18]);
             return m;
         });
     }
