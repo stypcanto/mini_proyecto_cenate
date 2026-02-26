@@ -1,141 +1,171 @@
 // ========================================================================
 // 📊 EstadisticasProgramacion.jsx  →  Producción Diaria (Power BI)
 // Ruta: /estadisticas/programacion
-// v1.71.0: Reemplazado por embed Power BI — BI_PENDIENTES_DIARIO
+// v1.71.1: UX mejorada — modo expandido cubre sidebar + header
 // ========================================================================
 
 import React, { useState, useRef, useCallback } from 'react';
-import { Maximize2, Minimize2, RefreshCw, ExternalLink } from 'lucide-react';
+import { Maximize2, X, RefreshCw, ExternalLink } from 'lucide-react';
 
 const BI_URL =
   'https://app.powerbi.com/view?r=eyJrIjoiOGQ5ZmZjZjMtMGMxNC00NmIwLWFmMmMtNTYxMWUwNDU2NTVkIiwidCI6IjM0ZjMyNDE5LTFjMDUtNDc1Ni04OTZlLTQ1ZDYzMzcyNjU5YiIsImMiOjR9';
 
 export default function EstadisticasProgramacion() {
-  const iframeRef = useRef(null);
-  const [fullscreen, setFullscreen] = useState(false);
-  const [zoom, setZoom] = useState(100);
-  const [key, setKey] = useState(0); // fuerza recarga del iframe
+  const [expandido, setExpandido] = useState(false);
+  const [key, setKey] = useState(0);
 
   const recargar = useCallback(() => setKey(k => k + 1), []);
 
-  const toggleFullscreen = useCallback(() => {
-    const el = document.getElementById('bi-container');
-    if (!fullscreen) {
-      if (el?.requestFullscreen) el.requestFullscreen();
-      else if (el?.webkitRequestFullscreen) el.webkitRequestFullscreen();
-    } else {
-      if (document.exitFullscreen) document.exitFullscreen();
-      else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
-    }
-    setFullscreen(f => !f);
-  }, [fullscreen]);
-
-  const zoomIn  = () => setZoom(z => Math.min(z + 10, 200));
-  const zoomOut = () => setZoom(z => Math.max(z - 10, 50));
-  const resetZoom = () => setZoom(100);
-
   return (
-    <div className="flex flex-col h-screen bg-gray-100">
+    <>
+      {/* ── Vista normal (embedded en la app) ─────────────────────── */}
+      <div className="flex flex-col" style={{ height: 'calc(100vh - 64px)' }}>
 
-      {/* ── Barra de herramientas ────────────────────────────────────── */}
-      <div className="flex items-center justify-between px-4 py-2 bg-white border-b border-gray-200 shadow-sm flex-shrink-0">
-        <div className="flex items-center gap-2">
-          <div className="w-2 h-2 rounded-full bg-[#0A5BA9]" />
-          <span className="text-sm font-bold text-gray-800">Producción Diaria</span>
-          <span className="text-xs text-gray-400 ml-1">— Panel de Pendientes BI</span>
+        {/* Barra mínima */}
+        <div className="flex items-center justify-between px-4 py-2 bg-white border-b border-gray-200 flex-shrink-0">
+          <div className="flex items-center gap-2">
+            <div className="w-2.5 h-2.5 rounded-full bg-[#0A5BA9]" />
+            <span className="text-sm font-bold text-gray-800">Producción Diaria</span>
+            <span className="text-xs text-gray-400">— Panel de Pendientes BI</span>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <button
+              onClick={recargar}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-gray-600 hover:bg-gray-100 rounded-lg transition-colors border border-gray-200"
+              title="Recargar reporte"
+            >
+              <RefreshCw className="w-3.5 h-3.5" />
+              Recargar
+            </button>
+
+            <a
+              href={BI_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-gray-600 hover:bg-gray-100 rounded-lg transition-colors border border-gray-200"
+              title="Abrir en Power BI"
+            >
+              <ExternalLink className="w-3.5 h-3.5" />
+              Abrir en BI
+            </a>
+
+            <button
+              onClick={() => setExpandido(true)}
+              className="flex items-center gap-1.5 px-4 py-1.5 text-xs font-semibold text-white bg-[#0A5BA9] hover:bg-[#084A8E] rounded-lg transition-colors shadow-sm"
+              title="Ver en pantalla completa"
+            >
+              <Maximize2 className="w-3.5 h-3.5" />
+              Expandir
+            </button>
+          </div>
         </div>
 
-        <div className="flex items-center gap-1">
-          {/* Zoom */}
-          <button
-            onClick={zoomOut}
-            className="px-2 py-1 text-sm font-bold text-gray-600 hover:bg-gray-100 rounded transition-colors"
-            title="Reducir zoom"
-          >
-            −
-          </button>
-          <button
-            onClick={resetZoom}
-            className="px-2 py-1 text-xs font-semibold text-gray-600 hover:bg-gray-100 rounded transition-colors min-w-[48px] text-center"
-            title="Restablecer zoom"
-          >
-            {zoom}%
-          </button>
-          <button
-            onClick={zoomIn}
-            className="px-2 py-1 text-sm font-bold text-gray-600 hover:bg-gray-100 rounded transition-colors"
-            title="Aumentar zoom"
-          >
-            +
-          </button>
-
-          <div className="w-px h-5 bg-gray-200 mx-1" />
-
-          {/* Recargar */}
-          <button
-            onClick={recargar}
-            className="p-1.5 text-gray-500 hover:bg-gray-100 rounded transition-colors"
-            title="Recargar reporte"
-          >
-            <RefreshCw className="w-4 h-4" />
-          </button>
-
-          {/* Abrir en nueva pestaña */}
-          <a
-            href={BI_URL}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="p-1.5 text-gray-500 hover:bg-gray-100 rounded transition-colors"
-            title="Abrir en Power BI"
-          >
-            <ExternalLink className="w-4 h-4" />
-          </a>
-
-          {/* Pantalla completa */}
-          <button
-            onClick={toggleFullscreen}
-            className="p-1.5 text-gray-500 hover:bg-gray-100 rounded transition-colors"
-            title={fullscreen ? 'Salir de pantalla completa' : 'Pantalla completa'}
-          >
-            {fullscreen
-              ? <Minimize2 className="w-4 h-4" />
-              : <Maximize2 className="w-4 h-4" />}
-          </button>
-        </div>
-      </div>
-
-      {/* ── Contenedor del iframe ────────────────────────────────────── */}
-      <div
-        id="bi-container"
-        className="flex-1 overflow-auto bg-gray-50"
-        style={{ minHeight: 0 }}
-      >
-        <div
-          style={{
-            width:  `${zoom}%`,
-            height: zoom === 100 ? '100%' : `${zoom}%`,
-            minHeight: '100%',
-            transformOrigin: 'top left',
-            transition: 'width 0.2s, height 0.2s',
-          }}
-        >
+        {/* iframe normal */}
+        <div className="flex-1 overflow-hidden">
           <iframe
             key={key}
-            ref={iframeRef}
             title="BI_PENDIENTES_DIARIO"
             src={BI_URL}
             frameBorder="0"
             allowFullScreen
-            style={{
-              width:  '100%',
-              height: '100%',
-              minHeight: 'calc(100vh - 48px)',
-              border: 'none',
-              display: 'block',
-            }}
+            style={{ width: '100%', height: '100%', border: 'none', display: 'block' }}
           />
         </div>
       </div>
-    </div>
+
+      {/* ── Modo expandido: cubre TODA la ventana (sidebar + header) ── */}
+      {expandido && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 9999,
+            background: '#fff',
+            display: 'flex',
+            flexDirection: 'column',
+          }}
+        >
+          {/* Barra superior en modo expandido */}
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              padding: '8px 16px',
+              background: '#0A5BA9',
+              flexShrink: 0,
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#7DD3FC' }} />
+              <span style={{ color: '#fff', fontWeight: 700, fontSize: 14 }}>
+                Producción Diaria
+              </span>
+              <span style={{ color: '#93C5FD', fontSize: 12 }}>— Panel de Pendientes BI</span>
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <button
+                onClick={recargar}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 6,
+                  padding: '6px 12px', borderRadius: 8,
+                  background: 'rgba(255,255,255,0.15)', color: '#fff',
+                  border: '1px solid rgba(255,255,255,0.3)',
+                  cursor: 'pointer', fontSize: 12, fontWeight: 500,
+                }}
+                title="Recargar"
+              >
+                <RefreshCw style={{ width: 14, height: 14 }} />
+                Recargar
+              </button>
+
+              <a
+                href={BI_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 6,
+                  padding: '6px 12px', borderRadius: 8,
+                  background: 'rgba(255,255,255,0.15)', color: '#fff',
+                  border: '1px solid rgba(255,255,255,0.3)',
+                  fontSize: 12, fontWeight: 500, textDecoration: 'none',
+                }}
+                title="Abrir en Power BI"
+              >
+                <ExternalLink style={{ width: 14, height: 14 }} />
+                Abrir en BI
+              </a>
+
+              <button
+                onClick={() => setExpandido(false)}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 6,
+                  padding: '6px 16px', borderRadius: 8,
+                  background: '#fff', color: '#0A5BA9',
+                  border: 'none', cursor: 'pointer',
+                  fontSize: 12, fontWeight: 700,
+                }}
+                title="Cerrar pantalla completa"
+              >
+                <X style={{ width: 14, height: 14 }} />
+                Cerrar
+              </button>
+            </div>
+          </div>
+
+          {/* iframe en pantalla completa */}
+          <iframe
+            key={`exp-${key}`}
+            title="BI_PENDIENTES_DIARIO_FULL"
+            src={BI_URL}
+            frameBorder="0"
+            allowFullScreen
+            style={{ flex: 1, border: 'none', display: 'block', width: '100%' }}
+          />
+        </div>
+      )}
+    </>
   );
 }
