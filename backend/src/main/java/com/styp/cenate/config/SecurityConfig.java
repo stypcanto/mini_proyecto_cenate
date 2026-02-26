@@ -240,6 +240,16 @@ public class SecurityConfig {
                                                 .requestMatchers(HttpMethod.DELETE, "/api/usuarios/**")
                                                 .hasAnyRole("SUPERADMIN", "ADMIN")
 
+                                                // Endpoints accesibles por GESTOR_TERRITORIAL_TI (antes del catch-all /api/admin/**)
+                                                .requestMatchers(
+                                                                "/api/admin/solicitudes-registro/**",
+                                                                "/api/admin/usuarios/pendientes-activacion/**",
+                                                                "/api/admin/usuarios/*/reenviar-activacion",
+                                                                "/api/admin/usuarios/*/pendiente-activacion",
+                                                                "/api/admin/datos-huerfanos/**",
+                                                                "/api/admin/email-audit/**")
+                                                .hasAnyRole("SUPERADMIN", "ADMIN", "GESTOR_TERRITORIAL_TI")
+
                                                 // Otros endpoints de administración - Solo ADMIN/SUPERADMIN
                                                 .requestMatchers(
                                                                 "/api/admin/permisos/**",
