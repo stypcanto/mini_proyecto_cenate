@@ -897,6 +897,72 @@ export default function TotalPacientesEnfermeria() {
   const [sortDir,        setSortDir]        = useState('desc');
   const [enfermeraDrawer, setEnfermeraDrawer] = useState(null);
 
+  // ── Buscador global de pacientes ──────────────────────────────
+  const [busqPaciente,       setBusqPaciente]       = useState('');
+  const [resultadosPaciente, setResultadosPaciente] = useState([]);
+  const [buscandoPaciente,   setBuscandoPaciente]   = useState(false);
+  const [dropdownAbierto,    setDropdownAbierto]    = useState(false);
+  const dropdownRef = useRef(null);
+
+  useEffect(() => {
+    const handler = (e) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
+        setDropdownAbierto(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
+
+  useEffect(() => {
+    if (busqPaciente.trim().length < 3) {
+      setResultadosPaciente([]);
+      setDropdownAbierto(false);
+      return;
+    }
+    const timer = setTimeout(async () => {
+      setBuscandoPaciente(true);
+      try {
+        const data = await apiClient.get(
+          `/enfermeria/pacientes/buscar-global?q=${encodeURIComponent(busqPaciente.trim())}`,
+          true,
+        );
+        setResultadosPaciente(Array.isArray(data) ? data : []);
+        setDropdownAbierto(true);
+      } catch (e) {
+        console.error('Error buscando paciente:', e);
+        setResultadosPaciente([]);
+      } finally {
+        setBuscandoPaciente(false);
+      }
+    }, 350);
+    return () => clearTimeout(timer);
+  }, [busqPaciente]);
+
+  const abrirEnfermeraDeResultado = (resultado) => {
+    // Buscar la enfermera en la lista cargada para abrir su drawer
+    const enfermera = enfermeras.find(e => String(e.id_enfermera) === String(resultado.idPersonal));
+    if (enfermera) {
+      setEnfermeraDrawer(enfermera);
+    } else {
+      // Si no está en la lista actual (por filtros activos), construir un objeto mínimo
+      setEnfermeraDrawer({
+        id_enfermera:     resultado.idPersonal,
+        nombre_enfermera: resultado.nombreEnfermera,
+        total: 0, pendientes: 0, atendidos: 0, desercion: 0,
+      });
+    }
+    setBusqPaciente('');
+    setDropdownAbierto(false);
+  };
+
+  const condicionColor = (c) => {
+    if (c === 'Pendiente') return { color: '#f59e0b', bg: '#fffbeb' };
+    if (c === 'Atendido')  return { color: '#10b981', bg: '#f0fdf4' };
+    if (c === 'Deserción') return { color: '#ef4444', bg: '#fef2f2' };
+    return { color: '#64748b', bg: '#f1f5f9' };
+  };
+
   const handleSort = (col) => {
     if (sortCol === col) {
       setSortDir(d => d === 'asc' ? 'desc' : 'asc');
@@ -1116,29 +1182,167 @@ export default function TotalPacientesEnfermeria() {
         </div>
       </div>
 
-      {/* Buscador */}
-      <div style={{ position: 'relative', maxWidth: '320px' }}>
-        <Search size={15} color="#94a3b8" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
-        <input
-          type="text"
-          placeholder="Buscar enfermera..."
-          value={busqueda}
-          onChange={e => setBusqueda(e.target.value)}
-          style={{
-            width: '100%', boxSizing: 'border-box',
-            padding: '8px 12px 8px 36px',
-            border: '1.5px solid #e2e8f0', borderRadius: '8px',
-            fontSize: '13px', color: '#1e293b', outline: 'none', background: '#fff',
-          }}
-        />
-        {busqueda && (
-          <button
-            onClick={() => setBusqueda('')}
-            style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', display: 'flex', padding: 0 }}
-          >
-            <XCircle size={15} />
-          </button>
-        )}
+      {/* Buscadores: enfermera + paciente */}
+      <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'flex-start' }}>
+
+        {/* Buscador enfermera */}
+        <div style={{ position: 'relative', width: '260px', flexShrink: 0 }}>
+          <Search size={15} color="#94a3b8" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
+          <input
+            type="text"
+            placeholder="Buscar enfermera..."
+            value={busqueda}
+            onChange={e => setBusqueda(e.target.value)}
+            style={{
+              width: '100%', boxSizing: 'border-box',
+              padding: '8px 12px 8px 36px',
+              border: '1.5px solid #e2e8f0', borderRadius: '8px',
+              fontSize: '13px', color: '#1e293b', outline: 'none', background: '#fff',
+            }}
+          />
+          {busqueda && (
+            <button
+              onClick={() => setBusqueda('')}
+              style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', display: 'flex', padding: 0 }}
+            >
+              <XCircle size={15} />
+            </button>
+          )}
+        </div>
+
+        {/* Buscador global de pacientes */}
+        <div ref={dropdownRef} style={{ position: 'relative', width: '320px', flexShrink: 0 }}>
+          <Search size={15} color={busqPaciente ? '#0D5BA9' : '#94a3b8'} style={{ position: 'absolute', left: '12px', top: '10px', pointerEvents: 'none' }} />
+          <input
+            type="text"
+            placeholder="Buscar paciente por nombre o DNI..."
+            value={busqPaciente}
+            onChange={e => setBusqPaciente(e.target.value)}
+            onFocus={() => { if (resultadosPaciente.length > 0) setDropdownAbierto(true); }}
+            style={{
+              width: '100%', boxSizing: 'border-box',
+              padding: '8px 32px 8px 36px',
+              border: `1.5px solid ${busqPaciente ? '#0D5BA9' : '#e2e8f0'}`,
+              borderRadius: '8px', fontSize: '13px', color: '#1e293b', outline: 'none',
+              background: busqPaciente ? '#f0f7ff' : '#fff',
+            }}
+          />
+          {buscandoPaciente && (
+            <Loader2 size={14} color="#0D5BA9" style={{ position: 'absolute', right: '10px', top: '10px', animation: 'spin 1s linear infinite' }} />
+          )}
+          {busqPaciente && !buscandoPaciente && (
+            <button
+              onClick={() => { setBusqPaciente(''); setResultadosPaciente([]); setDropdownAbierto(false); }}
+              style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', display: 'flex', padding: 0 }}
+            >
+              <XCircle size={15} />
+            </button>
+          )}
+          {/* Dropdown de resultados */}
+          {dropdownAbierto && (
+            <div style={{
+              position: 'absolute', top: 'calc(100% + 6px)', left: 0, right: 0, zIndex: 300,
+              background: '#fff', border: '1.5px solid #bfdbfe', borderRadius: '12px',
+              boxShadow: '0 8px 32px rgba(13,91,169,0.18)', maxHeight: '360px', overflowY: 'auto',
+            }}>
+              {resultadosPaciente.length === 0 ? (
+                <div style={{ padding: '20px 16px', textAlign: 'center' }}>
+                  <Users size={28} style={{ color: '#cbd5e1', marginBottom: '8px' }} />
+                  <div style={{ color: '#94a3b8', fontSize: '13px', fontWeight: '500' }}>Sin resultados para "{busqPaciente}"</div>
+                  <div style={{ color: '#cbd5e1', fontSize: '11px', marginTop: '4px' }}>Intenta con otro nombre o DNI</div>
+                </div>
+              ) : (
+                <>
+                  {/* Header resultados */}
+                  <div style={{ padding: '10px 14px 6px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid #f1f5f9' }}>
+                    <span style={{ fontSize: '11px', fontWeight: '700', color: '#0D5BA9' }}>
+                      {resultadosPaciente.length} paciente{resultadosPaciente.length !== 1 ? 's' : ''} encontrado{resultadosPaciente.length !== 1 ? 's' : ''}
+                    </span>
+                    <span style={{ fontSize: '10px', color: '#94a3b8' }}>Clic para ver enfermera</span>
+                  </div>
+
+                  {resultadosPaciente.map((r, i) => {
+                    const { color: cc, bg: cb } = condicionColor(r.condicionMedica || r.condicion_medica || '');
+                    const condicion  = r.condicionMedica || r.condicion_medica || '';
+                    const nombre     = r.pacienteNombre  || r.paciente_nombre  || 'Sin nombre';
+                    const dni        = r.pacienteDni     || r.paciente_dni     || '—';
+                    const enfNombre  = r.nombreEnfermera || 'Sin asignar';
+                    const enfInicial = enfNombre.charAt(0).toUpperCase();
+                    return (
+                      <div
+                        key={r.idSolicitud || i}
+                        onMouseDown={() => abrirEnfermeraDeResultado(r)}
+                        style={{
+                          padding: '12px 14px', cursor: 'pointer',
+                          borderBottom: i < resultadosPaciente.length - 1 ? '1px solid #f8fafc' : 'none',
+                          transition: 'background 0.12s',
+                        }}
+                        onMouseEnter={e => { e.currentTarget.style.background = '#f0f7ff'; }}
+                        onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; }}
+                      >
+                        {/* Fila paciente */}
+                        <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
+                          {/* Avatar inicial paciente */}
+                          <div style={{
+                            width: '36px', height: '36px', borderRadius: '50%', flexShrink: 0,
+                            background: '#dbeafe', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            fontSize: '13px', fontWeight: '800', color: '#1d4ed8',
+                          }}>
+                            {nombre.charAt(0).toUpperCase()}
+                          </div>
+
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            {/* Nombre completo */}
+                            <div style={{ fontWeight: '700', color: '#0f172a', fontSize: '13px', lineHeight: 1.3, marginBottom: '4px' }}>
+                              {nombre}
+                            </div>
+                            {/* DNI + condición */}
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                              <span style={{
+                                fontSize: '11px', fontWeight: '600', color: '#475569',
+                                background: '#f1f5f9', border: '1px solid #e2e8f0',
+                                padding: '2px 8px', borderRadius: '5px', fontFamily: 'monospace', letterSpacing: '0.04em',
+                              }}>
+                                DNI {dni}
+                              </span>
+                              {condicion && (
+                                <span style={{
+                                  fontSize: '10px', fontWeight: '700', color: cc, background: cb,
+                                  padding: '2px 8px', borderRadius: '20px',
+                                }}>
+                                  {condicion}
+                                </span>
+                              )}
+                            </div>
+
+                            {/* Separador + enfermera asignada */}
+                            <div style={{
+                              marginTop: '8px', paddingTop: '8px', borderTop: '1px dashed #e2e8f0',
+                              display: 'flex', alignItems: 'center', gap: '6px',
+                            }}>
+                              <div style={{
+                                width: '20px', height: '20px', borderRadius: '50%',
+                                background: '#0D5BA9', display: 'flex', alignItems: 'center',
+                                justifyContent: 'center', fontSize: '9px', fontWeight: '800', color: '#fff', flexShrink: 0,
+                              }}>
+                                {enfInicial}
+                              </div>
+                              <div style={{ flex: 1, minWidth: 0 }}>
+                                <span style={{ fontSize: '9px', color: '#94a3b8', display: 'block', lineHeight: 1 }}>ENFERMERA ASIGNADA</span>
+                                <span style={{ fontSize: '12px', fontWeight: '600', color: '#0D5BA9' }}>{enfNombre}</span>
+                              </div>
+                              <ChevronRight size={14} color="#0D5BA9" style={{ flexShrink: 0, opacity: 0.7 }} />
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </>
+              )}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Tabla */}

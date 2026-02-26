@@ -748,6 +748,26 @@ public class NursingService {
     }
 
     /**
+     * Búsqueda global de pacientes de enfermería por nombre o DNI.
+     * Retorna hasta 25 resultados con la enfermera asignada.
+     */
+    @Transactional(readOnly = true)
+    public List<RescatarPacienteDto> buscarPacienteGlobal(String q) {
+        String patron = "%" + q.trim() + "%";
+        log.info("🔍 buscarPacienteGlobal - q: {}", q);
+        List<Object[]> rows = solicitudBolsaRepository.buscarPacienteGlobal(patron);
+        return rows.stream().map(r -> RescatarPacienteDto.builder()
+                .idSolicitud(r[0] != null ? ((Number) r[0]).longValue() : null)
+                .pacienteNombre(r[1] != null ? r[1].toString() : "")
+                .pacienteDni(r[2] != null ? r[2].toString() : "")
+                .condicionMedica(r[3] != null ? r[3].toString() : "")
+                .idPersonal(r[5] != null ? ((Number) r[5]).longValue() : null)
+                .nombreEnfermera(r[6] != null ? r[6].toString() : "")
+                .build())
+                .collect(Collectors.toList());
+    }
+
+    /**
      * Reasignación masiva de pacientes (solicitudes) a otra enfermera.
      * Actualiza id_personal + fecha_atencion + hora_atencion (reprogramación ESSI).
      */

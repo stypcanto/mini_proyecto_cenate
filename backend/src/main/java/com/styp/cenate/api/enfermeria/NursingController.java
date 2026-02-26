@@ -99,6 +99,20 @@ public class NursingController {
     }
 
     /**
+     * GET /api/enfermeria/pacientes/buscar-global?q=TEXTO
+     * Busca pacientes de enfermería por nombre o DNI (parcial) en todas las enfermeras.
+     * Retorna hasta 25 resultados con la enfermera asignada.
+     */
+    @GetMapping("/pacientes/buscar-global")
+    public ResponseEntity<List<RescatarPacienteDto>> buscarPacienteGlobal(@RequestParam String q) {
+        if (q == null || q.trim().length() < 3) {
+            return ResponseEntity.ok(List.of());
+        }
+        log.info("🔍 GET /api/enfermeria/pacientes/buscar-global - q: {}", q);
+        return ResponseEntity.ok(nursingService.buscarPacienteGlobal(q));
+    }
+
+    /**
      * GET /api/enfermeria/enfermeras
      * Lista el personal activo con profesión de enfermería.
      */

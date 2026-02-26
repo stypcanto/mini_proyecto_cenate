@@ -1127,6 +1127,25 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
     );
 
     /**
+     * Búsqueda global de pacientes de enfermería por nombre o DNI.
+     * Retorna el paciente + la enfermera asignada.
+     * Parámetro q debe venir con wildcards: '%texto%'
+     */
+    @Query(value = """
+        SELECT sb.id_solicitud, sb.paciente_nombre, sb.paciente_dni,
+               sb.condicion_medica, sb.fecha_atencion, sb.id_personal,
+               TRIM(COALESCE(p.ape_pater_pers,'') || ' ' || COALESCE(p.ape_mater_pers,'') || ' ' || COALESCE(p.nom_pers,'')) AS nombre_enfermera
+        FROM dim_solicitud_bolsa sb
+        JOIN dim_personal_cnt p ON sb.id_personal = p.id_pers
+        WHERE sb.activo = true AND UPPER(sb.especialidad) = 'ENFERMERIA'
+          AND sb.id_personal IS NOT NULL
+          AND (sb.paciente_dni LIKE :q OR UPPER(sb.paciente_nombre) LIKE UPPER(:q))
+        ORDER BY sb.paciente_nombre
+        LIMIT 25
+        """, nativeQuery = true)
+    List<Object[]> buscarPacienteGlobal(@org.springframework.data.repository.query.Param("q") String q);
+
+    /**
      * Fechas disponibles con total de pacientes de enfermería.
      * Usado por el calendario del frontend para pintar días con datos.
      */
