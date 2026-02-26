@@ -45,7 +45,10 @@ import teleecgService from '../../../../services/teleecgService';
 import { useAuth } from '../../../../context/AuthContext';
 import CalendarioAsignacion from '../../../../components/calendario/CalendarioAsignacion';
 import CrearTicketModal from '../../../mesa-ayuda/components/CrearTicketModal';
+import TicketsExistentesModal from '../../../mesa-ayuda/components/TicketsExistentesModal';
+import DetalleTicketModal from '../../../mesa-ayuda/components/DetalleTicketModal';
 import { mesaAyudaService } from '../../../../services/mesaAyudaService';
+import { logRespuestaConsola } from '../../../../utils/consoleResponseLogger';
 
 // ✅ v1.78.0: Sistema Genérico de Especialidades
 // Define qué funcionalidades tiene cada tipo de especialidad
@@ -188,7 +191,10 @@ export default function MisPacientes() {
       if (doctorInfo?.especialidad) {
         detectedSpecialty = detectSpecialtyByKeywords(doctorInfo.especialidad);
         if (detectedSpecialty) {
-          console.log('✅ v1.78.0: Especialidad desde API (doctor logueado):', detectedSpecialty, 'Nombre:', doctorInfo.especialidad);
+          console.log('%c✅ v1.78.0 - ESPECIALIDAD DETECTADA', 'color: #00aa00; font-weight: bold; font-size: 12px; background: #e0ffe0; padding: 6px 8px; border-radius: 3px');
+          console.log('  • Fuente: %cAPI (Doctor Logueado)', 'color: #0066cc; font-weight: bold');
+          console.log('  • Tipo: %c' + detectedSpecialty, 'color: #ff6600; font-weight: bold');
+          console.log('  • Nombre: %c' + doctorInfo.especialidad, 'color: #6600cc; font-weight: bold');
           return SPECIALTY_FEATURES[detectedSpecialty];
         }
       }
@@ -197,7 +203,10 @@ export default function MisPacientes() {
       if (authUser?.especialidad) {
         detectedSpecialty = detectSpecialtyByKeywords(authUser.especialidad);
         if (detectedSpecialty) {
-          console.log('✅ v1.78.0: Especialidad detectada desde AuthContext:', detectedSpecialty, 'Nombre:', authUser.especialidad);
+          console.log('%c✅ v1.78.0 - ESPECIALIDAD DETECTADA', 'color: #00aa00; font-weight: bold; font-size: 12px; background: #e0ffe0; padding: 6px 8px; border-radius: 3px');
+          console.log('  • Fuente: %cAuthContext', 'color: #0066cc; font-weight: bold');
+          console.log('  • Tipo: %c' + detectedSpecialty, 'color: #ff6600; font-weight: bold');
+          console.log('  • Nombre: %c' + authUser.especialidad, 'color: #6600cc; font-weight: bold');
           return SPECIALTY_FEATURES[detectedSpecialty];
         }
       }
@@ -209,18 +218,24 @@ export default function MisPacientes() {
         const especialidad = user.especialidad || user.especialidadNombre || '';
         detectedSpecialty = detectSpecialtyByKeywords(especialidad);
         if (detectedSpecialty) {
-          console.log('✅ v1.78.0: Especialidad detectada desde localStorage:', detectedSpecialty, 'Nombre:', especialidad);
+          console.log('%c✅ v1.78.0 - ESPECIALIDAD DETECTADA', 'color: #00aa00; font-weight: bold; font-size: 12px; background: #e0ffe0; padding: 6px 8px; border-radius: 3px');
+          console.log('  • Fuente: %claudStorage', 'color: #0066cc; font-weight: bold');
+          console.log('  • Tipo: %c' + detectedSpecialty, 'color: #ff6600; font-weight: bold');
+          console.log('  • Nombre: %c' + especialidad, 'color: #6600cc; font-weight: bold');
           return SPECIALTY_FEATURES[detectedSpecialty];
         }
       }
 
       // 4. Si se detectó desde pacientes, usar ese valor
       if (userSpecialty) {
-        console.log('✅ v1.78.0: Especialidad detectada desde pacientes:', userSpecialty);
+        console.log('%c✅ v1.78.0 - ESPECIALIDAD DETECTADA', 'color: #00aa00; font-weight: bold; font-size: 12px; background: #e0ffe0; padding: 6px 8px; border-radius: 3px');
+        console.log('  • Fuente: %cPacientes Cargados', 'color: #0066cc; font-weight: bold');
+        console.log('  • Tipo: %c' + userSpecialty, 'color: #ff6600; font-weight: bold');
         return SPECIALTY_FEATURES[userSpecialty];
       }
 
-      console.log('⚠️ v1.78.0: No se detectó especialidad');
+      console.log('%c⚠️ v1.78.0 - ESPECIALIDAD NO DETECTADA', 'color: #ff6600; font-weight: bold; font-size: 12px; background: #ffe0cc; padding: 6px 8px; border-radius: 3px');
+      console.log('  • Intenta refrescar la página o verifica los datos del médico en la BD');
       return null;
     } catch (error) {
       console.error('Error al detectar especialidad:', error);
@@ -688,6 +703,14 @@ export default function MisPacientes() {
   const [ticketDetalleModal, setTicketDetalleModal] = useState(null);
   const [ticketsMedico, setTicketsMedico] = useState({});
 
+  // ✅ v1.67.0: Estados para Modal Tickets Existentes
+  const [showTicketsExistentesModal, setShowTicketsExistentesModal] = useState(false);
+  const [ticketsExistentes, setTicketsExistentes] = useState([]);
+
+  // ✅ v1.67.0: Estados para Modal Detalle Ticket
+  const [showDetalleTicketModal, setShowDetalleTicketModal] = useState(false);
+  const [numeroTicketDetalle, setNumeroTicketDetalle] = useState(null);
+
   const bolsasDisponibles = [
     { id: 1, nombre: 'Bolsa 107 (Módulo 107)' },
     { id: 2, nombre: 'Dengue' },
@@ -737,11 +760,12 @@ export default function MisPacientes() {
     const cargarInfoMedico = async () => {
       try {
         const info = await gestionPacientesService.obtenerInfoMedicoActual();
-        console.log('✅ v1.78.0: Información del doctor cargada:', info);
+        console.log('%c✅ v1.78.0 - DOCTOR INFO CARGADA', 'color: #00aa00; font-weight: bold; font-size: 12px; background: #e0ffe0; padding: 6px 8px; border-radius: 3px');
+        console.log(info);
         setDoctorInfo(info);
         if (info?.idPersonal) cargarTicketsMedico(info.idPersonal);
       } catch (error) {
-        console.error('⚠️ v1.78.0: Error al cargar información del doctor:', error);
+        console.error('%c❌ v1.78.0 - ERROR AL CARGAR DOCTOR INFO', 'color: #ff0000; font-weight: bold; font-size: 12px; background: #ffe0e0; padding: 6px 8px; border-radius: 3px', error);
       }
     };
     cargarInfoMedico();
@@ -794,7 +818,8 @@ export default function MisPacientes() {
       const data = await obtenerEspecialidadesActivasCenate();
       const sorted = Array.isArray(data) ? [...data].sort((a, b) => a.descServicio.localeCompare(b.descServicio, 'es')) : [];
       setEspecialidades(sorted);
-      console.log('✅ Especialidades CENATE cargadas:', sorted);
+      console.log('%c✅ ESPECIALIDADES CENATE CARGADAS', 'color: #00aa00; font-weight: bold; font-size: 12px; background: #e0ffe0; padding: 6px 8px; border-radius: 3px');
+      console.table(sorted);
     } catch (error) {
       console.error('Error cargando especialidades CENATE:', error);
     }
@@ -848,14 +873,37 @@ export default function MisPacientes() {
     try {
       setLoading(true);
       const data = await gestionPacientesService.obtenerPacientesMedico();
-      console.log('🔍 [DEBUG] Datos del API:', data);
+      
+      // ✅ Usar función estandarizada para logging de respuestas
       if (data?.length > 0) {
-        console.log('🔍 [DEBUG] Primer paciente estructura:', data[0]);
-        console.log('🔍 [DEBUG] Campos disponibles:', Object.keys(data[0]));
-        console.log('🔍 [DEBUG] ipress:', data[0].ipress);
-        console.log('🔍 [DEBUG] fechaAsignacion:', data[0].fechaAsignacion);
-        console.log('🔍 [DEBUG] TODOS LOS CAMPOS:', JSON.stringify(data[0], null, 2));
+        logRespuestaConsola({
+          titulo: 'Carga Pacientes Médico',
+          endpoint: '/api/gestion-pacientes/medico/asignados',
+          method: 'GET',
+          enviado: null,
+          status: 200,
+          devuelto: {
+            cantidad: data.length,
+            primerPaciente: data[0]
+          },
+          fuente: '/pacientes-medico',
+          identificador: data.length,
+          etiquetaIdentificador: 'Pacientes'
+        });
+      } else {
+        logRespuestaConsola({
+          titulo: 'Carga Pacientes Médico',
+          endpoint: '/api/gestion-pacientes/medico/asignados',
+          method: 'GET',
+          enviado: null,
+          status: 200,
+          devuelto: { cantidad: 0, data: [] },
+          fuente: '/pacientes-medico',
+          identificador: 0,
+          etiquetaIdentificador: 'Pacientes'
+        });
       }
+      
       setPacientes(Array.isArray(data) ? data : []);
 
       // ✅ v1.78.0: Detectar especialidad desde el primer paciente si no está en contexto
@@ -877,11 +925,13 @@ export default function MisPacientes() {
 
             if (especialidadDetectada) {
               setUserSpecialty(especialidadDetectada);
-              console.log('✅ v1.78.0: Sistema de especialidades activado para:', especialidadDetectada);
+              console.log('%c✅ v1.78.0 - SISTEMA DE ESPECIALIDADES ACTIVADO', 'color: #00aa00; font-weight: bold; font-size: 12px; background: #e0ffe0; padding: 6px 8px; border-radius: 3px');
+              console.log('  • Especialidad: %c' + especialidadDetectada, 'color: #ff6600; font-weight: bold');
             }
           } else {
-            console.warn('⚠️ v1.78.0: No se encontró especialidad con ID:', especIdMedico);
-            console.warn('⚠️ v1.78.0: IDs disponibles:', especialidades.map(e => e.id).join(', '));
+            console.warn('%c⚠️ v1.78.0 - NO SE ENCONTRÓ ESPECIALIDAD CON ID', 'color: #ff6600; font-weight: bold; font-size: 12px; background: #ffe0cc; padding: 6px 8px; border-radius: 3px');
+            console.warn('  • ID buscado: %c' + especIdMedico, 'color: #ff6600; font-weight: bold');
+            console.warn('  • IDs disponibles: %c' + especialidades.map(e => e.id).join(', '), 'color: #ff6600; font-weight: bold');
           }
         }
       }
@@ -895,7 +945,7 @@ export default function MisPacientes() {
         cargarFechasTomaEKG(data);
       }
     } catch (error) {
-      console.error('Error cargando pacientes:', error);
+      console.error('%c❌ ERROR AL CARGAR PACIENTES', 'color: #ff0000; font-weight: bold; font-size: 12px; background: #ffe0e0; padding: 6px 8px; border-radius: 3px', error);
       toast.error('Error al cargar pacientes');
       setPacientes([]);
     } finally {
@@ -906,7 +956,9 @@ export default function MisPacientes() {
   // ✅ v1.80.5: Cargar fechas de toma EKG desde endpoint separado (transacción separada)
   const cargarFechasTomaEKG = async (pacientesActuales) => {
     try {
+      console.log('%c🫀 v1.80.5 - CARGANDO FECHAS DE TOMA EKG', 'color: #ff3366; font-weight: bold; font-size: 12px; background: #ffe0e6; padding: 6px 8px; border-radius: 3px');
       const dnis = [...new Set(pacientesActuales.map(p => p.numDoc).filter(Boolean))];
+      console.log(`  • Total pacientes: %c${dnis.length}`, 'color: #ff3366; font-weight: bold');
       if (dnis.length === 0) return;
 
       // Procesar en chunks de 10 para no saturar el backend
@@ -923,15 +975,15 @@ export default function MisPacientes() {
           chunk.map(async (dni) => {
             try {
               const datosEKG = await gestionPacientesService.obtenerDatosEKGPaciente(dni);
-              console.log(`📅 [EKG ${dni}] Respuesta del servidor:`, datosEKG);
+              console.log(`%c📅 [EKG ${dni}]%c Respuesta:`, 'color: #ff3366; font-weight: bold', 'color: #666666', datosEKG);
 
               // Siempre actualizar, aunque sea null
               if (datosEKG) {
                 updates[dni] = datosEKG.fechaTomaEKG;
-                console.log(`✅ [EKG ${dni}] Fecha actualizada a:`, datosEKG.fechaTomaEKG);
+                console.log(`%c✅ [EKG ${dni}]%c Fecha:`, 'color: #00aa00; font-weight: bold', 'color: #666666', datosEKG.fechaTomaEKG);
               }
             } catch (error) {
-              console.warn(`❌ Error cargando fecha EKG para DNI ${dni}:`, error);
+              console.warn(`%c❌ [EKG ${dni}]%c Error:`, 'color: #ff6600; font-weight: bold', 'color: #666666', error.message);
               updates[dni] = null;
             }
           })
@@ -947,16 +999,17 @@ export default function MisPacientes() {
       });
 
       setPacientes(pacientesActualizados);
-      console.log('✅ [FECHA TOMA EKG] Fechas cargadas para todos los pacientes', updates);
+      console.log('%c✅ FECHAS EKG CARGADAS', 'color: #00aa00; font-weight: bold; font-size: 12px; background: #e0ffe0; padding: 6px 8px; border-radius: 3px');
+      console.log(updates);
     } catch (error) {
-      console.error('❌ Error cargando fechas de toma EKG:', error);
+      console.error('%c❌ ERROR CARGANDO FECHAS EKG', 'color: #ff0000; font-weight: bold; font-size: 12px; background: #ffe0e0; padding: 6px 8px; border-radius: 3px', error);
     }
   };
 
   // ✅ v1.66.0: Cargar conteos de ECG para todos los pacientes (en lotes de 10)
   const cargarConteosECG = async (pacientesActuales) => {
     try {
-      console.log('🚀 [v1.89.8] Cargando conteos ECG con BATCH...');
+      console.log('%c🚀 v1.89.8 - CARGANDO CONTEOS ECG (BATCH)', 'color: #ff3366; font-weight: bold; font-size: 12px; background: #ffe0e6; padding: 6px 8px; border-radius: 3px');
       const startTime = performance.now();
 
       // ✅ v1.89.8: BATCH endpoint - UNA sola llamada en lugar de 21
@@ -971,16 +1024,19 @@ export default function MisPacientes() {
 
       const endTime = performance.now();
       const tiempoMs = (endTime - startTime).toFixed(0);
-      console.log(`✅ [v1.89.8] Conteos cargados en ${tiempoMs}ms:`, counts);
+      console.log('%c✅ CONTEOS ECG CARGADOS', 'color: #00aa00; font-weight: bold; font-size: 12px; background: #e0ffe0; padding: 6px 8px; border-radius: 3px');
+      console.log(`  • Tiempo: %c${tiempoMs}ms`, 'color: #ff6600; font-weight: bold');
+      console.log(`  • Total pacientes: %c${Object.keys(counts).length}`, 'color: #ff6600; font-weight: bold');
+      console.table(counts);
     } catch (error) {
-      console.error('❌ [v1.89.8] Error cargando conteos ECG:', error);
+      console.error('%c❌ ERROR CARGANDO CONTEOS ECG', 'color: #ff0000; font-weight: bold; font-size: 12px; background: #ffe0e0; padding: 6px 8px; border-radius: 3px', error);
     }
   };
 
   // ✅ v1.92.0: Cargar estados de evaluación ECG + detectar rechazos (en background, sin bloquear UI)
   const cargarEstadosEvaluacion = async (pacientesActuales) => {
     try {
-      console.log('🚀 [v1.89.8] Cargando estados de evaluación ECG con BATCH...');
+      console.log('%c🚀 v1.89.8 - CARGANDO ESTADOS DE EVALUACIÓN ECG (BATCH)', 'color: #ff3366; font-weight: bold; font-size: 12px; background: #ffe0e6; padding: 6px 8px; border-radius: 3px');
       const startTime = performance.now();
 
       const estados = {};
@@ -994,15 +1050,15 @@ export default function MisPacientes() {
 
         if (imagenes && Array.isArray(imagenes)) {
           // ✅ DEBUG: Loguear imágenes recibidas
-          console.log(`📸 [DEBUG] DNI ${dni} tiene ${imagenes.length} imagen(es):`, imagenes.map(img => ({
-            id: img.idImagen || img.id_imagen,
-            evaluacion: img.evaluacion,
-            estado: img.estado,
-            statImagen: img.statImagen || img.stat_imagen,
-            fechaEnvio: img.fechaEnvio || img.fecha_envio,
-            fechaEvaluacion: img.fechaEvaluacion || img.fecha_evaluacion,
-            descripcionEvaluacion: img.descripcionEvaluacion || img.descripcion_evaluacion
-          })));
+          console.log(`%c📸 [DNI ${dni}]%c ${imagenes.length} imagen(es) encontrada(s)`, 'color: #0066cc; font-weight: bold', 'color: #666666');
+          imagenes.forEach((img, idx) => {
+            console.log(`  ${idx + 1}. ID: %c${img.idImagen || img.id_imagen}%c | Estado: %c${img.estado}%c | Evaluación: %c${img.evaluacion || 'PENDIENTE'}`, 
+              'color: #00aa00; font-weight: bold',
+              'color: #666666',
+              'color: ' + (img.estado === 'OBSERVADA' ? '#ff6600' : '#0066cc') + '; font-weight: bold',
+              'color: #666666',
+              'color: ' + (img.evaluacion ? '#00aa00' : '#ff6600') + '; font-weight: bold');
+          });
 
           // ✅ v1.92.0: Detectar imágenes rechazadas (estado OBSERVADA)
           const imagenesRechazadas = imagenes.filter(
@@ -1018,34 +1074,27 @@ export default function MisPacientes() {
                 fecha: img.fechaEnvio || img.fecha_envio || ''
               }))
             };
-            console.log(`⚠️ Paciente ${dni} tiene ${imagenesRechazadas.length} imagen(es) rechazada(s)`);
+            console.log(`%c⚠️ [RECHAZADAS] DNI ${dni}%c tiene ${imagenesRechazadas.length} imagen(es) rechazada(s)`, 'color: #ff6600; font-weight: bold', 'color: #666666');
           }
 
           // ✅ v1.92.1: FILTRO MEJORADO - Más explícito y robusto
           // Criterio: evaluacion está poblada Y no es 'SIN_EVALUAR'
           const evaluadas = imagenes.filter(img => {
             if (!img) {
-              console.log(`  🔍 [EVAL FILTER] imagen null ➜ ❌ EXCLUDE`);
               return false;
             }
             
             const evalValue = img.evaluacion || '';
             const isEvaluated = evalValue && evalValue.trim() !== '' && evalValue !== 'SIN_EVALUAR';
             
-            console.log(`  🔍 [EVAL FILTER] ID ${img.idImagen || img.id_imagen}: evaluacion="${evalValue}" (trim="${evalValue.trim()}", notEmpty=${evalValue.trim() !== ''}, notSinEvaluar=${evalValue !== 'SIN_EVALUAR'}) ➜ ${isEvaluated ? '✅ EVALUADA' : '❌ SIN EVALUAR'}`);
-            
             return isEvaluated;
           });
 
-          console.log(`  📊 [v1.92.1] Resumen DNI ${dni}: total=${imagenes.length}, evaluadas=${evaluadas.length}, rechazadas=${imagenesRechazadas.length}`);
+          console.log(`%c📊 [RESUMEN]%c DNI ${dni}: ${evaluadas.length}/${imagenes.length} evaluadas`, 'color: #0066cc; font-weight: bold', 'color: #666666');
 
           if (evaluadas.length > 0) {
             const ultima = evaluadas[evaluadas.length - 1];
-            console.log(`✅ [DEBUG] DNI ${dni} - EVALUADA encontrada:`, { 
-              tipo: ultima.evaluacion, 
-              fecha: ultima.fechaEvaluacion || ultima.fecha_evaluacion,
-              hasDescripcion: !!ultima.descripcionEvaluacion || !!ultima.descripcion_evaluacion
-            });
+            console.log(`  %c✅ Última evaluación: %c${ultima.evaluacion}`, 'color: #00aa00; font-weight: bold', 'color: #666666');
             estados[dni] = {
               estado: 'EVALUADO',
               datos: {
@@ -2064,7 +2113,7 @@ export default function MisPacientes() {
 
       const match = fechaAtencion === fechaSeleccionadaCalendario;
       if (!match) {
-        console.log(`🟡 ${p.apellidosNombres}: fechaAtencion="${fechaAtencion}" != seleccionada="${fechaSeleccionadaCalendario}"`);
+        // console.log(`🟡 ${p.apellidosNombres}: fechaAtencion="${fechaAtencion}" != seleccionada="${fechaSeleccionadaCalendario}"`);
       } else {
         console.log(`✅ ${p.apellidosNombres}: COINCIDE - debe atender el ${fechaSeleccionadaCalendario}`);
       }
@@ -2946,9 +2995,29 @@ export default function MisPacientes() {
                             );
                           })()}
                           <button
-                            onClick={() => {
+                            onClick={async () => {
                               setPacienteTicket(paciente);
-                              setShowTicketModal(true);
+                              
+                              // ✅ v1.67.0: Verificar si ya existen tickets para este paciente
+                              try {
+                                const tickets = await mesaAyudaService.obtenerPorSolicitudBolsa(paciente.idSolicitudBolsa);
+                                console.log(`%c✅ TICKETS EXISTENTES para idSolicitudBolsa ${paciente.idSolicitudBolsa}`, 'color: #00aa00; font-weight: bold; font-size: 12px; background: #e0ffe0; padding: 6px 8px; border-radius: 3px');
+                                console.log(`  • Total: ${Array.isArray(tickets) ? tickets.length : 0}`, 'color: #00aa00; font-weight: bold');
+                                console.table(tickets);
+
+                                if (Array.isArray(tickets) && tickets.length > 0) {
+                                  // Si existen tickets, mostrar modal de tickets existentes
+                                  setTicketsExistentes(tickets);
+                                  setShowTicketsExistentesModal(true);
+                                } else {
+                                  // Si no existen tickets, mostrar modal de crear nuevo
+                                  setShowTicketModal(true);
+                                }
+                              } catch (error) {
+                                console.error(`%c❌ Error verificando tickets`, 'color: #ff0000; font-weight: bold; font-size: 12px; background: #ffe0e0; padding: 6px 8px; border-radius: 3px', error);
+                                // Si hay error, permitir crear uno nuevo por defecto
+                                setShowTicketModal(true);
+                              }
                             }}
                             title="Generar ticket de Mesa de Ayuda para este paciente"
                             className="p-1 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors duration-150"
@@ -5369,6 +5438,46 @@ export default function MisPacientes() {
           setPacienteTicket(null);
           if (doctorInfo?.idPersonal) cargarTicketsMedico(doctorInfo.idPersonal);
         }}
+      />
+
+      {/* ✅ v1.67.0: Modal para Ver Tickets Existentes */}
+      <TicketsExistentesModal
+        isOpen={showTicketsExistentesModal}
+        onClose={() => {
+          setShowTicketsExistentesModal(false);
+          setTicketsExistentes([]);
+          setPacienteTicket(null);
+        }}
+        onAbrirCrearTicket={() => {
+          // Cerrar el modal de tickets existentes y abrir el de crear ticket
+          setShowTicketsExistentesModal(false);
+          setShowTicketModal(true);
+        }}
+        onAbrirDetalleTicket={(numeroTicket) => {
+          // Abrir modal de detalle del ticket
+          setNumeroTicketDetalle(numeroTicket);
+          setShowDetalleTicketModal(true);
+        }}
+        tickets={ticketsExistentes}
+        paciente={pacienteTicket ? {
+          id: pacienteTicket.idSolicitudBolsa,
+          idSolicitudBolsa: pacienteTicket.idSolicitudBolsa,
+          tipoDocumento: pacienteTicket.tipoDoc || 'DNI',
+          dni: pacienteTicket.numDoc,
+          nombre: pacienteTicket.apellidosNombres,
+          ipress: pacienteTicket.ipress,
+          telefono: pacienteTicket.telefono
+        } : null}
+      />
+
+      {/* ✅ v1.67.0: Modal Detalle de Ticket */}
+      <DetalleTicketModal
+        isOpen={showDetalleTicketModal}
+        onClose={() => {
+          setShowDetalleTicketModal(false);
+          setNumeroTicketDetalle(null);
+        }}
+        numeroTicket={numeroTicketDetalle}
       />
 
       {/* Modal Detalle Ticket Mesa de Ayuda - Vista Médico */}

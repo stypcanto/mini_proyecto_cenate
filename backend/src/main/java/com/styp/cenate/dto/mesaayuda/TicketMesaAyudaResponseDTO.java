@@ -53,6 +53,11 @@ public class TicketMesaAyudaResponseDTO {
     private String nombreMedico;
 
     /**
+     * ID del médico que creó el ticket (NUEVO v1.67.0)
+     */
+    private Long idMedico;
+
+    /**
      * Tipo de documento del paciente (DNI, CE, PASAPORTE, etc.)
      */
     private String tipoDocumento;
@@ -76,6 +81,12 @@ public class TicketMesaAyudaResponseDTO {
      * IPRESS del paciente
      */
     private String ipress;
+
+    /**
+     * ID de la solicitud bolsa (NUEVO v1.67.0)
+     * Identificador único del paciente/solicitud
+     */
+    private Long idSolicitudBolsa;
 
     /**
      * Teléfono móvil principal del paciente

@@ -22,6 +22,7 @@ import java.util.List;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.NotBlank;
 import jakarta.annotation.PostConstruct;
 import java.util.HashMap;
 import java.util.List;
@@ -209,7 +210,7 @@ public class TicketMesaAyudaController {
     }
 
     /**
-     * Obtener tickets de un médico específico
+     * Obtener tickets de un médico con paginación
      * Utilizado en MisPacientes para mostrar historial de tickets del médico
      *
      * @param idMedico ID del médico
@@ -230,6 +231,44 @@ public class TicketMesaAyudaController {
         Page<TicketMesaAyudaResponseDTO> resultado = ticketService.obtenerPorMedicoPaginado(idMedico, pageable);
 
         return ResponseEntity.ok(resultado);
+    }
+
+    /**
+     * ✅ v1.67.0: Obtener tickets por idSolicitudBolsa
+     * Verifica si un paciente ya tiene tickets creados
+     * Utilizado antes de abrir CrearTicketModal
+     *
+     * @param idSolicitudBolsa ID del solicitud bolsa (paciente)
+     * @return ResponseEntity con lista de tickets para ese paciente
+     * @status 200 OK
+     */
+    @GetMapping("/tickets/solicitud-bolsa/{idSolicitudBolsa}")
+    public ResponseEntity<List<TicketMesaAyudaResponseDTO>> obtenerPorSolicitudBolsa(
+        @PathVariable @NotNull Long idSolicitudBolsa
+    ) {
+        log.info("GET /api/mesa-ayuda/tickets/solicitud-bolsa/{} - Obteniendo tickets", idSolicitudBolsa);
+
+        List<TicketMesaAyudaResponseDTO> tickets = ticketService.obtenerPorSolicitudBolsa(idSolicitudBolsa);
+        return ResponseEntity.ok(tickets);
+    }
+
+    /**
+     * ✅ v1.67.0: Obtener detalle completo de un ticket por número
+     * Devuelve todos los campos incluyendo respuesta, nombre medico, etc.
+     *
+     * @param numeroTicket Número único del ticket (ej: 001-2026)
+     * @return ResponseEntity con detalles completos del ticket
+     * @status 200 OK
+     * @status 404 NOT FOUND si el ticket no existe
+     */
+    @GetMapping("/tickets/detalle/{numeroTicket}")
+    public ResponseEntity<TicketMesaAyudaResponseDTO> obtenerDetalleTicket(
+        @PathVariable @NotBlank String numeroTicket
+    ) {
+        log.info("GET /api/mesa-ayuda/tickets/detalle/{} - Obteniendo detalle del ticket", numeroTicket);
+        
+        TicketMesaAyudaResponseDTO ticket = ticketService.obtenerPorNumeroTicket(numeroTicket);
+        return ResponseEntity.ok(ticket);
     }
 
     /**

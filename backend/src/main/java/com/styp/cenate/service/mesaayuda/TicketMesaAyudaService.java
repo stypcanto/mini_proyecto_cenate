@@ -308,6 +308,29 @@ public class TicketMesaAyudaService {
     }
 
     /**
+     * ✅ v1.67.0: Obtener tickets por idSolicitudBolsa
+     * Utilizado para verificar si un paciente ya tiene ticket asociado
+     */
+    public TicketMesaAyudaResponseDTO obtenerPorNumeroTicket(String numeroTicket) {
+        log.debug("Obteniendo ticket para numero_ticket: {}", numeroTicket);
+        Optional<TicketMesaAyuda> ticket = ticketRepository.findByNumeroTicketAndDeletedAtIsNull(numeroTicket);
+        if (ticket.isEmpty()) {
+            log.warn("Ticket no encontrado: {}", numeroTicket);
+            throw new RuntimeException("Ticket no encontrado: " + numeroTicket);
+        }
+        return toResponseDTO(ticket.get());
+    }
+
+    @Transactional(readOnly = true)
+    public List<TicketMesaAyudaResponseDTO> obtenerPorSolicitudBolsa(Long idSolicitudBolsa) {
+        log.debug("Obteniendo tickets para idSolicitudBolsa: {}", idSolicitudBolsa);
+        return ticketRepository.findByIdSolicitudBolsaAndDeletedAtIsNullOrderByFechaCreacionDesc(idSolicitudBolsa)
+            .stream()
+            .map(this::toResponseDTO)
+            .collect(Collectors.toList());
+    }
+
+    /**
      * Obtener tickets por estado
      * Filtra tickets NUEVOS, EN_PROCESO, RESUELTOS o CERRADOS
      */
@@ -1001,11 +1024,13 @@ public class TicketMesaAyudaService {
             .estado(ticket.getEstado())
             .prioridad(ticket.getPrioridad())
             .nombreMedico(ticket.getNombreMedico())
+            .idMedico(ticket.getIdMedico())
             .tipoDocumento(ticket.getTipoDocumento())
             .dniPaciente(ticket.getDniPaciente())
             .nombrePaciente(ticket.getNombrePaciente())
             .especialidad(ticket.getEspecialidad())
             .ipress(ticket.getIpress())
+            .idSolicitudBolsa(ticket.getIdSolicitudBolsa())
             .telefonoPaciente(telefonoPrincipal)
             .telefonoPacienteAlterno(telefonoAlterno)
             .respuesta(ticket.getRespuesta())

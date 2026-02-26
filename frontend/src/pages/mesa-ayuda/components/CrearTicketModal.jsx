@@ -91,8 +91,16 @@ function CrearTicketModal({ isOpen, onClose, medico, paciente, onSuccess }) {
   const [siguienteNumero, setSiguienteNumero] = useState(null);
 
   // ✅ v1.64.0: Cargar motivos y siguiente número al abrir el modal
+  // ✅ v1.67.0: Reset completo del estado al reabrir para evitar mostrar éxito previo
   useEffect(() => {
     if (isOpen) {
+      setIdMotivo('');
+      setObservaciones('');
+      setPrioridad('MEDIA');
+      setError(null);
+      setSuccess(false);
+      setTicketCreado(null);
+      setLoading(false);
       cargarMotivos();
       cargarSiguienteNumero();
     }
@@ -276,6 +284,12 @@ function CrearTicketModal({ isOpen, onClose, medico, paciente, onSuccess }) {
                   </label>
                   <p className="text-sm text-gray-900">{paciente.nombre}</p>
                   <p className="text-xs text-gray-600">DNI: {paciente.dni}</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1">
+                    ID Solicitud Bolsa
+                  </label>
+                  <p className="text-sm text-gray-900 font-mono font-bold">{paciente.idSolicitudBolsa || 'N/A'}</p>
                 </div>
                 <div className="col-span-2">
                   <label className="block text-sm font-semibold text-gray-700 mb-1">

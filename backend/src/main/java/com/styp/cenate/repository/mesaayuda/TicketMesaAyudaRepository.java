@@ -167,6 +167,18 @@ public interface TicketMesaAyudaRepository extends JpaRepository<TicketMesaAyuda
     );
 
     /**
+     * ✅ v1.67.0: Obtener tickets por idSolicitudBolsa
+     * Utilizado para verificar si un paciente ya tiene tickets asociados
+     */
+    List<TicketMesaAyuda> findByIdSolicitudBolsaAndDeletedAtIsNullOrderByFechaCreacionDesc(Long idSolicitudBolsa);
+
+    /**
+     * ✅ v1.67.0: Obtener detalle completo de un ticket por número
+     * Utilizado en modal de consulta de detalles de ticket
+     */
+    Optional<TicketMesaAyuda> findByNumeroTicketAndDeletedAtIsNull(String numeroTicket);
+
+    /**
      * Contar todos los tickets no eliminados (para estadísticas)
      */
     Long countByDeletedAtIsNull();

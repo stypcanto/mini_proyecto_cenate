@@ -78,6 +78,30 @@ export const mesaAyudaService = {
   },
 
   /**
+   * ✅ v1.67.0: Obtener tickets por idSolicitudBolsa
+   * Verifica si un paciente ya tiene tickets creados
+   * @param {number} idSolicitudBolsa ID del solicitud bolsa (paciente)
+   * @returns {Promise} Lista de tickets para ese paciente
+   */
+  obtenerPorSolicitudBolsa: async (idSolicitudBolsa) => {
+    console.log('Fetching tickets for idSolicitudBolsa:', idSolicitudBolsa);
+    const response = await apiClient.get(`${ENDPOINT}/tickets/solicitud-bolsa/${idSolicitudBolsa}`, true);
+    return response;
+  },
+
+  /**
+   * ✅ v1.67.0: Obtener detalle completo de un ticket por número
+   * Consulta todos los campos incluyendo respuesta, médico, etc.
+   * @param {string} numeroTicket Número único del ticket (ej: 001-2026)
+   * @returns {Promise} Detalles completos del ticket
+   */
+  obtenerDetalleTicket: async (numeroTicket) => {
+    console.log('Fetching ticket detail for numeroTicket:', numeroTicket);
+    const response = await apiClient.get(`${ENDPOINT}/tickets/detalle/${numeroTicket}`, true);
+    return response;
+  },
+
+  /**
    * Obtener tickets activos (NUEVO, EN_PROCESO, RESUELTO)
    * @param {number} page Número de página (default 0)
    * @param {number} size Tamaño de página (default 20)
