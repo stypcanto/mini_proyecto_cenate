@@ -11,82 +11,55 @@ import {
   MapPin,
   BarChart3,
   Building2,
-  Network,
   FileText,
   ArrowRight,
   CheckCircle2,
-  Upload,
-  History,
 } from "lucide-react";
 
 const accesos = [
   {
     icono: BarChart3,
+    titulo: "Producción Diaria",
+    descripcion: "Panel Power BI — Reporte de pendientes del día en tiempo real",
+    ruta: "/estadisticas/programacion",
+    color: "blue",
+  },
+  {
+    icono: BarChart3,
+    titulo: "Producción Mensual",
+    descripcion: "Panel Power BI — Reporte de citas pendientes corte mensual",
+    ruta: "/estadisticas/mensual",
+    color: "indigo",
+  },
+  {
+    icono: MapPin,
     titulo: "Dashboard por Redes",
     descripcion: "Visualiza estadísticas de atenciones agrupadas por redes de salud",
     ruta: "/roles/gestionterritorial/dashboardredes",
-    color: "blue",
+    color: "teal",
   },
   {
     icono: Building2,
     titulo: "Diagnóstico de IPRESS",
     descripcion: "Análisis y diagnóstico del estado operativo de las IPRESS",
     ruta: "/roles/gestionterritorial/diagnosticoipress",
-    color: "teal",
+    color: "violet",
   },
   {
     icono: FileText,
     titulo: "Respuestas de Solicitudes",
     descripcion: "Revisa respuestas a los requerimientos de las IPRESS",
     ruta: "/roles/gestionterritorial/respuestas-solicitudes",
-    color: "indigo",
-  },
-  {
-    icono: Network,
-    titulo: "Listado de IPRESS",
-    descripcion: "Consulta y gestiona el directorio de IPRESS registradas",
-    ruta: "/ipress/listado",
-    color: "violet",
-  },
-  {
-    icono: MapPin,
-    titulo: "Gestión de Redes",
-    descripcion: "Administra la estructura de redes de salud territoriales",
-    ruta: "/ipress/redes",
-    color: "cyan",
-  },
-  {
-    icono: BarChart3,
-    titulo: "Producción Diaria",
-    descripcion: "Panel Power BI — Reporte de pendientes del día en tiempo real",
-    ruta: "/estadisticas/programacion",
     color: "emerald",
-  },
-  {
-    icono: Upload,
-    titulo: "Cargar Excel",
-    descripcion: "Importación masiva de solicitudes de bolsa desde Excel",
-    ruta: "/bolsas/cargar-excel",
-    color: "orange",
-  },
-  {
-    icono: History,
-    titulo: "Historial de Bolsas",
-    descripcion: "Consulta el historial de cargas y solicitudes de bolsas",
-    ruta: "/bolsas/historial",
-    color: "slate",
   },
 ];
 
 const colorMap = {
-  blue:    { bg: "bg-blue-50",    icon: "text-blue-600",    btn: "bg-blue-600 hover:bg-blue-700" },
-  teal:    { bg: "bg-teal-50",    icon: "text-teal-600",    btn: "bg-teal-600 hover:bg-teal-700" },
-  indigo:  { bg: "bg-indigo-50",  icon: "text-indigo-600",  btn: "bg-indigo-600 hover:bg-indigo-700" },
-  violet:  { bg: "bg-violet-50",  icon: "text-violet-600",  btn: "bg-violet-600 hover:bg-violet-700" },
-  cyan:    { bg: "bg-cyan-50",    icon: "text-cyan-600",    btn: "bg-cyan-600 hover:bg-cyan-700" },
-  emerald: { bg: "bg-emerald-50", icon: "text-emerald-600", btn: "bg-emerald-600 hover:bg-emerald-700" },
-  orange:  { bg: "bg-orange-50",  icon: "text-orange-600",  btn: "bg-orange-600 hover:bg-orange-700" },
-  slate:   { bg: "bg-slate-100",  icon: "text-slate-600",   btn: "bg-slate-600 hover:bg-slate-700" },
+  blue:    { bg: "bg-blue-50",    icon: "text-blue-600" },
+  teal:    { bg: "bg-teal-50",    icon: "text-teal-600" },
+  indigo:  { bg: "bg-indigo-50",  icon: "text-indigo-600" },
+  violet:  { bg: "bg-violet-50",  icon: "text-violet-600" },
+  emerald: { bg: "bg-emerald-50", icon: "text-emerald-600" },
 };
 
 export default function BienvenidaGestionTerritorial() {
