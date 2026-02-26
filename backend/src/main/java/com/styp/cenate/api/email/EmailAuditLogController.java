@@ -34,7 +34,7 @@ public class EmailAuditLogController {
      * GET /api/email-audit/todos?limite=100
      */
     @GetMapping("/todos")
-    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN')")
+    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'GESTOR_TERRITORIAL_TI')")
     public ResponseEntity<?> obtenerTodos(
         @RequestParam(defaultValue = "100") int limite) {
         try {
@@ -61,7 +61,7 @@ public class EmailAuditLogController {
      * GET /api/email-audit/enviados?limite=50
      */
     @GetMapping("/enviados")
-    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN')")
+    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'GESTOR_TERRITORIAL_TI')")
     public ResponseEntity<?> obtenerEnviados(
         @RequestParam(defaultValue = "50") int limite) {
         try {
@@ -88,7 +88,7 @@ public class EmailAuditLogController {
      * GET /api/email-audit/fallidos?limite=50
      */
     @GetMapping("/fallidos")
-    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN')")
+    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'GESTOR_TERRITORIAL_TI')")
     public ResponseEntity<?> obtenerCorreosFallidos(
         @RequestParam(defaultValue = "50") int limite) {
         try {
@@ -115,7 +115,7 @@ public class EmailAuditLogController {
      * GET /api/email-audit/destinatario?email=user@example.com
      */
     @GetMapping("/destinatario")
-    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN')")
+    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'GESTOR_TERRITORIAL_TI')")
     public ResponseEntity<?> obtenerPorDestinatario(
         @RequestParam String email) {
         try {
@@ -143,7 +143,7 @@ public class EmailAuditLogController {
      * GET /api/email-audit/estadisticas?inicio=2026-02-01&fin=2026-02-05
      */
     @GetMapping("/estadisticas")
-    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN')")
+    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'GESTOR_TERRITORIAL_TI')")
     public ResponseEntity<?> obtenerEstadisticas(
         @RequestParam(required = false) String inicio,
         @RequestParam(required = false) String fin) {
@@ -184,7 +184,7 @@ public class EmailAuditLogController {
      * GET /api/email-audit/errores-conexion?limite=50
      */
     @GetMapping("/errores-conexion")
-    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN')")
+    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'GESTOR_TERRITORIAL_TI')")
     public ResponseEntity<?> obtenerErroresConexion(
         @RequestParam(defaultValue = "50") int limite) {
         try {
@@ -211,7 +211,7 @@ public class EmailAuditLogController {
      * GET /api/email-audit/usuario/:id?pagina=0&tamanio=20
      */
     @GetMapping("/usuario/{idUsuario}")
-    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN')")
+    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'GESTOR_TERRITORIAL_TI')")
     public ResponseEntity<?> obtenerHistoricoUsuario(
         @PathVariable Long idUsuario,
         @RequestParam(defaultValue = "0") int pagina,
@@ -244,7 +244,7 @@ public class EmailAuditLogController {
      * GET /api/email-audit/resumen
      */
     @GetMapping("/resumen")
-    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN')")
+    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'GESTOR_TERRITORIAL_TI')")
     public ResponseEntity<?> obtenerResumen() {
         try {
             log.info("📊 Obteniendo resumen de auditoría de correos");
