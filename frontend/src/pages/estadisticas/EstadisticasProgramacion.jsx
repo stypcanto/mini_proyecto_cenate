@@ -21,6 +21,16 @@ export default function EstadisticasProgramacion() {
       {/* ── Vista normal (embedded en la app) ─────────────────────── */}
       <div className="flex flex-col" style={{ height: 'calc(100vh - 64px)' }}>
 
+        {/* Título principal */}
+        <div className="px-4 py-3 bg-white border-b border-gray-100 flex-shrink-0 text-center">
+          <h1 className="text-xl font-extrabold tracking-wide uppercase text-gray-800">
+            Información de Pendientes del Día{' '}
+            <span className="text-[#0A5BA9]">
+              {new Date().toLocaleDateString('es-PE', { day: '2-digit', month: '2-digit', year: 'numeric' })}
+            </span>
+          </h1>
+        </div>
+
         {/* Barra mínima */}
         <div className="flex items-center justify-between px-4 py-2 bg-white border-b border-gray-200 flex-shrink-0">
           <div className="flex items-center gap-2">
