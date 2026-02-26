@@ -4266,6 +4266,7 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
                     .responsableGestoraId(responsableGestoraId)
                     .estado("PENDIENTE")
                     .estadoGestionCitasId(1L)
+                    .condicionMedica("Pendiente")
                     .activo(true)
                     .fechaAtencion(fechaCita)
                     .fechaSolicitud(OffsetDateTime.now())

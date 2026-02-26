@@ -75,7 +75,7 @@ export default function Login() {
     if (has("SUPERADMIN") || has("ADMIN")) return "/admin/bienvenida";
     if (isPersonal107) return "/roles/personal107/bienvenida";
     if (hasAny(["MEDICO", "ENFERMERIA", "OBSTETRA", "LABORATORIO", "RADIOLOGIA", "FARMACIA", "PSICOLOGO", "TERAPISTA_LENG", "TERAPISTA_FISI", "NUTRICION"])) return "/roles/profesionaldesalud/bienvenida";
-    if (has("COORDINADOR_MEDICO_TELEURGENCIAS")) return "/roles/coordinador/teleurgencias/bienvenida";
+    if (has("COORDINADOR_MEDICO_TELEURGENCIAS") || hasAny(["COORD. TELE URGENCIAS Y TRIAJE", "TELE URGENCIAS", "TELEURGENCIAS"])) return "/roles/coordinador/teleurgencias/bienvenida";
     if (has("COORDINADOR")) return "/roles/coordinador/bienvenida";
     // ✅ v1.40.0: Mejorada detección flexible para GESTOR DE CITAS
     if (hasAny(["GESTOR_CITAS", "GESTOR DE CITAS", "GESTORCITAS"])) return "/citas/bienvenida";
