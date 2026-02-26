@@ -571,12 +571,13 @@ export const componentRegistry = {
   '/bolsas/bolsa-x-gestor': {
     component: lazy(() => import('../pages/bolsas/BolsaXGestor')),
     requiredAction: 'ver',
-    requiredRoles: ['SUPERADMIN', 'COORDINADOR_GESTION_CITAS', 'GESTOR DE CITAS', 'COORD. GESTION CITAS'],
+    requiredRoles: ['SUPERADMIN', 'COORDINADOR_GESTION_CITAS', 'GESTOR DE CITAS', 'COORD. GESTION CITAS', 'GESTOR_TERRITORIAL_TI'],
   },
 
   '/bolsas/historial': {
     component: lazy(() => import('../pages/bolsas/GestionBolsas')),
     requiredAction: 'ver',
+    requiredRoles: ['SUPERADMIN', 'ADMIN', 'COORDINADOR', 'COORDINADOR_GESTION_CITAS', 'GESTOR DE CITAS', 'COORD. GESTION CITAS'],
   },
 
   // ⚠️ DEPRECATED: Rutas antiguas mantenidas para compatibilidad backward
