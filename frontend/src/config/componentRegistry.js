@@ -693,7 +693,7 @@ export const componentRegistry = {
   },
 
   // ========================================================================
-  // 📊 ESTADÍSTICAS DE PROGRAMACIÓN
+  // 📊 PRODUCCIÓN DIARIA (Power BI embed) — antes: Estadísticas de Programación
   // ========================================================================
   '/estadisticas/programacion': {
     component: lazy(() => import('../pages/estadisticas/EstadisticasProgramacion')),
