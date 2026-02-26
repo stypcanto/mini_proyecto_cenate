@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef, useMemo, useCallback } from 'react';
 import { useLocation } from 'react-router-dom';
-import { Zap, AlertCircle, RotateCw, ChevronDown, UserCircle, PlayCircle, Clock, CheckCircle2, Eye, Users, Archive, Pencil, Check, X, Timer, User, Stethoscope, Phone } from 'lucide-react';
+import { Zap, AlertCircle, RotateCw, ChevronDown, UserCircle, PlayCircle, Clock, CheckCircle2, Eye, Users, Archive, Pencil, Check, X, Timer, User, Stethoscope, Phone, Search, SlidersHorizontal, Calendar, Filter, Hash, FileText, ShieldAlert } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import ResponderTicketModal from './components/ResponderTicketModal';
 
@@ -79,6 +79,8 @@ function ListaTickets() {
   const [filtroMedico, setFiltroMedico] = useState('');
   const [filtroSemaforo, setFiltroSemaforo] = useState('');
   const [filtroAsignado, setFiltroAsignado] = useState('');
+  const [fechaDesde, setFechaDesde] = useState('');
+  const [fechaHasta, setFechaHasta] = useState('');
 
   // ✅ v1.67.2: Datos de médicos cargados desde backend con conteo
   const [medicosConTickets, setMedicosConTickets] = useState([]);
@@ -129,6 +131,8 @@ function ListaTickets() {
     setFiltroMedico('');
     setFiltroSemaforo('');
     setFiltroAsignado('');
+    setFechaDesde('');
+    setFechaHasta('');
     setSelectedTickets(new Set());
   }, [location.pathname]);
 
@@ -165,7 +169,7 @@ function ListaTickets() {
   // ✅ v1.67.1: Fetch con búsqueda backend paginada
   useEffect(() => {
     fetchTickets();
-  }, [currentPage, pageSize, modoConfig.estadosBackend, filtroPrioridad, filtroMedico, filtroAsignado]);
+  }, [currentPage, pageSize, modoConfig.estadosBackend, filtroPrioridad, filtroMedico, filtroAsignado, fechaDesde, fechaHasta]);
 
   // ✅ v1.67.1: Debounce para campos de texto (DNI y N° Ticket)
   useEffect(() => {
@@ -222,6 +226,8 @@ function ListaTickets() {
         numeroTicket: busquedaNumeroTicket || undefined,
         idMedico: filtroMedico || undefined,
         nombreAsignado: filtroAsignado || undefined,
+        fechaDesde: fechaDesde || undefined,
+        fechaHasta: fechaHasta || undefined,
       };
 
       const response = await mesaAyudaService.buscarConFiltros(filtros);
@@ -501,163 +507,220 @@ function ListaTickets() {
       )}
 
       {/* Filtros */}
-      <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200 mb-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-7 gap-4">
-          {/* Buscar por N° de Ticket - Autocomplete */}
-          <div className="relative" ref={ticketInputRef}>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              N° de Ticket
-            </label>
-            <div className="relative">
-              <input
-                type="text"
-                value={busquedaNumeroTicket}
-                onChange={(e) => {
-                  setBusquedaNumeroTicket(e.target.value);
-                  setShowTicketSuggestions(true);
-                }}
-                onFocus={() => setShowTicketSuggestions(true)}
-                onBlur={() => setTimeout(() => setShowTicketSuggestions(false), 150)}
-                placeholder="Ej: 0001-2026..."
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-              {busquedaNumeroTicket && (
-                <button
-                  onClick={() => { setBusquedaNumeroTicket(''); setShowTicketSuggestions(false); setCurrentPage(0); }}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                >
-                  <X size={14} />
-                </button>
-              )}
-            </div>
-            {showTicketSuggestions && ticketSuggestions.length > 0 && (
-              <ul className="absolute z-30 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg max-h-48 overflow-auto">
-                {ticketSuggestions.map(numero => (
-                  <li
-                    key={numero}
-                    onMouseDown={() => {
-                      setBusquedaNumeroTicket(numero);
-                      setShowTicketSuggestions(false);
-                    }}
-                    className="px-4 py-2 text-sm cursor-pointer hover:bg-blue-50 hover:text-blue-700 font-mono"
-                  >
-                    {numero}
-                  </li>
-                ))}
-              </ul>
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 mb-6 overflow-hidden">
+        {/* Header de filtros */}
+        <div className="flex items-center justify-between px-5 py-3 bg-gradient-to-r from-[#0a5ba9]/5 to-transparent border-b border-gray-100">
+          <div className="flex items-center gap-2">
+            <SlidersHorizontal size={16} className="text-[#0a5ba9]" />
+            <span className="text-sm font-semibold text-gray-700">Filtros de búsqueda</span>
+            {(busquedaNumeroTicket || busquedaDni || filtroMedico || filtroPrioridad || filtroAsignado || filtroSemaforo || fechaDesde || fechaHasta) && (
+              <span className="ml-1 px-2 py-0.5 bg-[#0a5ba9] text-white text-[10px] font-bold rounded-full">
+                {[busquedaNumeroTicket, busquedaDni, filtroMedico, filtroPrioridad, filtroAsignado, filtroSemaforo, fechaDesde, fechaHasta].filter(Boolean).length}
+              </span>
             )}
           </div>
-
-          {/* Buscar por DNI del Paciente */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              DNI del Paciente
-            </label>
-            <input
-              type="text"
-              value={busquedaDni}
-              onChange={(e) => setBusquedaDni(e.target.value)}
-              placeholder="DNI del paciente..."
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            />
-          </div>
-
-          {/* Filtro Médico */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Profesional de Salud
-            </label>
-            <select
-              value={filtroMedico}
-              onChange={(e) => {
-                setFiltroMedico(e.target.value);
-                setCurrentPage(0);
-              }}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            >
-              <option value="">Todos</option>
-              {medicosConTickets.map(m => (
-                <option key={m.idMedico} value={m.idMedico}>
-                  {m.nombreMedico} ({m.count})
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Filtro Nivel de Importancia (Semáforo) */}
-          {modoConfig.mostrarSemaforo && (
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Nivel de Importancia
-              </label>
-              <select
-                value={filtroSemaforo}
-                onChange={(e) => {
-                  setFiltroSemaforo(e.target.value);
+          <div className="flex items-center gap-2">
+            {(busquedaNumeroTicket || busquedaDni || filtroMedico || filtroPrioridad || filtroAsignado || filtroSemaforo || fechaDesde || fechaHasta) && (
+              <button
+                onClick={() => {
+                  setBusquedaNumeroTicket(''); setBusquedaDni(''); setFiltroMedico(''); setFiltroPrioridad('');
+                  setFiltroAsignado(''); setFiltroSemaforo(''); setFechaDesde(''); setFechaHasta('');
                   setCurrentPage(0);
                 }}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="text-xs text-gray-500 hover:text-red-500 transition-colors flex items-center gap-1"
               >
-                <option value="">Todos</option>
-                <option value="rojo">Rojo (&gt; 40 min)</option>
-                <option value="amarillo">Amarillo (20 – 40 min)</option>
-                <option value="verde">Verde (≤ 20 min)</option>
-              </select>
-            </div>
-          )}
-
-          {/* Filtro Prioridad de Ticket */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Prioridad de Ticket
-            </label>
-            <select
-              value={filtroPrioridad}
-              onChange={(e) => {
-                setFiltroPrioridad(e.target.value);
-                setCurrentPage(0);
-              }}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            >
-              <option value="">Todas</option>
-              <option value="ALTA">Alta</option>
-              <option value="MEDIA">Media</option>
-              <option value="BAJA">Baja</option>
-            </select>
-          </div>
-
-          {/* Filtro Asignado a */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Asignado a
-            </label>
-            <select
-              value={filtroAsignado}
-              onChange={(e) => {
-                setFiltroAsignado(e.target.value);
-                setCurrentPage(0);
-              }}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            >
-              <option value="">Todos</option>
-              {asignadosConCount.map(({ nombre, count }) => (
-                <option key={nombre} value={nombre}>
-                  {nombre} ({count})
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Botón Refrescar */}
-          <div className="flex items-end">
+                <X size={12} />
+                Limpiar filtros
+              </button>
+            )}
             <button
-              onClick={() => { fetchTickets(); /* Recargar dropdowns */ const reloadDropdowns = async () => { try { const { mesaAyudaService } = await import('../../services/mesaAyudaService'); const r = await mesaAyudaService.obtenerTodosSinPaginacion(modoConfig.estadosBackend || null); setAllTicketsForDropdowns(Array.isArray(r.data) ? r.data : r.data?.content || []); const med = await mesaAyudaService.obtenerMedicosConTickets(); setMedicosConTickets(Array.isArray(med) ? med : []); } catch(e) {} }; reloadDropdowns(); }}
+              onClick={() => { fetchTickets(); const reloadDropdowns = async () => { try { const { mesaAyudaService } = await import('../../services/mesaAyudaService'); const r = await mesaAyudaService.obtenerTodosSinPaginacion(modoConfig.estadosBackend || null); setAllTicketsForDropdowns(Array.isArray(r.data) ? r.data : r.data?.content || []); const med = await mesaAyudaService.obtenerMedicosConTickets(); setMedicosConTickets(Array.isArray(med) ? med : []); } catch(e) {} }; reloadDropdowns(); }}
               disabled={loading}
-              className="w-full px-4 py-2 bg-[#0a5ba9] text-white rounded-lg font-medium hover:bg-[#084a8a] disabled:bg-gray-400 transition-colors flex items-center justify-center gap-2"
+              className="px-3 py-1.5 bg-[#0a5ba9] text-white text-xs font-medium rounded-lg hover:bg-[#084a8a] disabled:bg-gray-400 transition-colors flex items-center gap-1.5"
             >
-              <RotateCw size={18} className={loading ? 'animate-spin' : ''} />
+              <RotateCw size={13} className={loading ? 'animate-spin' : ''} />
               Refrescar
             </button>
+          </div>
+        </div>
+
+        <div className="p-4">
+          {/* Fila 1: Búsquedas de texto + Profesional */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
+            {/* N° de Ticket */}
+            <div className="relative" ref={ticketInputRef}>
+              <label className="flex items-center gap-1.5 text-xs font-medium text-gray-500 mb-1 uppercase tracking-wide">
+                <Hash size={12} />
+                N° de Ticket
+              </label>
+              <div className="relative">
+                <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                <input
+                  type="text"
+                  value={busquedaNumeroTicket}
+                  onChange={(e) => {
+                    setBusquedaNumeroTicket(e.target.value);
+                    setShowTicketSuggestions(true);
+                  }}
+                  onFocus={() => setShowTicketSuggestions(true)}
+                  onBlur={() => setTimeout(() => setShowTicketSuggestions(false), 150)}
+                  placeholder="Ej: 0001-2026..."
+                  className="w-full pl-9 pr-8 py-2 text-sm border border-gray-200 rounded-lg bg-gray-50 focus:bg-white focus:ring-2 focus:ring-[#0a5ba9]/20 focus:border-[#0a5ba9] transition-all"
+                />
+                {busquedaNumeroTicket && (
+                  <button
+                    onClick={() => { setBusquedaNumeroTicket(''); setShowTicketSuggestions(false); setCurrentPage(0); }}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  >
+                    <X size={13} />
+                  </button>
+                )}
+              </div>
+              {showTicketSuggestions && ticketSuggestions.length > 0 && (
+                <ul className="absolute z-30 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg max-h-48 overflow-auto">
+                  {ticketSuggestions.map(numero => (
+                    <li
+                      key={numero}
+                      onMouseDown={() => {
+                        setBusquedaNumeroTicket(numero);
+                        setShowTicketSuggestions(false);
+                      }}
+                      className="px-4 py-2 text-sm cursor-pointer hover:bg-blue-50 hover:text-blue-700 font-mono"
+                    >
+                      {numero}
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+
+            {/* DNI del Paciente */}
+            <div>
+              <label className="flex items-center gap-1.5 text-xs font-medium text-gray-500 mb-1 uppercase tracking-wide">
+                <FileText size={12} />
+                DNI del Paciente
+              </label>
+              <div className="relative">
+                <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                <input
+                  type="text"
+                  value={busquedaDni}
+                  onChange={(e) => setBusquedaDni(e.target.value)}
+                  placeholder="Buscar por DNI..."
+                  className="w-full pl-9 pr-3 py-2 text-sm border border-gray-200 rounded-lg bg-gray-50 focus:bg-white focus:ring-2 focus:ring-[#0a5ba9]/20 focus:border-[#0a5ba9] transition-all"
+                />
+              </div>
+            </div>
+
+            {/* Profesional de Salud */}
+            <div>
+              <label className="flex items-center gap-1.5 text-xs font-medium text-gray-500 mb-1 uppercase tracking-wide">
+                <Stethoscope size={12} />
+                Profesional de Salud
+              </label>
+              <select
+                value={filtroMedico}
+                onChange={(e) => { setFiltroMedico(e.target.value); setCurrentPage(0); }}
+                className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg bg-gray-50 focus:bg-white focus:ring-2 focus:ring-[#0a5ba9]/20 focus:border-[#0a5ba9] transition-all appearance-none cursor-pointer"
+                style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%239ca3af' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 10px center' }}
+              >
+                <option value="">Todos</option>
+                {medicosConTickets.map(m => (
+                  <option key={m.idMedico} value={m.idMedico}>
+                    {m.nombreMedico} ({m.count})
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          {/* Fila 2: Fecha Registro (bloque) + Selectores */}
+          <div className={`grid grid-cols-1 gap-3 ${modoConfig.mostrarSemaforo ? 'md:grid-cols-2 lg:grid-cols-4' : 'md:grid-cols-2 lg:grid-cols-3'}`}>
+            {/* Fecha de Registro (bloque agrupado) */}
+            <div>
+              <label className="flex items-center gap-1.5 text-xs font-medium text-gray-500 mb-1 uppercase tracking-wide">
+                <Calendar size={12} />
+                Fecha de Registro
+              </label>
+              <div className="flex items-center gap-2">
+                <input
+                  type="date"
+                  value={fechaDesde}
+                  onChange={(e) => { setFechaDesde(e.target.value); setCurrentPage(0); }}
+                  className="flex-1 min-w-0 px-3 py-2 text-sm border border-gray-200 rounded-lg bg-gray-50 focus:bg-white focus:ring-2 focus:ring-[#0a5ba9]/20 focus:border-[#0a5ba9] transition-all"
+                  title="Desde"
+                />
+                <span className="text-xs text-gray-400 font-medium shrink-0">a</span>
+                <input
+                  type="date"
+                  value={fechaHasta}
+                  onChange={(e) => { setFechaHasta(e.target.value); setCurrentPage(0); }}
+                  className="flex-1 min-w-0 px-3 py-2 text-sm border border-gray-200 rounded-lg bg-gray-50 focus:bg-white focus:ring-2 focus:ring-[#0a5ba9]/20 focus:border-[#0a5ba9] transition-all"
+                  title="Hasta"
+                />
+              </div>
+            </div>
+
+            {/* Prioridad */}
+            <div>
+              <label className="flex items-center gap-1.5 text-xs font-medium text-gray-500 mb-1 uppercase tracking-wide">
+                <ShieldAlert size={12} />
+                Prioridad
+              </label>
+              <select
+                value={filtroPrioridad}
+                onChange={(e) => { setFiltroPrioridad(e.target.value); setCurrentPage(0); }}
+                className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg bg-gray-50 focus:bg-white focus:ring-2 focus:ring-[#0a5ba9]/20 focus:border-[#0a5ba9] transition-all appearance-none cursor-pointer"
+                style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%239ca3af' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 10px center' }}
+              >
+                <option value="">Todas</option>
+                <option value="ALTA">Alta</option>
+                <option value="MEDIA">Media</option>
+                <option value="BAJA">Baja</option>
+              </select>
+            </div>
+
+            {/* Asignado a */}
+            <div>
+              <label className="flex items-center gap-1.5 text-xs font-medium text-gray-500 mb-1 uppercase tracking-wide">
+                <User size={12} />
+                Asignado a
+              </label>
+              <select
+                value={filtroAsignado}
+                onChange={(e) => { setFiltroAsignado(e.target.value); setCurrentPage(0); }}
+                className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg bg-gray-50 focus:bg-white focus:ring-2 focus:ring-[#0a5ba9]/20 focus:border-[#0a5ba9] transition-all appearance-none cursor-pointer"
+                style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%239ca3af' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 10px center' }}
+              >
+                <option value="">Todos</option>
+                {asignadosConCount.map(({ nombre, count }) => (
+                  <option key={nombre} value={nombre}>
+                    {nombre} ({count})
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Semáforo - solo en pendientes */}
+            {modoConfig.mostrarSemaforo && (
+              <div>
+                <label className="flex items-center gap-1.5 text-xs font-medium text-gray-500 mb-1 uppercase tracking-wide">
+                  <Filter size={12} />
+                  Importancia
+                </label>
+                <select
+                  value={filtroSemaforo}
+                  onChange={(e) => { setFiltroSemaforo(e.target.value); setCurrentPage(0); }}
+                  className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg bg-gray-50 focus:bg-white focus:ring-2 focus:ring-[#0a5ba9]/20 focus:border-[#0a5ba9] transition-all appearance-none cursor-pointer"
+                  style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%239ca3af' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 10px center' }}
+                >
+                  <option value="">Todos</option>
+                  <option value="rojo">🔴 Rojo (&gt; 40 min)</option>
+                  <option value="amarillo">🟡 Amarillo (20–40 min)</option>
+                  <option value="verde">🟢 Verde (≤ 20 min)</option>
+                </select>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -775,6 +838,12 @@ function ListaTickets() {
                   </th>
                   <th className="px-3 py-2.5 text-left text-xs font-semibold text-white uppercase tracking-wider whitespace-nowrap">
                     Asignado a
+                  </th>
+                  <th className="px-3 py-2.5 text-center text-xs font-semibold text-white uppercase tracking-wider whitespace-nowrap">
+                    F. Creación
+                  </th>
+                  <th className="px-3 py-2.5 text-center text-xs font-semibold text-white uppercase tracking-wider whitespace-nowrap">
+                    F. Atención
                   </th>
                   <th className="px-3 py-2.5 text-center text-xs font-semibold text-white uppercase tracking-wider whitespace-nowrap">
                     Espera
@@ -924,6 +993,24 @@ function ListaTickets() {
                         </button>
                       )}
 
+                    </td>
+                    {/* Columna Fecha Creación */}
+                    <td className="px-3 py-2.5 text-center text-xs text-gray-600 whitespace-nowrap">
+                      {ticket.fechaCreacion ? (
+                        <>
+                          <div className="font-medium">{new Date(ticket.fechaCreacion).toLocaleDateString('es-PE', { day: '2-digit', month: '2-digit', year: 'numeric' })}</div>
+                          <div className="text-gray-400">{new Date(ticket.fechaCreacion).toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit' })}</div>
+                        </>
+                      ) : <span className="text-gray-300">—</span>}
+                    </td>
+                    {/* Columna Fecha Atención */}
+                    <td className="px-3 py-2.5 text-center text-xs text-gray-600 whitespace-nowrap">
+                      {ticket.fechaAtencion ? (
+                        <>
+                          <div className="font-medium">{new Date(ticket.fechaAtencion).toLocaleDateString('es-PE', { day: '2-digit', month: '2-digit', year: 'numeric' })}</div>
+                          <div className="text-gray-400">{new Date(ticket.fechaAtencion).toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit' })}</div>
+                        </>
+                      ) : <span className="text-gray-300">—</span>}
                     </td>
                     {/* Columna Tiempo de Espera */}
                     <td className="px-3 py-2.5 text-center">

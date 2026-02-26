@@ -18,6 +18,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -200,6 +201,8 @@ public class TicketMesaAyudaController {
      * @param numeroTicket   Búsqueda parcial por número de ticket
      * @param idMedico       ID del profesional de salud
      * @param nombreAsignado Nombre exacto del personal asignado
+     * @param fechaDesde     Fecha inicio (inclusive) formato yyyy-MM-dd
+     * @param fechaHasta     Fecha fin (inclusive) formato yyyy-MM-dd
      * @return Page de tickets con paginación
      * @status 200 OK
      */
@@ -212,14 +215,16 @@ public class TicketMesaAyudaController {
         @RequestParam(required = false) String dniPaciente,
         @RequestParam(required = false) String numeroTicket,
         @RequestParam(required = false) Long idMedico,
-        @RequestParam(required = false) String nombreAsignado
+        @RequestParam(required = false) String nombreAsignado,
+        @RequestParam(required = false) LocalDate fechaDesde,
+        @RequestParam(required = false) LocalDate fechaHasta
     ) {
-        log.info("GET /api/mesa-ayuda/tickets/buscar - page={}, size={}, estados={}, prioridad={}, dni={}, ticket={}, idMedico={}, asignado={}",
-            page, size, estados, prioridad, dniPaciente, numeroTicket, idMedico, nombreAsignado);
+        log.info("GET /api/mesa-ayuda/tickets/buscar - page={}, size={}, estados={}, prioridad={}, dni={}, ticket={}, idMedico={}, asignado={}, fechaDesde={}, fechaHasta={}",
+            page, size, estados, prioridad, dniPaciente, numeroTicket, idMedico, nombreAsignado, fechaDesde, fechaHasta);
 
         Pageable pageable = PageRequest.of(page, size);
         Page<TicketMesaAyudaResponseDTO> resultado = ticketService.buscarConFiltros(
-            estados, prioridad, dniPaciente, numeroTicket, idMedico, nombreAsignado, pageable
+            estados, prioridad, dniPaciente, numeroTicket, idMedico, nombreAsignado, fechaDesde, fechaHasta, pageable
         );
 
         return ResponseEntity.ok(resultado);

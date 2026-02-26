@@ -23,6 +23,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
@@ -319,6 +320,8 @@ public class TicketMesaAyudaService {
             String numeroTicket,
             Long idMedico,
             String nombreAsignado,
+            LocalDate fechaDesde,
+            LocalDate fechaHasta,
             Pageable pageable) {
 
         // Normalizar parámetros
@@ -368,6 +371,16 @@ public class TicketMesaAyudaService {
             jpql.append(" AND t.nombrePersonalAsignado = :nombreAsignado");
             countJpql.append(" AND t.nombrePersonalAsignado = :nombreAsignado");
             params.put("nombreAsignado", asignadoParam);
+        }
+        if (fechaDesde != null) {
+            jpql.append(" AND t.fechaCreacion >= :fechaDesde");
+            countJpql.append(" AND t.fechaCreacion >= :fechaDesde");
+            params.put("fechaDesde", fechaDesde.atStartOfDay());
+        }
+        if (fechaHasta != null) {
+            jpql.append(" AND t.fechaCreacion < :fechaHasta");
+            countJpql.append(" AND t.fechaCreacion < :fechaHasta");
+            params.put("fechaHasta", fechaHasta.plusDays(1).atStartOfDay());
         }
 
         jpql.append(" ORDER BY t.fechaCreacion DESC");
