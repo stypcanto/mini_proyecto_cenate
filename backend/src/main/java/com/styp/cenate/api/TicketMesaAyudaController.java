@@ -18,15 +18,14 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.annotation.PostConstruct;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
 /**
  * Controller REST para gestionar tickets de Mesa de Ayuda
@@ -185,6 +184,61 @@ public class TicketMesaAyudaController {
         List<TicketMesaAyudaResponseDTO> resultado = ticketService.obtenerTodosSinPaginacion(estado);
 
         return ResponseEntity.ok(resultado);
+    }
+
+    // ========== BÚSQUEDA PAGINADA CON FILTROS (v1.67.1) ==========
+
+    /**
+     * Búsqueda paginada de tickets con múltiples filtros opcionales.
+     * Todos los filtros se aplican en backend (SQL) para máximo rendimiento.
+     *
+     * @param page           Número de página (default 0)
+     * @param size           Tamaño de página (default 15)
+     * @param estados        CSV de estados a filtrar (ej: "NUEVO,EN_PROCESO")
+     * @param prioridad      Prioridad exacta (ALTA, MEDIA, BAJA)
+     * @param dniPaciente    Búsqueda parcial por DNI
+     * @param numeroTicket   Búsqueda parcial por número de ticket
+     * @param idMedico       ID del profesional de salud
+     * @param nombreAsignado Nombre exacto del personal asignado
+     * @return Page de tickets con paginación
+     * @status 200 OK
+     */
+    @GetMapping("/tickets/buscar")
+    public ResponseEntity<Page<TicketMesaAyudaResponseDTO>> buscarConFiltros(
+        @RequestParam(defaultValue = "0") int page,
+        @RequestParam(defaultValue = "15") int size,
+        @RequestParam(required = false) String estados,
+        @RequestParam(required = false) String prioridad,
+        @RequestParam(required = false) String dniPaciente,
+        @RequestParam(required = false) String numeroTicket,
+        @RequestParam(required = false) Long idMedico,
+        @RequestParam(required = false) String nombreAsignado
+    ) {
+        log.info("GET /api/mesa-ayuda/tickets/buscar - page={}, size={}, estados={}, prioridad={}, dni={}, ticket={}, idMedico={}, asignado={}",
+            page, size, estados, prioridad, dniPaciente, numeroTicket, idMedico, nombreAsignado);
+
+        Pageable pageable = PageRequest.of(page, size);
+        Page<TicketMesaAyudaResponseDTO> resultado = ticketService.buscarConFiltros(
+            estados, prioridad, dniPaciente, numeroTicket, idMedico, nombreAsignado, pageable
+        );
+
+        return ResponseEntity.ok(resultado);
+    }
+
+    // ========== MÉDICOS CON CONTEO DE TICKETS ==========
+
+    /**
+     * Obtener lista de médicos creadores con conteo de tickets.
+     * Usado para poblar el dropdown "Profesional de Salud".
+     *
+     * @return Lista de { idMedico, nombreMedico, count }
+     * @status 200 OK
+     */
+    @GetMapping("/medicos-con-tickets")
+    public ResponseEntity<List<Map<String, Object>>> obtenerMedicosConConteo() {
+        log.info("GET /api/mesa-ayuda/medicos-con-tickets");
+        List<Map<String, Object>> medicos = ticketService.obtenerMedicosConConteo();
+        return ResponseEntity.ok(medicos);
     }
 
     /**

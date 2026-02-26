@@ -179,6 +179,20 @@ public interface TicketMesaAyudaRepository extends JpaRepository<TicketMesaAyuda
     Optional<TicketMesaAyuda> findByNumeroTicketAndDeletedAtIsNull(String numeroTicket);
 
     /**
+     * Obtener médicos creadores con conteo de tickets
+     * Retorna Object[] { idMedico (Long), nombreMedico (String), count (Long) }
+     */
+    @Query("""
+        SELECT t.idMedico, t.nombreMedico, COUNT(t)
+        FROM TicketMesaAyuda t
+        WHERE t.deletedAt IS NULL
+        AND t.idMedico IS NOT NULL
+        GROUP BY t.idMedico, t.nombreMedico
+        ORDER BY t.nombreMedico ASC
+    """)
+    List<Object[]> findMedicosConConteo();
+
+    /**
      * Contar todos los tickets no eliminados (para estadísticas)
      */
     Long countByDeletedAtIsNull();

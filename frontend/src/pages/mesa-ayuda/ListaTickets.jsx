@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef, useMemo } from 'react';
+import React, { useEffect, useState, useRef, useMemo, useCallback } from 'react';
 import { useLocation } from 'react-router-dom';
 import { Zap, AlertCircle, RotateCw, ChevronDown, UserCircle, PlayCircle, Clock, CheckCircle2, Eye, Users, Archive, Pencil, Check, X, Timer, User, Stethoscope, Phone } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
@@ -65,6 +65,7 @@ function ListaTickets() {
   const [currentPage, setCurrentPage] = useState(0);
   const [pageSize, setPageSize] = useState(15);
   const [totalPages, setTotalPages] = useState(0);
+  const [totalElements, setTotalElements] = useState(0);
 
   // Filtros
   const [filtroPrioridad, setFiltroPrioridad] = useState('');
@@ -78,6 +79,15 @@ function ListaTickets() {
   const [filtroMedico, setFiltroMedico] = useState('');
   const [filtroSemaforo, setFiltroSemaforo] = useState('');
   const [filtroAsignado, setFiltroAsignado] = useState('');
+
+  // ✅ v1.67.2: Datos de médicos cargados desde backend con conteo
+  const [medicosConTickets, setMedicosConTickets] = useState([]);
+
+  // Datos auxiliares para dropdowns de tickets y asignados
+  const [allTicketsForDropdowns, setAllTicketsForDropdowns] = useState([]);
+
+  // Debounce timer ref para búsquedas de texto
+  const debounceRef = useRef(null);
 
   // Modal
   const [showModalResponder, setShowModalResponder] = useState(false);
@@ -122,9 +132,50 @@ function ListaTickets() {
     setSelectedTickets(new Set());
   }, [location.pathname]);
 
+  // ✅ v1.67.2: Cargar médicos con conteo desde backend
+  useEffect(() => {
+    const cargarMedicos = async () => {
+      try {
+        const { mesaAyudaService } = await import('../../services/mesaAyudaService');
+        const data = await mesaAyudaService.obtenerMedicosConTickets();
+        setMedicosConTickets(Array.isArray(data) ? data : []);
+      } catch (err) {
+        console.error('Error cargando médicos con tickets:', err);
+      }
+    };
+    cargarMedicos();
+  }, []);
+
+  // ✅ v1.67.2: Cargar datos auxiliares para dropdowns (tickets suggestions + asignados)
+  useEffect(() => {
+    const cargarDatosDropdowns = async () => {
+      try {
+        const { mesaAyudaService } = await import('../../services/mesaAyudaService');
+        const estadoParam = modoConfig.estadosBackend || null;
+        const response = await mesaAyudaService.obtenerTodosSinPaginacion(estadoParam);
+        const data = Array.isArray(response.data) ? response.data : response.data?.content || [];
+        setAllTicketsForDropdowns(data);
+      } catch (err) {
+        console.error('Error cargando datos para dropdowns:', err);
+      }
+    };
+    cargarDatosDropdowns();
+  }, [modoConfig.estadosBackend]);
+
+  // ✅ v1.67.1: Fetch con búsqueda backend paginada
   useEffect(() => {
     fetchTickets();
-  }, [modoConfig.estadosBackend]);
+  }, [currentPage, pageSize, modoConfig.estadosBackend, filtroPrioridad, filtroMedico, filtroAsignado]);
+
+  // ✅ v1.67.1: Debounce para campos de texto (DNI y N° Ticket)
+  useEffect(() => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      setCurrentPage(0);
+      fetchTickets();
+    }, 400);
+    return () => clearTimeout(debounceRef.current);
+  }, [busquedaDni, busquedaNumeroTicket]);
 
   // Cargar lista de personal Mesa de Ayuda al montar
   useEffect(() => {
@@ -159,17 +210,26 @@ function ListaTickets() {
       setLoading(true);
       setError(null);
 
-      // Lazy import para evitar problemas de circular dependencies
       const { mesaAyudaService } = await import('../../services/mesaAyudaService');
 
-      // Usar los estados del modo (pendientes: NUEVO,EN_PROCESO; atendidos: RESUELTO,CERRADO)
-      const estadoParam = modoConfig.estadosBackend || null;
-      // Cargar TODOS los registros SIN paginación en backend para que el filtrado sea 100% en frontend
-      const response = await mesaAyudaService.obtenerTodosSinPaginacion(estadoParam);
+      // ✅ v1.67.1: Búsqueda paginada con filtros en backend
+      const filtros = {
+        page: currentPage,
+        size: pageSize,
+        estados: modoConfig.estadosBackend || undefined,
+        prioridad: filtroPrioridad || undefined,
+        dniPaciente: busquedaDni || undefined,
+        numeroTicket: busquedaNumeroTicket || undefined,
+        idMedico: filtroMedico || undefined,
+        nombreAsignado: filtroAsignado || undefined,
+      };
 
-      // El endpoint retorna un array directo, no un Page
-      setTickets(Array.isArray(response.data) ? response.data : response.data.content || []);
-      setTotalPages(1); // Una única página ya que cargamos toda la data de una vez
+      const response = await mesaAyudaService.buscarConFiltros(filtros);
+
+      // El endpoint retorna un Page con content, totalPages, totalElements
+      setTickets(response?.content || []);
+      setTotalPages(response?.totalPages || 1);
+      setTotalElements(response?.totalElements || 0);
     } catch (err) {
       console.error('Error cargando tickets:', err);
       setError('Error al cargar los tickets');
@@ -365,28 +425,23 @@ function ListaTickets() {
     }
   };
 
-  // Lista única de médicos para el dropdown
-  const medicosUnicos = useMemo(() => {
-    const nombres = new Set();
-    tickets.forEach(t => { if (t.nombreMedico) nombres.add(t.nombreMedico); });
-    return Array.from(nombres).sort();
-  }, [tickets]);
+  // ✅ v1.67.2: Médicos con conteo desde backend (ya no se calcula desde allTicketsForDropdowns)
+  // medicosConTickets ya viene del endpoint /medicos-con-tickets con { idMedico, nombreMedico, count }
 
-  // Lista de personal asignado con conteo de tickets
   // Sugerencias autocomplete para N° de Ticket
   const ticketSuggestions = useMemo(() => {
     if (!busquedaNumeroTicket.trim()) return [];
-    return tickets
+    return allTicketsForDropdowns
       .map(t => t.numeroTicket)
       .filter(Boolean)
-      .filter((n, i, arr) => arr.indexOf(n) === i) // únicos
+      .filter((n, i, arr) => arr.indexOf(n) === i)
       .filter(n => n.toLowerCase().includes(busquedaNumeroTicket.toLowerCase()))
       .slice(0, 8);
-  }, [tickets, busquedaNumeroTicket]);
+  }, [allTicketsForDropdowns, busquedaNumeroTicket]);
 
   const asignadosConCount = useMemo(() => {
     const mapa = {};
-    tickets.forEach(t => {
+    allTicketsForDropdowns.forEach(t => {
       if (t.nombrePersonalAsignado) {
         mapa[t.nombrePersonalAsignado] = (mapa[t.nombrePersonalAsignado] || 0) + 1;
       }
@@ -394,9 +449,9 @@ function ListaTickets() {
     return Object.entries(mapa)
       .map(([nombre, count]) => ({ nombre, count }))
       .sort((a, b) => b.count - a.count);
-  }, [tickets]);
+  }, [allTicketsForDropdowns]);
 
-  // Calcular semáforo helper para filtro
+  // Calcular semáforo helper para filtro (se aplica localmente sobre la página actual)
   const getSemaforoNivel = (fechaCreacion) => {
     const minutos = Math.floor((new Date() - new Date(fechaCreacion)) / 60000);
     if (minutos <= 20) return 'verde';
@@ -404,22 +459,11 @@ function ListaTickets() {
     return 'rojo';
   };
 
-  // Filtrar tickets por filtros locales
-  const ticketsFiltrados = tickets.filter(ticket => {
-    // Filtro N° Ticket
-    if (busquedaNumeroTicket && !ticket.numeroTicket?.toLowerCase().includes(busquedaNumeroTicket.toLowerCase())) return false;
-    // Filtro DNI
-    if (busquedaDni && !ticket.dniPaciente?.toLowerCase().includes(busquedaDni.toLowerCase())) return false;
-    // Filtro Médico
-    if (filtroMedico && ticket.nombreMedico !== filtroMedico) return false;
-    // Filtro Semáforo (nivel de importancia por tiempo)
-    if (filtroSemaforo && modoConfig.mostrarSemaforo && getSemaforoNivel(ticket.fechaCreacion) !== filtroSemaforo) return false;
-    // Filtro Prioridad
-    if (filtroPrioridad && ticket.prioridad !== filtroPrioridad) return false;
-    // Filtro Asignado a
-    if (filtroAsignado && ticket.nombrePersonalAsignado !== filtroAsignado) return false;
-    return true;
-  });
+  // ✅ v1.67.1: Filtrado semáforo en frontend (sobre la página actual del backend)
+  // Los demás filtros ya se aplican en backend
+  const ticketsFiltrados = filtroSemaforo && modoConfig.mostrarSemaforo
+    ? tickets.filter(ticket => getSemaforoNivel(ticket.fechaCreacion) === filtroSemaforo)
+    : tickets;
 
   // Solo tickets asignables (sin personal y no resueltos)
   const ticketsAsignables = ticketsFiltrados.filter(t => !t.nombrePersonalAsignado && t.estado !== 'RESUELTO');
@@ -432,7 +476,7 @@ function ListaTickets() {
           {React.createElement(modoConfig.icon, { size: 32, className: esAtendidos ? 'text-green-500' : 'text-yellow-500' })}
           {modoConfig.titulo}
           <span className="text-sm font-medium text-gray-500 bg-gray-100 px-3 py-1 rounded-full">
-            {ticketsFiltrados.length} tickets
+            {totalElements} tickets
           </span>
         </h1>
         <p className="text-gray-600 mt-2">
@@ -479,7 +523,7 @@ function ListaTickets() {
               />
               {busquedaNumeroTicket && (
                 <button
-                  onClick={() => { setBusquedaNumeroTicket(''); setShowTicketSuggestions(false); }}
+                  onClick={() => { setBusquedaNumeroTicket(''); setShowTicketSuggestions(false); setCurrentPage(0); }}
                   className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
                 >
                   <X size={14} />
@@ -532,8 +576,10 @@ function ListaTickets() {
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             >
               <option value="">Todos</option>
-              {medicosUnicos.map(nombre => (
-                <option key={nombre} value={nombre}>{nombre}</option>
+              {medicosConTickets.map(m => (
+                <option key={m.idMedico} value={m.idMedico}>
+                  {m.nombreMedico} ({m.count})
+                </option>
               ))}
             </select>
           </div>
@@ -605,7 +651,7 @@ function ListaTickets() {
           {/* Botón Refrescar */}
           <div className="flex items-end">
             <button
-              onClick={fetchTickets}
+              onClick={() => { fetchTickets(); /* Recargar dropdowns */ const reloadDropdowns = async () => { try { const { mesaAyudaService } = await import('../../services/mesaAyudaService'); const r = await mesaAyudaService.obtenerTodosSinPaginacion(modoConfig.estadosBackend || null); setAllTicketsForDropdowns(Array.isArray(r.data) ? r.data : r.data?.content || []); const med = await mesaAyudaService.obtenerMedicosConTickets(); setMedicosConTickets(Array.isArray(med) ? med : []); } catch(e) {} }; reloadDropdowns(); }}
               disabled={loading}
               className="w-full px-4 py-2 bg-[#0a5ba9] text-white rounded-lg font-medium hover:bg-[#084a8a] disabled:bg-gray-400 transition-colors flex items-center justify-center gap-2"
             >
@@ -930,7 +976,7 @@ function ListaTickets() {
               Página <span className="font-semibold text-gray-700">{currentPage + 1}</span> de{' '}
               <span className="font-semibold text-gray-700">{totalPages}</span>
               {' '}·{' '}
-              <span className="font-semibold text-gray-700">{tickets.length}</span> registros en esta página
+              <span className="font-semibold text-gray-700">{totalElements}</span> registros en total
             </div>
             <div className="flex items-center gap-1">
               {/* Primera página */}

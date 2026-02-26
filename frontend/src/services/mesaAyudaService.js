@@ -53,6 +53,40 @@ export const mesaAyudaService = {
   },
 
   /**
+   * ✅ v1.67.1: Búsqueda paginada con filtros en backend
+   * Todos los filtros se aplican en SQL para máximo rendimiento
+   * @param {Object} filtros - { page, size, estados, prioridad, dniPaciente, numeroTicket, idMedico, nombreAsignado }
+   * @returns {Promise} Page con content[], totalPages, totalElements, etc.
+   */
+  buscarConFiltros: async (filtros = {}) => {
+    const params = new URLSearchParams();
+    params.append('page', filtros.page ?? 0);
+    params.append('size', filtros.size ?? 15);
+    if (filtros.estados) params.append('estados', filtros.estados);
+    if (filtros.prioridad) params.append('prioridad', filtros.prioridad);
+    if (filtros.dniPaciente) params.append('dniPaciente', filtros.dniPaciente);
+    if (filtros.numeroTicket) params.append('numeroTicket', filtros.numeroTicket);
+    if (filtros.idMedico) params.append('idMedico', filtros.idMedico);
+    if (filtros.nombreAsignado) params.append('nombreAsignado', filtros.nombreAsignado);
+
+    const url = `${ENDPOINT}/tickets/buscar?${params.toString()}`;
+    console.log('🔍 Buscando tickets con filtros:', filtros);
+    const response = await apiClient.get(url, true);
+    return response;
+  },
+
+  /**
+   * ✅ v1.67.2: Obtener médicos creadores con conteo de tickets
+   * Para poblar el dropdown "Profesional de Salud"
+   * @returns {Promise} Lista de { idMedico, nombreMedico, count }
+   */
+  obtenerMedicosConTickets: async () => {
+    console.log('👨‍⚕️ Obteniendo médicos con tickets...');
+    const response = await apiClient.get(`${ENDPOINT}/medicos-con-tickets`, true);
+    return response;
+  },
+
+  /**
    * Obtener un ticket específico por ID
    * @param {number} id ID del ticket
    * @returns {Promise} Datos del ticket

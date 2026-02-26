@@ -282,6 +282,116 @@ public class TicketMesaAyudaService {
     }
 
     /**
+     * ✅ v1.67.1: Búsqueda paginada con filtros dinámicos en backend.
+     * Construye la query JPQL dinámicamente según los filtros proporcionados.
+     * Usa EntityManager para máxima compatibilidad con Hibernate.
+     *
+     * @param estados       Filtro por estados (CSV: "NUEVO,EN_PROCESO")
+     * @param prioridad     Filtro por prioridad exacta (ALTA, MEDIA, BAJA)
+     * @param dniPaciente   Búsqueda parcial por DNI
+     * @param numeroTicket  Búsqueda parcial por número de ticket
+     * @param nombreMedico  Nombre exacto del profesional de salud
+     * @param nombreAsignado Nombre exacto del personal asignado
+     * @param pageable      Paginación
+     * @return Page<TicketMesaAyudaResponseDTO>
+     */
+    /**
+     * Obtener lista de médicos creadores con conteo de tickets
+     * @return Lista de mapas con idMedico, nombreMedico, count
+     */
+    @Transactional(readOnly = true)
+    public List<Map<String, Object>> obtenerMedicosConConteo() {
+        List<Object[]> rows = ticketRepository.findMedicosConConteo();
+        return rows.stream().map(row -> {
+            Map<String, Object> m = new HashMap<>();
+            m.put("idMedico", row[0]);
+            m.put("nombreMedico", row[1]);
+            m.put("count", row[2]);
+            return m;
+        }).collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
+    public Page<TicketMesaAyudaResponseDTO> buscarConFiltros(
+            String estados,
+            String prioridad,
+            String dniPaciente,
+            String numeroTicket,
+            Long idMedico,
+            String nombreAsignado,
+            Pageable pageable) {
+
+        // Normalizar parámetros
+        List<String> estadosList = (estados != null && !estados.isBlank())
+            ? Arrays.asList(estados.split(",")) : null;
+        String prioridadParam = (prioridad != null && !prioridad.isBlank()) ? prioridad : null;
+        String dniParam = (dniPaciente != null && !dniPaciente.isBlank()) ? dniPaciente : null;
+        String ticketParam = (numeroTicket != null && !numeroTicket.isBlank()) ? numeroTicket : null;
+        String asignadoParam = (nombreAsignado != null && !nombreAsignado.isBlank()) ? nombreAsignado : null;
+
+        log.debug("Búsqueda paginada: estados={}, prioridad={}, dni={}, ticket={}, idMedico={}, asignado={}, page={}, size={}",
+            estadosList, prioridadParam, dniParam, ticketParam, idMedico, asignadoParam,
+            pageable.getPageNumber(), pageable.getPageSize());
+
+        // Construir query dinámicamente
+        StringBuilder jpql = new StringBuilder("SELECT t FROM TicketMesaAyuda t WHERE t.deletedAt IS NULL");
+        StringBuilder countJpql = new StringBuilder("SELECT COUNT(t) FROM TicketMesaAyuda t WHERE t.deletedAt IS NULL");
+
+        Map<String, Object> params = new HashMap<>();
+
+        if (estadosList != null && !estadosList.isEmpty()) {
+            jpql.append(" AND t.estado IN :estados");
+            countJpql.append(" AND t.estado IN :estados");
+            params.put("estados", estadosList);
+        }
+        if (prioridadParam != null) {
+            jpql.append(" AND t.prioridad = :prioridad");
+            countJpql.append(" AND t.prioridad = :prioridad");
+            params.put("prioridad", prioridadParam);
+        }
+        if (dniParam != null) {
+            jpql.append(" AND t.dniPaciente LIKE :dniPaciente");
+            countJpql.append(" AND t.dniPaciente LIKE :dniPaciente");
+            params.put("dniPaciente", "%" + dniParam + "%");
+        }
+        if (ticketParam != null) {
+            jpql.append(" AND t.numeroTicket LIKE :numeroTicket");
+            countJpql.append(" AND t.numeroTicket LIKE :numeroTicket");
+            params.put("numeroTicket", "%" + ticketParam + "%");
+        }
+        if (idMedico != null) {
+            jpql.append(" AND t.idMedico = :idMedico");
+            countJpql.append(" AND t.idMedico = :idMedico");
+            params.put("idMedico", idMedico);
+        }
+        if (asignadoParam != null) {
+            jpql.append(" AND t.nombrePersonalAsignado = :nombreAsignado");
+            countJpql.append(" AND t.nombrePersonalAsignado = :nombreAsignado");
+            params.put("nombreAsignado", asignadoParam);
+        }
+
+        jpql.append(" ORDER BY t.fechaCreacion DESC");
+
+        // Ejecutar count query
+        var countQuery = entityManager.createQuery(countJpql.toString(), Long.class);
+        params.forEach(countQuery::setParameter);
+        long total = countQuery.getSingleResult();
+
+        // Ejecutar data query con paginación
+        var dataQuery = entityManager.createQuery(jpql.toString(), TicketMesaAyuda.class);
+        params.forEach(dataQuery::setParameter);
+        dataQuery.setFirstResult((int) pageable.getOffset());
+        dataQuery.setMaxResults(pageable.getPageSize());
+
+        List<TicketMesaAyuda> resultados = dataQuery.getResultList();
+        List<TicketMesaAyudaResponseDTO> dtos = resultados.stream()
+            .map(this::toResponseDTO)
+            .collect(Collectors.toList());
+
+        return new org.springframework.data.domain.PageImpl<>(dtos, pageable, total);
+    }
+
+    /**
      * Obtener tickets de un médico específico
      * Utilizado para mostrar los tickets creados por el médico en MisPacientes
      *
