@@ -704,6 +704,12 @@ export const componentRegistry = {
     component: lazy(() => import('../pages/estadisticas/EstadisticasProgramacion')),
     requiredAction: 'ver',
   },
+
+  // 📊 PRODUCCIÓN MENSUAL (Power BI embed)
+  '/estadisticas/mensual': {
+    component: lazy(() => import('../pages/estadisticas/EstadisticasMensual')),
+    requiredAction: 'ver',
+  },
 };
 
 // ========================================================================
