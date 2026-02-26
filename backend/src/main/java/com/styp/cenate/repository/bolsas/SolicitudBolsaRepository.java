@@ -1084,8 +1084,8 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
         WHERE sb.activo = true AND UPPER(sb.especialidad) = 'ENFERMERIA' AND sb.id_personal IS NOT NULL
           AND (:fecha IS NULL OR DATE(sb.fecha_atencion) = CAST(:fecha AS DATE))
           AND (:turno IS NULL
-               OR (:turno = 'MANANA' AND EXTRACT(HOUR FROM sc.hora_cita) BETWEEN 7 AND 13)
-               OR (:turno = 'TARDE'  AND EXTRACT(HOUR FROM sc.hora_cita) BETWEEN 14 AND 20))
+               OR (:turno = 'MANANA' AND EXTRACT(HOUR FROM COALESCE(sb.hora_atencion, sc.hora_cita)) BETWEEN 7 AND 13)
+               OR (:turno = 'TARDE'  AND EXTRACT(HOUR FROM COALESCE(sb.hora_atencion, sc.hora_cita)) BETWEEN 14 AND 20))
         GROUP BY p.id_pers, p.nom_pers, p.ape_pater_pers, p.ape_mater_pers
         ORDER BY total DESC
         """, nativeQuery = true)
@@ -1116,9 +1116,9 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
           AND sb.id_personal = :idPersonal
           AND (:fecha IS NULL OR DATE(sb.fecha_atencion) = CAST(:fecha AS DATE))
           AND (:turno IS NULL
-               OR (:turno = 'MANANA' AND EXTRACT(HOUR FROM sc.hora_cita) BETWEEN 7 AND 13)
-               OR (:turno = 'TARDE'  AND EXTRACT(HOUR FROM sc.hora_cita) BETWEEN 14 AND 20))
-        ORDER BY sc.hora_cita ASC NULLS LAST, sb.paciente_nombre ASC
+               OR (:turno = 'MANANA' AND EXTRACT(HOUR FROM COALESCE(sb.hora_atencion, sc.hora_cita)) BETWEEN 7 AND 13)
+               OR (:turno = 'TARDE'  AND EXTRACT(HOUR FROM COALESCE(sb.hora_atencion, sc.hora_cita)) BETWEEN 14 AND 20))
+        ORDER BY COALESCE(sb.hora_atencion, sc.hora_cita) ASC NULLS LAST, sb.paciente_nombre ASC
         """, nativeQuery = true)
     List<Object[]> pacientesPorEnfermera(
         @org.springframework.data.repository.query.Param("idPersonal") Long idPersonal,
@@ -1161,13 +1161,14 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
      */
     @Modifying
     @org.springframework.transaction.annotation.Transactional
-    @Query("""
-        UPDATE SolicitudBolsa s
-        SET s.idPersonal    = :idPersonal,
-            s.fechaAtencion = CASE WHEN :fechaAtencion IS NOT NULL THEN :fechaAtencion ELSE s.fechaAtencion END,
-            s.horaAtencion  = CASE WHEN :horaAtencion  IS NOT NULL THEN :horaAtencion  ELSE s.horaAtencion  END
-        WHERE s.idSolicitud IN :ids AND s.activo = true
-        """)
+    @Query(value = """
+        UPDATE dim_solicitud_bolsa
+        SET id_personal         = :idPersonal,
+            fecha_atencion      = COALESCE(CAST(:fechaAtencion AS date), fecha_atencion),
+            hora_atencion       = COALESCE(CAST(:horaAtencion  AS time), hora_atencion),
+            fecha_actualizacion = NOW()
+        WHERE id_solicitud IN (:ids) AND activo = true
+        """, nativeQuery = true)
     int reasignarPacientesMasivo(
         @org.springframework.data.repository.query.Param("ids")           List<Long> ids,
         @org.springframework.data.repository.query.Param("idPersonal")    Long idPersonal,

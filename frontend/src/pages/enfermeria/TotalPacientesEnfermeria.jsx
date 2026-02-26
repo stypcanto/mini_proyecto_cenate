@@ -12,10 +12,11 @@
 
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import apiClient from '../../lib/apiClient';
+import * as XLSX from 'xlsx';
 import {
   Users, RefreshCw, Calendar, Search, ArrowUp, ArrowDown, ArrowUpDown,
   UserCheck, ChevronDown, Loader2, ArrowRightLeft, X, XCircle, AlertCircle,
-  CheckCircle2, Clock, ChevronLeft, ChevronRight, Filter,
+  CheckCircle2, Clock, ChevronLeft, ChevronRight, Filter, Download,
 } from 'lucide-react';
 
 // ── Estados de condición médica ───────────────────────────────
@@ -420,6 +421,34 @@ function DrawerEnfermera({ enfermera, fecha, turno, onClose, onReasignacionExito
 
   const enfermeraDestNombre = enfermeras.find(e => String(e.idPersonal) === String(enfermeraDestino))?.nombreCompleto;
 
+  const exportarExcel = () => {
+    const filas = pacientesFiltrados.map((p, idx) => ({
+      'N°': idx + 1,
+      'Nombre del Paciente': p.pacienteNombre || p.paciente_nombre || '',
+      'DNI': p.pacienteDni || p.paciente_dni || '',
+      'Hora Cita': p.horaCita || p.hora_cita || '',
+      'Condición Médica': p.condicionMedica || p.condicion_medica || '',
+      'Fecha Atención': fechaLocal || '',
+    }));
+
+    const ws = XLSX.utils.json_to_sheet(filas);
+    // Anchos de columna
+    ws['!cols'] = [
+      { wch: 5 }, { wch: 36 }, { wch: 12 }, { wch: 10 }, { wch: 14 }, { wch: 14 },
+    ];
+
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Pacientes');
+
+    const turnoLabel = turnoLocal === 'MANANA' ? '_Mañana' : turnoLocal === 'TARDE' ? '_Tarde' : '';
+    const fechaLabel = fechaLocal ? `_${fechaLocal}` : '';
+    const estadoLabel = filtroEstado ? `_${filtroEstado}` : '';
+    const enfNombre   = (enfermera.nombre_enfermera || 'Enfermera').replace(/\s+/g, '_');
+    const filename    = `Pacientes_${enfNombre}${fechaLabel}${turnoLabel}${estadoLabel}.xlsx`;
+
+    XLSX.writeFile(wb, filename);
+  };
+
   const estadoColor = (condicion) => {
     if (condicion === 'Pendiente') return { color: '#f59e0b', bg: '#fffbeb' };
     if (condicion === 'Atendido')  return { color: '#10b981', bg: '#f0fdf4' };
@@ -567,6 +596,24 @@ function DrawerEnfermera({ enfermera, fecha, turno, onClose, onReasignacionExito
                 <option value="Sin estado">Sin estado</option>
               </select>
             </div>
+            {/* Botón exportar Excel */}
+            {pacientesFiltrados.length > 0 && (
+              <button
+                onClick={exportarExcel}
+                title="Exportar a Excel"
+                style={{
+                  display: 'flex', alignItems: 'center', gap: '5px',
+                  padding: '5px 10px', borderRadius: '8px', border: '1.5px solid #16a34a',
+                  background: '#f0fdf4', color: '#16a34a', fontWeight: '600', fontSize: '11px',
+                  cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0, transition: 'all 0.15s',
+                }}
+                onMouseEnter={e => { e.currentTarget.style.background = '#dcfce7'; }}
+                onMouseLeave={e => { e.currentTarget.style.background = '#f0fdf4'; }}
+              >
+                <Download size={12} />
+                Excel
+              </button>
+            )}
           </div>
         </div>
 
