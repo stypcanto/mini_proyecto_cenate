@@ -1094,7 +1094,8 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
      */
     @Query(value = """
         SELECT sb.id_solicitud, sb.paciente_nombre, sb.paciente_dni,
-               sb.condicion_medica, sb.fecha_atencion, sb.id_personal
+               sb.condicion_medica, sb.fecha_atencion, sb.id_personal,
+               TO_CHAR(sb.hora_atencion, 'HH24:MI') AS hora_cita
         FROM dim_solicitud_bolsa sb
         WHERE sb.activo = true AND UPPER(sb.especialidad) = 'ENFERMERIA'
           AND sb.id_personal = :idPersonal
@@ -1102,7 +1103,7 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
           AND (:turno IS NULL
                OR (:turno = 'MANANA' AND EXTRACT(HOUR FROM sb.fecha_atencion AT TIME ZONE 'America/Lima') BETWEEN 7 AND 13)
                OR (:turno = 'TARDE'  AND EXTRACT(HOUR FROM sb.fecha_atencion AT TIME ZONE 'America/Lima') BETWEEN 14 AND 20))
-        ORDER BY sb.paciente_nombre ASC
+        ORDER BY sb.hora_atencion ASC NULLS LAST, sb.paciente_nombre ASC
         """, nativeQuery = true)
     List<Object[]> pacientesPorEnfermera(
         @org.springframework.data.repository.query.Param("idPersonal") Long idPersonal,

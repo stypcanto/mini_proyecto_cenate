@@ -711,6 +711,7 @@ public class NursingService {
                 .condicionMedica(r[3] != null ? r[3].toString() : "")
                 .idPersonal(idPersonal)
                 .nombreEnfermera(nombreEnfermera)
+                .horaCita(r[6] != null ? r[6].toString() : null)
                 .build())
                 .collect(Collectors.toList());
     }

@@ -27,4 +27,6 @@ public class RescatarPacienteDto {
     private String especialidad;
     private Long idBolsa;
     private String numeroSolicitud;
+    /** Hora de cita formateada "HH:MM" (ej. "07:30"). Null si no tiene hora asignada. */
+    private String horaCita;
 }

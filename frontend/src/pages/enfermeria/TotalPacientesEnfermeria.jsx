@@ -285,6 +285,7 @@ function DrawerEnfermera({ enfermera, fecha, turno, onClose, onReasignacionExito
   const [busqueda,       setBusqueda]       = useState('');
   const [filtroEstado,   setFiltroEstado]   = useState(''); // '' = todos
   const [fechaLocal,           setFechaLocal]           = useState(fecha || HOY);
+  const [turnoLocal,           setTurnoLocal]           = useState(turno || null);
   const [diasConDatosEnfermera, setDiasConDatosEnfermera] = useState({});
   const [seleccionados,        setSeleccionados]         = useState(new Set());
   const [enfermeras,     setEnfermeras]     = useState([]);
@@ -302,8 +303,8 @@ function DrawerEnfermera({ enfermera, fecha, turno, onClose, onReasignacionExito
       setLoading(true);
       try {
         let url = `/enfermeria/pacientes/por-enfermera?idPersonal=${enfermera.id_enfermera}`;
-        if (fechaLocal) url += `&fecha=${fechaLocal}`;
-        if (turno) url += `&turno=${turno}`;
+        if (fechaLocal)  url += `&fecha=${fechaLocal}`;
+        if (turnoLocal)  url += `&turno=${turnoLocal}`;
         const data = await apiClient.get(url, true);
         setPacientes(Array.isArray(data) ? data : []);
       } catch (e) {
@@ -314,7 +315,7 @@ function DrawerEnfermera({ enfermera, fecha, turno, onClose, onReasignacionExito
       }
     };
     cargar();
-  }, [enfermera.id_enfermera, fechaLocal]);
+  }, [enfermera.id_enfermera, fechaLocal, turnoLocal]);
 
   // Cargar enfermeras disponibles para reasignación
   useEffect(() => {
@@ -524,9 +525,9 @@ function DrawerEnfermera({ enfermera, fecha, turno, onClose, onReasignacionExito
             </button>
           )}
           </div>
-          {/* Fila 2: filtros fecha + estado */}
-          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-            <div style={{ flex: 1, minWidth: 0 }}>
+          {/* Fila 2: filtros fecha + turno + estado */}
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
+            <div style={{ flexShrink: 0 }}>
               <SelectorFecha
                 fecha={fechaLocal}
                 onChange={f => { setFechaLocal(f || HOY); setSeleccionados(new Set()); }}
@@ -535,7 +536,24 @@ function DrawerEnfermera({ enfermera, fecha, turno, onClose, onReasignacionExito
                 popupZIndex={200}
               />
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flex: 1 }}>
+            {/* Toggle Mañana / Tarde */}
+            <div style={{ display: 'flex', gap: '4px', flexShrink: 0 }}>
+              {[{ key: 'MANANA', label: '☀ Mañana' }, { key: 'TARDE', label: '🌆 Tarde' }].map(t => (
+                <button
+                  key={t.key}
+                  onClick={() => { setTurnoLocal(prev => prev === t.key ? null : t.key); setSeleccionados(new Set()); }}
+                  style={{
+                    padding: '5px 10px', borderRadius: '8px', border: 'none', cursor: 'pointer', fontSize: '11px', fontWeight: '600',
+                    background: turnoLocal === t.key ? '#0D5BA9' : '#f1f5f9',
+                    color:      turnoLocal === t.key ? '#fff'    : '#475569',
+                    transition: 'all 0.15s',
+                  }}
+                >
+                  {t.label}
+                </button>
+              ))}
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flex: 1, minWidth: '130px' }}>
               <Filter size={13} color="#64748b" style={{ flexShrink: 0 }} />
               <select
                 value={filtroEstado}
@@ -579,6 +597,7 @@ function DrawerEnfermera({ enfermera, fecha, turno, onClose, onReasignacionExito
                     />
                   </th>
                   <th style={{ padding: '10px 12px', borderBottom: '2px solid #e2e8f0', textAlign: 'left', fontWeight: '700', color: '#475569', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Paciente</th>
+                  <th style={{ padding: '10px 8px', borderBottom: '2px solid #e2e8f0', textAlign: 'center', fontWeight: '700', color: '#475569', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap' }}>Hora</th>
                   <th style={{ padding: '10px 12px', borderBottom: '2px solid #e2e8f0', textAlign: 'center', fontWeight: '700', color: '#475569', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Condición</th>
                 </tr>
               </thead>
@@ -590,6 +609,7 @@ function DrawerEnfermera({ enfermera, fecha, turno, onClose, onReasignacionExito
                   const condicion = p.condicionMedica || p.condicion_medica || '';
                   const nombre    = p.pacienteNombre  || p.paciente_nombre  || 'Sin nombre';
                   const dni       = p.pacienteDni     || p.paciente_dni     || '—';
+                  const hora      = p.horaCita        || p.hora_cita        || null;
                   const { color: ec, bg: eb } = estadoColor(condicion);
                   return (
                     <tr
@@ -615,6 +635,16 @@ function DrawerEnfermera({ enfermera, fecha, turno, onClose, onReasignacionExito
                         <div style={{ color: '#94a3b8', fontSize: '11px', marginTop: '1px' }}>
                           DNI: {dni}
                         </div>
+                      </td>
+                      <td style={{ padding: '9px 8px', textAlign: 'center', whiteSpace: 'nowrap' }}>
+                        {hora ? (
+                          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '3px', fontSize: '11px', fontWeight: '700', color: '#0D5BA9', background: '#eff6ff', padding: '2px 7px', borderRadius: '6px' }}>
+                            <Clock size={10} />
+                            {hora}
+                          </span>
+                        ) : (
+                          <span style={{ fontSize: '10px', color: '#cbd5e1' }}>—</span>
+                        )}
                       </td>
                       <td style={{ padding: '9px 12px', textAlign: 'center' }}>
                         <span style={{ display: 'inline-block', padding: '2px 8px', borderRadius: '20px', background: eb, color: ec, fontWeight: '600', fontSize: '10px', whiteSpace: 'nowrap' }}>
