@@ -666,7 +666,7 @@ export default function MisPacientes() {
 
   // ============ v1.49.0: FILTROS AVANZADOS ============
   const [filtroIpress, setFiltroIpress] = useState('');
-  const [filtroRangoFecha, setFiltroRangoFecha] = useState('hoy');
+  const [filtroRangoFecha, setFiltroRangoFecha] = useState('todos');
   const [fechaDesde, setFechaDesde] = useState('');
   const [fechaHasta, setFechaHasta] = useState('');
   const [ipressDisponibles, setIpressDisponibles] = useState([]);
@@ -2350,17 +2350,66 @@ export default function MisPacientes() {
           )}
         </div>
 
+        {/* ✅ v1.71.0: Welcome banner — seleccionar fecha antes de ver estadísticas */}
+        {!fechaSeleccionadaCalendario ? (
+          <div className="mb-8 bg-gradient-to-br from-blue-50 via-indigo-50 to-slate-50 rounded-2xl border border-blue-100 shadow-sm overflow-hidden">
+            <div className="px-8 pt-8 pb-4 text-center">
+              <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-blue-100 border border-blue-200 mb-4 shadow-sm">
+                <Calendar className="w-8 h-8 text-[#0A5BA9]" />
+              </div>
+              <h2 className="text-xl font-bold text-gray-800 mb-2">¿Qué día vas a atender?</h2>
+              <p className="text-gray-500 text-sm max-w-sm mx-auto">
+                Selecciona una fecha en el calendario para ver tus pacientes asignados y sus estadísticas del día
+              </p>
+            </div>
+            <div className="flex justify-center pb-8">
+              <CalendarioAsignacion
+                fechaSeleccionada={fechaSeleccionadaCalendario}
+                onFechaChange={(fecha) => {
+                  setFechaSeleccionadaCalendario(fecha);
+                  if (fecha) {
+                    setFiltroRangoFecha('personalizado');
+                  } else {
+                    setFiltroRangoFecha('todos');
+                  }
+                }}
+                fechasConAsignaciones={fechasConAsignaciones}
+              />
+            </div>
+          </div>
+        ) : (
+          <>
+            {/* Chip de fecha seleccionada + botón cambiar */}
+            <div className="flex items-center gap-3 mb-4 flex-wrap">
+              <div className="flex items-center gap-2 bg-blue-50 border border-blue-200 rounded-full px-4 py-1.5">
+                <Calendar className="w-4 h-4 text-[#0A5BA9]" />
+                <span className="text-sm font-semibold text-[#0A5BA9]">
+                  {parsearFechaLocal(fechaSeleccionadaCalendario).toLocaleDateString('es-PE', {
+                    weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+                  })}
+                </span>
+              </div>
+              <button
+                onClick={() => {
+                  setFechaSeleccionadaCalendario(null);
+                  setFiltroRangoFecha('todos');
+                }}
+                className="text-xs text-gray-400 hover:text-red-500 flex items-center gap-1 transition-colors"
+              >
+                <X className="w-3.5 h-3.5" />
+                Cambiar fecha
+              </button>
+            </div>
+
         {/* 📊 Estadísticas - Clicables para Filtrar */}
         <div className="mb-6 grid grid-cols-1 md:grid-cols-4 gap-6">
           {/* Total de Pacientes - Clicable para limpiar filtro */}
           <button
             onClick={() => {
               setFiltroEstado('');
-              setFiltroRangoFecha('todos');
               setFechaDesde('');
               setFechaHasta('');
               setFechaAtencionSeleccionada('');
-              setFechaSeleccionadaCalendario(null); // ✅ v1.66.0: Limpiar calendario
             }}
             className={`kpi-card-animate kpi-card-hover text-left rounded-xl p-7 overflow-hidden relative group ${
               filtroEstado === ''
@@ -2380,11 +2429,9 @@ export default function MisPacientes() {
           <button
             onClick={() => {
               setFiltroEstado('Atendido');
-              setFiltroRangoFecha('hoy');
               setFechaDesde('');
               setFechaHasta('');
               setFechaAtencionSeleccionada('');
-              setFechaSeleccionadaCalendario(null); // ✅ v1.66.0: Limpiar calendario
             }}
             className={`kpi-card-animate kpi-card-hover text-left rounded-xl p-7 overflow-hidden relative group ${
               filtroEstado === 'Atendido'
@@ -2406,11 +2453,9 @@ export default function MisPacientes() {
           <button
             onClick={() => {
               setFiltroEstado('Pendiente');
-              setFiltroRangoFecha('hoy');
               setFechaDesde('');
               setFechaHasta('');
               setFechaAtencionSeleccionada('');
-              setFechaSeleccionadaCalendario(null); // ✅ v1.66.0: Limpiar calendario
             }}
             className={`kpi-card-animate kpi-card-hover text-left rounded-xl p-7 overflow-hidden relative group ${
               filtroEstado === 'Pendiente'
@@ -2432,11 +2477,9 @@ export default function MisPacientes() {
           <button
             onClick={() => {
               setFiltroEstado('Deserción');
-              setFiltroRangoFecha('hoy');
               setFechaDesde('');
               setFechaHasta('');
               setFechaAtencionSeleccionada('');
-              setFechaSeleccionadaCalendario(null); // ✅ v1.66.0: Limpiar calendario
             }}
             className={`kpi-card-animate kpi-card-hover text-left rounded-xl p-7 overflow-hidden relative group ${
               filtroEstado === 'Deserción'
@@ -2455,7 +2498,7 @@ export default function MisPacientes() {
           </button>
         </div>
 
-        {/* ✅ v1.65.2: Filtros colapsables - Accordion */}
+          {/* ✅ v1.65.2: Filtros colapsables - Accordion */}
         <div className="bg-gradient-to-br from-slate-50 to-slate-100 border border-slate-200 shadow-md rounded-xl mb-6 overflow-hidden">
           {/* ENCABEZADO - BOTÓN PARA EXPANDIR/COLAPSAR + LIMPIAR */}
           <div className="px-4 py-2.5 flex items-center justify-between hover:bg-slate-100 transition-colors border-b border-slate-200">
@@ -3032,6 +3075,8 @@ export default function MisPacientes() {
               </table>
             </div>
           </div>
+        )}
+          </>
         )}
       </div>
 
