@@ -1145,10 +1145,18 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
      */
     @Modifying
     @org.springframework.transaction.annotation.Transactional
-    @Query("UPDATE SolicitudBolsa s SET s.idPersonal = :idPersonal WHERE s.idSolicitud IN :ids AND s.activo = true")
+    @Query("""
+        UPDATE SolicitudBolsa s
+        SET s.idPersonal    = :idPersonal,
+            s.fechaAtencion = CASE WHEN :fechaAtencion IS NOT NULL THEN :fechaAtencion ELSE s.fechaAtencion END,
+            s.horaAtencion  = CASE WHEN :horaAtencion  IS NOT NULL THEN :horaAtencion  ELSE s.horaAtencion  END
+        WHERE s.idSolicitud IN :ids AND s.activo = true
+        """)
     int reasignarPacientesMasivo(
-        @org.springframework.data.repository.query.Param("ids") List<Long> ids,
-        @org.springframework.data.repository.query.Param("idPersonal") Long idPersonal
+        @org.springframework.data.repository.query.Param("ids")           List<Long> ids,
+        @org.springframework.data.repository.query.Param("idPersonal")    Long idPersonal,
+        @org.springframework.data.repository.query.Param("fechaAtencion") java.time.LocalDate fechaAtencion,
+        @org.springframework.data.repository.query.Param("horaAtencion")  java.time.LocalTime horaAtencion
     );
 
     /**

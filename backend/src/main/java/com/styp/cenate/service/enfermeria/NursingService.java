@@ -748,11 +748,15 @@ public class NursingService {
 
     /**
      * Reasignación masiva de pacientes (solicitudes) a otra enfermera.
+     * Actualiza id_personal + fecha_atencion + hora_atencion (reprogramación ESSI).
      */
     @Transactional
-    public int reasignarPacientesMasivo(List<Long> ids, Long idPersonal) {
-        log.info("🔄 PUT /api/enfermeria/reasignar-masivo - {} ids → enfermera {}", ids.size(), idPersonal);
-        return solicitudBolsaRepository.reasignarPacientesMasivo(ids, idPersonal);
+    public int reasignarPacientesMasivo(List<Long> ids, Long idPersonal,
+                                         java.time.LocalDate fechaAtencion,
+                                         java.time.LocalTime horaAtencion) {
+        log.info("🔄 PUT /api/enfermeria/reasignar-masivo - {} ids → enfermera {} fecha={} hora={}",
+                 ids.size(), idPersonal, fechaAtencion, horaAtencion);
+        return solicitudBolsaRepository.reasignarPacientesMasivo(ids, idPersonal, fechaAtencion, horaAtencion);
     }
 
     /**

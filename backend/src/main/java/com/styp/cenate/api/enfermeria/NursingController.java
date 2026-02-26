@@ -171,8 +171,20 @@ public class NursingController {
         List<Integer> idsRaw = (List<Integer>) body.get("ids");
         Long idPersonal = Long.valueOf(body.get("idPersonal").toString());
         List<Long> ids = idsRaw.stream().map(Integer::longValue).collect(Collectors.toList());
-        log.info("🔄 PUT /api/enfermeria/reasignar-masivo - {} registros → enfermera {}", ids.size(), idPersonal);
-        int actualizados = nursingService.reasignarPacientesMasivo(ids, idPersonal);
+
+        // Fecha y hora nuevas (reprogramación ESSI) — opcionales para retrocompatibilidad
+        java.time.LocalDate fechaAtencion = null;
+        java.time.LocalTime horaAtencion  = null;
+        if (body.get("fecha") != null) {
+            fechaAtencion = java.time.LocalDate.parse(body.get("fecha").toString());
+        }
+        if (body.get("hora") != null) {
+            horaAtencion = java.time.LocalTime.parse(body.get("hora").toString());
+        }
+
+        log.info("🔄 PUT /api/enfermeria/reasignar-masivo - {} registros → enfermera {} fecha={} hora={}",
+                 ids.size(), idPersonal, fechaAtencion, horaAtencion);
+        int actualizados = nursingService.reasignarPacientesMasivo(ids, idPersonal, fechaAtencion, horaAtencion);
         return ResponseEntity.ok(Map.of("actualizados", actualizados, "ids", ids.size()));
     }
 }

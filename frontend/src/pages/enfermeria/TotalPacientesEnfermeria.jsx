@@ -288,10 +288,13 @@ function DrawerEnfermera({ enfermera, fecha, turno, onClose, onReasignacionExito
   const [diasConDatosEnfermera, setDiasConDatosEnfermera] = useState({});
   const [seleccionados,        setSeleccionados]         = useState(new Set());
   const [enfermeras,     setEnfermeras]     = useState([]);
-  const [modalAbierto,   setModalAbierto]   = useState(false);
-  const [enfermeraDestino, setEnfermeraDestino] = useState(null);
-  const [reasignando,    setReasignando]    = useState(false);
-  const [progreso,       setProgreso]       = useState({ ok: 0, err: 0, total: 0 });
+  const [modalAbierto,      setModalAbierto]      = useState(false);
+  const [enfermeraDestino,  setEnfermeraDestino]  = useState(null);
+  const [fechaReasig,       setFechaReasig]       = useState('');
+  const [horaReasig,        setHoraReasig]        = useState('');
+  const [reasignando,       setReasignando]        = useState(false);
+  const [progreso,          setProgreso]          = useState({ ok: 0, err: 0, total: 0 });
+  const [exitoVisible,      setExitoVisible]      = useState(false);
 
   // Cargar pacientes de la enfermera
   useEffect(() => {
@@ -385,24 +388,28 @@ function DrawerEnfermera({ enfermera, fecha, turno, onClose, onReasignacionExito
   };
 
   const confirmarReasignacion = async () => {
-    if (!enfermeraDestino || seleccionados.size === 0) return;
+    if (!enfermeraDestino || seleccionados.size === 0 || !fechaReasig || !horaReasig) return;
     const ids = Array.from(seleccionados).map(Number);
     setReasignando(true);
     setProgreso({ ok: 0, err: 0, total: ids.length });
     try {
       await apiClient.put(
         '/enfermeria/reasignar-masivo',
-        { ids, idPersonal: Number(enfermeraDestino) },
+        { ids, idPersonal: Number(enfermeraDestino), fecha: fechaReasig, hora: horaReasig },
         true,
       );
       setProgreso({ ok: ids.length, err: 0, total: ids.length });
+      setExitoVisible(true);
       setTimeout(() => {
         setModalAbierto(false);
         setReasignando(false);
+        setExitoVisible(false);
         setSeleccionados(new Set());
+        setFechaReasig('');
+        setHoraReasig('');
         onReasignacionExitosa();
         onClose();
-      }, 1200);
+      }, 2200);
     } catch (e) {
       console.error('Error reasignando:', e);
       setProgreso({ ok: 0, err: ids.length, total: ids.length });
@@ -504,7 +511,7 @@ function DrawerEnfermera({ enfermera, fecha, turno, onClose, onReasignacionExito
           </div>
           {seleccionados.size > 0 && (
             <button
-              onClick={() => { setEnfermeraDestino(null); setProgreso({ ok: 0, err: 0, total: 0 }); setModalAbierto(true); }}
+              onClick={() => { setEnfermeraDestino(null); setFechaReasig(''); setHoraReasig(''); setProgreso({ ok: 0, err: 0, total: 0 }); setExitoVisible(false); setModalAbierto(true); }}
               style={{
                 display: 'flex', alignItems: 'center', gap: '6px',
                 padding: '7px 14px', borderRadius: '8px', border: 'none', cursor: 'pointer',
@@ -689,11 +696,49 @@ function DrawerEnfermera({ enfermera, fecha, turno, onClose, onReasignacionExito
                 />
               </div>
 
+              {/* Nueva fecha y hora de cita */}
+              <div style={{ display: 'flex', gap: '10px', marginTop: '14px' }}>
+                <div style={{ flex: 1 }}>
+                  <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', color: '#374151', marginBottom: '6px' }}>
+                    <Calendar size={12} style={{ display: 'inline', marginRight: '4px', verticalAlign: 'middle' }} />
+                    Nueva fecha de cita
+                  </label>
+                  <input
+                    type="date"
+                    value={fechaReasig}
+                    onChange={e => setFechaReasig(e.target.value)}
+                    style={{ width: '100%', boxSizing: 'border-box', padding: '8px 10px', border: `1.5px solid ${fechaReasig ? '#0D5BA9' : '#e2e8f0'}`, borderRadius: '8px', fontSize: '12px', outline: 'none', background: '#fff', color: '#1e293b', cursor: 'pointer' }}
+                  />
+                </div>
+                <div style={{ flex: 1 }}>
+                  <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', color: '#374151', marginBottom: '6px' }}>
+                    <Clock size={12} style={{ display: 'inline', marginRight: '4px', verticalAlign: 'middle' }} />
+                    Nueva hora de cita
+                  </label>
+                  <input
+                    type="time"
+                    value={horaReasig}
+                    onChange={e => setHoraReasig(e.target.value)}
+                    style={{ width: '100%', boxSizing: 'border-box', padding: '8px 10px', border: `1.5px solid ${horaReasig ? '#0D5BA9' : '#e2e8f0'}`, borderRadius: '8px', fontSize: '12px', outline: 'none', background: '#fff', color: '#1e293b', cursor: 'pointer' }}
+                  />
+                </div>
+              </div>
+
+              {/* Nota ESSI */}
+              {(fechaReasig && horaReasig) && (
+                <div style={{ marginTop: '10px', background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '8px', padding: '8px 12px', display: 'flex', gap: '8px', alignItems: 'center' }}>
+                  <CheckCircle2 size={13} color="#10b981" style={{ flexShrink: 0 }} />
+                  <span style={{ fontSize: '11px', color: '#15803d' }}>
+                    La cita se reprogramará al <strong>{fechaReasig}</strong> a las <strong>{horaReasig}</strong> en el Sistema ESSI.
+                  </span>
+                </div>
+              )}
+
               {/* Barra de progreso */}
               {reasignando && (
                 <div style={{ marginTop: '16px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px', fontSize: '11px', color: '#64748b' }}>
-                    <span>Reasignando...</span>
+                    <span>Reprogramando citas en ESSI...</span>
                     <span>{progreso.ok + progreso.err} / {progreso.total}</span>
                   </div>
                   <div style={{ height: '8px', background: '#f1f5f9', borderRadius: '8px', overflow: 'hidden' }}>
@@ -704,9 +749,17 @@ function DrawerEnfermera({ enfermera, fecha, turno, onClose, onReasignacionExito
                       borderRadius: '8px', transition: 'width 0.3s',
                     }} />
                   </div>
-                  {progreso.ok === progreso.total && progreso.total > 0 && (
-                    <div style={{ marginTop: '8px', display: 'flex', alignItems: 'center', gap: '6px', color: '#10b981', fontSize: '12px', fontWeight: '600' }}>
-                      <CheckCircle2 size={14} /> Reasignación completada
+                  {exitoVisible && (
+                    <div style={{ marginTop: '12px', background: '#f0fdf4', border: '1px solid #86efac', borderRadius: '10px', padding: '12px 14px', display: 'flex', gap: '10px', alignItems: 'center' }}>
+                      <CheckCircle2 size={20} color="#16a34a" style={{ flexShrink: 0 }} />
+                      <div>
+                        <div style={{ fontWeight: '700', fontSize: '13px', color: '#15803d' }}>
+                          Reprogramación realizada con Éxito
+                        </div>
+                        <div style={{ fontSize: '11px', color: '#16a34a', marginTop: '2px' }}>
+                          {progreso.total} cita{progreso.total !== 1 ? 's' : ''} reprogramada{progreso.total !== 1 ? 's' : ''} → {fechaReasig} {horaReasig}
+                        </div>
+                      </div>
                     </div>
                   )}
                 </div>
@@ -720,16 +773,17 @@ function DrawerEnfermera({ enfermera, fecha, turno, onClose, onReasignacionExito
                   </button>
                   <button
                     onClick={confirmarReasignacion}
-                    disabled={!enfermeraDestino}
+                    disabled={!enfermeraDestino || !fechaReasig || !horaReasig}
                     style={{
-                      flex: 2, padding: '9px', borderRadius: '8px', border: 'none', cursor: enfermeraDestino ? 'pointer' : 'not-allowed',
-                      background: enfermeraDestino ? '#0D5BA9' : '#e2e8f0',
-                      color: enfermeraDestino ? '#fff' : '#94a3b8',
+                      flex: 2, padding: '9px', borderRadius: '8px', border: 'none',
+                      cursor: (enfermeraDestino && fechaReasig && horaReasig) ? 'pointer' : 'not-allowed',
+                      background: (enfermeraDestino && fechaReasig && horaReasig) ? '#0D5BA9' : '#e2e8f0',
+                      color:      (enfermeraDestino && fechaReasig && horaReasig) ? '#fff'    : '#94a3b8',
                       fontSize: '13px', fontWeight: '700', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
                     }}
                   >
                     <ArrowRightLeft size={14} />
-                    Confirmar reasignación
+                    Confirmar reprogramación
                     {enfermeraDestNombre && (
                       <span style={{ fontWeight: '400', fontSize: '11px', opacity: 0.85 }}>→ {enfermeraDestNombre.split(' ')[0]}</span>
                     )}
