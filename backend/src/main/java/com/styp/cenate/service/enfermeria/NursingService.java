@@ -732,6 +732,21 @@ public class NursingService {
     }
 
     /**
+     * Devuelve mapa {fecha(YYYY-MM-DD) → total} para una enfermera específica.
+     */
+    @Transactional(readOnly = true)
+    public Map<String, Long> obtenerFechasPorEnfermera(Long idPersonal) {
+        List<Object[]> rows = solicitudBolsaRepository.fechasConPacientesPorEnfermera(idPersonal);
+        Map<String, Long> resultado = new java.util.LinkedHashMap<>();
+        for (Object[] r : rows) {
+            String fecha = r[0] != null ? r[0].toString() : null;
+            Long total   = r[1] != null ? ((Number) r[1]).longValue() : 0L;
+            if (fecha != null) resultado.put(fecha, total);
+        }
+        return resultado;
+    }
+
+    /**
      * Reasignación masiva de pacientes (solicitudes) a otra enfermera.
      */
     @Transactional

@@ -15,7 +15,7 @@ import apiClient from '../../lib/apiClient';
 import {
   Users, RefreshCw, Calendar, Search, ArrowUp, ArrowDown, ArrowUpDown,
   UserCheck, ChevronDown, Loader2, ArrowRightLeft, X, XCircle, AlertCircle,
-  CheckCircle2, Clock, ChevronLeft, ChevronRight,
+  CheckCircle2, Clock, ChevronLeft, ChevronRight, Filter,
 } from 'lucide-react';
 
 // ── Estados de condición médica ───────────────────────────────
@@ -71,7 +71,7 @@ function Badge({ valor, accent, bg }) {
 }
 
 // ── Selector calendario de fecha ─────────────────────────────
-function SelectorFecha({ fecha, onChange, diasConDatos = {} }) {
+function SelectorFecha({ fecha, onChange, diasConDatos = {}, maxBadge = 999, popupZIndex = 50 }) {
   const [abierto, setAbierto] = useState(false);
   const [anio, setAnio]       = useState(new Date().getFullYear());
   const [mes, setMes]         = useState(new Date().getMonth());
@@ -119,7 +119,7 @@ function SelectorFecha({ fecha, onChange, diasConDatos = {} }) {
 
       {abierto && (
         <div style={{
-          position: 'absolute', top: 'calc(100% + 8px)', left: 0, zIndex: 50,
+          position: 'absolute', top: 'calc(100% + 8px)', left: 0, zIndex: popupZIndex,
           background: '#fff', border: '1.5px solid #0D5BA9', borderRadius: '12px',
           overflow: 'hidden', minWidth: '280px', boxShadow: '0 4px 16px rgba(13,91,169,0.12)',
         }}>
@@ -170,7 +170,7 @@ function SelectorFecha({ fecha, onChange, diasConDatos = {} }) {
                       fontSize: '9px', fontWeight: '700', lineHeight: 1, marginTop: '2px',
                       color: activo ? '#bfdbfe' : '#0D5BA9',
                     }}>
-                      {totalDia > 999 ? '999+' : totalDia}
+                      {totalDia > maxBadge ? `${maxBadge}+` : totalDia}
                     </span>
                   )}
                 </button>
@@ -283,8 +283,10 @@ function DrawerEnfermera({ enfermera, fecha, turno, onClose, onReasignacionExito
   const [pacientes,      setPacientes]      = useState([]);
   const [loading,        setLoading]        = useState(true);
   const [busqueda,       setBusqueda]       = useState('');
-  const [filtroEstado,   setFiltroEstado]   = useState(null); // null = todos
-  const [seleccionados,  setSeleccionados]  = useState(new Set());
+  const [filtroEstado,   setFiltroEstado]   = useState(''); // '' = todos
+  const [fechaLocal,           setFechaLocal]           = useState(fecha || HOY);
+  const [diasConDatosEnfermera, setDiasConDatosEnfermera] = useState({});
+  const [seleccionados,        setSeleccionados]         = useState(new Set());
   const [enfermeras,     setEnfermeras]     = useState([]);
   const [modalAbierto,   setModalAbierto]   = useState(false);
   const [enfermeraDestino, setEnfermeraDestino] = useState(null);
@@ -297,7 +299,7 @@ function DrawerEnfermera({ enfermera, fecha, turno, onClose, onReasignacionExito
       setLoading(true);
       try {
         let url = `/enfermeria/pacientes/por-enfermera?idPersonal=${enfermera.id_enfermera}`;
-        if (fecha) url += `&fecha=${fecha}`;
+        if (fechaLocal) url += `&fecha=${fechaLocal}`;
         if (turno) url += `&turno=${turno}`;
         const data = await apiClient.get(url, true);
         setPacientes(Array.isArray(data) ? data : []);
@@ -309,7 +311,7 @@ function DrawerEnfermera({ enfermera, fecha, turno, onClose, onReasignacionExito
       }
     };
     cargar();
-  }, [enfermera.id_enfermera, fecha]);
+  }, [enfermera.id_enfermera, fechaLocal]);
 
   // Cargar enfermeras disponibles para reasignación
   useEffect(() => {
@@ -326,12 +328,29 @@ function DrawerEnfermera({ enfermera, fecha, turno, onClose, onReasignacionExito
     cargar();
   }, [enfermera.id_enfermera]);
 
+  // Cargar fechas disponibles para esta enfermera (calendario del drawer)
+  useEffect(() => {
+    const cargar = async () => {
+      try {
+        const data = await apiClient.get(
+          `/enfermeria/estadisticas/fechas-por-enfermera?idPersonal=${enfermera.id_enfermera}`,
+          true,
+        );
+        setDiasConDatosEnfermera(data && typeof data === 'object' ? data : {});
+      } catch (e) {
+        console.error('Error cargando fechas por enfermera:', e);
+      }
+    };
+    cargar();
+  }, [enfermera.id_enfermera]);
+
   // El backend devuelve camelCase (RescatarPacienteDto sin @JsonProperty)
   // idSolicitud, pacienteNombre, pacienteDni, condicionMedica
   const pacientesFiltrados = useMemo(() => {
     return pacientes.filter(p => {
       const condicion = p.condicionMedica || p.condicion_medica || '';
-      const matchEstado = !filtroEstado || condicion === filtroEstado;
+      const matchEstado = !filtroEstado ||
+        (filtroEstado === 'Sin estado' ? !condicion : condicion === filtroEstado);
       const nombre = p.pacienteNombre || p.paciente_nombre || '';
       const dni    = p.pacienteDni    || p.paciente_dni    || '';
       const matchBusq = !busqueda || (
@@ -434,7 +453,7 @@ function DrawerEnfermera({ enfermera, fecha, turno, onClose, onReasignacionExito
                 </div>
                 <div style={{ color: 'rgba(255,255,255,0.7)', fontSize: '11px', marginTop: '2px' }}>
                   {n(enfermera.total).toLocaleString()} pacientes asignados
-                  {fecha && ` · ${fecha}`}
+                  {fechaLocal && ` · ${fechaLocal}`}
                 </div>
               </div>
             </div>
@@ -451,7 +470,7 @@ function DrawerEnfermera({ enfermera, fecha, turno, onClose, onReasignacionExito
               return (
                 <button
                   key={e.key}
-                  onClick={() => setFiltroEstado(prev => prev === e.label ? null : e.label)}
+                  onClick={() => setFiltroEstado(prev => prev === e.label ? '' : e.label)}
                   title={`Filtrar: ${e.label}`}
                   style={{
                     display: 'flex', alignItems: 'center', gap: '4px',
@@ -469,8 +488,10 @@ function DrawerEnfermera({ enfermera, fecha, turno, onClose, onReasignacionExito
           </div>
         </div>
 
-        {/* Barra búsqueda + reasignar */}
-        <div style={{ padding: '12px 16px', borderBottom: '1px solid #f1f5f9', flexShrink: 0, background: '#fafafa', display: 'flex', gap: '10px', alignItems: 'center' }}>
+        {/* Barra búsqueda + filtros + reasignar */}
+        <div style={{ padding: '10px 16px', borderBottom: '1px solid #f1f5f9', flexShrink: 0, background: '#fafafa', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          {/* Fila 1: búsqueda + reasignar */}
+          <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
           <div style={{ position: 'relative', flex: 1 }}>
             <Search size={14} color="#94a3b8" style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
             <input
@@ -495,6 +516,33 @@ function DrawerEnfermera({ enfermera, fecha, turno, onClose, onReasignacionExito
               Reasignar ({seleccionados.size})
             </button>
           )}
+          </div>
+          {/* Fila 2: filtros fecha + estado */}
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <SelectorFecha
+                fecha={fechaLocal}
+                onChange={f => { setFechaLocal(f || HOY); setSeleccionados(new Set()); }}
+                diasConDatos={diasConDatosEnfermera}
+                maxBadge={9}
+                popupZIndex={200}
+              />
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flex: 1 }}>
+              <Filter size={13} color="#64748b" style={{ flexShrink: 0 }} />
+              <select
+                value={filtroEstado}
+                onChange={e => setFiltroEstado(e.target.value)}
+                style={{ flex: 1, padding: '5px 8px', border: '1.5px solid #e2e8f0', borderRadius: '8px', fontSize: '12px', outline: 'none', background: '#fff', color: '#1e293b', cursor: 'pointer' }}
+              >
+                <option value="">Todos los estados</option>
+                <option value="Pendiente">Pendiente</option>
+                <option value="Atendido">Atendido</option>
+                <option value="Deserción">Deserción</option>
+                <option value="Sin estado">Sin estado</option>
+              </select>
+            </div>
+          </div>
         </div>
 
         {/* Tabla de pacientes */}

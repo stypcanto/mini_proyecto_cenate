@@ -1126,6 +1126,21 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
     List<Object[]> fechasConPacientesEnfermeria();
 
     /**
+     * Fechas disponibles para una enfermera específica — con conteo de pacientes.
+     * Usado por el calendario del drawer para pintar días con datos por enfermera.
+     */
+    @Query(value = """
+        SELECT TO_CHAR(DATE(sb.fecha_atencion), 'YYYY-MM-DD') as fecha, COUNT(*) as total
+        FROM dim_solicitud_bolsa sb
+        WHERE sb.activo = true AND UPPER(sb.especialidad) = 'ENFERMERIA'
+          AND sb.id_personal = :idPersonal AND sb.fecha_atencion IS NOT NULL
+        GROUP BY DATE(sb.fecha_atencion)
+        ORDER BY fecha DESC
+        LIMIT 90
+        """, nativeQuery = true)
+    List<Object[]> fechasConPacientesPorEnfermera(@org.springframework.data.repository.query.Param("idPersonal") Long idPersonal);
+
+    /**
      * Reasignación masiva de solicitudes a otra enfermera.
      */
     @Modifying

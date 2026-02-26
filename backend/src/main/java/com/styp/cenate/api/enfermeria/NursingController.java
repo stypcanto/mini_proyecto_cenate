@@ -150,6 +150,17 @@ public class NursingController {
     }
 
     /**
+     * GET /api/enfermeria/estadisticas/fechas-por-enfermera?idPersonal=X
+     * Retorna mapa {fecha → total} con las fechas que tiene asignadas una enfermera específica.
+     * Usado por el calendario del drawer para pintar días con datos.
+     */
+    @GetMapping("/estadisticas/fechas-por-enfermera")
+    public ResponseEntity<Map<String, Long>> fechasPorEnfermera(@RequestParam Long idPersonal) {
+        log.info("📅 GET /api/enfermeria/estadisticas/fechas-por-enfermera - idPersonal: {}", idPersonal);
+        return ResponseEntity.ok(nursingService.obtenerFechasPorEnfermera(idPersonal));
+    }
+
+    /**
      * PUT /api/enfermeria/reasignar-masivo
      * Body: { "ids": [1,2,3], "idPersonal": 490 }
      * Reasigna un lote de solicitudes a otra enfermera.
