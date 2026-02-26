@@ -1075,11 +1075,17 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
           SUM(CASE WHEN sb.condicion_medica = 'Deserción' THEN 1 ELSE 0 END) as desercion
         FROM dim_solicitud_bolsa sb
         JOIN dim_personal_cnt p ON sb.id_personal = p.id_pers
+        LEFT JOIN (
+            SELECT DISTINCT ON (doc_paciente) doc_paciente, hora_cita
+            FROM solicitud_cita
+            WHERE hora_cita IS NOT NULL
+            ORDER BY doc_paciente, fecha_cita DESC
+        ) sc ON sc.doc_paciente = sb.paciente_dni
         WHERE sb.activo = true AND UPPER(sb.especialidad) = 'ENFERMERIA' AND sb.id_personal IS NOT NULL
           AND (:fecha IS NULL OR DATE(sb.fecha_atencion) = CAST(:fecha AS DATE))
           AND (:turno IS NULL
-               OR (:turno = 'MANANA' AND EXTRACT(HOUR FROM sb.fecha_atencion AT TIME ZONE 'America/Lima') BETWEEN 7 AND 13)
-               OR (:turno = 'TARDE'  AND EXTRACT(HOUR FROM sb.fecha_atencion AT TIME ZONE 'America/Lima') BETWEEN 14 AND 20))
+               OR (:turno = 'MANANA' AND EXTRACT(HOUR FROM sc.hora_cita) BETWEEN 7 AND 13)
+               OR (:turno = 'TARDE'  AND EXTRACT(HOUR FROM sc.hora_cita) BETWEEN 14 AND 20))
         GROUP BY p.id_pers, p.nom_pers, p.ape_pater_pers, p.ape_mater_pers
         ORDER BY total DESC
         """, nativeQuery = true)
@@ -1110,8 +1116,8 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
           AND sb.id_personal = :idPersonal
           AND (:fecha IS NULL OR DATE(sb.fecha_atencion) = CAST(:fecha AS DATE))
           AND (:turno IS NULL
-               OR (:turno = 'MANANA' AND EXTRACT(HOUR FROM sb.fecha_atencion AT TIME ZONE 'America/Lima') BETWEEN 7 AND 13)
-               OR (:turno = 'TARDE'  AND EXTRACT(HOUR FROM sb.fecha_atencion AT TIME ZONE 'America/Lima') BETWEEN 14 AND 20))
+               OR (:turno = 'MANANA' AND EXTRACT(HOUR FROM sc.hora_cita) BETWEEN 7 AND 13)
+               OR (:turno = 'TARDE'  AND EXTRACT(HOUR FROM sc.hora_cita) BETWEEN 14 AND 20))
         ORDER BY sc.hora_cita ASC NULLS LAST, sb.paciente_nombre ASC
         """, nativeQuery = true)
     List<Object[]> pacientesPorEnfermera(
