@@ -1097,16 +1097,22 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
                sb.condicion_medica, sb.fecha_atencion, sb.id_personal,
                COALESCE(
                  TO_CHAR(sb.hora_atencion, 'HH24:MI'),
-                 TO_CHAR(sb.fecha_atencion AT TIME ZONE 'America/Lima', 'HH24:MI')
+                 TO_CHAR(sc.hora_cita, 'HH24:MI')
                ) AS hora_cita
         FROM dim_solicitud_bolsa sb
+        LEFT JOIN (
+            SELECT DISTINCT ON (doc_paciente) doc_paciente, hora_cita, fecha_cita
+            FROM solicitud_cita
+            WHERE hora_cita IS NOT NULL
+            ORDER BY doc_paciente, fecha_cita DESC
+        ) sc ON sc.doc_paciente = sb.paciente_dni
         WHERE sb.activo = true AND UPPER(sb.especialidad) = 'ENFERMERIA'
           AND sb.id_personal = :idPersonal
           AND (:fecha IS NULL OR DATE(sb.fecha_atencion) = CAST(:fecha AS DATE))
           AND (:turno IS NULL
                OR (:turno = 'MANANA' AND EXTRACT(HOUR FROM sb.fecha_atencion AT TIME ZONE 'America/Lima') BETWEEN 7 AND 13)
                OR (:turno = 'TARDE'  AND EXTRACT(HOUR FROM sb.fecha_atencion AT TIME ZONE 'America/Lima') BETWEEN 14 AND 20))
-        ORDER BY sb.fecha_atencion ASC NULLS LAST, sb.paciente_nombre ASC
+        ORDER BY sc.hora_cita ASC NULLS LAST, sb.paciente_nombre ASC
         """, nativeQuery = true)
     List<Object[]> pacientesPorEnfermera(
         @org.springframework.data.repository.query.Param("idPersonal") Long idPersonal,
