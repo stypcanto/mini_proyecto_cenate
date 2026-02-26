@@ -744,6 +744,9 @@ export default function MBACControl() {
         }
       }
 
+      // Propagar cambios a todos los usuarios que tienen este rol
+      await apiClient.post(`/mbac/propagate-role/${rolSeleccionadoConfig}`, {}, true);
+
       alert("Configuración guardada exitosamente");
       setHasChanges(false);
 

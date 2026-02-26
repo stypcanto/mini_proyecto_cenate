@@ -157,4 +157,60 @@ public interface PermisoModularRepository extends JpaRepository<PermisoModular, 
      * Elimina todos los permisos de un usuario (para resetear permisos al cambiar rol).
      */
     void deleteByIdUser(Long idUser);
+
+    // =========================================================================
+    // 🔹 PROPAGACIÓN MASIVA — sincroniza segu_permisos_rol_pagina → permisos_modulares
+    // =========================================================================
+
+    /**
+     * PASO 1: Actualiza los permisos existentes en permisos_modulares para todos los
+     * usuarios que tienen el rol indicado en rel_user_roles.
+     * Busca por (id_user, id_pagina) sin importar el id_rol almacenado en la fila.
+     */
+    @Modifying
+    @Transactional
+    @Query(value = """
+        UPDATE permisos_modulares pm
+        SET puede_ver      = s.puede_ver,
+            puede_crear    = s.puede_crear,
+            puede_editar   = s.puede_editar,
+            puede_eliminar = s.puede_eliminar,
+            puede_exportar = s.puede_exportar,
+            activo         = s.activo,
+            updated_at     = NOW()
+        FROM segu_permisos_rol_pagina s
+        CROSS JOIN rel_user_roles rur
+        WHERE s.id_rol  = :idRol
+          AND rur.id_rol = :idRol
+          AND pm.id_user  = rur.id_user
+          AND pm.id_pagina = s.id_pagina
+        """, nativeQuery = true)
+    int propagarActualizarPermisosRol(@Param("idRol") Integer idRol);
+
+    /**
+     * PASO 2: Inserta nuevos permisos para combinaciones (usuario, página) que aún
+     * no existen en permisos_modulares. Usa el id_rol real del usuario.
+     */
+    @Modifying
+    @Transactional
+    @Query(value = """
+        INSERT INTO permisos_modulares
+            (id_user, id_rol, id_modulo, id_pagina, accion,
+             puede_ver, puede_crear, puede_editar, puede_eliminar,
+             puede_exportar, puede_aprobar, activo, created_at, updated_at)
+        SELECT DISTINCT
+            rur.id_user, rur.id_rol, p.id_modulo, s.id_pagina, 'ROL_PROPAGADO',
+            s.puede_ver, s.puede_crear, s.puede_editar, s.puede_eliminar,
+            s.puede_exportar, false, s.activo, NOW(), NOW()
+        FROM segu_permisos_rol_pagina s
+        JOIN rel_user_roles rur ON rur.id_rol = s.id_rol
+        JOIN dim_paginas_modulo p ON p.id_pagina = s.id_pagina
+        WHERE s.id_rol = :idRol
+          AND NOT EXISTS (
+              SELECT 1 FROM permisos_modulares pm2
+              WHERE pm2.id_user = rur.id_user AND pm2.id_pagina = s.id_pagina
+          )
+        ON CONFLICT (id_user, id_rol, id_pagina) DO NOTHING
+        """, nativeQuery = true)
+    int propagarInsertarPermisosRol(@Param("idRol") Integer idRol);
 }

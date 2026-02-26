@@ -222,6 +222,10 @@ public class ModuloSistemaServiceImpl implements ModuloSistemaService {
 
 		mapearDTOAPermisoRP(dto, entity);
 		entity = permisoRolPaginaRepository.save(entity);
+
+		// Propagar cambio a todos los usuarios con este rol
+		propagarPermisosRolAUsuarios(dto.getIdRol());
+
 		return convertirPermisoRPADTO(entity);
 	}
 
@@ -232,7 +236,21 @@ public class ModuloSistemaServiceImpl implements ModuloSistemaService {
 
 		mapearDTOAPermisoRP(dto, entity);
 		entity = permisoRolPaginaRepository.save(entity);
+
+		// Propagar cambio a todos los usuarios con este rol
+		propagarPermisosRolAUsuarios(dto.getIdRol());
+
 		return convertirPermisoRPADTO(entity);
+	}
+
+	@Override
+	@Transactional
+	public java.util.Map<String, Integer> propagarPermisosRolAUsuarios(Integer idRol) {
+		log.info("🔄 Propagando permisos del rol {} a usuarios en permisos_modulares", idRol);
+		int actualizados = permisoModularRepository.propagarActualizarPermisosRol(idRol);
+		int insertados   = permisoModularRepository.propagarInsertarPermisosRol(idRol);
+		log.info("✅ Propagación rol {}: {} actualizados, {} insertados", idRol, actualizados, insertados);
+		return java.util.Map.of("actualizados", actualizados, "insertados", insertados);
 	}
 
 	@Override

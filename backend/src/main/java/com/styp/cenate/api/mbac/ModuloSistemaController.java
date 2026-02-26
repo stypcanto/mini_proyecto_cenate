@@ -185,6 +185,20 @@ public class ModuloSistemaController {
 		return ResponseEntity.noContent().build();
 	}
 
+	/**
+	 * POST /api/mbac/propagate-role/{idRol}
+	 * Propaga los permisos de segu_permisos_rol_pagina a permisos_modulares
+	 * para TODOS los usuarios que tienen ese rol en rel_user_roles.
+	 * Se llama automáticamente al guardar permisos de rol en MBAC.
+	 */
+	@PostMapping("/propagate-role/{idRol}")
+	public ResponseEntity<java.util.Map<String, Integer>> propagarRol(@PathVariable("idRol") Integer idRol) {
+		log.info("🔄 POST /api/mbac/propagate-role/{} — sincronizando permisos a usuarios", idRol);
+		java.util.Map<String, Integer> resultado = mbacService.propagarPermisosRolAUsuarios(idRol);
+		log.info("✅ Propagación completada: {}", resultado);
+		return ResponseEntity.ok(resultado);
+	}
+
 }
 
 /*

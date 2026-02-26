@@ -56,6 +56,9 @@ public interface ModuloSistemaService {
     List<PermisoRolModuloViewDTO> listarPermisosRolModuloConNombres();
     List<PermisoRolPaginaViewDTO> listarPermisosRolPaginaConNombres();
 
+    /** Propaga permisos de segu_permisos_rol_pagina → permisos_modulares para todos los usuarios del rol. */
+    java.util.Map<String, Integer> propagarPermisosRolAUsuarios(Integer idRol);
+
 	
 	
 	
