@@ -295,6 +295,20 @@ public class TicketMesaAyudaController {
     }
 
     /**
+     * ✅ Contar tickets RESUELTOS por lista de idSolicitudBolsa (batch)
+     * POST /api/mesa-ayuda/tickets/resueltos-count
+     * Body: [50518, 50519, ...] → { "50518": 1, "50519": 0, ... }
+     */
+    @PostMapping("/tickets/resueltos-count")
+    public ResponseEntity<Map<Long, Long>> contarResueltosPorSolicitudes(
+        @RequestBody List<Long> idsSolicitud
+    ) {
+        log.info("POST /api/mesa-ayuda/tickets/resueltos-count - {} solicitudes", idsSolicitud.size());
+        Map<Long, Long> resultado = ticketService.contarTicketsResueltoPorSolicitudes(idsSolicitud);
+        return ResponseEntity.ok(resultado);
+    }
+
+    /**
      * ✅ v1.67.0: Obtener tickets por idSolicitudBolsa
      * Verifica si un paciente ya tiene tickets creados
      * Utilizado antes de abrir CrearTicketModal

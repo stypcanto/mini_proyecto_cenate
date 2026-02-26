@@ -480,6 +480,24 @@ public class TicketMesaAyudaService {
     }
 
     /**
+     * ✅ Contar tickets RESUELTOS por id_solicitud_bolsa (batch)
+     * Retorna mapa { idSolicitudBolsa → count }
+     */
+    @Transactional(readOnly = true)
+    public Map<Long, Long> contarTicketsResueltoPorSolicitudes(List<Long> idsSolicitud) {
+        if (idsSolicitud == null || idsSolicitud.isEmpty()) return Map.of();
+        List<Object[]> rows = ticketRepository.countResueltosporSolicitudBolsa(idsSolicitud);
+        Map<Long, Long> mapa = new java.util.HashMap<>();
+        for (Object[] row : rows) {
+            Long idSol = ((Number) row[0]).longValue();
+            Long count = ((Number) row[1]).longValue();
+            mapa.put(idSol, count);
+        }
+        log.info("🔔 Tickets resueltos por solicitud: {} solicitudes consultadas, {} con resueltos", idsSolicitud.size(), mapa.size());
+        return mapa;
+    }
+
+    /**
      * Obtener tickets activos (NUEVO, EN_PROCESO, RESUELTO)
      */
     @Transactional(readOnly = true)
