@@ -322,6 +322,8 @@ public class TicketMesaAyudaService {
             String nombreAsignado,
             LocalDate fechaDesde,
             LocalDate fechaHasta,
+            LocalDate fechaAtencionDesde,
+            LocalDate fechaAtencionHasta,
             Pageable pageable) {
 
         // Normalizar parámetros
@@ -381,6 +383,16 @@ public class TicketMesaAyudaService {
             jpql.append(" AND t.fechaCreacion < :fechaHasta");
             countJpql.append(" AND t.fechaCreacion < :fechaHasta");
             params.put("fechaHasta", fechaHasta.plusDays(1).atStartOfDay());
+        }
+        if (fechaAtencionDesde != null) {
+            jpql.append(" AND t.fechaAtencion >= :fechaAtencionDesde");
+            countJpql.append(" AND t.fechaAtencion >= :fechaAtencionDesde");
+            params.put("fechaAtencionDesde", fechaAtencionDesde.atStartOfDay());
+        }
+        if (fechaAtencionHasta != null) {
+            jpql.append(" AND t.fechaAtencion < :fechaAtencionHasta");
+            countJpql.append(" AND t.fechaAtencion < :fechaAtencionHasta");
+            params.put("fechaAtencionHasta", fechaAtencionHasta.plusDays(1).atStartOfDay());
         }
 
         jpql.append(" ORDER BY t.fechaCreacion DESC");

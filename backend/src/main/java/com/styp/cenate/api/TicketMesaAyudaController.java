@@ -217,14 +217,16 @@ public class TicketMesaAyudaController {
         @RequestParam(required = false) Long idMedico,
         @RequestParam(required = false) String nombreAsignado,
         @RequestParam(required = false) LocalDate fechaDesde,
-        @RequestParam(required = false) LocalDate fechaHasta
+        @RequestParam(required = false) LocalDate fechaHasta,
+        @RequestParam(required = false) LocalDate fechaAtencionDesde,
+        @RequestParam(required = false) LocalDate fechaAtencionHasta
     ) {
-        log.info("GET /api/mesa-ayuda/tickets/buscar - page={}, size={}, estados={}, prioridad={}, dni={}, ticket={}, idMedico={}, asignado={}, fechaDesde={}, fechaHasta={}",
-            page, size, estados, prioridad, dniPaciente, numeroTicket, idMedico, nombreAsignado, fechaDesde, fechaHasta);
+        log.info("GET /api/mesa-ayuda/tickets/buscar - page={}, size={}, estados={}, prioridad={}, dni={}, ticket={}, idMedico={}, asignado={}, fechaDesde={}, fechaHasta={}, fechaAtencionDesde={}, fechaAtencionHasta={}",
+            page, size, estados, prioridad, dniPaciente, numeroTicket, idMedico, nombreAsignado, fechaDesde, fechaHasta, fechaAtencionDesde, fechaAtencionHasta);
 
         Pageable pageable = PageRequest.of(page, size);
         Page<TicketMesaAyudaResponseDTO> resultado = ticketService.buscarConFiltros(
-            estados, prioridad, dniPaciente, numeroTicket, idMedico, nombreAsignado, fechaDesde, fechaHasta, pageable
+            estados, prioridad, dniPaciente, numeroTicket, idMedico, nombreAsignado, fechaDesde, fechaHasta, fechaAtencionDesde, fechaAtencionHasta, pageable
         );
 
         return ResponseEntity.ok(resultado);

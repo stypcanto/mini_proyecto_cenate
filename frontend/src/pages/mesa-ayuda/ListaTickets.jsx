@@ -81,6 +81,8 @@ function ListaTickets() {
   const [filtroAsignado, setFiltroAsignado] = useState('');
   const [fechaDesde, setFechaDesde] = useState('');
   const [fechaHasta, setFechaHasta] = useState('');
+  const [fechaAtencionDesde, setFechaAtencionDesde] = useState('');
+  const [fechaAtencionHasta, setFechaAtencionHasta] = useState('');
 
   // ✅ v1.67.2: Datos de médicos cargados desde backend con conteo
   const [medicosConTickets, setMedicosConTickets] = useState([]);
@@ -133,6 +135,8 @@ function ListaTickets() {
     setFiltroAsignado('');
     setFechaDesde('');
     setFechaHasta('');
+    setFechaAtencionDesde('');
+    setFechaAtencionHasta('');
     setSelectedTickets(new Set());
   }, [location.pathname]);
 
@@ -169,7 +173,7 @@ function ListaTickets() {
   // ✅ v1.67.1: Fetch con búsqueda backend paginada
   useEffect(() => {
     fetchTickets();
-  }, [currentPage, pageSize, modoConfig.estadosBackend, filtroPrioridad, filtroMedico, filtroAsignado, fechaDesde, fechaHasta]);
+  }, [currentPage, pageSize, modoConfig.estadosBackend, filtroPrioridad, filtroMedico, filtroAsignado, fechaDesde, fechaHasta, fechaAtencionDesde, fechaAtencionHasta]);
 
   // ✅ v1.67.1: Debounce para campos de texto (DNI y N° Ticket)
   useEffect(() => {
@@ -228,6 +232,8 @@ function ListaTickets() {
         nombreAsignado: filtroAsignado || undefined,
         fechaDesde: fechaDesde || undefined,
         fechaHasta: fechaHasta || undefined,
+        fechaAtencionDesde: fechaAtencionDesde || undefined,
+        fechaAtencionHasta: fechaAtencionHasta || undefined,
       };
 
       const response = await mesaAyudaService.buscarConFiltros(filtros);
@@ -513,18 +519,18 @@ function ListaTickets() {
           <div className="flex items-center gap-2">
             <SlidersHorizontal size={16} className="text-[#0a5ba9]" />
             <span className="text-sm font-semibold text-gray-700">Filtros de búsqueda</span>
-            {(busquedaNumeroTicket || busquedaDni || filtroMedico || filtroPrioridad || filtroAsignado || filtroSemaforo || fechaDesde || fechaHasta) && (
+            {(busquedaNumeroTicket || busquedaDni || filtroMedico || filtroPrioridad || filtroAsignado || filtroSemaforo || fechaDesde || fechaHasta || fechaAtencionDesde || fechaAtencionHasta) && (
               <span className="ml-1 px-2 py-0.5 bg-[#0a5ba9] text-white text-[10px] font-bold rounded-full">
-                {[busquedaNumeroTicket, busquedaDni, filtroMedico, filtroPrioridad, filtroAsignado, filtroSemaforo, fechaDesde, fechaHasta].filter(Boolean).length}
+                {[busquedaNumeroTicket, busquedaDni, filtroMedico, filtroPrioridad, filtroAsignado, filtroSemaforo, fechaDesde, fechaHasta, fechaAtencionDesde, fechaAtencionHasta].filter(Boolean).length}
               </span>
             )}
           </div>
           <div className="flex items-center gap-2">
-            {(busquedaNumeroTicket || busquedaDni || filtroMedico || filtroPrioridad || filtroAsignado || filtroSemaforo || fechaDesde || fechaHasta) && (
+            {(busquedaNumeroTicket || busquedaDni || filtroMedico || filtroPrioridad || filtroAsignado || filtroSemaforo || fechaDesde || fechaHasta || fechaAtencionDesde || fechaAtencionHasta) && (
               <button
                 onClick={() => {
                   setBusquedaNumeroTicket(''); setBusquedaDni(''); setFiltroMedico(''); setFiltroPrioridad('');
-                  setFiltroAsignado(''); setFiltroSemaforo(''); setFechaDesde(''); setFechaHasta('');
+                  setFiltroAsignado(''); setFiltroSemaforo(''); setFechaDesde(''); setFechaHasta(''); setFechaAtencionDesde(''); setFechaAtencionHasta('');
                   setCurrentPage(0);
                 }}
                 className="text-xs text-gray-500 hover:text-red-500 transition-colors flex items-center gap-1"
@@ -634,8 +640,8 @@ function ListaTickets() {
             </div>
           </div>
 
-          {/* Fila 2: Fecha Registro (bloque) + Selectores */}
-          <div className={`grid grid-cols-1 gap-3 ${modoConfig.mostrarSemaforo ? 'md:grid-cols-2 lg:grid-cols-4' : 'md:grid-cols-2 lg:grid-cols-3'}`}>
+          {/* Fila 2: Fechas (bloques) + Selectores */}
+          <div className={`grid grid-cols-1 gap-3 ${modoConfig.mostrarSemaforo ? 'md:grid-cols-3 lg:grid-cols-5' : 'md:grid-cols-2 lg:grid-cols-4'}`}>
             {/* Fecha de Registro (bloque agrupado) */}
             <div>
               <label className="flex items-center gap-1.5 text-xs font-medium text-gray-500 mb-1 uppercase tracking-wide">
@@ -655,6 +661,31 @@ function ListaTickets() {
                   type="date"
                   value={fechaHasta}
                   onChange={(e) => { setFechaHasta(e.target.value); setCurrentPage(0); }}
+                  className="flex-1 min-w-0 px-3 py-2 text-sm border border-gray-200 rounded-lg bg-gray-50 focus:bg-white focus:ring-2 focus:ring-[#0a5ba9]/20 focus:border-[#0a5ba9] transition-all"
+                  title="Hasta"
+                />
+              </div>
+            </div>
+
+            {/* Fecha de Atención (bloque agrupado) */}
+            <div>
+              <label className="flex items-center gap-1.5 text-xs font-medium text-gray-500 mb-1 uppercase tracking-wide">
+                <Calendar size={12} />
+                Fecha de Atención
+              </label>
+              <div className="flex items-center gap-2">
+                <input
+                  type="date"
+                  value={fechaAtencionDesde}
+                  onChange={(e) => { setFechaAtencionDesde(e.target.value); setCurrentPage(0); }}
+                  className="flex-1 min-w-0 px-3 py-2 text-sm border border-gray-200 rounded-lg bg-gray-50 focus:bg-white focus:ring-2 focus:ring-[#0a5ba9]/20 focus:border-[#0a5ba9] transition-all"
+                  title="Desde"
+                />
+                <span className="text-xs text-gray-400 font-medium shrink-0">a</span>
+                <input
+                  type="date"
+                  value={fechaAtencionHasta}
+                  onChange={(e) => { setFechaAtencionHasta(e.target.value); setCurrentPage(0); }}
                   className="flex-1 min-w-0 px-3 py-2 text-sm border border-gray-200 rounded-lg bg-gray-50 focus:bg-white focus:ring-2 focus:ring-[#0a5ba9]/20 focus:border-[#0a5ba9] transition-all"
                   title="Hasta"
                 />
