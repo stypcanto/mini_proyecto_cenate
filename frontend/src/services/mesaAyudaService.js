@@ -187,6 +187,17 @@ export const mesaAyudaService = {
   },
 
   /**
+   * ✅ Contar tickets RESUELTOS por lista de idSolicitudBolsa (batch)
+   * @param {number[]} idsSolicitud Lista de IDs de solicitud bolsa
+   * @returns {Promise<Object>} Mapa { idSolicitud → count }
+   */
+  contarResueltosPorSolicitudes: async (idsSolicitud) => {
+    console.log('Counting resolved tickets for', idsSolicitud.length, 'solicitudes');
+    const response = await apiClient.post(`${ENDPOINT}/tickets/resueltos-count`, idsSolicitud, true);
+    return response;
+  },
+
+  /**
    * Obtener KPIs del sistema de Mesa de Ayuda
    * @returns {Promise} KPIs (totalTickets, abiertos, enProceso, resueltos, cerrados, tasaResolucion)
    */

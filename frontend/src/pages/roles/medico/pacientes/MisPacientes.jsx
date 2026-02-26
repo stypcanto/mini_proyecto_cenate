@@ -34,7 +34,8 @@ import {
   Edit2,
   AlertTriangle,
   UserMinus,
-  UserPlus
+  UserPlus,
+  Bell
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import gestionPacientesService from '../../../../services/gestionPacientesService';
@@ -702,6 +703,7 @@ export default function MisPacientes() {
   const [pacienteTicket, setPacienteTicket] = useState(null);
   const [ticketDetalleModal, setTicketDetalleModal] = useState(null);
   const [ticketsMedico, setTicketsMedico] = useState({});
+  const [ticketsResueltosPorId, setTicketsResueltosPorId] = useState({});
 
   // ✅ v1.67.0: Estados para Modal Tickets Existentes
   const [showTicketsExistentesModal, setShowTicketsExistentesModal] = useState(false);
@@ -745,13 +747,36 @@ export default function MisPacientes() {
       const tickets = result?.data?.content || [];
       const mapa = {};
       for (const t of tickets) {
-        if (t.dniPaciente && (!mapa[t.dniPaciente] || t.id > mapa[t.dniPaciente].id)) {
-          mapa[t.dniPaciente] = t;
+        if (t.dniPaciente) {
+          // Mapa del ticket más reciente por DNI
+          if (!mapa[t.dniPaciente] || t.id > mapa[t.dniPaciente].id) {
+            mapa[t.dniPaciente] = t;
+          }
         }
       }
       setTicketsMedico(mapa);
+      console.log('%c🔔 TICKETS MEDICO - DEBUG', 'color: #ff8800; font-weight: bold; font-size: 12px; background: #fff3e0; padding: 4px 8px; border-radius: 3px');
+      console.log('   Mapa tickets (último por DNI):', mapa);
+      console.log('   Total tickets cargados:', tickets.length);
+      tickets.forEach(t => console.log(`   → DNI: "${t.dniPaciente}", estado: "${t.estado}", id: ${t.id}, numero: ${t.numeroTicket}`));
     } catch (error) {
       console.error('⚠️ Error al cargar tickets del médico:', error);
+    }
+  };
+
+  // ✅ Cargar conteo de tickets resueltos por idSolicitudBolsa (endpoint batch)
+  const cargarTicketsResueltos = async (listaPacientes) => {
+    try {
+      const ids = listaPacientes
+        .map(p => p.idSolicitudBolsa)
+        .filter(id => id != null);
+      if (ids.length === 0) return;
+      const mapa = await mesaAyudaService.contarResueltosPorSolicitudes(ids);
+      console.log('%c🔔 TICKETS RESUELTOS POR SOLICITUD', 'color: #00aa00; font-weight: bold; font-size: 12px; background: #e0ffe0; padding: 4px 8px; border-radius: 3px');
+      console.log('   Mapa resueltos:', mapa);
+      setTicketsResueltosPorId(mapa || {});
+    } catch (error) {
+      console.error('⚠️ Error al cargar tickets resueltos:', error);
     }
   };
 
@@ -905,6 +930,11 @@ export default function MisPacientes() {
       }
       
       setPacientes(Array.isArray(data) ? data : []);
+
+      // ✅ Cargar conteo de tickets resueltos por idSolicitudBolsa
+      if (Array.isArray(data) && data.length > 0) {
+        cargarTicketsResueltos(data);
+      }
 
       // ✅ v1.78.0: Detectar especialidad desde el primer paciente si no está en contexto
       if (data?.length > 0 && !authUser?.especialidad && especialidades.length > 0) {
@@ -3019,6 +3049,15 @@ export default function MisPacientes() {
                       {/* ✅ v1.65.0: COLUMNA FINAL - Ticket Mesa de Ayuda con estado */}
                       <td className="px-2 py-1 text-center">
                         <div className="flex flex-col items-center gap-1">
+                          {/* 🔔 Campana: tickets resueltos >= 1 (por idSolicitudBolsa) */}
+                          {(ticketsResueltosPorId[paciente.idSolicitudBolsa] || 0) >= 1 && (
+                            <div className="relative inline-flex items-center" title={`${ticketsResueltosPorId[paciente.idSolicitudBolsa]} ticket(s) resuelto(s)`}>
+                              <Bell size={16} className="text-amber-500 animate-bounce" style={{ animationDuration: '2s', animationIterationCount: '3' }} />
+                              <span className="absolute -top-1.5 -right-2 min-w-[16px] h-[16px] flex items-center justify-center rounded-full bg-green-500 text-white text-[9px] font-bold leading-none px-0.5">
+                                {ticketsResueltosPorId[paciente.idSolicitudBolsa]}
+                              </span>
+                            </div>
+                          )}
                           {ticketsMedico[paciente.numDoc] && (() => {
                             const t = ticketsMedico[paciente.numDoc];
                             const colores = {

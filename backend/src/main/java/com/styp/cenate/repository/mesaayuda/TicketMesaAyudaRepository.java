@@ -201,4 +201,18 @@ public interface TicketMesaAyudaRepository extends JpaRepository<TicketMesaAyuda
      * Contar tickets por prioridad no eliminados (para estadísticas)
      */
     Long countByPrioridadAndDeletedAtIsNull(String prioridad);
+
+    /**
+     * ✅ Contar tickets RESUELTOS agrupados por id_solicitud_bolsa
+     * Retorna Object[] { idSolicitudBolsa (Long), count (Long) }
+     */
+    @Query("""
+        SELECT t.idSolicitudBolsa, COUNT(t)
+        FROM TicketMesaAyuda t
+        WHERE t.deletedAt IS NULL
+        AND t.estado = 'RESUELTO'
+        AND t.idSolicitudBolsa IN :ids
+        GROUP BY t.idSolicitudBolsa
+    """)
+    List<Object[]> countResueltosporSolicitudBolsa(@Param("ids") List<Long> ids);
 }
