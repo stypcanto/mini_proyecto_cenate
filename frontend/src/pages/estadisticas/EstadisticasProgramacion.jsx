@@ -5,7 +5,7 @@
 // ========================================================================
 
 import React, { useState, useRef, useCallback } from 'react';
-import { Maximize2, X, RefreshCw, ExternalLink } from 'lucide-react';
+import { Maximize2, X, RefreshCw } from 'lucide-react';
 
 const BI_URL =
   'https://app.powerbi.com/view?r=eyJrIjoiOGQ5ZmZjZjMtMGMxNC00NmIwLWFmMmMtNTYxMWUwNDU2NTVkIiwidCI6IjM0ZjMyNDE5LTFjMDUtNDc1Ni04OTZlLTQ1ZDYzMzcyNjU5YiIsImMiOjR9';
@@ -38,17 +38,6 @@ export default function EstadisticasProgramacion() {
               <RefreshCw className="w-3.5 h-3.5" />
               Recargar
             </button>
-
-            <a
-              href={BI_URL}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-gray-600 hover:bg-gray-100 rounded-lg transition-colors border border-gray-200"
-              title="Abrir en Power BI"
-            >
-              <ExternalLink className="w-3.5 h-3.5" />
-              Abrir en BI
-            </a>
 
             <button
               onClick={() => setExpandido(true)}
@@ -121,22 +110,6 @@ export default function EstadisticasProgramacion() {
                 Recargar
               </button>
 
-              <a
-                href={BI_URL}
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{
-                  display: 'flex', alignItems: 'center', gap: 6,
-                  padding: '6px 12px', borderRadius: 8,
-                  background: 'rgba(255,255,255,0.15)', color: '#fff',
-                  border: '1px solid rgba(255,255,255,0.3)',
-                  fontSize: 12, fontWeight: 500, textDecoration: 'none',
-                }}
-                title="Abrir en Power BI"
-              >
-                <ExternalLink style={{ width: 14, height: 14 }} />
-                Abrir en BI
-              </a>
 
               <button
                 onClick={() => setExpandido(false)}
