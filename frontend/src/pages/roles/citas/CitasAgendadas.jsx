@@ -493,6 +493,7 @@ export default function CitasAgendadas() {
   );
   console.log('🔍 [CitasAgendadas] esCoordEnfermeria:', esCoordEnfermeria);
 
+  const cargarRef = useRef(null);   // ref para evitar stale closure en setInterval
   const [pacientes, setPacientes]           = useState([]);
   const [loading, setLoading]               = useState(true);
   const [busqueda, setBusqueda]             = useState('');
@@ -586,12 +587,58 @@ export default function CitasAgendadas() {
       const endpoint = esCoordEnfermeria
         ? '/api/bolsas/solicitudes/bandeja-enfermeria-coordinador'
         : '/api/bolsas/solicitudes/mi-bandeja';
+
+      console.log('══════════════════════════════════════════════════════');
+      console.log('📡 [CitasAgendadas] REQUEST');
+      console.log('   Método: GET');
+      console.log('   Endpoint:', endpoint);
+      console.log('   URL completa:', window.location.origin + endpoint);
+      console.log('   esCoordEnfermeria:', esCoordEnfermeria);
+      console.log('══════════════════════════════════════════════════════');
+
       const res = await fetch(endpoint, {
         headers: { Authorization: `Bearer ${token}` },
       });
+
+      console.log('📥 [CitasAgendadas] RESPONSE');
+      console.log('   Status:', res.status, res.statusText);
+      console.log('   Headers:', Object.fromEntries(res.headers.entries()));
+
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
+
+      console.log('══════════════════════════════════════════════════════');
+      console.log('📦 [CitasAgendadas] RESPUESTA BACKEND (objeto JSON):');
+      console.log(data);
+      console.log('──────────────────────────────────────────────────────');
+      console.log('📝 [CitasAgendadas] RESPUESTA BACKEND (texto):');
+      console.log(JSON.stringify(data, null, 2));
+      console.log('──────────────────────────────────────────────────────');
+
       const solicitudes = data?.solicitudes || data?.content || [];
+
+      console.log(`📊 [CitasAgendadas] Total solicitudes recibidas: ${solicitudes.length}`);
+      if (solicitudes.length > 0) {
+        console.log('📋 [CitasAgendadas] PRIMERA solicitud (muestra de campos):');
+        console.log(solicitudes[0]);
+        console.log('📋 [CitasAgendadas] Primera solicitud (texto):');
+        console.log(JSON.stringify(solicitudes[0], null, 2));
+        console.log('🔑 [CitasAgendadas] Campos disponibles:', Object.keys(solicitudes[0]));
+        console.log('🏥 [CitasAgendadas] Valores clave de la primera solicitud:');
+        const s = solicitudes[0];
+        console.table({
+          id_solicitud: s.id_solicitud || s.idSolicitud,
+          especialidad: s.especialidad,
+          id_servicio: s.id_servicio || s.idServicio,
+          condicion_medica: s.condicion_medica || s.condicionMedica,
+          estado: s.estado,
+          cod_estado_cita: s.cod_estado_cita || s.codEstadoCita,
+          id_bolsa: s.id_bolsa || s.idBolsa,
+          paciente_dni: s.paciente_dni || s.pacienteDni,
+          fecha_atencion: s.fecha_atencion || s.fechaAtencion,
+        });
+      }
+      console.log('══════════════════════════════════════════════════════');
 
       const procesados = solicitudes
         .map(s => ({
@@ -611,6 +658,8 @@ export default function CitasAgendadas() {
           nomMedico:               s.nombre_medico_asignado    || s.nombreMedicoAsignado    || s.nom_medico || s.nomMedico || null,
           esCenacron:              s.es_cenacron === true      || s.esCenacron === true,
           motivoAnulacion:         s.motivo_anulacion          || s.motivoAnulacion         || null,
+          estadoBolsa:             s.estado                    || '—',
+          estadoAtencion:          s.condicion_medica          || s.condicionMedica         || '—',
         }))
         // Incluir: estados agendados O cualquiera que tenga fecha de atención asignada
         .filter(p => ESTADOS_AGENDADOS.includes(p.codigoEstado) || p.fechaAtencion)
@@ -630,10 +679,13 @@ export default function CitasAgendadas() {
     }
   };
 
+  // Mantener ref actualizada con la última versión de cargar
+  cargarRef.current = cargar;
+
   useEffect(() => {
     cargar();
-    // Auto-refresh cada 60s para capturar nuevas importaciones
-    const interval = setInterval(cargar, 60_000);
+    // Auto-refresh cada 60s — usa ref para evitar stale closure con HMR
+    const interval = setInterval(() => cargarRef.current(), 60_000);
     return () => clearInterval(interval);
   }, []);
 
@@ -828,7 +880,7 @@ export default function CitasAgendadas() {
   // ── Exportar seleccionados a Excel (CSV) ───────────────────
   const exportarExcel = () => {
     if (filasSeleccionadas.length === 0) { toast.error('Selecciona al menos una fila'); return; }
-    const headers = ['N°','Paciente','DNI','Sexo','Edad','Teléfono','Teléfono Alt.','Prof. de Salud','Especialidad','Fecha Cita','Hora Cita','IPRESS','Tipo Cita','Estado'];
+    const headers = ['N°','Paciente','DNI','Sexo','Edad','Teléfono','Teléfono Alt.','Prof. de Salud','Especialidad','Fecha Cita','Hora Cita','IPRESS','Tipo Cita','Estado de Cita'];
     const BADGE_LABEL = Object.fromEntries(Object.entries(BADGE).map(([k, v]) => [k, v.label]));
     const filas = filasSeleccionadas.map((p, i) => [
       i + 1,
@@ -1303,8 +1355,8 @@ CENATE de Essalud`;
                         />
                       </th>
                       {(esCoordEnfermeria
-                        ? ['Paciente', 'DNI', 'Teléfono', 'Enfermera asignada', 'Especialidad', 'Fecha / Hora Cita', 'IPRESS', 'Estado', 'Motivo anulación', 'Acc.']
-                        : ['Paciente', 'DNI', 'Teléfono', 'Prof. de Salud', 'Especialidad', 'Fecha / Hora Cita', 'IPRESS', 'Estado', 'Motivo anulación', 'Acc.']
+                        ? ['Paciente', 'DNI', 'Teléfono', 'Enfermera asignada', 'Especialidad', 'Fecha / Hora Cita', 'IPRESS', 'Estado de Cita', 'Estado de Bolsa', 'Estado de Atención', 'Motivo anulación', 'Acc.']
+                        : ['Paciente', 'DNI', 'Teléfono', 'Prof. de Salud', 'Especialidad', 'Fecha / Hora Cita', 'IPRESS', 'Estado de Cita', 'Estado de Bolsa', 'Estado de Atención', 'Motivo anulación', 'Acc.']
                       ).map((h, i) => (
                         <th key={h} style={{ padding: '10px 12px', textAlign: i === 9 ? 'center' : 'left', fontSize: '10px', fontWeight: '700', color: '#e0f2fe', textTransform: 'uppercase', letterSpacing: '0.06em', whiteSpace: 'nowrap', width: i === 9 ? '90px' : 'auto' }}>
                           {h}
@@ -1448,6 +1500,7 @@ CENATE de Essalud`;
                                   </>
                                 ) : <span style={{ color: '#d1d5db', fontSize: '12px' }}>—</span>}
                               </div>
+                              {!(p.estadoAtencion === 'Atendido' || p.estadoAtencion === 'Deserción') && (
                               <button
                                 onClick={() => abrirModalEditarFecha(p)}
                                 title="Editar fecha y hora de cita"
@@ -1457,6 +1510,7 @@ CENATE de Essalud`;
                               >
                                 <Pencil size={12} strokeWidth={2} />
                               </button>
+                              )}
                             </div>
                           </td>
 
@@ -1476,6 +1530,20 @@ CENATE de Essalud`;
                                 <span className={`w-1.5 h-1.5 rounded-full ${badge.dot}`} />{badge.label}
                               </span>
                             )}
+                          </td>
+
+                          {/* ESTADO DE BOLSA */}
+                          <td style={{ padding: '10px 12px' }}>
+                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '2px 10px', borderRadius: '999px', fontSize: '11px', fontWeight: '600', background: p.estadoBolsa === 'PENDIENTE' ? '#fef3c7' : p.estadoBolsa === 'CITADO' ? '#dbeafe' : p.estadoBolsa === 'ATENDIDO' ? '#dcfce7' : '#f1f5f9', color: p.estadoBolsa === 'PENDIENTE' ? '#92400e' : p.estadoBolsa === 'CITADO' ? '#1e40af' : p.estadoBolsa === 'ATENDIDO' ? '#166534' : '#475569', border: `1px solid ${p.estadoBolsa === 'PENDIENTE' ? '#fde68a' : p.estadoBolsa === 'CITADO' ? '#bfdbfe' : p.estadoBolsa === 'ATENDIDO' ? '#bbf7d0' : '#e2e8f0'}` }}>
+                              {p.estadoBolsa}
+                            </span>
+                          </td>
+
+                          {/* ESTADO DE ATENCIÓN */}
+                          <td style={{ padding: '10px 12px' }}>
+                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '2px 10px', borderRadius: '999px', fontSize: '11px', fontWeight: '600', background: p.estadoAtencion === 'Pendiente' ? '#fef3c7' : p.estadoAtencion === 'Atendido' ? '#dcfce7' : p.estadoAtencion === 'Deserción' ? '#fee2e2' : '#f1f5f9', color: p.estadoAtencion === 'Pendiente' ? '#92400e' : p.estadoAtencion === 'Atendido' ? '#166534' : p.estadoAtencion === 'Deserción' ? '#991b1b' : '#475569', border: `1px solid ${p.estadoAtencion === 'Pendiente' ? '#fde68a' : p.estadoAtencion === 'Atendido' ? '#bbf7d0' : p.estadoAtencion === 'Deserción' ? '#fecaca' : '#e2e8f0'}` }}>
+                              {p.estadoAtencion}
+                            </span>
                           </td>
 
                           {/* MOTIVO ANULACIÓN */}
