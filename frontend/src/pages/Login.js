@@ -82,6 +82,8 @@ export default function Login() {
     if (hasAny(["COORDINADOR_GESTION_CITAS", "COORD. GESTION CITAS", "COORD_GESTION_CITAS"])) return "/roles/coordcitas/bienvenida";
     if (has("EXTERNO") || has("INSTITUCION_EX")) return "/roles/externo/bienvenida";
     if (hasAny(["MESA_DE_AYUDA", "MESA DE AYUDA", "MESAAYUDA"])) return "/mesa-ayuda/bienvenida";
+    // ✅ v1.72.0: Bienvenida para Gestión Territorial (ambos roles)
+    if (hasAny(["GESTIONTERRITORIAL", "GESTOR_TERRITORIAL", "GESTOR TERRITORIAL"])) return "/roles/gestionterritorial/bienvenida";
     return "/citas/bienvenida"; // ruta por defecto → Gestor de Citas
   };
 

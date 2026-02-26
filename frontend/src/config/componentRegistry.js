@@ -461,6 +461,11 @@ export const componentRegistry = {
   // ========================================================================
   // 🗺️ GESTIÓN TERRITORIAL
   // ========================================================================
+  '/roles/gestionterritorial/bienvenida': {
+    component: lazy(() => import('../pages/roles/gestionterritorial/BienvenidaGestionTerritorial')),
+    requiredAction: 'ver',
+  },
+
   '/roles/gestionterritorial/diagnosticoipress': {
     component: lazy(() => import('../pages/roles/gestionterritorial/DiagnosticoIpress')),
     requiredAction: 'ver',
