@@ -41,7 +41,7 @@ WORKDIR /app
 
 # 🧩 Instalar herramientas útiles (curl, jq, column)
 RUN apt-get update && \
-    apt-get install -y curl jq bsdmainutils && \
+    apt-get install -y curl jq bsdextrautils && \
     rm -rf /var/lib/apt/lists/*
 
 # Copiar el jar compilado desde el stage anterior
