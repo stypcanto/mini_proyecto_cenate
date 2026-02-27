@@ -401,6 +401,22 @@ function BuscadorEnfermera({ value, onChange }) {
   );
 }
 
+// ─── Columnas de la tabla (fuera del componente — constante estática) ────────
+const COLUMNAS = [
+  { label: 'F. Generación',              field: 'fechaSolicitud',  sortable: true  },
+  { label: 'Tipo',                       field: 'tipoCita',        sortable: true  },
+  { label: 'Paciente',                   field: 'pacienteNombre',  sortable: true  },
+  { label: 'DNI',                        field: 'pacienteDni',     sortable: true  },
+  { label: 'Especialidad',               field: 'especialidad',    sortable: true  },
+  { label: 'Motivo interconsulta',       field: null,              sortable: false },
+  { label: 'Origen bolsa',               field: 'origenBolsa',     sortable: true  },
+  { label: 'Estado de Bolsa',            field: 'estadoBolsa',     sortable: true  },
+  { label: 'Fecha preferida',            field: 'fechaPreferida',  sortable: true  },
+  { label: 'Creado por',                 field: 'medicoCreador',   sortable: true  },
+  { label: 'Estado',                     field: null,              sortable: false },
+  { label: 'Estado de Personal Asist.', field: 'condicionMedica', sortable: true  },
+];
+
 // ─── Componente principal ─────────────────────────────────────────────────────
 
 export default function TrazabilidadRecitasInterconsultas() {
@@ -541,22 +557,6 @@ export default function TrazabilidadRecitasInterconsultas() {
     setFiltroEstadoBolsa('');
     setFiltroCreadoPor('');
   };
-
-  // ─── Columnas de la tabla con configuración de sort ───────────────────────
-  const COLUMNAS = [
-    { label: 'F. Generación',              field: 'fechaSolicitud',  sortable: true  },
-    { label: 'Tipo',                       field: 'tipoCita',        sortable: true  },
-    { label: 'Paciente',                   field: 'pacienteNombre',  sortable: true  },
-    { label: 'DNI',                        field: 'pacienteDni',     sortable: true  },
-    { label: 'Especialidad',               field: 'especialidad',    sortable: true  },
-    { label: 'Motivo interconsulta',       field: null,              sortable: false },
-    { label: 'Origen bolsa',               field: 'origenBolsa',     sortable: true  },
-    { label: 'Estado de Bolsa',            field: 'estadoBolsa',     sortable: true  },
-    { label: 'Fecha preferida',            field: 'fechaPreferida',  sortable: true  },
-    { label: 'Creado por',                 field: 'medicoCreador',   sortable: true  },
-    { label: 'Estado',                     field: null,              sortable: false },
-    { label: 'Estado de Personal Asist.', field: 'condicionMedica', sortable: true  },
-  ];
 
   function handleSort(field) {
     if (!field) return;
@@ -810,23 +810,8 @@ export default function TrazabilidadRecitasInterconsultas() {
           </div>
         )}
 
-        {/* Loading */}
-        {isLoading && !errorMessage && (
-          <div className="p-10 text-center text-gray-500 text-sm flex items-center justify-center gap-2">
-            <RefreshCw size={16} className="animate-spin" /> Cargando trazabilidad...
-          </div>
-        )}
-
-        {/* Sin datos */}
-        {!isLoading && !errorMessage && filas.length === 0 && (
-          <div className="p-12 text-center">
-            <GitBranch size={40} className="mx-auto mb-3 text-gray-300" />
-            <p className="text-gray-500 text-sm">No se encontraron registros con los filtros aplicados</p>
-          </div>
-        )}
-
-        {/* Tabla datos */}
-        {!isLoading && !errorMessage && filas.length > 0 && (
+        {/* Tabla — thead SIEMPRE visible, tbody cambia según estado */}
+        {!errorMessage && (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
@@ -963,6 +948,27 @@ export default function TrazabilidadRecitasInterconsultas() {
                     </td>
                   </tr>
                 ))}
+
+                {/* Loading dentro del tbody — headers siempre visibles */}
+                {isLoading && (
+                  <tr>
+                    <td colSpan={COLUMNAS.length} className="py-10 text-center text-gray-500 text-sm">
+                      <div className="flex items-center justify-center gap-2">
+                        <RefreshCw size={16} className="animate-spin" /> Cargando trazabilidad...
+                      </div>
+                    </td>
+                  </tr>
+                )}
+
+                {/* Sin datos */}
+                {!isLoading && filas.length === 0 && (
+                  <tr>
+                    <td colSpan={COLUMNAS.length} className="py-12 text-center">
+                      <GitBranch size={36} className="mx-auto mb-3 text-gray-300" />
+                      <p className="text-gray-500 text-sm">No se encontraron registros con los filtros aplicados</p>
+                    </td>
+                  </tr>
+                )}
               </tbody>
             </table>
           </div>
