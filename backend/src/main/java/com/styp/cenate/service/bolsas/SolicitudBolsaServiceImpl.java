@@ -4133,14 +4133,15 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
     @org.springframework.transaction.annotation.Transactional(readOnly = true)
     public org.springframework.data.domain.Page<java.util.Map<String, Object>> obtenerTrazabilidadRecitas(
             String busqueda, String fechaInicio, String fechaFin,
-            String tipoCita, Long idPersonal, String sortDir,
+            String tipoCita, Long idPersonal, String sortDir, String sortField,
             String especialidad, String motivoInterconsulta, String estadoBolsa, String creadoPor,
             org.springframework.data.domain.Pageable pageable) {
 
         String dir = (sortDir != null && sortDir.equalsIgnoreCase("asc")) ? "asc" : "desc";
+        String field = (sortField != null && !sortField.isBlank()) ? sortField : "fechaSolicitud";
         org.springframework.data.domain.Page<Object[]> rows =
             solicitudRepository.obtenerTrazabilidadRecitasInterconsultas(
-                busqueda, fechaInicio, fechaFin, tipoCita, idPersonal, dir,
+                busqueda, fechaInicio, fechaFin, tipoCita, idPersonal, dir, field,
                 especialidad, motivoInterconsulta, estadoBolsa, creadoPor, pageable);
 
         return rows.map(row -> {

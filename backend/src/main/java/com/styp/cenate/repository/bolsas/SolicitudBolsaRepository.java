@@ -1817,10 +1817,39 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
           AND (:estadoBolsa IS NULL OR recita.estado ILIKE :estadoBolsa)
           AND (:creadoPor IS NULL OR (pc.ape_pater_pers || ' ' || pc.ape_mater_pers || ', ' || pc.nom_pers) ILIKE '%' || :creadoPor || '%')
         ORDER BY
+          -- Texto: tipo_cita
+          CASE WHEN :sortField = 'tipoCita'       AND :sortDir = 'asc'  THEN recita.tipo_cita           END ASC  NULLS LAST,
+          CASE WHEN :sortField = 'tipoCita'       AND :sortDir != 'asc' THEN recita.tipo_cita           END DESC NULLS LAST,
+          -- Texto: paciente_nombre
+          CASE WHEN :sortField = 'pacienteNombre' AND :sortDir = 'asc'  THEN recita.paciente_nombre     END ASC  NULLS LAST,
+          CASE WHEN :sortField = 'pacienteNombre' AND :sortDir != 'asc' THEN recita.paciente_nombre     END DESC NULLS LAST,
+          -- Texto: paciente_dni
+          CASE WHEN :sortField = 'pacienteDni'    AND :sortDir = 'asc'  THEN recita.paciente_dni        END ASC  NULLS LAST,
+          CASE WHEN :sortField = 'pacienteDni'    AND :sortDir != 'asc' THEN recita.paciente_dni        END DESC NULLS LAST,
+          -- Texto: especialidad
+          CASE WHEN :sortField = 'especialidad'   AND :sortDir = 'asc'  THEN recita.especialidad        END ASC  NULLS LAST,
+          CASE WHEN :sortField = 'especialidad'   AND :sortDir != 'asc' THEN recita.especialidad        END DESC NULLS LAST,
+          -- Texto: origen_bolsa
+          CASE WHEN :sortField = 'origenBolsa'    AND :sortDir = 'asc'  THEN COALESCE(tb.desc_tipo_bolsa,'') END ASC  NULLS LAST,
+          CASE WHEN :sortField = 'origenBolsa'    AND :sortDir != 'asc' THEN COALESCE(tb.desc_tipo_bolsa,'') END DESC NULLS LAST,
+          -- Texto: estado (bolsa)
+          CASE WHEN :sortField = 'estadoBolsa'    AND :sortDir = 'asc'  THEN recita.estado              END ASC  NULLS LAST,
+          CASE WHEN :sortField = 'estadoBolsa'    AND :sortDir != 'asc' THEN recita.estado              END DESC NULLS LAST,
+          -- Texto: medico_creador
+          CASE WHEN :sortField = 'medicoCreador'  AND :sortDir = 'asc'  THEN pc.ape_pater_pers          END ASC  NULLS LAST,
+          CASE WHEN :sortField = 'medicoCreador'  AND :sortDir != 'asc' THEN pc.ape_pater_pers          END DESC NULLS LAST,
+          -- Texto: condicion_medica
+          CASE WHEN :sortField = 'condicionMedica' AND :sortDir = 'asc'  THEN recita.condicion_medica   END ASC  NULLS LAST,
+          CASE WHEN :sortField = 'condicionMedica' AND :sortDir != 'asc' THEN recita.condicion_medica   END DESC NULLS LAST,
+          -- Timestamp: fecha_solicitud (y default cuando ningún otro campo coincide)
+          CASE WHEN :sortField = 'fechaSolicitud' AND :sortDir = 'asc'  THEN recita.fecha_solicitud END ASC  NULLS LAST,
+          CASE WHEN :sortField = 'fechaSolicitud' AND :sortDir != 'asc' THEN recita.fecha_solicitud END DESC NULLS LAST,
+          -- Timestamp: fecha_preferida
+          CASE WHEN :sortField = 'fechaPreferida' AND :sortDir = 'asc'  THEN recita.fecha_preferida_no_atendida END ASC  NULLS LAST,
+          CASE WHEN :sortField = 'fechaPreferida' AND :sortDir != 'asc' THEN recita.fecha_preferida_no_atendida END DESC NULLS LAST,
+          -- Tiebreaker secundario: siempre fecha_solicitud DESC para orden estable
           CASE WHEN :sortDir = 'asc'  THEN recita.fecha_solicitud END ASC  NULLS LAST,
-          CASE WHEN :sortDir != 'asc' THEN recita.fecha_solicitud END DESC NULLS LAST,
-          CASE WHEN :sortDir = 'asc'  THEN recita.fecha_preferida_no_atendida END ASC  NULLS LAST,
-          CASE WHEN :sortDir != 'asc' THEN recita.fecha_preferida_no_atendida END DESC NULLS LAST
+          CASE WHEN :sortDir != 'asc' THEN recita.fecha_solicitud END DESC NULLS LAST
         """,
         countQuery = """
         SELECT COUNT(*)
@@ -1867,6 +1896,7 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
         @org.springframework.data.repository.query.Param("tipoCita")    String tipoCita,
         @org.springframework.data.repository.query.Param("idPersonal")  Long idPersonal,
         @org.springframework.data.repository.query.Param("sortDir")     String sortDir,
+        @org.springframework.data.repository.query.Param("sortField")   String sortField,
         @org.springframework.data.repository.query.Param("especialidad") String especialidad,
         @org.springframework.data.repository.query.Param("motivo")       String motivoInterconsulta,
         @org.springframework.data.repository.query.Param("estadoBolsa")  String estadoBolsa,

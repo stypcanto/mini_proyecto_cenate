@@ -318,6 +318,7 @@ public interface SolicitudBolsaService {
         String tipoCita,
         Long idPersonal,
         String sortDir,
+        String sortField,
         String especialidad,
         String motivoInterconsulta,
         String estadoBolsa,
