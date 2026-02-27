@@ -22,14 +22,11 @@ java {
     }
 }
 
-// 🤖 Excluir módulo Spring AI (no borrar - chatbot deshabilitado por defecto)
+// 🤖 Excluir módulo Spring AI legacy (no borrar - rutas antiguas reservadas)
 sourceSets {
     main {
         java {
             exclude 'com/styp/cenate/ai/**'
-            exclude 'com/styp/cenate/api/chatbot/TrazabilidadTools.java'
-            exclude 'com/styp/cenate/service/chatbot/ChatbotTrazabilidadService.java'
-            exclude 'com/styp/cenate/api/chatbot/ChatbotTrazabilidadController.java'
         }
     }
 }
