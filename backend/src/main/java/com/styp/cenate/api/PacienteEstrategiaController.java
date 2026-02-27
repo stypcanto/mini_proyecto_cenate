@@ -23,6 +23,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
@@ -144,6 +145,7 @@ public class PacienteEstrategiaController {
      */
     @PutMapping("/baja-cenacron/{pkAsegurado}")
     @PreAuthorize("hasAnyRole('MEDICO', 'ENFERMERIA', 'COORDINADOR', 'ADMIN', 'SUPERADMIN')")
+    @Transactional
     @Operation(
         summary = "Dar de baja del programa CENACRON",
         description = "Desvincula a un paciente del programa CENACRON con registro de auditoría. " +
@@ -194,11 +196,12 @@ public class PacienteEstrategiaController {
             asignacion = pacienteEstrategiaRepository.save(asignacion);
 
             // Sincronizar paciente_cronico=false en asegurados al dar de baja
-            try {
-                int filas = aseguradoRepository.actualizarPacienteCronico(pkAsegurado, false);
-                log.info("✅ paciente_cronico=false sincronizado en asegurados para DNI {} ({} fila/s)", pkAsegurado, filas);
-            } catch (Exception exSync) {
-                log.warn("⚠️ No se pudo sincronizar paciente_cronico al dar de baja CENACRON (DNI {}): {}", pkAsegurado, exSync.getMessage());
+            log.info("🔄 Intentando actualizar paciente_cronico=false en asegurados. pkAsegurado recibido='{}'", pkAsegurado);
+            int filas = aseguradoRepository.actualizarPacienteCronico(pkAsegurado, false);
+            log.info("✅ paciente_cronico=false sincronizado en asegurados para '{}' ({} fila/s actualizada/s)", pkAsegurado, filas);
+            if (filas == 0) {
+                log.warn("⚠️ 0 filas actualizadas! No existe doc_paciente='{}' en tabla asegurados. " +
+                         "Verificar si pk_asegurado ≠ doc_paciente.", pkAsegurado);
             }
 
             log.info("Baja CENACRON completada. Paciente: {}, NuevoEstado: {}, Auditor: {}",
