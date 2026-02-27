@@ -13,6 +13,7 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import teleurgenciasService from '../../../../services/teleurgenciasService';
 import * as XLSX from 'xlsx';
+import toast from 'react-hot-toast';
 import {
   Users, RefreshCw, Calendar, Search, ArrowUp, ArrowDown, ArrowUpDown,
   Stethoscope, ChevronDown, Loader2, ArrowRightLeft, X, XCircle, AlertCircle,
@@ -293,6 +294,33 @@ function DrawerMedico({ medico, fecha, turno, onClose, onReasignacionExitosa }) 
   const [reasignando,    setReasignando]    = useState(false);
   const [progreso,       setProgreso]       = useState({ ok: 0, err: 0, total: 0 });
   const [exitoVisible,   setExitoVisible]   = useState(false);
+  const [horasOcupadas,  setHorasOcupadas]  = useState([]);
+  const [loadingHoras,   setLoadingHoras]   = useState(false);
+
+  // Cargar horas ocupadas al cambiar médico destino o fecha de reasignación
+  useEffect(() => {
+    if (!medicoDestino || !fechaReasig) {
+      setHorasOcupadas([]);
+      return;
+    }
+    const cargarHoras = async () => {
+      setLoadingHoras(true);
+      try {
+        const data = await teleurgenciasService.pacientesPorMedico(medicoDestino, fechaReasig, null);
+        const lista = Array.isArray(data) ? data : [];
+        const horas = lista
+          .map(p => p.horaCita || p.hora_cita)
+          .filter(Boolean)
+          .map(h => h.substring(0, 5));
+        setHorasOcupadas(horas);
+      } catch {
+        setHorasOcupadas([]);
+      } finally {
+        setLoadingHoras(false);
+      }
+    };
+    cargarHoras();
+  }, [medicoDestino, fechaReasig]);
 
   // Cargar pacientes del médico
   useEffect(() => {
@@ -390,6 +418,10 @@ function DrawerMedico({ medico, fecha, turno, onClose, onReasignacionExitosa }) 
       });
       setProgreso({ ok: ids.length, err: 0, total: ids.length });
       setExitoVisible(true);
+      toast.success(
+        `✅ ${ids.length} paciente${ids.length !== 1 ? 's' : ''} reprogramado${ids.length !== 1 ? 's' : ''} exitosamente`,
+        { duration: 4000, position: 'top-center', style: { fontWeight: '600', fontSize: '13px' } }
+      );
       setTimeout(() => {
         setModalAbierto(false);
         setReasignando(false);
@@ -772,13 +804,46 @@ function DrawerMedico({ medico, fecha, turno, onClose, onReasignacionExitosa }) 
                   <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', color: '#374151', marginBottom: '6px' }}>
                     <Clock size={12} style={{ display: 'inline', marginRight: '4px', verticalAlign: 'middle' }} />
                     Nueva hora de cita
+                    {loadingHoras && <Loader2 size={11} style={{ display: 'inline', marginLeft: '4px', verticalAlign: 'middle', animation: 'spin 1s linear infinite' }} />}
                   </label>
-                  <input
-                    type="time"
-                    value={horaReasig}
-                    onChange={e => setHoraReasig(e.target.value)}
-                    style={{ width: '100%', boxSizing: 'border-box', padding: '8px 10px', border: `1.5px solid ${horaReasig ? '#1d4ed8' : '#e2e8f0'}`, borderRadius: '8px', fontSize: '12px', outline: 'none', background: '#fff', color: '#1e293b', cursor: 'pointer' }}
-                  />
+                  {(!medicoDestino || !fechaReasig) ? (
+                    <div style={{ padding: '8px 10px', border: '1.5px solid #e2e8f0', borderRadius: '8px', fontSize: '11px', color: '#94a3b8', background: '#f8fafc' }}>
+                      Selecciona médico y fecha primero
+                    </div>
+                  ) : (
+                    <div style={{ border: `1.5px solid ${horaReasig ? '#1d4ed8' : '#e2e8f0'}`, borderRadius: '8px', padding: '6px', background: '#fff', maxHeight: '140px', overflowY: 'auto' }}>
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '3px' }}>
+                        {Array.from({ length: 27 }, (_, i) => {
+                          const totalMin = 7 * 60 + i * 30;
+                          const hh = String(Math.floor(totalMin / 60)).padStart(2, '0');
+                          const mm = String(totalMin % 60).padStart(2, '0');
+                          const slot = `${hh}:${mm}`;
+                          const ocupado = horasOcupadas.includes(slot);
+                          const seleccionado = horaReasig === slot;
+                          return (
+                            <button
+                              key={slot}
+                              disabled={ocupado}
+                              onClick={() => setHoraReasig(seleccionado ? '' : slot)}
+                              title={ocupado ? 'Hora ocupada' : slot}
+                              style={{
+                                padding: '4px 2px', borderRadius: '5px', fontSize: '10px', fontWeight: seleccionado ? '700' : '500',
+                                border: seleccionado ? '2px solid #1d4ed8' : '1px solid #e2e8f0',
+                                background: seleccionado ? '#1d4ed8' : ocupado ? '#f1f5f9' : '#fff',
+                                color: seleccionado ? '#fff' : ocupado ? '#cbd5e1' : '#374151',
+                                cursor: ocupado ? 'not-allowed' : 'pointer',
+                                textDecoration: ocupado ? 'line-through' : 'none',
+                                position: 'relative',
+                              }}
+                            >
+                              {slot}
+                              {ocupado && <span style={{ position: 'absolute', top: '1px', right: '2px', fontSize: '7px', color: '#ef4444' }}>●</span>}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
 
