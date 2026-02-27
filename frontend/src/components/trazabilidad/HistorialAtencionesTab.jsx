@@ -1,14 +1,18 @@
 // ========================================================================
-// HistorialAtencionesTab.jsx - Historial de Atenciones Clínicas
+// HistorialAtencionesTab.jsx - Historial de Atenciones (Trazabilidad)
 // ------------------------------------------------------------------------
-// CENATE 2026 | Componente para mostrar timeline de atenciones del asegurado
+// CENATE 2026 | Timeline de solicitudes de atención del asegurado
+// DTO fields: idSolicitud, numeroSolicitud, pacienteNombre, pacienteDni,
+//             especialidad, tipoCita, derivacionInterna,
+//             ipressNombre, codigoIpress, estado, estadoDescripcion,
+//             condicionMedica, fechaSolicitud, fechaAtencion,
+//             horaAtencion, motivoLlamadoBolsa
 // ========================================================================
 
-import React, { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Activity,
   Calendar,
-  User,
   Building2,
   FileText,
   AlertCircle,
@@ -17,20 +21,62 @@ import {
   Clock,
   Stethoscope,
   ChevronDown,
-  Filter,
-  X
+  Hash
 } from 'lucide-react';
 import { atencionesClinicasService } from '../../services/atencionesClinicasService';
 import DetalleAtencionModal from './DetalleAtencionModal';
-import VitalSignsStatusBadge from '../common/VitalSignsStatusBadge';
-import VitalSignBadge from '../common/VitalSignBadge';
-import TrendIndicator from '../common/TrendIndicator';
-import {
-  evaluarPresionArterial,
-  evaluarSaturacionO2,
-  evaluarTemperatura,
-  evaluarFrecuenciaCardiaca
-} from '../../utils/vitalSignsUtils';
+
+// ============================================================
+// Helpers
+// ============================================================
+
+/**
+ * Format a date (LocalDate string "YYYY-MM-DD" or LocalDateTime) in Spanish.
+ * Falls back to fechaSolicitud if fechaAtencion is null.
+ */
+const formatearFecha = (fecha) => {
+  if (!fecha) return 'Sin fecha';
+  try {
+    // LocalDateTime strings contain 'T'; LocalDate strings don't
+    const dateObj = fecha.includes('T')
+      ? new Date(fecha)
+      : new Date(fecha + 'T00:00:00');
+    return dateObj.toLocaleDateString('es-PE', {
+      day: '2-digit',
+      month: 'long',
+      year: 'numeric'
+    });
+  } catch {
+    return 'Fecha inválida';
+  }
+};
+
+/**
+ * Return a Tailwind color pair for the estado badge.
+ */
+const colorBadgeEstado = (estado) => {
+  const estadoUpper = (estado || '').toUpperCase();
+  if (['ATENDIDO', 'COMPLETADO', 'REALIZADO'].some(s => estadoUpper.includes(s))) {
+    return 'bg-emerald-100 text-emerald-800 border border-emerald-200';
+  }
+  if (['DESERCI', 'ABANDONO'].some(s => estadoUpper.includes(s))) {
+    return 'bg-orange-100 text-orange-800 border border-orange-200';
+  }
+  if (['PENDIENTE', 'EN_ESPERA', 'PENDIENTE_CITAR'].some(s => estadoUpper.includes(s))) {
+    return 'bg-amber-100 text-amber-800 border border-amber-200';
+  }
+  if (['CITADO', 'PROGRAMADO', 'AGENDADO'].some(s => estadoUpper.includes(s))) {
+    return 'bg-sky-100 text-sky-800 border border-sky-200';
+  }
+  if (['CANCELADO', 'ANULADO'].some(s => estadoUpper.includes(s))) {
+    return 'bg-red-100 text-red-800 border border-red-200';
+  }
+  return 'bg-slate-100 text-slate-700 border border-slate-200';
+};
+
+// ============================================================
+// Component
+// ============================================================
 
 export default function HistorialAtencionesTab({ pkAsegurado }) {
   const [atenciones, setAtenciones] = useState([]);
@@ -39,19 +85,8 @@ export default function HistorialAtencionesTab({ pkAsegurado }) {
   const [expandedItems, setExpandedItems] = useState({});
   const [modalDetalle, setModalDetalle] = useState({
     isOpen: false,
-    idAtencion: null
+    idSolicitud: null
   });
-
-  // Estado para comparativos de signos vitales (tendencias)
-  const [comparativos, setComparativos] = useState({});
-
-  // Estados para filtros
-  const [filtros, setFiltros] = useState({
-    fechaAtencion: '',
-    especialidad: '',
-    medico: ''
-  });
-  const [mostrarFiltros, setMostrarFiltros] = useState(false);
 
   // ============================================================
   // Cargar Atenciones
@@ -67,12 +102,11 @@ export default function HistorialAtencionesTab({ pkAsegurado }) {
     setError(null);
     try {
       const response = await atencionesClinicasService.obtenerPorAsegurado(pkAsegurado, 0, 50);
-      console.log('✅ Atenciones cargadas:', response);
       const data = response.data || response;
       setAtenciones(data.content || []);
     } catch (err) {
-      console.error('❌ Error al cargar atenciones:', err);
-      setError('No se pudieron cargar las atenciones clínicas');
+      console.error('Error al cargar atenciones:', err);
+      setError('No se pudieron cargar las atenciones del asegurado');
     } finally {
       setLoading(false);
     }
@@ -83,130 +117,38 @@ export default function HistorialAtencionesTab({ pkAsegurado }) {
   }, [pkAsegurado]);
 
   // ============================================================
-  // Toggle Expandir/Colapsar + Cargar Comparativo
+  // Toggle card expand/collapse
   // ============================================================
-  const toggleExpand = async (idAtencion) => {
-    const isExpanding = !expandedItems[idAtencion];
-
+  const toggleExpand = (idSolicitud) => {
     setExpandedItems(prev => ({
       ...prev,
-      [idAtencion]: isExpanding
+      [idSolicitud]: !prev[idSolicitud]
     }));
-
-    // Si estamos expandiendo y no tenemos comparativo, cargarlo
-    if (isExpanding && !comparativos[idAtencion]) {
-      try {
-        const comparativo = await atencionesClinicasService.obtenerComparativoSignosVitales(idAtencion);
-        setComparativos(prev => ({
-          ...prev,
-          [idAtencion]: comparativo
-        }));
-      } catch (error) {
-        console.error('Error al cargar comparativo de signos vitales:', error);
-        // No mostrar error al usuario, simplemente no habrá tendencias
-      }
-    }
   };
 
   // ============================================================
-  // Formatear Fecha
-  // ============================================================
-  const formatearFecha = (fecha) => {
-    if (!fecha) return 'Sin fecha';
-    try {
-      return new Date(fecha).toLocaleDateString('es-PE', {
-        day: '2-digit',
-        month: 'long',
-        year: 'numeric'
-      });
-    } catch {
-      return 'Fecha inválida';
-    }
-  };
-
-  // ============================================================
-  // Extraer fechas, especialidades y médicos únicos
-  // ============================================================
-  const fechasUnicas = useMemo(() => {
-    const fechas = atenciones
-      .map(a => a.fechaAtencion)
-      .filter(f => f);
-    // Ordenar de más reciente a más antigua
-    return [...new Set(fechas)].sort((a, b) => new Date(b) - new Date(a));
-  }, [atenciones]);
-
-  const especialidadesUnicas = useMemo(() => {
-    const especialidades = atenciones
-      .map(a => a.nombreEspecialidad)
-      .filter(e => e && e.trim() !== '');
-    return [...new Set(especialidades)].sort();
-  }, [atenciones]);
-
-  const medicosUnicos = useMemo(() => {
-    const medicos = atenciones
-      .map(a => a.nombreProfesional)
-      .filter(m => m && m.trim() !== '');
-    return [...new Set(medicos)].sort();
-  }, [atenciones]);
-
-  // ============================================================
-  // Filtrar Atenciones
-  // ============================================================
-  const atencionesFiltradas = useMemo(() => {
-    return atenciones.filter(atencion => {
-      // Filtro por fecha específica
-      if (filtros.fechaAtencion && atencion.fechaAtencion !== filtros.fechaAtencion) {
-        return false;
-      }
-
-      // Filtro por especialidad
-      if (filtros.especialidad && atencion.nombreEspecialidad !== filtros.especialidad) {
-        return false;
-      }
-
-      // Filtro por médico
-      if (filtros.medico && atencion.nombreProfesional !== filtros.medico) {
-        return false;
-      }
-
-      return true;
-    });
-  }, [atenciones, filtros]);
-
-  // ============================================================
-  // Limpiar Filtros
-  // ============================================================
-  const limpiarFiltros = () => {
-    setFiltros({
-      fechaAtencion: '',
-      especialidad: '',
-      medico: ''
-    });
-  };
-
-  // Verificar si hay filtros activos
-  const hayFiltrosActivos = filtros.fechaAtencion || filtros.especialidad || filtros.medico;
-
-  // ============================================================
-  // Render
+  // Loading state
   // ============================================================
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center py-16">
-        <Loader2 className="w-12 h-12 text-[#084a8a] animate-spin mb-4" />
-        <p className="font-medium text-slate-600">Cargando atenciones clínicas...</p>
+        <Loader2 className="w-10 h-10 text-emerald-500 animate-spin mb-3" />
+        <p className="text-sm font-medium text-slate-500">Cargando atenciones...</p>
       </div>
     );
   }
 
+  // ============================================================
+  // Error state
+  // ============================================================
   if (error) {
     return (
-      <div className="p-8 text-center border-2 border-purple-200 bg-purple-50 rounded-2xl">
-        <AlertCircle className="w-12 h-12 mx-auto mb-4 text-purple-600" />
-        <p className="mb-2 font-medium text-purple-700">{ error }</p>
+      <div className="p-8 text-center border border-red-200 bg-red-50 rounded-xl">
+        <AlertCircle className="w-10 h-10 mx-auto mb-3 text-red-400" />
+        <p className="mb-1 font-medium text-red-700">{error}</p>
         <button
-          onClick={ cargarAtenciones }
-          className="inline-flex items-center gap-2 px-4 py-2 mt-4 font-medium text-white transition-all bg-purple-600 hover:bg-purple-700 rounded-xl"
+          onClick={cargarAtenciones}
+          className="inline-flex items-center gap-2 px-4 py-2 mt-4 text-sm font-medium text-white transition-all bg-emerald-600 hover:bg-emerald-700 rounded-lg"
         >
           <RefreshCw className="w-4 h-4" />
           Reintentar
@@ -215,480 +157,206 @@ export default function HistorialAtencionesTab({ pkAsegurado }) {
     );
   }
 
+  // ============================================================
+  // Empty state
+  // ============================================================
   if (!atenciones || atenciones.length === 0) {
     return (
-      <div className="p-12 text-center border-2 bg-slate-50 border-slate-200 rounded-2xl">
-        <Activity className="w-16 h-16 mx-auto mb-4 text-slate-300" />
-        <p className="mb-2 font-medium text-slate-600">
-          No se encontraron atenciones clínicas
-        </p>
-        <p className="text-sm text-slate-500">
-          Este asegurado aún no tiene atenciones registradas en el sistema
+      <div className="flex flex-col items-center justify-center py-14 px-8 text-center bg-gradient-to-b from-emerald-50/60 to-slate-50 border border-emerald-100 rounded-xl">
+        <div className="p-4 bg-emerald-100/70 rounded-full mb-4">
+          <Activity className="w-8 h-8 text-emerald-400" />
+        </div>
+        <p className="font-semibold text-slate-600 mb-1">Sin atenciones registradas</p>
+        <p className="text-sm text-slate-400 max-w-xs">
+          Este asegurado aún no tiene atenciones clínicas en el sistema CENATE
         </p>
       </div>
     );
   }
 
+  // ============================================================
+  // Timeline
+  // ============================================================
   return (
-    <div className="space-y-4">
-      {/* Header */ }
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-3">
-          <div className="p-2 bg-[#084a8a] rounded-lg">
-            <Activity className="w-5 h-5 text-white" />
-          </div>
-          <div>
-            <h3 className="text-lg font-bold text-slate-900">
-              Historial de Atenciones Clínicas
-            </h3>
-            <p className="text-sm text-slate-500">
-              { hayFiltrosActivos ? (
-                <>
-                  { atencionesFiltradas.length } de { atenciones.length } atenciones
-                  { atencionesFiltradas.length === 0 && ' (sin resultados)' }
-                </>
-              ) : (
-                <>
-                  { atenciones.length } { atenciones.length === 1 ? 'atención registrada' : 'atenciones registradas' }
-                </>
-              ) }
-            </p>
-          </div>
-        </div>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={ () => setMostrarFiltros(!mostrarFiltros) }
-            className={ `flex items-center gap-2 px-3 py-2 rounded-lg transition-all text-sm font-medium ${hayFiltrosActivos
-              ? 'bg-[#084a8a] text-white hover:bg-[#063d6f]'
-              : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
-              } ` }
+    <div className="space-y-3">
+      {/* Counter */}
+      <p className="text-xs font-medium text-slate-500 pb-1">
+        {atenciones.length} {atenciones.length === 1 ? 'atención registrada' : 'atenciones registradas'}
+      </p>
+
+      {/* Cards */}
+      {atenciones.map((atencion) => {
+        const isExpanded = !!expandedItems[atencion.idSolicitud];
+
+        // Derive display values from real DTO fields
+        const titulo = atencion.tipoCita || 'Atención';
+        const subtitulo = atencion.especialidad || atencion.derivacionInterna || 'Sin especialidad';
+        const tieneFechaAtencion = !!atencion.fechaAtencion;
+        const tieneFechaSugerida = !!atencion.fechaPreferidaNoAtendida;
+        const fechaMostrar = tieneFechaAtencion
+          ? formatearFecha(atencion.fechaAtencion)
+          : tieneFechaSugerida
+            ? formatearFecha(atencion.fechaPreferidaNoAtendida)
+            : formatearFecha(atencion.fechaSolicitud);
+        const labelFecha = tieneFechaAtencion
+          ? 'Cita:'
+          : tieneFechaSugerida
+            ? 'Sugerida:'
+            : 'Registrado:';
+
+        // condicionMedica refleja el desenlace clínico real → tiene prioridad sobre estadoDescripcion
+        // (estadoDescripcion = estado de agendamiento que siempre dice "Paciente agendado...")
+        const condicionUpper = (atencion.condicionMedica || '').toUpperCase();
+        const tieneDesenlace = ['ATENDIDO', 'DESERCI', 'ABANDONO', 'COMPLETADO'].some(s => condicionUpper.includes(s));
+        const estadoLabel = tieneDesenlace
+          ? atencion.condicionMedica
+          : (atencion.estadoDescripcion || atencion.condicionMedica || atencion.estado || '');
+
+        return (
+          <div
+            key={atencion.idSolicitud}
+            className="bg-white border border-slate-200 rounded-xl hover:border-emerald-300 hover:shadow-sm transition-all duration-200"
           >
-            <Filter className="w-4 h-4" />
-            Filtros
-            { hayFiltrosActivos && (
-              <span className="ml-1 px-1.5 py-0.5 bg-white text-[#084a8a] rounded-full text-xs font-bold">
-                { [filtros.fechaAtencion, filtros.especialidad, filtros.medico].filter(Boolean).length }
-              </span>
-            ) }
-          </button>
-          <button
-            onClick={ cargarAtenciones }
-            className="flex items-center gap-2 px-3 py-2 text-sm font-medium transition-all rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700"
-          >
-            <RefreshCw className="w-4 h-4" />
-            Actualizar
-          </button>
-        </div>
-      </div>
+            {/* Card header — always visible */}
+            <div className="flex items-start gap-3 p-4">
+              {/* Icon */}
+              <div className="mt-0.5 p-2 bg-emerald-100 rounded-lg flex-shrink-0">
+                <Stethoscope className="w-4 h-4 text-emerald-600" />
+              </div>
 
-      {/* Panel de Filtros */ }
-      { mostrarFiltros && (
-        <div className="bg-gradient-to-r from-slate-50 to-[#084a8a]/5 border-2 border-slate-200 rounded-xl p-4 space-y-3 animate-in slide-in-from-top-2 duration-200">
-          <div className="flex items-center justify-between mb-2">
-            <div className="flex items-center gap-2">
-              <Filter className="w-4 h-4 text-[#084a8a]" />
-              <h4 className="font-semibold text-slate-900">Filtrar Atenciones</h4>
-            </div>
-            { hayFiltrosActivos && (
-              <button
-                onClick={ limpiarFiltros }
-                className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-purple-600 transition-all rounded-lg hover:text-purple-700 hover:bg-purple-50"
-              >
-                <X className="w-3 h-3" />
-                Limpiar filtros
-              </button>
-            ) }
-          </div>
-
-          <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
-            {/* Fecha de Atención */ }
-            <div>
-              <label className="block mb-1 text-xs font-medium text-slate-700">
-                Fecha de Atención
-              </label>
-              <select
-                value={ filtros.fechaAtencion }
-                onChange={ (e) => setFiltros({ ...filtros, fechaAtencion: e.target.value }) }
-                className="w-full px-3 py-2 border border-[#084a8a]/30 rounded-lg text-sm focus:ring-2 focus:ring-[#084a8a] focus:border-[#084a8a] transition-all bg-white hover:border-[#084a8a]/50"
-              >
-                <option value="">Todas las fechas</option>
-                { fechasUnicas.map(fecha => (
-                  <option key={ fecha } value={ fecha }>
-                    { formatearFecha(fecha) }
-                  </option>
-                )) }
-              </select>
-            </div>
-
-            {/* Especialidad */ }
-            <div>
-              <label className="block mb-1 text-xs font-medium text-slate-700">
-                Especialidad
-              </label>
-              <select
-                value={ filtros.especialidad }
-                onChange={ (e) => setFiltros({ ...filtros, especialidad: e.target.value }) }
-                className="w-full px-3 py-2 border border-[#084a8a]/30 rounded-lg text-sm focus:ring-2 focus:ring-[#084a8a] focus:border-[#084a8a] transition-all bg-white hover:border-[#084a8a]/50"
-              >
-                <option value="">Todas las especialidades</option>
-                { especialidadesUnicas.map(esp => (
-                  <option key={ esp } value={ esp }>{ esp }</option>
-                )) }
-              </select>
-            </div>
-
-            {/* Médico */ }
-            <div>
-              <label className="block mb-1 text-xs font-medium text-slate-700">
-                Médico
-              </label>
-              <select
-                value={ filtros.medico }
-                onChange={ (e) => setFiltros({ ...filtros, medico: e.target.value }) }
-                className="w-full px-3 py-2 border border-[#084a8a]/30 rounded-lg text-sm focus:ring-2 focus:ring-[#084a8a] focus:border-[#084a8a] transition-all bg-white hover:border-[#084a8a]/50"
-              >
-                <option value="">Todos los médicos</option>
-                { medicosUnicos.map(med => (
-                  <option key={ med } value={ med }>{ med }</option>
-                )) }
-              </select>
-            </div>
-          </div>
-
-          {/* Resumen de filtros activos */ }
-          { hayFiltrosActivos && (
-            <div className="flex flex-wrap gap-2 pt-2 border-t border-slate-200">
-              { filtros.fechaAtencion && (
-                <span className="inline-flex items-center gap-1 px-2 py-1 bg-[#084a8a]/10 text-[#084a8a] rounded-md text-xs font-medium border border-[#084a8a]/20">
-                  📅 { formatearFecha(filtros.fechaAtencion) }
-                  <button
-                    onClick={ () => setFiltros({ ...filtros, fechaAtencion: '' }) }
-                    className="hover:bg-[#084a8a]/20 rounded-full p-0.5"
-                  >
-                    <X className="w-3 h-3" />
-                  </button>
-                </span>
-              ) }
-              { filtros.especialidad && (
-                <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-purple-800 bg-purple-100 rounded-md">
-                  { filtros.especialidad }
-                  <button
-                    onClick={ () => setFiltros({ ...filtros, especialidad: '' }) }
-                    className="hover:bg-purple-200 rounded-full p-0.5"
-                  >
-                    <X className="w-3 h-3" />
-                  </button>
-                </span>
-              ) }
-              { filtros.medico && (
-                <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-green-800 bg-green-100 rounded-md">
-                  { filtros.medico }
-                  <button
-                    onClick={ () => setFiltros({ ...filtros, medico: '' }) }
-                    className="hover:bg-green-200 rounded-full p-0.5"
-                  >
-                    <X className="w-3 h-3" />
-                  </button>
-                </span>
-              ) }
-            </div>
-          ) }
-        </div>
-      ) }
-
-      {/* Timeline de Atenciones */ }
-      { atencionesFiltradas.length === 0 ? (
-        <div className="p-8 text-center border-2 border-purple-200 bg-purple-50 rounded-xl">
-          <Filter className="w-12 h-12 mx-auto mb-3 text-purple-400" />
-          <p className="mb-1 font-semibold text-purple-900">No se encontraron resultados</p>
-          <p className="mb-4 text-sm text-purple-700">
-            No hay atenciones que coincidan con los filtros seleccionados
-          </p>
-          <button
-            onClick={ limpiarFiltros }
-            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white transition-all bg-purple-600 rounded-lg hover:bg-purple-700"
-          >
-            <X className="w-4 h-4" />
-            Limpiar filtros
-          </button>
-        </div>
-      ) : (
-        <div className="space-y-3">
-          { atencionesFiltradas.map((atencion, index) => (
-            <div
-              key={ atencion.idAtencion }
-              className="bg-white border-2 border-slate-200 rounded-xl p-4 hover:border-[#084a8a] hover:shadow-lg transition-all"
-            >
-              <div className="flex items-start gap-4">
-                {/* Icono y línea de timeline */ }
-                <div className="flex flex-col items-center">
-                  <div className="p-2 bg-[#084a8a] rounded-full">
-                    <Stethoscope className="w-4 h-4 text-white" />
+              {/* Main info */}
+              <div className="flex-1 min-w-0">
+                <div className="flex items-start justify-between gap-2 flex-wrap">
+                  {/* Title + subtitle */}
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <h4 className="font-semibold text-slate-800 text-sm leading-snug truncate">
+                        {titulo}
+                      </h4>
+                      {/* Badge tipo derivación: RECITA / INTERCONSULTA */}
+                      {['RECITA', 'INTERCONSULTA', 'TELECONSULTA'].includes(
+                        (atencion.tipoCita || '').toUpperCase()
+                      ) && (
+                        <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-indigo-100 text-indigo-700 border border-indigo-200 uppercase tracking-wide">
+                          {atencion.tipoCita}
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-xs text-slate-500 mt-0.5 truncate">
+                      {subtitulo}
+                    </p>
                   </div>
-                  { index < atencionesFiltradas.length - 1 && (
-                    <div className="w-0.5 h-full bg-slate-200 mt-2" />
-                  ) }
+
+                  {/* Estado badge */}
+                  {estadoLabel && (
+                    <span className={`flex-shrink-0 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold ${colorBadgeEstado(estadoLabel)}`}>
+                      {estadoLabel}
+                    </span>
+                  )}
                 </div>
 
-                {/* Contenido */ }
-                <div className="flex-1">
-                  {/* Header clickeable */ }
-                  <div className="flex items-start justify-between mb-2 group">
-                    <div className="flex-1">
-                      <h4 className="font-semibold text-slate-900">
-                        { atencion.nombreTipoAtencion || 'Atención Clínica' }
-                      </h4>
-                      <p className="text-sm text-slate-600">
-                        { atencion.nombreEspecialidad || 'Sin especialidad' }
-                      </p>
-                    </div>
-
-                    {/* Botón de expandir/colapsar más intuitivo */ }
-                    <button
-                      className="group/btn flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-50 hover:bg-[#084a8a] transition-all duration-200 border border-slate-200 hover:border-[#084a8a] flex-shrink-0 shadow-sm hover:shadow-md"
-                      onClick={ () => toggleExpand(atencion.idAtencion) }
-                    >
-                      <span className="text-xs font-medium transition-colors text-slate-600 group-hover/btn:text-white">
-                        { expandedItems[atencion.idAtencion] ? 'Ocultar detalles' : 'Ver detalles' }
-                      </span>
-                      <ChevronDown
-                        className={ `w-4 h-4 text-slate-600 group-hover/btn:text-white transition-all duration-200 ${expandedItems[atencion.idAtencion] ? 'rotate-180' : 'rotate-0'
-                          } ` }
-                      />
-                    </button>
-                  </div>
-
-                  {/* Información básica - siempre visible */ }
-                  <div className="grid grid-cols-1 gap-3 text-sm md:grid-cols-2">
-                    <div className="flex items-center gap-2 text-slate-600">
-                      <Calendar className="w-4 h-4 text-[#084a8a]" />
-                      <span>{ formatearFecha(atencion.fechaAtencion) }</span>
-                    </div>
-                    { atencion.nombreProfesional && (
-                      <div className="flex items-center gap-2 text-slate-600">
-                        <User className="w-4 h-4 text-[#084a8a]" />
-                        <span>{ atencion.nombreProfesional }</span>
-                      </div>
-                    ) }
-                  </div>
-
-                  {/* Estrategia - Badge siempre visible */ }
-                  { atencion.nombreEstrategia && (
-                    <div className="mt-2">
-                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-[#084a8a] text-white shadow-sm">
-                        <FileText className="w-3.5 h-3.5" />
-                        { atencion.nombreEstrategia }
-                      </span>
-                    </div>
-                  ) }
-
-                  {/* Contenido expandible */ }
-                  { expandedItems[atencion.idAtencion] && (
-                    <div className="mt-3 space-y-3 duration-200 animate-in slide-in-from-top-2">
-                      {/* Información adicional del header */ }
-                      { atencion.nombreIpress && (
-                        <div className="flex items-center gap-2 text-sm text-slate-600">
-                          <Building2 className="w-4 h-4 text-[#084a8a]" />
-                          <span className="truncate">{ atencion.nombreIpress }</span>
-                        </div>
-                      ) }
-
-                      {/* Signos Vitales Estructurados - FIX PROBLEMA #1 */ }
-                      { (atencion.signosVitales?.presionArterial || atencion.signosVitales?.saturacionO2 || atencion.signosVitales?.temperatura || atencion.signosVitales?.frecuenciaCardiaca) && (
-                        <div className="p-4 border-2 border-gray-200 bg-gradient-to-r from-gray-50 to-slate-50 rounded-xl">
-                          <div className="flex items-center gap-2 mb-3">
-                            <div className="p-1.5 bg-green-100 rounded">
-                              <Activity className="w-4 h-4 text-green-600" />
-                            </div>
-                            <h4 className="text-sm font-semibold text-gray-900">Signos Vitales</h4>
-                          </div>
-
-                          <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
-                            {/* Presión Arterial */ }
-                            { atencion.signosVitales.presionArterial && (
-                              <VitalSignBadge
-                                label="PA"
-                                value={ atencion.signosVitales.presionArterial }
-                                unit="mmHg"
-                                evaluacion={ evaluarPresionArterial(atencion.signosVitales.presionArterial) }
-                              />
-                            ) }
-
-                            {/* Saturación O2 */ }
-                            { atencion.signosVitales.saturacionO2 !== null && atencion.signosVitales.saturacionO2 !== undefined && (
-                              <VitalSignBadge
-                                label="SpO₂"
-                                value={ atencion.signosVitales.saturacionO2 }
-                                unit="%"
-                                evaluacion={ evaluarSaturacionO2(atencion.signosVitales.saturacionO2) }
-                              />
-                            ) }
-
-                            {/* Temperatura */ }
-                            { atencion.signosVitales.temperatura && (
-                              <VitalSignBadge
-                                label="Temp"
-                                value={ atencion.signosVitales.temperatura }
-                                unit="°C"
-                                evaluacion={ evaluarTemperatura(atencion.signosVitales.temperatura) }
-                              />
-                            ) }
-
-                            {/* Frecuencia Cardíaca */ }
-                            { atencion.signosVitales.frecuenciaCardiaca !== null && atencion.signosVitales.frecuenciaCardiaca !== undefined && (
-                              <VitalSignBadge
-                                label="FC"
-                                value={ atencion.signosVitales.frecuenciaCardiaca }
-                                unit="lpm"
-                                evaluacion={ evaluarFrecuenciaCardiaca(atencion.signosVitales.frecuenciaCardiaca) }
-                              />
-                            ) }
-                          </div>
-                        </div>
-                      ) }
-
-                      {/* Motivo de Consulta */ }
-                      { atencion.motivoConsulta && (
-                        <div className="p-3 bg-[#084a8a]/5 border border-[#084a8a]/20 rounded-lg">
-                          <p className="text-xs font-semibold text-[#084a8a] mb-1">
-                            Motivo de Consulta:
-                          </p>
-                          <p className="text-sm text-[#084a8a]/90">
-                            { atencion.motivoConsulta }
-                          </p>
-                        </div>
-                      ) }
-
-                      {/* 💊 TRATAMIENTO Y RECOMENDACIONES (PRIORIDAD #1) */ }
-                      { (atencion.tratamiento || atencion.recomendacionEspecialista) && (
-                        <div className="space-y-3">
-                          {/* Tratamiento */ }
-                          { atencion.tratamiento && (
-                            <div className="p-4 border-2 border-green-400 bg-gradient-to-br from-green-50 to-green-100 rounded-xl">
-                              <h4 className="flex items-center gap-2 mb-2 text-sm font-black text-green-900 uppercase">
-                                <FileText className="w-4 h-4" />
-                                💊 Plan Farmacológico
-                              </h4>
-                              <pre className="font-sans text-sm font-semibold leading-relaxed text-green-900 whitespace-pre-wrap">
-                                { atencion.tratamiento }
-                              </pre>
-                            </div>
-                          ) }
-
-                          {/* Recomendaciones */ }
-                          { atencion.recomendacionEspecialista && (
-                            <div className="p-4 border-2 border-green-300 bg-green-50 rounded-xl">
-                              <h4 className="flex items-center gap-2 mb-2 text-sm font-bold text-green-900">
-                                <FileText className="w-4 h-4" />
-                                👨‍⚕️ Recomendaciones
-                              </h4>
-                              <p className="text-sm font-medium leading-relaxed text-green-900 whitespace-pre-wrap">
-                                { atencion.recomendacionEspecialista }
-                              </p>
-                            </div>
-                          ) }
-                        </div>
-                      ) }
-
-                      {/* 📋 CIE-10 Compacto (Contexto administrativo) */ }
-                      { (atencion.diagnosticosCie10?.length > 0 || atencion.cie10Codigo) && (
-                        <div className="p-3 border rounded-lg bg-slate-50 border-slate-300">
-                          <h4 className="flex items-center gap-2 mb-2 text-xs font-bold tracking-wide uppercase text-slate-600">
-                            <Stethoscope className="w-3 h-3" />
-                            Códigos CIE-10 { atencion.diagnosticosCie10?.length > 0 && `(${atencion.diagnosticosCie10.length})` }
-                          </h4>
-                          { atencion.diagnosticosCie10?.length > 0 ? (
-                            <ul className="space-y-1.5 text-xs text-slate-700">
-                              { atencion.diagnosticosCie10.map((diag, index) => (
-                                <li key={ index } className="flex items-start gap-2">
-                                  <span className={ `px-1.5 py-0.5 rounded font-mono font-bold text-[10px] flex-shrink-0 ${
-                                    diag.esPrincipal ? 'bg-purple-600 text-white' : 'bg-slate-300 text-slate-700'
-                                  }` }>
-                                    { diag.cie10Codigo }
-                                  </span>
-                                  <span className="leading-tight">
-                                    { diag.esPrincipal && <strong>⭐ </strong> }
-                                    { diag.cie10Descripcion }
-                                  </span>
-                                </li>
-                              )) }
-                            </ul>
-                          ) : (
-                            atencion.cie10Codigo && (
-                              <div className="flex items-start gap-2 text-xs text-slate-700">
-                                <span className="px-1.5 py-0.5 bg-purple-600 text-white rounded font-mono font-bold text-[10px]">
-                                  { atencion.cie10Codigo }
-                                </span>
-                                <span className="leading-tight">{ atencion.cie10Descripcion }</span>
-                              </div>
-                            )
-                          ) }
-                        </div>
-                      ) }
-
-                      {/* Impresión Diagnóstica (texto libre - SIN valores) */ }
-                      { atencion.diagnostico && (
-                        <div className="p-3 border border-purple-300 rounded-lg bg-purple-50">
-                          <h4 className="text-xs font-bold text-purple-900 flex items-center gap-2 mb-1.5">
-                            <FileText className="w-3 h-3" />
-                            Impresión Diagnóstica
-                          </h4>
-                          <p className="text-xs leading-relaxed text-purple-800">
-                            { atencion.diagnostico }
-                          </p>
-                        </div>
-                      ) }
-
-                      {/* Badges de información adicional */ }
-                      <div className="flex flex-wrap gap-2">
-                        {/* FIX CRÍTICO: Badge inteligente que evalúa estado real de signos vitales */ }
-                        { (atencion.signosVitales?.presionArterial || atencion.signosVitales?.saturacionO2 || atencion.signosVitales?.temperatura || atencion.signosVitales?.frecuenciaCardiaca) && (
-                          <VitalSignsStatusBadge
-                            presionArterial={ atencion.signosVitales.presionArterial }
-                            saturacionO2={ atencion.signosVitales.saturacionO2 }
-                            temperatura={ atencion.signosVitales.temperatura }
-                            frecuenciaCardiaca={ atencion.signosVitales.frecuenciaCardiaca }
-                          />
-                        ) }
-                        { atencion.tieneInterconsulta && (
-                          <span className="inline-flex items-center px-2 py-1 text-xs font-medium text-purple-800 bg-purple-100 rounded-md">
-                            Interconsulta
-                          </span>
-                        ) }
-                        { atencion.requiereTelemonitoreo && (
-                          <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-[#084a8a]/10 text-[#084a8a] border border-[#084a8a]/20">
-                            Telemonitoreo
-                          </span>
-                        ) }
-                      </div>
-
-                      {/* Botón para ver detalles completos */ }
-                      <button
-                        onClick={ (e) => {
-                          e.stopPropagation();
-                          setModalDetalle({ isOpen: true, idAtencion: atencion.idAtencion });
-                        } }
-                        className="w-full mt-2 px-4 py-2 bg-[#084a8a] hover:bg-[#063d6f] text-white rounded-lg transition-all font-medium text-sm flex items-center justify-center gap-2"
-                      >
-                        <FileText className="w-4 h-4" />
-                        Ver Detalles Completos
-                      </button>
-                    </div>
-                  ) }
+                {/* Date + IPRESS + Profesional row */}
+                <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-2">
+                  <span className="inline-flex items-center gap-1.5 text-xs text-slate-600">
+                    <Calendar className={`w-3.5 h-3.5 flex-shrink-0 ${tieneFechaAtencion ? 'text-emerald-500' : 'text-slate-400'}`} />
+                    <span className={`font-medium ${tieneFechaAtencion ? 'text-slate-600' : 'text-slate-400'}`}>{labelFecha}</span>
+                    <span className={tieneFechaAtencion ? 'text-slate-700' : 'text-slate-400 italic'}>{fechaMostrar}</span>
+                    {tieneFechaAtencion && atencion.horaAtencion && (
+                      <span className="text-slate-400">· {atencion.horaAtencion}</span>
+                    )}
+                  </span>
+                  {atencion.nombreProfesional && (
+                    <span className="inline-flex items-center gap-1.5 text-xs text-slate-600 truncate max-w-[260px]">
+                      <Stethoscope className="w-3.5 h-3.5 text-emerald-500 flex-shrink-0" />
+                      <span className="truncate font-medium">{atencion.nombreProfesional}</span>
+                    </span>
+                  )}
+                  {atencion.ipressNombre && (
+                    <span className="inline-flex items-center gap-1.5 text-xs text-slate-500 truncate max-w-[220px]">
+                      <Building2 className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />
+                      <span className="truncate">{atencion.ipressNombre}</span>
+                    </span>
+                  )}
                 </div>
               </div>
-            </div>
-          )) }
-        </div>
-      ) }
 
-      {/* Modal de Detalle */ }
-      { modalDetalle.isOpen && (
+              {/* Expand button */}
+              <button
+                onClick={() => toggleExpand(atencion.idSolicitud)}
+                className="flex-shrink-0 flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium text-slate-600 bg-slate-50 hover:bg-emerald-50 hover:text-emerald-700 border border-slate-200 hover:border-emerald-200 transition-all duration-150"
+                aria-expanded={isExpanded}
+                aria-label={isExpanded ? 'Ocultar detalles' : 'Ver detalles'}
+              >
+                <span className="hidden sm:inline">{isExpanded ? 'Ocultar' : 'Detalles'}</span>
+                <ChevronDown
+                  className={`w-3.5 h-3.5 transition-transform duration-200 ${isExpanded ? 'rotate-180' : 'rotate-0'}`}
+                />
+              </button>
+            </div>
+
+            {/* Expanded section */}
+            {isExpanded && (
+              <div className="border-t border-slate-100 px-4 pb-4 pt-3 space-y-3">
+                {/* Motivo de llamado a bolsa */}
+                {atencion.motivoLlamadoBolsa && (
+                  <div className="p-3 bg-emerald-50 border border-emerald-100 rounded-lg">
+                    <p className="text-xs font-semibold text-emerald-700 mb-1">
+                      Motivo de la solicitud
+                    </p>
+                    <p className="text-sm text-emerald-900 leading-relaxed">
+                      {atencion.motivoLlamadoBolsa}
+                    </p>
+                  </div>
+                )}
+
+                {/* Secondary metadata row */}
+                <div className="flex flex-wrap gap-x-6 gap-y-2">
+                  {atencion.horaAtencion && (
+                    <span className="inline-flex items-center gap-1.5 text-xs text-slate-600">
+                      <Clock className="w-3.5 h-3.5 text-emerald-500" />
+                      Hora: <span className="font-medium text-slate-700">{atencion.horaAtencion}</span>
+                    </span>
+                  )}
+                  {atencion.numeroSolicitud && (
+                    <span className="inline-flex items-center gap-1.5 text-xs text-slate-600">
+                      <Hash className="w-3.5 h-3.5 text-emerald-500" />
+                      N° Solicitud: <span className="font-medium text-slate-700">{atencion.numeroSolicitud}</span>
+                    </span>
+                  )}
+                  {atencion.derivacionInterna && atencion.especialidad && (
+                    // Show derivacionInterna as extra context only when it differs from the subtitle
+                    <span className="inline-flex items-center gap-1.5 text-xs text-slate-600">
+                      <Activity className="w-3.5 h-3.5 text-emerald-500" />
+                      Servicio: <span className="font-medium text-slate-700">{atencion.derivacionInterna}</span>
+                    </span>
+                  )}
+                </div>
+
+                {/* Ver Detalles Completos button */}
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setModalDetalle({ isOpen: true, idSolicitud: atencion.idSolicitud });
+                  }}
+                  className="w-full mt-1 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition-all font-medium text-sm flex items-center justify-center gap-2"
+                >
+                  <FileText className="w-4 h-4" />
+                  Ver Detalles Completos
+                </button>
+              </div>
+            )}
+          </div>
+        );
+      })}
+
+      {/* Modal de Detalle */}
+      {modalDetalle.isOpen && (
         <DetalleAtencionModal
-          idAtencion={ modalDetalle.idAtencion }
-          onClose={ () => setModalDetalle({ isOpen: false, idAtencion: null }) }
+          isOpen={true}
+          idAtencion={modalDetalle.idSolicitud}
+          onClose={() => setModalDetalle({ isOpen: false, idSolicitud: null })}
         />
-      ) }
+      )}
     </div>
   );
 }

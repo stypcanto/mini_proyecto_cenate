@@ -32,56 +32,53 @@ export default function TrazabilidadClinicaTabs({ pkAsegurado }) {
     };
 
     return (
-        <div className="w-full">
-            {/* Navegación de pestañas */ }
+        <div className="w-full space-y-4">
+            {/* Header / Navegación */ }
             { !verificandoElegibilidad && (
-                <div className="rounded-xl mb-6 border border-[#084a8a]/20 bg-[#084a8a]/5 backdrop-blur-sm shadow-sm p-1.5">
-                    <div className={ `grid grid-cols-1 ${esElegible ? 'md:grid-cols-2' : ''} gap-2` }>
-                        {/* Pestaña Historial (Siempre visible) */ }
+                esElegible ? (
+                    /* Dos pestañas: pill tabs */
+                    <div className="flex gap-2 bg-slate-100 rounded-xl p-1">
                         <button
                             onClick={ () => setTabActiva('historial') }
-                            className={ `group relative flex items-center justify-center gap-2.5 px-5 py-3.5 text-sm font-semibold rounded-lg transition-all duration-200 ease-out focus:outline-none focus-visible:ring-2 focus-visible:ring-[#084a8a] focus-visible:ring-offset-2 ${tabActiva === 'historial'
-                                    ? 'bg-[#084a8a] text-white shadow-md'
-                                    : 'text-slate-600 hover:text-slate-900 hover:bg-white/70'
-                                }` }
+                            className={ `flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 ${
+                                tabActiva === 'historial'
+                                    ? 'bg-white text-[#084a8a] shadow-sm border border-slate-200'
+                                    : 'text-slate-500 hover:text-slate-700'
+                            }` }
                         >
-                            <div className={ `p-1.5 rounded-md transition-colors duration-200 ${tabActiva === 'historial' ? 'bg-white/20' : 'bg-[#084a8a]/10 group-hover:bg-[#084a8a]/20'}` }>
-                                <FileText className={ `w-4 h-4 transition-colors duration-200 ${tabActiva === 'historial' ? 'text-white' : 'text-slate-600 group-hover:text-slate-700'}` } />
-                            </div>
-                            <span>Historial de Atenciones</span>
-                            { tabActiva === 'historial' && (
-                                <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-10 h-1 bg-[#084a8a] rounded-full shadow-sm" />
-                            ) }
+                            <FileText className="w-4 h-4" />
+                            Historial de Atenciones
                         </button>
-
-                        {/* Pestaña Evolución Crónica (Solo para CENACRON con HTA/DM) */ }
-                        { esElegible && (
-                            <button
-                                onClick={ () => setTabActiva('evolucion') }
-                                className={ `group relative flex items-center justify-center gap-2.5 px-5 py-3.5 text-sm font-semibold rounded-lg transition-all duration-200 ease-out focus:outline-none focus-visible:ring-2 focus-visible:ring-[#084a8a] focus-visible:ring-offset-2 ${tabActiva === 'evolucion'
-                                        ? 'bg-[#084a8a] text-white shadow-md'
-                                        : 'text-slate-600 hover:text-slate-900 hover:bg-white/70'
-                                    }` }
-                            >
-                                <div className={ `p-1.5 rounded-md transition-colors duration-200 ${tabActiva === 'evolucion' ? 'bg-white/20' : 'bg-[#084a8a]/10 group-hover:bg-[#084a8a]/20'}` }>
-                                    <Activity className={ `w-4 h-4 transition-colors duration-200 ${tabActiva === 'evolucion' ? 'text-white' : 'text-slate-600 group-hover:text-slate-700'}` } />
-                                </div>
-                                <span>Evolución Crónica</span>
-                                <span className={ `px-2 py-0.5 text-xs rounded-full font-bold ring-1 ring-green-200 transition-all duration-200 ${tabActiva === 'evolucion'
-                                    ? 'bg-green-500 text-white ring-green-300'
-                                    : 'bg-green-100 text-green-700 group-hover:bg-green-200/70'}` }>
-                                    CENACRON
-                                </span>
-                                { tabActiva === 'evolucion' && (
-                                    <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-10 h-1 bg-[#084a8a] rounded-full shadow-sm" />
-                                ) }
-                            </button>
-                        ) }
+                        <button
+                            onClick={ () => setTabActiva('evolucion') }
+                            className={ `flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 ${
+                                tabActiva === 'evolucion'
+                                    ? 'bg-white text-[#084a8a] shadow-sm border border-slate-200'
+                                    : 'text-slate-500 hover:text-slate-700'
+                            }` }
+                        >
+                            <Activity className="w-4 h-4" />
+                            Evolución Crónica
+                            <span className="px-1.5 py-0.5 text-[10px] font-bold rounded-full bg-green-100 text-green-700">
+                                CENACRON
+                            </span>
+                        </button>
                     </div>
-                </div>
+                ) : (
+                    /* Una sola sección: header decorativo */
+                    <div className="flex items-center gap-3 px-4 py-3 bg-gradient-to-r from-emerald-50 to-slate-50 border border-emerald-100 rounded-xl">
+                        <div className="p-2 bg-emerald-100 rounded-lg">
+                            <FileText className="w-4 h-4 text-emerald-600" />
+                        </div>
+                        <div>
+                            <p className="text-sm font-semibold text-slate-700">Historial de Atenciones</p>
+                            <p className="text-xs text-slate-400">Registro de atenciones clínicas CENATE</p>
+                        </div>
+                    </div>
+                )
             ) }
 
-            {/* Contenido de las pestañas */ }
+            {/* Contenido */ }
             <div>
                 { tabActiva === 'historial' && (
                     <HistorialAtencionesTab pkAsegurado={ pkAsegurado } />

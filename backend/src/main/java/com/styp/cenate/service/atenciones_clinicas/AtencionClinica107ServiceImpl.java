@@ -3,8 +3,10 @@ package com.styp.cenate.service.atenciones_clinicas;
 import com.styp.cenate.dto.*;
 import com.styp.cenate.model.AtencionClinica107;
 import com.styp.cenate.model.EstadoGestionCita;
+import com.styp.cenate.model.PersonalCnt;
 import com.styp.cenate.repository.AtencionClinica107Repository;
 import com.styp.cenate.repository.EstadoGestionCitaRepository;
+import com.styp.cenate.repository.PersonalCntRepository;
 import com.styp.cenate.service.specification.AtencionClinica107Specification;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -41,6 +43,7 @@ public class AtencionClinica107ServiceImpl implements AtencionClinica107Service 
 
     private final AtencionClinica107Repository repository;
     private final EstadoGestionCitaRepository estadoGestionCitaRepository;
+    private final PersonalCntRepository personalCntRepository;
 
     /**
      * Listar atenciones con filtros complejos
@@ -262,6 +265,18 @@ public class AtencionClinica107ServiceImpl implements AtencionClinica107Service 
             ipressNombre = atencion.getIpress().getDescIpress();
         }
 
+        // Resolver nombre del profesional asignado
+        String nombreProfesional = null;
+        if (atencion.getIdPersonal() != null) {
+            try {
+                nombreProfesional = personalCntRepository.findById(atencion.getIdPersonal())
+                        .map(PersonalCnt::getNombreCompleto)
+                        .orElse(null);
+            } catch (Exception e) {
+                log.warn("No se pudo resolver nombre del profesional idPersonal={}", atencion.getIdPersonal());
+            }
+        }
+
         return AtencionClinica107DTO.builder()
             .idSolicitud(atencion.getIdSolicitud())
             .numeroSolicitud(atencion.getNumeroSolicitud())
@@ -292,9 +307,11 @@ public class AtencionClinica107ServiceImpl implements AtencionClinica107Service 
             .fechaActualizacion(atencion.getFechaActualizacion())
             .responsableGestoraId(atencion.getResponsableGestoraId())
             .fechaAsignacion(atencion.getFechaAsignacion())
+            .fechaPreferidaNoAtendida(atencion.getFechaPreferidaNoAtendida()) // Fecha sugerida recita/interconsulta
             .fechaAtencion(atencion.getFechaAtencion()) // 🆕 Fecha de atención programada
             .horaAtencion(atencion.getHoraAtencion()) // 🆕 Hora de atención programada
             .idPersonal(atencion.getIdPersonal()) // 🆕 ID del personal que atiende
+            .nombreProfesional(nombreProfesional) // 🆕 Nombre completo del profesional
             .tiempoInicioSintomas(atencion.getTiempoInicioSintomas()) // 🆕 Tiempo inicio síntomas
             .consentimientoInformado(atencion.getConsentimientoInformado()) // 🆕 Consentimiento informado
             .condicionMedica(atencion.getCondicionMedica() != null && !atencion.getCondicionMedica().trim().isEmpty() 

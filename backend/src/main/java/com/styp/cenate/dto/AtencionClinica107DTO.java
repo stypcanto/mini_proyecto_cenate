@@ -56,9 +56,11 @@ public class AtencionClinica107DTO {
     private LocalDateTime fechaAsignacion;
 
     // 🕐 Datos de Atención Programada
+    private LocalDate fechaPreferidaNoAtendida; // Fecha sugerida para recita/interconsulta
     private LocalDate fechaAtencion;
     private String horaAtencion;
     private Long idPersonal;
+    private String nombreProfesional; // Nombre completo del profesional asignado
 
     // 🆕 Nuevos campos para derivación de atenciones
     private String tiempoInicioSintomas;

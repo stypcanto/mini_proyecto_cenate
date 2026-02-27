@@ -1,6 +1,7 @@
 package com.styp.cenate.api.atenciones_clinicas;
 
 import com.styp.cenate.dto.*;
+import com.styp.cenate.repository.AseguradoRepository;
 import com.styp.cenate.service.atenciones_clinicas.AtencionClinica107Service;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -33,6 +34,7 @@ import java.util.Map;
 public class AtencionClinica107PublicController {
 
     private final AtencionClinica107Service service;
+    private final AseguradoRepository aseguradoRepository;
 
     /**
      * GET /api/atenciones-clinicas-107/listar
@@ -228,6 +230,49 @@ public class AtencionClinica107PublicController {
             log.error("❌ [MODULO 107] Error al obtener detalle: {}", e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(
                 Map.of("error", "Error al procesar", "mensaje", e.getMessage())
+            );
+        }
+    }
+
+    /**
+     * GET /api/atenciones-clinicas-107/asegurado/{pkAsegurado}
+     * Obtener atenciones de un asegurado por su pkAsegurado (o DNI como fallback)
+     */
+    @GetMapping("/asegurado/{pkAsegurado}")
+    public ResponseEntity<Map<String, Object>> listarPorAsegurado(
+            @PathVariable String pkAsegurado,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "50") int size) {
+        try {
+            log.info("📋 [MODULO 107] GET /asegurado/{}", pkAsegurado);
+
+            // Resolver DNI: buscar asegurado por pk, o usar el valor directamente como DNI
+            String dni = aseguradoRepository.findById(pkAsegurado)
+                    .map(a -> a.getDocPaciente())
+                    .orElse(pkAsegurado); // fallback: tratar pkAsegurado como DNI
+
+            AtencionClinica107FiltroDTO filtro = AtencionClinica107FiltroDTO.builder()
+                    .pacienteDni(dni)
+                    .pageNumber(page)
+                    .pageSize(size)
+                    .build();
+
+            Page<AtencionClinica107DTO> resultado = service.listarConFiltros(filtro);
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("content", resultado.getContent());
+            response.put("totalElements", resultado.getTotalElements());
+            response.put("totalPages", resultado.getTotalPages());
+            response.put("number", resultado.getNumber());
+            response.put("size", resultado.getSize());
+
+            log.info("✅ [MODULO 107] {} atenciones encontradas para asegurado {}", resultado.getTotalElements(), pkAsegurado);
+            return ResponseEntity.ok(response);
+
+        } catch (Exception e) {
+            log.error("❌ [MODULO 107] Error al listar atenciones por asegurado {}: {}", pkAsegurado, e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(
+                    Map.of("error", "Error al cargar atenciones", "mensaje", e.getMessage())
             );
         }
     }

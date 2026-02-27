@@ -1820,9 +1820,17 @@ public class SolicitudBolsaController {
     @GetMapping("/trazabilidad/por-dni/{dni}")
     @Transactional(readOnly = true)
     public ResponseEntity<?> obtenerTrazabilidadPorDni(@PathVariable String dni) {
-        log.info("📋 [v1.75.2] GET /trazabilidad/por-dni/{}", dni);
-        return solicitudRepository
-                .findFirstByPacienteDniAndActivoTrueOrderByFechaSolicitudDesc(dni)
+        log.info("📋 [v1.75.3] GET /trazabilidad/por-dni/{}", dni);
+        // Busca primero la solicitud ORIGINAL (sin padre) para mostrar ciclo completo
+        // con recitas/interconsultas como eventos derivados. Si no hay original activa,
+        // cae al fallback de la más reciente.
+        Optional<SolicitudBolsa> solicitud = solicitudRepository
+                .findFirstByPacienteDniAndActivoTrueAndIdsolicitudgeneracionIsNullOrderByFechaSolicitudDesc(dni);
+        if (solicitud.isEmpty()) {
+            solicitud = solicitudRepository
+                    .findFirstByPacienteDniAndActivoTrueOrderByFechaSolicitudDesc(dni);
+        }
+        return solicitud
                 .map(s -> ResponseEntity.ok(trazabilidadBolsaService.obtenerTrazabilidad(s.getIdSolicitud())))
                 .orElse(ResponseEntity.notFound().build());
     }

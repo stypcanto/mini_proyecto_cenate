@@ -47,7 +47,7 @@ export default function DetalleAtencionModal({
     setLoading(true);
     setError(null);
     try {
-      const data = await atencionesClinicasService.obtenerPorId(idAtencion);
+      const data = await atencionesClinicasService.obtenerDetalle(idAtencion);
       console.log('✅ Detalle de atención cargado:', data);
       setAtencion(data);
     } catch (err) {
@@ -132,7 +132,7 @@ export default function DetalleAtencionModal({
                 Detalle de Atención Clínica
               </h2>
               <p className="text-sm text-white/80">
-                ID: {idAtencion} | {atencion?.nombreTipoAtencion || 'Cargando...'}
+                ID: {idAtencion} | {atencion?.tipoCita || 'Cargando...'}
               </p>
             </div>
           </div>
@@ -225,11 +225,11 @@ export default function DetalleAtencionModal({
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
                         <p className="text-xs font-semibold text-blue-700 uppercase mb-1">Nombre Completo</p>
-                        <p className="text-base font-bold text-blue-900">{atencion.nombreAsegurado}</p>
+                        <p className="text-base font-bold text-blue-900">{atencion.pacienteNombre}</p>
                       </div>
                       <div>
                         <p className="text-xs font-semibold text-blue-700 uppercase mb-1">ID Asegurado</p>
-                        <p className="text-base font-bold text-blue-900">{atencion.pkAsegurado}</p>
+                        <p className="text-base font-bold text-blue-900">{atencion.pacienteDni || atencion.pacienteId}</p>
                       </div>
                     </div>
                   </div>
@@ -247,15 +247,15 @@ export default function DetalleAtencionModal({
                       </div>
                       <div>
                         <p className="text-xs font-semibold text-slate-500 uppercase mb-1">Tipo de Atención</p>
-                        <p className="text-sm font-medium text-slate-900">{atencion.nombreTipoAtencion}</p>
+                        <p className="text-sm font-medium text-slate-900">{atencion.tipoCita}</p>
                       </div>
                       <div>
                         <p className="text-xs font-semibold text-slate-500 uppercase mb-1">IPRESS</p>
-                        <p className="text-sm font-medium text-slate-900">{atencion.nombreIpress}</p>
+                        <p className="text-sm font-medium text-slate-900">{atencion.ipressNombre}</p>
                       </div>
                       <div>
                         <p className="text-xs font-semibold text-slate-500 uppercase mb-1">Especialidad</p>
-                        <p className="text-sm font-medium text-slate-900">{atencion.nombreEspecialidad || 'No especificada'}</p>
+                        <p className="text-sm font-medium text-slate-900">{atencion.especialidad || 'No especificada'}</p>
                       </div>
                       <div>
                         <p className="text-xs font-semibold text-slate-500 uppercase mb-1">Profesional</p>
@@ -279,11 +279,11 @@ export default function DetalleAtencionModal({
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
                       <div>
                         <span className="text-slate-500 font-medium">Creado:</span>{' '}
-                        <span className="text-slate-700">{formatearFecha(atencion.createdAt)}</span>
+                        <span className="text-slate-700">{formatearFecha(atencion.fechaSolicitud)}</span>
                       </div>
                       <div>
                         <span className="text-slate-500 font-medium">Última actualización:</span>{' '}
-                        <span className="text-slate-700">{formatearFecha(atencion.updatedAt)}</span>
+                        <span className="text-slate-700">{formatearFecha(atencion.fechaActualizacion)}</span>
                       </div>
                     </div>
                   </div>

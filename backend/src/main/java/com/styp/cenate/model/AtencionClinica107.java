@@ -127,6 +127,9 @@ public class AtencionClinica107 {
     private LocalDateTime fechaAsignacion;
 
     // 🕐 Datos de Atención Programada
+    @Column(name = "fecha_preferida_no_atendida")
+    private LocalDate fechaPreferidaNoAtendida;
+
     @Column(name = "fecha_atencion")
     private LocalDate fechaAtencion;
 

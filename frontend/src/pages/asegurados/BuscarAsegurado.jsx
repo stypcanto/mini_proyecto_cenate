@@ -896,8 +896,8 @@ export default function BuscarAsegurado() {
                   <button
                     onClick={ () => setTabActiva('paciente') }
                     className={ `flex items-center justify-center gap-2 px-4 py-4 text-sm font-semibold transition-all border-b-2 ${tabActiva === 'paciente'
-                      ? 'border-[#0A5BA9] text-[#0A5BA9] bg-white'
-                      : 'border-transparent text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+                      ? 'border-emerald-500 text-emerald-700 bg-white'
+                      : 'border-transparent text-slate-600 hover:text-emerald-600 hover:bg-emerald-50'
                       }` }
                   >
                     <User className="w-4 h-4" />
@@ -906,8 +906,8 @@ export default function BuscarAsegurado() {
                   <button
                     onClick={ () => setTabActiva('ipress') }
                     className={ `flex items-center justify-center gap-2 px-4 py-4 text-sm font-semibold transition-all border-b-2 ${tabActiva === 'ipress'
-                      ? 'border-[#0A5BA9] text-[#0A5BA9] bg-white'
-                      : 'border-transparent text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+                      ? 'border-emerald-500 text-emerald-700 bg-white'
+                      : 'border-transparent text-slate-600 hover:text-emerald-600 hover:bg-emerald-50'
                       }` }
                   >
                     <Building2 className="w-4 h-4" />
@@ -916,8 +916,8 @@ export default function BuscarAsegurado() {
                   <button
                     onClick={ () => setTabActiva('antecedentes') }
                     className={ `flex items-center justify-center gap-2 px-4 py-4 text-sm font-semibold transition-all border-b-2 ${tabActiva === 'antecedentes'
-                      ? 'border-[#0A5BA9] text-[#0A5BA9] bg-white'
-                      : 'border-transparent text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+                      ? 'border-emerald-500 text-emerald-700 bg-white'
+                      : 'border-transparent text-slate-600 hover:text-emerald-600 hover:bg-emerald-50'
                       }` }
                   >
                     <Activity className="w-4 h-4" />
