@@ -109,6 +109,12 @@ function getMensajeBienvenida(roles) {
       return 'Hola Soy tu asistente CENATE.\nPuedo consultar el historial y trazabilidad de tus pacientes en la BD.';
     case 'GESTION_TERRITORIAL':
       return 'Hola Soy el asistente CENATE.\nPuedo buscar profesionales, historial de pacientes e inconsistencias en tu territorio.';
+    case 'CITAS':
+      return 'Hola Soy tu asistente CENATE.\nPuedo verificar si un paciente puede recibir nueva cita, consultar su historial y buscar solicitudes activas antes de registrarlo.';
+    case 'ENFERMERIA':
+      return 'Hola Soy tu asistente CENATE.\nPuedo consultar el historial de pacientes, verificar solicitudes activas y buscar informacion antes de la atencion.';
+    case 'ESTADISTICA':
+      return 'Hola Soy el asistente CENATE.\nPuedo mostrarte resumenes y KPIs de solicitudes por estado o especialidad, y consultar historial de pacientes.';
     default:
       return 'Hola Soy el asistente de trazabilidad CENATE.\nPreguntame sobre pacientes, citas o usuarios del sistema.';
   }
