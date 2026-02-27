@@ -7,6 +7,7 @@
 
 import React, { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { getToken, getUser } from "../../../constants/auth";
+import HistorialPacienteBtn from "../../../components/trazabilidad/HistorialPacienteBtn";
 import {
   CalendarCheck,
   Search,
@@ -1385,6 +1386,7 @@ CENATE de Essalud`;
 
                           <td style={{ padding: '10px 12px', minWidth: '150px' }}>
                             <div style={{ fontWeight: '600', color: '#0f172a', fontSize: '13px' }}>{p.pacienteNombre}</div>
+                            <HistorialPacienteBtn dni={p.pacienteDni} nombrePaciente={p.pacienteNombre} />
                             {p.esCenacron && (
                               <span style={{ display: 'inline-flex', alignItems: 'center', gap: '3px', marginTop: '3px', padding: '1px 8px', borderRadius: '999px', fontSize: '10px', fontWeight: '700', background: '#f3e8ff', color: '#7e22ce', border: '1px solid #d8b4fe' }}>
                                 ♾ CENACRON

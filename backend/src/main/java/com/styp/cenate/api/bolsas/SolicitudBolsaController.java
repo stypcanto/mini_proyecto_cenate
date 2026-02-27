@@ -1805,10 +1805,26 @@ public class SolicitudBolsaController {
      * Devuelve el timeline completo: ingreso, asignación médico, cita, atención, anulación, recitas.
      */
     @GetMapping("/trazabilidad/{idSolicitud}")
+    @Transactional(readOnly = true)
     public ResponseEntity<TrazabilidadBolsaResponseDTO> obtenerTrazabilidad(
             @PathVariable Long idSolicitud) {
         log.info("📋 [v1.75.0] GET /trazabilidad/{}", idSolicitud);
         return ResponseEntity.ok(trazabilidadBolsaService.obtenerTrazabilidad(idSolicitud));
+    }
+
+    /**
+     * GET /api/bolsas/solicitudes/trazabilidad/por-dni/{dni}
+     * v1.75.2: Obtiene el timeline de la solicitud más reciente activa para un DNI.
+     * Utilizado por el botón "Ver historial" en módulos que solo conocen el DNI del paciente.
+     */
+    @GetMapping("/trazabilidad/por-dni/{dni}")
+    @Transactional(readOnly = true)
+    public ResponseEntity<?> obtenerTrazabilidadPorDni(@PathVariable String dni) {
+        log.info("📋 [v1.75.2] GET /trazabilidad/por-dni/{}", dni);
+        return solicitudRepository
+                .findFirstByPacienteDniAndActivoTrueOrderByFechaSolicitudDesc(dni)
+                .map(s -> ResponseEntity.ok(trazabilidadBolsaService.obtenerTrazabilidad(s.getIdSolicitud())))
+                .orElse(ResponseEntity.notFound().build());
     }
 
 }

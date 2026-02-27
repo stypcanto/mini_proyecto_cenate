@@ -1,12 +1,10 @@
 package com.styp.cenate.api.chatbot;
 
-import com.styp.cenate.model.DimBolsa;
 import com.styp.cenate.model.GestionPaciente;
 import com.styp.cenate.model.PersonalCnt;
 import com.styp.cenate.model.Usuario;
 import com.styp.cenate.model.bolsas.SolicitudBolsa;
 import com.styp.cenate.repository.AseguradoRepository;
-import com.styp.cenate.repository.BolsaRepository;
 import com.styp.cenate.repository.GestionPacienteRepository;
 import com.styp.cenate.repository.PersonalCntRepository;
 import com.styp.cenate.repository.UsuarioRepository;
@@ -36,7 +34,6 @@ import java.util.stream.Collectors;
 @Slf4j
 public class TrazabilidadTools {
 
-    private final BolsaRepository bolsaRepository;
     private final GestionPacienteRepository gestionPacienteRepository;
     private final AseguradoRepository aseguradoRepository;
     private final UsuarioRepository usuarioRepository;
@@ -55,22 +52,35 @@ public class TrazabilidadTools {
     public String buscarHistorialPaciente(String dni) {
         log.info("[Trazabilidad] buscarHistorialPaciente({})", dni);
         try {
-            List<DimBolsa> bolsas = bolsaRepository.findByPacienteDni(dni);
-            if (bolsas.isEmpty()) {
+            List<SolicitudBolsa> solicitudes = solicitudBolsaRepository.findByPacienteDni(dni);
+            if (solicitudes.isEmpty()) {
                 return "No se encontraron solicitudes en bolsa para el DNI: " + dni;
             }
-            String resumen = bolsas.stream()
-                    .map(b -> String.format(
-                            "ID=%d | Especialidad=%s | Estado=%s | Responsable=%s | IPRESS=%s | TipoCita=%s",
-                            b.getIdSolicitud(),
-                            b.getEspecialidadNombre() != null ? b.getEspecialidadNombre() : "N/A",
-                            b.getEstado() != null ? b.getEstado() : "N/A",
-                            b.getResponsableNombre() != null ? b.getResponsableNombre() : "Sin asignar",
-                            b.getCodigoIpress() != null ? b.getCodigoIpress() : "N/A",
-                            b.getTipoCita() != null ? b.getTipoCita() : "N/A"))
+            String resumen = solicitudes.stream()
+                    .map(s -> {
+                        String responsable = "Sin asignar";
+                        if (s.getIdPersonal() != null) {
+                            responsable = personalCntRepository.findById(s.getIdPersonal())
+                                .map(p -> {
+                                    String n = ((p.getNomPers() != null ? p.getNomPers() : "") + " "
+                                        + (p.getApePaterPers() != null ? p.getApePaterPers() : "") + " "
+                                        + (p.getApeMaterPers() != null ? p.getApeMaterPers() : "")).trim();
+                                    return n.isEmpty() ? "ID " + s.getIdPersonal() : n;
+                                })
+                                .orElse("ID " + s.getIdPersonal());
+                        }
+                        return String.format(
+                            "ID=%d | Especialidad=%s | Estado=%s | Profesional=%s | IPRESS=%s | TipoCita=%s",
+                            s.getIdSolicitud(),
+                            s.getEspecialidad() != null ? s.getEspecialidad() : "N/A",
+                            s.getEstado() != null ? s.getEstado() : "N/A",
+                            responsable,
+                            s.getCodigoIpressAdscripcion() != null ? s.getCodigoIpressAdscripcion() : "N/A",
+                            s.getTipoCita() != null ? s.getTipoCita() : "N/A");
+                    })
                     .collect(Collectors.joining("\n"));
-            return "Paciente: " + (bolsas.get(0).getPacienteNombre() != null ? bolsas.get(0).getPacienteNombre() : dni)
-                    + " | Total registros: " + bolsas.size() + "\n" + resumen;
+            return "Paciente: " + (solicitudes.get(0).getPacienteNombre() != null ? solicitudes.get(0).getPacienteNombre() : dni)
+                    + " | Total registros: " + solicitudes.size() + "\n" + resumen;
         } catch (Exception e) {
             log.error("[Trazabilidad] Error buscarHistorialPaciente: {}", e.getMessage());
             return "Error al consultar historial: " + e.getMessage();
@@ -89,7 +99,7 @@ public class TrazabilidadTools {
     public String verificarPuedeCrearCita(String dni) {
         log.info("[Trazabilidad] verificarPuedeCrearCita({})", dni);
         try {
-            List<DimBolsa> bolsas = bolsaRepository.findByPacienteDni(dni);
+            List<SolicitudBolsa> solicitudes = solicitudBolsaRepository.findByPacienteDni(dni);
             List<GestionPaciente> gestiones = gestionPacienteRepository.findByNumDoc(dni);
             boolean existeAsegurado = aseguradoRepository.findByDocPaciente(dni).isPresent();
 
@@ -102,21 +112,21 @@ public class TrazabilidadTools {
             }
             sb.append("✅ Asegurado registrado en el sistema.\n");
 
-            List<DimBolsa> activas = bolsas.stream()
-                    .filter(b -> b.getEstado() != null && b.getActivo() != null && b.getActivo()
-                            && !b.getEstado().equalsIgnoreCase("CERRADA")
-                            && !b.getEstado().equalsIgnoreCase("INACTIVA"))
+            List<SolicitudBolsa> activas = solicitudes.stream()
+                    .filter(s -> s.getEstado() != null && Boolean.TRUE.equals(s.getActivo())
+                            && !s.getEstado().equalsIgnoreCase("CERRADA")
+                            && !s.getEstado().equalsIgnoreCase("INACTIVA"))
                     .collect(Collectors.toList());
 
-            sb.append("Total solicitudes en bolsa: ").append(bolsas.size()).append("\n");
+            sb.append("Total solicitudes en bolsa: ").append(solicitudes.size()).append("\n");
             sb.append("Solicitudes activas: ").append(activas.size()).append("\n");
             sb.append("Registros de gestión: ").append(gestiones.size()).append("\n");
 
             if (!activas.isEmpty()) {
                 sb.append("⚠️ Tiene ").append(activas.size()).append(" solicitud(es) activa(s):\n");
-                activas.forEach(b -> sb.append("  → ID=").append(b.getIdSolicitud())
-                        .append(" | ").append(b.getEspecialidadNombre())
-                        .append(" | Estado=").append(b.getEstado()).append("\n"));
+                activas.forEach(s -> sb.append("  → ID=").append(s.getIdSolicitud())
+                        .append(" | ").append(s.getEspecialidad() != null ? s.getEspecialidad() : "N/A")
+                        .append(" | Estado=").append(s.getEstado()).append("\n"));
             } else {
                 sb.append("✅ Sin solicitudes activas. Puede crear nueva cita.\n");
             }
@@ -141,7 +151,7 @@ public class TrazabilidadTools {
     public String detectarInconsistencias(String dni) {
         log.info("[Trazabilidad] detectarInconsistencias({})", dni);
         try {
-            List<DimBolsa> bolsas = bolsaRepository.findByPacienteDni(dni);
+            List<SolicitudBolsa> solicitudes = solicitudBolsaRepository.findByPacienteDni(dni);
             StringBuilder sb = new StringBuilder();
             sb.append("=== Inconsistencias DNI ").append(dni).append(" ===\n");
             boolean hayProblemas = false;
@@ -151,20 +161,19 @@ public class TrazabilidadTools {
                 return sb.toString();
             }
 
-            for (DimBolsa b : bolsas) {
-                if (b.getResponsableNombre() == null || b.getResponsableNombre().isBlank()) {
-                    sb.append("⚠️ Solicitud ID=").append(b.getIdSolicitud())
-                      .append(" (").append(b.getEspecialidadNombre()).append(")")
-                      .append(": sin responsable asignado. Estado=").append(b.getEstado()).append("\n");
+            for (SolicitudBolsa s : solicitudes) {
+                if (s.getIdPersonal() == null) {
+                    sb.append("⚠️ Solicitud ID=").append(s.getIdSolicitud())
+                      .append(" (").append(s.getEspecialidad() != null ? s.getEspecialidad() : "N/A").append(")")
+                      .append(": sin profesional asignado. Estado=").append(s.getEstado()).append("\n");
                     hayProblemas = true;
                 }
             }
 
             // Duplicados activos por especialidad
-            bolsas.stream()
-                    .filter(b -> b.getEspecialidadNombre() != null
-                            && b.getActivo() != null && b.getActivo())
-                    .collect(Collectors.groupingBy(DimBolsa::getEspecialidadNombre))
+            solicitudes.stream()
+                    .filter(s -> s.getEspecialidad() != null && Boolean.TRUE.equals(s.getActivo()))
+                    .collect(Collectors.groupingBy(SolicitudBolsa::getEspecialidad))
                     .forEach((esp, lista) -> {
                         if (lista.size() > 1) {
                             sb.append("❌ Especialidad '").append(esp).append("': ")
@@ -265,16 +274,26 @@ public class TrazabilidadTools {
                     String activo = Boolean.TRUE.equals(r.getActivo()) ? "✅ ACTIVO" : "📦 ARCHIVADO";
                     String condicion = r.getCondicionMedica() != null ? r.getCondicionMedica() : "—";
                     String fecha = r.getFechaAtencion() != null ? r.getFechaAtencion().toString() : "sin fecha";
-                    String medico = r.getIdPersonal() != null ? "idPers=" + r.getIdPersonal() : "sin médico";
+                    String profesional = "sin profesional";
+                    if (r.getIdPersonal() != null) {
+                        profesional = personalCntRepository.findById(r.getIdPersonal())
+                            .map(p -> {
+                                String nomCompleto = ((p.getNomPers() != null ? p.getNomPers() : "") + " "
+                                    + (p.getApePaterPers() != null ? p.getApePaterPers() : "") + " "
+                                    + (p.getApeMaterPers() != null ? p.getApeMaterPers() : "")).trim();
+                                return nomCompleto.isEmpty() ? "ID " + r.getIdPersonal() : nomCompleto;
+                            })
+                            .orElse("ID " + r.getIdPersonal());
+                    }
                     sb.append(String.format(
-                        "[%s] ID=%d | %s | Estado=%s | CondiciónMédica=%s | Fecha=%s | Médico=%s\n",
+                        "[%s] ID=%d | %s | Estado=%s | CondiciónMédica=%s | Fecha=%s | Profesional=%s\n",
                         activo,
                         r.getIdSolicitud(),
                         r.getEspecialidad() != null ? r.getEspecialidad() : "N/A",
                         r.getEstado() != null ? r.getEstado() : "N/A",
                         condicion,
                         fecha,
-                        medico));
+                        profesional));
                 });
 
             return sb.toString();
@@ -335,9 +354,9 @@ public class TrazabilidadTools {
     public String buscarPacientePorNombre(String nombre) {
         log.info("[Trazabilidad] buscarPacientePorNombre({})", nombre);
         try {
-            List<DimBolsa> resultados = bolsaRepository.findAll().stream()
-                    .filter(b -> b.getPacienteNombre() != null &&
-                            b.getPacienteNombre().toLowerCase().contains(nombre.toLowerCase()))
+            List<SolicitudBolsa> resultados = solicitudBolsaRepository.findAll().stream()
+                    .filter(s -> s.getPacienteNombre() != null &&
+                            s.getPacienteNombre().toLowerCase().contains(nombre.toLowerCase()))
                     .limit(10)
                     .collect(Collectors.toList());
             if (resultados.isEmpty()) {
@@ -345,12 +364,12 @@ public class TrazabilidadTools {
             }
             return "Encontrados " + resultados.size() + " registro(s):\n" +
                     resultados.stream()
-                            .map(b -> String.format("DNI=%s | %s | %s | Estado=%s | IPRESS=%s",
-                                    b.getPacienteDni() != null ? b.getPacienteDni() : "N/A",
-                                    b.getPacienteNombre() != null ? b.getPacienteNombre() : "N/A",
-                                    b.getEspecialidadNombre() != null ? b.getEspecialidadNombre() : "N/A",
-                                    b.getEstado() != null ? b.getEstado() : "N/A",
-                                    b.getCodigoIpress() != null ? b.getCodigoIpress() : "N/A"))
+                            .map(s -> String.format("DNI=%s | %s | %s | Estado=%s | IPRESS=%s",
+                                    s.getPacienteDni() != null ? s.getPacienteDni() : "N/A",
+                                    s.getPacienteNombre() != null ? s.getPacienteNombre() : "N/A",
+                                    s.getEspecialidad() != null ? s.getEspecialidad() : "N/A",
+                                    s.getEstado() != null ? s.getEstado() : "N/A",
+                                    s.getCodigoIpressAdscripcion() != null ? s.getCodigoIpressAdscripcion() : "N/A"))
                             .collect(Collectors.joining("\n"));
         } catch (Exception e) {
             log.error("[Trazabilidad] Error buscarPacientePorNombre: {}", e.getMessage());
@@ -372,10 +391,10 @@ public class TrazabilidadTools {
     public String resumenSolicitudesPorEstado(String especialidad) {
         log.info("[Trazabilidad] resumenSolicitudesPorEstado({})", especialidad);
         try {
-            List<DimBolsa> todas = bolsaRepository.findAll();
+            List<SolicitudBolsa> todas = solicitudBolsaRepository.findAll();
             if (especialidad != null && !especialidad.isBlank() && !especialidad.equalsIgnoreCase("TODAS")) {
                 todas = todas.stream()
-                        .filter(b -> especialidad.equalsIgnoreCase(b.getEspecialidadNombre()))
+                        .filter(s -> especialidad.equalsIgnoreCase(s.getEspecialidad()))
                         .collect(Collectors.toList());
             }
             if (todas.isEmpty()) {
@@ -389,7 +408,7 @@ public class TrazabilidadTools {
                     : "=== KPI General de Solicitudes ===\n";
             String resumen = todas.stream()
                     .collect(Collectors.groupingBy(
-                            b -> b.getEstado() != null ? b.getEstado() : "SIN ESTADO",
+                            s -> s.getEstado() != null ? s.getEstado() : "SIN ESTADO",
                             Collectors.counting()))
                     .entrySet().stream()
                     .sorted((a, b2) -> Long.compare(b2.getValue(), a.getValue()))

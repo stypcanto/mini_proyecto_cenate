@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import HistorialPacienteBtn from '../../components/trazabilidad/HistorialPacienteBtn';
 import {
   Search, CheckCircle, ChevronLeft, ChevronRight, Calendar,
   RefreshCw, ChevronDown, Users
@@ -467,6 +468,7 @@ export default function SolicitudesAtendidas() {
                     </td>
                     <td className="px-3 py-2.5">
                       <div className="font-semibold text-gray-900 whitespace-nowrap">{s.paciente}</div>
+                      <HistorialPacienteBtn dni={s.dni} nombrePaciente={s.paciente} />
                       <div className="text-xs text-gray-400">{s.sexo} · {s.edad} años</div>
                     </td>
                     <td className="px-3 py-2.5 whitespace-nowrap text-xs text-gray-600">

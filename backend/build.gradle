@@ -135,7 +135,21 @@ dependencies {
    ================================================================ */
 springBoot {
     mainClass = 'com.styp.cenate.CenateApplication'
+}
 
+/* ================================================================
+   🔑 AUTO-CARGAR .env en bootRun (variables de entorno locales)
+   ================================================================ */
+bootRun {
+    def envFile = file('.env')
+    if (envFile.exists()) {
+        envFile.readLines().each { line ->
+            if (line && !line.startsWith('#') && line.contains('=')) {
+                def parts = line.split('=', 2)
+                environment parts[0].trim(), parts[1].trim()
+            }
+        }
+    }
 }
 
 /* ================================================================

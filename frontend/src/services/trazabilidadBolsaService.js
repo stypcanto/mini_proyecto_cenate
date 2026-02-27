@@ -12,6 +12,14 @@ const trazabilidadBolsaService = {
      */
     obtenerTrazabilidad: (idSolicitud) =>
         apiClient.get(`/bolsas/solicitudes/trazabilidad/${idSolicitud}`, true),
+
+    /**
+     * v1.75.2: Obtiene el timeline por DNI (solicitud más reciente activa).
+     * @param {string} dni
+     * @returns {Promise} misma estructura que obtenerTrazabilidad
+     */
+    obtenerTrazabilidadPorDni: (dni) =>
+        apiClient.get(`/bolsas/solicitudes/trazabilidad/por-dni/${dni}`, true),
 };
 
 export default trazabilidadBolsaService;

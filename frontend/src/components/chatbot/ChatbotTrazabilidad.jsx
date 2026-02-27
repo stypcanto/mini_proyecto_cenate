@@ -57,47 +57,47 @@ function getSugerenciasPorRol(roles) {
   switch (rol) {
     case 'ADMIN':
       return [
-        'Buscar usuario admin',
-        'Buscar profesional SALINAS',
-        'Inconsistencias DNI 08643806',
-        'Trazabilidad DNI 08643806',
+        { label: 'Buscar usuario', plantilla: 'Buscar usuario ' },
+        { label: 'Buscar profesional', plantilla: 'Buscar profesional ' },
+        { label: 'Inconsistencias de paciente', plantilla: 'Inconsistencias DNI ' },
+        { label: 'Trazabilidad de paciente', plantilla: 'Trazabilidad DNI ' },
       ];
     case 'COORDINADOR':
     case 'COORDINADOR_GESTION_CITAS':
       return [
-        'Historial DNI 08643806',
-        '¿Puede nueva cita DNI 08643806?',
-        'Trazabilidad completa DNI 08643806',
-        'Inconsistencias DNI 08643806',
+        { label: 'Historial de paciente', plantilla: 'Historial DNI ' },
+        { label: '¿Puede recibir nueva cita?', plantilla: '¿Puede nueva cita DNI ' },
+        { label: 'Trazabilidad completa', plantilla: 'Trazabilidad completa DNI ' },
+        { label: 'Detectar inconsistencias', plantilla: 'Inconsistencias DNI ' },
       ];
     case 'MEDICO':
       return [
-        'Historial DNI 08643806',
-        '¿Tiene citas activas DNI 08643806?',
-        'Trazabilidad completa DNI 08643806',
-        'Buscar profesional por nombre',
+        { label: 'Historial de paciente', plantilla: 'Historial DNI ' },
+        { label: '¿Tiene citas activas?', plantilla: '¿Tiene citas activas DNI ' },
+        { label: 'Trazabilidad completa', plantilla: 'Trazabilidad completa DNI ' },
+        { label: 'Buscar profesional', plantilla: 'Buscar profesional ' },
       ];
     case 'GESTION_TERRITORIAL':
       return [
-        'Buscar profesional GARCIA',
-        'Historial DNI 08643806',
-        'Inconsistencias DNI 08643806',
-        'Buscar usuario coordinador',
+        { label: 'Buscar profesional', plantilla: 'Buscar profesional ' },
+        { label: 'Historial de paciente', plantilla: 'Historial DNI ' },
+        { label: 'Inconsistencias de paciente', plantilla: 'Inconsistencias DNI ' },
+        { label: 'Buscar usuario', plantilla: 'Buscar usuario ' },
       ];
     case 'ENFERMERIA':
     case 'CITAS':
       return [
-        '¿Puede nueva cita DNI 08643806?',
-        'Historial DNI 08643806',
-        '¿Tiene solicitudes activas DNI 08643806?',
-        'Buscar profesional por nombre',
+        { label: '¿Puede recibir nueva cita?', plantilla: '¿Puede nueva cita DNI ' },
+        { label: 'Historial de paciente', plantilla: 'Historial DNI ' },
+        { label: '¿Tiene solicitudes activas?', plantilla: '¿Tiene solicitudes activas DNI ' },
+        { label: 'Buscar profesional', plantilla: 'Buscar profesional ' },
       ];
     default:
       return [
-        'Historial DNI 08643806',
-        '¿Puede nueva cita DNI 08643806?',
-        'Buscar usuario',
-        'Inconsistencias DNI',
+        { label: 'Historial de paciente', plantilla: 'Historial DNI ' },
+        { label: '¿Puede recibir nueva cita?', plantilla: '¿Puede nueva cita DNI ' },
+        { label: 'Buscar usuario', plantilla: 'Buscar usuario ' },
+        { label: 'Inconsistencias de paciente', plantilla: 'Inconsistencias DNI ' },
       ];
   }
 }
@@ -381,7 +381,7 @@ export default function ChatbotTrazabilidad() {
               <BotAvatar />
               <div>
                 <p className="font-bold text-sm leading-none">Cenatito Bot</p>
-                <p className="text-xs text-blue-200 mt-0.5">Tu asistente de trazabilidad CENATE</p>
+                <p className="text-xs text-blue-200 mt-0.5">Asistente virtual personalizado</p>
               </div>
             </div>
             <div className="flex items-center gap-1">
@@ -544,11 +544,14 @@ export default function ChatbotTrazabilidad() {
             <div className="px-3 py-2 flex flex-wrap gap-1.5 bg-white border-t border-slate-100 shrink-0">
               {sugerencias.map((s) => (
                 <button
-                  key={s}
-                  onClick={() => enviarMensaje(s)}
+                  key={s.label}
+                  onClick={() => {
+                    setInput(s.plantilla);
+                    setTimeout(() => inputRef.current?.focus(), 50);
+                  }}
                   className="text-xs bg-blue-50 hover:bg-blue-100 text-blue-700 px-2.5 py-1 rounded-full border border-blue-200 transition-colors"
                 >
-                  {s}
+                  {s.label}
                 </button>
               ))}
             </div>
@@ -584,15 +587,15 @@ export default function ChatbotTrazabilidad() {
       {/* Boton flotante — círculo azul oscuro con Cenatito flotando */}
       <button
         onClick={() => setAbierto(prev => !prev)}
-        className={`w-[90px] h-[90px] rounded-full flex items-center justify-center transition-all duration-300 hover:scale-105 active:scale-95 ${
+        className={`w-[64px] h-[64px] rounded-full flex items-center justify-center transition-all duration-300 hover:scale-105 active:scale-95 ${
           abierto ? 'bg-[#0A5BA9]' : 'bg-[#0A5BA9] cenatito-btn'
         }`}
         aria-label={abierto ? 'Cerrar asistente' : 'Abrir asistente CENATE'}
         title="Asistente de Trazabilidad CENATE"
       >
         {abierto
-          ? <span className="text-white text-3xl font-thin leading-none">×</span>
-          : <CenatitoBotAvatar size={68} float={true} />
+          ? <span className="text-white text-2xl font-thin leading-none">×</span>
+          : <CenatitoBotAvatar size={48} float={true} />
         }
       </button>
     </div>

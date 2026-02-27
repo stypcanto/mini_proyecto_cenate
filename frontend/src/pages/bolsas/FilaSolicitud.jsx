@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Phone, Users, UserPlus, Download, FileText, X, Calendar, Pencil, Check, ClipboardList } from 'lucide-react';
+import { Phone, Users, UserPlus, Download, FileText, X, Calendar, Pencil, Check } from 'lucide-react';
+import HistorialPacienteBtn from '../../components/trazabilidad/HistorialPacienteBtn';
 
 /**
  * 🚀 v2.6.0 - Componente MEMORIZADO para cada fila de tabla
@@ -153,11 +154,15 @@ function FilaSolicitud({
       </td>
       <td className="px-3 py-2 text-sm min-w-max">
         <div className="font-bold text-gray-900 text-base whitespace-nowrap">{solicitud.paciente}</div>
-        <div className="text-xs text-gray-500 mt-1">
-          <span className="inline-block">{solicitud.sexo}</span>
-          <span className="mx-1">•</span>
-          <span className="inline-block">{solicitud.edad} años</span>
-        </div>
+        <HistorialPacienteBtn dni={solicitud.dni} nombrePaciente={solicitud.paciente} />
+        {(solicitud.sexo && solicitud.sexo !== 'N/A') || (solicitud.edad && solicitud.edad !== 'N/A') ? (
+          <div className="text-xs text-gray-500 mt-1">
+            {[
+              solicitud.sexo && solicitud.sexo !== 'N/A' ? solicitud.sexo : null,
+              solicitud.edad && solicitud.edad !== 'N/A' ? `${solicitud.edad} años` : null,
+            ].filter(Boolean).join(' • ')}
+          </div>
+        ) : null}
         {/* Motivo de interconsulta/recita — extrae texto entre paréntesis de la especialidad */}
         {(solicitud.tipoCita === 'INTERCONSULTA' || solicitud.tipoCita === 'RECITA') && (() => {
           const match = solicitud.especialidad?.match(/\(([^)]+)\)/);
@@ -376,17 +381,6 @@ function FilaSolicitud({
           >
             <FileText size={16} />
           </button>
-
-          {/* Ver Historial */}
-          {onVerHistorial && (
-            <button
-              onClick={() => onVerHistorial(solicitud)}
-              className="p-1.5 hover:bg-blue-100 rounded-md transition-colors text-blue-600"
-              title="Ver historial de esta solicitud"
-            >
-              <ClipboardList size={16} />
-            </button>
-          )}
 
           {/* Cambiar Teléfono */}
           <button

@@ -124,25 +124,6 @@ function IconoDocumento({ className = 'w-3.5 h-3.5' }) {
   );
 }
 
-function IconoCalendario({ className = 'w-3.5 h-3.5' }) {
-  return (
-    <svg
-      className={className}
-      fill="none"
-      stroke="currentColor"
-      strokeWidth={2}
-      viewBox="0 0 24 24"
-      aria-hidden="true"
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5"
-      />
-    </svg>
-  );
-}
-
 // ── Sección: Alerta de deserción ─────────────────────────────────────────
 
 function AlertaDesercion({ total, severidad }) {
@@ -285,14 +266,6 @@ function BotonesAccion({ paciente, dniPaciente, onAction }) {
         Ver Historia
       </button>
 
-      <button
-        type="button"
-        onClick={() => onAction('reprogramar', dniPaciente)}
-        className="flex items-center gap-1 text-xs px-3 py-1.5 rounded-lg border border-green-200 text-green-600 hover:bg-green-50 transition-colors"
-      >
-        <IconoCalendario className="w-3 h-3" />
-        Reprogramar
-      </button>
     </div>
   );
 }

@@ -49,6 +49,7 @@ import CrearTicketModal from '../../../mesa-ayuda/components/CrearTicketModal';
 import TicketsExistentesModal from '../../../mesa-ayuda/components/TicketsExistentesModal';
 import DetalleTicketModal from '../../../mesa-ayuda/components/DetalleTicketModal';
 import { mesaAyudaService } from '../../../../services/mesaAyudaService';
+import HistorialPacienteBtn from '../../../../components/trazabilidad/HistorialPacienteBtn';
 import { logRespuestaConsola } from '../../../../utils/consoleResponseLogger';
 
 // ✅ v1.78.0: Sistema Genérico de Especialidades
@@ -2821,6 +2822,7 @@ export default function MisPacientes() {
                           {/* Nombre y DNI */}
                           <div className="flex flex-col gap-0 min-w-0 leading-tight">
                             <div className="font-semibold text-gray-900 text-[13px]">{formatearNombrePaciente(paciente.apellidosNombres)}</div>
+                            <HistorialPacienteBtn dni={paciente.numDoc} nombrePaciente={paciente.apellidosNombres} />
                             {paciente.esCenacron && (
                               <div className="inline-flex items-center gap-1 mt-0.5 w-fit">
                                 <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-purple-100 text-purple-700 border border-purple-300">
