@@ -424,7 +424,8 @@ export default function TrazabilidadRecitasInterconsultas() {
   const [facetas, setFacetas] = useState({ especialidades: [], motivos: [], estadosBolsa: [], creadosPor: [] });
 
   const [currentPage, setCurrentPage] = useState(1);
-  const [sortDir,     setSortDir]     = useState('desc'); // 'desc' | 'asc'
+  const [sortDir,   setSortDir]   = useState('desc');           // 'desc' | 'asc'
+  const [sortField, setSortField] = useState('fechaSolicitud'); // campo activo
 
   const isMountedRef = useRef(true);
   const isFirstLoad  = useRef(true);

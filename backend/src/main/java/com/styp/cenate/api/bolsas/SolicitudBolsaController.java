@@ -1718,7 +1718,8 @@ public class SolicitudBolsaController {
             @RequestParam(required = false) String fechaFin,
             @RequestParam(required = false) String tipoCita,
             @RequestParam(required = false) Long idPersonal,
-            @RequestParam(defaultValue = "desc") String sortDir,
+            @RequestParam(defaultValue = "desc")           String sortDir,
+            @RequestParam(defaultValue = "fechaSolicitud") String sortField,
             @RequestParam(required = false) String especialidad,
             @RequestParam(required = false) String motivoInterconsulta,
             @RequestParam(required = false) String estadoBolsa,
@@ -1726,10 +1727,10 @@ public class SolicitudBolsaController {
             @RequestParam(defaultValue = "0")  int page,
             @RequestParam(defaultValue = "25") int size) {
         try {
-            log.info("🔎 GET /api/bolsas/solicitudes/trazabilidad-recitas busqueda={} tipoCita={} idPersonal={} especialidad={} motivo={} estadoBolsa={} creadoPor={}", busqueda, tipoCita, idPersonal, especialidad, motivoInterconsulta, estadoBolsa, creadoPor);
+            log.info("🔎 GET /api/bolsas/solicitudes/trazabilidad-recitas busqueda={} tipoCita={} idPersonal={} especialidad={} motivo={} estadoBolsa={} creadoPor={} sortField={} sortDir={}", busqueda, tipoCita, idPersonal, especialidad, motivoInterconsulta, estadoBolsa, creadoPor, sortField, sortDir);
             var pageable = org.springframework.data.domain.PageRequest.of(page, size);
             var resultado = solicitudBolsaService.obtenerTrazabilidadRecitas(
-                busqueda, fechaInicio, fechaFin, tipoCita, idPersonal, sortDir,
+                busqueda, fechaInicio, fechaFin, tipoCita, idPersonal, sortDir, sortField,
                 especialidad, motivoInterconsulta, estadoBolsa, creadoPor, pageable);
             return ResponseEntity.ok(Map.of(
                 "solicitudes",  resultado.getContent(),
