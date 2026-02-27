@@ -13,7 +13,11 @@ import com.styp.cenate.repository.mesaayuda.MotivoMesaAyudaRepository;
 import com.styp.cenate.repository.mesaayuda.SecuenciaTicketsRepository;
 import com.styp.cenate.repository.mesaayuda.RespuestasPredefinidasRepository;
 import com.styp.cenate.repository.bolsas.SolicitudBolsaRepository;
+import com.styp.cenate.repository.AseguradoRepository;
+import com.styp.cenate.repository.IpressRepository;
 import com.styp.cenate.model.bolsas.SolicitudBolsa;
+import com.styp.cenate.model.Asegurado;
+import com.styp.cenate.model.Ipress;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import lombok.RequiredArgsConstructor;
@@ -59,6 +63,8 @@ public class TicketMesaAyudaService {
     private final SecuenciaTicketsRepository secuenciaRepository;
     private final SolicitudBolsaRepository solicitudBolsaRepository;
     private final RespuestasPredefinidasRepository respuestasPredefinidasRepository;
+    private final AseguradoRepository aseguradoRepository;
+    private final IpressRepository ipressRepository;
 
     @PersistenceContext
     private EntityManager entityManager;
@@ -1097,6 +1103,26 @@ public class TicketMesaAyudaService {
         // Generar número de solicitud único
         String numeroSolicitud = String.format("MESA-%d-%d", ticketId, System.currentTimeMillis());
 
+        // Resolver IPRESS desde asegurado (cas_adscripcion → dim_ipress)
+        Long idIpressResuelto = null;
+        String codigoIpressResuelto = null;
+        try {
+            Optional<Asegurado> aseguradoOpt = aseguradoRepository.findByDocPaciente(dniPaciente);
+            if (aseguradoOpt.isPresent()) {
+                String casAdscripcion = aseguradoOpt.get().getCasAdscripcion();
+                if (casAdscripcion != null && !casAdscripcion.isBlank()) {
+                    codigoIpressResuelto = casAdscripcion;
+                    Optional<Ipress> ipressOpt = ipressRepository.findByCodIpress(casAdscripcion);
+                    if (ipressOpt.isPresent()) {
+                        idIpressResuelto = ipressOpt.get().getIdIpress();
+                        log.info("✅ IPRESS resuelta para DNI {}: {} (id={})", dniPaciente, casAdscripcion, idIpressResuelto);
+                    }
+                }
+            }
+        } catch (Exception e) {
+            log.warn("⚠️ No se pudo resolver IPRESS para DNI {}: {}", dniPaciente, e.getMessage());
+        }
+
         SolicitudBolsa solicitud = SolicitudBolsa.builder()
             .numeroSolicitud(numeroSolicitud)
             .pacienteId(dniPaciente)
@@ -1109,6 +1135,9 @@ public class TicketMesaAyudaService {
             .estadoGestionCitasId(ID_ESTADO_PENDIENTE_CITA)
             .estado("PENDIENTE")
             .activo(true)
+            .codigoAdscripcion(codigoIpressResuelto)
+            .idIpress(idIpressResuelto)
+            .idIpressAtencion(idIpressResuelto)
             .build();
 
         solicitudBolsaRepository.save(solicitud);
