@@ -40,6 +40,7 @@ import {
 import toast from "react-hot-toast";
 import { formatearTiempoRelativo } from "../../../utils/dateUtils";
 import { logRespuestaConsola } from "../../../utils/consoleResponseLogger";
+import HistorialPacienteBtn from "../../../components/trazabilidad/HistorialPacienteBtn";
 
 // ── Tooltip con posición fixed (escapa overflow:hidden) ──────
 function Tooltip({ text, children }) {
@@ -2634,6 +2635,7 @@ CENATE de Essalud`;
                         {/* PACIENTE */}
                         <td className="px-3 py-2 text-sm min-w-max">
                           <div className="font-bold text-gray-900 text-base whitespace-nowrap">{paciente.pacienteNombre}</div>
+                          <HistorialPacienteBtn dni={paciente.pacienteDni} nombrePaciente={paciente.pacienteNombre} />
                           {paciente.esCenacron && (
                             <span className="inline-flex items-center gap-1 mt-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-purple-100 text-purple-700 border border-purple-300">
                               ♾ CENACRON

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { ChevronLeft, ChevronRight, Loader } from 'lucide-react';
 import { listarPacientesModulo107 } from '../../../services/formulario107Service';
 import toast from 'react-hot-toast';
+import HistorialPacienteBtn from '../../../components/trazabilidad/HistorialPacienteBtn';
 
 /**
  * 📋 ListadoPacientes - Tab de Listado de Pacientes del Módulo 107 (v3.0)
@@ -150,7 +151,8 @@ export default function ListadoPacientes() {
                       {paciente.paciente_dni || 'N/A'}
                     </td>
                     <td className="px-4 py-3 text-gray-800">
-                      {paciente.paciente_nombre || 'N/A'}
+                      <div>{paciente.paciente_nombre || 'N/A'}</div>
+                      <HistorialPacienteBtn dni={paciente.paciente_dni} nombrePaciente={paciente.paciente_nombre} />
                     </td>
                     <td className="px-4 py-3 text-gray-600">
                       {paciente.paciente_sexo || 'N/A'}

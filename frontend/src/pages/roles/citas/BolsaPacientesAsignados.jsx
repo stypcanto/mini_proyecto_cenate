@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Users, Headphones, Search, Filter, Plus, MoreVertical, AlertCircle, ChevronDown, UserCheck } from 'lucide-react';
+import HistorialPacienteBtn from '../../../components/trazabilidad/HistorialPacienteBtn';
 import { useAuth } from '../../../context/AuthContext';
 import { getToken } from '../../../constants/auth';
 import toast from 'react-hot-toast';
@@ -244,7 +245,10 @@ export default function BolsaPacientesAsignados() {
                 {solicitudesFiltradas.map((solicitud) => (
                   <tr key={solicitud.id_solicitud} className="hover:bg-gray-50 transition">
                     <td className="px-6 py-4 text-sm font-mono text-gray-900">{solicitud.paciente_dni}</td>
-                    <td className="px-6 py-4 text-sm text-gray-900 font-medium">{solicitud.paciente_nombre}</td>
+                    <td className="px-6 py-4 text-sm text-gray-900 font-medium">
+                      <div>{solicitud.paciente_nombre}</div>
+                      <HistorialPacienteBtn dni={solicitud.paciente_dni} nombrePaciente={solicitud.paciente_nombre} />
+                    </td>
                     <td className="px-6 py-4 text-sm text-gray-600">{solicitud.especialidad}</td>
                     <td className="px-6 py-4 text-sm text-gray-600">{solicitud.desc_ipress}</td>
                     <td className="px-6 py-4 text-sm">

@@ -25,6 +25,7 @@ import {
 import toast from "react-hot-toast";
 import * as XLSX from "xlsx";
 import { atencionesClinicasService } from "../../../services/atencionesClinicasService";
+import HistorialPacienteBtn from "../../../components/trazabilidad/HistorialPacienteBtn";
 import { filtrosUbicacionService } from "../../../services/filtrosUbicacionService";
 
 const REGISTROS_POR_PAGINA = 25;
@@ -962,7 +963,10 @@ export default function Modulo107PacientesList() {
                       </td>
                       <td className="px-2 py-1 text-xs text-gray-700">{formatFecha(paciente.fechaSolicitud)}</td>
                       <td className="px-2 py-1 text-xs text-gray-700 font-mono">{paciente.pacienteDni}</td>
-                      <td className="px-2 py-1 text-xs text-gray-900 font-medium">{paciente.pacienteNombre}</td>
+                      <td className="px-2 py-1 text-xs text-gray-900 font-medium">
+                        <div>{paciente.pacienteNombre}</div>
+                        <HistorialPacienteBtn dni={paciente.pacienteDni} nombrePaciente={paciente.pacienteNombre} />
+                      </td>
                       <td className="px-2 py-1 text-xs text-center">
                         <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${
                           paciente.pacienteSexo === "M"

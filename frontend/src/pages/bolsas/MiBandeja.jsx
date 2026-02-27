@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import HistorialPacienteBtn from '../../components/trazabilidad/HistorialPacienteBtn';
 import {
   Calendar,
   Phone,
@@ -303,6 +304,7 @@ const MiBandeja = () => {
                           <User className="w-4 h-4 text-gray-400 mr-2" />
                           {solicitud.pacienteNombre}
                         </div>
+                        <HistorialPacienteBtn dni={solicitud.pacienteDni} nombrePaciente={solicitud.pacienteNombre} />
                       </td>
                       <td className="px-6 py-4 text-sm text-gray-600">
                         {solicitud.pacienteDni}

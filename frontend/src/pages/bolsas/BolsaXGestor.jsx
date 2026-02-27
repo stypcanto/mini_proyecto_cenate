@@ -12,6 +12,7 @@
  */
 
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import HistorialPacienteBtn from '../../components/trazabilidad/HistorialPacienteBtn';
 import apiClient from '../../lib/apiClient';
 import {
   Users, RefreshCw, CalendarCheck, PhoneMissed,
@@ -592,6 +593,7 @@ function DrawerGestora({ gestora, onClose, onReasignacionExitosa }) {
                         <div style={{ fontWeight: '600', color: '#1e293b', lineHeight: 1.3 }}>
                           {p.paciente_nombre || 'Sin nombre'}
                         </div>
+                        <HistorialPacienteBtn dni={p.paciente_dni} nombrePaciente={p.paciente_nombre} />
                         <div style={{ color: '#94a3b8', fontSize: '11px', marginTop: '1px' }}>
                           DNI: {p.paciente_dni || '—'} · {p.desc_ipress || '—'}
                         </div>
