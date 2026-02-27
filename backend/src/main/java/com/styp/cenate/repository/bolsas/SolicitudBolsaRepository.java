@@ -143,8 +143,8 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
                sb.fecha_atencion, sb.hora_atencion, sb.id_personal,
                sb.condicion_medica, sb.fecha_atencion_medica,
                COALESCE(CONCAT(med.nom_pers, ' ', med.ape_pater_pers, ' ', med.ape_mater_pers), '') as nombre_medico,
-               sb.id_ipress_atencion, COALESCE(di2.cod_ipress, '') as cod_ipress_atencion,
-               COALESCE(di2.desc_ipress, '') as desc_ipress_atencion
+               sb.id_ipress_atencion, COALESCE(di2.cod_ipress, di.cod_ipress, '') as cod_ipress_atencion,
+               COALESCE(di2.desc_ipress, di.desc_ipress, '') as desc_ipress_atencion
         FROM dim_solicitud_bolsa sb
         LEFT JOIN dim_tipos_bolsas tb ON sb.id_bolsa = tb.id_tipo_bolsa
         LEFT JOIN dim_ipress di ON sb.id_ipress = di.id_ipress
@@ -188,8 +188,8 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
                sb.id_personal,
                sb.condicion_medica, sb.fecha_atencion_medica,
                COALESCE(CONCAT(med.nom_pers, ' ', med.ape_pater_pers, ' ', med.ape_mater_pers), '') as nombre_medico,
-               sb.id_ipress_atencion, COALESCE(di2.cod_ipress, '') as cod_ipress_atencion,
-               COALESCE(di2.desc_ipress, '') as desc_ipress_atencion,
+               sb.id_ipress_atencion, COALESCE(di2.cod_ipress, di.cod_ipress, '') as cod_ipress_atencion,
+               COALESCE(di2.desc_ipress, di.desc_ipress, '') as desc_ipress_atencion,
                COALESCE(CONCAT(pcg.nom_pers, ' ', pcg.ape_pater_pers, ' ', pcg.ape_mater_pers), ug.name_user) as nombre_gestora
         FROM dim_solicitud_bolsa sb
         LEFT JOIN dim_tipos_bolsas tb ON sb.id_bolsa = tb.id_tipo_bolsa
@@ -249,8 +249,8 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
                sb.id_personal,
                sb.condicion_medica, sb.fecha_atencion_medica,
                COALESCE(CONCAT(med.nom_pers, ' ', med.ape_pater_pers, ' ', med.ape_mater_pers), '') as nombre_medico,
-               sb.id_ipress_atencion, COALESCE(di2.cod_ipress, '') as cod_ipress_atencion,
-               COALESCE(di2.desc_ipress, '') as desc_ipress_atencion,
+               sb.id_ipress_atencion, COALESCE(di2.cod_ipress, di.cod_ipress, '') as cod_ipress_atencion,
+               COALESCE(di2.desc_ipress, di.desc_ipress, '') as desc_ipress_atencion,
                COALESCE(CONCAT(pcg.nom_pers, ' ', pcg.ape_pater_pers, ' ', pcg.ape_mater_pers), ug.name_user) as nombre_gestora
         FROM dim_solicitud_bolsa sb
         LEFT JOIN dim_tipos_bolsas tb ON sb.id_bolsa = tb.id_tipo_bolsa
@@ -1207,6 +1207,92 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
         @org.springframework.data.repository.query.Param("horaAtencion")  java.time.LocalTime horaAtencion
     );
 
+    // =========================================================================
+    // 🚑 TELEURGENCIAS — Estadísticas por médico (patrón enfermería)
+    // =========================================================================
+
+    /**
+     * Estadísticas de pacientes de Teleurgencias agrupadas por médico.
+     * Filtra por los 47 IDs de médicos de Teleurgencias.
+     */
+    @Query(value = """
+        SELECT p.id_pers as id_medico,
+          TRIM(COALESCE(p.ape_pater_pers,'') || ' ' || COALESCE(p.ape_mater_pers,'') || ' ' || COALESCE(p.nom_pers,'')) as nombre_medico,
+          COUNT(*) as total,
+          SUM(CASE WHEN sb.condicion_medica = 'Pendiente'  THEN 1 ELSE 0 END) as pendientes,
+          SUM(CASE WHEN sb.condicion_medica = 'Atendido'   THEN 1 ELSE 0 END) as atendidos,
+          SUM(CASE WHEN sb.condicion_medica = 'Deserción'  THEN 1 ELSE 0 END) as desercion
+        FROM dim_solicitud_bolsa sb
+        JOIN dim_personal_cnt p ON sb.id_personal = p.id_pers
+        WHERE sb.activo = true
+          AND sb.id_personal IN (:idsMedicos)
+          AND (:fecha IS NULL OR DATE(sb.fecha_atencion) = CAST(:fecha AS DATE))
+          AND (:turno IS NULL
+               OR (:turno = 'MANANA' AND EXTRACT(HOUR FROM sb.fecha_atencion) BETWEEN 7 AND 13)
+               OR (:turno = 'TARDE'  AND EXTRACT(HOUR FROM sb.fecha_atencion) BETWEEN 14 AND 20))
+        GROUP BY p.id_pers, p.nom_pers, p.ape_pater_pers, p.ape_mater_pers
+        ORDER BY total DESC
+        """, nativeQuery = true)
+    List<Object[]> estadisticasPorMedicoTeleurgencias(
+        @org.springframework.data.repository.query.Param("idsMedicos") List<Long> idsMedicos,
+        @org.springframework.data.repository.query.Param("fecha") String fecha,
+        @org.springframework.data.repository.query.Param("turno") String turno);
+
+    /**
+     * Pacientes de Teleurgencias asignados a un médico específico.
+     */
+    @Query(value = """
+        SELECT sb.id_solicitud, sb.paciente_nombre, sb.paciente_dni,
+               sb.condicion_medica, sb.fecha_atencion, sb.id_personal,
+               COALESCE(
+                 TO_CHAR(sb.hora_atencion, 'HH24:MI'),
+                 TO_CHAR(sc.hora_cita, 'HH24:MI')
+               ) AS hora_cita
+        FROM dim_solicitud_bolsa sb
+        LEFT JOIN (
+            SELECT DISTINCT ON (doc_paciente) doc_paciente, hora_cita, fecha_cita
+            FROM solicitud_cita
+            WHERE hora_cita IS NOT NULL
+            ORDER BY doc_paciente, fecha_cita DESC
+        ) sc ON sc.doc_paciente = sb.paciente_dni
+        WHERE sb.activo = true
+          AND sb.id_personal = :idMedico
+          AND (:fecha IS NULL OR DATE(sb.fecha_atencion) = CAST(:fecha AS DATE))
+          AND (:turno IS NULL
+               OR (:turno = 'MANANA' AND EXTRACT(HOUR FROM sb.fecha_atencion) BETWEEN 7 AND 13)
+               OR (:turno = 'TARDE'  AND EXTRACT(HOUR FROM sb.fecha_atencion) BETWEEN 14 AND 20))
+        ORDER BY COALESCE(sb.hora_atencion, sc.hora_cita) ASC NULLS LAST, sb.paciente_nombre ASC
+        """, nativeQuery = true)
+    List<Object[]> pacientesPorMedicoTeleurgencias(
+        @org.springframework.data.repository.query.Param("idMedico") Long idMedico,
+        @org.springframework.data.repository.query.Param("fecha") String fecha,
+        @org.springframework.data.repository.query.Param("turno") String turno);
+
+    /**
+     * Fechas disponibles con total de pacientes de Teleurgencias (todos los médicos).
+     */
+    @Query(value = """
+        SELECT TO_CHAR(DATE(sb.fecha_atencion), 'YYYY-MM-DD') as fecha, COUNT(*) as total
+        FROM dim_solicitud_bolsa sb
+        WHERE sb.activo = true AND sb.id_personal IN (:idsMedicos) AND sb.fecha_atencion IS NOT NULL
+        GROUP BY DATE(sb.fecha_atencion)
+        ORDER BY fecha DESC LIMIT 90
+        """, nativeQuery = true)
+    List<Object[]> fechasDisponiblesTeleurgencias(
+        @org.springframework.data.repository.query.Param("idsMedicos") List<Long> idsMedicos);
+
+    /**
+     * Fechas disponibles para un médico específico de Teleurgencias.
+     */
+    @Query(value = """
+        SELECT TO_CHAR(DATE(sb.fecha_atencion), 'YYYY-MM-DD') as fecha, COUNT(*) as total
+        FROM dim_solicitud_bolsa sb
+        WHERE sb.activo = true AND sb.id_personal = :idMedico AND sb.fecha_atencion IS NOT NULL
+        GROUP BY DATE(sb.fecha_atencion) ORDER BY fecha DESC LIMIT 90
+        """, nativeQuery = true)
+    List<Object[]> fechasPorMedicoTeleurgencias(
+        @org.springframework.data.repository.query.Param("idMedico") Long idMedico);
+
     /**
      * 🆕 v1.46.0: Contar solicitudes entre dos fechas
      * Usado para generar número de solicitud único (IMP-YYYYMMDD-NNNN)
@@ -1516,8 +1602,8 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
                sb.id_personal,
                sb.condicion_medica, sb.fecha_atencion_medica,
                COALESCE(CONCAT(med.nom_pers, ' ', med.ape_pater_pers, ' ', med.ape_mater_pers), '') as nombre_medico,
-               sb.id_ipress_atencion, COALESCE(di2.cod_ipress, '') as cod_ipress_atencion,
-               COALESCE(di2.desc_ipress, '') as desc_ipress_atencion,
+               sb.id_ipress_atencion, COALESCE(di2.cod_ipress, di.cod_ipress, '') as cod_ipress_atencion,
+               COALESCE(di2.desc_ipress, di.desc_ipress, '') as desc_ipress_atencion,
                COALESCE(CONCAT(pcg.nom_pers, ' ', pcg.ape_pater_pers, ' ', pcg.ape_mater_pers), ug.name_user) as nombre_gestora
         FROM dim_solicitud_bolsa sb
         LEFT JOIN dim_tipos_bolsas tb ON sb.id_bolsa = tb.id_tipo_bolsa
