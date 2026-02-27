@@ -37,6 +37,13 @@ public interface SolicitudBolsaEstadisticasService {
 
     List<EstadisticasPorEstadoDTO> obtenerEstadisticasPorEstadoFiltrado(String ipressAtencion);
 
+    /** v1.78.3: KPI filtrados — mismos parámetros que el listado de solicitudes */
+    List<EstadisticasPorEstadoDTO> obtenerKpiConFiltros(
+            String bolsaNombre, String macrorregion, String red, String ipress,
+            String especialidad, String estadoCodigo, String ipressAtencion,
+            String tipoCita, String asignacion, String busqueda,
+            String fechaInicio, String fechaFin, Long gestoraId, String estadoBolsa);
+
     /**
      * Obtiene estadísticas agrupadas por especialidad médica
      * Incluye tasas de completación y tiempo promedio

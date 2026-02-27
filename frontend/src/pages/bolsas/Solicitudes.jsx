@@ -710,25 +710,51 @@ export default function Solicitudes() {
       const asignacionFinal = filtroAsignacion === 'todos' ? null : filtroAsignacion;
       console.log('✅ asignacionFinal para enviar:', asignacionFinal);
 
-      const response = await bolsasService.obtenerSolicitudesPaginado(
-        0, // page 0 (primera página cuando cambian los filtros)
-        registrosPorPagina,
-        filtroBolsa.length === 0 ? null : filtroBolsa.join(','),
-        filtroMacrorregion === 'todas' ? null : filtroMacrorregion,
-        filtroRed === 'todas' ? null : filtroRed,
-        filtroIpress === 'todas' ? null : filtroIpress,
-        filtroEspecialidad === 'todas' ? null : filtroEspecialidad,
-        filtroEstado === 'todos' ? null : filtroEstado,
-        filtroIpressAtencion === 'todas' ? null : filtroIpressAtencion,
-        filtroTipoCita === 'todas' ? null : filtroTipoCita,
-        asignacionFinal,
-        searchTerm.trim() || null,
-        filtroFechaInicio || null,
-        filtroFechaFin || null,
-        null,              // condicionMedica
-        filtroGestoraId,   // gestoraId
-        filtroEstadoBolsa === 'todos' ? null : filtroEstadoBolsa  // estadoBolsa
-      );
+      // v1.78.3: Parámetros de filtro compartidos entre listado y KPI cards
+      const filtrosActuales = {
+        bolsaNombre:    filtroBolsa.length === 0 ? null : filtroBolsa.join(','),
+        macrorregion:   filtroMacrorregion === 'todas' ? null : filtroMacrorregion,
+        red:            filtroRed === 'todas' ? null : filtroRed,
+        ipress:         filtroIpress === 'todas' ? null : filtroIpress,
+        especialidad:   filtroEspecialidad === 'todas' ? null : filtroEspecialidad,
+        estadoCodigo:   filtroEstado === 'todos' ? null : filtroEstado,
+        ipressAtencion: filtroIpressAtencion === 'todas' ? null : filtroIpressAtencion,
+        tipoCita:       filtroTipoCita === 'todas' ? null : filtroTipoCita,
+        asignacion:     asignacionFinal,
+        busqueda:       searchTerm.trim() || null,
+        fechaInicio:    filtroFechaInicio || null,
+        fechaFin:       filtroFechaFin || null,
+        gestoraId:      filtroGestoraId || null,
+        estadoBolsa:    filtroEstadoBolsa === 'todos' ? null : filtroEstadoBolsa,
+      };
+
+      const [response, kpiData] = await Promise.all([
+        bolsasService.obtenerSolicitudesPaginado(
+          0, // page 0 (primera página cuando cambian los filtros)
+          registrosPorPagina,
+          filtrosActuales.bolsaNombre,
+          filtrosActuales.macrorregion,
+          filtrosActuales.red,
+          filtrosActuales.ipress,
+          filtrosActuales.especialidad,
+          filtrosActuales.estadoCodigo,
+          filtrosActuales.ipressAtencion,
+          filtrosActuales.tipoCita,
+          filtrosActuales.asignacion,
+          filtrosActuales.busqueda,
+          filtrosActuales.fechaInicio,
+          filtrosActuales.fechaFin,
+          null,              // condicionMedica
+          filtrosActuales.gestoraId,
+          filtrosActuales.estadoBolsa
+        ),
+        bolsasService.obtenerKpiConFiltros(filtrosActuales).catch(() => null),
+      ]);
+
+      // v1.78.3: Actualizar KPI cards con los datos filtrados
+      if (kpiData && Array.isArray(kpiData) && kpiData.length > 0) {
+        setEstadisticasGlobales(kpiData);
+      }
 
       console.log('📥 Respuesta con filtros recibida:', response);
 

@@ -111,6 +111,37 @@ public class SolicitudBolsaEstadisticasController {
     }
 
     /**
+     * v1.78.3: KPI cards filtrados — mismos parámetros que el listado de solicitudes.
+     * GET /api/bolsas/estadisticas/kpi-con-filtros
+     * Permite actualizar los 4 cards (Sin Gestora, Pendiente Citar, Con Gestora, Total)
+     * dinámicamente cuando el usuario aplica filtros en la página de solicitudes.
+     */
+    @GetMapping("/kpi-con-filtros")
+    public ResponseEntity<List<EstadisticasPorEstadoDTO>> obtenerKpiConFiltros(
+            @RequestParam(required = false) String bolsaNombre,
+            @RequestParam(required = false) String macrorregion,
+            @RequestParam(required = false) String red,
+            @RequestParam(required = false) String ipress,
+            @RequestParam(required = false) String especialidad,
+            @RequestParam(required = false) String estadoCodigo,
+            @RequestParam(required = false) String ipressAtencion,
+            @RequestParam(required = false) String tipoCita,
+            @RequestParam(required = false) String asignacion,
+            @RequestParam(required = false) String busqueda,
+            @RequestParam(required = false) String fechaInicio,
+            @RequestParam(required = false) String fechaFin,
+            @RequestParam(required = false) Long   gestoraId,
+            @RequestParam(required = false) String estadoBolsa) {
+
+        log.info("GET /api/bolsas/estadisticas/kpi-con-filtros — bolsa={} macro={} red={} ipress={}",
+                bolsaNombre, macrorregion, red, ipress);
+        return ResponseEntity.ok(estadisticasService.obtenerKpiConFiltros(
+                bolsaNombre, macrorregion, red, ipress, especialidad, estadoCodigo,
+                ipressAtencion, tipoCita, asignacion, busqueda,
+                fechaInicio, fechaFin, gestoraId, estadoBolsa));
+    }
+
+    /**
      * Estadísticas por condicion_medica para bolsa PADOMI (v1.73.1)
      * GET /api/bolsas/estadisticas/por-condicion-medica-padomi
      */

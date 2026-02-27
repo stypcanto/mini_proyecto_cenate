@@ -127,6 +127,33 @@ public class SolicitudBolsaEstadisticasServiceImpl implements SolicitudBolsaEsta
                 .collect(Collectors.toList());
     }
 
+    @Override
+    public List<EstadisticasPorEstadoDTO> obtenerKpiConFiltros(
+            String bolsaNombre, String macrorregion, String red, String ipress,
+            String especialidad, String estadoCodigo, String ipressAtencion,
+            String tipoCita, String asignacion, String busqueda,
+            String fechaInicio, String fechaFin, Long gestoraId, String estadoBolsa) {
+
+        List<Map<String, Object>> rows = solicitudRepository.estadisticasKpiConFiltros(
+                bolsaNombre, macrorregion, red, ipress, especialidad, estadoCodigo,
+                ipressAtencion, tipoCita, asignacion, busqueda,
+                fechaInicio, fechaFin, gestoraId, estadoBolsa);
+
+        return rows.stream()
+                .map(row -> {
+                    String estado   = (String) row.get("estado");
+                    Long cantidad   = ((Number) row.get("cantidad")).longValue();
+                    return EstadisticasPorEstadoDTO.builder()
+                            .estado(estado)
+                            .cantidad(cantidad)
+                            .porcentaje(BigDecimal.ZERO)
+                            .color(getColorPorEstado(estado))
+                            .emoji(getEmojiPorEstado(estado))
+                            .build();
+                })
+                .collect(Collectors.toList());
+    }
+
     private EstadisticasPorEstadoDTO mapearAEstadoDTO(Map<String, Object> row) {
         String estado = (String) row.get("estado");
         Long cantidad = ((Number) row.get("cantidad")).longValue();

@@ -436,6 +436,24 @@ export const obtenerEstadisticasPorEstado = async (ipressAtencion = null) => {
   }
 };
 
+/** v1.78.3: KPI filtrados — mismos parámetros que el listado de solicitudes */
+export const obtenerKpiConFiltros = async (filtros = {}) => {
+  try {
+    const params = new URLSearchParams();
+    Object.entries(filtros).forEach(([k, v]) => {
+      if (v != null && v !== '') params.append(k, v);
+    });
+    const qs = params.toString();
+    const url = qs
+      ? `${API_BASE_URL}/estadisticas/kpi-con-filtros?${qs}`
+      : `${API_BASE_URL}/estadisticas/kpi-con-filtros`;
+    return await apiClient.get(url, true);
+  } catch (error) {
+    console.error('Error al obtener KPI con filtros:', error);
+    throw error;
+  }
+};
+
 /**
  * Obtiene estadísticas por especialidad
  * @param {string} ipressAtencion - Filtro opcional por IPRESS atención (ej: 'PADOMI')
@@ -1209,6 +1227,7 @@ export default {
   obtenerEstadisticas,
   obtenerEstadisticasDelDia,
   obtenerEstadisticasPorEstado,
+  obtenerKpiConFiltros,
   obtenerEstadisticasPorEspecialidad,
   obtenerEstadisticasPorIpress,
   obtenerEstadisticasPorIpressAtencion,
