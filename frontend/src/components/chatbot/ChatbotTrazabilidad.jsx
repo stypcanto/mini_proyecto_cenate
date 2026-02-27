@@ -126,11 +126,27 @@ function horaActual() {
   return new Date().toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit' });
 }
 
+// ── Estilos animación flotante ────────────────────────────────────────────
+const CENATITO_STYLES = `
+  @keyframes cenatito-float {
+    0%   { transform: translateY(0px);   }
+    50%  { transform: translateY(-7px);  }
+    100% { transform: translateY(0px);   }
+  }
+  @keyframes cenatito-glow {
+    0%   { box-shadow: 0 0 12px 2px rgba(59,130,246,0.5), 0 4px 20px rgba(10,91,169,0.4); }
+    50%  { box-shadow: 0 0 22px 6px rgba(99,179,237,0.7), 0 8px 28px rgba(10,91,169,0.6); }
+    100% { box-shadow: 0 0 12px 2px rgba(59,130,246,0.5), 0 4px 20px rgba(10,91,169,0.4); }
+  }
+  .cenatito-float { animation: cenatito-float 2.4s ease-in-out infinite; }
+  .cenatito-btn   { animation: cenatito-glow  2.4s ease-in-out infinite; }
+`;
+
 // ── Avatar animado Cenatito ───────────────────────────────────────────────
 const TOTAL_FRAMES = 30;
 const FRAME_INTERVAL = 80; // ms entre frames (~12fps)
 
-function CenatitoBotAvatar({ size = 32, className = '' }) {
+function CenatitoBotAvatar({ size = 32, float = false, className = '' }) {
   const [frame, setFrame] = React.useState(0);
 
   React.useEffect(() => {
@@ -148,14 +164,14 @@ function CenatitoBotAvatar({ size = 32, className = '' }) {
       alt="Cenatito CENATE"
       width={size}
       height={size}
-      className={`select-none object-contain ${className}`}
+      className={`select-none object-contain ${float ? 'cenatito-float' : ''} ${className}`}
       draggable={false}
     />
   );
 }
 
-function BotAvatar({ small = false }) {
-  return <CenatitoBotAvatar size={small ? 24 : 28} />;
+function BotAvatar() {
+  return <CenatitoBotAvatar size={26} />;
 }
 
 // ── Componente principal ──────────────────────────────────────────────────
@@ -246,6 +262,7 @@ export default function ChatbotTrazabilidad() {
 
   return (
     <div className="fixed bottom-4 right-4 z-[9000] flex flex-col items-end">
+      <style>{CENATITO_STYLES}</style>
 
       {/* Panel de conversación */}
       {abierto && (
@@ -408,20 +425,18 @@ export default function ChatbotTrazabilidad() {
         </div>
       )}
 
-      {/* Boton flotante con Cenatito animado */}
+      {/* Boton flotante — círculo azul oscuro con Cenatito flotando */}
       <button
         onClick={() => setAbierto(prev => !prev)}
-        className={`w-16 h-16 rounded-full shadow-xl flex items-center justify-center transition-all duration-200 hover:scale-110 active:scale-95 border-2 ${
-          abierto
-            ? 'bg-slate-100 border-slate-300'
-            : 'bg-white border-[#0A5BA9]'
+        className={`w-[72px] h-[72px] rounded-full flex items-center justify-center transition-all duration-300 hover:scale-105 active:scale-95 ${
+          abierto ? 'bg-[#0d1b3e]' : 'bg-[#0d1b3e] cenatito-btn'
         }`}
         aria-label={abierto ? 'Cerrar asistente' : 'Abrir asistente CENATE'}
         title="Asistente de Trazabilidad CENATE"
       >
         {abierto
-          ? <span className="text-slate-500 text-2xl font-light">×</span>
-          : <CenatitoBotAvatar size={44} />
+          ? <span className="text-white text-3xl font-thin leading-none">×</span>
+          : <CenatitoBotAvatar size={52} float={true} />
         }
       </button>
     </div>
