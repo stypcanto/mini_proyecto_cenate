@@ -3183,12 +3183,26 @@ CENATE de Essalud`;
               <p className="text-sm text-gray-600 mb-4">
                 ¿Confirma el registro del siguiente paciente en el programa <strong className="text-purple-700">CENACRON</strong>?
               </p>
-              <div className="bg-purple-50 border border-purple-200 rounded-xl p-4 mb-5">
+              <div className="bg-purple-50 border border-purple-200 rounded-xl p-4 mb-4">
                 <p className="font-bold text-gray-900 text-base leading-tight">{modalCenacron.paciente.pacienteNombre}</p>
                 <p className="text-sm text-gray-500 mt-1">DNI: {modalCenacron.paciente.pacienteDni}</p>
               </div>
+              {/* Requisitos de elegibilidad */}
+              <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 mb-4">
+                <p className="text-xs font-bold text-amber-800 mb-1.5">⚠️ Requisitos de elegibilidad</p>
+                <p className="text-xs text-amber-700 leading-relaxed">
+                  El paciente debe tener diagnóstico confirmado de al menos una enfermedad crónica elegible:
+                </p>
+                <div className="flex flex-wrap gap-1 mt-2">
+                  {['HTA', 'Diabetes', 'EPOC', 'Asma', 'Insuf. Cardíaca', 'ERC'].map(enf => (
+                    <span key={enf} className="px-2 py-0.5 bg-amber-100 text-amber-800 border border-amber-300 rounded-full text-[10px] font-semibold">
+                      {enf}
+                    </span>
+                  ))}
+                </div>
+              </div>
               <p className="text-xs text-gray-400 mb-5">
-                Una vez registrado, el badge CENACRON aparecerá en la tabla y todos los profesionales podrán identificarlo.
+                Una vez registrado, el badge ♾ CENACRON aparecerá en todas las bandejas de profesionales.
               </p>
               <div className="flex gap-3">
                 <button

@@ -228,7 +228,7 @@ export default function DetalleAtencionModal({
                         <p className="text-base font-bold text-blue-900">{atencion.pacienteNombre}</p>
                       </div>
                       <div>
-                        <p className="text-xs font-semibold text-blue-700 uppercase mb-1">ID Asegurado</p>
+                        <p className="text-xs font-semibold text-blue-700 uppercase mb-1">DNI / ID</p>
                         <p className="text-base font-bold text-blue-900">{atencion.pacienteDni || atencion.pacienteId}</p>
                       </div>
                     </div>
