@@ -163,11 +163,10 @@ public class PacienteEstrategiaController {
                     userDetails != null ? userDetails.getUsername() : "desconocido");
 
             // 1. Buscar la asignación CENACRON activa del paciente (por sigla)
-            PacienteEstrategia asignacion = pacienteEstrategiaRepository
-                    .findAsignacionActivaPorSigla(pkAsegurado, "CENACRON")
-                    .orElseThrow(() -> new IllegalArgumentException(
-                            "El paciente no tiene una asignación CENACRON activa"
-                    ));
+            //    Si no existe fila en paciente_estrategia, continuar de todas formas:
+            //    el badge puede venir solo de asegurados.paciente_cronico=true.
+            java.util.Optional<PacienteEstrategia> asignacionOpt = pacienteEstrategiaRepository
+                    .findAsignacionActivaPorSigla(pkAsegurado, "CENACRON");
 
             // 2. Resolver el usuario autenticado para registrar la auditoría
             Usuario usuarioDesvinculo = null;
@@ -187,15 +186,23 @@ public class PacienteEstrategiaController {
                     ? "INACTIVO"
                     : "COMPLETADO";
 
-            // 4. Aplicar la desvinculación con auditoría completa
-            asignacion.setEstado(nuevoEstado);
-            asignacion.setFechaDesvinculacion(LocalDateTime.now());
-            asignacion.setObservacionDesvinculacion(request.getMotivoBaja());
-            asignacion.setUsuarioDesvinculo(usuarioDesvinculo);
+            PacienteEstrategia asignacion = null;
+            if (asignacionOpt.isPresent()) {
+                // 4a. Asignación encontrada → actualizar con auditoría completa
+                asignacion = asignacionOpt.get();
+                asignacion.setEstado(nuevoEstado);
+                asignacion.setFechaDesvinculacion(LocalDateTime.now());
+                asignacion.setObservacionDesvinculacion(request.getMotivoBaja());
+                asignacion.setUsuarioDesvinculo(usuarioDesvinculo);
+                asignacion = pacienteEstrategiaRepository.save(asignacion);
+            } else {
+                // 4b. No hay fila en paciente_estrategia (badge venía solo de asegurados.paciente_cronico).
+                //     Continuamos de todas formas para actualizar el flag en asegurados.
+                log.warn("No se encontró asignación CENACRON activa en paciente_estrategia para '{}'. " +
+                         "Se actualizará únicamente asegurados.paciente_cronico=false.", pkAsegurado);
+            }
 
-            asignacion = pacienteEstrategiaRepository.save(asignacion);
-
-            // Sincronizar paciente_cronico=false en asegurados al dar de baja
+            // 5. Sincronizar paciente_cronico=false en asegurados al dar de baja
             log.info("🔄 Intentando actualizar paciente_cronico=false en asegurados. pkAsegurado recibido='{}'", pkAsegurado);
             int filas = aseguradoRepository.actualizarPacienteCronico(pkAsegurado, false);
             log.info("✅ paciente_cronico=false sincronizado en asegurados para '{}' ({} fila/s actualizada/s)", pkAsegurado, filas);
@@ -208,16 +215,16 @@ public class PacienteEstrategiaController {
                     pkAsegurado, nuevoEstado,
                     usuarioDesvinculo != null ? usuarioDesvinculo.getNombreCompleto() : "sin_auditor");
 
-            // 5. Construir respuesta con datos de auditoría
+            // 6. Construir respuesta con datos de auditoría
             Map<String, Object> data = new HashMap<>();
-            data.put("idAsignacion", asignacion.getIdAsignacion());
-            data.put("pkAsegurado", asignacion.getPkAsegurado());
-            data.put("estrategia", asignacion.getEstrategia().getSigla());
+            data.put("idAsignacion", asignacion != null ? asignacion.getIdAsignacion() : null);
+            data.put("pkAsegurado", pkAsegurado);
+            data.put("estrategia", "CENACRON");
             data.put("estadoAnterior", "ACTIVO");
-            data.put("estadoNuevo", asignacion.getEstado());
+            data.put("estadoNuevo", nuevoEstado);
             data.put("tipoBaja", request.getTipoBaja());
-            data.put("motivoBaja", asignacion.getObservacionDesvinculacion());
-            data.put("fechaDesvinculacion", asignacion.getFechaDesvinculacion());
+            data.put("motivoBaja", request.getMotivoBaja());
+            data.put("fechaDesvinculacion", LocalDateTime.now());
             data.put("usuarioDesvinculoNombre",
                     usuarioDesvinculo != null ? usuarioDesvinculo.getNombreCompleto() : null);
             data.put("idUsuarioDesvinculo",

@@ -430,8 +430,7 @@ export default function MisPacientes() {
     };
 
     if (Array.isArray(pacientes)) {
-      console.log(`\n📅 v1.67.6: Procesando ${pacientes.length} pacientes por FECHA DE ATENCIÓN...`);
-      pacientes.forEach((p, idx) => {
+      pacientes.forEach((p) => {
         contadores.total++;
 
         // PREFERENCIA 1: Usar fechaAtencion (cuándo debe atender)
@@ -440,7 +439,6 @@ export default function MisPacientes() {
             ? p.fechaAtencion.split('T')[0]
             : p.fechaAtencion;
 
-          console.log(`[${idx}] ${p.apellidosNombres.substring(0, 30)}: fechaAtencion="${fechaAtencion}" ✅`);
           if (fechaAtencion) {
             fechasMap[fechaAtencion] = (fechasMap[fechaAtencion] || 0) + 1;
             contadores.conFechaAtencion++;
@@ -449,20 +447,16 @@ export default function MisPacientes() {
         // FALLBACK: Si NO tiene fechaAtencion, usar fechaAsignacion
         else if (p.fechaAsignacion) {
           const fechaAsignacion = extraerFecha(p.fechaAsignacion);
-          console.log(`[${idx}] ${p.apellidosNombres.substring(0, 30)}: SIN fechaAtencion, usando fechaAsignacion="${fechaAsignacion}" ⚠️`);
           if (fechaAsignacion) {
             fechasMap[fechaAsignacion] = (fechasMap[fechaAsignacion] || 0) + 1;
             contadores.conFechaAsignacionSolo++;
           }
         }
         else {
-          console.log(`[${idx}] ${p.apellidosNombres.substring(0, 30)}: SIN fechaAtencion NI fechaAsignacion ❌`);
           contadores.sinFechaAtencion++;
         }
       });
     }
-    console.log('📊 ESTADÍSTICAS:', contadores);
-    console.log('📅 RESULTADO FINAL - Fechas de ATENCIÓN:', fechasMap);
     return fechasMap;
   }, [pacientes]);
   const [loading, setLoading] = useState(true);
@@ -2134,7 +2128,6 @@ export default function MisPacientes() {
     // ✅ v1.67.5: PRIORIDAD 1: Si hay fecha seleccionada en el calendario, usar fechaAtencion
     if (fechaSeleccionadaCalendario) {
       if (!p.fechaAtencion) {
-        console.log(`🔴 Paciente ${p.apellidosNombres} sin fechaAtencion`);
         return false;
       }
       // v1.67.5: fechaAtencion es DATE (YYYY-MM-DD), extraer correctamente
@@ -2143,11 +2136,6 @@ export default function MisPacientes() {
         : p.fechaAtencion;
 
       const match = fechaAtencion === fechaSeleccionadaCalendario;
-      if (!match) {
-        // console.log(`🟡 ${p.apellidosNombres}: fechaAtencion="${fechaAtencion}" != seleccionada="${fechaSeleccionadaCalendario}"`);
-      } else {
-        console.log(`✅ ${p.apellidosNombres}: COINCIDE - debe atender el ${fechaSeleccionadaCalendario}`);
-      }
       return match;
     }
 
