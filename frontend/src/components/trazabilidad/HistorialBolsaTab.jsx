@@ -7,19 +7,22 @@
 import React, { useEffect, useState } from 'react';
 import {
   ClipboardList, UserCheck, CalendarCheck, Stethoscope,
-  XCircle, RefreshCw, AlertCircle, Loader2, Clock
+  XCircle, RefreshCw, AlertCircle, Loader2, Clock,
+  Heart, HeartOff,
 } from 'lucide-react';
 import trazabilidadBolsaService from '../../services/trazabilidadBolsaService';
 
 // ── Icono y color según tipo de evento ──────────────────────────────────────
 const EVENTO_CONFIG = {
-  INGRESO:           { Icon: ClipboardList, bg: 'bg-blue-100',   ring: 'ring-blue-300',   text: 'text-blue-700'   },
-  ASIGNACION_MEDICO: { Icon: UserCheck,     bg: 'bg-purple-100', ring: 'ring-purple-300', text: 'text-purple-700' },
-  CITA_AGENDADA:     { Icon: CalendarCheck, bg: 'bg-green-100',  ring: 'ring-green-300',  text: 'text-green-700'  },
-  ATENCION:          { Icon: Stethoscope,   bg: 'bg-emerald-100',ring: 'ring-emerald-300',text: 'text-emerald-700'},
-  CAMBIO_ESTADO:     { Icon: RefreshCw,     bg: 'bg-gray-100',   ring: 'ring-gray-300',   text: 'text-gray-700'   },
-  ANULACION:         { Icon: XCircle,       bg: 'bg-red-100',    ring: 'ring-red-300',    text: 'text-red-700'    },
-  RECITA:            { Icon: CalendarCheck, bg: 'bg-orange-100', ring: 'ring-orange-300', text: 'text-orange-700' },
+  INGRESO:           { Icon: ClipboardList, bg: 'bg-blue-100',    ring: 'ring-blue-300',    text: 'text-blue-700'    },
+  ASIGNACION_MEDICO: { Icon: UserCheck,     bg: 'bg-purple-100',  ring: 'ring-purple-300',  text: 'text-purple-700'  },
+  CITA_AGENDADA:     { Icon: CalendarCheck, bg: 'bg-green-100',   ring: 'ring-green-300',   text: 'text-green-700'   },
+  ATENCION:          { Icon: Stethoscope,   bg: 'bg-emerald-100', ring: 'ring-emerald-300', text: 'text-emerald-700' },
+  CAMBIO_ESTADO:     { Icon: RefreshCw,     bg: 'bg-gray-100',    ring: 'ring-gray-300',    text: 'text-gray-700'    },
+  ANULACION:         { Icon: XCircle,       bg: 'bg-red-100',     ring: 'ring-red-300',     text: 'text-red-700'     },
+  RECITA:            { Icon: CalendarCheck, bg: 'bg-orange-100',  ring: 'ring-orange-300',  text: 'text-orange-700'  },
+  CENACRON_INGRESO:  { Icon: Heart,         bg: 'bg-purple-100',  ring: 'ring-purple-300',  text: 'text-purple-700'  },
+  CENACRON_BAJA:     { Icon: HeartOff,      bg: 'bg-orange-100',  ring: 'ring-orange-300',  text: 'text-orange-700'  },
 };
 
 const COLOR_BADGE = {
@@ -136,7 +139,7 @@ export default function HistorialBolsaTab({ idSolicitud }) {
                   <div className="flex items-start justify-between gap-2 mb-1">
                     <p className="text-sm font-semibold text-slate-800">{evento.descripcion}</p>
                     <span className={`text-xs font-medium px-2 py-0.5 rounded-full border whitespace-nowrap ${badgeClass}`}>
-                      {evento.estado || evento.tipo.replace('_', ' ')}
+                      {evento.estado || (evento.tipo === 'ASIGNACION_MEDICO' ? 'ASIGNACIÓN' : evento.tipo.replace(/_/g, ' '))}
                     </span>
                   </div>
 
@@ -146,16 +149,22 @@ export default function HistorialBolsaTab({ idSolicitud }) {
                     {formatFecha(evento.fecha)}
                   </p>
 
-                  {/* Médico */}
+                  {/* Médico / Responsable */}
                   {evento.medico && (
                     <p className="text-xs text-slate-600">
-                      <span className="font-medium">Profesional:</span> {evento.medico}
+                      <span className="font-medium">
+                        {evento.tipo === 'CENACRON_INGRESO' ? 'Inscrito por:' :
+                         evento.tipo === 'CENACRON_BAJA'    ? 'Dado de baja por:' :
+                         'Profesional:'}
+                      </span>{' '}{evento.medico}
                     </p>
                   )}
 
-                  {/* Detalle adicional */}
+                  {/* Detalle adicional / motivo */}
                   {evento.detalle && (
-                    <p className="text-xs text-slate-500 mt-1 italic">{evento.detalle}</p>
+                    <p className={`text-xs mt-1 ${evento.tipo === 'CENACRON_BAJA' ? 'text-orange-700 font-medium' : 'text-slate-500 italic'}`}>
+                      {evento.detalle}
+                    </p>
                   )}
                 </div>
               </li>

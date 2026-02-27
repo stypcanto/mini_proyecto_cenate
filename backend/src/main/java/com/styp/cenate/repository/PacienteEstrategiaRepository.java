@@ -215,6 +215,27 @@ public interface PacienteEstrategiaRepository extends JpaRepository<PacienteEstr
     );
 
     /**
+     * Obtiene el historial completo de asignaciones a una estrategia para un paciente,
+     * incluyendo todos los estados (ACTIVO, INACTIVO, COMPLETADO).
+     * Hace JOIN FETCH de los usuarios para evitar LazyInitializationException.
+     * Usado en el timeline de trazabilidad para mostrar eventos CENACRON.
+     *
+     * @param pkAsegurado DNI/pk_asegurado del paciente
+     * @param sigla       Sigla de la estrategia (ej: "CENACRON")
+     * @return Lista ordenada por fecha de asignación ascendente
+     */
+    @Query("SELECT pe FROM PacienteEstrategia pe " +
+           "LEFT JOIN FETCH pe.usuarioAsigno " +
+           "LEFT JOIN FETCH pe.usuarioDesvinculo " +
+           "WHERE pe.pkAsegurado = :pkAsegurado " +
+           "AND pe.estrategia.sigla = :sigla " +
+           "ORDER BY pe.fechaAsignacion ASC")
+    List<PacienteEstrategia> findHistorialPorPkAseguradoYSigla(
+            @Param("pkAsegurado") String pkAsegurado,
+            @Param("sigla") String sigla
+    );
+
+    /**
      * Lista paginada de bajas CENACRON (estado INACTIVO o COMPLETADO) con datos de auditoría.
      * Incluye nombre del paciente y datos completos del usuario que generó la baja.
      */

@@ -2,13 +2,16 @@ package com.styp.cenate.service.bolsas;
 
 import com.styp.cenate.dto.bolsas.TrazabilidadBolsaResponseDTO;
 import com.styp.cenate.dto.bolsas.TrazabilidadBolsaResponseDTO.EventoTrazabilidadDTO;
+import com.styp.cenate.model.PacienteEstrategia;
 import com.styp.cenate.model.PersonalCnt;
 import com.styp.cenate.model.bolsas.SolicitudBolsa;
+import com.styp.cenate.repository.PacienteEstrategiaRepository;
 import com.styp.cenate.repository.PersonalCntRepository;
 import com.styp.cenate.repository.bolsas.SolicitudBolsaRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -32,9 +35,11 @@ import java.util.List;
 @RequiredArgsConstructor
 public class TrazabilidadBolsaService {
 
-    private final SolicitudBolsaRepository solicitudRepo;
-    private final PersonalCntRepository    personalRepo;
+    private final SolicitudBolsaRepository    solicitudRepo;
+    private final PersonalCntRepository       personalRepo;
+    private final PacienteEstrategiaRepository pacienteEstrategiaRepo;
 
+    @Transactional(readOnly = true)
     public TrazabilidadBolsaResponseDTO obtenerTrazabilidad(Long idSolicitud) {
         log.info("📋 [v1.75.0] Trazabilidad solicitada para idSolicitud={}", idSolicitud);
 
@@ -60,7 +65,7 @@ public class TrazabilidadBolsaService {
             eventos.add(EventoTrazabilidadDTO.builder()
                     .tipo("ASIGNACION_MEDICO")
                     .fecha(s.getFechaActualizacion())
-                    .descripcion("Médico asignado a la solicitud")
+                    .descripcion("Profesional de salud asignado a la solicitud")
                     .medico(nombreMedico)
                     .color("purple")
                     .build());
@@ -134,6 +139,58 @@ public class TrazabilidadBolsaService {
                     .detalle(detalle)
                     .color("orange")
                     .build());
+        }
+
+        // ── 8. EVENTOS CENACRON (inscripción y baja del programa) ─────────
+        // Busca por pk_asegurado = DNI del paciente en la solicitud de bolsa
+        if (s.getPacienteDni() != null && !s.getPacienteDni().isBlank()) {
+            try {
+                List<PacienteEstrategia> cenacronEvts = pacienteEstrategiaRepo
+                        .findHistorialPorPkAseguradoYSigla(s.getPacienteDni(), "CENACRON");
+
+                for (PacienteEstrategia pe : cenacronEvts) {
+                    // 8a. Ingreso al programa CENACRON
+                    if (pe.getFechaAsignacion() != null) {
+                        String responsableIngreso = pe.getUsuarioAsigno() != null
+                                ? pe.getUsuarioAsigno().getNombreCompleto()
+                                : null;
+                        eventos.add(EventoTrazabilidadDTO.builder()
+                                .tipo("CENACRON_INGRESO")
+                                .fecha(pe.getFechaAsignacion().atOffset(java.time.ZoneOffset.of("-05:00")))
+                                .descripcion("Inscripción al programa CENACRON")
+                                .medico(responsableIngreso)
+                                .estado("ACTIVO")
+                                .color("purple")
+                                .build());
+                    }
+
+                    // 8b. Baja del programa CENACRON (si ya no está activo)
+                    if (!"ACTIVO".equals(pe.getEstado()) && pe.getFechaDesvinculacion() != null) {
+                        String responsableBaja = pe.getUsuarioDesvinculo() != null
+                                ? pe.getUsuarioDesvinculo().getNombreCompleto()
+                                : null;
+                        String tipoBajaDesc = "INACTIVO".equals(pe.getEstado())
+                                ? "Baja total del programa"
+                                : "Completó especialidad";
+                        String detalleMotivo = pe.getObservacionDesvinculacion() != null
+                                && !pe.getObservacionDesvinculacion().isBlank()
+                                ? "Motivo: " + pe.getObservacionDesvinculacion()
+                                : tipoBajaDesc;
+
+                        eventos.add(EventoTrazabilidadDTO.builder()
+                                .tipo("CENACRON_BAJA")
+                                .fecha(pe.getFechaDesvinculacion().atOffset(java.time.ZoneOffset.of("-05:00")))
+                                .descripcion("Salida del programa CENACRON")
+                                .medico(responsableBaja)
+                                .estado(pe.getEstado())
+                                .detalle(detalleMotivo)
+                                .color("orange")
+                                .build());
+                    }
+                }
+            } catch (Exception ex) {
+                log.warn("⚠️ No se pudieron cargar eventos CENACRON para solicitud {}: {}", idSolicitud, ex.getMessage());
+            }
         }
 
         // ── Ordenar por fecha ascendente ───────────────────────────────────
