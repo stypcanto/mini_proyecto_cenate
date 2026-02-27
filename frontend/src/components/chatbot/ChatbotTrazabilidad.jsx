@@ -174,13 +174,17 @@ function CenatitoBotAvatar({ size = 32, float = false, className = '' }) {
 }
 
 function BotAvatar() {
+  return <CenatitoBotAvatar size={26} />;
+}
+
+function CenatitoMsgIcon() {
   return (
     <img
       src="/images/Cenatito.png"
       alt="Cenatito"
-      width={30}
-      height={30}
-      className="select-none object-contain shrink-0"
+      width={28}
+      height={28}
+      className="select-none object-contain shrink-0 mt-0.5 mr-1.5"
       draggable={false}
     />
   );
@@ -402,9 +406,7 @@ export default function ChatbotTrazabilidad() {
                 key={m.id}
                 className={`flex ${m.tipo === 'usuario' ? 'justify-end' : 'justify-start'}`}
               >
-                {m.tipo === 'bot' && (
-                  <span className="mr-1.5 mt-1 shrink-0 text-base">🤖</span>
-                )}
+                {m.tipo === 'bot' && <CenatitoMsgIcon />}
                 <div
                   className={`${expandido ? 'max-w-[90%]' : 'max-w-[85%]'} px-3 py-2 rounded-2xl text-sm leading-relaxed ${
                     m.tipo === 'usuario'
@@ -455,7 +457,7 @@ export default function ChatbotTrazabilidad() {
             {/* Spinner mientras carga */}
             {cargando && (
               <div className="flex justify-start">
-                <span className="mr-1.5 mt-1 text-base shrink-0">🤖</span>
+                <CenatitoMsgIcon />
                 <div className="bg-white border border-slate-100 rounded-2xl rounded-bl-sm px-3 py-2 shadow-sm">
                   <span className="flex gap-1 items-center">
                     <span className="w-1.5 h-1.5 bg-blue-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
