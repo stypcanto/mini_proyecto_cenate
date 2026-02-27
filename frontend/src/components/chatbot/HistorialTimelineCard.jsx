@@ -59,7 +59,7 @@ function getLabelEstado(estado, activo, condicionMedica) {
 // ── Subcomponente: ítem individual del timeline ───────────────────────────
 
 function TimelineItem({ registro }) {
-  const { estado, especialidad, fechaAtencion, medico, condicionMedica, activo } = registro;
+  const { estado, especialidad, fechaAtencion, nombreMedico: medico, condicionMedica, activo } = registro;
 
   const badgeClase = getBadgeClase(estado, activo, condicionMedica);
   const labelEstado = getLabelEstado(estado, activo, condicionMedica);

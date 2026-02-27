@@ -193,7 +193,7 @@ function DatosContacto({ telefono, email }) {
 // ── Sección: Fila de registro ────────────────────────────────────────────
 
 function FilaRegistro({ registro }) {
-  const { estado, especialidad, fechaAtencion, medico, condicionMedica, activo } = registro;
+  const { estado, especialidad, fechaAtencion, nombreMedico: medico, condicionMedica, activo } = registro;
 
   const badgeClase = getBadgeEstado(estado, activo, condicionMedica);
   const labelEstado = getLabelEstado(estado, activo, condicionMedica);
