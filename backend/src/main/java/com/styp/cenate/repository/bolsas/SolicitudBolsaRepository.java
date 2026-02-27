@@ -1857,7 +1857,7 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
         FROM dim_solicitud_bolsa recita
         LEFT JOIN dim_solicitud_bolsa orig_d ON orig_d.id_solicitud = recita.idsolicitudgeneracion
         LEFT JOIN LATERAL (
-            SELECT h.id_personal
+            SELECT h.id_personal, h.especialidad
             FROM   dim_solicitud_bolsa h
             WHERE  h.paciente_dni = recita.paciente_dni
               AND  h.id_personal IS NOT NULL
@@ -1918,7 +1918,7 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
         FROM dim_solicitud_bolsa recita
         LEFT JOIN dim_solicitud_bolsa orig_d ON orig_d.id_solicitud = recita.idsolicitudgeneracion
         LEFT JOIN LATERAL (
-            SELECT h.id_personal
+            SELECT h.id_personal, h.especialidad
             FROM   dim_solicitud_bolsa h
             WHERE  h.paciente_dni = recita.paciente_dni
               AND  h.id_personal IS NOT NULL
@@ -1961,7 +1961,7 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
         FROM dim_solicitud_bolsa recita
         LEFT JOIN dim_solicitud_bolsa orig_d ON orig_d.id_solicitud = recita.idsolicitudgeneracion
         LEFT JOIN LATERAL (
-            SELECT h.id_personal
+            SELECT h.id_personal, h.especialidad
             FROM   dim_solicitud_bolsa h
             WHERE  h.paciente_dni = recita.paciente_dni
               AND  h.id_personal IS NOT NULL
