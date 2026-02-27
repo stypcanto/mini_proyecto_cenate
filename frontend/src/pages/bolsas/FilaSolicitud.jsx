@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Phone, Users, UserPlus, Download, FileText, X, Calendar, Pencil, Check } from 'lucide-react';
+import { Phone, Users, UserPlus, Download, FileText, X, Calendar, Pencil, Check, ClipboardList } from 'lucide-react';
 
 /**
  * 🚀 v2.6.0 - Componente MEMORIZADO para cada fila de tabla
@@ -16,6 +16,7 @@ function FilaSolicitud({
   onAbrirEnviarRecordatorio,
   onAbrirIpressAtencion,
   onEditarFechaPreferida,
+  onVerHistorial,
   isProcessing,
   getEstadoBadge,
 }) {
@@ -376,6 +377,17 @@ function FilaSolicitud({
             <FileText size={16} />
           </button>
 
+          {/* Ver Historial */}
+          {onVerHistorial && (
+            <button
+              onClick={() => onVerHistorial(solicitud)}
+              className="p-1.5 hover:bg-blue-100 rounded-md transition-colors text-blue-600"
+              title="Ver historial de esta solicitud"
+            >
+              <ClipboardList size={16} />
+            </button>
+          )}
+
           {/* Cambiar Teléfono */}
           <button
             onClick={() => onAbrirCambiarTelefono(solicitud)}
@@ -410,6 +422,7 @@ export default React.memo(FilaSolicitud, (prevProps, nextProps) => {
     prevProps.isProcessing === nextProps.isProcessing &&
     prevProps.getEstadoBadge === nextProps.getEstadoBadge &&
     prevProps.onAbrirIpressAtencion === nextProps.onAbrirIpressAtencion &&
-    prevProps.onEditarFechaPreferida === nextProps.onEditarFechaPreferida
+    prevProps.onEditarFechaPreferida === nextProps.onEditarFechaPreferida &&
+    prevProps.onVerHistorial === nextProps.onVerHistorial
   );
 });

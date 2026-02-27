@@ -8,6 +8,7 @@ import ipressService from '../../services/ipressService';
 import { usePermisos } from '../../context/PermisosContext';
 import ModalResultadosImportacion from '../../components/modals/ModalResultadosImportacion'; // ✅ NUEVO v1.19.0
 import FilaSolicitud from './FilaSolicitud'; // 🚀 v2.6.0: Componente memorizado para filas
+import DetallesPacienteModal from '../../components/modals/DetallesPacienteModal'; // v1.75.0: Historial trazabilidad
 
 /**
  * 📋 Solicitudes - Recepción de Bolsa
@@ -142,6 +143,10 @@ export default function Solicitudes() {
   // Estado para asegurados nuevos
   const [modalAseguradosNuevos, setModalAseguradosNuevos] = useState(false);
   const [aseguradosNuevos, setAseguradosNuevos] = useState([]);
+
+  // v1.75.0: Modal historial de trazabilidad
+  const [modalHistorial, setModalHistorial] = useState(false);
+  const [solicitudHistorial, setSolicitudHistorial] = useState(null);
 
   // Estado para asegurados sincronizados recientemente
 
@@ -1515,6 +1520,12 @@ export default function Solicitudes() {
   // ========================================================================
 
   // Abrir modal para cambiar teléfono (v2.4.3 - ambos teléfonos)
+  // v1.75.0: Abrir modal de historial de trazabilidad
+  const handleVerHistorial = useCallback((solicitud) => {
+    setSolicitudHistorial(solicitud);
+    setModalHistorial(true);
+  }, []);
+
   const handleAbrirCambiarTelefono = (solicitud) => {
     setSolicitudSeleccionada(solicitud);
     setNuevoTelefono(solicitud.telefono || '');
@@ -2670,6 +2681,7 @@ export default function Solicitudes() {
                       onAbrirEnviarRecordatorio={handleAbrirEnviarRecordatorio}
                       onAbrirIpressAtencion={handleAbrirIpressAtencion}
                       onEditarFechaPreferida={handleEditarFechaPreferida}
+                      onVerHistorial={handleVerHistorial}
                       isProcessing={isProcessing}
                       getEstadoBadge={getEstadoBadge}
                     />
@@ -3617,6 +3629,19 @@ export default function Solicitudes() {
           isOpen={modalResultadosImportacion}
           onClose={() => setModalResultadosImportacion(false)}
           resultados={resultadosImportacion}
+        />
+
+        {/* v1.75.0: MODAL: Historial de trazabilidad de solicitud */}
+        <DetallesPacienteModal
+          isOpen={modalHistorial}
+          onClose={() => { setModalHistorial(false); setSolicitudHistorial(null); }}
+          paciente={solicitudHistorial ? {
+            apellidosNombres: solicitudHistorial.paciente,
+            numDoc: solicitudHistorial.dni,
+            telefono: solicitudHistorial.telefono,
+            ipress: solicitudHistorial.ipress,
+          } : null}
+          idSolicitud={solicitudHistorial?.id}
         />
       </div>
     </div>

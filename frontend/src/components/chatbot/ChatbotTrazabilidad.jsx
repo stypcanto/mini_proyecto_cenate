@@ -126,10 +126,36 @@ function horaActual() {
   return new Date().toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit' });
 }
 
-function BotAvatar() {
+// ── Avatar animado Cenatito ───────────────────────────────────────────────
+const TOTAL_FRAMES = 30;
+const FRAME_INTERVAL = 80; // ms entre frames (~12fps)
+
+function CenatitoBotAvatar({ size = 32, className = '' }) {
+  const [frame, setFrame] = React.useState(0);
+
+  React.useEffect(() => {
+    const timer = setInterval(() => {
+      setFrame(f => (f + 1) % TOTAL_FRAMES);
+    }, FRAME_INTERVAL);
+    return () => clearInterval(timer);
+  }, []);
+
+  const src = `/images/Cenatito_animado/cenatito_${String(frame).padStart(3, '0')}.png`;
+
   return (
-    <span className="text-lg select-none" role="img" aria-label="bot">🤖</span>
+    <img
+      src={src}
+      alt="Cenatito CENATE"
+      width={size}
+      height={size}
+      className={`select-none object-contain ${className}`}
+      draggable={false}
+    />
   );
+}
+
+function BotAvatar({ small = false }) {
+  return <CenatitoBotAvatar size={small ? 24 : 28} />;
 }
 
 // ── Componente principal ──────────────────────────────────────────────────
@@ -382,18 +408,21 @@ export default function ChatbotTrazabilidad() {
         </div>
       )}
 
-      {/* Boton flotante */}
+      {/* Boton flotante con Cenatito animado */}
       <button
         onClick={() => setAbierto(prev => !prev)}
-        className={`w-14 h-14 rounded-full shadow-lg flex items-center justify-center text-2xl transition-all duration-200 hover:scale-110 active:scale-95 ${
+        className={`w-16 h-16 rounded-full shadow-xl flex items-center justify-center transition-all duration-200 hover:scale-110 active:scale-95 border-2 ${
           abierto
-            ? 'bg-slate-500 text-white'
-            : 'bg-[#0A5BA9] text-white hover:bg-blue-700'
+            ? 'bg-slate-100 border-slate-300'
+            : 'bg-white border-[#0A5BA9]'
         }`}
         aria-label={abierto ? 'Cerrar asistente' : 'Abrir asistente CENATE'}
         title="Asistente de Trazabilidad CENATE"
       >
-        {abierto ? '×' : '🤖'}
+        {abierto
+          ? <span className="text-slate-500 text-2xl font-light">×</span>
+          : <CenatitoBotAvatar size={44} />
+        }
       </button>
     </div>
   );
