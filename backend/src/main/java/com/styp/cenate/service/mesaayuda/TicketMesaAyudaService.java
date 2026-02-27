@@ -1064,7 +1064,7 @@ public class TicketMesaAyudaService {
     // ========== BOLSA DE REPROGRAMACIÓN ==========
 
     /**
-     * Enviar paciente del ticket a la Bolsa de Reprogramación (BOLSA_MESA_DE_AYUDA)
+     * Enviar paciente del ticket a la Bolsa de Reprogramación (id=6, BOLSAS_REPROGRAMACION)
      * Crea una nueva entrada en dim_solicitud_bolsa con id_bolsa=13
      *
      * Si el paciente ya está en esa bolsa, retorna mensaje informativo sin error.
@@ -1084,16 +1084,16 @@ public class TicketMesaAyudaService {
             throw new IllegalArgumentException("El ticket no tiene DNI de paciente para enviar a la bolsa");
         }
 
-        final Long ID_BOLSA_MESA_DE_AYUDA = 13L;
+        final Long ID_BOLSA_REPROGRAMACION = 6L;  // v1.78.6: unificado con Bolsa Reprogramación (antes 13)
         final Long ID_ESTADO_PENDIENTE_CITA = 11L;
         final Long ID_SERVICIO_DEFAULT = 1L;
 
         // Verificar si el paciente ya está en la bolsa
         boolean yaExiste = solicitudBolsaRepository.existsByIdBolsaAndPacienteId(
-            ID_BOLSA_MESA_DE_AYUDA, dniPaciente);
+            ID_BOLSA_REPROGRAMACION, dniPaciente);
 
         if (yaExiste) {
-            log.info("Paciente {} ya existe en BOLSA_MESA_DE_AYUDA, omitiendo duplicado", dniPaciente);
+            log.info("Paciente {} ya existe en BOLSA_REPROGRAMACION, omitiendo duplicado", dniPaciente);
             Map<String, Object> response = new HashMap<>();
             response.put("mensaje", "El paciente ya se encontraba en la Bolsa de Reprogramación");
             response.put("yaExistia", true);
@@ -1130,7 +1130,7 @@ public class TicketMesaAyudaService {
             .pacienteNombre(ticket.getNombrePaciente() != null ? ticket.getNombrePaciente() : "SIN NOMBRE")
             .especialidad(ticket.getEspecialidad())
             .tipoDocumento(ticket.getTipoDocumento() != null ? ticket.getTipoDocumento() : "DNI")
-            .idBolsa(ID_BOLSA_MESA_DE_AYUDA)
+            .idBolsa(ID_BOLSA_REPROGRAMACION)
             .idServicio(ID_SERVICIO_DEFAULT)
             .estadoGestionCitasId(ID_ESTADO_PENDIENTE_CITA)
             .estado("PENDIENTE")
@@ -1141,7 +1141,7 @@ public class TicketMesaAyudaService {
             .build();
 
         solicitudBolsaRepository.save(solicitud);
-        log.info("Paciente {} enviado exitosamente a BOLSA_MESA_DE_AYUDA - Solicitud: {}",
+        log.info("Paciente {} enviado exitosamente a BOLSA_REPROGRAMACION - Solicitud: {}",
             dniPaciente, numeroSolicitud);
 
         Map<String, Object> response = new HashMap<>();
