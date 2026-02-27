@@ -8,6 +8,7 @@
 // ========================================================================
 
 import React, { useState, useRef, useEffect } from 'react';
+import ReactMarkdown from 'react-markdown';
 import { useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import chatbotTrazabilidadService from '../../services/chatbotTrazabilidadService';
@@ -204,7 +205,7 @@ export default function ChatbotTrazabilidad() {
       {abierto && (
         <div
           className="mb-3 flex flex-col bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden"
-          style={{ width: 360, height: 500 }}
+          style={{ width: 400, height: 520 }}
         >
           {/* Header */}
           <div className="flex items-center justify-between px-4 py-3 bg-[#0A5BA9] text-white shrink-0">
@@ -235,13 +236,40 @@ export default function ChatbotTrazabilidad() {
                   <span className="mr-1.5 mt-1 shrink-0 text-base">🤖</span>
                 )}
                 <div
-                  className={`max-w-[78%] px-3 py-2 rounded-2xl text-sm whitespace-pre-wrap leading-relaxed ${
+                  className={`max-w-[85%] px-3 py-2 rounded-2xl text-sm leading-relaxed ${
                     m.tipo === 'usuario'
                       ? 'bg-[#0A5BA9] text-white rounded-br-sm'
                       : 'bg-white text-slate-700 rounded-bl-sm shadow-sm border border-slate-100'
                   }`}
                 >
-                  {m.texto}
+                  {m.tipo === 'usuario' ? (
+                    <span className="whitespace-pre-wrap">{m.texto}</span>
+                  ) : (
+                    <ReactMarkdown
+                      components={{
+                        p: ({ children }) => <p className="mb-1.5 last:mb-0">{children}</p>,
+                        strong: ({ children }) => <strong className="font-semibold text-slate-800">{children}</strong>,
+                        ul: ({ children }) => <ul className="list-disc list-inside space-y-0.5 my-1.5 pl-1">{children}</ul>,
+                        ol: ({ children }) => <ol className="list-decimal list-inside space-y-0.5 my-1.5 pl-1">{children}</ol>,
+                        li: ({ children }) => <li className="text-slate-700">{children}</li>,
+                        table: ({ children }) => (
+                          <div className="overflow-x-auto my-2 rounded-lg border border-slate-200">
+                            <table className="w-full text-xs border-collapse">{children}</table>
+                          </div>
+                        ),
+                        thead: ({ children }) => <thead className="bg-[#0A5BA9] text-white">{children}</thead>,
+                        tbody: ({ children }) => <tbody className="divide-y divide-slate-100">{children}</tbody>,
+                        th: ({ children }) => <th className="px-2 py-1.5 text-left font-semibold whitespace-nowrap">{children}</th>,
+                        td: ({ children }) => <td className="px-2 py-1.5 text-slate-700">{children}</td>,
+                        tr: ({ children }) => <tr className="even:bg-slate-50">{children}</tr>,
+                        code: ({ children }) => <code className="bg-slate-100 text-blue-700 rounded px-1 py-0.5 text-xs font-mono">{children}</code>,
+                        blockquote: ({ children }) => <blockquote className="border-l-2 border-blue-300 pl-2 text-slate-500 italic my-1">{children}</blockquote>,
+                        h3: ({ children }) => <h3 className="font-semibold text-slate-800 mt-2 mb-1">{children}</h3>,
+                      }}
+                    >
+                      {m.texto}
+                    </ReactMarkdown>
+                  )}
                 </div>
               </div>
             ))}
