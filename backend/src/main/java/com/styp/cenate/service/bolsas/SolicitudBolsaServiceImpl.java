@@ -4241,9 +4241,15 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
                     "INSERT INTO asegurados (pk_asegurado, doc_paciente) VALUES (:dni, :dni) ON CONFLICT DO NOTHING"
                 ).setParameter("dni", dni).executeUpdate();
 
-                // 2. Verificar duplicado (mismo id_bolsa + paciente_id)
-                if (solicitudRepository.existsByIdBolsaAndPacienteId(idBolsa, dni)) {
-                    log.debug("⚠️ Duplicado detectado: bolsa={}, dni={}", idBolsa, dni);
+                // 1b. Obtener pk_asegurado real: puede diferir del DNI si el asegurado ya existía
+                //     en la tabla con un pk distinto (ej: importado desde ESSI con otro ID interno).
+                String pkAsegurado = aseguradoRepository.findByDocPaciente(dni)
+                    .map(Asegurado::getPkAsegurado)
+                    .orElse(dni);
+
+                // 2. Verificar duplicado (mismo id_bolsa + paciente_id usando pk real)
+                if (solicitudRepository.existsByIdBolsaAndPacienteId(idBolsa, pkAsegurado)) {
+                    log.debug("⚠️ Duplicado detectado: bolsa={}, pk={}", idBolsa, pkAsegurado);
                     duplicados++;
                     Map<String, String> dup = new HashMap<>();
                     dup.put("dni", dni);
@@ -4264,14 +4270,14 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
                     log.warn("⚠️ No se pudo parsear hora '{}' para DNI {}: {}", row.getHoraCita(), dni, e.getMessage());
                 }
 
-                // 4. Construir la entidad
+                // 4. Construir la entidad usando pk_asegurado real para satisfacer la FK
                 String numeroSolicitud = "REC-" + (baseTs + i);
                 SolicitudBolsa solicitud = SolicitudBolsa.builder()
                     .numeroSolicitud(numeroSolicitud)
                     .idBolsa(idBolsa)
                     .idPersonal(idPersonal)
                     .pacienteDni(dni)
-                    .pacienteId(dni)
+                    .pacienteId(pkAsegurado)
                     .pacienteNombre(row.getPaciente() != null ? row.getPaciente().trim() : "")
                     .pacienteSexo(row.getSexo())
                     .pacienteTelefono(row.getTelMovil())
