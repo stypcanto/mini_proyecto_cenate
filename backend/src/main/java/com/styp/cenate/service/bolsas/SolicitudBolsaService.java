@@ -318,6 +318,10 @@ public interface SolicitudBolsaService {
         String tipoCita,
         Long idPersonal,
         String sortDir,
+        String especialidad,
+        String motivoInterconsulta,
+        String estadoBolsa,
+        String creadoPor,
         org.springframework.data.domain.Pageable pageable
     );
 
@@ -329,6 +333,9 @@ public interface SolicitudBolsaService {
 
     /** KPIs globales de trazabilidad (total tabla, no solo página actual). */
     Map<String, Object> obtenerKpisTrazabilidad();
+
+    /** Facetas para filtros desplegables: especialidades, motivos, estados y creadores con conteo. */
+    Map<String, Object> listarFacetasRecitasInterconsultas();
 
     /**
      * Sincroniza teléfonos desde la tabla asegurados hacia dim_solicitud_bolsa.

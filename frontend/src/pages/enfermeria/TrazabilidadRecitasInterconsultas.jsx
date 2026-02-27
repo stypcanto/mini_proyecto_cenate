@@ -417,6 +417,12 @@ export default function TrazabilidadRecitasInterconsultas() {
   const [fechasConDatos,    setFechasConDatos]    = useState(new Map());
   const [kpis,              setKpis]              = useState({ total: 0, recitas: 0, interconsultas: 0, sinCreador: 0 });
 
+  const [filtroEspecialidad,       setFiltroEspecialidad]       = useState('');
+  const [filtroMotivoInterconsulta, setFiltroMotivoInterconsulta] = useState('');
+  const [filtroEstadoBolsa,        setFiltroEstadoBolsa]        = useState('');
+  const [filtroCreadoPor,          setFiltroCreadoPor]          = useState('');
+  const [facetas, setFacetas] = useState({ especialidades: [], motivos: [], estadosBolsa: [], creadosPor: [] });
+
   const [currentPage, setCurrentPage] = useState(1);
   const [sortDir,     setSortDir]     = useState('desc'); // 'desc' | 'asc'
 
@@ -443,6 +449,20 @@ export default function TrazabilidadRecitasInterconsultas() {
           setFechasConDatos(new Map(data.map(d => [String(d.fecha).substring(0, 10), Number(d.total)])));
       })
       .catch(() => {});
+
+    fetch(`${API_BASE}/bolsas/solicitudes/trazabilidad-recitas/facetas`, { headers })
+      .then(r => r.json())
+      .then(data => {
+        if (data && !data.error) {
+          setFacetas({
+            especialidades: Array.isArray(data.especialidades) ? data.especialidades : [],
+            motivos:        Array.isArray(data.motivos)        ? data.motivos        : [],
+            estadosBolsa:   Array.isArray(data.estadosBolsa)   ? data.estadosBolsa   : [],
+            creadosPor:     Array.isArray(data.creadosPor)     ? data.creadosPor     : [],
+          });
+        }
+      })
+      .catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -455,7 +475,7 @@ export default function TrazabilidadRecitasInterconsultas() {
     if (isFirstLoad.current) { isFirstLoad.current = false; return; }
     setCurrentPage(1);
     cargar(1);
-  }, [filtroFechaInicio, filtroFechaFin, filtroTipo, searchTerm, filtroEnfermera, sortDir]); // eslint-disable-line
+  }, [filtroFechaInicio, filtroFechaFin, filtroTipo, searchTerm, filtroEnfermera, sortDir, filtroEspecialidad, filtroMotivoInterconsulta, filtroEstadoBolsa, filtroCreadoPor]); // eslint-disable-line
 
   useEffect(() => {
     if (currentPage > 1) cargar(currentPage);
@@ -468,11 +488,15 @@ export default function TrazabilidadRecitasInterconsultas() {
       const p = new URLSearchParams();
       p.set('page', page - 1);
       p.set('size', PAGE_SIZE);
-      if (searchTerm.trim())  p.set('busqueda',    searchTerm.trim());
-      if (filtroFechaInicio)  p.set('fechaInicio', filtroFechaInicio);
-      if (filtroFechaFin)     p.set('fechaFin',    filtroFechaFin);
-      if (filtroTipo)         p.set('tipoCita',    filtroTipo);
-      if (filtroEnfermera)    p.set('idPersonal',  filtroEnfermera);
+      if (searchTerm.trim())            p.set('busqueda',             searchTerm.trim());
+      if (filtroFechaInicio)            p.set('fechaInicio',          filtroFechaInicio);
+      if (filtroFechaFin)               p.set('fechaFin',             filtroFechaFin);
+      if (filtroTipo)                   p.set('tipoCita',             filtroTipo);
+      if (filtroEnfermera)              p.set('idPersonal',           filtroEnfermera);
+      if (filtroEspecialidad.trim())    p.set('especialidad',         filtroEspecialidad.trim());
+      if (filtroMotivoInterconsulta.trim()) p.set('motivoInterconsulta', filtroMotivoInterconsulta.trim());
+      if (filtroEstadoBolsa.trim())     p.set('estadoBolsa',          filtroEstadoBolsa.trim());
+      if (filtroCreadoPor.trim())       p.set('creadoPor',            filtroCreadoPor.trim());
       p.set('sortDir', sortDir);
 
       console.log('📤 Enviando request a endpoint:', `${API_BASE}/bolsas/solicitudes/trazabilidad-recitas`);
@@ -502,7 +526,7 @@ export default function TrazabilidadRecitasInterconsultas() {
     } finally {
       if (isMountedRef.current) setIsLoading(false);
     }
-  }, [searchTerm, filtroFechaInicio, filtroFechaFin, filtroTipo, filtroEnfermera, sortDir]); // eslint-disable-line
+  }, [searchTerm, filtroFechaInicio, filtroFechaFin, filtroTipo, filtroEnfermera, sortDir, filtroEspecialidad, filtroMotivoInterconsulta, filtroEstadoBolsa, filtroCreadoPor]); // eslint-disable-line
 
   const limpiarFiltros = () => {
     setSearchTerm('');
@@ -510,6 +534,10 @@ export default function TrazabilidadRecitasInterconsultas() {
     setFiltroFechaInicio('');
     setFiltroFechaFin('');
     setFiltroEnfermera('');
+    setFiltroEspecialidad('');
+    setFiltroMotivoInterconsulta('');
+    setFiltroEstadoBolsa('');
+    setFiltroCreadoPor('');
   };
 
   const guardarFechaPreferida = async (idSolicitud, fecha) => {
@@ -622,6 +650,90 @@ export default function TrazabilidadRecitasInterconsultas() {
             value={filtroEnfermera}
             onChange={setFiltroEnfermera}
           />
+
+          {/* Especialidad */}
+          <div className="min-w-[180px]">
+            <label className="block text-xs font-semibold text-gray-600 mb-1">
+              <Stethoscope size={11} className="inline mr-1" />
+              Especialidad
+              {facetas.especialidades.length > 0 && (
+                <span className="ml-1 text-[10px] text-blue-500">({facetas.especialidades.length})</span>
+              )}
+            </label>
+            <select
+              value={filtroEspecialidad}
+              onChange={e => setFiltroEspecialidad(e.target.value)}
+              className="w-full py-2 px-3 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0a5ba9] bg-white"
+            >
+              <option value="">Todas las especialidades</option>
+              {facetas.especialidades.map(f => (
+                <option key={f.valor} value={f.valor}>{f.valor} ({f.total})</option>
+              ))}
+            </select>
+          </div>
+
+          {/* Motivo interconsulta */}
+          <div className="min-w-[190px]">
+            <label className="block text-xs font-semibold text-gray-600 mb-1">
+              <FileText size={11} className="inline mr-1" />
+              Motivo interconsulta
+              {facetas.motivos.length > 0 && (
+                <span className="ml-1 text-[10px] text-blue-500">({facetas.motivos.length})</span>
+              )}
+            </label>
+            <select
+              value={filtroMotivoInterconsulta}
+              onChange={e => setFiltroMotivoInterconsulta(e.target.value)}
+              className="w-full py-2 px-3 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0a5ba9] bg-white"
+            >
+              <option value="">Todos los motivos</option>
+              {facetas.motivos.map(f => (
+                <option key={f.valor} value={f.valor}>{f.valor} ({f.total})</option>
+              ))}
+            </select>
+          </div>
+
+          {/* Estado de Bolsa */}
+          <div className="min-w-[160px]">
+            <label className="block text-xs font-semibold text-gray-600 mb-1">
+              <Filter size={11} className="inline mr-1" />
+              Estado de Bolsa
+              {facetas.estadosBolsa.length > 0 && (
+                <span className="ml-1 text-[10px] text-blue-500">({facetas.estadosBolsa.length})</span>
+              )}
+            </label>
+            <select
+              value={filtroEstadoBolsa}
+              onChange={e => setFiltroEstadoBolsa(e.target.value)}
+              className="w-full py-2 px-3 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0a5ba9] bg-white"
+            >
+              <option value="">Todos los estados</option>
+              {facetas.estadosBolsa.map(f => (
+                <option key={f.valor} value={f.valor}>{f.valor} ({f.total})</option>
+              ))}
+            </select>
+          </div>
+
+          {/* Creado por */}
+          <div className="min-w-[200px]">
+            <label className="block text-xs font-semibold text-gray-600 mb-1">
+              <Search size={11} className="inline mr-1" />
+              Creado por
+              {facetas.creadosPor.length > 0 && (
+                <span className="ml-1 text-[10px] text-blue-500">({facetas.creadosPor.length})</span>
+              )}
+            </label>
+            <select
+              value={filtroCreadoPor}
+              onChange={e => setFiltroCreadoPor(e.target.value)}
+              className="w-full py-2 px-3 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0a5ba9] bg-white"
+            >
+              <option value="">Todos los profesionales</option>
+              {facetas.creadosPor.map(f => (
+                <option key={f.valor} value={f.valor}>{f.valor} ({f.total})</option>
+              ))}
+            </select>
+          </div>
 
           {/* Rango de fechas — calendario */}
           <RangoFechas

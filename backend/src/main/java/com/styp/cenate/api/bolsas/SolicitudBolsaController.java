@@ -1711,7 +1711,7 @@ public class SolicitudBolsaController {
     }
 
     @GetMapping("/trazabilidad-recitas")
-    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'COORD. ENFERMERIA')")
+    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'COORD. ENFERMERIA', 'SOPORTE_TELEUE')")
     public ResponseEntity<?> obtenerTrazabilidadRecitas(
             @RequestParam(required = false) String busqueda,
             @RequestParam(required = false) String fechaInicio,
@@ -1719,13 +1719,18 @@ public class SolicitudBolsaController {
             @RequestParam(required = false) String tipoCita,
             @RequestParam(required = false) Long idPersonal,
             @RequestParam(defaultValue = "desc") String sortDir,
+            @RequestParam(required = false) String especialidad,
+            @RequestParam(required = false) String motivoInterconsulta,
+            @RequestParam(required = false) String estadoBolsa,
+            @RequestParam(required = false) String creadoPor,
             @RequestParam(defaultValue = "0")  int page,
             @RequestParam(defaultValue = "25") int size) {
         try {
-            log.info("🔎 GET /api/bolsas/solicitudes/trazabilidad-recitas busqueda={} tipoCita={} idPersonal={} sortDir={}", busqueda, tipoCita, idPersonal, sortDir);
+            log.info("🔎 GET /api/bolsas/solicitudes/trazabilidad-recitas busqueda={} tipoCita={} idPersonal={} especialidad={} motivo={} estadoBolsa={} creadoPor={}", busqueda, tipoCita, idPersonal, especialidad, motivoInterconsulta, estadoBolsa, creadoPor);
             var pageable = org.springframework.data.domain.PageRequest.of(page, size);
             var resultado = solicitudBolsaService.obtenerTrazabilidadRecitas(
-                busqueda, fechaInicio, fechaFin, tipoCita, idPersonal, sortDir, pageable);
+                busqueda, fechaInicio, fechaFin, tipoCita, idPersonal, sortDir,
+                especialidad, motivoInterconsulta, estadoBolsa, creadoPor, pageable);
             return ResponseEntity.ok(Map.of(
                 "solicitudes",  resultado.getContent(),
                 "total",        resultado.getTotalElements(),
@@ -1739,7 +1744,7 @@ public class SolicitudBolsaController {
     }
 
     @GetMapping("/trazabilidad-recitas/enfermeras")
-    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'COORD. ENFERMERIA')")
+    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'COORD. ENFERMERIA', 'SOPORTE_TELEUE')")
     public ResponseEntity<?> listarEnfermerasTrazabilidad() {
         try {
             return ResponseEntity.ok(solicitudBolsaService.listarEnfermerasTrazabilidad());
@@ -1750,7 +1755,7 @@ public class SolicitudBolsaController {
     }
 
     @GetMapping("/trazabilidad-recitas/kpis")
-    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'COORD. ENFERMERIA')")
+    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'COORD. ENFERMERIA', 'SOPORTE_TELEUE')")
     public ResponseEntity<?> obtenerKpisTrazabilidad() {
         try {
             return ResponseEntity.ok(solicitudBolsaService.obtenerKpisTrazabilidad());
@@ -1786,12 +1791,23 @@ public class SolicitudBolsaController {
     }
 
     @GetMapping("/trazabilidad-recitas/fechas")
-    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'COORD. ENFERMERIA')")
+    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'COORD. ENFERMERIA', 'SOPORTE_TELEUE')")
     public ResponseEntity<?> obtenerFechasConRecitas() {
         try {
             return ResponseEntity.ok(solicitudBolsaService.obtenerFechasConRecitas());
         } catch (Exception e) {
             log.error("❌ Error obteniendo fechas con recitas: ", e);
+            return ResponseEntity.status(500).body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    @GetMapping("/trazabilidad-recitas/facetas")
+    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'COORD. ENFERMERIA')")
+    public ResponseEntity<?> listarFacetasRecitas() {
+        try {
+            return ResponseEntity.ok(solicitudBolsaService.listarFacetasRecitasInterconsultas());
+        } catch (Exception e) {
+            log.error("❌ Error obteniendo facetas recitas: ", e);
             return ResponseEntity.status(500).body(Map.of("error", e.getMessage()));
         }
     }

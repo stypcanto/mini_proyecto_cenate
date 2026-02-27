@@ -4134,12 +4134,14 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
     public org.springframework.data.domain.Page<java.util.Map<String, Object>> obtenerTrazabilidadRecitas(
             String busqueda, String fechaInicio, String fechaFin,
             String tipoCita, Long idPersonal, String sortDir,
+            String especialidad, String motivoInterconsulta, String estadoBolsa, String creadoPor,
             org.springframework.data.domain.Pageable pageable) {
 
         String dir = (sortDir != null && sortDir.equalsIgnoreCase("asc")) ? "asc" : "desc";
         org.springframework.data.domain.Page<Object[]> rows =
             solicitudRepository.obtenerTrazabilidadRecitasInterconsultas(
-                busqueda, fechaInicio, fechaFin, tipoCita, idPersonal, dir, pageable);
+                busqueda, fechaInicio, fechaFin, tipoCita, idPersonal, dir,
+                especialidad, motivoInterconsulta, estadoBolsa, creadoPor, pageable);
 
         return rows.map(row -> {
             java.util.Map<String, Object> m = new java.util.LinkedHashMap<>();
@@ -4199,6 +4201,22 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
             m.put("total", row[1]);
             return m;
         }).toList();
+    }
+
+    @Override
+    public java.util.Map<String, Object> listarFacetasRecitasInterconsultas() {
+        java.util.function.Function<Object[], java.util.Map<String, Object>> toMap = row -> {
+            java.util.Map<String, Object> m = new java.util.LinkedHashMap<>();
+            m.put("valor", row[0] != null ? row[0].toString() : "");
+            m.put("total", row[1]);
+            return m;
+        };
+        java.util.Map<String, Object> facetas = new java.util.LinkedHashMap<>();
+        facetas.put("especialidades",  solicitudRepository.facetaEspecialidadesRecita().stream().map(toMap).toList());
+        facetas.put("motivos",         solicitudRepository.facetaMotivosInterconsulta().stream().map(toMap).toList());
+        facetas.put("estadosBolsa",    solicitudRepository.facetaEstadosBolsa().stream().map(toMap).toList());
+        facetas.put("creadosPor",      solicitudRepository.facetaCreadosPor().stream().map(toMap).toList());
+        return facetas;
     }
 
     // ============================================================================

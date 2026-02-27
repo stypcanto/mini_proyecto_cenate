@@ -1812,6 +1812,10 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
           AND (:fechaFin    IS NULL OR recita.fecha_preferida_no_atendida <= CAST(:fechaFin    AS date))
           AND (:tipoCita    IS NULL OR UPPER(recita.tipo_cita) = UPPER(:tipoCita))
           AND (:idPersonal  IS NULL OR COALESCE(recita.id_personal, orig_d.id_personal, orig_t.id_personal, ac_fk.id_personal_creador, orig_ac.id_personal) = CAST(:idPersonal AS bigint))
+          AND (:especialidad IS NULL OR recita.especialidad ILIKE '%' || :especialidad || '%')
+          AND (:motivo IS NULL OR (UPPER(recita.tipo_cita) = 'INTERCONSULTA' AND SUBSTRING(recita.especialidad FROM '\\(([^)]+)\\)') ILIKE '%' || :motivo || '%'))
+          AND (:estadoBolsa IS NULL OR recita.estado ILIKE :estadoBolsa)
+          AND (:creadoPor IS NULL OR (pc.ape_pater_pers || ' ' || pc.ape_mater_pers || ', ' || pc.nom_pers) ILIKE '%' || :creadoPor || '%')
         ORDER BY
           CASE WHEN :sortDir = 'asc'  THEN recita.fecha_solicitud END ASC  NULLS LAST,
           CASE WHEN :sortDir != 'asc' THEN recita.fecha_solicitud END DESC NULLS LAST,
@@ -1851,6 +1855,9 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
           AND (:fechaFin    IS NULL OR recita.fecha_preferida_no_atendida <= CAST(:fechaFin    AS date))
           AND (:tipoCita    IS NULL OR UPPER(recita.tipo_cita) = UPPER(:tipoCita))
           AND (:idPersonal  IS NULL OR COALESCE(recita.id_personal, orig_d.id_personal, orig_t.id_personal, ac_fk.id_personal_creador, orig_ac.id_personal) = CAST(:idPersonal AS bigint))
+          AND (:especialidad IS NULL OR recita.especialidad ILIKE '%' || :especialidad || '%')
+          AND (:motivo IS NULL OR (UPPER(recita.tipo_cita) = 'INTERCONSULTA' AND SUBSTRING(recita.especialidad FROM '\\(([^)]+)\\)') ILIKE '%' || :motivo || '%'))
+          AND (:estadoBolsa IS NULL OR recita.estado ILIKE :estadoBolsa)
         """,
         nativeQuery = true)
     Page<Object[]> obtenerTrazabilidadRecitasInterconsultas(
@@ -1860,6 +1867,10 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
         @org.springframework.data.repository.query.Param("tipoCita")    String tipoCita,
         @org.springframework.data.repository.query.Param("idPersonal")  Long idPersonal,
         @org.springframework.data.repository.query.Param("sortDir")     String sortDir,
+        @org.springframework.data.repository.query.Param("especialidad") String especialidad,
+        @org.springframework.data.repository.query.Param("motivo")       String motivoInterconsulta,
+        @org.springframework.data.repository.query.Param("estadoBolsa")  String estadoBolsa,
+        @org.springframework.data.repository.query.Param("creadoPor")    String creadoPor,
         Pageable pageable
     );
 
@@ -1955,6 +1966,85 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
         ORDER BY fecha DESC
         """, nativeQuery = true)
     List<Object[]> fechasConRecitasInterconsultas();
+
+    // ─── FACETAS para filtros desplegables ───────────────────────────────────
+
+    /** Especialidades distintas de RECITA (excluyendo INTERCONSULTA) con conteo. */
+    @Query(value = """
+        SELECT recita.especialidad AS valor, COUNT(*) AS total
+        FROM   dim_solicitud_bolsa recita
+        WHERE  UPPER(recita.tipo_cita) = 'RECITA'
+          AND  recita.activo = true
+          AND  recita.id_bolsa = 11
+          AND  recita.especialidad IS NOT NULL
+        GROUP BY recita.especialidad
+        ORDER BY total DESC, valor ASC
+        """, nativeQuery = true)
+    List<Object[]> facetaEspecialidadesRecita();
+
+    /** Motivos de INTERCONSULTA (texto entre paréntesis en especialidad_destino) con conteo. */
+    @Query(value = """
+        SELECT SUBSTRING(recita.especialidad FROM '\\\\(([^)]+)\\\\)') AS valor,
+               COUNT(*) AS total
+        FROM   dim_solicitud_bolsa recita
+        WHERE  UPPER(recita.tipo_cita) = 'INTERCONSULTA'
+          AND  recita.activo = true
+          AND  recita.id_bolsa = 11
+          AND  recita.especialidad IS NOT NULL
+          AND  SUBSTRING(recita.especialidad FROM '\\\\(([^)]+)\\\\)') IS NOT NULL
+        GROUP BY valor
+        ORDER BY total DESC, valor ASC
+        """, nativeQuery = true)
+    List<Object[]> facetaMotivosInterconsulta();
+
+    /** Estados distintos de bolsa en recitas/interconsultas con conteo. */
+    @Query(value = """
+        SELECT recita.estado AS valor, COUNT(*) AS total
+        FROM   dim_solicitud_bolsa recita
+        WHERE  UPPER(recita.tipo_cita) IN ('RECITA','INTERCONSULTA')
+          AND  recita.activo = true
+          AND  recita.id_bolsa = 11
+          AND  recita.estado IS NOT NULL
+        GROUP BY recita.estado
+        ORDER BY total DESC, valor ASC
+        """, nativeQuery = true)
+    List<Object[]> facetaEstadosBolsa();
+
+    /** Creadores distintos (personal de salud) en recitas/interconsultas con conteo. */
+    @Query(value = """
+        SELECT pc.ape_pater_pers || ' ' || pc.ape_mater_pers || ', ' || pc.nom_pers AS valor,
+               COUNT(*) AS total
+        FROM   dim_solicitud_bolsa recita
+        LEFT JOIN dim_solicitud_bolsa orig_d ON orig_d.id_solicitud = recita.idsolicitudgeneracion
+        LEFT JOIN LATERAL (
+            SELECT h.id_personal
+            FROM   dim_solicitud_bolsa h
+            WHERE  h.paciente_dni = recita.paciente_dni
+              AND  h.id_personal IS NOT NULL
+              AND  UPPER(h.tipo_cita) NOT IN ('RECITA','INTERCONSULTA')
+              AND  h.fecha_atencion_medica IS NOT NULL
+              AND  ABS(EXTRACT(EPOCH FROM (h.fecha_atencion_medica - recita.fecha_solicitud))) < 120
+            ORDER BY ABS(EXTRACT(EPOCH FROM (h.fecha_atencion_medica - recita.fecha_solicitud)))
+            LIMIT 1
+        ) orig_t ON recita.idsolicitudgeneracion IS NULL
+        LEFT JOIN LATERAL (
+            SELECT ac.id_personal_creador AS id_personal
+            FROM   atencion_clinica ac
+            WHERE  ac.pk_asegurado = recita.paciente_id
+              AND  ac.fecha_atencion >= recita.fecha_solicitud - INTERVAL '2 minutes'
+              AND  ac.fecha_atencion <= recita.fecha_solicitud + INTERVAL '30 minutes'
+            ORDER BY ABS(EXTRACT(EPOCH FROM (ac.fecha_atencion - recita.fecha_solicitud)))
+            LIMIT 1
+        ) orig_ac ON COALESCE(recita.id_personal, orig_d.id_personal, orig_t.id_personal) IS NULL
+        LEFT JOIN dim_personal_cnt pc ON pc.id_pers = COALESCE(recita.id_personal, orig_d.id_personal, orig_t.id_personal, orig_ac.id_personal)
+        WHERE  UPPER(recita.tipo_cita) IN ('RECITA','INTERCONSULTA')
+          AND  recita.activo = true
+          AND  recita.id_bolsa = 11
+          AND  COALESCE(recita.id_personal, orig_d.id_personal, orig_t.id_personal, orig_ac.id_personal) IS NOT NULL
+        GROUP BY pc.ape_pater_pers, pc.ape_mater_pers, pc.nom_pers
+        ORDER BY total DESC, valor ASC
+        """, nativeQuery = true)
+    List<Object[]> facetaCreadosPor();
 
 }
 
