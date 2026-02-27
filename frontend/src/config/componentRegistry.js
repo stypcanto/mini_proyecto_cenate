@@ -217,37 +217,37 @@ export const componentRegistry = {
   '/roles/coordinador/dashboard-medico': {
     component: lazy(() => import('../pages/roles/coordinador/dashboard-medico/DashboardCoordinadorMedico')),
     requiredAction: 'ver',
-    requiredRoles: ['COORDINADOR_MEDICO_TELEURGENCIAS', 'COORD. TELE URGENCIAS Y TRIAJE', 'ADMIN', 'SUPERADMIN'],
+    requiredRoles: ['COORDINADOR_MEDICO_TELEURGENCIAS', 'COORD. TELE URGENCIAS Y TRIAJE', 'SOPORTE_TELEUE', 'ADMIN', 'SUPERADMIN'],
   },
 
   '/roles/coordinador/teleurgencias/bienvenida': {
     component: lazy(() => import('../pages/roles/coordinador/teleurgencias/BienvenidaTeleurgencias')),
     requiredAction: 'ver',
-    requiredRoles: ['COORDINADOR_MEDICO_TELEURGENCIAS', 'COORD. TELE URGENCIAS Y TRIAJE', 'ADMIN', 'SUPERADMIN'],
+    requiredRoles: ['COORDINADOR_MEDICO_TELEURGENCIAS', 'COORD. TELE URGENCIAS Y TRIAJE', 'SOPORTE_TELEUE', 'ADMIN', 'SUPERADMIN'],
   },
 
   '/roles/coordinador/teleurgencias': {
     component: lazy(() => import('../pages/roles/coordinador/teleurgencias/DashboardCoordinadorTeleurgencias')),
     requiredAction: 'ver',
-    requiredRoles: ['COORDINADOR_MEDICO_TELEURGENCIAS', 'COORD. TELE URGENCIAS Y TRIAJE', 'ADMIN', 'SUPERADMIN'],
+    requiredRoles: ['COORDINADOR_MEDICO_TELEURGENCIAS', 'COORD. TELE URGENCIAS Y TRIAJE', 'SOPORTE_TELEUE', 'ADMIN', 'SUPERADMIN'],
   },
 
   '/roles/coordinador/teleurgencias/estadisticas': {
     component: lazy(() => import('../pages/roles/coordinador/teleurgencias/EstadisticasTeleurgencias')),
     requiredAction: 'ver',
-    requiredRoles: ['COORDINADOR_MEDICO_TELEURGENCIAS', 'COORD. TELE URGENCIAS Y TRIAJE', 'ADMIN', 'SUPERADMIN'],
+    requiredRoles: ['COORDINADOR_MEDICO_TELEURGENCIAS', 'COORD. TELE URGENCIAS Y TRIAJE', 'SOPORTE_TELEUE', 'ADMIN', 'SUPERADMIN'],
   },
 
   '/roles/coordinador/teleurgencias/reasignar': {
     component: lazy(() => import('../pages/roles/coordinador/dashboard-medico/DashboardCoordinadorMedico')),
     requiredAction: 'editar',
-    requiredRoles: ['COORDINADOR_MEDICO_TELEURGENCIAS', 'COORD. TELE URGENCIAS Y TRIAJE', 'ADMIN', 'SUPERADMIN'],
+    requiredRoles: ['COORDINADOR_MEDICO_TELEURGENCIAS', 'COORD. TELE URGENCIAS Y TRIAJE', 'SOPORTE_TELEUE', 'ADMIN', 'SUPERADMIN'],
   },
 
   '/roles/coordinador/teleurgencias/exportar': {
     component: lazy(() => import('../pages/roles/coordinador/dashboard-medico/DashboardCoordinadorMedico')),
     requiredAction: 'exportar',
-    requiredRoles: ['COORDINADOR_MEDICO_TELEURGENCIAS', 'COORD. TELE URGENCIAS Y TRIAJE', 'ADMIN', 'SUPERADMIN'],
+    requiredRoles: ['COORDINADOR_MEDICO_TELEURGENCIAS', 'COORD. TELE URGENCIAS Y TRIAJE', 'SOPORTE_TELEUE', 'ADMIN', 'SUPERADMIN'],
   },
 
   // ========================================================================

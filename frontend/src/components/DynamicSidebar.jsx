@@ -243,7 +243,7 @@ export default function DynamicSidebar({ collapsed = false, onToggleCollapse }) 
     "MEDICO", "ENFERMERIA", "OBSTETRA", "LABORATORIO", "RADIOLOGIA",
     "FARMACIA", "PSICOLOGO", "TERAPISTA_LENG", "TERAPISTA_FISI", "NUTRICION"
   ].includes(r));
-  const isCoordinadorTeleurgencias = roles.includes("COORDINADOR_MEDICO_TELEURGENCIAS");
+  const isCoordinadorTeleurgencias = roles.includes("COORDINADOR_MEDICO_TELEURGENCIAS") || roles.includes("SOPORTE_TELEUE");
   const isMesaDeAyuda = roles.some(r => r.includes("MESA") && r.includes("AYUDA"));
 
   // ============================================================

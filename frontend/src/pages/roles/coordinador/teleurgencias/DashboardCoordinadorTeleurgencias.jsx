@@ -419,8 +419,28 @@ function DrawerMedico({ medico, fecha, turno, onClose, onReasignacionExitosa }) 
       setProgreso({ ok: ids.length, err: 0, total: ids.length });
       setExitoVisible(true);
       toast.success(
-        `✅ ${ids.length} paciente${ids.length !== 1 ? 's' : ''} reprogramado${ids.length !== 1 ? 's' : ''} exitosamente`,
-        { duration: 4000, position: 'top-center', style: { fontWeight: '600', fontSize: '13px' } }
+        (t) => (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+            <div style={{ fontWeight: '800', fontSize: '16px' }}>
+              ✅ {ids.length} paciente{ids.length !== 1 ? 's' : ''} reprogramado{ids.length !== 1 ? 's' : ''} exitosamente
+            </div>
+            <div style={{ fontSize: '13px', color: '#b45309', fontWeight: '700', borderTop: '1px solid #fde68a', paddingTop: '6px' }}>
+              ⚠️ RECUERDA: Registrar también la reprogramación en el Sistema <strong>ESSI</strong>
+            </div>
+          </div>
+        ),
+        {
+          duration: 8000,
+          position: 'top-center',
+          style: {
+            maxWidth: '520px',
+            padding: '18px 24px',
+            borderLeft: '5px solid #f59e0b',
+            borderRadius: '8px',
+            boxShadow: '0 8px 24px rgba(0,0,0,0.2)',
+            background: '#fff',
+          },
+        }
       );
       setTimeout(() => {
         setModalAbierto(false);
