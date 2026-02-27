@@ -73,6 +73,12 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
     boolean existsByPacienteDniAndTipoCitaAndActivoTrue(String pacienteDni, String tipoCita);
 
     /**
+     * v1.75.0: Obtiene recitas/interconsultas derivadas de una solicitud original.
+     * Usa la FK idsolicitudgeneracion para trazabilidad del ciclo de vida.
+     */
+    List<SolicitudBolsa> findByIdsolicitudgeneracionOrderByFechaSolicitudAsc(Long idSolicitudOriginal);
+
+    /**
      * Verifica si ya existe una solicitud activa de un tipo de cita + especialidad para un paciente
      * Usado en AtenderPacienteService para verificar Interconsultas duplicadas
      */

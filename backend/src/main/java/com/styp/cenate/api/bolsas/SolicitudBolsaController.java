@@ -48,6 +48,8 @@ import com.styp.cenate.model.Usuario;
 import com.styp.cenate.repository.UsuarioRepository;
 import com.styp.cenate.repository.chatbot.SolicitudCitaRepository;
 import com.styp.cenate.model.chatbot.SolicitudCita;
+import com.styp.cenate.dto.bolsas.TrazabilidadBolsaResponseDTO;
+import com.styp.cenate.service.bolsas.TrazabilidadBolsaService;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 
@@ -73,6 +75,7 @@ public class SolicitudBolsaController {
     private final DetalleMedicoService detalleMedicoService; // v1.46.8: Para obtener médicos
     private final UsuarioRepository usuarioRepository; // ✅ v1.47.0: Para sincronizar gestora
     private final SolicitudCitaRepository solicitudCitaRepository; // v1.67.0: Para horas ocupadas
+    private final TrazabilidadBolsaService trazabilidadBolsaService; // v1.75.0: Timeline de solicitud
 
     /**
      * Importa solicitudes desde archivo Excel
@@ -1791,6 +1794,21 @@ public class SolicitudBolsaController {
             log.error("❌ Error obteniendo fechas con recitas: ", e);
             return ResponseEntity.status(500).body(Map.of("error", e.getMessage()));
         }
+    }
+
+    // =========================================================================
+    // v1.75.0 — TRAZABILIDAD: timeline del ciclo de vida de una solicitud
+    // =========================================================================
+
+    /**
+     * GET /api/bolsas/solicitudes/trazabilidad/{idSolicitud}
+     * Devuelve el timeline completo: ingreso, asignación médico, cita, atención, anulación, recitas.
+     */
+    @GetMapping("/trazabilidad/{idSolicitud}")
+    public ResponseEntity<TrazabilidadBolsaResponseDTO> obtenerTrazabilidad(
+            @PathVariable Long idSolicitud) {
+        log.info("📋 [v1.75.0] GET /trazabilidad/{}", idSolicitud);
+        return ResponseEntity.ok(trazabilidadBolsaService.obtenerTrazabilidad(idSolicitud));
     }
 
 }
