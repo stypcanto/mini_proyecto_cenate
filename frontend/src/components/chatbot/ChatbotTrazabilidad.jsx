@@ -144,7 +144,7 @@ const CENATITO_STYLES = `
 
 // ── Avatar animado Cenatito ───────────────────────────────────────────────
 const TOTAL_FRAMES = 30;
-const FRAME_INTERVAL = 80; // ms entre frames (~12fps)
+const FRAME_INTERVAL = 250; // ms entre frames (~4fps) — movimiento suave y lento
 
 function CenatitoBotAvatar({ size = 32, float = false, className = '' }) {
   const [frame, setFrame] = React.useState(0);
