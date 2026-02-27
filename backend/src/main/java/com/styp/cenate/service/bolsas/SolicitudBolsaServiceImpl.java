@@ -3856,8 +3856,26 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
             // IPRESS Atención = siempre CENATE (id_ipress = 2) para citas creadas desde este modal
             final Long ID_IPRESS_CENATE = 2L;
 
-            // Crear nueva solicitud
-            String numeroSolicitud2 = generarNumeroSolicitud();
+            // Archivar registros terminales previos del mismo paciente+especialidad para liberar el índice único
+            // (ux_solicitud_paciente_servicio_otras_bolsas filtra por activo=true)
+            java.util.Set<String> estadosTerminalesArchivo = java.util.Set.of("ATENDIDO", "CANCELADO", "DESERTOR", "RESCATADO", "RECHAZADO", "NO ASISTIO");
+            solicitudRepository.findByPacienteDniAndActivoTrue(request.getPacienteDni()).stream()
+                .filter(s -> {
+                    String est = s.getEstado() != null ? s.getEstado().toUpperCase() : "";
+                    boolean terminalEst = estadosTerminalesArchivo.contains(est);
+                    boolean terminalGest = s.getEstadoGestionCitasId() != null && s.getEstadoGestionCitasId().equals(2L); // 2L = BOLSA_ATENDIDO_IPRESS
+                    return terminalEst || terminalGest;
+                })
+                .filter(s -> request.getEspecialidad() != null &&
+                             request.getEspecialidad().equalsIgnoreCase(s.getEspecialidad()))
+                .forEach(s -> {
+                    s.setActivo(false);
+                    solicitudRepository.save(s);
+                    log.info("📦 Registro {} archivado (activo=false) para reprogramación. condicion_medica preservada: {}", s.getIdSolicitud(), s.getCondicionMedica());
+                });
+
+            // Crear nueva solicitud (usa método con retry para evitar colisiones de numero_solicitud)
+            String numeroSolicitud2 = encontrarNumeroSolicitudDisponible(5);
             SolicitudBolsa nuevaSolicitud = SolicitudBolsa.builder()
                 .numeroSolicitud(numeroSolicitud2)
                 .pacienteDni(request.getPacienteDni())

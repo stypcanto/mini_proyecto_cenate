@@ -138,6 +138,7 @@ public class SincronizacionBolsaServiceImpl implements SincronizacionBolsaServic
 
                 // Actualizar estado
                 solicitudBolsa.setEstadoGestionCitasId(EstadosCitaConstants.BOLSA_ATENDIDO_IPRESS);
+                solicitudBolsa.setEstado("ATENDIDO"); // Sincronizar campo estado para validaciones de reprogramación
 
                 // Guardar fecha y hora de atención
                 solicitudBolsa.setFechaAtencion(solicitudCita.getFechaCita());

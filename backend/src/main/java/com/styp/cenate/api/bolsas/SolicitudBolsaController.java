@@ -1598,11 +1598,20 @@ public class SolicitudBolsaController {
             solicitudBolsaService.buscarAsignacionesPorDni(request.getPacienteDni());
 
         java.util.Set<String> estadosTerminales = java.util.Set.of("ATENDIDO", "CANCELADO", "DESERTOR", "RESCATADO", "RECHAZADO", "NO ASISTIO");
+        // IDs de estados de gestión que son terminales (2=BOLSA_ATENDIDO_IPRESS)
+        // Cubre el caso donde sincronización actualizó estadoGestionCitasId pero aún no el campo estado
+        java.util.Set<Long> gestionTerminales = java.util.Set.of(2L);
         String especialidadNueva = request.getEspecialidad() != null ? request.getEspecialidad().trim().toUpperCase() : "";
 
         existentes.stream()
             .filter(e -> e.getIdPersonal() != null)
-            .filter(e -> !estadosTerminales.contains(e.getEstado() != null ? e.getEstado().toUpperCase() : ""))
+            .filter(e -> {
+                String estadoStr = e.getEstado() != null ? e.getEstado().toUpperCase() : "";
+                boolean terminalPorEstado = estadosTerminales.contains(estadoStr);
+                boolean terminalPorGestion = e.getEstadoGestionCitasId() != null
+                        && gestionTerminales.contains(e.getEstadoGestionCitasId());
+                return !terminalPorEstado && !terminalPorGestion;
+            })
             .filter(e -> especialidadNueva.isEmpty() || especialidadNueva.equals(
                 e.getEspecialidad() != null ? e.getEspecialidad().trim().toUpperCase() : ""))
             .findFirst()

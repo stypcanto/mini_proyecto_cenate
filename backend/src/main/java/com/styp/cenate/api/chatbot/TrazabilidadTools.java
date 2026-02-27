@@ -4,11 +4,13 @@ import com.styp.cenate.model.DimBolsa;
 import com.styp.cenate.model.GestionPaciente;
 import com.styp.cenate.model.PersonalCnt;
 import com.styp.cenate.model.Usuario;
+import com.styp.cenate.model.bolsas.SolicitudBolsa;
 import com.styp.cenate.repository.AseguradoRepository;
 import com.styp.cenate.repository.BolsaRepository;
 import com.styp.cenate.repository.GestionPacienteRepository;
 import com.styp.cenate.repository.PersonalCntRepository;
 import com.styp.cenate.repository.UsuarioRepository;
+import com.styp.cenate.repository.bolsas.SolicitudBolsaRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.tool.annotation.Tool;
@@ -39,6 +41,7 @@ public class TrazabilidadTools {
     private final AseguradoRepository aseguradoRepository;
     private final UsuarioRepository usuarioRepository;
     private final PersonalCntRepository personalCntRepository;
+    private final SolicitudBolsaRepository solicitudBolsaRepository;
 
     // ============================================================
     // 🔍 HISTORIAL DE SOLICITUDES EN BOLSA
@@ -221,6 +224,63 @@ public class TrazabilidadTools {
         } catch (Exception e) {
             log.error("[Trazabilidad] Error buscarProfesional: {}", e.getMessage());
             return "Error al buscar profesional: " + e.getMessage();
+        }
+    }
+
+    // ============================================================
+    // 📋 TRAZABILIDAD COMPLETA DE CASO (activo + archivado)
+    // ============================================================
+
+    @Tool(description = """
+            Consulta la trazabilidad completa de un caso de paciente por DNI.
+            Incluye TODOS los registros: activos (citas vigentes) y archivados (histórico).
+            Para cada registro muestra: especialidad, estado, condicion_medica,
+            fecha de atención, médico asignado, y si está activo o archivado.
+            Usar cuando se quiera saber el historial completo de un paciente,
+            incluyendo deserciones, reprogramaciones y citas anteriores.
+            """)
+    public String consultarTrazabilidadCompleta(String dni) {
+        log.info("[Trazabilidad] consultarTrazabilidadCompleta({})", dni);
+        try {
+            List<SolicitudBolsa> registros = solicitudBolsaRepository.findByPacienteDni(dni);
+            if (registros.isEmpty()) {
+                return "No se encontraron registros para el DNI: " + dni;
+            }
+
+            String nombre = registros.get(0).getPacienteNombre() != null
+                    ? registros.get(0).getPacienteNombre() : dni;
+
+            StringBuilder sb = new StringBuilder();
+            sb.append("=== Trazabilidad completa: ").append(nombre)
+              .append(" (DNI: ").append(dni).append(") ===\n");
+            sb.append("Total registros (activos + archivados): ").append(registros.size()).append("\n\n");
+
+            registros.stream()
+                .sorted((a, b) -> {
+                    if (a.getFechaSolicitud() == null) return 1;
+                    if (b.getFechaSolicitud() == null) return -1;
+                    return b.getFechaSolicitud().compareTo(a.getFechaSolicitud());
+                })
+                .forEach(r -> {
+                    String activo = Boolean.TRUE.equals(r.getActivo()) ? "✅ ACTIVO" : "📦 ARCHIVADO";
+                    String condicion = r.getCondicionMedica() != null ? r.getCondicionMedica() : "—";
+                    String fecha = r.getFechaAtencion() != null ? r.getFechaAtencion().toString() : "sin fecha";
+                    String medico = r.getIdPersonal() != null ? "idPers=" + r.getIdPersonal() : "sin médico";
+                    sb.append(String.format(
+                        "[%s] ID=%d | %s | Estado=%s | CondiciónMédica=%s | Fecha=%s | Médico=%s\n",
+                        activo,
+                        r.getIdSolicitud(),
+                        r.getEspecialidad() != null ? r.getEspecialidad() : "N/A",
+                        r.getEstado() != null ? r.getEstado() : "N/A",
+                        condicion,
+                        fecha,
+                        medico));
+                });
+
+            return sb.toString();
+        } catch (Exception e) {
+            log.error("[Trazabilidad] Error consultarTrazabilidadCompleta: {}", e.getMessage());
+            return "Error al consultar trazabilidad: " + e.getMessage();
         }
     }
 
