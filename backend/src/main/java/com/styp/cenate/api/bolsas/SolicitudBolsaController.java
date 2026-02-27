@@ -1803,7 +1803,7 @@ public class SolicitudBolsaController {
     }
 
     @GetMapping("/trazabilidad-recitas/facetas")
-    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'COORD. ENFERMERIA')")
+    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'COORD. ENFERMERIA', 'SOPORTE_TELEUE', 'ENFERMERIA')")
     public ResponseEntity<?> listarFacetasRecitas() {
         try {
             return ResponseEntity.ok(solicitudBolsaService.listarFacetasRecitasInterconsultas());
