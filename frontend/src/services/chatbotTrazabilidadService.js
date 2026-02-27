@@ -16,6 +16,16 @@ const chatbotTrazabilidadService = {
   chat: async (mensaje) => {
     return apiClient.post('/v1/chatbot/trazabilidad/chat', { mensaje }, true);
   },
+
+  /**
+   * Obtiene la tarjeta clínica enriquecida de un paciente por DNI.
+   * Devuelve PatientCardDTO con datos de contacto, registros y alerta de deserción.
+   * @param {string} dni - DNI de 8 dígitos del asegurado
+   * @returns {Promise<PatientCardDTO>}
+   */
+  getPatientCard: async (dni) => {
+    return apiClient.get(`/v1/chatbot/trazabilidad/paciente/${dni}`, true);
+  },
 };
 
 export default chatbotTrazabilidadService;
