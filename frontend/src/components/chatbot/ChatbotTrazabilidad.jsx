@@ -1,11 +1,13 @@
 // ========================================================================
-// ChatbotTrazabilidad.jsx — Widget flotante de IA (v1.75.1)
+// ChatbotTrazabilidad.jsx — Widget flotante de IA (v1.77.0)
 // ========================================================================
 // Asistente de trazabilidad para personal interno CENATE.
 // Solo visible para roles en la lista blanca (no EXTERNO / INSTITUCION).
 // Sugerencias y bienvenida personalizadas por rol.
 // Posicionado fixed bottom-right, z-index 9000.
 // v1.75.1: Estado expandido (680x680) con timestamps y textarea más cómodo.
+// v1.77.0: Tarjeta clínica enriquecida — detección automática de DNI,
+//          fetch paralelo con chatbot, render PatientRichCard.
 // ========================================================================
 
 import React, { useState, useRef, useEffect } from 'react';
@@ -13,6 +15,7 @@ import ReactMarkdown from 'react-markdown';
 import { useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import chatbotTrazabilidadService from '../../services/chatbotTrazabilidadService';
+import PatientRichCard from './PatientRichCard';
 
 const RUTAS_PUBLICAS = ['/', '/login', '/crear-cuenta', '/cambiar-contrasena', '/unauthorized'];
 
@@ -171,7 +174,16 @@ function CenatitoBotAvatar({ size = 32, float = false, className = '' }) {
 }
 
 function BotAvatar() {
-  return <CenatitoBotAvatar size={26} />;
+  return (
+    <img
+      src="/images/Cenatito.png"
+      alt="Cenatito"
+      width={30}
+      height={30}
+      className="select-none object-contain shrink-0"
+      draggable={false}
+    />
+  );
 }
 
 // ── Componente principal ──────────────────────────────────────────────────
@@ -225,6 +237,25 @@ export default function ChatbotTrazabilidad() {
     ? { width: 680, height: 680, transition: 'width 0.3s ease, height 0.3s ease' }
     : { width: 360, height: 500, transition: 'width 0.3s ease, height 0.3s ease' };
 
+  // ── Acciones de los botones de la tarjeta clínica ───────────────────────
+  // Cada acción inyecta un mensaje de texto al chat para mantener el flujo.
+  const handleCardAction = (tipo, payload) => {
+    if (tipo === 'contactar') {
+      const tel = payload?.telefono || 'No disponible';
+      const email = payload?.email || 'No disponible';
+      enviarMensaje(
+        `Datos de contacto del paciente ${payload?.nombre || payload?.dni}: Tel: ${tel} | Email: ${email}`
+      );
+    }
+    if (tipo === 'historia') {
+      enviarMensaje(`Trazabilidad completa DNI ${payload}`);
+    }
+    if (tipo === 'reprogramar') {
+      enviarMensaje(`¿Puede nueva cita DNI ${payload}?`);
+    }
+  };
+
+  // ── Envío de mensaje con detección de DNI y tarjeta enriquecida ─────────
   const enviarMensaje = async (texto) => {
     const msg = texto.trim();
     if (!msg || cargando) return;
@@ -234,15 +265,54 @@ export default function ChatbotTrazabilidad() {
     setInput('');
     setCargando(true);
 
+    // Detectar si el mensaje contiene un DNI de 8 dígitos
+    const dniMatch = msg.match(/\b(\d{8})\b/);
+
     try {
-      const data = await chatbotTrazabilidadService.chat(msg);
-      const respuesta = data?.respuesta || 'No se obtuvo respuesta del servidor.';
-      setMensajes(prev => [...prev, { id: idUsuario + 1, tipo: 'bot', texto: respuesta, hora: horaActual() }]);
+      // Ejecutar chatbot y tarjeta de paciente en paralelo (si hay DNI detectado)
+      const [chatResponse, cardData] = await Promise.allSettled([
+        chatbotTrazabilidadService.chat(msg),
+        dniMatch
+          ? chatbotTrazabilidadService.getPatientCard(dniMatch[1])
+          : Promise.reject('no dni'),
+      ]);
+
+      // Insertar tarjeta clínica ANTES de la respuesta de texto (solo si fue encontrado)
+      if (cardData.status === 'fulfilled' && cardData.value?.encontrado) {
+        setMensajes(prev => [
+          ...prev,
+          {
+            id: idUsuario + 1,
+            tipo: 'card',
+            data: cardData.value,
+            hora: horaActual(),
+          },
+        ]);
+      }
+
+      // Insertar respuesta del chatbot (siempre, independiente de la tarjeta)
+      if (chatResponse.status === 'fulfilled') {
+        const respuesta = chatResponse.value?.respuesta || 'No se obtuvo respuesta del servidor.';
+        setMensajes(prev => [
+          ...prev,
+          { id: idUsuario + 2, tipo: 'bot', texto: respuesta, hora: horaActual() },
+        ]);
+      } else {
+        setMensajes(prev => [
+          ...prev,
+          {
+            id: idUsuario + 2,
+            tipo: 'bot',
+            texto: 'Error al procesar la consulta. Verifica tu conexion o intenta de nuevo.',
+            hora: horaActual(),
+          },
+        ]);
+      }
     } catch (error) {
       setMensajes(prev => [
         ...prev,
         {
-          id: idUsuario + 1,
+          id: idUsuario + 2,
           tipo: 'bot',
           texto: 'Error al procesar la consulta. Verifica tu conexion o intenta de nuevo.',
           hora: horaActual(),
@@ -313,7 +383,21 @@ export default function ChatbotTrazabilidad() {
 
           {/* Mensajes */}
           <div className={`flex-1 overflow-y-auto bg-slate-50 ${expandido ? 'p-4 space-y-3' : 'p-3 space-y-2'}`}>
-            {mensajes.map((m) => (
+            {mensajes.map((m) => {
+              // ── Tarjeta clínica enriquecida ──────────────────────────────
+              if (m.tipo === 'card') {
+                return (
+                  <div key={m.id} className="flex justify-start w-full">
+                    <PatientRichCard
+                      data={m.data}
+                      onAction={(tipo, payload) => handleCardAction(tipo, payload)}
+                    />
+                  </div>
+                );
+              }
+
+              // ── Mensajes bot / usuario ───────────────────────────────────
+              return (
               <div
                 key={m.id}
                 className={`flex ${m.tipo === 'usuario' ? 'justify-end' : 'justify-start'}`}
@@ -322,7 +406,7 @@ export default function ChatbotTrazabilidad() {
                   <span className="mr-1.5 mt-1 shrink-0 text-base">🤖</span>
                 )}
                 <div
-                  className={`max-w-[85%] px-3 py-2 rounded-2xl text-sm leading-relaxed ${
+                  className={`${expandido ? 'max-w-[90%]' : 'max-w-[85%]'} px-3 py-2 rounded-2xl text-sm leading-relaxed ${
                     m.tipo === 'usuario'
                       ? 'bg-[#0A5BA9] text-white rounded-br-sm'
                       : 'bg-white text-slate-700 rounded-bl-sm shadow-sm border border-slate-100'
@@ -365,7 +449,8 @@ export default function ChatbotTrazabilidad() {
                   )}
                 </div>
               </div>
-            ))}
+              );
+            })}
 
             {/* Spinner mientras carga */}
             {cargando && (
