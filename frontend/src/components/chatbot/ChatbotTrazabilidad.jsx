@@ -1,10 +1,11 @@
 // ========================================================================
-// ChatbotTrazabilidad.jsx — Widget flotante de IA (v1.75.0)
+// ChatbotTrazabilidad.jsx — Widget flotante de IA (v1.75.1)
 // ========================================================================
 // Asistente de trazabilidad para personal interno CENATE.
 // Solo visible para roles en la lista blanca (no EXTERNO / INSTITUCION).
 // Sugerencias y bienvenida personalizadas por rol.
 // Posicionado fixed bottom-right, z-index 9000.
+// v1.75.1: Estado expandido (680x680) con timestamps y textarea más cómodo.
 // ========================================================================
 
 import React, { useState, useRef, useEffect } from 'react';
@@ -120,6 +121,11 @@ function getMensajeBienvenida(roles) {
   }
 }
 
+// Helper para obtener hora actual formateada
+function horaActual() {
+  return new Date().toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit' });
+}
+
 function BotAvatar() {
   return (
     <span className="text-lg select-none" role="img" aria-label="bot">🤖</span>
@@ -132,11 +138,13 @@ export default function ChatbotTrazabilidad() {
   const { isAuthenticated, user } = useAuth();
   const { pathname } = useLocation();
   const [abierto, setAbierto] = useState(false);
+  const [expandido, setExpandido] = useState(false);
   const [mensajes, setMensajes] = useState([
     {
       id: 0,
       tipo: 'bot',
       texto: 'Hola Soy el asistente de trazabilidad CENATE.\nPreguntame sobre pacientes, citas o usuarios del sistema.',
+      hora: horaActual(),
     },
   ]);
   const [input, setInput] = useState('');
@@ -148,7 +156,7 @@ export default function ChatbotTrazabilidad() {
   useEffect(() => {
     if (!user?.roles) return;
     const bienvenida = getMensajeBienvenida(user.roles);
-    setMensajes([{ id: 0, tipo: 'bot', texto: bienvenida }]);
+    setMensajes([{ id: 0, tipo: 'bot', texto: bienvenida, hora: horaActual() }]);
   }, [user?.roles]);
 
   // Solo mostrar para personal interno autenticado con acceso al chatbot, fuera de rutas públicas
@@ -170,19 +178,24 @@ export default function ChatbotTrazabilidad() {
 
   const sugerencias = getSugerenciasPorRol(user?.roles || []);
 
+  // Dimensiones dinámicas según estado de expansión
+  const panelStyle = expandido
+    ? { width: 680, height: 680, transition: 'width 0.3s ease, height 0.3s ease' }
+    : { width: 360, height: 500, transition: 'width 0.3s ease, height 0.3s ease' };
+
   const enviarMensaje = async (texto) => {
     const msg = texto.trim();
     if (!msg || cargando) return;
 
     const idUsuario = Date.now();
-    setMensajes(prev => [...prev, { id: idUsuario, tipo: 'usuario', texto: msg }]);
+    setMensajes(prev => [...prev, { id: idUsuario, tipo: 'usuario', texto: msg, hora: horaActual() }]);
     setInput('');
     setCargando(true);
 
     try {
       const data = await chatbotTrazabilidadService.chat(msg);
       const respuesta = data?.respuesta || 'No se obtuvo respuesta del servidor.';
-      setMensajes(prev => [...prev, { id: idUsuario + 1, tipo: 'bot', texto: respuesta }]);
+      setMensajes(prev => [...prev, { id: idUsuario + 1, tipo: 'bot', texto: respuesta, hora: horaActual() }]);
     } catch (error) {
       setMensajes(prev => [
         ...prev,
@@ -190,6 +203,7 @@ export default function ChatbotTrazabilidad() {
           id: idUsuario + 1,
           tipo: 'bot',
           texto: 'Error al procesar la consulta. Verifica tu conexion o intenta de nuevo.',
+          hora: horaActual(),
         },
       ]);
     } finally {
@@ -207,11 +221,11 @@ export default function ChatbotTrazabilidad() {
   return (
     <div className="fixed bottom-4 right-4 z-[9000] flex flex-col items-end">
 
-      {/* Panel expandido */}
+      {/* Panel de conversación */}
       {abierto && (
         <div
           className="mb-3 flex flex-col bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden"
-          style={{ width: 400, height: 520 }}
+          style={panelStyle}
         >
           {/* Header */}
           <div className="flex items-center justify-between px-4 py-3 bg-[#0A5BA9] text-white shrink-0">
@@ -222,17 +236,40 @@ export default function ChatbotTrazabilidad() {
                 <p className="text-xs text-blue-200 mt-0.5">Trazabilidad en tiempo real</p>
               </div>
             </div>
-            <button
-              onClick={() => setAbierto(false)}
-              className="text-white hover:text-blue-200 transition-colors text-xl leading-none"
-              aria-label="Cerrar chatbot"
-            >
-              ×
-            </button>
+            <div className="flex items-center gap-1">
+              {/* Botón expandir/contraer — va ANTES del botón × */}
+              <button
+                onClick={() => setExpandido(prev => !prev)}
+                className="text-white hover:text-blue-200 transition-colors mr-2 p-1 rounded"
+                aria-label={expandido ? 'Contraer' : 'Expandir'}
+                title={expandido ? 'Vista compacta' : 'Expandir conversación'}
+              >
+                {expandido ? (
+                  // Icono minimizar (dos flechas hacia adentro)
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 9L4 4m0 0h5m-5 0v5M15 9l5-5m0 0h-5m5 0v5M9 15l-5 5m0 0h5m-5 0v-5M15 15l5 5m0 0h-5m5 0v-5" />
+                  </svg>
+                ) : (
+                  // Icono expandir (dos flechas hacia afuera)
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
+                  </svg>
+                )}
+              </button>
+
+              {/* Botón cerrar */}
+              <button
+                onClick={() => setAbierto(false)}
+                className="text-white hover:text-blue-200 transition-colors text-xl leading-none"
+                aria-label="Cerrar chatbot"
+              >
+                ×
+              </button>
+            </div>
           </div>
 
           {/* Mensajes */}
-          <div className="flex-1 overflow-y-auto p-3 space-y-2 bg-slate-50">
+          <div className={`flex-1 overflow-y-auto bg-slate-50 ${expandido ? 'p-4 space-y-3' : 'p-3 space-y-2'}`}>
             {mensajes.map((m) => (
               <div
                 key={m.id}
@@ -276,6 +313,13 @@ export default function ChatbotTrazabilidad() {
                       {m.texto}
                     </ReactMarkdown>
                   )}
+
+                  {/* Timestamp — visible solo en estado expandido */}
+                  {expandido && m.hora && (
+                    <p className={`text-[10px] opacity-60 mt-1 ${m.tipo === 'usuario' ? 'text-right text-blue-100' : 'text-right text-slate-400'}`}>
+                      {m.hora}
+                    </p>
+                  )}
                 </div>
               </div>
             ))}
@@ -315,7 +359,7 @@ export default function ChatbotTrazabilidad() {
           <div className="flex items-end gap-2 px-3 py-2.5 bg-white border-t border-slate-200 shrink-0">
             <textarea
               ref={inputRef}
-              rows={1}
+              rows={expandido ? 2 : 1}
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
