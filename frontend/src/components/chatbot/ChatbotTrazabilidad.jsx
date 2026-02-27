@@ -428,7 +428,7 @@ export default function ChatbotTrazabilidad() {
       {/* Boton flotante — círculo azul oscuro con Cenatito flotando */}
       <button
         onClick={() => setAbierto(prev => !prev)}
-        className={`w-[72px] h-[72px] rounded-full flex items-center justify-center transition-all duration-300 hover:scale-105 active:scale-95 ${
+        className={`w-[90px] h-[90px] rounded-full flex items-center justify-center transition-all duration-300 hover:scale-105 active:scale-95 ${
           abierto ? 'bg-[#0A5BA9]' : 'bg-[#0A5BA9] cenatito-btn'
         }`}
         aria-label={abierto ? 'Cerrar asistente' : 'Abrir asistente CENATE'}
@@ -436,7 +436,7 @@ export default function ChatbotTrazabilidad() {
       >
         {abierto
           ? <span className="text-white text-3xl font-thin leading-none">×</span>
-          : <CenatitoBotAvatar size={52} float={true} />
+          : <CenatitoBotAvatar size={68} float={true} />
         }
       </button>
     </div>
