@@ -16,6 +16,7 @@ import { useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import chatbotTrazabilidadService from '../../services/chatbotTrazabilidadService';
 import PatientRichCard from './PatientRichCard';
+import HistorialTimelineCard from './HistorialTimelineCard';
 
 const RUTAS_PUBLICAS = ['/', '/login', '/crear-cuenta', '/cambiar-contrasena', '/unauthorized'];
 
@@ -252,7 +253,37 @@ export default function ChatbotTrazabilidad() {
       );
     }
     if (tipo === 'historia') {
-      enviarMensaje(`Trazabilidad completa DNI ${payload}`);
+      // Interceptar aquí: cargar la tarjeta de trazabilidad directamente
+      // sin enviar el mensaje por Claude (evita respuesta con barras |).
+      setCargando(true);
+      chatbotTrazabilidadService.getPatientCard(payload)
+        .then(data => {
+          if (data?.encontrado) {
+            setMensajes(prev => [...prev, {
+              id: Date.now(),
+              tipo: 'timeline',
+              data,
+              hora: horaActual(),
+            }]);
+          } else {
+            setMensajes(prev => [...prev, {
+              id: Date.now(),
+              tipo: 'bot',
+              texto: `No se encontraron registros históricos para DNI ${payload}.`,
+              hora: horaActual(),
+            }]);
+          }
+        })
+        .catch(() => {
+          setMensajes(prev => [...prev, {
+            id: Date.now(),
+            tipo: 'bot',
+            texto: 'Error al cargar el historial. Intenta de nuevo.',
+            hora: horaActual(),
+          }]);
+        })
+        .finally(() => setCargando(false));
+      return; // No enviar mensaje de texto por Claude
     }
     if (tipo === 'reprogramar') {
       enviarMensaje(`¿Puede nueva cita DNI ${payload}?`);
@@ -409,6 +440,30 @@ export default function ChatbotTrazabilidad() {
                     <PatientRichCard
                       data={m.data}
                       onAction={(tipo, payload) => handleCardAction(tipo, payload)}
+                    />
+                  </div>
+                );
+              }
+
+              // ── Timeline clínico completo (acción "Ver Historia") ────────
+              if (m.tipo === 'timeline') {
+                return (
+                  <div key={m.id} className="flex justify-start w-full">
+                    <HistorialTimelineCard
+                      data={m.data}
+                      onClose={() => {
+                        // Reemplazar el mensaje timeline por confirmación de bot
+                        setMensajes(prev => prev.map(msg =>
+                          msg.id === m.id
+                            ? {
+                                ...msg,
+                                tipo: 'bot',
+                                texto: `Historial de ${m.data?.paciente?.nombre || 'paciente'} cerrado.`,
+                                data: undefined,
+                              }
+                            : msg
+                        ));
+                      }}
                     />
                   </div>
                 );
