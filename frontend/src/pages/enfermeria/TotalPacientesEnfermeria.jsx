@@ -324,8 +324,7 @@ function DrawerEnfermera({ enfermera, fecha, turno, onClose, onReasignacionExito
       try {
         const data = await apiClient.get('/enfermeria/enfermeras', true);
         const lista = Array.isArray(data) ? data : [];
-        // Excluir la enfermera actual
-        setEnfermeras(lista.filter(e => String(e.idPersonal) !== String(enfermera.id_enfermera)));
+        setEnfermeras(lista);
       } catch (e) {
         console.error('Error cargando enfermeras:', e);
       }

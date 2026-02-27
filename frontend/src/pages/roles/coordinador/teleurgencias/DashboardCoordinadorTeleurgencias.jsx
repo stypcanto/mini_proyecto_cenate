@@ -317,7 +317,7 @@ function DrawerMedico({ medico, fecha, turno, onClose, onReasignacionExitosa }) 
       try {
         const data = await teleurgenciasService.medicos();
         const lista = Array.isArray(data) ? data : [];
-        setMedicos(lista.filter(m => String(m.idPersonal) !== String(medico.id_medico)));
+        setMedicos(lista);
       } catch (e) {
         console.error('Error cargando médicos:', e);
       }
