@@ -322,4 +322,83 @@ public class TrazabilidadTools {
             return "Error al buscar usuario: " + e.getMessage();
         }
     }
+
+    // ============================================================
+    // 🔍 BUSCAR PACIENTE POR NOMBRE
+    // ============================================================
+
+    @Tool(description = """
+            Busca pacientes en la bolsa por nombre o apellido (búsqueda parcial, insensible a mayúsculas).
+            Devuelve DNI, nombre completo, especialidad, estado y IPRESS de los registros encontrados.
+            Usar cuando no se conoce el DNI pero sí el nombre del paciente.
+            """)
+    public String buscarPacientePorNombre(String nombre) {
+        log.info("[Trazabilidad] buscarPacientePorNombre({})", nombre);
+        try {
+            List<DimBolsa> resultados = bolsaRepository.findAll().stream()
+                    .filter(b -> b.getPacienteNombre() != null &&
+                            b.getPacienteNombre().toLowerCase().contains(nombre.toLowerCase()))
+                    .limit(10)
+                    .collect(Collectors.toList());
+            if (resultados.isEmpty()) {
+                return "No se encontraron pacientes con nombre: " + nombre;
+            }
+            return "Encontrados " + resultados.size() + " registro(s):\n" +
+                    resultados.stream()
+                            .map(b -> String.format("DNI=%s | %s | %s | Estado=%s | IPRESS=%s",
+                                    b.getPacienteDni() != null ? b.getPacienteDni() : "N/A",
+                                    b.getPacienteNombre() != null ? b.getPacienteNombre() : "N/A",
+                                    b.getEspecialidadNombre() != null ? b.getEspecialidadNombre() : "N/A",
+                                    b.getEstado() != null ? b.getEstado() : "N/A",
+                                    b.getCodigoIpress() != null ? b.getCodigoIpress() : "N/A"))
+                            .collect(Collectors.joining("\n"));
+        } catch (Exception e) {
+            log.error("[Trazabilidad] Error buscarPacientePorNombre: {}", e.getMessage());
+            return "Error al buscar paciente: " + e.getMessage();
+        }
+    }
+
+    // ============================================================
+    // 📊 RESUMEN KPI SOLICITUDES POR ESTADO
+    // ============================================================
+
+    @Tool(description = """
+            Muestra un resumen/KPI de solicitudes en bolsa agrupadas por estado.
+            Devuelve conteos por estado (PENDIENTE, CITADO, ATENDIDO, DESERTOR, etc.).
+            Opcionalmente filtra por especialidad. Útil para coordinadores que quieren
+            ver el estado general de la bolsa o de una especialidad específica.
+            Pasar "TODAS" o null para ver todos los estados sin filtro de especialidad.
+            """)
+    public String resumenSolicitudesPorEstado(String especialidad) {
+        log.info("[Trazabilidad] resumenSolicitudesPorEstado({})", especialidad);
+        try {
+            List<DimBolsa> todas = bolsaRepository.findAll();
+            if (especialidad != null && !especialidad.isBlank() && !especialidad.equalsIgnoreCase("TODAS")) {
+                todas = todas.stream()
+                        .filter(b -> especialidad.equalsIgnoreCase(b.getEspecialidadNombre()))
+                        .collect(Collectors.toList());
+            }
+            if (todas.isEmpty()) {
+                return "No se encontraron solicitudes"
+                        + (especialidad != null && !especialidad.equalsIgnoreCase("TODAS")
+                                ? " para especialidad: " + especialidad : "")
+                        + ".";
+            }
+            String encabezado = especialidad != null && !especialidad.isBlank() && !especialidad.equalsIgnoreCase("TODAS")
+                    ? "=== KPI Solicitudes — " + especialidad.toUpperCase() + " ===\n"
+                    : "=== KPI General de Solicitudes ===\n";
+            String resumen = todas.stream()
+                    .collect(Collectors.groupingBy(
+                            b -> b.getEstado() != null ? b.getEstado() : "SIN ESTADO",
+                            Collectors.counting()))
+                    .entrySet().stream()
+                    .sorted((a, b2) -> Long.compare(b2.getValue(), a.getValue()))
+                    .map(e -> String.format("  %-20s : %d", e.getKey(), e.getValue()))
+                    .collect(Collectors.joining("\n"));
+            return encabezado + "Total registros: " + todas.size() + "\n" + resumen;
+        } catch (Exception e) {
+            log.error("[Trazabilidad] Error resumenSolicitudesPorEstado: {}", e.getMessage());
+            return "Error al obtener resumen: " + e.getMessage();
+        }
+    }
 }

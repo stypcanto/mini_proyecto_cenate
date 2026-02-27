@@ -1,23 +1,116 @@
 // ========================================================================
-// 🤖 ChatbotTrazabilidad.jsx — Widget flotante de IA (v1.70.0)
+// ChatbotTrazabilidad.jsx — Widget flotante de IA (v1.75.0)
 // ========================================================================
 // Asistente de trazabilidad para personal interno CENATE.
-// Solo visible para roles internos (no EXTERNO / INSTITUCION).
+// Solo visible para roles en la lista blanca (no EXTERNO / INSTITUCION).
+// Sugerencias y bienvenida personalizadas por rol.
 // Posicionado fixed bottom-right, z-index 9000.
 // ========================================================================
 
 import React, { useState, useRef, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import chatbotTrazabilidadService from '../../services/chatbotTrazabilidadService';
 
+const RUTAS_PUBLICAS = ['/', '/login', '/crear-cuenta', '/cambiar-contrasena', '/unauthorized'];
+
 // ── Helpers ──────────────────────────────────────────────────────────────
 
-function isRoleExterno(roles) {
+const ROLES_CON_CHATBOT = [
+  'SUPERADMIN', 'ADMINISTRADOR', 'COORDINADOR',
+  'COORDINADOR_GESTION_CITAS', 'GESTION_TERRITORIAL',
+  'MEDICO', 'ENFERMERIA', 'CITAS', 'ESTADISTICA',
+];
+
+function tieneChatbotAccess(roles) {
   if (!Array.isArray(roles)) return false;
   return roles.some(r => {
     const nombre = (typeof r === 'string' ? r : r?.authority || '').toUpperCase();
-    return nombre.includes('EXTERNO') || nombre.includes('INSTITUCION');
+    return ROLES_CON_CHATBOT.some(rol => nombre.includes(rol));
   });
+}
+
+function detectarRolPrincipal(roles) {
+  if (!Array.isArray(roles)) return 'DEFAULT';
+  for (const r of roles) {
+    const nombre = (typeof r === 'string' ? r : r?.authority || '').toUpperCase();
+    if (nombre.includes('SUPERADMIN') || nombre.includes('ADMINISTRADOR')) return 'ADMIN';
+    if (nombre.includes('COORDINADOR_GESTION_CITAS')) return 'COORDINADOR_GESTION_CITAS';
+    if (nombre.includes('COORDINADOR')) return 'COORDINADOR';
+    if (nombre.includes('MEDICO')) return 'MEDICO';
+    if (nombre.includes('GESTION_TERRITORIAL')) return 'GESTION_TERRITORIAL';
+    if (nombre.includes('ENFERMERIA')) return 'ENFERMERIA';
+    if (nombre.includes('CITAS')) return 'CITAS';
+    if (nombre.includes('ESTADISTICA')) return 'ESTADISTICA';
+  }
+  return 'DEFAULT';
+}
+
+function getSugerenciasPorRol(roles) {
+  const rol = detectarRolPrincipal(roles);
+  switch (rol) {
+    case 'ADMIN':
+      return [
+        'Buscar usuario admin',
+        'Buscar profesional SALINAS',
+        'Inconsistencias DNI 08643806',
+        'Trazabilidad DNI 08643806',
+      ];
+    case 'COORDINADOR':
+    case 'COORDINADOR_GESTION_CITAS':
+      return [
+        'Historial DNI 08643806',
+        '¿Puede nueva cita DNI 08643806?',
+        'Trazabilidad completa DNI 08643806',
+        'Inconsistencias DNI 08643806',
+      ];
+    case 'MEDICO':
+      return [
+        'Historial DNI 08643806',
+        '¿Tiene citas activas DNI 08643806?',
+        'Trazabilidad completa DNI 08643806',
+        'Buscar profesional por nombre',
+      ];
+    case 'GESTION_TERRITORIAL':
+      return [
+        'Buscar profesional GARCIA',
+        'Historial DNI 08643806',
+        'Inconsistencias DNI 08643806',
+        'Buscar usuario coordinador',
+      ];
+    case 'ENFERMERIA':
+    case 'CITAS':
+      return [
+        '¿Puede nueva cita DNI 08643806?',
+        'Historial DNI 08643806',
+        '¿Tiene solicitudes activas DNI 08643806?',
+        'Buscar profesional por nombre',
+      ];
+    default:
+      return [
+        'Historial DNI 08643806',
+        '¿Puede nueva cita DNI 08643806?',
+        'Buscar usuario',
+        'Inconsistencias DNI',
+      ];
+  }
+}
+
+function getMensajeBienvenida(roles) {
+  const rol = detectarRolPrincipal(roles);
+  switch (rol) {
+    case 'ADMIN':
+      return 'Hola Soy el asistente CENATE.\nPuedo buscar usuarios, profesionales, historial de pacientes e inconsistencias del sistema.';
+    case 'COORDINADOR':
+    case 'COORDINADOR_GESTION_CITAS':
+      return 'Hola Soy el asistente de trazabilidad CENATE.\nPuedo consultar historial de pacientes, verificar si pueden recibir nueva cita y detectar inconsistencias en la BD.';
+    case 'MEDICO':
+      return 'Hola Soy tu asistente CENATE.\nPuedo consultar el historial y trazabilidad de tus pacientes en la BD.';
+    case 'GESTION_TERRITORIAL':
+      return 'Hola Soy el asistente CENATE.\nPuedo buscar profesionales, historial de pacientes e inconsistencias en tu territorio.';
+    default:
+      return 'Hola Soy el asistente de trazabilidad CENATE.\nPreguntame sobre pacientes, citas o usuarios del sistema.';
+  }
 }
 
 function BotAvatar() {
@@ -30,12 +123,13 @@ function BotAvatar() {
 
 export default function ChatbotTrazabilidad() {
   const { isAuthenticated, user } = useAuth();
+  const { pathname } = useLocation();
   const [abierto, setAbierto] = useState(false);
   const [mensajes, setMensajes] = useState([
     {
       id: 0,
       tipo: 'bot',
-      texto: 'Hola 👋 Soy el asistente de trazabilidad CENATE.\nPregúntame sobre pacientes, citas, usuarios o problemas del sistema.',
+      texto: 'Hola Soy el asistente de trazabilidad CENATE.\nPreguntame sobre pacientes, citas o usuarios del sistema.',
     },
   ]);
   const [input, setInput] = useState('');
@@ -43,8 +137,16 @@ export default function ChatbotTrazabilidad() {
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
 
-  // Solo mostrar para personal interno autenticado
-  const esInterno = isAuthenticated && !isRoleExterno(user?.roles || []);
+  // Actualizar bienvenida cuando el usuario este disponible
+  useEffect(() => {
+    if (!user?.roles) return;
+    const bienvenida = getMensajeBienvenida(user.roles);
+    setMensajes([{ id: 0, tipo: 'bot', texto: bienvenida }]);
+  }, [user?.roles]);
+
+  // Solo mostrar para personal interno autenticado con acceso al chatbot, fuera de rutas públicas
+  const esRutaPublica = RUTAS_PUBLICAS.includes(pathname);
+  const esInterno = isAuthenticated && !esRutaPublica && tieneChatbotAccess(user?.roles || []);
 
   // Hooks deben ir antes de cualquier return condicional (Rules of Hooks)
   useEffect(() => {
@@ -58,6 +160,8 @@ export default function ChatbotTrazabilidad() {
   }, [abierto, esInterno]);
 
   if (!esInterno) return null;
+
+  const sugerencias = getSugerenciasPorRol(user?.roles || []);
 
   const enviarMensaje = async (texto) => {
     const msg = texto.trim();
@@ -78,7 +182,7 @@ export default function ChatbotTrazabilidad() {
         {
           id: idUsuario + 1,
           tipo: 'bot',
-          texto: '❌ Error al procesar la consulta. Verifica tu conexión o intenta de nuevo.',
+          texto: 'Error al procesar la consulta. Verifica tu conexion o intenta de nuevo.',
         },
       ]);
     } finally {
@@ -92,13 +196,6 @@ export default function ChatbotTrazabilidad() {
       enviarMensaje(input);
     }
   };
-
-  const sugerencias = [
-    '¿Qué roles existen?',
-    'Buscar usuario admin',
-    'DNI 08643806',
-    'Detectar inconsistencias',
-  ];
 
   return (
     <div className="fixed bottom-4 right-4 z-[9000] flex flex-col items-end">
@@ -165,7 +262,7 @@ export default function ChatbotTrazabilidad() {
             <div ref={messagesEndRef} />
           </div>
 
-          {/* Sugerencias rápidas (solo al inicio) */}
+          {/* Sugerencias rapidas (solo al inicio) */}
           {mensajes.length === 1 && !cargando && (
             <div className="px-3 py-2 flex flex-wrap gap-1.5 bg-white border-t border-slate-100 shrink-0">
               {sugerencias.map((s) => (
@@ -207,7 +304,7 @@ export default function ChatbotTrazabilidad() {
         </div>
       )}
 
-      {/* Botón flotante */}
+      {/* Boton flotante */}
       <button
         onClick={() => setAbierto(prev => !prev)}
         className={`w-14 h-14 rounded-full shadow-lg flex items-center justify-center text-2xl transition-all duration-200 hover:scale-110 active:scale-95 ${
