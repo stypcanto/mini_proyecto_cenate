@@ -5,8 +5,26 @@
 // ========================================================================
 
 import React, { useEffect, useState } from 'react';
-import { X, Cake, User } from 'lucide-react';
+import { X, Gift, User } from 'lucide-react';
 import apiClient from '../lib/apiClient';
+
+function AvatarNotif({ fotoUrl, nombre }) {
+  const [imgError, setImgError] = useState(false);
+  return (
+    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-pink-400 to-purple-500 flex items-center justify-center flex-shrink-0 ring-2 ring-white shadow-sm">
+      {fotoUrl && !imgError ? (
+        <img
+          src={fotoUrl}
+          alt={nombre}
+          className="w-full h-full rounded-full object-cover"
+          onError={() => setImgError(true)}
+        />
+      ) : (
+        <User className="w-5 h-5 text-white" />
+      )}
+    </div>
+  );
+}
 
 export default function NotificacionesPanel({ isOpen, onClose, esSuperAdmin = false }) {
   const [notificaciones, setNotificaciones] = useState([]);
@@ -54,7 +72,7 @@ export default function NotificacionesPanel({ isOpen, onClose, esSuperAdmin = fa
         {/* Header del panel */}
         <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-slate-700 bg-gradient-to-r from-[#0a5ba9] to-[#1C5B36]">
           <div className="flex items-center gap-2">
-            <Cake className="w-5 h-5 text-white" />
+            <Gift className="w-5 h-5 text-white" />
             <h3 className="text-lg font-bold text-white">Cumpleaños de Hoy</h3>
           </div>
           <button
@@ -73,7 +91,7 @@ export default function NotificacionesPanel({ isOpen, onClose, esSuperAdmin = fa
             </div>
           ) : notificaciones.length === 0 ? (
             <div className="p-8 text-center text-gray-500 dark:text-gray-400">
-              <Cake className="w-12 h-12 mx-auto mb-3 opacity-50" />
+              <Gift className="w-12 h-12 mx-auto mb-3 opacity-50" />
               <p className="text-sm">No hay cumpleaños hoy</p>
             </div>
           ) : (
@@ -84,17 +102,7 @@ export default function NotificacionesPanel({ isOpen, onClose, esSuperAdmin = fa
                   className="px-4 py-3 hover:bg-blue-50/50 dark:hover:bg-slate-700/50 transition-colors flex items-center gap-3"
                 >
                   {/* Avatar */}
-                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-pink-400 to-purple-500 flex items-center justify-center flex-shrink-0 ring-2 ring-white shadow-sm">
-                    {notif.foto_url ? (
-                      <img
-                        src={notif.foto_url}
-                        alt={notif.nombre_completo}
-                        className="w-full h-full rounded-full object-cover"
-                      />
-                    ) : (
-                      <User className="w-5 h-5 text-white" />
-                    )}
-                  </div>
+                  <AvatarNotif fotoUrl={notif.foto_url} nombre={notif.nombre_completo} />
 
                   {/* Nombre + profesión */}
                   <div className="flex-1 min-w-0">
@@ -108,7 +116,6 @@ export default function NotificacionesPanel({ isOpen, onClose, esSuperAdmin = fa
                     </p>
                   </div>
 
-                  <span className="text-lg flex-shrink-0">🎂</span>
                 </div>
               ))}
             </div>
