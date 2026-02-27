@@ -1806,6 +1806,7 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
         WHERE UPPER(recita.tipo_cita) IN ('RECITA','INTERCONSULTA')
           AND recita.activo = true
           AND recita.id_bolsa = 11
+          AND UPPER(COALESCE(orig_d.especialidad, orig_t.especialidad, '')) = 'ENFERMERIA'
           AND (:busqueda    IS NULL OR recita.paciente_dni    ILIKE '%' || :busqueda || '%'
                                    OR recita.paciente_nombre  ILIKE '%' || :busqueda || '%')
           AND (:fechaInicio IS NULL OR recita.fecha_preferida_no_atendida >= CAST(:fechaInicio AS date))
@@ -1878,6 +1879,7 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
         LEFT JOIN atencion_clinica ac_fk ON ac_fk.id_atencion = recita.id_atencion_clinica
         WHERE UPPER(recita.tipo_cita) IN ('RECITA','INTERCONSULTA')
           AND recita.activo = true AND recita.id_bolsa = 11
+          AND UPPER(COALESCE(orig_d.especialidad, orig_t.especialidad, '')) = 'ENFERMERIA'
           AND (:busqueda    IS NULL OR recita.paciente_dni    ILIKE '%' || :busqueda    || '%'
                                    OR recita.paciente_nombre  ILIKE '%' || :busqueda    || '%')
           AND (:fechaInicio IS NULL OR recita.fecha_preferida_no_atendida >= CAST(:fechaInicio AS date))
@@ -1939,6 +1941,7 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
         WHERE UPPER(recita.tipo_cita) IN ('RECITA','INTERCONSULTA')
           AND recita.activo = true
           AND recita.id_bolsa = 11
+          AND UPPER(COALESCE(orig_d.especialidad, orig_t.especialidad, '')) = 'ENFERMERIA'
           AND COALESCE(recita.id_personal, orig_d.id_personal, orig_t.id_personal, orig_ac.id_personal) IS NOT NULL
         GROUP BY COALESCE(recita.id_personal, orig_d.id_personal, orig_t.id_personal, orig_ac.id_personal),
                  pc.ape_pater_pers, pc.ape_mater_pers, pc.nom_pers
@@ -1980,6 +1983,7 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
         WHERE UPPER(recita.tipo_cita) IN ('RECITA','INTERCONSULTA')
           AND recita.activo = true
           AND recita.id_bolsa = 11
+          AND UPPER(COALESCE(orig_d.especialidad, orig_t.especialidad, '')) = 'ENFERMERIA'
         """, nativeQuery = true)
     Map<String, Object> kpisTrazabilidad();
 
@@ -1988,9 +1992,12 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
         SELECT recita.fecha_preferida_no_atendida AS fecha,
                COUNT(*) AS total
         FROM dim_solicitud_bolsa recita
+        LEFT JOIN dim_solicitud_bolsa orig_d
+               ON orig_d.id_solicitud = recita.idsolicitudgeneracion
         WHERE UPPER(recita.tipo_cita) IN ('RECITA','INTERCONSULTA')
           AND recita.activo = true
           AND recita.id_bolsa = 11
+          AND UPPER(COALESCE(orig_d.especialidad, '')) = 'ENFERMERIA'
           AND recita.fecha_preferida_no_atendida IS NOT NULL
         GROUP BY recita.fecha_preferida_no_atendida
         ORDER BY fecha DESC
@@ -2014,14 +2021,14 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
 
     /** Motivos de INTERCONSULTA (texto entre paréntesis en especialidad_destino) con conteo. */
     @Query(value = """
-        SELECT SUBSTRING(recita.especialidad FROM '\\\\(([^)]+)\\\\)') AS valor,
+        SELECT SUBSTRING(recita.especialidad FROM '\\(([^)]+)\\)') AS valor,
                COUNT(*) AS total
         FROM   dim_solicitud_bolsa recita
         WHERE  UPPER(recita.tipo_cita) = 'INTERCONSULTA'
           AND  recita.activo = true
           AND  recita.id_bolsa = 11
           AND  recita.especialidad IS NOT NULL
-          AND  SUBSTRING(recita.especialidad FROM '\\\\(([^)]+)\\\\)') IS NOT NULL
+          AND  SUBSTRING(recita.especialidad FROM '\\(([^)]+)\\)') IS NOT NULL
         GROUP BY valor
         ORDER BY total DESC, valor ASC
         """, nativeQuery = true)
