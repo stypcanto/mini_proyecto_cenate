@@ -141,7 +141,9 @@ public interface PersonalCntRepository extends JpaRepository<PersonalCnt, Long> 
 		"LEFT JOIN p.profesiones ppRef " +
 		"LEFT JOIN ppRef.profesion pf " +
 		"WHERE " +
-		"  (:busqueda IS NULL OR LOWER(COALESCE(p.numDocPers,'')) LIKE CONCAT('%', LOWER(COALESCE(CAST(:busqueda AS String), '')), '%')) " +
+		"  (:busqueda IS NULL OR " +
+		"     LOWER(COALESCE(p.numDocPers,'')) LIKE CONCAT('%', LOWER(COALESCE(CAST(:busqueda AS String), '')), '%') OR " +
+		"     LOWER(CONCAT(COALESCE(p.nomPers,''), ' ', COALESCE(p.apePaterPers,''), ' ', COALESCE(p.apeMaterPers,''))) LIKE CONCAT('%', LOWER(COALESCE(CAST(:busqueda AS String), '')), '%')) " +
 		"  AND (:rol IS NULL OR LOWER(r.descRol) = LOWER(COALESCE(CAST(:rol AS String), ''))) " +
 		"  AND (:statPers IS NULL OR p.statPers = :statPers) " +
 		"  AND (:descArea IS NULL OR LOWER(COALESCE(a.descArea,'')) LIKE CONCAT('%', LOWER(COALESCE(CAST(:descArea AS String), '')), '%')) " +
@@ -165,7 +167,9 @@ public interface PersonalCntRepository extends JpaRepository<PersonalCnt, Long> 
 		"LEFT JOIN p.profesiones ppRef " +
 		"LEFT JOIN ppRef.profesion pf " +
 		"WHERE " +
-		"  (:busqueda IS NULL OR LOWER(COALESCE(p.numDocPers,'')) LIKE CONCAT('%', LOWER(COALESCE(CAST(:busqueda AS String), '')), '%')) " +
+		"  (:busqueda IS NULL OR " +
+		"     LOWER(COALESCE(p.numDocPers,'')) LIKE CONCAT('%', LOWER(COALESCE(CAST(:busqueda AS String), '')), '%') OR " +
+		"     LOWER(CONCAT(COALESCE(p.nomPers,''), ' ', COALESCE(p.apePaterPers,''), ' ', COALESCE(p.apeMaterPers,''))) LIKE CONCAT('%', LOWER(COALESCE(CAST(:busqueda AS String), '')), '%')) " +
 		"  AND (:rol IS NULL OR LOWER(r.descRol) = LOWER(COALESCE(CAST(:rol AS String), ''))) " +
 		"  AND (:statPers IS NULL OR p.statPers = :statPers) " +
 		"  AND (:descArea IS NULL OR LOWER(COALESCE(a.descArea,'')) LIKE CONCAT('%', LOWER(COALESCE(CAST(:descArea AS String), '')), '%')) " +

@@ -46,7 +46,7 @@ const FiltersPanel = ({ filters, setFilters, searchTerm, setSearchTerm, onNewUse
   // Obtener filtros activos con sus valores para mostrar badges
   const activeFiltersList = useMemo(() => {
     const list = [];
-    if (searchTerm) list.push({ key: 'search', label: 'DNI/CE', value: searchTerm });
+    if (searchTerm) list.push({ key: 'search', label: 'DNI/Nombre', value: searchTerm });
     if (filters.rol) list.push({ key: 'rol', label: 'Rol', value: filters.rol });
     if (filters.institucion) list.push({ key: 'institucion', label: 'Tipo', value: filters.institucion });
     if (filters.estado) list.push({ key: 'estado', label: 'Estado', value: filters.estado });
@@ -262,16 +262,14 @@ const FiltersPanel = ({ filters, setFilters, searchTerm, setSearchTerm, onNewUse
                     <div className="relative bg-white rounded-lg p-3 border-2 border-gray-200 hover:border-blue-400 transition-all duration-300 shadow-sm hover:shadow-md h-full">
                       <label className="block mb-2 text-xs font-bold text-gray-700 uppercase tracking-wider flex items-center gap-1.5">
                         <Search className="w-3.5 h-3.5 text-blue-500" strokeWidth={2.5} />
-                        DNI / CE
+                        DNI / Nombre
                       </label>
                       <div className="relative">
                         <input
                           type="text"
-                          inputMode="numeric"
-                          placeholder="Nro. documento..."
+                          placeholder="DNI o nombre..."
                           value={searchTerm}
-                          onChange={(e) => setSearchTerm(e.target.value.replace(/\D/g, ''))}
-                          maxLength={12}
+                          onChange={(e) => setSearchTerm(e.target.value)}
                           className="w-full pl-2 pr-6 py-1.5 bg-gray-50 border border-gray-300 rounded-lg text-xs text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
                         />
                         {searchTerm && (
