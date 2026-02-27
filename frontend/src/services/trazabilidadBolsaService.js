@@ -1,4 +1,4 @@
-import apiClient from './apiClient';
+import { apiClient } from '../lib/apiClient';
 
 /**
  * v1.75.0: Servicio para el timeline de trazabilidad de solicitudes de bolsa.
