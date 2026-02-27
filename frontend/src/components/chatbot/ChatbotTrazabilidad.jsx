@@ -275,8 +275,8 @@ export default function ChatbotTrazabilidad() {
             <div className="flex items-center gap-2">
               <BotAvatar />
               <div>
-                <p className="font-semibold text-sm leading-none">Asistente CENATE</p>
-                <p className="text-xs text-blue-200 mt-0.5">Trazabilidad en tiempo real</p>
+                <p className="font-bold text-sm leading-none">Cenatito Bot</p>
+                <p className="text-xs text-blue-200 mt-0.5">Tu asistente de trazabilidad CENATE</p>
               </div>
             </div>
             <div className="flex items-center gap-1">
