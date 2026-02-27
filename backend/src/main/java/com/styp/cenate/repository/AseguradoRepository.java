@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import org.springframework.transaction.annotation.Transactional;
 import com.styp.cenate.model.Asegurado;
 
 import java.util.List;
@@ -33,6 +34,7 @@ public interface AseguradoRepository extends JpaRepository<Asegurado, String> {
      * manteniendo ambas tablas (asegurados y paciente_estrategia) consistentes.
      */
     @Modifying
+    @Transactional
     @Query(value = "UPDATE asegurados SET paciente_cronico = :valor WHERE doc_paciente = :docPaciente", nativeQuery = true)
     int actualizarPacienteCronico(@Param("docPaciente") String docPaciente, @Param("valor") boolean valor);
 }
