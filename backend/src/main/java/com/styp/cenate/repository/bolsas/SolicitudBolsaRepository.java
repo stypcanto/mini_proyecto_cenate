@@ -470,7 +470,7 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
           AND (CAST(:fechaFin    AS VARCHAR) IS NULL OR DATE(sb.fecha_cambio_estado) <= CAST(:fechaFin AS DATE))
           AND (:gestoraId IS NULL OR sb.responsable_gestora_id = :gestoraId)
           AND (CAST(:estadoBolsa AS VARCHAR) IS NULL OR UPPER(COALESCE(sb.estado,'')) = UPPER(CAST(:estadoBolsa AS VARCHAR)))
-        GROUP BY dgc.cod_estado_cita, dgc.id_estado_cita
+        GROUP BY COALESCE(dgc.cod_estado_cita, 'PENDIENTE_CITA')
 
         UNION ALL
 
