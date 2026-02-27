@@ -129,17 +129,17 @@ function horaActual() {
 // ── Estilos animación flotante ────────────────────────────────────────────
 const CENATITO_STYLES = `
   @keyframes cenatito-float {
-    0%   { transform: translateY(0px);   }
-    50%  { transform: translateY(-7px);  }
-    100% { transform: translateY(0px);   }
+    0%   { transform: translateY(0px);  }
+    50%  { transform: translateY(-6px); }
+    100% { transform: translateY(0px);  }
   }
   @keyframes cenatito-glow {
-    0%   { box-shadow: 0 0 12px 2px rgba(59,130,246,0.5), 0 4px 20px rgba(10,91,169,0.4); }
-    50%  { box-shadow: 0 0 22px 6px rgba(99,179,237,0.7), 0 8px 28px rgba(10,91,169,0.6); }
-    100% { box-shadow: 0 0 12px 2px rgba(59,130,246,0.5), 0 4px 20px rgba(10,91,169,0.4); }
+    0%   { box-shadow: 0 0 10px 2px rgba(10,91,169,0.4), 0 4px 16px rgba(10,91,169,0.3); }
+    50%  { box-shadow: 0 0 20px 5px rgba(10,91,169,0.6), 0 8px 24px rgba(10,91,169,0.5); }
+    100% { box-shadow: 0 0 10px 2px rgba(10,91,169,0.4), 0 4px 16px rgba(10,91,169,0.3); }
   }
-  .cenatito-float { animation: cenatito-float 2.4s ease-in-out infinite; }
-  .cenatito-btn   { animation: cenatito-glow  2.4s ease-in-out infinite; }
+  .cenatito-float { animation: cenatito-float 3.5s ease-in-out infinite; }
+  .cenatito-btn   { animation: cenatito-glow  3.5s ease-in-out infinite; }
 `;
 
 // ── Avatar animado Cenatito ───────────────────────────────────────────────
@@ -429,7 +429,7 @@ export default function ChatbotTrazabilidad() {
       <button
         onClick={() => setAbierto(prev => !prev)}
         className={`w-[72px] h-[72px] rounded-full flex items-center justify-center transition-all duration-300 hover:scale-105 active:scale-95 ${
-          abierto ? 'bg-[#0d1b3e]' : 'bg-[#0d1b3e] cenatito-btn'
+          abierto ? 'bg-[#0A5BA9]' : 'bg-[#0A5BA9] cenatito-btn'
         }`}
         aria-label={abierto ? 'Cerrar asistente' : 'Abrir asistente CENATE'}
         title="Asistente de Trazabilidad CENATE"
