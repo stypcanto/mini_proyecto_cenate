@@ -476,7 +476,7 @@ export default function TrazabilidadRecitasInterconsultas() {
     if (isFirstLoad.current) { isFirstLoad.current = false; return; }
     setCurrentPage(1);
     cargar(1);
-  }, [filtroFechaInicio, filtroFechaFin, filtroTipo, searchTerm, filtroEnfermera, sortDir, filtroEspecialidad, filtroMotivoInterconsulta, filtroEstadoBolsa, filtroCreadoPor]); // eslint-disable-line
+  }, [filtroFechaInicio, filtroFechaFin, filtroTipo, searchTerm, filtroEnfermera, sortDir, sortField, filtroEspecialidad, filtroMotivoInterconsulta, filtroEstadoBolsa, filtroCreadoPor]); // eslint-disable-line
 
   useEffect(() => {
     if (currentPage > 1) cargar(currentPage);
@@ -498,7 +498,8 @@ export default function TrazabilidadRecitasInterconsultas() {
       if (filtroMotivoInterconsulta.trim()) p.set('motivoInterconsulta', filtroMotivoInterconsulta.trim());
       if (filtroEstadoBolsa.trim())     p.set('estadoBolsa',          filtroEstadoBolsa.trim());
       if (filtroCreadoPor.trim())       p.set('creadoPor',            filtroCreadoPor.trim());
-      p.set('sortDir', sortDir);
+      p.set('sortDir',   sortDir);
+      p.set('sortField', sortField);
 
       console.log('📤 Enviando request a endpoint:', `${API_BASE}/bolsas/solicitudes/trazabilidad-recitas`);
       console.log('📋 Parámetros:', Object.fromEntries(p));
@@ -527,7 +528,7 @@ export default function TrazabilidadRecitasInterconsultas() {
     } finally {
       if (isMountedRef.current) setIsLoading(false);
     }
-  }, [searchTerm, filtroFechaInicio, filtroFechaFin, filtroTipo, filtroEnfermera, sortDir, filtroEspecialidad, filtroMotivoInterconsulta, filtroEstadoBolsa, filtroCreadoPor]); // eslint-disable-line
+  }, [searchTerm, filtroFechaInicio, filtroFechaFin, filtroTipo, filtroEnfermera, sortDir, sortField, filtroEspecialidad, filtroMotivoInterconsulta, filtroEstadoBolsa, filtroCreadoPor]); // eslint-disable-line
 
   const limpiarFiltros = () => {
     setSearchTerm('');
@@ -540,6 +541,33 @@ export default function TrazabilidadRecitasInterconsultas() {
     setFiltroEstadoBolsa('');
     setFiltroCreadoPor('');
   };
+
+  // ─── Columnas de la tabla con configuración de sort ───────────────────────
+  const COLUMNAS = [
+    { label: 'F. Generación',              field: 'fechaSolicitud',  sortable: true  },
+    { label: 'Tipo',                       field: 'tipoCita',        sortable: true  },
+    { label: 'Paciente',                   field: 'pacienteNombre',  sortable: true  },
+    { label: 'DNI',                        field: 'pacienteDni',     sortable: true  },
+    { label: 'Especialidad',               field: 'especialidad',    sortable: true  },
+    { label: 'Motivo interconsulta',       field: null,              sortable: false },
+    { label: 'Origen bolsa',               field: 'origenBolsa',     sortable: true  },
+    { label: 'Estado de Bolsa',            field: 'estadoBolsa',     sortable: true  },
+    { label: 'Fecha preferida',            field: 'fechaPreferida',  sortable: true  },
+    { label: 'Creado por',                 field: 'medicoCreador',   sortable: true  },
+    { label: 'Estado',                     field: null,              sortable: false },
+    { label: 'Estado de Personal Asist.', field: 'condicionMedica', sortable: true  },
+  ];
+
+  function handleSort(field) {
+    if (!field) return;
+    if (sortField === field) {
+      setSortDir(d => d === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortDir('desc');
+    }
+    setCurrentPage(1);
+  }
 
   const guardarFechaPreferida = async (idSolicitud, fecha) => {
     try {
@@ -803,24 +831,31 @@ export default function TrazabilidadRecitasInterconsultas() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="bg-[#0a5ba9] text-white">
-                  {/* F. Generación — ordenable */}
-                  <th
-                    className="px-3 py-2.5 text-left text-xs font-semibold whitespace-nowrap cursor-pointer select-none hover:bg-[#0d4e90] transition-colors"
-                    onClick={() => { setSortDir(d => d === 'desc' ? 'asc' : 'desc'); setCurrentPage(1); }}
-                    title={sortDir === 'desc' ? 'Ordenado: más reciente primero — clic para invertir' : 'Ordenado: más antiguo primero — clic para invertir'}
-                  >
-                    <span className="flex items-center gap-1">
-                      F. Generación
-                      {sortDir === 'desc'
-                        ? <ChevronDown size={13} className="opacity-90" />
-                        : <ChevronUp   size={13} className="opacity-90" />}
-                    </span>
-                  </th>
-                  {['Tipo', 'Paciente', 'DNI', 'Especialidad', 'Motivo interconsulta', 'Origen bolsa', 'Estado de Bolsa', 'Fecha preferida', 'Creado por', 'Estado', 'Estado de Personal Asistencial'].map(h => (
-                    <th key={h} className="px-3 py-2.5 text-left text-xs font-semibold whitespace-nowrap">
-                      {h}
-                    </th>
-                  ))}
+                  {COLUMNAS.map(({ label, field, sortable }) => {
+                    const activo = sortable && field === sortField;
+                    return (
+                      <th
+                        key={label}
+                        onClick={() => sortable && handleSort(field)}
+                        title={sortable ? (activo ? `Ordenado por ${label} — clic para invertir` : `Ordenar por ${label}`) : undefined}
+                        className={[
+                          'px-3 py-2.5 text-left text-xs font-semibold whitespace-nowrap select-none transition-colors',
+                          sortable ? 'cursor-pointer hover:bg-[#0d4e90]' : 'cursor-default',
+                        ].join(' ')}
+                      >
+                        <span className="flex items-center gap-1">
+                          {label}
+                          {sortable && (
+                            activo
+                              ? sortDir === 'asc'
+                                ? <ChevronUp   size={12} className="opacity-90 shrink-0" />
+                                : <ChevronDown size={12} className="opacity-90 shrink-0" />
+                              : <ArrowUpDown  size={11} className="opacity-40 shrink-0" />
+                          )}
+                        </span>
+                      </th>
+                    );
+                  })}
                 </tr>
               </thead>
               <tbody>
