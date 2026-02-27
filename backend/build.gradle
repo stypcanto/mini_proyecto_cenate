@@ -22,7 +22,7 @@ java {
     }
 }
 
-// 🤖 Excluir módulo Spring AI (diseño sin dependencias aún)
+// 🤖 Excluir módulo Spring AI legacy (no borrar - rutas antiguas reservadas)
 sourceSets {
     main {
         java {
@@ -33,6 +33,17 @@ sourceSets {
 
 repositories {
     mavenCentral()
+    maven { url 'https://repo.spring.io/milestone' }
+    maven { url 'https://repo.spring.io/snapshot' }
+}
+
+/* ================================================================
+   🤖 SPRING AI - BOM (v1.70.0 Chatbot Trazabilidad)
+   ================================================================ */
+dependencyManagement {
+    imports {
+        mavenBom "org.springframework.ai:spring-ai-bom:1.0.0"
+    }
 }
 
 configurations {
@@ -108,6 +119,10 @@ dependencies {
     annotationProcessor 'org.projectlombok:lombok:1.18.34'
     testCompileOnly 'org.projectlombok:lombok:1.18.34'
     testAnnotationProcessor 'org.projectlombok:lombok:1.18.34'
+
+    // 🤖 SPRING AI - Chatbot Trazabilidad (v1.70.0)
+    // Nota: en Spring AI 1.0.0 GA el starter de Anthropic se llama spring-ai-starter-model-anthropic
+    implementation 'org.springframework.ai:spring-ai-starter-model-anthropic:1.0.0'
 
     // 🔹 TESTING
     testImplementation 'org.springframework.boot:spring-boot-starter-test'

@@ -135,10 +135,12 @@ public class SecurityConfig {
                                                 // =====================================================
                                                 // ENDPOINTS DE CITA (POST/PUT) -Inicio CHATBOT WEB
                                                 // =====================================================
+                                                // 🔒 v1.70.0 Chatbot Trazabilidad — requiere JWT (solo personal interno)
+                                                .requestMatchers("/api/v1/chatbot/trazabilidad/**").authenticated()
                                                 .requestMatchers("/api/v1/chatbot/**").permitAll()
 
                                                 // =====================================================
-                                                // ENDPOINTS DE CITA (POST/PUT) -Inicio CHATBOT WEB
+                                                // ENDPOINTS DE CITA (POST/PUT) -Fin CHATBOT WEB
                                                 // =====================================================
 
                                                 // =====================================================

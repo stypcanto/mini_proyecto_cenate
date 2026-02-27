@@ -34,6 +34,9 @@ import Unauthorized from "./pages/Unauthorized";
 // TEST (temporal - será removido)
 import TestUsuarios from "./pages/TestUsuarios";
 
+// 🤖 v1.70.0: Chatbot de Trazabilidad CENATE (solo personal interno)
+import ChatbotTrazabilidad from "./components/chatbot/ChatbotTrazabilidad";
+
 
 // ========================================================================
 // 🧩 Layout protegido – aplica AppLayout solo una vez
@@ -151,6 +154,9 @@ export default function App() {
 
             {/* 🚏 Sistema de rutas MBAC */}
             <AppRoutes />
+
+            {/* 🤖 v1.70.0: Widget flotante Chatbot Trazabilidad (solo roles internos) */}
+            <ChatbotTrazabilidad />
             </ToastProvider>
           </PermisosProvider>
         </SidebarProvider>
