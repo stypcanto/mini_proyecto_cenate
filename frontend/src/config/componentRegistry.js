@@ -214,6 +214,11 @@ export const componentRegistry = {
     requiredAction: 'ver',
   },
 
+  '/roles/coordinador/gestion-coordinacion-medica': {
+    component: lazy(() => import('../pages/roles/coordinador/GestionCoordinacionMedica')),
+    requiredAction: 'ver',
+  },
+
   '/roles/coordinador/dashboard-medico': {
     component: lazy(() => import('../pages/roles/coordinador/dashboard-medico/DashboardCoordinadorMedico')),
     requiredAction: 'ver',
