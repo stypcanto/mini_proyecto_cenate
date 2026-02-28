@@ -1103,20 +1103,28 @@ public class TicketMesaAyudaService {
         // Generar número de solicitud único
         String numeroSolicitud = String.format("MESA-%d-%d", ticketId, System.currentTimeMillis());
 
-        // Resolver IPRESS desde asegurado (cas_adscripcion → dim_ipress)
+        // Resolver pk_asegurado e IPRESS desde asegurado
         Long idIpressResuelto = null;
         String codigoIpressResuelto = null;
+        String pkAseguradoResuelto = null;
+
+        Optional<Asegurado> aseguradoOpt = aseguradoRepository.findByDocPaciente(dniPaciente);
+        if (aseguradoOpt.isEmpty()) {
+            throw new IllegalArgumentException(
+                "No se encontró el asegurado con DNI " + dniPaciente + " en la base de datos. " +
+                "El paciente debe estar registrado en el sistema para ser enviado a la bolsa.");
+        }
+        Asegurado asegurado = aseguradoOpt.get();
+        pkAseguradoResuelto = asegurado.getPkAsegurado();
+
         try {
-            Optional<Asegurado> aseguradoOpt = aseguradoRepository.findByDocPaciente(dniPaciente);
-            if (aseguradoOpt.isPresent()) {
-                String casAdscripcion = aseguradoOpt.get().getCasAdscripcion();
-                if (casAdscripcion != null && !casAdscripcion.isBlank()) {
-                    codigoIpressResuelto = casAdscripcion;
-                    Optional<Ipress> ipressOpt = ipressRepository.findByCodIpress(casAdscripcion);
-                    if (ipressOpt.isPresent()) {
-                        idIpressResuelto = ipressOpt.get().getIdIpress();
-                        log.info("✅ IPRESS resuelta para DNI {}: {} (id={})", dniPaciente, casAdscripcion, idIpressResuelto);
-                    }
+            String casAdscripcion = asegurado.getCasAdscripcion();
+            if (casAdscripcion != null && !casAdscripcion.isBlank()) {
+                codigoIpressResuelto = casAdscripcion;
+                Optional<Ipress> ipressOpt = ipressRepository.findByCodIpress(casAdscripcion);
+                if (ipressOpt.isPresent()) {
+                    idIpressResuelto = ipressOpt.get().getIdIpress();
+                    log.info("✅ IPRESS resuelta para DNI {}: {} (id={})", dniPaciente, casAdscripcion, idIpressResuelto);
                 }
             }
         } catch (Exception e) {
@@ -1125,7 +1133,7 @@ public class TicketMesaAyudaService {
 
         SolicitudBolsa solicitud = SolicitudBolsa.builder()
             .numeroSolicitud(numeroSolicitud)
-            .pacienteId(dniPaciente)
+            .pacienteId(pkAseguradoResuelto)
             .pacienteDni(dniPaciente)
             .pacienteNombre(ticket.getNombrePaciente() != null ? ticket.getNombrePaciente() : "SIN NOMBRE")
             .especialidad(ticket.getEspecialidad())
