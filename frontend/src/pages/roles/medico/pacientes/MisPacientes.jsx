@@ -2376,11 +2376,10 @@ export default function MisPacientes() {
                 fechaSeleccionada={fechaSeleccionadaCalendario}
                 onFechaChange={(fecha) => {
                   setFechaSeleccionadaCalendario(fecha);
-                  if (fecha) {
-                    setFiltroRangoFecha('personalizado');
-                  } else {
-                    setFiltroRangoFecha('todos');
-                  }
+                  // ✅ v1.81.2: NO forzar 'personalizado' al seleccionar fecha del calendario
+                  // El filtro de fecha lo maneja fechaSeleccionadaCalendario via fechaAtencion
+                  // Forzar 'personalizado' excluía pacientes sin fechaAsignacion (bug)
+                  if (!fecha) setFiltroRangoFecha('todos');
                 }}
                 fechasConAsignaciones={fechasConAsignaciones}
               />
@@ -2662,13 +2661,10 @@ export default function MisPacientes() {
                 fechaSeleccionada={fechaSeleccionadaCalendario}
                 onFechaChange={(fecha) => {
                   setFechaSeleccionadaCalendario(fecha);
-                  // ✅ v1.67.1: Cambiar filtroRangoFecha para permitir filtros de fecha custom
-                  // Si se selecciona una fecha, desactivar el filtro 'hoy' por defecto
-                  if (fecha) {
-                    setFiltroRangoFecha('personalizado');
-                  } else {
-                    setFiltroRangoFecha('todos'); // Limpiar = volver a todos
-                  }
+                  // ✅ v1.81.2: NO forzar 'personalizado' al seleccionar fecha del calendario
+                  // El filtro de fecha lo maneja fechaSeleccionadaCalendario via fechaAtencion
+                  // Forzar 'personalizado' excluía pacientes sin fechaAsignacion (bug)
+                  if (!fecha) setFiltroRangoFecha('todos');
                 }}
                 fechasConAsignaciones={fechasConAsignaciones}
               />

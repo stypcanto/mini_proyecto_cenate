@@ -1146,6 +1146,7 @@ public class TicketMesaAyudaService {
             .codigoAdscripcion(codigoIpressResuelto)
             .idIpress(idIpressResuelto)
             .idIpressAtencion(idIpressResuelto)
+            .fechaAsignacion(java.time.OffsetDateTime.now(java.time.ZoneId.of("America/Lima")))
             .build();
 
         solicitudBolsaRepository.save(solicitud);
