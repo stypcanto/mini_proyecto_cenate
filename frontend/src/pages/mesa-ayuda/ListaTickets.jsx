@@ -501,13 +501,19 @@ function ListaTickets() {
           </p>
         </div>
         {esPendientes && (
-          <button
-            onClick={() => setShowModalCitaAdicional(true)}
-            className="flex-shrink-0 flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors shadow-sm font-medium text-sm"
-          >
-            <Plus className="w-4 h-4" />
-            Registrar cita adicional
-          </button>
+          <div className="relative group flex-shrink-0">
+            <button
+              onClick={() => setShowModalCitaAdicional(true)}
+              className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors shadow-sm font-medium text-sm"
+            >
+              <Plus className="w-4 h-4" />
+              Registrar cita adicional en la Intranet
+            </button>
+            <div className="absolute bottom-full right-0 mb-2 w-72 bg-gray-900 text-white text-xs rounded-lg px-3 py-2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50 shadow-lg">
+              Busca un paciente por DNI y agenda una nueva cita con especialidad, profesional, fecha y hora. La cita queda registrada en la bandeja del Gestor de Citas.
+              <div className="absolute top-full right-4 border-4 border-solid border-gray-900 border-l-transparent border-r-transparent border-b-transparent" />
+            </div>
+          </div>
         )}
       </div>
 
