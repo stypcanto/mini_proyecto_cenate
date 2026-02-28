@@ -358,17 +358,7 @@ export default function MisPacientes() {
   // Formatear nombre del paciente: "APELLIDO1 APELLIDO2 NOMBRE1 NOMBRE2" → "Nombre1 Nombre2 Apellido1 Apellido2"
   const formatearNombrePaciente = (nombreCompleto) => {
     if (!nombreCompleto) return '';
-    const palabras = nombreCompleto.trim().split(/\s+/).filter(p => p.length > 0);
-    if (palabras.length <= 2) {
-      return palabras.map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
-    }
-    // 4 palabras: AP1 AP2 NOM1 NOM2 → NOM1 NOM2 AP1 AP2
-    // 3 palabras: AP1 AP2 NOM1 → NOM1 AP1 AP2
-    const apellidos = palabras.slice(0, 2);
-    const nombres = palabras.slice(2);
-    return [...nombres, ...apellidos]
-      .map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
-      .join(' ');
+    return nombreCompleto.trim().toUpperCase();
   };
 
   const [pacientes, setPacientes] = useState([]);
