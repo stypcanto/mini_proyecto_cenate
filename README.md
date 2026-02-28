@@ -1,9 +1,10 @@
+
 # 🏥 CENATE - Centro Nacional de Telemedicina
 
 > **Sistema integral de coordinación de atenciones médicas remotas para EsSalud**
 > **Versión:** v1.41.0 (2026-01-30)
 > **Status:** ✅ Production Ready
-........
+
 ---
 
 ## 🎯 ¿QUÉ ES CENATE?
