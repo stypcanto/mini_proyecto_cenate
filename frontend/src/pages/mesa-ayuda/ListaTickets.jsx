@@ -1,8 +1,9 @@
 import React, { useEffect, useState, useRef, useMemo, useCallback } from 'react';
 import { useLocation } from 'react-router-dom';
-import { Zap, AlertCircle, RotateCw, ChevronDown, UserCircle, PlayCircle, Clock, CheckCircle2, Eye, Users, Archive, Pencil, Check, X, Timer, User, Stethoscope, Phone, Search, SlidersHorizontal, Calendar, Filter, Hash, FileText, ShieldAlert } from 'lucide-react';
+import { Zap, AlertCircle, RotateCw, ChevronDown, UserCircle, PlayCircle, Clock, CheckCircle2, Eye, Users, Archive, Pencil, Check, X, Timer, User, Stethoscope, Phone, Search, SlidersHorizontal, Calendar, Filter, Hash, FileText, ShieldAlert, Plus } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import ResponderTicketModal from './components/ResponderTicketModal';
+import RegistrarCitaAdicionalModal from '../../components/citas/RegistrarCitaAdicionalModal';
 
 /**
  * Página de Lista de Tickets para Mesa de Ayuda
@@ -92,6 +93,9 @@ function ListaTickets() {
 
   // Debounce timer ref para búsquedas de texto
   const debounceRef = useRef(null);
+
+  // Modal Registrar cita adicional
+  const [showModalCitaAdicional, setShowModalCitaAdicional] = useState(false);
 
   // Modal
   const [showModalResponder, setShowModalResponder] = useState(false);
@@ -483,17 +487,28 @@ function ListaTickets() {
   return (
     <div className="p-6 bg-gray-50 min-h-screen">
       {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
-          {React.createElement(modoConfig.icon, { size: 32, className: esAtendidos ? 'text-green-500' : 'text-yellow-500' })}
-          {modoConfig.titulo}
-          <span className="text-sm font-medium text-gray-500 bg-gray-100 px-3 py-1 rounded-full">
-            {totalElements} tickets
-          </span>
-        </h1>
-        <p className="text-gray-600 mt-2">
-          {modoConfig.subtitulo}
-        </p>
+      <div className="mb-8 flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
+            {React.createElement(modoConfig.icon, { size: 32, className: esAtendidos ? 'text-green-500' : 'text-yellow-500' })}
+            {modoConfig.titulo}
+            <span className="text-sm font-medium text-gray-500 bg-gray-100 px-3 py-1 rounded-full">
+              {totalElements} tickets
+            </span>
+          </h1>
+          <p className="text-gray-600 mt-2">
+            {modoConfig.subtitulo}
+          </p>
+        </div>
+        {esPendientes && (
+          <button
+            onClick={() => setShowModalCitaAdicional(true)}
+            className="flex-shrink-0 flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors shadow-sm font-medium text-sm"
+          >
+            <Plus className="w-4 h-4" />
+            Registrar cita adicional
+          </button>
+        )}
       </div>
 
       {/* Error Message */}
@@ -1737,6 +1752,14 @@ function ListaTickets() {
           onSuccess={handleResponderSuccess}
         />
       )}
+
+      {/* Modal Registrar Cita Adicional */}
+      <RegistrarCitaAdicionalModal
+        open={showModalCitaAdicional}
+        onClose={() => setShowModalCitaAdicional(false)}
+        onSuccess={() => {}}
+        user={user}
+      />
     </div>
   );
 }
