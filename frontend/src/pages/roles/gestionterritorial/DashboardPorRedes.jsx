@@ -9,9 +9,10 @@ import React, { useState, useEffect, useCallback } from "react";
 import {
   Network, Building2, CheckCircle2, AlertCircle,
   Shield, XCircle, ChevronDown, ChevronUp, Loader,
-  RefreshCw, BarChart3, TrendingUp, Activity
+  RefreshCw, BarChart3, TrendingUp, Activity, Download
 } from "lucide-react";
 import toast from "react-hot-toast";
+import * as XLSX from "xlsx";
 import api from '../../../lib/apiClient';
 
 export default function DashboardPorRedes() {
@@ -22,6 +23,8 @@ export default function DashboardPorRedes() {
   const [redExpandida, setRedExpandida] = useState(null);
   const [detalleIpress, setDetalleIpress] = useState([]);
   const [cargandoDetalle, setCargandoDetalle] = useState(false);
+
+  const [exportando, setExportando] = useState(false);
 
   // Estados de filtros
   const [macroregiones, setMacroregiones] = useState([]);
@@ -142,6 +145,92 @@ export default function DashboardPorRedes() {
     } else {
       setRedExpandida(idRed);
       await cargarDetalleRed(idRed);
+    }
+  };
+
+  // ================================================================
+  // EXPORTAR EXCEL
+  // ================================================================
+  const exportarExcel = async () => {
+    if (estadisticas.length === 0) {
+      toast.error("No hay datos para exportar");
+      return;
+    }
+    try {
+      setExportando(true);
+      toast.loading("Preparando datos para exportar...", { id: "export" });
+
+      // Cargar detalle de todas las redes en paralelo
+      const detallesPromises = estadisticas.map((red) =>
+        api.get(`/diagnostico/estadisticas/detalle-red?idRed=${red.id_red}`)
+          .then((data) => ({ red, ipress: data || [] }))
+          .catch(() => ({ red, ipress: [] }))
+      );
+      const detalles = await Promise.all(detallesPromises);
+
+      // Construir filas del Excel
+      const filas = [];
+      detalles.forEach(({ red, ipress }) => {
+        if (ipress.length === 0) {
+          filas.push({
+            "Macroregión": red.desc_macro,
+            "Red Asistencial": red.desc_red,
+            "Total IPRESS": red.total_ipress,
+            "Red - Enviados": red.enviados,
+            "Red - En Proceso": red.en_proceso,
+            "Red - Falta Enviar": red.falta_enviar,
+            "IPRESS": "—",
+            "Código IPRESS": "—",
+            "Estado Formulario": "—",
+            "Fecha Creación": "—",
+            "Fecha Envío": "—",
+            "Firmante": "—",
+          });
+        } else {
+          ipress.forEach((ip) => {
+            filas.push({
+              "Macroregión": red.desc_macro,
+              "Red Asistencial": red.desc_red,
+              "Total IPRESS": red.total_ipress,
+              "Red - Enviados": red.enviados,
+              "Red - En Proceso": red.en_proceso,
+              "Red - Falta Enviar": red.falta_enviar,
+              "IPRESS": ip.desc_ipress || "—",
+              "Código IPRESS": ip.cod_ipress || "—",
+              "Estado Formulario": getLabelEstado(ip.estado_formulario),
+              "Fecha Creación": ip.fecha_creacion
+                ? new Date(ip.fecha_creacion).toLocaleDateString("es-PE")
+                : "—",
+              "Fecha Envío": ip.fecha_envio
+                ? new Date(ip.fecha_envio).toLocaleDateString("es-PE")
+                : "—",
+              "Firmante": ip.nombre_firmante || "—",
+            });
+          });
+        }
+      });
+
+      const ws = XLSX.utils.json_to_sheet(filas);
+
+      // Ancho de columnas
+      ws["!cols"] = [
+        { wch: 20 }, { wch: 30 }, { wch: 14 }, { wch: 16 },
+        { wch: 16 }, { wch: 18 }, { wch: 40 }, { wch: 14 },
+        { wch: 18 }, { wch: 16 }, { wch: 14 }, { wch: 30 },
+      ];
+
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Estadísticas por Red");
+
+      const fecha = new Date().toLocaleDateString("es-PE").replace(/\//g, "-");
+      XLSX.writeFile(wb, `Dashboard_Redes_IPRESS_${fecha}.xlsx`);
+
+      toast.success("Excel descargado correctamente", { id: "export" });
+    } catch (error) {
+      console.error("Error al exportar:", error);
+      toast.error("Error al generar el Excel", { id: "export" });
+    } finally {
+      setExportando(false);
     }
   };
 
@@ -412,10 +501,34 @@ export default function DashboardPorRedes() {
 
         {/* Estadísticas por Red */}
         <div>
-          <h2 className="text-lg font-semibold text-gray-700 mb-4 flex items-center gap-2">
-            <Network className="w-5 h-5 text-blue-600" />
-            Estadísticas por Red Asistencial
-          </h2>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold text-gray-700 flex items-center gap-2">
+              <Network className="w-5 h-5 text-blue-600" />
+              Estadísticas por Red Asistencial
+            </h2>
+            <div className="relative group">
+              <button
+                onClick={exportarExcel}
+                disabled={exportando || estadisticas.length === 0}
+                className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg shadow hover:bg-green-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+              >
+                {exportando ? (
+                  <Loader className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Download className="w-4 h-4" />
+                )}
+                <span>{exportando ? "Exportando..." : "Exportar Excel"}</span>
+              </button>
+              <div className="absolute right-0 top-full mt-2 w-64 bg-gray-800 text-white text-xs rounded-lg p-3 shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-10">
+                <p className="font-semibold mb-1">Exportar a Excel</p>
+                <p className="text-gray-300 leading-relaxed">
+                  Descarga todas las redes asistenciales con el desglose completo de IPRESS: código, estado del formulario, fechas de creación y envío, y firmante.
+                </p>
+                <p className="text-gray-400 mt-1.5">Se aplican los filtros activos.</p>
+                <div className="absolute right-3 -top-1.5 w-3 h-3 bg-gray-800 rotate-45" />
+              </div>
+            </div>
+          </div>
 
           <div className="space-y-3">
             {estadisticas.map((red) => (
