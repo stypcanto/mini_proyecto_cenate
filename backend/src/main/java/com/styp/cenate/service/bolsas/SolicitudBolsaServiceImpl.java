@@ -2901,12 +2901,23 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
             log.info("   ✓ Usuario encontrado - ID: {}, Username: {}, Estado: {}",
                 usuarioId, usuarioActual.getNameUser(), usuarioActual.getStatUser());
 
-            // 3️⃣ OBTENER SOLICITUDES ASIGNADAS A ESTA GESTORA
-            log.info("   🔍 Buscando solicitudes con: responsableGestoraId={} AND activo=true", usuarioId);
-            List<SolicitudBolsa> solicitudes = solicitudRepository.findByResponsableGestoraIdAndActivoTrue(usuarioId);
+            // 3️⃣ OBTENER SOLICITUDES: SOPORTE_TELEUE y SUPERADMIN ven todas; el resto solo las propias
+            boolean esSupervisor = authentication.getAuthorities().stream()
+                .map(a -> a.getAuthority().toUpperCase())
+                .anyMatch(a -> a.equals("ROLE_SOPORTE_TELEUE") || a.equals("ROLE_SUPERADMIN"));
 
-            log.info("   ✅ Query realizado: Se encontraron {} solicitud(es) asignada(s) a gestora (ID: {})",
-                solicitudes.size(), usuarioId);
+            List<SolicitudBolsa> solicitudes;
+            if (esSupervisor) {
+                log.info("   🔍 [SUPERVISOR] Rol '{}' detectado → devolviendo TODAS las solicitudes activas",
+                    esSupervisor ? "SOPORTE_TELEUE/SUPERADMIN" : "");
+                solicitudes = solicitudRepository.findByActivoTrueOrderByFechaSolicitudDesc();
+            } else {
+                log.info("   🔍 Buscando solicitudes con: responsableGestoraId={} AND activo=true", usuarioId);
+                solicitudes = solicitudRepository.findByResponsableGestoraIdAndActivoTrue(usuarioId);
+            }
+
+            log.info("   ✅ Query realizado: Se encontraron {} solicitud(es) (esSupervisor={})",
+                solicitudes.size(), esSupervisor);
 
             // 5️⃣ DEBUG: Mostrar solicitudes encontradas
             if (!solicitudes.isEmpty()) {
