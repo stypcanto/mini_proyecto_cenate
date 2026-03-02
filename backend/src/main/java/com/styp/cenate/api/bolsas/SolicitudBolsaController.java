@@ -1355,10 +1355,9 @@ public class SolicitudBolsaController {
      * Body: { "ids": [1, 2, 3] }
      * Response: { "actualizados": 3 }
      *
-     * Roles permitidos: SUPERADMIN, ADMIN, COORD. GESTION CITAS, GESTOR DE CITAS
+     * Roles permitidos: cualquier usuario autenticado con acceso al módulo de citas
      */
     @PostMapping("/rechazar-masivo")
-    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'COORD. GESTION CITAS', 'GESTOR DE CITAS')")
     public ResponseEntity<?> rechazarMasivo(@RequestBody Map<String, Object> payload) {
         try {
             Object idsObj = payload.get("ids");
