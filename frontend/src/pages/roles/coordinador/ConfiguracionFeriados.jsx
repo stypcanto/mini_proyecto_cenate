@@ -7,7 +7,7 @@
 
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Eye, Plus, AlertCircle, Loader, RefreshCw } from 'lucide-react';
+import { Eye, Plus, Pencil, AlertCircle, Loader, RefreshCw } from 'lucide-react';
 import ModalNuevaSolicitud from '../../../components/control_horarios/ModalNuevaSolicitud';
 import ModalEditarSolicitud from '../../../components/control_horarios/ModalEditarSolicitud';
 import ModalConsultarSolicitud from '../../../components/control_horarios/ModalConsultarSolicitud';
@@ -67,7 +67,12 @@ const ConfiguracionFeriados = () => {
       });
 
       console.log('📊 Períodos obtenidos del API:', JSON.stringify(periodosResponse.data, null, 2));
-      setPeriodos(periodosResponse.data || []);
+      // Normalizar campo: backend puede enviar 'estado' (viejo) o 'estadoPeriodo' (nuevo)
+      const datosNormalizados = (periodosResponse.data || []).map(p => ({
+        ...p,
+        estadoPeriodo: p.estadoPeriodo || p.estado || '',
+      }));
+      setPeriodos(datosNormalizados);
 
     } catch (err) {
       // Logging detallado de error según estándar respuestaconsola
@@ -135,7 +140,7 @@ const ConfiguracionFeriados = () => {
   const datosFiltrados = periodos.filter(p => {
     // Normalizar valores para comparación
     const periodoAno = p.periodo.substring(0, 4);
-    const periodoEstado = p.estado ? p.estado.trim().toUpperCase() : '';
+    const periodoEstado = (p.estadoPeriodo || p.estado || '').trim().toUpperCase();
     const estadoFiltro = estado.toUpperCase();
     
     // Aplicar filtros
@@ -215,6 +220,29 @@ const ConfiguracionFeriados = () => {
     );
   };
 
+  // Badge de estado de solicitud (horario)
+  const getEstadoSolicitudBadge = (nombreEstado) => {
+    if (!nombreEstado) return <span className="text-gray-400 text-sm">—</span>;
+    
+    const estadoLower = nombreEstado.toLowerCase().replace(/\s+/g, '');
+    
+    const badgeStyles = {
+      iniciado: { bg: 'bg-blue-100', text: 'text-blue-700', icon: '○' },
+      enproceso: { bg: 'bg-amber-100', text: 'text-amber-700', icon: '◔' },
+      anulado: { bg: 'bg-red-100', text: 'text-red-700', icon: '✖' },
+      terminado: { bg: 'bg-green-100', text: 'text-green-700', icon: '✔' },
+    };
+
+    const style = badgeStyles[estadoLower] || { bg: 'bg-gray-100', text: 'text-gray-700', icon: '○' };
+
+    return (
+      <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold ${style.bg} ${style.text}`}>
+        <span>{style.icon}</span>
+        {nombreEstado}
+      </span>
+    );
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 p-6">
       {/* Header Azul */}
@@ -282,7 +310,7 @@ const ConfiguracionFeriados = () => {
           </div>
           
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Estado</label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Estado de Periodo</label>
             <select
               value={estado}
               onChange={(e) => setEstado(e.target.value)}
@@ -327,14 +355,15 @@ const ConfiguracionFeriados = () => {
                 <th className="px-6 py-3 text-left text-sm font-semibold">Solicitud</th>
                 <th className="px-6 py-3 text-left text-sm font-semibold">Fecha Inicio</th>
                 <th className="px-6 py-3 text-left text-sm font-semibold">Fecha Fin</th>
-                <th className="px-6 py-3 text-left text-sm font-semibold">Estado</th>
+                <th className="px-6 py-3 text-left text-sm font-semibold">Estado Periodo</th>
+                <th className="px-6 py-3 text-left text-sm font-semibold">Estado Solicitud</th>
                 <th className="px-6 py-3 text-left text-sm font-semibold">Acción</th>
               </tr>
             </thead>
             <tbody>
               {datosFiltrados.length === 0 ? (
                 <tr>
-                  <td colSpan="8" className="px-6 py-8 text-center text-gray-500">
+                  <td colSpan="9" className="px-6 py-8 text-center text-gray-500">
                     No hay datos disponibles
                   </td>
                 </tr>
@@ -347,15 +376,67 @@ const ConfiguracionFeriados = () => {
                     <td className="px-6 py-4 text-sm text-gray-900">{p.idCtrHorario || '—'}</td>
                     <td className="px-6 py-4 text-sm text-gray-900">{formatDate(p.fechaInicio)}</td>
                     <td className="px-6 py-4 text-sm text-gray-900">{formatDate(p.fechaFin)}</td>
-                    <td className="px-6 py-4 text-sm">{getEstadoBadge(p.estado)}</td>
+                    <td className="px-6 py-4 text-sm">{getEstadoBadge(p.estadoPeriodo)}</td>
+                    <td className="px-6 py-4 text-sm">{getEstadoSolicitudBadge(p.nombreEstadoSolicitud)}</td>
                     <td className="px-6 py-4 text-sm">
-                      <button
-                        onClick={() => handleIniciarSolicitud(p)}
-                        className="text-blue-600 hover:text-blue-800 font-medium flex items-center gap-1"
-                      >
-                        <Plus className="w-4 h-4" />
-                        Iniciar
-                      </button>
+                      {(() => {
+                        const estadoPer = (p.estadoPeriodo || '').trim().toUpperCase();
+                        const estadoSol = (p.nombreEstadoSolicitud || '').trim().toUpperCase();
+                        const tieneSolicitud = !!p.idCtrHorario;
+                        const periodoCerrado = estadoPer === 'CERRADO';
+
+                        // Periodo CERRADO: solo consultar si tiene solicitud
+                        if (periodoCerrado) {
+                          return tieneSolicitud ? (
+                            <button
+                              onClick={() => handleConsultarSolicitud(p)}
+                              className="text-indigo-600 hover:text-indigo-800 font-medium flex items-center gap-1"
+                            >
+                              <Eye className="w-4 h-4" />
+                              Consultar
+                            </button>
+                          ) : (
+                            <span className="text-gray-400 text-sm">—</span>
+                          );
+                        }
+
+                        // TERMINADO: solo consultar
+                        if (estadoSol === 'TERMINADO') {
+                          return (
+                            <button
+                              onClick={() => handleConsultarSolicitud(p)}
+                              className="text-indigo-600 hover:text-indigo-800 font-medium flex items-center gap-1"
+                            >
+                              <Eye className="w-4 h-4" />
+                              Consultar
+                            </button>
+                          );
+                        }
+
+                        // EN PROCESO o INICIADO: editar
+                        if (estadoSol === 'EN PROCESO' || estadoSol === 'INICIADO') {
+                          return (
+                            <button
+                              onClick={() => handleEditarSolicitud(p)}
+                              className="text-amber-600 hover:text-amber-800 font-medium flex items-center gap-1"
+                            >
+                              <Pencil className="w-4 h-4" />
+                              Editar
+                            </button>
+                          );
+                        }
+
+                        // Sin solicitud: iniciar
+                        return (
+                          <button
+                            onClick={() => handleIniciarSolicitud(p)}
+                            className="text-blue-600 hover:text-blue-800 font-medium flex items-center gap-1"
+                          >
+                            <Plus className="w-4 h-4" />
+                            Iniciar
+                          </button>
+                        );
+                      })()}
                     </td>
                   </tr>
                 ))

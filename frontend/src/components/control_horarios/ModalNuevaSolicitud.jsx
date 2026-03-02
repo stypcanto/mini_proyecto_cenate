@@ -5,8 +5,10 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { X, Loader, AlertCircle, ChevronLeft, ChevronRight } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext';
 
 const ModalNuevaSolicitud = ({ periodo, onClose, onSuccess }) => {
+  const { user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [selectedDate, setSelectedDate] = useState(null);
@@ -160,11 +162,6 @@ const ModalNuevaSolicitud = ({ periodo, onClose, onSuccess }) => {
       return;
     }
 
-    if (!formData.idPers) {
-      setError('Por favor selecciona un médico');
-      return;
-    }
-
     setLoading(true);
     setError(null);
 
@@ -172,19 +169,18 @@ const ModalNuevaSolicitud = ({ periodo, onClose, onSuccess }) => {
       const token = localStorage.getItem('token') || localStorage.getItem('auth.token');
       const turnoSeleccionado = dayTurnos[getDateKey(selectedDate)];
 
+      // Datos tomados del JWT claims del usuario logueado
       const request = {
         periodo: periodo.periodo,
         idArea: periodo.idArea,
-        idPers: parseInt(formData.idPers),
-        idGrupoProg: 0,
-        idServicio: null,
+        idPers: user?.idPers,
+        idGrupoProg: user?.idGrupoProg || 1,
+        idServicio: user?.idServicio || null,
+        idRegLab: user?.idRegLab || 1,
         turnosTotales: 1,
         horasTotales: 0,
         observaciones: `Turno: ${turnoSeleccionado} | Fecha: ${selectedDate.toLocaleDateString('es-PE')} ${formData.observaciones ? '| ' + formData.observaciones : ''}`,
       };
-
-      const personalSeleccionado = medicos.find(m => m.idPers === parseInt(formData.idPers));
-      request.idRegLab = personalSeleccionado?.idRegLab || 1;
 
       const response = await axios.post('/api/control-horarios/horarios', request, {
         headers: {
@@ -356,29 +352,28 @@ const ModalNuevaSolicitud = ({ periodo, onClose, onSuccess }) => {
               </div>
             </div>
 
-            {/* Médico y Observaciones (aparece cuando hay turno seleccionado) */}
+            {/* Datos del médico y Observaciones (aparece cuando hay turno seleccionado) */}
             {selectedDate && dayTurnos[getDateKey(selectedDate)] && (
               <div className="bg-blue-50 border-2 border-blue-200 rounded-lg p-6 mb-6">
                 <div className="space-y-4">
-                  {/* Médico */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Médico <span className="text-red-600">*</span>
-                    </label>
-                    <select
-                      name="idPers"
-                      value={formData.idPers}
-                      onChange={handleChange}
-                      className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                      disabled={loading}
-                    >
-                      <option value="">Selecciona médico</option>
-                      {medicos.map(m => (
-                        <option key={m.idPers} value={m.idPers}>
-                          {m.nomPers}
-                        </option>
-                      ))}
-                    </select>
+                  {/* Info del médico logueado (read-only) */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs font-medium text-gray-500 mb-1">Médico</label>
+                      <p className="text-sm font-semibold text-gray-800">{user?.nombreCompleto || user?.nombre || `ID: ${user?.idPers}`}</p>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-500 mb-1">Régimen Laboral</label>
+                      <p className="text-sm text-gray-800">{user?.descRegLab || `ID: ${user?.idRegLab}`}</p>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-500 mb-1">Servicio</label>
+                      <p className="text-sm text-gray-800">{user?.descServicio || `ID: ${user?.idServicio}`}</p>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-500 mb-1">Grupo Programático</label>
+                      <p className="text-sm text-gray-800">{user?.idGrupoProg || '—'}</p>
+                    </div>
                   </div>
 
                   {/* Observaciones */}
@@ -405,7 +400,7 @@ const ModalNuevaSolicitud = ({ periodo, onClose, onSuccess }) => {
               <button
                 type="submit"
                 disabled={
-                  loading || !selectedDate || !dayTurnos[getDateKey(selectedDate)] || !formData.idPers
+                  loading || !selectedDate || !dayTurnos[getDateKey(selectedDate)] || !user?.idPers
                 }
                 className="flex-1 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 font-semibold text-lg flex items-center justify-center gap-2"
               >

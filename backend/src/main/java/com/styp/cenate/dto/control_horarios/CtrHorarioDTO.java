@@ -31,6 +31,8 @@ public class CtrHorarioDTO {
     private Integer turnosValidos;       // Turnos válidos registrados
     private BigDecimal horasTotales;     // Horas totales
     private String observaciones;        // Observaciones
+    private Short idEstado;              // ID del estado (1=INICIADO, 2=EN PROCESO, 3=ANULADO, 4=TERMINADO)
+    private String nombreEstado;         // Nombre del estado (JOIN dim_horario_estado)
     private LocalDateTime createdAt;     // Fecha creación
     private LocalDateTime updatedAt;     // Fecha actualización
 }

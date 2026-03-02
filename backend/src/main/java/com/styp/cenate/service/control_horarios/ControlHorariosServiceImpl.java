@@ -61,15 +61,18 @@ public class ControlHorariosServiceImpl implements ControlHorariosService {
             String sql = "SELECT cp.periodo, cp.id_area, da.desc_area, TRIM(cp.estado) as estado, " +
                     "cp.fecha_inicio, cp.fecha_fin, " +
                     "COUNT(DISTINCT ch.id_ctr_horario) as total_horarios, " +
-                    "ch_med.id_ctr_horario as id_solicitud " +
+                    "ch_med.id_ctr_horario as id_solicitud, " +
+                    "ch_med.id_estado as id_estado_solicitud, " +
+                    "dhe.nombre_estado as nombre_estado_solicitud " +
                     "FROM public.ctr_periodo cp " +
                     "JOIN public.dim_area da ON cp.id_area = da.id_area " +
                     "LEFT JOIN public.ctr_horario ch ON cp.periodo = ch.periodo AND cp.id_area = ch.id_area " +
                     "LEFT JOIN public.ctr_horario ch_med ON cp.periodo = ch_med.periodo " +
                     "      AND cp.id_area = ch_med.id_area " +
                     "      AND ch_med.id_pers = ? " +
+                    "LEFT JOIN public.dim_horario_estado dhe ON ch_med.id_estado = dhe.id_estado " +
                     "WHERE TRIM(cp.estado) IN (" + estadosSQL + ") " +
-                    "GROUP BY cp.periodo, cp.id_area, da.desc_area, TRIM(cp.estado), cp.fecha_inicio, cp.fecha_fin, ch_med.id_ctr_horario " +
+                    "GROUP BY cp.periodo, cp.id_area, da.desc_area, TRIM(cp.estado), cp.fecha_inicio, cp.fecha_fin, ch_med.id_ctr_horario, ch_med.id_estado, dhe.nombre_estado " +
                     "ORDER BY cp.periodo ASC, cp.id_area";
 
             log.debug("🔄 SQL con idPers: {}", idPers);
@@ -81,23 +84,30 @@ public class ControlHorariosServiceImpl implements ControlHorariosService {
                         Object idSolicitudObj = rs.getObject("id_solicitud");
                         Long idCtrHorario = idSolicitudObj != null ? ((Number) idSolicitudObj).longValue() : null;
                         
+                        // Extraer estado de la solicitud del médico
+                        Object idEstadoObj = rs.getObject("id_estado_solicitud");
+                        Short idEstadoSolicitud = idEstadoObj != null ? ((Number) idEstadoObj).shortValue() : null;
+                        String nombreEstadoSolicitud = rs.getString("nombre_estado_solicitud");
+
                         return PeriodoDisponibleDTO.builder()
                                 .periodo(rs.getString("periodo"))
                                 .idArea(rs.getLong("id_area"))
                                 .descArea(rs.getString("desc_area"))
-                                .estado(rs.getString("estado"))
+                                .estadoPeriodo(rs.getString("estado"))
                                 .totalHorarios(rs.getInt("total_horarios"))
                                 .fechaInicio(rs.getObject("fecha_inicio", java.time.LocalDate.class))
                                 .fechaFin(rs.getObject("fecha_fin", java.time.LocalDate.class))
                                 .idCtrHorario(idCtrHorario)
                                 .tieneSolicitud(idCtrHorario != null)
+                                .idEstadoSolicitud(idEstadoSolicitud)
+                                .nombreEstadoSolicitud(nombreEstadoSolicitud)
                                 .build();
                     }
             );
             
             log.info("✅ Períodos retornados: {} registros", resultado.size());
-            resultado.forEach(p -> log.debug("   - Periodo: {}, Estado: {}, Area: {}, Solicitud: {}", 
-                p.getPeriodo(), p.getEstado(), p.getDescArea(), p.getIdCtrHorario()));
+            resultado.forEach(p -> log.debug("   - Periodo: {}, EstadoPeriodo: {}, Area: {}, Solicitud: {}, EstadoSolicitud: {}", 
+                p.getPeriodo(), p.getEstadoPeriodo(), p.getDescArea(), p.getIdCtrHorario(), p.getNombreEstadoSolicitud()));
             
             return resultado;
 
@@ -114,19 +124,11 @@ public class ControlHorariosServiceImpl implements ControlHorariosService {
 
         try {
             // Usar SQL INSERT directo para crear el registro
-            String sql = """
-                INSERT INTO public.ctr_horario (
-                    periodo, id_area, id_grupo_prog, id_pers, id_reg_lab, id_servicio,
-                    turnos_totales, turnos_validos, horas_totales, observaciones, created_at, updated_at
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())
-                RETURNING id_ctr_horario
-            """;
-
             String insertSql = """
                 INSERT INTO public.ctr_horario (
                     periodo, id_area, id_grupo_prog, id_pers, id_reg_lab, id_servicio,
-                    turnos_totales, turnos_validos, horas_totales, observaciones, created_at, updated_at
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    turnos_totales, turnos_validos, horas_totales, observaciones, id_estado, created_at, updated_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, NOW(), NOW())
             """;
 
             // Para PostgreSQL sin RETURNING, ejecutar insert separado
@@ -149,12 +151,14 @@ public class ControlHorariosServiceImpl implements ControlHorariosService {
                        ch.id_grupo_prog, ch.id_pers, dpc.nom_pers, ch.id_reg_lab,
                        drl.desc_reg_lab, ch.id_servicio, dse.desc_servicio,
                        ch.turnos_totales, ch.turnos_validos, ch.horas_totales,
-                       ch.observaciones, ch.created_at, ch.updated_at
+                       ch.observaciones, ch.id_estado, dhe.nombre_estado,
+                       ch.created_at, ch.updated_at
                 FROM public.ctr_horario ch
                 LEFT JOIN public.dim_area da ON ch.id_area = da.id_area
                 LEFT JOIN public.dim_personal_cnt dpc ON ch.id_pers = dpc.id_pers
                 LEFT JOIN public.dim_regimen_laboral drl ON ch.id_reg_lab = drl.id_reg_lab
                 LEFT JOIN public.dim_servicio_essi dse ON ch.id_servicio = dse.id_servicio
+                LEFT JOIN public.dim_horario_estado dhe ON ch.id_estado = dhe.id_estado
                 WHERE ch.periodo = ? AND ch.id_pers = ?
                 ORDER BY ch.created_at DESC
                 LIMIT 1
@@ -178,6 +182,8 @@ public class ControlHorariosServiceImpl implements ControlHorariosService {
                             .turnosValidos(rs.getInt("turnos_validos"))
                             .horasTotales(rs.getBigDecimal("horas_totales"))
                             .observaciones(rs.getString("observaciones"))
+                            .idEstado(rs.getObject("id_estado") != null ? rs.getShort("id_estado") : 1)
+                            .nombreEstado(rs.getString("nombre_estado"))
                             .createdAt(rs.getTimestamp("created_at").toLocalDateTime())
                             .updatedAt(rs.getTimestamp("updated_at").toLocalDateTime())
                             .build()
@@ -238,7 +244,8 @@ public class ControlHorariosServiceImpl implements ControlHorariosService {
                     ch.turnos_validos,
                     ch.horas_totales,
                     ch.observaciones,
-                    ch.estado,
+                    ch.id_estado,
+                    dhe.nombre_estado,
                     ch.created_at,
                     ch.updated_at
                 FROM public.ctr_horario ch
@@ -246,6 +253,7 @@ public class ControlHorariosServiceImpl implements ControlHorariosService {
                 LEFT JOIN public.dim_personal_cnt dpc ON ch.id_pers = dpc.id_pers
                 LEFT JOIN public.dim_regimen_laboral drl ON ch.id_reg_lab = drl.id_reg_lab
                 LEFT JOIN public.dim_servicio_essi dse ON ch.id_servicio = dse.id_servicio
+                LEFT JOIN public.dim_horario_estado dhe ON ch.id_estado = dhe.id_estado
                 WHERE ch.id_ctr_horario = ?
             """;
 
@@ -266,6 +274,8 @@ public class ControlHorariosServiceImpl implements ControlHorariosService {
                             .turnosValidos(rs.getInt("turnos_validos"))
                             .horasTotales(rs.getBigDecimal("horas_totales"))
                             .observaciones(rs.getString("observaciones"))
+                            .idEstado(rs.getObject("id_estado") != null ? rs.getShort("id_estado") : 1)
+                            .nombreEstado(rs.getString("nombre_estado"))
                             .createdAt(rs.getTimestamp("created_at").toLocalDateTime())
                             .updatedAt(rs.getTimestamp("updated_at").toLocalDateTime())
                             .build()
@@ -313,6 +323,8 @@ public class ControlHorariosServiceImpl implements ControlHorariosService {
                 .turnosValidos(horario.getTurnosValidos())
                 .horasTotales(horario.getHorasTotales())
                 .observaciones(horario.getObservaciones())
+                .idEstado(horario.getIdEstado())
+                .nombreEstado(horario.getEstado() != null ? horario.getEstado().getNombreEstado() : null)
                 .createdAt(horario.getCreatedAt() != null ? horario.getCreatedAt().toLocalDateTime() : null)
                 .updatedAt(horario.getUpdatedAt() != null ? horario.getUpdatedAt().toLocalDateTime() : null)
                 .build();

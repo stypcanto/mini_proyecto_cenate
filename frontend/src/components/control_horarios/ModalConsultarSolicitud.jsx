@@ -45,8 +45,10 @@ const ModalConsultarSolicitud = ({ horario, isOpen, onClose }) => {
                 <p className="text-lg font-semibold text-gray-800">{horario.nomPers}</p>
               </div>
               <div className="bg-gray-50 p-4 rounded-lg">
-                <p className="text-xs text-gray-500 uppercase mb-1">Grupo Programático</p>
-                <p className="text-lg font-semibold text-gray-800">{horario.idGrupoProg}</p>
+                <p className="text-xs text-gray-500 uppercase mb-1">Estado Solicitud</p>
+                <p className="text-lg font-semibold text-gray-800">
+                  {horario.nombreEstado || 'INICIADO'}
+                </p>
               </div>
             </div>
           </div>

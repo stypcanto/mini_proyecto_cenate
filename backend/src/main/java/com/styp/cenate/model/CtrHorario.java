@@ -119,6 +119,22 @@ public class CtrHorario {
     private Integer turnosValidos = 0;
 
     /**
+     * Estado del horario (FK a dim_horario_estado)
+     * 1=INICIADO, 2=EN PROCESO, 3=ANULADO, 4=TERMINADO
+     */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "id_estado", nullable = false)
+    @Builder.Default
+    private DimHorarioEstado estado = null;
+
+    /**
+     * ID del estado (para acceso directo sin cargar la relación)
+     */
+    @Column(name = "id_estado", insertable = false, updatable = false)
+    @Builder.Default
+    private Short idEstado = 1;
+
+    /**
      * Observaciones del horario
      */
     @Column(name = "observaciones", columnDefinition = "TEXT")
