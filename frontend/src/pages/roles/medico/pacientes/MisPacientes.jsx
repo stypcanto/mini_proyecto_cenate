@@ -462,6 +462,8 @@ export default function MisPacientes() {
   const [estadoSeleccionado, setEstadoSeleccionado] = useState('Pendiente');
   const [razonDesercion, setRazonDesercion] = useState('');
   const [motivosDesercion, setMotivosDesercion] = useState([]);
+  const [busquedaDesercion, setBusquedaDesercion] = useState('');
+  const [showDesercionDropdown, setShowDesercionDropdown] = useState(false);
 
   // ✅ v1.50.0: Modal de detalles del paciente
   const [mostrarDetalles, setMostrarDetalles] = useState(false);
@@ -1701,6 +1703,7 @@ export default function MisPacientes() {
     setModalAccion('cambiarEstado');
     setEstadoSeleccionado(paciente?.condicion || 'Pendiente'); // Preseleccionar estado actual
     setRazonDesercion('');
+    setBusquedaDesercion('');
     setNotasAccion('');
     // Pre-cargar enfermedades crónicas existentes del paciente
     const enfermedadesExistentes = paciente?.enfermedadCronica || [];
@@ -1922,6 +1925,7 @@ export default function MisPacientes() {
       setPacienteSeleccionado(null);
       setEstadoSeleccionado('Pendiente');
       setRazonDesercion('');
+      setBusquedaDesercion('');
     } catch (error) {
       console.error('Error procesando acción:', error);
       toast.error('Error al cambiar estado. Intenta nuevamente.');
@@ -3878,58 +3882,107 @@ export default function MisPacientes() {
                 </div>
               </button>
 
-                {/* Campo de razón para deserción — opciones desde BD */}
-                {estadoSeleccionado === 'Deserción' && (
-                  <div className="mt-6 ml-10 pt-6 border-t border-red-200">
-                    <label className="block text-sm font-medium text-gray-700 mb-3">Seleccione la razón:</label>
-                    <select
-                      value={razonDesercion}
-                      onChange={(e) => setRazonDesercion(e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-red-500 focus:border-red-500 text-sm"
-                    >
-                      <option value="">-- Seleccionar razón --</option>
-                      {motivosDesercion.length > 0
-                        ? /* opciones dinámicas desde BD agrupadas por categoría */
-                          Object.entries(
-                            motivosDesercion.reduce((acc, m) => {
-                              const cat = m.categoria || 'Otro';
-                              if (!acc[cat]) acc[cat] = [];
-                              acc[cat].push(m);
-                              return acc;
-                            }, {})
-                          ).map(([cat, items]) => (
-                            <optgroup key={cat} label={cat}>
-                              {items.map(m => (
-                                <option key={m.id} value={m.descripcion}>{m.descripcion}</option>
-                              ))}
-                            </optgroup>
-                          ))
-                        : /* fallback estático si BD no responde */
-                          <>
-                            <optgroup label="Contacto">
-                              <option value="No contactado">No contactado</option>
-                              <option value="No contesta">No contesta</option>
-                              <option value="Número apagado">Número apagado</option>
-                              <option value="Número no existe">Número no existe</option>
-                              <option value="Número equivocado">Número equivocado</option>
-                            </optgroup>
-                            <optgroup label="Rechazo">
-                              <option value="Paciente rechazó">Paciente rechazó</option>
-                              <option value="No desea atención">No desea atención</option>
-                            </optgroup>
-                            <optgroup label="Condición Médica">
-                              <option value="Paciente internado">Paciente internado</option>
-                              <option value="Paciente fallecido">Paciente fallecido</option>
-                              <option value="Examen pendiente">Examen pendiente</option>
-                            </optgroup>
-                            <optgroup label="Otro">
-                              <option value="Otro">Otro</option>
-                            </optgroup>
-                          </>
-                      }
-                    </select>
-                  </div>
-                )}
+                {/* Campo de razón para deserción — combobox con búsqueda */}
+                {estadoSeleccionado === 'Deserción' && (() => {
+                  const FALLBACK = [
+                    { id: 'f1', descripcion: 'No contactado',     categoria: 'Contacto'        },
+                    { id: 'f2', descripcion: 'No contesta',       categoria: 'Contacto'        },
+                    { id: 'f3', descripcion: 'Número apagado',    categoria: 'Contacto'        },
+                    { id: 'f4', descripcion: 'Número no existe',  categoria: 'Contacto'        },
+                    { id: 'f5', descripcion: 'Número equivocado', categoria: 'Contacto'        },
+                    { id: 'f6', descripcion: 'Paciente rechazó',  categoria: 'Rechazo'         },
+                    { id: 'f7', descripcion: 'No desea atención', categoria: 'Rechazo'         },
+                    { id: 'f8', descripcion: 'Paciente internado',categoria: 'Condición Médica'},
+                    { id: 'f9', descripcion: 'Paciente fallecido',categoria: 'Condición Médica'},
+                    { id: 'f10',descripcion: 'Examen pendiente',  categoria: 'Condición Médica'},
+                    { id: 'f11',descripcion: 'Otro',              categoria: 'Otro'            },
+                  ];
+                  const lista  = motivosDesercion.length > 0 ? motivosDesercion : FALLBACK;
+                  const filtro = busquedaDesercion.toLowerCase().trim();
+                  const filtrados = filtro
+                    ? lista.filter(m => m.descripcion.toLowerCase().includes(filtro) || (m.categoria || '').toLowerCase().includes(filtro))
+                    : lista;
+
+                  const grupos = filtrados.reduce((acc, m) => {
+                    const cat = m.categoria || 'Otro';
+                    if (!acc[cat]) acc[cat] = [];
+                    acc[cat].push(m);
+                    return acc;
+                  }, {});
+
+                  return (
+                    <div className="mt-6 ml-10 pt-6 border-t border-red-200">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Seleccione la razón:</label>
+                      <div className="relative">
+                        {/* Input de búsqueda */}
+                        <input
+                          type="text"
+                          value={busquedaDesercion}
+                          onChange={(e) => {
+                            setBusquedaDesercion(e.target.value);
+                            setRazonDesercion('');
+                            setShowDesercionDropdown(true);
+                          }}
+                          onFocus={() => setShowDesercionDropdown(true)}
+                          onBlur={() => setTimeout(() => setShowDesercionDropdown(false), 150)}
+                          placeholder="Buscar razón (ej: No contesta, internado...)"
+                          className={`w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-red-400 ${
+                            razonDesercion ? 'border-green-400 bg-green-50' : 'border-gray-300'
+                          }`}
+                        />
+                        {/* Indicador de seleccionado */}
+                        {razonDesercion && (
+                          <div className="mt-1 flex items-center gap-1 text-xs text-green-700 font-medium">
+                            <Check className="w-3.5 h-3.5" />
+                            <span>{razonDesercion}</span>
+                            <button
+                              type="button"
+                              onMouseDown={(e) => { e.preventDefault(); setRazonDesercion(''); setBusquedaDesercion(''); }}
+                              className="ml-1 text-gray-400 hover:text-red-500"
+                            >
+                              <X className="w-3 h-3" />
+                            </button>
+                          </div>
+                        )}
+                        {/* Dropdown con opciones filtradas */}
+                        {showDesercionDropdown && (
+                          <div className="absolute z-50 w-full bg-white border border-gray-200 rounded-lg shadow-xl max-h-52 overflow-y-auto mt-1">
+                            {Object.keys(grupos).length === 0 ? (
+                              <div className="px-4 py-3 text-sm text-gray-500 text-center">Sin resultados para "{busquedaDesercion}"</div>
+                            ) : (
+                              Object.entries(grupos).map(([cat, items]) => (
+                                <div key={cat}>
+                                  <div className="px-3 py-1.5 text-xs font-bold text-gray-400 uppercase tracking-wide bg-gray-50 border-b border-gray-100">
+                                    {cat}
+                                  </div>
+                                  {items.map(m => (
+                                    <button
+                                      key={m.id}
+                                      type="button"
+                                      onMouseDown={(e) => {
+                                        e.preventDefault();
+                                        setRazonDesercion(m.descripcion);
+                                        setBusquedaDesercion(m.descripcion);
+                                        setShowDesercionDropdown(false);
+                                      }}
+                                      className={`w-full text-left px-4 py-2 text-sm transition-colors ${
+                                        razonDesercion === m.descripcion
+                                          ? 'bg-red-50 text-red-700 font-semibold'
+                                          : 'text-gray-700 hover:bg-red-50 hover:text-red-700'
+                                      }`}
+                                    >
+                                      {m.descripcion}
+                                    </button>
+                                  ))}
+                                </div>
+                              ))
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })()}
             </div>
 
             {/* Footer Fijo con Botones */}
@@ -5882,10 +5935,9 @@ export default function MisPacientes() {
                             setBajaMotivo(m.descripcion);
                             setShowMotivosDropdown(false);
                           }}
-                          className="w-full text-left px-4 py-2.5 text-sm hover:bg-red-50 hover:text-red-700 transition-colors border-b border-gray-100 last:border-0"
+                          className="w-full text-left px-4 py-2.5 text-sm text-gray-800 hover:bg-red-50 hover:text-red-700 transition-colors border-b border-gray-100 last:border-0"
                         >
-                          <span className="font-medium block">{m.descripcion}</span>
-                          <span className="text-[11px] text-gray-400">{m.codigo}</span>
+                          {m.descripcion}
                         </button>
                       ))}
                     {motivosBajaCatalogo.filter(m => m.activo && (
