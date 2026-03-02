@@ -4056,22 +4056,24 @@ export default function MisPacientes() {
                 disabled={procesando}
                 className="px-5 py-2.5 text-gray-700 border-2 border-gray-300 rounded-lg hover:bg-gray-100 hover:border-gray-400 transition disabled:opacity-50 font-semibold text-sm"
               >
-                Cancelar
+                {pacienteSeleccionado?.condicion === 'Atendido' ? 'Cerrar' : 'Cancelar'}
               </button>
-              <button
-                onClick={procesarAccion}
-                disabled={procesando}
-                className="px-6 py-2.5 bg-[#0A5BA9] text-white rounded-lg hover:bg-[#083d78] transition disabled:opacity-50 font-semibold text-sm flex items-center justify-center gap-2 shadow-sm"
-              >
-                {procesando ? (
-                  <>
-                    <Loader className="w-4 h-4 animate-spin" />
-                    Procesando...
-                  </>
-                ) : (
-                  '✓ Confirmar'
-                )}
-              </button>
+              {pacienteSeleccionado?.condicion !== 'Atendido' && (
+                <button
+                  onClick={procesarAccion}
+                  disabled={procesando}
+                  className="px-6 py-2.5 bg-[#0A5BA9] text-white rounded-lg hover:bg-[#083d78] transition disabled:opacity-50 font-semibold text-sm flex items-center justify-center gap-2 shadow-sm"
+                >
+                  {procesando ? (
+                    <>
+                      <Loader className="w-4 h-4 animate-spin" />
+                      Procesando...
+                    </>
+                  ) : (
+                    '✓ Confirmar'
+                  )}
+                </button>
+              )}
             </div>
           </div>
         </div>
