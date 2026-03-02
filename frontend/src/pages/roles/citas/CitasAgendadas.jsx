@@ -518,6 +518,9 @@ export default function CitasAgendadas() {
   // ── Editar fecha/hora de cita ──
   const [modalEditarFecha, setModalEditarFecha] = useState({ visible: false, paciente: null, fecha: '', hora: '' });
   const [guardandoFecha, setGuardandoFecha]     = useState(false);
+  // ── Búsqueda global por DNI (cuando el paciente no está en la bandeja propia) ──
+  const [resultadosGlobales, setResultadosGlobales] = useState([]);
+  const [buscandoGlobal, setBuscandoGlobal]         = useState(false);
   // ── Cancelar cita individual ──
   const [modalCancelar, setModalCancelar]       = useState({ visible: false, paciente: null });
   const [cancelando, setCancelando]             = useState(false);
@@ -690,6 +693,70 @@ export default function CitasAgendadas() {
     return () => clearInterval(interval);
   }, []);
 
+  // ── Búsqueda global por DNI (cuando el paciente no está en la bandeja actual) ──
+  // Si el usuario escribe un DNI de 8 dígitos que no aparece en la bandeja propia,
+  // busca en TODOS los registros del sistema (independiente de gestora asignada).
+  useEffect(() => {
+    const q = busqueda.trim();
+    if (!/^\d{8}$/.test(q)) {
+      setResultadosGlobales([]);
+      return;
+    }
+
+    // Si ya está en la bandeja local, no hace falta buscar globalmente
+    const yaEnLocal = pacientes.some(p => p.pacienteDni === q);
+    if (yaEnLocal) {
+      setResultadosGlobales([]);
+      return;
+    }
+
+    const timer = setTimeout(async () => {
+      setBuscandoGlobal(true);
+      try {
+        const token = getToken();
+        const res = await fetch(`/api/bolsas/solicitudes/buscar-dni/${q}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!res.ok) return;
+        const data = await res.json();
+
+        const mapear = (s) => ({
+          id:                      s.id_solicitud              || s.idSolicitud,
+          pacienteNombre:          s.paciente_nombre           || s.pacienteNombre          || '—',
+          pacienteDni:             s.paciente_dni              || s.pacienteDni             || '—',
+          pacienteSexo:            s.paciente_sexo             || s.pacienteSexo            || null,
+          pacienteEdad:            s.paciente_edad             || s.pacienteEdad            || null,
+          pacienteTelefono:        s.paciente_telefono         || s.pacienteTelefono        || null,
+          pacienteTelefonoAlterno: s.paciente_telefono_alterno || s.pacienteTelefonoAlterno || null,
+          especialidad:            s.especialidad              || '—',
+          codigoEstado:            s.cod_estado_cita           || s.codEstadoCita           || '—',
+          fechaAtencion:           s.fecha_atencion            || s.fechaAtencion           || null,
+          horaAtencion:            s.hora_atencion             || s.horaAtencion            || null,
+          descIpress:              s.desc_ipress_atencion      || s.descIpressAtencion      || s.desc_ipress || s.descIpress || '—',
+          tipoCita:                s.tipo_cita                 || s.tipoCita                || '—',
+          nomMedico:               s.nombre_medico_asignado    || s.nombreMedicoAsignado    || s.nom_medico || s.nomMedico || null,
+          esCenacron:              s.es_cenacron === true      || s.esCenacron === true,
+          motivoAnulacion:         s.motivo_anulacion          || s.motivoAnulacion         || null,
+          estadoBolsa:             s.estado                    || '—',
+          estadoAtencion:          s.condicion_medica          || s.condicionMedica         || '—',
+          _desdeBusquedaGlobal: true,
+        });
+
+        const agendados = (Array.isArray(data) ? data : [])
+          .map(mapear)
+          .filter(p => ESTADOS_AGENDADOS.includes(p.codigoEstado) || p.fechaAtencion);
+
+        setResultadosGlobales(agendados);
+      } catch (err) {
+        console.error('[CitasAgendadas] Error en búsqueda global por DNI:', err);
+      } finally {
+        setBuscandoGlobal(false);
+      }
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [busqueda, pacientes]);
+
   // ── KPIs ───────────────────────────────────────────────────
   const kpis = useMemo(() => {
     const counts = { total: pacientes.length };
@@ -753,9 +820,16 @@ export default function CitasAgendadas() {
   };
 
   // ── Filtrado ───────────────────────────────────────────────
+  // Combina la bandeja propia con resultados globales (por DNI) deduplicados
   const filtrados = useMemo(() => {
+    const localIds = new Set(pacientes.map(p => p.id));
+    const combinados = [
+      ...pacientes,
+      ...resultadosGlobales.filter(p => !localIds.has(p.id)),
+    ];
+
     const q = busqueda.toLowerCase().trim();
-    return pacientes.filter(p => {
+    return combinados.filter(p => {
       const matchBusqueda = !q || (p.pacienteDni || '').toLowerCase().includes(q) || (p.pacienteNombre || '').toLowerCase().includes(q);
       const matchEstado   = !filtroEstado || filtroEstado === 'total' || p.codigoEstado === filtroEstado;
       const matchIpress   = !filtroIpress || p.descIpress === filtroIpress;
@@ -771,7 +845,7 @@ export default function CitasAgendadas() {
       ));
       return matchBusqueda && matchEstado && matchIpress && matchEspec && matchMedico && matchCenacron && matchFecha;
     });
-  }, [pacientes, busqueda, filtroEstado, filtroIpress, filtroEspec, filtroMedico, filtroCenacron, fechaSeleccionada]);
+  }, [pacientes, resultadosGlobales, busqueda, filtroEstado, filtroIpress, filtroEspec, filtroMedico, filtroCenacron, fechaSeleccionada]);
 
   const totalPaginas = Math.max(1, Math.ceil(filtrados.length / PAGE_SIZE));
   const paginaActual = filtrados.slice((pagina - 1) * PAGE_SIZE, pagina * PAGE_SIZE);
@@ -1197,12 +1271,21 @@ CENATE de Essalud`;
                 placeholder="Buscar por DNI o nombre..."
                 style={{ width: '100%', boxSizing: 'border-box', paddingLeft: '36px', paddingRight: busqueda ? '32px' : '12px', paddingTop: '9px', paddingBottom: '9px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '13px', color: '#374151', outline: 'none' }}
               />
-              {busqueda && (
+              {buscandoGlobal ? (
+                <div style={{ position: 'absolute', right: '8px', top: '50%', transform: 'translateY(-50%)', display: 'flex', alignItems: 'center' }}>
+                  <RefreshCw size={15} className="animate-spin" style={{ color: '#0D5BA9' }} />
+                </div>
+              ) : busqueda && (
                 <button onClick={() => handleBusqueda('')} style={{ position: 'absolute', right: '8px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', display: 'flex' }}>
                   <XCircle size={15} />
                 </button>
               )}
             </div>
+            {resultadosGlobales.length > 0 && (
+              <span style={{ fontSize: '11px', color: '#7c3aed', background: '#f5f3ff', border: '1px solid #ddd6fe', borderRadius: '6px', padding: '4px 8px', fontWeight: '600', whiteSpace: 'nowrap' }}>
+                🔍 {resultadosGlobales.length} hallado{resultadosGlobales.length !== 1 ? 's' : ''} en otra bandeja
+              </span>
+            )}
 
             <button
               onClick={() => setMostrarFiltros(v => !v)}
