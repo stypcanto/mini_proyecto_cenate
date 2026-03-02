@@ -29,7 +29,6 @@ public class GestionMotivosBajaCenacronController {
     private final MotivosBajaCenacronAdminService service;
 
     @GetMapping("/todos")
-    @PreAuthorize("hasRole('SUPERADMIN')")
     public ResponseEntity<List<MotivoBajaCenacronDTO>> obtenerTodos() {
         return ResponseEntity.ok(service.obtenerTodos());
     }
