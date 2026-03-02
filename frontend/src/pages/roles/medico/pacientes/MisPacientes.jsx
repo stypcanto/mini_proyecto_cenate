@@ -51,6 +51,8 @@ import DetalleTicketModal from '../../../mesa-ayuda/components/DetalleTicketModa
 import { mesaAyudaService } from '../../../../services/mesaAyudaService';
 import HistorialPacienteBtn from '../../../../components/trazabilidad/HistorialPacienteBtn';
 import { logRespuestaConsola } from '../../../../utils/consoleResponseLogger';
+import motivosDesercionService from '../../../../services/motivosDesercionService';
+import motivosBajaCenacronService from '../../../../services/motivosBajaCenacronService';
 
 // ✅ v1.78.0: Sistema Genérico de Especialidades
 // Define qué funcionalidades tiene cada tipo de especialidad
@@ -459,6 +461,7 @@ export default function MisPacientes() {
   const [procesando, setProcesando] = useState(false);
   const [estadoSeleccionado, setEstadoSeleccionado] = useState('Pendiente');
   const [razonDesercion, setRazonDesercion] = useState('');
+  const [motivosDesercion, setMotivosDesercion] = useState([]);
 
   // ✅ v1.50.0: Modal de detalles del paciente
   const [mostrarDetalles, setMostrarDetalles] = useState(false);
@@ -511,6 +514,9 @@ export default function MisPacientes() {
   const [bajaTipo, setBajaTipo] = useState('PROGRAMA_COMPLETO');
   const [bajaMotivo, setBajaMotivo] = useState('');
   const [procesandoBaja, setProcesandoBaja] = useState(false);
+  const [motivosBajaCatalogo, setMotivosBajaCatalogo] = useState([]);
+  const [bajaMotivoSearch, setBajaMotivoSearch] = useState('');
+  const [showMotivosDropdown, setShowMotivosDropdown] = useState(false);
 
   // CENACRON: Modal Asignar al Programa
   const [showAsignarCenacronModal, setShowAsignarCenacronModal] = useState(false);
@@ -795,6 +801,13 @@ export default function MisPacientes() {
       })
       .catch(err => console.error('Error cargando motivos interconsulta:', err));
   }, [esEnfermeria]);
+
+  // Cargar motivos de deserción desde BD
+  useEffect(() => {
+    motivosDesercionService.obtenerActivos()
+      .then(data => { if (Array.isArray(data) && data.length > 0) setMotivosDesercion(data); })
+      .catch(() => {}); // fallback: se queda en [] y el select usa las opciones estáticas de respaldo
+  }, []);
 
   // ✅ v1.104.0: Cargar pacientes con timeout - no esperar indefinidamente si especialidades falla
   useEffect(() => {
@@ -1612,16 +1625,24 @@ export default function MisPacientes() {
     return colores[condicion] || 'bg-gray-100 text-gray-700 border-gray-200';
   };
 
-  const abrirBajaCenacron = (paciente) => {
+  const abrirBajaCenacron = async (paciente) => {
     setPacienteBajaCenacron(paciente);
     setBajaTipo('PROGRAMA_COMPLETO');
     setBajaMotivo('');
+    setBajaMotivoSearch('');
+    setShowMotivosDropdown(false);
     setShowBajaCenacronModal(true);
+    try {
+      const motivos = await motivosBajaCenacronService.obtenerTodos();
+      setMotivosBajaCatalogo(motivos);
+    } catch {
+      setMotivosBajaCatalogo([]);
+    }
   };
 
   const confirmarBajaCenacron = async () => {
-    if (!bajaMotivo.trim() || bajaMotivo.trim().length < 5) {
-      toast.error('Debe ingresar un motivo de baja (mínimo 5 caracteres)');
+    if (!bajaMotivo.trim()) {
+      toast.error('Debe seleccionar un motivo de baja');
       return;
     }
     if (!pacienteBajaCenacron?.pkAsegurado) {
@@ -1639,6 +1660,7 @@ export default function MisPacientes() {
       setShowBajaCenacronModal(false);
       setPacienteBajaCenacron(null);
       setBajaMotivo('');
+      setBajaMotivoSearch('');
       // Refrescar lista de pacientes
       cargarPacientes();
     } catch (err) {
@@ -3856,7 +3878,7 @@ export default function MisPacientes() {
                 </div>
               </button>
 
-                {/* Campo de razón para deserción */}
+                {/* Campo de razón para deserción — opciones desde BD */}
                 {estadoSeleccionado === 'Deserción' && (
                   <div className="mt-6 ml-10 pt-6 border-t border-red-200">
                     <label className="block text-sm font-medium text-gray-700 mb-3">Seleccione la razón:</label>
@@ -3866,25 +3888,45 @@ export default function MisPacientes() {
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-red-500 focus:border-red-500 text-sm"
                     >
                       <option value="">-- Seleccionar razón --</option>
-                      <optgroup label="Contacto">
-                        <option value="No contactado">No contactado</option>
-                        <option value="No contesta">No contesta</option>
-                        <option value="Número apagado">Número apagado</option>
-                        <option value="Número no existe">Número no existe</option>
-                        <option value="Número equivocado">Número equivocado</option>
-                      </optgroup>
-                      <optgroup label="Rechazo">
-                        <option value="Paciente rechazó">Paciente rechazó</option>
-                        <option value="No desea atención">No desea atención</option>
-                      </optgroup>
-                      <optgroup label="Condición Médica">
-                        <option value="Paciente internado">Paciente internado</option>
-                        <option value="Paciente fallecido">Paciente fallecido</option>
-                        <option value="Examen pendiente">Examen pendiente</option>
-                      </optgroup>
-                      <optgroup label="Otro">
-                        <option value="Otro">Otro</option>
-                      </optgroup>
+                      {motivosDesercion.length > 0
+                        ? /* opciones dinámicas desde BD agrupadas por categoría */
+                          Object.entries(
+                            motivosDesercion.reduce((acc, m) => {
+                              const cat = m.categoria || 'Otro';
+                              if (!acc[cat]) acc[cat] = [];
+                              acc[cat].push(m);
+                              return acc;
+                            }, {})
+                          ).map(([cat, items]) => (
+                            <optgroup key={cat} label={cat}>
+                              {items.map(m => (
+                                <option key={m.id} value={m.descripcion}>{m.descripcion}</option>
+                              ))}
+                            </optgroup>
+                          ))
+                        : /* fallback estático si BD no responde */
+                          <>
+                            <optgroup label="Contacto">
+                              <option value="No contactado">No contactado</option>
+                              <option value="No contesta">No contesta</option>
+                              <option value="Número apagado">Número apagado</option>
+                              <option value="Número no existe">Número no existe</option>
+                              <option value="Número equivocado">Número equivocado</option>
+                            </optgroup>
+                            <optgroup label="Rechazo">
+                              <option value="Paciente rechazó">Paciente rechazó</option>
+                              <option value="No desea atención">No desea atención</option>
+                            </optgroup>
+                            <optgroup label="Condición Médica">
+                              <option value="Paciente internado">Paciente internado</option>
+                              <option value="Paciente fallecido">Paciente fallecido</option>
+                              <option value="Examen pendiente">Examen pendiente</option>
+                            </optgroup>
+                            <optgroup label="Otro">
+                              <option value="Otro">Otro</option>
+                            </optgroup>
+                          </>
+                      }
                     </select>
                   </div>
                 )}
@@ -5802,18 +5844,62 @@ export default function MisPacientes() {
                 </div>
               </div>
 
-              {/* Motivo */}
-              <div>
+              {/* Motivo — autocomplete desde catálogo */}
+              <div className="relative">
                 <p className="text-sm font-semibold text-gray-700 mb-1.5">Motivo de Baja <span className="text-red-500">*</span></p>
-                <textarea
-                  rows={3}
-                  value={bajaMotivo}
-                  onChange={(e) => setBajaMotivo(e.target.value)}
-                  placeholder="Describa el motivo por el cual se da de baja al paciente del programa..."
-                  className="w-full px-3 py-2.5 text-sm border border-gray-300 rounded-xl resize-none focus:outline-none focus:ring-2 focus:ring-red-400 focus:border-transparent"
-                  maxLength={500}
+                <input
+                  type="text"
+                  value={bajaMotivoSearch}
+                  onChange={(e) => {
+                    setBajaMotivoSearch(e.target.value);
+                    setBajaMotivo('');
+                    setShowMotivosDropdown(true);
+                  }}
+                  onFocus={() => setShowMotivosDropdown(true)}
+                  placeholder="Buscar motivo de baja..."
+                  className="w-full px-3 py-2.5 text-sm border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-400 focus:border-transparent"
                 />
-                <p className="text-[11px] text-gray-400 mt-1">Especifique claramente la razón de la baja para el registro médico.</p>
+                {bajaMotivo && (
+                  <p className="text-xs text-emerald-700 mt-1 px-1">✓ Seleccionado: <span className="font-medium">{bajaMotivoSearch}</span></p>
+                )}
+                {!bajaMotivo && bajaMotivoSearch && (
+                  <p className="text-[11px] text-amber-600 mt-1 px-1">Selecciona un motivo de la lista.</p>
+                )}
+                {showMotivosDropdown && (
+                  <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-xl shadow-xl max-h-52 overflow-y-auto">
+                    {motivosBajaCatalogo
+                      .filter(m => m.activo && (
+                        !bajaMotivoSearch.trim() ||
+                        m.descripcion.toLowerCase().includes(bajaMotivoSearch.toLowerCase()) ||
+                        m.codigo.toLowerCase().includes(bajaMotivoSearch.toLowerCase())
+                      ))
+                      .map(m => (
+                        <button
+                          key={m.id}
+                          type="button"
+                          onMouseDown={() => {
+                            setBajaMotivoSearch(m.descripcion);
+                            setBajaMotivo(m.descripcion);
+                            setShowMotivosDropdown(false);
+                          }}
+                          className="w-full text-left px-4 py-2.5 text-sm hover:bg-red-50 hover:text-red-700 transition-colors border-b border-gray-100 last:border-0"
+                        >
+                          <span className="font-medium block">{m.descripcion}</span>
+                          <span className="text-[11px] text-gray-400">{m.codigo}</span>
+                        </button>
+                      ))}
+                    {motivosBajaCatalogo.filter(m => m.activo && (
+                      !bajaMotivoSearch.trim() ||
+                      m.descripcion.toLowerCase().includes(bajaMotivoSearch.toLowerCase()) ||
+                      m.codigo.toLowerCase().includes(bajaMotivoSearch.toLowerCase())
+                    )).length === 0 && (
+                      <p className="px-4 py-3 text-sm text-gray-400">Sin resultados</p>
+                    )}
+                  </div>
+                )}
+                {showMotivosDropdown && (
+                  <div className="fixed inset-0 z-40" onMouseDown={() => setShowMotivosDropdown(false)} />
+                )}
               </div>
 
               {/* Advertencia */}
@@ -5839,7 +5925,7 @@ export default function MisPacientes() {
               </button>
               <button
                 onClick={confirmarBajaCenacron}
-                disabled={procesandoBaja || bajaMotivo.trim().length < 5}
+                disabled={procesandoBaja || !bajaMotivo.trim()}
                 className="flex-1 py-2.5 bg-red-600 hover:bg-red-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded-xl text-sm font-semibold transition-colors flex items-center justify-center gap-2"
               >
                 {procesandoBaja ? (
