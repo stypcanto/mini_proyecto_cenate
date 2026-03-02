@@ -1182,6 +1182,22 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
     }
 
     @Override
+    @Transactional
+    public int devolverAPendientes(List<Long> ids, String motivo) {
+        if (ids == null || ids.isEmpty()) {
+            log.warn("⚠️ Lista vacía de IDs para devolver a pendientes");
+            return 0;
+        }
+
+        log.info("↩️ Devolviendo {} solicitudes a PENDIENTE con motivo: {}", ids.size(), motivo);
+
+        int actualizados = solicitudRepository.devolverAPendientesMasivo(ids, motivo);
+
+        log.info("✅ {} solicitudes devueltas a PENDIENTE_CITA", actualizados);
+        return actualizados;
+    }
+
+    @Override
     public List<Map<String, Object>> obtenerAseguradosNuevos() {
         log.info("Buscando asegurados nuevos detectados...");
 

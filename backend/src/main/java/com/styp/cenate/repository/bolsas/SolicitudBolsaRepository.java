@@ -1749,6 +1749,26 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
     );
 
     /**
+     * Devuelve solicitudes al estado PENDIENTE_CITA (ID=11) limpiando campos de cita médica (v1.81.5)
+     */
+    @Modifying
+    @Query("UPDATE SolicitudBolsa s SET " +
+        "s.estadoGestionCitasId = 11, " +
+        "s.estado = 'PENDIENTE', " +
+        "s.idPersonal = null, " +
+        "s.fechaAtencion = null, " +
+        "s.horaAtencion = null, " +
+        "s.condicionMedica = null, " +
+        "s.fechaAtencionMedica = null, " +
+        "s.motivoAnulacion = :motivo, " +
+        "s.fechaCambioEstado = CURRENT_TIMESTAMP " +
+        "WHERE s.idSolicitud IN :ids AND s.activo = true")
+    int devolverAPendientesMasivo(
+        @org.springframework.data.repository.query.Param("ids") List<Long> ids,
+        @org.springframework.data.repository.query.Param("motivo") String motivo
+    );
+
+    /**
      * ✅ Trazabilidad de Recitas e Interconsultas para Coordinadora de Enfermería
      * Recupera recitas/interconsultas con datos del profesional que las generó.
      * Estrategia dual: FK directa (idsolicitudgeneracion) o correlación por timestamp.

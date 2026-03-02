@@ -146,6 +146,15 @@ public interface SolicitudBolsaService {
     int rechazarMasivoConMotivo(List<Long> ids, String motivo);
 
     /**
+     * Devuelve múltiples solicitudes al estado PENDIENTE_CITA guardando el motivo de devolución (v1.81.5)
+     * Limpia médico asignado, fecha/hora cita y condición médica.
+     * @param ids    lista de IDs de solicitudes a devolver
+     * @param motivo motivo de la devolución
+     * @return cantidad de registros actualizados
+     */
+    int devolverAPendientes(List<Long> ids, String motivo);
+
+    /**
      * Obtiene asegurados nuevos detectados (que no existen en tabla asegurados)
      * Busca solicitudes con nombre "Paciente DNI" e identifica los DNIs faltantes
      */

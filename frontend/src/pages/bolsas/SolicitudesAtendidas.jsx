@@ -2,18 +2,15 @@ import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import HistorialPacienteBtn from '../../components/trazabilidad/HistorialPacienteBtn';
 import {
   Search, CheckCircle, ChevronLeft, ChevronRight, Calendar,
-  RefreshCw, ChevronDown, Users
+  RefreshCw, ChevronDown, Users, RotateCcw, X, AlertTriangle
 } from 'lucide-react';
 import bolsasService from '../../services/bolsasService';
+import toast from 'react-hot-toast';
 
 /**
- * SolicitudesAtendidas v4.0.0
- * Server-side pagination + filtering.
- * Carga 50 registros por página; los filtros se envían al backend.
- * Ya no descarga todos los registros al entrar → carga instantánea.
- *
- * @version 4.0.0
- * @since 2026-02-23
+ * SolicitudesAtendidas v5.0.0
+ * + Multi-select con barra flotante
+ * + Devolver a Pendientes con modal de motivo (v1.81.5)
  */
 
 const ESTADOS_GESTIONADOS =
@@ -22,9 +19,7 @@ const ESTADOS_GESTIONADOS =
   'REPROG_FALLIDA,APAGADO,FALLECIDO,DESERCION,ANULADO,ANULADA,' +
   'PARTICULAR,NO_IPRESS_CENATE,HOSPITALIZADO';
 
-// Opciones fijas para el dropdown (no dependen de cargar todos los datos)
 const ESTADOS_OPCIONES = ESTADOS_GESTIONADOS.split(',').sort();
-
 const PAGE_SIZE = 50;
 
 const ESTADO_BADGE = {
@@ -149,12 +144,110 @@ function mapSolicitud(s) {
   };
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Modal: Motivo de devolución
+// ─────────────────────────────────────────────────────────────────────────────
+function ModalMotivo({ cantidad, onConfirmar, onCancelar, procesando }) {
+  const [motivo, setMotivo] = useState('');
+  const textareaRef = useRef(null);
+
+  useEffect(() => {
+    textareaRef.current?.focus();
+  }, []);
+
+  const handleConfirmar = () => {
+    if (!motivo.trim()) {
+      toast.error('El motivo es obligatorio');
+      return;
+    }
+    onConfirmar(motivo.trim());
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 overflow-hidden">
+        {/* Header */}
+        <div className="bg-amber-50 border-b border-amber-200 px-6 py-4 flex items-center gap-3">
+          <div className="p-2 bg-amber-100 rounded-lg">
+            <RotateCcw className="w-5 h-5 text-amber-600" />
+          </div>
+          <div className="flex-1">
+            <h3 className="font-bold text-gray-900">Devolver a Pendientes</h3>
+            <p className="text-xs text-gray-500 mt-0.5">
+              {cantidad} solicitud{cantidad !== 1 ? 'es' : ''} seleccionada{cantidad !== 1 ? 's' : ''}
+            </p>
+          </div>
+          <button onClick={onCancelar} disabled={procesando} className="p-1 rounded-lg hover:bg-amber-200 transition-colors">
+            <X className="w-4 h-4 text-gray-500" />
+          </button>
+        </div>
+
+        {/* Body */}
+        <div className="px-6 py-5">
+          <div className="flex items-start gap-3 mb-4 p-3 bg-amber-50 rounded-lg border border-amber-200">
+            <AlertTriangle className="w-4 h-4 text-amber-500 mt-0.5 flex-shrink-0" />
+            <p className="text-xs text-amber-700 leading-relaxed">
+              Las solicitudes volverán al estado <strong>PENDIENTE_CITA</strong>. Se limpiarán el médico asignado, fecha/hora de cita y condición médica. Esta acción queda registrada en base de datos.
+            </p>
+          </div>
+
+          <label className="block text-sm font-semibold text-gray-700 mb-2">
+            Motivo de devolución <span className="text-red-500">*</span>
+          </label>
+          <textarea
+            ref={textareaRef}
+            value={motivo}
+            onChange={e => setMotivo(e.target.value)}
+            placeholder="Describe el motivo por el que se devuelven estas solicitudes a pendientes..."
+            rows={4}
+            maxLength={500}
+            disabled={procesando}
+            className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-400 resize-none disabled:opacity-50"
+          />
+          <div className="text-right text-xs text-gray-400 mt-1">{motivo.length}/500</div>
+        </div>
+
+        {/* Footer */}
+        <div className="px-6 pb-5 flex gap-3 justify-end">
+          <button
+            onClick={onCancelar}
+            disabled={procesando}
+            className="px-4 py-2 text-sm text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
+          >
+            Cancelar
+          </button>
+          <button
+            onClick={handleConfirmar}
+            disabled={procesando || !motivo.trim()}
+            className="flex items-center gap-2 px-4 py-2 text-sm bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+          >
+            {procesando ? (
+              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+            ) : (
+              <RotateCcw className="w-4 h-4" />
+            )}
+            {procesando ? 'Procesando...' : 'Confirmar devolución'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Componente principal
+// ─────────────────────────────────────────────────────────────────────────────
 export default function SolicitudesAtendidas() {
   // ── Estado de datos ────────────────────────────────────────────────────────
   const [solicitudes,    setSolicitudes]    = useState([]);
   const [totalElementos, setTotalElementos] = useState(0);
   const [isLoading,      setIsLoading]      = useState(true);
   const [errorMessage,   setErrorMessage]   = useState('');
+
+  // ── Multi-select ───────────────────────────────────────────────────────────
+  const [seleccionados,    setSeleccionados]    = useState(new Set());
+  const [modalMotivo,      setModalMotivo]      = useState(false);
+  const [procesandoDevolver, setProcesandoDevolver] = useState(false);
 
   // ── Filtros (server-side) ──────────────────────────────────────────────────
   const [searchTerm,        setSearchTerm]        = useState('');
@@ -177,14 +270,15 @@ export default function SolicitudesAtendidas() {
     return () => { isMountedRef.current = false; };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ── Re-fetch cuando cambian filtros (salvo primer render) ─────────────────
+  // ── Re-fetch cuando cambian filtros ───────────────────────────────────────
   useEffect(() => {
     if (isFirstLoad.current) { isFirstLoad.current = false; return; }
     setCurrentPage(1);
+    setSeleccionados(new Set());
     cargarSolicitudes(1);
   }, [filtroEstado, filtroEstadoBolsa, filtroFechaInicio, filtroFechaFin, searchTerm]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ── Re-fetch al cambiar de página (distinto del primer render) ────────────
+  // ── Re-fetch al cambiar de página ─────────────────────────────────────────
   useEffect(() => {
     if (currentPage > 1) cargarSolicitudes(currentPage);
   }, [currentPage]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -194,27 +288,16 @@ export default function SolicitudesAtendidas() {
     setIsLoading(true);
     setErrorMessage('');
     try {
-      // estado: si hay filtro específico lo pasamos, si no usamos todos los estados gestionados
       const estadoParam = filtroEstado !== 'todos' ? filtroEstado : ESTADOS_GESTIONADOS;
 
       const response = await bolsasService.obtenerSolicitudesPaginado(
-        page - 1,                      // page (0-based)
-        PAGE_SIZE,                     // size
-        null,                          // bolsa
-        null,                          // macrorregion
-        null,                          // red
-        null,                          // ipress
-        null,                          // especialidad
-        estadoParam,                   // estado (Estado de Gestora)
-        null,                          // ipressAtencion
-        null,                          // tipoCita
-        null,                          // asignacion
-        searchTerm.trim() || null,     // busqueda (DNI)
-        filtroFechaInicio || null,     // fechaInicio
-        filtroFechaFin    || null,     // fechaFin
-        null,                          // condicionMedica
-        null,                          // gestoraId
-        filtroEstadoBolsa !== 'todos' ? filtroEstadoBolsa : null  // estadoBolsa
+        page - 1, PAGE_SIZE, null, null, null, null, null,
+        estadoParam, null, null, null,
+        searchTerm.trim() || null,
+        filtroFechaInicio || null,
+        filtroFechaFin    || null,
+        null, null,
+        filtroEstadoBolsa !== 'todos' ? filtroEstadoBolsa : null
       );
 
       if (!isMountedRef.current) return;
@@ -233,7 +316,7 @@ export default function SolicitudesAtendidas() {
     }
   }, [filtroEstado, filtroEstadoBolsa, filtroFechaInicio, filtroFechaFin, searchTerm]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ── Ordenamiento client-side (sobre la página actual) ─────────────────────
+  // ── Ordenamiento client-side ───────────────────────────────────────────────
   const handleSort = useCallback((key) => {
     setSortConfig(prev => ({
       key,
@@ -259,6 +342,44 @@ export default function SolicitudesAtendidas() {
     });
   }, [solicitudes, sortConfig]);
 
+  // ── Multi-select helpers ───────────────────────────────────────────────────
+  const toggleSeleccion = (id) => {
+    setSeleccionados(prev => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  };
+
+  const toggleTodos = () => {
+    if (seleccionados.size === sortedSolicitudes.length) {
+      setSeleccionados(new Set());
+    } else {
+      setSeleccionados(new Set(sortedSolicitudes.map(s => s.id)));
+    }
+  };
+
+  const todosSeleccionados = sortedSolicitudes.length > 0 && seleccionados.size === sortedSolicitudes.length;
+  const algunosSeleccionados = seleccionados.size > 0 && !todosSeleccionados;
+
+  // ── Devolver a pendientes ─────────────────────────────────────────────────
+  const handleDevolverAPendientes = async (motivo) => {
+    const ids = Array.from(seleccionados);
+    setProcesandoDevolver(true);
+    try {
+      await bolsasService.devolverAPendientes(ids, motivo);
+      toast.success(`${ids.length} solicitud${ids.length !== 1 ? 'es' : ''} devuelta${ids.length !== 1 ? 's' : ''} a pendientes`);
+      setModalMotivo(false);
+      setSeleccionados(new Set());
+      cargarSolicitudes(currentPage);
+    } catch (e) {
+      console.error('Error al devolver solicitudes:', e);
+      toast.error('Error al devolver las solicitudes a pendientes');
+    } finally {
+      setProcesandoDevolver(false);
+    }
+  };
+
   // ── Paginación ─────────────────────────────────────────────────────────────
   const totalPaginas   = Math.max(1, Math.ceil(totalElementos / PAGE_SIZE));
   const registroInicio = totalElementos === 0 ? 0 : (currentPage - 1) * PAGE_SIZE + 1;
@@ -277,6 +398,45 @@ export default function SolicitudesAtendidas() {
   // ── Render ──────────────────────────────────────────────────────────────────
   return (
     <div className="p-4 space-y-4">
+
+      {/* Modal motivo */}
+      {modalMotivo && (
+        <ModalMotivo
+          cantidad={seleccionados.size}
+          onConfirmar={handleDevolverAPendientes}
+          onCancelar={() => setModalMotivo(false)}
+          procesando={procesandoDevolver}
+        />
+      )}
+
+      {/* Barra flotante multi-select */}
+      {seleccionados.size > 0 && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 flex items-center gap-3 bg-gray-900 text-white px-5 py-3 rounded-2xl shadow-2xl border border-gray-700 animate-in slide-in-from-bottom-4">
+          <div className="flex items-center gap-2">
+            <div className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center text-xs font-bold">
+              {seleccionados.size}
+            </div>
+            <span className="text-sm font-medium">
+              solicitud{seleccionados.size !== 1 ? 'es' : ''} seleccionada{seleccionados.size !== 1 ? 's' : ''}
+            </span>
+          </div>
+          <div className="w-px h-6 bg-gray-600" />
+          <button
+            onClick={() => setModalMotivo(true)}
+            className="flex items-center gap-2 px-4 py-1.5 bg-amber-500 hover:bg-amber-400 text-white text-sm font-medium rounded-lg transition-colors"
+          >
+            <RotateCcw className="w-4 h-4" />
+            Devolver a Pendientes
+          </button>
+          <button
+            onClick={() => setSeleccionados(new Set())}
+            className="p-1.5 rounded-lg hover:bg-gray-700 transition-colors"
+            title="Limpiar selección"
+          >
+            <X className="w-4 h-4 text-gray-400" />
+          </button>
+        </div>
+      )}
 
       {/* ENCABEZADO */}
       <div className="flex items-center justify-between">
@@ -306,7 +466,6 @@ export default function SolicitudesAtendidas() {
       <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-4">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
 
-          {/* Búsqueda por DNI */}
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={15} />
             <input
@@ -318,7 +477,6 @@ export default function SolicitudesAtendidas() {
             />
           </div>
 
-          {/* Estado de Bolsa */}
           <div className="relative">
             <label className="block text-xs font-medium text-gray-500 mb-1">Estado de Bolsa</label>
             <select
@@ -334,7 +492,6 @@ export default function SolicitudesAtendidas() {
             <ChevronDown className="absolute right-3 bottom-2 text-gray-400 pointer-events-none" size={14} />
           </div>
 
-          {/* Estado de Gestora */}
           <div className="relative">
             <label className="block text-xs font-medium text-gray-500 mb-1">Estado de Gestora</label>
             <select
@@ -350,7 +507,6 @@ export default function SolicitudesAtendidas() {
             <ChevronDown className="absolute right-3 bottom-2 text-gray-400 pointer-events-none" size={14} />
           </div>
 
-          {/* Fecha desde */}
           <div>
             <div className="flex items-center gap-1 mb-1">
               <Calendar size={12} className="text-gray-400" />
@@ -364,7 +520,6 @@ export default function SolicitudesAtendidas() {
             />
           </div>
 
-          {/* Fecha hasta */}
           <div>
             <div className="flex items-center gap-1 mb-1">
               <Calendar size={12} className="text-gray-400" />
@@ -381,10 +536,7 @@ export default function SolicitudesAtendidas() {
 
         {hayFiltros && (
           <div className="mt-2 flex justify-end">
-            <button
-              onClick={limpiarFiltros}
-              className="text-xs text-blue-600 hover:underline"
-            >
+            <button onClick={limpiarFiltros} className="text-xs text-blue-600 hover:underline">
               Limpiar filtros
             </button>
           </div>
@@ -429,6 +581,17 @@ export default function SolicitudesAtendidas() {
             <table className="w-full border-collapse">
               <thead className="bg-[#0D5BA9] text-white sticky top-0 z-40">
                 <tr className="border-b-2 border-blue-900">
+                  {/* Checkbox "seleccionar todos" */}
+                  <th className="px-3 py-3 text-center bg-[#0D5BA9] w-10">
+                    <input
+                      type="checkbox"
+                      checked={todosSeleccionados}
+                      ref={el => { if (el) el.indeterminate = algunosSeleccionados; }}
+                      onChange={toggleTodos}
+                      className="w-4 h-4 rounded cursor-pointer accent-amber-400"
+                      title="Seleccionar todos"
+                    />
+                  </th>
                   <th className="px-3 py-3 text-center text-sm font-bold uppercase tracking-wider whitespace-nowrap bg-[#0D5BA9] w-10">#</th>
                   {COLUMNAS.map(({ label, key }) => {
                     const isActive = sortConfig.key === key;
@@ -443,53 +606,85 @@ export default function SolicitudesAtendidas() {
                       </th>
                     );
                   })}
+                  {/* Columna acciones */}
+                  <th className="px-3 py-3 text-center text-sm font-bold uppercase tracking-wider whitespace-nowrap bg-[#0D5BA9] w-20">
+                    Acciones
+                  </th>
                 </tr>
               </thead>
               <tbody>
-                {sortedSolicitudes.map((s, idx) => (
-                  <tr
-                    key={s.id ?? idx}
-                    className="border-b border-gray-100 hover:bg-blue-50/40 transition-colors"
-                  >
-                    <td className="px-3 py-2.5 text-center text-xs text-gray-400 font-medium">
-                      {registroInicio + idx}
-                    </td>
-                    <td className="px-3 py-2.5 whitespace-nowrap text-xs text-gray-600">{s.fechaSolicitud || '—'}</td>
-                    <td className="px-3 py-2.5 whitespace-nowrap text-xs text-gray-600">{s.estado || '—'}</td>
-                    <td className="px-3 py-2.5 whitespace-nowrap">
-                      <span className="inline-block px-2 py-0.5 rounded text-xs font-medium bg-blue-50 text-blue-700">
-                        {s.nombreBolsa}
-                      </span>
-                    </td>
-                    <td className="px-3 py-2.5 whitespace-nowrap text-xs text-gray-600">{s.fechaPreferidaNoAtendida || '—'}</td>
-                    <td className="px-3 py-2.5 whitespace-nowrap">
-                      <div className="text-xs font-semibold text-gray-500">{s.tipoDocumento}</div>
-                      <div className="font-bold text-blue-700">{s.dni}</div>
-                    </td>
-                    <td className="px-3 py-2.5">
-                      <div className="font-semibold text-gray-900 whitespace-nowrap">{s.paciente}</div>
-                      <HistorialPacienteBtn dni={s.dni} nombrePaciente={s.paciente} />
-                      <div className="text-xs text-gray-400">{s.sexo} · {s.edad} años</div>
-                    </td>
-                    <td className="px-3 py-2.5 whitespace-nowrap text-xs text-gray-600">
-                      <div>{s.telefono || '—'}</div>
-                      {s.telefonoAlterno && <div className="text-gray-400">{s.telefonoAlterno}</div>}
-                    </td>
-                    <td className="px-3 py-2.5 whitespace-nowrap text-xs text-gray-600">{s.tipoCita || '—'}</td>
-                    <td className="px-3 py-2.5 whitespace-nowrap text-xs text-gray-600">{s.especialidad || '—'}</td>
-                    <td className="px-3 py-2.5 text-xs text-gray-600 max-w-[160px] truncate" title={s.ipress}>{s.ipress}</td>
-                    <td className="px-3 py-2.5 text-xs text-gray-600 max-w-[160px] truncate" title={s.ipressAtencion}>{s.ipressAtencion}</td>
-                    <td className="px-3 py-2.5 whitespace-nowrap text-xs text-gray-600">{s.red}</td>
-                    <td className="px-3 py-2.5">{getEstadoBadge(s.estadoCodigo)}</td>
-                    <td className="px-3 py-2.5 whitespace-nowrap text-xs text-gray-600">{s.fechaHoraCita || '—'}</td>
-                    <td className="px-3 py-2.5 whitespace-nowrap text-xs text-gray-600">{s.nombreMedicoAsignado || '—'}</td>
-                    <td className="px-3 py-2.5 whitespace-nowrap text-xs text-gray-600">{s.condicionMedica || '—'}</td>
-                    <td className="px-3 py-2.5 whitespace-nowrap text-xs text-gray-600">{s.fechaAtencionMedica || '—'}</td>
-                    <td className="px-3 py-2.5 whitespace-nowrap text-xs text-gray-600">{s.fechaAsignacion || '—'}</td>
-                    <td className="px-3 py-2.5 whitespace-nowrap text-xs text-gray-600">{s.gestoraAsignada || '—'}</td>
-                    <td className="px-3 py-2.5 whitespace-nowrap text-xs text-gray-600">{s.usuarioCambioEstado || '—'}</td>
-                  </tr>
-                ))}
+                {sortedSolicitudes.map((s, idx) => {
+                  const estaSeleccionado = seleccionados.has(s.id);
+                  return (
+                    <tr
+                      key={s.id ?? idx}
+                      className={`border-b border-gray-100 transition-colors ${
+                        estaSeleccionado ? 'bg-amber-50 border-amber-200' : 'hover:bg-blue-50/40'
+                      }`}
+                    >
+                      {/* Checkbox individual */}
+                      <td className="px-3 py-2.5 text-center">
+                        <input
+                          type="checkbox"
+                          checked={estaSeleccionado}
+                          onChange={() => toggleSeleccion(s.id)}
+                          className="w-4 h-4 rounded cursor-pointer accent-amber-500"
+                        />
+                      </td>
+                      <td className="px-3 py-2.5 text-center text-xs text-gray-400 font-medium">
+                        {registroInicio + idx}
+                      </td>
+                      <td className="px-3 py-2.5 whitespace-nowrap text-xs text-gray-600">{s.fechaSolicitud || '—'}</td>
+                      <td className="px-3 py-2.5 whitespace-nowrap text-xs text-gray-600">{s.estado || '—'}</td>
+                      <td className="px-3 py-2.5 whitespace-nowrap">
+                        <span className="inline-block px-2 py-0.5 rounded text-xs font-medium bg-blue-50 text-blue-700">
+                          {s.nombreBolsa}
+                        </span>
+                      </td>
+                      <td className="px-3 py-2.5 whitespace-nowrap text-xs text-gray-600">{s.fechaPreferidaNoAtendida || '—'}</td>
+                      <td className="px-3 py-2.5 whitespace-nowrap">
+                        <div className="text-xs font-semibold text-gray-500">{s.tipoDocumento}</div>
+                        <div className="font-bold text-blue-700">{s.dni}</div>
+                      </td>
+                      <td className="px-3 py-2.5">
+                        <div className="font-semibold text-gray-900 whitespace-nowrap">{s.paciente}</div>
+                        <HistorialPacienteBtn dni={s.dni} nombrePaciente={s.paciente} />
+                        <div className="text-xs text-gray-400">{s.sexo} · {s.edad} años</div>
+                      </td>
+                      <td className="px-3 py-2.5 whitespace-nowrap text-xs text-gray-600">
+                        <div>{s.telefono || '—'}</div>
+                        {s.telefonoAlterno && <div className="text-gray-400">{s.telefonoAlterno}</div>}
+                      </td>
+                      <td className="px-3 py-2.5 whitespace-nowrap text-xs text-gray-600">{s.tipoCita || '—'}</td>
+                      <td className="px-3 py-2.5 whitespace-nowrap text-xs text-gray-600">{s.especialidad || '—'}</td>
+                      <td className="px-3 py-2.5 text-xs text-gray-600 max-w-[160px] truncate" title={s.ipress}>{s.ipress}</td>
+                      <td className="px-3 py-2.5 text-xs text-gray-600 max-w-[160px] truncate" title={s.ipressAtencion}>{s.ipressAtencion}</td>
+                      <td className="px-3 py-2.5 whitespace-nowrap text-xs text-gray-600">{s.red}</td>
+                      <td className="px-3 py-2.5">{getEstadoBadge(s.estadoCodigo)}</td>
+                      <td className="px-3 py-2.5 whitespace-nowrap text-xs text-gray-600">{s.fechaHoraCita || '—'}</td>
+                      <td className="px-3 py-2.5 whitespace-nowrap text-xs text-gray-600">{s.nombreMedicoAsignado || '—'}</td>
+                      <td className="px-3 py-2.5 whitespace-nowrap text-xs text-gray-600">{s.condicionMedica || '—'}</td>
+                      <td className="px-3 py-2.5 whitespace-nowrap text-xs text-gray-600">{s.fechaAtencionMedica || '—'}</td>
+                      <td className="px-3 py-2.5 whitespace-nowrap text-xs text-gray-600">{s.fechaAsignacion || '—'}</td>
+                      <td className="px-3 py-2.5 whitespace-nowrap text-xs text-gray-600">{s.gestoraAsignada || '—'}</td>
+                      <td className="px-3 py-2.5 whitespace-nowrap text-xs text-gray-600">{s.usuarioCambioEstado || '—'}</td>
+                      {/* Acciones */}
+                      <td className="px-3 py-2.5 text-center">
+                        <button
+                          onClick={() => {
+                            setSeleccionados(new Set([s.id]));
+                            setModalMotivo(true);
+                          }}
+                          title="Devolver a Pendientes"
+                          className="inline-flex items-center gap-1 px-2 py-1 text-xs bg-amber-100 text-amber-700 rounded-lg hover:bg-amber-200 transition-colors font-medium"
+                        >
+                          <RotateCcw className="w-3 h-3" />
+                          Devolver
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
@@ -503,6 +698,11 @@ export default function SolicitudesAtendidas() {
               <span className="font-bold text-gray-900">{registroInicio}</span>–
               <span className="font-bold text-gray-900">{registroFin}</span> de{' '}
               <span className="font-bold text-gray-900">{totalElementos.toLocaleString('es-PE')}</span>
+              {seleccionados.size > 0 && (
+                <span className="ml-3 text-amber-600 font-semibold">
+                  · {seleccionados.size} seleccionada{seleccionados.size !== 1 ? 's' : ''}
+                </span>
+              )}
             </div>
 
             {totalPaginas > 1 && (

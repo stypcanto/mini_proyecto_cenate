@@ -373,6 +373,24 @@ export const eliminarMultiplesSolicitudes = async (ids) => {
   }
 };
 
+/**
+ * v1.81.5 - Devuelve solicitudes al estado PENDIENTE_CITA con motivo de devolución
+ * @param {number[]} ids - IDs de solicitudes a devolver
+ * @param {string} motivo - Motivo de la devolución
+ */
+export const devolverAPendientes = async (ids, motivo) => {
+  try {
+    const response = await apiClient.post(`${API_BASE_URL}/solicitudes/devolver-a-pendientes`, {
+      ids,
+      motivo,
+    }, true);
+    return response;
+  } catch (error) {
+    console.error('Error al devolver solicitudes a pendientes:', error);
+    throw error;
+  }
+};
+
 // ========================================================================
 // 📊 ESTADÍSTICAS - Métricas del módulo Bolsas
 // ========================================================================
@@ -1222,6 +1240,7 @@ export default {
   rechazarSolicitud,
   eliminarSolicitud,
   eliminarMultiplesSolicitudes,
+  devolverAPendientes,
 
   // Estadísticas
   obtenerEstadisticas,
