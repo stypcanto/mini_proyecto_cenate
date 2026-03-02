@@ -32,6 +32,26 @@ import java.util.Optional;
 public interface DimHorarioRepository extends JpaRepository<DimHorario, Long> {
 
     /**
+     * Busca horarios activos por área y grupo de programación.
+     * Usado en el modal de turnos para cargar los códigos disponibles.
+     *
+     * @param idArea ID del área
+     * @param idGrupoProg ID del grupo de programación
+     * @return Lista de horarios activos para esa área y grupo
+     */
+    @Query("""
+        SELECT h FROM DimHorario h
+        WHERE h.idArea = :idArea
+          AND h.idGrupoProg = :idGrupoProg
+          AND h.statHorario = 'A'
+        ORDER BY h.categoria, h.codHorario
+    """)
+    List<DimHorario> findByAreaAndGrupoProg(
+        @Param("idArea") Long idArea,
+        @Param("idGrupoProg") Long idGrupoProg
+    );
+
+    /**
      * CRÍTICO: Busca horario por código y régimen laboral.
      * Usado durante sincronización para mapear turnos correctamente.
      *

@@ -2,9 +2,11 @@ package com.styp.cenate.service.control_horarios;
 
 import com.styp.cenate.dto.control_horarios.CtrHorarioDTO;
 import com.styp.cenate.dto.control_horarios.CreateCtrHorarioRequest;
+import com.styp.cenate.dto.control_horarios.DimHorarioDTO;
 import com.styp.cenate.dto.control_horarios.PeriodoDisponibleDTO;
 import com.styp.cenate.model.CtrHorario;
 import com.styp.cenate.repository.CtrHorarioRepository;
+import com.styp.cenate.repository.DimHorarioRepository;
 import com.styp.cenate.security.service.JwtUtil;
 import io.jsonwebtoken.Claims;
 import lombok.RequiredArgsConstructor;
@@ -27,6 +29,7 @@ import java.util.stream.Collectors;
 public class ControlHorariosServiceImpl implements ControlHorariosService {
 
     private final CtrHorarioRepository ctrHorarioRepository;
+    private final DimHorarioRepository dimHorarioRepository;
     private final JdbcTemplate jdbcTemplate;
     private final JwtUtil jwtUtil;
 
@@ -334,5 +337,40 @@ public class ControlHorariosServiceImpl implements ControlHorariosService {
     public Long obtenerSolicitudDelMedico(String periodo, Long idArea) {
         // Este método quedó deprecado - la solicitud se obtiene en obtenerPeriodosDisponibles()
         return null;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<DimHorarioDTO> obtenerHorariosPorAreaYGrupo(Long idArea, Long idGrupoProg) {
+        log.info("📋 Obteniendo horarios para idArea={}, idGrupoProg={}", idArea, idGrupoProg);
+
+        var horarios = dimHorarioRepository.findByAreaAndGrupoProg(idArea, idGrupoProg);
+
+        log.info("✅ Se encontraron {} horarios activos", horarios.size());
+
+        return horarios.stream().map(h -> {
+            // Asignar color según categoría
+            String color;
+            switch (h.getCategoria() != null ? h.getCategoria() : "") {
+                case "TURNO": color = "bg-blue-600"; break;
+                case "LIBRE": color = "bg-gray-400"; break;
+                case "JUSTIF": color = "bg-amber-500"; break;
+                case "ESTADO": color = "bg-red-600"; break;
+                default: color = "bg-blue-600";
+            }
+
+            return DimHorarioDTO.builder()
+                    .idHorario(h.getIdHorario())
+                    .codHorario(h.getCodHorario())
+                    .codHorarioVisual(h.getCodHorarioVisual())
+                    .descHorario(h.getDescHorario())
+                    .horaInicio(h.getHoraInicio() != null ? h.getHoraInicio().toString() : null)
+                    .horaFin(h.getHoraFin() != null ? h.getHoraFin().toString() : null)
+                    .horas(h.getHoras())
+                    .cruzaDia(h.getCruzaDia())
+                    .categoria(h.getCategoria())
+                    .color(color)
+                    .build();
+        }).collect(Collectors.toList());
     }
 }

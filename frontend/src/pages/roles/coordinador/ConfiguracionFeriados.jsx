@@ -9,7 +9,6 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Eye, Plus, Pencil, AlertCircle, Loader, RefreshCw } from 'lucide-react';
 import ModalNuevaSolicitud from '../../../components/control_horarios/ModalNuevaSolicitud';
-import ModalEditarSolicitud from '../../../components/control_horarios/ModalEditarSolicitud';
 import ModalConsultarSolicitud from '../../../components/control_horarios/ModalConsultarSolicitud';
 import { logRespuestaConsola } from '../../../utils/consoleResponseLogger';
 
@@ -25,7 +24,6 @@ const ConfiguracionFeriados = () => {
   
   // Modales
   const [showModalNuevaSolicitud, setShowModalNuevaSolicitud] = useState(false);
-  const [showModalEditar, setShowModalEditar] = useState(false);
   const [showModalConsultar, setShowModalConsultar] = useState(false);
   const [selectedPeriodo, setSelectedPeriodo] = useState(null);
   const [selectedHorario, setSelectedHorario] = useState(null);
@@ -101,22 +99,42 @@ const ConfiguracionFeriados = () => {
 
   const handleIniciarSolicitud = (p) => {
     setSelectedPeriodo(p);
+    setSelectedHorario(null);
     setShowModalNuevaSolicitud(true);
   };
 
-  const handleEditarSolicitud = (h) => {
-    setSelectedHorario(h);
-    setShowModalEditar(true);
+  const handleEditarSolicitud = async (h) => {
+    try {
+      const token = localStorage.getItem('token') || localStorage.getItem('auth.token');
+      const response = await axios.get(`/api/control-horarios/horarios/${h.idCtrHorario}`, {
+        headers: { 'Authorization': token ? `Bearer ${token}` : '' }
+      });
+      setSelectedHorario(response.data);
+      setSelectedPeriodo(h);
+      setShowModalNuevaSolicitud(true);
+    } catch (err) {
+      console.error('Error cargando detalle para editar:', err);
+      setError('Error al cargar detalle de la solicitud');
+    }
   };
 
-  const handleConsultarSolicitud = (h) => {
-    setSelectedHorario(h);
-    setShowModalConsultar(true);
+  const handleConsultarSolicitud = async (h) => {
+    try {
+      const token = localStorage.getItem('token') || localStorage.getItem('auth.token');
+      const response = await axios.get(`/api/control-horarios/horarios/${h.idCtrHorario}`, {
+        headers: { 'Authorization': token ? `Bearer ${token}` : '' }
+      });
+      setSelectedHorario(response.data);
+      setShowModalConsultar(true);
+    } catch (err) {
+      console.error('Error cargando detalle para consultar:', err);
+      setError('Error al cargar detalle de la solicitud');
+    }
   };
 
   const handleModalSuccess = () => {
     setShowModalNuevaSolicitud(false);
-    setShowModalEditar(false);
+    setSelectedHorario(null);
     cargarDatos();
   };
 
@@ -455,15 +473,8 @@ const ConfiguracionFeriados = () => {
       {showModalNuevaSolicitud && (
         <ModalNuevaSolicitud
           periodo={selectedPeriodo}
-          onClose={() => setShowModalNuevaSolicitud(false)}
-          onSuccess={handleModalSuccess}
-        />
-      )}
-
-      {showModalEditar && selectedHorario && (
-        <ModalEditarSolicitud
           horario={selectedHorario}
-          onClose={() => setShowModalEditar(false)}
+          onClose={() => { setShowModalNuevaSolicitud(false); setSelectedHorario(null); }}
           onSuccess={handleModalSuccess}
         />
       )}

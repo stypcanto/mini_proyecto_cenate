@@ -2,6 +2,7 @@ package com.styp.cenate.api.control_horarios;
 
 import com.styp.cenate.dto.control_horarios.CtrHorarioDTO;
 import com.styp.cenate.dto.control_horarios.CreateCtrHorarioRequest;
+import com.styp.cenate.dto.control_horarios.DimHorarioDTO;
 import com.styp.cenate.dto.control_horarios.PeriodoDisponibleDTO;
 import com.styp.cenate.service.control_horarios.ControlHorariosService;
 import lombok.RequiredArgsConstructor;
@@ -65,6 +66,22 @@ public class ControlHorariosController {
         return null;
     }
 
+
+    /**
+     * GET /api/control-horarios/horarios/codigos
+     * Obtener códigos de horario por área y grupo de programación.
+     * Los parámetros idArea e idGrupoProg vienen del JWT claims del frontend.
+     */
+    @PreAuthorize("isAuthenticated()")
+    @GetMapping("/horarios/codigos")
+    public ResponseEntity<List<DimHorarioDTO>> obtenerCodigosHorario(
+            @RequestParam Long idArea,
+            @RequestParam Long idGrupoProg
+    ) {
+        log.info("GET /horarios/codigos - idArea={}, idGrupoProg={}", idArea, idGrupoProg);
+        List<DimHorarioDTO> horarios = controlHorariosService.obtenerHorariosPorAreaYGrupo(idArea, idGrupoProg);
+        return ResponseEntity.ok(horarios);
+    }
 
     /**
      * POST /api/control-horarios/horarios

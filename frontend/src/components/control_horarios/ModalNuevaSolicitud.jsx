@@ -7,40 +7,33 @@ import axios from 'axios';
 import { X, Loader, AlertCircle, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
-const ModalNuevaSolicitud = ({ periodo, onClose, onSuccess }) => {
+const ModalNuevaSolicitud = ({ periodo, horario, onClose, onSuccess }) => {
   const { user } = useAuth();
+  const isEditMode = !!horario;
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [selectedDate, setSelectedDate] = useState(null);
   const [dayTurnos, setDayTurnos] = useState({}); // Mapea fecha (YYYY-MM-DD) a código de turno
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [medicos, setMedicos] = useState([]);
+  const [turnos, setTurnos] = useState([]); // Cargados desde API dim_horario
 
-  // Códigos de turno con colores
-  const TURNO_COLORES = {
-    '200A': { color: 'bg-blue-600', label: '2 TURNOS REGULARES' },
-    '131': { color: 'bg-blue-600', label: 'TURNO TARDE (2:00 P.M. - 8:00 P.M.)' },
-    '158': { color: 'bg-yellow-500', label: 'TURNO MAÑANA (8:00 A.M. - 2:00 P.M.)' },
-    '002': { color: 'bg-green-600', label: 'VACACIONES' },
-    '004': { color: 'bg-gray-400', label: 'LIBRE' },
-    'L': { color: 'bg-purple-600', label: 'LICENCIA OTROS' },
-    'C': { color: 'bg-red-600', label: 'CUMPLEAÑOS' },
-    'O': { color: 'bg-pink-600', label: 'ONOMÁSTICO' },
-    'DM': { color: 'bg-red-700', label: 'DESCANSO MÉDICO' },
-  };
-
-  // Turnos hardcodeados (luego vendrán de API)
-  const turnos = Object.keys(TURNO_COLORES).map(codigo => ({
-    codigo,
-    descripcion: TURNO_COLORES[codigo].label
-  }));
+  // Mapa de colores construido dinámicamente desde los turnos cargados
+  const TURNO_COLORES = {};
+  turnos.forEach(t => {
+    TURNO_COLORES[t.codigo] = {
+      color: t.color || 'bg-blue-600',
+      label: t.descHorario || t.descripcion,
+      horas: t.horas
+    };
+  });
   
   const [showTurnosDropdown, setShowTurnosDropdown] = useState(false);
 
   const [formData, setFormData] = useState({
     idPers: '',
     turnoCode: '',
-    observaciones: '',
+    observaciones: isEditMode ? (horario?.observaciones || '') : '',
   });
 
   // Cargar datos iniciales al abrir
@@ -62,16 +55,27 @@ const ModalNuevaSolicitud = ({ periodo, onClose, onSuccess }) => {
       setLoading(true);
       setError(null);
 
-      // Cargar médicos/personal
-      const responseMedicos = await axios.get('/api/personal', {
-        params: { idArea: periodo.idArea }
-      });
-      setMedicos(responseMedicos.data || []);
+      const token = localStorage.getItem('token') || localStorage.getItem('auth.token');
+      const idArea = periodo?.idArea || user?.idArea;
+      const idGrupoProg = user?.idGrupoProg || 1;
 
-      // Los turnos ya están hardcodeados en la constante arriba
-      // Cuando se implemente API, cambiar a: const responseTurnos = await axios.get('/api/turnos');
+      // Cargar códigos de horario desde dim_horario (filtrados por área y grupo)
+      const responseHorarios = await axios.get('/api/control-horarios/horarios/codigos', {
+        params: { idArea, idGrupoProg },
+        headers: { 'Authorization': token ? `Bearer ${token}` : '' }
+      });
+
+      const horariosData = (responseHorarios.data || []).map(h => ({
+        ...h,
+        codigo: h.codHorarioVisual || h.codHorario,
+        descripcion: h.descHorario,
+      }));
+      setTurnos(horariosData);
+
+      console.log(`📋 Códigos de horario cargados: ${horariosData.length} (idArea=${idArea}, idGrupoProg=${idGrupoProg})`);
     } catch (err) {
       console.error('Error cargando datos:', err);
+      setError('Error al cargar códigos de horario');
     } finally {
       setLoading(false);
     }
@@ -169,35 +173,62 @@ const ModalNuevaSolicitud = ({ periodo, onClose, onSuccess }) => {
       const token = localStorage.getItem('token') || localStorage.getItem('auth.token');
       const turnoSeleccionado = dayTurnos[getDateKey(selectedDate)];
 
-      // Datos tomados del JWT claims del usuario logueado
-      const request = {
-        periodo: periodo.periodo,
-        idArea: periodo.idArea,
-        idPers: user?.idPers,
-        idGrupoProg: user?.idGrupoProg || 1,
-        idServicio: user?.idServicio || null,
-        idRegLab: user?.idRegLab || 1,
-        turnosTotales: 1,
-        horasTotales: 0,
-        observaciones: `Turno: ${turnoSeleccionado} | Fecha: ${selectedDate.toLocaleDateString('es-PE')} ${formData.observaciones ? '| ' + formData.observaciones : ''}`,
-      };
+      if (isEditMode) {
+        // Modo edición: PUT
+        const updateRequest = {
+          turnosTotales: 1,
+          horasTotales: 0,
+          observaciones: `Turno: ${turnoSeleccionado} | Fecha: ${selectedDate.toLocaleDateString('es-PE')} ${formData.observaciones ? '| ' + formData.observaciones : ''}`,
+        };
 
-      const response = await axios.post('/api/control-horarios/horarios', request, {
-        headers: {
-          'Authorization': token ? `Bearer ${token}` : '',
-          'Content-Type': 'application/json'
+        const response = await axios.put(
+          `/api/control-horarios/horarios/${horario.idCtrHorario}`,
+          updateRequest,
+          {
+            headers: {
+              'Authorization': token ? `Bearer ${token}` : '',
+              'Content-Type': 'application/json'
+            }
+          }
+        );
+
+        if (response.data.success) {
+          onSuccess();
+          onClose();
+        } else {
+          setError(response.data.error || 'Error al actualizar solicitud');
         }
-      });
-
-      if (response.data.success) {
-        onSuccess();
-        onClose();
       } else {
-        setError(response.data.error || 'Error al crear solicitud');
+        // Modo creación: POST
+        const request = {
+          periodo: periodo.periodo,
+          idArea: periodo.idArea,
+          idPers: user?.idPers,
+          idGrupoProg: user?.idGrupoProg || 1,
+          idServicio: user?.idServicio || null,
+          idRegLab: user?.idRegLab || 1,
+          turnosTotales: 1,
+          horasTotales: 0,
+          observaciones: `Turno: ${turnoSeleccionado} | Fecha: ${selectedDate.toLocaleDateString('es-PE')} ${formData.observaciones ? '| ' + formData.observaciones : ''}`,
+        };
+
+        const response = await axios.post('/api/control-horarios/horarios', request, {
+          headers: {
+            'Authorization': token ? `Bearer ${token}` : '',
+            'Content-Type': 'application/json'
+          }
+        });
+
+        if (response.data.success) {
+          onSuccess();
+          onClose();
+        } else {
+          setError(response.data.error || 'Error al crear solicitud');
+        }
       }
     } catch (err) {
-      console.error('Error creando solicitud:', err);
-      setError(err.response?.data?.error || 'Error al crear solicitud');
+      console.error(`Error ${isEditMode ? 'actualizando' : 'creando'} solicitud:`, err);
+      setError(err.response?.data?.error || `Error al ${isEditMode ? 'actualizar' : 'crear'} solicitud`);
     } finally {
       setLoading(false);
     }
@@ -215,7 +246,7 @@ const ModalNuevaSolicitud = ({ periodo, onClose, onSuccess }) => {
       <div className="bg-white rounded-lg shadow-xl w-full max-w-6xl max-h-[95vh] overflow-y-auto">
         {/* Header */}
         <div className="sticky top-0 bg-blue-600 text-white px-6 py-4 flex items-center justify-between border-b">
-          <h2 className="text-xl font-bold">Mi Horario del Mes</h2>
+          <h2 className="text-xl font-bold">{isEditMode ? 'Editar Horario del Mes' : 'Mi Horario del Mes'}</h2>
           <button
             onClick={onClose}
             className="p-1 hover:bg-blue-700 rounded transition-colors"
@@ -405,7 +436,7 @@ const ModalNuevaSolicitud = ({ periodo, onClose, onSuccess }) => {
                 className="flex-1 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 font-semibold text-lg flex items-center justify-center gap-2"
               >
                 {loading && <Loader className="w-5 h-5 animate-spin" />}
-                Guardar Horario
+                {isEditMode ? 'Actualizar Horario' : 'Guardar Horario'}
               </button>
               <button
                 type="button"
@@ -427,6 +458,9 @@ const ModalNuevaSolicitud = ({ periodo, onClose, onSuccess }) => {
                       {codigo}
                     </span>
                     <span className="text-sm text-gray-700">{info.label}</span>
+                    {info.horas > 0 && (
+                      <span className="text-xs text-gray-500 font-medium">({info.horas}h)</span>
+                    )}
                   </div>
                 ))}
               </div>

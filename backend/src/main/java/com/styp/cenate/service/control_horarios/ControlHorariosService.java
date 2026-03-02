@@ -2,6 +2,7 @@ package com.styp.cenate.service.control_horarios;
 
 import com.styp.cenate.dto.control_horarios.CtrHorarioDTO;
 import com.styp.cenate.dto.control_horarios.CreateCtrHorarioRequest;
+import com.styp.cenate.dto.control_horarios.DimHorarioDTO;
 import com.styp.cenate.dto.control_horarios.PeriodoDisponibleDTO;
 import java.util.List;
 
@@ -42,4 +43,10 @@ public interface ControlHorariosService {
      * Eliminar solicitud
      */
     void eliminarSolicitud(Long idCtrHorario);
+
+    /**
+     * Obtener códigos de horario por área y grupo de programación.
+     * Tabla: dim_horario (solo activos)
+     */
+    List<DimHorarioDTO> obtenerHorariosPorAreaYGrupo(Long idArea, Long idGrupoProg);
 }

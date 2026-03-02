@@ -6,6 +6,7 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import java.math.BigDecimal;
+import java.time.LocalTime;
 import java.time.OffsetDateTime;
 import java.util.LinkedHashSet;
 import java.util.Set;
@@ -45,6 +46,24 @@ public class DimHorario {
     private Long idHorario;
 
     /**
+     * Área a la que pertenece el horario
+     */
+    @Column(name = "id_area", nullable = false)
+    private Long idArea;
+
+    /**
+     * Grupo de programación al que pertenece el horario
+     */
+    @Column(name = "id_grupo_prog", nullable = false)
+    private Long idGrupoProg;
+
+    /**
+     * Servicio asociado (opcional)
+     */
+    @Column(name = "id_servicio")
+    private Long idServicio;
+
+    /**
      * Código del horario (158, 131, 200A, etc.)
      * Usado para mapear turnos de disponibilidad a horarios chatbot
      */
@@ -52,10 +71,35 @@ public class DimHorario {
     private String codHorario;
 
     /**
+     * Código visual del horario (opcional)
+     */
+    @Column(name = "cod_horario_visual", length = 10)
+    private String codHorarioVisual;
+
+    /**
      * Descripción del horario
      */
     @Column(name = "desc_horario", nullable = false, columnDefinition = "TEXT")
     private String descHorario;
+
+    /**
+     * Hora de inicio del turno
+     */
+    @Column(name = "hora_inicio")
+    private LocalTime horaInicio;
+
+    /**
+     * Hora de fin del turno
+     */
+    @Column(name = "hora_fin")
+    private LocalTime horaFin;
+
+    /**
+     * Si el turno cruza al día siguiente
+     */
+    @Column(name = "cruza_dia", nullable = false)
+    @Builder.Default
+    private Boolean cruzaDia = false;
 
     /**
      * Horas del turno (6.00, 12.00, etc.)
@@ -65,10 +109,31 @@ public class DimHorario {
     private BigDecimal horas = BigDecimal.ZERO;
 
     /**
-     * Régimen laboral asociado
+     * Si requiere asistencia
+     */
+    @Column(name = "requiere_asistencia", nullable = false)
+    @Builder.Default
+    private Boolean requiereAsistencia = true;
+
+    /**
+     * Si cuenta para carga laboral
+     */
+    @Column(name = "cuenta_carga", nullable = false)
+    @Builder.Default
+    private Boolean cuentaCarga = true;
+
+    /**
+     * Categoría: TURNO, LIBRE, JUSTIF, ESTADO
+     */
+    @Column(name = "categoria", nullable = false, length = 20)
+    @Builder.Default
+    private String categoria = "TURNO";
+
+    /**
+     * Régimen laboral asociado (opcional)
      */
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "id_reg_lab", nullable = false)
+    @JoinColumn(name = "id_reg_lab")
     private RegimenLaboral regimenLaboral;
 
     /**
@@ -77,12 +142,6 @@ public class DimHorario {
     @Column(name = "stat_horario", nullable = false, columnDefinition = "TEXT")
     @Builder.Default
     private String statHorario = "A";
-
-    /**
-     * Código visual del horario (opcional)
-     */
-    @Column(name = "cod_horario_visual", length = 10)
-    private String codHorarioVisual;
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
