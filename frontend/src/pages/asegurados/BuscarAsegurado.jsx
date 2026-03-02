@@ -783,22 +783,24 @@ export default function BuscarAsegurado() {
                               </div>
                             </div>
                           </td>
-                          <td className="px-2.5 py-3" style={{ width: '100px' }}>
-                            <div className="flex items-center justify-center gap-0.5">
+                          <td className="px-2.5 py-3" style={{ width: '110px' }}>
+                            <div className="flex items-center justify-center gap-1.5">
                               {/* Botón Ver */}
                               <div className="relative group">
                                 <button
                                   onClick={ () => obtenerDetalles(asegurado.pkAsegurado) }
                                   disabled={ loadingDetalle }
-                                  className="p-1 bg-white border border-emerald-600 text-emerald-600
-                                           rounded hover:bg-emerald-600 hover:text-white transition-all duration-200
-                                           disabled:opacity-50 disabled:cursor-not-allowed"
+                                  className="w-8 h-8 flex items-center justify-center rounded-lg
+                                           bg-emerald-50 text-emerald-600 border border-emerald-200
+                                           hover:bg-emerald-500 hover:text-white hover:border-emerald-500
+                                           shadow-sm hover:shadow-md transition-all duration-200
+                                           disabled:opacity-40 disabled:cursor-not-allowed"
                                 >
-                                  <Eye className="w-3.5 h-3.5" />
+                                  <Eye className="w-4 h-4" />
                                 </button>
-                                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 text-xs text-white bg-gray-800 rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">
+                                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 text-xs text-white bg-gray-900 rounded-md whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50 shadow-lg">
                                   Ver detalle
-                                  <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-800" />
+                                  <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-900" />
                                 </div>
                               </div>
 
@@ -807,15 +809,17 @@ export default function BuscarAsegurado() {
                                 <button
                                   onClick={ () => abrirFormularioEditar(asegurado.pkAsegurado) }
                                   disabled={ loadingDetalle }
-                                  className="p-1 bg-white border border-blue-600 text-blue-600
-                                           rounded hover:bg-blue-600 hover:text-white transition-all duration-200
-                                           disabled:opacity-50 disabled:cursor-not-allowed"
+                                  className="w-8 h-8 flex items-center justify-center rounded-lg
+                                           bg-blue-50 text-blue-600 border border-blue-200
+                                           hover:bg-blue-500 hover:text-white hover:border-blue-500
+                                           shadow-sm hover:shadow-md transition-all duration-200
+                                           disabled:opacity-40 disabled:cursor-not-allowed"
                                 >
-                                  <Edit className="w-3.5 h-3.5" />
+                                  <Edit className="w-4 h-4" />
                                 </button>
-                                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 text-xs text-white bg-gray-800 rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">
+                                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 text-xs text-white bg-gray-900 rounded-md whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50 shadow-lg">
                                   Editar asegurado
-                                  <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-800" />
+                                  <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-900" />
                                 </div>
                               </div>
 
@@ -824,14 +828,16 @@ export default function BuscarAsegurado() {
                                 <div className="relative group">
                                   <button
                                     onClick={ () => eliminarAsegurado(asegurado.pkAsegurado, asegurado.paciente) }
-                                    className="p-1 bg-white border border-red-600 text-red-600
-                                             rounded hover:bg-red-600 hover:text-white transition-all duration-200"
+                                    className="w-8 h-8 flex items-center justify-center rounded-lg
+                                             bg-red-50 text-red-500 border border-red-200
+                                             hover:bg-red-500 hover:text-white hover:border-red-500
+                                             shadow-sm hover:shadow-md transition-all duration-200"
                                   >
-                                    <Trash2 className="w-3.5 h-3.5" />
+                                    <Trash2 className="w-4 h-4" />
                                   </button>
-                                  <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 text-xs text-white bg-gray-800 rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">
+                                  <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 text-xs text-white bg-gray-900 rounded-md whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50 shadow-lg">
                                     Eliminar asegurado
-                                    <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-800" />
+                                    <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-900" />
                                   </div>
                                 </div>
                               ) }
