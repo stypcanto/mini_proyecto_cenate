@@ -823,9 +823,17 @@ export default function CitasAgendadas() {
     ];
   }, [pacientes]);
 
+  // Normaliza estado bolsa a UPPERCASE para agrupar variantes (ej: "Observado" = "OBSERVADO")
+  const normEstadoBolsa = (e) => e ? e.toUpperCase() : e;
+
   const opcionesEstadoBolsa = useMemo(() => {
     const counts = {};
-    pacientes.forEach(p => { if (p.estadoBolsa && p.estadoBolsa !== '—') counts[p.estadoBolsa] = (counts[p.estadoBolsa] || 0) + 1; });
+    pacientes.forEach(p => {
+      if (p.estadoBolsa && p.estadoBolsa !== '—') {
+        const key = normEstadoBolsa(p.estadoBolsa);
+        counts[key] = (counts[key] || 0) + 1;
+      }
+    });
     return [
       { label: `Todos (${pacientes.length})`, value: '' },
       ...Object.entries(counts)
@@ -845,9 +853,18 @@ export default function CitasAgendadas() {
     ];
   }, [pacientes]);
 
+  // Normaliza variantes de estado atención al valor canónico
+  const NORM_ESTADO_ATEN = { 'Anulada': 'Anulado', 'Desercion': 'Deserción', 'DESERCION': 'Deserción' };
+  const normEstadoAten = (e) => e ? (NORM_ESTADO_ATEN[e] || e) : e;
+
   const opcionesEstadoAten = useMemo(() => {
     const counts = {};
-    pacientes.forEach(p => { if (p.estadoAtencion && p.estadoAtencion !== '—') counts[p.estadoAtencion] = (counts[p.estadoAtencion] || 0) + 1; });
+    pacientes.forEach(p => {
+      if (p.estadoAtencion && p.estadoAtencion !== '—') {
+        const key = normEstadoAten(p.estadoAtencion);
+        counts[key] = (counts[key] || 0) + 1;
+      }
+    });
     return [
       { label: `Todos (${pacientes.length})`, value: '' },
       ...Object.entries(counts)
@@ -888,9 +905,9 @@ export default function CitasAgendadas() {
           ? p.fechaAtencion.split('T')[0] === fechaSeleccionada
           : p.fechaAtencion.substring(0, 10) === fechaSeleccionada
       ));
-      const matchEstadoBolsa = !filtroEstadoBolsa || p.estadoBolsa === filtroEstadoBolsa;
+      const matchEstadoBolsa = !filtroEstadoBolsa || normEstadoBolsa(p.estadoBolsa) === filtroEstadoBolsa;
       const matchEstadoCita  = !filtroEstadoCita  || p.codigoEstado === filtroEstadoCita;
-      const matchEstadoAten  = !filtroEstadoAten  || p.estadoAtencion === filtroEstadoAten;
+      const matchEstadoAten  = !filtroEstadoAten  || normEstadoAten(p.estadoAtencion) === filtroEstadoAten;
       return matchBusqueda && matchEstado && matchIpress && matchEspec && matchMedico && matchCenacron && matchFecha && matchEstadoBolsa && matchEstadoCita && matchEstadoAten;
     });
   }, [pacientes, resultadosGlobales, busqueda, filtroEstado, filtroIpress, filtroEspec, filtroMedico, filtroCenacron, fechaSeleccionada, filtroEstadoBolsa, filtroEstadoCita, filtroEstadoAten]);
