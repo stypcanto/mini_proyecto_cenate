@@ -4,7 +4,7 @@
 --           El JOIN con dim_ipress falla → el frontend muestra el código
 --           numérico (ej: "160", "351") en lugar del nombre de la IPRESS.
 -- Causa: Al crear la solicitud no se resolvió cas_adscripcion → id_ipress.
--- Solución: UPDATE usando dim_asegurados.cas_adscripcion → dim_ipress.id_ipress
+-- Solución: UPDATE usando asegurados.cas_adscripcion → dim_ipress.id_ipress
 -- Autor: Styp Canto Rondón / Claude Code
 -- Fecha: 2026-03-02
 -- ============================================================================
@@ -22,7 +22,7 @@ END $$;
 -- PASO 2: Backfill id_ipress resolviendo cas_adscripcion → cod_ipress → id_ipress
 UPDATE dim_solicitud_bolsa sb
 SET id_ipress = di.id_ipress
-FROM dim_asegurados da
+FROM asegurados da
 JOIN dim_ipress di ON TRIM(da.cas_adscripcion) = di.cod_ipress
 WHERE sb.paciente_dni = da.doc_paciente
   AND sb.id_ipress IS NULL
