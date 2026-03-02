@@ -708,6 +708,17 @@ export default function MisPacientes() {
   const [showDetalleTicketModal, setShowDetalleTicketModal] = useState(false);
   const [numeroTicketDetalle, setNumeroTicketDetalle] = useState(null);
 
+  // ✅ v1.85.0: Auto-guardar borrador del formulario "Atendido" en localStorage
+  const draftKey = pacienteSeleccionado
+    ? `cenate_atencion_draft_${pacienteSeleccionado.idSolicitudBolsa || pacienteSeleccionado.idGestion}`
+    : null;
+
+  useEffect(() => {
+    if (modalAccion !== 'cambiarEstado' || estadoSeleccionado !== 'Atendido' || !draftKey) return;
+    const draft = { tieneRecita, recitaDias, tieneInterconsulta, interconsultasLista, esCronico, enfermedadesCronicas };
+    localStorage.setItem(draftKey, JSON.stringify(draft));
+  }, [tieneRecita, recitaDias, tieneInterconsulta, interconsultasLista, esCronico, enfermedadesCronicas, modalAccion, estadoSeleccionado, draftKey]);
+
   const bolsasDisponibles = [
     { id: 1, nombre: 'Bolsa 107 (Módulo 107)' },
     { id: 2, nombre: 'Dengue' },
@@ -1719,6 +1730,30 @@ export default function MisPacientes() {
       setExpandCronico(false);
       setEnfermedadesCronicas([]);
     }
+
+    // ✅ v1.85.0: Restaurar borrador guardado (solo si el paciente NO está ya Atendido)
+    if (paciente?.condicion !== 'Atendido') {
+      const key = `cenate_atencion_draft_${paciente.idSolicitudBolsa || paciente.idGestion}`;
+      const savedDraft = localStorage.getItem(key);
+      if (savedDraft) {
+        try {
+          const draft = JSON.parse(savedDraft);
+          setTieneRecita(draft.tieneRecita ?? false);
+          setRecitaDias(draft.recitaDias ?? 15);
+          setTieneInterconsulta(draft.tieneInterconsulta ?? false);
+          setInterconsultasLista(draft.interconsultasLista ?? []);
+          if (!(draft.esCronico) && enfermedadesExistentes.length === 0) {
+            setEsCronico(draft.esCronico ?? false);
+            setEnfermedadesCronicas(draft.enfermedadesCronicas ?? []);
+          }
+          if (draft.tieneRecita) setExpandRecita(true);
+          if (draft.tieneInterconsulta) setExpandInterconsulta(true);
+          if (draft.esCronico) setExpandCronico(true);
+          setEstadoSeleccionado('Atendido');
+          toast('📝 Borrador restaurado', { icon: '💾', duration: 2500 });
+        } catch (_) { /* ignorar borrador corrupto */ }
+      }
+    }
   };
 
   // ✅ v1.50.0: Abrir modal de detalles del paciente
@@ -2021,6 +2056,10 @@ export default function MisPacientes() {
       );
 
       toast.success('✅ Atención registrada correctamente');
+
+      // ✅ v1.85.0: Borrar borrador al confirmar exitosamente
+      const keyDraft = `cenate_atencion_draft_${idParaAtender}`;
+      localStorage.removeItem(keyDraft);
 
       // 4️⃣ Cerrar modales
       setModalAccion(null);
@@ -3154,8 +3193,18 @@ export default function MisPacientes() {
               </div>
             </div>
 
+            {/* ✅ v1.85.0: Banner "Solo lectura" cuando el paciente ya fue Atendido */}
+            {pacienteSeleccionado?.condicion === 'Atendido' && (
+              <div className="px-6 py-3 bg-green-50 border-b border-green-200 flex items-center gap-2">
+                <CheckCircle className="w-4 h-4 text-green-600 flex-shrink-0" />
+                <p className="text-sm text-green-800 font-medium">
+                  Este paciente ya fue atendido. La atención no puede modificarse.
+                </p>
+              </div>
+            )}
+
             {/* Contenido Scrolleable - Más espacio blanco */}
-            <div className="flex-1 overflow-y-auto p-8 bg-white space-y-6">
+            <div className={`flex-1 overflow-y-auto p-8 bg-white space-y-6 ${pacienteSeleccionado?.condicion === 'Atendido' ? 'pointer-events-none opacity-75' : ''}`}>
               {/* Opción Atendido - DESTACADA */}
               <button
                 onClick={() => setEstadoSeleccionado('Atendido')}
@@ -3369,7 +3418,7 @@ export default function MisPacientes() {
                               >
                                 <option value="">Selecciona motivo...</option>
                                 {motivosInterconsulta.map(m => (
-                                  <option key={m.idMotivo} value={m.descripcion}>
+                                  <option key={m.id ?? m.idMotivo ?? m.descripcion} value={m.descripcion}>
                                     {m.descripcion}
                                   </option>
                                 ))}
