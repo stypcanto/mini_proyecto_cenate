@@ -710,15 +710,21 @@ export default function MisPacientes() {
   const [showDetalleTicketModal, setShowDetalleTicketModal] = useState(false);
   const [numeroTicketDetalle, setNumeroTicketDetalle] = useState(null);
 
-  // ✅ v1.85.0: Auto-guardar borrador del formulario "Atendido" en localStorage
+  // ✅ v1.85.2: Auto-guardar borrador del formulario "Atendido" en localStorage
   const draftKey = pacienteSeleccionado
     ? `cenate_atencion_draft_${pacienteSeleccionado.idSolicitudBolsa || pacienteSeleccionado.idGestion}`
     : null;
+  const [draftGuardado, setDraftGuardado] = useState(false);   // muestra "💾 Guardado"
+  const [draftRestaurado, setDraftRestaurado] = useState(false); // muestra banner de restauración
 
   useEffect(() => {
     if (modalAccion !== 'cambiarEstado' || estadoSeleccionado !== 'Atendido' || !draftKey) return;
     const draft = { tieneRecita, recitaDias, tieneInterconsulta, interconsultasLista, esCronico, enfermedadesCronicas };
     localStorage.setItem(draftKey, JSON.stringify(draft));
+    // Mostrar indicador "Guardado" brevemente
+    setDraftGuardado(true);
+    const t = setTimeout(() => setDraftGuardado(false), 1800);
+    return () => clearTimeout(t);
   }, [tieneRecita, recitaDias, tieneInterconsulta, interconsultasLista, esCronico, enfermedadesCronicas, modalAccion, estadoSeleccionado, draftKey]);
 
   const bolsasDisponibles = [
@@ -1752,7 +1758,7 @@ export default function MisPacientes() {
           if (draft.tieneInterconsulta) setExpandInterconsulta(true);
           if (draft.esCronico) setExpandCronico(true);
           setEstadoSeleccionado('Atendido');
-          toast('📝 Borrador restaurado', { icon: '💾', duration: 2500 });
+          setDraftRestaurado(true); // muestra banner dentro del modal
         } catch (_) { /* ignorar borrador corrupto */ }
       }
     }
@@ -3172,7 +3178,7 @@ export default function MisPacientes() {
             <div className="relative px-6 py-5 bg-[#0A5BA9] rounded-t-lg">
               {/* Close Button X - En círculo con zona segura */}
               <button
-                onClick={() => setModalAccion(null)}
+                onClick={() => { setModalAccion(null); setDraftRestaurado(false); }}
                 className="absolute top-5 right-5 w-10 h-10 rounded-full bg-white/15 hover:bg-white/25 flex items-center justify-center transition-colors"
                 title="Cerrar"
               >
@@ -3202,6 +3208,32 @@ export default function MisPacientes() {
                 <p className="text-sm text-green-800 font-medium">
                   Este paciente ya fue atendido. La atención no puede modificarse.
                 </p>
+              </div>
+            )}
+
+            {/* ✅ v1.85.2: Banner "Borrador restaurado" — visible y descartable */}
+            {draftRestaurado && (
+              <div className="mx-6 mt-4 px-4 py-3 bg-blue-50 border border-blue-200 rounded-lg flex items-center gap-3">
+                <span className="text-lg flex-shrink-0">💾</span>
+                <div className="flex-1">
+                  <p className="text-sm font-semibold text-blue-800">Progreso anterior restaurado</p>
+                  <p className="text-xs text-blue-600 mt-0.5">Retomamos donde lo dejó. Revise los datos antes de confirmar.</p>
+                </div>
+                <button
+                  onClick={() => {
+                    setDraftRestaurado(false);
+                    setTieneRecita(false); setRecitaDias(15);
+                    setTieneInterconsulta(false); setInterconsultasLista([]);
+                    setExpandRecita(false); setExpandInterconsulta(false);
+                    if (pacienteSeleccionado) {
+                      const k = `cenate_atencion_draft_${pacienteSeleccionado.idSolicitudBolsa || pacienteSeleccionado.idGestion}`;
+                      localStorage.removeItem(k);
+                    }
+                  }}
+                  className="text-xs text-blue-500 hover:text-blue-700 underline flex-shrink-0 font-medium"
+                >
+                  Descartar
+                </button>
               </div>
             )}
 
@@ -4052,9 +4084,14 @@ export default function MisPacientes() {
             </div>
 
             {/* Footer Fijo con Botones */}
-            <div className="border-t border-gray-200 p-6 bg-white flex gap-3 justify-end rounded-b-lg">
+            <div className="border-t border-gray-200 p-6 bg-white flex items-center gap-3 rounded-b-lg">
+              {/* ✅ v1.85.2: Indicador "Guardado" auto-save */}
+              <div className={`flex items-center gap-1.5 mr-auto transition-all duration-300 ${draftGuardado && estadoSeleccionado === 'Atendido' ? 'opacity-100' : 'opacity-0'}`}>
+                <span className="text-sm">💾</span>
+                <span className="text-xs text-gray-500 font-medium">Guardado automáticamente</span>
+              </div>
               <button
-                onClick={() => setModalAccion(null)}
+                onClick={() => { setModalAccion(null); setDraftRestaurado(false); }}
                 disabled={procesando}
                 className="px-5 py-2.5 text-gray-700 border-2 border-gray-300 rounded-lg hover:bg-gray-100 hover:border-gray-400 transition disabled:opacity-50 font-semibold text-sm"
               >
