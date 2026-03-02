@@ -179,6 +179,15 @@ function ListaTickets() {
     fetchTickets();
   }, [currentPage, pageSize, modoConfig.estadosBackend, filtroPrioridad, filtroMedico, filtroAsignado, fechaDesde, fechaHasta, fechaAtencionDesde, fechaAtencionHasta]);
 
+  // 🔄 Auto-refresh cada 30 s solo en tickets pendientes
+  useEffect(() => {
+    if (!esPendientes) return;
+    const intervalo = setInterval(() => {
+      fetchTickets();
+    }, 30000);
+    return () => clearInterval(intervalo);
+  }, [esPendientes, currentPage, pageSize, modoConfig.estadosBackend, filtroPrioridad, filtroMedico, filtroAsignado, fechaDesde, fechaHasta, fechaAtencionDesde, fechaAtencionHasta]);
+
   // ✅ v1.67.1: Debounce para campos de texto (DNI y N° Ticket)
   useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
@@ -499,6 +508,12 @@ function ListaTickets() {
           <p className="text-gray-600 mt-2">
             {modoConfig.subtitulo}
           </p>
+          { esPendientes && (
+            <p className="text-xs text-emerald-600 mt-1 flex items-center gap-1">
+              <span className="inline-block w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+              Actualización automática cada 30 s
+            </p>
+          ) }
         </div>
         {esPendientes && (
           <div className="relative group flex-shrink-0">
