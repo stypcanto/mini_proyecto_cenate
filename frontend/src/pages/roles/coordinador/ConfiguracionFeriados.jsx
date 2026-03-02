@@ -390,7 +390,7 @@ const ConfiguracionFeriados = () => {
                   <tr key={`${p.periodo}-${p.idArea}`} className="border-t border-gray-200 hover:bg-gray-50">
                     <td className="px-6 py-4 text-sm text-gray-900">{p.periodo.substring(0, 4)}</td>
                     <td className="px-6 py-4 text-sm text-gray-900">{p.periodo}</td>
-                    <td className="px-6 py-4 text-sm text-gray-900">{p.descArea || '—'}</td>
+                    <td className="px-6 py-4 text-sm text-gray-900">{p.descArea || '—'} <span className="text-gray-400">({p.idArea})</span></td>
                     <td className="px-6 py-4 text-sm text-gray-900">{p.idCtrHorario || '—'}</td>
                     <td className="px-6 py-4 text-sm text-gray-900">{formatDate(p.fechaInicio)}</td>
                     <td className="px-6 py-4 text-sm text-gray-900">{formatDate(p.fechaFin)}</td>
