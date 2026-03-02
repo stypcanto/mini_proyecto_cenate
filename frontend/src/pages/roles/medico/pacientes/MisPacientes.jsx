@@ -7,7 +7,7 @@
  * - Generar Interconsulta
  */
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import {
   Users,
   Search,
@@ -464,6 +464,8 @@ export default function MisPacientes() {
   const [motivosDesercion, setMotivosDesercion] = useState([]);
   const [busquedaDesercion, setBusquedaDesercion] = useState('');
   const [showDesercionDropdown, setShowDesercionDropdown] = useState(false);
+  const [desercionDropdownStyle, setDesercionDropdownStyle] = useState({});
+  const desercionInputRef = useRef(null);
 
   // ✅ v1.50.0: Modal de detalles del paciente
   const [mostrarDetalles, setMostrarDetalles] = useState(false);
@@ -3916,6 +3918,7 @@ export default function MisPacientes() {
                       <div className="relative">
                         {/* Input de búsqueda */}
                         <input
+                          ref={desercionInputRef}
                           type="text"
                           value={busquedaDesercion}
                           onChange={(e) => {
@@ -3923,7 +3926,19 @@ export default function MisPacientes() {
                             setRazonDesercion('');
                             setShowDesercionDropdown(true);
                           }}
-                          onFocus={() => setShowDesercionDropdown(true)}
+                          onFocus={() => {
+                            if (desercionInputRef.current) {
+                              const rect = desercionInputRef.current.getBoundingClientRect();
+                              setDesercionDropdownStyle({
+                                position: 'fixed',
+                                top: rect.bottom + 4,
+                                left: rect.left,
+                                width: rect.width,
+                                zIndex: 99999,
+                              });
+                            }
+                            setShowDesercionDropdown(true);
+                          }}
                           onBlur={() => setTimeout(() => setShowDesercionDropdown(false), 150)}
                           placeholder="Buscar razón (ej: No contesta, internado...)"
                           className={`w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-red-400 ${
@@ -3944,9 +3959,9 @@ export default function MisPacientes() {
                             </button>
                           </div>
                         )}
-                        {/* Dropdown con opciones filtradas */}
+                        {/* Dropdown con opciones filtradas — fixed para escapar overflow del modal */}
                         {showDesercionDropdown && (
-                          <div className="absolute z-50 w-full bg-white border border-gray-200 rounded-lg shadow-xl max-h-52 overflow-y-auto mt-1">
+                          <div style={desercionDropdownStyle} className="bg-white border border-gray-200 rounded-lg shadow-2xl max-h-52 overflow-y-auto">
                             {Object.keys(grupos).length === 0 ? (
                               <div className="px-4 py-3 text-sm text-gray-500 text-center">Sin resultados para "{busquedaDesercion}"</div>
                             ) : (
