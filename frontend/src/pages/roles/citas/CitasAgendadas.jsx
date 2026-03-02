@@ -1619,22 +1619,44 @@ CENATE de Essalud`;
 
                           {/* ESTADO DE BOLSA */}
                           <td style={{ padding: '10px 12px' }}>
-                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '2px 10px', borderRadius: '999px', fontSize: '11px', fontWeight: '600', background: p.estadoBolsa === 'PENDIENTE' ? '#fef3c7' : p.estadoBolsa === 'CITADO' ? '#dbeafe' : p.estadoBolsa === 'ATENDIDO' ? '#dcfce7' : '#f1f5f9', color: p.estadoBolsa === 'PENDIENTE' ? '#92400e' : p.estadoBolsa === 'CITADO' ? '#1e40af' : p.estadoBolsa === 'ATENDIDO' ? '#166534' : '#475569', border: `1px solid ${p.estadoBolsa === 'PENDIENTE' ? '#fde68a' : p.estadoBolsa === 'CITADO' ? '#bfdbfe' : p.estadoBolsa === 'ATENDIDO' ? '#bbf7d0' : '#e2e8f0'}` }}>
-                              {p.estadoBolsa}
-                            </span>
+                            {(() => {
+                              const eb = p.estadoBolsa;
+                              const cfg =
+                                eb === 'PENDIENTE'  ? { bg: '#fef3c7', color: '#92400e', border: '#fde68a' } :
+                                eb === 'CITADO'     ? { bg: '#dbeafe', color: '#1e40af', border: '#bfdbfe' } :
+                                eb === 'ATENDIDO'   ? { bg: '#dcfce7', color: '#166534', border: '#bbf7d0' } :
+                                eb === 'Observado'  ? { bg: '#fce7f3', color: '#9d174d', border: '#f9a8d4' } :
+                                                     { bg: '#f1f5f9', color: '#475569', border: '#e2e8f0' };
+                              return (
+                                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '2px 10px', borderRadius: '999px', fontSize: '11px', fontWeight: '600', background: cfg.bg, color: cfg.color, border: `1px solid ${cfg.border}` }}>
+                                  {eb}
+                                </span>
+                              );
+                            })()}
                           </td>
 
                           {/* ESTADO DE ATENCIÓN */}
                           <td style={{ padding: '10px 12px' }}>
-                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '2px 10px', borderRadius: '999px', fontSize: '11px', fontWeight: '600', background: p.estadoAtencion === 'Pendiente' ? '#fef3c7' : p.estadoAtencion === 'Atendido' ? '#dcfce7' : p.estadoAtencion === 'Deserción' ? '#fee2e2' : '#f1f5f9', color: p.estadoAtencion === 'Pendiente' ? '#92400e' : p.estadoAtencion === 'Atendido' ? '#166534' : p.estadoAtencion === 'Deserción' ? '#991b1b' : '#475569', border: `1px solid ${p.estadoAtencion === 'Pendiente' ? '#fde68a' : p.estadoAtencion === 'Atendido' ? '#bbf7d0' : p.estadoAtencion === 'Deserción' ? '#fecaca' : '#e2e8f0'}` }}>
-                              {p.estadoAtencion}
-                            </span>
+                            {(() => {
+                              const ea = p.estadoAtencion;
+                              const cfg =
+                                ea === 'Pendiente'  ? { bg: '#fef3c7', color: '#92400e', border: '#fde68a' } :
+                                ea === 'Atendido'   ? { bg: '#dcfce7', color: '#166534', border: '#bbf7d0' } :
+                                ea === 'Deserción'  ? { bg: '#fee2e2', color: '#991b1b', border: '#fecaca' } :
+                                ea === 'Anulado'    ? { bg: '#fee2e2', color: '#dc2626', border: '#fca5a5' } :
+                                                     { bg: '#f1f5f9', color: '#475569', border: '#e2e8f0' };
+                              return (
+                                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '2px 10px', borderRadius: '999px', fontSize: '11px', fontWeight: '600', background: cfg.bg, color: cfg.color, border: `1px solid ${cfg.border}` }}>
+                                  {ea}
+                                </span>
+                              );
+                            })()}
                           </td>
 
                           {/* MOTIVO ANULACIÓN */}
-                          <td style={{ padding: '10px 12px', maxWidth: '180px' }}>
+                          <td style={{ padding: '10px 12px', minWidth: '160px', maxWidth: '220px' }}>
                             {p.motivoAnulacion ? (
-                              <span style={{ display: 'block', fontSize: '12px', color: '#be123c', fontStyle: 'italic', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={p.motivoAnulacion}>
+                              <span style={{ display: 'block', fontSize: '12px', color: '#dc2626', fontStyle: 'italic', whiteSpace: 'normal', wordBreak: 'break-word', lineHeight: '1.4' }}>
                                 {p.motivoAnulacion}
                               </span>
                             ) : (

@@ -1741,7 +1741,13 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
      * Cambia el estado masivo y guarda el motivo de anulación (v1.69.0)
      */
     @Modifying
-    @Query("UPDATE SolicitudBolsa s SET s.estadoGestionCitasId = :idEstado, s.fechaCambioEstado = CURRENT_TIMESTAMP, s.motivoAnulacion = :motivo WHERE s.idSolicitud IN :ids AND s.activo = true")
+    @Query("UPDATE SolicitudBolsa s SET " +
+        "s.estadoGestionCitasId = :idEstado, " +
+        "s.fechaCambioEstado = CURRENT_TIMESTAMP, " +
+        "s.motivoAnulacion = :motivo, " +
+        "s.condicionMedica = 'Anulado', " +
+        "s.estado = 'Observado' " +
+        "WHERE s.idSolicitud IN :ids AND s.activo = true")
     int cambiarEstadoMasivoConMotivo(
         @org.springframework.data.repository.query.Param("ids") List<Long> ids,
         @org.springframework.data.repository.query.Param("idEstado") Long idEstado,
