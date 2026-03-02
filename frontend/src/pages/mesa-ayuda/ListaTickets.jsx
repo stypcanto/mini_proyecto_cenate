@@ -180,12 +180,12 @@ function ListaTickets() {
     fetchTickets();
   }, [currentPage, pageSize, modoConfig.estadosBackend, filtroPrioridad, filtroMedico, filtroAsignado, fechaDesde, fechaHasta, fechaAtencionDesde, fechaAtencionHasta]);
 
-  // 🔄 Auto-refresh cada 30 s solo en tickets pendientes
+  // 🔄 Auto-refresh cada 10 s solo en tickets pendientes
   useEffect(() => {
     if (!esPendientes) return;
     const intervalo = setInterval(() => {
       fetchTickets(true); // silent: no muestra spinner, no interrumpe al usuario
-    }, 30000);
+    }, 10000);
     return () => clearInterval(intervalo);
   }, [esPendientes, currentPage, pageSize, modoConfig.estadosBackend, filtroPrioridad, filtroMedico, filtroAsignado, fechaDesde, fechaHasta, fechaAtencionDesde, fechaAtencionHasta]);
 
@@ -524,7 +524,7 @@ function ListaTickets() {
               ) : (
                 <>
                   <span className="inline-block w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                  <span className="text-emerald-600">Actualización automática cada 30 s</span>
+                  <span className="text-emerald-600">Actualización automática cada 10 s</span>
                 </>
               )}
             </p>
