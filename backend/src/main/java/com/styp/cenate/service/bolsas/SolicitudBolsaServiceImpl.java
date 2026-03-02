@@ -4372,10 +4372,28 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
                 }
                 String dni = row.getDocPaciente().trim();
 
-                // 1. Insertar en asegurados ON CONFLICT DO NOTHING
-                entityManager.createNativeQuery(
-                    "INSERT INTO asegurados (pk_asegurado, doc_paciente) VALUES (:dni, :dni) ON CONFLICT DO NOTHING"
-                ).setParameter("dni", dni).executeUpdate();
+                // 1. UPSERT en asegurados: INSERT si es nuevo, UPDATE teléfono/nombre/sexo/ipress si ya existe
+                //    Los datos del Excel son más actualizados (teléfono, IPRESS adscripción).
+                String nombreExcel = row.getPaciente() != null ? row.getPaciente().trim() : null;
+                String sexoExcel   = row.getSexo()      != null ? row.getSexo().trim()     : null;
+                String telExcel    = row.getTelMovil()   != null ? row.getTelMovil().trim()  : null;
+                String casExcel    = row.getCasAdscripcion() != null ? row.getCasAdscripcion().trim() : null;
+
+                entityManager.createNativeQuery("""
+                    INSERT INTO asegurados (pk_asegurado, doc_paciente, paciente, sexo, tel_celular, cas_adscripcion)
+                    VALUES (:dni, :dni, :nombre, :sexo, :tel, :cas)
+                    ON CONFLICT (pk_asegurado) DO UPDATE SET
+                        paciente        = COALESCE(NULLIF(EXCLUDED.paciente, ''),        asegurados.paciente),
+                        sexo            = COALESCE(NULLIF(EXCLUDED.sexo, ''),            asegurados.sexo),
+                        tel_celular     = COALESCE(NULLIF(EXCLUDED.tel_celular, ''),     asegurados.tel_celular),
+                        cas_adscripcion = COALESCE(NULLIF(EXCLUDED.cas_adscripcion, ''), asegurados.cas_adscripcion)
+                    """)
+                    .setParameter("dni",    dni)
+                    .setParameter("nombre", nombreExcel)
+                    .setParameter("sexo",   sexoExcel)
+                    .setParameter("tel",    telExcel)
+                    .setParameter("cas",    casExcel)
+                    .executeUpdate();
 
                 // 1b. Obtener pk_asegurado real: puede diferir del DNI si el asegurado ya existía
                 //     en la tabla con un pk distinto (ej: importado desde ESSI con otro ID interno).
