@@ -1186,6 +1186,29 @@ public class TicketMesaAyudaService {
             }
         }
 
+        // Obtener tipo y número de documento del profesional (por idMedico → dim_personal_cnt)
+        String tipoDocMedico = null;
+        String numDocMedico = null;
+        if (ticket.getIdMedico() != null) {
+            try {
+                @SuppressWarnings("unchecked")
+                List<Object[]> docResult = entityManager.createNativeQuery(
+                    "SELECT dt.desc_tip_doc, p.num_doc_pers " +
+                    "FROM dim_personal_cnt p " +
+                    "LEFT JOIN dim_tipo_documento dt ON dt.id_tip_doc = p.id_tip_doc " +
+                    "WHERE p.id_pers = :idMedico LIMIT 1")
+                    .setParameter("idMedico", ticket.getIdMedico())
+                    .getResultList();
+                if (!docResult.isEmpty()) {
+                    Object[] row = docResult.get(0);
+                    tipoDocMedico = row[0] != null ? row[0].toString() : "DNI";
+                    numDocMedico  = row[1] != null ? row[1].toString() : null;
+                }
+            } catch (Exception e) {
+                log.warn("No se pudo obtener documento del profesional {}: {}", ticket.getIdMedico(), e.getMessage());
+            }
+        }
+
         // Obtener teléfonos del paciente desde tabla asegurados (por DNI)
         String telefonoPrincipal = ticket.getTelefonoPaciente();
         String telefonoAlterno = null;
@@ -1216,6 +1239,8 @@ public class TicketMesaAyudaService {
             .prioridad(ticket.getPrioridad())
             .nombreMedico(ticket.getNombreMedico())
             .idMedico(ticket.getIdMedico())
+            .tipoDocMedico(tipoDocMedico)
+            .numDocMedico(numDocMedico)
             .tipoDocumento(ticket.getTipoDocumento())
             .dniPaciente(ticket.getDniPaciente())
             .nombrePaciente(ticket.getNombrePaciente())

@@ -503,6 +503,9 @@ export default function CitasAgendadas() {
   const [filtroEspec, setFiltroEspec]       = useState('');
   const [filtroMedico, setFiltroMedico]     = useState('');
   const [filtroCenacron, setFiltroCenacron] = useState(''); // '' = todos | 'si' = solo CENACRON | 'no' = sin CENACRON
+  const [filtroEstadoBolsa, setFiltroEstadoBolsa]   = useState('');
+  const [filtroEstadoCita,  setFiltroEstadoCita]    = useState('');
+  const [filtroEstadoAten,  setFiltroEstadoAten]    = useState('');
   const [fechaSeleccionada, setFechaSelec]  = useState(null);
   const [mostrarFiltros, setMostrarFiltros] = useState(false);
   const [pagina, setPagina]                 = useState(1);
@@ -790,9 +793,17 @@ export default function CitasAgendadas() {
     ];
   }, [pacientes]);
 
+  // Normaliza especialidad: "ENFERMERIA (SIN ATENCIÓN)" → "ENFERMERIA"
+  const normEspec = (e) => e ? e.replace(/\s*\([^)]*\)/g, '').trim() : e;
+
   const opcionesEspec = useMemo(() => {
     const counts = {};
-    pacientes.forEach(p => { if (p.especialidad && p.especialidad !== '—') counts[p.especialidad] = (counts[p.especialidad] || 0) + 1; });
+    pacientes.forEach(p => {
+      if (p.especialidad && p.especialidad !== '—') {
+        const key = normEspec(p.especialidad);
+        counts[key] = (counts[key] || 0) + 1;
+      }
+    });
     return [
       { label: `Todas las especialidades (${pacientes.length})`, value: '' },
       ...Object.entries(counts)
@@ -812,10 +823,44 @@ export default function CitasAgendadas() {
     ];
   }, [pacientes]);
 
-  const hayFiltrosActivos = filtroIpress || filtroEspec || filtroMedico || filtroCenacron || fechaSeleccionada;
+  const opcionesEstadoBolsa = useMemo(() => {
+    const counts = {};
+    pacientes.forEach(p => { if (p.estadoBolsa && p.estadoBolsa !== '—') counts[p.estadoBolsa] = (counts[p.estadoBolsa] || 0) + 1; });
+    return [
+      { label: `Todos (${pacientes.length})`, value: '' },
+      ...Object.entries(counts)
+        .sort(([a], [b]) => a.localeCompare(b, 'es', { sensitivity: 'base' }))
+        .map(([est, cnt]) => ({ label: `${est} (${cnt})`, value: est })),
+    ];
+  }, [pacientes]);
+
+  const opcionesEstadoCita = useMemo(() => {
+    const counts = {};
+    pacientes.forEach(p => { if (p.codigoEstado && p.codigoEstado !== '—') counts[p.codigoEstado] = (counts[p.codigoEstado] || 0) + 1; });
+    return [
+      { label: `Todos (${pacientes.length})`, value: '' },
+      ...Object.entries(counts)
+        .sort(([a], [b]) => a.localeCompare(b, 'es', { sensitivity: 'base' }))
+        .map(([cod, cnt]) => ({ label: `${BADGE[cod]?.label || cod} (${cnt})`, value: cod })),
+    ];
+  }, [pacientes]);
+
+  const opcionesEstadoAten = useMemo(() => {
+    const counts = {};
+    pacientes.forEach(p => { if (p.estadoAtencion && p.estadoAtencion !== '—') counts[p.estadoAtencion] = (counts[p.estadoAtencion] || 0) + 1; });
+    return [
+      { label: `Todos (${pacientes.length})`, value: '' },
+      ...Object.entries(counts)
+        .sort(([a], [b]) => a.localeCompare(b, 'es', { sensitivity: 'base' }))
+        .map(([est, cnt]) => ({ label: `${est} (${cnt})`, value: est })),
+    ];
+  }, [pacientes]);
+
+  const hayFiltrosActivos = filtroIpress || filtroEspec || filtroMedico || filtroCenacron || fechaSeleccionada || filtroEstadoBolsa || filtroEstadoCita || filtroEstadoAten;
 
   const limpiarFiltros = () => {
     setFiltroIpress(''); setFiltroEspec(''); setFiltroMedico(''); setFiltroCenacron(''); setFechaSelec(null);
+    setFiltroEstadoBolsa(''); setFiltroEstadoCita(''); setFiltroEstadoAten('');
     setPagina(1);
   };
 
@@ -838,14 +883,17 @@ export default function CitasAgendadas() {
       const matchCenacron = !filtroCenacron
         || (filtroCenacron === 'si' && p.esCenacron === true)
         || (filtroCenacron === 'no' && !p.esCenacron);
-      const matchFecha    = !fechaSeleccionada || (p.fechaAtencion && (
+      const matchFecha       = !fechaSeleccionada || (p.fechaAtencion && (
         p.fechaAtencion.includes('T')
           ? p.fechaAtencion.split('T')[0] === fechaSeleccionada
           : p.fechaAtencion.substring(0, 10) === fechaSeleccionada
       ));
-      return matchBusqueda && matchEstado && matchIpress && matchEspec && matchMedico && matchCenacron && matchFecha;
+      const matchEstadoBolsa = !filtroEstadoBolsa || p.estadoBolsa === filtroEstadoBolsa;
+      const matchEstadoCita  = !filtroEstadoCita  || p.codigoEstado === filtroEstadoCita;
+      const matchEstadoAten  = !filtroEstadoAten  || p.estadoAtencion === filtroEstadoAten;
+      return matchBusqueda && matchEstado && matchIpress && matchEspec && matchMedico && matchCenacron && matchFecha && matchEstadoBolsa && matchEstadoCita && matchEstadoAten;
     });
-  }, [pacientes, resultadosGlobales, busqueda, filtroEstado, filtroIpress, filtroEspec, filtroMedico, filtroCenacron, fechaSeleccionada]);
+  }, [pacientes, resultadosGlobales, busqueda, filtroEstado, filtroIpress, filtroEspec, filtroMedico, filtroCenacron, fechaSeleccionada, filtroEstadoBolsa, filtroEstadoCita, filtroEstadoAten]);
 
   const totalPaginas = Math.max(1, Math.ceil(filtrados.length / PAGE_SIZE));
   const paginaActual = filtrados.slice((pagina - 1) * PAGE_SIZE, pagina * PAGE_SIZE);
@@ -1295,7 +1343,7 @@ CENATE de Essalud`;
               Filtros
               {hayFiltrosActivos && (
                 <span style={{ background: '#0D5BA9', color: '#fff', borderRadius: '10px', padding: '1px 7px', fontSize: '11px', fontWeight: '700' }}>
-                  {[filtroIpress, filtroEspec, filtroMedico, filtroCenacron, fechaSeleccionada].filter(Boolean).length}
+                  {[filtroIpress, filtroEspec, filtroMedico, filtroCenacron, fechaSeleccionada, filtroEstadoBolsa, filtroEstadoCita, filtroEstadoAten].filter(Boolean).length}
                 </span>
               )}
             </button>
@@ -1310,6 +1358,33 @@ CENATE de Essalud`;
           {/* Panel de filtros */}
           {mostrarFiltros && (
             <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '16px', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px' }}>
+              {/* Estado Bolsa */}
+              <div>
+                <label style={{ display: 'block', fontSize: '11px', fontWeight: '600', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '6px' }}>Estado Bolsa</label>
+                <SearchableSelect
+                  value={filtroEstadoBolsa}
+                  onChange={v => handleFiltro(setFiltroEstadoBolsa)(v)}
+                  options={opcionesEstadoBolsa}
+                />
+              </div>
+              {/* Estado Cita */}
+              <div>
+                <label style={{ display: 'block', fontSize: '11px', fontWeight: '600', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '6px' }}>Estado Cita</label>
+                <SearchableSelect
+                  value={filtroEstadoCita}
+                  onChange={v => handleFiltro(setFiltroEstadoCita)(v)}
+                  options={opcionesEstadoCita}
+                />
+              </div>
+              {/* Estado Atención */}
+              <div>
+                <label style={{ display: 'block', fontSize: '11px', fontWeight: '600', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '6px' }}>Estado Atención</label>
+                <SearchableSelect
+                  value={filtroEstadoAten}
+                  onChange={v => handleFiltro(setFiltroEstadoAten)(v)}
+                  options={opcionesEstadoAten}
+                />
+              </div>
               <div>
                 <label style={{ display: 'block', fontSize: '11px', fontWeight: '600', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '6px' }}>IPRESS</label>
                 <SearchableSelect

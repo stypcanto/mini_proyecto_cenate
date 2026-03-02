@@ -62,6 +62,7 @@ function ListaTickets() {
 
   const [tickets, setTickets] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [silentRefreshing, setSilentRefreshing] = useState(false);
   const [error, setError] = useState(null);
   const [currentPage, setCurrentPage] = useState(0);
   const [pageSize, setPageSize] = useState(15);
@@ -183,7 +184,7 @@ function ListaTickets() {
   useEffect(() => {
     if (!esPendientes) return;
     const intervalo = setInterval(() => {
-      fetchTickets();
+      fetchTickets(true); // silent: no muestra spinner, no interrumpe al usuario
     }, 30000);
     return () => clearInterval(intervalo);
   }, [esPendientes, currentPage, pageSize, modoConfig.estadosBackend, filtroPrioridad, filtroMedico, filtroAsignado, fechaDesde, fechaHasta, fechaAtencionDesde, fechaAtencionHasta]);
@@ -226,9 +227,13 @@ function ListaTickets() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const fetchTickets = async () => {
+  const fetchTickets = async (silent = false) => {
     try {
-      setLoading(true);
+      if (silent) {
+        setSilentRefreshing(true);
+      } else {
+        setLoading(true);
+      }
       setError(null);
 
       const { mesaAyudaService } = await import('../../services/mesaAyudaService');
@@ -257,9 +262,10 @@ function ListaTickets() {
       setTotalElements(response?.totalElements || 0);
     } catch (err) {
       console.error('Error cargando tickets:', err);
-      setError('Error al cargar los tickets');
+      if (!silent) setError('Error al cargar los tickets');
     } finally {
       setLoading(false);
+      setSilentRefreshing(false);
     }
   };
 
@@ -509,9 +515,18 @@ function ListaTickets() {
             {modoConfig.subtitulo}
           </p>
           { esPendientes && (
-            <p className="text-xs text-emerald-600 mt-1 flex items-center gap-1">
-              <span className="inline-block w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-              Actualización automática cada 30 s
+            <p className="text-xs mt-1 flex items-center gap-1">
+              { silentRefreshing ? (
+                <>
+                  <span className="inline-block w-2 h-2 rounded-full bg-blue-400 animate-ping" />
+                  <span className="text-blue-500">Actualizando...</span>
+                </>
+              ) : (
+                <>
+                  <span className="inline-block w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                  <span className="text-emerald-600">Actualización automática cada 30 s</span>
+                </>
+              )}
             </p>
           ) }
         </div>
@@ -1469,6 +1484,16 @@ function ListaTickets() {
                     <p className="text-xs text-gray-400 mb-0.5">Especialidad</p>
                     <p className="text-sm font-medium text-gray-800">{ticketDetalle.especialidad || 'N/A'}</p>
                   </div>
+
+                  {ticketDetalle.numDocMedico && (
+                    <div className="bg-gray-50 rounded-lg p-3 mb-3 flex items-center gap-3 border border-gray-100">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-[#0a5ba9] flex-shrink-0"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M7 15h0M2 9.5h20"/></svg>
+                      <div>
+                        <p className="text-xs text-gray-400">{ticketDetalle.tipoDocMedico || 'DNI'}</p>
+                        <p className="text-sm font-semibold text-gray-900">{ticketDetalle.numDocMedico}</p>
+                      </div>
+                    </div>
+                  )}
 
                   <div>
                     <p className="text-xs text-gray-400 mb-1.5">Categoría</p>
