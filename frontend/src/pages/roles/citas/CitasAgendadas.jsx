@@ -878,7 +878,7 @@ export default function CitasAgendadas() {
       const matchBusqueda = !q || (p.pacienteDni || '').toLowerCase().includes(q) || (p.pacienteNombre || '').toLowerCase().includes(q);
       const matchEstado   = !filtroEstado || filtroEstado === 'total' || p.codigoEstado === filtroEstado;
       const matchIpress   = !filtroIpress || p.descIpress === filtroIpress;
-      const matchEspec    = !filtroEspec  || p.especialidad === filtroEspec;
+      const matchEspec    = !filtroEspec  || normEspec(p.especialidad) === filtroEspec;
       const matchMedico   = !filtroMedico || p.nomMedico === filtroMedico;
       const matchCenacron = !filtroCenacron
         || (filtroCenacron === 'si' && p.esCenacron === true)
