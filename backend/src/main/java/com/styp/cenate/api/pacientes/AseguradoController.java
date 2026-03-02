@@ -715,6 +715,7 @@ public class AseguradoController {
             // Actualizar el asegurado
             String updateSql = """
                 UPDATE asegurados SET
+                    doc_paciente = ?,
                     paciente = ?,
                     fecnacimpaciente = ?,
                     sexo = ?,
@@ -729,6 +730,7 @@ public class AseguradoController {
             """;
 
             int rowsAffected = jdbcTemplate.update(updateSql,
+                    aseguradoDTO.getDocPaciente(),
                     aseguradoDTO.getPaciente(),
                     aseguradoDTO.getFecnacimpaciente(),
                     aseguradoDTO.getSexo(),
