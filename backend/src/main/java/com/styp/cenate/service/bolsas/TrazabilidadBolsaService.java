@@ -4,9 +4,11 @@ import com.styp.cenate.dto.bolsas.TrazabilidadBolsaResponseDTO;
 import com.styp.cenate.dto.bolsas.TrazabilidadBolsaResponseDTO.EventoTrazabilidadDTO;
 import com.styp.cenate.model.PacienteEstrategia;
 import com.styp.cenate.model.PersonalCnt;
+import com.styp.cenate.model.bolsas.HistorialCambioSolicitud;
 import com.styp.cenate.model.bolsas.SolicitudBolsa;
 import com.styp.cenate.repository.PacienteEstrategiaRepository;
 import com.styp.cenate.repository.PersonalCntRepository;
+import com.styp.cenate.repository.bolsas.HistorialCambioSolicitudRepository;
 import com.styp.cenate.repository.bolsas.SolicitudBolsaRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -28,6 +30,7 @@ import java.util.List;
  *  - CAMBIO_ESTADO  → fechaCambioEstado + descripcionEstado
  *  - ATENCION       → fechaAtencionMedica
  *  - ANULACION      → motivoAnulacion + estadoGestionCitas
+ *  - DEVOLUCION     → dim_historial_cambios_solicitud (v1.81.6)
  *  - RECITA         → solicitudes derivadas (idsolicitudgeneracion)
  */
 @Service
@@ -35,13 +38,14 @@ import java.util.List;
 @RequiredArgsConstructor
 public class TrazabilidadBolsaService {
 
-    private final SolicitudBolsaRepository    solicitudRepo;
-    private final PersonalCntRepository       personalRepo;
-    private final PacienteEstrategiaRepository pacienteEstrategiaRepo;
+    private final SolicitudBolsaRepository           solicitudRepo;
+    private final PersonalCntRepository              personalRepo;
+    private final PacienteEstrategiaRepository       pacienteEstrategiaRepo;
+    private final HistorialCambioSolicitudRepository historialRepo;
 
     @Transactional(readOnly = true)
     public TrazabilidadBolsaResponseDTO obtenerTrazabilidad(Long idSolicitud) {
-        log.info("📋 [v1.75.0] Trazabilidad solicitada para idSolicitud={}", idSolicitud);
+        log.info("📋 [v1.81.6] Trazabilidad solicitada para idSolicitud={}", idSolicitud);
 
         SolicitudBolsa s = solicitudRepo.findById(idSolicitud)
                 .orElseThrow(() -> new RuntimeException("Solicitud no encontrada: " + idSolicitud));
@@ -125,7 +129,39 @@ public class TrazabilidadBolsaService {
                     .build());
         }
 
-        // ── 7. RECITAS / INTERCONSULTAS DERIVADAS ─────────────────────────
+        // ── 7. DEVOLUCIONES A PENDIENTE (desde historial permanente) ──────
+        try {
+            List<HistorialCambioSolicitud> historiales =
+                    historialRepo.findByIdSolicitudOrderByFechaCambioAsc(idSolicitud);
+            for (HistorialCambioSolicitud h : historiales) {
+                if (!"DEVOLUCION_A_PENDIENTE".equals(h.getTipoCambio())) continue;
+
+                StringBuilder detalle = new StringBuilder();
+                if (h.getEstadoAnteriorDesc() != null)
+                    detalle.append("Estado anterior: ").append(h.getEstadoAnteriorDesc());
+                if (h.getMedicoAnteriorNombre() != null)
+                    detalle.append(" · Médico: ").append(h.getMedicoAnteriorNombre());
+                if (h.getFechaCitaAnterior() != null) {
+                    detalle.append(" · Cita: ").append(h.getFechaCitaAnterior());
+                    if (h.getHoraCitaAnterior() != null)
+                        detalle.append(" ").append(h.getHoraCitaAnterior());
+                }
+
+                eventos.add(EventoTrazabilidadDTO.builder()
+                        .tipo("DEVOLUCION")
+                        .fecha(h.getFechaCambio())
+                        .descripcion("Devuelta a pendientes")
+                        .detalle(detalle.length() > 0 ? detalle.toString() : null)
+                        .medico(h.getUsuarioNombre())
+                        .estado("Motivo: " + (h.getMotivo() != null ? h.getMotivo() : "—"))
+                        .color("amber")
+                        .build());
+            }
+        } catch (Exception ex) {
+            log.warn("⚠️ No se pudieron cargar eventos de devolución para solicitud {}: {}", idSolicitud, ex.getMessage());
+        }
+
+        // ── 8. RECITAS / INTERCONSULTAS DERIVADAS ─────────────────────────
         List<SolicitudBolsa> derivadas = solicitudRepo
                 .findByIdsolicitudgeneracionOrderByFechaSolicitudAsc(idSolicitud);
 

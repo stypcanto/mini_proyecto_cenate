@@ -26,6 +26,7 @@ import com.styp.cenate.repository.TipoBolsaRepository;
 import com.styp.cenate.repository.UsuarioRepository;
 import com.styp.cenate.repository.PersonalCntRepository;
 import com.styp.cenate.repository.PacienteEstrategiaRepository;
+import com.styp.cenate.repository.bolsas.HistorialCambioSolicitudRepository;
 import com.styp.cenate.exception.ResourceNotFoundException;
 import com.styp.cenate.exception.ValidationException;
 import com.styp.cenate.service.ApplicationErrorLogService;
@@ -87,6 +88,7 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
     private final PacienteEstrategiaRepository pacienteEstrategiaRepository;
     private final ApplicationErrorLogService errorLogService;
     private final DimSolicitudBolsasGeneralRepository dimSolicitudBolsasGeneralRepository;
+    private final HistorialCambioSolicitudRepository historialCambioRepository;
 
     @PersistenceContext
     private EntityManager entityManager;
@@ -1191,6 +1193,64 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
 
         log.info("↩️ Devolviendo {} solicitudes a PENDIENTE con motivo: {}", ids.size(), motivo);
 
+        // Obtener usuario actual para auditoría
+        Long usuarioActualId = null;
+        String usuarioActualNombre = null;
+        try {
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            if (auth != null && auth.isAuthenticated()) {
+                String username = auth.getName();
+                Usuario usuario = usuarioRepository.findByNameUser(username).orElse(null);
+                if (usuario != null) {
+                    usuarioActualId = usuario.getIdUser();
+                    usuarioActualNombre = username;
+                }
+            }
+        } catch (Exception e) {
+            log.warn("⚠️ No se pudo obtener usuario para historial de devolución: {}", e.getMessage());
+        }
+
+        // Guardar historial ANTES de limpiar los campos (preservar datos anteriores)
+        List<SolicitudBolsa> solicitudes = solicitudRepository.findAllById(ids);
+        List<com.styp.cenate.model.bolsas.HistorialCambioSolicitud> registros = new ArrayList<>();
+        for (SolicitudBolsa s : solicitudes) {
+            if (!Boolean.TRUE.equals(s.getActivo())) continue;
+
+            String estadoAnteriorDesc = null;
+            if (s.getEstadoGestionCitas() != null) {
+                estadoAnteriorDesc = s.getEstadoGestionCitas().getDescripcionEstado();
+            }
+
+            String medicoAnteriorNombre = null;
+            if (s.getIdPersonal() != null) {
+                try {
+                    medicoAnteriorNombre = personalCntRepository.findById(s.getIdPersonal())
+                            .map(PersonalCnt::getNombreCompleto)
+                            .orElse("Personal #" + s.getIdPersonal());
+                } catch (Exception e) {
+                    medicoAnteriorNombre = "Personal #" + s.getIdPersonal();
+                }
+            }
+
+            registros.add(com.styp.cenate.model.bolsas.HistorialCambioSolicitud.builder()
+                    .idSolicitud(s.getIdSolicitud())
+                    .tipoCambio("DEVOLUCION_A_PENDIENTE")
+                    .motivo(motivo)
+                    .estadoAnteriorId(s.getEstadoGestionCitasId())
+                    .estadoAnteriorDesc(estadoAnteriorDesc)
+                    .medicoAnteriorId(s.getIdPersonal())
+                    .medicoAnteriorNombre(medicoAnteriorNombre)
+                    .fechaCitaAnterior(s.getFechaAtencion())
+                    .horaCitaAnterior(s.getHoraAtencion())
+                    .usuarioId(usuarioActualId)
+                    .usuarioNombre(usuarioActualNombre)
+                    .fechaCambio(java.time.OffsetDateTime.now())
+                    .build());
+        }
+        historialCambioRepository.saveAll(registros);
+        log.info("📋 {} registros de historial guardados para trazabilidad", registros.size());
+
+        // Limpiar campos y cambiar estado a PENDIENTE_CITA
         int actualizados = solicitudRepository.devolverAPendientesMasivo(ids, motivo);
 
         log.info("✅ {} solicitudes devueltas a PENDIENTE_CITA", actualizados);
