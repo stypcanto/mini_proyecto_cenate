@@ -5,6 +5,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.sql.Date;
@@ -77,10 +78,10 @@ public class AseguradoController {
         try {
             log.info("📊 Listando asegurados - Página: {}, Tamaño: {}, CENACRON: {}", page, size, cenacron);
 
-            StringBuilder whereClause = new StringBuilder();
+            StringBuilder whereClause = new StringBuilder(" WHERE a.vigencia = true");
             List<Object> params = new ArrayList<>();
             if (Boolean.TRUE.equals(cenacron)) {
-                whereClause.append(" WHERE a.paciente_cronico = true");
+                whereClause.append(" AND a.paciente_cronico = true");
             }
 
             // Consulta para obtener el total de registros
@@ -263,9 +264,9 @@ public class AseguradoController {
         try {
             log.info("🔍 Buscando asegurado: '{}', CENACRON: {}", q, cenacron);
 
-            // Búsqueda por DNI o nombre (ILIKE para nombre parcial)
+            // Búsqueda por DNI o nombre (ILIKE para nombre parcial), solo vigentes
             StringBuilder whereClause = new StringBuilder(
-                "WHERE (a.doc_paciente = ? OR UPPER(a.paciente) LIKE UPPER(?))");
+                "WHERE a.vigencia = true AND (a.doc_paciente = ? OR UPPER(a.paciente) LIKE UPPER(?))");
             List<Object> params = new ArrayList<>();
             params.add(q.trim());
             params.add("%" + q.trim() + "%");
@@ -940,27 +941,38 @@ public class AseguradoController {
      * Ejemplo: DELETE /api/asegurados/{pkAsegurado}
      */
     @DeleteMapping("/{pkAsegurado}")
+    @PreAuthorize("hasRole('SUPERADMIN')")
     public ResponseEntity<?> eliminarAsegurado(@PathVariable String pkAsegurado) {
         try {
             log.info("🗑️ Eliminando asegurado: PK={}", pkAsegurado);
             
             // Verificar que el asegurado existe antes de eliminar
-            String checkSql = "SELECT COUNT(*) FROM asegurados WHERE pk_asegurado = ?";
+            // Usamos ::text para evitar problemas de tipo UUID vs VARCHAR en JDBC
+            String checkSql = "SELECT COUNT(*) FROM asegurados WHERE pk_asegurado::text = ?";
             Integer count = jdbcTemplate.queryForObject(checkSql, Integer.class, pkAsegurado);
-            
+
             if (count == null || count == 0) {
                 log.warn("⚠️ No se encontró asegurado con PK: {}", pkAsegurado);
                 return ResponseEntity.notFound().build();
             }
-            
+
             // Obtener información del asegurado antes de eliminarlo (para el log)
-            String selectSql = "SELECT doc_paciente, paciente FROM asegurados WHERE pk_asegurado = ?";
+            String selectSql = "SELECT doc_paciente, paciente FROM asegurados WHERE pk_asegurado::text = ?";
             Map<String, Object> aseguradoInfo = jdbcTemplate.queryForMap(selectSql, pkAsegurado);
             String docPaciente = (String) aseguradoInfo.get("doc_paciente");
             String nombrePaciente = (String) aseguradoInfo.get("paciente");
-            
-            // Eliminar el asegurado
-            String deleteSql = "DELETE FROM asegurados WHERE pk_asegurado = ?";
+
+            // Desvincular referencias en dim_solicitud_bolsa (FK ON DELETE RESTRICT)
+            // Se usa ::text para compatibilidad con el tipo UUID del PK
+            String unlinkBolsaSql = "UPDATE dim_solicitud_bolsa SET paciente_id = NULL WHERE paciente_id::text = ?";
+            int bolsasDesvinculadas = jdbcTemplate.update(unlinkBolsaSql, pkAsegurado);
+            if (bolsasDesvinculadas > 0) {
+                log.info("🔗 {} solicitud(es) de bolsa desvinculadas del asegurado PK={}", bolsasDesvinculadas, pkAsegurado);
+            }
+
+            // Eliminar el asegurado (paciente_estrategia y asegurado_enfermedad_cronica
+            // se eliminan en cascada por ON DELETE CASCADE en sus FKs)
+            String deleteSql = "DELETE FROM asegurados WHERE pk_asegurado::text = ?";
             int rowsAffected = jdbcTemplate.update(deleteSql, pkAsegurado);
             
             if (rowsAffected == 0) {
