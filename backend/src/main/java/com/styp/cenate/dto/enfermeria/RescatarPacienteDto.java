@@ -5,6 +5,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDate;
 import java.time.OffsetDateTime;
 
 /**
@@ -27,6 +28,8 @@ public class RescatarPacienteDto {
     private String especialidad;
     private Long idBolsa;
     private String numeroSolicitud;
+    /** Fecha de cita (fecha_atencion). Null si no tiene fecha asignada. */
+    private LocalDate fechaAtencion;
     /** Hora de cita formateada "HH:MM" (ej. "07:30"). Null si no tiene hora asignada. */
     private String horaCita;
 }

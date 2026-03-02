@@ -8,7 +8,7 @@ import React, { useEffect, useState } from 'react';
 import {
   ClipboardList, UserCheck, CalendarCheck, Stethoscope,
   XCircle, RefreshCw, AlertCircle, Loader2, Clock,
-  Heart, HeartOff,
+  Heart, HeartOff, RotateCcw, User,
 } from 'lucide-react';
 import trazabilidadBolsaService from '../../services/trazabilidadBolsaService';
 
@@ -20,6 +20,7 @@ const EVENTO_CONFIG = {
   ATENCION:          { Icon: Stethoscope,   bg: 'bg-emerald-100', ring: 'ring-emerald-300', text: 'text-emerald-700' },
   CAMBIO_ESTADO:     { Icon: RefreshCw,     bg: 'bg-gray-100',    ring: 'ring-gray-300',    text: 'text-gray-700'    },
   ANULACION:         { Icon: XCircle,       bg: 'bg-red-100',     ring: 'ring-red-300',     text: 'text-red-700'     },
+  DEVOLUCION:        { Icon: RotateCcw,     bg: 'bg-amber-100',   ring: 'ring-amber-300',   text: 'text-amber-700'   },
   RECITA:            { Icon: CalendarCheck, bg: 'bg-orange-100',  ring: 'ring-orange-300',  text: 'text-orange-700'  },
   CENACRON_INGRESO:  { Icon: Heart,         bg: 'bg-purple-100',  ring: 'ring-purple-300',  text: 'text-purple-700'  },
   CENACRON_BAJA:     { Icon: HeartOff,      bg: 'bg-orange-100',  ring: 'ring-orange-300',  text: 'text-orange-700'  },
@@ -34,13 +35,44 @@ const COLOR_BADGE = {
   gray:   'bg-gray-50 text-gray-600 border-gray-200',
 };
 
+const MESES = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+
 function formatFecha(fecha) {
   if (!fecha) return '—';
-  return new Intl.DateTimeFormat('es-PE', {
-    day: '2-digit', month: 'short', year: 'numeric',
-    hour: '2-digit', minute: '2-digit',
-  }).format(new Date(fecha));
+  const d = new Date(fecha);
+  const dia  = String(d.getDate()).padStart(2, '0');
+  const mes  = MESES[d.getMonth()];
+  const anio = d.getFullYear();
+  const hh   = String(d.getHours()).padStart(2, '0');
+  const mm   = String(d.getMinutes()).padStart(2, '0');
+  return `${dia} ${mes} ${anio}, ${hh}:${mm}`;
 }
+
+const LABEL_USUARIO = {
+  INGRESO:           'Registrado por:',
+  ASIGNACION_MEDICO: 'Asignado por:',
+  CITA_AGENDADA:     'Agendado por:',
+  ATENCION:          'Atendido por:',
+  CAMBIO_ESTADO:     'Gestionado por:',
+  ANULACION:         'Anulado por:',
+  DEVOLUCION:        'Devuelto por:',
+  RECITA:            'Recitado por:',
+  CENACRON_INGRESO:  'Inscrito por:',
+  CENACRON_BAJA:     'Dado de baja por:',
+};
+
+const LABEL_MEDICO = {
+  INGRESO:           'Especialidad:',
+  ASIGNACION_MEDICO: 'Profesional asignado:',
+  CITA_AGENDADA:     'Profesional de cita:',
+  ATENCION:          'Médico que atendió:',
+  CAMBIO_ESTADO:     'Profesional:',
+  ANULACION:         'Profesional:',
+  DEVOLUCION:        'Médico anterior:',
+  RECITA:            'Profesional:',
+  CENACRON_INGRESO:  'Inscrito por:',
+  CENACRON_BAJA:     'Dado de baja por:',
+};
 
 // ── Componente principal ─────────────────────────────────────────────────────
 export default function HistorialBolsaTab({ idSolicitud }) {
@@ -149,20 +181,30 @@ export default function HistorialBolsaTab({ idSolicitud }) {
                     {formatFecha(evento.fecha)}
                   </p>
 
-                  {/* Médico / Responsable */}
+                  {/* Profesional de salud involucrado */}
                   {evento.medico && (
-                    <p className="text-xs text-slate-600">
-                      <span className="font-medium">
-                        {evento.tipo === 'CENACRON_INGRESO' ? 'Inscrito por:' :
-                         evento.tipo === 'CENACRON_BAJA'    ? 'Dado de baja por:' :
-                         'Profesional:'}
-                      </span>{' '}{evento.medico}
+                    <p className="text-xs text-slate-600 flex items-center gap-1">
+                      <span className="font-medium">{LABEL_MEDICO[evento.tipo] ?? 'Profesional:'}</span>
+                      {evento.medico}
+                    </p>
+                  )}
+
+                  {/* Usuario del sistema que ejecutó la acción */}
+                  {evento.usuario && evento.usuario !== evento.medico && (
+                    <p className="text-xs text-slate-500 flex items-center gap-1 mt-0.5">
+                      <User className="w-3 h-3 shrink-0" />
+                      <span className="font-medium">{LABEL_USUARIO[evento.tipo] ?? 'Gestionado por:'}</span>
+                      {evento.usuario}
                     </p>
                   )}
 
                   {/* Detalle adicional / motivo */}
                   {evento.detalle && (
-                    <p className={`text-xs mt-1 ${evento.tipo === 'CENACRON_BAJA' ? 'text-orange-700 font-medium' : 'text-slate-500 italic'}`}>
+                    <p className={`text-xs mt-1 ${
+                      evento.tipo === 'CENACRON_BAJA' ? 'text-orange-700 font-medium' :
+                      evento.tipo === 'ANULACION'     ? 'text-red-600 italic' :
+                      'text-slate-500 italic'
+                    }`}>
                       {evento.detalle}
                     </p>
                   )}

@@ -761,6 +761,7 @@ public class NursingService {
                 .pacienteNombre(r[1] != null ? r[1].toString() : "")
                 .pacienteDni(r[2] != null ? r[2].toString() : "")
                 .condicionMedica(r[3] != null ? r[3].toString() : "")
+                .fechaAtencion(r[4] != null ? ((java.sql.Date) r[4]).toLocalDate() : null)
                 .idPersonal(r[5] != null ? ((Number) r[5]).longValue() : null)
                 .nombreEnfermera(r[6] != null ? r[6].toString() : "")
                 .build())

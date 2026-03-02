@@ -1173,13 +1173,25 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
 
         log.info("❌ Anulando {} solicitudes con motivo: {}", ids.size(), motivo);
 
+        // Obtener ID del usuario autenticado para auditoría
+        Long idUsuarioActual = null;
+        try {
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            if (auth != null && auth.isAuthenticated()) {
+                Usuario usuario = usuarioRepository.findByNameUser(auth.getName()).orElse(null);
+                if (usuario != null) idUsuarioActual = usuario.getIdUser();
+            }
+        } catch (Exception e) {
+            log.warn("⚠️ No se pudo obtener usuario autenticado para auditoría: {}", e.getMessage());
+        }
+
         com.styp.cenate.model.bolsas.DimEstadosGestionCitas estado =
             dimEstadosGestionCitasRepository.findByCodigoEstado("RECHAZADO")
                 .orElseThrow(() -> new RuntimeException("Estado RECHAZADO no encontrado en BD"));
 
-        int actualizados = solicitudRepository.cambiarEstadoMasivoConMotivo(ids, estado.getIdEstado(), motivo);
+        int actualizados = solicitudRepository.cambiarEstadoMasivoConMotivo(ids, estado.getIdEstado(), motivo, idUsuarioActual);
 
-        log.info("✅ {} solicitudes anuladas con motivo registrado", actualizados);
+        log.info("✅ {} solicitudes anuladas con motivo registrado por usuario ID={}", actualizados, idUsuarioActual);
         return actualizados;
     }
 
@@ -3059,6 +3071,24 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
             List<SolicitudBolsaDTO> resultado = solicitudes.stream()
                 .map(s -> mapSolicitudBolsaToDTOBatch(s, ipressMap, tipoBolsaMap, aseguradoMap, personalMap))
                 .collect(Collectors.toList());
+
+            // Enriquecer con flag CENACRON
+            try {
+                List<String> dnisCenacronQuery = resultado.stream()
+                    .map(SolicitudBolsaDTO::getPacienteDni)
+                    .filter(dni -> dni != null && !dni.isBlank())
+                    .distinct()
+                    .collect(Collectors.toList());
+                if (!dnisCenacronQuery.isEmpty()) {
+                    Set<String> setCenacron = new HashSet<>(
+                        pacienteEstrategiaRepository.findDnisPertenecentesAEstrategia(dnisCenacronQuery, "CENACRON")
+                    );
+                    resultado.forEach(dto -> dto.setEsCenacron(setCenacron.contains(dto.getPacienteDni())));
+                    log.info("   🏷️ CENACRON (enfermería): {} pacientes identificados", setCenacron.size());
+                }
+            } catch (Exception ex) {
+                log.warn("⚠️ No se pudo enriquecer flag CENACRON (enfermería): {}", ex.getMessage());
+            }
 
             log.info("✅ Bandeja COORD. ENFERMERIA: {} pacientes", resultado.size());
             return resultado;

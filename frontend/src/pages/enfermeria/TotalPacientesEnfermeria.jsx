@@ -507,6 +507,7 @@ function DrawerEnfermera({ enfermera, fecha, turno, onClose, onReasignacionExito
     if (condicion === 'Pendiente') return { color: '#f59e0b', bg: '#fffbeb' };
     if (condicion === 'Atendido')  return { color: '#10b981', bg: '#f0fdf4' };
     if (condicion === 'Deserción') return { color: '#ef4444', bg: '#fef2f2' };
+    if (condicion === 'Anulado')   return { color: '#dc2626', bg: '#fee2e2' };
     return { color: '#64748b', bg: '#f1f5f9' };
   };
 
@@ -1027,6 +1028,12 @@ export default function TotalPacientesEnfermeria() {
   }, [busqPaciente]);
 
   const abrirEnfermeraDeResultado = (resultado) => {
+    // Auto-navegar a la fecha de cita del paciente si está disponible
+    const fechaCita = resultado.fechaAtencion || resultado.fecha_atencion || null;
+    if (fechaCita && fechaCita !== fecha) {
+      setFecha(fechaCita);
+      cargar(fechaCita, turno);
+    }
     // Buscar la enfermera en la lista cargada para abrir su drawer
     const enfermera = enfermeras.find(e => String(e.id_enfermera) === String(resultado.idPersonal));
     if (enfermera) {
@@ -1047,6 +1054,7 @@ export default function TotalPacientesEnfermeria() {
     if (c === 'Pendiente') return { color: '#f59e0b', bg: '#fffbeb' };
     if (c === 'Atendido')  return { color: '#10b981', bg: '#f0fdf4' };
     if (c === 'Deserción') return { color: '#ef4444', bg: '#fef2f2' };
+    if (c === 'Anulado')   return { color: '#dc2626', bg: '#fee2e2' };
     return { color: '#64748b', bg: '#f1f5f9' };
   };
 

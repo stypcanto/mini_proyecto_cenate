@@ -1746,12 +1746,14 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
         "s.fechaCambioEstado = CURRENT_TIMESTAMP, " +
         "s.motivoAnulacion = :motivo, " +
         "s.condicionMedica = 'Anulado', " +
-        "s.estado = 'Observado' " +
+        "s.estado = 'Observado', " +
+        "s.usuarioCambioEstadoId = :idUsuario " +
         "WHERE s.idSolicitud IN :ids AND s.activo = true")
     int cambiarEstadoMasivoConMotivo(
         @org.springframework.data.repository.query.Param("ids") List<Long> ids,
         @org.springframework.data.repository.query.Param("idEstado") Long idEstado,
-        @org.springframework.data.repository.query.Param("motivo") String motivo
+        @org.springframework.data.repository.query.Param("motivo") String motivo,
+        @org.springframework.data.repository.query.Param("idUsuario") Long idUsuario
     );
 
     /**
