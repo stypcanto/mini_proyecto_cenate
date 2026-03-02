@@ -859,7 +859,7 @@ export default function MisPacientes() {
       const sorted = Array.isArray(data) ? [...data].sort((a, b) => a.descServicio.localeCompare(b.descServicio, 'es')) : [];
       setEspecialidades(sorted);
       devLog('%c✅ ESPECIALIDADES CENATE CARGADAS', 'color: #00aa00; font-weight: bold; font-size: 12px; background: #e0ffe0; padding: 6px 8px; border-radius: 3px');
-      console.table(sorted);
+      devLog(sorted);
     } catch (error) {
       devError('Error cargando especialidades CENATE:', error);
     }
@@ -1072,7 +1072,7 @@ export default function MisPacientes() {
       devLog('%c✅ CONTEOS ECG CARGADOS', 'color: #00aa00; font-weight: bold; font-size: 12px; background: #e0ffe0; padding: 6px 8px; border-radius: 3px');
       devLog(`  • Tiempo: %c${tiempoMs}ms`, 'color: #ff6600; font-weight: bold');
       devLog(`  • Total pacientes: %c${Object.keys(counts).length}`, 'color: #ff6600; font-weight: bold');
-      console.table(counts);
+      devLog(counts);
     } catch (error) {
       devError('%c❌ ERROR CARGANDO CONTEOS ECG', 'color: #ff0000; font-weight: bold; font-size: 12px; background: #ffe0e0; padding: 6px 8px; border-radius: 3px', error);
     }
@@ -3130,7 +3130,7 @@ export default function MisPacientes() {
                                 const tickets = await mesaAyudaService.obtenerPorSolicitudBolsa(paciente.idSolicitudBolsa);
                                 devLog(`%c✅ TICKETS EXISTENTES para idSolicitudBolsa ${paciente.idSolicitudBolsa}`, 'color: #00aa00; font-weight: bold; font-size: 12px; background: #e0ffe0; padding: 6px 8px; border-radius: 3px');
                                 devLog(`  • Total: ${Array.isArray(tickets) ? tickets.length : 0}`, 'color: #00aa00; font-weight: bold');
-                                console.table(tickets);
+                                devLog(tickets);
 
                                 if (Array.isArray(tickets) && tickets.length > 0) {
                                   // Si existen tickets, mostrar modal de tickets existentes
