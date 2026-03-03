@@ -11,6 +11,7 @@ import React, { useState, useMemo, useEffect } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import usePermissions from "../hooks/usePermissions";
+import TrackableNavLink from "./TrackableNavLink";
 import { VERSION } from "../config/version";
 import ExternoSidebar from "./ExternoSidebar";
 import {
@@ -828,9 +829,11 @@ function PaginaConSubmenu({ pagina, location, nombreModulo, getIconComponent, au
             // Priorizar hardcoded icons basado en nombre
             const SubIcon = getPageIcon(nombreModulo, subpagina.nombre) || (subpagina.icono ? getIconComponent(subpagina.icono) : Folder);
             return (
-              <NavLink
+              <TrackableNavLink
                 key={subpagina.id_pagina || subIdx}
                 to={subpagina.ruta}
+                idPagina={subpagina.id_pagina}
+                nombrePagina={subpagina.nombre}
                 className={`flex items-center gap-3 px-4 py-2 rounded-lg text-xs font-medium transition-all block ${
                   isActive
                     ? "bg-[#0A5BA9] text-white shadow-md"
@@ -839,7 +842,7 @@ function PaginaConSubmenu({ pagina, location, nombreModulo, getIconComponent, au
               >
                 <SubIcon className="w-4 h-4 flex-shrink-0" />
                 <span className="truncate">{subpagina.nombre}</span>
-              </NavLink>
+              </TrackableNavLink>
             );
           })}
         </div>
@@ -926,9 +929,11 @@ function DynamicModuleSection({ modulo, colorConfig, location, toggleSection, op
     return (
       <>
         <div className="relative mb-2" style={{ overflow: 'visible', position: 'static' }}>
-          <NavLink
+          <TrackableNavLink
             ref={linkRef}
             to={firstPage?.ruta || "#"}
+            idPagina={firstPage?.id_pagina}
+            nombrePagina={firstPage?.nombre}
             onMouseEnter={handleMouseEnter}
             onMouseLeave={handleMouseLeave}
             className={`flex items-center justify-center w-10 h-10 rounded-xl transition-all mx-auto hover:bg-slate-800/60 ${
@@ -938,7 +943,7 @@ function DynamicModuleSection({ modulo, colorConfig, location, toggleSection, op
             }`}
           >
             <ModuleIcon className="w-5 h-5" />
-          </NavLink>
+          </TrackableNavLink>
         </div>
         {showTooltip && (
           <div
@@ -1015,9 +1020,11 @@ function DynamicModuleSection({ modulo, colorConfig, location, toggleSection, op
               const isActive = location.pathname === pagina.ruta;
               const PageIcon = getPageIcon(nombreModulo, pagina.nombre) || (pagina.icono ? getIconComponent(pagina.icono) : null) || Folder;
               return (
-                <NavLink
+                <TrackableNavLink
                   key={pagina.id_pagina || idx}
                   to={pagina.ruta}
+                  idPagina={pagina.id_pagina}
+                  nombrePagina={pagina.nombre}
                   className={`flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-all ${
                     isActive
                       ? "bg-[#0A5BA9] text-white shadow-md"
@@ -1026,7 +1033,7 @@ function DynamicModuleSection({ modulo, colorConfig, location, toggleSection, op
                 >
                   <PageIcon className="w-4 h-4" />
                   <span className="truncate">{pagina.nombre}</span>
-                </NavLink>
+                </TrackableNavLink>
               );
             }
           })}
