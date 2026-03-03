@@ -1956,6 +1956,22 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
      * ✅ CORRECCIÓN v1.19.0: Detecta duplicados y retorna información estructurada
      * @return null si no hay duplicado, o Map con detalles del duplicado
      */
+    /**
+     * Genera un mensaje claro y amigable explicando por qué el paciente no pudo cargarse.
+     */
+    private String generarMotivoDuplicado(String estado) {
+        if (estado == null) return "Ya tiene una solicitud activa en esta bolsa";
+        return switch (estado.toUpperCase()) {
+            case "PENDIENTE"      -> "Ya tiene una cita PENDIENTE — debe atenderse antes de registrar una nueva";
+            case "CITADO"         -> "Ya fue CITADO — tiene una cita programada activa";
+            case "EN_ATENCION"    -> "Actualmente EN ATENCIÓN — ya está siendo atendido";
+            case "ATENDIDO"       -> "Ya fue ATENDIDO en esta bolsa en una carga anterior";
+            case "NO_ASISTIO"     -> "Registrado como NO ASISTIÓ — coordinar reprogramación";
+            case "ANULADO"        -> "Tiene una solicitud ANULADA — puede volver a cargarse si es intencional";
+            default               -> "Ya existe en la bolsa con estado: " + estado;
+        };
+    }
+
     private Map<String, Object> detectarDuplicado(int filaNumero, Long idBolsa,
                                                    SolicitudBolsa solicitud,
                                                    DimServicioEssi servicio) {
@@ -4412,12 +4428,19 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
                     .orElse(dni);
 
                 // 2. Verificar duplicado (mismo id_bolsa + paciente_id usando pk real)
-                if (solicitudRepository.existsByIdBolsaAndPacienteId(idBolsa, pkAsegurado)) {
-                    log.debug("⚠️ Duplicado detectado: bolsa={}, pk={}", idBolsa, pkAsegurado);
+                List<SolicitudBolsa> existentes = solicitudRepository
+                    .findByIdBolsaAndPacienteIdOrderByFechaSolicitudDesc(idBolsa, pkAsegurado);
+                if (!existentes.isEmpty()) {
+                    SolicitudBolsa existente = existentes.get(0);
+                    log.debug("⚠️ Duplicado detectado: bolsa={}, pk={}, solicitud={}", idBolsa, pkAsegurado, existente.getNumeroSolicitud());
                     duplicados++;
                     Map<String, String> dup = new HashMap<>();
                     dup.put("dni", dni);
                     dup.put("nombre", row.getPaciente() != null ? row.getPaciente().trim() : "—");
+                    dup.put("solicitudExistente", existente.getNumeroSolicitud());
+                    dup.put("estadoExistente", existente.getEstado() != null ? existente.getEstado() : "PENDIENTE");
+                    dup.put("especialidadExistente", existente.getEspecialidad() != null ? existente.getEspecialidad() : "—");
+                    dup.put("motivo", generarMotivoDuplicado(existente.getEstado()));
                     detalleDuplicados.add(dup);
                     continue;
                 }

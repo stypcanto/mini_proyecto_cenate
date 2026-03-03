@@ -97,6 +97,9 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
 
     Optional<SolicitudBolsa> findFirstByPacienteDniAndActivoTrueOrderByFechaSolicitudDesc(String pacienteDni);
 
+    /** Busca solicitudes en una bolsa para un paciente, más reciente primero (para detalle duplicado) */
+    List<SolicitudBolsa> findByIdBolsaAndPacienteIdOrderByFechaSolicitudDesc(Long idBolsa, String pacienteId);
+
     /**
      * v1.75.3: Busca la solicitud ORIGINAL más reciente (sin padre = no es recita ni interconsulta).
      * Usada en el historial por DNI para mostrar el ciclo completo incluyendo recitas derivadas.
