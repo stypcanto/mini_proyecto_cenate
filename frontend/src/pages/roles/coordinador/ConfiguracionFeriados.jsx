@@ -9,7 +9,6 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Eye, Plus, Pencil, AlertCircle, Loader, RefreshCw } from 'lucide-react';
 import ModalNuevaSolicitud from '../../../components/control_horarios/ModalNuevaSolicitud';
-import ModalConsultarSolicitud from '../../../components/control_horarios/ModalConsultarSolicitud';
 import { logRespuestaConsola } from '../../../utils/consoleResponseLogger';
 import { useAuth } from '../../../context/AuthContext';
 
@@ -26,9 +25,9 @@ const ConfiguracionFeriados = () => {
   
   // Modales
   const [showModalNuevaSolicitud, setShowModalNuevaSolicitud] = useState(false);
-  const [showModalConsultar, setShowModalConsultar] = useState(false);
   const [selectedPeriodo, setSelectedPeriodo] = useState(null);
   const [selectedHorario, setSelectedHorario] = useState(null);
+  const [isReadOnly, setIsReadOnly] = useState(false);
 
   // Cargar datos al montar
   useEffect(() => {
@@ -102,6 +101,7 @@ const ConfiguracionFeriados = () => {
   const handleIniciarSolicitud = (p) => {
     setSelectedPeriodo(p);
     setSelectedHorario(null);
+    setIsReadOnly(false);
     setShowModalNuevaSolicitud(true);
   };
 
@@ -113,6 +113,7 @@ const ConfiguracionFeriados = () => {
       });
       setSelectedHorario(response.data);
       setSelectedPeriodo(h);
+      setIsReadOnly(false);
       setShowModalNuevaSolicitud(true);
     } catch (err) {
       console.error('Error cargando detalle para editar:', err);
@@ -127,7 +128,9 @@ const ConfiguracionFeriados = () => {
         headers: { 'Authorization': token ? `Bearer ${token}` : '' }
       });
       setSelectedHorario(response.data);
-      setShowModalConsultar(true);
+      setSelectedPeriodo(h);
+      setIsReadOnly(true);
+      setShowModalNuevaSolicitud(true);
     } catch (err) {
       console.error('Error cargando detalle para consultar:', err);
       setError('Error al cargar detalle de la solicitud');
@@ -137,6 +140,7 @@ const ConfiguracionFeriados = () => {
   const handleModalSuccess = () => {
     setShowModalNuevaSolicitud(false);
     setSelectedHorario(null);
+    setIsReadOnly(false);
     cargarDatos();
   };
 
@@ -476,15 +480,13 @@ const ConfiguracionFeriados = () => {
         <ModalNuevaSolicitud
           periodo={selectedPeriodo}
           horario={selectedHorario}
-          onClose={() => { setShowModalNuevaSolicitud(false); setSelectedHorario(null); }}
+          readOnly={isReadOnly}
+          onClose={() => { 
+            setShowModalNuevaSolicitud(false); 
+            setSelectedHorario(null);
+            setIsReadOnly(false);
+          }}
           onSuccess={handleModalSuccess}
-        />
-      )}
-
-      {showModalConsultar && selectedHorario && (
-        <ModalConsultarSolicitud
-          horario={selectedHorario}
-          onClose={() => setShowModalConsultar(false)}
         />
       )}
     </div>

@@ -7,9 +7,9 @@ import axios from 'axios';
 import { X, Loader, AlertCircle, ChevronLeft, ChevronRight, Calendar, User, Building2, Briefcase, FileText, Clock, Hash, CheckCircle2 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
-const ModalNuevaSolicitud = ({ periodo, horario, onClose, onSuccess }) => {
+const ModalNuevaSolicitud = ({ periodo, horario, onClose, onSuccess, readOnly = false }) => {
   const { user } = useAuth();
-  const isEditMode = !!horario;
+  const isEditMode = !!horario && !readOnly;
   const dropdownRef = useRef(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -64,6 +64,16 @@ const ModalNuevaSolicitud = ({ periodo, horario, onClose, onSuccess }) => {
     }
   }, [periodo]);
 
+  // Actualizar observaciones cuando horario cambia (edición o lectura)
+  useEffect(() => {
+    if (horario?.observaciones) {
+      setFormData(prev => ({
+        ...prev,
+        observaciones: horario.observaciones || ''
+      }));
+    }
+  }, [horario?.observaciones]);
+
   const cargarDatos = async () => {
     try {
       setLoading(true);
@@ -90,8 +100,8 @@ const ModalNuevaSolicitud = ({ periodo, horario, onClose, onSuccess }) => {
 
       console.log(`📋 Códigos de horario cargados: ${horariosData.length} (idArea=${idArea}, idGrupoProg=${idGrupoProg})`);
 
-      // Si es modo edición, cargar los detalles guardados (turnos por día)
-      if (isEditMode && horario?.idCtrHorario) {
+      // Si hay horario (edición o lectura), cargar los detalles guardados (turnos por día)
+      if (horario?.idCtrHorario) {
         try {
           const detResponse = await axios.get(
             `/api/control-horarios/horarios/${horario.idCtrHorario}/detalles`,
@@ -350,7 +360,11 @@ const ModalNuevaSolicitud = ({ periodo, horario, onClose, onSuccess }) => {
       <div className="bg-white rounded-lg shadow-xl w-full max-w-6xl max-h-[95vh] overflow-y-auto">
         {/* Header */}
         <div className="sticky top-0 bg-blue-600 text-white px-6 py-4 flex items-center justify-between border-b z-30 shadow-md">
-          <h2 className="text-xl font-bold">{isEditMode ? 'Editar Horario del Mes' : 'Mi Horario del Mes'}</h2>
+          <h2 className="text-xl font-bold">
+            {readOnly 
+              ? 'Consultar Horario del Mes' 
+              : (isEditMode ? 'Editar Horario del Mes' : 'Mi Horario del Mes')}
+          </h2>
           <button
             onClick={onClose}
             className="p-1 hover:bg-blue-700 rounded transition-colors"
@@ -521,9 +535,9 @@ const ModalNuevaSolicitud = ({ periodo, horario, onClose, onSuccess }) => {
                     value={formData.observaciones}
                     onChange={handleChange}
                     rows="4"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm resize-none"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm resize-none disabled:bg-gray-100 disabled:text-gray-600 disabled:cursor-not-allowed"
                     placeholder="Notas adicionales..."
-                    disabled={loading}
+                    disabled={loading || readOnly}
                   />
                 </div>
               </div>
@@ -576,10 +590,12 @@ const ModalNuevaSolicitud = ({ periodo, horario, onClose, onSuccess }) => {
                           <>
                             <button
                               type="button"
-                              onClick={() => handleDateClick(day)}
+                              onClick={() => !readOnly && handleDateClick(day)}
+                              disabled={readOnly}
                               className={`
                                 w-full aspect-square rounded-lg font-bold text-lg transition-all
                                 flex flex-col items-center justify-center gap-1
+                                ${readOnly ? 'cursor-not-allowed opacity-75' : ''}
                                 ${
                                   selectedDate &&
                                   selectedDate.getDate() === day &&
@@ -690,54 +706,58 @@ const ModalNuevaSolicitud = ({ periodo, horario, onClose, onSuccess }) => {
 
             {/* Botones (ancho completo) */}
             <div className="flex gap-3 mt-6">
-              <button
-                type="submit"
-                disabled={loading || (isEditMode && !hasChanges)}
-                className="flex-1 px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 disabled:opacity-50 font-semibold text-base flex items-center justify-center gap-2 shadow-sm transition-colors"
-              >
-                {loading && <Loader className="w-5 h-5 animate-spin" />}
-                {isEditMode ? 'Guardar Progreso' : 'Guardar Horario'}
-              </button>
-              {isEditMode && (
-                <button
-                  type="button"
-                  disabled={loading || hasChanges}
-                  onClick={async () => {
-                    if (!window.confirm('¿Está seguro de finalizar el horario?\nUna vez finalizado no podrá realizar modificaciones.')) return;
-                    setLoading(true);
-                    setError(null);
-                    try {
-                      const token = localStorage.getItem('token') || localStorage.getItem('auth.token');
-                      const response = await axios.patch(
-                        `/api/control-horarios/horarios/${horario.idCtrHorario}/finalizar`,
-                        {},
-                        { headers: { 'Authorization': token ? `Bearer ${token}` : '' } }
-                      );
-                      if (response.data.success) {
-                        onSuccess();
-                        onClose();
-                      } else {
-                        setError(response.data.error || 'Error al finalizar');
-                      }
-                    } catch (err) {
-                      setError(err.response?.data?.error || 'Error al finalizar horario');
-                    } finally {
-                      setLoading(false);
-                    }
-                  }}
-                  className="flex-1 px-6 py-3 bg-green-600 text-white rounded-xl hover:bg-green-700 disabled:opacity-50 font-semibold text-base flex items-center justify-center gap-2 shadow-sm transition-colors"
-                >
-                  <CheckCircle2 className="w-5 h-5" />
-                  Finalizar Horario
-                </button>
+              {!readOnly && (
+                <>
+                  <button
+                    type="submit"
+                    disabled={loading || (isEditMode && !hasChanges)}
+                    className="flex-1 px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 disabled:opacity-50 font-semibold text-base flex items-center justify-center gap-2 shadow-sm transition-colors"
+                  >
+                    {loading && <Loader className="w-5 h-5 animate-spin" />}
+                    {isEditMode ? 'Guardar Progreso' : 'Guardar Horario'}
+                  </button>
+                  {isEditMode && (
+                    <button
+                      type="button"
+                      disabled={loading || hasChanges}
+                      onClick={async () => {
+                        if (!window.confirm('¿Está seguro de finalizar el horario?\nUna vez finalizado no podrá realizar modificaciones.')) return;
+                        setLoading(true);
+                        setError(null);
+                        try {
+                          const token = localStorage.getItem('token') || localStorage.getItem('auth.token');
+                          const response = await axios.patch(
+                            `/api/control-horarios/horarios/${horario.idCtrHorario}/finalizar`,
+                            {},
+                            { headers: { 'Authorization': token ? `Bearer ${token}` : '' } }
+                          );
+                          if (response.data.success) {
+                            onSuccess();
+                            onClose();
+                          } else {
+                            setError(response.data.error || 'Error al finalizar');
+                          }
+                        } catch (err) {
+                          setError(err.response?.data?.error || 'Error al finalizar horario');
+                        } finally {
+                          setLoading(false);
+                        }
+                      }}
+                      className="flex-1 px-6 py-3 bg-green-600 text-white rounded-xl hover:bg-green-700 disabled:opacity-50 font-semibold text-base flex items-center justify-center gap-2 shadow-sm transition-colors"
+                    >
+                      <CheckCircle2 className="w-5 h-5" />
+                      Finalizar Horario
+                    </button>
+                  )}
+                </>
               )}
               <button
                 type="button"
                 onClick={onClose}
                 disabled={loading}
-                className="flex-1 px-6 py-3 border-2 border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 disabled:opacity-50 font-semibold text-base transition-colors"
+                className={`${readOnly ? 'flex-1' : 'flex-1'} px-6 py-3 border-2 border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 disabled:opacity-50 font-semibold text-base transition-colors`}
               >
-                Cancelar
+                {readOnly ? 'Cerrar' : 'Cancelar'}
               </button>
             </div>
           </form>
