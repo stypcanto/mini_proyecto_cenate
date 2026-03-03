@@ -1820,7 +1820,7 @@ public class SolicitudBolsaController {
      * @return mapa con: total, insertados, duplicados, errores, detalleErrores
      */
     @PostMapping("/carga-masiva-pacientes")
-    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'GESTOR DE CITAS', 'COORD. GESTION CITAS')")
+    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'GESTOR DE CITAS', 'COORD. GESTION CITAS', 'SOPORTE_TELEUE')")
     public ResponseEntity<?> cargaMasivaPacientes(@RequestBody CargaMasivaRequest request) {
         try {
             log.info("📤 POST /api/bolsas/solicitudes/carga-masiva-pacientes - personal: {}, filas: {}",
