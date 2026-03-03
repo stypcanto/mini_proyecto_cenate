@@ -4140,16 +4140,16 @@ export default function MisPacientes() {
               </p>
               <ul className="text-sm text-gray-700 space-y-1.5 pl-1">
                 <li className="flex items-start gap-2">
-                  <span className="text-red-500 font-bold mt-0.5">✕</span>
-                  <span>No podrá modificar los datos de esta atención.</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-red-500 font-bold mt-0.5">✕</span>
-                  <span>El estado del paciente cambiará a <strong>Atendido</strong> de forma definitiva.</span>
+                  <span className="text-green-600 font-bold mt-0.5">✓</span>
+                  <span>El estado del paciente cambiará a <strong>Atendido</strong>.</span>
                 </li>
                 <li className="flex items-start gap-2">
                   <span className="text-green-600 font-bold mt-0.5">✓</span>
                   <span>Recita, interconsultas y enfermedades crónicas quedarán registradas.</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-green-600 font-bold mt-0.5">✓</span>
+                  <span>Podrá volver a editar la atención si es necesario.</span>
                 </li>
               </ul>
               <p className="text-sm font-semibold text-gray-800 bg-gray-50 border border-gray-200 rounded-lg px-4 py-3">
