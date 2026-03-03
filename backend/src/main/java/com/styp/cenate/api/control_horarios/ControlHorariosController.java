@@ -194,4 +194,29 @@ public class ControlHorariosController {
         // Implementación...
         return ResponseEntity.ok("OK");
     }
+
+    /**
+     * PATCH /api/control-horarios/horarios/{id}/finalizar
+     * Finalizar solicitud (cambiar estado a TERMINADO = 4)
+     */
+    @PreAuthorize("isAuthenticated()")
+    @PatchMapping("/horarios/{id}/finalizar")
+    public ResponseEntity<?> finalizarSolicitud(@PathVariable Long id) {
+        log.info("PATCH /horarios/{}/finalizar - Finalizar solicitud", id);
+
+        try {
+            CtrHorarioDTO resultado = controlHorariosService.finalizarSolicitud(id);
+            return ResponseEntity.ok(Map.of(
+                    "success", true,
+                    "message", "Solicitud finalizada exitosamente (estado: TERMINADO)",
+                    "data", resultado
+            ));
+        } catch (Exception e) {
+            log.error("Error finalizando solicitud: {}", e.getMessage());
+            return ResponseEntity.badRequest().body(Map.of(
+                    "success", false,
+                    "error", e.getMessage()
+            ));
+        }
+    }
 }

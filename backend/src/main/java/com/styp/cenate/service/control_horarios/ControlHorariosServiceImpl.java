@@ -375,4 +375,24 @@ public class ControlHorariosServiceImpl implements ControlHorariosService {
                     .build();
         }).collect(Collectors.toList());
     }
+
+    @Override
+    @Transactional
+    public CtrHorarioDTO finalizarSolicitud(Long idCtrHorario) {
+        log.info("✅ Finalizando solicitud: {} (estado → TERMINADO=4)", idCtrHorario);
+
+        try {
+            jdbcTemplate.update(
+                "UPDATE public.ctr_horario SET id_estado = 4, updated_at = NOW() WHERE id_ctr_horario = ?",
+                idCtrHorario
+            );
+
+            log.info("✅ Solicitud {} finalizada exitosamente", idCtrHorario);
+            return obtenerDetalle(idCtrHorario);
+
+        } catch (Exception e) {
+            log.error("❌ Error finalizando solicitud: {}", e.getMessage());
+            throw new RuntimeException("Error al finalizar solicitud", e);
+        }
+    }
 }

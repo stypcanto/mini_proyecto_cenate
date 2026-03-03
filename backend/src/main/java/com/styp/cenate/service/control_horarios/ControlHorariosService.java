@@ -49,4 +49,9 @@ public interface ControlHorariosService {
      * Tabla: dim_horario (solo activos)
      */
     List<DimHorarioDTO> obtenerHorariosPorAreaYGrupo(Long idArea, Long idGrupoProg);
+
+    /**
+     * Finalizar solicitud de horario (cambiar estado a TERMINADO = 4)
+     */
+    CtrHorarioDTO finalizarSolicitud(Long idCtrHorario);
 }

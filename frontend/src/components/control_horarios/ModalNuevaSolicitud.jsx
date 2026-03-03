@@ -4,7 +4,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
-import { X, Loader, AlertCircle, ChevronLeft, ChevronRight, Calendar, User, Building2, Briefcase, FileText, Clock, Hash } from 'lucide-react';
+import { X, Loader, AlertCircle, ChevronLeft, ChevronRight, Calendar, User, Building2, Briefcase, FileText, Clock, Hash, CheckCircle2 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
 const ModalNuevaSolicitud = ({ periodo, horario, onClose, onSuccess }) => {
@@ -565,7 +565,7 @@ const ModalNuevaSolicitud = ({ periodo, horario, onClose, onSuccess }) => {
             </div>
             {/* ========== FIN LAYOUT 2 COLUMNAS ========== */}
 
-            {/* Leyenda de Códigos (ancho completo) */}
+            {/* Leyenda: Todos los Códigos */}
             <div className="mt-6 bg-gray-50 border border-gray-200 rounded-xl p-5">
               <h4 className="font-bold text-gray-700 mb-3 text-sm uppercase tracking-wider flex items-center gap-2">
                 <Calendar className="w-4 h-4" />
@@ -586,59 +586,68 @@ const ModalNuevaSolicitud = ({ periodo, horario, onClose, onSuccess }) => {
               </div>
             </div>
 
-            {/* Horas por Código asignado */}
-            {(() => {
-              // Agrupar horas por código asignado en el calendario
-              const codigoCount = {};
-              Object.values(dayTurnos).forEach(codigo => {
-                if (!codigo) return;
-                if (!codigoCount[codigo]) codigoCount[codigo] = 0;
-                codigoCount[codigo]++;
-              });
-              const codigos = Object.keys(codigoCount);
-              if (codigos.length === 0) return null;
-              return (
-                <div className="mt-4 bg-blue-50 border border-blue-200 rounded-xl p-5">
-                  <h4 className="font-bold text-gray-700 mb-3 text-sm uppercase tracking-wider flex items-center gap-2">
-                    <Clock className="w-4 h-4" />
-                    Horas por Código:
-                  </h4>
-                  <div className="grid grid-cols-3 gap-3">
-                    {codigos.map(codigo => {
-                      const info = TURNO_COLORES[codigo];
-                      const horasPorTurno = info?.horas || 0;
-                      const totalHoras = Number(horasPorTurno) * codigoCount[codigo];
-                      return (
-                        <div key={codigo} className="flex items-center gap-2 bg-white rounded-lg px-3 py-2 border border-blue-100">
-                          <span className={`${info?.color || 'bg-gray-500'} text-white px-2 py-0.5 rounded text-xs font-bold min-w-fit`}>
-                            {codigo}
-                          </span>
-                          <span className="text-sm text-gray-700 font-semibold">
-                            = {totalHoras}h
-                          </span>
-                          {codigoCount[codigo] > 1 && (
-                            <span className="text-[10px] text-gray-400">({codigoCount[codigo]}×{horasPorTurno}h)</span>
-                          )}
-                        </div>
-                      );
-                    })}
+            {/* Leyenda: Códigos con Horas (siempre visible) */}
+            <div className="mt-4 bg-blue-50 border border-blue-200 rounded-xl p-5">
+              <h4 className="font-bold text-gray-700 mb-3 text-sm uppercase tracking-wider flex items-center gap-2">
+                <Clock className="w-4 h-4 text-blue-600" />
+                Códigos de Horario con Horas
+              </h4>
+              <div className="grid grid-cols-3 gap-3">
+                {Object.entries(TURNO_COLORES).filter(([, info]) => info.horas > 0).map(([codigo, info]) => (
+                  <div key={codigo} className="flex items-center gap-2 bg-white rounded-lg px-3 py-2 border border-blue-100">
+                    <span className={`${info.color} text-white px-2 py-0.5 rounded text-xs font-bold min-w-fit`}>
+                      {codigo}
+                    </span>
+                    <span className="text-xs text-gray-700 flex-1">{info.label}</span>
+                    <span className="text-xs font-semibold text-blue-700 bg-blue-100 px-2 py-0.5 rounded">{info.horas}h</span>
                   </div>
-                </div>
-              );
-            })()}
+                ))}
+              </div>
+            </div>
 
             {/* Botones (ancho completo) */}
             <div className="flex gap-3 mt-6">
               <button
                 type="submit"
-                disabled={
-                  loading || !selectedDate || !dayTurnos[getDateKey(selectedDate)] || !user?.idPers
-                }
+                disabled={loading}
                 className="flex-1 px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 disabled:opacity-50 font-semibold text-base flex items-center justify-center gap-2 shadow-sm transition-colors"
               >
                 {loading && <Loader className="w-5 h-5 animate-spin" />}
-                {isEditMode ? 'Actualizar Horario' : 'Guardar Horario'}
+                {isEditMode ? 'Guardar Progreso' : 'Guardar Horario'}
               </button>
+              {isEditMode && (
+                <button
+                  type="button"
+                  disabled={loading}
+                  onClick={async () => {
+                    if (!window.confirm('¿Está seguro de finalizar el horario?\nUna vez finalizado no podrá realizar modificaciones.')) return;
+                    setLoading(true);
+                    setError(null);
+                    try {
+                      const token = localStorage.getItem('token') || localStorage.getItem('auth.token');
+                      const response = await axios.patch(
+                        `/api/control-horarios/horarios/${horario.idCtrHorario}/finalizar`,
+                        {},
+                        { headers: { 'Authorization': token ? `Bearer ${token}` : '' } }
+                      );
+                      if (response.data.success) {
+                        onSuccess();
+                        onClose();
+                      } else {
+                        setError(response.data.error || 'Error al finalizar');
+                      }
+                    } catch (err) {
+                      setError(err.response?.data?.error || 'Error al finalizar horario');
+                    } finally {
+                      setLoading(false);
+                    }
+                  }}
+                  className="flex-1 px-6 py-3 bg-green-600 text-white rounded-xl hover:bg-green-700 disabled:opacity-50 font-semibold text-base flex items-center justify-center gap-2 shadow-sm transition-colors"
+                >
+                  <CheckCircle2 className="w-5 h-5" />
+                  Finalizar Horario
+                </button>
+              )}
               <button
                 type="button"
                 onClick={onClose}
