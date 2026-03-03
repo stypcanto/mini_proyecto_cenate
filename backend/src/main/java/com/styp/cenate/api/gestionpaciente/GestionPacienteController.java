@@ -16,7 +16,6 @@ import com.styp.cenate.dto.bolsas.MotivoInterconsultaDTO;
 import com.styp.cenate.repository.DimServicioEssiRepository;
 import com.styp.cenate.repository.bolsas.DimMotivoInterconsultaRepository;
 import com.styp.cenate.security.mbac.CheckMBACPermission;
-import com.styp.cenate.validation.AtenderPacienteValidator;
 import jakarta.annotation.PostConstruct;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
@@ -26,7 +25,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.validation.BindingResult;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -47,7 +45,6 @@ public class GestionPacienteController {
     private final IGestionPacienteService servicio;
     private final AtenderPacienteService atenderPacienteService;
     private final DimServicioEssiRepository servicioEssiRepository;
-    private final AtenderPacienteValidator atenderPacienteValidator;
     private final TeleECGService teleECGService;
     private final AtencionClinicaRepository atencionClinicaRepository;
     private final AseguradoRepository aseguradoRepository;
@@ -315,30 +312,15 @@ public class GestionPacienteController {
     @PostMapping("/{id}/atendido")
     //@CheckMBACPermission(pagina = "/roles/medico/pacientes", accion = "editar", mensajeDenegado = "No tiene permiso para registrar atención")
     public ResponseEntity<?> atenderPaciente(
-    //public ResponseEntity<Map<String, String>> atenderPaciente(
             @PathVariable @Min(1) Long id,
-            @RequestBody @Valid AtenderPacienteRequest request,
-            BindingResult bindingResult
+            @RequestBody AtenderPacienteRequest request
     ) {
-        log.info("🏥 [v1.47.0] POST /api/gestion-pacientes/{}/atendido - Registrando atención (idSolicitudBolsa: {})", id, id);
-        log.info("📨 Request recibido: esCronico={}, enfermedades={}, tieneRecita={}, tieneInterconsulta={}",
-            request.getEsCronico(),
-            request.getEnfermedades() != null ? String.join(", ", request.getEnfermedades()) : "null",
+        log.info("🏥 POST /api/gestion-pacientes/{}/atendido - tieneRecita={}, tieneInterconsulta={}, interconsultaEsp={}, esCronico={}",
+            id,
             request.getTieneRecita(),
-            request.getTieneInterconsulta());
-
-        // ✅ Validación condicional
-        atenderPacienteValidator.validate(request, bindingResult);
-        if (bindingResult.hasErrors()) {
-            String errorMessage = bindingResult.getAllErrors().stream()
-                .map(error -> error.getDefaultMessage())
-                .findFirst()
-                .orElse("Validación fallida");
-            return ResponseEntity.badRequest().body(Map.of(
-                "error", errorMessage,
-                "solicitudId", id.toString()
-            ));
-        }
+            request.getTieneInterconsulta(),
+            request.getInterconsultaEspecialidad(),
+            request.getEsCronico());
 
         // ✅ v1.47.0: Usar idSolicitudBolsa (no idGestion) - el id es del dim_solicitud_bolsa
         // El atenderPacienteService ya espera idSolicitudBolsa
