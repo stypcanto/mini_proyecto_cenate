@@ -677,19 +677,21 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
                         // Si no hay IPRESS, usar casAdscripcion del asegurado y buscar descripción
                         if (isBlank(descIpress) && !isBlank(asegurado.getCasAdscripcion())) {
                             String codigoIpress = asegurado.getCasAdscripcion().trim();
-                            // Buscar IPRESS por código en dim_ipress
+                            // Normalizar a 3 dígitos: dim_ipress.cod_ipress siempre usa "021", "010", etc.
+                            try {
+                                codigoIpress = String.format("%03d", Integer.parseInt(codigoIpress));
+                            } catch (NumberFormatException ignored) { /* alfanumérico, no normalizar */ }
+                            // Buscar IPRESS por código normalizado en dim_ipress
                             try {
                                 Optional<Ipress> ipressOpt = ipressRepository.findByCodIpress(codigoIpress);
                                 if (ipressOpt.isPresent()) {
                                     descIpress = ipressOpt.get().getDescIpress();
                                     log.info("✅ v1.68.0 - IPRESS completada desde asegurados (código: {}) -> descripción: {}", codigoIpress, descIpress);
                                 } else {
-                                    descIpress = codigoIpress; // Fallback al código
                                     log.warn("⚠️ v1.68.0 - No se encontró descripción para código IPRESS: {}", codigoIpress);
                                 }
                             } catch (Exception e) {
                                 log.warn("⚠️ Error buscando descripción de IPRESS para código {}: {}", codigoIpress, e.getMessage());
-                                descIpress = codigoIpress; // Fallback al código
                             }
                         }
                     }
