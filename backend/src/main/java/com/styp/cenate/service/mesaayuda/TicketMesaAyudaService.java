@@ -1138,11 +1138,21 @@ public class TicketMesaAyudaService {
         try {
             String casAdscripcion = asegurado.getCasAdscripcion();
             if (casAdscripcion != null && !casAdscripcion.isBlank()) {
-                codigoIpressResuelto = casAdscripcion;
-                Optional<Ipress> ipressOpt = ipressRepository.findByCodIpress(casAdscripcion);
+                // Normalizar código IPRESS: dim_ipress.cod_ipress usa siempre 3 dígitos con cero
+                // Ej: "21" → "021", "5" → "005". Si no es numérico, se deja tal cual.
+                String codNormalizado = casAdscripcion.trim();
+                try {
+                    int num = Integer.parseInt(codNormalizado);
+                    codNormalizado = String.format("%03d", num);
+                } catch (NumberFormatException ignored) { /* código alfanumérico, no normalizar */ }
+
+                codigoIpressResuelto = codNormalizado;
+                Optional<Ipress> ipressOpt = ipressRepository.findByCodIpress(codNormalizado);
                 if (ipressOpt.isPresent()) {
                     idIpressResuelto = ipressOpt.get().getIdIpress();
-                    log.info("✅ IPRESS resuelta para DNI {}: {} (id={})", dniPaciente, casAdscripcion, idIpressResuelto);
+                    log.info("✅ IPRESS resuelta para DNI {}: {} → {} (id={})", dniPaciente, casAdscripcion, codNormalizado, idIpressResuelto);
+                } else {
+                    log.warn("⚠️ IPRESS no encontrada para código '{}' (normalizado desde '{}')", codNormalizado, casAdscripcion);
                 }
             }
         } catch (Exception e) {

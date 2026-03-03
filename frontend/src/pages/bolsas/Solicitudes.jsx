@@ -598,7 +598,7 @@ export default function Solicitudes() {
                 return `${d}/${m}/${y}`;
               })() : 'N/A',
             tipoCita: solicitud.tipo_cita ? solicitud.tipo_cita.toUpperCase() : 'N/A',
-            codigoIpress: solicitud.codigo_adscripcion || 'N/A',
+            codigoIpress: solicitud.codigo_adscripcion ? ((/^\d+$/.test(solicitud.codigo_adscripcion)) ? solicitud.codigo_adscripcion.padStart(3, '0') : solicitud.codigo_adscripcion) : 'N/A',
             idIpressAtencion: solicitud.id_ipress_atencion || null,
             codIpressAtencion: solicitud.cod_ipress_atencion || 'N/A',
             descIpressAtencion: solicitud.desc_ipress_atencion || 'N/A',
@@ -828,7 +828,7 @@ export default function Solicitudes() {
                   return `${d}/${m}/${y}`;
                 })() : 'N/A',
               tipoCita: solicitud.tipo_cita ? solicitud.tipo_cita.toUpperCase() : 'N/A',
-              codigoIpress: solicitud.codigo_adscripcion || 'N/A',
+              codigoIpress: solicitud.codigo_adscripcion ? ((/^\d+$/.test(solicitud.codigo_adscripcion)) ? solicitud.codigo_adscripcion.padStart(3, '0') : solicitud.codigo_adscripcion) : 'N/A',
               idIpressAtencion: solicitud.id_ipress_atencion || null,
               codIpressAtencion: solicitud.cod_ipress_atencion || 'N/A',
               descIpressAtencion: solicitud.desc_ipress_atencion || 'N/A',
@@ -1009,7 +1009,7 @@ export default function Solicitudes() {
                   return `${d}/${m}/${y}`;
                 })() : 'N/A',
               tipoCita: solicitud.tipo_cita ? solicitud.tipo_cita.toUpperCase() : 'N/A',
-              codigoIpress: solicitud.codigo_adscripcion || 'N/A',
+              codigoIpress: solicitud.codigo_adscripcion ? ((/^\d+$/.test(solicitud.codigo_adscripcion)) ? solicitud.codigo_adscripcion.padStart(3, '0') : solicitud.codigo_adscripcion) : 'N/A',
               idIpressAtencion: solicitud.id_ipress_atencion || null,
               codIpressAtencion: solicitud.cod_ipress_atencion || 'N/A',
               descIpressAtencion: solicitud.desc_ipress_atencion || 'N/A',
