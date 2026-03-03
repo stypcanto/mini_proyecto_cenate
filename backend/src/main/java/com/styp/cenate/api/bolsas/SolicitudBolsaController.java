@@ -1755,7 +1755,7 @@ public class SolicitudBolsaController {
     }
 
     @GetMapping("/trazabilidad-recitas")
-    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'COORD. ENFERMERIA', 'SOPORTE_TELEUE')")
+    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'COORD. ENFERMERIA', 'SOPORTE_TELEUE', 'ENFERMERIA')")
     public ResponseEntity<?> obtenerTrazabilidadRecitas(
             @RequestParam(required = false) String busqueda,
             @RequestParam(required = false) String fechaInicio,
@@ -1789,7 +1789,7 @@ public class SolicitudBolsaController {
     }
 
     @GetMapping("/trazabilidad-recitas/enfermeras")
-    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'COORD. ENFERMERIA', 'SOPORTE_TELEUE')")
+    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'COORD. ENFERMERIA', 'SOPORTE_TELEUE', 'ENFERMERIA')")
     public ResponseEntity<?> listarEnfermerasTrazabilidad() {
         try {
             return ResponseEntity.ok(solicitudBolsaService.listarEnfermerasTrazabilidad());
@@ -1800,7 +1800,7 @@ public class SolicitudBolsaController {
     }
 
     @GetMapping("/trazabilidad-recitas/kpis")
-    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'COORD. ENFERMERIA', 'SOPORTE_TELEUE')")
+    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'COORD. ENFERMERIA', 'SOPORTE_TELEUE', 'ENFERMERIA')")
     public ResponseEntity<?> obtenerKpisTrazabilidad() {
         try {
             return ResponseEntity.ok(solicitudBolsaService.obtenerKpisTrazabilidad());
@@ -1836,7 +1836,7 @@ public class SolicitudBolsaController {
     }
 
     @GetMapping("/trazabilidad-recitas/fechas")
-    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'COORD. ENFERMERIA', 'SOPORTE_TELEUE')")
+    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'COORD. ENFERMERIA', 'SOPORTE_TELEUE', 'ENFERMERIA')")
     public ResponseEntity<?> obtenerFechasConRecitas() {
         try {
             return ResponseEntity.ok(solicitudBolsaService.obtenerFechasConRecitas());
