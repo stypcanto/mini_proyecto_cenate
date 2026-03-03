@@ -2111,5 +2111,11 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
         """, nativeQuery = true)
     List<Object[]> facetaCreadosPor();
 
+    /**
+     * Buscar bolsa RECITA activa más reciente de un paciente
+     */
+    Optional<SolicitudBolsa> findFirstByPacienteDniAndTipoCitaAndActivoTrueOrderByFechaAsignacionDesc(
+            String pacienteDni, String tipoCita);
+
 }
 

@@ -10,6 +10,7 @@ import org.springframework.stereotype.Repository;
 
 import java.time.OffsetDateTime;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Repository para gestionar atenciones clínicas
@@ -149,6 +150,12 @@ public interface AtencionClinicaRepository extends JpaRepository<AtencionClinica
          * @return true si tiene al menos una atención, false en caso contrario
          */
         boolean existsByPkAsegurado(String pkAsegurado);
+
+        /**
+         * Buscar la ficha de enfermería más reciente de un asegurado
+         */
+        Optional<AtencionClinica> findFirstByPkAseguradoAndIdTipoAtencionOrderByCreatedAtDesc(
+                        String pkAsegurado, Long idTipoAtencion);
 
         /**
          * Buscar controles de enfermería (id_tipo_atencion = 5) de un asegurado

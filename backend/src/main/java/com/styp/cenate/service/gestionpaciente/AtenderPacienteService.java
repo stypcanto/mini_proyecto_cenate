@@ -121,10 +121,19 @@ public class AtenderPacienteService {
             }
 
             String pkAseguradoFinal = pkAsegurado;
-            // 3. Crear bolsa Recita si aplica
+            // 3. Crear o actualizar bolsa Recita si aplica
             if (request.getTieneRecita() != null && request.getTieneRecita()) {
-                if (existeRecitaParaPaciente(pkAseguradoFinal)) {
-                    log.warn("⚠️ [v1.47.1] Recita ya existe para el paciente: {}", pkAseguradoFinal);
+                var recitaExistente = solicitudBolsaRepository
+                        .findFirstByPacienteDniAndTipoCitaAndActivoTrueOrderByFechaAsignacionDesc(
+                                pkAseguradoFinal, "RECITA");
+                if (recitaExistente.isPresent()) {
+                    SolicitudBolsa recita = recitaExistente.get();
+                    ZonedDateTime nuevaFecha = Instant.now().atZone(ZoneId.of("America/Lima"))
+                            .plusDays(request.getRecitaDias() != null ? request.getRecitaDias() : 7);
+                    recita.setFechaPreferidaNoAtendida(nuevaFecha.toLocalDate());
+                    if (idAtencionClinica != null) recita.setIdAtencionClinica(idAtencionClinica);
+                    solicitudBolsaRepository.save(recita);
+                    log.info("✅ Bolsa RECITA actualizada (id={}) — nueva fecha: {}", recita.getIdSolicitud(), nuevaFecha.toLocalDate());
                 } else {
                     crearBolsaRecitaConTransaccion(solicitudOriginal, especialidadActual, request.getRecitaDias(), idAtencionClinica);
                     log.info("✅ Nueva bolsa RECITA creada - visible solo para gestora de citas");
@@ -403,10 +412,34 @@ public class AtenderPacienteService {
                 try { glucosaValor = new BigDecimal(request.getGlucosa()); } catch (NumberFormatException ignored) {}
             }
 
+            // ✅ Buscar ficha existente para actualizar en lugar de duplicar
+            var fichaExistente = atencionClinicaRepository
+                    .findFirstByPkAseguradoAndIdTipoAtencionOrderByCreatedAtDesc(
+                            asegurado.getPkAsegurado(), 5L);
+
+            if (fichaExistente.isPresent()) {
+                ficha = fichaExistente.get();
+                ficha.setFechaAtencion(fechaAtencion);
+                ficha.setPresionArterial(request.getPresionArterial());
+                ficha.setPesoKg(pesoKg);
+                ficha.setTallaCm(tallaCm);
+                ficha.setImc(imcValor);
+                ficha.setGlucosa(glucosaValor);
+                ficha.setObservacionesGenerales(request.getObservaciones());
+                ficha.setControlEnfermeria(request.getControlEnfermeria());
+                ficha.setAdherenciaMorisky(request.getAdherencia());
+                ficha.setNivelRiesgo(request.getNivelRiesgo());
+                ficha.setControlado(request.getControlado());
+                ficha.setIdPersonalModificador(idPersonal);
+                AtencionClinica actualizada = atencionClinicaRepository.save(ficha);
+                log.info("✅ Ficha de Enfermería ACTUALIZADA — id_atencion: {}", actualizada.getIdAtencion());
+                return actualizada.getIdAtencion();
+            }
+
             ficha = AtencionClinica.builder()
-                    .pkAsegurado(asegurado.getPkAsegurado())  // ✅ UUID, no DNI
+                    .pkAsegurado(asegurado.getPkAsegurado())
                     .fechaAtencion(fechaAtencion)
-                    .idIpress(idIpress)                        // ✅ FK válido
+                    .idIpress(idIpress)
                     .idServicio(solicitud.getIdServicio())
                     .idTipoAtencion(5L)  // 5 = ENFERMERÍA
                     .pesoKg(pesoKg)
@@ -419,15 +452,15 @@ public class AtenderPacienteService {
                     .adherenciaMorisky(request.getAdherencia())
                     .nivelRiesgo(request.getNivelRiesgo())
                     .controlado(request.getControlado())
-                    .idPersonalCreador(idPersonal)             // ✅ FK válido, garantizado no-null
+                    .idPersonalCreador(idPersonal)
                     .tieneOrdenInterconsulta(false)
                     .requiereTelemonitoreo(false)
                     .build();
 
             AtencionClinica guardada = atencionClinicaRepository.save(ficha);
-            log.info("✅ [v6.0.0] Ficha de Enfermería guardada — id_atencion: {} / DNI: {} / UUID: {}",
-                    guardada.getIdAtencion(), solicitud.getPacienteDni(), asegurado.getPkAsegurado());
-            return guardada.getIdAtencion(); // ✅ v6.0.0: Retornar id para FK en RECITA/INTERCONSULTA
+            log.info("✅ [v6.0.0] Ficha de Enfermería CREADA — id_atencion: {} / DNI: {}",
+                    guardada.getIdAtencion(), solicitud.getPacienteDni());
+            return guardada.getIdAtencion();
         } catch (Exception e) {
             // ✅ v1.103.7: Limpiar entidad de la sesión Hibernate para evitar "null identifier" en flush posterior
             if (ficha != null) {
