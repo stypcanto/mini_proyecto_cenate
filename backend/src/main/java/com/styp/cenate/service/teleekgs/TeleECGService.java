@@ -226,7 +226,7 @@ public class TeleECGService {
 
         // 6.5. 🆕 v1.58.0: Crear bolsa automática en dim_solicitud_bolsa para CENATE
         try {
-            crearBolsaTeleECG(imagen, aseguradoVerificacion.get(), ipressOrigen);
+            crearBolsaTeleECG(imagen, aseguradoVerificacion.get(), ipressOrigen, idUsuarioEnvio);
             log.info("✅ Bolsa TeleECG creada automáticamente para paciente {}", imagen.getNumDocPaciente());
         } catch (Exception e) {
             log.error("⚠️ Error creando bolsa TeleECG (continuando): {}", e.getMessage(), e);
@@ -1194,7 +1194,7 @@ public class TeleECGService {
      *    (Spring AOP proxy-based ignora anotaciones en métodos privados).
      *    TransactionTemplate sí funciona correctamente en cualquier contexto.
      */
-    private void crearBolsaTeleECG(TeleECGImagen imagen, Asegurado asegurado, Ipress ipress) {
+    private void crearBolsaTeleECG(TeleECGImagen imagen, Asegurado asegurado, Ipress ipress, Long idUsuarioEnvio) {
         try {
             TransactionTemplate txTemplate = new TransactionTemplate(transactionManager);
             txTemplate.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
@@ -1216,9 +1216,9 @@ public class TeleECGService {
                 // 3. Generar número único de solicitud
                 String numeroSolicitud = "TEL-" + System.currentTimeMillis();
 
-                // 4. Obtener coordinador responsable del IPRESS (si existe)
-                Long responsableGestoraId = null;
-                log.info("ℹ️ Bolsa TeleECG sin coordinador responsable asignado aún");
+                // 4. Usuario que subió el ECG → responsable de la bolsa (v1.82.11: trazabilidad)
+                Long responsableGestoraId = idUsuarioEnvio;
+                log.info("🔑 Bolsa TeleECG - responsableGestoraId={} (usuario que subió el ECG)", responsableGestoraId);
 
                 // 5. Crear bolsa (estado PENDIENTE)
                 SolicitudBolsa bolsa = SolicitudBolsa.builder()
@@ -1240,6 +1240,7 @@ public class TeleECGService {
                     .pacienteTelefono(asegurado.getTelCelular() != null ? asegurado.getTelCelular() : asegurado.getTelFijo())
                     .fechaNacimiento(asegurado.getFecnacimpaciente())
                     .tipoCita("Voluntaria")
+                    .fechaSolicitud(java.time.OffsetDateTime.now(java.time.ZoneId.of("America/Lima")))
                     .build();
 
                 solicitudBolsaRepository.save(bolsa);
