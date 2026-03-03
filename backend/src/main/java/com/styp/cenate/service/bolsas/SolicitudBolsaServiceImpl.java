@@ -1962,13 +1962,10 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
     private String generarMotivoDuplicado(String estado) {
         if (estado == null) return "Ya tiene una solicitud activa en esta bolsa";
         return switch (estado.toUpperCase()) {
-            case "PENDIENTE"      -> "Ya tiene una cita PENDIENTE — debe atenderse antes de registrar una nueva";
-            case "CITADO"         -> "Ya fue CITADO — tiene una cita programada activa";
-            case "EN_ATENCION"    -> "Actualmente EN ATENCIÓN — ya está siendo atendido";
-            case "ATENDIDO"       -> "Ya fue ATENDIDO en esta bolsa en una carga anterior";
-            case "NO_ASISTIO"     -> "Registrado como NO ASISTIÓ — coordinar reprogramación";
-            case "ANULADO"        -> "Tiene una solicitud ANULADA — puede volver a cargarse si es intencional";
-            default               -> "Ya existe en la bolsa con estado: " + estado;
+            case "PENDIENTE"   -> "Ya tiene una cita PENDIENTE — debe atenderse antes de registrar una nueva";
+            case "CITADO"      -> "Ya fue CITADO — tiene una cita programada activa";
+            case "EN_ATENCION" -> "Actualmente EN ATENCIÓN — ya está siendo atendido";
+            default            -> "Tiene solicitud activa con estado: " + estado;
         };
     }
 
@@ -4427,11 +4424,16 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
                     .map(Asegurado::getPkAsegurado)
                     .orElse(dni);
 
-                // 2. Verificar duplicado (mismo id_bolsa + paciente_id usando pk real)
+                // 2. Verificar duplicado: solo bloquear si tiene cita ACTIVA (PENDIENTE/CITADO/EN_ATENCION)
+                //    Si ya fue ATENDIDO, NO_ASISTIO o ANULADO → puede cargarse de nuevo
                 List<SolicitudBolsa> existentes = solicitudRepository
                     .findByIdBolsaAndPacienteIdOrderByFechaSolicitudDesc(idBolsa, pkAsegurado);
-                if (!existentes.isEmpty()) {
-                    SolicitudBolsa existente = existentes.get(0);
+                SolicitudBolsa existente = existentes.isEmpty() ? null
+                    : existentes.stream()
+                        .filter(s -> s.getEstado() != null &&
+                            List.of("PENDIENTE","CITADO","EN_ATENCION").contains(s.getEstado().toUpperCase()))
+                        .findFirst().orElse(null);
+                if (existente != null) {
                     log.debug("⚠️ Duplicado detectado: bolsa={}, pk={}, solicitud={}", idBolsa, pkAsegurado, existente.getNumeroSolicitud());
                     duplicados++;
                     Map<String, String> dup = new HashMap<>();
