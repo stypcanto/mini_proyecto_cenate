@@ -967,7 +967,7 @@ export default function MisPacientes() {
           const especIdMedico = parseInt(primerPaciente.especialidadMedico);
 
           // ✅ FIX v1.78.0: Usar descServicio en lugar de nombre (bug encontrado)
-          const especialidadEncontrada = especialidades.find(esp => esp.id === especIdMedico);
+          const especialidadEncontrada = especialidades.find(esp => esp.idServicio === especIdMedico);
 
           if (especialidadEncontrada?.descServicio) {
             especialidadDetectada = detectSpecialtyByKeywords(especialidadEncontrada.descServicio);
@@ -3422,7 +3422,7 @@ export default function MisPacientes() {
                                 esEnfermeria ? item.especialidad === esp.descServicio : item === esp.descServicio
                               ))
                               .map(esp => (
-                                <option key={esp.id} value={esp.descServicio}>
+                                <option key={esp.idServicio} value={esp.descServicio}>
                                   {esp.descServicio}
                                 </option>
                               ))}
