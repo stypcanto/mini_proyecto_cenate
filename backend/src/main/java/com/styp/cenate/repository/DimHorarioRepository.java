@@ -44,7 +44,7 @@ public interface DimHorarioRepository extends JpaRepository<DimHorario, Long> {
         WHERE h.idArea = :idArea
           AND h.idGrupoProg = :idGrupoProg
           AND h.statHorario = 'A'
-        ORDER BY h.categoria, h.codHorario
+        ORDER BY h.ordenVisualizacion, h.categoria, h.codHorario
     """)
     List<DimHorario> findByAreaAndGrupoProg(
         @Param("idArea") Long idArea,

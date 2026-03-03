@@ -130,6 +130,20 @@ public class DimHorario {
     private String categoria = "TURNO";
 
     /**
+     * Orden de visualización en la leyenda y dropdown
+     */
+    @Column(name = "orden_visualizacion", nullable = false)
+    @Builder.Default
+    private Short ordenVisualizacion = 99;
+
+    /**
+     * Si este horario es visible/seleccionable para el médico en el dropdown
+     */
+    @Column(name = "visible_medico", nullable = false)
+    @Builder.Default
+    private Boolean visibleMedico = true;
+
+    /**
      * Régimen laboral asociado (opcional)
      */
     @ManyToOne(fetch = FetchType.LAZY)

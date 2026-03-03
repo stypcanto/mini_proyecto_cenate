@@ -370,6 +370,8 @@ public class ControlHorariosServiceImpl implements ControlHorariosService {
                     .cruzaDia(h.getCruzaDia())
                     .categoria(h.getCategoria())
                     .color(color)
+                    .ordenVisualizacion(h.getOrdenVisualizacion())
+                    .visibleMedico(h.getVisibleMedico())
                     .build();
         }).collect(Collectors.toList());
     }

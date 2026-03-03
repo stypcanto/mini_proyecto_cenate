@@ -77,11 +77,13 @@ const ModalNuevaSolicitud = ({ periodo, horario, onClose, onSuccess }) => {
         headers: { 'Authorization': token ? `Bearer ${token}` : '' }
       });
 
-      const horariosData = (responseHorarios.data || []).map(h => ({
-        ...h,
-        codigo: h.codHorarioVisual || h.codHorario,
-        descripcion: h.descHorario,
-      }));
+      const horariosData = (responseHorarios.data || [])
+        .sort((a, b) => (a.ordenVisualizacion || 99) - (b.ordenVisualizacion || 99))
+        .map(h => ({
+          ...h,
+          codigo: h.codHorarioVisual || h.codHorario,
+          descripcion: h.descHorario,
+        }));
       setTurnos(horariosData);
 
       console.log(`📋 Códigos de horario cargados: ${horariosData.length} (idArea=${idArea}, idGrupoProg=${idGrupoProg})`);
@@ -515,7 +517,7 @@ const ModalNuevaSolicitud = ({ periodo, horario, onClose, onSuccess }) => {
                                   <div className="p-3 border-b border-gray-200 bg-blue-50 sticky top-0">
                                     <p className="text-sm font-semibold text-gray-800">Seleccionar turno:</p>
                                   </div>
-                                  {turnos.map((t) => (
+                                  {turnos.filter(t => t.visibleMedico !== false).map((t) => (
                                     <button
                                       key={t.codigo}
                                       type="button"
@@ -573,6 +575,47 @@ const ModalNuevaSolicitud = ({ periodo, horario, onClose, onSuccess }) => {
                 ))}
               </div>
             </div>
+
+            {/* Horas por Código asignado */}
+            {(() => {
+              // Agrupar horas por código asignado en el calendario
+              const codigoCount = {};
+              Object.values(dayTurnos).forEach(codigo => {
+                if (!codigo) return;
+                if (!codigoCount[codigo]) codigoCount[codigo] = 0;
+                codigoCount[codigo]++;
+              });
+              const codigos = Object.keys(codigoCount);
+              if (codigos.length === 0) return null;
+              return (
+                <div className="mt-4 bg-blue-50 border border-blue-200 rounded-xl p-5">
+                  <h4 className="font-bold text-gray-700 mb-3 text-sm uppercase tracking-wider flex items-center gap-2">
+                    <Clock className="w-4 h-4" />
+                    Horas por Código:
+                  </h4>
+                  <div className="grid grid-cols-3 gap-3">
+                    {codigos.map(codigo => {
+                      const info = TURNO_COLORES[codigo];
+                      const horasPorTurno = info?.horas || 0;
+                      const totalHoras = Number(horasPorTurno) * codigoCount[codigo];
+                      return (
+                        <div key={codigo} className="flex items-center gap-2 bg-white rounded-lg px-3 py-2 border border-blue-100">
+                          <span className={`${info?.color || 'bg-gray-500'} text-white px-2 py-0.5 rounded text-xs font-bold min-w-fit`}>
+                            {codigo}
+                          </span>
+                          <span className="text-sm text-gray-700 font-semibold">
+                            = {totalHoras}h
+                          </span>
+                          {codigoCount[codigo] > 1 && (
+                            <span className="text-[10px] text-gray-400">({codigoCount[codigo]}×{horasPorTurno}h)</span>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })()}
 
             {/* Botones (ancho completo) */}
             <div className="flex gap-3 mt-6">

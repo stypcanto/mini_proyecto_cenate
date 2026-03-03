@@ -27,4 +27,6 @@ public class DimHorarioDTO {
     private Boolean cruzaDia;
     private String categoria;
     private String color;
+    private Short ordenVisualizacion;
+    private Boolean visibleMedico;
 }
