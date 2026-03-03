@@ -4383,10 +4383,16 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
                 String telExcel    = row.getTelMovil()   != null ? row.getTelMovil().trim()  : null;
                 String casExcel    = row.getCasAdscripcion() != null ? row.getCasAdscripcion().trim() : null;
 
+                // UPSERT por doc_paciente (unique) en lugar de pk_asegurado.
+                // Razón: en producción puede existir un asegurado con pk distinto pero
+                // mismo DNI (ej: pk=11 dígitos, doc=8 dígitos). Si usamos ON CONFLICT(pk)
+                // no se detecta y el INSERT falla por la restricción única en doc_paciente,
+                // abortando toda la transacción JPA.
+                // Incluimos vigencia=true para evitar NOT NULL sin default en algunos entornos.
                 entityManager.createNativeQuery("""
-                    INSERT INTO asegurados (pk_asegurado, doc_paciente, paciente, sexo, tel_celular, cas_adscripcion)
-                    VALUES (:dni, :dni, :nombre, :sexo, :tel, :cas)
-                    ON CONFLICT (pk_asegurado) DO UPDATE SET
+                    INSERT INTO asegurados (pk_asegurado, doc_paciente, paciente, sexo, tel_celular, cas_adscripcion, vigencia)
+                    VALUES (:dni, :dni, :nombre, :sexo, :tel, :cas, true)
+                    ON CONFLICT (doc_paciente) DO UPDATE SET
                         paciente        = COALESCE(NULLIF(EXCLUDED.paciente, ''),        asegurados.paciente),
                         sexo            = COALESCE(NULLIF(EXCLUDED.sexo, ''),            asegurados.sexo),
                         tel_celular     = COALESCE(NULLIF(EXCLUDED.tel_celular, ''),     asegurados.tel_celular),
