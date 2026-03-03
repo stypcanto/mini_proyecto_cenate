@@ -1,9 +1,9 @@
 # CLAUDE.md - Proyecto CENATE
 
 > **Sistema de Telemedicina - EsSalud Perú**
-> **Versión:** v1.66.x (2026-02-24) 🚀
-> **Última Feature:** v1.66.x - Página Bajas CENACRON con auditoría completa ✅ (2026-02-24)
-> **Última Feature Base:** v1.65.0 - Total Pacientes Enfermería + reasignación masiva ✅ (2026-02-24)
+> **Versión:** v1.82.6 (2026-03-02) 🚀
+> **Última Feature:** v1.82.6 - Trazabilidad completa (quién ejecuta cada acción) + badge CENACRON en citas ✅ (2026-03-02)
+> **Última Feature Base:** v1.82.5 - IPRESS muestra nombre en lugar de código numérico ✅ (2026-03-02)
 > **Status:** ✅ Production Ready
 
 ---
@@ -295,11 +295,15 @@ Módulo para gestionar los períodos durante los cuales los médicos registran s
 **👉 Ver historial completo:** [`CHANGELOG-VERSIONES.md`](CHANGELOG-VERSIONES.md)
 
 Versiones recientes:
-- **v1.66.x** - Bajas CENACRON: página auditoría + fix tabla `dim_estrategia_institucional` ✅ (2026-02-24) 🆕
-- **v1.65.0** - Total Pacientes Enfermería + reasignación masiva ✅ (2026-02-24)
-- **v1.64.0** - Filtros Avanzados Gestión Períodos (Estado, Área, Propietario) ✅ (2026-02-19)
-- **v1.62.0** - Notificaciones de Pacientes Pendientes ✅ (2026-02-08)
-- **v1.58.0** - Módulo de Requerimiento de Especialidades ✅ (2026-02-08)
+- **v1.82.6** - Trazabilidad completa (quién ejecuta cada acción) + badge CENACRON en citas + fix auditoría anulación ✅ (2026-03-02) 🆕
+- **v1.82.5** - IPRESS muestra nombre en lugar de código numérico ✅ (2026-03-02)
+- **v1.82.4** - IPRESS ATENCIÓN corregida en panel citas agendadas ✅ (2026-03-02)
+- **v1.82.3** - Flyway V6_10_0: normalizar especialidades con paréntesis ✅ (2026-03-02)
+- **v1.82.2** - Normalizar `condicion_medica` y `estado_bolsa` en BD y frontend ✅ (2026-03-02)
+- **v1.82.1** - Fix FK violation al enviar ticket a Bolsa de Reprogramación ✅ (2026-03-02)
+- **v1.81.x** - Trazabilidad del ciclo de vida (dim_historial_cambios_solicitud) ✅ (2026-02-28)
+- **v1.78.x** - Bolsa Reprogramación + HistorialPacienteBtn en todos los módulos ✅ (2026-02-27)
+- **v1.66.x** - Bajas CENACRON: página auditoría + fix tabla `dim_estrategia_institucional` ✅ (2026-02-24)
 
 Para ver detalles de cada versión, abre: [`CHANGELOG-VERSIONES.md`](CHANGELOG-VERSIONES.md)
 

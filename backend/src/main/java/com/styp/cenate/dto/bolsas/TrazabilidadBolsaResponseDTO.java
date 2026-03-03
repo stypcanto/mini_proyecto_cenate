@@ -38,8 +38,11 @@ public class TrazabilidadBolsaResponseDTO {
         /** Descripción legible del evento */
         private String descripcion;
 
-        /** Nombre completo del profesional involucrado (si aplica) */
+        /** Nombre completo del profesional de salud involucrado (si aplica) */
         private String medico;
+
+        /** Nombre del usuario del sistema que ejecutó la acción (gestora, coordinador, médico) */
+        private String usuario;
 
         /** Descripción del estado resultante (si aplica) */
         private String estado;

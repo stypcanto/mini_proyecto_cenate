@@ -445,7 +445,10 @@ export default function CargarDesdeExcel() {
         if (!response.ok) throw new Error(`Error: ${response.status}`);
         const datos = await response.json();
         console.log('📋 Tipos de bolsas:', datos);
-        setTiposBolsas(datos || []);
+        // ✅ Excluir bolsas auto-generadas por el sistema (no se alimentan por Excel)
+        const BOLSAS_NO_CARGABLES = ['BOLSA_GENERADA_X_PROFESIONAL'];
+        const cargables = (datos || []).filter(b => !BOLSAS_NO_CARGABLES.includes(b.codTipoBolsa));
+        setTiposBolsas(cargables);
       } catch (error) {
         console.error('Error tipos bolsas:', error);
         setTiposBolsas([]);

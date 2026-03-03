@@ -1304,16 +1304,60 @@ public class SolicitudBolsaController {
     }
 
     /**
+     * Devuelve múltiples solicitudes al estado PENDIENTE_CITA con motivo de devolución (v1.81.5)
+     * POST /api/bolsas/solicitudes/devolver-a-pendientes
+     * Body: { "ids": [1,2,3], "motivo": "texto del motivo" }
+     */
+    @PostMapping("/devolver-a-pendientes")
+    public ResponseEntity<?> devolverAPendientes(@RequestBody Map<String, Object> payload) {
+        try {
+            Object idsObj = payload.get("ids");
+            String motivo = payload.get("motivo") instanceof String m ? m.trim() : "";
+
+            if (idsObj == null) {
+                return ResponseEntity.badRequest().body(Map.of("error", "No se proporcionó el campo 'ids'"));
+            }
+            if (motivo.isEmpty()) {
+                return ResponseEntity.badRequest().body(Map.of("error", "El motivo de devolución es obligatorio"));
+            }
+
+            List<Long> ids = new ArrayList<>();
+            if (idsObj instanceof List<?>) {
+                for (Object obj : (List<?>) idsObj) {
+                    if (obj instanceof Number) ids.add(((Number) obj).longValue());
+                    else if (obj instanceof String) { try { ids.add(Long.parseLong((String) obj)); } catch (NumberFormatException ignored) {} }
+                }
+            }
+
+            if (ids.isEmpty()) {
+                return ResponseEntity.badRequest().body(Map.of("error", "No se proporcionaron IDs válidos"));
+            }
+
+            log.info("↩️ Devolviendo {} solicitudes a PENDIENTE | motivo: {}", ids.size(), motivo);
+            int actualizados = solicitudBolsaService.devolverAPendientes(ids, motivo);
+
+            return ResponseEntity.ok(Map.of(
+                "mensaje", actualizados + " solicitud(es) devuelta(s) a pendientes exitosamente",
+                "actualizados", actualizados,
+                "ids", ids
+            ));
+
+        } catch (Exception e) {
+            log.error("❌ Error al devolver solicitudes a pendientes: ", e);
+            return ResponseEntity.status(500).body(Map.of("error", "Error interno: " + e.getMessage()));
+        }
+    }
+
+    /**
      * Marca múltiples solicitudes como RECHAZADO en una sola operación (bulk)
      * POST /api/bolsas/solicitudes/rechazar-masivo
      *
      * Body: { "ids": [1, 2, 3] }
      * Response: { "actualizados": 3 }
      *
-     * Roles permitidos: SUPERADMIN, ADMIN, COORD. GESTION CITAS, GESTOR DE CITAS
+     * Roles permitidos: cualquier usuario autenticado con acceso al módulo de citas
      */
     @PostMapping("/rechazar-masivo")
-    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'COORD. GESTION CITAS', 'GESTOR DE CITAS')")
     public ResponseEntity<?> rechazarMasivo(@RequestBody Map<String, Object> payload) {
         try {
             Object idsObj = payload.get("ids");

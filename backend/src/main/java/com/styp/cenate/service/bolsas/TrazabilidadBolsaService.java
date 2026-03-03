@@ -4,9 +4,11 @@ import com.styp.cenate.dto.bolsas.TrazabilidadBolsaResponseDTO;
 import com.styp.cenate.dto.bolsas.TrazabilidadBolsaResponseDTO.EventoTrazabilidadDTO;
 import com.styp.cenate.model.PacienteEstrategia;
 import com.styp.cenate.model.PersonalCnt;
+import com.styp.cenate.model.bolsas.HistorialCambioSolicitud;
 import com.styp.cenate.model.bolsas.SolicitudBolsa;
 import com.styp.cenate.repository.PacienteEstrategiaRepository;
 import com.styp.cenate.repository.PersonalCntRepository;
+import com.styp.cenate.repository.bolsas.HistorialCambioSolicitudRepository;
 import com.styp.cenate.repository.bolsas.SolicitudBolsaRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -28,6 +30,7 @@ import java.util.List;
  *  - CAMBIO_ESTADO  → fechaCambioEstado + descripcionEstado
  *  - ATENCION       → fechaAtencionMedica
  *  - ANULACION      → motivoAnulacion + estadoGestionCitas
+ *  - DEVOLUCION     → dim_historial_cambios_solicitud (v1.81.6)
  *  - RECITA         → solicitudes derivadas (idsolicitudgeneracion)
  */
 @Service
@@ -35,18 +38,23 @@ import java.util.List;
 @RequiredArgsConstructor
 public class TrazabilidadBolsaService {
 
-    private final SolicitudBolsaRepository    solicitudRepo;
-    private final PersonalCntRepository       personalRepo;
-    private final PacienteEstrategiaRepository pacienteEstrategiaRepo;
+    private final SolicitudBolsaRepository           solicitudRepo;
+    private final PersonalCntRepository              personalRepo;
+    private final PacienteEstrategiaRepository       pacienteEstrategiaRepo;
+    private final HistorialCambioSolicitudRepository historialRepo;
 
     @Transactional(readOnly = true)
     public TrazabilidadBolsaResponseDTO obtenerTrazabilidad(Long idSolicitud) {
-        log.info("📋 [v1.75.0] Trazabilidad solicitada para idSolicitud={}", idSolicitud);
+        log.info("📋 [v1.81.6] Trazabilidad solicitada para idSolicitud={}", idSolicitud);
 
         SolicitudBolsa s = solicitudRepo.findById(idSolicitud)
                 .orElseThrow(() -> new RuntimeException("Solicitud no encontrada: " + idSolicitud));
 
         List<EventoTrazabilidadDTO> eventos = new ArrayList<>();
+
+        // Pre-resolver nombres de usuario reutilizados
+        String nombreGestora         = resolverNombreUsuario(s.getResponsableGestoraId());
+        String nombreUsuarioCambio   = resolverNombreUsuario(s.getUsuarioCambioEstadoId());
 
         // ── 1. INGRESO A BOLSA ─────────────────────────────────────────────
         if (s.getFechaSolicitud() != null) {
@@ -55,6 +63,7 @@ public class TrazabilidadBolsaService {
                     .fecha(s.getFechaSolicitud())
                     .descripcion("Paciente ingresó a bolsa")
                     .detalle(s.getEspecialidad() != null ? "Especialidad: " + s.getEspecialidad() : null)
+                    .usuario(nombreGestora)
                     .color("blue")
                     .build());
         }
@@ -64,9 +73,10 @@ public class TrazabilidadBolsaService {
             String nombreMedico = resolverNombreMedico(s.getIdPersonal());
             eventos.add(EventoTrazabilidadDTO.builder()
                     .tipo("ASIGNACION_MEDICO")
-                    .fecha(s.getFechaActualizacion())
+                    .fecha(s.getFechaAsignacion() != null ? s.getFechaAsignacion() : s.getFechaSolicitud())
                     .descripcion("Profesional de salud asignado a la solicitud")
                     .medico(nombreMedico)
+                    .usuario(nombreGestora)
                     .color("purple")
                     .build());
         }
@@ -77,11 +87,13 @@ public class TrazabilidadBolsaService {
             if (s.getHoraAtencion() != null) {
                 detalleCita += " · Hora: " + s.getHoraAtencion();
             }
+            String usuarioCita = nombreUsuarioCambio != null ? nombreUsuarioCambio : nombreGestora;
             eventos.add(EventoTrazabilidadDTO.builder()
                     .tipo("CITA_AGENDADA")
                     .fecha(s.getFechaCambioEstado() != null ? s.getFechaCambioEstado() : s.getFechaActualizacion())
                     .descripcion("Cita agendada")
                     .medico(s.getIdPersonal() != null ? resolverNombreMedico(s.getIdPersonal()) : null)
+                    .usuario(usuarioCita)
                     .detalle(detalleCita)
                     .color("green")
                     .build());
@@ -89,11 +101,13 @@ public class TrazabilidadBolsaService {
 
         // ── 4. ATENCIÓN MÉDICA REALIZADA ───────────────────────────────────
         if (s.getFechaAtencionMedica() != null) {
+            String nombreMedicoAtencion = s.getIdPersonal() != null ? resolverNombreMedico(s.getIdPersonal()) : null;
             eventos.add(EventoTrazabilidadDTO.builder()
                     .tipo("ATENCION")
                     .fecha(s.getFechaAtencionMedica())
                     .descripcion("Paciente atendido")
-                    .medico(s.getIdPersonal() != null ? resolverNombreMedico(s.getIdPersonal()) : null)
+                    .medico(nombreMedicoAtencion)
+                    .usuario(nombreMedicoAtencion)
                     .color("green")
                     .build());
         }
@@ -102,13 +116,13 @@ public class TrazabilidadBolsaService {
         if (s.getFechaCambioEstado() != null && s.getEstadoGestionCitas() != null) {
             String descEstado = s.getEstadoGestionCitas().getDescripcionEstado();
             String colorEstado = resolverColorEstado(s.getEstadoGestionCitas().getCodigoEstado());
-            String gestoraStr = s.getGestora() != null ? s.getGestora().getUsername() : null;
+            String usuarioCambio = nombreUsuarioCambio != null ? nombreUsuarioCambio : nombreGestora;
 
             eventos.add(EventoTrazabilidadDTO.builder()
                     .tipo("CAMBIO_ESTADO")
                     .fecha(s.getFechaCambioEstado())
                     .descripcion("Estado actualizado: " + descEstado)
-                    .medico(gestoraStr)
+                    .usuario(usuarioCambio)
                     .estado(descEstado)
                     .color(colorEstado)
                     .build());
@@ -116,16 +130,50 @@ public class TrazabilidadBolsaService {
 
         // ── 6. ANULACIÓN ───────────────────────────────────────────────────
         if (s.getMotivoAnulacion() != null && !s.getMotivoAnulacion().isBlank()) {
+            String usuarioAnulacion = nombreUsuarioCambio != null ? nombreUsuarioCambio : nombreGestora;
             eventos.add(EventoTrazabilidadDTO.builder()
                     .tipo("ANULACION")
                     .fecha(s.getFechaCambioEstado() != null ? s.getFechaCambioEstado() : s.getFechaActualizacion())
                     .descripcion("Cita anulada")
+                    .usuario(usuarioAnulacion)
                     .detalle("Motivo: " + s.getMotivoAnulacion())
                     .color("red")
                     .build());
         }
 
-        // ── 7. RECITAS / INTERCONSULTAS DERIVADAS ─────────────────────────
+        // ── 7. DEVOLUCIONES A PENDIENTE (desde historial permanente) ──────
+        try {
+            List<HistorialCambioSolicitud> historiales =
+                    historialRepo.findByIdSolicitudOrderByFechaCambioAsc(idSolicitud);
+            for (HistorialCambioSolicitud h : historiales) {
+                if (!"DEVOLUCION_A_PENDIENTE".equals(h.getTipoCambio())) continue;
+
+                StringBuilder detalle = new StringBuilder();
+                if (h.getEstadoAnteriorDesc() != null)
+                    detalle.append("Estado anterior: ").append(h.getEstadoAnteriorDesc());
+                if (h.getMedicoAnteriorNombre() != null)
+                    detalle.append(" · Médico: ").append(h.getMedicoAnteriorNombre());
+                if (h.getFechaCitaAnterior() != null) {
+                    detalle.append(" · Cita: ").append(h.getFechaCitaAnterior());
+                    if (h.getHoraCitaAnterior() != null)
+                        detalle.append(" ").append(h.getHoraCitaAnterior());
+                }
+
+                eventos.add(EventoTrazabilidadDTO.builder()
+                        .tipo("DEVOLUCION")
+                        .fecha(h.getFechaCambio())
+                        .descripcion("Devuelta a pendientes")
+                        .detalle(detalle.length() > 0 ? detalle.toString() : null)
+                        .medico(h.getUsuarioNombre())
+                        .estado("Motivo: " + (h.getMotivo() != null ? h.getMotivo() : "—"))
+                        .color("amber")
+                        .build());
+            }
+        } catch (Exception ex) {
+            log.warn("⚠️ No se pudieron cargar eventos de devolución para solicitud {}: {}", idSolicitud, ex.getMessage());
+        }
+
+        // ── 8. RECITAS / INTERCONSULTAS DERIVADAS ─────────────────────────
         List<SolicitudBolsa> derivadas = solicitudRepo
                 .findByIdsolicitudgeneracionOrderByFechaSolicitudAsc(idSolicitud);
 
@@ -225,6 +273,18 @@ public class TrazabilidadBolsaService {
                     .orElse("Personal #" + idPersonal);
         } catch (Exception e) {
             return "Personal #" + idPersonal;
+        }
+    }
+
+    /** Resuelve el nombre completo del usuario del sistema (gestora/coordinador) por su idUser. */
+    private String resolverNombreUsuario(Long idUsuario) {
+        if (idUsuario == null) return null;
+        try {
+            return personalRepo.findByUsuario_IdUser(idUsuario)
+                    .map(PersonalCnt::getNombreCompleto)
+                    .orElse(null);
+        } catch (Exception e) {
+            return null;
         }
     }
 

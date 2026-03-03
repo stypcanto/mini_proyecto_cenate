@@ -503,6 +503,9 @@ export default function CitasAgendadas() {
   const [filtroEspec, setFiltroEspec]       = useState('');
   const [filtroMedico, setFiltroMedico]     = useState('');
   const [filtroCenacron, setFiltroCenacron] = useState(''); // '' = todos | 'si' = solo CENACRON | 'no' = sin CENACRON
+  const [filtroEstadoBolsa, setFiltroEstadoBolsa]   = useState('');
+  const [filtroEstadoCita,  setFiltroEstadoCita]    = useState('');
+  const [filtroEstadoAten,  setFiltroEstadoAten]    = useState('');
   const [fechaSeleccionada, setFechaSelec]  = useState(null);
   const [mostrarFiltros, setMostrarFiltros] = useState(false);
   const [pagina, setPagina]                 = useState(1);
@@ -518,6 +521,9 @@ export default function CitasAgendadas() {
   // ── Editar fecha/hora de cita ──
   const [modalEditarFecha, setModalEditarFecha] = useState({ visible: false, paciente: null, fecha: '', hora: '' });
   const [guardandoFecha, setGuardandoFecha]     = useState(false);
+  // ── Búsqueda global por DNI (cuando el paciente no está en la bandeja propia) ──
+  const [resultadosGlobales, setResultadosGlobales] = useState([]);
+  const [buscandoGlobal, setBuscandoGlobal]         = useState(false);
   // ── Cancelar cita individual ──
   const [modalCancelar, setModalCancelar]       = useState({ visible: false, paciente: null });
   const [cancelando, setCancelando]             = useState(false);
@@ -690,6 +696,70 @@ export default function CitasAgendadas() {
     return () => clearInterval(interval);
   }, []);
 
+  // ── Búsqueda global por DNI (cuando el paciente no está en la bandeja actual) ──
+  // Si el usuario escribe un DNI de 8 dígitos que no aparece en la bandeja propia,
+  // busca en TODOS los registros del sistema (independiente de gestora asignada).
+  useEffect(() => {
+    const q = busqueda.trim();
+    if (!/^\d{8}$/.test(q)) {
+      setResultadosGlobales([]);
+      return;
+    }
+
+    // Si ya está en la bandeja local, no hace falta buscar globalmente
+    const yaEnLocal = pacientes.some(p => p.pacienteDni === q);
+    if (yaEnLocal) {
+      setResultadosGlobales([]);
+      return;
+    }
+
+    const timer = setTimeout(async () => {
+      setBuscandoGlobal(true);
+      try {
+        const token = getToken();
+        const res = await fetch(`/api/bolsas/solicitudes/buscar-dni/${q}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!res.ok) return;
+        const data = await res.json();
+
+        const mapear = (s) => ({
+          id:                      s.id_solicitud              || s.idSolicitud,
+          pacienteNombre:          s.paciente_nombre           || s.pacienteNombre          || '—',
+          pacienteDni:             s.paciente_dni              || s.pacienteDni             || '—',
+          pacienteSexo:            s.paciente_sexo             || s.pacienteSexo            || null,
+          pacienteEdad:            s.paciente_edad             || s.pacienteEdad            || null,
+          pacienteTelefono:        s.paciente_telefono         || s.pacienteTelefono        || null,
+          pacienteTelefonoAlterno: s.paciente_telefono_alterno || s.pacienteTelefonoAlterno || null,
+          especialidad:            s.especialidad              || '—',
+          codigoEstado:            s.cod_estado_cita           || s.codEstadoCita           || '—',
+          fechaAtencion:           s.fecha_atencion            || s.fechaAtencion           || null,
+          horaAtencion:            s.hora_atencion             || s.horaAtencion            || null,
+          descIpress:              s.desc_ipress_atencion      || s.descIpressAtencion      || s.desc_ipress || s.descIpress || '—',
+          tipoCita:                s.tipo_cita                 || s.tipoCita                || '—',
+          nomMedico:               s.nombre_medico_asignado    || s.nombreMedicoAsignado    || s.nom_medico || s.nomMedico || null,
+          esCenacron:              s.es_cenacron === true      || s.esCenacron === true,
+          motivoAnulacion:         s.motivo_anulacion          || s.motivoAnulacion         || null,
+          estadoBolsa:             s.estado                    || '—',
+          estadoAtencion:          s.condicion_medica          || s.condicionMedica         || '—',
+          _desdeBusquedaGlobal: true,
+        });
+
+        const agendados = (Array.isArray(data) ? data : [])
+          .map(mapear)
+          .filter(p => ESTADOS_AGENDADOS.includes(p.codigoEstado) || p.fechaAtencion);
+
+        setResultadosGlobales(agendados);
+      } catch (err) {
+        console.error('[CitasAgendadas] Error en búsqueda global por DNI:', err);
+      } finally {
+        setBuscandoGlobal(false);
+      }
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [busqueda, pacientes]);
+
   // ── KPIs ───────────────────────────────────────────────────
   const kpis = useMemo(() => {
     const counts = { total: pacientes.length };
@@ -723,9 +793,17 @@ export default function CitasAgendadas() {
     ];
   }, [pacientes]);
 
+  // Normaliza especialidad: "ENFERMERIA (SIN ATENCIÓN)" → "ENFERMERIA"
+  const normEspec = (e) => e ? e.replace(/\s*\([^)]*\)/g, '').trim() : e;
+
   const opcionesEspec = useMemo(() => {
     const counts = {};
-    pacientes.forEach(p => { if (p.especialidad && p.especialidad !== '—') counts[p.especialidad] = (counts[p.especialidad] || 0) + 1; });
+    pacientes.forEach(p => {
+      if (p.especialidad && p.especialidad !== '—') {
+        const key = normEspec(p.especialidad);
+        counts[key] = (counts[key] || 0) + 1;
+      }
+    });
     return [
       { label: `Todas las especialidades (${pacientes.length})`, value: '' },
       ...Object.entries(counts)
@@ -745,33 +823,94 @@ export default function CitasAgendadas() {
     ];
   }, [pacientes]);
 
-  const hayFiltrosActivos = filtroIpress || filtroEspec || filtroMedico || filtroCenacron || fechaSeleccionada;
+  // Normaliza estado bolsa a UPPERCASE para agrupar variantes (ej: "Observado" = "OBSERVADO")
+  const normEstadoBolsa = (e) => e ? e.toUpperCase() : e;
+
+  const opcionesEstadoBolsa = useMemo(() => {
+    const counts = {};
+    pacientes.forEach(p => {
+      if (p.estadoBolsa && p.estadoBolsa !== '—') {
+        const key = normEstadoBolsa(p.estadoBolsa);
+        counts[key] = (counts[key] || 0) + 1;
+      }
+    });
+    return [
+      { label: `Todos (${pacientes.length})`, value: '' },
+      ...Object.entries(counts)
+        .sort(([a], [b]) => a.localeCompare(b, 'es', { sensitivity: 'base' }))
+        .map(([est, cnt]) => ({ label: `${est} (${cnt})`, value: est })),
+    ];
+  }, [pacientes]);
+
+  const opcionesEstadoCita = useMemo(() => {
+    const counts = {};
+    pacientes.forEach(p => { if (p.codigoEstado && p.codigoEstado !== '—') counts[p.codigoEstado] = (counts[p.codigoEstado] || 0) + 1; });
+    return [
+      { label: `Todos (${pacientes.length})`, value: '' },
+      ...Object.entries(counts)
+        .sort(([a], [b]) => a.localeCompare(b, 'es', { sensitivity: 'base' }))
+        .map(([cod, cnt]) => ({ label: `${BADGE[cod]?.label || cod} (${cnt})`, value: cod })),
+    ];
+  }, [pacientes]);
+
+  // Normaliza variantes de estado atención al valor canónico
+  const NORM_ESTADO_ATEN = { 'Anulada': 'Anulado', 'Desercion': 'Deserción', 'DESERCION': 'Deserción' };
+  const normEstadoAten = (e) => e ? (NORM_ESTADO_ATEN[e] || e) : e;
+
+  const opcionesEstadoAten = useMemo(() => {
+    const counts = {};
+    pacientes.forEach(p => {
+      if (p.estadoAtencion && p.estadoAtencion !== '—') {
+        const key = normEstadoAten(p.estadoAtencion);
+        counts[key] = (counts[key] || 0) + 1;
+      }
+    });
+    return [
+      { label: `Todos (${pacientes.length})`, value: '' },
+      ...Object.entries(counts)
+        .sort(([a], [b]) => a.localeCompare(b, 'es', { sensitivity: 'base' }))
+        .map(([est, cnt]) => ({ label: `${est} (${cnt})`, value: est })),
+    ];
+  }, [pacientes]);
+
+  const hayFiltrosActivos = filtroIpress || filtroEspec || filtroMedico || filtroCenacron || fechaSeleccionada || filtroEstadoBolsa || filtroEstadoCita || filtroEstadoAten;
 
   const limpiarFiltros = () => {
     setFiltroIpress(''); setFiltroEspec(''); setFiltroMedico(''); setFiltroCenacron(''); setFechaSelec(null);
+    setFiltroEstadoBolsa(''); setFiltroEstadoCita(''); setFiltroEstadoAten('');
     setPagina(1);
   };
 
   // ── Filtrado ───────────────────────────────────────────────
+  // Combina la bandeja propia con resultados globales (por DNI) deduplicados
   const filtrados = useMemo(() => {
+    const localIds = new Set(pacientes.map(p => p.id));
+    const combinados = [
+      ...pacientes,
+      ...resultadosGlobales.filter(p => !localIds.has(p.id)),
+    ];
+
     const q = busqueda.toLowerCase().trim();
-    return pacientes.filter(p => {
+    return combinados.filter(p => {
       const matchBusqueda = !q || (p.pacienteDni || '').toLowerCase().includes(q) || (p.pacienteNombre || '').toLowerCase().includes(q);
       const matchEstado   = !filtroEstado || filtroEstado === 'total' || p.codigoEstado === filtroEstado;
       const matchIpress   = !filtroIpress || p.descIpress === filtroIpress;
-      const matchEspec    = !filtroEspec  || p.especialidad === filtroEspec;
+      const matchEspec    = !filtroEspec  || normEspec(p.especialidad) === filtroEspec;
       const matchMedico   = !filtroMedico || p.nomMedico === filtroMedico;
       const matchCenacron = !filtroCenacron
         || (filtroCenacron === 'si' && p.esCenacron === true)
         || (filtroCenacron === 'no' && !p.esCenacron);
-      const matchFecha    = !fechaSeleccionada || (p.fechaAtencion && (
+      const matchFecha       = !fechaSeleccionada || (p.fechaAtencion && (
         p.fechaAtencion.includes('T')
           ? p.fechaAtencion.split('T')[0] === fechaSeleccionada
           : p.fechaAtencion.substring(0, 10) === fechaSeleccionada
       ));
-      return matchBusqueda && matchEstado && matchIpress && matchEspec && matchMedico && matchCenacron && matchFecha;
+      const matchEstadoBolsa = !filtroEstadoBolsa || normEstadoBolsa(p.estadoBolsa) === filtroEstadoBolsa;
+      const matchEstadoCita  = !filtroEstadoCita  || p.codigoEstado === filtroEstadoCita;
+      const matchEstadoAten  = !filtroEstadoAten  || normEstadoAten(p.estadoAtencion) === filtroEstadoAten;
+      return matchBusqueda && matchEstado && matchIpress && matchEspec && matchMedico && matchCenacron && matchFecha && matchEstadoBolsa && matchEstadoCita && matchEstadoAten;
     });
-  }, [pacientes, busqueda, filtroEstado, filtroIpress, filtroEspec, filtroMedico, filtroCenacron, fechaSeleccionada]);
+  }, [pacientes, resultadosGlobales, busqueda, filtroEstado, filtroIpress, filtroEspec, filtroMedico, filtroCenacron, fechaSeleccionada, filtroEstadoBolsa, filtroEstadoCita, filtroEstadoAten]);
 
   const totalPaginas = Math.max(1, Math.ceil(filtrados.length / PAGE_SIZE));
   const paginaActual = filtrados.slice((pagina - 1) * PAGE_SIZE, pagina * PAGE_SIZE);
@@ -1197,12 +1336,21 @@ CENATE de Essalud`;
                 placeholder="Buscar por DNI o nombre..."
                 style={{ width: '100%', boxSizing: 'border-box', paddingLeft: '36px', paddingRight: busqueda ? '32px' : '12px', paddingTop: '9px', paddingBottom: '9px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '13px', color: '#374151', outline: 'none' }}
               />
-              {busqueda && (
+              {buscandoGlobal ? (
+                <div style={{ position: 'absolute', right: '8px', top: '50%', transform: 'translateY(-50%)', display: 'flex', alignItems: 'center' }}>
+                  <RefreshCw size={15} className="animate-spin" style={{ color: '#0D5BA9' }} />
+                </div>
+              ) : busqueda && (
                 <button onClick={() => handleBusqueda('')} style={{ position: 'absolute', right: '8px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', display: 'flex' }}>
                   <XCircle size={15} />
                 </button>
               )}
             </div>
+            {resultadosGlobales.length > 0 && (
+              <span style={{ fontSize: '11px', color: '#7c3aed', background: '#f5f3ff', border: '1px solid #ddd6fe', borderRadius: '6px', padding: '4px 8px', fontWeight: '600', whiteSpace: 'nowrap' }}>
+                🔍 {resultadosGlobales.length} hallado{resultadosGlobales.length !== 1 ? 's' : ''} en otra bandeja
+              </span>
+            )}
 
             <button
               onClick={() => setMostrarFiltros(v => !v)}
@@ -1212,7 +1360,7 @@ CENATE de Essalud`;
               Filtros
               {hayFiltrosActivos && (
                 <span style={{ background: '#0D5BA9', color: '#fff', borderRadius: '10px', padding: '1px 7px', fontSize: '11px', fontWeight: '700' }}>
-                  {[filtroIpress, filtroEspec, filtroMedico, filtroCenacron, fechaSeleccionada].filter(Boolean).length}
+                  {[filtroIpress, filtroEspec, filtroMedico, filtroCenacron, fechaSeleccionada, filtroEstadoBolsa, filtroEstadoCita, filtroEstadoAten].filter(Boolean).length}
                 </span>
               )}
             </button>
@@ -1227,6 +1375,33 @@ CENATE de Essalud`;
           {/* Panel de filtros */}
           {mostrarFiltros && (
             <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '16px', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px' }}>
+              {/* Estado Bolsa */}
+              <div>
+                <label style={{ display: 'block', fontSize: '11px', fontWeight: '600', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '6px' }}>Estado Bolsa</label>
+                <SearchableSelect
+                  value={filtroEstadoBolsa}
+                  onChange={v => handleFiltro(setFiltroEstadoBolsa)(v)}
+                  options={opcionesEstadoBolsa}
+                />
+              </div>
+              {/* Estado Cita */}
+              <div>
+                <label style={{ display: 'block', fontSize: '11px', fontWeight: '600', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '6px' }}>Estado Cita</label>
+                <SearchableSelect
+                  value={filtroEstadoCita}
+                  onChange={v => handleFiltro(setFiltroEstadoCita)(v)}
+                  options={opcionesEstadoCita}
+                />
+              </div>
+              {/* Estado Atención */}
+              <div>
+                <label style={{ display: 'block', fontSize: '11px', fontWeight: '600', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '6px' }}>Estado Atención</label>
+                <SearchableSelect
+                  value={filtroEstadoAten}
+                  onChange={v => handleFiltro(setFiltroEstadoAten)(v)}
+                  options={opcionesEstadoAten}
+                />
+              </div>
               <div>
                 <label style={{ display: 'block', fontSize: '11px', fontWeight: '600', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '6px' }}>IPRESS</label>
                 <SearchableSelect
@@ -1536,22 +1711,44 @@ CENATE de Essalud`;
 
                           {/* ESTADO DE BOLSA */}
                           <td style={{ padding: '10px 12px' }}>
-                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '2px 10px', borderRadius: '999px', fontSize: '11px', fontWeight: '600', background: p.estadoBolsa === 'PENDIENTE' ? '#fef3c7' : p.estadoBolsa === 'CITADO' ? '#dbeafe' : p.estadoBolsa === 'ATENDIDO' ? '#dcfce7' : '#f1f5f9', color: p.estadoBolsa === 'PENDIENTE' ? '#92400e' : p.estadoBolsa === 'CITADO' ? '#1e40af' : p.estadoBolsa === 'ATENDIDO' ? '#166534' : '#475569', border: `1px solid ${p.estadoBolsa === 'PENDIENTE' ? '#fde68a' : p.estadoBolsa === 'CITADO' ? '#bfdbfe' : p.estadoBolsa === 'ATENDIDO' ? '#bbf7d0' : '#e2e8f0'}` }}>
-                              {p.estadoBolsa}
-                            </span>
+                            {(() => {
+                              const eb = p.estadoBolsa;
+                              const cfg =
+                                eb === 'PENDIENTE'  ? { bg: '#fef3c7', color: '#92400e', border: '#fde68a' } :
+                                eb === 'CITADO'     ? { bg: '#dbeafe', color: '#1e40af', border: '#bfdbfe' } :
+                                eb === 'ATENDIDO'   ? { bg: '#dcfce7', color: '#166534', border: '#bbf7d0' } :
+                                eb === 'Observado'  ? { bg: '#fce7f3', color: '#9d174d', border: '#f9a8d4' } :
+                                                     { bg: '#f1f5f9', color: '#475569', border: '#e2e8f0' };
+                              return (
+                                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '2px 10px', borderRadius: '999px', fontSize: '11px', fontWeight: '600', background: cfg.bg, color: cfg.color, border: `1px solid ${cfg.border}` }}>
+                                  {eb}
+                                </span>
+                              );
+                            })()}
                           </td>
 
                           {/* ESTADO DE ATENCIÓN */}
                           <td style={{ padding: '10px 12px' }}>
-                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '2px 10px', borderRadius: '999px', fontSize: '11px', fontWeight: '600', background: p.estadoAtencion === 'Pendiente' ? '#fef3c7' : p.estadoAtencion === 'Atendido' ? '#dcfce7' : p.estadoAtencion === 'Deserción' ? '#fee2e2' : '#f1f5f9', color: p.estadoAtencion === 'Pendiente' ? '#92400e' : p.estadoAtencion === 'Atendido' ? '#166534' : p.estadoAtencion === 'Deserción' ? '#991b1b' : '#475569', border: `1px solid ${p.estadoAtencion === 'Pendiente' ? '#fde68a' : p.estadoAtencion === 'Atendido' ? '#bbf7d0' : p.estadoAtencion === 'Deserción' ? '#fecaca' : '#e2e8f0'}` }}>
-                              {p.estadoAtencion}
-                            </span>
+                            {(() => {
+                              const ea = p.estadoAtencion;
+                              const cfg =
+                                ea === 'Pendiente'  ? { bg: '#fef3c7', color: '#92400e', border: '#fde68a' } :
+                                ea === 'Atendido'   ? { bg: '#dcfce7', color: '#166534', border: '#bbf7d0' } :
+                                ea === 'Deserción'  ? { bg: '#fee2e2', color: '#991b1b', border: '#fecaca' } :
+                                ea === 'Anulado'    ? { bg: '#fee2e2', color: '#dc2626', border: '#fca5a5' } :
+                                                     { bg: '#f1f5f9', color: '#475569', border: '#e2e8f0' };
+                              return (
+                                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '2px 10px', borderRadius: '999px', fontSize: '11px', fontWeight: '600', background: cfg.bg, color: cfg.color, border: `1px solid ${cfg.border}` }}>
+                                  {ea}
+                                </span>
+                              );
+                            })()}
                           </td>
 
                           {/* MOTIVO ANULACIÓN */}
-                          <td style={{ padding: '10px 12px', maxWidth: '180px' }}>
+                          <td style={{ padding: '10px 12px', minWidth: '160px', maxWidth: '220px' }}>
                             {p.motivoAnulacion ? (
-                              <span style={{ display: 'block', fontSize: '12px', color: '#be123c', fontStyle: 'italic', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={p.motivoAnulacion}>
+                              <span style={{ display: 'block', fontSize: '12px', color: '#dc2626', fontStyle: 'italic', whiteSpace: 'normal', wordBreak: 'break-word', lineHeight: '1.4' }}>
                                 {p.motivoAnulacion}
                               </span>
                             ) : (

@@ -36,8 +36,10 @@ import {
 import { apiClient } from '../../lib/apiClient';
 import toast from "react-hot-toast";
 import TrazabilidadClinicaTabs from "../../components/trazabilidad/TrazabilidadClinicaTabs";
+import { usePermisos } from '../../context/PermisosContext';
 
 export default function BuscarAsegurado() {
+  const { esSuperAdmin } = usePermisos();
   const [asegurados, setAsegurados] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchValue, setSearchValue] = useState("");
@@ -57,6 +59,10 @@ export default function BuscarAsegurado() {
 
   // 📋 Estados para tipos de documento
   const [tiposDocumento, setTiposDocumento] = useState([]);
+
+  // 🔍 Estados para búsqueda de IPRESS en formulario
+  const [ipressSearchText, setIpressSearchText] = useState('');
+  const [ipressDropdownOpen, setIpressDropdownOpen] = useState(false);
 
   // Paginación desde el backend
   const [currentPage, setCurrentPage] = useState(0);
@@ -345,6 +351,8 @@ export default function BuscarAsegurado() {
     });
     setDniStatus(null);
     setDniMessage("");
+    setIpressSearchText('');
+    setIpressDropdownOpen(false);
     if (todasIpress.length === 0) {
       cargarIpress();
     }
@@ -386,6 +394,8 @@ export default function BuscarAsegurado() {
         periodo: response.asegurado.periodo || new Date().getFullYear().toString(),
         pacienteCronico: Boolean(response.asegurado.pacienteCronico)
       });
+      setIpressSearchText('');
+      setIpressDropdownOpen(false);
       setShowFormModal(true);
     } catch (error) {
       console.error("Error al cargar datos del asegurado:", error);
@@ -414,6 +424,8 @@ export default function BuscarAsegurado() {
     });
     setDniStatus(null);
     setDniMessage("");
+    setIpressSearchText('');
+    setIpressDropdownOpen(false);
   };
 
   const handleInputChange = (e) => {
@@ -771,41 +783,64 @@ export default function BuscarAsegurado() {
                               </div>
                             </div>
                           </td>
-                          <td className="px-2.5 py-3" style={{ width: '100px' }}>
-                            <div className="flex items-center justify-center gap-0.5">
-                              {/* Botón Ver */ }
-                              <button
-                                onClick={ () => obtenerDetalles(asegurado.pkAsegurado) }
-                                disabled={ loadingDetalle }
-                                className="p-1 bg-white border border-emerald-600 text-emerald-600
-                                         rounded hover:bg-emerald-600 hover:text-white transition-all duration-200
-                                         disabled:opacity-50 disabled:cursor-not-allowed"
-                                title="Ver"
-                              >
-                                <Eye className="w-3.5 h-3.5" />
-                              </button>
+                          <td className="px-2.5 py-3" style={{ width: '110px' }}>
+                            <div className="flex items-center justify-center gap-1.5">
+                              {/* Botón Ver */}
+                              <div className="relative group">
+                                <button
+                                  onClick={ () => obtenerDetalles(asegurado.pkAsegurado) }
+                                  disabled={ loadingDetalle }
+                                  className="w-8 h-8 flex items-center justify-center rounded-lg
+                                           bg-emerald-50 text-emerald-600 border border-emerald-200
+                                           hover:bg-emerald-500 hover:text-white hover:border-emerald-500
+                                           shadow-sm hover:shadow-md transition-all duration-200
+                                           disabled:opacity-40 disabled:cursor-not-allowed"
+                                >
+                                  <Eye className="w-4 h-4" />
+                                </button>
+                                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 text-xs text-white bg-gray-900 rounded-md whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50 shadow-lg">
+                                  Ver detalle
+                                  <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-900" />
+                                </div>
+                              </div>
 
-                              {/* Botón Editar */ }
-                              <button
-                                onClick={ () => abrirFormularioEditar(asegurado.pkAsegurado) }
-                                disabled={ loadingDetalle }
-                                className="p-1 bg-white border border-blue-600 text-blue-600
-                                         rounded hover:bg-blue-600 hover:text-white transition-all duration-200
-                                         disabled:opacity-50 disabled:cursor-not-allowed"
-                                title="Editar"
-                              >
-                                <Edit className="w-3.5 h-3.5" />
-                              </button>
+                              {/* Botón Editar */}
+                              <div className="relative group">
+                                <button
+                                  onClick={ () => abrirFormularioEditar(asegurado.pkAsegurado) }
+                                  disabled={ loadingDetalle }
+                                  className="w-8 h-8 flex items-center justify-center rounded-lg
+                                           bg-blue-50 text-blue-600 border border-blue-200
+                                           hover:bg-blue-500 hover:text-white hover:border-blue-500
+                                           shadow-sm hover:shadow-md transition-all duration-200
+                                           disabled:opacity-40 disabled:cursor-not-allowed"
+                                >
+                                  <Edit className="w-4 h-4" />
+                                </button>
+                                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 text-xs text-white bg-gray-900 rounded-md whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50 shadow-lg">
+                                  Editar asegurado
+                                  <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-900" />
+                                </div>
+                              </div>
 
-                              {/* Botón Eliminar */ }
-                              <button
-                                onClick={ () => eliminarAsegurado(asegurado.pkAsegurado, asegurado.paciente) }
-                                className="p-1 bg-white border border-red-600 text-red-600
-                                         rounded hover:bg-red-600 hover:text-white transition-all duration-200"
-                                title="Eliminar"
-                              >
-                                <Trash2 className="w-3.5 h-3.5" />
-                              </button>
+                              {/* Botón Eliminar — solo SUPERADMIN */}
+                              { esSuperAdmin && (
+                                <div className="relative group">
+                                  <button
+                                    onClick={ () => eliminarAsegurado(asegurado.pkAsegurado, asegurado.paciente) }
+                                    className="w-8 h-8 flex items-center justify-center rounded-lg
+                                             bg-red-50 text-red-500 border border-red-200
+                                             hover:bg-red-500 hover:text-white hover:border-red-500
+                                             shadow-sm hover:shadow-md transition-all duration-200"
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                  </button>
+                                  <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 text-xs text-white bg-gray-900 rounded-md whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50 shadow-lg">
+                                    Eliminar asegurado
+                                    <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-900" />
+                                  </div>
+                                </div>
+                              ) }
                             </div>
                           </td>
                         </tr>
@@ -1167,10 +1202,10 @@ export default function BuscarAsegurado() {
                     value={ formularioData.idTipDoc }
                     onChange={ handleInputChange }
                     required
-                    disabled={ modoFormulario === 'editar' }
+                    disabled={ modoFormulario === 'editar' && !esSuperAdmin }
                     className={`w-full px-4 py-2.5 border-2 border-slate-200 rounded-lg text-slate-900
                              focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100
-                             transition-all ${modoFormulario === 'editar' ? 'bg-slate-100 cursor-not-allowed' : ''}`}
+                             transition-all ${modoFormulario === 'editar' && !esSuperAdmin ? 'bg-slate-100 cursor-not-allowed' : ''}`}
                   >
                     <option value="">-- Selecciona tipo --</option>
                     {tiposDocumento && Array.isArray(tiposDocumento) && tiposDocumento.length > 0 ? (
@@ -1188,7 +1223,7 @@ export default function BuscarAsegurado() {
                     )}
                   </select>
                   <p className="text-xs text-slate-500 mt-1">
-                    { modoFormulario === 'editar'
+                    { modoFormulario === 'editar' && !esSuperAdmin
                       ? 'No se puede cambiar el tipo de documento después de crear'
                       : 'Selecciona el tipo de documento' }
                   </p>
@@ -1208,9 +1243,9 @@ export default function BuscarAsegurado() {
                       onChange={ handleInputChange }
                       required
                       maxLength="20"
-                      disabled={ loadingForm || modoFormulario === 'editar' }
+                      disabled={ loadingForm || (modoFormulario === 'editar' && !esSuperAdmin) }
                       className={`w-full px-4 py-2.5 border-2 rounded-lg text-slate-900 transition-all ${
-                        modoFormulario === 'editar'
+                        modoFormulario === 'editar' && !esSuperAdmin
                           ? 'border-slate-200 bg-slate-100 cursor-not-allowed'
                           : dniStatus === "disponible"
                           ? "border-green-300 focus:border-green-500 focus:ring-2 focus:ring-green-100 focus:outline-none"
@@ -1391,22 +1426,67 @@ export default function BuscarAsegurado() {
                     <Building2 className="w-4 h-4 inline mr-1" />
                     IPRESS <span className="text-red-600">*</span>
                   </label>
-                  <select
-                    name="casAdscripcion"
-                    value={ formularioData.casAdscripcion }
-                    onChange={ handleInputChange }
-                    required
-                    className="w-full px-4 py-2.5 border-2 border-slate-200 rounded-lg text-slate-900
-                             focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100
-                             transition-all"
-                  >
-                    <option value="">Selecciona una IPRESS</option>
-                    { todasIpress.map((i) => (
-                      <option key={ i.codIpress } value={ i.codIpress }>
-                        { i.descIpress } - Cód: { i.codIpress }
-                      </option>
-                    )) }
-                  </select>
+                  {/* Combobox con búsqueda de IPRESS */}
+                  <div className="relative">
+                    <input
+                      type="text"
+                      value={ ipressSearchText || (formularioData.casAdscripcion
+                        ? (() => {
+                            const found = todasIpress.find(i => i.codIpress === formularioData.casAdscripcion);
+                            return found ? `${found.descIpress} - Cód: ${found.codIpress}` : formularioData.casAdscripcion;
+                          })()
+                        : '') }
+                      onChange={ (e) => {
+                        setIpressSearchText(e.target.value);
+                        setIpressDropdownOpen(true);
+                        if (!e.target.value) {
+                          setFormularioData(prev => ({ ...prev, casAdscripcion: '' }));
+                        }
+                      } }
+                      onFocus={ () => {
+                        setIpressSearchText('');
+                        setIpressDropdownOpen(true);
+                      } }
+                      onBlur={ () => setTimeout(() => setIpressDropdownOpen(false), 200) }
+                      placeholder="Escribe para buscar IPRESS..."
+                      className="w-full px-4 py-2.5 border-2 border-slate-200 rounded-lg text-slate-900
+                               focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100
+                               transition-all"
+                      autoComplete="off"
+                    />
+                    { ipressDropdownOpen && (
+                      <div className="absolute z-50 w-full mt-1 bg-white border-2 border-blue-200 rounded-lg shadow-xl max-h-56 overflow-y-auto">
+                        { (() => {
+                            const texto = ipressSearchText.toLowerCase().trim();
+                            const filtradas = todasIpress
+                              .filter(i => !texto || i.descIpress.toLowerCase().includes(texto) || i.codIpress.toLowerCase().includes(texto))
+                              .sort((a, b) => a.descIpress.localeCompare(b.descIpress, 'es'));
+                            if (filtradas.length === 0) {
+                              return <div className="px-4 py-3 text-sm text-slate-500 text-center">Sin resultados</div>;
+                            }
+                            return filtradas.map(i => (
+                              <div
+                                key={ i.codIpress }
+                                onMouseDown={ () => {
+                                  setFormularioData(prev => ({ ...prev, casAdscripcion: i.codIpress }));
+                                  setIpressSearchText('');
+                                  setIpressDropdownOpen(false);
+                                } }
+                                className={ `px-4 py-2.5 text-sm cursor-pointer hover:bg-blue-50 transition-colors ${
+                                  formularioData.casAdscripcion === i.codIpress ? 'bg-blue-100 font-semibold text-blue-800' : 'text-slate-800'
+                                }` }
+                              >
+                                <span className="font-medium">{ i.descIpress }</span>
+                                <span className="text-slate-500 ml-1">- Cód: { i.codIpress }</span>
+                              </div>
+                            ));
+                          })()
+                        }
+                      </div>
+                    ) }
+                  </div>
+                  { /* Campo oculto para validación HTML required */ }
+                  <input type="hidden" name="casAdscripcion" value={ formularioData.casAdscripcion } required />
                 </div>
 
                 <div>
@@ -1422,15 +1502,15 @@ export default function BuscarAsegurado() {
                     required
                     maxLength="4"
                     pattern="[0-9]{4}"
-                    disabled={ modoFormulario === 'editar' }
+                    disabled={ modoFormulario === 'editar' && !esSuperAdmin }
                     className={ `w-full px-4 py-2.5 border-2 border-slate-200 rounded-lg text-slate-900
                              focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100
-                             transition-all ${modoFormulario === 'editar' ? 'bg-slate-100 cursor-not-allowed' : ''}` }
+                             transition-all ${modoFormulario === 'editar' && !esSuperAdmin ? 'bg-slate-100 cursor-not-allowed' : ''}` }
                     placeholder="2025"
-                    title={ modoFormulario === 'editar' ? 'El periodo no se puede modificar' : 'Ingresa el año (4 dígitos). Ejemplo: 2025' }
+                    title={ modoFormulario === 'editar' && !esSuperAdmin ? 'El periodo no se puede modificar' : 'Ingresa el año (4 dígitos). Ejemplo: 2025' }
                   />
                   <p className="text-xs text-slate-500 mt-1">
-                    { modoFormulario === 'editar'
+                    { modoFormulario === 'editar' && !esSuperAdmin
                       ? 'El periodo no se puede modificar después de crear el asegurado'
                       : 'Ingresa solo el año (4 dígitos). Ejemplo: 2025' }
                   </p>

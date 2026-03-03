@@ -26,6 +26,7 @@ import com.styp.cenate.repository.TipoBolsaRepository;
 import com.styp.cenate.repository.UsuarioRepository;
 import com.styp.cenate.repository.PersonalCntRepository;
 import com.styp.cenate.repository.PacienteEstrategiaRepository;
+import com.styp.cenate.repository.bolsas.HistorialCambioSolicitudRepository;
 import com.styp.cenate.exception.ResourceNotFoundException;
 import com.styp.cenate.exception.ValidationException;
 import com.styp.cenate.service.ApplicationErrorLogService;
@@ -87,6 +88,7 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
     private final PacienteEstrategiaRepository pacienteEstrategiaRepository;
     private final ApplicationErrorLogService errorLogService;
     private final DimSolicitudBolsasGeneralRepository dimSolicitudBolsasGeneralRepository;
+    private final HistorialCambioSolicitudRepository historialCambioRepository;
 
     @PersistenceContext
     private EntityManager entityManager;
@@ -1171,13 +1173,99 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
 
         log.info("❌ Anulando {} solicitudes con motivo: {}", ids.size(), motivo);
 
+        // Obtener ID del usuario autenticado para auditoría
+        Long idUsuarioActual = null;
+        try {
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            if (auth != null && auth.isAuthenticated()) {
+                Usuario usuario = usuarioRepository.findByNameUser(auth.getName()).orElse(null);
+                if (usuario != null) idUsuarioActual = usuario.getIdUser();
+            }
+        } catch (Exception e) {
+            log.warn("⚠️ No se pudo obtener usuario autenticado para auditoría: {}", e.getMessage());
+        }
+
         com.styp.cenate.model.bolsas.DimEstadosGestionCitas estado =
             dimEstadosGestionCitasRepository.findByCodigoEstado("RECHAZADO")
                 .orElseThrow(() -> new RuntimeException("Estado RECHAZADO no encontrado en BD"));
 
-        int actualizados = solicitudRepository.cambiarEstadoMasivoConMotivo(ids, estado.getIdEstado(), motivo);
+        int actualizados = solicitudRepository.cambiarEstadoMasivoConMotivo(ids, estado.getIdEstado(), motivo, idUsuarioActual);
 
-        log.info("✅ {} solicitudes anuladas con motivo registrado", actualizados);
+        log.info("✅ {} solicitudes anuladas con motivo registrado por usuario ID={}", actualizados, idUsuarioActual);
+        return actualizados;
+    }
+
+    @Override
+    @Transactional
+    public int devolverAPendientes(List<Long> ids, String motivo) {
+        if (ids == null || ids.isEmpty()) {
+            log.warn("⚠️ Lista vacía de IDs para devolver a pendientes");
+            return 0;
+        }
+
+        log.info("↩️ Devolviendo {} solicitudes a PENDIENTE con motivo: {}", ids.size(), motivo);
+
+        // Obtener usuario actual para auditoría
+        Long usuarioActualId = null;
+        String usuarioActualNombre = null;
+        try {
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            if (auth != null && auth.isAuthenticated()) {
+                String username = auth.getName();
+                Usuario usuario = usuarioRepository.findByNameUser(username).orElse(null);
+                if (usuario != null) {
+                    usuarioActualId = usuario.getIdUser();
+                    usuarioActualNombre = username;
+                }
+            }
+        } catch (Exception e) {
+            log.warn("⚠️ No se pudo obtener usuario para historial de devolución: {}", e.getMessage());
+        }
+
+        // Guardar historial ANTES de limpiar los campos (preservar datos anteriores)
+        List<SolicitudBolsa> solicitudes = solicitudRepository.findAllById(ids);
+        List<com.styp.cenate.model.bolsas.HistorialCambioSolicitud> registros = new ArrayList<>();
+        for (SolicitudBolsa s : solicitudes) {
+            if (!Boolean.TRUE.equals(s.getActivo())) continue;
+
+            String estadoAnteriorDesc = null;
+            if (s.getEstadoGestionCitas() != null) {
+                estadoAnteriorDesc = s.getEstadoGestionCitas().getDescripcionEstado();
+            }
+
+            String medicoAnteriorNombre = null;
+            if (s.getIdPersonal() != null) {
+                try {
+                    medicoAnteriorNombre = personalCntRepository.findById(s.getIdPersonal())
+                            .map(PersonalCnt::getNombreCompleto)
+                            .orElse("Personal #" + s.getIdPersonal());
+                } catch (Exception e) {
+                    medicoAnteriorNombre = "Personal #" + s.getIdPersonal();
+                }
+            }
+
+            registros.add(com.styp.cenate.model.bolsas.HistorialCambioSolicitud.builder()
+                    .idSolicitud(s.getIdSolicitud())
+                    .tipoCambio("DEVOLUCION_A_PENDIENTE")
+                    .motivo(motivo)
+                    .estadoAnteriorId(s.getEstadoGestionCitasId())
+                    .estadoAnteriorDesc(estadoAnteriorDesc)
+                    .medicoAnteriorId(s.getIdPersonal())
+                    .medicoAnteriorNombre(medicoAnteriorNombre)
+                    .fechaCitaAnterior(s.getFechaAtencion())
+                    .horaCitaAnterior(s.getHoraAtencion())
+                    .usuarioId(usuarioActualId)
+                    .usuarioNombre(usuarioActualNombre)
+                    .fechaCambio(java.time.OffsetDateTime.now())
+                    .build());
+        }
+        historialCambioRepository.saveAll(registros);
+        log.info("📋 {} registros de historial guardados para trazabilidad", registros.size());
+
+        // Limpiar campos y cambiar estado a PENDIENTE_CITA
+        int actualizados = solicitudRepository.devolverAPendientesMasivo(ids, motivo);
+
+        log.info("✅ {} solicitudes devueltas a PENDIENTE_CITA", actualizados);
         return actualizados;
     }
 
@@ -2825,12 +2913,23 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
             log.info("   ✓ Usuario encontrado - ID: {}, Username: {}, Estado: {}",
                 usuarioId, usuarioActual.getNameUser(), usuarioActual.getStatUser());
 
-            // 3️⃣ OBTENER SOLICITUDES ASIGNADAS A ESTA GESTORA
-            log.info("   🔍 Buscando solicitudes con: responsableGestoraId={} AND activo=true", usuarioId);
-            List<SolicitudBolsa> solicitudes = solicitudRepository.findByResponsableGestoraIdAndActivoTrue(usuarioId);
+            // 3️⃣ OBTENER SOLICITUDES: SOPORTE_TELEUE y SUPERADMIN ven todas; el resto solo las propias
+            boolean esSupervisor = authentication.getAuthorities().stream()
+                .map(a -> a.getAuthority().toUpperCase())
+                .anyMatch(a -> a.equals("ROLE_SOPORTE_TELEUE") || a.equals("ROLE_SUPERADMIN"));
 
-            log.info("   ✅ Query realizado: Se encontraron {} solicitud(es) asignada(s) a gestora (ID: {})",
-                solicitudes.size(), usuarioId);
+            List<SolicitudBolsa> solicitudes;
+            if (esSupervisor) {
+                log.info("   🔍 [SUPERVISOR] Rol '{}' detectado → devolviendo TODAS las solicitudes activas",
+                    esSupervisor ? "SOPORTE_TELEUE/SUPERADMIN" : "");
+                solicitudes = solicitudRepository.findByActivoTrueOrderByFechaSolicitudDesc();
+            } else {
+                log.info("   🔍 Buscando solicitudes con: responsableGestoraId={} AND activo=true", usuarioId);
+                solicitudes = solicitudRepository.findByResponsableGestoraIdAndActivoTrue(usuarioId);
+            }
+
+            log.info("   ✅ Query realizado: Se encontraron {} solicitud(es) (esSupervisor={})",
+                solicitudes.size(), esSupervisor);
 
             // 5️⃣ DEBUG: Mostrar solicitudes encontradas
             if (!solicitudes.isEmpty()) {
@@ -2972,6 +3071,24 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
             List<SolicitudBolsaDTO> resultado = solicitudes.stream()
                 .map(s -> mapSolicitudBolsaToDTOBatch(s, ipressMap, tipoBolsaMap, aseguradoMap, personalMap))
                 .collect(Collectors.toList());
+
+            // Enriquecer con flag CENACRON
+            try {
+                List<String> dnisCenacronQuery = resultado.stream()
+                    .map(SolicitudBolsaDTO::getPacienteDni)
+                    .filter(dni -> dni != null && !dni.isBlank())
+                    .distinct()
+                    .collect(Collectors.toList());
+                if (!dnisCenacronQuery.isEmpty()) {
+                    Set<String> setCenacron = new HashSet<>(
+                        pacienteEstrategiaRepository.findDnisPertenecentesAEstrategia(dnisCenacronQuery, "CENACRON")
+                    );
+                    resultado.forEach(dto -> dto.setEsCenacron(setCenacron.contains(dto.getPacienteDni())));
+                    log.info("   🏷️ CENACRON (enfermería): {} pacientes identificados", setCenacron.size());
+                }
+            } catch (Exception ex) {
+                log.warn("⚠️ No se pudo enriquecer flag CENACRON (enfermería): {}", ex.getMessage());
+            }
 
             log.info("✅ Bandeja COORD. ENFERMERIA: {} pacientes", resultado.size());
             return resultado;
@@ -4255,10 +4372,28 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
                 }
                 String dni = row.getDocPaciente().trim();
 
-                // 1. Insertar en asegurados ON CONFLICT DO NOTHING
-                entityManager.createNativeQuery(
-                    "INSERT INTO asegurados (pk_asegurado, doc_paciente) VALUES (:dni, :dni) ON CONFLICT DO NOTHING"
-                ).setParameter("dni", dni).executeUpdate();
+                // 1. UPSERT en asegurados: INSERT si es nuevo, UPDATE teléfono/nombre/sexo/ipress si ya existe
+                //    Los datos del Excel son más actualizados (teléfono, IPRESS adscripción).
+                String nombreExcel = row.getPaciente() != null ? row.getPaciente().trim() : null;
+                String sexoExcel   = row.getSexo()      != null ? row.getSexo().trim()     : null;
+                String telExcel    = row.getTelMovil()   != null ? row.getTelMovil().trim()  : null;
+                String casExcel    = row.getCasAdscripcion() != null ? row.getCasAdscripcion().trim() : null;
+
+                entityManager.createNativeQuery("""
+                    INSERT INTO asegurados (pk_asegurado, doc_paciente, paciente, sexo, tel_celular, cas_adscripcion)
+                    VALUES (:dni, :dni, :nombre, :sexo, :tel, :cas)
+                    ON CONFLICT (pk_asegurado) DO UPDATE SET
+                        paciente        = COALESCE(NULLIF(EXCLUDED.paciente, ''),        asegurados.paciente),
+                        sexo            = COALESCE(NULLIF(EXCLUDED.sexo, ''),            asegurados.sexo),
+                        tel_celular     = COALESCE(NULLIF(EXCLUDED.tel_celular, ''),     asegurados.tel_celular),
+                        cas_adscripcion = COALESCE(NULLIF(EXCLUDED.cas_adscripcion, ''), asegurados.cas_adscripcion)
+                    """)
+                    .setParameter("dni",    dni)
+                    .setParameter("nombre", nombreExcel)
+                    .setParameter("sexo",   sexoExcel)
+                    .setParameter("tel",    telExcel)
+                    .setParameter("cas",    casExcel)
+                    .executeUpdate();
 
                 // 1b. Obtener pk_asegurado real: puede diferir del DNI si el asegurado ya existía
                 //     en la tabla con un pk distinto (ej: importado desde ESSI con otro ID interno).

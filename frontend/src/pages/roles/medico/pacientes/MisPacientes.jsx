@@ -7,7 +7,7 @@
  * - Generar Interconsulta
  */
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import {
   Users,
   Search,
@@ -51,6 +51,9 @@ import DetalleTicketModal from '../../../mesa-ayuda/components/DetalleTicketModa
 import { mesaAyudaService } from '../../../../services/mesaAyudaService';
 import HistorialPacienteBtn from '../../../../components/trazabilidad/HistorialPacienteBtn';
 import { logRespuestaConsola } from '../../../../utils/consoleResponseLogger';
+import motivosDesercionService from '../../../../services/motivosDesercionService';
+import motivosBajaCenacronService from '../../../../services/motivosBajaCenacronService';
+import { devLog, devWarn, devError } from '../../../../utils/devLogger';
 
 // ✅ v1.78.0: Sistema Genérico de Especialidades
 // Define qué funcionalidades tiene cada tipo de especialidad
@@ -193,10 +196,10 @@ export default function MisPacientes() {
       if (doctorInfo?.especialidad) {
         detectedSpecialty = detectSpecialtyByKeywords(doctorInfo.especialidad);
         if (detectedSpecialty) {
-          console.log('%c✅ v1.78.0 - ESPECIALIDAD DETECTADA', 'color: #00aa00; font-weight: bold; font-size: 12px; background: #e0ffe0; padding: 6px 8px; border-radius: 3px');
-          console.log('  • Fuente: %cAPI (Doctor Logueado)', 'color: #0066cc; font-weight: bold');
-          console.log('  • Tipo: %c' + detectedSpecialty, 'color: #ff6600; font-weight: bold');
-          console.log('  • Nombre: %c' + doctorInfo.especialidad, 'color: #6600cc; font-weight: bold');
+          devLog('%c✅ v1.78.0 - ESPECIALIDAD DETECTADA', 'color: #00aa00; font-weight: bold; font-size: 12px; background: #e0ffe0; padding: 6px 8px; border-radius: 3px');
+          devLog('  • Fuente: %cAPI (Doctor Logueado)', 'color: #0066cc; font-weight: bold');
+          devLog('  • Tipo: %c' + detectedSpecialty, 'color: #ff6600; font-weight: bold');
+          devLog('  • Nombre: %c' + doctorInfo.especialidad, 'color: #6600cc; font-weight: bold');
           return SPECIALTY_FEATURES[detectedSpecialty];
         }
       }
@@ -205,10 +208,10 @@ export default function MisPacientes() {
       if (authUser?.especialidad) {
         detectedSpecialty = detectSpecialtyByKeywords(authUser.especialidad);
         if (detectedSpecialty) {
-          console.log('%c✅ v1.78.0 - ESPECIALIDAD DETECTADA', 'color: #00aa00; font-weight: bold; font-size: 12px; background: #e0ffe0; padding: 6px 8px; border-radius: 3px');
-          console.log('  • Fuente: %cAuthContext', 'color: #0066cc; font-weight: bold');
-          console.log('  • Tipo: %c' + detectedSpecialty, 'color: #ff6600; font-weight: bold');
-          console.log('  • Nombre: %c' + authUser.especialidad, 'color: #6600cc; font-weight: bold');
+          devLog('%c✅ v1.78.0 - ESPECIALIDAD DETECTADA', 'color: #00aa00; font-weight: bold; font-size: 12px; background: #e0ffe0; padding: 6px 8px; border-radius: 3px');
+          devLog('  • Fuente: %cAuthContext', 'color: #0066cc; font-weight: bold');
+          devLog('  • Tipo: %c' + detectedSpecialty, 'color: #ff6600; font-weight: bold');
+          devLog('  • Nombre: %c' + authUser.especialidad, 'color: #6600cc; font-weight: bold');
           return SPECIALTY_FEATURES[detectedSpecialty];
         }
       }
@@ -220,27 +223,27 @@ export default function MisPacientes() {
         const especialidad = user.especialidad || user.especialidadNombre || '';
         detectedSpecialty = detectSpecialtyByKeywords(especialidad);
         if (detectedSpecialty) {
-          console.log('%c✅ v1.78.0 - ESPECIALIDAD DETECTADA', 'color: #00aa00; font-weight: bold; font-size: 12px; background: #e0ffe0; padding: 6px 8px; border-radius: 3px');
-          console.log('  • Fuente: %claudStorage', 'color: #0066cc; font-weight: bold');
-          console.log('  • Tipo: %c' + detectedSpecialty, 'color: #ff6600; font-weight: bold');
-          console.log('  • Nombre: %c' + especialidad, 'color: #6600cc; font-weight: bold');
+          devLog('%c✅ v1.78.0 - ESPECIALIDAD DETECTADA', 'color: #00aa00; font-weight: bold; font-size: 12px; background: #e0ffe0; padding: 6px 8px; border-radius: 3px');
+          devLog('  • Fuente: %claudStorage', 'color: #0066cc; font-weight: bold');
+          devLog('  • Tipo: %c' + detectedSpecialty, 'color: #ff6600; font-weight: bold');
+          devLog('  • Nombre: %c' + especialidad, 'color: #6600cc; font-weight: bold');
           return SPECIALTY_FEATURES[detectedSpecialty];
         }
       }
 
       // 4. Si se detectó desde pacientes, usar ese valor
       if (userSpecialty) {
-        console.log('%c✅ v1.78.0 - ESPECIALIDAD DETECTADA', 'color: #00aa00; font-weight: bold; font-size: 12px; background: #e0ffe0; padding: 6px 8px; border-radius: 3px');
-        console.log('  • Fuente: %cPacientes Cargados', 'color: #0066cc; font-weight: bold');
-        console.log('  • Tipo: %c' + userSpecialty, 'color: #ff6600; font-weight: bold');
+        devLog('%c✅ v1.78.0 - ESPECIALIDAD DETECTADA', 'color: #00aa00; font-weight: bold; font-size: 12px; background: #e0ffe0; padding: 6px 8px; border-radius: 3px');
+        devLog('  • Fuente: %cPacientes Cargados', 'color: #0066cc; font-weight: bold');
+        devLog('  • Tipo: %c' + userSpecialty, 'color: #ff6600; font-weight: bold');
         return SPECIALTY_FEATURES[userSpecialty];
       }
 
-      console.log('%c⚠️ v1.78.0 - ESPECIALIDAD NO DETECTADA', 'color: #ff6600; font-weight: bold; font-size: 12px; background: #ffe0cc; padding: 6px 8px; border-radius: 3px');
-      console.log('  • Intenta refrescar la página o verifica los datos del médico en la BD');
+      devLog('%c⚠️ v1.78.0 - ESPECIALIDAD NO DETECTADA', 'color: #ff6600; font-weight: bold; font-size: 12px; background: #ffe0cc; padding: 6px 8px; border-radius: 3px');
+      devLog('  • Intenta refrescar la página o verifica los datos del médico en la BD');
       return null;
     } catch (error) {
-      console.error('Error al detectar especialidad:', error);
+      devError('Error al detectar especialidad:', error);
       return null;
     }
   }, [doctorInfo, authUser, userSpecialty]);
@@ -389,7 +392,7 @@ export default function MisPacientes() {
 
       return `${año}-${mes}-${día}`;
     } catch (e) {
-      console.error('❌ Error al procesar fecha:', dateStr, e);
+      devError('❌ Error al procesar fecha:', dateStr, e);
       return null;
     }
   };
@@ -458,7 +461,13 @@ export default function MisPacientes() {
   const [pacienteSeleccionado, setPacienteSeleccionado] = useState(null);
   const [procesando, setProcesando] = useState(false);
   const [estadoSeleccionado, setEstadoSeleccionado] = useState('Pendiente');
+  const [showConfirmacionFinal, setShowConfirmacionFinal] = useState(false); // ✅ v1.85.1
   const [razonDesercion, setRazonDesercion] = useState('');
+  const [motivosDesercion, setMotivosDesercion] = useState([]);
+  const [busquedaDesercion, setBusquedaDesercion] = useState('');
+  const [showDesercionDropdown, setShowDesercionDropdown] = useState(false);
+  const [desercionDropdownStyle, setDesercionDropdownStyle] = useState({});
+  const desercionInputRef = useRef(null);
 
   // ✅ v1.50.0: Modal de detalles del paciente
   const [mostrarDetalles, setMostrarDetalles] = useState(false);
@@ -511,6 +520,9 @@ export default function MisPacientes() {
   const [bajaTipo, setBajaTipo] = useState('PROGRAMA_COMPLETO');
   const [bajaMotivo, setBajaMotivo] = useState('');
   const [procesandoBaja, setProcesandoBaja] = useState(false);
+  const [motivosBajaCatalogo, setMotivosBajaCatalogo] = useState([]);
+  const [bajaMotivoSearch, setBajaMotivoSearch] = useState('');
+  const [showMotivosDropdown, setShowMotivosDropdown] = useState(false);
 
   // CENACRON: Modal Asignar al Programa
   const [showAsignarCenacronModal, setShowAsignarCenacronModal] = useState(false);
@@ -698,6 +710,23 @@ export default function MisPacientes() {
   const [showDetalleTicketModal, setShowDetalleTicketModal] = useState(false);
   const [numeroTicketDetalle, setNumeroTicketDetalle] = useState(null);
 
+  // ✅ v1.85.2: Auto-guardar borrador del formulario "Atendido" en localStorage
+  const draftKey = pacienteSeleccionado
+    ? `cenate_atencion_draft_${pacienteSeleccionado.idSolicitudBolsa || pacienteSeleccionado.idGestion}`
+    : null;
+  const [draftGuardado, setDraftGuardado] = useState(false);   // muestra "💾 Guardado"
+  const [draftRestaurado, setDraftRestaurado] = useState(false); // muestra banner de restauración
+
+  useEffect(() => {
+    if (modalAccion !== 'cambiarEstado' || estadoSeleccionado !== 'Atendido' || !draftKey) return;
+    const draft = { tieneRecita, recitaDias, tieneInterconsulta, interconsultasLista, esCronico, enfermedadesCronicas };
+    localStorage.setItem(draftKey, JSON.stringify(draft));
+    // Mostrar indicador "Guardado" brevemente
+    setDraftGuardado(true);
+    const t = setTimeout(() => setDraftGuardado(false), 1800);
+    return () => clearTimeout(t);
+  }, [tieneRecita, recitaDias, tieneInterconsulta, interconsultasLista, esCronico, enfermedadesCronicas, modalAccion, estadoSeleccionado, draftKey]);
+
   const bolsasDisponibles = [
     { id: 1, nombre: 'Bolsa 107 (Módulo 107)' },
     { id: 2, nombre: 'Dengue' },
@@ -715,12 +744,12 @@ export default function MisPacientes() {
           .filter(b => b !== null && b !== undefined)
       )].sort((a, b) => a - b);
 
-      console.log('🔍 Bolsas detectadas del médico:', bolsasUnicos);
+      devLog('🔍 Bolsas detectadas del médico:', bolsasUnicos);
       setBolsasDelMedico(bolsasUnicos);
 
       // POR DEFECTO: Mostrar TODAS las bolsas (sin filtro automático)
       // El médico puede seleccionar una bolsa específica del dropdown si lo desea
-      console.log('✅ Cargando todas las bolsas por defecto (sin filtro automático)');
+      devLog('✅ Cargando todas las bolsas por defecto (sin filtro automático)');
       filtroAutoAplicado.current = true;
     }
   }, [pacientes]);
@@ -740,12 +769,12 @@ export default function MisPacientes() {
         }
       }
       setTicketsMedico(mapa);
-      console.log('%c🔔 TICKETS MEDICO - DEBUG', 'color: #ff8800; font-weight: bold; font-size: 12px; background: #fff3e0; padding: 4px 8px; border-radius: 3px');
-      console.log('   Mapa tickets (último por DNI):', mapa);
-      console.log('   Total tickets cargados:', tickets.length);
-      tickets.forEach(t => console.log(`   → DNI: "${t.dniPaciente}", estado: "${t.estado}", id: ${t.id}, numero: ${t.numeroTicket}`));
+      devLog('%c🔔 TICKETS MEDICO - DEBUG', 'color: #ff8800; font-weight: bold; font-size: 12px; background: #fff3e0; padding: 4px 8px; border-radius: 3px');
+      devLog('   Mapa tickets (último por DNI):', mapa);
+      devLog('   Total tickets cargados:', tickets.length);
+      tickets.forEach(t => devLog(`   → DNI: "${t.dniPaciente}", estado: "${t.estado}", id: ${t.id}, numero: ${t.numeroTicket}`));
     } catch (error) {
-      console.error('⚠️ Error al cargar tickets del médico:', error);
+      devError('⚠️ Error al cargar tickets del médico:', error);
     }
   };
 
@@ -757,11 +786,11 @@ export default function MisPacientes() {
         .filter(id => id != null);
       if (ids.length === 0) return;
       const mapa = await mesaAyudaService.contarResueltosPorSolicitudes(ids);
-      console.log('%c🔔 TICKETS RESUELTOS POR SOLICITUD', 'color: #00aa00; font-weight: bold; font-size: 12px; background: #e0ffe0; padding: 4px 8px; border-radius: 3px');
-      console.log('   Mapa resueltos:', mapa);
+      devLog('%c🔔 TICKETS RESUELTOS POR SOLICITUD', 'color: #00aa00; font-weight: bold; font-size: 12px; background: #e0ffe0; padding: 4px 8px; border-radius: 3px');
+      devLog('   Mapa resueltos:', mapa);
       setTicketsResueltosPorId(mapa || {});
     } catch (error) {
-      console.error('⚠️ Error al cargar tickets resueltos:', error);
+      devError('⚠️ Error al cargar tickets resueltos:', error);
     }
   };
 
@@ -770,12 +799,12 @@ export default function MisPacientes() {
     const cargarInfoMedico = async () => {
       try {
         const info = await gestionPacientesService.obtenerInfoMedicoActual();
-        console.log('%c✅ v1.78.0 - DOCTOR INFO CARGADA', 'color: #00aa00; font-weight: bold; font-size: 12px; background: #e0ffe0; padding: 6px 8px; border-radius: 3px');
-        console.log(info);
+        devLog('%c✅ v1.78.0 - DOCTOR INFO CARGADA', 'color: #00aa00; font-weight: bold; font-size: 12px; background: #e0ffe0; padding: 6px 8px; border-radius: 3px');
+        devLog(info);
         setDoctorInfo(info);
         if (info?.idPersonal) cargarTicketsMedico(info.idPersonal);
       } catch (error) {
-        console.error('%c❌ v1.78.0 - ERROR AL CARGAR DOCTOR INFO', 'color: #ff0000; font-weight: bold; font-size: 12px; background: #ffe0e0; padding: 6px 8px; border-radius: 3px', error);
+        devError('%c❌ v1.78.0 - ERROR AL CARGAR DOCTOR INFO', 'color: #ff0000; font-weight: bold; font-size: 12px; background: #ffe0e0; padding: 6px 8px; border-radius: 3px', error);
       }
     };
     cargarInfoMedico();
@@ -793,20 +822,27 @@ export default function MisPacientes() {
       .then(data => {
         if (Array.isArray(data)) setMotivosInterconsulta(data);
       })
-      .catch(err => console.error('Error cargando motivos interconsulta:', err));
+      .catch(err => devError('Error cargando motivos interconsulta:', err));
   }, [esEnfermeria]);
+
+  // Cargar motivos de deserción desde BD
+  useEffect(() => {
+    motivosDesercionService.obtenerActivos()
+      .then(data => { if (Array.isArray(data) && data.length > 0) setMotivosDesercion(data); })
+      .catch(() => {}); // fallback: se queda en [] y el select usa las opciones estáticas de respaldo
+  }, []);
 
   // ✅ v1.104.0: Cargar pacientes con timeout - no esperar indefinidamente si especialidades falla
   useEffect(() => {
     const timer = setTimeout(() => {
-      console.log('✅ v1.104.0: Cargando pacientes (timeout de especialidades)...');
+      devLog('✅ v1.104.0: Cargando pacientes (timeout de especialidades)...');
       cargarPacientes();
     }, 1000);
 
     // Si especialidades carga antes del timeout, cargar de inmediato
     if (especialidades.length > 0) {
       clearTimeout(timer);
-      console.log('✅ v1.78.0: Especialidades cargadas, ahora cargando pacientes...');
+      devLog('✅ v1.78.0: Especialidades cargadas, ahora cargando pacientes...');
       cargarPacientes();
     }
 
@@ -816,7 +852,7 @@ export default function MisPacientes() {
   // ✅ v1.78.0: Cargar ECGs cuando se detecta que es cardiólogo
   useEffect(() => {
     if (esCardiologo && pacientes.length > 0) {
-      console.log('✅ v1.78.0: Cargando conteos de ECG para cardiólogo...');
+      devLog('✅ v1.78.0: Cargando conteos de ECG para cardiólogo...');
       cargarConteosECG(pacientes);
       // ✅ v1.80.0: Cargar estados de evaluación de ECGs
       cargarEstadosEvaluacion(pacientes);
@@ -828,10 +864,10 @@ export default function MisPacientes() {
       const data = await obtenerEspecialidadesActivasCenate();
       const sorted = Array.isArray(data) ? [...data].sort((a, b) => a.descServicio.localeCompare(b.descServicio, 'es')) : [];
       setEspecialidades(sorted);
-      console.log('%c✅ ESPECIALIDADES CENATE CARGADAS', 'color: #00aa00; font-weight: bold; font-size: 12px; background: #e0ffe0; padding: 6px 8px; border-radius: 3px');
-      console.table(sorted);
+      devLog('%c✅ ESPECIALIDADES CENATE CARGADAS', 'color: #00aa00; font-weight: bold; font-size: 12px; background: #e0ffe0; padding: 6px 8px; border-radius: 3px');
+      devLog(sorted);
     } catch (error) {
-      console.error('Error cargando especialidades CENATE:', error);
+      devError('Error cargando especialidades CENATE:', error);
     }
   };
 
@@ -862,7 +898,7 @@ export default function MisPacientes() {
           })));
         }
       } catch (error) {
-        console.error('Error cargando IPRESS:', error);
+        devError('Error cargando IPRESS:', error);
         // Fallback en caso de error
         const ipressUnicos = [...new Set(
           pacientes.map(p => p.ipress).filter(i => i && i !== '-')
@@ -935,18 +971,18 @@ export default function MisPacientes() {
 
           if (especialidadEncontrada?.descServicio) {
             especialidadDetectada = detectSpecialtyByKeywords(especialidadEncontrada.descServicio);
-            console.log('✅ v1.78.0: Especialidad encontrada en backend:', especialidadEncontrada.descServicio);
-            console.log('✅ v1.78.0: Especialidad mapeada a:', especialidadDetectada);
+            devLog('✅ v1.78.0: Especialidad encontrada en backend:', especialidadEncontrada.descServicio);
+            devLog('✅ v1.78.0: Especialidad mapeada a:', especialidadDetectada);
 
             if (especialidadDetectada) {
               setUserSpecialty(especialidadDetectada);
-              console.log('%c✅ v1.78.0 - SISTEMA DE ESPECIALIDADES ACTIVADO', 'color: #00aa00; font-weight: bold; font-size: 12px; background: #e0ffe0; padding: 6px 8px; border-radius: 3px');
-              console.log('  • Especialidad: %c' + especialidadDetectada, 'color: #ff6600; font-weight: bold');
+              devLog('%c✅ v1.78.0 - SISTEMA DE ESPECIALIDADES ACTIVADO', 'color: #00aa00; font-weight: bold; font-size: 12px; background: #e0ffe0; padding: 6px 8px; border-radius: 3px');
+              devLog('  • Especialidad: %c' + especialidadDetectada, 'color: #ff6600; font-weight: bold');
             }
           } else {
-            console.warn('%c⚠️ v1.78.0 - NO SE ENCONTRÓ ESPECIALIDAD CON ID', 'color: #ff6600; font-weight: bold; font-size: 12px; background: #ffe0cc; padding: 6px 8px; border-radius: 3px');
-            console.warn('  • ID buscado: %c' + especIdMedico, 'color: #ff6600; font-weight: bold');
-            console.warn('  • IDs disponibles: %c' + especialidades.map(e => e.id).join(', '), 'color: #ff6600; font-weight: bold');
+            devWarn('%c⚠️ v1.78.0 - NO SE ENCONTRÓ ESPECIALIDAD CON ID', 'color: #ff6600; font-weight: bold; font-size: 12px; background: #ffe0cc; padding: 6px 8px; border-radius: 3px');
+            devWarn('  • ID buscado: %c' + especIdMedico, 'color: #ff6600; font-weight: bold');
+            devWarn('  • IDs disponibles: %c' + especialidades.map(e => e.id).join(', '), 'color: #ff6600; font-weight: bold');
           }
         }
       }
@@ -960,7 +996,7 @@ export default function MisPacientes() {
         cargarFechasTomaEKG(data);
       }
     } catch (error) {
-      console.error('%c❌ ERROR AL CARGAR PACIENTES', 'color: #ff0000; font-weight: bold; font-size: 12px; background: #ffe0e0; padding: 6px 8px; border-radius: 3px', error);
+      devError('%c❌ ERROR AL CARGAR PACIENTES', 'color: #ff0000; font-weight: bold; font-size: 12px; background: #ffe0e0; padding: 6px 8px; border-radius: 3px', error);
       toast.error('Error al cargar pacientes');
       setPacientes([]);
     } finally {
@@ -971,9 +1007,9 @@ export default function MisPacientes() {
   // ✅ v1.80.5: Cargar fechas de toma EKG desde endpoint separado (transacción separada)
   const cargarFechasTomaEKG = async (pacientesActuales) => {
     try {
-      console.log('%c🫀 v1.80.5 - CARGANDO FECHAS DE TOMA EKG', 'color: #ff3366; font-weight: bold; font-size: 12px; background: #ffe0e6; padding: 6px 8px; border-radius: 3px');
+      devLog('%c🫀 v1.80.5 - CARGANDO FECHAS DE TOMA EKG', 'color: #ff3366; font-weight: bold; font-size: 12px; background: #ffe0e6; padding: 6px 8px; border-radius: 3px');
       const dnis = [...new Set(pacientesActuales.map(p => p.numDoc).filter(Boolean))];
-      console.log(`  • Total pacientes: %c${dnis.length}`, 'color: #ff3366; font-weight: bold');
+      devLog(`  • Total pacientes: %c${dnis.length}`, 'color: #ff3366; font-weight: bold');
       if (dnis.length === 0) return;
 
       // Procesar en chunks de 10 para no saturar el backend
@@ -990,15 +1026,15 @@ export default function MisPacientes() {
           chunk.map(async (dni) => {
             try {
               const datosEKG = await gestionPacientesService.obtenerDatosEKGPaciente(dni);
-              console.log(`%c📅 [EKG ${dni}]%c Respuesta:`, 'color: #ff3366; font-weight: bold', 'color: #666666', datosEKG);
+              devLog(`%c📅 [EKG ${dni}]%c Respuesta:`, 'color: #ff3366; font-weight: bold', 'color: #666666', datosEKG);
 
               // Siempre actualizar, aunque sea null
               if (datosEKG) {
                 updates[dni] = datosEKG.fechaTomaEKG;
-                console.log(`%c✅ [EKG ${dni}]%c Fecha:`, 'color: #00aa00; font-weight: bold', 'color: #666666', datosEKG.fechaTomaEKG);
+                devLog(`%c✅ [EKG ${dni}]%c Fecha:`, 'color: #00aa00; font-weight: bold', 'color: #666666', datosEKG.fechaTomaEKG);
               }
             } catch (error) {
-              console.warn(`%c❌ [EKG ${dni}]%c Error:`, 'color: #ff6600; font-weight: bold', 'color: #666666', error.message);
+              devWarn(`%c❌ [EKG ${dni}]%c Error:`, 'color: #ff6600; font-weight: bold', 'color: #666666', error.message);
               updates[dni] = null;
             }
           })
@@ -1014,17 +1050,17 @@ export default function MisPacientes() {
       });
 
       setPacientes(pacientesActualizados);
-      console.log('%c✅ FECHAS EKG CARGADAS', 'color: #00aa00; font-weight: bold; font-size: 12px; background: #e0ffe0; padding: 6px 8px; border-radius: 3px');
-      console.log(updates);
+      devLog('%c✅ FECHAS EKG CARGADAS', 'color: #00aa00; font-weight: bold; font-size: 12px; background: #e0ffe0; padding: 6px 8px; border-radius: 3px');
+      devLog(updates);
     } catch (error) {
-      console.error('%c❌ ERROR CARGANDO FECHAS EKG', 'color: #ff0000; font-weight: bold; font-size: 12px; background: #ffe0e0; padding: 6px 8px; border-radius: 3px', error);
+      devError('%c❌ ERROR CARGANDO FECHAS EKG', 'color: #ff0000; font-weight: bold; font-size: 12px; background: #ffe0e0; padding: 6px 8px; border-radius: 3px', error);
     }
   };
 
   // ✅ v1.66.0: Cargar conteos de ECG para todos los pacientes (en lotes de 10)
   const cargarConteosECG = async (pacientesActuales) => {
     try {
-      console.log('%c🚀 v1.89.8 - CARGANDO CONTEOS ECG (BATCH)', 'color: #ff3366; font-weight: bold; font-size: 12px; background: #ffe0e6; padding: 6px 8px; border-radius: 3px');
+      devLog('%c🚀 v1.89.8 - CARGANDO CONTEOS ECG (BATCH)', 'color: #ff3366; font-weight: bold; font-size: 12px; background: #ffe0e6; padding: 6px 8px; border-radius: 3px');
       const startTime = performance.now();
 
       // ✅ v1.89.8: BATCH endpoint - UNA sola llamada en lugar de 21
@@ -1039,19 +1075,19 @@ export default function MisPacientes() {
 
       const endTime = performance.now();
       const tiempoMs = (endTime - startTime).toFixed(0);
-      console.log('%c✅ CONTEOS ECG CARGADOS', 'color: #00aa00; font-weight: bold; font-size: 12px; background: #e0ffe0; padding: 6px 8px; border-radius: 3px');
-      console.log(`  • Tiempo: %c${tiempoMs}ms`, 'color: #ff6600; font-weight: bold');
-      console.log(`  • Total pacientes: %c${Object.keys(counts).length}`, 'color: #ff6600; font-weight: bold');
-      console.table(counts);
+      devLog('%c✅ CONTEOS ECG CARGADOS', 'color: #00aa00; font-weight: bold; font-size: 12px; background: #e0ffe0; padding: 6px 8px; border-radius: 3px');
+      devLog(`  • Tiempo: %c${tiempoMs}ms`, 'color: #ff6600; font-weight: bold');
+      devLog(`  • Total pacientes: %c${Object.keys(counts).length}`, 'color: #ff6600; font-weight: bold');
+      devLog(counts);
     } catch (error) {
-      console.error('%c❌ ERROR CARGANDO CONTEOS ECG', 'color: #ff0000; font-weight: bold; font-size: 12px; background: #ffe0e0; padding: 6px 8px; border-radius: 3px', error);
+      devError('%c❌ ERROR CARGANDO CONTEOS ECG', 'color: #ff0000; font-weight: bold; font-size: 12px; background: #ffe0e0; padding: 6px 8px; border-radius: 3px', error);
     }
   };
 
   // ✅ v1.92.0: Cargar estados de evaluación ECG + detectar rechazos (en background, sin bloquear UI)
   const cargarEstadosEvaluacion = async (pacientesActuales) => {
     try {
-      console.log('%c🚀 v1.89.8 - CARGANDO ESTADOS DE EVALUACIÓN ECG (BATCH)', 'color: #ff3366; font-weight: bold; font-size: 12px; background: #ffe0e6; padding: 6px 8px; border-radius: 3px');
+      devLog('%c🚀 v1.89.8 - CARGANDO ESTADOS DE EVALUACIÓN ECG (BATCH)', 'color: #ff3366; font-weight: bold; font-size: 12px; background: #ffe0e6; padding: 6px 8px; border-radius: 3px');
       const startTime = performance.now();
 
       const estados = {};
@@ -1065,9 +1101,9 @@ export default function MisPacientes() {
 
         if (imagenes && Array.isArray(imagenes)) {
           // ✅ DEBUG: Loguear imágenes recibidas
-          console.log(`%c📸 [DNI ${dni}]%c ${imagenes.length} imagen(es) encontrada(s)`, 'color: #0066cc; font-weight: bold', 'color: #666666');
+          devLog(`%c📸 [DNI ${dni}]%c ${imagenes.length} imagen(es) encontrada(s)`, 'color: #0066cc; font-weight: bold', 'color: #666666');
           imagenes.forEach((img, idx) => {
-            console.log(`  ${idx + 1}. ID: %c${img.idImagen || img.id_imagen}%c | Estado: %c${img.estado}%c | Evaluación: %c${img.evaluacion || 'PENDIENTE'}`, 
+            devLog(`  ${idx + 1}. ID: %c${img.idImagen || img.id_imagen}%c | Estado: %c${img.estado}%c | Evaluación: %c${img.evaluacion || 'PENDIENTE'}`, 
               'color: #00aa00; font-weight: bold',
               'color: #666666',
               'color: ' + (img.estado === 'OBSERVADA' ? '#ff6600' : '#0066cc') + '; font-weight: bold',
@@ -1089,7 +1125,7 @@ export default function MisPacientes() {
                 fecha: img.fechaEnvio || img.fecha_envio || ''
               }))
             };
-            console.log(`%c⚠️ [RECHAZADAS] DNI ${dni}%c tiene ${imagenesRechazadas.length} imagen(es) rechazada(s)`, 'color: #ff6600; font-weight: bold', 'color: #666666');
+            devLog(`%c⚠️ [RECHAZADAS] DNI ${dni}%c tiene ${imagenesRechazadas.length} imagen(es) rechazada(s)`, 'color: #ff6600; font-weight: bold', 'color: #666666');
           }
 
           // ✅ v1.92.1: FILTRO MEJORADO - Más explícito y robusto
@@ -1105,11 +1141,11 @@ export default function MisPacientes() {
             return isEvaluated;
           });
 
-          console.log(`%c📊 [RESUMEN]%c DNI ${dni}: ${evaluadas.length}/${imagenes.length} evaluadas`, 'color: #0066cc; font-weight: bold', 'color: #666666');
+          devLog(`%c📊 [RESUMEN]%c DNI ${dni}: ${evaluadas.length}/${imagenes.length} evaluadas`, 'color: #0066cc; font-weight: bold', 'color: #666666');
 
           if (evaluadas.length > 0) {
             const ultima = evaluadas[evaluadas.length - 1];
-            console.log(`  %c✅ Última evaluación: %c${ultima.evaluacion}`, 'color: #00aa00; font-weight: bold', 'color: #666666');
+            devLog(`  %c✅ Última evaluación: %c${ultima.evaluacion}`, 'color: #00aa00; font-weight: bold', 'color: #666666');
             estados[dni] = {
               estado: 'EVALUADO',
               datos: {
@@ -1121,7 +1157,7 @@ export default function MisPacientes() {
               }
             };
           } else {
-            console.log(`⚠️ [DEBUG] DNI ${dni} - NO tiene evaluación (PENDIENTE). Valores de evaluacion encontrados:`, imagenes.map(i => i.evaluacion));
+            devLog(`⚠️ [DEBUG] DNI ${dni} - NO tiene evaluación (PENDIENTE). Valores de evaluacion encontrados:`, imagenes.map(i => i.evaluacion));
             estados[dni] = { estado: 'PENDIENTE' };
           }
         } else {
@@ -1134,9 +1170,9 @@ export default function MisPacientes() {
 
       const endTime = performance.now();
       const tiempoMs = (endTime - startTime).toFixed(0);
-      console.log(`✅ [v1.89.8] Estados cargados en ${tiempoMs}ms - Total pacientes con estados:`, Object.keys(estados).length);
+      devLog(`✅ [v1.89.8] Estados cargados en ${tiempoMs}ms - Total pacientes con estados:`, Object.keys(estados).length);
     } catch (error) {
-      console.error('❌ [v1.89.8] Error cargando estados evaluación:', error);
+      devError('❌ [v1.89.8] Error cargando estados evaluación:', error);
     }
   };
 
@@ -1342,7 +1378,7 @@ export default function MisPacientes() {
 
       return `${String(d).padStart(2, '0')}/${String(mo).padStart(2, '0')}/${y}, ${String(h12).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')} ${meridiem}`;
     } catch (e) {
-      console.error('Error formateando fecha:', fecha, e);
+      devError('Error formateando fecha:', fecha, e);
       return '-';
     }
   };
@@ -1382,7 +1418,7 @@ export default function MisPacientes() {
       // Retornar solo la fecha en formato DD/MM/YY
       return `${String(d).padStart(2, '0')}/${String(mo).padStart(2, '0')}/${String(y).slice(-2)}`;
     } catch (e) {
-      console.error('Error formateando solo fecha:', fecha, e);
+      devError('Error formateando solo fecha:', fecha, e);
       return '-';
     }
   };
@@ -1446,7 +1482,7 @@ export default function MisPacientes() {
         return `${String(d).padStart(2, '0')}/${String(mo).padStart(2, '0')}/${String(y).slice(-2)} ${horaFormato} ${meridiem}`;
       }
     } catch (e) {
-      console.error('Error formateando fecha humanizada:', fecha, e);
+      devError('Error formateando fecha humanizada:', fecha, e);
       return '-';
     }
   };
@@ -1612,16 +1648,24 @@ export default function MisPacientes() {
     return colores[condicion] || 'bg-gray-100 text-gray-700 border-gray-200';
   };
 
-  const abrirBajaCenacron = (paciente) => {
+  const abrirBajaCenacron = async (paciente) => {
     setPacienteBajaCenacron(paciente);
     setBajaTipo('PROGRAMA_COMPLETO');
     setBajaMotivo('');
+    setBajaMotivoSearch('');
+    setShowMotivosDropdown(false);
     setShowBajaCenacronModal(true);
+    try {
+      const motivos = await motivosBajaCenacronService.obtenerTodos();
+      setMotivosBajaCatalogo(motivos);
+    } catch {
+      setMotivosBajaCatalogo([]);
+    }
   };
 
   const confirmarBajaCenacron = async () => {
-    if (!bajaMotivo.trim() || bajaMotivo.trim().length < 5) {
-      toast.error('Debe ingresar un motivo de baja (mínimo 5 caracteres)');
+    if (!bajaMotivo.trim()) {
+      toast.error('Debe seleccionar un motivo de baja');
       return;
     }
     if (!pacienteBajaCenacron?.pkAsegurado) {
@@ -1639,6 +1683,7 @@ export default function MisPacientes() {
       setShowBajaCenacronModal(false);
       setPacienteBajaCenacron(null);
       setBajaMotivo('');
+      setBajaMotivoSearch('');
       // Refrescar lista de pacientes
       cargarPacientes();
     } catch (err) {
@@ -1679,6 +1724,7 @@ export default function MisPacientes() {
     setModalAccion('cambiarEstado');
     setEstadoSeleccionado(paciente?.condicion || 'Pendiente'); // Preseleccionar estado actual
     setRazonDesercion('');
+    setBusquedaDesercion('');
     setNotasAccion('');
     // Pre-cargar enfermedades crónicas existentes del paciente
     const enfermedadesExistentes = paciente?.enfermedadCronica || [];
@@ -1691,6 +1737,30 @@ export default function MisPacientes() {
       setEsCronico(false);
       setExpandCronico(false);
       setEnfermedadesCronicas([]);
+    }
+
+    // ✅ v1.85.0: Restaurar borrador guardado (solo si el paciente NO está ya Atendido)
+    if (paciente?.condicion !== 'Atendido') {
+      const key = `cenate_atencion_draft_${paciente.idSolicitudBolsa || paciente.idGestion}`;
+      const savedDraft = localStorage.getItem(key);
+      if (savedDraft) {
+        try {
+          const draft = JSON.parse(savedDraft);
+          setTieneRecita(draft.tieneRecita ?? false);
+          setRecitaDias(draft.recitaDias ?? 15);
+          setTieneInterconsulta(draft.tieneInterconsulta ?? false);
+          setInterconsultasLista(draft.interconsultasLista ?? []);
+          if (!(draft.esCronico) && enfermedadesExistentes.length === 0) {
+            setEsCronico(draft.esCronico ?? false);
+            setEnfermedadesCronicas(draft.enfermedadesCronicas ?? []);
+          }
+          if (draft.tieneRecita) setExpandRecita(true);
+          if (draft.tieneInterconsulta) setExpandInterconsulta(true);
+          if (draft.esCronico) setExpandCronico(true);
+          setEstadoSeleccionado('Atendido');
+          setDraftRestaurado(true); // muestra banner dentro del modal
+        } catch (_) { /* ignorar borrador corrupto */ }
+      }
     }
   };
 
@@ -1758,7 +1828,7 @@ export default function MisPacientes() {
               ...preview,
             };
           } catch (error) {
-            console.error('Error cargando preview para imagen:', error);
+            devError('Error cargando preview para imagen:', error);
             // Retornar la imagen sin contenido en lugar de fallar
             return ecg;
           }
@@ -1785,12 +1855,12 @@ export default function MisPacientes() {
         },
       };
 
-      console.log('📋 [DEBUG] Datos para modal:', ecgParaModal);
+      devLog('📋 [DEBUG] Datos para modal:', ecgParaModal);
       setEcgActual(ecgParaModal);
       setCargandoECG(false);
 
     } catch (error) {
-      console.error('Error cargando ECG:', error);
+      devError('Error cargando ECG:', error);
       toast.error('Error al cargar las imágenes ECG');
       setCargandoECG(false);
       setShowECGModal(false);
@@ -1800,7 +1870,7 @@ export default function MisPacientes() {
   // ✅ v1.66.1: Manejar confirmación de evaluación de ECG
   const manejarConfirmacionECG = async (tipoEvaluacion, evaluacionCompleta, idImagen, contextoMedico) => {
     try {
-      console.log('✅ Evaluación ECG confirmada:', {tipoEvaluacion, idImagen, contextoMedico});
+      devLog('✅ Evaluación ECG confirmada:', {tipoEvaluacion, idImagen, contextoMedico});
 
       // ✅ v1.80.2: Guardar evaluación en backend usando API
       // El endpoint espera: PUT /teleekgs/{idImagen}/evaluar
@@ -1822,12 +1892,12 @@ export default function MisPacientes() {
         descripcion: descripcionCompleta
       };
 
-      console.log('📤 Enviando evaluación COMPLETA al backend:', payload);
+      devLog('📤 Enviando evaluación COMPLETA al backend:', payload);
 
       // Llamar al API para guardar evaluación
       const response = await teleecgService.evaluarImagen(idImagen, tipoEvaluacion, descripcionCompleta);
 
-      console.log('✅ Respuesta del backend:', response);
+      devLog('✅ Respuesta del backend:', response);
 
       toast.success('✅ Evaluación guardada correctamente en el backend');
 
@@ -1838,7 +1908,7 @@ export default function MisPacientes() {
       // ✅ v1.86.2: Recargar datos para mostrar estetoscopio azul actualizado
       cargarPacientes();
     } catch (error) {
-      console.error('❌ Error guardando evaluación:', error);
+      devError('❌ Error guardando evaluación:', error);
       toast.error('❌ Error al guardar la evaluación: ' + (error.message || 'Error desconocido'));
     }
   };
@@ -1872,7 +1942,7 @@ export default function MisPacientes() {
       // Si no, usar idGestion (pacientes de gestion_paciente)
       const idParaActualizar = pacienteSeleccionado.idSolicitudBolsa || pacienteSeleccionado.idGestion;
 
-      console.log('🔍 [DEBUG] Actualizando condición:', {
+      devLog('🔍 [DEBUG] Actualizando condición:', {
         idSolicitudBolsa: pacienteSeleccionado.idSolicitudBolsa,
         idGestion: pacienteSeleccionado.idGestion,
         idParaActualizar,
@@ -1900,8 +1970,9 @@ export default function MisPacientes() {
       setPacienteSeleccionado(null);
       setEstadoSeleccionado('Pendiente');
       setRazonDesercion('');
+      setBusquedaDesercion('');
     } catch (error) {
-      console.error('Error procesando acción:', error);
+      devError('Error procesando acción:', error);
       toast.error('Error al cambiar estado. Intenta nuevamente.');
     } finally {
       setProcesando(false);
@@ -1961,7 +2032,7 @@ export default function MisPacientes() {
         })
       };
 
-      console.log('🏥 [v1.74.0] Registrando atención:', payload);
+      devLog('🏥 [v1.74.0] Registrando atención:', payload);
 
       // 1️⃣ Registrar atención médica
       const atencionResp = await gestionPacientesService.atenderPaciente(idParaAtender, payload);
@@ -1993,6 +2064,10 @@ export default function MisPacientes() {
       );
 
       toast.success('✅ Atención registrada correctamente');
+
+      // ✅ v1.85.0: Borrar borrador al confirmar exitosamente
+      const keyDraft = `cenate_atencion_draft_${idParaAtender}`;
+      localStorage.removeItem(keyDraft);
 
       // 4️⃣ Cerrar modales
       setModalAccion(null);
@@ -2030,7 +2105,7 @@ export default function MisPacientes() {
       setGlucosa('');
       setShowFichaEnfermeriaModal(false);
     } catch (error) {
-      console.error('Error registrando atención:', error);
+      devError('Error registrando atención:', error);
       toast.error('Error al registrar atención. Intenta nuevamente.');
     } finally {
       setProcesando(false);
@@ -2051,7 +2126,7 @@ export default function MisPacientes() {
       setPacienteEditando(null);
       cargarPacientes();
     } catch (error) {
-      console.error('Error al actualizar consentimiento:', error);
+      devError('Error al actualizar consentimiento:', error);
       toast.error('Error al actualizar consentimiento');
     } finally {
       setProcesando(false);
@@ -2072,7 +2147,7 @@ export default function MisPacientes() {
       setPacienteEditando(null);
       cargarPacientes();
     } catch (error) {
-      console.error('Error al actualizar tiempo síntomas:', error);
+      devError('Error al actualizar tiempo síntomas:', error);
       toast.error('Error al actualizar tiempo de síntomas');
     } finally {
       setProcesando(false);
@@ -2087,7 +2162,7 @@ export default function MisPacientes() {
     // 1️⃣ Aplicar filtro de estado si existe
     if (filtroEstado) {
       pacientesAFiltrar = pacientesAFiltrar.filter(p => p.condicion === filtroEstado);
-      console.log(`✅ Filtrado por estado "${filtroEstado}": ${pacientesAFiltrar.length} pacientes`);
+      devLog(`✅ Filtrado por estado "${filtroEstado}": ${pacientesAFiltrar.length} pacientes`);
     }
 
     // 2️⃣ Obtener SOLO fechas de pacientes que tienen fechaAtencion
@@ -2100,7 +2175,7 @@ export default function MisPacientes() {
         })
     )].sort().reverse(); // Ordenar descendente (más recientes primero)
 
-    console.log(`📅 Fechas de atención disponibles para estado "${filtroEstado || 'TODOS'}": ${fechas.length} fechas`, fechas);
+    devLog(`📅 Fechas de atención disponibles para estado "${filtroEstado || 'TODOS'}": ${fechas.length} fechas`, fechas);
     return fechas;
   };
 
@@ -3059,9 +3134,9 @@ export default function MisPacientes() {
                               // ✅ v1.67.0: Verificar si ya existen tickets para este paciente
                               try {
                                 const tickets = await mesaAyudaService.obtenerPorSolicitudBolsa(paciente.idSolicitudBolsa);
-                                console.log(`%c✅ TICKETS EXISTENTES para idSolicitudBolsa ${paciente.idSolicitudBolsa}`, 'color: #00aa00; font-weight: bold; font-size: 12px; background: #e0ffe0; padding: 6px 8px; border-radius: 3px');
-                                console.log(`  • Total: ${Array.isArray(tickets) ? tickets.length : 0}`, 'color: #00aa00; font-weight: bold');
-                                console.table(tickets);
+                                devLog(`%c✅ TICKETS EXISTENTES para idSolicitudBolsa ${paciente.idSolicitudBolsa}`, 'color: #00aa00; font-weight: bold; font-size: 12px; background: #e0ffe0; padding: 6px 8px; border-radius: 3px');
+                                devLog(`  • Total: ${Array.isArray(tickets) ? tickets.length : 0}`, 'color: #00aa00; font-weight: bold');
+                                devLog(tickets);
 
                                 if (Array.isArray(tickets) && tickets.length > 0) {
                                   // Si existen tickets, mostrar modal de tickets existentes
@@ -3072,7 +3147,7 @@ export default function MisPacientes() {
                                   setShowTicketModal(true);
                                 }
                               } catch (error) {
-                                console.error(`%c❌ Error verificando tickets`, 'color: #ff0000; font-weight: bold; font-size: 12px; background: #ffe0e0; padding: 6px 8px; border-radius: 3px', error);
+                                devError(`%c❌ Error verificando tickets`, 'color: #ff0000; font-weight: bold; font-size: 12px; background: #ffe0e0; padding: 6px 8px; border-radius: 3px', error);
                                 // Si hay error, permitir crear uno nuevo por defecto
                                 setShowTicketModal(true);
                               }
@@ -3103,7 +3178,7 @@ export default function MisPacientes() {
             <div className="relative px-6 py-5 bg-[#0A5BA9] rounded-t-lg">
               {/* Close Button X - En círculo con zona segura */}
               <button
-                onClick={() => setModalAccion(null)}
+                onClick={() => { setModalAccion(null); setDraftRestaurado(false); }}
                 className="absolute top-5 right-5 w-10 h-10 rounded-full bg-white/15 hover:bg-white/25 flex items-center justify-center transition-colors"
                 title="Cerrar"
               >
@@ -3126,8 +3201,44 @@ export default function MisPacientes() {
               </div>
             </div>
 
+            {/* ✅ v1.85.0: Banner "Solo lectura" cuando el paciente ya fue Atendido */}
+            {pacienteSeleccionado?.condicion === 'Atendido' && (
+              <div className="px-6 py-3 bg-green-50 border-b border-green-200 flex items-center gap-2">
+                <CheckCircle className="w-4 h-4 text-green-600 flex-shrink-0" />
+                <p className="text-sm text-green-800 font-medium">
+                  Este paciente ya fue atendido. La atención no puede modificarse.
+                </p>
+              </div>
+            )}
+
+            {/* ✅ v1.85.2: Banner "Borrador restaurado" — visible y descartable */}
+            {draftRestaurado && (
+              <div className="mx-6 mt-4 px-4 py-3 bg-blue-50 border border-blue-200 rounded-lg flex items-center gap-3">
+                <span className="text-lg flex-shrink-0">💾</span>
+                <div className="flex-1">
+                  <p className="text-sm font-semibold text-blue-800">Progreso anterior restaurado</p>
+                  <p className="text-xs text-blue-600 mt-0.5">Retomamos donde lo dejó. Revise los datos antes de confirmar.</p>
+                </div>
+                <button
+                  onClick={() => {
+                    setDraftRestaurado(false);
+                    setTieneRecita(false); setRecitaDias(15);
+                    setTieneInterconsulta(false); setInterconsultasLista([]);
+                    setExpandRecita(false); setExpandInterconsulta(false);
+                    if (pacienteSeleccionado) {
+                      const k = `cenate_atencion_draft_${pacienteSeleccionado.idSolicitudBolsa || pacienteSeleccionado.idGestion}`;
+                      localStorage.removeItem(k);
+                    }
+                  }}
+                  className="text-xs text-blue-500 hover:text-blue-700 underline flex-shrink-0 font-medium"
+                >
+                  Descartar
+                </button>
+              </div>
+            )}
+
             {/* Contenido Scrolleable - Más espacio blanco */}
-            <div className="flex-1 overflow-y-auto p-8 bg-white space-y-6">
+            <div className={`flex-1 overflow-y-auto p-8 bg-white space-y-6 ${pacienteSeleccionado?.condicion === 'Atendido' ? 'pointer-events-none opacity-75' : ''}`}>
               {/* Opción Atendido - DESTACADA */}
               <button
                 onClick={() => setEstadoSeleccionado('Atendido')}
@@ -3341,7 +3452,7 @@ export default function MisPacientes() {
                               >
                                 <option value="">Selecciona motivo...</option>
                                 {motivosInterconsulta.map(m => (
-                                  <option key={m.idMotivo} value={m.descripcion}>
+                                  <option key={m.id ?? m.idMotivo ?? m.descripcion} value={m.descripcion}>
                                     {m.descripcion}
                                   </option>
                                 ))}
@@ -3856,62 +3967,222 @@ export default function MisPacientes() {
                 </div>
               </button>
 
-                {/* Campo de razón para deserción */}
-                {estadoSeleccionado === 'Deserción' && (
-                  <div className="mt-6 ml-10 pt-6 border-t border-red-200">
-                    <label className="block text-sm font-medium text-gray-700 mb-3">Seleccione la razón:</label>
-                    <select
-                      value={razonDesercion}
-                      onChange={(e) => setRazonDesercion(e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-red-500 focus:border-red-500 text-sm"
-                    >
-                      <option value="">-- Seleccionar razón --</option>
-                      <optgroup label="Contacto">
-                        <option value="No contactado">No contactado</option>
-                        <option value="No contesta">No contesta</option>
-                        <option value="Número apagado">Número apagado</option>
-                        <option value="Número no existe">Número no existe</option>
-                        <option value="Número equivocado">Número equivocado</option>
-                      </optgroup>
-                      <optgroup label="Rechazo">
-                        <option value="Paciente rechazó">Paciente rechazó</option>
-                        <option value="No desea atención">No desea atención</option>
-                      </optgroup>
-                      <optgroup label="Condición Médica">
-                        <option value="Paciente internado">Paciente internado</option>
-                        <option value="Paciente fallecido">Paciente fallecido</option>
-                        <option value="Examen pendiente">Examen pendiente</option>
-                      </optgroup>
-                      <optgroup label="Otro">
-                        <option value="Otro">Otro</option>
-                      </optgroup>
-                    </select>
-                  </div>
-                )}
+                {/* Campo de razón para deserción — combobox con búsqueda */}
+                {estadoSeleccionado === 'Deserción' && (() => {
+                  const FALLBACK = [
+                    { id: 'f1', descripcion: 'No contactado',     categoria: 'Contacto'        },
+                    { id: 'f2', descripcion: 'No contesta',       categoria: 'Contacto'        },
+                    { id: 'f3', descripcion: 'Número apagado',    categoria: 'Contacto'        },
+                    { id: 'f4', descripcion: 'Número no existe',  categoria: 'Contacto'        },
+                    { id: 'f5', descripcion: 'Número equivocado', categoria: 'Contacto'        },
+                    { id: 'f6', descripcion: 'Paciente rechazó',  categoria: 'Rechazo'         },
+                    { id: 'f7', descripcion: 'No desea atención', categoria: 'Rechazo'         },
+                    { id: 'f8', descripcion: 'Paciente internado',categoria: 'Condición Médica'},
+                    { id: 'f9', descripcion: 'Paciente fallecido',categoria: 'Condición Médica'},
+                    { id: 'f10',descripcion: 'Examen pendiente',  categoria: 'Condición Médica'},
+                    { id: 'f11',descripcion: 'Otro',              categoria: 'Otro'            },
+                  ];
+                  const lista  = motivosDesercion.length > 0 ? motivosDesercion : FALLBACK;
+                  const filtro = busquedaDesercion.toLowerCase().trim();
+                  const filtrados = filtro
+                    ? lista.filter(m => m.descripcion.toLowerCase().includes(filtro) || (m.categoria || '').toLowerCase().includes(filtro))
+                    : lista;
+
+                  const grupos = filtrados.reduce((acc, m) => {
+                    const cat = m.categoria || 'Otro';
+                    if (!acc[cat]) acc[cat] = [];
+                    acc[cat].push(m);
+                    return acc;
+                  }, {});
+
+                  return (
+                    <div className="mt-6 ml-10 pt-6 border-t border-red-200">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Seleccione la razón:</label>
+                      <div className="relative">
+                        {/* Input de búsqueda */}
+                        <input
+                          ref={desercionInputRef}
+                          type="text"
+                          value={busquedaDesercion}
+                          onChange={(e) => {
+                            setBusquedaDesercion(e.target.value);
+                            setRazonDesercion('');
+                            setShowDesercionDropdown(true);
+                          }}
+                          onFocus={() => {
+                            if (desercionInputRef.current) {
+                              const rect = desercionInputRef.current.getBoundingClientRect();
+                              setDesercionDropdownStyle({
+                                position: 'fixed',
+                                top: rect.bottom + 4,
+                                left: rect.left,
+                                width: rect.width,
+                                zIndex: 99999,
+                              });
+                            }
+                            setShowDesercionDropdown(true);
+                          }}
+                          onBlur={() => setTimeout(() => setShowDesercionDropdown(false), 150)}
+                          placeholder="Buscar razón (ej: No contesta, internado...)"
+                          className={`w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-red-400 ${
+                            razonDesercion ? 'border-green-400 bg-green-50' : 'border-gray-300'
+                          }`}
+                        />
+                        {/* Indicador de seleccionado */}
+                        {razonDesercion && (
+                          <div className="mt-1 flex items-center gap-1 text-xs text-green-700 font-medium">
+                            <Check className="w-3.5 h-3.5" />
+                            <span>{razonDesercion}</span>
+                            <button
+                              type="button"
+                              onMouseDown={(e) => { e.preventDefault(); setRazonDesercion(''); setBusquedaDesercion(''); }}
+                              className="ml-1 text-gray-400 hover:text-red-500"
+                            >
+                              <X className="w-3 h-3" />
+                            </button>
+                          </div>
+                        )}
+                        {/* Dropdown con opciones filtradas — fixed para escapar overflow del modal */}
+                        {showDesercionDropdown && (
+                          <div style={desercionDropdownStyle} className="bg-white border border-gray-200 rounded-lg shadow-2xl max-h-52 overflow-y-auto">
+                            {Object.keys(grupos).length === 0 ? (
+                              <div className="px-4 py-3 text-sm text-gray-500 text-center">Sin resultados para "{busquedaDesercion}"</div>
+                            ) : (
+                              Object.entries(grupos).map(([cat, items]) => (
+                                <div key={cat}>
+                                  <div className="px-3 py-1.5 text-xs font-bold text-gray-400 uppercase tracking-wide bg-gray-50 border-b border-gray-100">
+                                    {cat}
+                                  </div>
+                                  {items.map(m => (
+                                    <button
+                                      key={m.id}
+                                      type="button"
+                                      onMouseDown={(e) => {
+                                        e.preventDefault();
+                                        setRazonDesercion(m.descripcion);
+                                        setBusquedaDesercion(m.descripcion);
+                                        setShowDesercionDropdown(false);
+                                      }}
+                                      className={`w-full text-left px-4 py-2 text-sm transition-colors ${
+                                        razonDesercion === m.descripcion
+                                          ? 'bg-red-50 text-red-700 font-semibold'
+                                          : 'text-gray-700 hover:bg-red-50 hover:text-red-700'
+                                      }`}
+                                    >
+                                      {m.descripcion}
+                                    </button>
+                                  ))}
+                                </div>
+                              ))
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })()}
             </div>
 
             {/* Footer Fijo con Botones */}
-            <div className="border-t border-gray-200 p-6 bg-white flex gap-3 justify-end rounded-b-lg">
+            <div className="border-t border-gray-200 p-6 bg-white flex items-center gap-3 rounded-b-lg">
+              {/* ✅ v1.85.2: Indicador "Guardado" auto-save */}
+              <div className={`flex items-center gap-1.5 mr-auto transition-all duration-300 ${draftGuardado && estadoSeleccionado === 'Atendido' ? 'opacity-100' : 'opacity-0'}`}>
+                <span className="text-sm">💾</span>
+                <span className="text-xs text-gray-500 font-medium">Guardado automáticamente</span>
+              </div>
               <button
-                onClick={() => setModalAccion(null)}
+                onClick={() => { setModalAccion(null); setDraftRestaurado(false); }}
                 disabled={procesando}
                 className="px-5 py-2.5 text-gray-700 border-2 border-gray-300 rounded-lg hover:bg-gray-100 hover:border-gray-400 transition disabled:opacity-50 font-semibold text-sm"
               >
-                Cancelar
+                {pacienteSeleccionado?.condicion === 'Atendido' ? 'Cerrar' : 'Cancelar'}
+              </button>
+              {pacienteSeleccionado?.condicion !== 'Atendido' && (
+                <button
+                  onClick={() => {
+                    if (estadoSeleccionado === 'Atendido') {
+                      setShowConfirmacionFinal(true);
+                    } else {
+                      procesarAccion();
+                    }
+                  }}
+                  disabled={procesando}
+                  className="px-6 py-2.5 bg-[#0A5BA9] text-white rounded-lg hover:bg-[#083d78] transition disabled:opacity-50 font-semibold text-sm flex items-center justify-center gap-2 shadow-sm"
+                >
+                  {procesando ? (
+                    <>
+                      <Loader className="w-4 h-4 animate-spin" />
+                      Procesando...
+                    </>
+                  ) : (
+                    '✓ Confirmar'
+                  )}
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ✅ v1.85.1: Diálogo de confirmación final — aviso irreversible */}
+      {showConfirmacionFinal && pacienteSeleccionado && (
+        <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-[60] p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden">
+            {/* Cabecera con icono */}
+            <div className="bg-amber-50 border-b border-amber-200 px-6 py-5 flex items-start gap-4">
+              <div className="w-12 h-12 rounded-full bg-amber-100 flex items-center justify-center flex-shrink-0">
+                <AlertTriangle className="w-6 h-6 text-amber-600" />
+              </div>
+              <div>
+                <p className="text-base font-bold text-gray-900">¿Registrar atención como completada?</p>
+                <p className="text-sm text-gray-600 mt-1">
+                  Paciente: <span className="font-semibold">{formatearNombrePaciente(pacienteSeleccionado?.apellidosNombres)}</span>
+                </p>
+              </div>
+            </div>
+
+            {/* Cuerpo del mensaje */}
+            <div className="px-6 py-5 space-y-3">
+              <p className="text-sm text-gray-700 leading-relaxed">
+                Está a punto de registrar esta consulta como <span className="font-semibold text-green-700">Atendido</span>.
+                Una vez guardada la información:
+              </p>
+              <ul className="text-sm text-gray-700 space-y-1.5 pl-1">
+                <li className="flex items-start gap-2">
+                  <span className="text-red-500 font-bold mt-0.5">✕</span>
+                  <span>No podrá modificar los datos de esta atención.</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-red-500 font-bold mt-0.5">✕</span>
+                  <span>El estado del paciente cambiará a <strong>Atendido</strong> de forma definitiva.</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-green-600 font-bold mt-0.5">✓</span>
+                  <span>Recita, interconsultas y enfermedades crónicas quedarán registradas.</span>
+                </li>
+              </ul>
+              <p className="text-sm font-semibold text-gray-800 bg-gray-50 border border-gray-200 rounded-lg px-4 py-3">
+                ¿Está seguro que desea continuar?
+              </p>
+            </div>
+
+            {/* Botones */}
+            <div className="px-6 pb-6 flex gap-3 justify-end">
+              <button
+                onClick={() => setShowConfirmacionFinal(false)}
+                className="px-5 py-2.5 text-gray-700 border-2 border-gray-300 rounded-lg hover:bg-gray-100 transition font-semibold text-sm"
+              >
+                Revisar antes
               </button>
               <button
-                onClick={procesarAccion}
-                disabled={procesando}
-                className="px-6 py-2.5 bg-[#0A5BA9] text-white rounded-lg hover:bg-[#083d78] transition disabled:opacity-50 font-semibold text-sm flex items-center justify-center gap-2 shadow-sm"
+                onClick={() => {
+                  setShowConfirmacionFinal(false);
+                  procesarAccion();
+                }}
+                className="px-6 py-2.5 bg-green-600 text-white rounded-lg hover:bg-green-700 transition font-semibold text-sm flex items-center gap-2 shadow-sm"
               >
-                {procesando ? (
-                  <>
-                    <Loader className="w-4 h-4 animate-spin" />
-                    Procesando...
-                  </>
-                ) : (
-                  '✓ Confirmar'
-                )}
+                <CheckCircle className="w-4 h-4" />
+                Sí, guardar atención
               </button>
             </div>
           </div>
@@ -5802,18 +6073,61 @@ export default function MisPacientes() {
                 </div>
               </div>
 
-              {/* Motivo */}
-              <div>
+              {/* Motivo — autocomplete desde catálogo */}
+              <div className="relative">
                 <p className="text-sm font-semibold text-gray-700 mb-1.5">Motivo de Baja <span className="text-red-500">*</span></p>
-                <textarea
-                  rows={3}
-                  value={bajaMotivo}
-                  onChange={(e) => setBajaMotivo(e.target.value)}
-                  placeholder="Describa el motivo por el cual se da de baja al paciente del programa..."
-                  className="w-full px-3 py-2.5 text-sm border border-gray-300 rounded-xl resize-none focus:outline-none focus:ring-2 focus:ring-red-400 focus:border-transparent"
-                  maxLength={500}
+                <input
+                  type="text"
+                  value={bajaMotivoSearch}
+                  onChange={(e) => {
+                    setBajaMotivoSearch(e.target.value);
+                    setBajaMotivo('');
+                    setShowMotivosDropdown(true);
+                  }}
+                  onFocus={() => setShowMotivosDropdown(true)}
+                  placeholder="Buscar motivo de baja..."
+                  className="w-full px-3 py-2.5 text-sm border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-400 focus:border-transparent"
                 />
-                <p className="text-[11px] text-gray-400 mt-1">Especifique claramente la razón de la baja para el registro médico.</p>
+                {bajaMotivo && (
+                  <p className="text-xs text-emerald-700 mt-1 px-1">✓ Seleccionado: <span className="font-medium">{bajaMotivoSearch}</span></p>
+                )}
+                {!bajaMotivo && bajaMotivoSearch && (
+                  <p className="text-[11px] text-amber-600 mt-1 px-1">Selecciona un motivo de la lista.</p>
+                )}
+                {showMotivosDropdown && (
+                  <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-xl shadow-xl max-h-52 overflow-y-auto">
+                    {motivosBajaCatalogo
+                      .filter(m => m.activo && (
+                        !bajaMotivoSearch.trim() ||
+                        m.descripcion.toLowerCase().includes(bajaMotivoSearch.toLowerCase()) ||
+                        m.codigo.toLowerCase().includes(bajaMotivoSearch.toLowerCase())
+                      ))
+                      .map(m => (
+                        <button
+                          key={m.id}
+                          type="button"
+                          onMouseDown={() => {
+                            setBajaMotivoSearch(m.descripcion);
+                            setBajaMotivo(m.descripcion);
+                            setShowMotivosDropdown(false);
+                          }}
+                          className="w-full text-left px-4 py-2.5 text-sm text-gray-800 hover:bg-red-50 hover:text-red-700 transition-colors border-b border-gray-100 last:border-0"
+                        >
+                          {m.descripcion}
+                        </button>
+                      ))}
+                    {motivosBajaCatalogo.filter(m => m.activo && (
+                      !bajaMotivoSearch.trim() ||
+                      m.descripcion.toLowerCase().includes(bajaMotivoSearch.toLowerCase()) ||
+                      m.codigo.toLowerCase().includes(bajaMotivoSearch.toLowerCase())
+                    )).length === 0 && (
+                      <p className="px-4 py-3 text-sm text-gray-400">Sin resultados</p>
+                    )}
+                  </div>
+                )}
+                {showMotivosDropdown && (
+                  <div className="fixed inset-0 z-40" onMouseDown={() => setShowMotivosDropdown(false)} />
+                )}
               </div>
 
               {/* Advertencia */}
@@ -5839,7 +6153,7 @@ export default function MisPacientes() {
               </button>
               <button
                 onClick={confirmarBajaCenacron}
-                disabled={procesandoBaja || bajaMotivo.trim().length < 5}
+                disabled={procesandoBaja || !bajaMotivo.trim()}
                 className="flex-1 py-2.5 bg-red-600 hover:bg-red-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded-xl text-sm font-semibold transition-colors flex items-center justify-center gap-2"
               >
                 {procesandoBaja ? (

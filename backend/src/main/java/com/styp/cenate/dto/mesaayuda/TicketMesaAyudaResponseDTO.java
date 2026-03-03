@@ -73,6 +73,16 @@ public class TicketMesaAyudaResponseDTO {
     private String nombrePaciente;
 
     /**
+     * Tipo de documento del profesional (DNI, CE, etc.)
+     */
+    private String tipoDocMedico;
+
+    /**
+     * Número de documento del profesional
+     */
+    private String numDocMedico;
+
+    /**
      * Especialidad médica relacionada
      */
     private String especialidad;
