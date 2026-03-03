@@ -8,6 +8,7 @@ import java.util.Arrays;
 import java.util.stream.Collectors;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.styp.cenate.util.DniUtils;
 
 @Entity
 @Table(name = "asegurados")
@@ -100,4 +101,11 @@ public class Asegurado {
 
     public String[] getEnfermedadCronica() { return enfermedadCronica; }
     public void setEnfermedadCronica(String[] enfermedadCronica) { this.enfermedadCronica = enfermedadCronica; }
+
+    /** Normaliza el DNI antes de insertar o actualizar en BD */
+    @PrePersist
+    @PreUpdate
+    void normalizarDni() {
+        docPaciente = DniUtils.normalizar(docPaciente);
+    }
 }

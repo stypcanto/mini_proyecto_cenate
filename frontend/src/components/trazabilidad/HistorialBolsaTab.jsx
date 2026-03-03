@@ -8,12 +8,13 @@ import React, { useEffect, useState } from 'react';
 import {
   ClipboardList, UserCheck, CalendarCheck, Stethoscope,
   XCircle, RefreshCw, AlertCircle, Loader2, Clock,
-  Heart, HeartOff, RotateCcw, User,
+  Heart, HeartOff, RotateCcw, User, UploadCloud,
 } from 'lucide-react';
 import trazabilidadBolsaService from '../../services/trazabilidadBolsaService';
 
 // ── Icono y color según tipo de evento ──────────────────────────────────────
 const EVENTO_CONFIG = {
+  CARGA_BOLSA:       { Icon: UploadCloud,   bg: 'bg-slate-100',   ring: 'ring-slate-300',   text: 'text-slate-600'   },
   INGRESO:           { Icon: ClipboardList, bg: 'bg-blue-100',    ring: 'ring-blue-300',    text: 'text-blue-700'    },
   ASIGNACION_MEDICO: { Icon: UserCheck,     bg: 'bg-purple-100',  ring: 'ring-purple-300',  text: 'text-purple-700'  },
   CITA_AGENDADA:     { Icon: CalendarCheck, bg: 'bg-green-100',   ring: 'ring-green-300',   text: 'text-green-700'   },
@@ -33,6 +34,8 @@ const COLOR_BADGE = {
   orange: 'bg-orange-50 text-orange-700 border-orange-200',
   purple: 'bg-purple-50 text-purple-700 border-purple-200',
   gray:   'bg-gray-50 text-gray-600 border-gray-200',
+  slate:  'bg-slate-50 text-slate-600 border-slate-200',
+  amber:  'bg-amber-50 text-amber-700 border-amber-200',
 };
 
 const MESES = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
@@ -49,6 +52,7 @@ function formatFecha(fecha) {
 }
 
 const LABEL_USUARIO = {
+  CARGA_BOLSA:       'Cargado por:',
   INGRESO:           'Registrado por:',
   ASIGNACION_MEDICO: 'Asignado por:',
   CITA_AGENDADA:     'Agendado por:',
@@ -62,6 +66,7 @@ const LABEL_USUARIO = {
 };
 
 const LABEL_MEDICO = {
+  CARGA_BOLSA:       'Archivo:',
   INGRESO:           'Especialidad:',
   ASIGNACION_MEDICO: 'Profesional asignado:',
   CITA_AGENDADA:     'Profesional de cita:',

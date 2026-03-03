@@ -4371,6 +4371,10 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
                     continue;
                 }
                 String dni = row.getDocPaciente().trim();
+                // Normalizar DNI a 8 dígitos con cero a la izquierda (DNI peruano = 8 dígitos)
+                if (dni.matches("\\d{1,7}")) {
+                    dni = String.format("%08d", Long.parseLong(dni));
+                }
 
                 // 1. UPSERT en asegurados: INSERT si es nuevo, UPDATE teléfono/nombre/sexo/ipress si ya existe
                 //    Los datos del Excel son más actualizados (teléfono, IPRESS adscripción).

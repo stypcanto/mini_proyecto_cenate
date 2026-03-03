@@ -9,6 +9,7 @@ import lombok.Setter;
 import jakarta.persistence.*;
 import java.time.OffsetDateTime;
 import com.styp.cenate.model.Usuario;
+import com.styp.cenate.util.DniUtils;
 
 /**
  * Entidad JPA para solicitudes de bolsas de pacientes
@@ -247,6 +248,7 @@ public class SolicitudBolsa {
 
     @PrePersist
     void prePersist() {
+        pacienteDni = DniUtils.normalizar(pacienteDni);
         if (fechaSolicitud == null) {
             fechaSolicitud = OffsetDateTime.now();
         }
@@ -263,6 +265,7 @@ public class SolicitudBolsa {
 
     @PreUpdate
     void preUpdate() {
+        pacienteDni = DniUtils.normalizar(pacienteDni);
         fechaActualizacion = OffsetDateTime.now();
     }
 }

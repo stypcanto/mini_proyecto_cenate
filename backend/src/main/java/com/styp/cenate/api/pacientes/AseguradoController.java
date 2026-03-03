@@ -586,6 +586,7 @@ public class AseguradoController {
      * Ejemplo: POST /api/asegurados
      */
     @PostMapping
+    @PreAuthorize("hasAnyRole('SUPERADMIN', 'SOPORTE_TELEUE', 'COORD. GESTION CITAS', 'COORD. ENFERMERIA')")
     public ResponseEntity<?> crearAsegurado(@RequestBody AseguradoDTO aseguradoDTO) {
         try {
             log.info("✍️ Creando nuevo asegurado: DNI={}, Nombre={}",
@@ -698,6 +699,7 @@ public class AseguradoController {
      * Ejemplo: PUT /api/asegurados/{pkAsegurado}
      */
     @PutMapping("/{pkAsegurado}")
+    @PreAuthorize("hasAnyRole('SUPERADMIN', 'SOPORTE_TELEUE', 'COORD. GESTION CITAS', 'COORD. ENFERMERIA')")
     public ResponseEntity<?> actualizarAsegurado(
             @PathVariable String pkAsegurado,
             @RequestBody AseguradoDTO aseguradoDTO) {

@@ -39,7 +39,8 @@ import TrazabilidadClinicaTabs from "../../components/trazabilidad/TrazabilidadC
 import { usePermisos } from '../../context/PermisosContext';
 
 export default function BuscarAsegurado() {
-  const { esSuperAdmin } = usePermisos();
+  const { esSuperAdmin, tienePermiso } = usePermisos();
+  const puedeCrearAsegurado = esSuperAdmin || tienePermiso('/asegurados/buscar', 'crear');
   const [asegurados, setAsegurados] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchValue, setSearchValue] = useState("");
@@ -535,14 +536,16 @@ export default function BuscarAsegurado() {
           </div>
 
           <div className="flex gap-2 flex-shrink-0">
-            <button
-              onClick={ abrirFormularioCrear }
-              className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-lg 
-                       text-sm font-medium transition-all shadow-md hover:shadow-lg flex items-center gap-2"
-            >
-              <Plus className="w-4 h-4" />
-              Agregar
-            </button>
+            { puedeCrearAsegurado && (
+              <button
+                onClick={ abrirFormularioCrear }
+                className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-lg
+                         text-sm font-medium transition-all shadow-md hover:shadow-lg flex items-center gap-2"
+              >
+                <Plus className="w-4 h-4" />
+                Agregar
+              </button>
+            ) }
             <button
               onClick={ cargarAsegurados }
               disabled={ loading }
@@ -804,24 +807,26 @@ export default function BuscarAsegurado() {
                                 </div>
                               </div>
 
-                              {/* Botón Editar */}
-                              <div className="relative group">
-                                <button
-                                  onClick={ () => abrirFormularioEditar(asegurado.pkAsegurado) }
-                                  disabled={ loadingDetalle }
-                                  className="w-8 h-8 flex items-center justify-center rounded-lg
-                                           bg-blue-50 text-blue-600 border border-blue-200
-                                           hover:bg-blue-500 hover:text-white hover:border-blue-500
-                                           shadow-sm hover:shadow-md transition-all duration-200
-                                           disabled:opacity-40 disabled:cursor-not-allowed"
-                                >
-                                  <Edit className="w-4 h-4" />
-                                </button>
-                                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 text-xs text-white bg-gray-900 rounded-md whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50 shadow-lg">
-                                  Editar asegurado
-                                  <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-900" />
+                              {/* Botón Editar — solo roles autorizados */}
+                              { puedeCrearAsegurado && (
+                                <div className="relative group">
+                                  <button
+                                    onClick={ () => abrirFormularioEditar(asegurado.pkAsegurado) }
+                                    disabled={ loadingDetalle }
+                                    className="w-8 h-8 flex items-center justify-center rounded-lg
+                                             bg-blue-50 text-blue-600 border border-blue-200
+                                             hover:bg-blue-500 hover:text-white hover:border-blue-500
+                                             shadow-sm hover:shadow-md transition-all duration-200
+                                             disabled:opacity-40 disabled:cursor-not-allowed"
+                                  >
+                                    <Edit className="w-4 h-4" />
+                                  </button>
+                                  <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 text-xs text-white bg-gray-900 rounded-md whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50 shadow-lg">
+                                    Editar asegurado
+                                    <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-900" />
+                                  </div>
                                 </div>
-                              </div>
+                              ) }
 
                               {/* Botón Eliminar — solo SUPERADMIN */}
                               { esSuperAdmin && (

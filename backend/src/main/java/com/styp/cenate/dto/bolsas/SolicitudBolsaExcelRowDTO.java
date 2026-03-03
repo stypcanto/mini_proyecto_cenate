@@ -90,6 +90,11 @@ public record SolicitudBolsaExcelRowDTO(
         if (dni == null || dni.isBlank()) {
             throw new IllegalArgumentException("Fila " + filaExcel + ": DNI no puede estar vacío");
         }
+        // Normalizar DNI a 8 dígitos con cero a la izquierda (DNI peruano = 8 dígitos)
+        dni = dni.trim();
+        if (dni.matches("\\d{1,7}")) {
+            dni = String.format("%08d", Long.parseLong(dni));
+        }
         if (nombreCompleto == null || nombreCompleto.isBlank()) {
             throw new IllegalArgumentException("Fila " + filaExcel + ": ASEGURADO no puede estar vacío");
         }

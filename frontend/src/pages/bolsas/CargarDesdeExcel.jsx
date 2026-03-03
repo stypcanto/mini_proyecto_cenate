@@ -542,6 +542,23 @@ export default function CargarDesdeExcel() {
             });
           }
 
+          // ⚠️ VALIDACIÓN DNI: Detectar filas con DNI < 8 dígitos (col índice 2)
+          const dnisCortos = dataJson
+            .filter(row => {
+              const dni = row[2]?.toString().trim() ?? '';
+              return /^\d{1,7}$/.test(dni);
+            })
+            .map(row => row[2]?.toString().trim());
+
+          if (dnisCortos.length > 0) {
+            setImportStatus(prev => ({
+              ...prev,
+              type: 'warning',
+              message: (prev?.message ?? '') +
+                `\n⚠️ Se detectaron ${dnisCortos.length} DNI(s) con menos de 8 dígitos: ${dnisCortos.slice(0, 5).join(', ')}${dnisCortos.length > 5 ? '…' : ''}. El sistema los completará automáticamente con ceros a la izquierda al importar.`,
+            }));
+          }
+
           // 🧠 INTELIGENCIA: Auto-seleccionar tipo de bolsa y especialidad por nombre de archivo
           console.log(`🧠 Intentando auto-selección... tiposBolsas: ${tiposBolsas.length}, servicios: ${servicios.length}`);
 

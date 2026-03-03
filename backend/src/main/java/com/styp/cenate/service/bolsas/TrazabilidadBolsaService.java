@@ -9,6 +9,7 @@ import com.styp.cenate.model.bolsas.SolicitudBolsa;
 import com.styp.cenate.repository.PacienteEstrategiaRepository;
 import com.styp.cenate.repository.PersonalCntRepository;
 import com.styp.cenate.repository.bolsas.HistorialCambioSolicitudRepository;
+import com.styp.cenate.repository.bolsas.HistorialCargaBolsasRepository;
 import com.styp.cenate.repository.bolsas.SolicitudBolsaRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -42,6 +43,7 @@ public class TrazabilidadBolsaService {
     private final PersonalCntRepository              personalRepo;
     private final PacienteEstrategiaRepository       pacienteEstrategiaRepo;
     private final HistorialCambioSolicitudRepository historialRepo;
+    private final HistorialCargaBolsasRepository     cargaRepo;
 
     @Transactional(readOnly = true)
     public TrazabilidadBolsaResponseDTO obtenerTrazabilidad(Long idSolicitud) {
@@ -66,6 +68,24 @@ public class TrazabilidadBolsaService {
                     .usuario(nombreGestora)
                     .color("blue")
                     .build());
+        }
+
+        // ── 1b. CARGA DESDE EXCEL (quién importó al paciente a la bolsa) ──
+        if (s.getIdCargaExcel() != null) {
+            try {
+                cargaRepo.findById(s.getIdCargaExcel()).ifPresent(carga -> {
+                    eventos.add(EventoTrazabilidadDTO.builder()
+                            .tipo("CARGA_BOLSA")
+                            .fecha(carga.getFechaCreacion())
+                            .descripcion("Paciente importado desde Excel")
+                            .usuario(carga.getUsuarioCarga())
+                            .detalle("Archivo: " + carga.getNombreArchivo())
+                            .color("slate")
+                            .build());
+                });
+            } catch (Exception ex) {
+                log.warn("⚠️ No se pudo cargar info de carga Excel para solicitud {}: {}", idSolicitud, ex.getMessage());
+            }
         }
 
         // ── 2. ASIGNACIÓN DE MÉDICO ────────────────────────────────────────
