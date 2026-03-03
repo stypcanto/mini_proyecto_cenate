@@ -1048,7 +1048,7 @@ export default function CargaMasivaPacientes() {
                 {resultado.detalleDuplicados.length} paciente{resultado.detalleDuplicados.length !== 1 ? "s" : ""} no cargado{resultado.detalleDuplicados.length !== 1 ? "s" : ""} — ya tienen una solicitud activa
               </div>
               <p className="text-amber-600 text-xs mb-3">
-                Estos pacientes <strong>no fueron duplicados</strong> en la bolsa. Revisa el motivo para coordinar con el equipo.
+                Estos pacientes <strong>no se duplicaron</strong> en la bolsa porque ya tienen una cita registrada. Coordina con el equipo según el motivo.
               </p>
               <div className="rounded-xl overflow-hidden border border-amber-200">
                 <table className="w-full text-xs">
@@ -1059,35 +1059,58 @@ export default function CargaMasivaPacientes() {
                       <th className="px-3 py-2 text-left font-semibold text-amber-700 uppercase tracking-wide">Paciente</th>
                       <th className="px-3 py-2 text-left font-semibold text-amber-700 uppercase tracking-wide">Solicitud existente</th>
                       <th className="px-3 py-2 text-left font-semibold text-amber-700 uppercase tracking-wide">Estado</th>
+                      <th className="px-3 py-2 text-left font-semibold text-amber-700 uppercase tracking-wide">📅 Fecha de cita</th>
                       <th className="px-3 py-2 text-left font-semibold text-amber-700 uppercase tracking-wide">¿Por qué no cargó?</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-amber-100">
-                    {resultado.detalleDuplicados.map((d, i) => (
-                      <tr key={i} className="bg-white hover:bg-amber-50 transition-colors">
-                        <td className="px-3 py-2 text-amber-400 font-mono">{i + 1}</td>
-                        <td className="px-3 py-2 font-mono text-gray-600">{d.dni}</td>
-                        <td className="px-3 py-2 text-gray-800 font-medium">{d.nombre}</td>
-                        <td className="px-3 py-2 font-mono text-blue-600 text-[11px]">
-                          {d.solicitudExistente ?? "—"}
-                        </td>
-                        <td className="px-3 py-2">
-                          {d.estadoExistente ? (
-                            <span className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide
-                              ${d.estadoExistente === "PENDIENTE"   ? "bg-yellow-100 text-yellow-700 border border-yellow-300" :
-                                d.estadoExistente === "CITADO"      ? "bg-blue-100 text-blue-700 border border-blue-300" :
-                                d.estadoExistente === "ATENDIDO"    ? "bg-green-100 text-green-700 border border-green-300" :
-                                d.estadoExistente === "NO_ASISTIO"  ? "bg-red-100 text-red-700 border border-red-300" :
-                                                                      "bg-gray-100 text-gray-600 border border-gray-200"}`}>
-                              {d.estadoExistente}
-                            </span>
-                          ) : "—"}
-                        </td>
-                        <td className="px-3 py-2 text-amber-700 text-[11px] leading-snug max-w-xs">
-                          {d.motivo ?? "Ya existe en la bolsa"}
-                        </td>
-                      </tr>
-                    ))}
+                    {resultado.detalleDuplicados.map((d, i) => {
+                      // Formatear fecha como DD/MM/YYYY
+                      let fechaFormateada = "—";
+                      let esFuturo = false;
+                      if (d.fechaAtencion) {
+                        const [y, m, dia] = d.fechaAtencion.split("-");
+                        fechaFormateada = `${dia}/${m}/${y}`;
+                        const hoy = new Date(); hoy.setHours(0,0,0,0);
+                        const fCita = new Date(d.fechaAtencion); fCita.setHours(0,0,0,0);
+                        esFuturo = fCita >= hoy;
+                      }
+                      return (
+                        <tr key={i} className="bg-white hover:bg-amber-50 transition-colors">
+                          <td className="px-3 py-2 text-amber-400 font-mono">{i + 1}</td>
+                          <td className="px-3 py-2 font-mono text-gray-600">{d.dni}</td>
+                          <td className="px-3 py-2 text-gray-800 font-medium">{d.nombre}</td>
+                          <td className="px-3 py-2 font-mono text-blue-600 text-[11px]">
+                            {d.solicitudExistente ?? "—"}
+                          </td>
+                          <td className="px-3 py-2">
+                            {d.estadoExistente ? (
+                              <span className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide
+                                ${d.estadoExistente === "PENDIENTE"   ? "bg-yellow-100 text-yellow-700 border border-yellow-300" :
+                                  d.estadoExistente === "CITADO"      ? "bg-blue-100 text-blue-700 border border-blue-300" :
+                                  d.estadoExistente === "ATENDIDO"    ? "bg-green-100 text-green-700 border border-green-300" :
+                                  d.estadoExistente === "NO_ASISTIO"  ? "bg-red-100 text-red-700 border border-red-300" :
+                                                                        "bg-gray-100 text-gray-600 border border-gray-200"}`}>
+                                {d.estadoExistente}
+                              </span>
+                            ) : "—"}
+                          </td>
+                          <td className="px-3 py-2">
+                            {d.fechaAtencion ? (
+                              <span className={`inline-flex items-center gap-1 font-semibold text-[11px] px-2 py-0.5 rounded-lg
+                                ${esFuturo ? "bg-blue-50 text-blue-700 border border-blue-200" : "bg-gray-100 text-gray-500 border border-gray-200"}`}>
+                                {fechaFormateada}
+                                {d.horaAtencion && <span className="text-gray-400 font-normal">{d.horaAtencion}</span>}
+                                {esFuturo && <span className="text-blue-500 text-[10px]">próxima</span>}
+                              </span>
+                            ) : "—"}
+                          </td>
+                          <td className="px-3 py-2 text-amber-700 text-[11px] leading-snug max-w-xs">
+                            {d.motivo ?? "Ya existe en la bolsa"}
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>

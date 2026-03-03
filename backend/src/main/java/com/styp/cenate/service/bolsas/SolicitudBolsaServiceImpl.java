@@ -4441,6 +4441,10 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
                     dup.put("estadoExistente", existente.getEstado() != null ? existente.getEstado() : "PENDIENTE");
                     dup.put("especialidadExistente", existente.getEspecialidad() != null ? existente.getEspecialidad() : "—");
                     dup.put("motivo", generarMotivoDuplicado(existente.getEstado()));
+                    dup.put("fechaAtencion", existente.getFechaAtencion() != null
+                        ? existente.getFechaAtencion().toString() : null);
+                    dup.put("horaAtencion", existente.getHoraAtencion() != null
+                        ? existente.getHoraAtencion().toString().substring(0, 5) : null); // HH:mm
                     detalleDuplicados.add(dup);
                     continue;
                 }
