@@ -1739,8 +1739,8 @@ export default function MisPacientes() {
       setEnfermedadesCronicas([]);
     }
 
-    // ✅ v1.85.0: Restaurar borrador guardado (solo si el paciente NO está ya Atendido)
-    if (paciente?.condicion !== 'Atendido') {
+    // Restaurar borrador guardado
+    if (true) {
       const key = `cenate_atencion_draft_${paciente.idSolicitudBolsa || paciente.idGestion}`;
       const savedDraft = localStorage.getItem(key);
       if (savedDraft) {
@@ -3201,15 +3201,6 @@ export default function MisPacientes() {
               </div>
             </div>
 
-            {/* ✅ v1.85.0: Banner "Solo lectura" cuando el paciente ya fue Atendido */}
-            {pacienteSeleccionado?.condicion === 'Atendido' && (
-              <div className="px-6 py-3 bg-green-50 border-b border-green-200 flex items-center gap-2">
-                <CheckCircle className="w-4 h-4 text-green-600 flex-shrink-0" />
-                <p className="text-sm text-green-800 font-medium">
-                  Este paciente ya fue atendido. La atención no puede modificarse.
-                </p>
-              </div>
-            )}
 
             {/* ✅ v1.85.2: Banner "Borrador restaurado" — visible y descartable */}
             {draftRestaurado && (
@@ -3238,7 +3229,7 @@ export default function MisPacientes() {
             )}
 
             {/* Contenido Scrolleable - Más espacio blanco */}
-            <div className={`flex-1 overflow-y-auto p-8 bg-white space-y-6 ${pacienteSeleccionado?.condicion === 'Atendido' ? 'pointer-events-none opacity-75' : ''}`}>
+            <div className="flex-1 overflow-y-auto p-8 bg-white space-y-6">
               {/* Opción Atendido - DESTACADA */}
               <button
                 onClick={() => setEstadoSeleccionado('Atendido')}
@@ -4095,9 +4086,9 @@ export default function MisPacientes() {
                 disabled={procesando}
                 className="px-5 py-2.5 text-gray-700 border-2 border-gray-300 rounded-lg hover:bg-gray-100 hover:border-gray-400 transition disabled:opacity-50 font-semibold text-sm"
               >
-                {pacienteSeleccionado?.condicion === 'Atendido' ? 'Cerrar' : 'Cancelar'}
+                Cancelar
               </button>
-              {pacienteSeleccionado?.condicion !== 'Atendido' && (
+              {(
                 <button
                   onClick={() => {
                     if (estadoSeleccionado === 'Atendido') {
