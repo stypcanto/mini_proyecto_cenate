@@ -15,9 +15,12 @@ import com.styp.cenate.repository.mesaayuda.RespuestasPredefinidasRepository;
 import com.styp.cenate.repository.bolsas.SolicitudBolsaRepository;
 import com.styp.cenate.repository.AseguradoRepository;
 import com.styp.cenate.repository.IpressRepository;
+import com.styp.cenate.repository.UsuarioRepository;
 import com.styp.cenate.model.bolsas.SolicitudBolsa;
 import com.styp.cenate.model.Asegurado;
 import com.styp.cenate.model.Ipress;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import lombok.RequiredArgsConstructor;
@@ -65,6 +68,7 @@ public class TicketMesaAyudaService {
     private final RespuestasPredefinidasRepository respuestasPredefinidasRepository;
     private final AseguradoRepository aseguradoRepository;
     private final IpressRepository ipressRepository;
+    private final UsuarioRepository usuarioRepository;
 
     @PersistenceContext
     private EntityManager entityManager;
@@ -1088,6 +1092,20 @@ public class TicketMesaAyudaService {
         final Long ID_ESTADO_PENDIENTE_CITA = 11L;
         final Long ID_SERVICIO_DEFAULT = 1L;
 
+        // Resolver usuario que ejecuta la acción (para trazabilidad)
+        Long responsableGestoraId = null;
+        try {
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            if (auth != null && auth.getName() != null) {
+                responsableGestoraId = usuarioRepository.findByNameUser(auth.getName())
+                    .map(u -> u.getIdUser())
+                    .orElse(null);
+                log.info("🔑 Responsable gestor resuelto: {} → id={}", auth.getName(), responsableGestoraId);
+            }
+        } catch (Exception ex) {
+            log.warn("⚠️ No se pudo resolver el usuario actual para trazabilidad: {}", ex.getMessage());
+        }
+
         // Verificar si el paciente ya está en la bolsa
         boolean yaExiste = solicitudBolsaRepository.existsByIdBolsaAndPacienteId(
             ID_BOLSA_REPROGRAMACION, dniPaciente);
@@ -1146,6 +1164,8 @@ public class TicketMesaAyudaService {
             .codigoAdscripcion(codigoIpressResuelto)
             .idIpress(idIpressResuelto)
             .idIpressAtencion(idIpressResuelto)
+            .responsableGestoraId(responsableGestoraId)    // v1.82.7: trazabilidad quién envió a bolsa
+            .fechaSolicitud(java.time.OffsetDateTime.now(java.time.ZoneId.of("America/Lima")))
             .fechaAsignacion(java.time.OffsetDateTime.now(java.time.ZoneId.of("America/Lima")))
             .build();
 

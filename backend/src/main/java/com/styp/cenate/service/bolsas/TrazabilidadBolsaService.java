@@ -60,12 +60,15 @@ public class TrazabilidadBolsaService {
 
         // ── 1. INGRESO A BOLSA ─────────────────────────────────────────────
         if (s.getFechaSolicitud() != null) {
+            // Fallback: si la gestora no está registrada (registros anteriores a v1.82.7),
+            // mostrar "Registro del sistema" en lugar de vacío
+            String usuarioIngreso = nombreGestora != null ? nombreGestora : "Registro del sistema";
             eventos.add(EventoTrazabilidadDTO.builder()
                     .tipo("INGRESO")
                     .fecha(s.getFechaSolicitud())
                     .descripcion("Paciente ingresó a bolsa")
                     .detalle(s.getEspecialidad() != null ? "Especialidad: " + s.getEspecialidad() : null)
-                    .usuario(nombreGestora)
+                    .usuario(usuarioIngreso)
                     .color("blue")
                     .build());
         }
