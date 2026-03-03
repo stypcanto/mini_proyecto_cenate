@@ -746,8 +746,8 @@ export default function GestionAsegurado() {
     setModalTelefono({
       visible: true,
       paciente,
-      telefonoPrincipal: paciente.pacienteTelefono || "",
-      telefonoAlterno: paciente.pacienteTelefonoAlterno || "",
+      telefonoPrincipal: (paciente.pacienteTelefono || "").replace(/\D/g, ""),
+      telefonoAlterno: (paciente.pacienteTelefonoAlterno || "").replace(/\D/g, ""),
       saving: false,
     });
   };
@@ -1271,8 +1271,8 @@ CENATE de Essalud`;
 
   // Guardar teléfono actualizado
   const guardarTelefono = async () => {
-    const tel1 = modalTelefono.telefonoPrincipal?.trim();
-    const tel2 = modalTelefono.telefonoAlterno?.trim();
+    const tel1 = (modalTelefono.telefonoPrincipal || "").trim().replace(/\D/g, "");
+    const tel2 = (modalTelefono.telefonoAlterno || "").trim().replace(/\D/g, "");
 
     // Validación 1: Al menos uno requerido
     if (!tel1 && !tel2) {
