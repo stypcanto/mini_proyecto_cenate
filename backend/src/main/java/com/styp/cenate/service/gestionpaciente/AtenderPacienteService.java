@@ -243,7 +243,7 @@ public class AtenderPacienteService {
                 .numeroSolicitud(generarNumeroSolicitud("REC"))
                 .pacienteDni(solicitudOriginal.getPacienteDni())
                 .pacienteNombre(solicitudOriginal.getPacienteNombre())
-                .pacienteId(solicitudOriginal.getPacienteId())
+                .pacienteId(null) // ✅ fix FK: el numeric ID del original no existe en asegurados
                 .pacienteSexo(solicitudOriginal.getPacienteSexo())
                 .pacienteTelefono(solicitudOriginal.getPacienteTelefono())
                 .codigoIpressAdscripcion(solicitudOriginal.getCodigoIpressAdscripcion())
@@ -305,7 +305,7 @@ public class AtenderPacienteService {
                 .numeroSolicitud(generarNumeroSolicitud("INT"))
                 .pacienteDni(solicitudOriginal.getPacienteDni())
                 .pacienteNombre(solicitudOriginal.getPacienteNombre())
-                .pacienteId(solicitudOriginal.getPacienteId())
+                .pacienteId(null) // ✅ fix FK: el numeric ID del original no existe en asegurados
                 .pacienteSexo(solicitudOriginal.getPacienteSexo())
                 .pacienteTelefono(solicitudOriginal.getPacienteTelefono())
                 .codigoIpressAdscripcion(solicitudOriginal.getCodigoIpressAdscripcion())
