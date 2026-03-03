@@ -31,7 +31,8 @@ import {
   FileText,
   Activity,
   CheckCircle,
-  XCircle
+  XCircle,
+  Globe
 } from "lucide-react";
 import { apiClient } from '../../lib/apiClient';
 import toast from "react-hot-toast";
@@ -73,6 +74,7 @@ export default function BuscarAsegurado() {
   const [selectedIpress, setSelectedIpress] = useState("");
   const [soloCenacron, setSoloCenacron] = useState(false);
   const [soloDniValido, setSoloDniValido] = useState(false);
+  const [soloExtranjero, setSoloExtranjero] = useState(false);
   const [loadingFiltros, setLoadingFiltros] = useState(false);
 
   // 📋 Estados para tipos de documento
@@ -149,10 +151,10 @@ export default function BuscarAsegurado() {
 
   // ✅ Resetear página cuando cambian los filtros
   useEffect(() => {
-    if (selectedRed || selectedIpress || soloCenacron || soloDniValido) {
+    if (selectedRed || selectedIpress || soloCenacron || soloDniValido || soloExtranjero) {
       setCurrentPage(0);
     }
-  }, [selectedRed, selectedIpress, soloCenacron, soloDniValido]);
+  }, [selectedRed, selectedIpress, soloCenacron, soloDniValido, soloExtranjero]);
 
   // ✅ Debounce para la búsqueda
   useEffect(() => {
@@ -169,7 +171,7 @@ export default function BuscarAsegurado() {
   // Cargar asegurados con paginación
   useEffect(() => {
     cargarAsegurados();
-  }, [currentPage, debouncedSearchValue, selectedRed, selectedIpress, soloCenacron, soloDniValido]);
+  }, [currentPage, debouncedSearchValue, selectedRed, selectedIpress, soloCenacron, soloDniValido, soloExtranjero]);
 
   // 🔍 Validar DNI en tiempo real cuando tiene 8 dígitos (solo cuando está creando)
   useEffect(() => {
@@ -250,12 +252,14 @@ export default function BuscarAsegurado() {
         if (selectedIpress) params += `&codIpress=${encodeURIComponent(selectedIpress)}`;
         if (soloCenacron) params += `&cenacron=true`;
         if (soloDniValido) params += `&soloDniValido=true`;
+        if (soloExtranjero) params += `&soloExtranjero=true`;
 
         response = await apiClient.get(`/asegurados/buscar?${params}`, true);
       } else {
         let params = `page=${currentPage}&size=${pageSize}`;
         if (soloCenacron) params += `&cenacron=true`;
         if (soloDniValido) params += `&soloDniValido=true`;
+        if (soloExtranjero) params += `&soloExtranjero=true`;
         response = await apiClient.get(`/asegurados?${params}`, true);
       }
 
@@ -314,6 +318,8 @@ export default function BuscarAsegurado() {
     setSelectedRed("");
     setSelectedIpress("");
     setSoloCenacron(false);
+    setSoloDniValido(false);
+    setSoloExtranjero(false);
     setSearchValue("");
     setCurrentPage(0);
   };
@@ -587,14 +593,14 @@ export default function BuscarAsegurado() {
               <h3 className="text-base font-semibold text-slate-900">
                 Filtros y Búsqueda
               </h3>
-              { (selectedRed || selectedIpress || searchValue || soloCenacron) && (
+              { (selectedRed || selectedIpress || searchValue || soloCenacron || soloExtranjero) && (
                 <span className="bg-emerald-100 text-emerald-800 text-xs font-medium px-2 py-0.5 rounded-full">
                   Activos
                 </span>
               ) }
             </div>
             <div className="flex items-center gap-2">
-              { (selectedRed || selectedIpress || searchValue || soloCenacron) && (
+              { (selectedRed || selectedIpress || searchValue || soloCenacron || soloExtranjero) && (
                 <span
                   onClick={ (e) => {
                     e.stopPropagation();
@@ -688,6 +694,18 @@ export default function BuscarAsegurado() {
                   >
                     <IdCard className="w-3.5 h-3.5" />
                     Solo DNI válido
+                  </button>
+                  <button
+                    type="button"
+                    onClick={ () => { setSoloExtranjero(v => !v); setCurrentPage(0); } }
+                    className={ `inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-semibold border-2 transition-all whitespace-nowrap
+                      ${soloExtranjero
+                        ? 'bg-blue-600 border-blue-600 text-white'
+                        : 'bg-white border-slate-200 text-slate-600 hover:border-blue-400 hover:text-blue-600'
+                      }` }
+                  >
+                    <Globe className="w-3.5 h-3.5" />
+                    Solo Extranjeros
                   </button>
                 </div>
               </div>

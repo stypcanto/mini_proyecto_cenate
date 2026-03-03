@@ -74,7 +74,8 @@ public class AseguradoController {
             @RequestParam(name="page", defaultValue = "0") int page,
             @RequestParam(name="size", defaultValue = "25") int size,
             @RequestParam(required = false) Boolean cenacron,
-            @RequestParam(required = false) Boolean soloDniValido) {
+            @RequestParam(required = false) Boolean soloDniValido,
+            @RequestParam(required = false) Boolean soloExtranjero) {
 
         try {
             log.info("📊 Listando asegurados - Página: {}, Tamaño: {}, CENACRON: {}", page, size, cenacron);
@@ -86,6 +87,9 @@ public class AseguradoController {
             }
             if (Boolean.TRUE.equals(soloDniValido)) {
                 whereClause.append(" AND a.doc_paciente ~ '^\\d{8}$'");
+            }
+            if (Boolean.TRUE.equals(soloExtranjero)) {
+                whereClause.append(" AND a.id_tip_doc = 2");
             }
 
             // Consulta para obtener el total de registros
@@ -266,6 +270,7 @@ public class AseguradoController {
             @RequestParam(required = false) String codIpress,
             @RequestParam(required = false) Boolean cenacron,
             @RequestParam(required = false) Boolean soloDniValido,
+            @RequestParam(required = false) Boolean soloExtranjero,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "25") int size) {
 
@@ -300,7 +305,12 @@ public class AseguradoController {
             if (Boolean.TRUE.equals(soloDniValido)) {
                 whereClause.append(" AND a.doc_paciente ~ '^\\d{8}$'");
             }
-            
+
+            // Filtro Solo Extranjeros (id_tip_doc = 2 → C.E./PAS)
+            if (Boolean.TRUE.equals(soloExtranjero)) {
+                whereClause.append(" AND a.id_tip_doc = 2");
+            }
+
             // Consulta para obtener el total de registros
             String countSql = "SELECT COUNT(*) FROM asegurados a LEFT JOIN dim_ipress di ON a.cas_adscripcion = di.cod_ipress " + whereClause;
             Integer totalElements = jdbcTemplate.queryForObject(countSql, Integer.class, params.toArray());
