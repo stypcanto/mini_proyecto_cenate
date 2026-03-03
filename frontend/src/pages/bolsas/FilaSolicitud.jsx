@@ -216,7 +216,10 @@ function FilaSolicitud({
         {solicitud.especialidad?.replace(/\s*\([^)]*\)/, '').trim() || solicitud.especialidad}
       </td>
       <td className="px-3 py-3 text-sm text-gray-900 max-w-xs truncate" title={solicitud.ipress}>
-        <span className="font-semibold text-blue-600">{solicitud.codigoIpress}</span> - {solicitud.ipress || 'N/A'}
+        {solicitud.codigoIpress && solicitud.codigoIpress !== 'N/A'
+          ? <><span className="font-semibold text-blue-600">{solicitud.codigoIpress}</span> - {solicitud.ipress || 'N/A'}</>
+          : (solicitud.ipress || 'N/A')
+        }
       </td>
       {/* IPRESS - ATENCIÓN (v1.105.0: editable por COORD. GESTION CITAS) */}
       <td className="px-3 py-3 text-sm text-gray-900 max-w-xs">
