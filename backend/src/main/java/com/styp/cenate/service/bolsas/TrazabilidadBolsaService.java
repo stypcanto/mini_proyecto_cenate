@@ -60,9 +60,9 @@ public class TrazabilidadBolsaService {
 
         // ── 1. INGRESO A BOLSA ─────────────────────────────────────────────
         if (s.getFechaSolicitud() != null) {
-            // Fallback: si la gestora no está registrada (registros anteriores a v1.82.7),
-            // mostrar "Registro del sistema" en lugar de vacío
-            String usuarioIngreso = nombreGestora != null ? nombreGestora : "Registro del sistema";
+            // Fallback inteligente por prefijo de numero_solicitud cuando no hay usuario registrado
+            String usuarioIngreso = nombreGestora != null ? nombreGestora
+                    : resolverOrigenAutomatico(s.getNumeroSolicitud());
             eventos.add(EventoTrazabilidadDTO.builder()
                     .tipo("INGRESO")
                     .fecha(s.getFechaSolicitud())
@@ -309,6 +309,20 @@ public class TrazabilidadBolsaService {
         } catch (Exception e) {
             return null;
         }
+    }
+
+    /**
+     * Infiere el origen del ingreso cuando responsableGestoraId es NULL,
+     * basándose en el prefijo del numero_solicitud.
+     */
+    private String resolverOrigenAutomatico(String numeroSolicitud) {
+        if (numeroSolicitud == null) return "Registro del sistema";
+        if (numeroSolicitud.startsWith("107-ID-"))   return "Bolsa automática - Módulo 107";
+        if (numeroSolicitud.startsWith("TEL-"))      return "Bolsa automática - TeleECG";
+        if (numeroSolicitud.startsWith("REC-"))      return "Carga masiva - Enfermería";
+        if (numeroSolicitud.startsWith("MESA-"))     return "Mesa de Ayuda";
+        if (numeroSolicitud.startsWith("DENGUE-"))   return "Bolsa automática - Dengue";
+        return "Registro del sistema";
     }
 
     private String resolverColorEstado(String codigo) {
