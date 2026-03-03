@@ -100,6 +100,7 @@ public class AtenderPacienteService {
 
             // ✅ v1.47.2: Actualizar solicitud original
             solicitudOriginal.setCondicionMedica("Atendido");
+            solicitudOriginal.setPacienteId(null); // ✅ fix FK: limpiar ID numérico inválido antes de guardar
             guardarSolicitudConTransaccion(solicitudOriginal);
             log.info("✅ Solicitud original marcada como Atendido");
 
@@ -132,6 +133,7 @@ public class AtenderPacienteService {
                             .plusDays(request.getRecitaDias() != null ? request.getRecitaDias() : 7);
                     recita.setFechaPreferidaNoAtendida(nuevaFecha.toLocalDate());
                     if (idAtencionClinica != null) recita.setIdAtencionClinica(idAtencionClinica);
+                    recita.setPacienteId(null); // ✅ fix FK: limpiar ID numérico inválido antes de guardar
                     solicitudBolsaRepository.save(recita);
                     log.info("✅ Bolsa RECITA actualizada (id={}) — nueva fecha: {}", recita.getIdSolicitud(), nuevaFecha.toLocalDate());
                 } else {
