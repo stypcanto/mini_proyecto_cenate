@@ -73,7 +73,8 @@ public class AseguradoController {
     public ResponseEntity<Map<String, Object>> getAsegurados(
             @RequestParam(name="page", defaultValue = "0") int page,
             @RequestParam(name="size", defaultValue = "25") int size,
-            @RequestParam(required = false) Boolean cenacron) {
+            @RequestParam(required = false) Boolean cenacron,
+            @RequestParam(required = false) Boolean soloDniValido) {
 
         try {
             log.info("📊 Listando asegurados - Página: {}, Tamaño: {}, CENACRON: {}", page, size, cenacron);
@@ -82,6 +83,9 @@ public class AseguradoController {
             List<Object> params = new ArrayList<>();
             if (Boolean.TRUE.equals(cenacron)) {
                 whereClause.append(" AND a.paciente_cronico = true");
+            }
+            if (Boolean.TRUE.equals(soloDniValido)) {
+                whereClause.append(" AND a.doc_paciente ~ '^\\d{8}$'");
             }
 
             // Consulta para obtener el total de registros
@@ -258,6 +262,7 @@ public class AseguradoController {
             @RequestParam(required = false) Integer idRed,
             @RequestParam(required = false) String codIpress,
             @RequestParam(required = false) Boolean cenacron,
+            @RequestParam(required = false) Boolean soloDniValido,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "25") int size) {
 
@@ -286,6 +291,11 @@ public class AseguradoController {
             // Filtro CENACRON
             if (Boolean.TRUE.equals(cenacron)) {
                 whereClause.append(" AND a.paciente_cronico = true");
+            }
+
+            // Filtro Solo DNI válido (exactamente 8 dígitos numéricos)
+            if (Boolean.TRUE.equals(soloDniValido)) {
+                whereClause.append(" AND a.doc_paciente ~ '^\\d{8}$'");
             }
             
             // Consulta para obtener el total de registros

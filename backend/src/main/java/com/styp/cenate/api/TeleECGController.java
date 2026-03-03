@@ -1086,20 +1086,27 @@ public class TeleECGController {
                 log.info("✅ Solicitud base creada temporalmente");
             }
 
+            // ✅ v1.82.8: resolver pk_asegurado real para paciente_id
+            String pkAseguradoTele = aseguradoRepository.findByDocPaciente(imagen.getNumDocPaciente())
+                    .map(com.styp.cenate.model.Asegurado::getPkAsegurado)
+                    .orElse(imagen.getNumDocPaciente());
+
             // 4. Crear bolsa(s) según tipo
             if ("RECITA".equals(request.getTipo())) {
                 atenderPacienteService.crearBolsaRecita(
                     solicitudBase,
                     request.getEspecialidad(),
-                    request.getDias() != null ? request.getDias() : 90,  // Default 3 meses = 90 días
-                    null  // TeleECG no pasa por atencion_clinica de enfermería
+                    request.getDias() != null ? request.getDias() : 90,
+                    null,  // TeleECG no pasa por atencion_clinica de enfermería
+                    pkAseguradoTele
                 );
                 log.info("✅ Bolsa RECITA creada para especialidad: {}", request.getEspecialidad());
             } else if ("INTERCONSULTA".equals(request.getTipo())) {
                 atenderPacienteService.crearBolsaInterconsulta(
                     solicitudBase,
                     request.getEspecialidad(),
-                    null  // TeleECG no pasa por atencion_clinica de enfermería
+                    null,  // TeleECG no pasa por atencion_clinica de enfermería
+                    pkAseguradoTele
                 );
                 log.info("✅ Bolsa INTERCONSULTA creada para especialidad: {}", request.getEspecialidad());
             } else {

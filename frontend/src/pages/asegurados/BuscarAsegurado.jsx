@@ -145,10 +145,10 @@ export default function BuscarAsegurado() {
 
   // ✅ Resetear página cuando cambian los filtros
   useEffect(() => {
-    if (selectedRed || selectedIpress || soloCenacron) {
+    if (selectedRed || selectedIpress || soloCenacron || soloDniValido) {
       setCurrentPage(0);
     }
-  }, [selectedRed, selectedIpress, soloCenacron]);
+  }, [selectedRed, selectedIpress, soloCenacron, soloDniValido]);
 
   // ✅ Debounce para la búsqueda
   useEffect(() => {
@@ -165,7 +165,7 @@ export default function BuscarAsegurado() {
   // Cargar asegurados con paginación
   useEffect(() => {
     cargarAsegurados();
-  }, [currentPage, debouncedSearchValue, selectedRed, selectedIpress, soloCenacron]);
+  }, [currentPage, debouncedSearchValue, selectedRed, selectedIpress, soloCenacron, soloDniValido]);
 
   // 🔍 Validar DNI en tiempo real cuando tiene 8 dígitos (solo cuando está creando)
   useEffect(() => {
@@ -245,11 +245,13 @@ export default function BuscarAsegurado() {
         if (selectedRed) params += `&idRed=${selectedRed}`;
         if (selectedIpress) params += `&codIpress=${encodeURIComponent(selectedIpress)}`;
         if (soloCenacron) params += `&cenacron=true`;
+        if (soloDniValido) params += `&soloDniValido=true`;
 
         response = await apiClient.get(`/asegurados/buscar?${params}`, true);
       } else {
         let params = `page=${currentPage}&size=${pageSize}`;
         if (soloCenacron) params += `&cenacron=true`;
+        if (soloDniValido) params += `&soloDniValido=true`;
         response = await apiClient.get(`/asegurados?${params}`, true);
       }
 
@@ -656,7 +658,7 @@ export default function BuscarAsegurado() {
                   </select>
                 </div>
 
-                <div className="flex-shrink-0 pb-0.5">
+                <div className="flex-shrink-0 pb-0.5 flex gap-2">
                   <button
                     type="button"
                     onClick={ () => { setSoloCenacron(v => !v); setCurrentPage(0); } }
@@ -670,6 +672,18 @@ export default function BuscarAsegurado() {
                       <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>
                     </svg>
                     Solo CENACRON
+                  </button>
+                  <button
+                    type="button"
+                    onClick={ () => { setSoloDniValido(v => !v); setCurrentPage(0); } }
+                    className={ `inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-semibold border-2 transition-all whitespace-nowrap
+                      ${soloDniValido
+                        ? 'bg-emerald-600 border-emerald-600 text-white'
+                        : 'bg-white border-slate-200 text-slate-600 hover:border-emerald-400 hover:text-emerald-600'
+                      }` }
+                  >
+                    <IdCard className="w-3.5 h-3.5" />
+                    Solo DNI válido
                   </button>
                 </div>
               </div>

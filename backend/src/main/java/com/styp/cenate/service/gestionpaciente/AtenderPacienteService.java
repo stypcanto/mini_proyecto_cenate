@@ -121,23 +121,25 @@ public class AtenderPacienteService {
                 log.warn("⚠️ [v1.81.0] Error registrando en historial: {}", e.getMessage());
             }
 
-            String pkAseguradoFinal = pkAsegurado;
+            // ✅ v1.82.8: pk_asegurado real para recita/interconsulta (evita NULL, UUID y DNIs cortos)
+            String pkAseguradoFinal = asegurado != null ? asegurado.getPkAsegurado() : pkAsegurado;
+
             // 3. Crear o actualizar bolsa Recita si aplica
             if (request.getTieneRecita() != null && request.getTieneRecita()) {
                 var recitaExistente = solicitudBolsaRepository
                         .findFirstByPacienteDniAndTipoCitaAndActivoTrueOrderByFechaAsignacionDesc(
-                                pkAseguradoFinal, "RECITA");
+                                solicitudOriginal.getPacienteDni(), "RECITA");
                 if (recitaExistente.isPresent()) {
                     SolicitudBolsa recita = recitaExistente.get();
                     ZonedDateTime nuevaFecha = Instant.now().atZone(ZoneId.of("America/Lima"))
                             .plusDays(request.getRecitaDias() != null ? request.getRecitaDias() : 7);
                     recita.setFechaPreferidaNoAtendida(nuevaFecha.toLocalDate());
                     if (idAtencionClinica != null) recita.setIdAtencionClinica(idAtencionClinica);
-                    recita.setPacienteId(null); // ✅ fix FK: limpiar ID numérico inválido antes de guardar
+                    recita.setPacienteId(pkAseguradoFinal); // ✅ v1.82.8: pk_asegurado correcto
                     solicitudBolsaRepository.save(recita);
                     log.info("✅ Bolsa RECITA actualizada (id={}) — nueva fecha: {}", recita.getIdSolicitud(), nuevaFecha.toLocalDate());
                 } else {
-                    crearBolsaRecitaConTransaccion(solicitudOriginal, especialidadActual, request.getRecitaDias(), idAtencionClinica);
+                    crearBolsaRecitaConTransaccion(solicitudOriginal, especialidadActual, request.getRecitaDias(), idAtencionClinica, pkAseguradoFinal);
                     log.info("✅ Nueva bolsa RECITA creada - visible solo para gestora de citas");
                 }
             }
@@ -152,12 +154,12 @@ public class AtenderPacienteService {
                     String especialidadTrimmed = esp.trim();
                     if (especialidadTrimmed.isEmpty()) continue;
 
-                    if (existeInterconsultaParaPaciente(pkAseguradoFinal, especialidadTrimmed)) {
+                    if (existeInterconsultaParaPaciente(solicitudOriginal.getPacienteDni(), especialidadTrimmed)) {
                         log.warn("⚠️ [v1.75.0] Interconsulta de '{}' ya existe para el paciente: {}",
-                                especialidadTrimmed, pkAseguradoFinal);
+                                especialidadTrimmed, solicitudOriginal.getPacienteDni());
                         interconsultasOmitidas.add(especialidadTrimmed);
                     } else {
-                        crearBolsaInterconsultaConTransaccion(solicitudOriginal, especialidadTrimmed, idAtencionClinica);
+                        crearBolsaInterconsultaConTransaccion(solicitudOriginal, especialidadTrimmed, idAtencionClinica, pkAseguradoFinal);
                         log.info("✅ [v1.75.0] Nueva bolsa INTERCONSULTA creada para especialidad: '{}'", especialidadTrimmed);
                     }
                 }
@@ -177,13 +179,13 @@ public class AtenderPacienteService {
     }
 
     @Transactional
-    private void crearBolsaRecitaConTransaccion(SolicitudBolsa solicitudOriginal, String especialidad, Integer dias, Long idAtencionClinica) {
-        crearBolsaRecita(solicitudOriginal, especialidad, dias, idAtencionClinica);
+    private void crearBolsaRecitaConTransaccion(SolicitudBolsa solicitudOriginal, String especialidad, Integer dias, Long idAtencionClinica, String pkAsegurado) {
+        crearBolsaRecita(solicitudOriginal, especialidad, dias, idAtencionClinica, pkAsegurado);
     }
 
     @Transactional
-    private void crearBolsaInterconsultaConTransaccion(SolicitudBolsa solicitudOriginal, String especialidad, Long idAtencionClinica) {
-        crearBolsaInterconsulta(solicitudOriginal, especialidad, idAtencionClinica);
+    private void crearBolsaInterconsultaConTransaccion(SolicitudBolsa solicitudOriginal, String especialidad, Long idAtencionClinica, String pkAsegurado) {
+        crearBolsaInterconsulta(solicitudOriginal, especialidad, idAtencionClinica, pkAsegurado);
     }
 
     /**
@@ -212,7 +214,7 @@ public class AtenderPacienteService {
     }
 
 
-    public void crearBolsaRecita(SolicitudBolsa solicitudOriginal, String especialidad, Integer dias, Long idAtencionClinica) {
+    public void crearBolsaRecita(SolicitudBolsa solicitudOriginal, String especialidad, Integer dias, Long idAtencionClinica, String pkAsegurado) {
         log.info("📋 [v1.47.2] Creando bolsa RECITA para días: {}", dias);
 
         // ✅ v1.47.2: Recita usa especialidad del médico (solicitud original), NO la de Interconsulta
@@ -245,7 +247,7 @@ public class AtenderPacienteService {
                 .numeroSolicitud(generarNumeroSolicitud("REC"))
                 .pacienteDni(solicitudOriginal.getPacienteDni())
                 .pacienteNombre(solicitudOriginal.getPacienteNombre())
-                .pacienteId(null) // ✅ fix FK: el numeric ID del original no existe en asegurados
+                .pacienteId(pkAsegurado) // ✅ v1.82.8: pk_asegurado real desde tabla asegurados
                 .pacienteSexo(solicitudOriginal.getPacienteSexo())
                 .pacienteTelefono(solicitudOriginal.getPacienteTelefono())
                 .codigoIpressAdscripcion(solicitudOriginal.getCodigoIpressAdscripcion())
@@ -275,7 +277,7 @@ public class AtenderPacienteService {
         }
     }
 
-    public void crearBolsaInterconsulta(SolicitudBolsa solicitudOriginal, String especialidad, Long idAtencionClinica) {
+    public void crearBolsaInterconsulta(SolicitudBolsa solicitudOriginal, String especialidad, Long idAtencionClinica, String pkAsegurado) {
         log.info("📋 [v1.47.1] Creando bolsa INTERCONSULTA para especialidad: {}", especialidad);
 
         // ✅ v1.75.0: usa BOLSA_GENERADA_X_PROFESIONAL (11) — igual que RECITA
@@ -307,7 +309,7 @@ public class AtenderPacienteService {
                 .numeroSolicitud(generarNumeroSolicitud("INT"))
                 .pacienteDni(solicitudOriginal.getPacienteDni())
                 .pacienteNombre(solicitudOriginal.getPacienteNombre())
-                .pacienteId(null) // ✅ fix FK: el numeric ID del original no existe en asegurados
+                .pacienteId(pkAsegurado) // ✅ v1.82.8: pk_asegurado real desde tabla asegurados
                 .pacienteSexo(solicitudOriginal.getPacienteSexo())
                 .pacienteTelefono(solicitudOriginal.getPacienteTelefono())
                 .codigoIpressAdscripcion(solicitudOriginal.getCodigoIpressAdscripcion())
