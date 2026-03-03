@@ -113,6 +113,7 @@ public class AseguradoController {
                     a.tipo_seguro,
                     a.cas_adscripcion,
                     a.paciente_cronico,
+                    a.id_tip_doc,
                     di.desc_ipress as nombre_ipress,
                     dr.desc_red as nombre_red,
                     a.periodo
@@ -128,7 +129,7 @@ public class AseguradoController {
             allParams.add(size);
             allParams.add(offset);
             List<Map<String, Object>> asegurados = jdbcTemplate.queryForList(sql, allParams.toArray());
-            
+
             // Formatear los datos para camelCase que espera el frontend
             asegurados.forEach(asegurado -> {
                 asegurado.put("pkAsegurado", asegurado.get("pk_asegurado"));
@@ -143,6 +144,7 @@ public class AseguradoController {
                 asegurado.put("tipoSeguro", asegurado.get("tipo_seguro"));
                 asegurado.put("casAdscripcion", asegurado.get("cas_adscripcion"));
                 asegurado.put("pacienteCronico", Boolean.TRUE.equals(asegurado.get("paciente_cronico")));
+                asegurado.put("idTipDoc", asegurado.get("id_tip_doc"));
                 asegurado.put("nombreIpress", asegurado.get("nombre_ipress"));
                 asegurado.put("nombreRed", asegurado.get("nombre_red"));
                 asegurado.put("periodo", asegurado.get("periodo"));
@@ -154,6 +156,7 @@ public class AseguradoController {
                 asegurado.remove("tipo_seguro");
                 asegurado.remove("cas_adscripcion");
                 asegurado.remove("paciente_cronico");
+                asegurado.remove("id_tip_doc");
                 asegurado.remove("nombre_ipress");
                 asegurado.remove("nombre_red");
             });
@@ -323,6 +326,7 @@ public class AseguradoController {
                     a.tipo_seguro,
                     a.cas_adscripcion,
                     a.paciente_cronico,
+                    a.id_tip_doc,
                     di.desc_ipress as nombre_ipress,
                     dr.desc_red as nombre_red,
                     a.periodo
@@ -333,14 +337,14 @@ public class AseguradoController {
                 ORDER BY a.doc_paciente
                 LIMIT ? OFFSET ?
             """;
-            
+
             // Agregar parámetros de paginación
             List<Object> allParams = new ArrayList<>(params);
             allParams.add(size);
             allParams.add(offset);
-            
+
             List<Map<String, Object>> asegurados = jdbcTemplate.queryForList(sql, allParams.toArray());
-            
+
             // Formatear los datos para camelCase
             asegurados.forEach(asegurado -> {
                 asegurado.put("pkAsegurado", asegurado.get("pk_asegurado"));
@@ -355,6 +359,7 @@ public class AseguradoController {
                 asegurado.put("tipoSeguro", asegurado.get("tipo_seguro"));
                 asegurado.put("casAdscripcion", asegurado.get("cas_adscripcion"));
                 asegurado.put("pacienteCronico", Boolean.TRUE.equals(asegurado.get("paciente_cronico")));
+                asegurado.put("idTipDoc", asegurado.get("id_tip_doc"));
                 asegurado.put("nombreIpress", asegurado.get("nombre_ipress"));
                 asegurado.put("nombreRed", asegurado.get("nombre_red"));
                 asegurado.put("periodo", asegurado.get("periodo"));
@@ -366,12 +371,13 @@ public class AseguradoController {
                 asegurado.remove("tipo_seguro");
                 asegurado.remove("cas_adscripcion");
                 asegurado.remove("paciente_cronico");
+                asegurado.remove("id_tip_doc");
                 asegurado.remove("nombre_ipress");
             });
-            
+
             // Calcular el número total de páginas
             int totalPages = (int) Math.ceil((double) totalElements / size);
-            
+
             // Construir respuesta
             Map<String, Object> response = new HashMap<>();
             response.put("content", asegurados);
@@ -738,7 +744,8 @@ public class AseguradoController {
                     tipo_seguro = ?,
                     cas_adscripcion = ?,
                     correo_electronico = ?,
-                    paciente_cronico = ?
+                    paciente_cronico = ?,
+                    id_tip_doc = ?
                 WHERE pk_asegurado = ?
             """;
 
@@ -754,6 +761,7 @@ public class AseguradoController {
                     aseguradoDTO.getCasAdscripcion(),
                     aseguradoDTO.getCorreoElectronico(),
                     Boolean.TRUE.equals(aseguradoDTO.getPacienteCronico()),
+                    aseguradoDTO.getIdTipDoc(),
                     pkAsegurado
             );
             
@@ -779,6 +787,7 @@ public class AseguradoController {
                     a.tipo_seguro,
                     a.cas_adscripcion,
                     a.paciente_cronico,
+                    a.id_tip_doc,
                     di.desc_ipress as nombre_ipress,
                     dr.desc_red as nombre_red,
                     a.periodo
@@ -804,6 +813,7 @@ public class AseguradoController {
             response.put("tipoSeguro", asegurado.get("tipo_seguro"));
             response.put("casAdscripcion", asegurado.get("cas_adscripcion"));
             response.put("pacienteCronico", Boolean.TRUE.equals(asegurado.get("paciente_cronico")));
+            response.put("idTipDoc", asegurado.get("id_tip_doc"));
             response.put("nombreIpress", asegurado.get("nombre_ipress"));
             response.put("nombreRed", asegurado.get("nombre_red"));
             response.put("periodo", asegurado.get("periodo"));

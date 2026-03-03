@@ -38,9 +38,13 @@ import toast from "react-hot-toast";
 import TrazabilidadClinicaTabs from "../../components/trazabilidad/TrazabilidadClinicaTabs";
 import { usePermisos } from '../../context/PermisosContext';
 
-// ── Clasificar documento por su contenido real (independiente de idTipDoc) ──
-function clasificarDoc(doc) {
+// ── Clasificar documento usando idTipDoc primero, luego por formato ──
+function clasificarDoc(doc, idTipDoc) {
   if (!doc || doc.trim() === '') return { label: '—', cls: 'bg-slate-100 text-slate-400' };
+  // Si tiene tipo de documento explícito, usarlo como prioridad
+  if (idTipDoc === 2 || idTipDoc === '2') return { label: 'C.E./Pas.', cls: 'bg-blue-100 text-blue-700' };
+  if (idTipDoc === 1 || idTipDoc === '1') return { label: 'DNI',       cls: 'bg-emerald-100 text-emerald-700' };
+  // Fallback: inferir por formato
   const v = doc.trim();
   if (/^\d{8}$/.test(v))        return { label: 'DNI',       cls: 'bg-emerald-100 text-emerald-700' };
   if (/^[A-Za-z0-9]{6,12}$/.test(v) && /[A-Za-z]/.test(v))
@@ -774,7 +778,7 @@ export default function BuscarAsegurado() {
                           </td>
                           <td className="px-3 py-3 text-sm" style={{ width: '90px' }}>
                             {(() => {
-                              const { label, cls } = clasificarDoc(asegurado.docPaciente);
+                              const { label, cls } = clasificarDoc(asegurado.docPaciente, asegurado.idTipDoc);
                               return (
                                 <span className={`inline-block px-1.5 py-0.5 rounded text-[11px] font-semibold ${cls}`}>
                                   {label}
