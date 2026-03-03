@@ -315,13 +315,20 @@ public class TrazabilidadBolsaService {
      * Infiere el origen del ingreso cuando responsableGestoraId es NULL,
      * basándose en el prefijo del numero_solicitud.
      */
+    /**
+     * Infiere el origen del ingreso cuando responsableGestoraId es NULL.
+     * Distingue entre procesos realmente automáticos (sin usuario posible)
+     * y casos donde el usuario no fue registrado (datos históricos).
+     */
     private String resolverOrigenAutomatico(String numeroSolicitud) {
         if (numeroSolicitud == null) return "Registro del sistema";
-        if (numeroSolicitud.startsWith("107-ID-"))   return "Bolsa automática - Módulo 107";
-        if (numeroSolicitud.startsWith("TEL-"))      return "Bolsa automática - TeleECG";
-        if (numeroSolicitud.startsWith("REC-"))      return "Carga masiva - Enfermería";
-        if (numeroSolicitud.startsWith("MESA-"))     return "Mesa de Ayuda";
-        if (numeroSolicitud.startsWith("DENGUE-"))   return "Bolsa automática - Dengue";
+        // Procesos automáticos de BD: no hay usuario posible
+        if (numeroSolicitud.startsWith("107-ID-"))   return "Proceso automático - Módulo 107";
+        // Acciones de usuario pero no registradas (datos anteriores al fix v1.82.x)
+        if (numeroSolicitud.startsWith("TEL-"))      return "Carga TeleECG (usuario no registrado)";
+        if (numeroSolicitud.startsWith("REC-"))      return "Carga masiva Enfermería (usuario no registrado)";
+        if (numeroSolicitud.startsWith("MESA-"))     return "Mesa de Ayuda (usuario no registrado)";
+        if (numeroSolicitud.startsWith("DENGUE-"))   return "Carga Dengue (usuario no registrado)";
         return "Registro del sistema";
     }
 
