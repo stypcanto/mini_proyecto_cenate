@@ -38,6 +38,18 @@ import toast from "react-hot-toast";
 import TrazabilidadClinicaTabs from "../../components/trazabilidad/TrazabilidadClinicaTabs";
 import { usePermisos } from '../../context/PermisosContext';
 
+// ── Clasificar documento por su contenido real (independiente de idTipDoc) ──
+function clasificarDoc(doc) {
+  if (!doc || doc.trim() === '') return { label: '—', cls: 'bg-slate-100 text-slate-400' };
+  const v = doc.trim();
+  if (/^\d{8}$/.test(v))        return { label: 'DNI',       cls: 'bg-emerald-100 text-emerald-700' };
+  if (/^[A-Za-z0-9]{6,12}$/.test(v) && /[A-Za-z]/.test(v))
+                                 return { label: 'C.E./Pas.', cls: 'bg-blue-100 text-blue-700' };
+  if (/^\d{9,}$/.test(v))       return { label: 'Cód. Seg.', cls: 'bg-amber-100 text-amber-700' };
+  if (/^\d{1,7}$/.test(v))      return { label: 'Incompleto',cls: 'bg-red-100 text-red-600' };
+  return                                { label: 'Inválido',  cls: 'bg-red-100 text-red-600' };
+}
+
 export default function BuscarAsegurado() {
   const { esSuperAdmin, tienePermiso } = usePermisos();
   const puedeCrearAsegurado = esSuperAdmin || tienePermiso('/asegurados/buscar', 'crear');
@@ -56,6 +68,7 @@ export default function BuscarAsegurado() {
   const [selectedRed, setSelectedRed] = useState("");
   const [selectedIpress, setSelectedIpress] = useState("");
   const [soloCenacron, setSoloCenacron] = useState(false);
+  const [soloDniValido, setSoloDniValido] = useState(false);
   const [loadingFiltros, setLoadingFiltros] = useState(false);
 
   // 📋 Estados para tipos de documento
@@ -745,10 +758,17 @@ export default function BuscarAsegurado() {
                           <td className="px-2.5 py-3 text-xs text-slate-600 text-center font-medium" style={{ width: '50px' }}>
                             { globalIndex }
                           </td>
-                          <td className="px-3 py-3 text-sm text-slate-900" style={{ width: '90px' }}>
-                            { asegurado.idTipDoc === 1 ? 'DNI' : asegurado.idTipDoc === 2 ? 'C.E./PAS' : asegurado.idTipDoc === 3 ? 'PASAPORT' : 'DNI' }
+                          <td className="px-3 py-3 text-sm" style={{ width: '90px' }}>
+                            {(() => {
+                              const { label, cls } = clasificarDoc(asegurado.docPaciente);
+                              return (
+                                <span className={`inline-block px-1.5 py-0.5 rounded text-[11px] font-semibold ${cls}`}>
+                                  {label}
+                                </span>
+                              );
+                            })()}
                           </td>
-                          <td className="px-3 py-3 text-sm text-slate-900" style={{ width: '110px' }}>
+                          <td className="px-3 py-3 text-sm text-slate-900 font-mono" style={{ width: '110px' }}>
                             { asegurado.docPaciente || "-" }
                           </td>
                           <td className="px-3 py-3">
