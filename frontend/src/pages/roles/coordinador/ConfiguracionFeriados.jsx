@@ -11,8 +11,10 @@ import { Eye, Plus, Pencil, AlertCircle, Loader, RefreshCw } from 'lucide-react'
 import ModalNuevaSolicitud from '../../../components/control_horarios/ModalNuevaSolicitud';
 import ModalConsultarSolicitud from '../../../components/control_horarios/ModalConsultarSolicitud';
 import { logRespuestaConsola } from '../../../utils/consoleResponseLogger';
+import { useAuth } from '../../../context/AuthContext';
 
 const ConfiguracionFeriados = () => {
+  const { user } = useAuth();
   const [periodos, setPeriodos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);

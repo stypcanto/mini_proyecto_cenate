@@ -330,6 +330,16 @@ const ModalNuevaSolicitud = ({ periodo, horario, onClose, onSuccess }) => {
                         </p>
                       </div>
                     </div>
+                    <div className="flex items-start gap-3">
+                      <Building2 className="w-4 h-4 text-indigo-400 mt-0.5 flex-shrink-0" />
+                      <div>
+                        <p className="text-xs text-gray-500 font-medium">Grupo Programación</p>
+                        <p className="text-sm text-gray-800">
+                          {user?.descGrupoProg || '—'}
+                          {user?.idGrupoProg != null && <span className="text-xs text-gray-400 ml-1">({user.idGrupoProg})</span>}
+                        </p>
+                      </div>
+                    </div>
                   </div>
 
                   {/* Badges: Turnos y Horas */}

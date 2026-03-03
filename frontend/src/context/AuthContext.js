@@ -93,6 +93,8 @@ export const AuthProvider = ({ children }) => {
             idIpress: null,
             descServicio: null,
             idServicio: null,
+            idGrupoProg: null,
+            descGrupoProg: null,
             token
           };
 
@@ -188,6 +190,8 @@ export const AuthProvider = ({ children }) => {
       idIpress: data.idIpress || null,         // ID del IPRESS
       descServicio: data.descServicio || null, // Descripción del servicio
       idServicio: data.idServicio || null,     // ID del servicio
+      idGrupoProg: data.idGrupoProg || null,   // ID del grupo programático
+      descGrupoProg: data.descGrupoProg || null, // Descripción del grupo programático
       token: jwt
     };
 

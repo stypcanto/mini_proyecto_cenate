@@ -144,6 +144,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         String descServicio = null;
         Long idServicio = null;
         Long idGrupoProg = null;  // 🆕 ID del grupo programático
+        String descGrupoProg = null;  // 🆕 Descripción del grupo programático
 
         var personalInfo = obtenerInfoPersonal(user);
         
@@ -158,6 +159,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
             idServicio = personalInfo.get("id_servicio") != null ? ((Number) personalInfo.get("id_servicio")).longValue() : null;
             descServicio = (String) personalInfo.get("desc_servicio");
             idGrupoProg = personalInfo.get("id_grupo_prog") != null ? ((Number) personalInfo.get("id_grupo_prog")).longValue() : null;  // 🆕 Obtener ID del grupo programático
+            descGrupoProg = (String) personalInfo.get("desc_grupo_prog");  // 🆕 Descripción del grupo programático
         }
 
         Map<String, Object> claims = new HashMap<>();
@@ -176,6 +178,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         claims.put("descServicio", descServicio);  // 🆕 Descripción del servicio
         claims.put("idServicio", idServicio);  // 🆕 ID del servicio
         claims.put("idGrupoProg", idGrupoProg);  // 🆕 ID del grupo programático
+        claims.put("descGrupoProg", descGrupoProg);  // 🆕 Descripción del grupo programático
         if (especialidad != null) {
             claims.put("especialidad", especialidad);  // ✅ v1.77.0: Especialidad del médico
         }
@@ -241,6 +244,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                 .descServicio(descServicio)  // 🆕 v1.78.0: Servicio
                 .idServicio(idServicio)  // 🆕 v1.78.0: ID del servicio
                 .idGrupoProg(idGrupoProg)  // 🆕 ID del grupo programático
+                .descGrupoProg(descGrupoProg)  // 🆕 Descripción del grupo programático
                 .message("Inicio de sesión exitoso")
                 .build();
     }
@@ -505,12 +509,14 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                 "  di.desc_ipress, " +
                 "  dpc.id_servicio, " +
                 "  dse.desc_servicio, " +
-                "  dpc.id_grupo_prog " +
+                "  dpc.id_grupo_prog, " +
+                "  dgp.desc_grupo " +
                 "FROM public.dim_personal_cnt dpc " +
                 "LEFT JOIN public.dim_regimen_laboral drl ON dpc.id_reg_lab = drl.id_reg_lab " +
                 "LEFT JOIN public.dim_area da ON dpc.id_area = da.id_area " +
                 "LEFT JOIN public.dim_ipress di ON dpc.id_ipress = di.id_ipress " +
                 "LEFT JOIN public.dim_servicio_essi dse ON dpc.id_servicio = dse.id_servicio " +
+                "LEFT JOIN public.dim_grupo_programacion dgp ON dpc.id_grupo_prog = dgp.id_grupo_prog " +
                 "WHERE dpc.id_pers = ? " +
                 "LIMIT 1",
                 new Object[]{idPers},
@@ -526,6 +532,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                     map.put("id_servicio", rs.getObject("id_servicio"));
                     map.put("desc_servicio", rs.getString("desc_servicio"));
                     map.put("id_grupo_prog", rs.getObject("id_grupo_prog"));
+                    map.put("desc_grupo_prog", rs.getString("desc_grupo"));
                     return map;
                 }
             );
