@@ -15,6 +15,8 @@ const ModalNuevaSolicitud = ({ periodo, horario, onClose, onSuccess }) => {
   const [error, setError] = useState(null);
   const [selectedDate, setSelectedDate] = useState(null);
   const [dayTurnos, setDayTurnos] = useState({}); // Mapea fecha (YYYY-MM-DD) a código de turno
+  const [hasChanges, setHasChanges] = useState(!isEditMode); // En creación siempre activo
+  const savedStateRef = useRef({ dayTurnos: {}, observaciones: '' }); // Estado original guardado
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [medicos, setMedicos] = useState([]);
   const [turnos, setTurnos] = useState([]); // Cargados desde API dim_horario
@@ -87,6 +89,24 @@ const ModalNuevaSolicitud = ({ periodo, horario, onClose, onSuccess }) => {
       setTurnos(horariosData);
 
       console.log(`📋 Códigos de horario cargados: ${horariosData.length} (idArea=${idArea}, idGrupoProg=${idGrupoProg})`);
+
+      // Si es modo edición, cargar los detalles guardados (turnos por día)
+      if (isEditMode && horario?.idCtrHorario) {
+        try {
+          const detResponse = await axios.get(
+            `/api/control-horarios/horarios/${horario.idCtrHorario}/detalles`,
+            { headers: { 'Authorization': token ? `Bearer ${token}` : '' } }
+          );
+          if (detResponse.data.success && detResponse.data.data) {
+            setDayTurnos(detResponse.data.data);
+            savedStateRef.current.dayTurnos = { ...detResponse.data.data };
+            savedStateRef.current.observaciones = horario?.observaciones || '';
+            console.log(`📅 Detalles cargados: ${Object.keys(detResponse.data.data).length} días con turno`);
+          }
+        } catch (detErr) {
+          console.error('Error cargando detalles:', detErr);
+        }
+      }
     } catch (err) {
       console.error('Error cargando datos:', err);
       setError('Error al cargar códigos de horario');
@@ -144,18 +164,42 @@ const ModalNuevaSolicitud = ({ periodo, horario, onClose, onSuccess }) => {
     return date.toISOString().split('T')[0];
   };
 
+  // Detectar si los días (dayTurnos) cambiaron respecto al estado guardado
+  const hasDaysChanged = (newDayTurnos) => {
+    const saved = savedStateRef.current;
+    const currentKeys = Object.keys(newDayTurnos);
+    const savedKeys = Object.keys(saved.dayTurnos);
+    if (currentKeys.length !== savedKeys.length) return true;
+    for (const key of currentKeys) {
+      if (newDayTurnos[key] !== saved.dayTurnos[key]) return true;
+    }
+    return false;
+  };
+
+  // Detectar si las observaciones cambiaron respecto al estado guardado
+  const hasObsChanged = (newObservaciones) => {
+    const saved = savedStateRef.current;
+    return (newObservaciones || '') !== (saved.observaciones || '');
+  };
+
+  // Detectar si hay cualquier cambio real (días u observaciones)
+  const detectRealChanges = (newDayTurnos, newObservaciones) => {
+    return hasDaysChanged(newDayTurnos) || hasObsChanged(newObservaciones);
+  };
+
   const handleTurnoSelect = (codigo) => {
     if (selectedDate) {
       const dateKey = getDateKey(selectedDate);
-      setDayTurnos(prev => ({
-        ...prev,
-        [dateKey]: codigo
-      }));
+      const newDayTurnos = { ...dayTurnos, [dateKey]: codigo };
+      setDayTurnos(newDayTurnos);
       setFormData(prev => ({
         ...prev,
         turnoCode: codigo
       }));
-      setShowTurnosDropdown(false); // Cierra el dropdown después de seleccionar
+      setShowTurnosDropdown(false);
+      if (isEditMode) {
+        setHasChanges(detectRealChanges(newDayTurnos, formData.observaciones));
+      }
     }
   };
 
@@ -165,18 +209,27 @@ const ModalNuevaSolicitud = ({ periodo, horario, onClose, onSuccess }) => {
       ...prev,
       [name]: value
     }));
+    if (isEditMode) {
+      const newObs = name === 'observaciones' ? value : formData.observaciones;
+      setHasChanges(detectRealChanges(dayTurnos, newObs));
+    }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!selectedDate) {
-      setError('Por favor selecciona una fecha en el calendario');
+    // En modo edición, verificar si realmente hay cambios
+    if (isEditMode && !detectRealChanges(dayTurnos, formData.observaciones)) {
+      setError(null);
+      setHasChanges(false);
+      alert('No se detectaron cambios. Los datos son iguales a los guardados.');
       return;
     }
 
-    if (!dayTurnos[getDateKey(selectedDate)]) {
-      setError('Por favor selecciona un código de turno');
+    // Validar que haya al menos un turno asignado en el calendario
+    const turnosAsignados = Object.keys(dayTurnos).length;
+    if (turnosAsignados === 0) {
+      setError('Por favor asigna al menos un turno en el calendario');
       return;
     }
 
@@ -185,35 +238,54 @@ const ModalNuevaSolicitud = ({ periodo, horario, onClose, onSuccess }) => {
 
     try {
       const token = localStorage.getItem('token') || localStorage.getItem('auth.token');
-      const turnoSeleccionado = dayTurnos[getDateKey(selectedDate)];
+      const headers = {
+        'Authorization': token ? `Bearer ${token}` : '',
+        'Content-Type': 'application/json'
+      };
+
+      let idCtrHorario = horario?.idCtrHorario;
 
       if (isEditMode) {
-        // Modo edición: PUT
-        const updateRequest = {
-          turnosTotales: 1,
-          horasTotales: 0,
-          observaciones: `Turno: ${turnoSeleccionado} | Fecha: ${selectedDate.toLocaleDateString('es-PE')} ${formData.observaciones ? '| ' + formData.observaciones : ''}`,
-        };
+        // Modo edición: llamar SOLO las APIs que correspondan según lo que cambió
+        const daysChanged = hasDaysChanged(dayTurnos);
+        const obsChanged = hasObsChanged(formData.observaciones);
 
-        const response = await axios.put(
-          `/api/control-horarios/horarios/${horario.idCtrHorario}`,
-          updateRequest,
-          {
-            headers: {
-              'Authorization': token ? `Bearer ${token}` : '',
-              'Content-Type': 'application/json'
-            }
+        // 1) Si los días cambiaron → PUT /detalles (también actualiza turnos_totales y horas_totales)
+        if (daysChanged) {
+          const detResponse = await axios.put(
+            `/api/control-horarios/horarios/${idCtrHorario}/detalles`,
+            { turnosPorDia: dayTurnos },
+            { headers }
+          );
+          if (!detResponse.data.success) {
+            setError(detResponse.data.error || 'Error al guardar detalles');
+            return;
           }
-        );
-
-        if (response.data.success) {
-          onSuccess();
-          onClose();
-        } else {
-          setError(response.data.error || 'Error al actualizar solicitud');
         }
+
+        // 2) Si las observaciones cambiaron → PATCH /observaciones
+        if (obsChanged) {
+          const obsResponse = await axios.patch(
+            `/api/control-horarios/horarios/${idCtrHorario}/observaciones`,
+            { observaciones: formData.observaciones || '' },
+            { headers }
+          );
+          if (!obsResponse.data.success) {
+            setError(obsResponse.data.error || 'Error al actualizar observaciones');
+            return;
+          }
+        }
+
+        // Actualizar estado guardado para futuras comparaciones
+        savedStateRef.current = {
+          dayTurnos: { ...dayTurnos },
+          observaciones: formData.observaciones || ''
+        };
+        setHasChanges(false);
+        onSuccess();
+        onClose();
       } else {
-        // Modo creación: POST
+        // Modo creación: crear cabecera primero, luego detalles
         const request = {
           periodo: periodo.periodo,
           idArea: periodo.idArea,
@@ -221,23 +293,34 @@ const ModalNuevaSolicitud = ({ periodo, horario, onClose, onSuccess }) => {
           idGrupoProg: user?.idGrupoProg || 1,
           idServicio: user?.idServicio || null,
           idRegLab: user?.idRegLab || 1,
-          turnosTotales: 1,
+          turnosTotales: turnosAsignados,
           horasTotales: 0,
-          observaciones: `Turno: ${turnoSeleccionado} | Fecha: ${selectedDate.toLocaleDateString('es-PE')} ${formData.observaciones ? '| ' + formData.observaciones : ''}`,
+          observaciones: formData.observaciones || '',
         };
 
-        const response = await axios.post('/api/control-horarios/horarios', request, {
-          headers: {
-            'Authorization': token ? `Bearer ${token}` : '',
-            'Content-Type': 'application/json'
-          }
-        });
+        const response = await axios.post('/api/control-horarios/horarios', request, { headers });
 
         if (response.data.success) {
-          onSuccess();
-          onClose();
+          idCtrHorario = response.data.data?.idCtrHorario;
         } else {
           setError(response.data.error || 'Error al crear solicitud');
+          return;
+        }
+
+        // Guardar detalles (turnos por día) en ctr_horario_det
+        if (idCtrHorario) {
+          const detResponse = await axios.put(
+            `/api/control-horarios/horarios/${idCtrHorario}/detalles`,
+            { turnosPorDia: dayTurnos },
+            { headers }
+          );
+
+          if (detResponse.data.success) {
+            onSuccess();
+            onClose();
+          } else {
+            setError(detResponse.data.error || 'Error al guardar detalles');
+          }
         }
       }
     } catch (err) {
@@ -609,7 +692,7 @@ const ModalNuevaSolicitud = ({ periodo, horario, onClose, onSuccess }) => {
             <div className="flex gap-3 mt-6">
               <button
                 type="submit"
-                disabled={loading}
+                disabled={loading || (isEditMode && !hasChanges)}
                 className="flex-1 px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 disabled:opacity-50 font-semibold text-base flex items-center justify-center gap-2 shadow-sm transition-colors"
               >
                 {loading && <Loader className="w-5 h-5 animate-spin" />}
@@ -618,7 +701,7 @@ const ModalNuevaSolicitud = ({ periodo, horario, onClose, onSuccess }) => {
               {isEditMode && (
                 <button
                   type="button"
-                  disabled={loading}
+                  disabled={loading || hasChanges}
                   onClick={async () => {
                     if (!window.confirm('¿Está seguro de finalizar el horario?\nUna vez finalizado no podrá realizar modificaciones.')) return;
                     setLoading(true);

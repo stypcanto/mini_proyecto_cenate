@@ -196,6 +196,87 @@ public class ControlHorariosController {
     }
 
     /**
+     * PUT /api/control-horarios/horarios/{id}/detalles
+     * Guardar turnos por día (ctr_horario_det)
+     * Body: { "turnosPorDia": { "2026-02-01": "29", "2026-02-02": "131", ... } }
+     */
+    @PreAuthorize("isAuthenticated()")
+    @PutMapping("/horarios/{id}/detalles")
+    public ResponseEntity<?> guardarDetalles(
+            @PathVariable Long id,
+            @RequestBody Map<String, Object> body
+    ) {
+        log.info("PUT /horarios/{}/detalles - Guardar turnos por día", id);
+
+        try {
+            @SuppressWarnings("unchecked")
+            Map<String, String> turnosPorDia = (Map<String, String>) body.get("turnosPorDia");
+            if (turnosPorDia == null || turnosPorDia.isEmpty()) {
+                return ResponseEntity.badRequest().body(Map.of(
+                    "success", false,
+                    "error", "No se recibieron turnos para guardar"
+                ));
+            }
+
+            controlHorariosService.guardarDetalles(id, turnosPorDia);
+            return ResponseEntity.ok(Map.of(
+                "success", true,
+                "message", "Detalles guardados exitosamente (" + turnosPorDia.size() + " días)"
+            ));
+        } catch (Exception e) {
+            log.error("Error guardando detalles: {}", e.getMessage());
+            return ResponseEntity.badRequest().body(Map.of(
+                "success", false,
+                "error", e.getMessage()
+            ));
+        }
+    }
+
+    /**
+     * GET /api/control-horarios/horarios/{id}/detalles
+     * Obtener turnos guardados por día
+     */
+    @PreAuthorize("isAuthenticated()")
+    @GetMapping("/horarios/{id}/detalles")
+    public ResponseEntity<?> obtenerDetalles(@PathVariable Long id) {
+        log.info("GET /horarios/{}/detalles - Obtener turnos por día", id);
+
+        Map<String, String> detalles = controlHorariosService.obtenerDetalles(id);
+        return ResponseEntity.ok(Map.of(
+            "success", true,
+            "data", detalles
+        ));
+    }
+
+    /**
+     * PATCH /api/control-horarios/horarios/{id}/observaciones
+     * Actualizar solo las observaciones
+     * Body: { "observaciones": "texto" }
+     */
+    @PreAuthorize("isAuthenticated()")
+    @PatchMapping("/horarios/{id}/observaciones")
+    public ResponseEntity<?> actualizarObservaciones(
+            @PathVariable Long id,
+            @RequestBody Map<String, String> body
+    ) {
+        log.info("PATCH /horarios/{}/observaciones - Actualizar observaciones", id);
+        try {
+            String observaciones = body.getOrDefault("observaciones", "");
+            controlHorariosService.actualizarObservaciones(id, observaciones);
+            return ResponseEntity.ok(Map.of(
+                "success", true,
+                "message", "Observaciones actualizadas exitosamente"
+            ));
+        } catch (Exception e) {
+            log.error("Error actualizando observaciones: {}", e.getMessage());
+            return ResponseEntity.badRequest().body(Map.of(
+                "success", false,
+                "error", e.getMessage()
+            ));
+        }
+    }
+
+    /**
      * PATCH /api/control-horarios/horarios/{id}/finalizar
      * Finalizar solicitud (cambiar estado a TERMINADO = 4)
      */

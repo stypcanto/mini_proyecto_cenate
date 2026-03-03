@@ -51,6 +51,23 @@ public interface ControlHorariosService {
     List<DimHorarioDTO> obtenerHorariosPorAreaYGrupo(Long idArea, Long idGrupoProg);
 
     /**
+     * Guardar detalles diarios del horario (turnos por día).
+     * Recibe mapa fecha→códigoHorarioVisual y actualiza ctr_horario_det.
+     */
+    void guardarDetalles(Long idCtrHorario, java.util.Map<String, String> turnosPorDia);
+
+    /**
+     * Obtener detalles diarios del horario.
+     * Retorna mapa fecha→códigoHorarioVisual.
+     */
+    java.util.Map<String, String> obtenerDetalles(Long idCtrHorario);
+
+    /**
+     * Actualizar solo las observaciones de una solicitud.
+     */
+    void actualizarObservaciones(Long idCtrHorario, String observaciones);
+
+    /**
      * Finalizar solicitud de horario (cambiar estado a TERMINADO = 4)
      */
     CtrHorarioDTO finalizarSolicitud(Long idCtrHorario);

@@ -17,6 +17,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
@@ -374,6 +375,123 @@ public class ControlHorariosServiceImpl implements ControlHorariosService {
                     .visibleMedico(h.getVisibleMedico())
                     .build();
         }).collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional
+    public void guardarDetalles(Long idCtrHorario, Map<String, String> turnosPorDia) {
+        log.info("💾 Guardando detalles para horario {} ({} días)", idCtrHorario, turnosPorDia.size());
+
+        try {
+            // Construir mapa codHorarioVisual → idHorario desde dim_horario
+            Map<String, Long> codigoToId = new java.util.HashMap<>();
+            List<Map<String, Object>> dimRows = jdbcTemplate.queryForList(
+                "SELECT id_horario, cod_horario_visual FROM dim_horario WHERE stat_horario = 'A'"
+            );
+            for (Map<String, Object> row : dimRows) {
+                String codVisual = (String) row.get("cod_horario_visual");
+                Long idHorario = ((Number) row.get("id_horario")).longValue();
+                if (codVisual != null) {
+                    codigoToId.put(codVisual, idHorario);
+                }
+            }
+
+            int actualizados = 0;
+            for (Map.Entry<String, String> entry : turnosPorDia.entrySet()) {
+                String fecha = entry.getKey();     // "YYYY-MM-DD"
+                String codigo = entry.getValue();   // codHorarioVisual ej: "29", "131"
+
+                Long idHorario = codigoToId.get(codigo);
+                if (idHorario == null) {
+                    log.warn("⚠️ Código de horario visual '{}' no encontrado en dim_horario", codigo);
+                    continue;
+                }
+
+                // UPSERT: intentar UPDATE, si no afecta filas → INSERT
+                int updated = jdbcTemplate.update(
+                    "UPDATE ctr_horario_det SET id_horario = ?, origen_registro = 'PROFESIONAL', updated_at = NOW() " +
+                    "WHERE id_ctr_horario = ? AND fecha_dia = ?",
+                    idHorario, idCtrHorario, java.time.LocalDate.parse(fecha)
+                );
+
+                if (updated == 0) {
+                    // El día no existe aún, insertarlo
+                    jdbcTemplate.update(
+                        "INSERT INTO ctr_horario_det (id_ctr_horario, fecha_dia, id_horario, id_tip_turno, " +
+                        "estado_det, origen_registro, created_at, updated_at) " +
+                        "VALUES (?, ?, ?, 1, 'REGISTRADO', 'PROFESIONAL', NOW(), NOW())",
+                        idCtrHorario, java.time.LocalDate.parse(fecha), idHorario
+                    );
+                }
+                actualizados++;
+            }
+
+            // Actualizar totales en ctr_horario
+            jdbcTemplate.update(
+                "UPDATE ctr_horario SET turnos_totales = " +
+                "(SELECT COUNT(*) FROM ctr_horario_det WHERE id_ctr_horario = ? AND id_horario IS NOT NULL), " +
+                "horas_totales = COALESCE(" +
+                "(SELECT SUM(dh.horas) FROM ctr_horario_det chd JOIN dim_horario dh ON chd.id_horario = dh.id_horario " +
+                "WHERE chd.id_ctr_horario = ? AND chd.id_horario IS NOT NULL), 0), " +
+                "updated_at = NOW() WHERE id_ctr_horario = ?",
+                idCtrHorario, idCtrHorario, idCtrHorario
+            );
+
+            log.info("✅ Detalles guardados: {} días actualizados para horario {}", actualizados, idCtrHorario);
+
+        } catch (Exception e) {
+            log.error("❌ Error guardando detalles: {}", e.getMessage());
+            throw new RuntimeException("Error al guardar detalles de horario", e);
+        }
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Map<String, String> obtenerDetalles(Long idCtrHorario) {
+        log.info("📋 Obteniendo detalles para horario {}", idCtrHorario);
+
+        try {
+            String sql = """
+                SELECT chd.fecha_dia, dh.cod_horario_visual
+                FROM ctr_horario_det chd
+                LEFT JOIN dim_horario dh ON chd.id_horario = dh.id_horario
+                WHERE chd.id_ctr_horario = ?
+                  AND chd.id_horario IS NOT NULL
+                ORDER BY chd.fecha_dia ASC
+            """;
+
+            Map<String, String> resultado = new java.util.LinkedHashMap<>();
+            jdbcTemplate.query(sql, new Object[]{idCtrHorario}, (rs) -> {
+                String fecha = rs.getDate("fecha_dia").toLocalDate().toString();
+                String codVisual = rs.getString("cod_horario_visual");
+                if (codVisual != null) {
+                    resultado.put(fecha, codVisual);
+                }
+            });
+
+            log.info("✅ Se encontraron {} días con turno asignado", resultado.size());
+            return resultado;
+
+        } catch (Exception e) {
+            log.error("❌ Error obteniendo detalles: {}", e.getMessage());
+            return java.util.Collections.emptyMap();
+        }
+    }
+
+    @Override
+    @Transactional
+    public void actualizarObservaciones(Long idCtrHorario, String observaciones) {
+        log.info("📝 Actualizando observaciones para horario {}", idCtrHorario);
+        try {
+            jdbcTemplate.update(
+                "UPDATE ctr_horario SET observaciones = ?, updated_at = NOW() WHERE id_ctr_horario = ?",
+                observaciones, idCtrHorario
+            );
+            log.info("✅ Observaciones actualizadas para horario {}", idCtrHorario);
+        } catch (Exception e) {
+            log.error("❌ Error actualizando observaciones: {}", e.getMessage());
+            throw new RuntimeException("Error al actualizar observaciones", e);
+        }
     }
 
     @Override
