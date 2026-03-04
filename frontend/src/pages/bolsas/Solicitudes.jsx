@@ -210,6 +210,10 @@ export default function Solicitudes({ categoriaInicial } = {}) {
   const [gruposFormados, setGruposFormados]       = useState([]);
   const [grupoSeleccionado, setGrupoSeleccionado] = useState(null);
   const [loadingAgrupacion, setLoadingAgrupacion] = useState(false);
+  // Modal selección de lotes antes de asignar gestora
+  const [modalSeleccionLotes, setModalSeleccionLotes] = useState(false);
+  const [grupoParaAsignar, setGrupoParaAsignar]       = useState(null);
+  const [lotesAAsignar, setLotesAAsignar]             = useState(1);
 
   // ============================================================================
   // 📦 EFFECT 1: Cargar CATÁLOGOS una sola vez al iniciar
@@ -1103,12 +1107,19 @@ export default function Solicitudes({ categoriaInicial } = {}) {
       });
 
       // El backend ya filtró por MOD 4 = 0 y devolvió {ipress, especialidad, total, grupos, ids[]}
-      const gruposFormateados = grupos.map(g => ({
-        ipress:         g.ipress,
-        especialidad:   g.especialidad,
-        cantidadGrupos: g.grupos,
-        pacientes:      g.ids.map(id => ({ id_solicitud: id, id })), // solo IDs para asignación
-      }));
+      // Filtro extra client-side: en /especialidades excluir MEDICINA GENERAL y ENFERMERIA
+      const gruposFormateados = grupos
+        .filter(g => {
+          if (categoriaInicial !== 'especialidades') return true;
+          const eUpper = (g.especialidad || '').toUpperCase();
+          return eUpper !== 'MEDICINA GENERAL' && eUpper !== 'ENFERMERIA';
+        })
+        .map(g => ({
+          ipress:         g.ipress,
+          especialidad:   g.especialidad,
+          cantidadGrupos: g.grupos,
+          pacientes:      g.ids.map(id => ({ id_solicitud: id, id })),
+        }));
 
       const { default: toast } = await import('react-hot-toast');
       if (gruposFormateados.length === 0) {
@@ -1137,10 +1148,29 @@ export default function Solicitudes({ categoriaInicial } = {}) {
   };
 
   const asignarGestoraAGrupo = (grupo) => {
+    // Si tiene más de 1 lote, preguntar cuántos lotes asignar
+    if (grupo.cantidadGrupos > 1) {
+      setGrupoParaAsignar(grupo);
+      setLotesAAsignar(1);
+      setModalSeleccionLotes(true);
+      return;
+    }
+    // Solo 1 lote: ir directo al modal de gestora
     const ids = grupo.pacientes.map(p => p.id_item || p.id_solicitud || p.id);
     setSelectedRows(new Set(ids));
     setGrupoSeleccionado(grupo);
     setGestoraSeleccionada(null);
+    setModalAsignarGestora(true);
+  };
+
+  const confirmarLotesYAsignar = () => {
+    const lotes = Math.min(Math.max(1, parseInt(lotesAAsignar) || 1), grupoParaAsignar.cantidadGrupos);
+    const pacientesSeleccionados = grupoParaAsignar.pacientes.slice(0, lotes * 4);
+    const ids = pacientesSeleccionados.map(p => p.id_item || p.id_solicitud || p.id);
+    setSelectedRows(new Set(ids));
+    setGrupoSeleccionado({ ...grupoParaAsignar, pacientes: pacientesSeleccionados });
+    setGestoraSeleccionada(null);
+    setModalSeleccionLotes(false);
     setModalAsignarGestora(true);
   };
 
@@ -1524,9 +1554,12 @@ export default function Solicitudes({ categoriaInicial } = {}) {
   const macrorregionesUnicas = [...new Set(solicitudes.map(s => s.macroregion))].filter(m => m && m !== 'N/A').sort();
 
   // NEW v1.42.0: Usar especialidades desde backend (TODAS, no solo de página actual)
-  const especialidadesUnicas = especialidadesActivas && especialidadesActivas.length > 0
+  // En /especialidades excluir MEDICINA GENERAL y ENFERMERIA (tienen su propia sub-página)
+  const ESPECIALIDADES_EXCLUIDAS_EN_SUBPAGINA = ['MEDICINA GENERAL', 'ENFERMERIA'];
+  const especialidadesUnicas = (especialidadesActivas && especialidadesActivas.length > 0
     ? especialidadesActivas
-    : [];
+    : []
+  ).filter(e => categoriaInicial !== 'especialidades' || !ESPECIALIDADES_EXCLUIDAS_EN_SUBPAGINA.includes(e.toUpperCase()));
 
   // Verificar si hay registros SIN especialidad y agregar "S/E"
   const hayRegistrosSinEspecialidad = solicitudes.some(s => !s.especialidad || s.especialidad.trim() === '');
@@ -2338,13 +2371,15 @@ export default function Solicitudes({ categoriaInicial } = {}) {
                 searchable: true,
                 value: filtroEspecialidad,
                 onChange: (e) => setFiltroEspecialidad(e.target.value),
-                options: [
-                  { label: `Todas las especialidades (${especialidadesConSE.length})`, value: "todas" },
-                  ...especialidadesConSE.map(esp => ({
-                    label: esp,
-                    value: esp
-                  }))
-                ]
+                // Sub-página con especialidad fija → bloqueado + badge con total
+                disabled: !!(categoriaInicial && categoriaInicial !== 'especialidades' && categoriaInicial !== 'bolsa107'),
+                badgeCount: (categoriaInicial && categoriaInicial !== 'especialidades' && categoriaInicial !== 'bolsa107') ? totalElementos : undefined,
+                options: (categoriaInicial && categoriaInicial !== 'especialidades' && categoriaInicial !== 'bolsa107')
+                  ? [{ label: categoriaInicial, value: categoriaInicial }]
+                  : [
+                      { label: `Todas las especialidades (${especialidadesConSE.length})`, value: "todas" },
+                      ...especialidadesConSE.map(esp => ({ label: esp, value: esp }))
+                    ]
               },
               {
                 name: "Estado de Bolsa",
@@ -3124,6 +3159,80 @@ export default function Solicitudes({ categoriaInicial } = {}) {
                   className="flex-1 px-4 py-2 bg-[#0A5BA9] hover:bg-[#083d78] text-white rounded-lg font-semibold disabled:opacity-50 text-sm transition-colors"
                 >
                   {isProcessing ? 'Guardando...' : 'Guardar'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ====== MODAL: SELECCIONAR LOTES A ASIGNAR ====== */}
+        {modalSeleccionLotes && grupoParaAsignar && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-bold text-gray-800">¿Cuántos lotes asignar?</h3>
+                <button onClick={() => setModalSeleccionLotes(false)} className="text-gray-400 hover:text-gray-600 transition-colors">
+                  <X size={20} />
+                </button>
+              </div>
+
+              {/* Info del grupo */}
+              <div className="bg-purple-50 border border-purple-200 rounded-xl p-4 mb-5">
+                <p className="text-sm font-semibold text-gray-800 truncate">{grupoParaAsignar.ipress}</p>
+                <p className="text-xs text-blue-600 mt-0.5">{grupoParaAsignar.especialidad}</p>
+                <div className="flex items-center gap-3 mt-2">
+                  <span className="bg-purple-100 text-purple-700 text-xs font-bold px-2 py-1 rounded-full">
+                    {grupoParaAsignar.cantidadGrupos}×4 disponibles
+                  </span>
+                  <span className="text-xs text-gray-500">{grupoParaAsignar.pacientes.length} pacientes totales</span>
+                </div>
+              </div>
+
+              {/* Input lotes */}
+              <div className="mb-5">
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Lotes a asignar <span className="text-gray-400 font-normal">(máx. {grupoParaAsignar.cantidadGrupos})</span>
+                </label>
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={() => setLotesAAsignar(v => Math.max(1, (parseInt(v) || 1) - 1))}
+                    className="w-10 h-10 rounded-lg border border-gray-300 text-gray-600 text-xl font-bold hover:bg-gray-100 transition-colors flex items-center justify-center"
+                  >−</button>
+                  <input
+                    type="number"
+                    min={1}
+                    max={grupoParaAsignar.cantidadGrupos}
+                    value={lotesAAsignar}
+                    onChange={e => setLotesAAsignar(Math.min(Math.max(1, parseInt(e.target.value) || 1), grupoParaAsignar.cantidadGrupos))}
+                    className="flex-1 text-center text-2xl font-bold border border-gray-300 rounded-xl py-2 focus:outline-none focus:ring-2 focus:ring-purple-400"
+                  />
+                  <button
+                    onClick={() => setLotesAAsignar(v => Math.min(grupoParaAsignar.cantidadGrupos, (parseInt(v) || 1) + 1))}
+                    className="w-10 h-10 rounded-lg border border-gray-300 text-gray-600 text-xl font-bold hover:bg-gray-100 transition-colors flex items-center justify-center"
+                  >+</button>
+                </div>
+                {/* Resumen en tiempo real */}
+                <p className="text-sm text-gray-500 text-center mt-3">
+                  Se asignarán{' '}
+                  <span className="font-bold text-purple-700">
+                    {Math.min(Math.max(1, parseInt(lotesAAsignar) || 1), grupoParaAsignar.cantidadGrupos) * 4} pacientes
+                  </span>{' '}
+                  ({Math.min(Math.max(1, parseInt(lotesAAsignar) || 1), grupoParaAsignar.cantidadGrupos)} lote{Math.min(Math.max(1, parseInt(lotesAAsignar) || 1), grupoParaAsignar.cantidadGrupos) !== 1 ? 's' : ''} × 4)
+                </p>
+              </div>
+
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setModalSeleccionLotes(false)}
+                  className="flex-1 py-2.5 rounded-xl border border-gray-300 text-gray-700 text-sm font-medium hover:bg-gray-50 transition-colors"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={confirmarLotesYAsignar}
+                  className="flex-1 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-sm font-semibold transition-colors"
+                >
+                  Continuar → Elegir Gestora
                 </button>
               </div>
             </div>
