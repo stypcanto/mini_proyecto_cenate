@@ -2764,6 +2764,21 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
         log.info("✅ IPRESS Atención actualizada en solicitud {}. {} → {}", idSolicitud, ipressAnterior, idIpressAtencion);
     }
 
+    @Override
+    @Transactional
+    public void actualizarIpressAdscripcion(Long idSolicitud, Long idIpress) {
+        log.info("🏥 Actualizando IPRESS Adscripción de solicitud {} → idIpress: {}", idSolicitud, idIpress);
+
+        SolicitudBolsa solicitud = solicitudRepository.findById(idSolicitud)
+            .orElseThrow(() -> new ResourceNotFoundException("Solicitud " + idSolicitud + " no encontrada"));
+
+        Long ipressAnterior = solicitud.getIdIpress();
+        solicitud.setIdIpress(idIpress);
+        solicitudRepository.save(solicitud);
+
+        log.info("✅ IPRESS Adscripción actualizada en solicitud {}. {} → {}", idSolicitud, ipressAnterior, idIpress);
+    }
+
     /**
      * ✅ NUEVA v2.2.0: Analiza el Excel y detecta DNI duplicados ANTES de procesar
      * Aplica estrategia KEEP_FIRST: mantiene primer DNI, descarta duplicados
@@ -2992,7 +3007,7 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
                 .map(s -> mapSolicitudBolsaToDTOBatch(s, ipressMap, tipoBolsaMap, aseguradoMap, personalMap))
                 .collect(Collectors.toList());
 
-            // 5️⃣ ENRIQUECER CON FLAG CENACRON (consulta masiva para evitar N+1)
+            // 5️⃣ ENRIQUECER CON FLAGS DE ESTRATEGIAS (consulta masiva para evitar N+1)
             try {
                 List<String> todosLosDnis = dtoList.stream()
                     .map(SolicitudBolsaDTO::getPacienteDni)
@@ -3007,9 +3022,16 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
                     log.info("   🏷️ CENACRON: {} pacientes identificados de {} DNIs consultados",
                         setCenacron.size(), todosLosDnis.size());
                     dtoList.forEach(dto -> dto.setEsCenacron(setCenacron.contains(dto.getPacienteDni())));
+
+                    List<String> dnisMaraton = pacienteEstrategiaRepository
+                        .findDnisPertenecentesAEstrategia(todosLosDnis, "MARATON");
+                    Set<String> setMaraton = new HashSet<>(dnisMaraton);
+                    log.info("   🏷️ MARATON: {} pacientes identificados de {} DNIs consultados",
+                        setMaraton.size(), todosLosDnis.size());
+                    dtoList.forEach(dto -> dto.setEsMaraton(setMaraton.contains(dto.getPacienteDni())));
                 }
             } catch (Exception ex) {
-                log.warn("⚠️ No se pudo enriquecer flag CENACRON: {}", ex.getMessage());
+                log.warn("⚠️ No se pudo enriquecer flags de estrategias: {}", ex.getMessage());
             }
 
             return dtoList;
@@ -3087,7 +3109,7 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
                 .map(s -> mapSolicitudBolsaToDTOBatch(s, ipressMap, tipoBolsaMap, aseguradoMap, personalMap))
                 .collect(Collectors.toList());
 
-            // Enriquecer con flag CENACRON
+            // Enriquecer con flags de estrategias
             try {
                 List<String> dnisCenacronQuery = resultado.stream()
                     .map(SolicitudBolsaDTO::getPacienteDni)
@@ -3100,9 +3122,15 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
                     );
                     resultado.forEach(dto -> dto.setEsCenacron(setCenacron.contains(dto.getPacienteDni())));
                     log.info("   🏷️ CENACRON (enfermería): {} pacientes identificados", setCenacron.size());
+
+                    Set<String> setMaraton = new HashSet<>(
+                        pacienteEstrategiaRepository.findDnisPertenecentesAEstrategia(dnisCenacronQuery, "MARATON")
+                    );
+                    resultado.forEach(dto -> dto.setEsMaraton(setMaraton.contains(dto.getPacienteDni())));
+                    log.info("   🏷️ MARATON (enfermería): {} pacientes identificados", setMaraton.size());
                 }
             } catch (Exception ex) {
-                log.warn("⚠️ No se pudo enriquecer flag CENACRON (enfermería): {}", ex.getMessage());
+                log.warn("⚠️ No se pudo enriquecer flags de estrategias (enfermería): {}", ex.getMessage());
             }
 
             log.info("✅ Bandeja COORD. ENFERMERIA: {} pacientes", resultado.size());

@@ -212,6 +212,9 @@ public interface SolicitudBolsaService {
      */
     void actualizarIpressAtencion(Long idSolicitud, Long idIpressAtencion);
 
+    /** Actualiza la IPRESS de Adscripción (id_ipress) de una solicitud */
+    void actualizarIpressAdscripcion(Long idSolicitud, Long idIpress);
+
     /**
      * Actualiza la fecha preferida de una solicitud
      * @param idSolicitud ID de la solicitud

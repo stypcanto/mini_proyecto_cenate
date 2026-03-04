@@ -200,6 +200,7 @@ export default function Solicitudes({ categoriaInicial } = {}) {
 
   // ✅ v1.105.0: Modal IPRESS Atención
   const [modalIpressAtencion, setModalIpressAtencion]       = useState(false);
+  const [modalIpressAdscripcion, setModalIpressAdscripcion] = useState(false);
   const [iprессBusqueda, setIpressBusqueda]                 = useState('');
   const [ipressResultados, setIpressResultados]             = useState([]);
   const [ipressSeleccionada, setIpressSeleccionada]         = useState(null);
@@ -375,9 +376,11 @@ export default function Solicitudes({ categoriaInicial } = {}) {
           if (categoriaInicial) {
             try {
               // estadoCita=PENDIENTE_CITA para que el count coincida con el filtro por defecto de sub-páginas
+              // Usar misma lógica que main query: medicina-general/enfermeria → especialidad param; especialidades/bolsa107 → categoriaEspecialidad param
+              const especParam = especialidadPorCategoria !== 'todas' ? especialidadPorCategoria : null;
               const [naAdsc, naAten] = await Promise.all([
-                bolsasService.obtenerSolicitudesPaginado(0, 1, null, null, null, 'N/A', null, 'PENDIENTE_CITA', null, null, null, null, null, null, null, null, null, categoriaInicial).catch(() => null),
-                bolsasService.obtenerSolicitudesPaginado(0, 1, null, null, null, null, null, 'PENDIENTE_CITA', 'N/A', null, null, null, null, null, null, null, null, categoriaInicial).catch(() => null),
+                bolsasService.obtenerSolicitudesPaginado(0, 1, null, null, null, 'N/A', especParam, 'PENDIENTE_CITA', null, null, null, null, null, null, null, null, null, categoriaEspecialidad).catch(() => null),
+                bolsasService.obtenerSolicitudesPaginado(0, 1, null, null, null, null, especParam, 'PENDIENTE_CITA', 'N/A', null, null, null, null, null, null, null, null, categoriaEspecialidad).catch(() => null),
               ]);
               if (mounted) {
                 setIpressNaCount(naAdsc?.totalElements ?? null);
@@ -681,7 +684,9 @@ export default function Solicitudes({ categoriaInicial } = {}) {
             fechaAtencionMedica: solicitud.fecha_atencion_medica
               ? new Date(solicitud.fecha_atencion_medica).toLocaleString('es-PE', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' })
               : null,
-            nombreMedicoAsignado: solicitud.nombre_medico_asignado || null
+            nombreMedicoAsignado: solicitud.nombre_medico_asignado || null,
+            esCenacron: solicitud.es_cenacron === true || solicitud.esCenacron === true,
+            esMaraton:  solicitud.es_maraton === true  || solicitud.esMaraton === true,
           };
         } catch (mapError) {
           console.error(`❌ Error procesando solicitud [${idx}]:`, mapError, 'Solicitud:', solicitud);
@@ -911,7 +916,9 @@ export default function Solicitudes({ categoriaInicial } = {}) {
               fechaAtencionMedica: solicitud.fecha_atencion_medica
                 ? new Date(solicitud.fecha_atencion_medica).toLocaleString('es-PE', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' })
                 : null,
-              nombreMedicoAsignado: solicitud.nombre_medico_asignado || null
+              nombreMedicoAsignado: solicitud.nombre_medico_asignado || null,
+              esCenacron: solicitud.es_cenacron === true || solicitud.esCenacron === true,
+              esMaraton:  solicitud.es_maraton === true  || solicitud.esMaraton === true,
             };
           } catch (mapError) {
             console.error(`❌ Error procesando solicitud [${idx}]:`, mapError);
@@ -1086,7 +1093,9 @@ export default function Solicitudes({ categoriaInicial } = {}) {
               fechaAtencionMedica: solicitud.fecha_atencion_medica
                 ? new Date(solicitud.fecha_atencion_medica).toLocaleString('es-PE', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' })
                 : null,
-              nombreMedicoAsignado: solicitud.nombre_medico_asignado || null
+              nombreMedicoAsignado: solicitud.nombre_medico_asignado || null,
+              esCenacron: solicitud.es_cenacron === true || solicitud.esCenacron === true,
+              esMaraton:  solicitud.es_maraton === true  || solicitud.esMaraton === true,
             };
           } catch (mapError) {
             console.error(`❌ Error procesando solicitud [${idx}]:`, mapError);
@@ -1808,6 +1817,44 @@ export default function Solicitudes({ categoriaInicial } = {}) {
     }
   };
 
+  // Abrir modal IPRESS Adscripción
+  const handleAbrirIpressAdscripcion = useCallback((solicitud) => {
+    setSolicitudSeleccionada(solicitud);
+    setIpressSeleccionada(null);
+    setIpressBusqueda('');
+    setIpressResultados([]);
+    setModalIpressAdscripcion(true);
+  }, []);
+
+  // Guardar IPRESS Adscripción seleccionada
+  const handleGuardarIpressAdscripcion = async () => {
+    if (!ipressSeleccionada) { alert('Selecciona una IPRESS'); return; }
+    setIsProcessing(true);
+    try {
+      await bolsasService.actualizarIpressAdscripcion(
+        solicitudSeleccionada.idSolicitud || solicitudSeleccionada.id,
+        ipressSeleccionada.id
+      );
+      // Actualizar fila localmente sin recargar
+      setSolicitudes(prev => prev.map(s =>
+        s.id === (solicitudSeleccionada.idSolicitud || solicitudSeleccionada.id)
+          ? { ...s, ipress: ipressSeleccionada.descIpress, codigoIpress: ipressSeleccionada.codIpress }
+          : s
+      ));
+      setModalIpressAdscripcion(false);
+      import('react-hot-toast').then(({ default: toast }) =>
+        toast.success(`IPRESS Adscripción actualizada: ${ipressSeleccionada.descIpress}`)
+      );
+    } catch (error) {
+      console.error('Error actualizando IPRESS Adscripción:', error);
+      import('react-hot-toast').then(({ default: toast }) =>
+        toast.error('Error al actualizar. Intenta nuevamente.')
+      );
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
   // Abrir modal para asignar gestora (cargar gestoras disponibles)
   const handleAbrirAsignarGestora = (solicitud) => {
     setSolicitudSeleccionada(solicitud);
@@ -2332,10 +2379,13 @@ export default function Solicitudes({ categoriaInicial } = {}) {
                 options: (() => {
                   const naEntry = estadisticasIpress.find(i => i.nombreIpress === 'N/A' && i.total > 0);
                   const localNaCount = solicitudes.filter(s => !s.ipress || s.ipress === 'N/A').length;
-                  const hasNa = naEntry || localNaCount > 0 || categoriaInicial === 'bolsa107' || ipressNaCount > 0;
-                  // En sub-páginas usar count específico del contexto; en global usar stats globales
+                  // Sub-páginas: mostrar N/A solo si ipressNaCount > 0 (no usar global que incluye otras categorías)
+                  // Página global: mostrar si hay N/A en cualquier contexto
+                  const hasNa = categoriaInicial
+                    ? (ipressNaCount !== null && ipressNaCount > 0)
+                    : (naEntry?.total > 0 || localNaCount > 0);
                   const naCount = categoriaInicial ? ipressNaCount : (naEntry?.total ?? null);
-                  const naLabel = `⚠️ Sin IPRESS Adscripción${naCount !== null ? ` (${naCount})` : ''}`;
+                  const naLabel = `⚠️ Sin IPRESS Adsc.${naCount !== null ? ` (${naCount})` : ''}`;
                   const opts = estadisticasIpress
                     .filter(i => i.total > 0 && i.nombreIpress && i.nombreIpress !== 'N/A')
                     .sort((a, b) => (a.nombreIpress || '').localeCompare(b.nombreIpress || '', 'es', { sensitivity: 'base' }))
@@ -2360,8 +2410,11 @@ export default function Solicitudes({ categoriaInicial } = {}) {
                     .map(i => ({ label: `${i.nombreIpress} (${i.total})`, value: i.nombreIpress }));
                   // En sub-páginas usar count específico del contexto; en global usar stats globales
                   const naCountAten = categoriaInicial ? ipressAtencionNaCount : (naEntry?.total ?? null);
-                  const naLabel = `⚠️ Sin IPRESS Atención${naCountAten !== null ? ` (${naCountAten})` : ''}`;
-                  const showNaAten = naEntry || (categoriaInicial && ipressAtencionNaCount > 0);
+                  const naLabel = `⚠️ Sin IPRESS Aten.${naCountAten !== null ? ` (${naCountAten})` : ''}`;
+                  // Sub-páginas: mostrar solo si ipressAtencionNaCount > 0 (no usar global)
+                  const showNaAten = categoriaInicial
+                    ? (ipressAtencionNaCount !== null && ipressAtencionNaCount > 0)
+                    : (naEntry?.total > 0);
                   return [
                     { label: `Todas`, value: "todas" },
                     ...(showNaAten ? [{ label: naLabel, value: 'N/A' }] : []),
@@ -2958,6 +3011,7 @@ export default function Solicitudes({ categoriaInicial } = {}) {
                       onEliminarAsignacion={handleEliminarAsignacionGestora}
                       onAbrirEnviarRecordatorio={handleAbrirEnviarRecordatorio}
                       onAbrirIpressAtencion={handleAbrirIpressAtencion}
+                      onAbrirIpressAdscripcion={handleAbrirIpressAdscripcion}
                       onEditarFechaPreferida={handleEditarFechaPreferida}
                       onVerHistorial={handleVerHistorial}
                       isProcessing={isProcessing}
@@ -3201,6 +3255,91 @@ export default function Solicitudes({ categoriaInicial } = {}) {
                   onClick={handleGuardarIpressAtencion}
                   disabled={isProcessing || !ipressSeleccionada}
                   className="flex-1 px-4 py-2 bg-[#0A5BA9] hover:bg-[#083d78] text-white rounded-lg font-semibold disabled:opacity-50 text-sm transition-colors"
+                >
+                  {isProcessing ? 'Guardando...' : 'Guardar'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ====== MODAL: IPRESS ADSCRIPCIÓN (editar id_ipress) ====== */}
+        {modalIpressAdscripcion && (
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+               onClick={(e) => { if (e.target === e.currentTarget) setModalIpressAdscripcion(false); }}>
+            <div className="bg-white rounded-xl shadow-2xl w-full max-w-md">
+              <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+                <div>
+                  <h2 className="text-base font-bold text-gray-900">🏥 IPRESS de Adscripción</h2>
+                  <p className="text-xs text-gray-500 mt-0.5">
+                    Paciente: <span className="font-semibold text-gray-700">{solicitudSeleccionada?.paciente}</span>
+                  </p>
+                </div>
+                <button onClick={() => setModalIpressAdscripcion(false)} className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400">
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+              <div className="px-6 py-5 space-y-4">
+                <div className="bg-gray-50 rounded-lg px-4 py-3 text-sm">
+                  <p className="text-xs text-gray-400 mb-1">Actual</p>
+                  <p className="font-semibold text-blue-700">
+                    {solicitudSeleccionada?.codigoIpress && solicitudSeleccionada.codigoIpress !== 'N/A'
+                      ? `${solicitudSeleccionada.codigoIpress} - ${solicitudSeleccionada.ipress}`
+                      : 'Sin IPRESS de adscripción registrada'}
+                  </p>
+                </div>
+                <div>
+                  <label className="text-xs font-semibold text-gray-600 uppercase tracking-widest mb-1.5 block">
+                    Buscar nueva IPRESS
+                  </label>
+                  <input
+                    type="text"
+                    value={iprессBusqueda}
+                    onChange={(e) => handleBuscarIpress(e.target.value)}
+                    placeholder="Escribe nombre o código de IPRESS..."
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400/30 focus:border-blue-500"
+                    autoFocus
+                  />
+                </div>
+                {loadingIpress && <p className="text-xs text-gray-400 text-center py-2">Buscando...</p>}
+                {!loadingIpress && ipressResultados.length > 0 && (
+                  <div className="border border-gray-200 rounded-lg overflow-hidden max-h-48 overflow-y-auto">
+                    {ipressResultados.map((ip) => (
+                      <button
+                        key={ip.id}
+                        onClick={() => { setIpressSeleccionada(ip); setIpressBusqueda(ip.descIpress); setIpressResultados([]); }}
+                        className={`w-full text-left px-4 py-2.5 text-sm border-b border-gray-100 last:border-b-0 hover:bg-blue-50 transition-colors ${
+                          ipressSeleccionada?.id === ip.id ? 'bg-blue-50 font-semibold text-blue-700' : 'text-gray-800'
+                        }`}
+                      >
+                        <span className="font-semibold text-blue-600 mr-2">{ip.codIpress}</span>
+                        {ip.descIpress}
+                      </button>
+                    ))}
+                  </div>
+                )}
+                {ipressSeleccionada && (
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg px-4 py-3 flex items-center gap-3">
+                    <span className="text-lg">✅</span>
+                    <div>
+                      <p className="text-xs text-blue-600">Seleccionada</p>
+                      <p className="text-sm font-bold text-blue-700">{ipressSeleccionada.codIpress} - {ipressSeleccionada.descIpress}</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+              <div className="flex gap-3 px-6 py-4 border-t border-gray-100">
+                <button
+                  onClick={() => setModalIpressAdscripcion(false)}
+                  disabled={isProcessing}
+                  className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 font-semibold hover:bg-gray-50 disabled:opacity-50 text-sm"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={handleGuardarIpressAdscripcion}
+                  disabled={isProcessing || !ipressSeleccionada}
+                  className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold disabled:opacity-50 text-sm transition-colors"
                 >
                   {isProcessing ? 'Guardando...' : 'Guardar'}
                 </button>

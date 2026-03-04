@@ -1179,6 +1179,29 @@ public class SolicitudBolsaController {
     }
 
     /**
+     * Actualiza la IPRESS de Adscripción (id_ipress) de una solicitud
+     * PATCH /api/bolsas/solicitudes/{id}/ipress-adscripcion
+     */
+    @PatchMapping("/{id}/ipress-adscripcion")
+    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'COORD. GESTION CITAS', 'COORDINADOR', 'GESTOR DE CITAS')")
+    public ResponseEntity<?> actualizarIpressAdscripcion(
+            @PathVariable Long id,
+            @RequestParam(value = "idIpress", required = false) Long idIpress) {
+        try {
+            log.info("🏥 PATCH ipress-adscripcion solicitud {} → idIpress: {}", id, idIpress);
+            solicitudBolsaService.actualizarIpressAdscripcion(id, idIpress);
+            return ResponseEntity.ok(Map.of(
+                "mensaje", "IPRESS de Adscripción actualizada exitosamente",
+                "idSolicitud", id,
+                "idIpress", idIpress != null ? idIpress : ""
+            ));
+        } catch (Exception e) {
+            log.error("Error al actualizar IPRESS Adscripción: ", e);
+            return ResponseEntity.badRequest().body(Map.of("error", "Error: " + e.getMessage()));
+        }
+    }
+
+    /**
      * Elimina lógicamente una solicitud (soft delete)
      * DELETE /api/bolsas/solicitudes/{id}
      *
@@ -1865,6 +1888,55 @@ public class SolicitudBolsaController {
      * GET /api/bolsas/solicitudes/trazabilidad/{idSolicitud}
      * Devuelve el timeline completo: ingreso, asignación médico, cita, atención, anulación, recitas.
      */
+    /**
+     * GET /api/bolsas/solicitudes/agrupar-por-ipress-atencion
+     * v1.84.2: Agrupación inteligente — GROUP BY server-side, solo transfiere {ipress, especialidad, ids[]}.
+     * ~100x más rápido que cargar 9999 registros completos.
+     */
+    @GetMapping("/agrupar-por-ipress-atencion")
+    @Transactional(readOnly = true)
+    public ResponseEntity<List<Map<String, Object>>> agruparPorIpressAtencion(
+            @RequestParam(required = false) String bolsa,
+            @RequestParam(required = false) String macrorregion,
+            @RequestParam(required = false) String red,
+            @RequestParam(required = false) String ipress,
+            @RequestParam(required = false) String especialidad,
+            @RequestParam(required = false) String estado,
+            @RequestParam(required = false) String ipressAtencion,
+            @RequestParam(required = false) String tipoCita,
+            @RequestParam(required = false) String asignacion,
+            @RequestParam(required = false) String busqueda,
+            @RequestParam(required = false) String fechaInicio,
+            @RequestParam(required = false) String fechaFin,
+            @RequestParam(required = false) Long gestoraId,
+            @RequestParam(required = false) String estadoBolsa,
+            @RequestParam(required = false) String categoriaEspecialidad) {
+
+        log.info("🧩 [v1.84.2] GET /agrupar-por-ipress-atencion categoría={}", categoriaEspecialidad);
+
+        List<Object[]> rows = solicitudRepository.agruparPorIpressAtencionEspecialidad(
+                bolsa, macrorregion, red, ipress, especialidad,
+                estado, ipressAtencion, tipoCita, asignacion, busqueda,
+                fechaInicio, fechaFin, gestoraId, estadoBolsa, categoriaEspecialidad);
+
+        List<Map<String, Object>> result = rows.stream().map(r -> {
+            String idsRaw = r[2] != null ? r[2].toString() : "";
+            List<Long> ids = java.util.Arrays.stream(idsRaw.split(","))
+                    .filter(s -> !s.isBlank())
+                    .map(Long::parseLong)
+                    .collect(java.util.stream.Collectors.toList());
+            Map<String, Object> m = new java.util.LinkedHashMap<>();
+            m.put("ipress",      r[0]);
+            m.put("especialidad", r[1]);
+            m.put("total",       ids.size());
+            m.put("grupos",      ids.size() / 4);
+            m.put("ids",         ids);
+            return m;
+        }).collect(java.util.stream.Collectors.toList());
+
+        return ResponseEntity.ok(result);
+    }
+
     @GetMapping("/trazabilidad/{idSolicitud}")
     @Transactional(readOnly = true)
     public ResponseEntity<TrazabilidadBolsaResponseDTO> obtenerTrazabilidad(

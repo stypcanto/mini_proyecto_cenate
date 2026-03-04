@@ -16,6 +16,7 @@ function FilaSolicitud({
   onEliminarAsignacion,
   onAbrirEnviarRecordatorio,
   onAbrirIpressAtencion,
+  onAbrirIpressAdscripcion,
   onEditarFechaPreferida,
   onVerHistorial,
   isProcessing,
@@ -155,6 +156,16 @@ function FilaSolicitud({
       <td className="px-3 py-2 text-sm min-w-max">
         <div className="font-bold text-gray-900 text-base whitespace-nowrap">{solicitud.paciente}</div>
         <HistorialPacienteBtn dni={solicitud.dni} nombrePaciente={solicitud.paciente} />
+        {solicitud.esCenacron && (
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '3px', marginTop: '3px', padding: '1px 8px', borderRadius: '999px', fontSize: '10px', fontWeight: '700', background: '#f3e8ff', color: '#7e22ce', border: '1px solid #d8b4fe' }}>
+            ♾ CENACRON
+          </span>
+        )}
+        {solicitud.esMaraton && (
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '3px', marginTop: '3px', padding: '1px 8px', borderRadius: '999px', fontSize: '10px', fontWeight: '700', background: '#fef3c7', color: '#92400e', border: '1px solid #fcd34d' }}>
+            🏃 MARATÓN
+          </span>
+        )}
         {(solicitud.sexo && solicitud.sexo !== 'N/A') || (solicitud.edad && solicitud.edad !== 'N/A') ? (
           <div className="text-xs text-gray-500 mt-1">
             {[
@@ -215,11 +226,29 @@ function FilaSolicitud({
       <td className="px-3 py-3 text-sm text-gray-900">
         {solicitud.especialidad?.replace(/\s*\([^)]*\)/, '').trim() || solicitud.especialidad}
       </td>
-      <td className="px-3 py-3 text-sm text-gray-900 max-w-xs truncate" title={solicitud.ipress}>
-        {solicitud.codigoIpress && solicitud.codigoIpress !== 'N/A'
-          ? <><span className="font-semibold text-blue-600">{solicitud.codigoIpress}</span> - {solicitud.ipress || 'N/A'}</>
-          : (solicitud.ipress || 'N/A')
-        }
+      {/* IPRESS - ADSCRIPCIÓN (editable con lápiz) */}
+      <td className="px-3 py-3 text-sm text-gray-900 max-w-xs">
+        <div className="flex items-center gap-2 group">
+          <div className="flex-1 truncate" title={solicitud.ipress}>
+            {solicitud.codigoIpress && solicitud.codigoIpress !== 'N/A' ? (
+              <>
+                <span className="font-semibold text-blue-600">{solicitud.codigoIpress}</span>
+                <span className="text-gray-700"> - {solicitud.ipress}</span>
+              </>
+            ) : (
+              <span className="text-orange-500 italic text-xs font-semibold">N/A</span>
+            )}
+          </div>
+          {onAbrirIpressAdscripcion && (
+            <button
+              onClick={() => onAbrirIpressAdscripcion(solicitud)}
+              className="p-1 rounded hover:bg-blue-100 text-blue-400 hover:text-blue-700 flex-shrink-0 transition-colors"
+              title="Editar IPRESS de Adscripción"
+            >
+              <Pencil className="w-3.5 h-3.5" />
+            </button>
+          )}
+        </div>
       </td>
       {/* IPRESS - ATENCIÓN (v1.105.0: editable por COORD. GESTION CITAS) */}
       <td className="px-3 py-3 text-sm text-gray-900 max-w-xs">
@@ -415,10 +444,13 @@ export default React.memo(FilaSolicitud, (prevProps, nextProps) => {
   return (
     prevProps.solicitud?.id === nextProps.solicitud?.id &&
     prevProps.solicitud?.fechaPreferidaNoAtendida === nextProps.solicitud?.fechaPreferidaNoAtendida &&
+    prevProps.solicitud?.esCenacron === nextProps.solicitud?.esCenacron &&
+    prevProps.solicitud?.esMaraton === nextProps.solicitud?.esMaraton &&
     prevProps.isChecked === nextProps.isChecked &&
     prevProps.isProcessing === nextProps.isProcessing &&
     prevProps.getEstadoBadge === nextProps.getEstadoBadge &&
     prevProps.onAbrirIpressAtencion === nextProps.onAbrirIpressAtencion &&
+    prevProps.onAbrirIpressAdscripcion === nextProps.onAbrirIpressAdscripcion &&
     prevProps.onEditarFechaPreferida === nextProps.onEditarFechaPreferida &&
     prevProps.onVerHistorial === nextProps.onVerHistorial
   );

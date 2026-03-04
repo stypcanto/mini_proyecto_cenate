@@ -990,6 +990,22 @@ export const actualizarIpressAtencion = async (idSolicitud, idIpressAtencion) =>
 };
 
 /**
+ * Actualiza la IPRESS de Adscripción (id_ipress) de una solicitud
+ * @param {number} idSolicitud - ID de la solicitud
+ * @param {number} idIpress - ID de la nueva IPRESS
+ */
+export const actualizarIpressAdscripcion = async (idSolicitud, idIpress) => {
+  try {
+    const params = idIpress ? `?idIpress=${idIpress}` : '';
+    const response = await apiClient.patch(`/bolsas/solicitudes/${idSolicitud}/ipress-adscripcion${params}`, {}, true);
+    return response;
+  } catch (error) {
+    console.error(`Error al actualizar IPRESS Adscripción de solicitud ${idSolicitud}:`, error);
+    throw error;
+  }
+};
+
+/**
  * Actualiza la fecha preferida de una solicitud
  * @param {number} idSolicitud - ID de la solicitud
  * @param {string|null} fecha - Fecha en formato YYYY-MM-DD (null para limpiar)
@@ -1332,4 +1348,8 @@ export default {
 
   // AGRUPACIÓN INTELIGENTE (v1.84.2)
   agruparPorIpressAtencion,
+
+  // EDICIÓN IPRESS
+  actualizarIpressAtencion,
+  actualizarIpressAdscripcion,
 };
