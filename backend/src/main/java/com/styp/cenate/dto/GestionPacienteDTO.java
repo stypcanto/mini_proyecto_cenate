@@ -128,6 +128,10 @@ public class GestionPacienteDTO {
     @JsonProperty("esCenacron")
     private Boolean esCenacron;
 
+    // 🏷️ MARATON (enriquecido via JOIN con paciente_estrategia, EST-008)
+    @JsonProperty("esMaraton")
+    private Boolean esMaraton;
+
     // 📋 TIPO DE CITA y ESPECIALIDAD (desde dim_solicitud_bolsa)
     @JsonProperty("tipoCita")
     private String tipoCita;  // TELECONSULTA, INTERCONSULTA, RECITA

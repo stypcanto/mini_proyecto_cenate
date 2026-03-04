@@ -642,6 +642,7 @@ export default function GestionAsegurado() {
           consentimientoInformado: solicitud.consentimiento_informado || solicitud.consentimientoInformado || null,
           prioridad: solicitud.prioridad || null,
           esCenacron: solicitud.es_cenacron === true || solicitud.esCenacron === true,
+          esMaraton:  solicitud.es_maraton === true  || solicitud.esMaraton === true,
           pacienteId: solicitud.paciente_id || solicitud.pacienteId || null,
         };
       });
@@ -2639,6 +2640,11 @@ CENATE de Essalud`;
                           {paciente.esCenacron && (
                             <span className="inline-flex items-center gap-1 mt-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-purple-100 text-purple-700 border border-purple-300">
                               ♾ CENACRON
+                            </span>
+                          )}
+                          {paciente.esMaraton && (
+                            <span className="inline-flex items-center gap-1 mt-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-300">
+                              🏃 MARATÓN
                             </span>
                           )}
                           <div className="text-xs text-gray-500 mt-1">

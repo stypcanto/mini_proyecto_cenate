@@ -478,9 +478,9 @@ public class GestionPacienteServiceImpl implements IGestionPacienteService {
                     .map(this::bolsaToGestionDTO)
                     .collect(Collectors.toList());
 
-                // 🏷️ Enriquecer con flag CENACRON (consulta masiva para evitar N+1)
+                // 🏷️ Enriquecer con flags de estrategias (consulta masiva para evitar N+1)
                 // Fuente 1: paciente_estrategia con estado=ACTIVO
-                // Fuente 2: asegurados.paciente_cronico=true (sincronizado con lista de asegurados)
+                // Fuente 2: asegurados.paciente_cronico=true (solo para CENACRON)
                 try {
                     List<String> todosLosDnis = dtoList.stream()
                         .map(GestionPacienteDTO::getNumDoc)
@@ -503,9 +503,15 @@ public class GestionPacienteServiceImpl implements IGestionPacienteService {
 
                         log.info("   🏷️ CENACRON: {} pacientes identificados de {} DNIs (estrategia+asegurados)", setCenacron.size(), todosLosDnis.size());
                         dtoList.forEach(dto -> dto.setEsCenacron(setCenacron.contains(dto.getNumDoc())));
+
+                        Set<String> setMaraton = new java.util.HashSet<>(
+                            pacienteEstrategiaRepository.findDnisPertenecentesAEstrategia(todosLosDnis, "MARATON")
+                        );
+                        log.info("   🏷️ MARATON: {} pacientes identificados de {} DNIs", setMaraton.size(), todosLosDnis.size());
+                        dtoList.forEach(dto -> dto.setEsMaraton(setMaraton.contains(dto.getNumDoc())));
                     }
                 } catch (Exception ex) {
-                    log.warn("⚠️ No se pudo enriquecer flag CENACRON en MisPacientes: {}", ex.getMessage());
+                    log.warn("⚠️ No se pudo enriquecer flags de estrategias en MisPacientes: {}", ex.getMessage());
                 }
 
                 return dtoList;

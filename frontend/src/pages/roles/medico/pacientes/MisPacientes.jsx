@@ -2886,6 +2886,13 @@ export default function MisPacientes() {
                                 </button>
                               </div>
                             )}
+                            {paciente.esMaraton && (
+                              <div className="inline-flex items-center gap-1 mt-0.5 w-fit">
+                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-300">
+                                  🏃 MARATÓN
+                                </span>
+                              </div>
+                            )}
                             {/* Badge tipo de cita: solo si NO es TELECONSULTA (que es el tipo estándar) */}
                             {paciente.tipoCita && paciente.tipoCita !== 'TELECONSULTA' && (() => {
                               const tipoColores = {
@@ -4255,6 +4262,11 @@ export default function MisPacientes() {
                     {pacienteDetalles.esCenacron && (
                       <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-purple-500/30 text-purple-100 border border-purple-400/40">
                         ♾ CENACRON
+                      </span>
+                    )}
+                    {pacienteDetalles.esMaraton && (
+                      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-amber-500/30 text-amber-100 border border-amber-400/40">
+                        🏃 MARATÓN
                       </span>
                     )}
                     {pacienteDetalles.fechaAsignacion && (
