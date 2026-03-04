@@ -89,7 +89,7 @@ public class AseguradoController {
                 whereClause.append(" AND a.doc_paciente ~ '^\\d{8}$'");
             }
             if (Boolean.TRUE.equals(soloExtranjero)) {
-                whereClause.append(" AND (a.id_tip_doc = 2 OR (a.id_tip_doc IS NULL AND a.doc_paciente !~ '^\\d{8}$'))");
+                whereClause.append(" AND a.id_tip_doc = 2");
             }
 
             // Consulta para obtener el total de registros
@@ -308,7 +308,7 @@ public class AseguradoController {
 
             // Filtro Solo Extranjeros (id_tip_doc = 2 → C.E./PAS)
             if (Boolean.TRUE.equals(soloExtranjero)) {
-                whereClause.append(" AND (a.id_tip_doc = 2 OR (a.id_tip_doc IS NULL AND a.doc_paciente !~ '^\\d{8}$'))");
+                whereClause.append(" AND a.id_tip_doc = 2");
             }
 
             // Consulta para obtener el total de registros
