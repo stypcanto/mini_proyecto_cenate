@@ -548,6 +548,10 @@ export const componentRegistry = {
     component: lazy(() => import('../pages/bolsas/SolicitudesEspecialidades')),
     requiredAction: 'ver',
   },
+  '/bolsas/solicitudespendientes/bolsa107': {
+    component: lazy(() => import('../pages/bolsas/SolicitudesBolsa107')),
+    requiredAction: 'ver',
+  },
 
   '/bolsas/solicitudesatendidas': {
     component: lazy(() => import('../pages/bolsas/SolicitudesAtendidas')),

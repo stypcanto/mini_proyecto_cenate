@@ -95,13 +95,16 @@ export default function Solicitudes({ categoriaInicial } = {}) {
   const [filtroIpressAtencion, setFiltroIpressAtencion] = useState('todas');
   const [filtroMacrorregion, setFiltroMacrorregion] = useState('todas');
   // Si viene categoriaInicial → pre-aplicar filtro de especialidad fijo
-  const especialidadPorCategoria = categoriaInicial === 'especialidades'
-    ? 'todas'      // "especialidades" usa categoriaEspecialidad, no filtroEspecialidad
+  const especialidadPorCategoria = (categoriaInicial === 'especialidades' || categoriaInicial === 'bolsa107')
+    ? 'todas'      // estas categorías usan categoriaEspecialidad, no filtroEspecialidad
     : (categoriaInicial || 'todas');
   const [filtroEspecialidad, setFiltroEspecialidad] = useState(especialidadPorCategoria);
-  // Para la pestaña "Especialidades": excluir MG y Enfermería en el backend
-  const categoriaEspecialidad = categoriaInicial === 'especialidades' ? 'especialidades' : null;
-  const [filtroEstado, setFiltroEstado] = useState('todos'); // Mostrar todos los estados por defecto
+  // 'especialidades' y 'bolsa107' se pasan como categoriaEspecialidad al backend
+  const categoriaEspecialidad = (categoriaInicial === 'especialidades' || categoriaInicial === 'bolsa107') ? categoriaInicial : null;
+  // En sub-páginas los cards son solo informativos, no filtran la lista
+  const cardsInteractivos = !categoriaInicial;
+  // En sub-páginas mostrar por defecto solo "Paciente nuevo que ingresó a la bolsa"
+  const [filtroEstado, setFiltroEstado] = useState(categoriaInicial ? 'PENDIENTE_CITA' : 'todos');
   const [filtroTipoCita, setFiltroTipoCita] = useState('todas');
   const [filtroAsignacion, setFiltroAsignacion] = useState('todos');  // ✅ v1.42.0: Filtro asignación (cards clickeables)
   const [filtroGestoraId, setFiltroGestoraId] = useState(null);        // Filtro por gestora asignada (ID)
@@ -294,6 +297,7 @@ export default function Solicitudes({ categoriaInicial } = {}) {
   // para que sus dropdowns aparezcan sin esperar obtenerIpress() (lento).
   useEffect(() => {
     console.log('📊 [2.6a] Cargando estadísticas, estados y gestoras en paralelo...');
+    let mounted = true; // Flag local independiente de isMountedRef (evita race con StrictMode)
     (async () => {
       try {
         const [estado, bolsas, estadosGestion, gestorasData] = await Promise.all([
@@ -302,7 +306,7 @@ export default function Solicitudes({ categoriaInicial } = {}) {
           bolsasService.obtenerEstadosGestion().catch(() => []),
           bolsasService.obtenerGestorasDisponibles().catch(() => []),
         ]);
-        if (isMountedRef.current) {
+        if (mounted) {
           setEstadisticasGlobales(estado || []);
           setEstadisticasTipoBolsa(bolsas || []);
           setEstadisticasCargadas(true);
@@ -320,9 +324,10 @@ export default function Solicitudes({ categoriaInicial } = {}) {
         }
       } catch (error) {
         console.error('❌ [2.6a] Error cargando tarjetas:', error);
-        if (isMountedRef.current) setEstadisticasCargadas(true);
+        if (mounted) setEstadisticasCargadas(true);
       }
     })();
+    return () => { mounted = false; };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ============================================================================
@@ -332,13 +337,14 @@ export default function Solicitudes({ categoriaInicial } = {}) {
   // Antes esperaba a que los 5 endpoints de cargarCatalogos() terminaran (lento).
   useEffect(() => {
     console.log('📊 [2.6b] Cargando estadísticas de IPRESS para filtros...');
+    let mounted = true;
     (async () => {
       try {
         const [ipress, ipressAtencion] = await Promise.all([
           bolsasService.obtenerEstadisticasPorIpress().catch(() => []),
           bolsasService.obtenerEstadisticasPorIpressAtencion().catch(() => []),
         ]);
-        if (isMountedRef.current) {
+        if (mounted) {
           setEstadisticasIpress(ipress || []);
           setEstadisticasIpressAtencion(ipressAtencion || []);
           console.log('✅ [2.6b] Stats IPRESS para filtros cargadas');
@@ -347,6 +353,7 @@ export default function Solicitudes({ categoriaInicial } = {}) {
         console.error('❌ [2.6b] Error cargando stats IPRESS:', error);
       }
     })();
+    return () => { mounted = false; };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ============================================================================
@@ -1325,6 +1332,9 @@ export default function Solicitudes({ categoriaInicial } = {}) {
 
   // ✅ v1.42.0: Manejador para clics en cards de estadísticas
   const handleCardClick = (cardType) => {
+    // En sub-páginas los cards son solo informativos, no filtran
+    if (categoriaInicial) return;
+
     console.log('📊 handleCardClick - cardType:', cardType, 'cardSeleccionado actual:', cardSeleccionado);
 
     if (cardSeleccionado === cardType) {
@@ -1949,10 +1959,10 @@ export default function Solicitudes({ categoriaInicial } = {}) {
             {/* 1. Sin Gestora — Rojo (ACCIÓN URGENTE) */}
             <div
               onClick={() => handleCardClick('sin_asignar')}
-              className={`rounded-xl p-6 text-white cursor-pointer group overflow-hidden relative
+              className={`rounded-xl p-6 text-white overflow-hidden relative
                 transition-[transform,box-shadow,opacity] duration-200 ease-out
-                hover:scale-[1.02] hover:-translate-y-0.5
-                ${cardSeleccionado === 'sin_asignar' ? 'ring-2 ring-white/50 scale-[1.02] -translate-y-0.5' : ''}`}
+                ${cardsInteractivos ? 'cursor-pointer group hover:scale-[1.02] hover:-translate-y-0.5' : 'cursor-default'}
+                ${cardsInteractivos && cardSeleccionado === 'sin_asignar' ? 'ring-2 ring-white/50 scale-[1.02] -translate-y-0.5' : ''}`}
               style={{
                 background: 'linear-gradient(135deg, #dc2626 0%, #b91c1c 45%, #991b1b 100%)',
                 boxShadow: cardSeleccionado === 'sin_asignar'
@@ -1986,10 +1996,10 @@ export default function Solicitudes({ categoriaInicial } = {}) {
             {/* 2. Pendiente Citar — Naranja (EN COLA) */}
             <div
               onClick={() => handleCardClick('pendiente')}
-              className={`rounded-xl p-6 text-white cursor-pointer group overflow-hidden relative
+              className={`rounded-xl p-6 text-white overflow-hidden relative
                 transition-[transform,box-shadow,opacity] duration-200 ease-out
-                hover:scale-[1.02] hover:-translate-y-0.5
-                ${cardSeleccionado === 'pendiente' ? 'ring-2 ring-white/50 scale-[1.02] -translate-y-0.5' : ''}`}
+                ${cardsInteractivos ? 'cursor-pointer group hover:scale-[1.02] hover:-translate-y-0.5' : 'cursor-default'}
+                ${cardsInteractivos && cardSeleccionado === 'pendiente' ? 'ring-2 ring-white/50 scale-[1.02] -translate-y-0.5' : ''}`}
               style={{
                 background: 'linear-gradient(135deg, #f97316 0%, #ea580c 45%, #c2410c 100%)',
                 boxShadow: cardSeleccionado === 'pendiente'
@@ -2021,10 +2031,10 @@ export default function Solicitudes({ categoriaInicial } = {}) {
             {/* 3. Con Gestora — Verde (EN PROGRESO) */}
             <div
               onClick={() => handleCardClick('asignado')}
-              className={`rounded-xl p-6 text-white cursor-pointer group overflow-hidden relative
+              className={`rounded-xl p-6 text-white overflow-hidden relative
                 transition-[transform,box-shadow,opacity] duration-200 ease-out
-                hover:scale-[1.02] hover:-translate-y-0.5
-                ${cardSeleccionado === 'asignado' ? 'ring-2 ring-white/50 scale-[1.02] -translate-y-0.5' : ''}`}
+                ${cardsInteractivos ? 'cursor-pointer group hover:scale-[1.02] hover:-translate-y-0.5' : 'cursor-default'}
+                ${cardsInteractivos && cardSeleccionado === 'asignado' ? 'ring-2 ring-white/50 scale-[1.02] -translate-y-0.5' : ''}`}
               style={{
                 background: 'linear-gradient(135deg, #16a34a 0%, #15803d 45%, #166534 100%)',
                 boxShadow: cardSeleccionado === 'asignado'
@@ -2056,10 +2066,10 @@ export default function Solicitudes({ categoriaInicial } = {}) {
             {/* 4. Total en Bolsa — Azul (REFERENCIA GLOBAL) */}
             <div
               onClick={() => handleCardClick('total')}
-              className={`rounded-xl p-6 text-white cursor-pointer group overflow-hidden relative
+              className={`rounded-xl p-6 text-white overflow-hidden relative
                 transition-[transform,box-shadow,opacity] duration-200 ease-out
-                hover:scale-[1.02] hover:-translate-y-0.5
-                ${cardSeleccionado === 'total' ? 'ring-2 ring-white/50 scale-[1.02] -translate-y-0.5' : ''}`}
+                ${cardsInteractivos ? 'cursor-pointer group hover:scale-[1.02] hover:-translate-y-0.5' : 'cursor-default'}
+                ${cardsInteractivos && cardSeleccionado === 'total' ? 'ring-2 ring-white/50 scale-[1.02] -translate-y-0.5' : ''}`}
               style={{
                 background: 'linear-gradient(135deg, #1d4ed8 0%, #1e40af 45%, #1e3a8a 100%)',
                 boxShadow: cardSeleccionado === 'total'
@@ -2107,8 +2117,8 @@ export default function Solicitudes({ categoriaInicial } = {}) {
           }
         `}</style>
 
-        {/* Banner filtro activo por card */}
-        {cardSeleccionado && cardSeleccionado !== 'total' && (
+        {/* Banner filtro activo por card (solo en página principal, no en sub-páginas) */}
+        {cardsInteractivos && cardSeleccionado && cardSeleccionado !== 'total' && (
           <div className="mb-3 flex items-center gap-2 px-4 py-2 bg-blue-50 border border-blue-200 rounded-lg text-sm text-blue-800 font-medium">
             <span>Filtrado por card:</span>
             <span className="font-bold">
@@ -2168,6 +2178,7 @@ export default function Solicitudes({ categoriaInicial } = {}) {
                 value: filtroBolsa,
                 onMultiChange: (values) => setFiltroBolsa(values),
                 options: estadisticasTipoBolsa
+                  .filter(bolsa => !(categoriaInicial && bolsa.tipoBolsa && bolsa.tipoBolsa.toLowerCase().includes('107')))
                   .sort((a, b) => b.total - a.total)
                   .map(bolsa => {
                     const nombreBolsa = generarAliasBolsa(bolsa.tipoBolsa);

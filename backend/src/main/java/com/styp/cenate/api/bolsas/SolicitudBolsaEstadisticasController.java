@@ -131,14 +131,15 @@ public class SolicitudBolsaEstadisticasController {
             @RequestParam(required = false) String fechaInicio,
             @RequestParam(required = false) String fechaFin,
             @RequestParam(required = false) Long   gestoraId,
-            @RequestParam(required = false) String estadoBolsa) {
+            @RequestParam(required = false) String estadoBolsa,
+            @RequestParam(required = false) String categoriaEspecialidad) {
 
-        log.info("GET /api/bolsas/estadisticas/kpi-con-filtros — bolsa={} macro={} red={} ipress={}",
-                bolsaNombre, macrorregion, red, ipress);
+        log.info("GET /api/bolsas/estadisticas/kpi-con-filtros — bolsa={} macro={} red={} ipress={} categoria={}",
+                bolsaNombre, macrorregion, red, ipress, categoriaEspecialidad);
         return ResponseEntity.ok(estadisticasService.obtenerKpiConFiltros(
                 bolsaNombre, macrorregion, red, ipress, especialidad, estadoCodigo,
                 ipressAtencion, tipoCita, asignacion, busqueda,
-                fechaInicio, fechaFin, gestoraId, estadoBolsa));
+                fechaInicio, fechaFin, gestoraId, estadoBolsa, categoriaEspecialidad));
     }
 
     /**
