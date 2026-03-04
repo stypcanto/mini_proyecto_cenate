@@ -2312,18 +2312,20 @@ export default function Solicitudes({ categoriaInicial } = {}) {
                 onChange: (e) => setFiltroIpress(e.target.value),
                 options: (() => {
                   const naEntry = estadisticasIpress.find(i => i.nombreIpress === 'N/A' && i.total > 0);
-                  // Fallback: detectar N/A desde datos locales (por si el cache no tiene esta entrada)
                   const localNaCount = solicitudes.filter(s => !s.ipress || s.ipress === 'N/A').length;
-                  const naTotal = naEntry ? naEntry.total : (localNaCount > 0 ? localNaCount : null);
+                  const hasNa = naEntry || localNaCount > 0 || categoriaInicial === 'bolsa107';
+                  // En sub-páginas los conteos vienen de stats globales (confuso) → no mostrar count en N/A
+                  // Solo mostrar count en la página global (sin categoriaInicial)
+                  const naLabel = categoriaInicial
+                    ? `⚠️ Sin IPRESS Adscripción`
+                    : `⚠️ Sin IPRESS Adscripción${naEntry ? ` (${naEntry.total})` : ''}`;
                   const opts = estadisticasIpress
                     .filter(i => i.total > 0 && i.nombreIpress && i.nombreIpress !== 'N/A')
                     .sort((a, b) => (a.nombreIpress || '').localeCompare(b.nombreIpress || '', 'es', { sensitivity: 'base' }))
                     .map(i => ({ label: `${i.nombreIpress} (${i.total})`, value: i.nombreIpress }));
-                  // En bolsa107 siempre mostrar N/A para poder identificar pacientes sin IPRESS
-                  const showNa = naTotal !== null || categoriaInicial === 'bolsa107';
                   return [
                     { label: `Todas (${totalElementos})`, value: "todas" },
-                    ...(showNa ? [{ label: `⚠️ Sin IPRESS Adscripción${naTotal ? ` (${naTotal})` : ''}`, value: 'N/A' }] : []),
+                    ...(hasNa ? [{ label: naLabel, value: 'N/A' }] : []),
                     ...opts,
                   ];
                 })()
@@ -2339,9 +2341,13 @@ export default function Solicitudes({ categoriaInicial } = {}) {
                     .filter(i => i.total > 0 && i.nombreIpress !== 'N/A')
                     .sort((a, b) => (a.nombreIpress || '').localeCompare(b.nombreIpress || '', 'es', { sensitivity: 'base' }))
                     .map(i => ({ label: `${i.nombreIpress} (${i.total})`, value: i.nombreIpress }));
+                  // En sub-páginas no mostrar count global (misleading)
+                  const naLabel = categoriaInicial
+                    ? `⚠️ Sin IPRESS Atención`
+                    : `⚠️ Sin IPRESS Atención${naEntry ? ` (${naEntry.total})` : ''}`;
                   return [
                     { label: `Todas`, value: "todas" },
-                    ...(naEntry ? [{ label: `⚠️ Sin IPRESS Atención (${naEntry.total})`, value: 'N/A' }] : []),
+                    ...(naEntry ? [{ label: naLabel, value: 'N/A' }] : []),
                     ...opts,
                   ];
                 })()
