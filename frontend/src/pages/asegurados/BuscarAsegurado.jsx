@@ -156,15 +156,17 @@ export default function BuscarAsegurado() {
     }
   };
 
-  // ✅ Cargar IPRESS cuando cambia la Red seleccionada
+  // ✅ Cargar IPRESS Adscripción e IPRESS Atención cuando cambia la Red seleccionada
   useEffect(() => {
     if (selectedRed) {
       cargarIpress(selectedRed);
-      setSelectedIpress("");
+      cargarIpressAtencion(selectedRed);
     } else {
       cargarIpress();
-      setSelectedIpress("");
+      cargarIpressAtencion();
     }
+    setSelectedIpress("");
+    setSelectedIpressAtencion("");
   }, [selectedRed]);
 
   // ✅ Resetear página cuando cambian los filtros
@@ -338,9 +340,10 @@ export default function BuscarAsegurado() {
     }
   };
 
-  const cargarIpressAtencion = async () => {
+  const cargarIpressAtencion = async (idRed = null) => {
     try {
-      const response = await apiClient.get('/asegurados/filtros/ipress-atencion', true);
+      const url = idRed ? `/asegurados/filtros/ipress-atencion?idRed=${idRed}` : '/asegurados/filtros/ipress-atencion';
+      const response = await apiClient.get(url, true);
       setIpressAtencionOpciones(response || []);
     } catch (error) {
       console.error('Error al cargar IPRESS Atención:', error);

@@ -719,13 +719,14 @@ public class AseguradoController {
 
     /**
      * Lista de IPRESS de Atención disponibles (desde dim_solicitud_bolsa) con conteo
+     * Parámetro opcional: idRed para filtrar por red asistencial
      */
     @GetMapping("/filtros/ipress-atencion")
-    public ResponseEntity<?> getIpressAtencion() {
+    public ResponseEntity<?> getIpressAtencion(@RequestParam(required = false) Integer idRed) {
         try {
-            log.info("🏥 Obteniendo lista de IPRESS Atención con conteos");
+            log.info("🏥 Obteniendo lista de IPRESS Atención con conteos" + (idRed != null ? " para Red ID: " + idRed : ""));
 
-            String sql = """
+            StringBuilder sql = new StringBuilder("""
                 SELECT
                     di.id_ipress,
                     di.cod_ipress,
@@ -734,11 +735,18 @@ public class AseguradoController {
                 FROM dim_ipress di
                 INNER JOIN dim_solicitud_bolsa sb ON COALESCE(sb.id_ipress_atencion, sb.id_ipress) = di.id_ipress
                 WHERE di.desc_ipress IS NOT NULL
-                GROUP BY di.id_ipress, di.cod_ipress, di.desc_ipress
-                ORDER BY cantidad DESC, di.desc_ipress
-            """;
+            """);
 
-            List<Map<String, Object>> result = jdbcTemplate.queryForList(sql);
+            List<Object> sqlParams = new ArrayList<>();
+            if (idRed != null) {
+                sql.append(" AND di.id_red = ?");
+                sqlParams.add(idRed);
+            }
+
+            sql.append(" GROUP BY di.id_ipress, di.cod_ipress, di.desc_ipress");
+            sql.append(" ORDER BY cantidad DESC, di.desc_ipress");
+
+            List<Map<String, Object>> result = jdbcTemplate.queryForList(sql.toString(), sqlParams.toArray());
 
             result.forEach(i -> {
                 i.put("idIpress", i.get("id_ipress"));
