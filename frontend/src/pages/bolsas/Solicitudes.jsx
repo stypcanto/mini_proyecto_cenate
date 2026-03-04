@@ -374,9 +374,10 @@ export default function Solicitudes({ categoriaInicial } = {}) {
           // obtenerSolicitudesPaginado(page, size, bolsa, macro, red, ipress, espec, estado, ipressAtencion, ...rest, categoriaEspecialidad)
           if (categoriaInicial) {
             try {
+              // estadoCita=PENDIENTE_CITA para que el count coincida con el filtro por defecto de sub-páginas
               const [naAdsc, naAten] = await Promise.all([
-                bolsasService.obtenerSolicitudesPaginado(0, 1, null, null, null, 'N/A', null, null, null, null, null, null, null, null, null, null, null, categoriaInicial).catch(() => null),
-                bolsasService.obtenerSolicitudesPaginado(0, 1, null, null, null, null, null, null, 'N/A', null, null, null, null, null, null, null, null, categoriaInicial).catch(() => null),
+                bolsasService.obtenerSolicitudesPaginado(0, 1, null, null, null, 'N/A', null, 'PENDIENTE_CITA', null, null, null, null, null, null, null, null, null, categoriaInicial).catch(() => null),
+                bolsasService.obtenerSolicitudesPaginado(0, 1, null, null, null, null, null, 'PENDIENTE_CITA', 'N/A', null, null, null, null, null, null, null, null, categoriaInicial).catch(() => null),
               ]);
               if (mounted) {
                 setIpressNaCount(naAdsc?.totalElements ?? null);
