@@ -4526,7 +4526,27 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
                     log.warn("⚠️ No se pudo parsear hora '{}' para DNI {}: {}", row.getHoraCita(), dni, e.getMessage());
                 }
 
-                // 4. Construir la entidad usando pk_asegurado real para satisfacer la FK
+                // 4. Resolver id_ipress (adscripción) e id_ipress_atencion desde dim_ipress
+                Long idIpressAdscripcion = null;
+                Long idIpressAtencion = null;
+                String casCode = row.getCasAdscripcion() != null ? row.getCasAdscripcion().trim() : null;
+                String atencionCode = row.getIpressAtencion() != null ? row.getIpressAtencion().trim() : null;
+                if (casCode != null && !casCode.isBlank()) {
+                    idIpressAdscripcion = ipressRepository.findByCodIpress(casCode)
+                        .map(Ipress::getIdIpress).orElse(null);
+                    if (idIpressAdscripcion == null) {
+                        log.warn("⚠️ CAS_ADSCRIPCION '{}' no encontrado en dim_ipress para DNI {}", casCode, dni);
+                    }
+                }
+                if (atencionCode != null && !atencionCode.isBlank()) {
+                    idIpressAtencion = ipressRepository.findByCodIpress(atencionCode)
+                        .map(Ipress::getIdIpress).orElse(null);
+                    if (idIpressAtencion == null) {
+                        log.warn("⚠️ IPRESS_ATENCION '{}' no encontrado en dim_ipress para DNI {}", atencionCode, dni);
+                    }
+                }
+
+                // 5. Construir la entidad usando pk_asegurado real para satisfacer la FK
                 String numeroSolicitud = "REC-" + (baseTs + i);
                 SolicitudBolsa solicitud = SolicitudBolsa.builder()
                     .numeroSolicitud(numeroSolicitud)
@@ -4539,6 +4559,8 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
                     .pacienteTelefono(row.getTelMovil())
                     .codigoAdscripcion(row.getCasAdscripcion())
                     .codigoIpressAdscripcion(row.getIpressAtencion())
+                    .idIpress(idIpressAdscripcion)
+                    .idIpressAtencion(idIpressAtencion)
                     .horaAtencion(horaAtencion)
                     .tipoCita(row.getTipoCita())
                     .especialidad(especialidad)
