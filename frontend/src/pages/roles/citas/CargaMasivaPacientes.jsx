@@ -174,16 +174,30 @@ export default function CargaMasivaPacientes() {
           return;
         }
 
+        // Columnas que deben leerse como texto (preservar ceros iniciales, ej: "021")
+        const TEXT_COLS = new Set(["CAS_ADSCRIPCION", "IPRESS_ATENCION"]);
+
         const dataRows = raw
           .slice(1)
-          .filter((r) => r.some((c) => c !== ""))
-          .map((r) => {
+          .map((r, rowIdx) => {
+            if (!r.some((c) => c !== "")) return null;
             const obj = {};
+            const sheetRow = rowIdx + 1; // +1 por la fila de cabeceras
             headers.forEach((h, i) => {
-              obj[h] = h === "HORA_CITA" ? excelTimeToString(r[i]) : cellToString(r[i]);
+              if (h === "HORA_CITA") {
+                obj[h] = excelTimeToString(r[i]);
+              } else if (TEXT_COLS.has(h)) {
+                // Leer el valor formateado de la celda para preservar ceros iniciales
+                const cellAddr = XLSX.utils.encode_cell({ r: sheetRow, c: i });
+                const cell = sheet[cellAddr];
+                obj[h] = cell ? String(cell.w ?? cell.v ?? "").trim() : "";
+              } else {
+                obj[h] = cellToString(r[i]);
+              }
             });
             return obj;
-          });
+          })
+          .filter(Boolean);
 
         if (dataRows.length === 0) {
           toast.error("El archivo no contiene filas de datos");
