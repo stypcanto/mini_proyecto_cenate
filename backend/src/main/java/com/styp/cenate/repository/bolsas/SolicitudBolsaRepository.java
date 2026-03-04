@@ -290,6 +290,8 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
                OR (CAST(:condicionMedica AS VARCHAR) = 'Sin atención' AND (sb.condicion_medica IS NULL OR TRIM(sb.condicion_medica) = '')))
           AND (:gestoraId IS NULL OR sb.responsable_gestora_id = :gestoraId)
           AND (CAST(:estadoBolsa AS VARCHAR) IS NULL OR UPPER(COALESCE(sb.estado, '')) = UPPER(CAST(:estadoBolsa AS VARCHAR)))
+          AND (CAST(:categoriaEspecialidad AS VARCHAR) IS NULL
+               OR (CAST(:categoriaEspecialidad AS VARCHAR) = 'especialidades' AND LOWER(COALESCE(sb.especialidad,'')) NOT IN ('medicina general', 'enfermeria')))
         ORDER BY CASE WHEN COALESCE(deg.cod_estado_cita, 'PENDIENTE_CITA') = 'PENDIENTE_CITA' THEN 0
                       WHEN COALESCE(deg.cod_estado_cita, 'PENDIENTE_CITA') = 'CITADO' THEN 1
                       ELSE 2 END, sb.fecha_solicitud DESC
@@ -311,6 +313,7 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
             @org.springframework.data.repository.query.Param("condicionMedica") String condicionMedica,
             @org.springframework.data.repository.query.Param("gestoraId") Long gestoraId,
             @org.springframework.data.repository.query.Param("estadoBolsa") String estadoBolsa,
+            @org.springframework.data.repository.query.Param("categoriaEspecialidad") String categoriaEspecialidad,
             org.springframework.data.domain.Pageable pageable);
 
     /**
@@ -350,6 +353,8 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
                OR (CAST(:condicionMedica AS VARCHAR) = 'Sin atención' AND (sb.condicion_medica IS NULL OR TRIM(sb.condicion_medica) = '')))
           AND (:gestoraId IS NULL OR sb.responsable_gestora_id = :gestoraId)
           AND (CAST(:estadoBolsa AS VARCHAR) IS NULL OR UPPER(COALESCE(sb.estado, '')) = UPPER(CAST(:estadoBolsa AS VARCHAR)))
+          AND (CAST(:categoriaEspecialidad AS VARCHAR) IS NULL
+               OR (CAST(:categoriaEspecialidad AS VARCHAR) = 'especialidades' AND LOWER(COALESCE(sb.especialidad,'')) NOT IN ('medicina general', 'enfermeria')))
         """, nativeQuery = true)
     long countWithFilters(
             @org.springframework.data.repository.query.Param("bolsaNombre") String bolsaNombre,
@@ -366,7 +371,8 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
             @org.springframework.data.repository.query.Param("fechaFin") String fechaFin,
             @org.springframework.data.repository.query.Param("condicionMedica") String condicionMedica,
             @org.springframework.data.repository.query.Param("gestoraId") Long gestoraId,
-            @org.springframework.data.repository.query.Param("estadoBolsa") String estadoBolsa);
+            @org.springframework.data.repository.query.Param("estadoBolsa") String estadoBolsa,
+            @org.springframework.data.repository.query.Param("categoriaEspecialidad") String categoriaEspecialidad);
 
     /**
      * Cuenta total de solicitudes activas (para calcular páginas totales)

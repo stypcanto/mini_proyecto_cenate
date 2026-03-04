@@ -536,6 +536,18 @@ export const componentRegistry = {
     component: lazy(() => import('../pages/bolsas/Solicitudes')),
     requiredAction: 'ver',
   },
+  '/bolsas/solicitudespendientes/medicina-general': {
+    component: lazy(() => import('../pages/bolsas/SolicitudesMedicinaGeneral')),
+    requiredAction: 'ver',
+  },
+  '/bolsas/solicitudespendientes/enfermeria': {
+    component: lazy(() => import('../pages/bolsas/SolicitudesEnfermeria')),
+    requiredAction: 'ver',
+  },
+  '/bolsas/solicitudespendientes/especialidades': {
+    component: lazy(() => import('../pages/bolsas/SolicitudesEspecialidades')),
+    requiredAction: 'ver',
+  },
 
   '/bolsas/solicitudesatendidas': {
     component: lazy(() => import('../pages/bolsas/SolicitudesAtendidas')),

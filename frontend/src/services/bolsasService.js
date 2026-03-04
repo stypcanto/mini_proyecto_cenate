@@ -202,9 +202,10 @@ export const obtenerSolicitudesPaginado = async (
   busqueda = null,
   fechaInicio = null,
   fechaFin = null,
-  condicionMedica = null,   // v1.74.0: Filtro por condicion_medica (PADOMI)
-  gestoraId = null,         // v1.70.x: Filtro por gestora asignada (ID)
-  estadoBolsa = null        // Filtro por estado de bolsa (PENDIENTE, APROBADA, RECHAZADA)
+  condicionMedica = null,          // v1.74.0: Filtro por condicion_medica (PADOMI)
+  gestoraId = null,                // v1.70.x: Filtro por gestora asignada (ID)
+  estadoBolsa = null,              // Filtro por estado de bolsa (PENDIENTE, APROBADA, RECHAZADA)
+  categoriaEspecialidad = null     // 'medicina_general' | 'enfermeria' | 'especialidades' | null
 ) => {
   try {
     // Construir query string dinámico
@@ -231,6 +232,7 @@ export const obtenerSolicitudesPaginado = async (
     if (condicionMedica && condicionMedica.trim()) params.append('condicionMedica', condicionMedica.trim());
     if (gestoraId !== null && gestoraId !== undefined) params.append('gestoraId', gestoraId);
     if (estadoBolsa && estadoBolsa !== 'todos') params.append('estadoBolsa', estadoBolsa);
+    if (categoriaEspecialidad) params.append('categoriaEspecialidad', categoriaEspecialidad);
 
     const finalUrl = `${API_BASE_URL}/solicitudes?${params.toString()}`;
     console.log('🌐 URL de solicitud:', finalUrl);

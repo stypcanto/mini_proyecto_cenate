@@ -567,17 +567,17 @@ public class SolicitudBolsaController {
             @RequestParam(required = false) String condicionMedica,
             @RequestParam(required = false) Long gestoraId,
             @RequestParam(required = false) String estadoBolsa,
+            @RequestParam(required = false) String categoriaEspecialidad,
             @PageableDefault(size = 100, page = 0) Pageable pageable) {
 
         // Si hay algún filtro, usar búsqueda con filtros
         if (bolsa != null || macrorregion != null || red != null || ipress != null ||
             especialidad != null || estado != null || ipressAtencion != null || tipoCita != null ||
             asignacion != null || busqueda != null || fechaInicio != null || fechaFin != null ||
-            condicionMedica != null || gestoraId != null || estadoBolsa != null) {
-            log.info("🔍 Solicitud con filtros - Bolsa: {}, Macro: {}, Red: {}, IPRESS: {}, Especialidad: {}, Estado: {}, IPRESSAtencion: {}, TipoCita: {}, Asignación: {}, Búsqueda: {}, FechaInicio: {}, FechaFin: {}, CondicionMedica: {}, EstadoBolsa: {}",
-                bolsa, macrorregion, red, ipress, especialidad, estado, ipressAtencion, tipoCita, asignacion, busqueda, fechaInicio, fechaFin, condicionMedica, estadoBolsa);
+            condicionMedica != null || gestoraId != null || estadoBolsa != null || categoriaEspecialidad != null) {
+            log.info("🔍 Solicitud con filtros - Especialidad: {}, Categoria: {}", especialidad, categoriaEspecialidad);
             return ResponseEntity.ok(solicitudBolsaService.listarConFiltros(
-                    bolsa, macrorregion, red, ipress, especialidad, estado, ipressAtencion, tipoCita, asignacion, busqueda, fechaInicio, fechaFin, condicionMedica, gestoraId, estadoBolsa, pageable));
+                    bolsa, macrorregion, red, ipress, especialidad, estado, ipressAtencion, tipoCita, asignacion, busqueda, fechaInicio, fechaFin, condicionMedica, gestoraId, estadoBolsa, categoriaEspecialidad, pageable));
         }
 
         // Sin filtros, listar todas (comportamiento anterior)

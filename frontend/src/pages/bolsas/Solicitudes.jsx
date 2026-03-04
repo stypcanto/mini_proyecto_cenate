@@ -68,7 +68,8 @@ function generarCodigoBolsa(nombreBolsa) {
     .replace(/^_|_$/g, '');
 }
 
-export default function Solicitudes() {
+// categoriaInicial: 'MEDICINA GENERAL' | 'ENFERMERIA' | 'especialidades' | undefined (= todas)
+export default function Solicitudes({ categoriaInicial } = {}) {
   const [registrosPorPagina, setRegistrosPorPagina] = useState(20);
   const { esSuperAdmin } = usePermisos();
 
@@ -93,7 +94,13 @@ export default function Solicitudes() {
   const [filtroIpress, setFiltroIpress] = useState('todas');
   const [filtroIpressAtencion, setFiltroIpressAtencion] = useState('todas');
   const [filtroMacrorregion, setFiltroMacrorregion] = useState('todas');
-  const [filtroEspecialidad, setFiltroEspecialidad] = useState('todas');
+  // Si viene categoriaInicial → pre-aplicar filtro de especialidad fijo
+  const especialidadPorCategoria = categoriaInicial === 'especialidades'
+    ? 'todas'      // "especialidades" usa categoriaEspecialidad, no filtroEspecialidad
+    : (categoriaInicial || 'todas');
+  const [filtroEspecialidad, setFiltroEspecialidad] = useState(especialidadPorCategoria);
+  // Para la pestaña "Especialidades": excluir MG y Enfermería en el backend
+  const categoriaEspecialidad = categoriaInicial === 'especialidades' ? 'especialidades' : null;
   const [filtroEstado, setFiltroEstado] = useState('todos'); // Mostrar todos los estados por defecto
   const [filtroTipoCita, setFiltroTipoCita] = useState('todas');
   const [filtroAsignacion, setFiltroAsignacion] = useState('todos');  // ✅ v1.42.0: Filtro asignación (cards clickeables)
@@ -717,6 +724,7 @@ export default function Solicitudes() {
         red:            filtroRed === 'todas' ? null : filtroRed,
         ipress:         filtroIpress === 'todas' ? null : filtroIpress,
         especialidad:   filtroEspecialidad === 'todas' ? null : filtroEspecialidad,
+        categoriaEspecialidad: categoriaEspecialidad,
         estadoCodigo:   filtroEstado === 'todos' ? null : filtroEstado,
         ipressAtencion: filtroIpressAtencion === 'todas' ? null : filtroIpressAtencion,
         tipoCita:       filtroTipoCita === 'todas' ? null : filtroTipoCita,
@@ -746,7 +754,8 @@ export default function Solicitudes() {
           filtrosActuales.fechaFin,
           null,              // condicionMedica
           filtrosActuales.gestoraId,
-          filtrosActuales.estadoBolsa
+          filtrosActuales.estadoBolsa,
+          filtrosActuales.categoriaEspecialidad
         ),
         bolsasService.obtenerKpiConFiltros(filtrosActuales).catch(() => null),
       ]);
@@ -936,7 +945,8 @@ export default function Solicitudes() {
         filtroFechaFin || null,
         null,              // condicionMedica
         filtroGestoraId,   // gestoraId
-        filtroEstadoBolsa === 'todos' ? null : filtroEstadoBolsa  // estadoBolsa
+        filtroEstadoBolsa === 'todos' ? null : filtroEstadoBolsa,  // estadoBolsa
+        categoriaEspecialidad  // 'especialidades' | null
       );
       console.log('📥 Respuesta página recibida:', response);
 

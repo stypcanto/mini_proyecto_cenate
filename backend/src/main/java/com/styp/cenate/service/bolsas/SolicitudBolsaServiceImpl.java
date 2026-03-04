@@ -3455,10 +3455,11 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
             String condicionMedica,
             Long gestoraId,
             String estadoBolsa,
+            String categoriaEspecialidad,
             org.springframework.data.domain.Pageable pageable) {
         try {
-            log.info("🔍 Listando solicitudes con filtros - Bolsa: {}, Macro: {}, Red: {}, IPRESS: {}, Especialidad: {}, Estado: {}, IPRESSAtencion: {}, TipoCita: {}, Asignación: {}, Búsqueda: {}, FechaInicio: {}, FechaFin: {}, EstadoBolsa: {}",
-                bolsaNombre, macrorregion, red, ipress, especialidad, estadoCodigo, ipressAtencion, tipoCita, asignacion, busqueda, fechaInicio, fechaFin, estadoBolsa);
+            log.info("🔍 Listando solicitudes con filtros - Bolsa: {}, Macro: {}, Red: {}, IPRESS: {}, Especialidad: {}, Estado: {}, IPRESSAtencion: {}, TipoCita: {}, Asignación: {}, Búsqueda: {}, FechaInicio: {}, FechaFin: {}, EstadoBolsa: {}, Categoria: {}",
+                bolsaNombre, macrorregion, red, ipress, especialidad, estadoCodigo, ipressAtencion, tipoCita, asignacion, busqueda, fechaInicio, fechaFin, estadoBolsa, categoriaEspecialidad);
 
             // Convertir "todas"/"todos" a null para ignorar ese filtro
             String bolsaNombreFinal = (bolsaNombre == null || "todas".equals(bolsaNombre) || bolsaNombre.trim().isEmpty()) ? null : bolsaNombre.trim();
@@ -3475,15 +3476,16 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
             String fechaFinFinal = (fechaFin == null || fechaFin.trim().isEmpty()) ? null : fechaFin.trim();
             String condicionMedicaFinal = (condicionMedica == null || condicionMedica.trim().isEmpty()) ? null : condicionMedica.trim();
             String estadoBolsaFinal = (estadoBolsa == null || "todos".equals(estadoBolsa) || estadoBolsa.trim().isEmpty()) ? null : estadoBolsa.trim();
+            String categoriaEspecialidadFinal = (categoriaEspecialidad == null || categoriaEspecialidad.trim().isEmpty()) ? null : categoriaEspecialidad.trim();
 
             // Llamar al repository con filtros
             List<Object[]> resultados = solicitudRepository.findAllWithFiltersAndPagination(
                     bolsaNombreFinal, macrorFinal, redFinal, ipressFinal, especialidadFinal,
-                    estadoCod, ipressAtencionFinal, tipoCitaFinal, asignacionFinal, busquedaFinal, fechaInicioFinal, fechaFinFinal, condicionMedicaFinal, gestoraId, estadoBolsaFinal, pageable);
+                    estadoCod, ipressAtencionFinal, tipoCitaFinal, asignacionFinal, busquedaFinal, fechaInicioFinal, fechaFinFinal, condicionMedicaFinal, gestoraId, estadoBolsaFinal, categoriaEspecialidadFinal, pageable);
 
             long total = solicitudRepository.countWithFilters(
                     bolsaNombreFinal, macrorFinal, redFinal, ipressFinal, especialidadFinal,
-                    estadoCod, ipressAtencionFinal, tipoCitaFinal, asignacionFinal, busquedaFinal, fechaInicioFinal, fechaFinFinal, condicionMedicaFinal, gestoraId, estadoBolsaFinal);
+                    estadoCod, ipressAtencionFinal, tipoCitaFinal, asignacionFinal, busquedaFinal, fechaInicioFinal, fechaFinFinal, condicionMedicaFinal, gestoraId, estadoBolsaFinal, categoriaEspecialidadFinal);
 
             // Mapear a DTOs
             List<SolicitudBolsaDTO> dtos = resultados.stream()
