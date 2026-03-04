@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { Plus, Search, Phone, ChevronDown, ChevronUp, Circle, Eye, Users, UserPlus, Download, FileText, FolderOpen, ListChecks, Upload, AlertCircle, Edit, X, AlertTriangle, Clock, UserCheck, Database } from 'lucide-react';
+import { Plus, Search, Phone, ChevronDown, ChevronUp, Circle, Eye, Users, UserPlus, Download, FileText, FolderOpen, ListChecks, Upload, AlertCircle, Edit, X, AlertTriangle, Clock, UserCheck, Database, Loader } from 'lucide-react';
 import PageHeader from '../../components/PageHeader';
 import StatCard from '../../components/StatCard';
 import ListHeader from '../../components/ListHeader';
@@ -204,6 +204,12 @@ export default function Solicitudes({ categoriaInicial } = {}) {
   const [bolsaNuevaSeleccionada, setBolsaNuevaSeleccionada] = useState(null);
   const [bolsasDisponibles, setBolsasDisponibles] = useState([]);
   const [tiposBolsasActivos, setTiposBolsasActivos] = useState([]); // Tipos de bolsas activos (catálogo)
+
+  // Agrupación por IPRESS Atención + Especialidad (v1.84.2)
+  const [agrupacionActiva, setAgrupacionActiva]   = useState(false);
+  const [gruposFormados, setGruposFormados]       = useState([]);
+  const [grupoSeleccionado, setGrupoSeleccionado] = useState(null);
+  const [loadingAgrupacion, setLoadingAgrupacion] = useState(false);
 
   // ============================================================================
   // 📦 EFFECT 1: Cargar CATÁLOGOS una sola vez al iniciar
@@ -1067,6 +1073,80 @@ export default function Solicitudes({ categoriaInicial } = {}) {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  // ============================================================================
+  // 🧩 v1.84.2: Agrupación por IPRESS Atención + Especialidad (múltiplos de 4)
+  // ============================================================================
+  const agruparPorIpressAtencion = async () => {
+    setLoadingAgrupacion(true);
+    try {
+      const response = await bolsasService.obtenerSolicitudesPaginado(
+        0, 9999,
+        filtroBolsa.length === 0 ? null : filtroBolsa.join(','),
+        filtroMacrorregion === 'todas' ? null : filtroMacrorregion,
+        filtroRed === 'todas' ? null : filtroRed,
+        filtroIpress === 'todas' ? null : filtroIpress,
+        filtroEspecialidad === 'todas' ? null : filtroEspecialidad,
+        filtroEstado === 'todos' ? null : filtroEstado,
+        filtroIpressAtencion === 'todas' ? null : filtroIpressAtencion,
+        filtroTipoCita === 'todas' ? null : filtroTipoCita,
+        filtroAsignacion === 'todos' ? null : filtroAsignacion,
+        searchTerm.trim() || null,
+        filtroFechaInicio || null,
+        filtroFechaFin || null,
+        null,
+        filtroGestoraId,
+        filtroEstadoBolsa === 'todos' ? null : filtroEstadoBolsa,
+        categoriaEspecialidad
+      );
+      const todos = response?.content ?? (Array.isArray(response) ? response : solicitudes);
+
+      const grupos = {};
+      todos.forEach((s) => {
+        const ipress = s.desc_ipress_atencion || 'SIN_IPRESS_ATENCION';
+        const espec  = (s.especialidad || 'SIN_ESPECIALIDAD').replace(/\s*\([^)]*\)/, '').trim();
+        const key    = `${ipress}__${espec}`;
+        if (!grupos[key]) grupos[key] = { ipress, especialidad: espec, pacientes: [] };
+        grupos[key].pacientes.push(s);
+      });
+
+      const gruposValidos = Object.values(grupos)
+        .filter(g => g.pacientes.length >= 4 && g.pacientes.length % 4 === 0)
+        .map(g => ({ ...g, cantidadGrupos: Math.floor(g.pacientes.length / 4) }));
+
+      const { default: toast } = await import('react-hot-toast');
+      if (gruposValidos.length === 0) {
+        toast.error('No se encontraron grupos de 4 pacientes con misma IPRESS Atención y Especialidad');
+        return;
+      }
+      setGruposFormados(gruposValidos);
+      setAgrupacionActiva(true);
+      const total = gruposValidos.reduce((sum, g) => sum + g.cantidadGrupos, 0);
+      toast.success(`${total} grupos de 4 pacientes formados`);
+    } catch (error) {
+      console.error('Error al agrupar:', error);
+      const { default: toast } = await import('react-hot-toast');
+      toast.error('Error al cargar datos para agrupación');
+    } finally {
+      setLoadingAgrupacion(false);
+    }
+  };
+
+  const desactivarAgrupacion = async () => {
+    setAgrupacionActiva(false);
+    setGruposFormados([]);
+    setGrupoSeleccionado(null);
+    const { default: toast } = await import('react-hot-toast');
+    toast('Agrupación desactivada');
+  };
+
+  const asignarGestoraAGrupo = (grupo) => {
+    const ids = grupo.pacientes.map(p => p.id_item || p.id_solicitud || p.id);
+    setSelectedRows(new Set(ids));
+    setGrupoSeleccionado(grupo);
+    setGestoraSeleccionada(null);
+    setModalAsignarGestora(true);
   };
 
   // Helper: Obtener nombre descriptivo del estado para mostrar en tabla
@@ -2172,7 +2252,8 @@ export default function Solicitudes({ categoriaInicial } = {}) {
               setSearchTerm(valor);
             }}
             filters={[
-              {
+              // Ocultar selector de bolsas en bolsa107 (la sub-página ya filtra exclusivamente esa bolsa)
+              ...(categoriaInicial === 'bolsa107' ? [] : [{
                 name: "Bolsas",
                 multiSelect: true,
                 value: filtroBolsa,
@@ -2187,7 +2268,7 @@ export default function Solicitudes({ categoriaInicial } = {}) {
                       value: bolsa.tipoBolsa
                     };
                   })
-              },
+              }]),
               {
                 name: "IPRESS - Adscripción",
                 searchable: true,
@@ -2315,8 +2396,10 @@ export default function Solicitudes({ categoriaInicial } = {}) {
               setFiltroBolsa([]);
               setFiltroIpress('todas');
               setFiltroIpressAtencion('todas');
-              setFiltroEspecialidad('todas');
-              setFiltroEstado('todos');
+              // Preservar especialidad fija de la sub-página (medicina-general / enfermeria)
+              setFiltroEspecialidad(especialidadPorCategoria);
+              // En sub-páginas el default es PENDIENTE_CITA, en la página principal "todos"
+              setFiltroEstado(categoriaInicial ? 'PENDIENTE_CITA' : 'todos');
               setFiltroTipoCita('todas');
               setFiltroAsignacion('todos');
               setFiltroGestoraId(null);
@@ -2542,8 +2625,82 @@ export default function Solicitudes({ categoriaInicial } = {}) {
               </div>
           )}
 
+          {/* 🧩 v1.84.2: Botón Agrupación inteligente (solo sub-páginas) */}
+          {categoriaInicial && (
+            <div className="flex justify-end mt-2">
+              {agrupacionActiva ? (
+                <button
+                  onClick={desactivarAgrupacion}
+                  className="flex items-center gap-2 px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white rounded-lg font-medium text-sm transition-colors"
+                >
+                  <X size={16} /> Desactivar Agrupación
+                </button>
+              ) : (
+                <div className="relative group">
+                  <button
+                    onClick={agruparPorIpressAtencion}
+                    disabled={loadingAgrupacion}
+                    className="flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium text-sm transition-colors disabled:opacity-60"
+                  >
+                    {loadingAgrupacion
+                      ? <Loader size={16} className="animate-spin" />
+                      : <Users size={16} />}
+                    Agrupación inteligente
+                  </button>
+                  {/* Tooltip explicativo */}
+                  <div className="absolute right-0 top-full mt-2 w-72 bg-gray-900 text-white text-xs rounded-xl p-3 shadow-xl z-50 opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity duration-200">
+                    <p className="font-semibold text-purple-300 mb-1">Agrupación inteligente</p>
+                    <p className="text-gray-300 leading-relaxed">
+                      Analiza todos los pacientes con los filtros activos y los agrupa por
+                      <span className="text-white font-medium"> IPRESS Atención + Especialidad</span>.
+                    </p>
+                    <p className="text-gray-300 leading-relaxed mt-1">
+                      Solo se muestran grupos con un número exacto de
+                      <span className="text-yellow-300 font-medium"> múltiplos de 4</span> pacientes
+                      (4, 8, 12…), listos para asignar a una gestora de un solo clic.
+                    </p>
+                    <div className="mt-2 pt-2 border-t border-gray-700 text-gray-400">
+                      Cada tarjeta muestra el badge <span className="text-purple-300 font-bold">N×4</span> indicando cuántos grupos de 4 se forman.
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
           {/* 📌 ESPACIADO ADICIONAL: Separación antes de la tabla */}
           <div className="h-4"></div>
+
+          {/* 🧩 v1.84.2: Vista de grupos (solo cuando agrupación está activa) */}
+          {agrupacionActiva && gruposFormados.length > 0 && (
+            <div className="mb-6">
+              <h3 className="text-sm font-semibold text-gray-700 mb-3">
+                {gruposFormados.reduce((s, g) => s + g.cantidadGrupos, 0)} grupos de 4 pacientes
+                · {gruposFormados.reduce((s, g) => s + g.pacientes.length, 0)} pacientes totales
+              </h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {gruposFormados.map((grupo, i) => (
+                  <div key={i} className="bg-white border border-purple-200 rounded-xl p-4 shadow-sm">
+                    <div className="flex items-start justify-between mb-2">
+                      <span className="bg-purple-100 text-purple-700 text-xs font-bold px-2 py-1 rounded-full">
+                        {grupo.cantidadGrupos}×4
+                      </span>
+                      <span className="text-xs text-gray-500">{grupo.pacientes.length} pacientes</span>
+                    </div>
+                    <p className="text-sm font-semibold text-gray-800 truncate" title={grupo.ipress}>{grupo.ipress}</p>
+                    <p className="text-xs text-blue-600 mt-1 truncate" title={grupo.especialidad}>{grupo.especialidad}</p>
+                    <button
+                      onClick={() => asignarGestoraAGrupo(grupo)}
+                      className="mt-3 w-full flex items-center justify-center gap-1 bg-purple-600 hover:bg-purple-700 text-white text-xs font-medium py-2 rounded-lg transition-colors"
+                    >
+                      <UserPlus size={12} />
+                      Asignar Gestora
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* SCROLL SUPERIOR para indicar que hay más columnas */}
           <style>{`
