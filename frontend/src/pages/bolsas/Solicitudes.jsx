@@ -84,6 +84,7 @@ export default function Solicitudes({ categoriaInicial } = {}) {
   const [errorEspecialidades, setErrorEspecialidades] = useState(null); // Error al cargar especialidades (v1.42.0)
   const [estadisticasIpress, setEstadisticasIpress] = useState([]);
   const [estadisticasIpressAtencion, setEstadisticasIpressAtencion] = useState([]);
+  const [estadisticasEspecialidad, setEstadisticasEspecialidad] = useState({}); // {CARDIOLOGIA: 42, ...}
   // estadisticasTipoCita eliminado (v1.65.1) — el filtro usa opciones hardcodeadas
 
   const [isLoading, setIsLoading] = useState(true); // Inicia con loader por defecto
@@ -352,14 +353,21 @@ export default function Solicitudes({ categoriaInicial } = {}) {
     let mounted = true;
     (async () => {
       try {
-        const [ipress, ipressAtencion] = await Promise.all([
+        const [ipress, ipressAtencion, especialidad] = await Promise.all([
           bolsasService.obtenerEstadisticasPorIpress().catch(() => []),
           bolsasService.obtenerEstadisticasPorIpressAtencion().catch(() => []),
+          bolsasService.obtenerEstadisticasPorEspecialidad().catch(() => []),
         ]);
         if (mounted) {
           setEstadisticasIpress(ipress || []);
           setEstadisticasIpressAtencion(ipressAtencion || []);
-          console.log('✅ [2.6b] Stats IPRESS para filtros cargadas');
+          // Construir mapa {CARDIOLOGIA: 42, ...} para el dropdown
+          const mapEspec = {};
+          (especialidad || []).forEach(e => {
+            if (e.especialidad) mapEspec[e.especialidad.toUpperCase()] = e.total ?? 0;
+          });
+          setEstadisticasEspecialidad(mapEspec);
+          console.log('✅ [2.6b] Stats IPRESS + Especialidad para filtros cargadas');
         }
       } catch (error) {
         console.error('❌ [2.6b] Error cargando stats IPRESS:', error);
@@ -2378,7 +2386,10 @@ export default function Solicitudes({ categoriaInicial } = {}) {
                   ? [{ label: categoriaInicial, value: categoriaInicial }]
                   : [
                       { label: `Todas las especialidades (${especialidadesConSE.length})`, value: "todas" },
-                      ...especialidadesConSE.map(esp => ({ label: esp, value: esp }))
+                      ...especialidadesConSE.map(esp => {
+                        const count = estadisticasEspecialidad[esp.toUpperCase()];
+                        return { label: count !== undefined ? `${esp} (${count})` : esp, value: esp };
+                      })
                     ]
               },
               {
@@ -2565,7 +2576,8 @@ export default function Solicitudes({ categoriaInicial } = {}) {
           <div className="h-2"></div>
 
           {/* Botones de acción: asignar gestora, descargar, cambiar bolsa, limpiar y borrar */}
-          {(selectedRows.size > 0 || solicitudes.length > 0) && (
+          {/* En modo agrupación, ocultar botones masivos — cada tarjeta tiene su propio "Asignar Gestora" */}
+          {!agrupacionActiva && (selectedRows.size > 0 || solicitudes.length > 0) && (
             <div className="flex justify-end gap-3 flex-wrap">
                 {(selectedRows.size >= 1 || modoSeleccionTotal) && !seleccionarTodas && (
                   <button
