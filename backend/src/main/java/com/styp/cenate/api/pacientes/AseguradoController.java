@@ -885,7 +885,7 @@ public class AseguradoController {
      * Ejemplo: PUT /api/asegurados/{pkAsegurado}
      */
     @PutMapping("/{pkAsegurado}")
-    @PreAuthorize("hasAnyRole('SUPERADMIN', 'SOPORTE_TELEUE', 'COORD. GESTION CITAS', 'COORD. ENFERMERIA')")
+    @PreAuthorize("hasAnyRole('SUPERADMIN', 'SOPORTE_TELEUE', 'COORD. GESTION CITAS', 'COORD. ENFERMERIA', 'GESTOR DE CITAS')")
     public ResponseEntity<?> actualizarAsegurado(
             @PathVariable String pkAsegurado,
             @RequestBody AseguradoDTO aseguradoDTO) {
@@ -944,6 +944,29 @@ public class AseguradoController {
             // ── Cascade IPRESS a bolsas activas (no terminales) ──────────────────
             String dni = aseguradoDTO.getDocPaciente();
             String estadosTerminales = "('ATENDIDO','RECHAZADO','ANULADO','NO_ASISTIO','CERRADO')";
+
+            // ── Cascade TELÉFONOS a dim_solicitud_bolsa ─────────────────────────
+            if (aseguradoDTO.getTelFijo() != null || aseguradoDTO.getTelCelular() != null) {
+                if (aseguradoDTO.getIdSolicitud() != null) {
+                    // Actualizar solo la solicitud específica
+                    int bolsasTel = jdbcTemplate.update(
+                        "UPDATE dim_solicitud_bolsa SET paciente_telefono = ?, paciente_telefono_alterno = ? " +
+                        "WHERE id_solicitud = ?",
+                        aseguradoDTO.getTelFijo(), aseguradoDTO.getTelCelular(), aseguradoDTO.getIdSolicitud()
+                    );
+                    log.info("📞 Teléfonos actualizados en solicitud {} (tel1: {}, tel2: {})",
+                        aseguradoDTO.getIdSolicitud(), aseguradoDTO.getTelFijo(), aseguradoDTO.getTelCelular());
+                } else {
+                    // Fallback: actualizar todas las bolsas activas del paciente
+                    int bolsasTel = jdbcTemplate.update(
+                        "UPDATE dim_solicitud_bolsa SET paciente_telefono = ?, paciente_telefono_alterno = ? " +
+                        "WHERE paciente_dni = ? AND estado NOT IN " + estadosTerminales,
+                        aseguradoDTO.getTelFijo(), aseguradoDTO.getTelCelular(), dni
+                    );
+                    log.info("📞 Cascade teléfonos → {} bolsas activas (DNI: {}, tel1: {}, tel2: {})",
+                        bolsasTel, dni, aseguradoDTO.getTelFijo(), aseguradoDTO.getTelCelular());
+                }
+            }
 
             if (aseguradoDTO.getIdIpress() != null) {
                 int bolsasActualizadas = jdbcTemplate.update(

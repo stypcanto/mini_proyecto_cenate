@@ -31,4 +31,5 @@ public class AseguradoDTO {
     private Integer idTipDoc;        // 1=DNI, 2=C.E./PAS
     private Long idIpress;           // FK → dim_ipress (adscripción)
     private Long idIpressAtencion;   // FK → dim_ipress (atención)
+    private Long idSolicitud;        // id_solicitud de dim_solicitud_bolsa (para cascade puntual)
 }

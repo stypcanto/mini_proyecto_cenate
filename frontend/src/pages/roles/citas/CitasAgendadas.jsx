@@ -539,37 +539,55 @@ export default function CitasAgendadas() {
   const [progresoGrupo, setProgresoGrupo]       = useState({ activo: false, total: 0, ok: 0, err: 0 });
 
   // ── Guardar teléfonos ──────────────────────────────────────
-  const guardarTelefono = async (pacienteDni) => {
+  const guardarTelefono = async (pacienteDni, idSolicitud) => {
     setGuardandoTel(true);
+    console.log('══════════════════════════════════════════');
+    console.log('📞 [INICIO] guardarTelefono');
+    console.log('📞 pacienteDni:', pacienteDni);
+    console.log('📞 idSolicitud:', idSolicitud);
+    console.log('📞 telEdit:', JSON.stringify(telEdit));
+    console.log('══════════════════════════════════════════');
     try {
       const token = getToken();
       const headers = { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` };
 
       // Paso 1: obtener datos completos del asegurado (para tener pkAsegurado y todos los campos)
       const resGet = await fetch(`/api/asegurados/por-dni/${pacienteDni}`, { headers });
+      console.log('📞 GET status:', resGet.status);
       if (!resGet.ok) throw new Error(`GET HTTP ${resGet.status}`);
       const asegurado = await resGet.json();
+
+      console.log('📞 asegurado respuesta:', JSON.stringify(asegurado, null, 2));
+      console.log('📞 pkAsegurado:', asegurado.pkAsegurado);
 
       if (!asegurado.pkAsegurado) throw new Error('No se encontró pkAsegurado');
 
       // Paso 2: PUT con todos los campos existentes, solo actualizando teléfonos
+      const bodyPut = {
+        docPaciente:      asegurado.docPaciente,
+        paciente:         asegurado.paciente,
+        fecnacimpaciente: asegurado.fecnacimpaciente,
+        sexo:             asegurado.sexo,
+        tipoPaciente:     asegurado.tipoPaciente,
+        telFijo:          telEdit.tel1.trim(),
+        telCelular:       telEdit.tel2.trim(),
+        tipoSeguro:       asegurado.tipoSeguro,
+        casAdscripcion:   asegurado.codAdscripcion || asegurado.casAdscripcion,
+        correoElectronico: asegurado.correoElectronico,
+        pacienteCronico:  asegurado.pacienteCronico,
+        idSolicitud:      idSolicitud,
+      };
+      console.log('📞 PUT /api/asegurados/' + asegurado.pkAsegurado, 'body:', JSON.stringify(bodyPut, null, 2));
       const resPut = await fetch(`/api/asegurados/${encodeURIComponent(asegurado.pkAsegurado)}`, {
         method: 'PUT',
         headers,
-        body: JSON.stringify({
-          paciente:         asegurado.paciente,
-          fecnacimpaciente: asegurado.fecnacimpaciente,
-          sexo:             asegurado.sexo,
-          tipoPaciente:     asegurado.tipoPaciente,
-          telFijo:          telEdit.tel1.trim(),
-          telCelular:       telEdit.tel2.trim(),
-          tipoSeguro:       asegurado.tipoSeguro,
-          casAdscripcion:   asegurado.codAdscripcion || asegurado.casAdscripcion,
-          correoElectronico: asegurado.correoElectronico,
-          pacienteCronico:  asegurado.pacienteCronico,
-        }),
+        body: JSON.stringify(bodyPut),
       });
-      if (!resPut.ok) throw new Error(`PUT HTTP ${resPut.status}`);
+      if (!resPut.ok) {
+        const errBody = await resPut.text().catch(() => '');
+        console.error('❌ PUT teléfono error:', resPut.status, errBody);
+        throw new Error(`PUT HTTP ${resPut.status}: ${errBody}`);
+      }
 
       // Actualizar estado local
       setPacientes(prev => prev.map(p =>
@@ -580,7 +598,8 @@ export default function CitasAgendadas() {
       setEditandoTel(null);
       toast.success('Teléfono actualizado correctamente');
     } catch (err) {
-      toast.error('No se pudo actualizar el teléfono');
+      console.error('❌ guardarTelefono error completo:', err);
+      toast.error(`No se pudo actualizar el teléfono: ${err.message}`);
     } finally {
       setGuardandoTel(false);
     }
@@ -1608,7 +1627,7 @@ CENATE de Essalud`;
                                 />
                                 <div style={{ display: 'flex', gap: '4px', marginTop: '2px' }}>
                                   <button
-                                    onClick={() => guardarTelefono(p.pacienteDni)}
+                                    onClick={() => guardarTelefono(p.pacienteDni, p.id)}
                                     disabled={guardandoTel}
                                     title="Guardar"
                                     style={{ flex: 1, padding: '3px 0', background: '#16a34a', color: '#fff', border: 'none', borderRadius: '5px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '3px', fontSize: '11px', fontWeight: '600' }}
