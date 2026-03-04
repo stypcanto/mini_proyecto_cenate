@@ -787,8 +787,8 @@ export const obtenerGestorasDisponibles = async () => {
     const response = await apiClient.get(`${API_BASE_URL}/solicitudes/gestoras-disponibles`, true);
     return response;
   } catch (error) {
-    console.error('Error al obtener gestoras disponibles:', error);
-    throw error;
+    console.warn('No se pudieron cargar gestoras disponibles:', error?.message || error);
+    return [];
   }
 };
 
@@ -1099,6 +1099,33 @@ export const obtenerEspecialidadesUnicas = async () => {
 };
 
 /**
+ * v1.84.2: Agrupación inteligente — GROUP BY server-side.
+ * Devuelve [{ipress, especialidad, total, grupos, ids[]}] solo para múltiplos de 4.
+ * ~100x más rápido que cargar size=9999.
+ */
+export const agruparPorIpressAtencion = async (filtros = {}) => {
+  const params = new URLSearchParams();
+  if (filtros.bolsaNombre)           params.append('bolsa',                filtros.bolsaNombre);
+  if (filtros.macrorregion)          params.append('macrorregion',         filtros.macrorregion);
+  if (filtros.red)                   params.append('red',                  filtros.red);
+  if (filtros.ipress)                params.append('ipress',               filtros.ipress);
+  if (filtros.especialidad)          params.append('especialidad',         filtros.especialidad);
+  if (filtros.estadoCodigo)          params.append('estado',               filtros.estadoCodigo);
+  if (filtros.ipressAtencion)        params.append('ipressAtencion',       filtros.ipressAtencion);
+  if (filtros.tipoCita)              params.append('tipoCita',             filtros.tipoCita);
+  if (filtros.asignacion)            params.append('asignacion',           filtros.asignacion);
+  if (filtros.busqueda)              params.append('busqueda',             filtros.busqueda);
+  if (filtros.fechaInicio)           params.append('fechaInicio',          filtros.fechaInicio);
+  if (filtros.fechaFin)              params.append('fechaFin',             filtros.fechaFin);
+  if (filtros.gestoraId)             params.append('gestoraId',            filtros.gestoraId);
+  if (filtros.estadoBolsa)           params.append('estadoBolsa',          filtros.estadoBolsa);
+  if (filtros.categoriaEspecialidad) params.append('categoriaEspecialidad',filtros.categoriaEspecialidad);
+  const url = `${API_BASE_URL}/solicitudes/agrupar-por-ipress-atencion?${params.toString()}`;
+  const response = await apiClient.get(url, true);
+  return Array.isArray(response) ? response : [];
+};
+
+/**
  * Obtiene todos los tipos de bolsas activos (público)
  * GET /api/bolsas/tipos-bolsas/activos
  * @returns {Promise<Array>} - Listado de tipos de bolsas
@@ -1302,4 +1329,7 @@ export default {
 
   // SINCRONIZACIÓN DE TELÉFONOS
   sincronizarTelefonos,
+
+  // AGRUPACIÓN INTELIGENTE (v1.84.2)
+  agruparPorIpressAtencion,
 };
