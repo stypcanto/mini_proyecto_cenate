@@ -275,7 +275,7 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
           AND (CAST(:especialidad AS VARCHAR) IS NULL OR LOWER(COALESCE(sb.especialidad, '')) LIKE LOWER(CONCAT('%', CAST(:especialidad AS VARCHAR), '%')))
           AND (CAST(:estadoCodigo AS VARCHAR) IS NULL OR POSITION(',' || UPPER(COALESCE(deg.cod_estado_cita, 'PENDIENTE_CITA')) || ',' IN ',' || UPPER(CAST(:estadoCodigo AS VARCHAR)) || ',') > 0)
           AND (CAST(:ipressAtencion AS VARCHAR) IS NULL OR LOWER(COALESCE(di2.desc_ipress, '')) LIKE LOWER(CONCAT('%', CAST(:ipressAtencion AS VARCHAR), '%')))
-          AND (CAST(:tipoCita AS VARCHAR) IS NULL OR UPPER(COALESCE(sb.tipo_cita, 'N/A')) = UPPER(CAST(:tipoCita AS VARCHAR)))
+          AND (CAST(:tipoCita AS VARCHAR) IS NULL OR UPPER(COALESCE(sb.tipo_cita, 'VOLUNTARIA')) = UPPER(CAST(:tipoCita AS VARCHAR)))
           AND (CASE
                WHEN CAST(:asignacion AS VARCHAR) IS NULL THEN 1=1
                WHEN CAST(:asignacion AS VARCHAR) = 'asignados' THEN sb.responsable_gestora_id IS NOT NULL
@@ -291,7 +291,7 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
           AND (:gestoraId IS NULL OR sb.responsable_gestora_id = :gestoraId)
           AND (CAST(:estadoBolsa AS VARCHAR) IS NULL OR UPPER(COALESCE(sb.estado, '')) = UPPER(CAST(:estadoBolsa AS VARCHAR)))
           AND (CAST(:categoriaEspecialidad AS VARCHAR) IS NULL
-               OR (CAST(:categoriaEspecialidad AS VARCHAR) = 'especialidades' AND LOWER(COALESCE(sb.especialidad,'')) NOT IN ('medicina general', 'enfermeria'))
+               OR (CAST(:categoriaEspecialidad AS VARCHAR) = 'especialidades' AND LOWER(COALESCE(sb.especialidad,'')) NOT IN ('medicina general', 'enfermeria') AND sb.id_bolsa != 1)
                OR (CAST(:categoriaEspecialidad AS VARCHAR) = 'bolsa107' AND sb.id_bolsa = 1))
         ORDER BY CASE WHEN COALESCE(deg.cod_estado_cita, 'PENDIENTE_CITA') = 'PENDIENTE_CITA' THEN 0
                       WHEN COALESCE(deg.cod_estado_cita, 'PENDIENTE_CITA') = 'CITADO' THEN 1
@@ -339,7 +339,7 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
           AND (CAST(:especialidad AS VARCHAR) IS NULL OR LOWER(COALESCE(sb.especialidad, '')) LIKE LOWER(CONCAT('%', CAST(:especialidad AS VARCHAR), '%')))
           AND (CAST(:estadoCodigo AS VARCHAR) IS NULL OR POSITION(',' || UPPER(COALESCE(deg.cod_estado_cita, 'PENDIENTE_CITA')) || ',' IN ',' || UPPER(CAST(:estadoCodigo AS VARCHAR)) || ',') > 0)
           AND (CAST(:ipressAtencion AS VARCHAR) IS NULL OR LOWER(COALESCE(di2.desc_ipress, '')) LIKE LOWER(CONCAT('%', CAST(:ipressAtencion AS VARCHAR), '%')))
-          AND (CAST(:tipoCita AS VARCHAR) IS NULL OR UPPER(COALESCE(sb.tipo_cita, 'N/A')) = UPPER(CAST(:tipoCita AS VARCHAR)))
+          AND (CAST(:tipoCita AS VARCHAR) IS NULL OR UPPER(COALESCE(sb.tipo_cita, 'VOLUNTARIA')) = UPPER(CAST(:tipoCita AS VARCHAR)))
           AND (CASE
                WHEN CAST(:asignacion AS VARCHAR) IS NULL THEN 1=1
                WHEN CAST(:asignacion AS VARCHAR) = 'asignados' THEN sb.responsable_gestora_id IS NOT NULL
@@ -355,7 +355,7 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
           AND (:gestoraId IS NULL OR sb.responsable_gestora_id = :gestoraId)
           AND (CAST(:estadoBolsa AS VARCHAR) IS NULL OR UPPER(COALESCE(sb.estado, '')) = UPPER(CAST(:estadoBolsa AS VARCHAR)))
           AND (CAST(:categoriaEspecialidad AS VARCHAR) IS NULL
-               OR (CAST(:categoriaEspecialidad AS VARCHAR) = 'especialidades' AND LOWER(COALESCE(sb.especialidad,'')) NOT IN ('medicina general', 'enfermeria'))
+               OR (CAST(:categoriaEspecialidad AS VARCHAR) = 'especialidades' AND LOWER(COALESCE(sb.especialidad,'')) NOT IN ('medicina general', 'enfermeria') AND sb.id_bolsa != 1)
                OR (CAST(:categoriaEspecialidad AS VARCHAR) = 'bolsa107' AND sb.id_bolsa = 1))
         """, nativeQuery = true)
     long countWithFilters(
@@ -470,7 +470,7 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
           AND (CAST(:especialidad   AS VARCHAR) IS NULL OR LOWER(COALESCE(sb.especialidad,'')) LIKE LOWER(CONCAT('%', CAST(:especialidad AS VARCHAR), '%')))
           AND (CAST(:estadoCodigo   AS VARCHAR) IS NULL OR POSITION(',' || UPPER(COALESCE(dgc.cod_estado_cita,'PENDIENTE_CITA')) || ',' IN ',' || UPPER(CAST(:estadoCodigo AS VARCHAR)) || ',') > 0)
           AND (CAST(:ipressAtencion AS VARCHAR) IS NULL OR LOWER(COALESCE(di2.desc_ipress,'')) LIKE LOWER(CONCAT('%', CAST(:ipressAtencion AS VARCHAR), '%')))
-          AND (CAST(:tipoCita       AS VARCHAR) IS NULL OR UPPER(COALESCE(sb.tipo_cita,'N/A')) = UPPER(CAST(:tipoCita AS VARCHAR)))
+          AND (CAST(:tipoCita       AS VARCHAR) IS NULL OR UPPER(COALESCE(sb.tipo_cita,'VOLUNTARIA')) = UPPER(CAST(:tipoCita AS VARCHAR)))
           AND (CASE
                WHEN CAST(:asignacion AS VARCHAR) IS NULL THEN 1=1
                WHEN CAST(:asignacion AS VARCHAR) = 'asignados'   THEN sb.responsable_gestora_id IS NOT NULL
@@ -482,7 +482,7 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
           AND (:gestoraId IS NULL OR sb.responsable_gestora_id = :gestoraId)
           AND (CAST(:estadoBolsa AS VARCHAR) IS NULL OR UPPER(COALESCE(sb.estado,'')) = UPPER(CAST(:estadoBolsa AS VARCHAR)))
           AND (CAST(:categoriaEspecialidad AS VARCHAR) IS NULL
-               OR (CAST(:categoriaEspecialidad AS VARCHAR) = 'especialidades' AND LOWER(COALESCE(sb.especialidad,'')) NOT IN ('medicina general', 'enfermeria'))
+               OR (CAST(:categoriaEspecialidad AS VARCHAR) = 'especialidades' AND LOWER(COALESCE(sb.especialidad,'')) NOT IN ('medicina general', 'enfermeria') AND sb.id_bolsa != 1)
                OR (CAST(:categoriaEspecialidad AS VARCHAR) = 'bolsa107' AND sb.id_bolsa = 1))
         GROUP BY COALESCE(dgc.cod_estado_cita, 'PENDIENTE_CITA')
 
@@ -506,14 +506,14 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
           AND (CAST(:especialidad   AS VARCHAR) IS NULL OR LOWER(COALESCE(sb.especialidad,'')) LIKE LOWER(CONCAT('%', CAST(:especialidad AS VARCHAR), '%')))
           AND (CAST(:estadoCodigo   AS VARCHAR) IS NULL OR POSITION(',' || UPPER(COALESCE(dgc.cod_estado_cita,'PENDIENTE_CITA')) || ',' IN ',' || UPPER(CAST(:estadoCodigo AS VARCHAR)) || ',') > 0)
           AND (CAST(:ipressAtencion AS VARCHAR) IS NULL OR LOWER(COALESCE(di2.desc_ipress,'')) LIKE LOWER(CONCAT('%', CAST(:ipressAtencion AS VARCHAR), '%')))
-          AND (CAST(:tipoCita       AS VARCHAR) IS NULL OR UPPER(COALESCE(sb.tipo_cita,'N/A')) = UPPER(CAST(:tipoCita AS VARCHAR)))
+          AND (CAST(:tipoCita       AS VARCHAR) IS NULL OR UPPER(COALESCE(sb.tipo_cita,'VOLUNTARIA')) = UPPER(CAST(:tipoCita AS VARCHAR)))
           AND (CAST(:busqueda    AS VARCHAR) IS NULL OR COALESCE(sb.paciente_dni,'') LIKE CONCAT('%', CAST(:busqueda AS VARCHAR), '%'))
           AND (CAST(:fechaInicio AS VARCHAR) IS NULL OR DATE(sb.fecha_cambio_estado) >= CAST(:fechaInicio AS DATE))
           AND (CAST(:fechaFin    AS VARCHAR) IS NULL OR DATE(sb.fecha_cambio_estado) <= CAST(:fechaFin AS DATE))
           AND (:gestoraId IS NULL OR sb.responsable_gestora_id = :gestoraId)
           AND (CAST(:estadoBolsa AS VARCHAR) IS NULL OR UPPER(COALESCE(sb.estado,'')) = UPPER(CAST(:estadoBolsa AS VARCHAR)))
           AND (CAST(:categoriaEspecialidad AS VARCHAR) IS NULL
-               OR (CAST(:categoriaEspecialidad AS VARCHAR) = 'especialidades' AND LOWER(COALESCE(sb.especialidad,'')) NOT IN ('medicina general', 'enfermeria'))
+               OR (CAST(:categoriaEspecialidad AS VARCHAR) = 'especialidades' AND LOWER(COALESCE(sb.especialidad,'')) NOT IN ('medicina general', 'enfermeria') AND sb.id_bolsa != 1)
                OR (CAST(:categoriaEspecialidad AS VARCHAR) = 'bolsa107' AND sb.id_bolsa = 1))
         """, nativeQuery = true)
     List<Map<String, Object>> estadisticasKpiConFiltros(
@@ -2136,6 +2136,68 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
      */
     Optional<SolicitudBolsa> findFirstByPacienteDniAndTipoCitaAndActivoTrueOrderByFechaAsignacionDesc(
             String pacienteDni, String tipoCita);
+
+    /**
+     * v1.84.2: Agrupación inteligente por IPRESS Atención + Especialidad.
+     * Devuelve solo {ipress, especialidad, ids} con los mismos filtros del listado principal.
+     * Es ~100x más rápido que cargar 9999 registros completos porque:
+     *  - No hace JOIN con tablas de auditoría ni subqueries de citas
+     *  - Solo transfiere 3 columnas por grupo
+     *  - El HAVING filtra directamente en SQL los múltiplos de 4
+     */
+    @Query(value = """
+        SELECT COALESCE(di2.desc_ipress, di.desc_ipress, 'SIN_IPRESS_ATENCION') as ipress_atencion,
+               COALESCE(sb.especialidad, 'SIN_ESPECIALIDAD')                    as especialidad,
+               STRING_AGG(CAST(sb.id_solicitud AS VARCHAR), ',')                as ids
+        FROM dim_solicitud_bolsa sb
+        LEFT JOIN dim_tipos_bolsas tb  ON sb.id_bolsa            = tb.id_tipo_bolsa
+        LEFT JOIN dim_ipress di        ON sb.id_ipress            = di.id_ipress
+        LEFT JOIN dim_ipress di2       ON sb.id_ipress_atencion   = di2.id_ipress
+        LEFT JOIN dim_red dr           ON di.id_red               = dr.id_red
+        LEFT JOIN dim_macroregion dm   ON dr.id_macro             = dm.id_macro
+        LEFT JOIN dim_estados_gestion_citas deg ON sb.estado_gestion_citas_id = deg.id_estado_cita
+        WHERE sb.activo = true
+          AND (CAST(:bolsaNombre       AS VARCHAR) IS NULL OR POSITION(',' || LOWER(COALESCE(tb.desc_tipo_bolsa,'')) || ',' IN ',' || LOWER(CAST(:bolsaNombre AS VARCHAR)) || ',') > 0)
+          AND (CAST(:macrorregion      AS VARCHAR) IS NULL OR dm.desc_macro = CAST(:macrorregion AS VARCHAR))
+          AND (CAST(:red               AS VARCHAR) IS NULL OR dr.desc_red   = CAST(:red          AS VARCHAR))
+          AND (CAST(:ipress            AS VARCHAR) IS NULL OR di.desc_ipress = CAST(:ipress       AS VARCHAR))
+          AND (CAST(:especialidad      AS VARCHAR) IS NULL OR LOWER(COALESCE(sb.especialidad,'')) LIKE LOWER(CONCAT('%', CAST(:especialidad AS VARCHAR), '%')))
+          AND (CAST(:estadoCodigo      AS VARCHAR) IS NULL OR POSITION(',' || UPPER(COALESCE(deg.cod_estado_cita,'PENDIENTE_CITA')) || ',' IN ',' || UPPER(CAST(:estadoCodigo AS VARCHAR)) || ',') > 0)
+          AND (CAST(:ipressAtencion    AS VARCHAR) IS NULL OR LOWER(COALESCE(di2.desc_ipress,'')) LIKE LOWER(CONCAT('%', CAST(:ipressAtencion AS VARCHAR), '%')))
+          AND (CAST(:tipoCita          AS VARCHAR) IS NULL OR UPPER(COALESCE(sb.tipo_cita,'VOLUNTARIA')) = UPPER(CAST(:tipoCita AS VARCHAR)))
+          AND (CASE WHEN CAST(:asignacion AS VARCHAR) IS NULL          THEN 1=1
+                    WHEN CAST(:asignacion AS VARCHAR) = 'asignados'    THEN sb.responsable_gestora_id IS NOT NULL
+                    WHEN CAST(:asignacion AS VARCHAR) = 'sin_asignar'  THEN sb.responsable_gestora_id IS NULL
+                    ELSE 1=0 END)
+          AND (CAST(:busqueda          AS VARCHAR) IS NULL OR COALESCE(sb.paciente_dni,'') LIKE CONCAT('%', CAST(:busqueda AS VARCHAR), '%'))
+          AND (CAST(:fechaInicio       AS VARCHAR) IS NULL OR DATE(sb.fecha_cambio_estado) >= CAST(:fechaInicio AS DATE))
+          AND (CAST(:fechaFin          AS VARCHAR) IS NULL OR DATE(sb.fecha_cambio_estado) <= CAST(:fechaFin   AS DATE))
+          AND (:gestoraId IS NULL OR sb.responsable_gestora_id = :gestoraId)
+          AND (CAST(:estadoBolsa       AS VARCHAR) IS NULL OR UPPER(COALESCE(sb.estado,'')) = UPPER(CAST(:estadoBolsa AS VARCHAR)))
+          AND (CAST(:categoriaEspecialidad AS VARCHAR) IS NULL
+               OR (CAST(:categoriaEspecialidad AS VARCHAR) = 'especialidades' AND LOWER(COALESCE(sb.especialidad,'')) NOT IN ('medicina general','enfermeria') AND sb.id_bolsa != 1)
+               OR (CAST(:categoriaEspecialidad AS VARCHAR) = 'bolsa107'       AND sb.id_bolsa = 1))
+        GROUP BY COALESCE(di2.desc_ipress, di.desc_ipress, 'SIN_IPRESS_ATENCION'),
+                 COALESCE(sb.especialidad, 'SIN_ESPECIALIDAD')
+        HAVING MOD(COUNT(*), 4) = 0
+        ORDER BY COUNT(*) DESC
+        """, nativeQuery = true)
+    List<Object[]> agruparPorIpressAtencionEspecialidad(
+            @org.springframework.data.repository.query.Param("bolsaNombre")           String bolsaNombre,
+            @org.springframework.data.repository.query.Param("macrorregion")          String macrorregion,
+            @org.springframework.data.repository.query.Param("red")                   String red,
+            @org.springframework.data.repository.query.Param("ipress")                String ipress,
+            @org.springframework.data.repository.query.Param("especialidad")          String especialidad,
+            @org.springframework.data.repository.query.Param("estadoCodigo")          String estadoCodigo,
+            @org.springframework.data.repository.query.Param("ipressAtencion")        String ipressAtencion,
+            @org.springframework.data.repository.query.Param("tipoCita")              String tipoCita,
+            @org.springframework.data.repository.query.Param("asignacion")            String asignacion,
+            @org.springframework.data.repository.query.Param("busqueda")              String busqueda,
+            @org.springframework.data.repository.query.Param("fechaInicio")           String fechaInicio,
+            @org.springframework.data.repository.query.Param("fechaFin")              String fechaFin,
+            @org.springframework.data.repository.query.Param("gestoraId")             Long gestoraId,
+            @org.springframework.data.repository.query.Param("estadoBolsa")           String estadoBolsa,
+            @org.springframework.data.repository.query.Param("categoriaEspecialidad") String categoriaEspecialidad);
 
 }
 
