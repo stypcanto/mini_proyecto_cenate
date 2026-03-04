@@ -1,12 +1,25 @@
-# Módulo CENACRON — Documentación Técnica
+# Módulo Estrategias Institucionales — Documentación Técnica
 
-> **Estado:** Parcialmente implementado — Inscripción + Baja + Historial operativos
-> **Última actualización:** 2026-02-24
-> **Versiones que implementan este módulo:** v1.65.x, v1.66.x (en curso)
+> **Estado:** CENACRON operativo + MARATÓN cargado (EST-008) ✅
+> **Última actualización:** 2026-03-04
+> **Versiones:** v1.65.x, v1.66.x (CENACRON) · v1.84.14 (MARATÓN filtro Lista Asegurados)
+
+---
+
+## Estrategias registradas en `dim_estrategia_institucional`
+
+| id_estrategia | sigla | Descripción | Estado en sistema |
+|---------------|-------|-------------|-------------------|
+| 1 | CENACRON | Programa Integral de Control de Enfermedades Crónicas | ✅ Inscripción manual (Gestor) |
+| 8 | MARATON | Pacientes MARATÓN — H.I O. MONGRUT (Red R.A. Sabogal) | ✅ Carga masiva 2026-03-04 |
+
+---
 
 ---
 
 ## ¿Qué es CENACRON?
+
+> Ver también: [`MARATON.md`](MARATON.md) — Estrategia EST-008, 6,020 pacientes H.I O. MONGRUT
 
 **CENACRON** = Programa Integral de Control de Enfermedades Crónicas (EsSalud/CENATE).
 

@@ -46,7 +46,8 @@ function SearchableSelect({ filter }) {
       );
 
   const selectedOption = allOptions.find(o => o.value === filter.value);
-  const isFiltered = filter.value && filter.value !== 'todas';
+  const defaultValue = allOptions[0]?.value ?? 'todas';
+  const isFiltered = filter.value && filter.value !== defaultValue;
 
   const handleSelect = (value) => {
     filter.onChange({ target: { value } });
@@ -56,24 +57,35 @@ function SearchableSelect({ filter }) {
 
   const handleClear = (e) => {
     e.stopPropagation();
-    filter.onChange({ target: { value: 'todas' } });
+    filter.onChange({ target: { value: defaultValue } });
     setSearchText('');
   };
+
+  const isDisabled = filter.disabled === true;
 
   return (
     <div ref={containerRef} className="relative">
       <button
         type="button"
-        onClick={() => setIsOpen(!isOpen)}
-        className={`w-full px-3 py-2 border-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-xs text-left cursor-pointer bg-white font-medium transition-all hover:border-gray-400 flex items-center justify-between gap-1 ${
-          isFiltered ? 'border-blue-400 text-blue-700' : 'border-gray-300 text-gray-700'
+        onClick={() => !isDisabled && setIsOpen(!isOpen)}
+        className={`w-full px-3 py-2 border-2 rounded-lg focus:outline-none text-xs text-left font-medium transition-all flex items-center justify-between gap-1 ${
+          isDisabled
+            ? 'border-gray-200 text-gray-400 bg-gray-50 cursor-not-allowed opacity-75'
+            : isFiltered
+              ? 'border-blue-400 text-blue-700 bg-white cursor-pointer hover:border-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent'
+              : 'border-gray-300 text-gray-700 bg-white cursor-pointer hover:border-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent'
         }`}
       >
         <span className="truncate flex-1">
           {selectedOption ? selectedOption.label : allOptions[0]?.label || 'Todas'}
         </span>
         <div className="flex items-center gap-1 flex-shrink-0">
-          {isFiltered && (
+          {filter.badgeCount !== undefined && (
+            <span className="bg-blue-100 text-blue-700 text-xs font-bold px-1.5 py-0.5 rounded-full leading-none">
+              {filter.badgeCount}
+            </span>
+          )}
+          {isFiltered && !isDisabled && (
             <span
               onClick={handleClear}
               className="text-blue-400 hover:text-blue-600 cursor-pointer"
@@ -85,7 +97,7 @@ function SearchableSelect({ filter }) {
         </div>
       </button>
 
-      {isOpen && (
+      {isOpen && !isDisabled && (
         <div className="absolute z-50 w-full mt-1 bg-white border-2 border-gray-300 rounded-lg shadow-lg">
           {/* Input de búsqueda */}
           <div className="p-2 border-b border-gray-200">

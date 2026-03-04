@@ -74,13 +74,17 @@ public class AseguradoController {
             @RequestParam(name="page", defaultValue = "0") int page,
             @RequestParam(name="size", defaultValue = "25") int size,
             @RequestParam(required = false) Boolean cenacron,
+            @RequestParam(required = false) Boolean maraton,
             @RequestParam(required = false) Boolean soloDniValido,
             @RequestParam(required = false) Boolean soloExtranjero) {
 
         try {
-            log.info("📊 Listando asegurados - Página: {}, Tamaño: {}, CENACRON: {}", page, size, cenacron);
+            log.info("📊 Listando asegurados - Página: {}, Tamaño: {}, CENACRON: {}, MARATON: {}", page, size, cenacron, maraton);
 
-            StringBuilder whereClause = new StringBuilder(" WHERE a.vigencia = true");
+            // MARATÓN muestra el universo completo cargado (ignora vigencia)
+            StringBuilder whereClause = Boolean.TRUE.equals(maraton)
+                ? new StringBuilder(" WHERE EXISTS (SELECT 1 FROM paciente_estrategia pe WHERE pe.pk_asegurado = a.pk_asegurado AND pe.id_estrategia = 8 AND pe.estado = 'ACTIVO')")
+                : new StringBuilder(" WHERE a.vigencia = true");
             List<Object> params = new ArrayList<>();
             if (Boolean.TRUE.equals(cenacron)) {
                 whereClause.append(" AND a.paciente_cronico = true");
@@ -119,11 +123,31 @@ public class AseguradoController {
                     a.paciente_cronico,
                     a.id_tip_doc,
                     di.desc_ipress as nombre_ipress,
+                    di.cod_ipress as cod_ipress_adscripcion,
                     dr.desc_red as nombre_red,
-                    a.periodo
+                    a.periodo,
+                    di_at.desc_ipress as nombre_ipress_atencion,
+                    di_at.cod_ipress as cod_ipress_atencion,
+                    EXISTS (SELECT 1 FROM paciente_estrategia pe
+                            JOIN dim_estrategia_institucional dei ON dei.id_estrategia = pe.id_estrategia
+                            WHERE pe.pk_asegurado = a.pk_asegurado
+                              AND dei.sigla = 'MARATON' AND pe.estado = 'ACTIVO') AS es_maraton,
+                    EXISTS (SELECT 1 FROM paciente_estrategia pe
+                            JOIN dim_estrategia_institucional dei ON dei.id_estrategia = pe.id_estrategia
+                            WHERE pe.pk_asegurado = a.pk_asegurado
+                              AND dei.sigla = 'CENACRON' AND pe.estado = 'ACTIVO') AS es_cenacron_pe
                 FROM asegurados a
                 LEFT JOIN dim_ipress di ON a.cas_adscripcion = di.cod_ipress
                 LEFT JOIN dim_red dr ON di.id_red = dr.id_red
+                LEFT JOIN LATERAL (
+                    SELECT sb.id_ipress_atencion
+                    FROM dim_solicitud_bolsa sb
+                    WHERE sb.paciente_dni = a.doc_paciente
+                      AND sb.id_ipress_atencion IS NOT NULL
+                    ORDER BY sb.fecha_solicitud DESC
+                    LIMIT 1
+                ) sb_lat ON true
+                LEFT JOIN dim_ipress di_at ON di_at.id_ipress = sb_lat.id_ipress_atencion
                 """ + whereClause + """
                 ORDER BY a.doc_paciente
                 LIMIT ? OFFSET ?
@@ -146,10 +170,21 @@ public class AseguradoController {
                 asegurado.put("telFijo", asegurado.get("tel_fijo"));
                 asegurado.put("telCelular", asegurado.get("tel_celular"));
                 asegurado.put("tipoSeguro", asegurado.get("tipo_seguro"));
-                asegurado.put("casAdscripcion", asegurado.get("cas_adscripcion"));
                 asegurado.put("pacienteCronico", Boolean.TRUE.equals(asegurado.get("paciente_cronico")));
+                boolean esMaraton = Boolean.TRUE.equals(asegurado.get("es_maraton"));
+                asegurado.put("esMaraton", esMaraton);
+                asegurado.put("esCenacronPe", Boolean.TRUE.equals(asegurado.get("es_cenacron_pe")));
                 asegurado.put("idTipDoc", asegurado.get("id_tip_doc"));
-                asegurado.put("nombreIpress", asegurado.get("nombre_ipress"));
+                // IPRESS Adscripción (dato real de asegurados.cas_adscripcion → dim_ipress)
+                String nombreIpress = (String) asegurado.get("nombre_ipress");
+                Object codAdscripcion = asegurado.get("cod_ipress_adscripcion") != null
+                    ? asegurado.get("cod_ipress_adscripcion")
+                    : asegurado.get("cas_adscripcion");
+                asegurado.put("nombreIpress", nombreIpress);
+                asegurado.put("casAdscripcion", codAdscripcion);
+                // IPRESS Atención (dato real de dim_solicitud_bolsa → dim_ipress, null si sin bolsa)
+                asegurado.put("nombreIpressAtencion", asegurado.get("nombre_ipress_atencion"));
+                asegurado.put("codIpressAtencion", asegurado.get("cod_ipress_atencion"));
                 asegurado.put("nombreRed", asegurado.get("nombre_red"));
                 asegurado.put("periodo", asegurado.get("periodo"));
                 asegurado.remove("pk_asegurado");
@@ -160,8 +195,13 @@ public class AseguradoController {
                 asegurado.remove("tipo_seguro");
                 asegurado.remove("cas_adscripcion");
                 asegurado.remove("paciente_cronico");
+                asegurado.remove("es_maraton");
+                asegurado.remove("es_cenacron_pe");
                 asegurado.remove("id_tip_doc");
                 asegurado.remove("nombre_ipress");
+                asegurado.remove("cod_ipress_adscripcion");
+                asegurado.remove("nombre_ipress_atencion");
+                asegurado.remove("cod_ipress_atencion");
                 asegurado.remove("nombre_red");
             });
 
@@ -269,17 +309,19 @@ public class AseguradoController {
             @RequestParam(required = false) Integer idRed,
             @RequestParam(required = false) String codIpress,
             @RequestParam(required = false) Boolean cenacron,
+            @RequestParam(required = false) Boolean maraton,
             @RequestParam(required = false) Boolean soloDniValido,
             @RequestParam(required = false) Boolean soloExtranjero,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "25") int size) {
 
         try {
-            log.info("🔍 Buscando asegurado: '{}', CENACRON: {}", q, cenacron);
+            log.info("🔍 Buscando asegurado: '{}', CENACRON: {}, MARATON: {}", q, cenacron, maraton);
 
-            // Búsqueda por DNI o nombre (ILIKE para nombre parcial), solo vigentes
-            StringBuilder whereClause = new StringBuilder(
-                "WHERE a.vigencia = true AND (a.doc_paciente = ? OR UPPER(a.paciente) LIKE UPPER(?))");
+            // MARATÓN muestra el universo completo cargado (ignora vigencia)
+            StringBuilder whereClause = Boolean.TRUE.equals(maraton)
+                ? new StringBuilder("WHERE EXISTS (SELECT 1 FROM paciente_estrategia pe WHERE pe.pk_asegurado = a.pk_asegurado AND pe.id_estrategia = 8 AND pe.estado = 'ACTIVO') AND (a.doc_paciente = ? OR UPPER(a.paciente) LIKE UPPER(?))")
+                : new StringBuilder("WHERE a.vigencia = true AND (a.doc_paciente = ? OR UPPER(a.paciente) LIKE UPPER(?))");
             List<Object> params = new ArrayList<>();
             params.add(q.trim());
             params.add("%" + q.trim() + "%");
@@ -338,11 +380,31 @@ public class AseguradoController {
                     a.paciente_cronico,
                     a.id_tip_doc,
                     di.desc_ipress as nombre_ipress,
+                    di.cod_ipress as cod_ipress_adscripcion,
                     dr.desc_red as nombre_red,
-                    a.periodo
+                    a.periodo,
+                    di_at.desc_ipress as nombre_ipress_atencion,
+                    di_at.cod_ipress as cod_ipress_atencion,
+                    EXISTS (SELECT 1 FROM paciente_estrategia pe
+                            JOIN dim_estrategia_institucional dei ON dei.id_estrategia = pe.id_estrategia
+                            WHERE pe.pk_asegurado = a.pk_asegurado
+                              AND dei.sigla = 'MARATON' AND pe.estado = 'ACTIVO') AS es_maraton,
+                    EXISTS (SELECT 1 FROM paciente_estrategia pe
+                            JOIN dim_estrategia_institucional dei ON dei.id_estrategia = pe.id_estrategia
+                            WHERE pe.pk_asegurado = a.pk_asegurado
+                              AND dei.sigla = 'CENACRON' AND pe.estado = 'ACTIVO') AS es_cenacron_pe
                 FROM asegurados a
                 LEFT JOIN dim_ipress di ON a.cas_adscripcion = di.cod_ipress
                 LEFT JOIN dim_red dr ON di.id_red = dr.id_red
+                LEFT JOIN LATERAL (
+                    SELECT sb.id_ipress_atencion
+                    FROM dim_solicitud_bolsa sb
+                    WHERE sb.paciente_dni = a.doc_paciente
+                      AND sb.id_ipress_atencion IS NOT NULL
+                    ORDER BY sb.fecha_solicitud DESC
+                    LIMIT 1
+                ) sb_lat ON true
+                LEFT JOIN dim_ipress di_at ON di_at.id_ipress = sb_lat.id_ipress_atencion
                 """ + whereClause + """
                 ORDER BY a.doc_paciente
                 LIMIT ? OFFSET ?
@@ -367,10 +429,21 @@ public class AseguradoController {
                 asegurado.put("telFijo", asegurado.get("tel_fijo"));
                 asegurado.put("telCelular", asegurado.get("tel_celular"));
                 asegurado.put("tipoSeguro", asegurado.get("tipo_seguro"));
-                asegurado.put("casAdscripcion", asegurado.get("cas_adscripcion"));
                 asegurado.put("pacienteCronico", Boolean.TRUE.equals(asegurado.get("paciente_cronico")));
+                boolean esMaraton = Boolean.TRUE.equals(asegurado.get("es_maraton"));
+                asegurado.put("esMaraton", esMaraton);
+                asegurado.put("esCenacronPe", Boolean.TRUE.equals(asegurado.get("es_cenacron_pe")));
                 asegurado.put("idTipDoc", asegurado.get("id_tip_doc"));
-                asegurado.put("nombreIpress", asegurado.get("nombre_ipress"));
+                // IPRESS Adscripción (dato real de asegurados.cas_adscripcion → dim_ipress)
+                String nombreIpress = (String) asegurado.get("nombre_ipress");
+                Object codAdscripcion = asegurado.get("cod_ipress_adscripcion") != null
+                    ? asegurado.get("cod_ipress_adscripcion")
+                    : asegurado.get("cas_adscripcion");
+                asegurado.put("nombreIpress", nombreIpress);
+                asegurado.put("casAdscripcion", codAdscripcion);
+                // IPRESS Atención (dato real de dim_solicitud_bolsa → dim_ipress, null si sin bolsa)
+                asegurado.put("nombreIpressAtencion", asegurado.get("nombre_ipress_atencion"));
+                asegurado.put("codIpressAtencion", asegurado.get("cod_ipress_atencion"));
                 asegurado.put("nombreRed", asegurado.get("nombre_red"));
                 asegurado.put("periodo", asegurado.get("periodo"));
                 asegurado.remove("pk_asegurado");
@@ -379,10 +452,15 @@ public class AseguradoController {
                 asegurado.remove("tel_fijo");
                 asegurado.remove("tel_celular");
                 asegurado.remove("tipo_seguro");
+                asegurado.remove("es_maraton");
+                asegurado.remove("es_cenacron_pe");
                 asegurado.remove("cas_adscripcion");
                 asegurado.remove("paciente_cronico");
                 asegurado.remove("id_tip_doc");
                 asegurado.remove("nombre_ipress");
+                asegurado.remove("cod_ipress_adscripcion");
+                asegurado.remove("nombre_ipress_atencion");
+                asegurado.remove("cod_ipress_atencion");
             });
 
             // Calcular el número total de páginas
@@ -564,24 +642,27 @@ public class AseguradoController {
                     di.cod_ipress,
                     di.desc_ipress,
                     di.id_red,
-                    dr.desc_red as nombre_red
+                    dr.desc_red as nombre_red,
+                    COUNT(a.pk_asegurado) FILTER (WHERE a.vigencia = true) as cantidad
                 FROM dim_ipress di
                 LEFT JOIN dim_red dr ON di.id_red = dr.id_red
+                LEFT JOIN asegurados a ON a.cas_adscripcion = di.cod_ipress
                 WHERE di.desc_ipress IS NOT NULL
                   AND di.stat_ipress = 'A'
             """);
-            
+
             List<Object> params = new ArrayList<>();
-            
+
             if (idRed != null) {
                 sql.append(" AND di.id_red = ?");
                 params.add(idRed);
             }
-            
+
+            sql.append(" GROUP BY di.id_ipress, di.cod_ipress, di.desc_ipress, di.id_red, dr.desc_red");
             sql.append(" ORDER BY di.desc_ipress");
-            
+
             List<Map<String, Object>> ipress = jdbcTemplate.queryForList(sql.toString(), params.toArray());
-            
+
             // Formatear para camelCase
             ipress.forEach(i -> {
                 i.put("idIpress", i.get("id_ipress"));
@@ -589,6 +670,7 @@ public class AseguradoController {
                 i.put("descIpress", i.get("desc_ipress"));
                 i.put("idRed", i.get("id_red"));
                 i.put("nombreRed", i.get("nombre_red"));
+                i.put("cantidad", i.get("cantidad"));
                 i.remove("id_ipress");
                 i.remove("cod_ipress");
                 i.remove("desc_ipress");

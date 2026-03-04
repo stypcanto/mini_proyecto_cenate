@@ -73,6 +73,7 @@ export default function BuscarAsegurado() {
   const [selectedRed, setSelectedRed] = useState("");
   const [selectedIpress, setSelectedIpress] = useState("");
   const [soloCenacron, setSoloCenacron] = useState(false);
+  const [soloMaraton, setSoloMaraton] = useState(false);
   const [soloDniValido, setSoloDniValido] = useState(false);
   const [soloExtranjero, setSoloExtranjero] = useState(false);
   const [loadingFiltros, setLoadingFiltros] = useState(false);
@@ -151,10 +152,10 @@ export default function BuscarAsegurado() {
 
   // ✅ Resetear página cuando cambian los filtros
   useEffect(() => {
-    if (selectedRed || selectedIpress || soloCenacron || soloDniValido || soloExtranjero) {
+    if (selectedRed || selectedIpress || soloCenacron || soloMaraton || soloDniValido || soloExtranjero) {
       setCurrentPage(0);
     }
-  }, [selectedRed, selectedIpress, soloCenacron, soloDniValido, soloExtranjero]);
+  }, [selectedRed, selectedIpress, soloCenacron, soloMaraton, soloDniValido, soloExtranjero]);
 
   // ✅ Debounce para la búsqueda
   useEffect(() => {
@@ -171,7 +172,7 @@ export default function BuscarAsegurado() {
   // Cargar asegurados con paginación
   useEffect(() => {
     cargarAsegurados();
-  }, [currentPage, debouncedSearchValue, selectedRed, selectedIpress, soloCenacron, soloDniValido, soloExtranjero]);
+  }, [currentPage, debouncedSearchValue, selectedRed, selectedIpress, soloCenacron, soloMaraton, soloDniValido, soloExtranjero]);
 
   // 🔍 Validar DNI en tiempo real cuando tiene 8 dígitos (solo cuando está creando)
   useEffect(() => {
@@ -251,6 +252,7 @@ export default function BuscarAsegurado() {
         if (selectedRed) params += `&idRed=${selectedRed}`;
         if (selectedIpress) params += `&codIpress=${encodeURIComponent(selectedIpress)}`;
         if (soloCenacron) params += `&cenacron=true`;
+        if (soloMaraton) params += `&maraton=true`;
         if (soloDniValido) params += `&soloDniValido=true`;
         if (soloExtranjero) params += `&soloExtranjero=true`;
 
@@ -258,6 +260,7 @@ export default function BuscarAsegurado() {
       } else {
         let params = `page=${currentPage}&size=${pageSize}`;
         if (soloCenacron) params += `&cenacron=true`;
+        if (soloMaraton) params += `&maraton=true`;
         if (soloDniValido) params += `&soloDniValido=true`;
         if (soloExtranjero) params += `&soloExtranjero=true`;
         response = await apiClient.get(`/asegurados?${params}`, true);
@@ -318,6 +321,7 @@ export default function BuscarAsegurado() {
     setSelectedRed("");
     setSelectedIpress("");
     setSoloCenacron(false);
+    setSoloMaraton(false);
     setSoloDniValido(false);
     setSoloExtranjero(false);
     setSearchValue("");
@@ -593,14 +597,14 @@ export default function BuscarAsegurado() {
               <h3 className="text-base font-semibold text-slate-900">
                 Filtros y Búsqueda
               </h3>
-              { (selectedRed || selectedIpress || searchValue || soloCenacron || soloExtranjero) && (
+              { (selectedRed || selectedIpress || searchValue || soloCenacron || soloMaraton || soloExtranjero) && (
                 <span className="bg-emerald-100 text-emerald-800 text-xs font-medium px-2 py-0.5 rounded-full">
                   Activos
                 </span>
               ) }
             </div>
             <div className="flex items-center gap-2">
-              { (selectedRed || selectedIpress || searchValue || soloCenacron || soloExtranjero) && (
+              { (selectedRed || selectedIpress || searchValue || soloCenacron || soloMaraton || soloExtranjero) && (
                 <span
                   onClick={ (e) => {
                     e.stopPropagation();
@@ -682,6 +686,20 @@ export default function BuscarAsegurado() {
                       <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>
                     </svg>
                     Solo CENACRON
+                  </button>
+                  <button
+                    type="button"
+                    onClick={ () => { setSoloMaraton(v => !v); setCurrentPage(0); } }
+                    className={ `inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-semibold border-2 transition-all whitespace-nowrap
+                      ${soloMaraton
+                        ? 'bg-orange-600 border-orange-600 text-white'
+                        : 'bg-white border-slate-200 text-slate-600 hover:border-orange-400 hover:text-orange-600'
+                      }` }
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+                    </svg>
+                    Solo MARATÓN
                   </button>
                   <button
                     type="button"
@@ -776,7 +794,10 @@ export default function BuscarAsegurado() {
                         Teléfono
                       </th>
                       <th className="px-3 py-3 text-left text-xs font-bold uppercase tracking-wider whitespace-nowrap">
-                        IPRESS
+                        IPRESS Adscripción
+                      </th>
+                      <th className="px-3 py-3 text-left text-xs font-bold uppercase tracking-wider whitespace-nowrap">
+                        IPRESS Atención
                       </th>
                       <th className="px-3 py-3 text-center text-xs font-bold uppercase tracking-wider whitespace-nowrap" style={{ width: '100px' }}>
                         ACC
@@ -812,10 +833,15 @@ export default function BuscarAsegurado() {
                               <span className="text-sm text-slate-900 font-medium" title={ asegurado.paciente }>
                                 { asegurado.paciente || "-" }
                               </span>
-                              { asegurado.pacienteCronico && (
+                              { (asegurado.pacienteCronico || asegurado.esCenacronPe) && (
                                 <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-purple-600 text-white leading-none">
                                   <svg xmlns="http://www.w3.org/2000/svg" width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
                                   CENACRON
+                                </span>
+                              ) }
+                              { asegurado.esMaraton && (
+                                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '3px', padding: '1px 6px', borderRadius: '4px', fontSize: '10px', fontWeight: '700', background: '#fef3c7', color: '#92400e', border: '1px solid #fcd34d', lineHeight: 1.4 }}>
+                                  🏃 MARATÓN
                                 </span>
                               ) }
                             </div>
@@ -840,6 +866,22 @@ export default function BuscarAsegurado() {
                               <div className="text-xs text-slate-500 mt-1">
                                 Cód: <span className="font-mono">{ asegurado.casAdscripcion || "N/A" }</span>
                               </div>
+                            </div>
+                          </td>
+                          <td className="px-3 py-3">
+                            <div className="text-sm">
+                              { asegurado.nombreIpressAtencion ? (
+                                <>
+                                  <div className="font-medium text-slate-900" title={ asegurado.nombreIpressAtencion }>
+                                    { asegurado.nombreIpressAtencion }
+                                  </div>
+                                  <div className="text-xs text-slate-500 mt-1">
+                                    Cód: <span className="font-mono">{ asegurado.codIpressAtencion || "N/A" }</span>
+                                  </div>
+                                </>
+                              ) : (
+                                <span className="text-slate-400 text-xs">Sin bolsa</span>
+                              ) }
                             </div>
                           </td>
                           <td className="px-2.5 py-3" style={{ width: '110px' }}>

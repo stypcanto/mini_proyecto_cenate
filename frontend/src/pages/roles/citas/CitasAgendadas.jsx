@@ -664,6 +664,7 @@ export default function CitasAgendadas() {
           tipoCita:                s.tipo_cita                 || s.tipoCita                || '—',
           nomMedico:               s.nombre_medico_asignado    || s.nombreMedicoAsignado    || s.nom_medico || s.nomMedico || null,
           esCenacron:              s.es_cenacron === true      || s.esCenacron === true,
+          esMaraton:               s.es_maraton === true       || s.esMaraton === true,
           motivoAnulacion:         s.motivo_anulacion          || s.motivoAnulacion         || null,
           estadoBolsa:             s.estado                    || '—',
           estadoAtencion:          s.condicion_medica          || s.condicionMedica         || '—',
@@ -739,6 +740,7 @@ export default function CitasAgendadas() {
           tipoCita:                s.tipo_cita                 || s.tipoCita                || '—',
           nomMedico:               s.nombre_medico_asignado    || s.nombreMedicoAsignado    || s.nom_medico || s.nomMedico || null,
           esCenacron:              s.es_cenacron === true      || s.esCenacron === true,
+          esMaraton:               s.es_maraton === true       || s.esMaraton === true,
           motivoAnulacion:         s.motivo_anulacion          || s.motivoAnulacion         || null,
           estadoBolsa:             s.estado                    || '—',
           estadoAtencion:          s.condicion_medica          || s.condicionMedica         || '—',
@@ -1565,6 +1567,11 @@ CENATE de Essalud`;
                             {p.esCenacron && (
                               <span style={{ display: 'inline-flex', alignItems: 'center', gap: '3px', marginTop: '3px', padding: '1px 8px', borderRadius: '999px', fontSize: '10px', fontWeight: '700', background: '#f3e8ff', color: '#7e22ce', border: '1px solid #d8b4fe' }}>
                                 ♾ CENACRON
+                              </span>
+                            )}
+                            {p.esMaraton && (
+                              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '3px', marginTop: '3px', padding: '1px 8px', borderRadius: '999px', fontSize: '10px', fontWeight: '700', background: '#fef3c7', color: '#92400e', border: '1px solid #fcd34d' }}>
+                                🏃 MARATÓN
                               </span>
                             )}
                             {(p.pacienteSexo || p.pacienteEdad) && (
