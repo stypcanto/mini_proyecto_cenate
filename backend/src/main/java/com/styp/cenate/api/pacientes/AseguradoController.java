@@ -76,7 +76,8 @@ public class AseguradoController {
             @RequestParam(required = false) Boolean cenacron,
             @RequestParam(required = false) Boolean maraton,
             @RequestParam(required = false) Boolean soloDniValido,
-            @RequestParam(required = false) Boolean soloExtranjero) {
+            @RequestParam(required = false) Boolean soloExtranjero,
+            @RequestParam(required = false) String codIpressAtencion) {
 
         try {
             log.info("📊 Listando asegurados - Página: {}, Tamaño: {}, CENACRON: {}, MARATON: {}", page, size, cenacron, maraton);
@@ -94,6 +95,12 @@ public class AseguradoController {
             }
             if (Boolean.TRUE.equals(soloExtranjero)) {
                 whereClause.append(" AND a.id_tip_doc = 2");
+            }
+
+            // Filtro por IPRESS Atención
+            if (codIpressAtencion != null && !codIpressAtencion.trim().isEmpty()) {
+                whereClause.append(" AND EXISTS (SELECT 1 FROM dim_solicitud_bolsa sb2 JOIN dim_ipress di2 ON di2.id_ipress = sb2.id_ipress_atencion WHERE sb2.paciente_dni = a.doc_paciente AND di2.cod_ipress = ?)");
+                params.add(codIpressAtencion);
             }
 
             // Consulta para obtener el total de registros
@@ -312,6 +319,7 @@ public class AseguradoController {
             @RequestParam(required = false) Boolean maraton,
             @RequestParam(required = false) Boolean soloDniValido,
             @RequestParam(required = false) Boolean soloExtranjero,
+            @RequestParam(required = false) String codIpressAtencion,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "25") int size) {
 
@@ -351,6 +359,12 @@ public class AseguradoController {
             // Filtro Solo Extranjeros (id_tip_doc = 2 → C.E./PAS)
             if (Boolean.TRUE.equals(soloExtranjero)) {
                 whereClause.append(" AND a.id_tip_doc = 2");
+            }
+
+            // Filtro por IPRESS Atención
+            if (codIpressAtencion != null && !codIpressAtencion.trim().isEmpty()) {
+                whereClause.append(" AND EXISTS (SELECT 1 FROM dim_solicitud_bolsa sb2 JOIN dim_ipress di2 ON di2.id_ipress = sb2.id_ipress_atencion WHERE sb2.paciente_dni = a.doc_paciente AND di2.cod_ipress = ?)");
+                params.add(codIpressAtencion);
             }
 
             // Consulta para obtener el total de registros
@@ -690,6 +704,48 @@ public class AseguradoController {
     }
 
     /**
+     * Lista de IPRESS de Atención disponibles (desde dim_solicitud_bolsa) con conteo
+     */
+    @GetMapping("/filtros/ipress-atencion")
+    public ResponseEntity<?> getIpressAtencion() {
+        try {
+            log.info("🏥 Obteniendo lista de IPRESS Atención con conteos");
+
+            String sql = """
+                SELECT
+                    di.id_ipress,
+                    di.cod_ipress,
+                    di.desc_ipress,
+                    COUNT(sb.id_solicitud) as cantidad
+                FROM dim_ipress di
+                INNER JOIN dim_solicitud_bolsa sb ON COALESCE(sb.id_ipress_atencion, sb.id_ipress) = di.id_ipress
+                WHERE di.desc_ipress IS NOT NULL
+                GROUP BY di.id_ipress, di.cod_ipress, di.desc_ipress
+                ORDER BY cantidad DESC, di.desc_ipress
+            """;
+
+            List<Map<String, Object>> result = jdbcTemplate.queryForList(sql);
+
+            result.forEach(i -> {
+                i.put("idIpress", i.get("id_ipress"));
+                i.put("codIpress", i.get("cod_ipress"));
+                i.put("descIpress", i.get("desc_ipress"));
+                i.put("cantidad", i.get("cantidad"));
+                i.remove("id_ipress");
+                i.remove("cod_ipress");
+                i.remove("desc_ipress");
+            });
+
+            return ResponseEntity.ok(result);
+
+        } catch (Exception e) {
+            log.error("❌ Error al obtener IPRESS Atención", e);
+            return ResponseEntity.internalServerError()
+                .body(Map.of("error", "Error al obtener IPRESS Atención: " + e.getMessage()));
+        }
+    }
+
+    /**
      * Crear un nuevo asegurado
      * Ejemplo: POST /api/asegurados
      */
@@ -862,7 +918,32 @@ public class AseguradoController {
                 return ResponseEntity.internalServerError()
                     .body(Map.of("error", "No se pudo actualizar el asegurado"));
             }
-            
+
+            // ── Cascade IPRESS a bolsas activas (no terminales) ──────────────────
+            String dni = aseguradoDTO.getDocPaciente();
+            String estadosTerminales = "('ATENDIDO','RECHAZADO','ANULADO','NO_ASISTIO','CERRADO')";
+
+            if (aseguradoDTO.getIdIpress() != null) {
+                int bolsasActualizadas = jdbcTemplate.update(
+                    "UPDATE dim_solicitud_bolsa SET id_ipress = ? " +
+                    "WHERE paciente_dni = ? AND estado NOT IN " + estadosTerminales,
+                    aseguradoDTO.getIdIpress(), dni
+                );
+                log.info("🏥 Cascade IPRESS adscripción → {} bolsas activas (DNI: {}, id_ipress: {})",
+                    bolsasActualizadas, dni, aseguradoDTO.getIdIpress());
+            }
+
+            if (aseguradoDTO.getIdIpressAtencion() != null) {
+                int bolsasActualizadas = jdbcTemplate.update(
+                    "UPDATE dim_solicitud_bolsa SET id_ipress_atencion = ? " +
+                    "WHERE paciente_dni = ? AND estado NOT IN " + estadosTerminales,
+                    aseguradoDTO.getIdIpressAtencion(), dni
+                );
+                log.info("🏥 Cascade IPRESS atención → {} bolsas activas (DNI: {}, id_ipress_atencion: {})",
+                    bolsasActualizadas, dni, aseguradoDTO.getIdIpressAtencion());
+            }
+            // ─────────────────────────────────────────────────────────────────────
+
             log.info("✅ Asegurado actualizado exitosamente: PK={}", pkAsegurado);
             
             // Devolver el asegurado actualizado con información completa

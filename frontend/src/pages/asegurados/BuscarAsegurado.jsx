@@ -81,9 +81,21 @@ export default function BuscarAsegurado() {
   // 📋 Estados para tipos de documento
   const [tiposDocumento, setTiposDocumento] = useState([]);
 
-  // 🔍 Estados para búsqueda de IPRESS en formulario
+  const [ipressAtencionOpciones, setIpressAtencionOpciones] = useState([]);
+  const [selectedIpressAtencion, setSelectedIpressAtencion] = useState("");
+  // Combobox filter states
+  const [filtroAdscSearch, setFiltroAdscSearch] = useState('');
+  const [filtroAdscOpen, setFiltroAdscOpen] = useState(false);
+  const [filtroAtencionSearch, setFiltroAtencionSearch] = useState('');
+  const [filtroAtencionOpen, setFiltroAtencionOpen] = useState(false);
+
+  // 🔍 Estados para búsqueda de IPRESS en formulario (adscripción)
   const [ipressSearchText, setIpressSearchText] = useState('');
   const [ipressDropdownOpen, setIpressDropdownOpen] = useState(false);
+
+  // 🔍 Estados para búsqueda de IPRESS Atención en formulario
+  const [ipressAtenSearchText, setIpressAtenSearchText] = useState('');
+  const [ipressAtenDropdownOpen, setIpressAtenDropdownOpen] = useState(false);
 
   // Paginación desde el backend
   const [currentPage, setCurrentPage] = useState(0);
@@ -112,6 +124,8 @@ export default function BuscarAsegurado() {
     correoElectronico: '',
     tipoSeguro: 'TITULAR',
     casAdscripcion: '',
+    idIpress: null,
+    idIpressAtencion: null,
     periodo: new Date().getFullYear().toString(),
     pacienteCronico: false
   });
@@ -125,6 +139,7 @@ export default function BuscarAsegurado() {
   useEffect(() => {
     cargarRedes();
     cargarIpress();
+    cargarIpressAtencion();
     cargarTiposDocumento();
   }, []);
 
@@ -152,10 +167,10 @@ export default function BuscarAsegurado() {
 
   // ✅ Resetear página cuando cambian los filtros
   useEffect(() => {
-    if (selectedRed || selectedIpress || soloCenacron || soloMaraton || soloDniValido || soloExtranjero) {
+    if (selectedRed || selectedIpress || selectedIpressAtencion || soloCenacron || soloMaraton || soloDniValido || soloExtranjero) {
       setCurrentPage(0);
     }
-  }, [selectedRed, selectedIpress, soloCenacron, soloMaraton, soloDniValido, soloExtranjero]);
+  }, [selectedRed, selectedIpress, selectedIpressAtencion, soloCenacron, soloMaraton, soloDniValido, soloExtranjero]);
 
   // ✅ Debounce para la búsqueda
   useEffect(() => {
@@ -172,7 +187,7 @@ export default function BuscarAsegurado() {
   // Cargar asegurados con paginación
   useEffect(() => {
     cargarAsegurados();
-  }, [currentPage, debouncedSearchValue, selectedRed, selectedIpress, soloCenacron, soloMaraton, soloDniValido, soloExtranjero]);
+  }, [currentPage, debouncedSearchValue, selectedRed, selectedIpress, selectedIpressAtencion, soloCenacron, soloMaraton, soloDniValido, soloExtranjero]);
 
   // 🔍 Validar DNI en tiempo real cuando tiene 8 dígitos (solo cuando está creando)
   useEffect(() => {
@@ -255,6 +270,7 @@ export default function BuscarAsegurado() {
         if (soloMaraton) params += `&maraton=true`;
         if (soloDniValido) params += `&soloDniValido=true`;
         if (soloExtranjero) params += `&soloExtranjero=true`;
+        if (selectedIpressAtencion) params += `&codIpressAtencion=${encodeURIComponent(selectedIpressAtencion)}`;
 
         response = await apiClient.get(`/asegurados/buscar?${params}`, true);
       } else {
@@ -263,6 +279,7 @@ export default function BuscarAsegurado() {
         if (soloMaraton) params += `&maraton=true`;
         if (soloDniValido) params += `&soloDniValido=true`;
         if (soloExtranjero) params += `&soloExtranjero=true`;
+        if (selectedIpressAtencion) params += `&codIpressAtencion=${encodeURIComponent(selectedIpressAtencion)}`;
         response = await apiClient.get(`/asegurados?${params}`, true);
       }
 
@@ -317,9 +334,21 @@ export default function BuscarAsegurado() {
     }
   };
 
+  const cargarIpressAtencion = async () => {
+    try {
+      const response = await apiClient.get('/asegurados/filtros/ipress-atencion', true);
+      setIpressAtencionOpciones(response || []);
+    } catch (error) {
+      console.error('Error al cargar IPRESS Atención:', error);
+    }
+  };
+
   const limpiarFiltros = () => {
     setSelectedRed("");
     setSelectedIpress("");
+    setSelectedIpressAtencion("");
+    setFiltroAdscSearch('');
+    setFiltroAtencionSearch('');
     setSoloCenacron(false);
     setSoloMaraton(false);
     setSoloDniValido(false);
@@ -587,7 +616,7 @@ export default function BuscarAsegurado() {
         </div>
 
         {/* Filtros Colapsables */ }
-        <div className="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden">
+        <div className="bg-white rounded-lg border border-slate-200 shadow-sm overflow-visible">
           <button
             onClick={ () => setFiltrosAbiertos(!filtrosAbiertos) }
             className="w-full px-4 py-3 flex items-center justify-between hover:bg-slate-50 transition-colors"
@@ -597,14 +626,14 @@ export default function BuscarAsegurado() {
               <h3 className="text-base font-semibold text-slate-900">
                 Filtros y Búsqueda
               </h3>
-              { (selectedRed || selectedIpress || searchValue || soloCenacron || soloMaraton || soloExtranjero) && (
+              { (selectedRed || selectedIpress || selectedIpressAtencion || searchValue || soloCenacron || soloMaraton || soloExtranjero) && (
                 <span className="bg-emerald-100 text-emerald-800 text-xs font-medium px-2 py-0.5 rounded-full">
                   Activos
                 </span>
               ) }
             </div>
             <div className="flex items-center gap-2">
-              { (selectedRed || selectedIpress || searchValue || soloCenacron || soloMaraton || soloExtranjero) && (
+              { (selectedRed || selectedIpress || selectedIpressAtencion || searchValue || soloCenacron || soloMaraton || soloExtranjero) && (
                 <span
                   onClick={ (e) => {
                     e.stopPropagation();
@@ -631,9 +660,9 @@ export default function BuscarAsegurado() {
           </button>
 
           { filtrosAbiertos && (
-            <div className="px-4 py-3 border-t border-slate-100 space-y-2">
+            <div className="px-4 py-3 border-t border-slate-100 space-y-2 overflow-visible">
               {/* Fila 1: Red · IPRESS · CENACRON */}
-              <div className="flex flex-wrap items-end gap-3">
+              <div className="flex flex-wrap items-end gap-3 overflow-visible">
                 <div className="flex-1 min-w-[160px]">
                   <label className="block text-xs font-medium text-slate-500 mb-1">
                     <Network className="w-3 h-3 inline mr-1" />Red
@@ -652,24 +681,99 @@ export default function BuscarAsegurado() {
                   </select>
                 </div>
 
-                <div className="flex-1 min-w-[180px]">
+                {/* IPRESS Adscripción - combobox */}
+                <div className="flex-1 min-w-[200px] relative">
                   <label className="block text-xs font-medium text-slate-500 mb-1">
-                    <Building2 className="w-3 h-3 inline mr-1" />IPRESS
+                    <Building2 className="w-3 h-3 inline mr-1" />IPRESS Adscripción
                   </label>
-                  <select
-                    value={ selectedIpress }
-                    onChange={ (e) => setSelectedIpress(e.target.value) }
-                    disabled={ !selectedRed || loadingFiltros }
-                    className="w-full px-2.5 py-1.5 text-sm border border-slate-200 rounded-lg text-slate-900
-                             focus:outline-none focus:border-emerald-500 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    <option value="">{ selectedRed ? 'Todas las IPRESS' : 'Selecciona una red' }</option>
-                    { ipress.map((i) => (
-                      <option key={ i.codIpress } value={ i.codIpress }>
-                        { i.descIpress } ({ i.codIpress })
-                      </option>
-                    )) }
-                  </select>
+                  <input
+                    type="text"
+                    value={ filtroAdscSearch || (selectedIpress ? (ipress.find(i => i.codIpress === selectedIpress)?.descIpress || (todasIpress.find(i => i.codIpress === selectedIpress)?.descIpress) || selectedIpress) : '') }
+                    onChange={ (e) => { setFiltroAdscSearch(e.target.value); setFiltroAdscOpen(true); if (!e.target.value) { setSelectedIpress(""); setCurrentPage(0); } } }
+                    onFocus={ () => { setFiltroAdscSearch(''); setFiltroAdscOpen(true); } }
+                    onBlur={ () => setTimeout(() => { setFiltroAdscOpen(false); setFiltroAdscSearch(''); }, 200) }
+                    placeholder="Buscar IPRESS adscripción..."
+                    className={ `w-full px-2.5 py-1.5 text-sm border rounded-lg text-slate-900 focus:outline-none focus:border-emerald-500 transition-all
+                      ${selectedIpress ? 'border-emerald-400 bg-emerald-50' : 'border-slate-200'}` }
+                    autoComplete="off"
+                  />
+                  { filtroAdscOpen && (
+                    <div className="absolute z-[200] w-full mt-1 bg-white border border-slate-200 rounded-lg shadow-2xl max-h-64 overflow-y-auto">
+                      <div
+                        onMouseDown={ () => { setSelectedIpress(""); setFiltroAdscSearch(''); setFiltroAdscOpen(false); setCurrentPage(0); } }
+                        className="px-3 py-2 text-sm text-slate-500 hover:bg-slate-50 cursor-pointer border-b border-slate-100"
+                      >
+                        Todas las IPRESS
+                      </div>
+                      { (() => {
+                          const texto = filtroAdscSearch.toLowerCase().trim();
+                          return (selectedRed ? ipress : todasIpress)
+                            .filter(i => !texto || i.descIpress?.toLowerCase().includes(texto) || i.codIpress?.toLowerCase().includes(texto))
+                            .sort((a, b) => a.descIpress?.localeCompare(b.descIpress || '', 'es'))
+                            .map(i => (
+                              <div
+                                key={ i.codIpress }
+                                onMouseDown={ () => { setSelectedIpress(i.codIpress); setFiltroAdscSearch(''); setFiltroAdscOpen(false); setCurrentPage(0); } }
+                                className={ `px-3 py-2 text-sm cursor-pointer hover:bg-emerald-50 transition-colors flex justify-between items-center
+                                  ${selectedIpress === i.codIpress ? 'bg-emerald-100 font-semibold text-emerald-800' : 'text-slate-800'}` }
+                              >
+                                <span title={ i.descIpress }>{ i.descIpress } <span className="text-slate-400 text-xs">({ i.codIpress })</span></span>
+                                { i.cantidad != null && (
+                                  <span className="ml-2 text-xs bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded-full font-medium whitespace-nowrap">
+                                    { Number(i.cantidad).toLocaleString('es-PE') }
+                                  </span>
+                                ) }
+                              </div>
+                            ));
+                        })() }
+                    </div>
+                  ) }
+                </div>
+
+                {/* IPRESS Atención - combobox */}
+                <div className="flex-1 min-w-[200px] relative">
+                  <label className="block text-xs font-medium text-slate-500 mb-1">
+                    <Building2 className="w-3 h-3 inline mr-1" />IPRESS Atención
+                  </label>
+                  <input
+                    type="text"
+                    value={ filtroAtencionSearch || (selectedIpressAtencion ? (ipressAtencionOpciones.find(i => i.codIpress === selectedIpressAtencion)?.descIpress || selectedIpressAtencion) : '') }
+                    onChange={ (e) => { setFiltroAtencionSearch(e.target.value); setFiltroAtencionOpen(true); if (!e.target.value) { setSelectedIpressAtencion(""); setCurrentPage(0); } } }
+                    onFocus={ () => { setFiltroAtencionSearch(''); setFiltroAtencionOpen(true); } }
+                    onBlur={ () => setTimeout(() => { setFiltroAtencionOpen(false); setFiltroAtencionSearch(''); }, 200) }
+                    placeholder="Buscar IPRESS atención..."
+                    className={ `w-full px-2.5 py-1.5 text-sm border rounded-lg text-slate-900 focus:outline-none focus:border-blue-500 transition-all
+                      ${selectedIpressAtencion ? 'border-blue-400 bg-blue-50' : 'border-slate-200'}` }
+                    autoComplete="off"
+                  />
+                  { filtroAtencionOpen && (
+                    <div className="absolute z-[200] w-full mt-1 bg-white border border-slate-200 rounded-lg shadow-2xl max-h-64 overflow-y-auto">
+                      <div
+                        onMouseDown={ () => { setSelectedIpressAtencion(""); setFiltroAtencionSearch(''); setFiltroAtencionOpen(false); setCurrentPage(0); } }
+                        className="px-3 py-2 text-sm text-slate-500 hover:bg-slate-50 cursor-pointer border-b border-slate-100"
+                      >
+                        Todas las IPRESS
+                      </div>
+                      { (() => {
+                          const texto = filtroAtencionSearch.toLowerCase().trim();
+                          return ipressAtencionOpciones
+                            .filter(i => !texto || i.descIpress?.toLowerCase().includes(texto) || i.codIpress?.toLowerCase().includes(texto))
+                            .map(i => (
+                              <div
+                                key={ i.codIpress }
+                                onMouseDown={ () => { setSelectedIpressAtencion(i.codIpress); setFiltroAtencionSearch(''); setFiltroAtencionOpen(false); setCurrentPage(0); } }
+                                className={ `px-3 py-2 text-sm cursor-pointer hover:bg-blue-50 transition-colors flex justify-between items-center
+                                  ${selectedIpressAtencion === i.codIpress ? 'bg-blue-100 font-semibold text-blue-800' : 'text-slate-800'}` }
+                              >
+                                <span title={ i.descIpress }>{ i.descIpress } <span className="text-slate-400 text-xs">({ i.codIpress })</span></span>
+                                <span className="ml-2 text-xs bg-blue-50 text-blue-700 px-1.5 py-0.5 rounded-full font-medium whitespace-nowrap">
+                                  { Number(i.cantidad).toLocaleString('es-PE') }
+                                </span>
+                              </div>
+                            ));
+                        })() }
+                    </div>
+                  ) }
                 </div>
 
                 <div className="flex-shrink-0 pb-0.5 flex gap-2">
