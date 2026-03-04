@@ -85,6 +85,8 @@ export default function Solicitudes({ categoriaInicial } = {}) {
   const [estadisticasIpress, setEstadisticasIpress] = useState([]);
   const [estadisticasIpressAtencion, setEstadisticasIpressAtencion] = useState([]);
   const [estadisticasEspecialidad, setEstadisticasEspecialidad] = useState({}); // {CARDIOLOGIA: 42, ...}
+  const [ipressNaCount, setIpressNaCount] = useState(null);       // Count N/A IPRESS adscripción en contexto actual
+  const [ipressAtencionNaCount, setIpressAtencionNaCount] = useState(null); // Count N/A IPRESS atención
   // estadisticasTipoCita eliminado (v1.65.1) — el filtro usa opciones hardcodeadas
 
   const [isLoading, setIsLoading] = useState(true); // Inicia con loader por defecto
@@ -367,6 +369,22 @@ export default function Solicitudes({ categoriaInicial } = {}) {
             if (e.especialidad) mapEspec[e.especialidad.toUpperCase()] = e.total ?? 0;
           });
           setEstadisticasEspecialidad(mapEspec);
+
+          // Cargar counts N/A específicos del contexto actual (no globales)
+          // obtenerSolicitudesPaginado(page, size, bolsa, macro, red, ipress, espec, estado, ipressAtencion, ...rest, categoriaEspecialidad)
+          if (categoriaInicial) {
+            try {
+              const [naAdsc, naAten] = await Promise.all([
+                bolsasService.obtenerSolicitudesPaginado(0, 1, null, null, null, 'N/A', null, null, null, null, null, null, null, null, null, null, null, categoriaInicial).catch(() => null),
+                bolsasService.obtenerSolicitudesPaginado(0, 1, null, null, null, null, null, null, 'N/A', null, null, null, null, null, null, null, null, categoriaInicial).catch(() => null),
+              ]);
+              if (mounted) {
+                setIpressNaCount(naAdsc?.totalElements ?? null);
+                setIpressAtencionNaCount(naAten?.totalElements ?? null);
+              }
+            } catch (_) {}
+          }
+
           console.log('✅ [2.6b] Stats IPRESS + Especialidad para filtros cargadas');
         }
       } catch (error) {
@@ -2313,12 +2331,10 @@ export default function Solicitudes({ categoriaInicial } = {}) {
                 options: (() => {
                   const naEntry = estadisticasIpress.find(i => i.nombreIpress === 'N/A' && i.total > 0);
                   const localNaCount = solicitudes.filter(s => !s.ipress || s.ipress === 'N/A').length;
-                  const hasNa = naEntry || localNaCount > 0 || categoriaInicial === 'bolsa107';
-                  // En sub-páginas los conteos vienen de stats globales (confuso) → no mostrar count en N/A
-                  // Solo mostrar count en la página global (sin categoriaInicial)
-                  const naLabel = categoriaInicial
-                    ? `⚠️ Sin IPRESS Adscripción`
-                    : `⚠️ Sin IPRESS Adscripción${naEntry ? ` (${naEntry.total})` : ''}`;
+                  const hasNa = naEntry || localNaCount > 0 || categoriaInicial === 'bolsa107' || ipressNaCount > 0;
+                  // En sub-páginas usar count específico del contexto; en global usar stats globales
+                  const naCount = categoriaInicial ? ipressNaCount : (naEntry?.total ?? null);
+                  const naLabel = `⚠️ Sin IPRESS Adscripción${naCount !== null ? ` (${naCount})` : ''}`;
                   const opts = estadisticasIpress
                     .filter(i => i.total > 0 && i.nombreIpress && i.nombreIpress !== 'N/A')
                     .sort((a, b) => (a.nombreIpress || '').localeCompare(b.nombreIpress || '', 'es', { sensitivity: 'base' }))
@@ -2341,13 +2357,13 @@ export default function Solicitudes({ categoriaInicial } = {}) {
                     .filter(i => i.total > 0 && i.nombreIpress !== 'N/A')
                     .sort((a, b) => (a.nombreIpress || '').localeCompare(b.nombreIpress || '', 'es', { sensitivity: 'base' }))
                     .map(i => ({ label: `${i.nombreIpress} (${i.total})`, value: i.nombreIpress }));
-                  // En sub-páginas no mostrar count global (misleading)
-                  const naLabel = categoriaInicial
-                    ? `⚠️ Sin IPRESS Atención`
-                    : `⚠️ Sin IPRESS Atención${naEntry ? ` (${naEntry.total})` : ''}`;
+                  // En sub-páginas usar count específico del contexto; en global usar stats globales
+                  const naCountAten = categoriaInicial ? ipressAtencionNaCount : (naEntry?.total ?? null);
+                  const naLabel = `⚠️ Sin IPRESS Atención${naCountAten !== null ? ` (${naCountAten})` : ''}`;
+                  const showNaAten = naEntry || (categoriaInicial && ipressAtencionNaCount > 0);
                   return [
                     { label: `Todas`, value: "todas" },
-                    ...(naEntry ? [{ label: naLabel, value: 'N/A' }] : []),
+                    ...(showNaAten ? [{ label: naLabel, value: 'N/A' }] : []),
                     ...opts,
                   ];
                 })()
