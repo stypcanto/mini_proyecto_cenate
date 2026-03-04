@@ -1106,7 +1106,8 @@ public class TeleECGController {
                     solicitudBase,
                     request.getEspecialidad(),
                     null,  // TeleECG no pasa por atencion_clinica de enfermería
-                    pkAseguradoTele
+                    pkAseguradoTele,
+                    null   // TeleECG no usa motivo de interconsulta
                 );
                 log.info("✅ Bolsa INTERCONSULTA creada para especialidad: {}", request.getEspecialidad());
             } else {

@@ -1808,7 +1808,7 @@ CENATE de Essalud`;
             id: i.idIpress,
             codigo: i.codIpress,
             nombre: i.descIpress
-          }));
+          })).sort((a, b) => a.nombre.localeCompare(b.nombre));
           setIpressDisponibles(ipressFormatted);
           console.log("✅ IPRESS cargadas desde API:", ipressFormatted);
         }

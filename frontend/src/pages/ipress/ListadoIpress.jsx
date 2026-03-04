@@ -238,7 +238,7 @@ export default function ListadoIpress() {
     setLoadingEspecialidades(true);
     try {
       // 1. Primero cargar TODAS las especialidades disponibles de CENATE
-      const disponibles = await apiClient.get('/servicio-essi/activos-cenate-ipress');
+      const disponibles = await apiClient.get('/servicio-essi/activos-cenate-ipress', true);
       setEspecialidadesDisponibles(disponibles || []);
 
       if (!disponibles || disponibles.length === 0) {
@@ -250,7 +250,7 @@ export default function ListadoIpress() {
       // 2. Luego cargar la configuración actual de esta IPRESS (puede estar vacía)
       let configuradas = [];
       try {
-        configuradas = await apiClient.get(`/ipress/servicio-essi/${ipressItem.codIpress}`);
+        configuradas = await apiClient.get(`/ipress/servicio-essi/${ipressItem.codIpress}`, true);
       } catch (configError) {
         // Si falla, significa que no hay configuración previa (es normal)
         console.log("No hay configuración previa para esta IPRESS:", configError);
@@ -333,7 +333,7 @@ export default function ListadoIpress() {
       }));
 
       // El backend espera ConfigurarServiciosRequest { servicios: [...] }
-      await apiClient.put(`/ipress/servicio-essi/configurar/${ipressCode}`, { servicios: servicios });
+      await apiClient.put(`/ipress/servicio-essi/configurar/${ipressCode}`, { servicios: servicios }, true);
       toast.success(`Configuración de ${servicios.length} especialidades guardada exitosamente`);
 
       // Recargar los datos después de guardar exitosamente
@@ -348,7 +348,7 @@ export default function ListadoIpress() {
 
   const recargarConfiguracionEspecialidades = async (codIpress) => {
     try {
-      const configuradas = await apiClient.get(`/ipress/servicio-essi/${codIpress}`);
+      const configuradas = await apiClient.get(`/ipress/servicio-essi/${codIpress}`, true);
 
       // Crear mapa de configuraciones
       const configMap = new Map();

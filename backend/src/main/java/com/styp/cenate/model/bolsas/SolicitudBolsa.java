@@ -228,7 +228,16 @@ public class SolicitudBolsa {
     private Long idAtencionClinica;
 
     // ============================================================================
-    // 📞 MOTIVO DE LLAMADA (v1.68.2 - 2026-02-13)
+    // � INTERCONSULTA: FK hacia motivo y solicitud padre (v1.84.0)
+    // ============================================================================
+    @Column(name = "id_motivo_interconsulta")
+    private Long idMotivoInterconsulta;
+
+    @Column(name = "id_solicitud_padre")
+    private Long idSolicitudPadre;
+
+    // ============================================================================
+    // �📞 MOTIVO DE LLAMADA (v1.68.2 - 2026-02-13)
     // ============================================================================
     @Column(name = "motivo_llamada_bolsa", length = 500)
     private String motivoLlamadoBolsa;

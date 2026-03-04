@@ -8,6 +8,7 @@ import java.util.List;
  * ✅ v1.47.0: DTO para registrar atención médica (Recita + Interconsulta + Crónico)
  * ✅ v1.76.0: Campos Ficha de Enfermería
  * ✅ v1.77.0: Presión Arterial y Glucosa; retirado otraPatologia y tratamiento
+ * ✅ v1.84.0: interconsultaItems con idMotivo para FK id_motivo_interconsulta
  */
 @Data
 @NoArgsConstructor
@@ -23,6 +24,19 @@ public class AtenderPacienteRequest {
     // Interconsulta (Opcional)
     private Boolean tieneInterconsulta;
     private String interconsultaEspecialidad;
+
+    // ✅ v1.84.0: Lista estructurada de interconsultas con idMotivo
+    private List<InterconsultaItemDTO> interconsultaItems;
+
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Builder
+    public static class InterconsultaItemDTO {
+        private String especialidad;
+        private Long idMotivo;       // FK → dim_motivo_interconsulta.id_motivo
+        private String motivo;       // descripción texto (informativo)
+    }
 
     // Enfermedades crónicas (Opcional)
     private Boolean esCronico;
