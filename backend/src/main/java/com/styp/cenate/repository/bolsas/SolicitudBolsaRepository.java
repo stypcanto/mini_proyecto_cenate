@@ -293,6 +293,12 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
           AND (CAST(:categoriaEspecialidad AS VARCHAR) IS NULL
                OR (CAST(:categoriaEspecialidad AS VARCHAR) = 'especialidades' AND LOWER(COALESCE(sb.especialidad,'')) NOT IN ('medicina general', 'enfermeria') AND sb.id_bolsa != 1)
                OR (CAST(:categoriaEspecialidad AS VARCHAR) = 'bolsa107' AND sb.id_bolsa = 1))
+          AND (CAST(:estrategia AS VARCHAR) IS NULL
+               OR sb.paciente_dni IN (
+                   SELECT pe.pk_asegurado FROM paciente_estrategia pe
+                   JOIN dim_estrategia_institucional dei ON dei.id_estrategia = pe.id_estrategia
+                   WHERE dei.sigla = CAST(:estrategia AS VARCHAR) AND pe.estado = 'ACTIVO'
+               ))
         ORDER BY CASE WHEN COALESCE(deg.cod_estado_cita, 'PENDIENTE_CITA') = 'PENDIENTE_CITA' THEN 0
                       WHEN COALESCE(deg.cod_estado_cita, 'PENDIENTE_CITA') = 'CITADO' THEN 1
                       ELSE 2 END, sb.fecha_solicitud DESC
@@ -315,6 +321,7 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
             @org.springframework.data.repository.query.Param("gestoraId") Long gestoraId,
             @org.springframework.data.repository.query.Param("estadoBolsa") String estadoBolsa,
             @org.springframework.data.repository.query.Param("categoriaEspecialidad") String categoriaEspecialidad,
+            @org.springframework.data.repository.query.Param("estrategia") String estrategia,
             org.springframework.data.domain.Pageable pageable);
 
     /**
@@ -357,6 +364,12 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
           AND (CAST(:categoriaEspecialidad AS VARCHAR) IS NULL
                OR (CAST(:categoriaEspecialidad AS VARCHAR) = 'especialidades' AND LOWER(COALESCE(sb.especialidad,'')) NOT IN ('medicina general', 'enfermeria') AND sb.id_bolsa != 1)
                OR (CAST(:categoriaEspecialidad AS VARCHAR) = 'bolsa107' AND sb.id_bolsa = 1))
+          AND (CAST(:estrategia AS VARCHAR) IS NULL
+               OR sb.paciente_dni IN (
+                   SELECT pe.pk_asegurado FROM paciente_estrategia pe
+                   JOIN dim_estrategia_institucional dei ON dei.id_estrategia = pe.id_estrategia
+                   WHERE dei.sigla = CAST(:estrategia AS VARCHAR) AND pe.estado = 'ACTIVO'
+               ))
         """, nativeQuery = true)
     long countWithFilters(
             @org.springframework.data.repository.query.Param("bolsaNombre") String bolsaNombre,
@@ -374,7 +387,8 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
             @org.springframework.data.repository.query.Param("condicionMedica") String condicionMedica,
             @org.springframework.data.repository.query.Param("gestoraId") Long gestoraId,
             @org.springframework.data.repository.query.Param("estadoBolsa") String estadoBolsa,
-            @org.springframework.data.repository.query.Param("categoriaEspecialidad") String categoriaEspecialidad);
+            @org.springframework.data.repository.query.Param("categoriaEspecialidad") String categoriaEspecialidad,
+            @org.springframework.data.repository.query.Param("estrategia") String estrategia);
 
     /**
      * Cuenta total de solicitudes activas (para calcular páginas totales)
@@ -648,12 +662,12 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
      */
     @Query(value = """
         SELECT
-            di.desc_ipress AS nombre_ipress,
+            COALESCE(di.desc_ipress, 'N/A') AS nombre_ipress,
             COUNT(sb.id_solicitud) AS total
         FROM dim_solicitud_bolsa sb
         LEFT JOIN dim_ipress di ON sb.id_ipress_atencion = di.id_ipress
-        WHERE sb.activo = true AND sb.id_ipress_atencion IS NOT NULL
-        GROUP BY di.desc_ipress
+        WHERE sb.activo = true
+        GROUP BY COALESCE(di.desc_ipress, 'N/A')
         ORDER BY total DESC
         """, nativeQuery = true)
     List<Map<String, Object>> estadisticasPorIpressAtencion();

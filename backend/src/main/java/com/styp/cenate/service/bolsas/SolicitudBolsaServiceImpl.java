@@ -3484,6 +3484,7 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
             Long gestoraId,
             String estadoBolsa,
             String categoriaEspecialidad,
+            String estrategia,
             org.springframework.data.domain.Pageable pageable) {
         try {
             log.info("🔍 Listando solicitudes con filtros - Bolsa: {}, Macro: {}, Red: {}, IPRESS: {}, Especialidad: {}, Estado: {}, IPRESSAtencion: {}, TipoCita: {}, Asignación: {}, Búsqueda: {}, FechaInicio: {}, FechaFin: {}, EstadoBolsa: {}, Categoria: {}",
@@ -3505,15 +3506,16 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
             String condicionMedicaFinal = (condicionMedica == null || condicionMedica.trim().isEmpty()) ? null : condicionMedica.trim();
             String estadoBolsaFinal = (estadoBolsa == null || "todos".equals(estadoBolsa) || estadoBolsa.trim().isEmpty()) ? null : estadoBolsa.trim();
             String categoriaEspecialidadFinal = (categoriaEspecialidad == null || categoriaEspecialidad.trim().isEmpty()) ? null : categoriaEspecialidad.trim();
+            String estrategiaFinal = (estrategia == null || "todos".equals(estrategia) || estrategia.trim().isEmpty()) ? null : estrategia.trim().toUpperCase();
 
             // Llamar al repository con filtros
             List<Object[]> resultados = solicitudRepository.findAllWithFiltersAndPagination(
                     bolsaNombreFinal, macrorFinal, redFinal, ipressFinal, especialidadFinal,
-                    estadoCod, ipressAtencionFinal, tipoCitaFinal, asignacionFinal, busquedaFinal, fechaInicioFinal, fechaFinFinal, condicionMedicaFinal, gestoraId, estadoBolsaFinal, categoriaEspecialidadFinal, pageable);
+                    estadoCod, ipressAtencionFinal, tipoCitaFinal, asignacionFinal, busquedaFinal, fechaInicioFinal, fechaFinFinal, condicionMedicaFinal, gestoraId, estadoBolsaFinal, categoriaEspecialidadFinal, estrategiaFinal, pageable);
 
             long total = solicitudRepository.countWithFilters(
                     bolsaNombreFinal, macrorFinal, redFinal, ipressFinal, especialidadFinal,
-                    estadoCod, ipressAtencionFinal, tipoCitaFinal, asignacionFinal, busquedaFinal, fechaInicioFinal, fechaFinFinal, condicionMedicaFinal, gestoraId, estadoBolsaFinal, categoriaEspecialidadFinal);
+                    estadoCod, ipressAtencionFinal, tipoCitaFinal, asignacionFinal, busquedaFinal, fechaInicioFinal, fechaFinFinal, condicionMedicaFinal, gestoraId, estadoBolsaFinal, categoriaEspecialidadFinal, estrategiaFinal);
 
             // Mapear a DTOs
             List<SolicitudBolsaDTO> dtos = resultados.stream()
@@ -3522,6 +3524,29 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
 
             log.info("✅ Búsqueda con filtros completada: {} registros en página (Total: {})",
                     dtos.size(), total);
+
+            // 🏷️ ENRIQUECER CON FLAGS DE ESTRATEGIAS (CENACRON, MARATON, etc.)
+            try {
+                List<String> dnis = dtos.stream()
+                    .map(SolicitudBolsaDTO::getPacienteDni)
+                    .filter(d -> d != null && !d.isBlank())
+                    .distinct()
+                    .collect(Collectors.toList());
+                if (!dnis.isEmpty()) {
+                    Set<String> setCenacron = new HashSet<>(
+                        pacienteEstrategiaRepository.findDnisPertenecentesAEstrategia(dnis, "CENACRON"));
+                    Set<String> setMaraton = new HashSet<>(
+                        pacienteEstrategiaRepository.findDnisPertenecentesAEstrategia(dnis, "MARATON"));
+                    log.info("   🏷️ CENACRON: {} | MARATON: {} de {} DNIs",
+                        setCenacron.size(), setMaraton.size(), dnis.size());
+                    dtos.forEach(dto -> {
+                        dto.setEsCenacron(setCenacron.contains(dto.getPacienteDni()));
+                        dto.setEsMaraton(setMaraton.contains(dto.getPacienteDni()));
+                    });
+                }
+            } catch (Exception exEst) {
+                log.warn("⚠️ No se pudo enriquecer estrategias en listarConFiltros: {}", exEst.getMessage());
+            }
 
             return new org.springframework.data.domain.PageImpl<>(dtos, pageable, total);
 

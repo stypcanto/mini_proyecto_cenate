@@ -88,6 +88,7 @@ public interface SolicitudBolsaService {
             Long gestoraId,
             String estadoBolsa,
             String categoriaEspecialidad,
+            String estrategia,
             org.springframework.data.domain.Pageable pageable);
 
     /**

@@ -112,6 +112,9 @@ export default function Solicitudes({ categoriaInicial } = {}) {
   const [filtroAsignacion, setFiltroAsignacion] = useState('todos');  // ✅ v1.42.0: Filtro asignación (cards clickeables)
   const [filtroGestoraId, setFiltroGestoraId] = useState(null);        // Filtro por gestora asignada (ID)
   const [filtroEstadoBolsa, setFiltroEstadoBolsa] = useState('todos'); // ✅ v1.67.0: Filtro estado de bolsa (PENDIENTE, OBSERVADO, ATENDIDO)
+  const [filtroEstrategia, setFiltroEstrategia] = useState('todos');  // ✅ v1.85.0: Filtro por estrategia (CENACRON | MARATON | todos)
+  const [cenacronCount, setCenacronCount] = useState(null);           // Conteo CENACRON en contexto actual
+  const [maratonCount, setMaratonCount] = useState(null);             // Conteo MARATON en contexto actual
   const [filtroFechaInicio, setFiltroFechaInicio] = useState('');     // ✅ v1.66.0: Filtro rango de fechas - inicio
   const [filtroFechaFin, setFiltroFechaFin] = useState('');           // ✅ v1.66.0: Filtro rango de fechas - fin
   const [cardSeleccionado, setCardSeleccionado] = useState(null);     // ✅ v1.42.0: Rastrear card activo
@@ -378,13 +381,17 @@ export default function Solicitudes({ categoriaInicial } = {}) {
               // estadoCita=PENDIENTE_CITA para que el count coincida con el filtro por defecto de sub-páginas
               // Usar misma lógica que main query: medicina-general/enfermeria → especialidad param; especialidades/bolsa107 → categoriaEspecialidad param
               const especParam = especialidadPorCategoria !== 'todas' ? especialidadPorCategoria : null;
-              const [naAdsc, naAten] = await Promise.all([
+              const [naAdsc, naAten, cnCenacron, cnMaraton] = await Promise.all([
                 bolsasService.obtenerSolicitudesPaginado(0, 1, null, null, null, 'N/A', especParam, 'PENDIENTE_CITA', null, null, null, null, null, null, null, null, null, categoriaEspecialidad).catch(() => null),
                 bolsasService.obtenerSolicitudesPaginado(0, 1, null, null, null, null, especParam, 'PENDIENTE_CITA', 'N/A', null, null, null, null, null, null, null, null, categoriaEspecialidad).catch(() => null),
+                bolsasService.obtenerSolicitudesPaginado(0, 1, null, null, null, null, especParam, 'PENDIENTE_CITA', null, null, null, null, null, null, null, null, null, categoriaEspecialidad, 'CENACRON').catch(() => null),
+                bolsasService.obtenerSolicitudesPaginado(0, 1, null, null, null, null, especParam, 'PENDIENTE_CITA', null, null, null, null, null, null, null, null, null, categoriaEspecialidad, 'MARATON').catch(() => null),
               ]);
               if (mounted) {
                 setIpressNaCount(naAdsc?.totalElements ?? null);
                 setIpressAtencionNaCount(naAten?.totalElements ?? null);
+                setCenacronCount(cnCenacron?.totalElements ?? null);
+                setMaratonCount(cnMaraton?.totalElements ?? null);
               }
             } catch (_) {}
           }
@@ -423,7 +430,7 @@ export default function Solicitudes({ categoriaInicial } = {}) {
     setModoSeleccionTotal(false); // v1.65.0: Limpiar modo selección total al cambiar filtros
     setSelectedRows(new Set()); // Limpiar selección al cambiar filtros
     cargarSolicitudesConFiltros(); // Cargar CON FILTROS desde el backend
-  }, [filtroBolsa, filtroMacrorregion, filtroRed, filtroIpress, filtroIpressAtencion, filtroEspecialidad, filtroEstado, filtroTipoCita, filtroAsignacion, filtroGestoraId, filtroEstadoBolsa, searchTerm, filtroFechaInicio, filtroFechaFin, registrosPorPagina]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [filtroBolsa, filtroMacrorregion, filtroRed, filtroIpress, filtroIpressAtencion, filtroEspecialidad, filtroEstado, filtroTipoCita, filtroAsignacion, filtroGestoraId, filtroEstadoBolsa, filtroEstrategia, searchTerm, filtroFechaInicio, filtroFechaFin, registrosPorPagina]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ============================================================================
   // 📦 EFFECT 4: Cargar SIGUIENTE PÁGINA cuando cambia currentPage (v2.5.2 - Server-side pagination)
@@ -806,7 +813,8 @@ export default function Solicitudes({ categoriaInicial } = {}) {
           null,              // condicionMedica
           filtrosActuales.gestoraId,
           filtrosActuales.estadoBolsa,
-          filtrosActuales.categoriaEspecialidad
+          filtrosActuales.categoriaEspecialidad,
+          filtroEstrategia === 'todos' ? null : filtroEstrategia
         ),
         bolsasService.obtenerKpiConFiltros(filtrosActuales).catch(() => null),
       ]);
@@ -999,7 +1007,8 @@ export default function Solicitudes({ categoriaInicial } = {}) {
         null,              // condicionMedica
         filtroGestoraId,   // gestoraId
         filtroEstadoBolsa === 'todos' ? null : filtroEstadoBolsa,  // estadoBolsa
-        categoriaEspecialidad  // 'especialidades' | null
+        categoriaEspecialidad,  // 'especialidades' | null
+        filtroEstrategia === 'todos' ? null : filtroEstrategia
       );
       console.log('📥 Respuesta página recibida:', response);
 
@@ -2530,6 +2539,7 @@ export default function Solicitudes({ categoriaInicial } = {}) {
               setFiltroAsignacion('todos');
               setFiltroGestoraId(null);
               setFiltroEstadoBolsa('todos');
+              setFiltroEstrategia('todos');
               setFiltroFechaInicio('');
               setFiltroFechaFin('');
               setSearchTerm('');
@@ -2562,6 +2572,34 @@ export default function Solicitudes({ categoriaInicial } = {}) {
               </div>
             </div>
           </div>
+
+          {/* ✅ v1.85.0: Filtro Estrategia (CENACRON / MARATÓN) — solo en sub-páginas */}
+          {categoriaInicial && (
+            <div className="px-2 py-2">
+              <label className="block text-xs font-semibold text-gray-700 mb-2">Filtro por Estrategia</label>
+              <div className="flex flex-wrap gap-2">
+                {[
+                  { value: 'todos',   label: `Todas (${totalElementos})`,            bg: '#f8fafc', color: '#475569', border: '#cbd5e1', activeBg: '#334155', activeColor: '#fff', activeBorder: '#334155' },
+                  { value: 'CENACRON', label: `♾ CENACRON${cenacronCount !== null ? ` (${cenacronCount})` : ''}`, bg: '#eff6ff', color: '#1d4ed8', border: '#93c5fd', activeBg: '#1d4ed8', activeColor: '#fff', activeBorder: '#1d4ed8' },
+                  { value: 'MARATON',  label: `🏃 MARATÓN${maratonCount  !== null ? ` (${maratonCount})` : ''}`,  bg: '#fdf4ff', color: '#7e22ce', border: '#d8b4fe', activeBg: '#7e22ce', activeColor: '#fff', activeBorder: '#7e22ce' },
+                ].map(opt => {
+                  const active = filtroEstrategia === opt.value;
+                  return (
+                    <button
+                      key={opt.value}
+                      onClick={() => setFiltroEstrategia(opt.value)}
+                      className="px-4 py-1.5 rounded-lg border text-xs font-semibold transition-all"
+                      style={active
+                        ? { background: opt.activeBg, color: opt.activeColor, borderColor: opt.activeBorder }
+                        : { background: opt.bg,       color: opt.color,       borderColor: opt.border }}
+                    >
+                      {active ? `✓ ${opt.label}` : opt.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
 
           {/* ✅ v1.76.0: Filtro Pacientes Nuevos + Selector de registros por página */}
           <div className="px-2 py-1">
