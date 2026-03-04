@@ -2311,15 +2311,20 @@ export default function Solicitudes({ categoriaInicial } = {}) {
                 value: filtroIpress,
                 onChange: (e) => setFiltroIpress(e.target.value),
                 options: (() => {
+                  const naEntry = estadisticasIpress.find(i => i.nombreIpress === 'N/A' && i.total > 0);
+                  // Fallback: detectar N/A desde datos locales (por si el cache no tiene esta entrada)
+                  const localNaCount = solicitudes.filter(s => !s.ipress || s.ipress === 'N/A').length;
+                  const naTotal = naEntry ? naEntry.total : (localNaCount > 0 ? localNaCount : null);
                   const opts = estadisticasIpress
                     .filter(i => i.total > 0 && i.nombreIpress && i.nombreIpress !== 'N/A')
                     .sort((a, b) => (a.nombreIpress || '').localeCompare(b.nombreIpress || '', 'es', { sensitivity: 'base' }))
                     .map(i => ({ label: `${i.nombreIpress} (${i.total})`, value: i.nombreIpress }));
-                  const naEntry = estadisticasIpress.find(i => i.nombreIpress === 'N/A' && i.total > 0);
+                  // En bolsa107 siempre mostrar N/A para poder identificar pacientes sin IPRESS
+                  const showNa = naTotal !== null || categoriaInicial === 'bolsa107';
                   return [
                     { label: `Todas (${totalElementos})`, value: "todas" },
-                    { label: `⚠️ Sin IPRESS (N/A)${naEntry ? ` (${naEntry.total})` : ''}`, value: "N/A" },
-                    ...opts
+                    ...(showNa ? [{ label: `⚠️ Sin IPRESS Adscripción${naTotal ? ` (${naTotal})` : ''}`, value: 'N/A' }] : []),
+                    ...opts,
                   ];
                 })()
               },
@@ -2328,16 +2333,18 @@ export default function Solicitudes({ categoriaInicial } = {}) {
                 searchable: true,
                 value: filtroIpressAtencion,
                 onChange: (e) => setFiltroIpressAtencion(e.target.value),
-                options: [
-                  { label: `Todas`, value: "todas" },
-                  ...estadisticasIpressAtencion
-                    .filter(i => i.total > 0)
+                options: (() => {
+                  const naEntry = estadisticasIpressAtencion.find(i => i.nombreIpress === 'N/A' && i.total > 0);
+                  const opts = estadisticasIpressAtencion
+                    .filter(i => i.total > 0 && i.nombreIpress !== 'N/A')
                     .sort((a, b) => (a.nombreIpress || '').localeCompare(b.nombreIpress || '', 'es', { sensitivity: 'base' }))
-                    .map(i => ({
-                      label: `${i.nombreIpress} (${i.total})`,
-                      value: i.nombreIpress
-                    }))
-                ]
+                    .map(i => ({ label: `${i.nombreIpress} (${i.total})`, value: i.nombreIpress }));
+                  return [
+                    { label: `Todas`, value: "todas" },
+                    ...(naEntry ? [{ label: `⚠️ Sin IPRESS Atención (${naEntry.total})`, value: 'N/A' }] : []),
+                    ...opts,
+                  ];
+                })()
               },
               {
                 name: "Estado de Gestora",
