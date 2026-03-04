@@ -178,6 +178,12 @@ export default function MisECGsRecientes({
       const filas = resultado.map((asegurado, i) => {
         const imagenes = asegurado.imagenes || [];
         const ultima = imagenes[imagenes.length - 1] || {};
+        // Buscar evaluación: primero en el campo principal del DTO, luego en cualquier imagen que la tenga
+        const evaluacion = asegurado.evaluacion_principal
+          || asegurado.evaluacionPrincipal
+          || imagenes.find(img => img.evaluacion && img.evaluacion !== 'SIN_EVALUAR')?.evaluacion
+          || ultima.evaluacion
+          || '-';
         return {
           '#': i + 1,
           'DNI': asegurado.numDocPaciente || ultima.numDocPaciente || '-',
@@ -186,7 +192,7 @@ export default function MisECGsRecientes({
           'Género': (asegurado.generoPaciente || ultima.generoPaciente) === 'M' ? 'Masculino' : (asegurado.generoPaciente || ultima.generoPaciente) === 'F' ? 'Femenino' : '-',
           'Estado': 'Atendida',
           'Cant. Imágenes': imagenes.length || 0,
-          'Evaluación': ultima.evaluacion || ultima.evaluacionPrincipal || '-',
+          'Evaluación': evaluacion,
           'Fecha EKG': ultima.fechaToma ? formatearFechaExcel(ultima.fechaToma) : '-',
           'Fecha Envío': ultima.fechaEnvio ? formatearFechaExcel(ultima.fechaEnvio) : '-',
         };
@@ -675,47 +681,8 @@ export default function MisECGsRecientes({
 
         {/* Grid responsive - Professional Stats Cards Compact */}
         <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 md:gap-4">
-          {/* Total Pacientes - Azul Índigo */}
-          <button
-            onClick={() => {
-              setFiltroEstado(null);
-              setFiltroEstadoReactivo('TODOS');
-              onFiltrosChange({ ...safeFilterosActuales, estado: 'TODOS' });
-            }}
-            className="relative overflow-hidden rounded-lg bg-gradient-to-br from-indigo-600 to-indigo-700 border border-indigo-700 p-2 sm:p-3 md:p-4 shadow-md hover:shadow-xl transition-all duration-300 hover:scale-105 text-left cursor-pointer"
-            title="Total de pacientes"
-          >
-            <div className="absolute top-0 right-0 w-12 sm:w-16 h-12 sm:h-16 bg-white/10 rounded-full -mr-6 sm:-mr-8 -mt-6 sm:-mt-8" />
-            <div className="relative z-10">
-              <div className="mb-1.5 sm:mb-2">
-                <div className="inline-flex p-1.5 sm:p-2 bg-white/20 rounded-lg">
-                  <BarChart3 className="w-3 h-3 sm:w-4 sm:h-4 md:w-5 md:h-5 text-white" strokeWidth={2.5} />
-                </div>
-              </div>
-              <div className="mb-0.5 sm:mb-1">
-                <span className="text-lg sm:text-2xl md:text-3xl font-bold text-white">
-                  {(estadisticas.cargadas || 0) + (estadisticas.observadas || 0) + (estadisticas.atendidas || 0)}
-                </span>
-              </div>
-              <span className="text-xs md:text-sm font-semibold text-white/90 line-clamp-2">
-                Total Pacientes
-              </span>
-            </div>
-          </button>
-
-          {/* Total Pacientes - Verde SATURADO (Par - Luz) */}
-          <button
-            onClick={() => {
-              setFiltroEstado(null);
-              setFiltroEstadoReactivo('TODOS');
-              setFiltroEvaluacion('TODOS');
-              onFiltrosChange({ ...safeFilterosActuales, estado: 'TODOS', evaluacion: 'TODOS' });
-            }}
-            className={`relative overflow-hidden rounded-lg bg-gradient-to-br from-emerald-500 to-emerald-600 border p-2 sm:p-3 md:p-4 shadow-md hover:shadow-xl transition-all duration-300 hover:scale-105 text-left cursor-pointer ${
-              filtroEstado === null ? 'border-white ring-2 ring-white' : 'border-emerald-600'
-            }`}
-            title="Total de pacientes con ECGs"
-          >
+          {/* Total de Pacientes - Verde SATURADO */}
+          <div className="relative overflow-hidden rounded-lg bg-gradient-to-br from-emerald-500 to-emerald-600 border border-emerald-600 p-2 sm:p-3 md:p-4 shadow-md">
             {/* Background decorativo */}
             <div className="absolute top-0 right-0 w-12 sm:w-16 h-12 sm:h-16 bg-white/10 rounded-full -mr-6 sm:-mr-8 -mt-6 sm:-mt-8" />
 
@@ -736,62 +703,36 @@ export default function MisECGsRecientes({
 
               {/* Etiqueta */}
               <span className="text-xs md:text-sm font-semibold text-white/90 line-clamp-2">
-                Pendientes
+                Total de Pacientes
               </span>
             </div>
-          </button>
+          </div>
 
-          {/* Pendiente - Gris Oscuro/Negro SATURADO - HIDDEN */}
-          <button hidden style={{display:"none"}}
-            onClick={() => {
-              setFiltroEstado('ENVIADA');
-              setFiltroEstadoReactivo('ENVIADA');
-              setFiltroEvaluacion('TODOS');
-              onFiltrosChange({ ...safeFilterosActuales, estado: 'ENVIADA', evaluacion: 'TODOS' });
-            }}
-            className={`relative overflow-hidden rounded-lg bg-gradient-to-br from-slate-700 to-slate-800 border p-2 sm:p-3 md:p-4 shadow-md hover:shadow-xl transition-all duration-300 hover:scale-105 text-left cursor-pointer ${
-              filtroEstado === 'ENVIADA' ? 'border-white ring-2 ring-white' : 'border-slate-800'
-            }`}
-            title="Filtrar por Pendiente"
-          >
-            {/* Background decorativo */}
+          {/* Pendientes - Azul */}
+          <div className="relative overflow-hidden rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 border border-blue-600 p-2 sm:p-3 md:p-4 shadow-md">
             <div className="absolute top-0 right-0 w-12 sm:w-16 h-12 sm:h-16 bg-white/10 rounded-full -mr-6 sm:-mr-8 -mt-6 sm:-mt-8" />
 
             <div className="relative z-10">
-              {/* Icono */}
               <div className="mb-1.5 sm:mb-2.5">
                 <div className="inline-flex p-1.5 sm:p-2 bg-white/20 rounded-lg">
                   <Eye className="w-3 h-3 sm:w-4 sm:h-4 md:w-5 md:h-5 text-white" strokeWidth={2.5} />
                 </div>
               </div>
 
-              {/* Número */}
               <div className="mb-0.5 sm:mb-1.5">
                 <span className="text-lg sm:text-2xl md:text-3xl font-bold text-white">
-                  {estadisticas.cargadas}
+                  {Math.max(0, (estadisticas.cargadas || 0) - (estadisticas.observadas || 0) - (estadisticas.atendidas || 0))}
                 </span>
               </div>
 
-              {/* Etiqueta */}
               <span className="text-xs md:text-sm font-semibold text-white/90 line-clamp-2">
-                Pacientes pendientes
+                Pendientes
               </span>
             </div>
-          </button>
+          </div>
 
-          {/* Observadas - Ámbar SATURADO (Impar - Oscuro) */}
-          <button
-            onClick={() => {
-              setFiltroEstado('OBSERVADA');
-              setFiltroEstadoReactivo('OBSERVADA');
-              setFiltroEvaluacion('TODOS');
-              onFiltrosChange({ ...safeFilterosActuales, estado: 'OBSERVADA', evaluacion: 'TODOS' });
-            }}
-            className={`relative overflow-hidden rounded-lg bg-gradient-to-br from-orange-500 to-orange-600 border p-2 sm:p-3 md:p-4 shadow-md hover:shadow-xl transition-all duration-300 hover:scale-105 text-left cursor-pointer ${
-              filtroEstado === 'OBSERVADA' ? 'border-white ring-2 ring-white' : 'border-orange-600'
-            }`}
-            title="Filtrar por Observadas"
-          >
+          {/* Observadas - Ámbar SATURADO */}
+          <div className="relative overflow-hidden rounded-lg bg-gradient-to-br from-orange-500 to-orange-600 border border-orange-600 p-2 sm:p-3 md:p-4 shadow-md">
             {/* Background decorativo */}
             <div className="absolute top-0 right-0 w-12 sm:w-16 h-12 sm:h-16 bg-white/10 rounded-full -mr-6 sm:-mr-8 -mt-6 sm:-mt-8" />
 
@@ -815,20 +756,10 @@ export default function MisECGsRecientes({
                 Observadas
               </span>
             </div>
-          </button>
+          </div>
 
-          {/* Atendidas - Teal CLARO (Par - Luz) */}
-          <button
-            onClick={() => {
-              setFiltroEstado('ATENDIDA');
-              setFiltroEstadoReactivo('ATENDIDA');
-              onFiltrosChange({ ...safeFilterosActuales, estado: 'ATENDIDA' });
-            }}
-            className={`relative overflow-hidden rounded-lg bg-gradient-to-br from-teal-50 to-teal-100 border p-2 sm:p-3 md:p-4 shadow-sm hover:shadow-lg transition-all duration-300 hover:scale-105 text-left cursor-pointer ${
-              filtroEstado === 'ATENDIDA' ? 'border-teal-700 ring-2 ring-teal-700' : 'border-teal-200'
-            }`}
-            title="Filtrar por Atendidas"
-          >
+          {/* Atendidas - Teal CLARO */}
+          <div className="relative overflow-hidden rounded-lg bg-gradient-to-br from-teal-50 to-teal-100 border border-teal-200 p-2 sm:p-3 md:p-4 shadow-sm">
             {/* Background decorativo */}
             <div className="absolute top-0 right-0 w-12 sm:w-16 h-12 sm:h-16 bg-teal-200/30 rounded-full -mr-6 sm:-mr-8 -mt-6 sm:-mt-8" />
 
@@ -852,7 +783,7 @@ export default function MisECGsRecientes({
                 Atendidas
               </span>
             </div>
-          </button>
+          </div>
         </div>
       </div>
 
@@ -1458,7 +1389,7 @@ export default function MisECGsRecientes({
             )}
           </button>
           <p className="text-xs text-gray-600 text-center">
-            Hay más registros disponibles. Total: <span className="font-bold">{totalElementos}</span> pacientes
+            Hay más registros disponibles. Total: <span className="font-bold">{totalElementos}</span> imágenes de EKG
           </p>
         </div>
       )}
