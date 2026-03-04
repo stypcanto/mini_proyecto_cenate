@@ -134,9 +134,9 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
                sb.tipo_documento, sb.fecha_nacimiento, sb.paciente_sexo,
                sb.paciente_telefono, sb.paciente_telefono_alterno,
                sb.paciente_email,
-               sb.codigo_ipress, sb.tipo_cita,
+               di.cod_ipress, sb.tipo_cita,
                sb.id_bolsa, tb.desc_tipo_bolsa,
-               sb.id_servicio, COALESCE(sb.codigo_adscripcion, di.cod_ipress) as codigo_adscripcion, sb.id_ipress,
+               sb.id_servicio, di.cod_ipress as codigo_adscripcion, sb.id_ipress,
                sb.estado, COALESCE(deg.cod_estado_cita, 'PENDIENTE_CITA') as cod_estado_cita,
                COALESCE(deg.desc_estado_cita, 'Paciente nuevo que ingresó a la bolsa') as desc_estado_cita,
                sb.fecha_solicitud, sb.fecha_actualizacion,
@@ -175,9 +175,9 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
                sb.tipo_documento, sb.fecha_nacimiento, sb.paciente_sexo,
                sb.paciente_telefono, sb.paciente_telefono_alterno,
                sb.paciente_email,
-               sb.codigo_ipress, sb.tipo_cita,
+               di.cod_ipress, sb.tipo_cita,
                sb.id_bolsa, tb.desc_tipo_bolsa,
-               sb.id_servicio, COALESCE(sb.codigo_adscripcion, di.cod_ipress) as codigo_adscripcion, sb.id_ipress,
+               sb.id_servicio, di.cod_ipress as codigo_adscripcion, sb.id_ipress,
                sb.estado, COALESCE(deg.cod_estado_cita, 'PENDIENTE_CITA') as cod_estado_cita,
                COALESCE(deg.desc_estado_cita, 'Paciente nuevo que ingresó a la bolsa') as desc_estado_cita,
                sb.fecha_solicitud, sb.fecha_actualizacion,
@@ -236,9 +236,9 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
                sb.tipo_documento, sb.fecha_nacimiento, sb.paciente_sexo,
                sb.paciente_telefono, sb.paciente_telefono_alterno,
                sb.paciente_email,
-               sb.codigo_ipress, sb.tipo_cita,
+               di.cod_ipress, sb.tipo_cita,
                sb.id_bolsa, tb.desc_tipo_bolsa,
-               sb.id_servicio, COALESCE(sb.codigo_adscripcion, di.cod_ipress) as codigo_adscripcion, sb.id_ipress,
+               sb.id_servicio, di.cod_ipress as codigo_adscripcion, sb.id_ipress,
                sb.estado, COALESCE(deg.cod_estado_cita, 'PENDIENTE_CITA') as cod_estado_cita,
                COALESCE(deg.desc_estado_cita, 'Paciente nuevo que ingresó a la bolsa') as desc_estado_cita,
                sb.fecha_solicitud, sb.fecha_actualizacion,
@@ -605,7 +605,7 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
      */
     @Query(value = """
         SELECT
-            sb.codigo_ipress,
+            di.cod_ipress as codigo_ipress,
             di.desc_ipress as nombre_ipress,
             dr.desc_red as red_asistencial,
             COUNT(sb.id_solicitud) as total,
@@ -618,11 +618,11 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
             ) as tasa_completacion,
             ROW_NUMBER() OVER (ORDER BY COUNT(sb.id_solicitud) DESC) as ranking
         FROM dim_solicitud_bolsa sb
-        LEFT JOIN dim_ipress di ON sb.codigo_ipress = di.cod_ipress
+        LEFT JOIN dim_ipress di ON sb.id_ipress = di.id_ipress
         LEFT JOIN dim_red dr ON di.id_red = dr.id_red
         LEFT JOIN dim_estados_gestion_citas dgc ON sb.estado_gestion_citas_id = dgc.id_estado_cita
-        WHERE sb.activo = true AND sb.codigo_ipress IS NOT NULL
-        GROUP BY sb.codigo_ipress, di.desc_ipress, dr.desc_red
+        WHERE sb.activo = true AND sb.id_ipress IS NOT NULL
+        GROUP BY di.cod_ipress, di.desc_ipress, dr.desc_red
         ORDER BY total DESC
         """, nativeQuery = true)
     List<Map<String, Object>> estadisticasPorIpress();
@@ -871,7 +871,7 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
         WHERE s.idBolsa = 107 AND s.activo = true
         AND COALESCE(:dni, '') = '' OR s.pacienteDni LIKE CONCAT('%', :dni, '%')
         AND COALESCE(:nombre, '') = '' OR LOWER(s.pacienteNombre) LIKE LOWER(CONCAT('%', :nombre, '%'))
-        AND COALESCE(:codigoIpress, '') = '' OR s.codigoAdscripcion = :codigoIpress
+        AND (COALESCE(:codigoIpress, '') = '' OR s.idIpress IN (SELECT di.idIpress FROM Ipress di WHERE di.codIpress = :codigoIpress))
         AND :estadoId IS NULL OR s.estadoGestionCitasId = :estadoId
         AND :fechaDesde IS NULL OR s.fechaSolicitud >= :fechaDesde
         AND :fechaHasta IS NULL OR s.fechaSolicitud <= :fechaHasta
@@ -948,7 +948,8 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
      */
     @Query(value = """
         SELECT
-            s.codigo_adscripcion as codigo_ipress,
+            di.cod_ipress as codigo_ipress,
+            di.desc_ipress as nombre_ipress,
             COUNT(s.id_solicitud) as total,
             COUNT(CASE WHEN d.cod_estado_cita = 'ATENDIDO' THEN 1 END) as atendidos,
             COUNT(CASE WHEN d.cod_estado_cita = 'PENDIENTE' THEN 1 END) as pendientes,
@@ -958,8 +959,9 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
             ) as tasa_completacion
         FROM dim_solicitud_bolsa s
         LEFT JOIN dim_estados_gestion_citas d ON s.estado_gestion_citas_id = d.id_estado_cita
-        WHERE s.id_bolsa = 107 AND s.activo = true
-        GROUP BY s.codigo_adscripcion
+        LEFT JOIN dim_ipress di ON s.id_ipress = di.id_ipress
+        WHERE s.id_bolsa = 107 AND s.activo = true AND s.id_ipress IS NOT NULL
+        GROUP BY di.cod_ipress, di.desc_ipress
         ORDER BY total DESC
         LIMIT 10
         """, nativeQuery = true)
@@ -1035,7 +1037,7 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
             COALESCE(dm.desc_macro, 'Sin asignar') as macrorregion,
             COUNT(sb.id_solicitud) as cantidad
         FROM dim_solicitud_bolsa sb
-        LEFT JOIN dim_ipress di ON sb.codigo_ipress = di.cod_ipress
+        LEFT JOIN dim_ipress di ON sb.id_ipress = di.id_ipress
         LEFT JOIN dim_red dr ON di.id_red = dr.id_red
         LEFT JOIN dim_macroregion dm ON dr.id_macro = dm.id_macro
         WHERE sb.activo = true
@@ -1054,7 +1056,7 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
             COALESCE(dr.desc_red, 'Sin asignar') as red,
             COUNT(sb.id_solicitud) as cantidad
         FROM dim_solicitud_bolsa sb
-        LEFT JOIN dim_ipress di ON sb.codigo_ipress = di.cod_ipress
+        LEFT JOIN dim_ipress di ON sb.id_ipress = di.id_ipress
         LEFT JOIN dim_red dr ON di.id_red = dr.id_red
         WHERE sb.activo = true
         GROUP BY dr.desc_red
@@ -1670,9 +1672,9 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
                sb.tipo_documento, sb.fecha_nacimiento, sb.paciente_sexo,
                sb.paciente_telefono, sb.paciente_telefono_alterno,
                sb.paciente_email,
-               sb.codigo_ipress, sb.tipo_cita,
+               di.cod_ipress, sb.tipo_cita,
                sb.id_bolsa, tb.desc_tipo_bolsa,
-               sb.id_servicio, COALESCE(sb.codigo_adscripcion, di.cod_ipress) as codigo_adscripcion, sb.id_ipress,
+               sb.id_servicio, di.cod_ipress as codigo_adscripcion, sb.id_ipress,
                sb.estado, COALESCE(deg.cod_estado_cita, 'PENDIENTE_CITA') as cod_estado_cita,
                COALESCE(deg.desc_estado_cita, 'Paciente nuevo que ingresó a la bolsa') as desc_estado_cita,
                sb.fecha_solicitud, sb.fecha_actualizacion,

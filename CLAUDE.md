@@ -1,9 +1,9 @@
 # CLAUDE.md - Proyecto CENATE
 
 > **Sistema de Telemedicina - EsSalud Perú**
-> **Versión:** v1.82.6 (2026-03-02) 🚀
-> **Última Feature:** v1.82.6 - Trazabilidad completa (quién ejecuta cada acción) + badge CENACRON en citas ✅ (2026-03-02)
-> **Última Feature Base:** v1.82.5 - IPRESS muestra nombre en lugar de código numérico ✅ (2026-03-02)
+> **Versión:** v1.83.5 (2026-03-03) 🚀
+> **Última Feature:** v1.83.5 - Fix constraint unique bolsas: incluir especialidad en clave única (V6_25_0) ✅ (2026-03-03)
+> **Última Feature Base:** v1.82.x - Refactor arquitectura IPRESS: id_ipress + id_ipress_atencion como única fuente de verdad ✅ (2026-03-03)
 > **Status:** ✅ Production Ready
 
 ---
@@ -133,6 +133,51 @@ Frontend (React 19):
 ├─ /bolsas/modulo107/pacientes-de-107      ← Módulo 107
 ├─ /dengue/buscar                          ← Dengue
 └─ /bolsas/[futuro]/*                      ← Escalable
+```
+
+---
+
+## 🏥 ARQUITECTURA IPRESS — Fuente de Verdad (v1.82.x)
+
+**⭐ Documento Maestro:** [`spec/database/15_arquitectura_ipress_refactor.md`](spec/database/15_arquitectura_ipress_refactor.md)
+
+### ⚠️ REGLA CRÍTICA — Solo usar FKs
+
+`dim_solicitud_bolsa` tiene **2 FKs** como única fuente de verdad para IPRESS:
+
+```
+id_ipress          BIGINT FK → dim_ipress  ← IPRESS adscripción (origen del paciente)
+id_ipress_atencion BIGINT FK → dim_ipress  ← IPRESS atención (donde se atiende)
+```
+
+**NUNCA leer estas columnas obsoletas** (existen solo para backup hasta autorización de drop):
+- ~~`codigo_adscripcion`~~ — deprecated, sync automático vía trigger bidireccional
+- ~~`codigo_ipress`~~ — deprecated, duplicado exacto de `codigo_adscripcion`
+
+### JOIN correcto en queries
+
+```sql
+LEFT JOIN dim_ipress di ON sb.id_ipress = di.id_ipress          -- adscripción
+LEFT JOIN dim_ipress di2 ON sb.id_ipress_atencion = di2.id_ipress -- atención
+```
+
+### Trigger activo en BD
+
+`trg_sync_ipress_bidireccional` (función `fn_sync_ipress_bidireccional`) mantiene `codigo_adscripcion` y `codigo_ipress` en sync automáticamente como backup.
+
+### Migraciones ejecutadas
+
+| Migración | Descripción |
+|-----------|-------------|
+| `V6_22_0` | Backfill `id_ipress`: LPAD normalización + resolución directa + vía asegurados (736 registros) |
+| `V6_23_0` | Trigger unidireccional: `id_ipress` → texto (reemplazado) |
+| `V6_24_0` | Trigger bidireccional: `id_ipress ↔ codigo_adscripcion` |
+
+### Fase B (pendiente backup)
+
+```sql
+ALTER TABLE dim_solicitud_bolsa DROP COLUMN codigo_adscripcion;
+ALTER TABLE dim_solicitud_bolsa DROP COLUMN codigo_ipress;
 ```
 
 ---
@@ -295,7 +340,9 @@ Módulo para gestionar los períodos durante los cuales los médicos registran s
 **👉 Ver historial completo:** [`CHANGELOG-VERSIONES.md`](CHANGELOG-VERSIONES.md)
 
 Versiones recientes:
-- **v1.82.6** - Trazabilidad completa (quién ejecuta cada acción) + badge CENACRON en citas + fix auditoría anulación ✅ (2026-03-02) 🆕
+- **v1.83.5** - Fix constraint `ux_solicitud_paciente_servicio_otras_bolsas`: incluir `especialidad` en clave única — Flyway V6_25_0 ✅ (2026-03-03) 🆕
+- **v1.82.x** - Refactor arquitectura IPRESS: id_ipress + id_ipress_atencion como única fuente de verdad — V6_22_0/23_0/24_0 + 13 queries + 4 service methods ✅ (2026-03-03)
+- **v1.82.6** - Trazabilidad completa (quién ejecuta cada acción) + badge CENACRON en citas + fix auditoría anulación ✅ (2026-03-02)
 - **v1.82.5** - IPRESS muestra nombre en lugar de código numérico ✅ (2026-03-02)
 - **v1.82.4** - IPRESS ATENCIÓN corregida en panel citas agendadas ✅ (2026-03-02)
 - **v1.82.3** - Flyway V6_10_0: normalizar especialidades con paréntesis ✅ (2026-03-02)

@@ -3158,10 +3158,14 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
             }
         }
 
-        // IPRESS adscripción desde map (sin query por fila)
+        // IPRESS adscripción desde map (sin query por fila) — fuente: id_ipress FK
+        String codIpressAds = null;
         if (solicitud.getIdIpress() != null) {
             Ipress ipress = ipressMap.get(solicitud.getIdIpress());
-            if (ipress != null) descIpress = ipress.getDescIpress();
+            if (ipress != null) {
+                descIpress = ipress.getDescIpress();
+                codIpressAds = ipress.getCodIpress();
+            }
         }
 
         // IPRESS atención desde map — prioridad en columna IPRESS del frontend
@@ -3204,14 +3208,14 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
             .pacienteTelefonoAlterno(pacienteTelefonoAlterno)
             .pacienteEmail(solicitud.getPacienteEmail())
             .pacienteEdad(calcularEdad(fechaNacimiento))
-            .codigoIpressAdscripcion(solicitud.getCodigoIpressAdscripcion())
+            .codigoIpressAdscripcion(codIpressAds)
             .tipoCita(solicitud.getTipoCita())
             .tiempoInicioSintomas(solicitud.getTiempoInicioSintomas())
             .consentimientoInformado(solicitud.getConsentimientoInformado())
             .idBolsa(solicitud.getIdBolsa())
             .descTipoBolsa(descTipoBolsa)
             .idServicio(solicitud.getIdServicio())
-            .codigoAdscripcion(solicitud.getCodigoAdscripcion())
+            .codigoAdscripcion(codIpressAds)
             .idIpress(solicitud.getIdIpress())
             .descIpress(descIpress)
             .idIpressAtencion(solicitud.getIdIpressAtencion())
@@ -3298,12 +3302,14 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
             }
         }
 
-        // Enriquecer con descripción de IPRESS si existe (después de enriquecimiento)
+        // Enriquecer con descripción e código de IPRESS — fuente: id_ipress FK
+        String codIpressAdsMap = null;
         if (solicitud.getIdIpress() != null) {
             try {
                 Ipress ipress = ipressRepository.findById(solicitud.getIdIpress()).orElse(null);
                 if (ipress != null) {
                     descIpress = ipress.getDescIpress();
+                    codIpressAdsMap = ipress.getCodIpress();
                 }
             } catch (Exception e) {
                 log.warn("⚠️ No se pudo cargar descripción de IPRESS: {}", e.getMessage());
@@ -3344,14 +3350,14 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
             .pacienteTelefonoAlterno(pacienteTelefonoAlterno)
             .pacienteEmail(solicitud.getPacienteEmail())
             .pacienteEdad(calcularEdad(fechaNacimiento))
-            .codigoIpressAdscripcion(solicitud.getCodigoIpressAdscripcion())
+            .codigoIpressAdscripcion(codIpressAdsMap)
             .tipoCita(solicitud.getTipoCita())
             .tiempoInicioSintomas(solicitud.getTiempoInicioSintomas())
             .consentimientoInformado(solicitud.getConsentimientoInformado())
             .idBolsa(solicitud.getIdBolsa())
             .descTipoBolsa(descTipoBolsa)
             .idServicio(solicitud.getIdServicio())
-            .codigoAdscripcion(solicitud.getCodigoAdscripcion())
+            .codigoAdscripcion(codIpressAdsMap)
             .idIpress(solicitud.getIdIpress())
             .descIpress(descIpress)
             .estado(solicitud.getEstado())
