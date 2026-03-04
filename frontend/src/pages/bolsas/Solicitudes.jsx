@@ -2310,16 +2310,18 @@ export default function Solicitudes({ categoriaInicial } = {}) {
                 searchable: true,
                 value: filtroIpress,
                 onChange: (e) => setFiltroIpress(e.target.value),
-                options: [
-                  { label: `Todas (${totalElementos})`, value: "todas" },
-                  ...estadisticasIpress
-                    .filter(i => i.total > 0)
+                options: (() => {
+                  const opts = estadisticasIpress
+                    .filter(i => i.total > 0 && i.nombreIpress && i.nombreIpress !== 'N/A')
                     .sort((a, b) => (a.nombreIpress || '').localeCompare(b.nombreIpress || '', 'es', { sensitivity: 'base' }))
-                    .map(i => ({
-                      label: `${i.nombreIpress} (${i.total})`,
-                      value: i.nombreIpress
-                    }))
-                ]
+                    .map(i => ({ label: `${i.nombreIpress} (${i.total})`, value: i.nombreIpress }));
+                  const naEntry = estadisticasIpress.find(i => i.nombreIpress === 'N/A' && i.total > 0);
+                  return [
+                    { label: `Todas (${totalElementos})`, value: "todas" },
+                    { label: `⚠️ Sin IPRESS (N/A)${naEntry ? ` (${naEntry.total})` : ''}`, value: "N/A" },
+                    ...opts
+                  ];
+                })()
               },
               {
                 name: "IPRESS - Atención",
