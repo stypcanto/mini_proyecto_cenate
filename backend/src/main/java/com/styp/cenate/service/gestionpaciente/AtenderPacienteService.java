@@ -145,22 +145,43 @@ public class AtenderPacienteService {
             }
 
             // 4. Crear bolsa Interconsulta por cada especialidad (múltiples — v1.75.0)
-            if (request.getTieneInterconsulta() != null && request.getTieneInterconsulta()
-                    && request.getInterconsultaEspecialidad() != null
-                    && !request.getInterconsultaEspecialidad().isBlank()) {
+            // ✅ v1.84.0: Usar interconsultaItems (con idMotivo) si está presente; fallback a string
+            if (request.getTieneInterconsulta() != null && request.getTieneInterconsulta()) {
 
-                String[] especialidades = request.getInterconsultaEspecialidad().split(",");
-                for (String esp : especialidades) {
-                    String especialidadTrimmed = esp.trim();
-                    if (especialidadTrimmed.isEmpty()) continue;
+                if (request.getInterconsultaItems() != null && !request.getInterconsultaItems().isEmpty()) {
+                    // ✅ v1.84.0: Ruta estructurada — cada item trae especialidad + idMotivo
+                    for (AtenderPacienteRequest.InterconsultaItemDTO item : request.getInterconsultaItems()) {
+                        String especialidadTrimmed = item.getEspecialidad() != null ? item.getEspecialidad().trim() : "";
+                        if (especialidadTrimmed.isEmpty()) continue;
 
-                    if (existeInterconsultaParaPaciente(solicitudOriginal.getPacienteDni(), especialidadTrimmed)) {
-                        log.warn("⚠️ [v1.75.0] Interconsulta de '{}' ya existe para el paciente: {}",
-                                especialidadTrimmed, solicitudOriginal.getPacienteDni());
-                        interconsultasOmitidas.add(especialidadTrimmed);
-                    } else {
-                        crearBolsaInterconsultaConTransaccion(solicitudOriginal, especialidadTrimmed, idAtencionClinica, pkAseguradoFinal);
-                        log.info("✅ [v1.75.0] Nueva bolsa INTERCONSULTA creada para especialidad: '{}'", especialidadTrimmed);
+                        if (existeInterconsultaParaPaciente(solicitudOriginal.getPacienteDni(), especialidadTrimmed)) {
+                            log.warn("⚠️ [v1.84.0] Interconsulta de '{}' ya existe para el paciente: {}",
+                                    especialidadTrimmed, solicitudOriginal.getPacienteDni());
+                            interconsultasOmitidas.add(especialidadTrimmed);
+                        } else {
+                            crearBolsaInterconsultaConTransaccion(solicitudOriginal, especialidadTrimmed,
+                                    idAtencionClinica, pkAseguradoFinal, item.getIdMotivo());
+                            log.info("✅ [v1.84.0] INTERCONSULTA creada — especialidad: '{}', idMotivo: {}",
+                                    especialidadTrimmed, item.getIdMotivo());
+                        }
+                    }
+                } else if (request.getInterconsultaEspecialidad() != null
+                        && !request.getInterconsultaEspecialidad().isBlank()) {
+                    // Fallback legacy: solo string, sin idMotivo
+                    String[] especialidades = request.getInterconsultaEspecialidad().split(",");
+                    for (String esp : especialidades) {
+                        String especialidadTrimmed = esp.trim();
+                        if (especialidadTrimmed.isEmpty()) continue;
+
+                        if (existeInterconsultaParaPaciente(solicitudOriginal.getPacienteDni(), especialidadTrimmed)) {
+                            log.warn("⚠️ [v1.75.0] Interconsulta de '{}' ya existe para el paciente: {}",
+                                    especialidadTrimmed, solicitudOriginal.getPacienteDni());
+                            interconsultasOmitidas.add(especialidadTrimmed);
+                        } else {
+                            crearBolsaInterconsultaConTransaccion(solicitudOriginal, especialidadTrimmed,
+                                    idAtencionClinica, pkAseguradoFinal, null);
+                            log.info("✅ [v1.75.0] Nueva bolsa INTERCONSULTA creada para especialidad: '{}'", especialidadTrimmed);
+                        }
                     }
                 }
             }
@@ -184,8 +205,8 @@ public class AtenderPacienteService {
     }
 
     @Transactional
-    private void crearBolsaInterconsultaConTransaccion(SolicitudBolsa solicitudOriginal, String especialidad, Long idAtencionClinica, String pkAsegurado) {
-        crearBolsaInterconsulta(solicitudOriginal, especialidad, idAtencionClinica, pkAsegurado);
+    private void crearBolsaInterconsultaConTransaccion(SolicitudBolsa solicitudOriginal, String especialidad, Long idAtencionClinica, String pkAsegurado, Long idMotivoInterconsulta) {
+        crearBolsaInterconsulta(solicitudOriginal, especialidad, idAtencionClinica, pkAsegurado, idMotivoInterconsulta);
     }
 
     /**
@@ -277,8 +298,8 @@ public class AtenderPacienteService {
         }
     }
 
-    public void crearBolsaInterconsulta(SolicitudBolsa solicitudOriginal, String especialidad, Long idAtencionClinica, String pkAsegurado) {
-        log.info("📋 [v1.47.1] Creando bolsa INTERCONSULTA para especialidad: {}", especialidad);
+    public void crearBolsaInterconsulta(SolicitudBolsa solicitudOriginal, String especialidad, Long idAtencionClinica, String pkAsegurado, Long idMotivoInterconsulta) {
+        log.info("📋 [v1.84.0] Creando bolsa INTERCONSULTA — especialidad: {}, idMotivo: {}", especialidad, idMotivoInterconsulta);
 
         // ✅ v1.75.0: usa BOLSA_GENERADA_X_PROFESIONAL (11) — igual que RECITA
         // El UNIQUE constraint antiguo fue resuelto (1 fila por especialidad), ya no se necesita BOLSA_GESTORA (10)
@@ -324,6 +345,8 @@ public class AtenderPacienteService {
                 .fechaAsignacion(OffsetDateTime.now())
                 .fechaPreferidaNoAtendida(fechaPreferidaInterconsulta.toLocalDate()) // ✅ Fecha preferida (hoy + 30 días)
                 .idsolicitudgeneracion(solicitudOriginal.getIdSolicitud()) // ✅ FK trazabilidad
+                .idSolicitudPadre(solicitudOriginal.getIdSolicitud())      // ✅ v1.84.0: FK solicitud padre
+                .idMotivoInterconsulta(idMotivoInterconsulta)              // ✅ v1.84.0: FK motivo interconsulta
                 // id_personal = NULL: el coordinador asignará al profesional desde /bolsas/solicitudespendientes
                 // La trazabilidad del creador se obtiene via id_atencion_clinica.id_personal_creador
                 .idAtencionClinica(idAtencionClinica) // ✅ v6.0.0: FK directa → atencion_clinica
@@ -332,8 +355,9 @@ public class AtenderPacienteService {
 
         try {
             solicitudBolsaRepository.save(bolsaInterconsulta);
-            log.info("✅ Bolsa INTERCONSULTA creada: {} para especialidad: {} - idServicio: {}",
-                    bolsaInterconsulta.getIdSolicitud(), especialidad, idServicioInterconsulta);
+            log.info("✅ Bolsa INTERCONSULTA creada: {} para especialidad: {} - idServicio: {} - idMotivo: {} - idSolicitudPadre: {}",
+                    bolsaInterconsulta.getIdSolicitud(), especialidad, idServicioInterconsulta,
+                    idMotivoInterconsulta, solicitudOriginal.getIdSolicitud());
         } catch (Exception e) {
             log.error("❌ [v1.103.5] Error CRÍTICO creando bolsa Interconsulta: {}", e.getMessage(), e);
             throw new RuntimeException("Error creando bolsa de Interconsulta: " + e.getMessage(), e);

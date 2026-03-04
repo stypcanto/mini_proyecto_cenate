@@ -1997,7 +1997,12 @@ export default function MisPacientes() {
           : listaFinal.includes(interconsultaSelector);
         if (!yaAgregada) {
           if (esEnfermeria && interconsultaMotivoSelector) {
-            listaFinal = [...listaFinal, { especialidad: interconsultaSelector, motivo: interconsultaMotivoSelector }];
+            const motivoObj = motivosInterconsulta.find(m => m.descripcion === interconsultaMotivoSelector);
+            listaFinal = [...listaFinal, {
+              especialidad: interconsultaSelector,
+              motivo: interconsultaMotivoSelector,
+              idMotivo: motivoObj?.id ?? motivoObj?.idMotivo ?? null,
+            }];
           } else if (!esEnfermeria) {
             listaFinal = [...listaFinal, interconsultaSelector];
           }
@@ -2012,6 +2017,12 @@ export default function MisPacientes() {
           ? (esEnfermeria
               ? listaFinal.map(item => `${item.especialidad} (${item.motivo})`).join(', ')
               : listaFinal.join(', '))
+          : null,
+        // ✅ v1.84.0: Lista estructurada con idMotivo para FK id_motivo_interconsulta
+        interconsultaItems: (tieneInterconsulta && listaFinal.length > 0)
+          ? listaFinal.map(item => typeof item === 'string'
+              ? { especialidad: item, idMotivo: null, motivo: null }
+              : { especialidad: item.especialidad, idMotivo: item.idMotivo ?? null, motivo: item.motivo ?? null })
           : null,
         esCronico,
         enfermedades: esCronico ? enfermedadesCronicas : [],
@@ -3460,7 +3471,12 @@ export default function MisPacientes() {
                                 disabled={!interconsultaMotivoSelector}
                                 onClick={() => {
                                   if (interconsultaSelector && interconsultaMotivoSelector) {
-                                    setInterconsultasLista(prev => [...prev, { especialidad: interconsultaSelector, motivo: interconsultaMotivoSelector }]);
+                                    const motivoObj = motivosInterconsulta.find(m => m.descripcion === interconsultaMotivoSelector);
+                                    setInterconsultasLista(prev => [...prev, {
+                                      especialidad: interconsultaSelector,
+                                      motivo: interconsultaMotivoSelector,
+                                      idMotivo: motivoObj?.id ?? motivoObj?.idMotivo ?? null,
+                                    }]);
                                     setInterconsultaSelector('');
                                     setInterconsultaMotivoSelector('');
                                   }
