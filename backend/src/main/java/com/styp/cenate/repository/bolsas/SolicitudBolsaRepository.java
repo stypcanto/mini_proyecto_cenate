@@ -271,7 +271,7 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
           AND (CAST(:bolsaNombre AS VARCHAR) IS NULL OR POSITION(',' || LOWER(COALESCE(tb.desc_tipo_bolsa, '')) || ',' IN ',' || LOWER(CAST(:bolsaNombre AS VARCHAR)) || ',') > 0)
           AND (CAST(:macrorregion AS VARCHAR) IS NULL OR dm.desc_macro = CAST(:macrorregion AS VARCHAR))
           AND (CAST(:red AS VARCHAR) IS NULL OR dr.desc_red = CAST(:red AS VARCHAR))
-          AND (CAST(:ipress AS VARCHAR) IS NULL OR di.desc_ipress = CAST(:ipress AS VARCHAR))
+          AND (CAST(:ipress AS VARCHAR) IS NULL OR (CAST(:ipress AS VARCHAR) = 'N/A' AND di.desc_ipress IS NULL) OR di.desc_ipress = CAST(:ipress AS VARCHAR))
           AND (CAST(:especialidad AS VARCHAR) IS NULL OR LOWER(COALESCE(sb.especialidad, '')) LIKE LOWER(CONCAT('%', CAST(:especialidad AS VARCHAR), '%')))
           AND (CAST(:estadoCodigo AS VARCHAR) IS NULL OR POSITION(',' || UPPER(COALESCE(deg.cod_estado_cita, 'PENDIENTE_CITA')) || ',' IN ',' || UPPER(CAST(:estadoCodigo AS VARCHAR)) || ',') > 0)
           AND (CAST(:ipressAtencion AS VARCHAR) IS NULL OR LOWER(COALESCE(di2.desc_ipress, '')) LIKE LOWER(CONCAT('%', CAST(:ipressAtencion AS VARCHAR), '%')))
@@ -335,7 +335,7 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
           AND (CAST(:bolsaNombre AS VARCHAR) IS NULL OR POSITION(',' || LOWER(COALESCE(tb.desc_tipo_bolsa, '')) || ',' IN ',' || LOWER(CAST(:bolsaNombre AS VARCHAR)) || ',') > 0)
           AND (CAST(:macrorregion AS VARCHAR) IS NULL OR dm.desc_macro = CAST(:macrorregion AS VARCHAR))
           AND (CAST(:red AS VARCHAR) IS NULL OR dr.desc_red = CAST(:red AS VARCHAR))
-          AND (CAST(:ipress AS VARCHAR) IS NULL OR di.desc_ipress = CAST(:ipress AS VARCHAR))
+          AND (CAST(:ipress AS VARCHAR) IS NULL OR (CAST(:ipress AS VARCHAR) = 'N/A' AND di.desc_ipress IS NULL) OR di.desc_ipress = CAST(:ipress AS VARCHAR))
           AND (CAST(:especialidad AS VARCHAR) IS NULL OR LOWER(COALESCE(sb.especialidad, '')) LIKE LOWER(CONCAT('%', CAST(:especialidad AS VARCHAR), '%')))
           AND (CAST(:estadoCodigo AS VARCHAR) IS NULL OR POSITION(',' || UPPER(COALESCE(deg.cod_estado_cita, 'PENDIENTE_CITA')) || ',' IN ',' || UPPER(CAST(:estadoCodigo AS VARCHAR)) || ',') > 0)
           AND (CAST(:ipressAtencion AS VARCHAR) IS NULL OR LOWER(COALESCE(di2.desc_ipress, '')) LIKE LOWER(CONCAT('%', CAST(:ipressAtencion AS VARCHAR), '%')))
@@ -466,7 +466,7 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
           AND (CAST(:bolsaNombre    AS VARCHAR) IS NULL OR POSITION(',' || LOWER(COALESCE(tb.desc_tipo_bolsa,'')) || ',' IN ',' || LOWER(CAST(:bolsaNombre AS VARCHAR)) || ',') > 0)
           AND (CAST(:macrorregion   AS VARCHAR) IS NULL OR dm.desc_macro   = CAST(:macrorregion AS VARCHAR))
           AND (CAST(:red            AS VARCHAR) IS NULL OR dr.desc_red     = CAST(:red AS VARCHAR))
-          AND (CAST(:ipress         AS VARCHAR) IS NULL OR di.desc_ipress  = CAST(:ipress AS VARCHAR))
+          AND (CAST(:ipress         AS VARCHAR) IS NULL OR (CAST(:ipress AS VARCHAR) = 'N/A' AND di.desc_ipress IS NULL) OR di.desc_ipress = CAST(:ipress AS VARCHAR))
           AND (CAST(:especialidad   AS VARCHAR) IS NULL OR LOWER(COALESCE(sb.especialidad,'')) LIKE LOWER(CONCAT('%', CAST(:especialidad AS VARCHAR), '%')))
           AND (CAST(:estadoCodigo   AS VARCHAR) IS NULL OR POSITION(',' || UPPER(COALESCE(dgc.cod_estado_cita,'PENDIENTE_CITA')) || ',' IN ',' || UPPER(CAST(:estadoCodigo AS VARCHAR)) || ',') > 0)
           AND (CAST(:ipressAtencion AS VARCHAR) IS NULL OR LOWER(COALESCE(di2.desc_ipress,'')) LIKE LOWER(CONCAT('%', CAST(:ipressAtencion AS VARCHAR), '%')))
@@ -502,7 +502,7 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
           AND (CAST(:bolsaNombre    AS VARCHAR) IS NULL OR POSITION(',' || LOWER(COALESCE(tb.desc_tipo_bolsa,'')) || ',' IN ',' || LOWER(CAST(:bolsaNombre AS VARCHAR)) || ',') > 0)
           AND (CAST(:macrorregion   AS VARCHAR) IS NULL OR dm.desc_macro   = CAST(:macrorregion AS VARCHAR))
           AND (CAST(:red            AS VARCHAR) IS NULL OR dr.desc_red     = CAST(:red AS VARCHAR))
-          AND (CAST(:ipress         AS VARCHAR) IS NULL OR di.desc_ipress  = CAST(:ipress AS VARCHAR))
+          AND (CAST(:ipress         AS VARCHAR) IS NULL OR (CAST(:ipress AS VARCHAR) = 'N/A' AND di.desc_ipress IS NULL) OR di.desc_ipress = CAST(:ipress AS VARCHAR))
           AND (CAST(:especialidad   AS VARCHAR) IS NULL OR LOWER(COALESCE(sb.especialidad,'')) LIKE LOWER(CONCAT('%', CAST(:especialidad AS VARCHAR), '%')))
           AND (CAST(:estadoCodigo   AS VARCHAR) IS NULL OR POSITION(',' || UPPER(COALESCE(dgc.cod_estado_cita,'PENDIENTE_CITA')) || ',' IN ',' || UPPER(CAST(:estadoCodigo AS VARCHAR)) || ',') > 0)
           AND (CAST(:ipressAtencion AS VARCHAR) IS NULL OR LOWER(COALESCE(di2.desc_ipress,'')) LIKE LOWER(CONCAT('%', CAST(:ipressAtencion AS VARCHAR), '%')))
@@ -620,9 +620,9 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
      */
     @Query(value = """
         SELECT
-            di.cod_ipress as codigo_ipress,
-            di.desc_ipress as nombre_ipress,
-            dr.desc_red as red_asistencial,
+            COALESCE(di.cod_ipress, 'N/A') as codigo_ipress,
+            COALESCE(di.desc_ipress, 'N/A') as nombre_ipress,
+            COALESCE(dr.desc_red, 'N/A') as red_asistencial,
             COUNT(sb.id_solicitud) as total,
             COUNT(CASE WHEN dgc.desc_estado_cita = 'ATENDIDO' THEN 1 END) as atendidos,
             COUNT(CASE WHEN dgc.desc_estado_cita = 'PENDIENTE' THEN 1 END) as pendientes,
@@ -636,8 +636,8 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
         LEFT JOIN dim_ipress di ON sb.id_ipress = di.id_ipress
         LEFT JOIN dim_red dr ON di.id_red = dr.id_red
         LEFT JOIN dim_estados_gestion_citas dgc ON sb.estado_gestion_citas_id = dgc.id_estado_cita
-        WHERE sb.activo = true AND sb.id_ipress IS NOT NULL
-        GROUP BY di.cod_ipress, di.desc_ipress, dr.desc_red
+        WHERE sb.activo = true
+        GROUP BY COALESCE(di.cod_ipress, 'N/A'), COALESCE(di.desc_ipress, 'N/A'), COALESCE(dr.desc_red, 'N/A')
         ORDER BY total DESC
         """, nativeQuery = true)
     List<Map<String, Object>> estadisticasPorIpress();
@@ -2160,7 +2160,7 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
           AND (CAST(:bolsaNombre       AS VARCHAR) IS NULL OR POSITION(',' || LOWER(COALESCE(tb.desc_tipo_bolsa,'')) || ',' IN ',' || LOWER(CAST(:bolsaNombre AS VARCHAR)) || ',') > 0)
           AND (CAST(:macrorregion      AS VARCHAR) IS NULL OR dm.desc_macro = CAST(:macrorregion AS VARCHAR))
           AND (CAST(:red               AS VARCHAR) IS NULL OR dr.desc_red   = CAST(:red          AS VARCHAR))
-          AND (CAST(:ipress            AS VARCHAR) IS NULL OR di.desc_ipress = CAST(:ipress       AS VARCHAR))
+          AND (CAST(:ipress AS VARCHAR) IS NULL OR (CAST(:ipress AS VARCHAR) = 'N/A' AND di.desc_ipress IS NULL) OR di.desc_ipress = CAST(:ipress AS VARCHAR))
           AND (CAST(:especialidad      AS VARCHAR) IS NULL OR LOWER(COALESCE(sb.especialidad,'')) LIKE LOWER(CONCAT('%', CAST(:especialidad AS VARCHAR), '%')))
           AND (CAST(:estadoCodigo      AS VARCHAR) IS NULL OR POSITION(',' || UPPER(COALESCE(deg.cod_estado_cita,'PENDIENTE_CITA')) || ',' IN ',' || UPPER(CAST(:estadoCodigo AS VARCHAR)) || ',') > 0)
           AND (CAST(:ipressAtencion    AS VARCHAR) IS NULL OR LOWER(COALESCE(di2.desc_ipress,'')) LIKE LOWER(CONCAT('%', CAST(:ipressAtencion AS VARCHAR), '%')))
