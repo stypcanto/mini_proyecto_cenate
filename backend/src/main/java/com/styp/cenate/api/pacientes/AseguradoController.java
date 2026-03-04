@@ -77,6 +77,8 @@ public class AseguradoController {
             @RequestParam(required = false) Boolean maraton,
             @RequestParam(required = false) Boolean soloDniValido,
             @RequestParam(required = false) Boolean soloExtranjero,
+            @RequestParam(required = false) Integer idRed,
+            @RequestParam(required = false) String codIpress,
             @RequestParam(required = false) String codIpressAtencion) {
 
         try {
@@ -95,6 +97,18 @@ public class AseguradoController {
             }
             if (Boolean.TRUE.equals(soloExtranjero)) {
                 whereClause.append(" AND a.id_tip_doc = 2");
+            }
+
+            // Filtro por Red
+            if (idRed != null) {
+                whereClause.append(" AND di.id_red = ?");
+                params.add(idRed);
+            }
+
+            // Filtro por IPRESS Adscripción
+            if (codIpress != null && !codIpress.trim().isEmpty()) {
+                whereClause.append(" AND a.cas_adscripcion = ?");
+                params.add(codIpress);
             }
 
             // Filtro por IPRESS Atención

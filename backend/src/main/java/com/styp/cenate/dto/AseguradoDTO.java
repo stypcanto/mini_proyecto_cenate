@@ -29,4 +29,6 @@ public class AseguradoDTO {
     private String periodo;
     private Boolean pacienteCronico; // ✅ Pertenece a CENACRON (paciente crónico)
     private Integer idTipDoc;        // 1=DNI, 2=C.E./PAS
+    private Long idIpress;           // FK → dim_ipress (adscripción)
+    private Long idIpressAtencion;   // FK → dim_ipress (atención)
 }

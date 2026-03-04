@@ -71,6 +71,8 @@ export default function BuscarAsegurado() {
   const [ipress, setIpress] = useState([]);
   const [todasIpress, setTodasIpress] = useState([]);
   const [selectedRed, setSelectedRed] = useState("");
+  const [filtroRedSearch, setFiltroRedSearch] = useState('');
+  const [filtroRedOpen, setFiltroRedOpen] = useState(false);
   const [selectedIpress, setSelectedIpress] = useState("");
   const [soloCenacron, setSoloCenacron] = useState(false);
   const [soloMaraton, setSoloMaraton] = useState(false);
@@ -275,6 +277,8 @@ export default function BuscarAsegurado() {
         response = await apiClient.get(`/asegurados/buscar?${params}`, true);
       } else {
         let params = `page=${currentPage}&size=${pageSize}`;
+        if (selectedRed) params += `&idRed=${selectedRed}`;
+        if (selectedIpress) params += `&codIpress=${encodeURIComponent(selectedIpress)}`;
         if (soloCenacron) params += `&cenacron=true`;
         if (soloMaraton) params += `&maraton=true`;
         if (soloDniValido) params += `&soloDniValido=true`;
@@ -345,6 +349,7 @@ export default function BuscarAsegurado() {
 
   const limpiarFiltros = () => {
     setSelectedRed("");
+    setFiltroRedSearch('');
     setSelectedIpress("");
     setSelectedIpressAtencion("");
     setFiltroAdscSearch('');
@@ -405,6 +410,8 @@ export default function BuscarAsegurado() {
       correoElectronico: '',
       tipoSeguro: 'TITULAR',
       casAdscripcion: '',
+      idIpress: null,
+      idIpressAtencion: null,
       periodo: new Date().getFullYear().toString(),
       pacienteCronico: false
     });
@@ -412,13 +419,16 @@ export default function BuscarAsegurado() {
     setDniMessage("");
     setIpressSearchText('');
     setIpressDropdownOpen(false);
+    setIpressAtenSearchText('');
+    setIpressAtenDropdownOpen(false);
     if (todasIpress.length === 0) {
       cargarIpress();
     }
     setShowFormModal(true);
   };
 
-  const abrirFormularioEditar = async (pkAsegurado) => {
+  const abrirFormularioEditar = async (aseguradoRow) => {
+    const pkAsegurado = aseguradoRow.pkAsegurado;
     try {
       setLoadingDetalle(true);
 
@@ -436,6 +446,16 @@ export default function BuscarAsegurado() {
         fechaFormateada = fechaLocal.toISOString().split('T')[0];
       }
 
+      // Lookup idIpress desde la lista por casAdscripcion
+      const casAds = response.asegurado.casAdscripcion || '';
+      const ipressAdsc = todasIpress.find(i => i.codIpress === casAds);
+      const idIpressValue = ipressAdsc ? ipressAdsc.idIpress : null;
+
+      // Lookup idIpressAtencion desde la lista por codIpressAtencion del row
+      const codAten = aseguradoRow.codIpressAtencion || '';
+      const ipressAten = codAten ? todasIpress.find(i => i.codIpress === codAten) : null;
+      const idIpressAtencionValue = ipressAten ? ipressAten.idIpress : null;
+
       setModoFormulario('editar');
       setFormularioData({
         pkAsegurado: response.asegurado.pkAsegurado,
@@ -449,12 +469,16 @@ export default function BuscarAsegurado() {
         telCelular: response.asegurado.telCelular || '',
         correoElectronico: response.asegurado.correoElectronico || '',
         tipoSeguro: response.asegurado.tipoSeguro || 'TITULAR',
-        casAdscripcion: response.asegurado.casAdscripcion || '',
+        casAdscripcion: casAds,
+        idIpress: idIpressValue,
+        idIpressAtencion: idIpressAtencionValue,
         periodo: response.asegurado.periodo || new Date().getFullYear().toString(),
         pacienteCronico: Boolean(response.asegurado.pacienteCronico)
       });
       setIpressSearchText('');
       setIpressDropdownOpen(false);
+      setIpressAtenSearchText('');
+      setIpressAtenDropdownOpen(false);
       setShowFormModal(true);
     } catch (error) {
       console.error("Error al cargar datos del asegurado:", error);
@@ -478,6 +502,8 @@ export default function BuscarAsegurado() {
       correoElectronico: '',
       tipoSeguro: 'TITULAR',
       casAdscripcion: '',
+      idIpress: null,
+      idIpressAtencion: null,
       periodo: new Date().getFullYear().toString(),
       pacienteCronico: false
     });
@@ -485,6 +511,8 @@ export default function BuscarAsegurado() {
     setDniMessage("");
     setIpressSearchText('');
     setIpressDropdownOpen(false);
+    setIpressAtenSearchText('');
+    setIpressAtenDropdownOpen(false);
   };
 
   const handleInputChange = (e) => {
@@ -663,22 +691,49 @@ export default function BuscarAsegurado() {
             <div className="px-4 py-3 border-t border-slate-100 space-y-2 overflow-visible">
               {/* Fila 1: Red · IPRESS · CENACRON */}
               <div className="flex flex-wrap items-end gap-3 overflow-visible">
-                <div className="flex-1 min-w-[160px]">
+                {/* Red - combobox */}
+                <div className="flex-1 min-w-[160px] relative">
                   <label className="block text-xs font-medium text-slate-500 mb-1">
                     <Network className="w-3 h-3 inline mr-1" />Red
                   </label>
-                  <select
-                    value={ selectedRed }
-                    onChange={ (e) => setSelectedRed(e.target.value) }
+                  <input
+                    type="text"
+                    value={ filtroRedSearch || (selectedRed ? (redes.find(r => String(r.idRed) === String(selectedRed))?.descRed || '') : '') }
+                    onChange={ (e) => { setFiltroRedSearch(e.target.value); setFiltroRedOpen(true); if (!e.target.value) { setSelectedRed(""); setCurrentPage(0); } } }
+                    onFocus={ () => { setFiltroRedSearch(''); setFiltroRedOpen(true); } }
+                    onBlur={ () => setTimeout(() => { setFiltroRedOpen(false); setFiltroRedSearch(''); }, 200) }
+                    placeholder="Buscar red..."
                     disabled={ loadingFiltros }
-                    className="w-full px-2.5 py-1.5 text-sm border border-slate-200 rounded-lg text-slate-900
-                             focus:outline-none focus:border-emerald-500 transition-all disabled:opacity-50"
-                  >
-                    <option value="">Todas las redes</option>
-                    { redes.map((red) => (
-                      <option key={ red.idRed } value={ red.idRed }>{ red.descRed }</option>
-                    )) }
-                  </select>
+                    className={ `w-full px-2.5 py-1.5 text-sm border rounded-lg text-slate-900 focus:outline-none focus:border-violet-500 transition-all disabled:opacity-50
+                      ${selectedRed ? 'border-violet-400 bg-violet-50' : 'border-slate-200'}` }
+                    autoComplete="off"
+                  />
+                  { filtroRedOpen && (
+                    <div className="absolute z-[200] w-full mt-1 bg-white border border-slate-200 rounded-lg shadow-2xl max-h-64 overflow-y-auto">
+                      <div
+                        onMouseDown={ () => { setSelectedRed(""); setFiltroRedSearch(''); setFiltroRedOpen(false); setCurrentPage(0); } }
+                        className="px-3 py-2 text-sm text-slate-500 hover:bg-slate-50 cursor-pointer border-b border-slate-100"
+                      >
+                        Todas las redes
+                      </div>
+                      { (() => {
+                          const texto = filtroRedSearch.toLowerCase().trim();
+                          return redes
+                            .filter(r => !texto || r.descRed?.toLowerCase().includes(texto))
+                            .map(r => (
+                              <div
+                                key={ r.idRed }
+                                onMouseDown={ () => { setSelectedRed(String(r.idRed)); setFiltroRedSearch(''); setFiltroRedOpen(false); setCurrentPage(0); } }
+                                className={ `px-3 py-2 text-sm cursor-pointer hover:bg-violet-50 transition-colors
+                                  ${String(selectedRed) === String(r.idRed) ? 'bg-violet-100 font-semibold text-violet-800' : 'text-slate-800'}` }
+                              >
+                                { r.descRed }
+                              </div>
+                            ));
+                        })()
+                      }
+                    </div>
+                  ) }
                 </div>
 
                 {/* IPRESS Adscripción - combobox */}
@@ -1013,7 +1068,7 @@ export default function BuscarAsegurado() {
                               { puedeCrearAsegurado && (
                                 <div className="relative group">
                                   <button
-                                    onClick={ () => abrirFormularioEditar(asegurado.pkAsegurado) }
+                                    onClick={ () => abrirFormularioEditar(asegurado) }
                                     disabled={ loadingDetalle }
                                     className="w-8 h-8 flex items-center justify-center rounded-lg
                                              bg-blue-50 text-blue-600 border border-blue-200
@@ -1647,7 +1702,7 @@ export default function BuscarAsegurado() {
                         setIpressSearchText(e.target.value);
                         setIpressDropdownOpen(true);
                         if (!e.target.value) {
-                          setFormularioData(prev => ({ ...prev, casAdscripcion: '' }));
+                          setFormularioData(prev => ({ ...prev, casAdscripcion: '', idIpress: null }));
                         }
                       } }
                       onFocus={ () => {
@@ -1675,7 +1730,7 @@ export default function BuscarAsegurado() {
                               <div
                                 key={ i.codIpress }
                                 onMouseDown={ () => {
-                                  setFormularioData(prev => ({ ...prev, casAdscripcion: i.codIpress }));
+                                  setFormularioData(prev => ({ ...prev, casAdscripcion: i.codIpress, idIpress: i.idIpress }));
                                   setIpressSearchText('');
                                   setIpressDropdownOpen(false);
                                 } }
@@ -1694,6 +1749,79 @@ export default function BuscarAsegurado() {
                   </div>
                   { /* Campo oculto para validación HTML required */ }
                   <input type="hidden" name="casAdscripcion" value={ formularioData.casAdscripcion } required />
+                </div>
+
+                {/* IPRESS Atención - combobox */}
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 mb-2">
+                    <Building2 className="w-4 h-4 inline mr-1" />
+                    IPRESS Atención <span className="text-xs font-normal text-slate-400">(opcional)</span>
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="text"
+                      value={ ipressAtenSearchText || (formularioData.idIpressAtencion
+                        ? (() => {
+                            const found = todasIpress.find(i => i.idIpress === formularioData.idIpressAtencion);
+                            return found ? `${found.descIpress} - Cód: ${found.codIpress}` : '';
+                          })()
+                        : '') }
+                      onChange={ (e) => {
+                        setIpressAtenSearchText(e.target.value);
+                        setIpressAtenDropdownOpen(true);
+                        if (!e.target.value) {
+                          setFormularioData(prev => ({ ...prev, idIpressAtencion: null }));
+                        }
+                      } }
+                      onFocus={ () => {
+                        setIpressAtenSearchText('');
+                        setIpressAtenDropdownOpen(true);
+                      } }
+                      onBlur={ () => setTimeout(() => setIpressAtenDropdownOpen(false), 200) }
+                      placeholder="Escribe para buscar IPRESS Atención..."
+                      className="w-full px-4 py-2.5 border-2 border-slate-200 rounded-lg text-slate-900
+                               focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100
+                               transition-all"
+                      autoComplete="off"
+                    />
+                    { ipressAtenDropdownOpen && (
+                      <div className="absolute z-50 w-full mt-1 bg-white border-2 border-blue-200 rounded-lg shadow-xl max-h-56 overflow-y-auto">
+                        { (() => {
+                            const texto = ipressAtenSearchText.toLowerCase().trim();
+                            const filtradas = todasIpress
+                              .filter(i => !texto || i.descIpress.toLowerCase().includes(texto) || i.codIpress.toLowerCase().includes(texto))
+                              .sort((a, b) => a.descIpress.localeCompare(b.descIpress, 'es'));
+                            if (filtradas.length === 0) {
+                              return <div className="px-4 py-3 text-sm text-slate-500 text-center">Sin resultados</div>;
+                            }
+                            return filtradas.map(i => (
+                              <div
+                                key={ i.codIpress }
+                                onMouseDown={ () => {
+                                  setFormularioData(prev => ({ ...prev, idIpressAtencion: i.idIpress }));
+                                  setIpressAtenSearchText('');
+                                  setIpressAtenDropdownOpen(false);
+                                } }
+                                className={ `px-4 py-2.5 text-sm cursor-pointer hover:bg-blue-50 transition-colors ${
+                                  formularioData.idIpressAtencion === i.idIpress ? 'bg-blue-100 font-semibold text-blue-800' : 'text-slate-800'
+                                }` }
+                              >
+                                <span className="font-medium">{ i.descIpress }</span>
+                                <span className="text-slate-500 ml-1">- Cód: { i.codIpress }</span>
+                              </div>
+                            ));
+                          })()
+                        }
+                      </div>
+                    ) }
+                  </div>
+                  { formularioData.idIpressAtencion && (
+                    <button
+                      type="button"
+                      onClick={ () => setFormularioData(prev => ({ ...prev, idIpressAtencion: null })) }
+                      className="mt-1 text-xs text-red-500 hover:text-red-700"
+                    >✕ Limpiar IPRESS Atención</button>
+                  ) }
                 </div>
 
                 <div>
