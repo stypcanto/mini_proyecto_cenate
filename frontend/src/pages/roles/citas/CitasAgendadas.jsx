@@ -541,52 +541,26 @@ export default function CitasAgendadas() {
   // ── Guardar teléfonos ──────────────────────────────────────
   const guardarTelefono = async (pacienteDni, idSolicitud) => {
     setGuardandoTel(true);
-    console.log('══════════════════════════════════════════');
-    console.log('📞 [INICIO] guardarTelefono');
-    console.log('📞 pacienteDni:', pacienteDni);
-    console.log('📞 idSolicitud:', idSolicitud);
-    console.log('📞 telEdit:', JSON.stringify(telEdit));
-    console.log('══════════════════════════════════════════');
     try {
       const token = getToken();
       const headers = { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` };
 
-      // Paso 1: obtener datos completos del asegurado (para tener pkAsegurado y todos los campos)
-      const resGet = await fetch(`/api/asegurados/por-dni/${pacienteDni}`, { headers });
-      console.log('📞 GET status:', resGet.status);
-      if (!resGet.ok) throw new Error(`GET HTTP ${resGet.status}`);
-      const asegurado = await resGet.json();
-
-      console.log('📞 asegurado respuesta:', JSON.stringify(asegurado, null, 2));
-      console.log('📞 pkAsegurado:', asegurado.pkAsegurado);
-
-      if (!asegurado.pkAsegurado) throw new Error('No se encontró pkAsegurado');
-
-      // Paso 2: PUT con todos los campos existentes, solo actualizando teléfonos
       const bodyPut = {
-        docPaciente:      asegurado.docPaciente,
-        paciente:         asegurado.paciente,
-        fecnacimpaciente: asegurado.fecnacimpaciente,
-        sexo:             asegurado.sexo,
-        tipoPaciente:     asegurado.tipoPaciente,
-        telFijo:          telEdit.tel1.trim(),
-        telCelular:       telEdit.tel2.trim(),
-        tipoSeguro:       asegurado.tipoSeguro,
-        casAdscripcion:   asegurado.codAdscripcion || asegurado.casAdscripcion,
-        correoElectronico: asegurado.correoElectronico,
-        pacienteCronico:  asegurado.pacienteCronico,
-        idSolicitud:      idSolicitud,
+        idSolicitud,
+        pacienteDni,
+        telFijo:    telEdit.tel1.trim(),
+        telCelular: telEdit.tel2.trim(),
       };
-      console.log('📞 PUT /api/asegurados/' + asegurado.pkAsegurado, 'body:', JSON.stringify(bodyPut, null, 2));
-      const resPut = await fetch(`/api/asegurados/${encodeURIComponent(asegurado.pkAsegurado)}`, {
+
+      const res = await fetch('/api/asegurados/telefonos', {
         method: 'PUT',
         headers,
         body: JSON.stringify(bodyPut),
       });
-      if (!resPut.ok) {
-        const errBody = await resPut.text().catch(() => '');
-        console.error('❌ PUT teléfono error:', resPut.status, errBody);
-        throw new Error(`PUT HTTP ${resPut.status}: ${errBody}`);
+
+      if (!res.ok) {
+        const errBody = await res.text().catch(() => '');
+        throw new Error(`HTTP ${res.status}: ${errBody}`);
       }
 
       // Actualizar estado local
@@ -598,7 +572,7 @@ export default function CitasAgendadas() {
       setEditandoTel(null);
       toast.success('Teléfono actualizado correctamente');
     } catch (err) {
-      console.error('❌ guardarTelefono error completo:', err);
+      console.error('❌ guardarTelefono error:', err);
       toast.error(`No se pudo actualizar el teléfono: ${err.message}`);
     } finally {
       setGuardandoTel(false);

@@ -1515,6 +1515,65 @@ public class AseguradoController {
     }
 
     /**
+     * ✅ v1.84.0: Actualizar teléfonos en AMBAS tablas (dim_solicitud_bolsa + asegurados)
+     * PUT /api/asegurados/telefonos
+     * Body: { "idSolicitud": 123, "pacienteDni": "06822253", "telFijo": "992466258", "telCelular": "987654321" }
+     *
+     * 1. Siempre actualiza dim_solicitud_bolsa por id_solicitud
+     * 2. Intenta actualizar asegurados por paciente_dni (best effort — puede no existir)
+     */
+    @PutMapping("/telefonos")
+    @PreAuthorize("hasAnyRole('SUPERADMIN', 'SOPORTE_TELEUE', 'COORD. GESTION CITAS', 'COORD. ENFERMERIA', 'GESTOR DE CITAS')")
+    public ResponseEntity<?> actualizarTelefonos(@RequestBody Map<String, Object> body) {
+        try {
+            Long idSolicitud   = body.get("idSolicitud") != null ? Long.valueOf(body.get("idSolicitud").toString()) : null;
+            String pacienteDni = (String) body.get("pacienteDni");
+            String telFijo     = (String) body.get("telFijo");
+            String telCelular  = (String) body.get("telCelular");
+
+            log.info("📞 [v1.84.0] Actualizando teléfonos — idSolicitud: {}, DNI: {}, tel1: {}, tel2: {}",
+                    idSolicitud, pacienteDni, telFijo, telCelular);
+
+            int bolsasActualizadas = 0;
+            int aseguradosActualizados = 0;
+
+            // 1. Actualizar dim_solicitud_bolsa por id_solicitud
+            if (idSolicitud != null) {
+                bolsasActualizadas = jdbcTemplate.update(
+                    "UPDATE dim_solicitud_bolsa SET paciente_telefono = ?, paciente_telefono_alterno = ? WHERE id_solicitud = ?",
+                    telFijo, telCelular, idSolicitud
+                );
+                log.info("📞 dim_solicitud_bolsa actualizada: {} fila(s) — id_solicitud: {}", bolsasActualizadas, idSolicitud);
+            }
+
+            // 2. Intentar actualizar asegurados por DNI (best effort)
+            if (pacienteDni != null && !pacienteDni.isBlank()) {
+                try {
+                    aseguradosActualizados = jdbcTemplate.update(
+                        "UPDATE asegurados SET tel_fijo = ?, tel_celular = ? WHERE doc_paciente = ?",
+                        telFijo, telCelular, pacienteDni
+                    );
+                    log.info("📞 asegurados actualizada: {} fila(s) — DNI: {}", aseguradosActualizados, pacienteDni);
+                } catch (Exception e) {
+                    log.warn("⚠️ No se pudo actualizar asegurados para DNI {}: {}", pacienteDni, e.getMessage());
+                }
+            }
+
+            return ResponseEntity.ok(Map.of(
+                "success", true,
+                "bolsasActualizadas", bolsasActualizadas,
+                "aseguradosActualizados", aseguradosActualizados,
+                "telFijo", telFijo != null ? telFijo : "",
+                "telCelular", telCelular != null ? telCelular : ""
+            ));
+        } catch (Exception e) {
+            log.error("❌ Error actualizando teléfonos: {}", e.getMessage(), e);
+            return ResponseEntity.internalServerError()
+                .body(Map.of("error", "Error al actualizar teléfonos: " + e.getMessage()));
+        }
+    }
+
+    /**
      * Actualizar solo los teléfonos de un asegurado por DNI
      * PATCH /api/asegurados/por-dni/{docPaciente}/telefonos
      * Body: { "telFijo": "987000000", "telCelular": "987111111" }
