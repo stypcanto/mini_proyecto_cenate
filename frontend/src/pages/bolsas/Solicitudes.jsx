@@ -3,7 +3,7 @@ import { Plus, Search, Phone, ChevronDown, ChevronUp, Circle, Eye, Users, UserPl
 import PageHeader from '../../components/PageHeader';
 import StatCard from '../../components/StatCard';
 import ListHeader from '../../components/ListHeader';
-import bolsasService, { actualizarIpressAtencion, actualizarFechaPreferida, asignarGestoraMasivo } from '../../services/bolsasService';
+import bolsasService, { actualizarIpressAtencion, actualizarFechaPreferida, asignarGestoraMasivo, agruparPorIpressAtencion as agruparPorIpressAtencionAPI } from '../../services/bolsasService';
 import ipressService from '../../services/ipressService';
 import { usePermisos } from '../../context/PermisosContext';
 import ModalResultadosImportacion from '../../components/modals/ModalResultadosImportacion'; // ✅ NUEVO v1.19.0
@@ -307,13 +307,15 @@ export default function Solicitudes({ categoriaInicial } = {}) {
     (async () => {
       try {
         const [estado, bolsas, estadosGestion, gestorasData] = await Promise.all([
-          bolsasService.obtenerEstadisticasPorEstado().catch(() => []),
+          // En sub-páginas NO cargar stats globales: cargarSolicitudesConFiltros ya las carga
+          // con los filtros correctos. Si cargáramos aquí podríamos sobreescribir los KPIs filtrados.
+          categoriaInicial ? Promise.resolve([]) : bolsasService.obtenerEstadisticasPorEstado().catch(() => []),
           bolsasService.obtenerEstadisticasPorTipoBolsa().catch(() => []),
           bolsasService.obtenerEstadosGestion().catch(() => []),
           bolsasService.obtenerGestorasDisponibles().catch(() => []),
         ]);
         if (mounted) {
-          setEstadisticasGlobales(estado || []);
+          if (!categoriaInicial && estado?.length > 0) setEstadisticasGlobales(estado);
           setEstadisticasTipoBolsa(bolsas || []);
           setEstadisticasCargadas(true);
           if (estadosGestion && Array.isArray(estadosGestion) && estadosGestion.length > 0) {
@@ -617,7 +619,7 @@ export default function Solicitudes({ categoriaInicial } = {}) {
                 const [y, m, d] = solicitud.fecha_nacimiento.split('-');
                 return `${d}/${m}/${y}`;
               })() : 'N/A',
-            tipoCita: solicitud.tipo_cita ? solicitud.tipo_cita.toUpperCase() : 'N/A',
+            tipoCita: solicitud.tipo_cita ? solicitud.tipo_cita.toUpperCase() : 'VOLUNTARIA',
             codigoIpress: solicitud.codigo_adscripcion ? ((/^\d+$/.test(solicitud.codigo_adscripcion)) ? solicitud.codigo_adscripcion.padStart(3, '0') : solicitud.codigo_adscripcion) : 'N/A',
             idIpressAtencion: solicitud.id_ipress_atencion || null,
             codIpressAtencion: solicitud.cod_ipress_atencion || 'N/A',
@@ -849,7 +851,7 @@ export default function Solicitudes({ categoriaInicial } = {}) {
                   const [y, m, d] = solicitud.fecha_nacimiento.split('-');
                   return `${d}/${m}/${y}`;
                 })() : 'N/A',
-              tipoCita: solicitud.tipo_cita ? solicitud.tipo_cita.toUpperCase() : 'N/A',
+              tipoCita: solicitud.tipo_cita ? solicitud.tipo_cita.toUpperCase() : 'VOLUNTARIA',
               codigoIpress: solicitud.codigo_adscripcion ? ((/^\d+$/.test(solicitud.codigo_adscripcion)) ? solicitud.codigo_adscripcion.padStart(3, '0') : solicitud.codigo_adscripcion) : 'N/A',
               idIpressAtencion: solicitud.id_ipress_atencion || null,
               codIpressAtencion: solicitud.cod_ipress_atencion || 'N/A',
@@ -1031,7 +1033,7 @@ export default function Solicitudes({ categoriaInicial } = {}) {
                   const [y, m, d] = solicitud.fecha_nacimiento.split('-');
                   return `${d}/${m}/${y}`;
                 })() : 'N/A',
-              tipoCita: solicitud.tipo_cita ? solicitud.tipo_cita.toUpperCase() : 'N/A',
+              tipoCita: solicitud.tipo_cita ? solicitud.tipo_cita.toUpperCase() : 'VOLUNTARIA',
               codigoIpress: solicitud.codigo_adscripcion ? ((/^\d+$/.test(solicitud.codigo_adscripcion)) ? solicitud.codigo_adscripcion.padStart(3, '0') : solicitud.codigo_adscripcion) : 'N/A',
               idIpressAtencion: solicitud.id_ipress_atencion || null,
               codIpressAtencion: solicitud.cod_ipress_atencion || 'N/A',
@@ -1081,48 +1083,41 @@ export default function Solicitudes({ categoriaInicial } = {}) {
   const agruparPorIpressAtencion = async () => {
     setLoadingAgrupacion(true);
     try {
-      const response = await bolsasService.obtenerSolicitudesPaginado(
-        0, 9999,
-        filtroBolsa.length === 0 ? null : filtroBolsa.join(','),
-        filtroMacrorregion === 'todas' ? null : filtroMacrorregion,
-        filtroRed === 'todas' ? null : filtroRed,
-        filtroIpress === 'todas' ? null : filtroIpress,
-        filtroEspecialidad === 'todas' ? null : filtroEspecialidad,
-        filtroEstado === 'todos' ? null : filtroEstado,
-        filtroIpressAtencion === 'todas' ? null : filtroIpressAtencion,
-        filtroTipoCita === 'todas' ? null : filtroTipoCita,
-        filtroAsignacion === 'todos' ? null : filtroAsignacion,
-        searchTerm.trim() || null,
-        filtroFechaInicio || null,
-        filtroFechaFin || null,
-        null,
-        filtroGestoraId,
-        filtroEstadoBolsa === 'todos' ? null : filtroEstadoBolsa,
-        categoriaEspecialidad
-      );
-      const todos = response?.content ?? (Array.isArray(response) ? response : solicitudes);
-
-      const grupos = {};
-      todos.forEach((s) => {
-        const ipress = s.desc_ipress_atencion || 'SIN_IPRESS_ATENCION';
-        const espec  = (s.especialidad || 'SIN_ESPECIALIDAD').replace(/\s*\([^)]*\)/, '').trim();
-        const key    = `${ipress}__${espec}`;
-        if (!grupos[key]) grupos[key] = { ipress, especialidad: espec, pacientes: [] };
-        grupos[key].pacientes.push(s);
+      // v1.84.2: Usa endpoint dedicado con GROUP BY server-side (~100x más rápido que size=9999)
+      const grupos = await agruparPorIpressAtencionAPI({
+        bolsaNombre:           filtroBolsa.length === 0 ? null : filtroBolsa.join(','),
+        macrorregion:          filtroMacrorregion === 'todas' ? null : filtroMacrorregion,
+        red:                   filtroRed === 'todas' ? null : filtroRed,
+        ipress:                filtroIpress === 'todas' ? null : filtroIpress,
+        especialidad:          filtroEspecialidad === 'todas' ? null : filtroEspecialidad,
+        estadoCodigo:          filtroEstado === 'todos' ? null : filtroEstado,
+        ipressAtencion:        filtroIpressAtencion === 'todas' ? null : filtroIpressAtencion,
+        tipoCita:              filtroTipoCita === 'todas' ? null : filtroTipoCita,
+        asignacion:            filtroAsignacion === 'todos' ? null : filtroAsignacion,
+        busqueda:              searchTerm.trim() || null,
+        fechaInicio:           filtroFechaInicio || null,
+        fechaFin:              filtroFechaFin || null,
+        gestoraId:             filtroGestoraId || null,
+        estadoBolsa:           filtroEstadoBolsa === 'todos' ? null : filtroEstadoBolsa,
+        categoriaEspecialidad: categoriaEspecialidad || null,
       });
 
-      const gruposValidos = Object.values(grupos)
-        .filter(g => g.pacientes.length >= 4 && g.pacientes.length % 4 === 0)
-        .map(g => ({ ...g, cantidadGrupos: Math.floor(g.pacientes.length / 4) }));
+      // El backend ya filtró por MOD 4 = 0 y devolvió {ipress, especialidad, total, grupos, ids[]}
+      const gruposFormateados = grupos.map(g => ({
+        ipress:         g.ipress,
+        especialidad:   g.especialidad,
+        cantidadGrupos: g.grupos,
+        pacientes:      g.ids.map(id => ({ id_solicitud: id, id })), // solo IDs para asignación
+      }));
 
       const { default: toast } = await import('react-hot-toast');
-      if (gruposValidos.length === 0) {
+      if (gruposFormateados.length === 0) {
         toast.error('No se encontraron grupos de 4 pacientes con misma IPRESS Atención y Especialidad');
         return;
       }
-      setGruposFormados(gruposValidos);
+      setGruposFormados(gruposFormateados);
       setAgrupacionActiva(true);
-      const total = gruposValidos.reduce((sum, g) => sum + g.cantidadGrupos, 0);
+      const total = gruposFormateados.reduce((sum, g) => sum + g.cantidadGrupos, 0);
       toast.success(`${total} grupos de 4 pacientes formados`);
     } catch (error) {
       console.error('Error al agrupar:', error);
