@@ -2345,8 +2345,8 @@ export default function Solicitudes({ categoriaInicial } = {}) {
                               style={{ width: `${pct}%`, background: colorBar }} />
                           </div>
                           <div className="flex justify-between mt-1.5">
-                            <span className="text-[10px] text-gray-400">Faltan {(meta - actual).toLocaleString('es-PE')}</span>
-                            <span className="text-[10px] text-gray-400">Meta: {meta.toLocaleString('es-PE')}</span>
+                            <span className="text-[10px] font-semibold text-gray-600">Faltan {(meta - actual).toLocaleString('es-PE')}</span>
+                            <span className="text-[10px] text-gray-500">Meta: {meta.toLocaleString('es-PE')}</span>
                           </div>
                         </div>
                       );
@@ -2498,16 +2498,20 @@ export default function Solicitudes({ categoriaInicial } = {}) {
               const total    = estadisticas.total || 1;
               const atendidos  = estadisticas.atendidos  || 0;
               const citados    = estadisticas.citados    || 0;
-              const noContesto = estadisticas.noContesto || 0;
-              const rechazados = estadisticas.rechazados || 0;
               const pendientes = estadisticas.pendientes || 0;
+              // Todos los estados "observados" = todo lo que no es PENDIENTE, CITADO, ATENDIDO, ni sintéticos
+              const ESTADOS_BASE = new Set(['PENDIENTE_CITA', 'CITADO', 'ATENDIDO', 'ATENDIDO_IPRESS', 'SIN_GESTORA', 'CON_GESTORA', 'ASIGNADOS']);
+              const totalObservados = Array.isArray(estadisticasGlobales)
+                ? estadisticasGlobales
+                    .filter(s => !ESTADOS_BASE.has(s.estado?.toUpperCase()))
+                    .reduce((sum, s) => sum + (s.cantidad || 0), 0)
+                : (estadisticas.noContesto || 0) + (estadisticas.rechazados || 0);
               // Porcentajes sobre el total en bolsa
-              const atePct = (atendidos  / total) * 100;
-              const citPct = (citados    / total) * 100;
-              const noCPct = (noContesto / total) * 100;
-              const recPct = (rechazados / total) * 100;
+              const atePct  = (atendidos        / total) * 100;
+              const citPct  = (citados          / total) * 100;
+              const obsPct  = (totalObservados  / total) * 100;
               // El avance total (todos los que ya tuvieron alguna acción)
-              const avancePct = atePct + citPct + noCPct + recPct;
+              const avancePct = atePct + citPct + obsPct;
 
               return (
                 <>
@@ -2515,10 +2519,9 @@ export default function Solicitudes({ categoriaInicial } = {}) {
                   <div className="relative h-6 rounded-full overflow-hidden mb-3" style={{ background: '#cbd5e1' }}>
                     {/* Franja de avance (apilada de izquierda a derecha) */}
                     <div className="absolute inset-y-0 left-0 flex rounded-full overflow-hidden" style={{ width: `${avancePct}%`, transition: 'width 0.6s ease' }}>
-                      {atePct > 0 && <div className="bg-emerald-500 h-full" style={{ flex: atePct }} title={`Atendidos`} />}
-                      {citPct > 0 && <div className="bg-blue-500   h-full" style={{ flex: citPct }} title={`Citados`} />}
-                      {noCPct > 0 && <div className="bg-yellow-400 h-full" style={{ flex: noCPct }} title={`No contesta`} />}
-                      {recPct > 0 && <div className="bg-red-400    h-full" style={{ flex: recPct }} title={`Rechazados`} />}
+                      {atePct > 0 && <div className="bg-emerald-500 h-full" style={{ flex: atePct }} title="Atendidos" />}
+                      {citPct > 0 && <div className="bg-blue-500   h-full" style={{ flex: citPct }} title="Citados" />}
+                      {obsPct > 0 && <div className="bg-amber-400  h-full" style={{ flex: obsPct }} title="Observados (no contesta, rechazado, apagado, etc.)" />}
                     </div>
                     {/* Etiqueta % dentro de la barra */}
                     <div className="absolute inset-0 flex items-center justify-center">
@@ -2538,20 +2541,17 @@ export default function Solicitudes({ categoriaInicial } = {}) {
                       <span className="w-2.5 h-2.5 rounded-full bg-blue-500 inline-block flex-shrink-0" />
                       Citados <strong className="text-gray-700 ml-1">{citados.toLocaleString('es-PE')}</strong>
                     </span>
-                    <span className="flex items-center gap-1.5 text-xs text-gray-500">
-                      <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block flex-shrink-0" />
-                      Atendidos <strong className="text-gray-700 ml-1">{atendidos.toLocaleString('es-PE')}</strong>
-                    </span>
-                    {noContesto > 0 && (
+                    {atendidos > 0 && (
                       <span className="flex items-center gap-1.5 text-xs text-gray-500">
-                        <span className="w-2.5 h-2.5 rounded-full bg-yellow-400 inline-block flex-shrink-0" />
-                        No contesta <strong className="text-gray-700 ml-1">{noContesto.toLocaleString('es-PE')}</strong>
+                        <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block flex-shrink-0" />
+                        Atendidos <strong className="text-gray-700 ml-1">{atendidos.toLocaleString('es-PE')}</strong>
                       </span>
                     )}
-                    {rechazados > 0 && (
+                    {totalObservados > 0 && (
                       <span className="flex items-center gap-1.5 text-xs text-gray-500">
-                        <span className="w-2.5 h-2.5 rounded-full bg-red-400 inline-block flex-shrink-0" />
-                        Rechazados <strong className="text-gray-700 ml-1">{rechazados.toLocaleString('es-PE')}</strong>
+                        <span className="w-2.5 h-2.5 rounded-full bg-amber-400 inline-block flex-shrink-0" />
+                        Observados <strong className="text-gray-700 ml-1">{totalObservados.toLocaleString('es-PE')}</strong>
+                        <span className="text-gray-400">(no contesta, apagado, rechazado…)</span>
                       </span>
                     )}
                     <span className="ml-auto text-xs font-semibold text-emerald-700">
