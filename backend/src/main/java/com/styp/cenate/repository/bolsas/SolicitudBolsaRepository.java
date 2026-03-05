@@ -1871,11 +1871,14 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
             COALESCE(orig_d.especialidad, orig_t.especialidad)               AS especialidad_origen,
             recita.fecha_preferida_no_atendida                               AS fecha_preferida,
             COALESCE(tb.desc_tipo_bolsa, 'Bolsa de recita/interconsulta')    AS origen_bolsa,
-            recita.condicion_medica                                          AS condicion_medica
+            recita.condicion_medica                                          AS condicion_medica,
+            COALESCE(di_ads.desc_ipress, di_ads_orig.desc_ipress, '')        AS centro_adscripcion
         FROM dim_solicitud_bolsa recita
         LEFT JOIN dim_tipos_bolsas tb   ON tb.id_tipo_bolsa = recita.id_bolsa
+        LEFT JOIN dim_ipress di_ads     ON di_ads.id_ipress = recita.id_ipress
         LEFT JOIN dim_solicitud_bolsa orig_d
                ON orig_d.id_solicitud = recita.idsolicitudgeneracion
+        LEFT JOIN dim_ipress di_ads_orig ON di_ads_orig.id_ipress = orig_d.id_ipress
         LEFT JOIN LATERAL (
             SELECT h.numero_solicitud, h.id_personal, h.fecha_atencion_medica, h.especialidad
             FROM   dim_solicitud_bolsa h

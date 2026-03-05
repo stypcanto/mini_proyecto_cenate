@@ -4386,6 +4386,7 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
             m.put("fechaPreferida",      row[16]);
             m.put("origenBolsa",         row[17]);
             m.put("condicionMedica",     row[18]);
+            m.put("centroAdscripcion",   row[19]);
             return m;
         });
     }
@@ -4463,7 +4464,7 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
         Long idPersonal = request.getIdPersonal();
         String especialidad = request.getEspecialidad() != null ? request.getEspecialidad() : "ENFERMERIA";
         Long idServicio = request.getIdServicio() != null ? request.getIdServicio() : 56L;
-        Long responsableGestoraId = request.getResponsableGestoraId() != null ? request.getResponsableGestoraId() : 688L;
+        Long responsableGestoraId = request.getResponsableGestoraId(); // null si no se especifica — no asignar gestora por defecto
         Long idBolsa = 10L;
         LocalDate fechaCita = request.getFechaCita() != null ? request.getFechaCita() : LocalDate.now();
 

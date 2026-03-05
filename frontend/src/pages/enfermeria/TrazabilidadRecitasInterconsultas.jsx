@@ -414,7 +414,8 @@ const COLUMNAS = [
   { label: 'Fecha preferida',            field: 'fechaPreferida',  sortable: true  },
   { label: 'Creado por',                 field: 'medicoCreador',   sortable: true  },
   { label: 'Estado',                     field: null,              sortable: false },
-  { label: 'Estado de Personal Asist.', field: 'condicionMedica', sortable: true  },
+  { label: 'Estado de Personal Asist.', field: 'condicionMedica',    sortable: true  },
+  { label: 'Centro Adscripción',        field: 'centroAdscripcion', sortable: true  },
 ];
 
 // ─── Componente principal ─────────────────────────────────────────────────────
@@ -945,6 +946,13 @@ export default function TrazabilidadRecitasInterconsultas() {
                       ) : (
                         <span className="text-gray-400 italic">—</span>
                       )}
+                    </td>
+
+                    {/* Centro de Adscripción — IPRESS origen del paciente */}
+                    <td className="px-3 py-2.5 text-xs text-gray-700 max-w-[200px]">
+                      <span title={f.centroAdscripcion} className="block truncate">
+                        {f.centroAdscripcion || <span className="text-gray-400 italic">—</span>}
+                      </span>
                     </td>
                   </tr>
                 ))}

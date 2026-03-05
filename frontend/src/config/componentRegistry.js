@@ -387,6 +387,10 @@ export const componentRegistry = {
     component: lazy(() => import('../pages/roles/coordcitas/BienvenidaCoordCitas')),
     requiredAction: 'ver',
   },
+  '/roles/profesionaldesalud/rescatar-profesional': {
+    component: lazy(() => import('../pages/roles/coordcitas/RescatarProfesional')),
+    requiredAction: 'ver',
+  },
 
   // 📋 PERSONAL 107
   // ========================================================================
