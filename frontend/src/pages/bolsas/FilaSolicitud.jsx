@@ -109,6 +109,7 @@ function FilaSolicitud({
   isProcessing,
   getEstadoBadge,
   mostrarMetricasTiempo = false,  // v1.86.2: Prop para mostrar/ocultar columna de métricas
+  mostrarTiempoInicioSintomas = false,  // v1.87.0: Prop para mostrar/ocultar columna Tiempo Inicio Síntomas
 }) {
   const [editandoFecha, setEditandoFecha] = useState(false);
   const [fechaInput, setFechaInput] = useState('');
@@ -255,6 +256,32 @@ function FilaSolicitud({
           })()}
         </div>
       </td>
+      )}
+
+      {/* TIEMPO INICIO SÍNTOMAS (solo para bolsa107) - v1.87.0 con colores semáforo */}
+      {mostrarTiempoInicioSintomas && (
+        <td className="px-3 py-3 text-sm">
+          {(() => {
+            const valor = solicitud.tiempoInicioSintomas;
+            if (!valor) {
+              return <span className="text-gray-400 italic">Sin datos</span>;
+            }
+            // Determinar color según valor
+            let colorClass = 'bg-gray-100 text-gray-700 border-gray-300'; // default
+            if (valor.includes('< 24') || valor.includes('<24')) {
+              colorClass = 'bg-red-100 text-red-800 border-red-300';
+            } else if (valor.includes('24') && valor.includes('72')) {
+              colorClass = 'bg-yellow-100 text-yellow-800 border-yellow-300';
+            } else if (valor.includes('> 72') || valor.includes('>72')) {
+              colorClass = 'bg-teal-100 text-teal-800 border-teal-300';
+            }
+            return (
+              <span className={`inline-block px-2 py-1 rounded border font-medium text-xs ${colorClass}`}>
+                {valor}
+              </span>
+            );
+          })()}
+        </td>
       )}
 
       {/* ESTADO DE BOLSA */}

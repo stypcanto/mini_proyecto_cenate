@@ -193,7 +193,8 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
                COALESCE(CONCAT(med.nom_pers, ' ', med.ape_pater_pers, ' ', med.ape_mater_pers), '') as nombre_medico,
                sb.id_ipress_atencion, COALESCE(di2.cod_ipress, di.cod_ipress, '') as cod_ipress_atencion,
                COALESCE(di2.desc_ipress, di.desc_ipress, '') as desc_ipress_atencion,
-               COALESCE(CONCAT(pcg.nom_pers, ' ', pcg.ape_pater_pers, ' ', pcg.ape_mater_pers), ug.name_user) as nombre_gestora
+               COALESCE(CONCAT(pcg.nom_pers, ' ', pcg.ape_pater_pers, ' ', pcg.ape_mater_pers), ug.name_user) as nombre_gestora,
+               sb.tiempo_inicio_sintomas
         FROM dim_solicitud_bolsa sb
         LEFT JOIN dim_tipos_bolsas tb ON sb.id_bolsa = tb.id_tipo_bolsa
         LEFT JOIN dim_ipress di ON sb.id_ipress = di.id_ipress
@@ -254,7 +255,8 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
                COALESCE(CONCAT(med.nom_pers, ' ', med.ape_pater_pers, ' ', med.ape_mater_pers), '') as nombre_medico,
                sb.id_ipress_atencion, COALESCE(di2.cod_ipress, di.cod_ipress, '') as cod_ipress_atencion,
                COALESCE(di2.desc_ipress, di.desc_ipress, '') as desc_ipress_atencion,
-               COALESCE(CONCAT(pcg.nom_pers, ' ', pcg.ape_pater_pers, ' ', pcg.ape_mater_pers), ug.name_user) as nombre_gestora
+               COALESCE(CONCAT(pcg.nom_pers, ' ', pcg.ape_pater_pers, ' ', pcg.ape_mater_pers), ug.name_user) as nombre_gestora,
+               sb.tiempo_inicio_sintomas
         FROM dim_solicitud_bolsa sb
         LEFT JOIN dim_tipos_bolsas tb ON sb.id_bolsa = tb.id_tipo_bolsa
         LEFT JOIN dim_ipress di ON sb.id_ipress = di.id_ipress

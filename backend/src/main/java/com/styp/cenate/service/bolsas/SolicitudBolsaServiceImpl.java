@@ -780,6 +780,7 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
             String codIpressAtencion = row.length > 42 ? (String) row[42] : null;
             String descIpressAtencion = row.length > 43 ? (String) row[43] : null;
             String nombreGestora = row.length > 44 ? (String) row[44] : null;
+            String tiempoInicioSintomas = row.length > 45 ? (String) row[45] : null;
 
             return SolicitudBolsaDTO.builder()
                     .idSolicitud(toLongSafe("id_solicitud", row[0]))
@@ -828,6 +829,7 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
                     .codIpressAtencion(codIpressAtencion)  // NEW v1.15.0 - cod_ipress_atencion (índice 39)
                     .descIpressAtencion(descIpressAtencion) // NEW v1.15.0 - desc_ipress_atencion (índice 40)
                     .nombreGestora(nombreGestora)           // nombre gestora desde JOIN dim_usuarios
+                    .tiempoInicioSintomas(tiempoInicioSintomas)
                     .build();
         } catch (Exception e) {
             log.error("Error mapeando resultado SQL en índice. Error: {}", e.getMessage(), e);

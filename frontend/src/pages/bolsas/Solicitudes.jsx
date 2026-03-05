@@ -75,6 +75,8 @@ export default function Solicitudes({ categoriaInicial } = {}) {
 
   // v1.86.2: Métricas de tiempo solo para Medicina General y Especialidades
   const mostrarMetricasTiempo = categoriaInicial === 'MEDICINA GENERAL' || categoriaInicial === 'especialidades';
+  // v1.87.0: Tiempo Inicio Síntomas solo para bolsa107
+  const mostrarTiempoInicioSintomas = categoriaInicial === 'bolsa107';
 
   const [solicitudes, setSolicitudes] = useState([]);
   const [totalElementos, setTotalElementos] = useState(0); // NEW v2.5.1: Total de elementos del backend
@@ -649,6 +651,7 @@ export default function Solicitudes({ categoriaInicial } = {}) {
             gestoraAsignada: gestoraAsignadaNombre,
             gestoraAsignadaId: solicitud.responsable_gestora_id,
             fechaAsignacionFormato: fechaAsignacionFormato,
+            tiempoInicioSintomas: solicitud.tiempo_inicio_sintomas || null,
             // ============================================================================
             // 📋 LOS 10 CAMPOS DEL EXCEL v1.8.0
             // ============================================================================
@@ -897,6 +900,7 @@ export default function Solicitudes({ categoriaInicial } = {}) {
               gestoraAsignada: gestoraAsignadaNombre,
               gestoraAsignadaId: solicitud.responsable_gestora_id,
               fechaAsignacionFormato: fechaAsignacionFormato,
+              tiempoInicioSintomas: solicitud.tiempo_inicio_sintomas || null,
               fechaPreferidaNoAtendida: solicitud.fecha_preferida_no_atendida ?
                 (() => {
                   const [y, m, d] = solicitud.fecha_preferida_no_atendida.split('-');
@@ -1092,6 +1096,7 @@ export default function Solicitudes({ categoriaInicial } = {}) {
               gestoraAsignada: gestoraAsignadaNombre,
               gestoraAsignadaId: solicitud.responsable_gestora_id,
               fechaAsignacionFormato: fechaAsignacionFormato,
+              tiempoInicioSintomas: solicitud.tiempo_inicio_sintomas || null,
               fechaPreferidaNoAtendida: solicitud.fecha_preferida_no_atendida ?
                 (() => {
                   const [y, m, d] = solicitud.fecha_preferida_no_atendida.split('-');
@@ -3051,6 +3056,7 @@ export default function Solicitudes({ categoriaInicial } = {}) {
                     {[
                       { label: 'F. Ingreso Bolsa', key: 'fechaSolicitud' },
                       ...(mostrarMetricasTiempo ? [{ label: 'Métricas de Tiempo', key: 'metricasTiempo', tooltip: '📋 Pendiente | 📅 Citar | 🩺 Atención' }] : []),
+                      ...(mostrarTiempoInicioSintomas ? [{ label: 'T. Inicio Síntomas', key: 'tiempoInicioSintomas' }] : []),
                       { label: 'Estado de Bolsa', key: 'estado' },
                       { label: 'Origen de la Bolsa', key: 'nombreBolsa' },
                       { label: 'Fecha Preferida', key: 'fechaPreferidaNoAtendida' },
@@ -3136,6 +3142,7 @@ export default function Solicitudes({ categoriaInicial } = {}) {
                       isProcessing={isProcessing}
                       getEstadoBadge={getEstadoBadge}
                       mostrarMetricasTiempo={mostrarMetricasTiempo}
+                      mostrarTiempoInicioSintomas={mostrarTiempoInicioSintomas}
                     />
                   ))}
                 </tbody>
