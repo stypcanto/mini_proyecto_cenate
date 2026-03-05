@@ -405,8 +405,11 @@ export default function Solicitudes({ categoriaInicial } = {}) {
                   ? apiClient.get('/asegurados?maraton=true&page=0&size=1', true).catch(() => null)
                   : Promise.resolve(null),
                 // KPI CENACRON dentro de Maratón (termómetro de meta)
+                // Nota: pacientes Maratón tienen sigla='MARATON' en paciente_estrategia.
+                // Sin filtro estrategia → todos los citados en id_bolsa=17 = segmento CENACRON.
+                // Cuando entren Especialidades se segmentará por un campo específico.
                 categoriaInicial === 'maraton'
-                  ? bolsasService.obtenerKpiConFiltros({ categoriaEspecialidad: 'maraton', estrategia: 'CENACRON' }).catch(() => null)
+                  ? bolsasService.obtenerKpiConFiltros({ categoriaEspecialidad: 'maraton' }).catch(() => null)
                   : Promise.resolve(null),
               ];
               const [naAdsc, naAten, cnCenacron, cnMaraton, maratonUniverse, kpiCenacronData] = await Promise.all(promises);
