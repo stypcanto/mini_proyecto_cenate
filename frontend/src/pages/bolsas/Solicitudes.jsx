@@ -2198,118 +2198,99 @@ export default function Solicitudes({ categoriaInicial } = {}) {
           {categoriaInicial === 'maraton' ? (
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold text-gray-900">Embudo de Campaña Maratón</h3>
-              <span className="text-xs text-gray-400 font-medium tracking-wide uppercase">Universo → Asignación → Gestión → Conversión</span>
+              <span className="text-xs text-gray-400 font-medium tracking-wide uppercase">Total Base → Por Asignar → En Contacto → Citas Logradas</span>
             </div>
           ) : (
             <h3 className="text-lg font-semibold text-gray-900 mb-4">Estadísticas de Solicitudes</h3>
           )}
           <div className={`grid grid-cols-1 md:grid-cols-2 gap-5 animate-fade-in ${categoriaInicial === 'maraton' ? 'lg:grid-cols-4' : 'lg:grid-cols-4'}`}>
 
-            {/* ═══ CARDS MARATÓN — Embudo compacto estilo "Fila de Mando" ═══ */}
+            {/* ═══ CARDS MARATÓN — Fuente única: maratonUniversoTotal ═══ */}
             {categoriaInicial === 'maraton' ? (<>
 
               {/* Fila de KPIs — 4 cards compactos en línea */}
-              <div className="col-span-full grid grid-cols-4 gap-3">
-
-                {/* M1. UNIVERSO */}
-                <div className="bg-white rounded-xl border border-gray-200 border-l-4 px-4 py-3.5 shadow-sm"
-                  style={{ borderLeftColor: '#64748b' }}>
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-1">① Universo</p>
-                      <p className="text-3xl font-black text-gray-900 leading-none tabular-nums">
-                        {estadisticas.total === null ? <span className="text-xl text-gray-300 animate-pulse">—</span> : estadisticas.total.toLocaleString('es-PE')}
-                      </p>
-                      <p className="text-xs text-gray-400 mt-1">Total en bolsa</p>
-                    </div>
-                    <Database className="w-4 h-4 text-gray-300 flex-shrink-0 mt-0.5" strokeWidth={2} />
-                  </div>
-                </div>
-
-                {/* M2. SIN GESTORA — Alerta pesada */}
-                <div className="bg-white rounded-xl border border-red-200 border-l-4 px-4 py-3.5"
-                  style={{ borderLeftColor: '#dc2626', boxShadow: '0 4px 16px -2px rgba(220,38,38,0.25), 0 1px 4px rgba(220,38,38,0.12)' }}>
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <p className="text-[10px] font-bold uppercase tracking-widest text-red-400 mb-1 flex items-center gap-1">
-                        ② Sin Gestora <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 animate-ping" />
-                      </p>
-                      <p className="text-3xl font-black text-red-700 leading-none tabular-nums">
-                        {estadisticas.sinAsignar === null ? <span className="text-xl text-red-200 animate-pulse">—</span> : estadisticas.sinAsignar.toLocaleString('es-PE')}
-                      </p>
-                      <p className="text-xs font-semibold text-red-500 mt-1">
-                        {estadisticas.sinAsignar !== null && estadisticas.total
-                          ? `⚠ ${((estadisticas.sinAsignar / estadisticas.total) * 100).toFixed(1)}% sin asignar`
-                          : 'Trabajo no tocado'}
-                      </p>
-                    </div>
-                    <AlertTriangle className="w-4 h-4 text-red-300 flex-shrink-0 mt-0.5" strokeWidth={2} />
-                  </div>
-                </div>
-
-                {/* M3. EN GESTIÓN */}
-                <div className="bg-white rounded-xl border border-gray-200 border-l-4 px-4 py-3.5 shadow-sm"
-                  style={{ borderLeftColor: '#d97706' }}>
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <p className="text-[10px] font-bold uppercase tracking-widest text-amber-500 mb-1">③ En Gestión</p>
-                      <p className="text-3xl font-black text-gray-900 leading-none tabular-nums">
-                        {estadisticas.pendientes === null ? <span className="text-xl text-gray-300 animate-pulse">—</span> : estadisticas.pendientes.toLocaleString('es-PE')}
-                      </p>
-                      <p className="text-xs text-amber-600 font-medium mt-1">
-                        {estadisticas.pendientes !== null && estadisticas.total
-                          ? `${((estadisticas.pendientes / estadisticas.total) * 100).toFixed(1)}% · Pendiente citar`
-                          : 'Esperando llamada'}
-                      </p>
-                    </div>
-                    <Clock className="w-4 h-4 text-amber-200 flex-shrink-0 mt-0.5" strokeWidth={2} />
-                  </div>
-                </div>
-
-                {/* M4. CITADOS */}
-                <div className="bg-white rounded-xl border border-gray-200 border-l-4 px-4 py-3.5 shadow-sm"
-                  style={{ borderLeftColor: '#16a34a' }}>
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <p className="text-[10px] font-bold uppercase tracking-widest text-green-600 mb-1">④ Citados ✅</p>
-                      <p className="text-3xl font-black text-gray-900 leading-none tabular-nums">
-                        {estadisticas.citados === null ? <span className="text-xl text-gray-300 animate-pulse">—</span> : estadisticas.citados.toLocaleString('es-PE')}
-                      </p>
-                      <p className="text-xs text-green-600 font-semibold mt-1">
-                        {estadisticas.citados !== null && estadisticas.total
-                          ? `${((estadisticas.citados / estadisticas.total) * 100).toFixed(1)}% conversión`
-                          : 'Cita confirmada'}
-                      </p>
-                    </div>
-                    <CalendarCheck className="w-4 h-4 text-green-200 flex-shrink-0 mt-0.5" strokeWidth={2} />
-                  </div>
-                </div>
-              </div>
-
-              {/* OBSERVADOS — Fila compacta secundaria */}
               {(() => {
-                const observados = (estadisticas.total !== null && estadisticas.pendientes !== null && estadisticas.citados !== null)
-                  ? estadisticas.total - estadisticas.pendientes - estadisticas.citados : null;
+                const universoBase = maratonUniversoTotal ?? estadisticas.total ?? 1;
+                const pct = (n) => universoBase > 0 ? ((n / universoBase) * 100).toFixed(1) : '0.0';
                 const cargarDesglose = async () => {
                   setDesglosAbierto(true); setDesgloseLoading(true);
                   try { const kpi = await bolsasService.obtenerKpiConFiltros({ categoriaEspecialidad: 'maraton' }); setDesgloseData(kpi); }
                   catch { setDesgloseData(null); } finally { setDesgloseLoading(false); }
                 };
+                const observados = (estadisticas.total !== null && estadisticas.pendientes !== null && estadisticas.citados !== null)
+                  ? (estadisticas.total ?? 0) - (estadisticas.pendientes ?? 0) - (estadisticas.citados ?? 0)
+                  : null;
                 return (
-                  <div className="col-span-full mt-1">
-                    <button onClick={cargarDesglose}
-                      className="flex items-center gap-3 px-4 py-2.5 rounded-xl bg-amber-50 border border-amber-200 hover:bg-amber-100 transition-colors group">
-                      <BarChart2 className="w-4 h-4 text-amber-600 flex-shrink-0" />
-                      <span className="text-sm font-semibold text-amber-800">Observados:</span>
-                      <span className="text-sm font-black text-amber-900">
-                        {observados === null ? '—' : observados.toLocaleString('es-PE')}
-                      </span>
-                      <span className="text-xs text-amber-600">
-                        {observados !== null && estadisticas.total ? `(${((observados / estadisticas.total) * 100).toFixed(1)}% del total)` : ''}
-                      </span>
-                      <span className="text-xs text-amber-500 group-hover:text-amber-700 ml-1">Ver desglose →</span>
-                    </button>
-                  </div>
+                  <>
+                    <div className="col-span-full grid grid-cols-4 gap-3">
+
+                      {/* M1. UNIVERSO — fuente maratonUniversoTotal */}
+                      <div className="bg-white rounded-xl border border-gray-100 border-t-4 shadow-sm px-5 py-4 relative"
+                        style={{ borderTopColor: '#3b82f6' }}>
+                        <Database className="absolute top-3 right-3 w-3.5 h-3.5 text-blue-400" style={{ opacity: 0.3 }} strokeWidth={2} />
+                        <p className="text-[10px] font-bold uppercase tracking-widest mb-2" style={{ color: '#3b82f6' }}>① Universo</p>
+                        <p className="text-4xl font-black text-gray-900 leading-none tabular-nums">
+                          {universoBase === 1 && maratonUniversoTotal == null
+                            ? <span className="text-xl text-gray-300 animate-pulse">—</span>
+                            : (maratonUniversoTotal ?? estadisticas.total ?? 0).toLocaleString('es-PE')}
+                        </p>
+                        <p className="text-xs text-gray-400 mt-1.5">100% · Total base</p>
+                      </div>
+
+                      {/* M2. POR ASIGNAR — animate-pulse dot */}
+                      <div className="bg-white rounded-xl border border-gray-100 border-t-4 shadow-sm px-5 py-4 relative"
+                        style={{ borderTopColor: '#ef4444' }}>
+                        <AlertTriangle className="absolute top-3 right-3 w-3.5 h-3.5 text-red-400" style={{ opacity: 0.3 }} strokeWidth={2} />
+                        <p className="text-[10px] font-bold uppercase tracking-widest mb-2 flex items-center gap-1.5" style={{ color: '#ef4444' }}>
+                          ② Por Asignar
+                          <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse flex-shrink-0" />
+                        </p>
+                        <p className="text-4xl font-black text-gray-900 leading-none tabular-nums">
+                          {estadisticas.sinAsignar === null ? <span className="text-xl text-gray-300 animate-pulse">—</span> : estadisticas.sinAsignar.toLocaleString('es-PE')}
+                        </p>
+                        <p className="text-xs text-gray-400 mt-1.5">
+                          {estadisticas.sinAsignar !== null ? `${pct(estadisticas.sinAsignar)}% del total` : '—'}
+                        </p>
+                      </div>
+
+                      {/* M3. EN CONTACTO */}
+                      <div className="bg-white rounded-xl border border-gray-100 border-t-4 shadow-sm px-5 py-4 relative"
+                        style={{ borderTopColor: '#f97316' }}>
+                        <Clock className="absolute top-3 right-3 w-3.5 h-3.5 text-orange-400" style={{ opacity: 0.3 }} strokeWidth={2} />
+                        <p className="text-[10px] font-bold uppercase tracking-widest mb-2" style={{ color: '#f97316' }}>③ En Contacto</p>
+                        <p className="text-4xl font-black text-gray-900 leading-none tabular-nums">
+                          {estadisticas.pendientes === null ? <span className="text-xl text-gray-300 animate-pulse">—</span> : estadisticas.pendientes.toLocaleString('es-PE')}
+                        </p>
+                        <p className="text-xs text-gray-400 mt-1.5">
+                          {estadisticas.pendientes !== null ? `${pct(estadisticas.pendientes)}% del total` : '—'}
+                        </p>
+                      </div>
+
+                      {/* M4. CITAS LOGRADAS */}
+                      <div className="bg-white rounded-xl border border-gray-100 border-t-4 shadow-sm px-5 py-4 relative"
+                        style={{ borderTopColor: '#22c55e' }}>
+                        <CalendarCheck className="absolute top-3 right-3 w-3.5 h-3.5 text-green-400" style={{ opacity: 0.3 }} strokeWidth={2} />
+                        <p className="text-[10px] font-bold uppercase tracking-widest mb-2" style={{ color: '#22c55e' }}>④ Citas Logradas</p>
+                        <p className="text-4xl font-black text-gray-900 leading-none tabular-nums">
+                          {estadisticas.citados === null ? <span className="text-xl text-gray-300 animate-pulse">—</span> : estadisticas.citados.toLocaleString('es-PE')}
+                        </p>
+                        <p className="text-xs text-gray-400 mt-1.5">
+                          {estadisticas.citados !== null ? `${pct(estadisticas.citados)}% del total` : '—'}
+                        </p>
+                      </div>
+
+                    </div>
+
+                    {/* OBSERVADOS — chip compacto, solo si hay datos */}
+                    {observados !== null && observados > 0 && (
+                      <div className="col-span-full mt-1">
+                        <button onClick={cargarDesglose}
+                          className="bg-gray-100 hover:bg-gray-200 rounded-lg px-4 py-2 text-sm font-medium text-gray-600 transition-colors">
+                          Ver estados observados · {observados.toLocaleString('es-PE')} pacientes
+                        </button>
+                      </div>
+                    )}
+                  </>
                 );
               })()}
 
@@ -2532,50 +2513,98 @@ export default function Solicitudes({ categoriaInicial } = {}) {
                 ) : Array.isArray(desgloseData) && desgloseData.length > 0 ? (() => {
                   const ESTADOS_LABEL = {
                     PENDIENTE_CITA: 'Pendiente de citar', CITADO: 'Cita confirmada',
-                    ATENDIDO_IPRESS: 'Ya fue atendido', NO_CONTESTA: 'No responde llamadas',
-                    NO_DESEA: 'Rechazó la cita', NO_IPRESS_CENATE: 'IPRESS no cubre CENATE',
-                    REPROG_FALLIDA: 'Reprogramación fallida', APAGADO: 'Teléfono apagado',
-                    SIN_VIGENCIA: 'Sin seguro vigente', RECHAZADO: 'Rechazado por gestora',
-                    NUM_NO_EXISTE: 'Número no existe', PARTICULAR: 'Atención particular',
-                    TEL_SIN_SERVICIO: 'Teléfono sin servicio', YA_NO_REQUIERE: 'Ya no requiere atención',
+                    ATENDIDO: 'Atendido', ATENDIDO_IPRESS: 'Ya fue atendido en IPRESS',
+                    NO_CONTESTA: 'No responde llamadas', NO_CONTESTO: 'No contestó',
+                    APAGADO: 'Teléfono apagado', TEL_SIN_SERVICIO: 'Teléfono sin servicio',
+                    NO_DESEA: 'Rechazó la cita', RECHAZADO: 'Rechazado por gestora',
+                    NUM_NO_EXISTE: 'Número no existe', NO_IPRESS_CENATE: 'IPRESS no cubre CENATE',
+                    SIN_VIGENCIA: 'Sin seguro vigente', YA_NO_REQUIERE: 'Ya no requiere atención',
+                    PARTICULAR: 'Atención particular', REPROG_FALLIDA: 'Reprogramación fallida',
                   };
                   const EXCLUIR = ['PENDIENTE_CITA', 'CITADO', 'SIN_GESTORA', 'CON_GESTORA'];
                   const filas = desgloseData
                     .filter(r => !EXCLUIR.includes(r.estado))
                     .sort((a, b) => b.cantidad - a.cantidad);
                   const totalObservados = filas.reduce((s, r) => s + r.cantidad, 0);
+
+                  const GRUPOS = [
+                    {
+                      key: 'exito',
+                      label: 'ÉXITO',
+                      color: '#16a34a',
+                      bg: 'bg-green-50',
+                      badgeBg: 'bg-green-100 text-green-800',
+                      estados: ['CITADO', 'ATENDIDO', 'ATENDIDO_IPRESS'],
+                    },
+                    {
+                      key: 'proceso',
+                      label: 'EN PROCESO',
+                      color: '#d97706',
+                      bg: 'bg-amber-50',
+                      badgeBg: 'bg-amber-100 text-amber-800',
+                      estados: ['PENDIENTE_CITA', 'NO_CONTESTA', 'NO_CONTESTO', 'APAGADO', 'TEL_SIN_SERVICIO'],
+                    },
+                    {
+                      key: 'descartados',
+                      label: 'DESCARTADOS',
+                      color: '#dc2626',
+                      bg: 'bg-red-50',
+                      badgeBg: 'bg-red-100 text-red-800',
+                      estados: null, // catch-all: todos los que no están en los grupos anteriores
+                    },
+                  ];
+
+                  const exitoEstados = new Set(GRUPOS[0].estados);
+                  const procesoEstados = new Set(GRUPOS[1].estados);
+
+                  const gruposConFilas = GRUPOS.map(g => {
+                    let rows;
+                    if (g.key === 'exito') {
+                      rows = filas.filter(r => exitoEstados.has(r.estado));
+                    } else if (g.key === 'proceso') {
+                      rows = filas.filter(r => procesoEstados.has(r.estado));
+                    } else {
+                      rows = filas.filter(r => !exitoEstados.has(r.estado) && !procesoEstados.has(r.estado));
+                    }
+                    return { ...g, rows, subtotal: rows.reduce((s, r) => s + r.cantidad, 0) };
+                  }).filter(g => g.rows.length > 0);
+
                   return (
-                    <table className="w-full text-sm">
-                      <thead>
-                        <tr className="text-xs text-gray-400 uppercase border-b border-gray-100">
-                          <th className="text-left py-2 font-semibold">Estado</th>
-                          <th className="text-left py-2 font-semibold">Descripción</th>
-                          <th className="text-right py-2 font-semibold">Cant.</th>
-                          <th className="text-right py-2 font-semibold">%</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {filas.map(r => (
-                          <tr key={r.estado} className="border-b border-gray-50 hover:bg-gray-50">
-                            <td className="py-2 pr-3">
-                              <span className="inline-block px-2 py-0.5 rounded text-xs font-semibold bg-amber-100 text-amber-800">{r.estado}</span>
-                            </td>
-                            <td className="py-2 pr-3 text-gray-600 text-xs">{ESTADOS_LABEL[r.estado] || r.estado}</td>
-                            <td className="py-2 text-right font-bold text-gray-800">{r.cantidad.toLocaleString('es-PE')}</td>
-                            <td className="py-2 text-right text-gray-400 text-xs">
-                              {totalObservados > 0 ? ((r.cantidad / totalObservados) * 100).toFixed(1) : 0}%
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                      <tfoot>
-                        <tr className="border-t-2 border-gray-200">
-                          <td colSpan={2} className="py-3 font-bold text-gray-700 text-sm">Total observados</td>
-                          <td className="py-3 text-right font-bold text-amber-700">{totalObservados.toLocaleString('es-PE')}</td>
-                          <td className="py-3 text-right text-gray-400 text-xs">100%</td>
-                        </tr>
-                      </tfoot>
-                    </table>
+                    <div className="space-y-5">
+                      {gruposConFilas.map(grupo => (
+                        <div key={grupo.key}>
+                          {/* Group header */}
+                          <div className="flex items-center gap-2 mb-2">
+                            <span className={`text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded ${grupo.badgeBg}`}>
+                              {grupo.label}
+                            </span>
+                            <span className="text-xs text-gray-400 font-medium">
+                              {grupo.subtotal.toLocaleString('es-PE')} pacientes
+                              {totalObservados > 0 ? ` · ${((grupo.subtotal / totalObservados) * 100).toFixed(1)}%` : ''}
+                            </span>
+                          </div>
+                          {/* Group rows */}
+                          <div className={`rounded-lg ${grupo.bg} divide-y divide-white`}>
+                            {grupo.rows.map(r => (
+                              <div key={r.estado} className="flex items-center gap-3 px-3 py-2.5">
+                                <span className="text-base leading-none flex-shrink-0">{r.emoji || '•'}</span>
+                                <span className="flex-1 text-xs text-gray-700">{ESTADOS_LABEL[r.estado] || r.estado}</span>
+                                <span className="font-bold text-gray-800 text-sm tabular-nums">{r.cantidad.toLocaleString('es-PE')}</span>
+                                <span className="text-gray-400 text-xs tabular-nums w-10 text-right">
+                                  {totalObservados > 0 ? `${((r.cantidad / totalObservados) * 100).toFixed(1)}%` : '0%'}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+
+                      {/* Footer total */}
+                      <div className="border-t-2 border-gray-200 pt-3 flex items-center justify-between">
+                        <span className="text-sm font-bold text-gray-700">Total observados</span>
+                        <span className="text-sm font-bold text-amber-700">{totalObservados.toLocaleString('es-PE')}</span>
+                      </div>
+                    </div>
                   );
                 })() : (
                   <div className="text-center py-12 text-gray-400">No se pudieron cargar los datos</div>
