@@ -11,4 +11,5 @@ SET responsable_gestora_id = NULL,
     fecha_asignacion = NULL
 WHERE id_bolsa = 10
   AND responsable_gestora_id = 688
-  AND activo = TRUE;
+  AND activo = TRUE
+  AND estado = 'PENDIENTE';
