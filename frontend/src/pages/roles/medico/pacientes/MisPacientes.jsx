@@ -5739,11 +5739,10 @@ export default function MisPacientes() {
             </div>
 
             {/* Body scrollable — ✅ v1.85.0: Deshabilitado si restricción temporal */}
-            {/* ✅ v1.85.3: También deshabilitado si está Atendido */}
             {(() => {
               const deshabilitadoPorTiempo = pacienteSeleccionado?.fechaAtencionMedica && !puedeEditar(pacienteSeleccionado);
               const estaAtendido = pacienteSeleccionado?.condicion === 'Atendido';
-              const deshabilitado = deshabilitadoPorTiempo || estaAtendido;
+              const deshabilitado = deshabilitadoPorTiempo;
               return (
                 <>
                   <div className="overflow-y-auto flex-1 px-5 py-4 space-y-3"
@@ -5809,7 +5808,7 @@ export default function MisPacientes() {
                           type="number" min="20" max="300" step="0.1"
                           value={pesoKg}
                           onChange={e => setPesoKg(e.target.value)}
-                          readOnly={estaAtendido}
+                          readOnly={deshabilitadoPorTiempo}
                           placeholder="ej. 75"
                           className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-teal-400 focus:border-teal-400"
                         />
@@ -5820,7 +5819,7 @@ export default function MisPacientes() {
                           type="number" min="0.5" max="2.5" step="0.01"
                           value={tallaMt}
                           onChange={e => setTallaMt(e.target.value)}
-                          readOnly={estaAtendido}
+                          readOnly={deshabilitadoPorTiempo}
                           placeholder="ej. 1.65"
                           className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-teal-400 focus:border-teal-400"
                         />
@@ -5946,7 +5945,7 @@ export default function MisPacientes() {
                             inputMode="numeric"
                             value={paSistolica}
                             onChange={e => setPaSistolica(e.target.value)}
-                            readOnly={estaAtendido}
+                            readOnly={deshabilitadoPorTiempo}
                             placeholder="120"
                             className={`w-full px-3 py-2.5 border rounded-lg text-sm text-center font-bold focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400 ${
                               clasificacionPA?.color === 'error' ? 'border-red-400 bg-red-50' : 'border-gray-300'
@@ -5961,7 +5960,7 @@ export default function MisPacientes() {
                             inputMode="numeric"
                             value={paDiastolica}
                             onChange={e => setPaDiastolica(e.target.value)}
-                            readOnly={estaAtendido}
+                            readOnly={deshabilitadoPorTiempo}
                             placeholder="80"
                             className={`w-full px-3 py-2.5 border rounded-lg text-sm text-center font-bold focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400 ${
                               clasificacionPA?.color === 'error' ? 'border-red-400 bg-red-50' : 'border-gray-300'
@@ -6020,7 +6019,7 @@ export default function MisPacientes() {
                           inputMode="numeric"
                           value={glucosa}
                           onChange={e => setGlucosa(e.target.value)}
-                          readOnly={estaAtendido}
+                          readOnly={deshabilitadoPorTiempo}
                           placeholder="100"
                           className="w-36 px-3 py-2.5 border border-gray-300 rounded-lg text-sm text-center font-bold focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400"
                         />
@@ -6057,7 +6056,7 @@ export default function MisPacientes() {
                     <textarea
                       value={observacionesEnfermeria}
                       onChange={e => setObservacionesEnfermeria(e.target.value)}
-                      readOnly={estaAtendido}
+                      readOnly={deshabilitadoPorTiempo}
                       rows={3}
                       placeholder="Notas clínicas adicionales..."
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-teal-400 focus:border-teal-400 resize-none"
@@ -6190,17 +6189,17 @@ export default function MisPacientes() {
               >
                 Cancelar
               </button>
-              {/* ✅ v1.85.3: Si está Atendido, botón deshabilitado y con texto "Guardado" */}
+              {/* ✅ v1.85.3: Si pasó tiempo después de atención, botón deshabilitado y con texto "Guardado" */}
               <button
                 onClick={() => setShowFichaEnfermeriaModal(false)}
-                disabled={pacienteSeleccionado?.condicion === 'Atendido'}
+                disabled={pacienteSeleccionado?.fechaAtencionMedica && !puedeEditar(pacienteSeleccionado)}
                 className={`px-5 py-2 rounded-lg text-sm font-semibold transition-colors ${
-                  pacienteSeleccionado?.condicion === 'Atendido'
+                  pacienteSeleccionado?.fechaAtencionMedica && !puedeEditar(pacienteSeleccionado)
                     ? 'bg-gray-300 text-gray-500 cursor-not-allowed opacity-60'
                     : 'bg-teal-600 text-white hover:bg-teal-700'
                 }`}
               >
-                {pacienteSeleccionado?.condicion === 'Atendido' ? '✓ Guardado' : 'Aplicar'}
+                {pacienteSeleccionado?.fechaAtencionMedica && !puedeEditar(pacienteSeleccionado) ? '✓ Guardado' : 'Aplicar'}
               </button>
             </div>
           </div>
