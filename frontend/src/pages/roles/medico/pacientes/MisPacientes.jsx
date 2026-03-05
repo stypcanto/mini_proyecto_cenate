@@ -3359,24 +3359,17 @@ export default function MisPacientes() {
                           📅 Prim. Atención: {(() => {
                             try {
                               const f = pacienteSeleccionado.primeraFechaAtendida;
-                              let hora = '16:34:57'; // fallback
+                              const date = typeof f === 'string' ? new Date(f) : f;
                               
-                              // Si es String ISO con offset (-05:00)
-                              if (typeof f === 'string') {
-                                const match = f.match(/T(\d{2}):(\d{2}):(\d{2})/);
-                                if (match) {
-                                  hora = `${match[1]}:${match[2]}:${match[3]}`;
-                                }
-                              } else if (f instanceof Date) {
-                                const h = String(f.getHours()).padStart(2, '0');
-                                const m = String(f.getMinutes()).padStart(2, '0');
-                                const s = String(f.getSeconds()).padStart(2, '0');
-                                hora = `${h}:${m}:${s}`;
-                              }
+                              // Formato: DD/MM/YYYY HH:MM:SS
+                              const dia = String(date.getDate()).padStart(2, '0');
+                              const mes = String(date.getMonth() + 1).padStart(2, '0');
+                              const año = date.getFullYear();
+                              const hora = String(date.getHours()).padStart(2, '0');
+                              const minuto = String(date.getMinutes()).padStart(2, '0');
+                              const segundo = String(date.getSeconds()).padStart(2, '0');
                               
-                              const dateMatch = String(f).match(/(\d{4})-(\d{2})-(\d{2})/);
-                              const fecha = dateMatch ? `${dateMatch[3]}/${dateMatch[2]}/${dateMatch[1]}` : '—';
-                              return `${fecha} ${hora}`;
+                              return `${dia}/${mes}/${año} ${hora}:${minuto}:${segundo}`;
                             } catch { return '-'; }
                           })()}
                         </p>
@@ -3387,24 +3380,17 @@ export default function MisPacientes() {
                           📅 Últ. Atención: {(() => {
                             try {
                               const f = pacienteSeleccionado.fechaAtencionMedica;
-                              let hora = '16:35:48'; // fallback
+                              const date = typeof f === 'string' ? new Date(f) : f;
                               
-                              // Si es String ISO con offset (-05:00)
-                              if (typeof f === 'string') {
-                                const match = f.match(/T(\d{2}):(\d{2}):(\d{2})/);
-                                if (match) {
-                                  hora = `${match[1]}:${match[2]}:${match[3]}`;
-                                }
-                              } else if (f instanceof Date) {
-                                const h = String(f.getHours()).padStart(2, '0');
-                                const m = String(f.getMinutes()).padStart(2, '0');
-                                const s = String(f.getSeconds()).padStart(2, '0');
-                                hora = `${h}:${m}:${s}`;
-                              }
+                              // Formato: DD/MM/YYYY HH:MM:SS
+                              const dia = String(date.getDate()).padStart(2, '0');
+                              const mes = String(date.getMonth() + 1).padStart(2, '0');
+                              const año = date.getFullYear();
+                              const hora = String(date.getHours()).padStart(2, '0');
+                              const minuto = String(date.getMinutes()).padStart(2, '0');
+                              const segundo = String(date.getSeconds()).padStart(2, '0');
                               
-                              const dateMatch = String(f).match(/(\d{4})-(\d{2})-(\d{2})/);
-                              const fecha = dateMatch ? `${dateMatch[3]}/${dateMatch[2]}/${dateMatch[1]}` : '—';
-                              return `${fecha} ${hora}`;
+                              return `${dia}/${mes}/${año} ${hora}:${minuto}:${segundo}`;
                             } catch { return '-'; }
                           })()}
                         </p>
