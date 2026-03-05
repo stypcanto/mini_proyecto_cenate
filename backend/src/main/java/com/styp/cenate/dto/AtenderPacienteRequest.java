@@ -55,4 +55,5 @@ public class AtenderPacienteRequest {
     private String observaciones;      // Observaciones libres de enfermería
     private String presionArterial;    // Presión arterial: "120/80" (sistólica/diastólica mmHg)
     private String glucosa;            // Glucosa en ayunas: "95" (mg/dL)
+    private String videosApoyo;        // ✅ v1.85.2: Videos de apoyo seleccionados (CSV): "1, 2, 5"
 }

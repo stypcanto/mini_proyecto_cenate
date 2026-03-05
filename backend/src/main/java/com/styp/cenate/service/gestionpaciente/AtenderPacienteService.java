@@ -622,6 +622,7 @@ public class AtenderPacienteService {
                 ficha.setAdherenciaMorisky(request.getAdherencia());
                 ficha.setNivelRiesgo(request.getNivelRiesgo());
                 ficha.setControlado(request.getControlado());
+                ficha.setVideosApoyo(request.getVideosApoyo()); // ✅ v1.85.2: Guardar videos
                 ficha.setIdPersonalModificador(idPersonal);
                 AtencionClinica actualizada = atencionClinicaRepository.save(ficha);
                 log.info("✅ Ficha de Enfermería ACTUALIZADA — id_atencion: {}", actualizada.getIdAtencion());
@@ -644,6 +645,7 @@ public class AtenderPacienteService {
                     .adherenciaMorisky(request.getAdherencia())
                     .nivelRiesgo(request.getNivelRiesgo())
                     .controlado(request.getControlado())
+                    .videosApoyo(request.getVideosApoyo()) // ✅ v1.85.2: Guardar videos
                     .idPersonalCreador(idPersonal)
                     .tieneOrdenInterconsulta(false)
                     .requiereTelemonitoreo(false)

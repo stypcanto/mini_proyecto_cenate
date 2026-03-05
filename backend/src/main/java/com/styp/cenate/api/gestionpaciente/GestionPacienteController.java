@@ -503,6 +503,7 @@ public class GestionPacienteController {
                 item.put("nivelRiesgo", a.getNivelRiesgo());
                 item.put("controlado", a.getControlado());
                 item.put("observaciones", a.getObservacionesGenerales());
+                item.put("videosApoyo", a.getVideosApoyo()); // ✅ v1.85.2: Incluir videos de apoyo
                 return item;
             }).toList();
 

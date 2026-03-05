@@ -160,6 +160,9 @@ public class AtencionClinica {
     @Column(name = "glucosa", precision = 6, scale = 1)
     private BigDecimal glucosa;
 
+    @Column(name = "videos_apoyo", columnDefinition = "TEXT")
+    private String videosApoyo;
+
     // =====================================================================
     // TELEMONITOREO
     // =====================================================================

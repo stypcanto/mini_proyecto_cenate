@@ -1230,6 +1230,18 @@ export default function MisPacientes() {
           setObservacionesEnfermeria(ultimoControl.observaciones);
         }
         
+        // ✅ v1.85.2: Videos de Apoyo (CSV string → array)
+        if (ultimoControl.videosApoyo) {
+          devLog('📹 [v1.85.2] Videos recibidos:', ultimoControl.videosApoyo);
+          const videosArray = typeof ultimoControl.videosApoyo === 'string'
+            ? ultimoControl.videosApoyo.split(',').map(id => id.trim()).filter(id => id.length > 0)
+            : Array.isArray(ultimoControl.videosApoyo) ? ultimoControl.videosApoyo : [];
+          devLog('📹 [v1.85.2] Videos parseados:', videosArray);
+          setVideosSeleccionados(videosArray);
+        } else {
+          devLog('⚠️ [v1.85.2] No hay videosApoyo en la respuesta');
+        }
+        
         toast.success('Ficha de Enfermería cargada');
       } else {
         devLog('⚠️ [v1.85.2] No hay registros de Ficha guardados');
@@ -1245,6 +1257,7 @@ export default function MisPacientes() {
         setNivelRiesgoEnfermeria('');
         setControladoEnfermeria('');
         setObservacionesEnfermeria('');
+        setVideosSeleccionados([]); // ✅ v1.85.2: Limpiar videos
         
         toast.info('No hay registro de Ficha de Enfermería guardado');
       }
@@ -2157,6 +2170,7 @@ export default function MisPacientes() {
           presionArterial: (paSistolica && paDiastolica && clasificacionPA?.color !== 'error') ? `${paSistolica}/${paDiastolica}` : null,
           glucosa: glucosa || null,
           observaciones: observacionesEnfermeria || null,
+          videosApoyo: videosSeleccionados.length > 0 ? videosSeleccionados.join(', ') : null, // ✅ v1.85.2: Guardar videos
         })
       };
 
@@ -3663,6 +3677,19 @@ export default function MisPacientes() {
                       <button
                         onClick={async () => {
                           setShowFichaEnfermeriaModal(true);
+                          // ✅ v1.85.3: Si está Atendido, abrir todas las secciones automáticamente
+                          if (pacienteSeleccionado?.condicion === 'Atendido') {
+                            setFichaOpen({
+                              dispositivos: true,
+                              imc: true,
+                              morisky: true,
+                              riesgo: true,
+                              controlado: true,
+                              mediciones: true,
+                              observaciones: true,
+                              videos: true
+                            });
+                          }
                           if (pacienteSeleccionado?.numDoc) {
                             await cargarFichaEnfermeria(pacienteSeleccionado.numDoc);
                           }
@@ -5726,12 +5753,15 @@ export default function MisPacientes() {
             </div>
 
             {/* Body scrollable — ✅ v1.85.0: Deshabilitado si restricción temporal */}
+            {/* ✅ v1.85.3: También deshabilitado si está Atendido */}
             {(() => {
               const deshabilitadoPorTiempo = pacienteSeleccionado?.fechaAtencionMedica && !puedeEditar(pacienteSeleccionado);
+              const estaAtendido = pacienteSeleccionado?.condicion === 'Atendido';
+              const deshabilitado = deshabilitadoPorTiempo || estaAtendido;
               return (
                 <>
                   <div className="overflow-y-auto flex-1 px-5 py-4 space-y-3"
-                       style={deshabilitadoPorTiempo ? { opacity: 0.65, pointerEvents: 'none' } : {}}
+                       style={deshabilitado ? { opacity: 0.65, pointerEvents: estaAtendido ? 'auto' : 'none' } : {}}
                   >
 
               {/* Control de Dispositivos */}
@@ -5793,6 +5823,7 @@ export default function MisPacientes() {
                           type="number" min="20" max="300" step="0.1"
                           value={pesoKg}
                           onChange={e => setPesoKg(e.target.value)}
+                          readOnly={estaAtendido}
                           placeholder="ej. 75"
                           className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-teal-400 focus:border-teal-400"
                         />
@@ -5803,6 +5834,7 @@ export default function MisPacientes() {
                           type="number" min="0.5" max="2.5" step="0.01"
                           value={tallaMt}
                           onChange={e => setTallaMt(e.target.value)}
+                          readOnly={estaAtendido}
                           placeholder="ej. 1.65"
                           className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-teal-400 focus:border-teal-400"
                         />
@@ -5928,6 +5960,7 @@ export default function MisPacientes() {
                             inputMode="numeric"
                             value={paSistolica}
                             onChange={e => setPaSistolica(e.target.value)}
+                            readOnly={estaAtendido}
                             placeholder="120"
                             className={`w-full px-3 py-2.5 border rounded-lg text-sm text-center font-bold focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400 ${
                               clasificacionPA?.color === 'error' ? 'border-red-400 bg-red-50' : 'border-gray-300'
@@ -5942,6 +5975,7 @@ export default function MisPacientes() {
                             inputMode="numeric"
                             value={paDiastolica}
                             onChange={e => setPaDiastolica(e.target.value)}
+                            readOnly={estaAtendido}
                             placeholder="80"
                             className={`w-full px-3 py-2.5 border rounded-lg text-sm text-center font-bold focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400 ${
                               clasificacionPA?.color === 'error' ? 'border-red-400 bg-red-50' : 'border-gray-300'
@@ -6000,6 +6034,7 @@ export default function MisPacientes() {
                           inputMode="numeric"
                           value={glucosa}
                           onChange={e => setGlucosa(e.target.value)}
+                          readOnly={estaAtendido}
                           placeholder="100"
                           className="w-36 px-3 py-2.5 border border-gray-300 rounded-lg text-sm text-center font-bold focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400"
                         />
@@ -6036,6 +6071,7 @@ export default function MisPacientes() {
                     <textarea
                       value={observacionesEnfermeria}
                       onChange={e => setObservacionesEnfermeria(e.target.value)}
+                      readOnly={estaAtendido}
                       rows={3}
                       placeholder="Notas clínicas adicionales..."
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-teal-400 focus:border-teal-400 resize-none"
@@ -6168,11 +6204,17 @@ export default function MisPacientes() {
               >
                 Cancelar
               </button>
+              {/* ✅ v1.85.3: Si está Atendido, botón deshabilitado y con texto "Guardado" */}
               <button
                 onClick={() => setShowFichaEnfermeriaModal(false)}
-                className="px-5 py-2 rounded-lg bg-teal-600 text-white text-sm font-semibold hover:bg-teal-700 transition-colors"
+                disabled={pacienteSeleccionado?.condicion === 'Atendido'}
+                className={`px-5 py-2 rounded-lg text-sm font-semibold transition-colors ${
+                  pacienteSeleccionado?.condicion === 'Atendido'
+                    ? 'bg-gray-300 text-gray-500 cursor-not-allowed opacity-60'
+                    : 'bg-teal-600 text-white hover:bg-teal-700'
+                }`}
               >
-                Aplicar
+                {pacienteSeleccionado?.condicion === 'Atendido' ? '✓ Guardado' : 'Aplicar'}
               </button>
             </div>
           </div>
