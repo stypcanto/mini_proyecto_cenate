@@ -404,15 +404,10 @@ export default function Solicitudes({ categoriaInicial } = {}) {
                 categoriaInicial === 'maraton'
                   ? apiClient.get('/asegurados?maraton=true&page=0&size=1', true).catch(() => null)
                   : Promise.resolve(null),
-                // KPI CENACRON dentro de Maratón (termómetro de meta)
-                // Nota: pacientes Maratón tienen sigla='MARATON' en paciente_estrategia.
-                // Sin filtro estrategia → todos los citados en id_bolsa=17 = segmento CENACRON.
-                // Cuando entren Especialidades se segmentará por un campo específico.
-                categoriaInicial === 'maraton'
-                  ? bolsasService.obtenerKpiConFiltros({ categoriaEspecialidad: 'maraton' }).catch(() => null)
-                  : Promise.resolve(null),
+                // Nota: termómetros de meta usan estadisticasGlobales directamente (misma fuente que cards)
+                // → eliminada la llamada separada kpiCenacronData para evitar desincronización
               ];
-              const [naAdsc, naAten, cnCenacron, cnMaraton, maratonUniverse, kpiCenacronData] = await Promise.all(promises);
+              const [naAdsc, naAten, cnCenacron, cnMaraton, maratonUniverse] = await Promise.all(promises);
               if (mounted) {
                 setIpressNaCount(naAdsc?.totalElements ?? null);
                 setIpressAtencionNaCount(naAten?.totalElements ?? null);
@@ -420,15 +415,6 @@ export default function Solicitudes({ categoriaInicial } = {}) {
                 setMaratonCount(cnMaraton?.totalElements ?? null);
                 if (maratonUniverse?.totalElements != null) {
                   setMaratonUniversoTotal(maratonUniverse.totalElements);
-                }
-                if (Array.isArray(kpiCenacronData)) {
-                  const cenacronCitados = kpiCenacronData
-                    .filter(r => ['CITADO', 'ATENDIDO', 'ATENDIDO_IPRESS'].includes(r.estado))
-                    .reduce((s, r) => s + (r.cantidad || 0), 0);
-                  const cenacronUniverso = kpiCenacronData
-                    .filter(r => !['SIN_GESTORA', 'CON_GESTORA', 'ASIGNADOS'].includes(r.estado))
-                    .reduce((s, r) => s + (r.cantidad || 0), 0);
-                  setKpiCenacron({ citados: cenacronCitados, universo: cenacronUniverso });
                 }
               }
             } catch (_) {}
@@ -2322,12 +2308,12 @@ export default function Solicitudes({ categoriaInicial } = {}) {
                     )}
 
                     {/* ══ NIVEL 2: METAS ESTRATÉGICAS — CENACRON vs ESPECIALIDADES ══ */}
-                    {kpiCenacron !== null && (() => {
+                    {estadisticas.citados !== null && (() => {
                       const META_CENACRON = 3600;
                       const META_ESPECIALIDADES = 360;
-                      const citasLogradas = (estadisticas.citados ?? 0) + (estadisticas.atendidos ?? 0);
-                      const cenacronCitados = kpiCenacron.citados;
-                      const espCitados = Math.max(0, citasLogradas - cenacronCitados);
+                      // Fuente única: estadisticasGlobales (misma que cards) → números siempre consistentes
+                      const cenacronCitados = (estadisticas.citados ?? 0) + (estadisticas.atendidos ?? 0);
+                      const espCitados = 0; // Especialidades aún no iniciadas en esta bolsa
                       const cenacronPct = Math.min(100, (cenacronCitados / META_CENACRON) * 100);
                       const espPct = Math.min(100, (espCitados / META_ESPECIALIDADES) * 100);
 
