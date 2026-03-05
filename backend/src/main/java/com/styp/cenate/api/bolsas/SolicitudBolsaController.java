@@ -1435,7 +1435,7 @@ public class SolicitudBolsaController {
      * Roles permitidos: SUPERADMIN, ADMIN, COORD. GESTION CITAS, GESTOR DE CITAS
      */
     @PostMapping("/asignar-gestora-masivo")
-    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'COORD. GESTION CITAS', 'GESTOR DE CITAS')")
+    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'COORD. GESTION CITAS', 'GESTOR DE CITAS', 'COORD. ESPECIALIDADES', 'COORDINADOR')")
     public ResponseEntity<?> asignarGestoraMasivo(@RequestBody Map<String, Object> payload) {
         try {
             Object idsObj = payload.get("ids");

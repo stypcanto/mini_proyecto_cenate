@@ -2219,7 +2219,7 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
                OR (CAST(:categoriaEspecialidad AS VARCHAR) = 'maraton'        AND sb.id_bolsa = 17))
         GROUP BY COALESCE(di2.desc_ipress, di.desc_ipress, 'SIN_IPRESS_ATENCION'),
                  COALESCE(sb.especialidad, 'SIN_ESPECIALIDAD')
-        HAVING MOD(COUNT(*), 4) = 0
+        HAVING COUNT(*) >= 4
         ORDER BY COUNT(*) DESC
         """, nativeQuery = true)
     List<Object[]> agruparPorIpressAtencionEspecialidad(

@@ -77,6 +77,7 @@ public class AseguradoController {
             @RequestParam(required = false) Boolean maraton,
             @RequestParam(required = false) Boolean soloDniValido,
             @RequestParam(required = false) Boolean soloExtranjero,
+            @RequestParam(required = false) Boolean sinIpress,
             @RequestParam(required = false) Integer idRed,
             @RequestParam(required = false) String codIpress,
             @RequestParam(required = false) String codIpressAtencion) {
@@ -97,6 +98,9 @@ public class AseguradoController {
             }
             if (Boolean.TRUE.equals(soloExtranjero)) {
                 whereClause.append(" AND a.id_tip_doc = 2");
+            }
+            if (Boolean.TRUE.equals(sinIpress)) {
+                whereClause.append(" AND (a.cas_adscripcion IS NULL OR a.cas_adscripcion = '' OR di.desc_ipress IS NULL)");
             }
 
             // Filtro por Red
@@ -333,6 +337,7 @@ public class AseguradoController {
             @RequestParam(required = false) Boolean maraton,
             @RequestParam(required = false) Boolean soloDniValido,
             @RequestParam(required = false) Boolean soloExtranjero,
+            @RequestParam(required = false) Boolean sinIpress,
             @RequestParam(required = false) String codIpressAtencion,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "25") int size) {
@@ -373,6 +378,11 @@ public class AseguradoController {
             // Filtro Solo Extranjeros (id_tip_doc = 2 → C.E./PAS)
             if (Boolean.TRUE.equals(soloExtranjero)) {
                 whereClause.append(" AND a.id_tip_doc = 2");
+            }
+
+            // Filtro Sin IPRESS adscripción
+            if (Boolean.TRUE.equals(sinIpress)) {
+                whereClause.append(" AND (a.cas_adscripcion IS NULL OR a.cas_adscripcion = '' OR di.desc_ipress IS NULL)");
             }
 
             // Filtro por IPRESS Atención

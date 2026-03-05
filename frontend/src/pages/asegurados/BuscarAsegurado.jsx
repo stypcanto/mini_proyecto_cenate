@@ -78,6 +78,7 @@ export default function BuscarAsegurado() {
   const [soloMaraton, setSoloMaraton] = useState(false);
   const [soloDniValido, setSoloDniValido] = useState(false);
   const [soloExtranjero, setSoloExtranjero] = useState(false);
+  const [sinIpress, setSinIpress] = useState(false);
   const [loadingFiltros, setLoadingFiltros] = useState(false);
 
   // 📋 Estados para tipos de documento
@@ -171,10 +172,10 @@ export default function BuscarAsegurado() {
 
   // ✅ Resetear página cuando cambian los filtros
   useEffect(() => {
-    if (selectedRed || selectedIpress || selectedIpressAtencion || soloCenacron || soloMaraton || soloDniValido || soloExtranjero) {
+    if (selectedRed || selectedIpress || selectedIpressAtencion || soloCenacron || soloMaraton || soloDniValido || soloExtranjero || sinIpress) {
       setCurrentPage(0);
     }
-  }, [selectedRed, selectedIpress, selectedIpressAtencion, soloCenacron, soloMaraton, soloDniValido, soloExtranjero]);
+  }, [selectedRed, selectedIpress, selectedIpressAtencion, soloCenacron, soloMaraton, soloDniValido, soloExtranjero, sinIpress]);
 
   // ✅ Debounce para la búsqueda
   useEffect(() => {
@@ -191,7 +192,7 @@ export default function BuscarAsegurado() {
   // Cargar asegurados con paginación
   useEffect(() => {
     cargarAsegurados();
-  }, [currentPage, debouncedSearchValue, selectedRed, selectedIpress, selectedIpressAtencion, soloCenacron, soloMaraton, soloDniValido, soloExtranjero]);
+  }, [currentPage, debouncedSearchValue, selectedRed, selectedIpress, selectedIpressAtencion, soloCenacron, soloMaraton, soloDniValido, soloExtranjero, sinIpress]);
 
   // 🔍 Validar DNI en tiempo real cuando tiene 8 dígitos (solo cuando está creando)
   useEffect(() => {
@@ -274,6 +275,7 @@ export default function BuscarAsegurado() {
         if (soloMaraton) params += `&maraton=true`;
         if (soloDniValido) params += `&soloDniValido=true`;
         if (soloExtranjero) params += `&soloExtranjero=true`;
+        if (sinIpress) params += `&sinIpress=true`;
         if (selectedIpressAtencion) params += `&codIpressAtencion=${encodeURIComponent(selectedIpressAtencion)}`;
 
         response = await apiClient.get(`/asegurados/buscar?${params}`, true);
@@ -285,6 +287,7 @@ export default function BuscarAsegurado() {
         if (soloMaraton) params += `&maraton=true`;
         if (soloDniValido) params += `&soloDniValido=true`;
         if (soloExtranjero) params += `&soloExtranjero=true`;
+        if (sinIpress) params += `&sinIpress=true`;
         if (selectedIpressAtencion) params += `&codIpressAtencion=${encodeURIComponent(selectedIpressAtencion)}`;
         response = await apiClient.get(`/asegurados?${params}`, true);
       }
@@ -361,6 +364,7 @@ export default function BuscarAsegurado() {
     setSoloMaraton(false);
     setSoloDniValido(false);
     setSoloExtranjero(false);
+    setSinIpress(false);
     setSearchValue("");
     setCurrentPage(0);
   };
@@ -887,6 +891,18 @@ export default function BuscarAsegurado() {
                     <Globe className="w-3.5 h-3.5" />
                     Solo Extranjeros
                   </button>
+                  <button
+                    type="button"
+                    onClick={ () => { setSinIpress(v => !v); setCurrentPage(0); } }
+                    className={ `inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-semibold border-2 transition-all whitespace-nowrap
+                      ${sinIpress
+                        ? 'bg-rose-600 border-rose-600 text-white'
+                        : 'bg-white border-slate-200 text-slate-600 hover:border-rose-400 hover:text-rose-600'
+                      }` }
+                  >
+                    <Building2 className="w-3.5 h-3.5" />
+                    Sin IPRESS
+                  </button>
                 </div>
               </div>
 
@@ -952,8 +968,8 @@ export default function BuscarAsegurado() {
                       <th className="px-3 py-3 text-left text-xs font-bold uppercase tracking-wider whitespace-nowrap">
                         Nombre
                       </th>
-                      <th className="px-3 py-3 text-left text-xs font-bold uppercase tracking-wider whitespace-nowrap" style={{ width: '140px' }}>
-                        Teléfono
+                      <th className="px-3 py-3 text-left text-xs font-bold uppercase tracking-wider whitespace-nowrap" style={{ width: '160px' }}>
+                        Teléfonos
                       </th>
                       <th className="px-3 py-3 text-left text-xs font-bold uppercase tracking-wider whitespace-nowrap">
                         IPRESS Adscripción
@@ -1017,8 +1033,13 @@ export default function BuscarAsegurado() {
                               ) }
                             </div>
                           </td>
-                          <td className="px-3 py-3 text-sm text-slate-900" style={{ width: '140px' }}>
-                            { asegurado.telFijo || "-" }
+                          <td className="px-3 py-3 text-sm text-slate-900" style={{ width: '160px' }}>
+                            <div className="flex flex-col gap-0.5">
+                              <span className="font-mono text-xs">{asegurado.telFijo || '-'}</span>
+                              {asegurado.telCelular && (
+                                <span className="font-mono text-xs text-slate-500">{asegurado.telCelular}</span>
+                              )}
+                            </div>
                           </td>
                           <td className="px-3 py-3">
                             <div className="text-sm">
