@@ -2195,262 +2195,223 @@ export default function Solicitudes({ categoriaInicial } = {}) {
 
         {/* Tarjetas de Estadísticas - Siempre Visible */}
         <div className="mb-8">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">
-            {categoriaInicial === 'maraton' ? 'Resumen Campaña Maratón' : 'Estadísticas de Solicitudes'}
-          </h3>
-          <div className={`grid grid-cols-1 md:grid-cols-2 gap-5 animate-fade-in ${categoriaInicial === 'maraton' ? 'lg:grid-cols-5' : 'lg:grid-cols-4'}`}>
-
-            {/* 1. Sin Gestora — Rojo (ACCIÓN URGENTE) */}
-            <div
-              onClick={() => handleCardClick('sin_asignar')}
-              className={`rounded-xl p-6 text-white overflow-hidden relative
-                transition-[transform,box-shadow,opacity] duration-200 ease-out
-                ${cardsInteractivos ? 'cursor-pointer group hover:scale-[1.02] hover:-translate-y-0.5' : 'cursor-default'}
-                ${cardsInteractivos && cardSeleccionado === 'sin_asignar' ? 'ring-2 ring-white/50 scale-[1.02] -translate-y-0.5' : ''}`}
-              style={{
-                background: 'linear-gradient(135deg, #dc2626 0%, #b91c1c 45%, #991b1b 100%)',
-                boxShadow: cardSeleccionado === 'sin_asignar'
-                  ? '0 20px 40px -8px rgba(153,27,27,0.65), inset 0 1px 0 rgba(255,255,255,0.15)'
-                  : '0 4px 20px -4px rgba(153,27,27,0.45), inset 0 1px 0 rgba(255,255,255,0.12)'
-              }}
-            >
-              {/* Vignette permanente — profundidad en reposo */}
-              <div className="absolute inset-0 rounded-xl pointer-events-none"
-                style={{ background: 'linear-gradient(to bottom, rgba(0,0,0,0) 0%, rgba(0,0,0,0.18) 100%)' }} />
-              {/* Gloss diagonal — visible solo en hover */}
-              <div className="absolute inset-0 rounded-xl pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-200"
-                style={{ background: 'linear-gradient(135deg, rgba(255,255,255,0.18) 0%, rgba(255,255,255,0) 55%)' }} />
-              <div className="relative z-10">
-                <div className="flex items-center justify-between mb-3">
-                  <span className="text-xs font-semibold uppercase tracking-[0.12em] text-white/75">Sin Gestora</span>
-                  <div className="w-9 h-9 rounded-lg bg-white/15 flex items-center justify-center flex-shrink-0">
-                    <AlertTriangle className="w-4 h-4 text-white" strokeWidth={2.5} />
-                  </div>
-                </div>
-                <div className="text-5xl font-bold text-white leading-none mb-2"
-                  style={{ fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.02em' }}>
-                  {estadisticas.sinAsignar === null
-                    ? <span className="text-2xl opacity-50 animate-pulse">—</span>
-                    : estadisticas.sinAsignar.toLocaleString('es-PE')}
-                </div>
-                <div className="text-xs text-white/60 font-medium">Requieren asignación</div>
-              </div>
+          {categoriaInicial === 'maraton' ? (
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-gray-900">Embudo de Campaña Maratón</h3>
+              <span className="text-xs text-gray-400 font-medium tracking-wide uppercase">Universo → Asignación → Gestión → Conversión</span>
             </div>
+          ) : (
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Estadísticas de Solicitudes</h3>
+          )}
+          <div className={`grid grid-cols-1 md:grid-cols-2 gap-5 animate-fade-in ${categoriaInicial === 'maraton' ? 'lg:grid-cols-4' : 'lg:grid-cols-4'}`}>
 
-            {/* 2. Pendiente Citar */}
-            <div
-              onClick={() => handleCardClick('pendiente')}
-              className={`rounded-xl p-6 text-white overflow-hidden relative
-                transition-[transform,box-shadow,opacity] duration-200 ease-out
-                ${cardsInteractivos ? 'cursor-pointer group hover:scale-[1.02] hover:-translate-y-0.5' : 'cursor-default'}
-                ${cardsInteractivos && cardSeleccionado === 'pendiente' ? 'ring-2 ring-white/50 scale-[1.02] -translate-y-0.5' : ''}`}
-              style={{
-                background: 'linear-gradient(135deg, #f97316 0%, #ea580c 45%, #c2410c 100%)',
-                boxShadow: cardSeleccionado === 'pendiente'
-                  ? '0 20px 40px -8px rgba(194,65,12,0.65), inset 0 1px 0 rgba(255,255,255,0.15)'
-                  : '0 4px 20px -4px rgba(194,65,12,0.45), inset 0 1px 0 rgba(255,255,255,0.12)'
-              }}
-            >
-              <div className="absolute inset-0 rounded-xl pointer-events-none"
-                style={{ background: 'linear-gradient(to bottom, rgba(0,0,0,0) 0%, rgba(0,0,0,0.18) 100%)' }} />
-              <div className="absolute inset-0 rounded-xl pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-200"
-                style={{ background: 'linear-gradient(135deg, rgba(255,255,255,0.18) 0%, rgba(255,255,255,0) 55%)' }} />
-              <div className="relative z-10">
-                <div className="flex items-center justify-between mb-3">
-                  <span className="text-xs font-semibold uppercase tracking-[0.12em] text-white/75">Pendiente Citar</span>
-                  <div className="w-9 h-9 rounded-lg bg-white/15 flex items-center justify-center flex-shrink-0">
-                    <Clock className="w-4 h-4 text-white" strokeWidth={2.5} />
+            {/* ═══ CARDS MARATÓN — Embudo de izquierda a derecha ═══ */}
+            {categoriaInicial === 'maraton' ? (<>
+
+              {/* M1. UNIVERSO — Azul/Slate: contexto neutro */}
+              <div className="rounded-xl p-5 text-white overflow-hidden relative cursor-default"
+                style={{ background: 'linear-gradient(135deg, #334155 0%, #1e293b 60%, #0f172a 100%)', boxShadow: '0 4px 20px -4px rgba(15,23,42,0.5), inset 0 1px 0 rgba(255,255,255,0.08)' }}>
+                <div className="absolute inset-0 rounded-xl pointer-events-none" style={{ background: 'linear-gradient(to bottom, rgba(0,0,0,0) 0%, rgba(0,0,0,0.2) 100%)' }} />
+                <div className="relative z-10">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-[10px] font-bold uppercase tracking-[0.14em] text-white/50">① Universo</span>
+                    <Database className="w-4 h-4 text-white/40" strokeWidth={2} />
                   </div>
-                </div>
-                <div className="text-5xl font-bold text-white leading-none mb-2"
-                  style={{ fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.02em' }}>
-                  {estadisticas.pendientes === null
-                    ? <span className="text-2xl opacity-50 animate-pulse">—</span>
-                    : estadisticas.pendientes.toLocaleString('es-PE')}
-                </div>
-                <div className="text-xs text-white/60 font-medium">
-                  {estadisticas.pendientes !== null && estadisticas.total
-                    ? `${((estadisticas.pendientes / estadisticas.total) * 100).toFixed(1)}% del total`
-                    : 'Esperando llamada'}
+                  <div className="text-4xl font-black text-white leading-none mb-1" style={{ fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.03em' }}>
+                    {estadisticas.total === null ? <span className="text-xl opacity-40 animate-pulse">—</span> : estadisticas.total.toLocaleString('es-PE')}
+                  </div>
+                  <div className="text-[11px] text-white/50 font-medium">Total en bolsa Maratón</div>
                 </div>
               </div>
-            </div>
 
-            {/* 3. Citados (Maratón) / Con Gestora (otras) */}
-            {categoriaInicial === 'maraton' ? (
-              <div
-                className="rounded-xl p-6 text-white overflow-hidden relative cursor-default"
-                style={{
-                  background: 'linear-gradient(135deg, #0891b2 0%, #0e7490 45%, #155e75 100%)',
-                  boxShadow: '0 4px 20px -4px rgba(14,116,144,0.45), inset 0 1px 0 rgba(255,255,255,0.12)'
-                }}
-              >
-                <div className="absolute inset-0 rounded-xl pointer-events-none"
-                  style={{ background: 'linear-gradient(to bottom, rgba(0,0,0,0) 0%, rgba(0,0,0,0.18) 100%)' }} />
+              {/* FLECHA */}
+              <div className="hidden lg:flex items-center justify-center -mx-2 z-10 pointer-events-none">
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M4 10h12M12 5l5 5-5 5" stroke="rgba(148,163,184,0.5)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+              </div>
+
+              {/* M2. SIN GESTORA — Rojo alerta: cuello de botella */}
+              <div className="rounded-xl p-5 text-white overflow-hidden relative cursor-default"
+                style={{ background: 'linear-gradient(135deg, #dc2626 0%, #b91c1c 50%, #7f1d1d 100%)', boxShadow: '0 4px 24px -4px rgba(185,28,28,0.6), inset 0 1px 0 rgba(255,255,255,0.1)' }}>
+                <div className="absolute inset-0 rounded-xl pointer-events-none" style={{ background: 'linear-gradient(to bottom, rgba(0,0,0,0) 0%, rgba(0,0,0,0.22) 100%)' }} />
+                {/* Pulso de alerta */}
+                <div className="absolute top-3 right-3 w-2.5 h-2.5 rounded-full bg-red-300 animate-ping opacity-60" />
+                <div className="absolute top-3 right-3 w-2.5 h-2.5 rounded-full bg-white opacity-90" />
+                <div className="relative z-10">
+                  <div className="flex items-center gap-1.5 mb-2">
+                    <span className="text-[10px] font-bold uppercase tracking-[0.14em] text-white/60">② Sin Gestora 🚨</span>
+                  </div>
+                  <div className="text-4xl font-black text-white leading-none mb-1" style={{ fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.03em' }}>
+                    {estadisticas.sinAsignar === null ? <span className="text-xl opacity-40 animate-pulse">—</span> : estadisticas.sinAsignar.toLocaleString('es-PE')}
+                  </div>
+                  <div className="text-[11px] text-red-200 font-semibold">
+                    {estadisticas.sinAsignar !== null && estadisticas.total
+                      ? `⚠ ${((estadisticas.sinAsignar / estadisticas.total) * 100).toFixed(1)}% sin asignar`
+                      : 'Trabajo no tocado'}
+                  </div>
+                </div>
+              </div>
+
+              {/* FLECHA */}
+              <div className="hidden lg:flex items-center justify-center -mx-2 z-10 pointer-events-none">
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M4 10h12M12 5l5 5-5 5" stroke="rgba(148,163,184,0.5)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+              </div>
+
+              {/* M3. PENDIENTE CITAR — Naranja: volumen de trabajo */}
+              <div className="rounded-xl p-5 text-white overflow-hidden relative cursor-default"
+                style={{ background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 50%, #b45309 100%)', boxShadow: '0 4px 20px -4px rgba(180,83,9,0.55), inset 0 1px 0 rgba(255,255,255,0.12)' }}>
+                <div className="absolute inset-0 rounded-xl pointer-events-none" style={{ background: 'linear-gradient(to bottom, rgba(0,0,0,0) 0%, rgba(0,0,0,0.2) 100%)' }} />
+                <div className="relative z-10">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-[10px] font-bold uppercase tracking-[0.14em] text-white/60">③ En Gestión</span>
+                    <Clock className="w-4 h-4 text-white/50" strokeWidth={2} />
+                  </div>
+                  <div className="text-4xl font-black text-white leading-none mb-1" style={{ fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.03em' }}>
+                    {estadisticas.pendientes === null ? <span className="text-xl opacity-40 animate-pulse">—</span> : estadisticas.pendientes.toLocaleString('es-PE')}
+                  </div>
+                  <div className="text-[11px] text-yellow-100/80 font-medium">
+                    {estadisticas.pendientes !== null && estadisticas.total
+                      ? `${((estadisticas.pendientes / estadisticas.total) * 100).toFixed(1)}% del total · Pendiente citar`
+                      : 'Esperando llamada'}
+                  </div>
+                </div>
+              </div>
+
+              {/* FLECHA */}
+              <div className="hidden lg:flex items-center justify-center -mx-2 z-10 pointer-events-none">
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M4 10h12M12 5l5 5-5 5" stroke="rgba(148,163,184,0.5)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+              </div>
+
+              {/* M4. CITADOS — Verde: conversión / meta */}
+              <div className="rounded-xl p-5 text-white overflow-hidden relative cursor-default"
+                style={{ background: 'linear-gradient(135deg, #16a34a 0%, #15803d 50%, #14532d 100%)', boxShadow: '0 4px 20px -4px rgba(21,128,61,0.55), inset 0 1px 0 rgba(255,255,255,0.12)' }}>
+                <div className="absolute inset-0 rounded-xl pointer-events-none" style={{ background: 'linear-gradient(to bottom, rgba(0,0,0,0) 0%, rgba(0,0,0,0.2) 100%)' }} />
+                <div className="relative z-10">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-[10px] font-bold uppercase tracking-[0.14em] text-white/60">④ Citados ✅</span>
+                    <CalendarCheck className="w-4 h-4 text-white/50" strokeWidth={2} />
+                  </div>
+                  <div className="text-4xl font-black text-white leading-none mb-1" style={{ fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.03em' }}>
+                    {estadisticas.citados === null ? <span className="text-xl opacity-40 animate-pulse">—</span> : estadisticas.citados.toLocaleString('es-PE')}
+                  </div>
+                  <div className="text-[11px] text-green-200 font-semibold">
+                    {estadisticas.citados !== null && estadisticas.total
+                      ? `${((estadisticas.citados / estadisticas.total) * 100).toFixed(1)}% conversión`
+                      : 'Con cita confirmada'}
+                  </div>
+                </div>
+              </div>
+
+              {/* OBSERVADOS — Fila secundaria compacta */}
+              {(() => {
+                const observados = (estadisticas.total !== null && estadisticas.pendientes !== null && estadisticas.citados !== null)
+                  ? estadisticas.total - estadisticas.pendientes - estadisticas.citados : null;
+                const cargarDesglose = async () => {
+                  setDesglosAbierto(true); setDesgloseLoading(true);
+                  try { const kpi = await bolsasService.obtenerKpiConFiltros({ categoriaEspecialidad: 'maraton' }); setDesgloseData(kpi); }
+                  catch { setDesgloseData(null); } finally { setDesgloseLoading(false); }
+                };
+                return (
+                  <div className="col-span-full mt-1">
+                    <button onClick={cargarDesglose}
+                      className="flex items-center gap-3 px-4 py-2.5 rounded-xl bg-amber-50 border border-amber-200 hover:bg-amber-100 transition-colors group">
+                      <BarChart2 className="w-4 h-4 text-amber-600 flex-shrink-0" />
+                      <span className="text-sm font-semibold text-amber-800">Observados:</span>
+                      <span className="text-sm font-black text-amber-900">
+                        {observados === null ? '—' : observados.toLocaleString('es-PE')}
+                      </span>
+                      <span className="text-xs text-amber-600">
+                        {observados !== null && estadisticas.total ? `(${((observados / estadisticas.total) * 100).toFixed(1)}% del total)` : ''}
+                      </span>
+                      <span className="text-xs text-amber-500 group-hover:text-amber-700 ml-1">Ver desglose →</span>
+                    </button>
+                  </div>
+                );
+              })()}
+
+            </>) : (<>
+
+              {/* CARDS GENÉRICOS (no Maratón) */}
+              {/* 1. Sin Gestora */}
+              <div onClick={() => handleCardClick('sin_asignar')}
+                className={`rounded-xl p-6 text-white overflow-hidden relative transition-[transform,box-shadow,opacity] duration-200 ease-out
+                  ${cardsInteractivos ? 'cursor-pointer group hover:scale-[1.02] hover:-translate-y-0.5' : 'cursor-default'}
+                  ${cardsInteractivos && cardSeleccionado === 'sin_asignar' ? 'ring-2 ring-white/50 scale-[1.02] -translate-y-0.5' : ''}`}
+                style={{ background: 'linear-gradient(135deg, #dc2626 0%, #b91c1c 45%, #991b1b 100%)', boxShadow: cardSeleccionado === 'sin_asignar' ? '0 20px 40px -8px rgba(153,27,27,0.65), inset 0 1px 0 rgba(255,255,255,0.15)' : '0 4px 20px -4px rgba(153,27,27,0.45), inset 0 1px 0 rgba(255,255,255,0.12)' }}>
+                <div className="absolute inset-0 rounded-xl pointer-events-none" style={{ background: 'linear-gradient(to bottom, rgba(0,0,0,0) 0%, rgba(0,0,0,0.18) 100%)' }} />
+                <div className="absolute inset-0 rounded-xl pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-200" style={{ background: 'linear-gradient(135deg, rgba(255,255,255,0.18) 0%, rgba(255,255,255,0) 55%)' }} />
                 <div className="relative z-10">
                   <div className="flex items-center justify-between mb-3">
-                    <span className="text-xs font-semibold uppercase tracking-[0.12em] text-white/75">Citados</span>
-                    <div className="w-9 h-9 rounded-lg bg-white/15 flex items-center justify-center flex-shrink-0">
-                      <CalendarCheck className="w-4 h-4 text-white" strokeWidth={2.5} />
-                    </div>
+                    <span className="text-xs font-semibold uppercase tracking-[0.12em] text-white/75">Sin Gestora</span>
+                    <div className="w-9 h-9 rounded-lg bg-white/15 flex items-center justify-center flex-shrink-0"><AlertTriangle className="w-4 h-4 text-white" strokeWidth={2.5} /></div>
                   </div>
-                  <div className="text-5xl font-bold text-white leading-none mb-2"
-                    style={{ fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.02em' }}>
-                    {estadisticas.citados === null
-                      ? <span className="text-2xl opacity-50 animate-pulse">—</span>
-                      : estadisticas.citados.toLocaleString('es-PE')}
+                  <div className="text-5xl font-bold text-white leading-none mb-2" style={{ fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.02em' }}>
+                    {estadisticas.sinAsignar === null ? <span className="text-2xl opacity-50 animate-pulse">—</span> : estadisticas.sinAsignar.toLocaleString('es-PE')}
                   </div>
-                  <div className="text-xs text-white/60 font-medium">
-                    {estadisticas.citados !== null && estadisticas.total
-                      ? `${((estadisticas.citados / estadisticas.total) * 100).toFixed(1)}% del total`
-                      : 'Con fecha de cita agendada'}
-                  </div>
+                  <div className="text-xs text-white/60 font-medium">Requieren asignación</div>
                 </div>
               </div>
-            ) : (
-              <div
-                onClick={() => handleCardClick('asignado')}
-                className={`rounded-xl p-6 text-white overflow-hidden relative
-                  transition-[transform,box-shadow,opacity] duration-200 ease-out
+
+              {/* 2. Pendiente Citar */}
+              <div onClick={() => handleCardClick('pendiente')}
+                className={`rounded-xl p-6 text-white overflow-hidden relative transition-[transform,box-shadow,opacity] duration-200 ease-out
+                  ${cardsInteractivos ? 'cursor-pointer group hover:scale-[1.02] hover:-translate-y-0.5' : 'cursor-default'}
+                  ${cardsInteractivos && cardSeleccionado === 'pendiente' ? 'ring-2 ring-white/50 scale-[1.02] -translate-y-0.5' : ''}`}
+                style={{ background: 'linear-gradient(135deg, #f97316 0%, #ea580c 45%, #c2410c 100%)', boxShadow: cardSeleccionado === 'pendiente' ? '0 20px 40px -8px rgba(194,65,12,0.65), inset 0 1px 0 rgba(255,255,255,0.15)' : '0 4px 20px -4px rgba(194,65,12,0.45), inset 0 1px 0 rgba(255,255,255,0.12)' }}>
+                <div className="absolute inset-0 rounded-xl pointer-events-none" style={{ background: 'linear-gradient(to bottom, rgba(0,0,0,0) 0%, rgba(0,0,0,0.18) 100%)' }} />
+                <div className="absolute inset-0 rounded-xl pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-200" style={{ background: 'linear-gradient(135deg, rgba(255,255,255,0.18) 0%, rgba(255,255,255,0) 55%)' }} />
+                <div className="relative z-10">
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="text-xs font-semibold uppercase tracking-[0.12em] text-white/75">Pendiente Citar</span>
+                    <div className="w-9 h-9 rounded-lg bg-white/15 flex items-center justify-center flex-shrink-0"><Clock className="w-4 h-4 text-white" strokeWidth={2.5} /></div>
+                  </div>
+                  <div className="text-5xl font-bold text-white leading-none mb-2" style={{ fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.02em' }}>
+                    {estadisticas.pendientes === null ? <span className="text-2xl opacity-50 animate-pulse">—</span> : estadisticas.pendientes.toLocaleString('es-PE')}
+                  </div>
+                  <div className="text-xs text-white/60 font-medium">Esperando llamada</div>
+                </div>
+              </div>
+
+              {/* 3. Con Gestora */}
+              <div onClick={() => handleCardClick('asignado')}
+                className={`rounded-xl p-6 text-white overflow-hidden relative transition-[transform,box-shadow,opacity] duration-200 ease-out
                   ${cardsInteractivos ? 'cursor-pointer group hover:scale-[1.02] hover:-translate-y-0.5' : 'cursor-default'}
                   ${cardsInteractivos && cardSeleccionado === 'asignado' ? 'ring-2 ring-white/50 scale-[1.02] -translate-y-0.5' : ''}`}
-                style={{
-                  background: 'linear-gradient(135deg, #16a34a 0%, #15803d 45%, #166534 100%)',
-                  boxShadow: cardSeleccionado === 'asignado'
-                    ? '0 20px 40px -8px rgba(22,101,52,0.65), inset 0 1px 0 rgba(255,255,255,0.15)'
-                    : '0 4px 20px -4px rgba(22,101,52,0.45), inset 0 1px 0 rgba(255,255,255,0.12)'
-                }}
-              >
-                <div className="absolute inset-0 rounded-xl pointer-events-none"
-                  style={{ background: 'linear-gradient(to bottom, rgba(0,0,0,0) 0%, rgba(0,0,0,0.18) 100%)' }} />
-                <div className="absolute inset-0 rounded-xl pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-200"
-                  style={{ background: 'linear-gradient(135deg, rgba(255,255,255,0.18) 0%, rgba(255,255,255,0) 55%)' }} />
+                style={{ background: 'linear-gradient(135deg, #16a34a 0%, #15803d 45%, #166534 100%)', boxShadow: cardSeleccionado === 'asignado' ? '0 20px 40px -8px rgba(22,101,52,0.65), inset 0 1px 0 rgba(255,255,255,0.15)' : '0 4px 20px -4px rgba(22,101,52,0.45), inset 0 1px 0 rgba(255,255,255,0.12)' }}>
+                <div className="absolute inset-0 rounded-xl pointer-events-none" style={{ background: 'linear-gradient(to bottom, rgba(0,0,0,0) 0%, rgba(0,0,0,0.18) 100%)' }} />
+                <div className="absolute inset-0 rounded-xl pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-200" style={{ background: 'linear-gradient(135deg, rgba(255,255,255,0.18) 0%, rgba(255,255,255,0) 55%)' }} />
                 <div className="relative z-10">
                   <div className="flex items-center justify-between mb-3">
                     <span className="text-xs font-semibold uppercase tracking-[0.12em] text-white/75">Con Gestora</span>
-                    <div className="w-9 h-9 rounded-lg bg-white/15 flex items-center justify-center flex-shrink-0">
-                      <UserCheck className="w-4 h-4 text-white" strokeWidth={2.5} />
-                    </div>
+                    <div className="w-9 h-9 rounded-lg bg-white/15 flex items-center justify-center flex-shrink-0"><UserCheck className="w-4 h-4 text-white" strokeWidth={2.5} /></div>
                   </div>
-                  <div className="text-5xl font-bold text-white leading-none mb-2"
-                    style={{ fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.02em' }}>
-                    {estadisticas.asignados === null
-                      ? <span className="text-2xl opacity-50 animate-pulse">—</span>
-                      : estadisticas.asignados.toLocaleString('es-PE')}
+                  <div className="text-5xl font-bold text-white leading-none mb-2" style={{ fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.02em' }}>
+                    {estadisticas.asignados === null ? <span className="text-2xl opacity-50 animate-pulse">—</span> : estadisticas.asignados.toLocaleString('es-PE')}
                   </div>
                   <div className="text-xs text-white/60 font-medium">Gestora asignada</div>
                 </div>
               </div>
-            )}
 
-            {/* 4. Observados — solo Maratón */}
-            {categoriaInicial === 'maraton' && (() => {
-              const observados = (estadisticas.total !== null && estadisticas.pendientes !== null && estadisticas.citados !== null)
-                ? estadisticas.total - estadisticas.pendientes - estadisticas.citados
-                : null;
-              const cargarDesglose = async () => {
-                setDesglosAbierto(true);
-                setDesgloseLoading(true);
-                try {
-                  const kpi = await bolsasService.obtenerKpiConFiltros({ categoriaEspecialidad: 'maraton' });
-                  setDesgloseData(kpi);
-                } catch { setDesgloseData(null); }
-                finally { setDesgloseLoading(false); }
-              };
-              return (
-                <div
-                  onClick={cargarDesglose}
-                  className="rounded-xl p-6 text-white overflow-hidden relative cursor-pointer group hover:scale-[1.02] hover:-translate-y-0.5 transition-[transform,box-shadow,opacity] duration-200 ease-out"
-                  style={{
-                    background: 'linear-gradient(135deg, #b45309 0%, #92400e 45%, #78350f 100%)',
-                    boxShadow: '0 4px 20px -4px rgba(120,53,15,0.45), inset 0 1px 0 rgba(255,255,255,0.12)'
-                  }}
-                >
-                  <div className="absolute inset-0 rounded-xl pointer-events-none"
-                    style={{ background: 'linear-gradient(to bottom, rgba(0,0,0,0) 0%, rgba(0,0,0,0.18) 100%)' }} />
-                  <div className="absolute inset-0 rounded-xl pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-200"
-                    style={{ background: 'linear-gradient(135deg, rgba(255,255,255,0.18) 0%, rgba(255,255,255,0) 55%)' }} />
-                  <div className="relative z-10">
-                    <div className="flex items-center justify-between mb-3">
-                      <span className="text-xs font-semibold uppercase tracking-[0.12em] text-white/75">Observados</span>
-                      <div className="w-9 h-9 rounded-lg bg-white/15 flex items-center justify-center flex-shrink-0">
-                        <BarChart2 className="w-4 h-4 text-white" strokeWidth={2.5} />
-                      </div>
-                    </div>
-                    <div className="text-5xl font-bold text-white leading-none mb-2"
-                      style={{ fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.02em' }}>
-                      {observados === null
-                        ? <span className="text-2xl opacity-50 animate-pulse">—</span>
-                        : observados.toLocaleString('es-PE')}
-                    </div>
-                    <div className="text-xs text-white/60 font-medium">Ver desglose →</div>
-                  </div>
-                </div>
-              );
-            })()}
-
-            {/* 5. Total en Bolsa (Maratón y otras) */}
-            {categoriaInicial === 'maraton' ? (
-              <div
-                className="rounded-xl p-6 text-white overflow-hidden relative cursor-default"
-                style={{
-                  background: 'linear-gradient(135deg, #1d4ed8 0%, #1e40af 45%, #1e3a8a 100%)',
-                  boxShadow: '0 4px 20px -4px rgba(30,58,138,0.45), inset 0 1px 0 rgba(255,255,255,0.12)'
-                }}
-              >
-                <div className="absolute inset-0 rounded-xl pointer-events-none"
-                  style={{ background: 'linear-gradient(to bottom, rgba(0,0,0,0) 0%, rgba(0,0,0,0.18) 100%)' }} />
-                <div className="relative z-10">
-                  <div className="flex items-center justify-between mb-3">
-                    <span className="text-xs font-semibold uppercase tracking-[0.12em] text-white/75">Total en Bolsa</span>
-                    <div className="w-9 h-9 rounded-lg bg-white/15 flex items-center justify-center flex-shrink-0">
-                      <Database className="w-4 h-4 text-white" strokeWidth={2.5} />
-                    </div>
-                  </div>
-                  <div className="text-5xl font-bold text-white leading-none mb-2"
-                    style={{ fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.02em' }}>
-                    {estadisticas.total === null
-                      ? <span className="text-2xl opacity-50 animate-pulse">—</span>
-                      : estadisticas.total.toLocaleString('es-PE')}
-                  </div>
-                  <div className="text-xs text-white/60 font-medium">Todos los estados</div>
-                </div>
-              </div>
-            ) : (
-              <div
-                onClick={() => handleCardClick('total')}
-                className={`rounded-xl p-6 text-white overflow-hidden relative
-                  transition-[transform,box-shadow,opacity] duration-200 ease-out
+              {/* 4. Total en Bolsa */}
+              <div onClick={() => handleCardClick('total')}
+                className={`rounded-xl p-6 text-white overflow-hidden relative transition-[transform,box-shadow,opacity] duration-200 ease-out
                   ${cardsInteractivos ? 'cursor-pointer group hover:scale-[1.02] hover:-translate-y-0.5' : 'cursor-default'}
                   ${cardsInteractivos && cardSeleccionado === 'total' ? 'ring-2 ring-white/50 scale-[1.02] -translate-y-0.5' : ''}`}
-                style={{
-                  background: 'linear-gradient(135deg, #1d4ed8 0%, #1e40af 45%, #1e3a8a 100%)',
-                  boxShadow: cardSeleccionado === 'total'
-                    ? '0 20px 40px -8px rgba(30,58,138,0.65), inset 0 1px 0 rgba(255,255,255,0.15)'
-                    : '0 4px 20px -4px rgba(30,58,138,0.45), inset 0 1px 0 rgba(255,255,255,0.12)'
-                }}
-              >
-                <div className="absolute inset-0 rounded-xl pointer-events-none"
-                  style={{ background: 'linear-gradient(to bottom, rgba(0,0,0,0) 0%, rgba(0,0,0,0.18) 100%)' }} />
-                <div className="absolute inset-0 rounded-xl pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-200"
-                  style={{ background: 'linear-gradient(135deg, rgba(255,255,255,0.18) 0%, rgba(255,255,255,0) 55%)' }} />
+                style={{ background: 'linear-gradient(135deg, #1d4ed8 0%, #1e40af 45%, #1e3a8a 100%)', boxShadow: cardSeleccionado === 'total' ? '0 20px 40px -8px rgba(30,58,138,0.65), inset 0 1px 0 rgba(255,255,255,0.15)' : '0 4px 20px -4px rgba(30,58,138,0.45), inset 0 1px 0 rgba(255,255,255,0.12)' }}>
+                <div className="absolute inset-0 rounded-xl pointer-events-none" style={{ background: 'linear-gradient(to bottom, rgba(0,0,0,0) 0%, rgba(0,0,0,0.18) 100%)' }} />
+                <div className="absolute inset-0 rounded-xl pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-200" style={{ background: 'linear-gradient(135deg, rgba(255,255,255,0.18) 0%, rgba(255,255,255,0) 55%)' }} />
                 <div className="relative z-10">
                   <div className="flex items-center justify-between mb-3">
                     <span className="text-xs font-semibold uppercase tracking-[0.12em] text-white/75">Total en Bolsa</span>
-                    <div className="w-9 h-9 rounded-lg bg-white/15 flex items-center justify-center flex-shrink-0">
-                      <Database className="w-4 h-4 text-white" strokeWidth={2.5} />
-                    </div>
+                    <div className="w-9 h-9 rounded-lg bg-white/15 flex items-center justify-center flex-shrink-0"><Database className="w-4 h-4 text-white" strokeWidth={2.5} /></div>
                   </div>
-                  <div className="text-5xl font-bold text-white leading-none mb-2"
-                    style={{ fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.02em' }}>
-                    {estadisticas.total === null
-                      ? <span className="text-2xl opacity-50 animate-pulse">—</span>
-                      : estadisticas.total.toLocaleString('es-PE')}
+                  <div className="text-5xl font-bold text-white leading-none mb-2" style={{ fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.02em' }}>
+                    {estadisticas.total === null ? <span className="text-2xl opacity-50 animate-pulse">—</span> : estadisticas.total.toLocaleString('es-PE')}
                   </div>
                   <div className="text-xs text-white/60 font-medium">Todos los estados</div>
                 </div>
               </div>
-            )}
+
+            </>)}
 
           </div>
         </div>
