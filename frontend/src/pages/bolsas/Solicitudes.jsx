@@ -2339,35 +2339,31 @@ export default function Solicitudes({ categoriaInicial } = {}) {
               </div>
             )}
 
-            {/* 4. Atendidos (Maratón) / Total en Bolsa (otras) */}
+            {/* 4. Total en Bolsa (Maratón y otras) */}
             {categoriaInicial === 'maraton' ? (
               <div
                 className="rounded-xl p-6 text-white overflow-hidden relative cursor-default"
                 style={{
-                  background: 'linear-gradient(135deg, #16a34a 0%, #15803d 45%, #166534 100%)',
-                  boxShadow: '0 4px 20px -4px rgba(22,101,52,0.45), inset 0 1px 0 rgba(255,255,255,0.12)'
+                  background: 'linear-gradient(135deg, #1d4ed8 0%, #1e40af 45%, #1e3a8a 100%)',
+                  boxShadow: '0 4px 20px -4px rgba(30,58,138,0.45), inset 0 1px 0 rgba(255,255,255,0.12)'
                 }}
               >
                 <div className="absolute inset-0 rounded-xl pointer-events-none"
                   style={{ background: 'linear-gradient(to bottom, rgba(0,0,0,0) 0%, rgba(0,0,0,0.18) 100%)' }} />
                 <div className="relative z-10">
                   <div className="flex items-center justify-between mb-3">
-                    <span className="text-xs font-semibold uppercase tracking-[0.12em] text-white/75">Atendidos</span>
+                    <span className="text-xs font-semibold uppercase tracking-[0.12em] text-white/75">Total en Bolsa</span>
                     <div className="w-9 h-9 rounded-lg bg-white/15 flex items-center justify-center flex-shrink-0">
-                      <UserCheck className="w-4 h-4 text-white" strokeWidth={2.5} />
+                      <Database className="w-4 h-4 text-white" strokeWidth={2.5} />
                     </div>
                   </div>
                   <div className="text-5xl font-bold text-white leading-none mb-2"
                     style={{ fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.02em' }}>
-                    {estadisticas.atendidos === null
+                    {estadisticas.total === null
                       ? <span className="text-2xl opacity-50 animate-pulse">—</span>
-                      : estadisticas.atendidos.toLocaleString('es-PE')}
+                      : estadisticas.total.toLocaleString('es-PE')}
                   </div>
-                  <div className="text-xs text-white/60 font-medium">
-                    {estadisticas.atendidos !== null && estadisticas.total
-                      ? `${((estadisticas.atendidos / estadisticas.total) * 100).toFixed(1)}% del total`
-                      : 'Consulta completada'}
-                  </div>
+                  <div className="text-xs text-white/60 font-medium">Todos los estados</div>
                 </div>
               </div>
             ) : (
