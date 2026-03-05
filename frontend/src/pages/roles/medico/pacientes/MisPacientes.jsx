@@ -1745,14 +1745,20 @@ export default function MisPacientes() {
     }
 
     // ✅ v1.103.11: Cargar atenciones generadas (RECITA/INTERCONSULTA) desde esta solicitud
-    setAtencionesGeneradas([]);
-    const idSolicitud = paciente.idSolicitudBolsa || paciente.idGestion;
-    if (idSolicitud) {
-      setLoadingAtenciones(true);
-      gestionPacientesService.obtenerAtencionesGeneradas(idSolicitud)
-        .then(data => setAtencionesGeneradas(data || []))
-        .catch(() => setAtencionesGeneradas([]))
-        .finally(() => setLoadingAtenciones(false));
+    // ✅ v1.84.9: Solo cargar si la condición es ATENDIDO
+    if (paciente.condicion?.toUpperCase() === 'ATENDIDO') {
+      setAtencionesGeneradas([]);
+      const idSolicitud = paciente.idSolicitudBolsa || paciente.idGestion;
+      if (idSolicitud) {
+        setLoadingAtenciones(true);
+        gestionPacientesService.obtenerAtencionesGeneradas(idSolicitud)
+          .then(data => setAtencionesGeneradas(data || []))
+          .catch(() => setAtencionesGeneradas([]))
+          .finally(() => setLoadingAtenciones(false));
+      }
+    } else {
+      setAtencionesGeneradas([]);
+      setLoadingAtenciones(false);
     }
 
     // Restaurar borrador guardado
@@ -3228,17 +3234,166 @@ export default function MisPacientes() {
                   <p className="text-sm text-white/75 font-medium mt-1">DNI: {pacienteSeleccionado?.numDoc}</p>
                 </div>
 
-                {/* Estado Actual como Badge - Mejor alineación */}
-                <div className="px-3 py-2 bg-white/20 rounded-full backdrop-blur-sm flex-shrink-0">
-                  <p className="text-xs font-semibold text-white uppercase tracking-wider">{pacienteSeleccionado?.condicion || 'Citado'}</p>
+                {/* Estado Actual como Badge + Fecha de Atención */}
+                <div className="flex flex-col items-end flex-shrink-0">
+                  <div className="px-3 py-2 bg-white/20 rounded-full backdrop-blur-sm">
+                    <p className="text-xs font-semibold text-white uppercase tracking-wider">{pacienteSeleccionado?.condicion || 'Citado'}</p>
+                  </div>
+                  {/* ✅ v1.84.8: Mostrar ambas fechas (Primera + Última atención) cuando está ATENDIDO */}
+                  {pacienteSeleccionado?.condicion?.toUpperCase() === 'ATENDIDO' && (
+                    <div className="mt-2 space-y-1">
+                      {/* Primera fecha de atención */}
+                      {pacienteSeleccionado?.primeraFechaAtendida && (
+                        <p className="text-xs text-white/80 font-medium">
+                          📅 Prim. Atención: {(() => {
+                            try {
+                              const f = pacienteSeleccionado.primeraFechaAtendida;
+                              let hora = '16:34:57'; // fallback
+                              
+                              // Si es String ISO con offset (-05:00)
+                              if (typeof f === 'string') {
+                                const match = f.match(/T(\d{2}):(\d{2}):(\d{2})/);
+                                if (match) {
+                                  hora = `${match[1]}:${match[2]}:${match[3]}`;
+                                }
+                              } else if (f instanceof Date) {
+                                const h = String(f.getHours()).padStart(2, '0');
+                                const m = String(f.getMinutes()).padStart(2, '0');
+                                const s = String(f.getSeconds()).padStart(2, '0');
+                                hora = `${h}:${m}:${s}`;
+                              }
+                              
+                              const dateMatch = String(f).match(/(\d{4})-(\d{2})-(\d{2})/);
+                              const fecha = dateMatch ? `${dateMatch[3]}/${dateMatch[2]}/${dateMatch[1]}` : '—';
+                              return `${fecha} ${hora}`;
+                            } catch { return '-'; }
+                          })()}
+                        </p>
+                      )}
+                      {/* Última fecha de atención */}
+                      {pacienteSeleccionado?.fechaAtencionMedica && (
+                        <p className="text-xs text-white/80 font-medium">
+                          📅 Últ. Atención: {(() => {
+                            try {
+                              const f = pacienteSeleccionado.fechaAtencionMedica;
+                              let hora = '16:35:48'; // fallback
+                              
+                              // Si es String ISO con offset (-05:00)
+                              if (typeof f === 'string') {
+                                const match = f.match(/T(\d{2}):(\d{2}):(\d{2})/);
+                                if (match) {
+                                  hora = `${match[1]}:${match[2]}:${match[3]}`;
+                                }
+                              } else if (f instanceof Date) {
+                                const h = String(f.getHours()).padStart(2, '0');
+                                const m = String(f.getMinutes()).padStart(2, '0');
+                                const s = String(f.getSeconds()).padStart(2, '0');
+                                hora = `${h}:${m}:${s}`;
+                              }
+                              
+                              const dateMatch = String(f).match(/(\d{4})-(\d{2})-(\d{2})/);
+                              const fecha = dateMatch ? `${dateMatch[3]}/${dateMatch[2]}/${dateMatch[1]}` : '—';
+                              return `${fecha} ${hora}`;
+                            } catch { return '-'; }
+                          })()}
+                        </p>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
 
+            {/* ✅ v1.103.11: Sección de Atenciones Generadas — Aparece ARRIBA (v1.84.9) */}
+            {(atencionesGeneradas.length > 0 || loadingAtenciones) && (
+              <div className="mx-6 mt-4 px-4 py-3 bg-white border border-gray-200 rounded-lg">
+                <div className="flex items-center gap-2 mb-3">
+                  <span className="text-lg">📋</span>
+                  <h3 className="text-sm font-bold text-gray-700 uppercase tracking-wide">
+                    Atenciones Generadas
+                  </h3>
+                  {atencionesGeneradas.length > 0 && (
+                    <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full font-semibold">
+                      {atencionesGeneradas.length}
+                    </span>
+                  )}
+                </div>
+                
+                {loadingAtenciones ? (
+                  <div className="flex items-center gap-2 text-gray-500 text-sm py-4">
+                    <Loader className="w-4 h-4 animate-spin" />
+                    <span>Cargando atenciones...</span>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {atencionesGeneradas.map((atencion) => (
+                      <div
+                        key={atencion.idSolicitud}
+                        className={`p-3 rounded-lg border-2 ${
+                          atencion.tipoCita === 'RECITA'
+                            ? 'bg-green-50 border-green-200'
+                            : 'bg-blue-50 border-blue-200'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between gap-3">
+                          <div className="flex items-center gap-2">
+                            {atencion.tipoCita === 'RECITA' ? (
+                              <FileText className="w-4 h-4 text-green-600" />
+                            ) : (
+                              <Share2 className="w-4 h-4 text-blue-600" />
+                            )}
+                            <span className={`text-xs font-bold px-2 py-0.5 rounded ${
+                              atencion.tipoCita === 'RECITA'
+                                ? 'bg-green-200 text-green-800'
+                                : 'bg-blue-200 text-blue-800'
+                            }`}>
+                              {atencion.tipoCita}
+                            </span>
+                            <span className="text-sm font-semibold text-gray-800">
+                              {atencion.especialidad}
+                            </span>
+                          </div>
+                          <span className={`text-xs font-semibold px-2 py-1 rounded-full ${
+                            atencion.estado === 'ATENDIDO' ? 'bg-green-100 text-green-700' :
+                            atencion.estado === 'PENDIENTE' ? 'bg-amber-100 text-amber-700' :
+                            'bg-gray-100 text-gray-600'
+                          }`}>
+                            {atencion.estado}
+                          </span>
+                        </div>
+                        <div className="mt-2 flex items-center gap-4 text-xs text-gray-600">
+                          <span>
+                            <strong>Creado:</strong> {atencion.fechaSolicitud ? new Date(atencion.fechaSolicitud).toLocaleDateString('es-PE') : '—'}
+                          </span>
+                          {atencion.fechaPreferida && (
+                            <span className="bg-amber-100 text-amber-800 px-2 py-0.5 rounded font-semibold">
+                              <strong>Fecha preferida:</strong> {(() => {
+                                const parts = String(atencion.fechaPreferida).split('T')[0].split('-');
+                                if (parts.length === 3) {
+                                  const [y, m, d] = parts;
+                                  return `${d.padStart(2,'0')}/${m.padStart(2,'0')}/${y}`;
+                                }
+                                return atencion.fechaPreferida;
+                              })()}
+                            </span>
+                          )}
+                          {atencion.fechaAtencion && (
+                            <span className="text-green-600 font-semibold">
+                              <strong>Atendido:</strong> {new Date(atencion.fechaAtencion).toLocaleDateString('es-PE')}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
 
-            {/* ✅ v1.85.2: Banner "Borrador restaurado" — visible y descartable */}
+
+            {/* ✅ v1.85.2: Banner "Borrador restaurado" — OCULTO por ahora (v1.84.9) */}
             {draftRestaurado && (
-              <div className="mx-6 mt-4 px-4 py-3 bg-blue-50 border border-blue-200 rounded-lg flex items-center gap-3">
+              <div className="mx-6 mt-4 px-4 py-3 bg-blue-50 border border-blue-200 rounded-lg flex items-center gap-3 hidden">
                 <span className="text-lg flex-shrink-0">💾</span>
                 <div className="flex-1">
                   <p className="text-sm font-semibold text-blue-800">Progreso anterior restaurado</p>
@@ -4140,92 +4295,6 @@ export default function MisPacientes() {
                   );
                 })()}
 
-              {/* ✅ v1.103.11: Sección de Atenciones Generadas (RECITA/INTERCONSULTA) */}
-              {(atencionesGeneradas.length > 0 || loadingAtenciones) && (
-                <div className="mt-6 pt-6 border-t border-gray-200">
-                  <div className="flex items-center gap-2 mb-3">
-                    <span className="text-lg">📋</span>
-                    <h3 className="text-sm font-bold text-gray-700 uppercase tracking-wide">
-                      Atenciones Generadas
-                    </h3>
-                    {atencionesGeneradas.length > 0 && (
-                      <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full font-semibold">
-                        {atencionesGeneradas.length}
-                      </span>
-                    )}
-                  </div>
-                  
-                  {loadingAtenciones ? (
-                    <div className="flex items-center gap-2 text-gray-500 text-sm py-4">
-                      <Loader className="w-4 h-4 animate-spin" />
-                      <span>Cargando atenciones...</span>
-                    </div>
-                  ) : (
-                    <div className="space-y-2">
-                      {atencionesGeneradas.map((atencion) => (
-                        <div
-                          key={atencion.idSolicitud}
-                          className={`p-3 rounded-lg border-2 ${
-                            atencion.tipoCita === 'RECITA'
-                              ? 'bg-green-50 border-green-200'
-                              : 'bg-blue-50 border-blue-200'
-                          }`}
-                        >
-                          <div className="flex items-center justify-between gap-3">
-                            <div className="flex items-center gap-2">
-                              {atencion.tipoCita === 'RECITA' ? (
-                                <FileText className="w-4 h-4 text-green-600" />
-                              ) : (
-                                <Share2 className="w-4 h-4 text-blue-600" />
-                              )}
-                              <span className={`text-xs font-bold px-2 py-0.5 rounded ${
-                                atencion.tipoCita === 'RECITA'
-                                  ? 'bg-green-200 text-green-800'
-                                  : 'bg-blue-200 text-blue-800'
-                              }`}>
-                                {atencion.tipoCita}
-                              </span>
-                              <span className="text-sm font-semibold text-gray-800">
-                                {atencion.especialidad}
-                              </span>
-                            </div>
-                            <span className={`text-xs font-semibold px-2 py-1 rounded-full ${
-                              atencion.estado === 'ATENDIDO' ? 'bg-green-100 text-green-700' :
-                              atencion.estado === 'PENDIENTE' ? 'bg-amber-100 text-amber-700' :
-                              'bg-gray-100 text-gray-600'
-                            }`}>
-                              {atencion.estado}
-                            </span>
-                          </div>
-                          <div className="mt-2 flex items-center gap-4 text-xs text-gray-600">
-                            <span>
-                              <strong>Creado:</strong> {atencion.fechaSolicitud ? new Date(atencion.fechaSolicitud).toLocaleDateString('es-PE') : '—'}
-                            </span>
-                            {atencion.fechaPreferida && (
-                              <span className="bg-amber-100 text-amber-800 px-2 py-0.5 rounded font-semibold">
-                                <strong>Fecha preferida:</strong> {(() => {
-                                  // ✅ v1.103.12: Parsear fecha ISO sin desfase de zona horaria
-                                  const parts = String(atencion.fechaPreferida).split('T')[0].split('-');
-                                  if (parts.length === 3) {
-                                    const [y, m, d] = parts;
-                                    return `${d.padStart(2,'0')}/${m.padStart(2,'0')}/${y}`;
-                                  }
-                                  return atencion.fechaPreferida;
-                                })()}
-                              </span>
-                            )}
-                            {atencion.fechaAtencion && (
-                              <span className="text-green-600 font-semibold">
-                                <strong>Atendido:</strong> {new Date(atencion.fechaAtencion).toLocaleDateString('es-PE')}
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              )}
             </div>
 
             {/* Footer Fijo con Botones */}

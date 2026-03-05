@@ -100,10 +100,12 @@ public class AtenderPacienteService {
             }
 
             // ✅ v1.47.2: Actualizar solicitud original
+            // ✅ v1.84.7: También cambiar estado para excluir de búsqueda de RECITA existente
             solicitudOriginal.setCondicionMedica("Atendido");
+            solicitudOriginal.setEstado("ATENDIDO"); // ✅ v1.84.7: Cambiar estado ANTES de buscar RECITAs
             solicitudOriginal.setPacienteId(null); // ✅ fix FK: limpiar ID numérico inválido antes de guardar
             guardarSolicitudConTransaccion(solicitudOriginal);
-            log.info("✅ Solicitud original marcada como Atendido");
+            log.info("✅ Solicitud original marcada como Atendido (condicionMedica + estado)");
 
             // ✅ v1.76.0: Guardar Ficha de Enfermería en atencion_clinica si hay datos
             // ✅ v6.0.0: Capturar id_atencion para vincularlo a RECITA/INTERCONSULTA (FK directa)
@@ -128,6 +130,17 @@ public class AtenderPacienteService {
             // 3. Crear o actualizar bolsa Recita si aplica
             // ✅ v1.84.4: Buscar recita existente por paciente + ESPECIALIDAD (de solicitud) + ESTADO PENDIENTE
             // Si hay RECITA PENDIENTE → actualizar fecha. Si no → crear nueva.
+            // ✅ v1.84.6: Logging diagnóstico para problema de RECITA no creada
+            log.info("═══════════════════════════════════════════════════════════════");
+            log.info("🔍 [RECITA v1.84.6] DIAGNÓSTICO - ANTES DE EVALUAR tieneRecita");
+            log.info("   → request.getTieneRecita() = {}", request.getTieneRecita());
+            log.info("   → asegurado = {} (null? {})", asegurado, asegurado == null);
+            log.info("   → pkAseguradoFinal = '{}'", pkAseguradoFinal);
+            log.info("   → idAtencionClinica = {}", idAtencionClinica);
+            log.info("   → solicitudOriginal.getIdSolicitud() = {}", solicitudOriginal.getIdSolicitud());
+            log.info("   → solicitudOriginal.getEspecialidad() = '{}'", solicitudOriginal.getEspecialidad());
+            log.info("═══════════════════════════════════════════════════════════════");
+            
             if (request.getTieneRecita() != null && request.getTieneRecita()) {
                 // ✅ v1.84.4: Usar especialidad DE LA SOLICITUD ORIGINAL (no del parámetro)
                 String especialidadParaBusqueda = solicitudOriginal.getEspecialidad() != null 
@@ -152,6 +165,12 @@ public class AtenderPacienteService {
                 
                 var recitaExistente = solicitudBolsaRepository
                         .findRecitaPendientePorEspecialidad(dniNormalizado, especialidadParaBusqueda);
+                
+                // ✅ v1.84.7: Excluir la solicitud original de los resultados (por si el flush no se propagó)
+                if (recitaExistente.isPresent() && recitaExistente.get().getIdSolicitud().equals(solicitudOriginal.getIdSolicitud())) {
+                    log.warn("⚠️ [RECITA v1.84.7] La query retornó la misma solicitud original (id={}), descartando...", solicitudOriginal.getIdSolicitud());
+                    recitaExistente = java.util.Optional.empty();
+                }
                 
                 log.info("═══════════════════════════════════════════════════════════════");
                 log.info("🔍 [RECITA v1.84.5] RESULTADO: encontrada = {}", recitaExistente.isPresent());
@@ -180,6 +199,9 @@ public class AtenderPacienteService {
                     crearBolsaRecitaConTransaccion(solicitudOriginal, especialidadParaBusqueda, request.getRecitaDias(), idAtencionClinica, pkAseguradoFinal);
                     log.info("✅ [RECITA v1.84.4] Nueva bolsa RECITA creada");
                 }
+            } else {
+                // ✅ v1.84.6: Logging cuando NO se solicita RECITA
+                log.info("ℹ️ [RECITA v1.84.6] NO se solicitó RECITA (tieneRecita={}) - omitiendo creación", request.getTieneRecita());
             }
 
             // 4. Crear bolsa Interconsulta por cada especialidad (múltiples — v1.75.0)
@@ -232,17 +254,17 @@ public class AtenderPacienteService {
         }
     }
 
-    @Transactional
+    // ✅ v1.84.6: Removido @Transactional innecesario (métodos privados no son interceptados por Spring AOP)
     private void guardarSolicitudConTransaccion(SolicitudBolsa solicitud) {
-        solicitudBolsaRepository.save(solicitud);
+        solicitudBolsaRepository.saveAndFlush(solicitud); // ✅ v1.84.6: flush inmediato
     }
 
-    @Transactional
+    // ✅ v1.84.6: Removido @Transactional innecesario
     private void crearBolsaRecitaConTransaccion(SolicitudBolsa solicitudOriginal, String especialidad, Integer dias, Long idAtencionClinica, String pkAsegurado) {
         crearBolsaRecita(solicitudOriginal, especialidad, dias, idAtencionClinica, pkAsegurado);
     }
 
-    @Transactional
+    // ✅ v1.84.6: Removido @Transactional innecesario
     private void crearBolsaInterconsultaConTransaccion(SolicitudBolsa solicitudOriginal, String especialidad, Long idAtencionClinica, String pkAsegurado, Long idMotivoInterconsulta) {
         crearBolsaInterconsulta(solicitudOriginal, especialidad, idAtencionClinica, pkAsegurado, idMotivoInterconsulta);
     }
@@ -549,8 +571,8 @@ public class AtenderPacienteService {
      * Crea un registro en la tabla asegurados a partir de los datos de dim_solicitud_bolsa.
      * Se invoca automáticamente cuando el paciente no existe en asegurados.
      * Campos mapeados: DNI → pk_asegurado + doc_paciente, nombre, sexo, teléfono, cas_adscripcion.
+     * ✅ v1.84.6: Usando saveAndFlush para persistencia inmediata
      */
-    @Transactional
     private Asegurado crearAseguradoDesdeSolicitud(SolicitudBolsa solicitud) {
         String dni = solicitud.getPacienteDni();
         log.info("🆕 Creando asegurado automáticamente para DNI: {}", dni);
@@ -563,7 +585,7 @@ public class AtenderPacienteService {
             nuevo.setTelCelular(solicitud.getPacienteTelefono());
             nuevo.setCasAdscripcion(solicitud.getCodigoAdscripcion());
             nuevo.setVigencia(true);
-            Asegurado guardado = aseguradoRepository.save(nuevo);
+            Asegurado guardado = aseguradoRepository.saveAndFlush(nuevo); // ✅ v1.84.6: flush inmediato
             log.info("✅ Asegurado creado: DNI={}, nombre={}", dni, nuevo.getPaciente());
             return guardado;
         } catch (Exception e) {

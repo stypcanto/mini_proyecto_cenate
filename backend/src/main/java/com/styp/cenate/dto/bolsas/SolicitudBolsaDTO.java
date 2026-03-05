@@ -177,7 +177,11 @@ public class SolicitudBolsaDTO {
     private String condicionMedica;
 
     @JsonProperty("fecha_atencion_medica")
-    private java.time.OffsetDateTime fechaAtencionMedica;
+    private String fechaAtencionMedica;  // ✅ v1.84.8: Como String para evitar normalización zona horaria
+
+    // 🩺 PRIMERA ATENCIÓN MÉDICA (registro único al primer Atendido)
+    @JsonProperty("primera_fecha_atendida")
+    private String primeraFechaAtendida;  // ✅ v1.84.8: Como String ISO 8601 con offset -05:00
 
     // 📞 MOTIVO DE LLAMADA (v1.68.2)
     @JsonProperty("motivo_llamada_bolsa")

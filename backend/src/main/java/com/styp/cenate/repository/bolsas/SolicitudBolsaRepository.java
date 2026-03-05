@@ -154,7 +154,8 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
                sb.condicion_medica, sb.fecha_atencion_medica,
                COALESCE(CONCAT(med.nom_pers, ' ', med.ape_pater_pers, ' ', med.ape_mater_pers), '') as nombre_medico,
                sb.id_ipress_atencion, COALESCE(di2.cod_ipress, di.cod_ipress, '') as cod_ipress_atencion,
-               COALESCE(di2.desc_ipress, di.desc_ipress, '') as desc_ipress_atencion
+               COALESCE(di2.desc_ipress, di.desc_ipress, '') as desc_ipress_atencion,
+               sb.primera_fecha_atendida
         FROM dim_solicitud_bolsa sb
         LEFT JOIN dim_tipos_bolsas tb ON sb.id_bolsa = tb.id_tipo_bolsa
         LEFT JOIN dim_ipress di ON sb.id_ipress = di.id_ipress
@@ -201,7 +202,8 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
                sb.id_ipress_atencion, COALESCE(di2.cod_ipress, di.cod_ipress, '') as cod_ipress_atencion,
                COALESCE(di2.desc_ipress, di.desc_ipress, '') as desc_ipress_atencion,
                COALESCE(CONCAT(pcg.nom_pers, ' ', pcg.ape_pater_pers, ' ', pcg.ape_mater_pers), ug.name_user) as nombre_gestora,
-               sb.tiempo_inicio_sintomas
+               sb.tiempo_inicio_sintomas,
+               sb.primera_fecha_atendida
         FROM dim_solicitud_bolsa sb
         LEFT JOIN dim_tipos_bolsas tb ON sb.id_bolsa = tb.id_tipo_bolsa
         LEFT JOIN dim_ipress di ON sb.id_ipress = di.id_ipress
@@ -2271,6 +2273,20 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
             @org.springframework.data.repository.query.Param("gestoraId")             Long gestoraId,
             @org.springframework.data.repository.query.Param("estadoBolsa")           String estadoBolsa,
             @org.springframework.data.repository.query.Param("categoriaEspecialidad") String categoriaEspecialidad);
+
+    /**
+     * ✅ v1.85.0: Obtener pacientes asignados al médico con fechas de atención CARGADAS
+     * Explícitamente selecciona todos los campos incluyendo fechaAtencionMedica y primeraFechaAtendida
+     * Esto asegura que Hibernate carga esos campos correctamente desde BD
+     * 
+     * @param idPersonal ID del médico logueado
+     * @return Lista de SolicitudBolsa con TODOS los campos inicializados
+     */
+    @Query("""
+        SELECT s FROM SolicitudBolsa s 
+        WHERE s.idPersonal = :idPersonal
+    """)
+    List<SolicitudBolsa> findByIdPersonalWithAllFields(@org.springframework.data.repository.query.Param("idPersonal") Long idPersonal);
 
 }
 

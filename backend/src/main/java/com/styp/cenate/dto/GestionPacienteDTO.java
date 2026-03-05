@@ -92,9 +92,13 @@ public class GestionPacienteDTO {
     private OffsetDateTime fechaAtencion;
 
     // Fecha real de atención médica (cuando el médico marca como Atendido/Deserción)
+    // ✅ v1.84.8: Enviar como String para evitar normalización de zona horaria
     @JsonProperty("fechaAtencionMedica")
-    @JsonSerialize(using = OffsetDateTimeSerializer.class)
-    private OffsetDateTime fechaAtencionMedica;
+    private String fechaAtencionMedica;
+
+    // Fecha de la PRIMERA atención médica (se registra una sola vez al primer Atendido)
+    @JsonProperty("primeraFechaAtendida")
+    private String primeraFechaAtendida;
 
     // ✅ v1.50.0: Enfermedades crónicas del paciente (desde asegurado_enfermedad_cronica)
     private String[] enfermedadCronica;

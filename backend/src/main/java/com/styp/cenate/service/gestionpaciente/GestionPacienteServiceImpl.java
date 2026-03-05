@@ -463,10 +463,11 @@ public class GestionPacienteServiceImpl implements IGestionPacienteService {
             // ✅ v1.45.0: Buscar pacientes asignados directamente en dim_solicitud_bolsa (idPersonal)
             // Esta es la fuente correcta de asignaciones médicas (desde GestionAsegurado)
             // 🔧 v1.78.1: Buscar sin filtro activo=true para mostrar TODOS los pacientes asignados
+            // ✅ v1.85.0: Usar query optimizado que carga explícitamente fechaAtencionMedica y primeraFechaAtendida
             List<SolicitudBolsa> solicitudesBolsa = new ArrayList<>();
             try {
-                solicitudesBolsa = solicitudBolsaRepository.findByIdPersonal(idPers);
-                log.info("Se encontraron {} solicitudes en bolsas para el médico {}", solicitudesBolsa.size(), idPers);
+                solicitudesBolsa = solicitudBolsaRepository.findByIdPersonalWithAllFields(idPers);
+                log.info("✅ v1.85.0: Se encontraron {} solicitudes en bolsas para el médico {} (con fechas cargadas)", solicitudesBolsa.size(), idPers);
             } catch (Exception e) {
                 log.error("Error buscando solicitudes en bolsas para médico {}: {}", idPers, e.getMessage());
                 solicitudesBolsa = Collections.emptyList();
@@ -879,7 +880,16 @@ public class GestionPacienteServiceImpl implements IGestionPacienteService {
                         : java.time.LocalTime.MIDNIGHT)
                     .atOffset(java.time.ZoneOffset.of("-05:00"))
                 : null)  // ✅ v1.80.0: Incluir hora_atencion en fechaAtencion (fecha+hora de la cita)
-            .fechaAtencionMedica(bolsa.getFechaAtencionMedica())  // Cuándo el médico realmente atendió
+            .fechaAtencionMedica(bolsa.getFechaAtencionMedica() != null 
+                ? java.time.format.DateTimeFormatter.ISO_OFFSET_DATE_TIME.format(
+                    bolsa.getFechaAtencionMedica().atZoneSameInstant(java.time.ZoneId.of("America/Lima")).toOffsetDateTime()
+                  )
+                : null)  // ✅ v1.85.0: Convertir UTC → Lima (-05:00) antes de formatear
+            .primeraFechaAtendida(bolsa.getPrimeraFechaAtendida() != null 
+                ? java.time.format.DateTimeFormatter.ISO_OFFSET_DATE_TIME.format(
+                    bolsa.getPrimeraFechaAtendida().atZoneSameInstant(java.time.ZoneId.of("America/Lima")).toOffsetDateTime()
+                  )
+                : null)  // ✅ v1.85.0: Convertir UTC → Lima (-05:00) antes de formatear
             .enfermedadCronica(enfermedadesCronicas)  // ✅ v1.50.0: Incluir enfermedades crónicas
             .tiempoInicioSintomas(tiempoSintomas)  // ✅ v1.64.0: Con valor por defecto "> 72 hrs."
             .consentimientoInformado(consentimiento)  // ✅ v1.64.0: Con valores por defecto según condición

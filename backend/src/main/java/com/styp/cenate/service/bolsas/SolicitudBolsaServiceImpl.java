@@ -766,7 +766,10 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
 
             // ✅ v3.5.0 - Extraer condición médica y fecha atención médica (índices correctos: 38, 39)
             String condicionMedica = row.length > 38 ? (String) row[38] : null;
-            java.time.OffsetDateTime fechaAtencionMedica = row.length > 39 ? convertToOffsetDateTime(row[39]) : null;
+            java.time.OffsetDateTime fechaAtencionMedicaTemp = row.length > 39 ? convertToOffsetDateTime(row[39]) : null;
+            String fechaAtencionMedica = fechaAtencionMedicaTemp != null 
+                ? java.time.format.DateTimeFormatter.ISO_OFFSET_DATE_TIME.format(fechaAtencionMedicaTemp) 
+                : null;  // ✅ v1.84.8: Convertir a String ISO para evitar normalización zona horaria
 
             // ✅ v3.6.0 - Nombre del médico asignado (índice 40)
             String nombreMedicoAsignado = null;
@@ -781,6 +784,12 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
             String descIpressAtencion = row.length > 43 ? (String) row[43] : null;
             String nombreGestora = row.length > 44 ? (String) row[44] : null;
             String tiempoInicioSintomas = row.length > 45 ? (String) row[45] : null;
+
+            // ✅ v1.84.8 - Primera fecha atendida (índice 46)
+            java.time.OffsetDateTime primeraFechaAtendidaTemp = row.length > 46 ? convertToOffsetDateTime(row[46]) : null;
+            String primeraFechaAtendida = primeraFechaAtendidaTemp != null 
+                ? java.time.format.DateTimeFormatter.ISO_OFFSET_DATE_TIME.format(primeraFechaAtendidaTemp) 
+                : null;  // ✅ v1.84.8: Convertir a String ISO para evitar normalización zona horaria
 
             return SolicitudBolsaDTO.builder()
                     .idSolicitud(toLongSafe("id_solicitud", row[0]))
@@ -830,6 +839,7 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
                     .descIpressAtencion(descIpressAtencion) // NEW v1.15.0 - desc_ipress_atencion (índice 40)
                     .nombreGestora(nombreGestora)           // nombre gestora desde JOIN dim_usuarios
                     .tiempoInicioSintomas(tiempoInicioSintomas)
+                    .primeraFechaAtendida(primeraFechaAtendida)  // ✅ v1.84.8 - primera_fecha_atendida (índice 46)
                     .build();
         } catch (Exception e) {
             log.error("Error mapeando resultado SQL en índice. Error: {}", e.getMessage(), e);
@@ -871,10 +881,18 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
             return (java.time.OffsetDateTime) value;
         }
         if (value instanceof java.sql.Timestamp) {
-            return ((java.sql.Timestamp) value).toInstant().atOffset(java.time.ZoneOffset.UTC);
+            // ✅ v1.84.9: JDBC devuelve TIMESTAMP WITH TIME ZONE como UTC automáticamente
+            // Convertir de UTC a Lima para obtener la hora local correcta
+            return ((java.sql.Timestamp) value)
+                .toInstant()
+                .atZoneSameInstant(java.time.ZoneId.of("America/Lima"))
+                .toOffsetDateTime();
         }
         if (value instanceof java.time.Instant) {
-            return ((java.time.Instant) value).atOffset(java.time.ZoneOffset.UTC);
+            // ✅ v1.84.9: Instant siempre es UTC, convertir a Lima
+            return ((java.time.Instant) value)
+                .atZoneSameInstant(java.time.ZoneId.of("America/Lima"))
+                .toOffsetDateTime();
         }
         throw new ClassCastException("No se puede convertir " + value.getClass().getName() + " a OffsetDateTime. Tipo: " + value.getClass().getSimpleName());
     }
@@ -3407,7 +3425,12 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
             .idPersonal(solicitud.getIdPersonal())
             .nombreMedicoAsignado(obtenerNombreMedico(solicitud.getIdPersonal()))
             .condicionMedica(solicitud.getCondicionMedica())
-            .fechaAtencionMedica(solicitud.getFechaAtencionMedica())
+            .fechaAtencionMedica(solicitud.getFechaAtencionMedica() != null 
+                ? java.time.format.DateTimeFormatter.ISO_OFFSET_DATE_TIME.format(solicitud.getFechaAtencionMedica()) 
+                : null)  // ✅ v1.84.8: Convertir a String ISO
+            .primeraFechaAtendida(solicitud.getPrimeraFechaAtendida() != null 
+                ? java.time.format.DateTimeFormatter.ISO_OFFSET_DATE_TIME.format(solicitud.getPrimeraFechaAtendida()) 
+                : null)  // ✅ v1.84.8: Convertir a String ISO
             .build();
     }
 
