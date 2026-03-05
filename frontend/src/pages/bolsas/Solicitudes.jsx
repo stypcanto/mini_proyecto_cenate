@@ -104,14 +104,13 @@ export default function Solicitudes({ categoriaInicial } = {}) {
   const [filtroIpressAtencion, setFiltroIpressAtencion] = useState('todas');
   const [filtroMacrorregion, setFiltroMacrorregion] = useState('todas');
   // Si viene categoriaInicial → pre-aplicar filtro de especialidad fijo
-  // Nota: 'maraton' usa filtroEstrategia='MARATON' cross-bolsa, NO categoriaEspecialidad (id_bolsa=17)
-  const usaCategoriaEspecialidad = ['especialidades', 'bolsa107', 'recita', 'interconsulta'].includes(categoriaInicial);
+  const usaCategoriaEspecialidad = ['especialidades', 'bolsa107', 'recita', 'interconsulta', 'maraton'].includes(categoriaInicial);
   const especialidadPorCategoria = usaCategoriaEspecialidad
     ? 'todas'      // estas categorías usan categoriaEspecialidad, no filtroEspecialidad
-    : (categoriaInicial === 'maraton' ? 'todas' : (categoriaInicial || 'todas'));
+    : (categoriaInicial || 'todas');
   const [filtroEspecialidad, setFiltroEspecialidad] = useState(especialidadPorCategoria);
-  // 'especialidades', 'bolsa107', 'recita', 'interconsulta' se pasan como categoriaEspecialidad al backend
-  // 'maraton' usa estrategia=MARATON para mostrar KPIs cross-bolsa (no solo id_bolsa=17)
+  // 'especialidades', 'bolsa107', 'recita', 'interconsulta', 'maraton' se pasan como categoriaEspecialidad al backend
+  // 'maraton' → id_bolsa=17 (todos los pacientes Maratón están en esa bolsa)
   const categoriaEspecialidad = usaCategoriaEspecialidad ? categoriaInicial : null;
   // En sub-páginas los cards son solo informativos, no filtran la lista
   const cardsInteractivos = !categoriaInicial;
@@ -121,8 +120,8 @@ export default function Solicitudes({ categoriaInicial } = {}) {
   const [filtroAsignacion, setFiltroAsignacion] = useState('todos');  // ✅ v1.42.0: Filtro asignación (cards clickeables)
   const [filtroGestoraId, setFiltroGestoraId] = useState(null);        // Filtro por gestora asignada (ID)
   const [filtroEstadoBolsa, setFiltroEstadoBolsa] = useState('todos'); // ✅ v1.67.0: Filtro estado de bolsa (PENDIENTE, OBSERVADO, ATENDIDO)
-  // v1.85.0: Filtro por estrategia. Para campaña Maratón se pre-fija a 'MARATON' (cross-bolsa)
-  const [filtroEstrategia, setFiltroEstrategia] = useState(categoriaInicial === 'maraton' ? 'MARATON' : 'todos');
+  // v1.85.0: Filtro por estrategia (opcional, no se pre-fija para Maratón — usa categoriaEspecialidad=maraton → id_bolsa=17)
+  const [filtroEstrategia, setFiltroEstrategia] = useState('todos');
   const [cenacronCount, setCenacronCount] = useState(null);           // Conteo CENACRON en contexto actual
   const [maratonCount, setMaratonCount] = useState(null);             // Conteo MARATON en contexto actual
   const [maratonUniversoTotal, setMaratonUniversoTotal] = useState(null); // Total MARATÓN desde paciente_estrategia (13,402)
@@ -801,9 +800,7 @@ export default function Solicitudes({ categoriaInicial } = {}) {
         ipress:         filtroIpress === 'todas' ? null : filtroIpress,
         especialidad:   filtroEspecialidad === 'todas' ? null : filtroEspecialidad,
         categoriaEspecialidad: categoriaEspecialidad,
-        // Para Maratón: KPI no filtra por estado (muestra todos: CITADOS, ATENDIDOS, etc.)
-        // Para otras páginas: KPI respeta el filtro activo
-        estadoCodigo:   (categoriaInicial === 'maraton') ? null : (filtroEstado === 'todos' ? null : filtroEstado),
+        estadoCodigo:   filtroEstado === 'todos' ? null : filtroEstado,
         ipressAtencion: filtroIpressAtencion === 'todas' ? null : filtroIpressAtencion,
         tipoCita:       filtroTipoCita === 'todas' ? null : filtroTipoCita,
         asignacion:     asignacionFinal,
