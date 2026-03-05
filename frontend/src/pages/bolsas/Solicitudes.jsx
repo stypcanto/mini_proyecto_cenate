@@ -73,6 +73,9 @@ export default function Solicitudes({ categoriaInicial } = {}) {
   const [registrosPorPagina, setRegistrosPorPagina] = useState(20);
   const { esSuperAdmin } = usePermisos();
 
+  // v1.86.2: Métricas de tiempo solo para Medicina General y Especialidades
+  const mostrarMetricasTiempo = categoriaInicial === 'MEDICINA GENERAL' || categoriaInicial === 'especialidades';
+
   const [solicitudes, setSolicitudes] = useState([]);
   const [totalElementos, setTotalElementos] = useState(0); // NEW v2.5.1: Total de elementos del backend
   const [estadisticasGlobales, setEstadisticasGlobales] = useState(null); // NEW v2.5.2: Stats globales del backend
@@ -838,6 +841,16 @@ export default function Solicitudes({ categoriaInicial } = {}) {
         console.log('📊 Total páginas:', response.totalPages);
       }
 
+      // ✅ DEBUG: Datos crudos del backend para la tabla (ANTES de procesar)
+      console.log('═══════════════════════════════════════════════════════════════');
+      console.log('📋 DATOS CRUDOS DEL BACKEND (solicitudesData):', solicitudesData);
+      console.log('📋 Cantidad de registros:', solicitudesData?.length || 0);
+      if (solicitudesData && solicitudesData.length > 0) {
+        console.log('📋 Primer registro (ejemplo):', solicitudesData[0]);
+        console.log('📋 Campos disponibles:', Object.keys(solicitudesData[0]));
+      }
+      console.log('═══════════════════════════════════════════════════════════════');
+
       if (solicitudesData && solicitudesData.length > 0) {
         console.log('✅ Página con filtros cargada:', solicitudesData.length, 'registros');
 
@@ -1022,6 +1035,16 @@ export default function Solicitudes({ categoriaInicial } = {}) {
         totalElementosDelBackend = response.totalElements || 0;
         console.log('📊 Total elementos del backend:', totalElementosDelBackend);
       }
+
+      // ✅ DEBUG: Datos crudos del backend para la tabla (ANTES de procesar)
+      console.log('═══════════════════════════════════════════════════════════════');
+      console.log('📋 DATOS CRUDOS DEL BACKEND (solicitudesData):', solicitudesData);
+      console.log('📋 Cantidad de registros:', solicitudesData?.length || 0);
+      if (solicitudesData && solicitudesData.length > 0) {
+        console.log('📋 Primer registro (ejemplo):', solicitudesData[0]);
+        console.log('📋 Campos disponibles:', Object.keys(solicitudesData[0]));
+      }
+      console.log('═══════════════════════════════════════════════════════════════');
 
       if (solicitudesData && solicitudesData.length > 0) {
         console.log('✅ Página cargada: ', solicitudesData.length, 'registros');
@@ -2957,6 +2980,62 @@ export default function Solicitudes({ categoriaInicial } = {}) {
                   <span><strong>IPRESS Atención</strong> — el lápiz <svg xmlns="http://www.w3.org/2000/svg" className="inline h-3 w-3 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536M9 11l6.536-6.536a2 2 0 112.828 2.828L11.828 13.828A2 2 0 0110 14H9v-1a2 2 0 01.172-.768z" /></svg> permite asignar o cambiar la IPRESS donde se atenderá al paciente</span>
                 </div>
               </div>
+              {/* Leyenda Semáforo de Tiempos v1.86.1 - Solo para Medicina General y Especialidades */}
+              {mostrarMetricasTiempo && (
+              <div className="bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 mb-3">
+                <div className="text-xs font-bold text-gray-700 mb-2 flex items-center gap-1">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                  LEYENDA DE SEMÁFORO - MÉTRICAS DE TIEMPO
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  {/* Pendientes de Cita */}
+                  <div className="bg-white rounded border border-gray-200 p-2">
+                    <div className="text-xs font-semibold text-gray-800 mb-1 flex items-center gap-1">
+                      <span className="text-base">📋</span> Pendientes de Cita
+                      <span className="text-gray-400 font-normal">(hoy – fecha_solicitud)</span>
+                    </div>
+                    <div className="text-[10px] text-gray-500 mb-1.5 leading-tight">
+                      <strong>Aplica:</strong> Estado Gestora: No contesta, Apagado, Reprog. Fallida, Pendiente cita + Estado Bolsa: PENDIENTE
+                    </div>
+                    <div className="flex flex-wrap gap-1.5">
+                      <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-green-100 text-green-800 border border-green-300">🟢 ≤15d</span>
+                      <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-yellow-100 text-yellow-800 border border-yellow-300">🟡 16-30d</span>
+                      <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-red-100 text-red-800 border border-red-300">🔴 &gt;30d</span>
+                    </div>
+                  </div>
+                  {/* Tiempo para Citar */}
+                  <div className="bg-white rounded border border-gray-200 p-2">
+                    <div className="text-xs font-semibold text-gray-800 mb-1 flex items-center gap-1">
+                      <span className="text-base">📅</span> Tiempo para Citar
+                      <span className="text-gray-400 font-normal">(fecha_cita – fecha_solicitud)</span>
+                    </div>
+                    <div className="text-[10px] text-gray-500 mb-1.5 leading-tight">
+                      <strong>Aplica:</strong> Estado Gestora: CITADO
+                    </div>
+                    <div className="flex flex-wrap gap-1.5">
+                      <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-green-100 text-green-800 border border-green-300">🟢 ≤15d</span>
+                      <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-yellow-100 text-yellow-800 border border-yellow-300">🟡 16-30d</span>
+                      <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-red-100 text-red-800 border border-red-300">🔴 &gt;30d</span>
+                    </div>
+                  </div>
+                  {/* Tiempo para Atención */}
+                  <div className="bg-white rounded border border-gray-200 p-2">
+                    <div className="text-xs font-semibold text-gray-800 mb-1 flex items-center gap-1">
+                      <span className="text-base">🩺</span> Tiempo para Atención
+                      <span className="text-gray-400 font-normal">(fecha_atencion – fecha_solicitud)</span>
+                    </div>
+                    <div className="text-[10px] text-gray-500 mb-1.5 leading-tight">
+                      <strong>Aplica:</strong> Estado Bolsa: ATENDIDO
+                    </div>
+                    <div className="flex flex-wrap gap-1.5">
+                      <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-green-100 text-green-800 border border-green-300">🟢 ≤15d</span>
+                      <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-yellow-100 text-yellow-800 border border-yellow-300">🟡 16-30d</span>
+                      <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-red-100 text-red-800 border border-red-300">🔴 &gt;30d</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              )}
               <table className="w-full border-collapse">
                 <thead className="bg-[#0D5BA9] text-white sticky top-0 z-40">
                   <tr className="border-b-2 border-blue-900">
@@ -2968,9 +3047,10 @@ export default function Solicitudes({ categoriaInicial } = {}) {
                         className="w-5 h-5 cursor-pointer"
                       />
                     </th>
-                    {/* Columnas - Orden optimizado v2.1.0 + v1.68.0: F. Ingreso Bolsa primera | v1.80.0: Ordenamiento */}
+                    {/* Columnas - Orden optimizado v2.1.0 + v1.68.0: F. Ingreso Bolsa primera | v1.80.0: Ordenamiento | v1.86.0: Métricas de tiempo | v1.87.0: Tiempo Inicio Síntomas */}
                     {[
                       { label: 'F. Ingreso Bolsa', key: 'fechaSolicitud' },
+                      ...(mostrarMetricasTiempo ? [{ label: 'Métricas de Tiempo', key: 'metricasTiempo', tooltip: '📋 Pendiente | 📅 Citar | 🩺 Atención' }] : []),
                       { label: 'Estado de Bolsa', key: 'estado' },
                       { label: 'Origen de la Bolsa', key: 'nombreBolsa' },
                       { label: 'Fecha Preferida', key: 'fechaPreferidaNoAtendida' },
@@ -2990,12 +3070,13 @@ export default function Solicitudes({ categoriaInicial } = {}) {
                       { label: 'Fecha Asignación', key: 'fechaAsignacion' },
                       { label: 'Gestora Asignada', key: 'gestoraAsignada' },
                       { label: 'Usuario Cambio Estado', key: 'usuarioCambioEstado' },
-                    ].map(({ label, key }) => {
+                    ].map(({ label, key, tooltip }) => {
                       const isActive = sortConfig.key === key;
                       return (
                         <th
                           key={key}
                           onClick={() => handleSort(key)}
+                          title={tooltip}
                           className={`px-3 py-3 text-left text-sm font-bold uppercase tracking-wider whitespace-nowrap cursor-pointer select-none transition-colors
                             ${isActive ? 'bg-[#073f7a]' : 'bg-[#0D5BA9] hover:bg-[#0a4f96]'}`}
                         >
@@ -3054,6 +3135,7 @@ export default function Solicitudes({ categoriaInicial } = {}) {
                       onVerHistorial={handleVerHistorial}
                       isProcessing={isProcessing}
                       getEstadoBadge={getEstadoBadge}
+                      mostrarMetricasTiempo={mostrarMetricasTiempo}
                     />
                   ))}
                 </tbody>

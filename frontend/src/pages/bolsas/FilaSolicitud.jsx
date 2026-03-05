@@ -1,6 +1,93 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Phone, Users, UserPlus, Download, FileText, X, Calendar, Pencil, Check } from 'lucide-react';
+import { Phone, Users, UserPlus, Download, FileText, X, Calendar, Pencil, Check, Clock, CalendarCheck, Stethoscope } from 'lucide-react';
 import HistorialPacienteBtn from '../../components/trazabilidad/HistorialPacienteBtn';
+
+/**
+ * 📊 v1.86.0 - Funciones para calcular métricas de tiempo
+ * v1.86.1 - Formato día/hora/minuto + tooltips
+ */
+
+// Estados de gestora que aplican para "Pendientes de Cita"
+const ESTADOS_PENDIENTES_CITA = ['NO_CONTESTA', 'APAGADO', 'REPROG_FALLIDA', 'PENDIENTE_CITA'];
+
+// Calcula diferencia entre dos fechas y retorna { dias, horas, minutos, totalDias } o null
+function calcularTiempoEntre(fechaInicio, fechaFin) {
+  if (!fechaInicio || !fechaFin) return null;
+  try {
+    const inicio = new Date(fechaInicio);
+    const fin = new Date(fechaFin);
+    if (isNaN(inicio.getTime()) || isNaN(fin.getTime())) return null;
+    
+    const diffMs = fin.getTime() - inicio.getTime();
+    if (diffMs < 0) return { dias: 0, horas: 0, minutos: 0, totalDias: 0 };
+    
+    const totalMinutos = Math.floor(diffMs / (1000 * 60));
+    const dias = Math.floor(totalMinutos / (60 * 24));
+    const horas = Math.floor((totalMinutos % (60 * 24)) / 60);
+    const minutos = totalMinutos % 60;
+    const totalDias = diffMs / (1000 * 60 * 60 * 24); // Para colores del semáforo
+    
+    return { dias, horas, minutos, totalDias };
+  } catch {
+    return null;
+  }
+}
+
+// Formatea tiempo como "Xd Xh Xm"
+function formatearTiempo({ dias, horas, minutos }) {
+  const partes = [];
+  if (dias > 0) partes.push(`${dias}d`);
+  if (horas > 0) partes.push(`${horas}h`);
+  if (minutos > 0 || partes.length === 0) partes.push(`${minutos}m`);
+  return partes.join(' ');
+}
+
+// Pendientes de Cita: hoy - fecha_solicitud (solo para estados específicos y estado bolsa PENDIENTE)
+function calcularPendientesCita(solicitud) {
+  const estadoGestora = solicitud.estadoCodigo || solicitud.cod_estado_cita;
+  const estadoBolsa = (solicitud.estado || '').toUpperCase();
+  
+  if (!ESTADOS_PENDIENTES_CITA.includes(estadoGestora) || estadoBolsa !== 'PENDIENTE') {
+    return null;
+  }
+  
+  const fechaSolicitud = solicitud.fecha_solicitud;
+  if (!fechaSolicitud) return null;
+  
+  return calcularTiempoEntre(fechaSolicitud, new Date());
+}
+
+// Tiempo para Citar: fecha_cita - fecha_solicitud (solo para estado gestora CITADO)
+function calcularTiempoParaCitar(solicitud) {
+  const estadoGestora = solicitud.estadoCodigo || solicitud.cod_estado_cita;
+  
+  if (estadoGestora !== 'CITADO') {
+    return null;
+  }
+  
+  const fechaSolicitud = solicitud.fecha_solicitud;
+  const fechaCita = solicitud.fecha_atencion || solicitud.fecha_asignacion;
+  
+  if (!fechaSolicitud || !fechaCita) return null;
+  
+  return calcularTiempoEntre(fechaSolicitud, fechaCita);
+}
+
+// Tiempo para Atención: fecha_atencion - fecha_solicitud (solo para estado bolsa ATENDIDO)
+function calcularTiempoParaAtencion(solicitud) {
+  const estadoBolsa = (solicitud.estado || '').toUpperCase();
+  
+  if (estadoBolsa !== 'ATENDIDO') {
+    return null;
+  }
+  
+  const fechaSolicitud = solicitud.fecha_solicitud;
+  const fechaAtencion = solicitud.fecha_atencion_medica || solicitud.fecha_atencion;
+  
+  if (!fechaSolicitud || !fechaAtencion) return null;
+  
+  return calcularTiempoEntre(fechaSolicitud, fechaAtencion);
+}
 
 /**
  * 🚀 v2.6.0 - Componente MEMORIZADO para cada fila de tabla
@@ -21,6 +108,7 @@ function FilaSolicitud({
   onVerHistorial,
   isProcessing,
   getEstadoBadge,
+  mostrarMetricasTiempo = false,  // v1.86.2: Prop para mostrar/ocultar columna de métricas
 }) {
   const [editandoFecha, setEditandoFecha] = useState(false);
   const [fechaInput, setFechaInput] = useState('');
@@ -85,6 +173,89 @@ function FilaSolicitud({
           <div className="text-gray-400 italic text-xs py-0.5">—</div>
         )}
       </td>
+
+      {/* MÉTRICAS DE TIEMPO: 3 indicadores en una sola columna (solo si mostrarMetricasTiempo=true) */}
+      {mostrarMetricasTiempo && (
+        <td className="px-3 py-2">
+          <div className="flex flex-col gap-1">
+          {/* 📋 Pendientes de Cita */}
+          {(() => {
+            const tiempo = calcularPendientesCita(solicitud);
+            if (tiempo === null) {
+              return (
+                <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-gray-50 border border-gray-200 text-gray-400">
+                  <Clock size={10} />
+                  <span className="text-[10px] font-medium">📋 N/A</span>
+                </div>
+              );
+            }
+            const { totalDias } = tiempo;
+            const colorClass = totalDias <= 15 ? 'bg-green-100 text-green-800 border-green-300' :
+                              totalDias <= 30 ? 'bg-yellow-100 text-yellow-800 border-yellow-300' :
+                              'bg-red-100 text-red-800 border-red-300';
+            return (
+              <div 
+                className={`inline-flex items-center gap-1 px-2 py-0.5 rounded border cursor-help ${colorClass}`}
+                title="📋 Pendientes de cita: hoy – fecha_solicitud"
+              >
+                <Clock size={10} />
+                <span className="text-[10px] font-bold">📋 {formatearTiempo(tiempo)}</span>
+              </div>
+            );
+          })()}
+          {/* 📅 Tiempo para Citar */}
+          {(() => {
+            const tiempo = calcularTiempoParaCitar(solicitud);
+            if (tiempo === null) {
+              return (
+                <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-gray-50 border border-gray-200 text-gray-400">
+                  <CalendarCheck size={10} />
+                  <span className="text-[10px] font-medium">📅 N/A</span>
+                </div>
+              );
+            }
+            const { totalDias } = tiempo;
+            const colorClass = totalDias <= 15 ? 'bg-green-100 text-green-800 border-green-300' :
+                              totalDias <= 30 ? 'bg-yellow-100 text-yellow-800 border-yellow-300' :
+                              'bg-red-100 text-red-800 border-red-300';
+            return (
+              <div 
+                className={`inline-flex items-center gap-1 px-2 py-0.5 rounded border cursor-help ${colorClass}`}
+                title="📅 Tiempo para citar: fecha_cita – fecha_solicitud"
+              >
+                <CalendarCheck size={10} />
+                <span className="text-[10px] font-bold">📅 {formatearTiempo(tiempo)}</span>
+              </div>
+            );
+          })()}
+          {/* 🩺 Tiempo para Atención */}
+          {(() => {
+            const tiempo = calcularTiempoParaAtencion(solicitud);
+            if (tiempo === null) {
+              return (
+                <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-gray-50 border border-gray-200 text-gray-400">
+                  <Stethoscope size={10} />
+                  <span className="text-[10px] font-medium">🩺 N/A</span>
+                </div>
+              );
+            }
+            const { totalDias } = tiempo;
+            const colorClass = totalDias <= 15 ? 'bg-green-100 text-green-800 border-green-300' :
+                              totalDias <= 30 ? 'bg-yellow-100 text-yellow-800 border-yellow-300' :
+                              'bg-red-100 text-red-800 border-red-300';
+            return (
+              <div 
+                className={`inline-flex items-center gap-1 px-2 py-0.5 rounded border cursor-help ${colorClass}`}
+                title="🩺 Tiempo para atención: fecha_atencion – fecha_solicitud"
+              >
+                <Stethoscope size={10} />
+                <span className="text-[10px] font-bold">🩺 {formatearTiempo(tiempo)}</span>
+              </div>
+            );
+          })()}
+        </div>
+      </td>
+      )}
 
       {/* ESTADO DE BOLSA */}
       <td className="px-3 py-3 text-sm text-gray-700">
