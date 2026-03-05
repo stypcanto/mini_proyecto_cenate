@@ -576,6 +576,11 @@ export default function MisPacientes() {
   // ✅ v1.75.0: Peso y Talla para calcular IMC automáticamente
   const [pesoKg, setPesoKg] = useState('');
   const [tallaMt, setTallaMt] = useState('');
+
+  // ✅ v1.103.11: Atenciones generadas (RECITA/INTERCONSULTA) desde esta solicitud padre
+  const [atencionesGeneradas, setAtencionesGeneradas] = useState([]);
+  const [loadingAtenciones, setLoadingAtenciones] = useState(false);
+
   const imcCalculado = useMemo(() => {
     const p = parseFloat(pesoKg);
     const t = parseFloat(tallaMt);
@@ -1737,6 +1742,17 @@ export default function MisPacientes() {
       setEsCronico(false);
       setExpandCronico(false);
       setEnfermedadesCronicas([]);
+    }
+
+    // ✅ v1.103.11: Cargar atenciones generadas (RECITA/INTERCONSULTA) desde esta solicitud
+    setAtencionesGeneradas([]);
+    const idSolicitud = paciente.idSolicitudBolsa || paciente.idGestion;
+    if (idSolicitud) {
+      setLoadingAtenciones(true);
+      gestionPacientesService.obtenerAtencionesGeneradas(idSolicitud)
+        .then(data => setAtencionesGeneradas(data || []))
+        .catch(() => setAtencionesGeneradas([]))
+        .finally(() => setLoadingAtenciones(false));
     }
 
     // Restaurar borrador guardado
@@ -4095,6 +4111,85 @@ export default function MisPacientes() {
                     </div>
                   );
                 })()}
+
+              {/* ✅ v1.103.11: Sección de Atenciones Generadas (RECITA/INTERCONSULTA) */}
+              {(atencionesGeneradas.length > 0 || loadingAtenciones) && (
+                <div className="mt-6 pt-6 border-t border-gray-200">
+                  <div className="flex items-center gap-2 mb-3">
+                    <span className="text-lg">📋</span>
+                    <h3 className="text-sm font-bold text-gray-700 uppercase tracking-wide">
+                      Atenciones Generadas
+                    </h3>
+                    {atencionesGeneradas.length > 0 && (
+                      <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full font-semibold">
+                        {atencionesGeneradas.length}
+                      </span>
+                    )}
+                  </div>
+                  
+                  {loadingAtenciones ? (
+                    <div className="flex items-center gap-2 text-gray-500 text-sm py-4">
+                      <Loader className="w-4 h-4 animate-spin" />
+                      <span>Cargando atenciones...</span>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      {atencionesGeneradas.map((atencion) => (
+                        <div
+                          key={atencion.idSolicitud}
+                          className={`p-3 rounded-lg border-2 ${
+                            atencion.tipoCita === 'RECITA'
+                              ? 'bg-green-50 border-green-200'
+                              : 'bg-blue-50 border-blue-200'
+                          }`}
+                        >
+                          <div className="flex items-center justify-between gap-3">
+                            <div className="flex items-center gap-2">
+                              {atencion.tipoCita === 'RECITA' ? (
+                                <FileText className="w-4 h-4 text-green-600" />
+                              ) : (
+                                <Share2 className="w-4 h-4 text-blue-600" />
+                              )}
+                              <span className={`text-xs font-bold px-2 py-0.5 rounded ${
+                                atencion.tipoCita === 'RECITA'
+                                  ? 'bg-green-200 text-green-800'
+                                  : 'bg-blue-200 text-blue-800'
+                              }`}>
+                                {atencion.tipoCita}
+                              </span>
+                              <span className="text-sm font-semibold text-gray-800">
+                                {atencion.especialidad}
+                              </span>
+                            </div>
+                            <span className={`text-xs font-semibold px-2 py-1 rounded-full ${
+                              atencion.estado === 'ATENDIDO' ? 'bg-green-100 text-green-700' :
+                              atencion.estado === 'PENDIENTE' ? 'bg-amber-100 text-amber-700' :
+                              'bg-gray-100 text-gray-600'
+                            }`}>
+                              {atencion.estado}
+                            </span>
+                          </div>
+                          <div className="mt-2 flex items-center gap-4 text-xs text-gray-600">
+                            <span>
+                              <strong>Creado:</strong> {atencion.fechaSolicitud ? new Date(atencion.fechaSolicitud).toLocaleDateString('es-PE') : '—'}
+                            </span>
+                            {atencion.fechaPreferida && (
+                              <span>
+                                <strong>Fecha preferida:</strong> {new Date(atencion.fechaPreferida).toLocaleDateString('es-PE')}
+                              </span>
+                            )}
+                            {atencion.fechaAtencion && (
+                              <span className="text-green-600 font-semibold">
+                                <strong>Atendido:</strong> {new Date(atencion.fechaAtencion).toLocaleDateString('es-PE')}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* Footer Fijo con Botones */}

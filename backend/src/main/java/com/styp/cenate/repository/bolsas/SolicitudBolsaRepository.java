@@ -80,6 +80,12 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
     List<SolicitudBolsa> findByIdsolicitudgeneracionOrderByFechaSolicitudAsc(Long idSolicitudOriginal);
 
     /**
+     * v1.103.11: Obtiene atenciones hijas (RECITA/INTERCONSULTA) generadas a partir de una solicitud padre.
+     * Usa la FK id_solicitud_padre para obtener todas las atenciones derivadas.
+     */
+    List<SolicitudBolsa> findByIdSolicitudPadreAndActivoTrueOrderByFechaSolicitudDesc(Long idSolicitudPadre);
+
+    /**
      * Verifica si ya existe una solicitud activa de un tipo de cita + especialidad para un paciente
      * Usado en AtenderPacienteService para verificar Interconsultas duplicadas
      */

@@ -282,6 +282,14 @@ const gestionPacientesService = {
         );
     },
 
+    /**
+     * ⭐ v1.103.11: Obtener atenciones generadas (RECITA/INTERCONSULTA) desde una solicitud padre
+     * GET /api/bolsas/solicitudes/{idSolicitudPadre}/atenciones-generadas
+     */
+    obtenerAtencionesGeneradas: async (idSolicitudPadre) => {
+        return await apiClient.get(`/bolsas/solicitudes/${idSolicitudPadre}/atenciones-generadas`, true);
+    },
+
     generarEnlaceWhatsApp: (telefono, mensaje = '') => {
         // Limpiar el teléfono (quitar espacios, guiones, etc.)
         const telefonoLimpio = telefono.replace(/\D/g, '');

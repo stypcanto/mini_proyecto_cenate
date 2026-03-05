@@ -1970,6 +1970,34 @@ public class SolicitudBolsaController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
+    /**
+     * GET /api/bolsas/solicitudes/{idSolicitudPadre}/atenciones-generadas
+     * v1.103.11: Obtiene las atenciones (RECITA/INTERCONSULTA) generadas a partir de una solicitud padre.
+     * Utilizado por el modal de atención para mostrar el historial de derivaciones.
+     */
+    @GetMapping("/{idSolicitudPadre}/atenciones-generadas")
+    @Transactional(readOnly = true)
+    public ResponseEntity<List<Map<String, Object>>> obtenerAtencionesGeneradas(@PathVariable Long idSolicitudPadre) {
+        log.info("📋 [v1.103.11] GET /{}/atenciones-generadas", idSolicitudPadre);
+        List<SolicitudBolsa> atenciones = solicitudRepository.findByIdSolicitudPadreAndActivoTrueOrderByFechaSolicitudDesc(idSolicitudPadre);
+        
+        List<Map<String, Object>> response = atenciones.stream().map(sol -> {
+            Map<String, Object> atencion = new java.util.LinkedHashMap<>();
+            atencion.put("idSolicitud", sol.getIdSolicitud());
+            atencion.put("tipoCita", sol.getTipoCita());
+            atencion.put("especialidad", sol.getEspecialidad());
+            atencion.put("estado", sol.getEstado());
+            atencion.put("fechaSolicitud", sol.getFechaSolicitud());
+            atencion.put("fechaAtencion", sol.getFechaAtencion());
+            atencion.put("fechaPreferida", sol.getFechaPreferidaNoAtendida());
+            atencion.put("pacienteNombre", sol.getPacienteNombre());
+            atencion.put("pacienteDni", sol.getPacienteDni());
+            return atencion;
+        }).collect(java.util.stream.Collectors.toList());
+        
+        return ResponseEntity.ok(response);
+    }
+
 }
 
 
