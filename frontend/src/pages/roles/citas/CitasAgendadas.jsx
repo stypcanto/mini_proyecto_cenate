@@ -520,6 +520,9 @@ export default function CitasAgendadas() {
   const [reasignando, setReasignando]           = useState(false);
   // ── Editar fecha/hora de cita ──
   const [modalEditarFecha, setModalEditarFecha] = useState({ visible: false, paciente: null, fecha: '', hora: '' });
+  const [modalEditarIpress, setModalEditarIpress] = useState({ visible: false, paciente: null, idIpress: '' });
+  const [listaIpress, setListaIpress] = useState([]);
+  const [guardandoIpress, setGuardandoIpress] = useState(false);
   const [guardandoFecha, setGuardandoFecha]     = useState(false);
   // ── Búsqueda global por DNI (cuando el paciente no está en la bandeja propia) ──
   const [resultadosGlobales, setResultadosGlobales] = useState([]);
@@ -1004,6 +1007,42 @@ export default function CitasAgendadas() {
       toast.error('No se pudo actualizar la fecha');
     } finally {
       setGuardandoFecha(false);
+    }
+  };
+
+  const abrirModalEditarIpress = async (p) => {
+    setModalEditarIpress({ visible: true, paciente: p, idIpress: '' });
+    if (listaIpress.length === 0) {
+      try {
+        const res = await fetch('/api/asegurados/filtros/ipress', {
+          headers: { Authorization: `Bearer ${getToken()}` },
+        });
+        const data = await res.json();
+        setListaIpress(Array.isArray(data) ? data : []);
+      } catch { setListaIpress([]); }
+    }
+  };
+
+  const guardarIpress = async () => {
+    const { paciente, idIpress } = modalEditarIpress;
+    if (!idIpress) { toast.error('Selecciona una IPRESS'); return; }
+    setGuardandoIpress(true);
+    try {
+      const res = await fetch(`/api/bolsas/solicitudes/${paciente.id}/ipress-atencion?idIpressAtencion=${idIpress}`, {
+        method: 'PATCH',
+        headers: { Authorization: `Bearer ${getToken()}` },
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const ipress = listaIpress.find(i => String(i.id_ipress) === String(idIpress));
+      setPacientes(prev => prev.map(p =>
+        p.id === paciente.id ? { ...p, descIpress: ipress?.desc_ipress || p.descIpress } : p
+      ));
+      setModalEditarIpress({ visible: false, paciente: null, idIpress: '' });
+      toast.success('IPRESS actualizada correctamente');
+    } catch {
+      toast.error('No se pudo actualizar la IPRESS');
+    } finally {
+      setGuardandoIpress(false);
     }
   };
 
@@ -1692,7 +1731,20 @@ CENATE de Essalud`;
                           </td>
 
                           <td style={{ padding: '10px 12px', color: '#475569', fontSize: '12px', maxWidth: '160px' }}>
-                            <span title={p.descIpress} style={{ display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.descIpress}</span>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                              <span title={p.descIpress} style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.descIpress}</span>
+                              {!(p.estadoAtencion === 'Atendido' || p.estadoAtencion === 'Deserción') && (
+                                <button
+                                  onClick={() => abrirModalEditarIpress(p)}
+                                  title="Editar IPRESS de atención"
+                                  style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '26px', height: '26px', borderRadius: '6px', background: '#f1f5f9', border: '1px solid #e2e8f0', cursor: 'pointer', color: '#64748b', flexShrink: 0, transition: 'all 0.15s' }}
+                                  onMouseEnter={e => { e.currentTarget.style.background = '#e0f2fe'; e.currentTarget.style.color = '#0369a1'; e.currentTarget.style.borderColor = '#7dd3fc'; }}
+                                  onMouseLeave={e => { e.currentTarget.style.background = '#f1f5f9'; e.currentTarget.style.color = '#64748b'; e.currentTarget.style.borderColor = '#e2e8f0'; }}
+                                >
+                                  <Pencil size={12} strokeWidth={2} />
+                                </button>
+                              )}
+                            </div>
                           </td>
 
                           <td style={{ padding: '10px 12px' }}>
@@ -2222,6 +2274,88 @@ CENATE de Essalud`;
                 {guardandoFecha
                   ? <><RefreshCw size={14} className="animate-spin" /> Guardando...</>
                   : <><CalendarDays size={14} /> Guardar cambios</>}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Modal Editar IPRESS ── */}
+      {modalEditarIpress.visible && (
+        <div
+          style={{ position: 'fixed', inset: 0, zIndex: 10000, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }}
+          onClick={e => { if (e.target === e.currentTarget && !guardandoIpress) setModalEditarIpress({ visible: false, paciente: null, idIpress: '' }); }}
+        >
+          <div style={{ background: '#fff', borderRadius: '16px', width: '100%', maxWidth: '420px', boxShadow: '0 20px 60px rgba(0,0,0,0.3)', overflow: 'hidden' }}>
+
+            {/* Cabecera */}
+            <div style={{ background: '#0369a1', padding: '16px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <Pencil size={20} color="#fff" strokeWidth={2} />
+                <div>
+                  <p style={{ margin: 0, fontSize: '15px', fontWeight: '700', color: '#fff' }}>Editar IPRESS de Atención</p>
+                  <p style={{ margin: 0, fontSize: '12px', color: 'rgba(255,255,255,0.75)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '240px' }}>
+                    {modalEditarIpress.paciente?.pacienteNombre}
+                  </p>
+                </div>
+              </div>
+              {!guardandoIpress && (
+                <button
+                  onClick={() => setModalEditarIpress({ visible: false, paciente: null, idIpress: '' })}
+                  style={{ background: 'rgba(255,255,255,0.2)', border: 'none', borderRadius: '8px', padding: '6px', cursor: 'pointer', display: 'flex', color: '#fff' }}
+                >
+                  <X size={18} />
+                </button>
+              )}
+            </div>
+
+            {/* Cuerpo */}
+            <div style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <div>
+                <label style={{ display: 'block', fontSize: '11px', fontWeight: '600', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '6px' }}>
+                  IPRESS actual
+                </label>
+                <p style={{ margin: 0, fontSize: '13px', color: '#1e293b', fontWeight: '600', background: '#f8fafc', padding: '8px 12px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+                  {modalEditarIpress.paciente?.descIpress || '—'}
+                </p>
+              </div>
+              <div>
+                <label style={{ display: 'block', fontSize: '11px', fontWeight: '600', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '6px' }}>
+                  Nueva IPRESS de Atención *
+                </label>
+                <select
+                  value={modalEditarIpress.idIpress}
+                  onChange={e => setModalEditarIpress(prev => ({ ...prev, idIpress: e.target.value }))}
+                  style={{ width: '100%', padding: '10px 12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '13px', color: '#1e293b', outline: 'none', boxSizing: 'border-box', background: '#fff' }}
+                >
+                  <option value="">— Selecciona una IPRESS —</option>
+                  {listaIpress.map(ip => (
+                    <option key={ip.id_ipress} value={ip.id_ipress}>{ip.desc_ipress}</option>
+                  ))}
+                </select>
+                {listaIpress.length === 0 && (
+                  <p style={{ margin: '6px 0 0', fontSize: '11px', color: '#94a3b8' }}>Cargando lista de IPRESS...</p>
+                )}
+              </div>
+            </div>
+
+            {/* Pie */}
+            <div style={{ padding: '0 24px 24px', display: 'flex', gap: '10px' }}>
+              <button
+                onClick={() => setModalEditarIpress({ visible: false, paciente: null, idIpress: '' })}
+                disabled={guardandoIpress}
+                style={{ flex: 1, padding: '10px', borderRadius: '8px', border: '1px solid #e2e8f0', background: '#f8fafc', color: '#64748b', fontSize: '13px', fontWeight: '600', cursor: guardandoIpress ? 'not-allowed' : 'pointer' }}
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={guardarIpress}
+                disabled={guardandoIpress || !modalEditarIpress.idIpress}
+                style={{ flex: 2, padding: '10px', borderRadius: '8px', border: 'none', background: guardandoIpress || !modalEditarIpress.idIpress ? '#94a3b8' : '#0369a1', color: '#fff', fontSize: '13px', fontWeight: '700', cursor: guardandoIpress || !modalEditarIpress.idIpress ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
+              >
+                {guardandoIpress
+                  ? <><RefreshCw size={14} className="animate-spin" /> Guardando...</>
+                  : <><Pencil size={14} /> Guardar IPRESS</>}
               </button>
             </div>
           </div>
