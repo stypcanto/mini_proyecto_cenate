@@ -2964,15 +2964,15 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
             log.info("   ✓ Usuario encontrado - ID: {}, Username: {}, Estado: {}",
                 usuarioId, usuarioActual.getNameUser(), usuarioActual.getStatUser());
 
-            // 3️⃣ OBTENER SOLICITUDES: SOPORTE_TELEUE y SUPERADMIN ven todas; el resto solo las propias
+            // 3️⃣ OBTENER SOLICITUDES: SOPORTE_TELEUE, SUPERADMIN y COORD. GESTION CITAS ven todas; el resto solo las propias
             boolean esSupervisor = authentication.getAuthorities().stream()
                 .map(a -> a.getAuthority().toUpperCase())
-                .anyMatch(a -> a.equals("ROLE_SOPORTE_TELEUE") || a.equals("ROLE_SUPERADMIN"));
+                .anyMatch(a -> a.equals("ROLE_SOPORTE_TELEUE") || a.equals("ROLE_SUPERADMIN")
+                    || a.equals("ROLE_COORD. GESTION CITAS"));
 
             List<SolicitudBolsa> solicitudes;
             if (esSupervisor) {
-                log.info("   🔍 [SUPERVISOR] Rol '{}' detectado → devolviendo TODAS las solicitudes activas",
-                    esSupervisor ? "SOPORTE_TELEUE/SUPERADMIN" : "");
+                log.info("   🔍 [SUPERVISOR] Rol detectado → devolviendo TODAS las solicitudes activas");
                 solicitudes = solicitudRepository.findByActivoTrueOrderByFechaSolicitudDesc();
             } else {
                 log.info("   🔍 Buscando solicitudes con: responsableGestoraId={} AND activo=true", usuarioId);
