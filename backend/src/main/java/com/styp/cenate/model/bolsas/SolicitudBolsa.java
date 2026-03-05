@@ -251,6 +251,13 @@ public class SolicitudBolsa {
     @Column(name = "fecha_atencion_medica", columnDefinition = "TIMESTAMP WITH TIME ZONE")
     private OffsetDateTime fechaAtencionMedica;
 
+    // ============================================================================
+    // 📅 PRIMERA FECHA ATENDIDA - Seguimiento (v1.84.0)
+    // Solo se setea la PRIMERA vez que se marca como ATENDIDO, nunca se modifica después
+    // ============================================================================
+    @Column(name = "primera_fecha_atendida", columnDefinition = "TIMESTAMP WITH TIME ZONE")
+    private OffsetDateTime primeraFechaAtendida;
+
     // 🔔 AUDITORÍA
     @Column(name = "activo", nullable = false)
     private Boolean activo;

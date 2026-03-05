@@ -3951,7 +3951,20 @@ export default function MisPacientes() {
                 </div>
               )}
 
-              {/* Opción Pendiente */}
+              {/* Opción Pendiente — ✅ v1.103.13: Deshabilitado si ya fue ATENDIDO */}
+              {pacienteSeleccionado?.condicion?.toUpperCase() === 'ATENDIDO' ? (
+                <div className="w-full p-4 rounded-lg border-2 border-gray-200 bg-gray-100 opacity-60 cursor-not-allowed">
+                  <div className="flex items-center gap-3">
+                    <div className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 border-2 border-gray-300 text-gray-300">
+                      <Clock className="w-4 h-4" strokeWidth={3} />
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-base font-bold text-gray-400">Pendiente <span className="text-xs font-normal">(bloqueado)</span></p>
+                      <p className="text-sm text-gray-400 font-normal mt-1">No se puede cambiar a Pendiente después de Atendido</p>
+                    </div>
+                  </div>
+                </div>
+              ) : (
               <button
                 onClick={() => setEstadoSeleccionado('Pendiente')}
                 className={`w-full text-left p-4 rounded-lg border-2 cursor-pointer transition-all font-semibold ${
@@ -3973,8 +3986,22 @@ export default function MisPacientes() {
                   </div>
                 </div>
               </button>
+              )}
 
-              {/* Opción Deserción */}
+              {/* Opción Deserción — ✅ v1.103.13: Deshabilitado si ya fue ATENDIDO */}
+              {pacienteSeleccionado?.condicion?.toUpperCase() === 'ATENDIDO' ? (
+                <div className="w-full p-4 rounded-lg border-2 border-gray-200 bg-gray-100 opacity-60 cursor-not-allowed">
+                  <div className="flex items-center gap-3">
+                    <div className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 border-2 border-gray-300 text-gray-300">
+                      <X className="w-4 h-4" strokeWidth={3} />
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-base font-bold text-gray-400">Deserción <span className="text-xs font-normal">(bloqueado)</span></p>
+                      <p className="text-sm text-gray-400 font-normal mt-1">No se puede cambiar a Deserción después de Atendido</p>
+                    </div>
+                  </div>
+                </div>
+              ) : (
               <button
                 onClick={() => setEstadoSeleccionado('Deserción')}
                 className={`w-full text-left p-4 rounded-lg border-2 cursor-pointer transition-all font-semibold ${
@@ -3996,6 +4023,7 @@ export default function MisPacientes() {
                   </div>
                 </div>
               </button>
+              )}
 
                 {/* Campo de razón para deserción — combobox con búsqueda */}
                 {estadoSeleccionado === 'Deserción' && (() => {
@@ -4174,8 +4202,16 @@ export default function MisPacientes() {
                               <strong>Creado:</strong> {atencion.fechaSolicitud ? new Date(atencion.fechaSolicitud).toLocaleDateString('es-PE') : '—'}
                             </span>
                             {atencion.fechaPreferida && (
-                              <span>
-                                <strong>Fecha preferida:</strong> {new Date(atencion.fechaPreferida).toLocaleDateString('es-PE')}
+                              <span className="bg-amber-100 text-amber-800 px-2 py-0.5 rounded font-semibold">
+                                <strong>Fecha preferida:</strong> {(() => {
+                                  // ✅ v1.103.12: Parsear fecha ISO sin desfase de zona horaria
+                                  const parts = String(atencion.fechaPreferida).split('T')[0].split('-');
+                                  if (parts.length === 3) {
+                                    const [y, m, d] = parts;
+                                    return `${d.padStart(2,'0')}/${m.padStart(2,'0')}/${y}`;
+                                  }
+                                  return atencion.fechaPreferida;
+                                })()}
                               </span>
                             )}
                             {atencion.fechaAtencion && (

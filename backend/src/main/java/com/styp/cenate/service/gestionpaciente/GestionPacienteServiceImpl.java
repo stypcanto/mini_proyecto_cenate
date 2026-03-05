@@ -219,6 +219,28 @@ public class GestionPacienteServiceImpl implements IGestionPacienteService {
     public GestionPacienteDTO actualizarCondicion(Long id, String condicion, String observaciones) {
         log.info("Actualizando condición para ID: {} a {}", id, condicion);
 
+        // ✅ v1.103.13: Validar que no se pueda cambiar de ATENDIDO a Pendiente/Deserción
+        String condicionNormalizada = condicion != null ? condicion.toUpperCase().trim() : "";
+        if (!condicionNormalizada.equals("ATENDIDO")) {
+            // Verificar estado actual en ambas tablas
+            var solicitudOpt = solicitudBolsaRepository.findById(id);
+            if (solicitudOpt.isPresent()) {
+                String estadoActual = solicitudOpt.get().getCondicionMedica();
+                if (estadoActual != null && estadoActual.toUpperCase().trim().equals("ATENDIDO")) {
+                    log.warn("⚠️ [v1.103.13] Intento bloqueado: no se puede cambiar de ATENDIDO a {}", condicion);
+                    throw new IllegalStateException("No se puede cambiar el estado de un paciente ya ATENDIDO a " + condicion);
+                }
+            }
+            var gestionOpt = repository.findById(id);
+            if (gestionOpt.isPresent()) {
+                String estadoActual = gestionOpt.get().getCondicion();
+                if (estadoActual != null && estadoActual.toUpperCase().trim().equals("ATENDIDO")) {
+                    log.warn("⚠️ [v1.103.13] Intento bloqueado: no se puede cambiar de ATENDIDO a {}", condicion);
+                    throw new IllegalStateException("No se puede cambiar el estado de un paciente ya ATENDIDO a " + condicion);
+                }
+            }
+        }
+
         try {
             // ✅ v1.64.0: Extraer campos clínicos de Bolsa 107 si vienen en JSON
             String tiempoInicioSintomas = null;
@@ -287,6 +309,12 @@ public class GestionPacienteServiceImpl implements IGestionPacienteService {
                     OffsetDateTime fechaAtencion = zonedDateTime.toOffsetDateTime();
                     existing.setFechaAtencionMedica(fechaAtencion);
                     log.info("✅ Fecha de atención registrada (Instant→America/Lima): {} | LocalTime: {}", fechaAtencion, zonedDateTime.toLocalTime());
+
+                    // ✅ v1.84.0: PRIMERA FECHA ATENDIDA - Solo setear si es NULL (primera vez)
+                    if ("Atendido".equalsIgnoreCase(condicion) && existing.getPrimeraFechaAtendida() == null) {
+                        existing.setPrimeraFechaAtendida(fechaAtencion);
+                        log.info("✅ [v1.84.0] primera_fecha_atendida registrada por PRIMERA VEZ: {}", fechaAtencion);
+                    }
 
                     // ✅ v1.65.0: MEDICAL MODULE - Actualizar campo estado a "ATENDIDO" cuando condición es "Atendido" o "Deserción"
                     existing.setEstado("ATENDIDO");

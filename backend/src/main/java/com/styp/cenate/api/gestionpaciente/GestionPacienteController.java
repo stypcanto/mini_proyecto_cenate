@@ -217,7 +217,7 @@ public class GestionPacienteController {
     // ========================================================================
 
     @PutMapping("/{id}/condicion")
-    public ResponseEntity<GestionPacienteDTO> actualizarCondicion(
+    public ResponseEntity<?> actualizarCondicion(
         @PathVariable @Min(1) Long id,
         @RequestBody Map<String, String> body
     ) {
@@ -226,8 +226,14 @@ public class GestionPacienteController {
 
         log.info("PUT /api/gestion-pacientes/{}/condicion - Nueva condición: {}", id, condicion);
 
-        GestionPacienteDTO actualizado = servicio.actualizarCondicion(id, condicion, observaciones);
-        return ResponseEntity.ok(actualizado);
+        try {
+            GestionPacienteDTO actualizado = servicio.actualizarCondicion(id, condicion, observaciones);
+            return ResponseEntity.ok(actualizado);
+        } catch (IllegalStateException e) {
+            // ✅ v1.103.13: Bloquear cambio de estado inválido (ATENDIDO → Pendiente/Deserción)
+            log.warn("⚠️ [v1.103.13] {}", e.getMessage());
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
     }
 
     // ========================================================================
