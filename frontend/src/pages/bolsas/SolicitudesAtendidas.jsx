@@ -2,7 +2,8 @@ import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import HistorialPacienteBtn from '../../components/trazabilidad/HistorialPacienteBtn';
 import {
   Search, CheckCircle, ChevronLeft, ChevronRight, Calendar,
-  RefreshCw, ChevronDown, Users, RotateCcw, X, AlertTriangle
+  RefreshCw, ChevronDown, Users, RotateCcw, X, AlertTriangle,
+  BarChart2
 } from 'lucide-react';
 import bolsasService from '../../services/bolsasService';
 import toast from 'react-hot-toast';
@@ -255,6 +256,12 @@ export default function SolicitudesAtendidas() {
   const [filtroEstadoBolsa, setFiltroEstadoBolsa] = useState('todos');
   const [filtroFechaInicio, setFiltroFechaInicio] = useState('');
   const [filtroFechaFin,    setFiltroFechaFin]    = useState('');
+  const [soloMaraton,       setSoloMaraton]       = useState(false);
+
+  // ── Dashboard Maratón ─────────────────────────────────────────────────────
+  const [dashboardAbierto,  setDashboardAbierto]  = useState(false);
+  const [dashboardData,     setDashboardData]     = useState([]);
+  const [dashboardLoading,  setDashboardLoading]  = useState(false);
 
   // ── Paginación y orden ─────────────────────────────────────────────────────
   const [currentPage, setCurrentPage] = useState(1);
@@ -276,7 +283,7 @@ export default function SolicitudesAtendidas() {
     setCurrentPage(1);
     setSeleccionados(new Set());
     cargarSolicitudes(1);
-  }, [filtroEstado, filtroEstadoBolsa, filtroFechaInicio, filtroFechaFin, searchTerm]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [filtroEstado, filtroEstadoBolsa, filtroFechaInicio, filtroFechaFin, searchTerm, soloMaraton]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Re-fetch al cambiar de página ─────────────────────────────────────────
   useEffect(() => {
@@ -297,7 +304,9 @@ export default function SolicitudesAtendidas() {
         filtroFechaInicio || null,
         filtroFechaFin    || null,
         null, null,
-        filtroEstadoBolsa !== 'todos' ? filtroEstadoBolsa : null
+        filtroEstadoBolsa !== 'todos' ? filtroEstadoBolsa : null,
+        null,
+        soloMaraton ? 'MARATON' : null
       );
 
       if (!isMountedRef.current) return;
@@ -314,7 +323,7 @@ export default function SolicitudesAtendidas() {
     } finally {
       if (isMountedRef.current) setIsLoading(false);
     }
-  }, [filtroEstado, filtroEstadoBolsa, filtroFechaInicio, filtroFechaFin, searchTerm]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [filtroEstado, filtroEstadoBolsa, filtroFechaInicio, filtroFechaFin, searchTerm, soloMaraton]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Ordenamiento client-side ───────────────────────────────────────────────
   const handleSort = useCallback((key) => {
@@ -385,7 +394,7 @@ export default function SolicitudesAtendidas() {
   const registroInicio = totalElementos === 0 ? 0 : (currentPage - 1) * PAGE_SIZE + 1;
   const registroFin    = Math.min(currentPage * PAGE_SIZE, totalElementos);
 
-  const hayFiltros = searchTerm || filtroFechaInicio || filtroFechaFin || filtroEstado !== 'todos' || filtroEstadoBolsa !== 'todos';
+  const hayFiltros = searchTerm || filtroFechaInicio || filtroFechaFin || filtroEstado !== 'todos' || filtroEstadoBolsa !== 'todos' || soloMaraton;
 
   const limpiarFiltros = () => {
     setSearchTerm('');
@@ -393,6 +402,7 @@ export default function SolicitudesAtendidas() {
     setFiltroFechaFin('');
     setFiltroEstado('todos');
     setFiltroEstadoBolsa('todos');
+    setSoloMaraton(false);
   };
 
   // ── Render ──────────────────────────────────────────────────────────────────
@@ -408,6 +418,167 @@ export default function SolicitudesAtendidas() {
           procesando={procesandoDevolver}
         />
       )}
+
+      {/* ═══ MODAL DASHBOARD MARATÓN ═══ */}
+      {dashboardAbierto && (() => {
+        // Configuración visual por estado
+        const ESTADOS_CONFIG = {
+          CITADO:           { label: 'Cita confirmada',          color: '#2563eb', bg: '#dbeafe', enLista: true  },
+          ATENDIDO_IPRESS:  { label: 'Ya fue atendido',          color: '#16a34a', bg: '#dcfce7', enLista: true  },
+          NO_CONTESTA:      { label: 'No responde llamadas',     color: '#6b7280', bg: '#f3f4f6', enLista: false },
+          NO_DESEA:         { label: 'Rechazó la cita',          color: '#ea580c', bg: '#ffedd5', enLista: true  },
+          NO_IPRESS_CENATE: { label: 'IPRESS no cubre CENATE',   color: '#db2777', bg: '#fce7f3', enLista: true  },
+          APAGADO:          { label: 'Teléfono apagado',         color: '#6b7280', bg: '#f3f4f6', enLista: true  },
+          SIN_VIGENCIA:     { label: 'Sin seguro vigente',       color: '#ca8a04', bg: '#fef9c3', enLista: true  },
+          REPROG_FALLIDA:   { label: 'Reprogramación fallida',   color: '#dc2626', bg: '#fee2e2', enLista: true  },
+          RECHAZADO:        { label: 'Rechazado por gestora',    color: '#6b7280', bg: '#f3f4f6', enLista: false },
+          NUM_NO_EXISTE:    { label: 'Número no existe',         color: '#6b7280', bg: '#f3f4f6', enLista: true  },
+          PARTICULAR:       { label: 'Atención particular',      color: '#4f46e5', bg: '#ede9fe', enLista: true  },
+          YA_NO_REQUIERE:   { label: 'Ya no requiere atención',  color: '#ea580c', bg: '#ffedd5', enLista: true  },
+          HC_BLOQUEADA:     { label: 'Historia clínica bloqueada',color: '#dc2626', bg: '#fee2e2', enLista: true  },
+          TEL_SIN_SERVICIO: { label: 'Teléfono sin servicio',    color: '#6b7280', bg: '#f3f4f6', enLista: true  },
+          FALLECIDO:        { label: 'Paciente fallecido',       color: '#374151', bg: '#e5e7eb', enLista: true  },
+          DESERCION:        { label: 'Deserción del programa',   color: '#d97706', bg: '#fef3c7', enLista: true  },
+          ANULADO:          { label: 'Cita anulada',             color: '#6b7280', bg: '#f3f4f6', enLista: true  },
+          ANULADA:          { label: 'Cita anulada',             color: '#6b7280', bg: '#f3f4f6', enLista: true  },
+          HOSPITALIZADO:    { label: 'Paciente hospitalizado',   color: '#0d9488', bg: '#ccfbf1', enLista: true  },
+          NO_GRUPO_ETARIO:  { label: 'Fuera del grupo etario',   color: '#7c3aed', bg: '#ede9fe', enLista: true  },
+        };
+
+        const total = dashboardData.reduce((s, d) => d.estado !== 'ASIGNADOS' ? s + (d.cantidad || 0) : s, 0);
+        const maxCantidad = Math.max(...dashboardData.filter(d => d.estado !== 'ASIGNADOS').map(d => d.cantidad || 0), 1);
+        const sorted = [...dashboardData]
+          .filter(d => d.estado !== 'ASIGNADOS' && d.estado !== 'PENDIENTE_CITA')
+          .sort((a, b) => (b.cantidad || 0) - (a.cantidad || 0));
+
+        return (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
+
+              {/* Header */}
+              <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100"
+                   style={{ background: 'linear-gradient(135deg, #7e22ce 0%, #4f46e5 100%)' }}>
+                <div className="flex items-center gap-3 text-white">
+                  <BarChart2 size={20} />
+                  <div>
+                    <h2 className="text-base font-bold">Desglose por Estado — Campaña Maratón</h2>
+                    <p className="text-xs text-purple-200">Pacientes MARATÓN gestionados (todos los estados activos)</p>
+                  </div>
+                </div>
+                <button onClick={() => setDashboardAbierto(false)}
+                        className="text-white/70 hover:text-white transition-colors p-1 rounded-lg hover:bg-white/10">
+                  <X size={18} />
+                </button>
+              </div>
+
+              {/* Body */}
+              <div className="overflow-y-auto flex-1 px-6 py-4">
+                {dashboardLoading ? (
+                  <div className="flex items-center justify-center py-16 gap-3">
+                    <div className="animate-spin w-7 h-7 border-4 border-purple-500 border-t-transparent rounded-full" />
+                    <span className="text-sm text-gray-500">Cargando datos...</span>
+                  </div>
+                ) : (
+                  <>
+                    {/* Nota aclaratoria */}
+                    <div className="mb-4 rounded-lg bg-amber-50 border border-amber-200 px-4 py-2.5 text-xs text-amber-800">
+                      <strong>¿Por qué el total de este panel puede diferir del listado?</strong>
+                      {' '}Estados marcados con{' '}
+                      <span className="inline-block w-4 h-4 leading-4 text-center rounded-sm bg-gray-200 text-gray-500 font-bold align-middle text-[10px]">—</span>
+                      {' '}no aparecen en la tabla inferior porque no están en la lista de estados gestionados (ej. NO_CONTESTA, RECHAZADO).
+                      Para verlos, usa el filtro <em>Estado de Gestora</em>.
+                    </div>
+
+                    {/* Tabla */}
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="text-left text-xs text-gray-500 uppercase tracking-wider border-b border-gray-100">
+                          <th className="pb-2 pr-3 font-semibold">Estado</th>
+                          <th className="pb-2 pr-3 font-semibold">Descripción</th>
+                          <th className="pb-2 pr-3 font-semibold text-right">Cantidad</th>
+                          <th className="pb-2 pr-6 font-semibold">Distribución</th>
+                          <th className="pb-2 font-semibold text-center">En lista</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-50">
+                        {sorted.map(({ estado, cantidad }) => {
+                          const cfg = ESTADOS_CONFIG[estado] || { label: estado, color: '#6b7280', bg: '#f3f4f6', enLista: true };
+                          const pct = Math.round((cantidad / maxCantidad) * 100);
+                          return (
+                            <tr key={estado} className="hover:bg-gray-50 transition-colors">
+                              <td className="py-2 pr-3">
+                                <span className="inline-block px-2 py-0.5 rounded text-xs font-semibold"
+                                      style={{ background: cfg.bg, color: cfg.color }}>
+                                  {estado}
+                                </span>
+                              </td>
+                              <td className="py-2 pr-3 text-xs text-gray-600">{cfg.label}</td>
+                              <td className="py-2 pr-3 text-right font-bold text-gray-900">{cantidad.toLocaleString('es-PE')}</td>
+                              <td className="py-2 pr-6">
+                                <div className="flex items-center gap-2">
+                                  <div className="flex-1 h-2 rounded-full bg-gray-100 overflow-hidden">
+                                    <div className="h-full rounded-full transition-all duration-500"
+                                         style={{ width: `${pct}%`, background: cfg.color }} />
+                                  </div>
+                                  <span className="text-xs text-gray-400 w-8 text-right">
+                                    {total > 0 ? Math.round((cantidad / total) * 100) : 0}%
+                                  </span>
+                                </div>
+                              </td>
+                              <td className="py-2 text-center text-base">
+                                {cfg.enLista
+                                  ? <span title="Aparece en el listado" className="text-green-600">✅</span>
+                                  : <span title="No aparece en el listado (filtrar por Estado de Gestora)" className="text-gray-400">—</span>}
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                      <tfoot>
+                        <tr className="border-t-2 border-gray-200">
+                          <td colSpan={2} className="pt-2 text-xs font-semibold text-gray-700">Total gestionados</td>
+                          <td className="pt-2 text-right font-bold text-gray-900">{total.toLocaleString('es-PE')}</td>
+                          <td colSpan={2} />
+                        </tr>
+                      </tfoot>
+                    </table>
+
+                    {/* Leyenda */}
+                    <div className="mt-4 flex items-center gap-4 text-xs text-gray-500">
+                      <span className="flex items-center gap-1"><span className="text-green-600">✅</span> Aparece en el listado inferior</span>
+                      <span className="flex items-center gap-1"><span>—</span> No aparece (usar filtro Estado de Gestora)</span>
+                    </div>
+                  </>
+                )}
+              </div>
+
+              {/* Footer */}
+              <div className="px-6 py-3 border-t border-gray-100 flex justify-between items-center bg-gray-50">
+                <button
+                  onClick={async () => {
+                    setDashboardLoading(true);
+                    try {
+                      const data = await bolsasService.obtenerKpiConFiltros({ estrategia: 'MARATON' });
+                      setDashboardData(Array.isArray(data) ? data : []);
+                    } catch {
+                      toast.error('Error al actualizar');
+                    } finally {
+                      setDashboardLoading(false);
+                    }
+                  }}
+                  className="flex items-center gap-1.5 text-xs text-purple-600 hover:text-purple-800 font-medium"
+                >
+                  <RefreshCw size={12} /> Actualizar datos
+                </button>
+                <button onClick={() => setDashboardAbierto(false)}
+                        className="px-4 py-1.5 text-xs font-semibold bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors">
+                  Cerrar
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
 
       {/* Barra flotante multi-select */}
       {seleccionados.size > 0 && (
@@ -534,10 +705,48 @@ export default function SolicitudesAtendidas() {
           </div>
         </div>
 
-        {hayFiltros && (
-          <div className="mt-2 flex justify-end">
-            <button onClick={limpiarFiltros} className="text-xs text-blue-600 hover:underline">
+        {/* Filtro rápido Maratón */}
+        <div className="mt-3 flex items-center gap-3 flex-wrap">
+          <button
+            onClick={() => setSoloMaraton(v => !v)}
+            className="flex items-center gap-2 px-4 py-1.5 rounded-lg border text-xs font-semibold transition-all"
+            style={soloMaraton
+              ? { background: '#7e22ce', color: '#fff',     borderColor: '#7e22ce' }
+              : { background: '#fdf4ff', color: '#7e22ce',  borderColor: '#d8b4fe' }}
+            title="Mostrar solo pacientes de la campaña Maratón"
+          >
+            🏅 {soloMaraton ? '✓ Solo Maratón' : 'Solo Maratón'}
+          </button>
+          {hayFiltros && (
+            <button onClick={limpiarFiltros} className="text-xs text-blue-600 hover:underline ml-auto">
               Limpiar filtros
+            </button>
+          )}
+        </div>
+
+        {/* Botón Dashboard Maratón — visible solo cuando Solo Maratón está activo */}
+        {soloMaraton && (
+          <div className="mt-3">
+            <button
+              onClick={async () => {
+                setDashboardAbierto(true);
+                if (dashboardData.length === 0) {
+                  setDashboardLoading(true);
+                  try {
+                    const data = await bolsasService.obtenerKpiConFiltros({ estrategia: 'MARATON' });
+                    setDashboardData(Array.isArray(data) ? data : []);
+                  } catch {
+                    toast.error('No se pudo cargar el dashboard');
+                  } finally {
+                    setDashboardLoading(false);
+                  }
+                }
+              }}
+              className="inline-flex items-center gap-2 px-4 py-1.5 rounded-lg border text-xs font-semibold transition-all"
+              style={{ background: '#f5f3ff', color: '#6d28d9', borderColor: '#c4b5fd' }}
+            >
+              <BarChart2 size={13} />
+              Ver desglose por estado
             </button>
           </div>
         )}

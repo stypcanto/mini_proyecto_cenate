@@ -133,12 +133,12 @@ public class SolicitudBolsaEstadisticasServiceImpl implements SolicitudBolsaEsta
             String especialidad, String estadoCodigo, String ipressAtencion,
             String tipoCita, String asignacion, String busqueda,
             String fechaInicio, String fechaFin, Long gestoraId, String estadoBolsa,
-            String categoriaEspecialidad) {
+            String categoriaEspecialidad, String estrategia) {
 
         List<Map<String, Object>> rows = solicitudRepository.estadisticasKpiConFiltros(
                 bolsaNombre, macrorregion, red, ipress, especialidad, estadoCodigo,
                 ipressAtencion, tipoCita, asignacion, busqueda,
-                fechaInicio, fechaFin, gestoraId, estadoBolsa, categoriaEspecialidad);
+                fechaInicio, fechaFin, gestoraId, estadoBolsa, categoriaEspecialidad, estrategia);
 
         return rows.stream()
                 .map(row -> {

@@ -43,7 +43,7 @@ public interface SolicitudBolsaEstadisticasService {
             String especialidad, String estadoCodigo, String ipressAtencion,
             String tipoCita, String asignacion, String busqueda,
             String fechaInicio, String fechaFin, Long gestoraId, String estadoBolsa,
-            String categoriaEspecialidad);
+            String categoriaEspecialidad, String estrategia);
 
     /**
      * Obtiene estadísticas agrupadas por especialidad médica

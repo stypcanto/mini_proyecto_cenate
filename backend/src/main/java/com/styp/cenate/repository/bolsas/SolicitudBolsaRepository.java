@@ -296,7 +296,8 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
                OR (CAST(:categoriaEspecialidad AS VARCHAR) = 'especialidades' AND LOWER(COALESCE(sb.especialidad,'')) NOT IN ('medicina general', 'enfermeria') AND sb.id_bolsa != 1)
                OR (CAST(:categoriaEspecialidad AS VARCHAR) = 'bolsa107'       AND sb.id_bolsa = 1)
                OR (CAST(:categoriaEspecialidad AS VARCHAR) = 'recita'         AND sb.id_bolsa = 15)
-               OR (CAST(:categoriaEspecialidad AS VARCHAR) = 'interconsulta'  AND sb.id_bolsa = 16))
+               OR (CAST(:categoriaEspecialidad AS VARCHAR) = 'interconsulta'  AND sb.id_bolsa = 16)
+               OR (CAST(:categoriaEspecialidad AS VARCHAR) = 'maraton'        AND sb.id_bolsa = 17))
           AND (CAST(:estrategia AS VARCHAR) IS NULL
                OR sb.paciente_dni IN (
                    SELECT pe.pk_asegurado FROM paciente_estrategia pe
@@ -369,7 +370,8 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
                OR (CAST(:categoriaEspecialidad AS VARCHAR) = 'especialidades' AND LOWER(COALESCE(sb.especialidad,'')) NOT IN ('medicina general', 'enfermeria') AND sb.id_bolsa != 1)
                OR (CAST(:categoriaEspecialidad AS VARCHAR) = 'bolsa107'       AND sb.id_bolsa = 1)
                OR (CAST(:categoriaEspecialidad AS VARCHAR) = 'recita'         AND sb.id_bolsa = 15)
-               OR (CAST(:categoriaEspecialidad AS VARCHAR) = 'interconsulta'  AND sb.id_bolsa = 16))
+               OR (CAST(:categoriaEspecialidad AS VARCHAR) = 'interconsulta'  AND sb.id_bolsa = 16)
+               OR (CAST(:categoriaEspecialidad AS VARCHAR) = 'maraton'        AND sb.id_bolsa = 17))
           AND (CAST(:estrategia AS VARCHAR) IS NULL
                OR sb.paciente_dni IN (
                    SELECT pe.pk_asegurado FROM paciente_estrategia pe
@@ -506,6 +508,12 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
                OR (CAST(:categoriaEspecialidad AS VARCHAR) = 'bolsa107'       AND sb.id_bolsa = 1)
                OR (CAST(:categoriaEspecialidad AS VARCHAR) = 'recita'         AND sb.id_bolsa = 15)
                OR (CAST(:categoriaEspecialidad AS VARCHAR) = 'interconsulta'  AND sb.id_bolsa = 16))
+          AND (CAST(:estrategia AS VARCHAR) IS NULL
+               OR sb.paciente_dni IN (
+                   SELECT pe.pk_asegurado FROM paciente_estrategia pe
+                   JOIN dim_estrategia_institucional dei ON dei.id_estrategia = pe.id_estrategia
+                   WHERE dei.sigla = CAST(:estrategia AS VARCHAR) AND pe.estado = 'ACTIVO'
+               ))
         GROUP BY COALESCE(dgc.cod_estado_cita, 'PENDIENTE_CITA')
 
         UNION ALL
@@ -539,6 +547,12 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
                OR (CAST(:categoriaEspecialidad AS VARCHAR) = 'bolsa107'       AND sb.id_bolsa = 1)
                OR (CAST(:categoriaEspecialidad AS VARCHAR) = 'recita'         AND sb.id_bolsa = 15)
                OR (CAST(:categoriaEspecialidad AS VARCHAR) = 'interconsulta'  AND sb.id_bolsa = 16))
+          AND (CAST(:estrategia AS VARCHAR) IS NULL
+               OR sb.paciente_dni IN (
+                   SELECT pe.pk_asegurado FROM paciente_estrategia pe
+                   JOIN dim_estrategia_institucional dei ON dei.id_estrategia = pe.id_estrategia
+                   WHERE dei.sigla = CAST(:estrategia AS VARCHAR) AND pe.estado = 'ACTIVO'
+               ))
         """, nativeQuery = true)
     List<Map<String, Object>> estadisticasKpiConFiltros(
             @org.springframework.data.repository.query.Param("bolsaNombre")    String bolsaNombre,
@@ -555,7 +569,8 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
             @org.springframework.data.repository.query.Param("fechaFin")       String fechaFin,
             @org.springframework.data.repository.query.Param("gestoraId")      Long gestoraId,
             @org.springframework.data.repository.query.Param("estadoBolsa")    String estadoBolsa,
-            @org.springframework.data.repository.query.Param("categoriaEspecialidad") String categoriaEspecialidad
+            @org.springframework.data.repository.query.Param("categoriaEspecialidad") String categoriaEspecialidad,
+            @org.springframework.data.repository.query.Param("estrategia")     String estrategia
     );
 
     /**
@@ -2200,7 +2215,8 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
           AND (CAST(:estadoBolsa       AS VARCHAR) IS NULL OR UPPER(COALESCE(sb.estado,'')) = UPPER(CAST(:estadoBolsa AS VARCHAR)))
           AND (CAST(:categoriaEspecialidad AS VARCHAR) IS NULL
                OR (CAST(:categoriaEspecialidad AS VARCHAR) = 'especialidades' AND LOWER(COALESCE(sb.especialidad,'')) NOT IN ('medicina general','enfermeria') AND sb.id_bolsa != 1)
-               OR (CAST(:categoriaEspecialidad AS VARCHAR) = 'bolsa107'       AND sb.id_bolsa = 1))
+               OR (CAST(:categoriaEspecialidad AS VARCHAR) = 'bolsa107'       AND sb.id_bolsa = 1)
+               OR (CAST(:categoriaEspecialidad AS VARCHAR) = 'maraton'        AND sb.id_bolsa = 17))
         GROUP BY COALESCE(di2.desc_ipress, di.desc_ipress, 'SIN_IPRESS_ATENCION'),
                  COALESCE(sb.especialidad, 'SIN_ESPECIALIDAD')
         HAVING MOD(COUNT(*), 4) = 0

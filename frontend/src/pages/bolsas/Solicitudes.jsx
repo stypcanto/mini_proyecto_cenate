@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { Plus, Search, Phone, ChevronDown, ChevronUp, Circle, Eye, Users, UserPlus, Download, FileText, FolderOpen, ListChecks, Upload, AlertCircle, Edit, X, AlertTriangle, Clock, UserCheck, Database, Loader } from 'lucide-react';
+import { Plus, Search, Phone, ChevronDown, ChevronUp, Circle, Eye, Users, UserPlus, Download, FileText, FolderOpen, ListChecks, Upload, AlertCircle, Edit, X, AlertTriangle, Clock, UserCheck, Database, Loader, CalendarCheck } from 'lucide-react';
 import PageHeader from '../../components/PageHeader';
 import StatCard from '../../components/StatCard';
 import ListHeader from '../../components/ListHeader';
 import bolsasService, { actualizarIpressAtencion, actualizarFechaPreferida, asignarGestoraMasivo, agruparPorIpressAtencion as agruparPorIpressAtencionAPI } from '../../services/bolsasService';
+import { apiClient } from '../../lib/apiClient';
 import ipressService from '../../services/ipressService';
 import { usePermisos } from '../../context/PermisosContext';
 import ModalResultadosImportacion from '../../components/modals/ModalResultadosImportacion'; // ✅ NUEVO v1.19.0
@@ -103,12 +104,14 @@ export default function Solicitudes({ categoriaInicial } = {}) {
   const [filtroIpressAtencion, setFiltroIpressAtencion] = useState('todas');
   const [filtroMacrorregion, setFiltroMacrorregion] = useState('todas');
   // Si viene categoriaInicial → pre-aplicar filtro de especialidad fijo
+  // Nota: 'maraton' usa filtroEstrategia='MARATON' cross-bolsa, NO categoriaEspecialidad (id_bolsa=17)
   const usaCategoriaEspecialidad = ['especialidades', 'bolsa107', 'recita', 'interconsulta'].includes(categoriaInicial);
   const especialidadPorCategoria = usaCategoriaEspecialidad
     ? 'todas'      // estas categorías usan categoriaEspecialidad, no filtroEspecialidad
-    : (categoriaInicial || 'todas');
+    : (categoriaInicial === 'maraton' ? 'todas' : (categoriaInicial || 'todas'));
   const [filtroEspecialidad, setFiltroEspecialidad] = useState(especialidadPorCategoria);
   // 'especialidades', 'bolsa107', 'recita', 'interconsulta' se pasan como categoriaEspecialidad al backend
+  // 'maraton' usa estrategia=MARATON para mostrar KPIs cross-bolsa (no solo id_bolsa=17)
   const categoriaEspecialidad = usaCategoriaEspecialidad ? categoriaInicial : null;
   // En sub-páginas los cards son solo informativos, no filtran la lista
   const cardsInteractivos = !categoriaInicial;
@@ -118,9 +121,11 @@ export default function Solicitudes({ categoriaInicial } = {}) {
   const [filtroAsignacion, setFiltroAsignacion] = useState('todos');  // ✅ v1.42.0: Filtro asignación (cards clickeables)
   const [filtroGestoraId, setFiltroGestoraId] = useState(null);        // Filtro por gestora asignada (ID)
   const [filtroEstadoBolsa, setFiltroEstadoBolsa] = useState('todos'); // ✅ v1.67.0: Filtro estado de bolsa (PENDIENTE, OBSERVADO, ATENDIDO)
-  const [filtroEstrategia, setFiltroEstrategia] = useState('todos');  // ✅ v1.85.0: Filtro por estrategia (CENACRON | MARATON | todos)
+  // v1.85.0: Filtro por estrategia. Para campaña Maratón se pre-fija a 'MARATON' (cross-bolsa)
+  const [filtroEstrategia, setFiltroEstrategia] = useState(categoriaInicial === 'maraton' ? 'MARATON' : 'todos');
   const [cenacronCount, setCenacronCount] = useState(null);           // Conteo CENACRON en contexto actual
   const [maratonCount, setMaratonCount] = useState(null);             // Conteo MARATON en contexto actual
+  const [maratonUniversoTotal, setMaratonUniversoTotal] = useState(null); // Total MARATÓN desde paciente_estrategia (13,402)
   const [filtroFechaInicio, setFiltroFechaInicio] = useState('');     // ✅ v1.66.0: Filtro rango de fechas - inicio
   const [filtroFechaFin, setFiltroFechaFin] = useState('');           // ✅ v1.66.0: Filtro rango de fechas - fin
   const [cardSeleccionado, setCardSeleccionado] = useState(null);     // ✅ v1.42.0: Rastrear card activo
@@ -384,20 +389,26 @@ export default function Solicitudes({ categoriaInicial } = {}) {
           // obtenerSolicitudesPaginado(page, size, bolsa, macro, red, ipress, espec, estado, ipressAtencion, ...rest, categoriaEspecialidad)
           if (categoriaInicial) {
             try {
-              // estadoCita=PENDIENTE_CITA para que el count coincida con el filtro por defecto de sub-páginas
-              // Usar misma lógica que main query: medicina-general/enfermeria → especialidad param; especialidades/bolsa107 → categoriaEspecialidad param
               const especParam = especialidadPorCategoria !== 'todas' ? especialidadPorCategoria : null;
-              const [naAdsc, naAten, cnCenacron, cnMaraton] = await Promise.all([
+              const promises = [
                 bolsasService.obtenerSolicitudesPaginado(0, 1, null, null, null, 'N/A', especParam, 'PENDIENTE_CITA', null, null, null, null, null, null, null, null, null, categoriaEspecialidad).catch(() => null),
                 bolsasService.obtenerSolicitudesPaginado(0, 1, null, null, null, null, especParam, 'PENDIENTE_CITA', 'N/A', null, null, null, null, null, null, null, null, categoriaEspecialidad).catch(() => null),
                 bolsasService.obtenerSolicitudesPaginado(0, 1, null, null, null, null, especParam, 'PENDIENTE_CITA', null, null, null, null, null, null, null, null, null, categoriaEspecialidad, 'CENACRON').catch(() => null),
                 bolsasService.obtenerSolicitudesPaginado(0, 1, null, null, null, null, especParam, 'PENDIENTE_CITA', null, null, null, null, null, null, null, null, null, categoriaEspecialidad, 'MARATON').catch(() => null),
-              ]);
+                // Para Maratón: obtener el universo total desde paciente_estrategia (asegurados seleccionados como MARATÓN)
+                categoriaInicial === 'maraton'
+                  ? apiClient.get('/asegurados?maraton=true&page=0&size=1', true).catch(() => null)
+                  : Promise.resolve(null),
+              ];
+              const [naAdsc, naAten, cnCenacron, cnMaraton, maratonUniverse] = await Promise.all(promises);
               if (mounted) {
                 setIpressNaCount(naAdsc?.totalElements ?? null);
                 setIpressAtencionNaCount(naAten?.totalElements ?? null);
                 setCenacronCount(cnCenacron?.totalElements ?? null);
                 setMaratonCount(cnMaraton?.totalElements ?? null);
+                if (maratonUniverse?.totalElements != null) {
+                  setMaratonUniversoTotal(maratonUniverse.totalElements);
+                }
               }
             } catch (_) {}
           }
@@ -790,7 +801,9 @@ export default function Solicitudes({ categoriaInicial } = {}) {
         ipress:         filtroIpress === 'todas' ? null : filtroIpress,
         especialidad:   filtroEspecialidad === 'todas' ? null : filtroEspecialidad,
         categoriaEspecialidad: categoriaEspecialidad,
-        estadoCodigo:   filtroEstado === 'todos' ? null : filtroEstado,
+        // Para Maratón: KPI no filtra por estado (muestra todos: CITADOS, ATENDIDOS, etc.)
+        // Para otras páginas: KPI respeta el filtro activo
+        estadoCodigo:   (categoriaInicial === 'maraton') ? null : (filtroEstado === 'todos' ? null : filtroEstado),
         ipressAtencion: filtroIpressAtencion === 'todas' ? null : filtroIpressAtencion,
         tipoCita:       filtroTipoCita === 'todas' ? null : filtroTipoCita,
         asignacion:     asignacionFinal,
@@ -799,6 +812,7 @@ export default function Solicitudes({ categoriaInicial } = {}) {
         fechaFin:       filtroFechaFin || null,
         gestoraId:      filtroGestoraId || null,
         estadoBolsa:    filtroEstadoBolsa === 'todos' ? null : filtroEstadoBolsa,
+        estrategia:     filtroEstrategia === 'todos' ? null : filtroEstrategia,
       };
 
       const [response, kpiData] = await Promise.all([
@@ -1436,18 +1450,24 @@ export default function Solicitudes({ categoriaInicial } = {}) {
       const asignados = statsMap['ASIGNADOS'] || 0;
       return {
         total: total,
-        pendientes: statsMap['PENDIENTE_CITA'] || 0,      // ✅ v1.54.4: Usar PENDIENTE_CITA (código del estado)
-        citados: statsMap['CITADO'] || 0,                 // ✅ v1.54.4: CITADO (código del estado)
-        asignados: asignados,                             // 👥 v1.41.0: Casos asignados a gestora
-        sinAsignar: total - asignados,                    // ✅ v1.42.0: Casos sin asignar
+        pendientes: statsMap['PENDIENTE_CITA'] || 0,
+        citados: statsMap['CITADO'] || 0,
+        atendidos: statsMap['ATENDIDO'] || 0,
+        noContesto: (statsMap['NO_CONTESTO'] || 0) + (statsMap['NO_CONTESTA'] || 0),
+        rechazados: statsMap['RECHAZADO'] || 0,
+        asignados: asignados,
+        sinAsignar: total - asignados,
       };
     } else {
       // ✅ v3.0.3: Si las estadísticas no han cargado aún, mostrar loader animado
       // NO usar solicitudes.length porque eso causa números incorrectos en la primera carga
       return {
-        total: null,  // null = mostrar loader
+        total: null,
         pendientes: null,
         citados: null,
+        atendidos: null,
+        noContesto: null,
+        rechazados: null,
         asignados: null,
         sinAsignar: null,
       };
@@ -2173,7 +2193,9 @@ export default function Solicitudes({ categoriaInicial } = {}) {
 
         {/* Tarjetas de Estadísticas - Siempre Visible */}
         <div className="mb-8">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Estadísticas de Solicitudes</h3>
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">
+            {categoriaInicial === 'maraton' ? 'Avance de Campaña Maratón' : 'Estadísticas de Solicitudes'}
+          </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 animate-fade-in">
 
             {/* 1. Sin Gestora — Rojo (ACCIÓN URGENTE) */}
@@ -2213,40 +2235,74 @@ export default function Solicitudes({ categoriaInicial } = {}) {
               </div>
             </div>
 
-            {/* 2. Pendiente Citar — Naranja (EN COLA) */}
-            <div
-              onClick={() => handleCardClick('pendiente')}
-              className={`rounded-xl p-6 text-white overflow-hidden relative
-                transition-[transform,box-shadow,opacity] duration-200 ease-out
-                ${cardsInteractivos ? 'cursor-pointer group hover:scale-[1.02] hover:-translate-y-0.5' : 'cursor-default'}
-                ${cardsInteractivos && cardSeleccionado === 'pendiente' ? 'ring-2 ring-white/50 scale-[1.02] -translate-y-0.5' : ''}`}
-              style={{
-                background: 'linear-gradient(135deg, #f97316 0%, #ea580c 45%, #c2410c 100%)',
-                boxShadow: cardSeleccionado === 'pendiente'
-                  ? '0 20px 40px -8px rgba(194,65,12,0.65), inset 0 1px 0 rgba(255,255,255,0.15)'
-                  : '0 4px 20px -4px rgba(194,65,12,0.45), inset 0 1px 0 rgba(255,255,255,0.12)'
-              }}
-            >
-              <div className="absolute inset-0 rounded-xl pointer-events-none"
-                style={{ background: 'linear-gradient(to bottom, rgba(0,0,0,0) 0%, rgba(0,0,0,0.18) 100%)' }} />
-              <div className="absolute inset-0 rounded-xl pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-200"
-                style={{ background: 'linear-gradient(135deg, rgba(255,255,255,0.18) 0%, rgba(255,255,255,0) 55%)' }} />
-              <div className="relative z-10">
-                <div className="flex items-center justify-between mb-3">
-                  <span className="text-xs font-semibold uppercase tracking-[0.12em] text-white/75">Pendiente Citar</span>
-                  <div className="w-9 h-9 rounded-lg bg-white/15 flex items-center justify-center flex-shrink-0">
-                    <Clock className="w-4 h-4 text-white" strokeWidth={2.5} />
+            {/* 2. Pendiente Citar (genérico) / Citados (Maratón) */}
+            {categoriaInicial === 'maraton' ? (
+              /* Maratón: mostrar CITADOS en lugar de PENDIENTE_CITA (que = TOTAL, es redundante) */
+              <div
+                className="rounded-xl p-6 text-white overflow-hidden relative cursor-default"
+                style={{
+                  background: 'linear-gradient(135deg, #0891b2 0%, #0e7490 45%, #155e75 100%)',
+                  boxShadow: '0 4px 20px -4px rgba(14,116,144,0.45), inset 0 1px 0 rgba(255,255,255,0.12)'
+                }}
+              >
+                <div className="absolute inset-0 rounded-xl pointer-events-none"
+                  style={{ background: 'linear-gradient(to bottom, rgba(0,0,0,0) 0%, rgba(0,0,0,0.18) 100%)' }} />
+                <div className="relative z-10">
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="text-xs font-semibold uppercase tracking-[0.12em] text-white/75">Citados</span>
+                    <div className="w-9 h-9 rounded-lg bg-white/15 flex items-center justify-center flex-shrink-0">
+                      <CalendarCheck className="w-4 h-4 text-white" strokeWidth={2.5} />
+                    </div>
+                  </div>
+                  <div className="text-5xl font-bold text-white leading-none mb-2"
+                    style={{ fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.02em' }}>
+                    {estadisticas.citados === null
+                      ? <span className="text-2xl opacity-50 animate-pulse">—</span>
+                      : estadisticas.citados.toLocaleString('es-PE')}
+                  </div>
+                  <div className="text-xs text-white/60 font-medium">
+                    {estadisticas.citados !== null && estadisticas.total
+                      ? `${((estadisticas.citados / estadisticas.total) * 100).toFixed(1)}% del total`
+                      : 'Con fecha de cita agendada'}
                   </div>
                 </div>
-                <div className="text-5xl font-bold text-white leading-none mb-2"
-                  style={{ fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.02em' }}>
-                  {estadisticas.pendientes === null
-                    ? <span className="text-2xl opacity-50 animate-pulse">—</span>
-                    : estadisticas.pendientes.toLocaleString('es-PE')}
-                </div>
-                <div className="text-xs text-white/60 font-medium">Esperando llamada</div>
               </div>
-            </div>
+            ) : (
+              /* Otras bolsas: PENDIENTE CITAR normal */
+              <div
+                onClick={() => handleCardClick('pendiente')}
+                className={`rounded-xl p-6 text-white overflow-hidden relative
+                  transition-[transform,box-shadow,opacity] duration-200 ease-out
+                  ${cardsInteractivos ? 'cursor-pointer group hover:scale-[1.02] hover:-translate-y-0.5' : 'cursor-default'}
+                  ${cardsInteractivos && cardSeleccionado === 'pendiente' ? 'ring-2 ring-white/50 scale-[1.02] -translate-y-0.5' : ''}`}
+                style={{
+                  background: 'linear-gradient(135deg, #f97316 0%, #ea580c 45%, #c2410c 100%)',
+                  boxShadow: cardSeleccionado === 'pendiente'
+                    ? '0 20px 40px -8px rgba(194,65,12,0.65), inset 0 1px 0 rgba(255,255,255,0.15)'
+                    : '0 4px 20px -4px rgba(194,65,12,0.45), inset 0 1px 0 rgba(255,255,255,0.12)'
+                }}
+              >
+                <div className="absolute inset-0 rounded-xl pointer-events-none"
+                  style={{ background: 'linear-gradient(to bottom, rgba(0,0,0,0) 0%, rgba(0,0,0,0.18) 100%)' }} />
+                <div className="absolute inset-0 rounded-xl pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+                  style={{ background: 'linear-gradient(135deg, rgba(255,255,255,0.18) 0%, rgba(255,255,255,0) 55%)' }} />
+                <div className="relative z-10">
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="text-xs font-semibold uppercase tracking-[0.12em] text-white/75">Pendiente Citar</span>
+                    <div className="w-9 h-9 rounded-lg bg-white/15 flex items-center justify-center flex-shrink-0">
+                      <Clock className="w-4 h-4 text-white" strokeWidth={2.5} />
+                    </div>
+                  </div>
+                  <div className="text-5xl font-bold text-white leading-none mb-2"
+                    style={{ fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.02em' }}>
+                    {estadisticas.pendientes === null
+                      ? <span className="text-2xl opacity-50 animate-pulse">—</span>
+                      : estadisticas.pendientes.toLocaleString('es-PE')}
+                  </div>
+                  <div className="text-xs text-white/60 font-medium">Esperando llamada</div>
+                </div>
+              </div>
+            )}
 
             {/* 3. Con Gestora — Verde (EN PROGRESO) */}
             <div
@@ -2283,40 +2339,82 @@ export default function Solicitudes({ categoriaInicial } = {}) {
               </div>
             </div>
 
-            {/* 4. Total en Bolsa — Azul (REFERENCIA GLOBAL) */}
-            <div
-              onClick={() => handleCardClick('total')}
-              className={`rounded-xl p-6 text-white overflow-hidden relative
-                transition-[transform,box-shadow,opacity] duration-200 ease-out
-                ${cardsInteractivos ? 'cursor-pointer group hover:scale-[1.02] hover:-translate-y-0.5' : 'cursor-default'}
-                ${cardsInteractivos && cardSeleccionado === 'total' ? 'ring-2 ring-white/50 scale-[1.02] -translate-y-0.5' : ''}`}
-              style={{
-                background: 'linear-gradient(135deg, #1d4ed8 0%, #1e40af 45%, #1e3a8a 100%)',
-                boxShadow: cardSeleccionado === 'total'
-                  ? '0 20px 40px -8px rgba(30,58,138,0.65), inset 0 1px 0 rgba(255,255,255,0.15)'
-                  : '0 4px 20px -4px rgba(30,58,138,0.45), inset 0 1px 0 rgba(255,255,255,0.12)'
-              }}
-            >
-              <div className="absolute inset-0 rounded-xl pointer-events-none"
-                style={{ background: 'linear-gradient(to bottom, rgba(0,0,0,0) 0%, rgba(0,0,0,0.18) 100%)' }} />
-              <div className="absolute inset-0 rounded-xl pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-200"
-                style={{ background: 'linear-gradient(135deg, rgba(255,255,255,0.18) 0%, rgba(255,255,255,0) 55%)' }} />
-              <div className="relative z-10">
-                <div className="flex items-center justify-between mb-3">
-                  <span className="text-xs font-semibold uppercase tracking-[0.12em] text-white/75">Total en Bolsa</span>
-                  <div className="w-9 h-9 rounded-lg bg-white/15 flex items-center justify-center flex-shrink-0">
-                    <Database className="w-4 h-4 text-white" strokeWidth={2.5} />
+            {/* 4. Total — Azul (REFERENCIA GLOBAL) */}
+            {categoriaInicial === 'maraton' ? (
+              /* Maratón: mostrar universo total MARATÓN (paciente_estrategia) */
+              <div
+                className="rounded-xl p-6 text-white overflow-hidden relative cursor-default"
+                style={{
+                  background: 'linear-gradient(135deg, #1d4ed8 0%, #1e40af 45%, #1e3a8a 100%)',
+                  boxShadow: '0 4px 20px -4px rgba(30,58,138,0.45), inset 0 1px 0 rgba(255,255,255,0.12)'
+                }}
+              >
+                <div className="absolute inset-0 rounded-xl pointer-events-none"
+                  style={{ background: 'linear-gradient(to bottom, rgba(0,0,0,0) 0%, rgba(0,0,0,0.18) 100%)' }} />
+                <div className="relative z-10">
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="text-xs font-semibold uppercase tracking-[0.12em] text-white/75">Total Maratón</span>
+                    <div className="w-9 h-9 rounded-lg bg-white/15 flex items-center justify-center flex-shrink-0">
+                      <Database className="w-4 h-4 text-white" strokeWidth={2.5} />
+                    </div>
                   </div>
+                  <div className="text-5xl font-bold text-white leading-none mb-2"
+                    style={{ fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.02em' }}>
+                    {maratonUniversoTotal === null
+                      ? <span className="text-2xl opacity-50 animate-pulse">—</span>
+                      : maratonUniversoTotal.toLocaleString('es-PE')}
+                  </div>
+                  {/* Desglose: en bolsa vs pendientes de importar */}
+                  {maratonUniversoTotal !== null && estadisticas.total !== null && (
+                    <div className="space-y-0.5">
+                      <div className="text-xs text-white/70 font-medium">
+                        ✅ {estadisticas.total.toLocaleString('es-PE')} en bolsa
+                      </div>
+                      {maratonUniversoTotal - estadisticas.total > 0 && (
+                        <div className="text-xs text-yellow-300 font-semibold">
+                          ⚠ {(maratonUniversoTotal - estadisticas.total).toLocaleString('es-PE')} pendientes de importar
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
-                <div className="text-5xl font-bold text-white leading-none mb-2"
-                  style={{ fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.02em' }}>
-                  {estadisticas.total === null
-                    ? <span className="text-2xl opacity-50 animate-pulse">—</span>
-                    : estadisticas.total.toLocaleString('es-PE')}
-                </div>
-                <div className="text-xs text-white/60 font-medium">Todos los estados</div>
               </div>
-            </div>
+            ) : (
+              /* Otras bolsas: Total en Bolsa normal */
+              <div
+                onClick={() => handleCardClick('total')}
+                className={`rounded-xl p-6 text-white overflow-hidden relative
+                  transition-[transform,box-shadow,opacity] duration-200 ease-out
+                  ${cardsInteractivos ? 'cursor-pointer group hover:scale-[1.02] hover:-translate-y-0.5' : 'cursor-default'}
+                  ${cardsInteractivos && cardSeleccionado === 'total' ? 'ring-2 ring-white/50 scale-[1.02] -translate-y-0.5' : ''}`}
+                style={{
+                  background: 'linear-gradient(135deg, #1d4ed8 0%, #1e40af 45%, #1e3a8a 100%)',
+                  boxShadow: cardSeleccionado === 'total'
+                    ? '0 20px 40px -8px rgba(30,58,138,0.65), inset 0 1px 0 rgba(255,255,255,0.15)'
+                    : '0 4px 20px -4px rgba(30,58,138,0.45), inset 0 1px 0 rgba(255,255,255,0.12)'
+                }}
+              >
+                <div className="absolute inset-0 rounded-xl pointer-events-none"
+                  style={{ background: 'linear-gradient(to bottom, rgba(0,0,0,0) 0%, rgba(0,0,0,0.18) 100%)' }} />
+                <div className="absolute inset-0 rounded-xl pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+                  style={{ background: 'linear-gradient(135deg, rgba(255,255,255,0.18) 0%, rgba(255,255,255,0) 55%)' }} />
+                <div className="relative z-10">
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="text-xs font-semibold uppercase tracking-[0.12em] text-white/75">Total en Bolsa</span>
+                    <div className="w-9 h-9 rounded-lg bg-white/15 flex items-center justify-center flex-shrink-0">
+                      <Database className="w-4 h-4 text-white" strokeWidth={2.5} />
+                    </div>
+                  </div>
+                  <div className="text-5xl font-bold text-white leading-none mb-2"
+                    style={{ fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.02em' }}>
+                    {estadisticas.total === null
+                      ? <span className="text-2xl opacity-50 animate-pulse">—</span>
+                      : estadisticas.total.toLocaleString('es-PE')}
+                  </div>
+                  <div className="text-xs text-white/60 font-medium">Todos los estados</div>
+                </div>
+              </div>
+            )}
 
           </div>
         </div>
@@ -2336,6 +2434,92 @@ export default function Solicitudes({ categoriaInicial } = {}) {
             animation: fadeIn 0.6s ease-out;
           }
         `}</style>
+
+        {/* ═══ BARRA DE PROGRESO DE CAMPAÑA — Solo Maratón ═══ */}
+        {categoriaInicial === 'maraton' && estadisticas.total !== null && (
+          <div className="mb-6 bg-white rounded-xl border border-gray-200 shadow-sm px-5 py-4">
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-sm font-semibold text-gray-700">Progreso de la campaña</span>
+              <span className="text-xs text-gray-400">
+                {maratonUniversoTotal?.toLocaleString('es-PE') ?? estadisticas.total?.toLocaleString('es-PE')} pacientes seleccionados
+                {maratonUniversoTotal !== null && estadisticas.total !== null && maratonUniversoTotal > estadisticas.total && (
+                  <span className="ml-2 text-yellow-600 font-medium">
+                    · {(maratonUniversoTotal - estadisticas.total).toLocaleString('es-PE')} sin importar
+                  </span>
+                )}
+              </span>
+            </div>
+
+            {/* Barra de progreso de campaña */}
+            {(() => {
+              const total    = estadisticas.total || 1;
+              const atendidos  = estadisticas.atendidos  || 0;
+              const citados    = estadisticas.citados    || 0;
+              const noContesto = estadisticas.noContesto || 0;
+              const rechazados = estadisticas.rechazados || 0;
+              const pendientes = estadisticas.pendientes || 0;
+              // Porcentajes sobre el total en bolsa
+              const atePct = (atendidos  / total) * 100;
+              const citPct = (citados    / total) * 100;
+              const noCPct = (noContesto / total) * 100;
+              const recPct = (rechazados / total) * 100;
+              // El avance total (todos los que ya tuvieron alguna acción)
+              const avancePct = atePct + citPct + noCPct + recPct;
+
+              return (
+                <>
+                  {/* Barra de progreso: fondo gris = pendientes, colores = avance */}
+                  <div className="relative h-6 rounded-full overflow-hidden mb-3" style={{ background: '#cbd5e1' }}>
+                    {/* Franja de avance (apilada de izquierda a derecha) */}
+                    <div className="absolute inset-y-0 left-0 flex rounded-full overflow-hidden" style={{ width: `${avancePct}%`, transition: 'width 0.6s ease' }}>
+                      {atePct > 0 && <div className="bg-emerald-500 h-full" style={{ flex: atePct }} title={`Atendidos`} />}
+                      {citPct > 0 && <div className="bg-blue-500   h-full" style={{ flex: citPct }} title={`Citados`} />}
+                      {noCPct > 0 && <div className="bg-yellow-400 h-full" style={{ flex: noCPct }} title={`No contesta`} />}
+                      {recPct > 0 && <div className="bg-red-400    h-full" style={{ flex: recPct }} title={`Rechazados`} />}
+                    </div>
+                    {/* Etiqueta % dentro de la barra */}
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <span className="text-xs font-bold text-white drop-shadow" style={{ textShadow: '0 1px 2px rgba(0,0,0,0.5)' }}>
+                        {avancePct < 0.1 ? 'Sin avance aún — pendiente iniciar citaciones' : `${avancePct.toFixed(1)}% gestionado`}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Leyenda */}
+                  <div className="flex flex-wrap gap-x-5 gap-y-1.5">
+                    <span className="flex items-center gap-1.5 text-xs text-gray-500">
+                      <span className="w-2.5 h-2.5 rounded-full bg-slate-400 inline-block flex-shrink-0" />
+                      Pendiente citar <strong className="text-gray-700 ml-1">{pendientes.toLocaleString('es-PE')}</strong>
+                    </span>
+                    <span className="flex items-center gap-1.5 text-xs text-gray-500">
+                      <span className="w-2.5 h-2.5 rounded-full bg-blue-500 inline-block flex-shrink-0" />
+                      Citados <strong className="text-gray-700 ml-1">{citados.toLocaleString('es-PE')}</strong>
+                    </span>
+                    <span className="flex items-center gap-1.5 text-xs text-gray-500">
+                      <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block flex-shrink-0" />
+                      Atendidos <strong className="text-gray-700 ml-1">{atendidos.toLocaleString('es-PE')}</strong>
+                    </span>
+                    {noContesto > 0 && (
+                      <span className="flex items-center gap-1.5 text-xs text-gray-500">
+                        <span className="w-2.5 h-2.5 rounded-full bg-yellow-400 inline-block flex-shrink-0" />
+                        No contesta <strong className="text-gray-700 ml-1">{noContesto.toLocaleString('es-PE')}</strong>
+                      </span>
+                    )}
+                    {rechazados > 0 && (
+                      <span className="flex items-center gap-1.5 text-xs text-gray-500">
+                        <span className="w-2.5 h-2.5 rounded-full bg-red-400 inline-block flex-shrink-0" />
+                        Rechazados <strong className="text-gray-700 ml-1">{rechazados.toLocaleString('es-PE')}</strong>
+                      </span>
+                    )}
+                    <span className="ml-auto text-xs font-semibold text-emerald-700">
+                      Completados: {atePct.toFixed(1)}%
+                    </span>
+                  </div>
+                </>
+              );
+            })()}
+          </div>
+        )}
 
         {/* Banner filtro activo por card (solo en página principal, no en sub-páginas) */}
         {cardsInteractivos && cardSeleccionado && cardSeleccionado !== 'total' && (
@@ -2392,8 +2576,8 @@ export default function Solicitudes({ categoriaInicial } = {}) {
               setSearchTerm(valor);
             }}
             filters={[
-              // Ocultar selector de bolsas en bolsa107 (la sub-página ya filtra exclusivamente esa bolsa)
-              ...(categoriaInicial === 'bolsa107' ? [] : [{
+              // Ocultar selector de bolsas en bolsa107/maraton (la sub-página ya filtra exclusivamente esa bolsa)
+              ...(['bolsa107', 'maraton'].includes(categoriaInicial) ? [] : [{
                 name: "Bolsas",
                 multiSelect: true,
                 value: filtroBolsa,
@@ -2602,8 +2786,8 @@ export default function Solicitudes({ categoriaInicial } = {}) {
             </div>
           </div>
 
-          {/* ✅ v1.85.0: Filtro Estrategia (CENACRON / MARATÓN) — solo en sub-páginas */}
-          {categoriaInicial && (
+          {/* ✅ v1.85.0: Filtro Estrategia (CENACRON / MARATÓN) — solo en sub-páginas que NO son maratón */}
+          {categoriaInicial && categoriaInicial !== 'maraton' && (
             <div className="px-2 py-2">
               <label className="block text-xs font-semibold text-gray-700 mb-2">Filtro por Estrategia</label>
               <div className="flex flex-wrap gap-2">
