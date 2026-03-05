@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { Plus, Search, Phone, ChevronDown, ChevronUp, Circle, Eye, Users, UserPlus, Download, FileText, FolderOpen, ListChecks, Upload, AlertCircle, Edit, X, AlertTriangle, Clock, UserCheck, Database, Loader, CalendarCheck } from 'lucide-react';
+import { Plus, Search, Phone, ChevronDown, ChevronUp, Circle, Eye, Users, UserPlus, Download, FileText, FolderOpen, ListChecks, Upload, AlertCircle, Edit, X, AlertTriangle, Clock, UserCheck, Database, Loader, CalendarCheck, BarChart2, RefreshCw } from 'lucide-react';
 import PageHeader from '../../components/PageHeader';
 import StatCard from '../../components/StatCard';
 import ListHeader from '../../components/ListHeader';
@@ -123,6 +123,10 @@ export default function Solicitudes({ categoriaInicial } = {}) {
   const [filtroEstadoBolsa, setFiltroEstadoBolsa] = useState('todos'); // ✅ v1.67.0: Filtro estado de bolsa (PENDIENTE, OBSERVADO, ATENDIDO)
   // v1.85.0: Filtro por estrategia (opcional, no se pre-fija para Maratón — usa categoriaEspecialidad=maraton → id_bolsa=17)
   const [filtroEstrategia, setFiltroEstrategia] = useState('todos');
+  // Modal desglose Maratón (card OBSERVADOS)
+  const [desglosAbierto, setDesglosAbierto] = useState(false);
+  const [desgloseData, setDesgloseData] = useState(null);
+  const [desgloseLoading, setDesgloseLoading] = useState(false);
   const [cenacronCount, setCenacronCount] = useState(null);           // Conteo CENACRON en contexto actual
   const [maratonCount, setMaratonCount] = useState(null);             // Conteo MARATON en contexto actual
   const [maratonUniversoTotal, setMaratonUniversoTotal] = useState(null); // Total MARATÓN desde paciente_estrategia (13,402)
@@ -2194,7 +2198,7 @@ export default function Solicitudes({ categoriaInicial } = {}) {
           <h3 className="text-lg font-semibold text-gray-900 mb-4">
             {categoriaInicial === 'maraton' ? 'Resumen Campaña Maratón' : 'Estadísticas de Solicitudes'}
           </h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 animate-fade-in">
+          <div className={`grid grid-cols-1 md:grid-cols-2 gap-5 animate-fade-in ${categoriaInicial === 'maraton' ? 'lg:grid-cols-5' : 'lg:grid-cols-4'}`}>
 
             {/* 1. Sin Gestora — Rojo (ACCIÓN URGENTE) */}
             <div
@@ -2339,7 +2343,53 @@ export default function Solicitudes({ categoriaInicial } = {}) {
               </div>
             )}
 
-            {/* 4. Total en Bolsa (Maratón y otras) */}
+            {/* 4. Observados — solo Maratón */}
+            {categoriaInicial === 'maraton' && (() => {
+              const observados = (estadisticas.total !== null && estadisticas.pendientes !== null && estadisticas.citados !== null)
+                ? estadisticas.total - estadisticas.pendientes - estadisticas.citados
+                : null;
+              const cargarDesglose = async () => {
+                setDesglosAbierto(true);
+                setDesgloseLoading(true);
+                try {
+                  const kpi = await bolsasService.obtenerKpiConFiltros({ categoriaEspecialidad: 'maraton' });
+                  setDesgloseData(kpi);
+                } catch { setDesgloseData(null); }
+                finally { setDesgloseLoading(false); }
+              };
+              return (
+                <div
+                  onClick={cargarDesglose}
+                  className="rounded-xl p-6 text-white overflow-hidden relative cursor-pointer group hover:scale-[1.02] hover:-translate-y-0.5 transition-[transform,box-shadow,opacity] duration-200 ease-out"
+                  style={{
+                    background: 'linear-gradient(135deg, #b45309 0%, #92400e 45%, #78350f 100%)',
+                    boxShadow: '0 4px 20px -4px rgba(120,53,15,0.45), inset 0 1px 0 rgba(255,255,255,0.12)'
+                  }}
+                >
+                  <div className="absolute inset-0 rounded-xl pointer-events-none"
+                    style={{ background: 'linear-gradient(to bottom, rgba(0,0,0,0) 0%, rgba(0,0,0,0.18) 100%)' }} />
+                  <div className="absolute inset-0 rounded-xl pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+                    style={{ background: 'linear-gradient(135deg, rgba(255,255,255,0.18) 0%, rgba(255,255,255,0) 55%)' }} />
+                  <div className="relative z-10">
+                    <div className="flex items-center justify-between mb-3">
+                      <span className="text-xs font-semibold uppercase tracking-[0.12em] text-white/75">Observados</span>
+                      <div className="w-9 h-9 rounded-lg bg-white/15 flex items-center justify-center flex-shrink-0">
+                        <BarChart2 className="w-4 h-4 text-white" strokeWidth={2.5} />
+                      </div>
+                    </div>
+                    <div className="text-5xl font-bold text-white leading-none mb-2"
+                      style={{ fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.02em' }}>
+                      {observados === null
+                        ? <span className="text-2xl opacity-50 animate-pulse">—</span>
+                        : observados.toLocaleString('es-PE')}
+                    </div>
+                    <div className="text-xs text-white/60 font-medium">Ver desglose →</div>
+                  </div>
+                </div>
+              );
+            })()}
+
+            {/* 5. Total en Bolsa (Maratón y otras) */}
             {categoriaInicial === 'maraton' ? (
               <div
                 className="rounded-xl p-6 text-white overflow-hidden relative cursor-default"
@@ -2499,6 +2549,93 @@ export default function Solicitudes({ categoriaInicial } = {}) {
                 </>
               );
             })()}
+          </div>
+        )}
+
+        {/* ═══ MODAL DESGLOSE OBSERVADOS — Solo Maratón ═══ */}
+        {desglosAbierto && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.5)' }}>
+            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-xl max-h-[85vh] flex flex-col">
+              {/* Header */}
+              <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-lg bg-amber-100 flex items-center justify-center">
+                    <BarChart2 className="w-5 h-5 text-amber-700" />
+                  </div>
+                  <div>
+                    <h2 className="text-base font-bold text-gray-900">Desglose por Estado — Maratón</h2>
+                    <p className="text-xs text-gray-400">Pacientes con estados distintos a Pendiente y Citado</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button onClick={async () => { setDesgloseLoading(true); try { const kpi = await bolsasService.obtenerKpiConFiltros({ categoriaEspecialidad: 'maraton' }); setDesgloseData(kpi); } catch {} finally { setDesgloseLoading(false); } }}
+                    className="p-2 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors">
+                    <RefreshCw className={`w-4 h-4 ${desgloseLoading ? 'animate-spin' : ''}`} />
+                  </button>
+                  <button onClick={() => setDesglosAbierto(false)} className="p-2 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors">
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+              </div>
+              {/* Body */}
+              <div className="overflow-y-auto flex-1 px-6 py-4">
+                {desgloseLoading ? (
+                  <div className="flex items-center justify-center py-12 text-gray-400 gap-2">
+                    <Loader className="w-5 h-5 animate-spin" /> Cargando datos...
+                  </div>
+                ) : Array.isArray(desgloseData) && desgloseData.length > 0 ? (() => {
+                  const ESTADOS_LABEL = {
+                    PENDIENTE_CITA: 'Pendiente de citar', CITADO: 'Cita confirmada',
+                    ATENDIDO_IPRESS: 'Ya fue atendido', NO_CONTESTA: 'No responde llamadas',
+                    NO_DESEA: 'Rechazó la cita', NO_IPRESS_CENATE: 'IPRESS no cubre CENATE',
+                    REPROG_FALLIDA: 'Reprogramación fallida', APAGADO: 'Teléfono apagado',
+                    SIN_VIGENCIA: 'Sin seguro vigente', RECHAZADO: 'Rechazado por gestora',
+                    NUM_NO_EXISTE: 'Número no existe', PARTICULAR: 'Atención particular',
+                    TEL_SIN_SERVICIO: 'Teléfono sin servicio', YA_NO_REQUIERE: 'Ya no requiere atención',
+                  };
+                  const EXCLUIR = ['PENDIENTE_CITA', 'CITADO', 'SIN_GESTORA', 'CON_GESTORA'];
+                  const filas = desgloseData
+                    .filter(r => !EXCLUIR.includes(r.estado))
+                    .sort((a, b) => b.cantidad - a.cantidad);
+                  const totalObservados = filas.reduce((s, r) => s + r.cantidad, 0);
+                  return (
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="text-xs text-gray-400 uppercase border-b border-gray-100">
+                          <th className="text-left py-2 font-semibold">Estado</th>
+                          <th className="text-left py-2 font-semibold">Descripción</th>
+                          <th className="text-right py-2 font-semibold">Cant.</th>
+                          <th className="text-right py-2 font-semibold">%</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {filas.map(r => (
+                          <tr key={r.estado} className="border-b border-gray-50 hover:bg-gray-50">
+                            <td className="py-2 pr-3">
+                              <span className="inline-block px-2 py-0.5 rounded text-xs font-semibold bg-amber-100 text-amber-800">{r.estado}</span>
+                            </td>
+                            <td className="py-2 pr-3 text-gray-600 text-xs">{ESTADOS_LABEL[r.estado] || r.estado}</td>
+                            <td className="py-2 text-right font-bold text-gray-800">{r.cantidad.toLocaleString('es-PE')}</td>
+                            <td className="py-2 text-right text-gray-400 text-xs">
+                              {totalObservados > 0 ? ((r.cantidad / totalObservados) * 100).toFixed(1) : 0}%
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                      <tfoot>
+                        <tr className="border-t-2 border-gray-200">
+                          <td colSpan={2} className="py-3 font-bold text-gray-700 text-sm">Total observados</td>
+                          <td className="py-3 text-right font-bold text-amber-700">{totalObservados.toLocaleString('es-PE')}</td>
+                          <td className="py-3 text-right text-gray-400 text-xs">100%</td>
+                        </tr>
+                      </tfoot>
+                    </table>
+                  );
+                })() : (
+                  <div className="text-center py-12 text-gray-400">No se pudieron cargar los datos</div>
+                )}
+              </div>
+            </div>
           </div>
         )}
 
