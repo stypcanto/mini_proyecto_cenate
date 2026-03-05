@@ -51,7 +51,8 @@ public class AtenderPacienteService {
 
     @Transactional
     public List<String> atenderPaciente(Long idSolicitudBolsa, String especialidadActual, AtenderPacienteRequest request) {
-        log.info("🏥 [v1.103.6] Registrando atención - Solicitud: {}", idSolicitudBolsa);
+        log.info("🏥 [v1.103.6] Registrando atención - Solicitud: {}, especialidadActual='{}' (length={})", 
+                idSolicitudBolsa, especialidadActual, especialidadActual != null ? especialidadActual.length() : 0);
         List<String> interconsultasOmitidas = new java.util.ArrayList<>();
 
         try {
@@ -125,22 +126,59 @@ public class AtenderPacienteService {
             String pkAseguradoFinal = asegurado != null ? asegurado.getPkAsegurado() : pkAsegurado;
 
             // 3. Crear o actualizar bolsa Recita si aplica
+            // ✅ v1.84.4: Buscar recita existente por paciente + ESPECIALIDAD (de solicitud) + ESTADO PENDIENTE
+            // Si hay RECITA PENDIENTE → actualizar fecha. Si no → crear nueva.
             if (request.getTieneRecita() != null && request.getTieneRecita()) {
+                // ✅ v1.84.4: Usar especialidad DE LA SOLICITUD ORIGINAL (no del parámetro)
+                String especialidadParaBusqueda = solicitudOriginal.getEspecialidad() != null 
+                        ? solicitudOriginal.getEspecialidad().trim().toUpperCase() : "";
+                String dniNormalizado = solicitudOriginal.getPacienteDni() != null 
+                        ? solicitudOriginal.getPacienteDni().trim() : "";
+                
+                log.info("═══════════════════════════════════════════════════════════════");
+                log.info("🔍 [RECITA v1.84.5] INICIO BÚSQUEDA DE RECITA EXISTENTE");
+                log.info("═══════════════════════════════════════════════════════════════");
+                log.info("🔍 Parámetro 1 - DNI normalizado: '{}'", dniNormalizado);
+                log.info("🔍 Parámetro 2 - Especialidad normalizada: '{}'", especialidadParaBusqueda);
+                log.info("🔍 [DEBUG] solicitudOriginal.getEspecialidad() raw = '{}'", solicitudOriginal.getEspecialidad());
+                log.info("🔍 [DEBUG] especialidadActual (param del controller) = '{}'", especialidadActual);
+                log.info("🔍 Query SQL equivalente:");
+                log.info("   SELECT * FROM dim_solicitud_bolsa");
+                log.info("   WHERE TRIM(paciente_dni) = TRIM('{}')".replace("{}", dniNormalizado));
+                log.info("     AND UPPER(TRIM(especialidad)) = UPPER(TRIM('{}'))".replace("{}", especialidadParaBusqueda));
+                log.info("     AND UPPER(TRIM(estado)) = 'PENDIENTE'");
+                log.info("     AND UPPER(TRIM(tipo_cita)) = 'RECITA'");
+                log.info("   ORDER BY fecha_asignacion DESC LIMIT 1");
+                
                 var recitaExistente = solicitudBolsaRepository
-                        .findFirstByPacienteDniAndTipoCitaAndActivoTrueOrderByFechaAsignacionDesc(
-                                solicitudOriginal.getPacienteDni(), "RECITA");
+                        .findRecitaPendientePorEspecialidad(dniNormalizado, especialidadParaBusqueda);
+                
+                log.info("═══════════════════════════════════════════════════════════════");
+                log.info("🔍 [RECITA v1.84.5] RESULTADO: encontrada = {}", recitaExistente.isPresent());
+                if (recitaExistente.isPresent()) {
+                    SolicitudBolsa r = recitaExistente.get();
+                    log.info("   → id_solicitud: {}", r.getIdSolicitud());
+                    log.info("   → paciente_dni: '{}'", r.getPacienteDni());
+                    log.info("   → especialidad: '{}'", r.getEspecialidad());
+                    log.info("   → estado: '{}'", r.getEstado());
+                    log.info("   → tipo_cita: '{}'", r.getTipoCita());
+                }
+                log.info("═══════════════════════════════════════════════════════════════");
+                
                 if (recitaExistente.isPresent()) {
                     SolicitudBolsa recita = recitaExistente.get();
+                    log.info("✅ [RECITA v1.84.5] ACTUALIZANDO recita existente id={}", recita.getIdSolicitud());
                     ZonedDateTime nuevaFecha = Instant.now().atZone(ZoneId.of("America/Lima"))
                             .plusDays(request.getRecitaDias() != null ? request.getRecitaDias() : 7);
                     recita.setFechaPreferidaNoAtendida(nuevaFecha.toLocalDate());
                     if (idAtencionClinica != null) recita.setIdAtencionClinica(idAtencionClinica);
                     recita.setPacienteId(pkAseguradoFinal); // ✅ v1.82.8: pk_asegurado correcto
-                    solicitudBolsaRepository.save(recita);
-                    log.info("✅ Bolsa RECITA actualizada (id={}) — nueva fecha: {}", recita.getIdSolicitud(), nuevaFecha.toLocalDate());
+                    solicitudBolsaRepository.saveAndFlush(recita);
+                    log.info("✅ [RECITA v1.84.4] Bolsa RECITA ACTUALIZADA (id={}) — nueva fecha: {}", recita.getIdSolicitud(), nuevaFecha.toLocalDate());
                 } else {
-                    crearBolsaRecitaConTransaccion(solicitudOriginal, especialidadActual, request.getRecitaDias(), idAtencionClinica, pkAseguradoFinal);
-                    log.info("✅ Nueva bolsa RECITA creada - visible solo para gestora de citas");
+                    log.info("⚠️ [RECITA v1.84.4] NO encontrada recita PENDIENTE, creando nueva...");
+                    crearBolsaRecitaConTransaccion(solicitudOriginal, especialidadParaBusqueda, request.getRecitaDias(), idAtencionClinica, pkAseguradoFinal);
+                    log.info("✅ [RECITA v1.84.4] Nueva bolsa RECITA creada");
                 }
             }
 
@@ -272,18 +310,19 @@ public class AtenderPacienteService {
                 .pacienteSexo(solicitudOriginal.getPacienteSexo())
                 .pacienteTelefono(solicitudOriginal.getPacienteTelefono())
                 .codigoIpressAdscripcion(solicitudOriginal.getCodigoIpressAdscripcion())
-                .idIpress(solicitudOriginal.getIdIpress())
-                .idIpressAtencion(solicitudOriginal.getIdIpressAtencion())
+                .idIpress(solicitudOriginal.getIdIpress())                 // ✅ v1.84.0: FK IPRESS adscripción del padre
+                .idIpressAtencion(solicitudOriginal.getIdIpressAtencion()) // ✅ v1.84.0: FK IPRESS atención del padre
                 .tipoCita("RECITA")
                 .especialidad(solicitudOriginal.getEspecialidad())
                 .estado("PENDIENTE")
                 .estadoGestionCitasId(11L) // PENDIENTE_CITA = Paciente nuevo que ingresó a la bolsa
-                .idBolsa(15L) // ✅ v1.85.0: BOLSA_RECITA (id_bolsa=15)
+                .idBolsa(11L) // ✅ v1.103.8: BOLSA_GENERADA_X_PROFESIONAL (id_bolsa=10 conflicta con solicitud original)
                 .idServicio(idServicioRecita) // ✅ v1.47.3 Asignar idServicio para permitir selector de médicos
                 // ✅ v1.103.9: Sin gestora — va a bolsas/solicitudes para ser asignada, NO a citas-agendadas
                 .fechaAsignacion(OffsetDateTime.now())
                 .fechaPreferidaNoAtendida(fechaPreferida.toLocalDate()) // ✅ Fecha preferida calculada (hoy + días)
                 .idsolicitudgeneracion(solicitudOriginal.getIdSolicitud()) // ✅ FK trazabilidad
+                .idSolicitudPadre(solicitudOriginal.getIdSolicitud())      // ✅ v1.84.0: FK solicitud padre (consistente con INTERCONSULTA)
                 // id_personal = NULL: el coordinador asignará al profesional desde /bolsas/solicitudespendientes
                 // La trazabilidad del creador se obtiene via id_atencion_clinica.id_personal_creador
                 .idAtencionClinica(idAtencionClinica) // ✅ v6.0.0: FK directa → atencion_clinica
@@ -291,9 +330,9 @@ public class AtenderPacienteService {
                 .build();
 
         try {
-            solicitudBolsaRepository.save(bolsaRecita);
-            log.info("✅ Bolsa RECITA creada: {} - Fecha preferida: {} - idServicio: {}",
-                    bolsaRecita.getIdSolicitud(), fechaPreferida, idServicioRecita);
+            solicitudBolsaRepository.saveAndFlush(bolsaRecita); // ✅ v1.84.1: flush inmediato para evitar race conditions
+            log.info("✅ Bolsa RECITA creada: {} - Fecha preferida: {} - idServicio: {} - idSolicitudPadre: {}",
+                    bolsaRecita.getIdSolicitud(), fechaPreferida, idServicioRecita, solicitudOriginal.getIdSolicitud());
         } catch (Exception e) {
             log.error("❌ [v1.103.5] Error CRÍTICO creando bolsa Recita: {}", e.getMessage(), e);
             throw new RuntimeException("Error creando bolsa de Recita: " + e.getMessage(), e);
@@ -336,13 +375,14 @@ public class AtenderPacienteService {
                 .pacienteSexo(solicitudOriginal.getPacienteSexo())
                 .pacienteTelefono(solicitudOriginal.getPacienteTelefono())
                 .codigoIpressAdscripcion(solicitudOriginal.getCodigoIpressAdscripcion())
-                .idIpress(solicitudOriginal.getIdIpress())
-                .idIpressAtencion(solicitudOriginal.getIdIpressAtencion())
+                .idIpress(solicitudOriginal.getIdIpress())                 // ✅ v1.84.0: FK IPRESS adscripción del padre
+                .idIpressAtencion(solicitudOriginal.getIdIpressAtencion()) // ✅ v1.84.0: FK IPRESS atención del padre
                 .tipoCita("INTERCONSULTA")
                 .especialidad(especialidad)
                 .estado("PENDIENTE")
                 .estadoGestionCitasId(11L) // PENDIENTE_CITA = Paciente nuevo que ingresó a la bolsa
-                .idBolsa(16L) // ✅ v1.85.0: BOLSA_INTERCONSULTA (id_bolsa=16)
+                .idBolsa(11L) // ✅ v1.75.0: BOLSA_GENERADA_X_PROFESIONAL (correcto para interconsulta)
+                              // Antes era 10 (BOLSA_GESTORA) por UNIQUE constraint, resuelto con 1 fila por especialidad
                 .idServicio(idServicioInterconsulta) // ✅ v1.47.3 Asignar idServicio para permitir selector de médicos
                 // ✅ v1.103.9: Sin gestora — va a bolsas/solicitudes para ser asignada, NO a citas-agendadas
                 .fechaAsignacion(OffsetDateTime.now())

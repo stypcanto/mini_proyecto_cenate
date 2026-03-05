@@ -5,6 +5,7 @@ import com.styp.cenate.dto.bolsas.SolicitudBolsaDTO;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import org.springframework.data.domain.Page;
@@ -2160,6 +2161,32 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
      */
     Optional<SolicitudBolsa> findFirstByPacienteDniAndTipoCitaAndActivoTrueOrderByFechaAsignacionDesc(
             String pacienteDni, String tipoCita);
+
+    /**
+     * ✅ v1.84.0: Buscar bolsa RECITA activa más reciente de un paciente por ESPECIALIDAD.
+     * Esto permite crear recitas independientes por cada especialidad médica.
+     */
+    Optional<SolicitudBolsa> findFirstByPacienteDniAndTipoCitaAndEspecialidadAndActivoTrueOrderByFechaAsignacionDesc(
+            String pacienteDni, String tipoCita, String especialidad);
+
+    /**
+     * ✅ v1.84.1: Buscar bolsa RECITA PENDIENTE de un paciente por ESPECIALIDAD.
+     * Solo considera recitas que aún no han sido atendidas (estado = PENDIENTE).
+     * Esto permite crear nueva recita si la anterior ya fue atendida.
+     * Usa @Query nativo para garantizar el comportamiento exacto.
+     */
+    @Query(value = """
+        SELECT * FROM dim_solicitud_bolsa
+        WHERE TRIM(paciente_dni) = TRIM(:pacienteDni)
+          AND UPPER(TRIM(especialidad)) = UPPER(TRIM(:especialidad))
+          AND UPPER(TRIM(estado)) = 'PENDIENTE'
+          AND UPPER(TRIM(tipo_cita)) = 'RECITA'
+        ORDER BY fecha_asignacion DESC
+        LIMIT 1
+        """, nativeQuery = true)
+    Optional<SolicitudBolsa> findRecitaPendientePorEspecialidad(
+            @Param("pacienteDni") String pacienteDni, 
+            @Param("especialidad") String especialidad);
 
     /**
      * v1.84.2: Agrupación inteligente por IPRESS Atención + Especialidad.
