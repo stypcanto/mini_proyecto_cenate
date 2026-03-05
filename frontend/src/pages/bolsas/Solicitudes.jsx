@@ -2220,8 +2220,11 @@ export default function Solicitudes({ categoriaInicial } = {}) {
                   try { const kpi = await bolsasService.obtenerKpiConFiltros({ categoriaEspecialidad: 'maraton' }); setDesgloseData(kpi); }
                   catch { setDesgloseData(null); } finally { setDesgloseLoading(false); }
                 };
-                const observados = (estadisticas.total !== null && estadisticas.pendientes !== null && estadisticas.citados !== null)
-                  ? (estadisticas.total ?? 0) - (estadisticas.pendientes ?? 0) - (estadisticas.citados ?? 0)
+                // Observados = estados excepcionales (excluye PENDIENTE_CITA, CITADO, ATENDIDO y sintéticos)
+                // Misma fórmula que la barra de progreso → números siempre coherentes
+                const ESTADOS_NO_OBS = new Set(['PENDIENTE_CITA', 'CITADO', 'ATENDIDO', 'ATENDIDO_IPRESS', 'SIN_GESTORA', 'CON_GESTORA', 'ASIGNADOS']);
+                const observados = Array.isArray(estadisticasGlobales)
+                  ? estadisticasGlobales.filter(s => !ESTADOS_NO_OBS.has(s.estado?.toUpperCase())).reduce((s, r) => s + (r.cantidad || 0), 0)
                   : null;
                 return (
                   <>
@@ -2482,7 +2485,7 @@ export default function Solicitudes({ categoriaInicial } = {}) {
             <div className="flex items-center justify-between mb-3">
               <span className="text-sm font-semibold text-gray-700">Progreso de la campaña</span>
               <span className="text-xs text-gray-400">
-                {estadisticas.total?.toLocaleString('es-PE')} pacientes en bolsa
+                {(maratonUniversoTotal ?? estadisticas.total)?.toLocaleString('es-PE')} pacientes universo
               </span>
             </div>
 
