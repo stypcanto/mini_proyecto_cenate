@@ -1724,6 +1724,26 @@ export default function MisPacientes() {
     }
   };
 
+  // ✅ v1.85.0: Validar si puede editar basado en fecha de atención (restricción 24 horas)
+  const puedeEditar = (paciente) => {
+    if (!paciente?.fechaAtencionMedica) return true; // Nunca fue atendido, puede editar
+    
+    try {
+      // Extraer fecha del string ISO (ej: "2026-03-03T15:40:52.567-05:00")
+      const match = String(paciente.fechaAtencionMedica).match(/(\d{4})-(\d{2})-(\d{2})/);
+      if (!match) return true; // Si no puede parsear, permite continuar
+      
+      const [, año, mes, día] = match;
+      const fechaAtencion = new Date(Number(año), Number(mes) - 1, Number(día));
+      const hoy = new Date();
+      hoy.setHours(0, 0, 0, 0);
+      
+      return fechaAtencion.getTime() === hoy.getTime(); // Solo true si es hoy
+    } catch {
+      return true; // Si algo falla, permite
+    }
+  };
+
   const abrirAccion = (paciente) => {
     setPacienteSeleccionado(paciente);
     setModalAccion('cambiarEstado');
@@ -3423,7 +3443,32 @@ export default function MisPacientes() {
 
             {/* Contenido Scrolleable - Más espacio blanco */}
             <div className="flex-1 overflow-y-auto p-8 bg-white space-y-6">
-              {/* Opción Atendido - DESTACADA */}
+            {/* Opción Atendido - DESTACADA — ✅ v1.85.0: Bloqueado si no es el mismo día de atención */}
+            {pacienteSeleccionado?.fechaAtencionMedica && !puedeEditar(pacienteSeleccionado) ? (
+              <div className="w-full p-4 rounded-lg border-2 border-gray-200 bg-gray-100 opacity-60 cursor-not-allowed">
+                <div className="flex items-center gap-3">
+                  <div className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 border-2 border-gray-300 text-gray-300">
+                    <Check className="w-4 h-4" strokeWidth={3} />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-base font-bold text-gray-400">Atendido <span className="text-xs font-normal">(bloqueado)</span></p>
+                    <p className="text-sm text-gray-400 font-normal mt-1">
+                      {(() => {
+                        try {
+                          const match = String(pacienteSeleccionado.fechaAtencionMedica).match(/(\d{4})-(\d{2})-(\d{2})/);
+                          if (match) {
+                            return `Esta atención fue el ${match[3]}/${match[2]}/${match[1]}. Solo se puede editar el mismo día.`;
+                          }
+                          return 'Solo se puede editar el mismo día de la atención.';
+                        } catch {
+                          return 'Solo se puede editar el mismo día de la atención.';
+                        }
+                      })()}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            ) : (
               <button
                 onClick={() => setEstadoSeleccionado('Atendido')}
                 className={`w-full text-left p-4 rounded-lg border-2 cursor-pointer transition-all font-semibold ${
@@ -3445,25 +3490,42 @@ export default function MisPacientes() {
                   </div>
                 </div>
               </button>
+            )}
 
               {/* ✅ Opciones de Atención (aparecen cuando selecciona Atendido) - Chips simples */}
               {estadoSeleccionado === 'Atendido' && (
                 <div className="space-y-3 pl-10">
+                  {/* ✅ v1.85.0: Mostrar aviso si no puede editar */}
+                  {pacienteSeleccionado?.fechaAtencionMedica && !puedeEditar(pacienteSeleccionado) && (
+                    <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg flex items-start gap-2">
+                      <AlertTriangle className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
+                      <p className="text-xs text-amber-700">
+                        Esta atención fue hace más de un día. Solo puede visualizar los datos, no editar.
+                      </p>
+                    </div>
+                  )}
+                  
                   {/* Grid chips: 3 cols normal, 2 cols cuando ENFERMERIA (4 chips) */}
                   <div className={`grid gap-3 ${esEnfermeria ? 'grid-cols-2' : 'grid-cols-3'}`}>
-                    {/* Chip 1: Recita */}
+                    {/* Chip 1: Recita — ✅ v1.85.0: Deshabilitado si restricción temporal */}
                     <button
                       onClick={() => {
+                        if (pacienteSeleccionado?.fechaAtencionMedica && !puedeEditar(pacienteSeleccionado)) return;
                         const nuevoValor = !tieneRecita;
                         setTieneRecita(nuevoValor);
                         setExpandRecita(nuevoValor);
                         if (nuevoValor && esEnfermeria) setRecitaDias(30);
                       }}
-                      className={`p-4 rounded-xl transition-all cursor-pointer text-center font-semibold border-2
+                      disabled={pacienteSeleccionado?.fechaAtencionMedica && !puedeEditar(pacienteSeleccionado)}
+                      className={`p-4 rounded-xl transition-all text-center font-semibold border-2
                         focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-green-400 ${
-                        tieneRecita
-                          ? 'bg-green-500 text-white border-green-500 shadow-md'
-                          : 'bg-green-50 text-green-800 border-green-200 hover:bg-green-100 hover:border-green-400'
+                        pacienteSeleccionado?.fechaAtencionMedica && !puedeEditar(pacienteSeleccionado)
+                          ? 'bg-gray-100 text-gray-400 border-gray-300 cursor-not-allowed opacity-60'
+                          : `cursor-pointer ${
+                            tieneRecita
+                              ? 'bg-green-500 text-white border-green-500 shadow-md'
+                              : 'bg-green-50 text-green-800 border-green-200 hover:bg-green-100 hover:border-green-400'
+                          }`
                       }`}
                     >
                       <div className="flex flex-col items-center gap-2">
@@ -3472,17 +3534,23 @@ export default function MisPacientes() {
                       </div>
                     </button>
 
-                    {/* Chip 2: Interconsulta */}
+                    {/* Chip 2: Interconsulta — ✅ v1.85.0: Deshabilitado si restricción temporal */}
                     <button
                       onClick={() => {
+                        if (pacienteSeleccionado?.fechaAtencionMedica && !puedeEditar(pacienteSeleccionado)) return;
                         setTieneInterconsulta(!tieneInterconsulta);
                         setExpandInterconsulta(!expandInterconsulta);
                       }}
-                      className={`p-4 rounded-xl transition-all cursor-pointer text-center font-semibold border-2
+                      disabled={pacienteSeleccionado?.fechaAtencionMedica && !puedeEditar(pacienteSeleccionado)}
+                      className={`p-4 rounded-xl transition-all text-center font-semibold border-2
                         focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-blue-400 ${
-                        tieneInterconsulta
-                          ? 'bg-blue-600 text-white border-blue-600 shadow-md'
-                          : 'bg-blue-50 text-blue-800 border-blue-200 hover:bg-blue-100 hover:border-blue-400'
+                        pacienteSeleccionado?.fechaAtencionMedica && !puedeEditar(pacienteSeleccionado)
+                          ? 'bg-gray-100 text-gray-400 border-gray-300 cursor-not-allowed opacity-60'
+                          : `cursor-pointer ${
+                            tieneInterconsulta
+                              ? 'bg-blue-600 text-white border-blue-600 shadow-md'
+                              : 'bg-blue-50 text-blue-800 border-blue-200 hover:bg-blue-100 hover:border-blue-400'
+                          }`
                       }`}
                     >
                       <div className="flex flex-col items-center gap-2">
@@ -3491,17 +3559,23 @@ export default function MisPacientes() {
                       </div>
                     </button>
 
-                    {/* Chip 3: Registrar Crónico */}
+                    {/* Chip 3: Registrar Crónico — ✅ v1.85.0: Deshabilitado si restricción temporal */}
                     <button
                       onClick={() => {
+                        if (pacienteSeleccionado?.fechaAtencionMedica && !puedeEditar(pacienteSeleccionado)) return;
                         setEsCronico(!esCronico);
                         setExpandCronico(!expandCronico);
                       }}
-                      className={`p-4 rounded-xl transition-all cursor-pointer text-center font-semibold border-2
+                      disabled={pacienteSeleccionado?.fechaAtencionMedica && !puedeEditar(pacienteSeleccionado)}
+                      className={`p-4 rounded-xl transition-all text-center font-semibold border-2
                         focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-purple-400 ${
-                        esCronico
-                          ? 'bg-purple-600 text-white border-purple-600 shadow-md'
-                          : 'bg-purple-50 text-purple-800 border-purple-200 hover:bg-purple-100 hover:border-purple-400'
+                        pacienteSeleccionado?.fechaAtencionMedica && !puedeEditar(pacienteSeleccionado)
+                          ? 'bg-gray-100 text-gray-400 border-gray-300 cursor-not-allowed opacity-60'
+                          : `cursor-pointer ${
+                            esCronico
+                              ? 'bg-purple-600 text-white border-purple-600 shadow-md'
+                              : 'bg-purple-50 text-purple-800 border-purple-200 hover:bg-purple-100 hover:border-purple-400'
+                          }`
                       }`}
                     >
                       <div className="flex flex-col items-center gap-2">
@@ -3510,7 +3584,7 @@ export default function MisPacientes() {
                       </div>
                     </button>
 
-                    {/* Chip 4: Ficha Enfermería — solo para rol ENFERMERIA */}
+                    {/* Chip 4: Ficha Enfermería — ✅ v1.85.0: SÍ se puede ver pero NO editar si restricción temporal */}
                     {esEnfermeria && (
                       <button
                         onClick={() => setShowFichaEnfermeriaModal(true)}
@@ -3543,8 +3617,16 @@ export default function MisPacientes() {
                         </div>
                         <select
                           value={recitaDias}
-                          onChange={(e) => setRecitaDias(parseInt(e.target.value))}
-                          className="w-full px-3 py-2 border-2 border-green-400 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 text-sm font-semibold text-green-900 bg-white appearance-none cursor-pointer"
+                          onChange={(e) => {
+                            if (pacienteSeleccionado?.fechaAtencionMedica && !puedeEditar(pacienteSeleccionado)) return;
+                            setRecitaDias(parseInt(e.target.value));
+                          }}
+                          disabled={pacienteSeleccionado?.fechaAtencionMedica && !puedeEditar(pacienteSeleccionado)}
+                          className={`w-full px-3 py-2 border-2 rounded-lg text-sm font-semibold appearance-none cursor-pointer ${
+                            pacienteSeleccionado?.fechaAtencionMedica && !puedeEditar(pacienteSeleccionado)
+                              ? 'border-gray-300 bg-gray-100 text-gray-500 cursor-not-allowed opacity-60'
+                              : 'border-green-400 focus:ring-2 focus:ring-green-500 focus:border-green-500 text-green-900 bg-white'
+                          }`}
                         >
                           {!esEnfermeria && <option value={7}>7 días</option>}
                           {!esEnfermeria && <option value={15}>15 días</option>}
@@ -3587,7 +3669,11 @@ export default function MisPacientes() {
                                   )}
                                   <button
                                     type="button"
-                                    onClick={() => setInterconsultasLista(prev => prev.filter((_, j) => j !== i))}
+                                    onClick={() => {
+                                      if (pacienteSeleccionado?.fechaAtencionMedica && !puedeEditar(pacienteSeleccionado)) return;
+                                      setInterconsultasLista(prev => prev.filter((_, j) => j !== i));
+                                    }}
+                                    disabled={pacienteSeleccionado?.fechaAtencionMedica && !puedeEditar(pacienteSeleccionado)}
                                     className="ml-0.5 hover:bg-blue-500 rounded-full w-3.5 h-3.5 flex items-center justify-center transition-colors"
                                     title={`Quitar ${label}`}
                                   >
@@ -3599,15 +3685,21 @@ export default function MisPacientes() {
                           </div>
                         )}
 
-                        {/* Selector especialidad */}
+                        {/* Selector especialidad — ✅ v1.85.0: Deshabilitado si restricción temporal */}
                         <div className="flex gap-2 mb-0">
                           <select
                             value={interconsultaSelector}
                             onChange={(e) => {
+                              if (pacienteSeleccionado?.fechaAtencionMedica && !puedeEditar(pacienteSeleccionado)) return;
                               setInterconsultaSelector(e.target.value);
-                              setInterconsultaMotivoSelector(''); // reset motivo al cambiar especialidad
+                              setInterconsultaMotivoSelector('');
                             }}
-                            className="flex-1 px-3 py-2 border-2 border-blue-400 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm font-semibold text-blue-900 bg-white"
+                            disabled={pacienteSeleccionado?.fechaAtencionMedica && !puedeEditar(pacienteSeleccionado)}
+                            className={`flex-1 px-3 py-2 border-2 rounded-lg text-sm font-semibold ${
+                              pacienteSeleccionado?.fechaAtencionMedica && !puedeEditar(pacienteSeleccionado)
+                                ? 'border-gray-300 bg-gray-100 text-gray-500 cursor-not-allowed opacity-60'
+                                : 'border-blue-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-blue-900 bg-white'
+                            }`}
                           >
                             <option value="">Selecciona especialidad...</option>
                             {especialidades
@@ -3631,8 +3723,16 @@ export default function MisPacientes() {
                             <div className="flex gap-2">
                               <select
                                 value={interconsultaMotivoSelector}
-                                onChange={(e) => setInterconsultaMotivoSelector(e.target.value)}
-                                className="flex-1 px-3 py-2 border-2 border-blue-400 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm font-semibold text-blue-900 bg-white"
+                                onChange={(e) => {
+                                  if (pacienteSeleccionado?.fechaAtencionMedica && !puedeEditar(pacienteSeleccionado)) return;
+                                  setInterconsultaMotivoSelector(e.target.value);
+                                }}
+                                disabled={pacienteSeleccionado?.fechaAtencionMedica && !puedeEditar(pacienteSeleccionado)}
+                                className={`flex-1 px-3 py-2 border-2 rounded-lg text-sm font-semibold ${
+                                  pacienteSeleccionado?.fechaAtencionMedica && !puedeEditar(pacienteSeleccionado)
+                                    ? 'border-gray-300 bg-gray-100 text-gray-500 cursor-not-allowed opacity-60'
+                                    : 'border-blue-400 focus:ring-2 focus:ring-blue-500 text-blue-900 bg-white'
+                                }`}
                               >
                                 <option value="">Selecciona motivo...</option>
                                 {motivosInterconsulta.map(m => (
@@ -3643,8 +3743,9 @@ export default function MisPacientes() {
                               </select>
                               <button
                                 type="button"
-                                disabled={!interconsultaMotivoSelector}
+                                disabled={!interconsultaMotivoSelector || (pacienteSeleccionado?.fechaAtencionMedica && !puedeEditar(pacienteSeleccionado))}
                                 onClick={() => {
+                                  if (pacienteSeleccionado?.fechaAtencionMedica && !puedeEditar(pacienteSeleccionado)) return;
                                   if (interconsultaSelector && interconsultaMotivoSelector) {
                                     const motivoObj = motivosInterconsulta.find(m => m.descripcion === interconsultaMotivoSelector);
                                     setInterconsultasLista(prev => [...prev, {
@@ -3674,8 +3775,9 @@ export default function MisPacientes() {
                             <div className="flex-1" />
                             <button
                               type="button"
-                              disabled={!interconsultaSelector}
+                              disabled={!interconsultaSelector || (pacienteSeleccionado?.fechaAtencionMedica && !puedeEditar(pacienteSeleccionado))}
                               onClick={() => {
+                                if (pacienteSeleccionado?.fechaAtencionMedica && !puedeEditar(pacienteSeleccionado)) return;
                                 if (interconsultaSelector && !interconsultasLista.includes(interconsultaSelector)) {
                                   setInterconsultasLista(prev => [...prev, interconsultaSelector]);
                                   setInterconsultaSelector('');
@@ -3707,21 +3809,36 @@ export default function MisPacientes() {
                         <div className="space-y-1.5">
                           {['Hipertensión', 'Diabetes'].map((enfermedad) => {
                             const bloqueada = enfermedadesCronicasOriginales.includes(enfermedad);
+                            const deshabilitadoPorTiempo = pacienteSeleccionado?.fechaAtencionMedica && !puedeEditar(pacienteSeleccionado);
                             return (
                               <label
                                 key={enfermedad}
-                                className={`flex items-center gap-3 p-2 rounded-lg transition-colors ${bloqueada ? 'cursor-not-allowed opacity-80 bg-purple-100' : 'cursor-pointer hover:bg-purple-100'}`}
-                                title={bloqueada ? 'Enfermedad ya registrada — no se puede eliminar' : ''}
+                                className={`flex items-center gap-3 p-2 rounded-lg transition-colors ${
+                                  bloqueada || deshabilitadoPorTiempo
+                                    ? 'cursor-not-allowed opacity-80 bg-purple-100'
+                                    : 'cursor-pointer hover:bg-purple-100'
+                                }`}
+                                title={
+                                  bloqueada 
+                                    ? 'Enfermedad ya registrada — no se puede eliminar'
+                                    : deshabilitadoPorTiempo
+                                    ? 'Solo se puede editar el mismo día de la atención'
+                                    : ''
+                                }
                               >
                                 <input
                                   type="checkbox"
                                   checked={enfermedadesCronicas.includes(enfermedad)}
-                                  onChange={() => toggleEnfermedad(enfermedad)}
-                                  disabled={bloqueada}
+                                  onChange={() => {
+                                    if (deshabilitadoPorTiempo) return;
+                                    toggleEnfermedad(enfermedad);
+                                  }}
+                                  disabled={bloqueada || deshabilitadoPorTiempo}
                                   className="w-4 h-4 text-purple-600 rounded disabled:cursor-not-allowed"
                                 />
                                 <span className="text-xs font-medium text-gray-800">{enfermedad}</span>
                                 {bloqueada && <span className="ml-auto text-xs text-purple-500 font-semibold">Ya registrado</span>}
+                                {deshabilitadoPorTiempo && !bloqueada && <span className="ml-auto text-xs text-amber-600 font-semibold">Solo lectura</span>}
                               </label>
                             );
                           })}
@@ -4110,8 +4227,9 @@ export default function MisPacientes() {
                 </div>
               )}
 
-              {/* Opción Pendiente — ✅ v1.103.13: Deshabilitado si ya fue ATENDIDO */}
-              {pacienteSeleccionado?.condicion?.toUpperCase() === 'ATENDIDO' ? (
+              {/* Opción Pendiente — ✅ v1.103.13 + v1.85.0: Deshabilitado si ya fue ATENDIDO o restricción temporal */}
+              {(pacienteSeleccionado?.condicion?.toUpperCase() === 'ATENDIDO' || 
+                (pacienteSeleccionado?.fechaAtencionMedica && !puedeEditar(pacienteSeleccionado))) ? (
                 <div className="w-full p-4 rounded-lg border-2 border-gray-200 bg-gray-100 opacity-60 cursor-not-allowed">
                   <div className="flex items-center gap-3">
                     <div className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 border-2 border-gray-300 text-gray-300">
@@ -4119,7 +4237,11 @@ export default function MisPacientes() {
                     </div>
                     <div className="flex-1">
                       <p className="text-base font-bold text-gray-400">Pendiente <span className="text-xs font-normal">(bloqueado)</span></p>
-                      <p className="text-sm text-gray-400 font-normal mt-1">No se puede cambiar a Pendiente después de Atendido</p>
+                      <p className="text-sm text-gray-400 font-normal mt-1">
+                        {pacienteSeleccionado?.condicion?.toUpperCase() === 'ATENDIDO'
+                          ? 'No se puede cambiar a Pendiente después de Atendido'
+                          : 'Solo se puede editar el mismo día de la atención'}
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -4147,8 +4269,9 @@ export default function MisPacientes() {
               </button>
               )}
 
-              {/* Opción Deserción — ✅ v1.103.13: Deshabilitado si ya fue ATENDIDO */}
-              {pacienteSeleccionado?.condicion?.toUpperCase() === 'ATENDIDO' ? (
+              {/* Opción Deserción — ✅ v1.103.13 + v1.85.0: Deshabilitado si ya fue ATENDIDO o restricción temporal */}
+              {(pacienteSeleccionado?.condicion?.toUpperCase() === 'ATENDIDO' || 
+                (pacienteSeleccionado?.fechaAtencionMedica && !puedeEditar(pacienteSeleccionado))) ? (
                 <div className="w-full p-4 rounded-lg border-2 border-gray-200 bg-gray-100 opacity-60 cursor-not-allowed">
                   <div className="flex items-center gap-3">
                     <div className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 border-2 border-gray-300 text-gray-300">
@@ -4156,7 +4279,11 @@ export default function MisPacientes() {
                     </div>
                     <div className="flex-1">
                       <p className="text-base font-bold text-gray-400">Deserción <span className="text-xs font-normal">(bloqueado)</span></p>
-                      <p className="text-sm text-gray-400 font-normal mt-1">No se puede cambiar a Deserción después de Atendido</p>
+                      <p className="text-sm text-gray-400 font-normal mt-1">
+                        {pacienteSeleccionado?.condicion?.toUpperCase() === 'ATENDIDO'
+                          ? 'No se puede cambiar a Deserción después de Atendido'
+                          : 'Solo se puede editar el mismo día de la atención'}
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -4324,8 +4451,9 @@ export default function MisPacientes() {
                       procesarAccion();
                     }
                   }}
-                  disabled={procesando}
-                  className="px-6 py-2.5 bg-[#0A5BA9] text-white rounded-lg hover:bg-[#083d78] transition disabled:opacity-50 font-semibold text-sm flex items-center justify-center gap-2 shadow-sm"
+                  disabled={procesando || (pacienteSeleccionado?.fechaAtencionMedica && !puedeEditar(pacienteSeleccionado))}
+                  title={pacienteSeleccionado?.fechaAtencionMedica && !puedeEditar(pacienteSeleccionado) ? 'Solo se puede editar el mismo día de la atención' : ''}
+                  className="px-6 py-2.5 bg-[#0A5BA9] text-white rounded-lg hover:bg-[#083d78] transition disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-400 disabled:hover:bg-gray-400 font-semibold text-sm flex items-center justify-center gap-2 shadow-sm"
                 >
                   {procesando ? (
                     <>
@@ -5518,8 +5646,14 @@ export default function MisPacientes() {
               </button>
             </div>
 
-            {/* Body scrollable */}
-            <div className="overflow-y-auto flex-1 px-5 py-4 space-y-3">
+            {/* Body scrollable — ✅ v1.85.0: Deshabilitado si restricción temporal */}
+            {(() => {
+              const deshabilitadoPorTiempo = pacienteSeleccionado?.fechaAtencionMedica && !puedeEditar(pacienteSeleccionado);
+              return (
+                <>
+                  <div className="overflow-y-auto flex-1 px-5 py-4 space-y-3"
+                       style={deshabilitadoPorTiempo ? { opacity: 0.65, pointerEvents: 'none' } : {}}
+                  >
 
               {/* Control de Dispositivos */}
               <div className="border border-gray-200 rounded-xl overflow-hidden">
@@ -5942,8 +6076,10 @@ export default function MisPacientes() {
                   </div>
                 );
               })()}
-
-            </div>
+                  </div>
+                </>
+              );
+            })()}
 
             {/* Footer */}
             <div className="px-5 py-4 border-t bg-gray-50 rounded-b-2xl flex justify-end gap-3">

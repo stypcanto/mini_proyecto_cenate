@@ -84,6 +84,61 @@ public class AtenderPacienteService {
         log.info("✅ [v1.85.0] Validación OK: atención del mismo día, se permite modificar");
     }
 
+    /**
+     * ✅ v1.85.1: Valida rangos de valores en Ficha de Enfermería
+     * Previene numeric field overflow al intentar guardar valores fuera de rango NUMERIC(5,2)
+     */
+    private void validarRangosFichaEnfermeria(BigDecimal pesoKg, BigDecimal tallaCm, 
+                                               BigDecimal glucosa, BigDecimal imc, AtenderPacienteRequest request) {
+        if (pesoKg != null) {
+            if (pesoKg.compareTo(BigDecimal.valueOf(20)) < 0 || pesoKg.compareTo(BigDecimal.valueOf(200)) > 0) {
+                throw new IllegalArgumentException(
+                    "❌ Peso fuera de rango: " + pesoKg + " kg. Debe estar entre 20 y 200 kg.");
+            }
+        }
+
+        if (tallaCm != null) {
+            if (tallaCm.compareTo(BigDecimal.valueOf(50)) < 0 || tallaCm.compareTo(BigDecimal.valueOf(250)) > 0) {
+                throw new IllegalArgumentException(
+                    "❌ Talla fuera de rango: " + tallaCm + " cm. Debe estar entre 50 y 250 cm.");
+            }
+        }
+
+        if (glucosa != null) {
+            if (glucosa.compareTo(BigDecimal.valueOf(0)) < 0 || glucosa.compareTo(BigDecimal.valueOf(600)) > 0) {
+                throw new IllegalArgumentException(
+                    "❌ Glucosa fuera de rango: " + glucosa + " mg/dL. Debe estar entre 0 y 600 mg/dL.");
+            }
+        }
+
+        if (imc != null) {
+            if (imc.compareTo(BigDecimal.valueOf(8)) < 0 || imc.compareTo(BigDecimal.valueOf(70)) > 0) {
+                throw new IllegalArgumentException(
+                    "❌ IMC fuera de rango: " + imc + ". Debe estar entre 8 y 70.");
+            }
+        }
+
+        // Validar presión arterial si viene como número (aunque típicamente es texto "120/80")
+        if (request.getPresionArterial() != null && !request.getPresionArterial().trim().isEmpty()) {
+            String pa = request.getPresionArterial().trim();
+            // Si contiene "/" es el formato estándar "SIS/DIA"
+            if (!pa.contains("/")) {
+                try {
+                    BigDecimal paNumero = new BigDecimal(pa);
+                    if (paNumero.compareTo(BigDecimal.valueOf(0)) < 0 || paNumero.compareTo(BigDecimal.valueOf(300)) > 0) {
+                        throw new IllegalArgumentException(
+                            "❌ Presión Arterial fuera de rango: " + pa + ". Debe estar entre 0 y 300 mmHg.");
+                    }
+                } catch (NumberFormatException ignored) {
+                    // Si no es número, dejar pasar (formato "120/80" es válido)
+                }
+            }
+        }
+
+        log.info("✅ [v1.85.1] Validación de rangos OK: peso={}, talla={}, glucosa={}, imc={}", 
+                pesoKg, tallaCm, glucosa, imc);
+    }
+
     @Transactional
     public List<String> atenderPaciente(Long idSolicitudBolsa, String especialidadActual, AtenderPacienteRequest request) {
         log.info("🏥 [v1.103.6] Registrando atención - Solicitud: {}, especialidadActual='{}' (length={})", 
@@ -546,6 +601,9 @@ public class AtenderPacienteService {
                 try { glucosaValor = new BigDecimal(request.getGlucosa()); } catch (NumberFormatException ignored) {}
             }
 
+            // ✅ v1.85.1: VALIDACIÓN DE RANGOS — Evitar numeric field overflow
+            validarRangosFichaEnfermeria(pesoKg, tallaCm, glucosaValor, imcValor, request);
+
             // ✅ Buscar ficha existente para actualizar en lugar de duplicar
             var fichaExistente = atencionClinicaRepository
                     .findFirstByPkAseguradoAndIdTipoAtencionOrderByCreatedAtDesc(
@@ -595,12 +653,25 @@ public class AtenderPacienteService {
             log.info("✅ [v6.0.0] Ficha de Enfermería CREADA — id_atencion: {} / DNI: {}",
                     guardada.getIdAtencion(), solicitud.getPacienteDni());
             return guardada.getIdAtencion();
+        } catch (IllegalArgumentException validationEx) {
+            // ✅ v1.85.1: Error de validación de rangos
+            log.error("❌ [v1.85.1] Error de VALIDACIÓN en Ficha Enfermería: {}", validationEx.getMessage());
+            throw new RuntimeException("Datos de Ficha de Enfermería fuera de rango: " + validationEx.getMessage(), validationEx);
         } catch (Exception e) {
             // ✅ v1.103.7: Limpiar entidad de la sesión Hibernate para evitar "null identifier" en flush posterior
             if (ficha != null) {
                 try { entityManager.detach(ficha); } catch (Exception ignored) {}
             }
-            log.warn("⚠️ [v1.103.7] Error guardando Ficha Enfermería (no bloquea la atención): {}", e.getMessage());
+            String errorMsg = e.getMessage() != null ? e.getMessage() : e.toString();
+            if (errorMsg.contains("numeric field overflow")) {
+                log.error("❌ [v1.85.1] NUMERIC OVERFLOW al guardar Ficha Enfermería: {}", errorMsg);
+                log.error("   Causas posibles: glucosa > 999, peso > 999, talla > 999, o campo numérico de BD con rango insuficiente");
+                throw new RuntimeException(
+                    "Error al guardar Ficha: Un campo numérico está fuera de rango permitido. " +
+                    "Verifique que: glucosa < 999, peso < 999, talla < 999. " +
+                    "Detalle: " + errorMsg, e);
+            }
+            log.warn("⚠️ [v1.103.7] Error guardando Ficha Enfermería (no bloquea la atención): {}", errorMsg);
             return null;
         }
     }
