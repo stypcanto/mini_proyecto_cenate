@@ -514,7 +514,8 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
                OR (CAST(:categoriaEspecialidad AS VARCHAR) = 'especialidades' AND LOWER(COALESCE(sb.especialidad,'')) NOT IN ('medicina general', 'enfermeria') AND sb.id_bolsa != 1)
                OR (CAST(:categoriaEspecialidad AS VARCHAR) = 'bolsa107'       AND sb.id_bolsa = 1)
                OR (CAST(:categoriaEspecialidad AS VARCHAR) = 'recita'         AND sb.id_bolsa = 15)
-               OR (CAST(:categoriaEspecialidad AS VARCHAR) = 'interconsulta'  AND sb.id_bolsa = 16))
+               OR (CAST(:categoriaEspecialidad AS VARCHAR) = 'interconsulta'  AND sb.id_bolsa = 16)
+               OR (CAST(:categoriaEspecialidad AS VARCHAR) = 'maraton'        AND sb.id_bolsa = 17))
           AND (CAST(:estrategia AS VARCHAR) IS NULL
                OR sb.paciente_dni IN (
                    SELECT pe.pk_asegurado FROM paciente_estrategia pe
@@ -553,7 +554,8 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
                OR (CAST(:categoriaEspecialidad AS VARCHAR) = 'especialidades' AND LOWER(COALESCE(sb.especialidad,'')) NOT IN ('medicina general', 'enfermeria') AND sb.id_bolsa != 1)
                OR (CAST(:categoriaEspecialidad AS VARCHAR) = 'bolsa107'       AND sb.id_bolsa = 1)
                OR (CAST(:categoriaEspecialidad AS VARCHAR) = 'recita'         AND sb.id_bolsa = 15)
-               OR (CAST(:categoriaEspecialidad AS VARCHAR) = 'interconsulta'  AND sb.id_bolsa = 16))
+               OR (CAST(:categoriaEspecialidad AS VARCHAR) = 'interconsulta'  AND sb.id_bolsa = 16)
+               OR (CAST(:categoriaEspecialidad AS VARCHAR) = 'maraton'        AND sb.id_bolsa = 17))
           AND (CAST(:estrategia AS VARCHAR) IS NULL
                OR sb.paciente_dni IN (
                    SELECT pe.pk_asegurado FROM paciente_estrategia pe
