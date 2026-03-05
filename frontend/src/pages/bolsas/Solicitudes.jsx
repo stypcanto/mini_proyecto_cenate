@@ -2205,103 +2205,88 @@ export default function Solicitudes({ categoriaInicial } = {}) {
           )}
           <div className={`grid grid-cols-1 md:grid-cols-2 gap-5 animate-fade-in ${categoriaInicial === 'maraton' ? 'lg:grid-cols-4' : 'lg:grid-cols-4'}`}>
 
-            {/* ═══ CARDS MARATÓN — Embudo de izquierda a derecha ═══ */}
+            {/* ═══ CARDS MARATÓN — Embudo compacto estilo "Fila de Mando" ═══ */}
             {categoriaInicial === 'maraton' ? (<>
 
-              {/* M1. UNIVERSO — Azul/Slate: contexto neutro */}
-              <div className="rounded-xl p-5 text-white overflow-hidden relative cursor-default"
-                style={{ background: 'linear-gradient(135deg, #334155 0%, #1e293b 60%, #0f172a 100%)', boxShadow: '0 4px 20px -4px rgba(15,23,42,0.5), inset 0 1px 0 rgba(255,255,255,0.08)' }}>
-                <div className="absolute inset-0 rounded-xl pointer-events-none" style={{ background: 'linear-gradient(to bottom, rgba(0,0,0,0) 0%, rgba(0,0,0,0.2) 100%)' }} />
-                <div className="relative z-10">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-[10px] font-bold uppercase tracking-[0.14em] text-white/50">① Universo</span>
-                    <Database className="w-4 h-4 text-white/40" strokeWidth={2} />
-                  </div>
-                  <div className="text-4xl font-black text-white leading-none mb-1" style={{ fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.03em' }}>
-                    {estadisticas.total === null ? <span className="text-xl opacity-40 animate-pulse">—</span> : estadisticas.total.toLocaleString('es-PE')}
-                  </div>
-                  <div className="text-[11px] text-white/50 font-medium">Total en bolsa Maratón</div>
-                </div>
-              </div>
+              {/* Fila de KPIs — 4 cards compactos en línea */}
+              <div className="col-span-full grid grid-cols-4 gap-3">
 
-              {/* FLECHA */}
-              <div className="hidden lg:flex items-center justify-center -mx-2 z-10 pointer-events-none">
-                <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M4 10h12M12 5l5 5-5 5" stroke="rgba(148,163,184,0.5)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
-              </div>
-
-              {/* M2. SIN GESTORA — Rojo alerta: cuello de botella */}
-              <div className="rounded-xl p-5 text-white overflow-hidden relative cursor-default"
-                style={{ background: 'linear-gradient(135deg, #dc2626 0%, #b91c1c 50%, #7f1d1d 100%)', boxShadow: '0 4px 24px -4px rgba(185,28,28,0.6), inset 0 1px 0 rgba(255,255,255,0.1)' }}>
-                <div className="absolute inset-0 rounded-xl pointer-events-none" style={{ background: 'linear-gradient(to bottom, rgba(0,0,0,0) 0%, rgba(0,0,0,0.22) 100%)' }} />
-                {/* Pulso de alerta */}
-                <div className="absolute top-3 right-3 w-2.5 h-2.5 rounded-full bg-red-300 animate-ping opacity-60" />
-                <div className="absolute top-3 right-3 w-2.5 h-2.5 rounded-full bg-white opacity-90" />
-                <div className="relative z-10">
-                  <div className="flex items-center gap-1.5 mb-2">
-                    <span className="text-[10px] font-bold uppercase tracking-[0.14em] text-white/60">② Sin Gestora 🚨</span>
-                  </div>
-                  <div className="text-4xl font-black text-white leading-none mb-1" style={{ fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.03em' }}>
-                    {estadisticas.sinAsignar === null ? <span className="text-xl opacity-40 animate-pulse">—</span> : estadisticas.sinAsignar.toLocaleString('es-PE')}
-                  </div>
-                  <div className="text-[11px] text-red-200 font-semibold">
-                    {estadisticas.sinAsignar !== null && estadisticas.total
-                      ? `⚠ ${((estadisticas.sinAsignar / estadisticas.total) * 100).toFixed(1)}% sin asignar`
-                      : 'Trabajo no tocado'}
+                {/* M1. UNIVERSO */}
+                <div className="bg-white rounded-xl border border-gray-200 border-l-4 px-4 py-3.5 shadow-sm"
+                  style={{ borderLeftColor: '#64748b' }}>
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-1">① Universo</p>
+                      <p className="text-3xl font-black text-gray-900 leading-none tabular-nums">
+                        {estadisticas.total === null ? <span className="text-xl text-gray-300 animate-pulse">—</span> : estadisticas.total.toLocaleString('es-PE')}
+                      </p>
+                      <p className="text-xs text-gray-400 mt-1">Total en bolsa</p>
+                    </div>
+                    <Database className="w-4 h-4 text-gray-300 flex-shrink-0 mt-0.5" strokeWidth={2} />
                   </div>
                 </div>
-              </div>
 
-              {/* FLECHA */}
-              <div className="hidden lg:flex items-center justify-center -mx-2 z-10 pointer-events-none">
-                <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M4 10h12M12 5l5 5-5 5" stroke="rgba(148,163,184,0.5)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
-              </div>
-
-              {/* M3. PENDIENTE CITAR — Naranja: volumen de trabajo */}
-              <div className="rounded-xl p-5 text-white overflow-hidden relative cursor-default"
-                style={{ background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 50%, #b45309 100%)', boxShadow: '0 4px 20px -4px rgba(180,83,9,0.55), inset 0 1px 0 rgba(255,255,255,0.12)' }}>
-                <div className="absolute inset-0 rounded-xl pointer-events-none" style={{ background: 'linear-gradient(to bottom, rgba(0,0,0,0) 0%, rgba(0,0,0,0.2) 100%)' }} />
-                <div className="relative z-10">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-[10px] font-bold uppercase tracking-[0.14em] text-white/60">③ En Gestión</span>
-                    <Clock className="w-4 h-4 text-white/50" strokeWidth={2} />
-                  </div>
-                  <div className="text-4xl font-black text-white leading-none mb-1" style={{ fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.03em' }}>
-                    {estadisticas.pendientes === null ? <span className="text-xl opacity-40 animate-pulse">—</span> : estadisticas.pendientes.toLocaleString('es-PE')}
-                  </div>
-                  <div className="text-[11px] text-yellow-100/80 font-medium">
-                    {estadisticas.pendientes !== null && estadisticas.total
-                      ? `${((estadisticas.pendientes / estadisticas.total) * 100).toFixed(1)}% del total · Pendiente citar`
-                      : 'Esperando llamada'}
+                {/* M2. SIN GESTORA — Alerta pesada */}
+                <div className="bg-white rounded-xl border border-red-200 border-l-4 px-4 py-3.5"
+                  style={{ borderLeftColor: '#dc2626', boxShadow: '0 4px 16px -2px rgba(220,38,38,0.25), 0 1px 4px rgba(220,38,38,0.12)' }}>
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <p className="text-[10px] font-bold uppercase tracking-widest text-red-400 mb-1 flex items-center gap-1">
+                        ② Sin Gestora <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 animate-ping" />
+                      </p>
+                      <p className="text-3xl font-black text-red-700 leading-none tabular-nums">
+                        {estadisticas.sinAsignar === null ? <span className="text-xl text-red-200 animate-pulse">—</span> : estadisticas.sinAsignar.toLocaleString('es-PE')}
+                      </p>
+                      <p className="text-xs font-semibold text-red-500 mt-1">
+                        {estadisticas.sinAsignar !== null && estadisticas.total
+                          ? `⚠ ${((estadisticas.sinAsignar / estadisticas.total) * 100).toFixed(1)}% sin asignar`
+                          : 'Trabajo no tocado'}
+                      </p>
+                    </div>
+                    <AlertTriangle className="w-4 h-4 text-red-300 flex-shrink-0 mt-0.5" strokeWidth={2} />
                   </div>
                 </div>
-              </div>
 
-              {/* FLECHA */}
-              <div className="hidden lg:flex items-center justify-center -mx-2 z-10 pointer-events-none">
-                <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M4 10h12M12 5l5 5-5 5" stroke="rgba(148,163,184,0.5)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
-              </div>
+                {/* M3. EN GESTIÓN */}
+                <div className="bg-white rounded-xl border border-gray-200 border-l-4 px-4 py-3.5 shadow-sm"
+                  style={{ borderLeftColor: '#d97706' }}>
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <p className="text-[10px] font-bold uppercase tracking-widest text-amber-500 mb-1">③ En Gestión</p>
+                      <p className="text-3xl font-black text-gray-900 leading-none tabular-nums">
+                        {estadisticas.pendientes === null ? <span className="text-xl text-gray-300 animate-pulse">—</span> : estadisticas.pendientes.toLocaleString('es-PE')}
+                      </p>
+                      <p className="text-xs text-amber-600 font-medium mt-1">
+                        {estadisticas.pendientes !== null && estadisticas.total
+                          ? `${((estadisticas.pendientes / estadisticas.total) * 100).toFixed(1)}% · Pendiente citar`
+                          : 'Esperando llamada'}
+                      </p>
+                    </div>
+                    <Clock className="w-4 h-4 text-amber-200 flex-shrink-0 mt-0.5" strokeWidth={2} />
+                  </div>
+                </div>
 
-              {/* M4. CITADOS — Verde: conversión / meta */}
-              <div className="rounded-xl p-5 text-white overflow-hidden relative cursor-default"
-                style={{ background: 'linear-gradient(135deg, #16a34a 0%, #15803d 50%, #14532d 100%)', boxShadow: '0 4px 20px -4px rgba(21,128,61,0.55), inset 0 1px 0 rgba(255,255,255,0.12)' }}>
-                <div className="absolute inset-0 rounded-xl pointer-events-none" style={{ background: 'linear-gradient(to bottom, rgba(0,0,0,0) 0%, rgba(0,0,0,0.2) 100%)' }} />
-                <div className="relative z-10">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-[10px] font-bold uppercase tracking-[0.14em] text-white/60">④ Citados ✅</span>
-                    <CalendarCheck className="w-4 h-4 text-white/50" strokeWidth={2} />
-                  </div>
-                  <div className="text-4xl font-black text-white leading-none mb-1" style={{ fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.03em' }}>
-                    {estadisticas.citados === null ? <span className="text-xl opacity-40 animate-pulse">—</span> : estadisticas.citados.toLocaleString('es-PE')}
-                  </div>
-                  <div className="text-[11px] text-green-200 font-semibold">
-                    {estadisticas.citados !== null && estadisticas.total
-                      ? `${((estadisticas.citados / estadisticas.total) * 100).toFixed(1)}% conversión`
-                      : 'Con cita confirmada'}
+                {/* M4. CITADOS */}
+                <div className="bg-white rounded-xl border border-gray-200 border-l-4 px-4 py-3.5 shadow-sm"
+                  style={{ borderLeftColor: '#16a34a' }}>
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <p className="text-[10px] font-bold uppercase tracking-widest text-green-600 mb-1">④ Citados ✅</p>
+                      <p className="text-3xl font-black text-gray-900 leading-none tabular-nums">
+                        {estadisticas.citados === null ? <span className="text-xl text-gray-300 animate-pulse">—</span> : estadisticas.citados.toLocaleString('es-PE')}
+                      </p>
+                      <p className="text-xs text-green-600 font-semibold mt-1">
+                        {estadisticas.citados !== null && estadisticas.total
+                          ? `${((estadisticas.citados / estadisticas.total) * 100).toFixed(1)}% conversión`
+                          : 'Cita confirmada'}
+                      </p>
+                    </div>
+                    <CalendarCheck className="w-4 h-4 text-green-200 flex-shrink-0 mt-0.5" strokeWidth={2} />
                   </div>
                 </div>
               </div>
 
-              {/* OBSERVADOS — Fila secundaria compacta */}
+              {/* OBSERVADOS — Fila compacta secundaria */}
               {(() => {
                 const observados = (estadisticas.total !== null && estadisticas.pendientes !== null && estadisticas.citados !== null)
                   ? estadisticas.total - estadisticas.pendientes - estadisticas.citados : null;
