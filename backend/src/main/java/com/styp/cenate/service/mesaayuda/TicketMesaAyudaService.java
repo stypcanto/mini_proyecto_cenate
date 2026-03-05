@@ -334,6 +334,7 @@ public class TicketMesaAyudaService {
             LocalDate fechaHasta,
             LocalDate fechaAtencionDesde,
             LocalDate fechaAtencionHasta,
+            Long idMotivo,
             Pageable pageable) {
 
         // Normalizar parámetros
@@ -403,6 +404,11 @@ public class TicketMesaAyudaService {
             jpql.append(" AND t.fechaAtencion < :fechaAtencionHasta");
             countJpql.append(" AND t.fechaAtencion < :fechaAtencionHasta");
             params.put("fechaAtencionHasta", fechaAtencionHasta.plusDays(1).atStartOfDay());
+        }
+        if (idMotivo != null) {
+            jpql.append(" AND t.idMotivo = :idMotivo");
+            countJpql.append(" AND t.idMotivo = :idMotivo");
+            params.put("idMotivo", idMotivo);
         }
 
         jpql.append(" ORDER BY t.fechaCreacion DESC");

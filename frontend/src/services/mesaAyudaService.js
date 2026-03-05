@@ -72,6 +72,7 @@ export const mesaAyudaService = {
     if (filtros.fechaHasta) params.append('fechaHasta', filtros.fechaHasta);
     if (filtros.fechaAtencionDesde) params.append('fechaAtencionDesde', filtros.fechaAtencionDesde);
     if (filtros.fechaAtencionHasta) params.append('fechaAtencionHasta', filtros.fechaAtencionHasta);
+    if (filtros.idMotivo) params.append('idMotivo', filtros.idMotivo);
 
     const url = `${ENDPOINT}/tickets/buscar?${params.toString()}`;
     console.log('🔍 Buscando tickets con filtros:', filtros);

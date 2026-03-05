@@ -86,6 +86,10 @@ function ListaTickets() {
   const [fechaAtencionDesde, setFechaAtencionDesde] = useState('');
   const [fechaAtencionHasta, setFechaAtencionHasta] = useState('');
 
+  // Filtro motivo
+  const [filtroMotivo, setFiltroMotivo] = useState('');
+  const [motivos, setMotivos] = useState([]);
+
   // ✅ v1.67.2: Datos de médicos cargados desde backend con conteo
   const [medicosConTickets, setMedicosConTickets] = useState([]);
 
@@ -138,12 +142,27 @@ function ListaTickets() {
     setFiltroMedico('');
     setFiltroSemaforo('');
     setFiltroAsignado('');
+    setFiltroMotivo('');
     setFechaDesde('');
     setFechaHasta('');
     setFechaAtencionDesde('');
     setFechaAtencionHasta('');
     setSelectedTickets(new Set());
   }, [location.pathname]);
+
+  // Cargar motivos para el filtro
+  useEffect(() => {
+    const cargarMotivos = async () => {
+      try {
+        const { motivosMesaAyudaService } = await import('../../services/motivosMesaAyudaService');
+        const data = await motivosMesaAyudaService.obtenerTodos();
+        setMotivos(data);
+      } catch (err) {
+        console.error('Error cargando motivos:', err);
+      }
+    };
+    cargarMotivos();
+  }, []);
 
   // ✅ v1.67.2: Cargar médicos con conteo desde backend
   useEffect(() => {
@@ -178,7 +197,7 @@ function ListaTickets() {
   // ✅ v1.67.1: Fetch con búsqueda backend paginada
   useEffect(() => {
     fetchTickets();
-  }, [currentPage, pageSize, modoConfig.estadosBackend, filtroPrioridad, filtroMedico, filtroAsignado, fechaDesde, fechaHasta, fechaAtencionDesde, fechaAtencionHasta]);
+  }, [currentPage, pageSize, modoConfig.estadosBackend, filtroPrioridad, filtroMedico, filtroAsignado, filtroMotivo, fechaDesde, fechaHasta, fechaAtencionDesde, fechaAtencionHasta]);
 
   // 🔄 Auto-refresh cada 10 s solo en tickets pendientes
   useEffect(() => {
@@ -187,7 +206,7 @@ function ListaTickets() {
       fetchTickets(true); // silent: no muestra spinner, no interrumpe al usuario
     }, 10000);
     return () => clearInterval(intervalo);
-  }, [esPendientes, currentPage, pageSize, modoConfig.estadosBackend, filtroPrioridad, filtroMedico, filtroAsignado, fechaDesde, fechaHasta, fechaAtencionDesde, fechaAtencionHasta]);
+  }, [esPendientes, currentPage, pageSize, modoConfig.estadosBackend, filtroPrioridad, filtroMedico, filtroAsignado, filtroMotivo, fechaDesde, fechaHasta, fechaAtencionDesde, fechaAtencionHasta]);
 
   // ✅ v1.67.1: Debounce para campos de texto (DNI y N° Ticket)
   useEffect(() => {
@@ -247,6 +266,7 @@ function ListaTickets() {
         dniPaciente: busquedaDni || undefined,
         numeroTicket: busquedaNumeroTicket || undefined,
         idMedico: filtroMedico || undefined,
+        idMotivo: filtroMotivo || undefined,
         nombreAsignado: filtroAsignado || undefined,
         fechaDesde: fechaDesde || undefined,
         fechaHasta: fechaHasta || undefined,
@@ -570,18 +590,18 @@ function ListaTickets() {
           <div className="flex items-center gap-2">
             <SlidersHorizontal size={16} className="text-[#0a5ba9]" />
             <span className="text-sm font-semibold text-gray-700">Filtros de búsqueda</span>
-            {(busquedaNumeroTicket || busquedaDni || filtroMedico || filtroPrioridad || filtroAsignado || filtroSemaforo || fechaDesde || fechaHasta || fechaAtencionDesde || fechaAtencionHasta) && (
+            {(busquedaNumeroTicket || busquedaDni || filtroMedico || filtroPrioridad || filtroAsignado || filtroMotivo || filtroSemaforo || fechaDesde || fechaHasta || fechaAtencionDesde || fechaAtencionHasta) && (
               <span className="ml-1 px-2 py-0.5 bg-[#0a5ba9] text-white text-[10px] font-bold rounded-full">
-                {[busquedaNumeroTicket, busquedaDni, filtroMedico, filtroPrioridad, filtroAsignado, filtroSemaforo, fechaDesde, fechaHasta, fechaAtencionDesde, fechaAtencionHasta].filter(Boolean).length}
+                {[busquedaNumeroTicket, busquedaDni, filtroMedico, filtroPrioridad, filtroAsignado, filtroMotivo, filtroSemaforo, fechaDesde, fechaHasta, fechaAtencionDesde, fechaAtencionHasta].filter(Boolean).length}
               </span>
             )}
           </div>
           <div className="flex items-center gap-2">
-            {(busquedaNumeroTicket || busquedaDni || filtroMedico || filtroPrioridad || filtroAsignado || filtroSemaforo || fechaDesde || fechaHasta || fechaAtencionDesde || fechaAtencionHasta) && (
+            {(busquedaNumeroTicket || busquedaDni || filtroMedico || filtroPrioridad || filtroAsignado || filtroMotivo || filtroSemaforo || fechaDesde || fechaHasta || fechaAtencionDesde || fechaAtencionHasta) && (
               <button
                 onClick={() => {
                   setBusquedaNumeroTicket(''); setBusquedaDni(''); setFiltroMedico(''); setFiltroPrioridad('');
-                  setFiltroAsignado(''); setFiltroSemaforo(''); setFechaDesde(''); setFechaHasta(''); setFechaAtencionDesde(''); setFechaAtencionHasta('');
+                  setFiltroAsignado(''); setFiltroMotivo(''); setFiltroSemaforo(''); setFechaDesde(''); setFechaHasta(''); setFechaAtencionDesde(''); setFechaAtencionHasta('');
                   setCurrentPage(0);
                 }}
                 className="text-xs text-gray-500 hover:text-red-500 transition-colors flex items-center gap-1"
@@ -692,7 +712,7 @@ function ListaTickets() {
           </div>
 
           {/* Fila 2: Fechas (bloques) + Selectores */}
-          <div className={`grid grid-cols-1 gap-3 ${modoConfig.mostrarSemaforo ? 'md:grid-cols-3 lg:grid-cols-5' : 'md:grid-cols-2 lg:grid-cols-4'}`}>
+          <div className={`grid grid-cols-1 gap-3 ${modoConfig.mostrarSemaforo ? 'md:grid-cols-3 lg:grid-cols-6' : 'md:grid-cols-3 lg:grid-cols-5'}`}>
             {/* Fecha de Registro (bloque agrupado) */}
             <div>
               <label className="flex items-center gap-1.5 text-xs font-medium text-gray-500 mb-1 uppercase tracking-wide">
@@ -779,6 +799,25 @@ function ListaTickets() {
                   <option key={nombre} value={nombre}>
                     {nombre} ({count})
                   </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Motivo de solicitud */}
+            <div>
+              <label className="flex items-center gap-1.5 text-xs font-medium text-gray-500 mb-1 uppercase tracking-wide">
+                <FileText size={12} />
+                Motivo de solicitud
+              </label>
+              <select
+                value={filtroMotivo}
+                onChange={(e) => { setFiltroMotivo(e.target.value); setCurrentPage(0); }}
+                className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg bg-gray-50 focus:bg-white focus:ring-2 focus:ring-[#0a5ba9]/20 focus:border-[#0a5ba9] transition-all appearance-none cursor-pointer"
+                style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%239ca3af' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 10px center' }}
+              >
+                <option value="">Todos los motivos</option>
+                {motivos.map(m => (
+                  <option key={m.id} value={m.id}>{m.descripcion}</option>
                 ))}
               </select>
             </div>

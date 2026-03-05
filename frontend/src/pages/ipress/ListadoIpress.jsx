@@ -220,7 +220,8 @@ export default function ListadoIpress() {
       cargarDatos(); // Recargar datos
     } catch (error) {
       console.error("Error al eliminar IPRESS:", error);
-      toast.error("Error al eliminar IPRESS");
+      const mensaje = error?.response?.data?.message || "Error al eliminar IPRESS";
+      toast.error(mensaje);
     }
   };
 
