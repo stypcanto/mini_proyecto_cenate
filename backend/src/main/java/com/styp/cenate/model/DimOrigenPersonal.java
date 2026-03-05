@@ -19,6 +19,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.ToString;
 
 @Entity
 @Table(name = "dim_origen_personal")
@@ -26,6 +27,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@ToString(exclude = "personal")  // ✅ v1.84.6: evitar recursión infinita con PersonalCnt
 public class DimOrigenPersonal {
 
 	    @Id

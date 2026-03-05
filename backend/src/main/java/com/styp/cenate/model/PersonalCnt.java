@@ -30,7 +30,9 @@ import java.util.Set;
         "profesiones",
         "tipos",
         "ocs",
-        "firmas"
+        "firmas",
+        "servicioEssi",     // ✅ v1.84.5: excluir para evitar LazyInitializationException
+        "origenPersonal"    // ✅ v1.84.6: excluir relación bidireccional con DimOrigenPersonal
         //,"especialidades"
 })
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
