@@ -52,6 +52,13 @@ public class TrazabilidadBolsaService {
         SolicitudBolsa s = solicitudRepo.findById(idSolicitud)
                 .orElseThrow(() -> new RuntimeException("Solicitud no encontrada: " + idSolicitud));
 
+        // ── Opción A: si es RECITA o INTERCONSULTA derivada, mostrar trazabilidad del padre ──
+        if (s.getIdsolicitudgeneracion() != null) {
+            log.info("📋 Solicitud {} es derivada (RECITA/INTERCONSULTA) — redirigiendo a padre id={}",
+                    idSolicitud, s.getIdsolicitudgeneracion());
+            return obtenerTrazabilidad(s.getIdsolicitudgeneracion());
+        }
+
         List<EventoTrazabilidadDTO> eventos = new ArrayList<>();
 
         // Pre-resolver nombres de usuario reutilizados
@@ -202,7 +209,11 @@ public class TrazabilidadBolsaService {
 
         for (SolicitudBolsa d : derivadas) {
             String tipoDerivada = d.getTipoCita() != null ? d.getTipoCita() : "Derivada";
-            String detalle = d.getEspecialidad() != null ? "Especialidad: " + d.getEspecialidad() : null;
+            String detalleEsp = d.getEspecialidad() != null ? "Especialidad: " + d.getEspecialidad() : null;
+            String detalleFecha = d.getFechaPreferidaNoAtendida() != null ? "Fecha preferida: " + d.getFechaPreferidaNoAtendida() : null;
+            String detalle = (detalleEsp != null && detalleFecha != null)
+                    ? detalleEsp + " · " + detalleFecha
+                    : (detalleEsp != null ? detalleEsp : detalleFecha);
             eventos.add(EventoTrazabilidadDTO.builder()
                     .tipo("RECITA")
                     .fecha(d.getFechaSolicitud())

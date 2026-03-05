@@ -14,10 +14,11 @@ import HistorialBolsaTab from './HistorialBolsaTab';
  * y muestra un modal con el timeline de la solicitud.
  *
  * Props:
- *   dni           {string}  — DNI del paciente (requerido)
+ *   dni            {string} — DNI del paciente (requerido si no se pasa idSolicitud)
+ *   idSolicitud    {number} — ID directo de la solicitud (preferido, evita cargar la solicitud equivocada)
  *   nombrePaciente {string} — Nombre para el header del modal (opcional)
  */
-export default function HistorialPacienteBtn({ dni, nombrePaciente }) {
+export default function HistorialPacienteBtn({ dni, idSolicitud: idSolicitudProp, nombrePaciente }) {
     const [estado, setEstado] = useState('idle'); // idle | loading | open | sinHistorial
     const [idSolicitud, setIdSolicitud] = useState(null);
 
@@ -29,7 +30,9 @@ export default function HistorialPacienteBtn({ dni, nombrePaciente }) {
 
         setEstado('loading');
         try {
-            const data = await trazabilidadBolsaService.obtenerTrazabilidadPorDni(dni);
+            const data = idSolicitudProp
+                ? await trazabilidadBolsaService.obtenerTrazabilidad(idSolicitudProp)
+                : await trazabilidadBolsaService.obtenerTrazabilidadPorDni(dni);
             if (data && data.idSolicitud) {
                 setIdSolicitud(data.idSolicitud);
                 setEstado('open');

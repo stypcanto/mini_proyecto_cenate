@@ -155,7 +155,7 @@ function FilaSolicitud({
       </td>
       <td className="px-3 py-2 text-sm min-w-max">
         <div className="font-bold text-gray-900 text-base whitespace-nowrap">{solicitud.paciente}</div>
-        <HistorialPacienteBtn dni={solicitud.dni} nombrePaciente={solicitud.paciente} />
+        <HistorialPacienteBtn dni={solicitud.dni} idSolicitud={solicitud.id} nombrePaciente={solicitud.paciente} />
         {solicitud.esCenacron && (
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: '3px', marginTop: '3px', padding: '1px 8px', borderRadius: '999px', fontSize: '10px', fontWeight: '700', background: '#f3e8ff', color: '#7e22ce', border: '1px solid #d8b4fe' }}>
             ♾ CENACRON
