@@ -1181,6 +1181,79 @@ export default function MisPacientes() {
     }
   };
 
+  // ✅ v1.85.2: Cargar Ficha de Enfermería guardada
+  const cargarFichaEnfermeria = async (dni) => {
+    try {
+      devLog('%c🚀 [v1.85.2] CARGANDO FICHA DE ENFERMERÍA', 'color: #0066cc; font-weight: bold; font-size: 12px; background: #e0f2ff; padding: 6px 8px; border-radius: 3px');
+      const controles = await gestionPacientesService.obtenerControlesEnfermeria(dni);
+      
+      if (controles && controles.length > 0) {
+        const ultimoControl = controles[0]; // Registro más reciente
+        devLog('✅ [v1.85.2] Ficha cargada:', ultimoControl);
+        
+        // ✅ Mapear campos desde API response a state variables
+        if (ultimoControl.presionArterial) {
+          const [sistolica, diastolica] = ultimoControl.presionArterial.split('/').map(v => v.trim());
+          setPaSistolica(sistolica || '');
+          setPaDiastolica(diastolica || '');
+        }
+        
+        setGlucosa(ultimoControl.glucosa ? ultimoControl.glucosa.toString() : '');
+        setPesoKg(ultimoControl.pesoKg ? ultimoControl.pesoKg.toString() : '');
+        setTallaMt(ultimoControl.tallaCm ? (ultimoControl.tallaCm / 100).toString() : '');
+        // ✅ IMC se calcula automáticamente vía imcCalculado (useMemo)
+        
+        // ✅ Mapear campos de opciones (arrays/strings)
+        if (ultimoControl.controlEnfermeria) {
+          // ✅ El campo viene como CSV string: "SABE UTILIZAR TENSIOMETRO, NO SABE UTILIZAR GLUCOMETRO"
+          // Convertir a array splitendo por coma
+          const controlArray = typeof ultimoControl.controlEnfermeria === 'string'
+            ? ultimoControl.controlEnfermeria.split(',').map(item => item.trim()).filter(item => item.length > 0)
+            : Array.isArray(ultimoControl.controlEnfermeria) ? ultimoControl.controlEnfermeria : [];
+          setControlEnfermeria(controlArray);
+        }
+        
+        if (ultimoControl.adherenciaMorisky) {
+          setAdherenciaEnfermeria(ultimoControl.adherenciaMorisky);
+        }
+        
+        if (ultimoControl.nivelRiesgo) {
+          setNivelRiesgoEnfermeria(ultimoControl.nivelRiesgo);
+        }
+        
+        if (ultimoControl.controlado !== undefined) {
+          setControladoEnfermeria(ultimoControl.controlado ? 'si' : 'no');
+        }
+        
+        // ✅ Observaciones (si existe)
+        if (ultimoControl.observaciones) {
+          setObservacionesEnfermeria(ultimoControl.observaciones);
+        }
+        
+        toast.success('Ficha de Enfermería cargada');
+      } else {
+        devLog('⚠️ [v1.85.2] No hay registros de Ficha guardados');
+        // ✅ Limpiar campos si no hay datos previos
+        setPaSistolica('');
+        setPaDiastolica('');
+        setGlucosa('');
+        setPesoKg('');
+        setTallaMt('');
+        // ✅ IMC se calcula automáticamente vía imcCalculado (useMemo)
+        setControlEnfermeria([]);
+        setAdherenciaEnfermeria('');
+        setNivelRiesgoEnfermeria('');
+        setControladoEnfermeria('');
+        setObservacionesEnfermeria('');
+        
+        toast.info('No hay registro de Ficha de Enfermería guardado');
+      }
+    } catch (error) {
+      devError('❌ [v1.85.2] Error cargando Ficha de Enfermería:', error);
+      toast.error('Error al cargar Ficha de Enfermería');
+    }
+  };
+
   // ✅ v1.89.0: Parsear texto de evaluación para extraer secciones
   const parsearEvaluacionCompleta = (descripcion) => {
     if (!descripcion) return { hallazgos: '', observacionesClinicas: '' };
@@ -3585,9 +3658,15 @@ export default function MisPacientes() {
                     </button>
 
                     {/* Chip 4: Ficha Enfermería — ✅ v1.85.0: SÍ se puede ver pero NO editar si restricción temporal */}
+                    {/* ✅ v1.85.2: Cargar datos guardados al abrir modal */}
                     {esEnfermeria && (
                       <button
-                        onClick={() => setShowFichaEnfermeriaModal(true)}
+                        onClick={async () => {
+                          setShowFichaEnfermeriaModal(true);
+                          if (pacienteSeleccionado?.numDoc) {
+                            await cargarFichaEnfermeria(pacienteSeleccionado.numDoc);
+                          }
+                        }}
                         className={`p-4 rounded-xl transition-all cursor-pointer text-center font-semibold border-2
                           focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-teal-400 ${
                           (otraPatologia.length > 0 || controlEnfermeria.length > 0 ||
