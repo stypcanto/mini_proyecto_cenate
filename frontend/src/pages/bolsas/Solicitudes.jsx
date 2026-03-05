@@ -115,7 +115,8 @@ export default function Solicitudes({ categoriaInicial } = {}) {
   // En sub-páginas los cards son solo informativos, no filtran la lista
   const cardsInteractivos = !categoriaInicial;
   // En sub-páginas mostrar por defecto solo "Paciente nuevo que ingresó a la bolsa"
-  const [filtroEstado, setFiltroEstado] = useState(categoriaInicial ? 'PENDIENTE_CITA' : 'todos');
+  // Maratón muestra todos los estados para que los KPI cards sean completos
+  const [filtroEstado, setFiltroEstado] = useState(categoriaInicial === 'maraton' ? 'todos' : (categoriaInicial ? 'PENDIENTE_CITA' : 'todos'));
   const [filtroTipoCita, setFiltroTipoCita] = useState('todas');
   const [filtroAsignacion, setFiltroAsignacion] = useState('todos');  // ✅ v1.42.0: Filtro asignación (cards clickeables)
   const [filtroGestoraId, setFiltroGestoraId] = useState(null);        // Filtro por gestora asignada (ID)
@@ -2191,7 +2192,7 @@ export default function Solicitudes({ categoriaInicial } = {}) {
         {/* Tarjetas de Estadísticas - Siempre Visible */}
         <div className="mb-8">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">
-            {categoriaInicial === 'maraton' ? 'Avance de Campaña Maratón' : 'Estadísticas de Solicitudes'}
+            {categoriaInicial === 'maraton' ? 'Resumen Campaña Maratón' : 'Estadísticas de Solicitudes'}
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 animate-fade-in">
 
@@ -2232,9 +2233,47 @@ export default function Solicitudes({ categoriaInicial } = {}) {
               </div>
             </div>
 
-            {/* 2. Pendiente Citar (genérico) / Citados (Maratón) */}
+            {/* 2. Pendiente Citar */}
+            <div
+              onClick={() => handleCardClick('pendiente')}
+              className={`rounded-xl p-6 text-white overflow-hidden relative
+                transition-[transform,box-shadow,opacity] duration-200 ease-out
+                ${cardsInteractivos ? 'cursor-pointer group hover:scale-[1.02] hover:-translate-y-0.5' : 'cursor-default'}
+                ${cardsInteractivos && cardSeleccionado === 'pendiente' ? 'ring-2 ring-white/50 scale-[1.02] -translate-y-0.5' : ''}`}
+              style={{
+                background: 'linear-gradient(135deg, #f97316 0%, #ea580c 45%, #c2410c 100%)',
+                boxShadow: cardSeleccionado === 'pendiente'
+                  ? '0 20px 40px -8px rgba(194,65,12,0.65), inset 0 1px 0 rgba(255,255,255,0.15)'
+                  : '0 4px 20px -4px rgba(194,65,12,0.45), inset 0 1px 0 rgba(255,255,255,0.12)'
+              }}
+            >
+              <div className="absolute inset-0 rounded-xl pointer-events-none"
+                style={{ background: 'linear-gradient(to bottom, rgba(0,0,0,0) 0%, rgba(0,0,0,0.18) 100%)' }} />
+              <div className="absolute inset-0 rounded-xl pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+                style={{ background: 'linear-gradient(135deg, rgba(255,255,255,0.18) 0%, rgba(255,255,255,0) 55%)' }} />
+              <div className="relative z-10">
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-xs font-semibold uppercase tracking-[0.12em] text-white/75">Pendiente Citar</span>
+                  <div className="w-9 h-9 rounded-lg bg-white/15 flex items-center justify-center flex-shrink-0">
+                    <Clock className="w-4 h-4 text-white" strokeWidth={2.5} />
+                  </div>
+                </div>
+                <div className="text-5xl font-bold text-white leading-none mb-2"
+                  style={{ fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.02em' }}>
+                  {estadisticas.pendientes === null
+                    ? <span className="text-2xl opacity-50 animate-pulse">—</span>
+                    : estadisticas.pendientes.toLocaleString('es-PE')}
+                </div>
+                <div className="text-xs text-white/60 font-medium">
+                  {estadisticas.pendientes !== null && estadisticas.total
+                    ? `${((estadisticas.pendientes / estadisticas.total) * 100).toFixed(1)}% del total`
+                    : 'Esperando llamada'}
+                </div>
+              </div>
+            </div>
+
+            {/* 3. Citados (Maratón) / Con Gestora (otras) */}
             {categoriaInicial === 'maraton' ? (
-              /* Maratón: mostrar CITADOS en lugar de PENDIENTE_CITA (que = TOTAL, es redundante) */
               <div
                 className="rounded-xl p-6 text-white overflow-hidden relative cursor-default"
                 style={{
@@ -2265,18 +2304,17 @@ export default function Solicitudes({ categoriaInicial } = {}) {
                 </div>
               </div>
             ) : (
-              /* Otras bolsas: PENDIENTE CITAR normal */
               <div
-                onClick={() => handleCardClick('pendiente')}
+                onClick={() => handleCardClick('asignado')}
                 className={`rounded-xl p-6 text-white overflow-hidden relative
                   transition-[transform,box-shadow,opacity] duration-200 ease-out
                   ${cardsInteractivos ? 'cursor-pointer group hover:scale-[1.02] hover:-translate-y-0.5' : 'cursor-default'}
-                  ${cardsInteractivos && cardSeleccionado === 'pendiente' ? 'ring-2 ring-white/50 scale-[1.02] -translate-y-0.5' : ''}`}
+                  ${cardsInteractivos && cardSeleccionado === 'asignado' ? 'ring-2 ring-white/50 scale-[1.02] -translate-y-0.5' : ''}`}
                 style={{
-                  background: 'linear-gradient(135deg, #f97316 0%, #ea580c 45%, #c2410c 100%)',
-                  boxShadow: cardSeleccionado === 'pendiente'
-                    ? '0 20px 40px -8px rgba(194,65,12,0.65), inset 0 1px 0 rgba(255,255,255,0.15)'
-                    : '0 4px 20px -4px rgba(194,65,12,0.45), inset 0 1px 0 rgba(255,255,255,0.12)'
+                  background: 'linear-gradient(135deg, #16a34a 0%, #15803d 45%, #166534 100%)',
+                  boxShadow: cardSeleccionado === 'asignado'
+                    ? '0 20px 40px -8px rgba(22,101,52,0.65), inset 0 1px 0 rgba(255,255,255,0.15)'
+                    : '0 4px 20px -4px rgba(22,101,52,0.45), inset 0 1px 0 rgba(255,255,255,0.12)'
                 }}
               >
                 <div className="absolute inset-0 rounded-xl pointer-events-none"
@@ -2285,99 +2323,54 @@ export default function Solicitudes({ categoriaInicial } = {}) {
                   style={{ background: 'linear-gradient(135deg, rgba(255,255,255,0.18) 0%, rgba(255,255,255,0) 55%)' }} />
                 <div className="relative z-10">
                   <div className="flex items-center justify-between mb-3">
-                    <span className="text-xs font-semibold uppercase tracking-[0.12em] text-white/75">Pendiente Citar</span>
+                    <span className="text-xs font-semibold uppercase tracking-[0.12em] text-white/75">Con Gestora</span>
                     <div className="w-9 h-9 rounded-lg bg-white/15 flex items-center justify-center flex-shrink-0">
-                      <Clock className="w-4 h-4 text-white" strokeWidth={2.5} />
+                      <UserCheck className="w-4 h-4 text-white" strokeWidth={2.5} />
                     </div>
                   </div>
                   <div className="text-5xl font-bold text-white leading-none mb-2"
                     style={{ fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.02em' }}>
-                    {estadisticas.pendientes === null
+                    {estadisticas.asignados === null
                       ? <span className="text-2xl opacity-50 animate-pulse">—</span>
-                      : estadisticas.pendientes.toLocaleString('es-PE')}
+                      : estadisticas.asignados.toLocaleString('es-PE')}
                   </div>
-                  <div className="text-xs text-white/60 font-medium">Esperando llamada</div>
+                  <div className="text-xs text-white/60 font-medium">Gestora asignada</div>
                 </div>
               </div>
             )}
 
-            {/* 3. Con Gestora — Verde (EN PROGRESO) */}
-            <div
-              onClick={() => handleCardClick('asignado')}
-              className={`rounded-xl p-6 text-white overflow-hidden relative
-                transition-[transform,box-shadow,opacity] duration-200 ease-out
-                ${cardsInteractivos ? 'cursor-pointer group hover:scale-[1.02] hover:-translate-y-0.5' : 'cursor-default'}
-                ${cardsInteractivos && cardSeleccionado === 'asignado' ? 'ring-2 ring-white/50 scale-[1.02] -translate-y-0.5' : ''}`}
-              style={{
-                background: 'linear-gradient(135deg, #16a34a 0%, #15803d 45%, #166534 100%)',
-                boxShadow: cardSeleccionado === 'asignado'
-                  ? '0 20px 40px -8px rgba(22,101,52,0.65), inset 0 1px 0 rgba(255,255,255,0.15)'
-                  : '0 4px 20px -4px rgba(22,101,52,0.45), inset 0 1px 0 rgba(255,255,255,0.12)'
-              }}
-            >
-              <div className="absolute inset-0 rounded-xl pointer-events-none"
-                style={{ background: 'linear-gradient(to bottom, rgba(0,0,0,0) 0%, rgba(0,0,0,0.18) 100%)' }} />
-              <div className="absolute inset-0 rounded-xl pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-200"
-                style={{ background: 'linear-gradient(135deg, rgba(255,255,255,0.18) 0%, rgba(255,255,255,0) 55%)' }} />
-              <div className="relative z-10">
-                <div className="flex items-center justify-between mb-3">
-                  <span className="text-xs font-semibold uppercase tracking-[0.12em] text-white/75">Con Gestora</span>
-                  <div className="w-9 h-9 rounded-lg bg-white/15 flex items-center justify-center flex-shrink-0">
-                    <UserCheck className="w-4 h-4 text-white" strokeWidth={2.5} />
-                  </div>
-                </div>
-                <div className="text-5xl font-bold text-white leading-none mb-2"
-                  style={{ fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.02em' }}>
-                  {estadisticas.asignados === null
-                    ? <span className="text-2xl opacity-50 animate-pulse">—</span>
-                    : estadisticas.asignados.toLocaleString('es-PE')}
-                </div>
-                <div className="text-xs text-white/60 font-medium">Gestora asignada</div>
-              </div>
-            </div>
-
-            {/* 4. Total — Azul (REFERENCIA GLOBAL) */}
+            {/* 4. Atendidos (Maratón) / Total en Bolsa (otras) */}
             {categoriaInicial === 'maraton' ? (
-              /* Maratón: mostrar universo total MARATÓN (paciente_estrategia) */
               <div
                 className="rounded-xl p-6 text-white overflow-hidden relative cursor-default"
                 style={{
-                  background: 'linear-gradient(135deg, #1d4ed8 0%, #1e40af 45%, #1e3a8a 100%)',
-                  boxShadow: '0 4px 20px -4px rgba(30,58,138,0.45), inset 0 1px 0 rgba(255,255,255,0.12)'
+                  background: 'linear-gradient(135deg, #16a34a 0%, #15803d 45%, #166534 100%)',
+                  boxShadow: '0 4px 20px -4px rgba(22,101,52,0.45), inset 0 1px 0 rgba(255,255,255,0.12)'
                 }}
               >
                 <div className="absolute inset-0 rounded-xl pointer-events-none"
                   style={{ background: 'linear-gradient(to bottom, rgba(0,0,0,0) 0%, rgba(0,0,0,0.18) 100%)' }} />
                 <div className="relative z-10">
                   <div className="flex items-center justify-between mb-3">
-                    <span className="text-xs font-semibold uppercase tracking-[0.12em] text-white/75">Total Maratón</span>
+                    <span className="text-xs font-semibold uppercase tracking-[0.12em] text-white/75">Atendidos</span>
                     <div className="w-9 h-9 rounded-lg bg-white/15 flex items-center justify-center flex-shrink-0">
-                      <Database className="w-4 h-4 text-white" strokeWidth={2.5} />
+                      <UserCheck className="w-4 h-4 text-white" strokeWidth={2.5} />
                     </div>
                   </div>
                   <div className="text-5xl font-bold text-white leading-none mb-2"
                     style={{ fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.02em' }}>
-                    {maratonUniversoTotal === null
+                    {estadisticas.atendidos === null
                       ? <span className="text-2xl opacity-50 animate-pulse">—</span>
-                      : maratonUniversoTotal.toLocaleString('es-PE')}
+                      : estadisticas.atendidos.toLocaleString('es-PE')}
                   </div>
-                  {/* Desglose: en bolsa vs pendientes de importar */}
-                  {maratonUniversoTotal !== null && estadisticas.total !== null && (
-                    <div className="space-y-0.5">
-                      <div className="text-xs text-white/70 font-medium">
-                        ✅ {estadisticas.total.toLocaleString('es-PE')} en bolsa
-                      </div>
-                      {maratonUniversoTotal - estadisticas.total > 0 && (
-                        <div className="text-xs text-yellow-300 font-semibold">
-                          ⚠ {(maratonUniversoTotal - estadisticas.total).toLocaleString('es-PE')} pendientes de importar
-                        </div>
-                      )}
-                    </div>
-                  )}
+                  <div className="text-xs text-white/60 font-medium">
+                    {estadisticas.atendidos !== null && estadisticas.total
+                      ? `${((estadisticas.atendidos / estadisticas.total) * 100).toFixed(1)}% del total`
+                      : 'Consulta completada'}
+                  </div>
                 </div>
               </div>
             ) : (
-              /* Otras bolsas: Total en Bolsa normal */
               <div
                 onClick={() => handleCardClick('total')}
                 className={`rounded-xl p-6 text-white overflow-hidden relative
@@ -2438,12 +2431,7 @@ export default function Solicitudes({ categoriaInicial } = {}) {
             <div className="flex items-center justify-between mb-3">
               <span className="text-sm font-semibold text-gray-700">Progreso de la campaña</span>
               <span className="text-xs text-gray-400">
-                {maratonUniversoTotal?.toLocaleString('es-PE') ?? estadisticas.total?.toLocaleString('es-PE')} pacientes seleccionados
-                {maratonUniversoTotal !== null && estadisticas.total !== null && maratonUniversoTotal > estadisticas.total && (
-                  <span className="ml-2 text-yellow-600 font-medium">
-                    · {(maratonUniversoTotal - estadisticas.total).toLocaleString('es-PE')} sin importar
-                  </span>
-                )}
+                {estadisticas.total?.toLocaleString('es-PE')} pacientes en bolsa
               </span>
             </div>
 
