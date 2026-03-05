@@ -99,6 +99,7 @@ import {
   TicketCheck,
   CircleDot,
   HelpCircle,
+  Trophy,
 } from "lucide-react";
 
 // Mapeo de nombres de iconos a componentes de Lucide
@@ -180,6 +181,7 @@ const iconMap = {
   'GitBranch': GitBranch,
   'Briefcase': Briefcase,
   'MapPinned': MapPinned,
+  'Trophy': Trophy,
 };
 
 const getIconComponent = (iconName) => {
@@ -775,6 +777,7 @@ function getPageIcon(nombreModulo, nombrePagina) {
   if (lowerName.includes('médico') || lowerName.includes('medico')) return Stethoscope;
   if (lowerName.includes('enfermería') || lowerName.includes('enfermeria')) return Hospital;
   if (lowerName.includes('dengue')) return AlertTriangle;
+  if (lowerName.includes('maratón') || lowerName.includes('maraton')) return Trophy;
   if (lowerName.includes('configuración') || lowerName.includes('configuracion')) return Settings;
   if (lowerName.includes('ayuda') || lowerName.includes('soporte')) return Headphones;
 

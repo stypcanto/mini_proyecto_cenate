@@ -560,6 +560,10 @@ export const componentRegistry = {
     component: lazy(() => import('../pages/bolsas/SolicitudesInterconsulta')),
     requiredAction: 'ver',
   },
+  '/bolsas/solicitudespendientes/maraton': {
+    component: lazy(() => import('../pages/bolsas/SolicitudesMaraton')),
+    requiredAction: 'ver',
+  },
 
   '/bolsas/solicitudesatendidas': {
     component: lazy(() => import('../pages/bolsas/SolicitudesAtendidas')),

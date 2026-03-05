@@ -11,7 +11,7 @@ import java.time.LocalDate;
  * Campos por defecto:
  * - especialidad: ENFERMERIA
  * - idServicio: 56 (ENFERMERÍA cod F11 en dim_servicio_essi)
- * - responsableGestoraId: 688 (Gestora Claudia Lizbeth Valencia)
+ * - responsableGestoraId: null (sin asignar — no usar default fijo)
  */
 @Data
 public class CargaMasivaRequest {
@@ -25,8 +25,8 @@ public class CargaMasivaRequest {
     /** ID del servicio (dim_servicio_essi) */
     private Long idServicio = 56L;
 
-    /** ID del usuario gestora responsable */
-    private Long responsableGestoraId = 688L;
+    /** ID del usuario gestora responsable (null = sin asignar) */
+    private Long responsableGestoraId;
 
     /**
      * Fecha de la cita para todos los pacientes de la carga (YYYY-MM-DD).
