@@ -2323,16 +2323,17 @@ CENATE de Essalud`;
                 <label style={{ display: 'block', fontSize: '11px', fontWeight: '600', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '6px' }}>
                   Nueva IPRESS de Atención *
                 </label>
-                <select
+                <SearchableSelect
                   value={modalEditarIpress.idIpress}
-                  onChange={e => setModalEditarIpress(prev => ({ ...prev, idIpress: e.target.value }))}
-                  style={{ width: '100%', padding: '10px 12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '13px', color: '#1e293b', outline: 'none', boxSizing: 'border-box', background: '#fff' }}
-                >
-                  <option value="">— Selecciona una IPRESS —</option>
-                  {listaIpress.map(ip => (
-                    <option key={ip.idIpress ?? ip.id_ipress} value={ip.idIpress ?? ip.id_ipress}>{ip.descIpress ?? ip.desc_ipress}</option>
-                  ))}
-                </select>
+                  onChange={v => setModalEditarIpress(prev => ({ ...prev, idIpress: v }))}
+                  options={[
+                    { value: '', label: '— Selecciona una IPRESS —' },
+                    ...listaIpress.map(ip => ({
+                      value: String(ip.idIpress ?? ip.id_ipress),
+                      label: ip.descIpress ?? ip.desc_ipress ?? '',
+                    })),
+                  ]}
+                />
                 {listaIpress.length === 0 && (
                   <p style={{ margin: '6px 0 0', fontSize: '11px', color: '#94a3b8' }}>Cargando lista de IPRESS...</p>
                 )}
