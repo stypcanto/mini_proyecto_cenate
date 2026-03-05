@@ -1,5 +1,5 @@
-import RescatarPacienteEnfermeria from '../../enfermeria/RescatarPacienteEnfermeria';
+import RescatarProfesionalCoordCitas from './RescatarProfesionalCoordCitas';
 
 export default function RescatarProfesional() {
-  return <RescatarPacienteEnfermeria />;
+  return <RescatarProfesionalCoordCitas />;
 }

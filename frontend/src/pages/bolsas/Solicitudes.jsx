@@ -404,15 +404,10 @@ export default function Solicitudes({ categoriaInicial } = {}) {
                 categoriaInicial === 'maraton'
                   ? apiClient.get('/asegurados?maraton=true&page=0&size=1', true).catch(() => null)
                   : Promise.resolve(null),
-                // KPI CENACRON dentro de Maratón (termómetro de meta)
-                // Nota: pacientes Maratón tienen sigla='MARATON' en paciente_estrategia.
-                // Sin filtro estrategia → todos los citados en id_bolsa=17 = segmento CENACRON.
-                // Cuando entren Especialidades se segmentará por un campo específico.
-                categoriaInicial === 'maraton'
-                  ? bolsasService.obtenerKpiConFiltros({ categoriaEspecialidad: 'maraton' }).catch(() => null)
-                  : Promise.resolve(null),
+                // Nota: termómetros de meta usan estadisticasGlobales directamente (misma fuente que cards)
+                // → eliminada la llamada separada kpiCenacronData para evitar desincronización
               ];
-              const [naAdsc, naAten, cnCenacron, cnMaraton, maratonUniverse, kpiCenacronData] = await Promise.all(promises);
+              const [naAdsc, naAten, cnCenacron, cnMaraton, maratonUniverse] = await Promise.all(promises);
               if (mounted) {
                 setIpressNaCount(naAdsc?.totalElements ?? null);
                 setIpressAtencionNaCount(naAten?.totalElements ?? null);
@@ -420,15 +415,6 @@ export default function Solicitudes({ categoriaInicial } = {}) {
                 setMaratonCount(cnMaraton?.totalElements ?? null);
                 if (maratonUniverse?.totalElements != null) {
                   setMaratonUniversoTotal(maratonUniverse.totalElements);
-                }
-                if (Array.isArray(kpiCenacronData)) {
-                  const cenacronCitados = kpiCenacronData
-                    .filter(r => ['CITADO', 'ATENDIDO', 'ATENDIDO_IPRESS'].includes(r.estado))
-                    .reduce((s, r) => s + (r.cantidad || 0), 0);
-                  const cenacronUniverso = kpiCenacronData
-                    .filter(r => !['SIN_GESTORA', 'CON_GESTORA', 'ASIGNADOS'].includes(r.estado))
-                    .reduce((s, r) => s + (r.cantidad || 0), 0);
-                  setKpiCenacron({ citados: cenacronCitados, universo: cenacronUniverso });
                 }
               }
             } catch (_) {}
@@ -2234,8 +2220,11 @@ export default function Solicitudes({ categoriaInicial } = {}) {
                   try { const kpi = await bolsasService.obtenerKpiConFiltros({ categoriaEspecialidad: 'maraton' }); setDesgloseData(kpi); }
                   catch { setDesgloseData(null); } finally { setDesgloseLoading(false); }
                 };
-                const observados = (estadisticas.total !== null && estadisticas.pendientes !== null && estadisticas.citados !== null)
-                  ? (estadisticas.total ?? 0) - (estadisticas.pendientes ?? 0) - (estadisticas.citados ?? 0)
+                // Observados = estados excepcionales (excluye PENDIENTE_CITA, CITADO, ATENDIDO y sintéticos)
+                // Misma fórmula que la barra de progreso → números siempre coherentes
+                const ESTADOS_NO_OBS = new Set(['PENDIENTE_CITA', 'CITADO', 'ATENDIDO', 'ATENDIDO_IPRESS', 'SIN_GESTORA', 'CON_GESTORA', 'ASIGNADOS']);
+                const observados = Array.isArray(estadisticasGlobales)
+                  ? estadisticasGlobales.filter(s => !ESTADOS_NO_OBS.has(s.estado?.toUpperCase())).reduce((s, r) => s + (r.cantidad || 0), 0)
                   : null;
                 return (
                   <>
@@ -2270,10 +2259,11 @@ export default function Solicitudes({ categoriaInicial } = {}) {
                         </p>
                       </div>
 
-                      {/* M3. EN CONTACTO — con gestora asignada, aún no citados */}
+                      {/* M3. EN CONTACTO — con gestora asignada, aún no finalizados (sin CITADO ni ATENDIDO) */}
                       {(() => {
+                        const citasLogradas = (estadisticas.citados ?? 0) + (estadisticas.atendidos ?? 0);
                         const enContacto = (estadisticas.asignados !== null && estadisticas.citados !== null)
-                          ? Math.max(0, estadisticas.asignados - estadisticas.citados) : null;
+                          ? Math.max(0, estadisticas.asignados - citasLogradas) : null;
                         return (
                           <div className="bg-white rounded-xl border border-gray-100 border-t-4 shadow-sm px-5 py-4 relative"
                             style={{ borderTopColor: '#f97316' }}>
@@ -2289,18 +2279,24 @@ export default function Solicitudes({ categoriaInicial } = {}) {
                         );
                       })()}
 
-                      {/* M4. CITAS LOGRADAS */}
-                      <div className="bg-white rounded-xl border border-gray-100 border-t-4 shadow-sm px-5 py-4 relative"
-                        style={{ borderTopColor: '#22c55e' }}>
-                        <CalendarCheck className="absolute top-3 right-3 w-3.5 h-3.5 text-green-400" style={{ opacity: 0.3 }} strokeWidth={2} />
-                        <p className="text-[10px] font-bold uppercase tracking-widest mb-2" style={{ color: '#22c55e' }}>④ Citas Logradas</p>
-                        <p className="text-4xl font-black text-gray-900 leading-none tabular-nums">
-                          {estadisticas.citados === null ? <span className="text-xl text-gray-300 animate-pulse">—</span> : estadisticas.citados.toLocaleString('es-PE')}
-                        </p>
-                        <p className="text-xs text-gray-400 mt-1.5">
-                          {estadisticas.citados !== null ? `${pct(estadisticas.citados)}% del total` : '—'}
-                        </p>
-                      </div>
+                      {/* M4. CITAS LOGRADAS = CITADO + ATENDIDO (estados ÉXITO del modal) */}
+                      {(() => {
+                        const citasLogradas = (estadisticas.citados !== null)
+                          ? (estadisticas.citados ?? 0) + (estadisticas.atendidos ?? 0) : null;
+                        return (
+                          <div className="bg-white rounded-xl border border-gray-100 border-t-4 shadow-sm px-5 py-4 relative"
+                            style={{ borderTopColor: '#22c55e' }}>
+                            <CalendarCheck className="absolute top-3 right-3 w-3.5 h-3.5 text-green-400" style={{ opacity: 0.3 }} strokeWidth={2} />
+                            <p className="text-[10px] font-bold uppercase tracking-widest mb-2" style={{ color: '#22c55e' }}>④ Citas Logradas</p>
+                            <p className="text-4xl font-black text-gray-900 leading-none tabular-nums">
+                              {citasLogradas === null ? <span className="text-xl text-gray-300 animate-pulse">—</span> : citasLogradas.toLocaleString('es-PE')}
+                            </p>
+                            <p className="text-xs text-gray-400 mt-1.5">
+                              {citasLogradas !== null ? `${pct(citasLogradas)}% del total` : '—'}
+                            </p>
+                          </div>
+                        );
+                      })()}
 
                     </div>
 
@@ -2315,12 +2311,12 @@ export default function Solicitudes({ categoriaInicial } = {}) {
                     )}
 
                     {/* ══ NIVEL 2: METAS ESTRATÉGICAS — CENACRON vs ESPECIALIDADES ══ */}
-                    {kpiCenacron !== null && (() => {
+                    {estadisticas.citados !== null && (() => {
                       const META_CENACRON = 3600;
                       const META_ESPECIALIDADES = 360;
-                      const citasLogradas = (estadisticas.citados ?? 0) + (estadisticas.atendidos ?? 0);
-                      const cenacronCitados = kpiCenacron.citados;
-                      const espCitados = Math.max(0, citasLogradas - cenacronCitados);
+                      // Fuente única: estadisticasGlobales (misma que cards) → números siempre consistentes
+                      const cenacronCitados = (estadisticas.citados ?? 0) + (estadisticas.atendidos ?? 0);
+                      const espCitados = 0; // Especialidades aún no iniciadas en esta bolsa
                       const cenacronPct = Math.min(100, (cenacronCitados / META_CENACRON) * 100);
                       const espPct = Math.min(100, (espCitados / META_ESPECIALIDADES) * 100);
 
@@ -2345,8 +2341,8 @@ export default function Solicitudes({ categoriaInicial } = {}) {
                               style={{ width: `${pct}%`, background: colorBar }} />
                           </div>
                           <div className="flex justify-between mt-1.5">
-                            <span className="text-[10px] text-gray-400">Faltan {(meta - actual).toLocaleString('es-PE')}</span>
-                            <span className="text-[10px] text-gray-400">Meta: {meta.toLocaleString('es-PE')}</span>
+                            <span className="text-[10px] font-semibold text-gray-600">Faltan {(meta - actual).toLocaleString('es-PE')}</span>
+                            <span className="text-[10px] text-gray-500">Meta: {meta.toLocaleString('es-PE')}</span>
                           </div>
                         </div>
                       );
@@ -2489,7 +2485,7 @@ export default function Solicitudes({ categoriaInicial } = {}) {
             <div className="flex items-center justify-between mb-3">
               <span className="text-sm font-semibold text-gray-700">Progreso de la campaña</span>
               <span className="text-xs text-gray-400">
-                {estadisticas.total?.toLocaleString('es-PE')} pacientes en bolsa
+                {(maratonUniversoTotal ?? estadisticas.total)?.toLocaleString('es-PE')} pacientes universo
               </span>
             </div>
 
@@ -2498,16 +2494,20 @@ export default function Solicitudes({ categoriaInicial } = {}) {
               const total    = estadisticas.total || 1;
               const atendidos  = estadisticas.atendidos  || 0;
               const citados    = estadisticas.citados    || 0;
-              const noContesto = estadisticas.noContesto || 0;
-              const rechazados = estadisticas.rechazados || 0;
               const pendientes = estadisticas.pendientes || 0;
+              // Todos los estados "observados" = todo lo que no es PENDIENTE, CITADO, ATENDIDO, ni sintéticos
+              const ESTADOS_BASE = new Set(['PENDIENTE_CITA', 'CITADO', 'ATENDIDO', 'ATENDIDO_IPRESS', 'SIN_GESTORA', 'CON_GESTORA', 'ASIGNADOS']);
+              const totalObservados = Array.isArray(estadisticasGlobales)
+                ? estadisticasGlobales
+                    .filter(s => !ESTADOS_BASE.has(s.estado?.toUpperCase()))
+                    .reduce((sum, s) => sum + (s.cantidad || 0), 0)
+                : (estadisticas.noContesto || 0) + (estadisticas.rechazados || 0);
               // Porcentajes sobre el total en bolsa
-              const atePct = (atendidos  / total) * 100;
-              const citPct = (citados    / total) * 100;
-              const noCPct = (noContesto / total) * 100;
-              const recPct = (rechazados / total) * 100;
+              const atePct  = (atendidos        / total) * 100;
+              const citPct  = (citados          / total) * 100;
+              const obsPct  = (totalObservados  / total) * 100;
               // El avance total (todos los que ya tuvieron alguna acción)
-              const avancePct = atePct + citPct + noCPct + recPct;
+              const avancePct = atePct + citPct + obsPct;
 
               return (
                 <>
@@ -2515,10 +2515,9 @@ export default function Solicitudes({ categoriaInicial } = {}) {
                   <div className="relative h-6 rounded-full overflow-hidden mb-3" style={{ background: '#cbd5e1' }}>
                     {/* Franja de avance (apilada de izquierda a derecha) */}
                     <div className="absolute inset-y-0 left-0 flex rounded-full overflow-hidden" style={{ width: `${avancePct}%`, transition: 'width 0.6s ease' }}>
-                      {atePct > 0 && <div className="bg-emerald-500 h-full" style={{ flex: atePct }} title={`Atendidos`} />}
-                      {citPct > 0 && <div className="bg-blue-500   h-full" style={{ flex: citPct }} title={`Citados`} />}
-                      {noCPct > 0 && <div className="bg-yellow-400 h-full" style={{ flex: noCPct }} title={`No contesta`} />}
-                      {recPct > 0 && <div className="bg-red-400    h-full" style={{ flex: recPct }} title={`Rechazados`} />}
+                      {atePct > 0 && <div className="bg-emerald-500 h-full" style={{ flex: atePct }} title="Atendidos" />}
+                      {citPct > 0 && <div className="bg-blue-500   h-full" style={{ flex: citPct }} title="Citados" />}
+                      {obsPct > 0 && <div className="bg-amber-400  h-full" style={{ flex: obsPct }} title="Observados (no contesta, rechazado, apagado, etc.)" />}
                     </div>
                     {/* Etiqueta % dentro de la barra */}
                     <div className="absolute inset-0 flex items-center justify-center">
@@ -2538,20 +2537,17 @@ export default function Solicitudes({ categoriaInicial } = {}) {
                       <span className="w-2.5 h-2.5 rounded-full bg-blue-500 inline-block flex-shrink-0" />
                       Citados <strong className="text-gray-700 ml-1">{citados.toLocaleString('es-PE')}</strong>
                     </span>
-                    <span className="flex items-center gap-1.5 text-xs text-gray-500">
-                      <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block flex-shrink-0" />
-                      Atendidos <strong className="text-gray-700 ml-1">{atendidos.toLocaleString('es-PE')}</strong>
-                    </span>
-                    {noContesto > 0 && (
+                    {atendidos > 0 && (
                       <span className="flex items-center gap-1.5 text-xs text-gray-500">
-                        <span className="w-2.5 h-2.5 rounded-full bg-yellow-400 inline-block flex-shrink-0" />
-                        No contesta <strong className="text-gray-700 ml-1">{noContesto.toLocaleString('es-PE')}</strong>
+                        <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block flex-shrink-0" />
+                        Atendidos <strong className="text-gray-700 ml-1">{atendidos.toLocaleString('es-PE')}</strong>
                       </span>
                     )}
-                    {rechazados > 0 && (
+                    {totalObservados > 0 && (
                       <span className="flex items-center gap-1.5 text-xs text-gray-500">
-                        <span className="w-2.5 h-2.5 rounded-full bg-red-400 inline-block flex-shrink-0" />
-                        Rechazados <strong className="text-gray-700 ml-1">{rechazados.toLocaleString('es-PE')}</strong>
+                        <span className="w-2.5 h-2.5 rounded-full bg-amber-400 inline-block flex-shrink-0" />
+                        Observados <strong className="text-gray-700 ml-1">{totalObservados.toLocaleString('es-PE')}</strong>
+                        <span className="text-gray-400">(no contesta, apagado, rechazado…)</span>
                       </span>
                     )}
                     <span className="ml-auto text-xs font-semibold text-emerald-700">

@@ -3183,8 +3183,8 @@ export default function MisPacientes() {
                                 <RefreshCw className="w-6 h-6" strokeWidth={2} />
                                 <span className="text-xs">{pacientesRechazados[paciente.numDoc].cantidad}</span>
                               </button>
-                            ) : (
-                              // ✅ Normal: Botón de evaluación
+                            ) : (ecgCounts[paciente.numDoc] > 0 || evaluacionesEstados[paciente.numDoc]?.estado === 'EVALUADO') ? (
+                              // ✅ Normal: Botón de evaluación (solo si tiene imágenes ECG o ya fue evaluado)
                               <button
                                 onClick={() => abrirCarruselECG(paciente)}
                                 disabled={cargandoECG}
@@ -3215,7 +3215,7 @@ export default function MisPacientes() {
                                   <span className="font-bold">{ecgCounts[paciente.numDoc]}</span>
                                 )}
                               </button>
-                            )}
+                            ) : null}
 
                             {/* ✅ v1.80.0: Botón para ver resultados (si fue evaluado) */}
                             {evaluacionesEstados[paciente.numDoc]?.estado === 'EVALUADO' && (
