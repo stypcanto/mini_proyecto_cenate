@@ -552,6 +552,14 @@ export const componentRegistry = {
     component: lazy(() => import('../pages/bolsas/SolicitudesBolsa107')),
     requiredAction: 'ver',
   },
+  '/bolsas/solicitudespendientes/recitas': {
+    component: lazy(() => import('../pages/bolsas/SolicitudesRecita')),
+    requiredAction: 'ver',
+  },
+  '/bolsas/solicitudespendientes/interconsultas': {
+    component: lazy(() => import('../pages/bolsas/SolicitudesInterconsulta')),
+    requiredAction: 'ver',
+  },
 
   '/bolsas/solicitudesatendidas': {
     component: lazy(() => import('../pages/bolsas/SolicitudesAtendidas')),

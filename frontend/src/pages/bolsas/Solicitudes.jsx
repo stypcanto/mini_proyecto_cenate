@@ -68,7 +68,7 @@ function generarCodigoBolsa(nombreBolsa) {
     .replace(/^_|_$/g, '');
 }
 
-// categoriaInicial: 'MEDICINA GENERAL' | 'ENFERMERIA' | 'especialidades' | undefined (= todas)
+// categoriaInicial: 'MEDICINA GENERAL' | 'ENFERMERIA' | 'especialidades' | 'recita' | 'interconsulta' | undefined (= todas)
 export default function Solicitudes({ categoriaInicial } = {}) {
   const [registrosPorPagina, setRegistrosPorPagina] = useState(20);
   const { esSuperAdmin } = usePermisos();
@@ -103,12 +103,13 @@ export default function Solicitudes({ categoriaInicial } = {}) {
   const [filtroIpressAtencion, setFiltroIpressAtencion] = useState('todas');
   const [filtroMacrorregion, setFiltroMacrorregion] = useState('todas');
   // Si viene categoriaInicial → pre-aplicar filtro de especialidad fijo
-  const especialidadPorCategoria = (categoriaInicial === 'especialidades' || categoriaInicial === 'bolsa107')
+  const usaCategoriaEspecialidad = ['especialidades', 'bolsa107', 'recita', 'interconsulta'].includes(categoriaInicial);
+  const especialidadPorCategoria = usaCategoriaEspecialidad
     ? 'todas'      // estas categorías usan categoriaEspecialidad, no filtroEspecialidad
     : (categoriaInicial || 'todas');
   const [filtroEspecialidad, setFiltroEspecialidad] = useState(especialidadPorCategoria);
-  // 'especialidades' y 'bolsa107' se pasan como categoriaEspecialidad al backend
-  const categoriaEspecialidad = (categoriaInicial === 'especialidades' || categoriaInicial === 'bolsa107') ? categoriaInicial : null;
+  // 'especialidades', 'bolsa107', 'recita', 'interconsulta' se pasan como categoriaEspecialidad al backend
+  const categoriaEspecialidad = usaCategoriaEspecialidad ? categoriaInicial : null;
   // En sub-páginas los cards son solo informativos, no filtran la lista
   const cardsInteractivos = !categoriaInicial;
   // En sub-páginas mostrar por defecto solo "Paciente nuevo que ingresó a la bolsa"
@@ -2502,9 +2503,9 @@ export default function Solicitudes({ categoriaInicial } = {}) {
                 value: filtroEspecialidad,
                 onChange: (e) => setFiltroEspecialidad(e.target.value),
                 // Sub-página con especialidad fija → bloqueado + badge con total
-                disabled: !!(categoriaInicial && categoriaInicial !== 'especialidades' && categoriaInicial !== 'bolsa107'),
-                badgeCount: (categoriaInicial && categoriaInicial !== 'especialidades' && categoriaInicial !== 'bolsa107') ? totalElementos : undefined,
-                options: (categoriaInicial && categoriaInicial !== 'especialidades' && categoriaInicial !== 'bolsa107')
+                disabled: !!(categoriaInicial && !usaCategoriaEspecialidad),
+                badgeCount: (categoriaInicial && !usaCategoriaEspecialidad) ? totalElementos : undefined,
+                options: (categoriaInicial && !usaCategoriaEspecialidad)
                   ? [{ label: categoriaInicial, value: categoriaInicial }]
                   : [
                       { label: `Todas las especialidades (${especialidadesConSE.length})`, value: "todas" },

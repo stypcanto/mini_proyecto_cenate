@@ -294,7 +294,9 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
           AND (CAST(:estadoBolsa AS VARCHAR) IS NULL OR UPPER(COALESCE(sb.estado, '')) = UPPER(CAST(:estadoBolsa AS VARCHAR)))
           AND (CAST(:categoriaEspecialidad AS VARCHAR) IS NULL
                OR (CAST(:categoriaEspecialidad AS VARCHAR) = 'especialidades' AND LOWER(COALESCE(sb.especialidad,'')) NOT IN ('medicina general', 'enfermeria') AND sb.id_bolsa != 1)
-               OR (CAST(:categoriaEspecialidad AS VARCHAR) = 'bolsa107' AND sb.id_bolsa = 1))
+               OR (CAST(:categoriaEspecialidad AS VARCHAR) = 'bolsa107'       AND sb.id_bolsa = 1)
+               OR (CAST(:categoriaEspecialidad AS VARCHAR) = 'recita'         AND sb.id_bolsa = 15)
+               OR (CAST(:categoriaEspecialidad AS VARCHAR) = 'interconsulta'  AND sb.id_bolsa = 16))
           AND (CAST(:estrategia AS VARCHAR) IS NULL
                OR sb.paciente_dni IN (
                    SELECT pe.pk_asegurado FROM paciente_estrategia pe
@@ -365,7 +367,9 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
           AND (CAST(:estadoBolsa AS VARCHAR) IS NULL OR UPPER(COALESCE(sb.estado, '')) = UPPER(CAST(:estadoBolsa AS VARCHAR)))
           AND (CAST(:categoriaEspecialidad AS VARCHAR) IS NULL
                OR (CAST(:categoriaEspecialidad AS VARCHAR) = 'especialidades' AND LOWER(COALESCE(sb.especialidad,'')) NOT IN ('medicina general', 'enfermeria') AND sb.id_bolsa != 1)
-               OR (CAST(:categoriaEspecialidad AS VARCHAR) = 'bolsa107' AND sb.id_bolsa = 1))
+               OR (CAST(:categoriaEspecialidad AS VARCHAR) = 'bolsa107'       AND sb.id_bolsa = 1)
+               OR (CAST(:categoriaEspecialidad AS VARCHAR) = 'recita'         AND sb.id_bolsa = 15)
+               OR (CAST(:categoriaEspecialidad AS VARCHAR) = 'interconsulta'  AND sb.id_bolsa = 16))
           AND (CAST(:estrategia AS VARCHAR) IS NULL
                OR sb.paciente_dni IN (
                    SELECT pe.pk_asegurado FROM paciente_estrategia pe
@@ -499,7 +503,9 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
           AND (CAST(:estadoBolsa AS VARCHAR) IS NULL OR UPPER(COALESCE(sb.estado,'')) = UPPER(CAST(:estadoBolsa AS VARCHAR)))
           AND (CAST(:categoriaEspecialidad AS VARCHAR) IS NULL
                OR (CAST(:categoriaEspecialidad AS VARCHAR) = 'especialidades' AND LOWER(COALESCE(sb.especialidad,'')) NOT IN ('medicina general', 'enfermeria') AND sb.id_bolsa != 1)
-               OR (CAST(:categoriaEspecialidad AS VARCHAR) = 'bolsa107' AND sb.id_bolsa = 1))
+               OR (CAST(:categoriaEspecialidad AS VARCHAR) = 'bolsa107'       AND sb.id_bolsa = 1)
+               OR (CAST(:categoriaEspecialidad AS VARCHAR) = 'recita'         AND sb.id_bolsa = 15)
+               OR (CAST(:categoriaEspecialidad AS VARCHAR) = 'interconsulta'  AND sb.id_bolsa = 16))
         GROUP BY COALESCE(dgc.cod_estado_cita, 'PENDIENTE_CITA')
 
         UNION ALL
@@ -530,7 +536,9 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
           AND (CAST(:estadoBolsa AS VARCHAR) IS NULL OR UPPER(COALESCE(sb.estado,'')) = UPPER(CAST(:estadoBolsa AS VARCHAR)))
           AND (CAST(:categoriaEspecialidad AS VARCHAR) IS NULL
                OR (CAST(:categoriaEspecialidad AS VARCHAR) = 'especialidades' AND LOWER(COALESCE(sb.especialidad,'')) NOT IN ('medicina general', 'enfermeria') AND sb.id_bolsa != 1)
-               OR (CAST(:categoriaEspecialidad AS VARCHAR) = 'bolsa107' AND sb.id_bolsa = 1))
+               OR (CAST(:categoriaEspecialidad AS VARCHAR) = 'bolsa107'       AND sb.id_bolsa = 1)
+               OR (CAST(:categoriaEspecialidad AS VARCHAR) = 'recita'         AND sb.id_bolsa = 15)
+               OR (CAST(:categoriaEspecialidad AS VARCHAR) = 'interconsulta'  AND sb.id_bolsa = 16))
         """, nativeQuery = true)
     List<Map<String, Object>> estadisticasKpiConFiltros(
             @org.springframework.data.repository.query.Param("bolsaNombre")    String bolsaNombre,

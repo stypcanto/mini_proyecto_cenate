@@ -278,7 +278,7 @@ public class AtenderPacienteService {
                 .especialidad(solicitudOriginal.getEspecialidad())
                 .estado("PENDIENTE")
                 .estadoGestionCitasId(11L) // PENDIENTE_CITA = Paciente nuevo que ingresó a la bolsa
-                .idBolsa(11L) // ✅ v1.103.8: BOLSA_GENERADA_X_PROFESIONAL (id_bolsa=10 conflicta con solicitud original)
+                .idBolsa(15L) // ✅ v1.85.0: BOLSA_RECITA (id_bolsa=15)
                 .idServicio(idServicioRecita) // ✅ v1.47.3 Asignar idServicio para permitir selector de médicos
                 // ✅ v1.103.9: Sin gestora — va a bolsas/solicitudes para ser asignada, NO a citas-agendadas
                 .fechaAsignacion(OffsetDateTime.now())
@@ -342,8 +342,7 @@ public class AtenderPacienteService {
                 .especialidad(especialidad)
                 .estado("PENDIENTE")
                 .estadoGestionCitasId(11L) // PENDIENTE_CITA = Paciente nuevo que ingresó a la bolsa
-                .idBolsa(11L) // ✅ v1.75.0: BOLSA_GENERADA_X_PROFESIONAL (correcto para interconsulta)
-                              // Antes era 10 (BOLSA_GESTORA) por UNIQUE constraint, resuelto con 1 fila por especialidad
+                .idBolsa(16L) // ✅ v1.85.0: BOLSA_INTERCONSULTA (id_bolsa=16)
                 .idServicio(idServicioInterconsulta) // ✅ v1.47.3 Asignar idServicio para permitir selector de médicos
                 // ✅ v1.103.9: Sin gestora — va a bolsas/solicitudes para ser asignada, NO a citas-agendadas
                 .fechaAsignacion(OffsetDateTime.now())
