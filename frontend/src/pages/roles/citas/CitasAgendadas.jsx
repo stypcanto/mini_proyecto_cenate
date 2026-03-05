@@ -1033,9 +1033,9 @@ export default function CitasAgendadas() {
         headers: { Authorization: `Bearer ${getToken()}` },
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const ipress = listaIpress.find(i => String(i.id_ipress) === String(idIpress));
+      const ipress = listaIpress.find(i => String(i.idIpress ?? i.id_ipress) === String(idIpress));
       setPacientes(prev => prev.map(p =>
-        p.id === paciente.id ? { ...p, descIpress: ipress?.desc_ipress || p.descIpress } : p
+        p.id === paciente.id ? { ...p, descIpress: ipress?.descIpress ?? ipress?.desc_ipress ?? p.descIpress } : p
       ));
       setModalEditarIpress({ visible: false, paciente: null, idIpress: '' });
       toast.success('IPRESS actualizada correctamente');
@@ -1565,8 +1565,8 @@ CENATE de Essalud`;
                         />
                       </th>
                       {(esCoordEnfermeria
-                        ? ['Paciente', 'DNI', 'Teléfono', 'Enfermera asignada', 'Especialidad', 'Fecha / Hora Cita', 'IPRESS', 'Estado de Cita', 'Estado de Bolsa', 'Estado de Atención', 'Motivo anulación', 'Acc.']
-                        : ['Paciente', 'DNI', 'Teléfono', 'Prof. de Salud', 'Especialidad', 'Fecha / Hora Cita', 'IPRESS', 'Estado de Cita', 'Estado de Bolsa', 'Estado de Atención', 'Motivo anulación', 'Acc.']
+                        ? ['Paciente', 'DNI', 'Teléfono', 'Enfermera asignada', 'Especialidad', 'Fecha / Hora Cita', 'IPRESS Atención', 'Estado de Cita', 'Estado de Bolsa', 'Estado de Atención', 'Motivo anulación', 'Acc.']
+                        : ['Paciente', 'DNI', 'Teléfono', 'Prof. de Salud', 'Especialidad', 'Fecha / Hora Cita', 'IPRESS Atención', 'Estado de Cita', 'Estado de Bolsa', 'Estado de Atención', 'Motivo anulación', 'Acc.']
                       ).map((h, i) => (
                         <th key={h} style={{ padding: '10px 12px', textAlign: i === 9 ? 'center' : 'left', fontSize: '10px', fontWeight: '700', color: '#e0f2fe', textTransform: 'uppercase', letterSpacing: '0.06em', whiteSpace: 'nowrap', width: i === 9 ? '90px' : 'auto' }}>
                           {h}
@@ -2330,7 +2330,7 @@ CENATE de Essalud`;
                 >
                   <option value="">— Selecciona una IPRESS —</option>
                   {listaIpress.map(ip => (
-                    <option key={ip.id_ipress} value={ip.id_ipress}>{ip.desc_ipress}</option>
+                    <option key={ip.idIpress ?? ip.id_ipress} value={ip.idIpress ?? ip.id_ipress}>{ip.descIpress ?? ip.desc_ipress}</option>
                   ))}
                 </select>
                 {listaIpress.length === 0 && (
