@@ -130,6 +130,7 @@ export default function Solicitudes({ categoriaInicial } = {}) {
   const [cenacronCount, setCenacronCount] = useState(null);           // Conteo CENACRON en contexto actual
   const [maratonCount, setMaratonCount] = useState(null);             // Conteo MARATON en contexto actual
   const [maratonUniversoTotal, setMaratonUniversoTotal] = useState(null); // Total MARATÓN desde paciente_estrategia (13,402)
+  const [kpiCenacron, setKpiCenacron] = useState(null); // {citados, universo} para segmento CENACRON dentro de Maratón
   const [filtroFechaInicio, setFiltroFechaInicio] = useState('');     // ✅ v1.66.0: Filtro rango de fechas - inicio
   const [filtroFechaFin, setFiltroFechaFin] = useState('');           // ✅ v1.66.0: Filtro rango de fechas - fin
   const [cardSeleccionado, setCardSeleccionado] = useState(null);     // ✅ v1.42.0: Rastrear card activo
@@ -403,8 +404,12 @@ export default function Solicitudes({ categoriaInicial } = {}) {
                 categoriaInicial === 'maraton'
                   ? apiClient.get('/asegurados?maraton=true&page=0&size=1', true).catch(() => null)
                   : Promise.resolve(null),
+                // KPI CENACRON dentro de Maratón (termómetro de meta)
+                categoriaInicial === 'maraton'
+                  ? bolsasService.obtenerKpiConFiltros({ categoriaEspecialidad: 'maraton', estrategia: 'CENACRON' }).catch(() => null)
+                  : Promise.resolve(null),
               ];
-              const [naAdsc, naAten, cnCenacron, cnMaraton, maratonUniverse] = await Promise.all(promises);
+              const [naAdsc, naAten, cnCenacron, cnMaraton, maratonUniverse, kpiCenacronData] = await Promise.all(promises);
               if (mounted) {
                 setIpressNaCount(naAdsc?.totalElements ?? null);
                 setIpressAtencionNaCount(naAten?.totalElements ?? null);
@@ -412,6 +417,15 @@ export default function Solicitudes({ categoriaInicial } = {}) {
                 setMaratonCount(cnMaraton?.totalElements ?? null);
                 if (maratonUniverse?.totalElements != null) {
                   setMaratonUniversoTotal(maratonUniverse.totalElements);
+                }
+                if (Array.isArray(kpiCenacronData)) {
+                  const cenacronCitados = kpiCenacronData
+                    .filter(r => ['CITADO', 'ATENDIDO', 'ATENDIDO_IPRESS'].includes(r.estado))
+                    .reduce((s, r) => s + (r.cantidad || 0), 0);
+                  const cenacronUniverso = kpiCenacronData
+                    .filter(r => !['SIN_GESTORA', 'CON_GESTORA', 'ASIGNADOS'].includes(r.estado))
+                    .reduce((s, r) => s + (r.cantidad || 0), 0);
+                  setKpiCenacron({ citados: cenacronCitados, universo: cenacronUniverso });
                 }
               }
             } catch (_) {}
@@ -2253,18 +2267,24 @@ export default function Solicitudes({ categoriaInicial } = {}) {
                         </p>
                       </div>
 
-                      {/* M3. EN CONTACTO */}
-                      <div className="bg-white rounded-xl border border-gray-100 border-t-4 shadow-sm px-5 py-4 relative"
-                        style={{ borderTopColor: '#f97316' }}>
-                        <Clock className="absolute top-3 right-3 w-3.5 h-3.5 text-orange-400" style={{ opacity: 0.3 }} strokeWidth={2} />
-                        <p className="text-[10px] font-bold uppercase tracking-widest mb-2" style={{ color: '#f97316' }}>③ En Contacto</p>
-                        <p className="text-4xl font-black text-gray-900 leading-none tabular-nums">
-                          {estadisticas.pendientes === null ? <span className="text-xl text-gray-300 animate-pulse">—</span> : estadisticas.pendientes.toLocaleString('es-PE')}
-                        </p>
-                        <p className="text-xs text-gray-400 mt-1.5">
-                          {estadisticas.pendientes !== null ? `${pct(estadisticas.pendientes)}% del total` : '—'}
-                        </p>
-                      </div>
+                      {/* M3. EN CONTACTO — con gestora asignada, aún no citados */}
+                      {(() => {
+                        const enContacto = (estadisticas.asignados !== null && estadisticas.citados !== null)
+                          ? Math.max(0, estadisticas.asignados - estadisticas.citados) : null;
+                        return (
+                          <div className="bg-white rounded-xl border border-gray-100 border-t-4 shadow-sm px-5 py-4 relative"
+                            style={{ borderTopColor: '#f97316' }}>
+                            <Clock className="absolute top-3 right-3 w-3.5 h-3.5 text-orange-400" style={{ opacity: 0.3 }} strokeWidth={2} />
+                            <p className="text-[10px] font-bold uppercase tracking-widest mb-2" style={{ color: '#f97316' }}>③ En Contacto</p>
+                            <p className="text-4xl font-black text-gray-900 leading-none tabular-nums">
+                              {enContacto === null ? <span className="text-xl text-gray-300 animate-pulse">—</span> : enContacto.toLocaleString('es-PE')}
+                            </p>
+                            <p className="text-xs text-gray-400 mt-1.5">
+                              {enContacto !== null ? `${pct(enContacto)}% del total` : '—'}
+                            </p>
+                          </div>
+                        );
+                      })()}
 
                       {/* M4. CITAS LOGRADAS */}
                       <div className="bg-white rounded-xl border border-gray-100 border-t-4 shadow-sm px-5 py-4 relative"
@@ -2290,6 +2310,68 @@ export default function Solicitudes({ categoriaInicial } = {}) {
                         </button>
                       </div>
                     )}
+
+                    {/* ══ NIVEL 2: METAS ESTRATÉGICAS — CENACRON vs ESPECIALIDADES ══ */}
+                    {kpiCenacron !== null && (() => {
+                      const META_CENACRON = 3600;
+                      const META_ESPECIALIDADES = 360;
+                      const citasLogradas = (estadisticas.citados ?? 0) + (estadisticas.atendidos ?? 0);
+                      const cenacronCitados = kpiCenacron.citados;
+                      const espCitados = Math.max(0, citasLogradas - cenacronCitados);
+                      const cenacronPct = Math.min(100, (cenacronCitados / META_CENACRON) * 100);
+                      const espPct = Math.min(100, (espCitados / META_ESPECIALIDADES) * 100);
+
+                      const MetaCard = ({ label, emoji, actual, meta, pct, colorBar }) => (
+                        <div className="bg-white rounded-xl border border-gray-100 shadow-sm px-5 py-4">
+                          <div className="flex items-center justify-between mb-3">
+                            <div>
+                              <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400">{emoji} {label}</p>
+                              <p className="text-2xl font-black text-gray-900 tabular-nums leading-tight mt-0.5">
+                                {actual.toLocaleString('es-PE')}
+                                <span className="text-sm font-medium text-gray-400 ml-1">/ {meta.toLocaleString('es-PE')}</span>
+                              </p>
+                            </div>
+                            <div className="text-right">
+                              <p className="text-2xl font-black tabular-nums" style={{ color: colorBar }}>{pct.toFixed(1)}%</p>
+                              <p className="text-[10px] text-gray-400 uppercase tracking-wide">completado</p>
+                            </div>
+                          </div>
+                          {/* Barra de progreso */}
+                          <div className="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
+                            <div className="h-2 rounded-full transition-all duration-700"
+                              style={{ width: `${pct}%`, background: colorBar }} />
+                          </div>
+                          <div className="flex justify-between mt-1.5">
+                            <span className="text-[10px] text-gray-400">Faltan {(meta - actual).toLocaleString('es-PE')}</span>
+                            <span className="text-[10px] text-gray-400">Meta: {meta.toLocaleString('es-PE')}</span>
+                          </div>
+                        </div>
+                      );
+
+                      return (
+                        <div className="col-span-full mt-3">
+                          <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-2">Termómetros de Meta</p>
+                          <div className="grid grid-cols-2 gap-3">
+                            <MetaCard
+                              label="Maratón CENACRON"
+                              emoji="🩺"
+                              actual={cenacronCitados}
+                              meta={META_CENACRON}
+                              pct={cenacronPct}
+                              colorBar="#7c3aed"
+                            />
+                            <MetaCard
+                              label="Especialidades"
+                              emoji="🏥"
+                              actual={espCitados}
+                              meta={META_ESPECIALIDADES}
+                              pct={espPct}
+                              colorBar="#0ea5e9"
+                            />
+                          </div>
+                        </div>
+                      );
+                    })()}
                   </>
                 );
               })()}
