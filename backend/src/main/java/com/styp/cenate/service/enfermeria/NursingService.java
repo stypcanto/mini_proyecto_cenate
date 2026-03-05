@@ -552,6 +552,8 @@ public class NursingService {
         solicitud.setCondicionMedica("Pendiente");
         solicitud.setEstado("PENDIENTE");
         solicitud.setFechaAtencionMedica(null);
+        solicitud.setFechaAtencion(null);   // limpiar fecha cita para que no aparezca en fecha antigua
+        solicitud.setHoraAtencion(null);
 
         if (idPersonal != null) {
             solicitud.setIdPersonal(idPersonal);
