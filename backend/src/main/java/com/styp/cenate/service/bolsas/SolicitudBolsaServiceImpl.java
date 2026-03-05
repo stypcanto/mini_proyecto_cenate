@@ -883,16 +883,17 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
         if (value instanceof java.sql.Timestamp) {
             // ✅ v1.84.9: JDBC devuelve TIMESTAMP WITH TIME ZONE como UTC automáticamente
             // Convertir de UTC a Lima para obtener la hora local correcta
-            return ((java.sql.Timestamp) value)
-                .toInstant()
-                .atZoneSameInstant(java.time.ZoneId.of("America/Lima"))
-                .toOffsetDateTime();
+            return java.time.OffsetDateTime.ofInstant(
+                ((java.sql.Timestamp) value).toInstant(),
+                java.time.ZoneId.of("America/Lima")
+            );
         }
         if (value instanceof java.time.Instant) {
             // ✅ v1.84.9: Instant siempre es UTC, convertir a Lima
-            return ((java.time.Instant) value)
-                .atZoneSameInstant(java.time.ZoneId.of("America/Lima"))
-                .toOffsetDateTime();
+            return java.time.OffsetDateTime.ofInstant(
+                (java.time.Instant) value,
+                java.time.ZoneId.of("America/Lima")
+            );
         }
         throw new ClassCastException("No se puede convertir " + value.getClass().getName() + " a OffsetDateTime. Tipo: " + value.getClass().getSimpleName());
     }
@@ -3285,7 +3286,9 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
             .idPersonal(solicitud.getIdPersonal())
             .nombreMedicoAsignado(nombreMedico)
             .condicionMedica(solicitud.getCondicionMedica())
-            .fechaAtencionMedica(solicitud.getFechaAtencionMedica())
+            .fechaAtencionMedica(solicitud.getFechaAtencionMedica() != null 
+                ? java.time.format.DateTimeFormatter.ISO_OFFSET_DATE_TIME.format(solicitud.getFechaAtencionMedica()) 
+                : null)  // ✅ v1.85.0: Convertir a String ISO
             .build();
     }
 

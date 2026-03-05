@@ -767,7 +767,9 @@ export default function ModalEvaluacionECG({
       onClose();
     } catch (error) {
       console.error("❌ Error al marcar como atendido:", error);
-      toast.error("Error al marcar como atendido. Por favor intenta nuevamente.");
+      // ✅ v1.85.0: Mostrar mensaje específico de validación temporal
+      const mensaje = error?.response?.data?.error || error?.message || "Error al marcar como atendido. Por favor intenta nuevamente.";
+      toast.error(mensaje);
     }
   };
 

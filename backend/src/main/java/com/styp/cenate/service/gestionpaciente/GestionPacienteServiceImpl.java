@@ -62,6 +62,51 @@ public class GestionPacienteServiceImpl implements IGestionPacienteService {
     private final TrazabilidadClinicaService trazabilidadClinicaService;  // ✅ v1.81.0: Para registrar en historial centralizado
     private final PacienteEstrategiaRepository pacienteEstrategiaRepository;
 
+    /**
+     * ✅ v1.85.0: Validar si se puede editar un paciente basado en fecha_atencion_medica
+     * Bloquea cambios si ya pasó el día de atención
+     * 
+     * Regla: Solo se puede editar EL MISMO DÍA de la atención
+     * Ejemplo:
+     *   - Si fecha_atencion_medica = NULL → ✅ Permitir (nunca fue atendido)
+     *   - Si fecha_atencion_medica = 05/03/2026 y hoy = 05/03/2026 → ✅ Puedo editar
+     *   - Si fecha_atencion_medica = 05/03/2026 y hoy = 06/03/2026 → ❌ No puedo editar
+     * 
+     * @param solicitudBolsa       Solicitud del paciente con fecha_atencion_medica
+     * @param accion               Acción que intenta realizar (editar, cambiar estado, etc.)
+     * @throws IllegalStateException Si ya pasó el día y no puede editar
+     */
+    private void validarFinantraEdicionporFechaAtencion(SolicitudBolsa solicitudBolsa, String accion) {
+        if (solicitudBolsa.getFechaAtencionMedica() == null) {
+            // Sin fecha de atención registrada = se puede editar (nunca fue atendido antes)
+            log.info("✅ [v1.85.0] Sin fecha_atencion_medica: se permite {}", accion);
+            return;
+        }
+
+        // Obtener la fecha de atención en zona horaria Lima
+        // ✅ getFechaAtencionMedica() retorna OffsetDateTime que ya tiene zona horaria
+        LocalDate fechaAtencionLocal = solicitudBolsa.getFechaAtencionMedica()
+            .toLocalDate();  // OffsetDateTime ya tiene zona horaria, solo extraer la fecha
+        
+        // Fecha actual en zona horaria Lima
+        LocalDate hoy = LocalDate.now(ZoneId.of("America/Lima"));
+
+        // ✅ Solo permite editar si es el MISMO DÍA de la atención
+        if (!fechaAtencionLocal.equals(hoy)) {
+            log.warn("⚠️ [v1.85.0] Intento BLOQUEADO de {} para paciente con fecha_atencion_medica={}, hoy={}",
+                accion, fechaAtencionLocal, hoy);
+            throw new IllegalStateException(
+                String.format("No puede %s este paciente. La atención fue el %02d/%02d/%d. " +
+                    "Solo se puede editar el mismo día de la atención.",
+                    accion, fechaAtencionLocal.getDayOfMonth(), fechaAtencionLocal.getMonthValue(), fechaAtencionLocal.getYear())
+            );
+        }
+
+        log.info("✅ [v1.85.0] Validación OK: fecha_atencion={}  es hoy={}, se permite {}", 
+            fechaAtencionLocal, hoy, accion);
+    }
+
+
     @Override
     @Transactional
     public GestionPacienteDTO guardar(GestionPacienteDTO dto) {
@@ -218,6 +263,12 @@ public class GestionPacienteServiceImpl implements IGestionPacienteService {
     @Override
     public GestionPacienteDTO actualizarCondicion(Long id, String condicion, String observaciones) {
         log.info("Actualizando condición para ID: {} a {}", id, condicion);
+
+        // ✅ v1.85.0: Validar restricción temporal - Solo editar el mismo día de atención
+        var solicitudOptTempo = solicitudBolsaRepository.findById(id);
+        if (solicitudOptTempo.isPresent()) {
+            validarFinantraEdicionporFechaAtencion(solicitudOptTempo.get(), "actualizar estado del paciente");
+        }
 
         // ✅ v1.103.13: Validar que no se pueda cambiar de ATENDIDO a Pendiente/Deserción
         String condicionNormalizada = condicion != null ? condicion.toUpperCase().trim() : "";
@@ -881,15 +932,11 @@ public class GestionPacienteServiceImpl implements IGestionPacienteService {
                     .atOffset(java.time.ZoneOffset.of("-05:00"))
                 : null)  // ✅ v1.80.0: Incluir hora_atencion en fechaAtencion (fecha+hora de la cita)
             .fechaAtencionMedica(bolsa.getFechaAtencionMedica() != null 
-                ? java.time.format.DateTimeFormatter.ISO_OFFSET_DATE_TIME.format(
-                    bolsa.getFechaAtencionMedica().atZoneSameInstant(java.time.ZoneId.of("America/Lima")).toOffsetDateTime()
-                  )
-                : null)  // ✅ v1.85.0: Convertir UTC → Lima (-05:00) antes de formatear
+                ? java.time.format.DateTimeFormatter.ISO_OFFSET_DATE_TIME.format(bolsa.getFechaAtencionMedica())
+                : null)  // ✅ v1.85.0: Ya tiene offset -05:00 de Lima, formatear directamente
             .primeraFechaAtendida(bolsa.getPrimeraFechaAtendida() != null 
-                ? java.time.format.DateTimeFormatter.ISO_OFFSET_DATE_TIME.format(
-                    bolsa.getPrimeraFechaAtendida().atZoneSameInstant(java.time.ZoneId.of("America/Lima")).toOffsetDateTime()
-                  )
-                : null)  // ✅ v1.85.0: Convertir UTC → Lima (-05:00) antes de formatear
+                ? java.time.format.DateTimeFormatter.ISO_OFFSET_DATE_TIME.format(bolsa.getPrimeraFechaAtendida())
+                : null)  // ✅ v1.85.0: Ya tiene offset -05:00 de Lima, formatear directamente
             .enfermedadCronica(enfermedadesCronicas)  // ✅ v1.50.0: Incluir enfermedades crónicas
             .tiempoInicioSintomas(tiempoSintomas)  // ✅ v1.64.0: Con valor por defecto "> 72 hrs."
             .consentimientoInformado(consentimiento)  // ✅ v1.64.0: Con valores por defecto según condición

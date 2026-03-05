@@ -1995,7 +1995,9 @@ export default function MisPacientes() {
       setBusquedaDesercion('');
     } catch (error) {
       devError('Error procesando acción:', error);
-      toast.error('Error al cambiar estado. Intenta nuevamente.');
+      // ✅ v1.85.0: Mostrar mensaje específico de validación temporal
+      const mensaje = error?.response?.data?.error || error?.message || 'Error al cambiar estado. Intenta nuevamente.';
+      toast.error(mensaje);
     } finally {
       setProcesando(false);
     }
@@ -2139,7 +2141,9 @@ export default function MisPacientes() {
       setShowFichaEnfermeriaModal(false);
     } catch (error) {
       devError('Error registrando atención:', error);
-      toast.error('Error al registrar atención. Intenta nuevamente.');
+      // ✅ v1.85.0: Mostrar mensaje específico de validación temporal
+      const mensaje = error?.response?.data?.error || error?.message || 'Error al registrar atención. Intenta nuevamente.';
+      toast.error(mensaje);
     } finally {
       setProcesando(false);
     }

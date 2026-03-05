@@ -72,7 +72,12 @@ public class SolicitudBolsaMapper {
                 .estado(entity.getEstado())
                 // ===== ATENCIÓN MÉDICA (NEW v3.5.0) =====
                 .condicionMedica(entity.getCondicionMedica())
-                .fechaAtencionMedica(entity.getFechaAtencionMedica())
+                .fechaAtencionMedica(entity.getFechaAtencionMedica() != null 
+                    ? java.time.format.DateTimeFormatter.ISO_OFFSET_DATE_TIME.format(entity.getFechaAtencionMedica()) 
+                    : null)  // ✅ v1.85.0: Convertir a String ISO
+                .primeraFechaAtendida(entity.getPrimeraFechaAtendida() != null 
+                    ? java.time.format.DateTimeFormatter.ISO_OFFSET_DATE_TIME.format(entity.getPrimeraFechaAtendida()) 
+                    : null)  // ✅ v1.85.0: Convertir a String ISO
                 // ===== MÉDICO ASIGNADO (v3.6.0) =====
                 .idPersonal(entity.getIdPersonal())
                 // ===== FECHA Y HORA DE ATENCIÓN (v1.67.x) =====

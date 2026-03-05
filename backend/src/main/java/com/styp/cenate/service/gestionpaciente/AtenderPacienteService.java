@@ -49,6 +49,41 @@ public class AtenderPacienteService {
     private final AtencionClinicaRepository atencionClinicaRepository;    // ✅ v1.76.0
     private final IpressRepository ipressRepository;                       // ✅ v1.103.7: FK lookup
 
+    /**
+     * ✅ v1.85.0: Valida si se puede registrar atención después de que pasó el día
+     * Permite:
+     *   - Primer registro de atención (fecha_atencion_medica = NULL)
+     *   - Modificar en el MISMO DÍA de atención
+     * Bloquea:
+     *   - Intentar cambiar observaciones después que pasó el día
+     */
+    private void validarPuedeRegistrarAtencion(SolicitudBolsa solicitud) {
+        if (solicitud.getFechaAtencionMedica() == null) {
+            // Primera vez: permite registrar
+            log.info("✅ [v1.85.0] Primera atención: se permite registrar");
+            return;
+        }
+
+        // Ya fue atendido —  validar que sea el MISMO DÍA
+        // ✅ getFechaAtencionMedica() retorna OffsetDateTime que ya tiene zona horaria
+        LocalDate fechaAtencionLocal = solicitud.getFechaAtencionMedica()
+            .toLocalDate();  // OffsetDateTime ya tiene zona horaria, solo extraer la fecha
+        LocalDate hoy = LocalDate.now(ZoneId.of("America/Lima"));
+
+        if (!fechaAtencionLocal.equals(hoy)) {
+            log.warn("⚠️ [v1.85.0] Intento de modificar atención pasada: fecha={}, hoy={}", 
+                fechaAtencionLocal, hoy);
+            throw new IllegalStateException(
+                String.format("Esta atención fue el %02d/%02d/%d. " +
+                    "Solo se puede actualizar el mismo día. Hoy es %02d/%02d/%d.",
+                    fechaAtencionLocal.getDayOfMonth(), fechaAtencionLocal.getMonthValue(), fechaAtencionLocal.getYear(),
+                    hoy.getDayOfMonth(), hoy.getMonthValue(), hoy.getYear())
+            );
+        }
+
+        log.info("✅ [v1.85.0] Validación OK: atención del mismo día, se permite modificar");
+    }
+
     @Transactional
     public List<String> atenderPaciente(Long idSolicitudBolsa, String especialidadActual, AtenderPacienteRequest request) {
         log.info("🏥 [v1.103.6] Registrando atención - Solicitud: {}, especialidadActual='{}' (length={})", 
@@ -59,6 +94,9 @@ public class AtenderPacienteService {
             // 1. Obtener solicitud original
             SolicitudBolsa solicitudOriginal = solicitudBolsaRepository.findById(idSolicitudBolsa)
                     .orElseThrow(() -> new RuntimeException("Solicitud no encontrada"));
+
+            // ✅ v1.85.0: Validar restricción temporal ANTES de hacer cambios
+            validarPuedeRegistrarAtencion(solicitudOriginal);
 
             String pkAsegurado = solicitudOriginal.getPacienteDni();
             // ✅ Fix: asegurado es opcional — pacientes cargados sin registro en tabla asegurados
@@ -248,6 +286,10 @@ public class AtenderPacienteService {
 
             log.info("✅ [v1.103.6] Atención registrada completamente - Enfermedades crónicas guardadas en tabla asegurados");
             return interconsultasOmitidas;
+        } catch (IllegalStateException e) {
+            // ✅ v1.85.0: Dejar pasar validaciones sin envolver
+            log.warn("⚠️ [v1.85.0] Validación rechazada: {}", e.getMessage());
+            throw e;
         } catch (Exception e) {
             log.error("❌ [v1.103.6] Error crítico registrando atención: {}", e.getMessage(), e);
             throw new RuntimeException("Error al registrar atención: " + e.getMessage(), e);

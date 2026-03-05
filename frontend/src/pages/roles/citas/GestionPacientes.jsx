@@ -227,7 +227,9 @@ export default function GestionPacientes() {
             cargarPacientes();
         } catch (error) {
             console.error("Error:", error);
-            toast.error("Error al actualizar condición");
+            // ✅ v1.85.0: Mostrar mensaje específico de validación temporal
+            const mensaje = error?.response?.data?.error || error?.message || "Error al actualizar condición";
+            toast.error(mensaje);
         }
     };
 

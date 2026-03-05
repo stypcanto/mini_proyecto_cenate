@@ -230,9 +230,17 @@ public class GestionPacienteController {
             GestionPacienteDTO actualizado = servicio.actualizarCondicion(id, condicion, observaciones);
             return ResponseEntity.ok(actualizado);
         } catch (IllegalStateException e) {
-            // ✅ v1.103.13: Bloquear cambio de estado inválido (ATENDIDO → Pendiente/Deserción)
-            log.warn("⚠️ [v1.103.13] {}", e.getMessage());
-            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+            // ✅ v1.85.0 & v1.103.13: Validación temporal o estado inválido
+            String mensaje = e.getMessage();
+            String tipo = mensaje.contains("actualizar") && mensaje.contains("mismo día") 
+                ? "VALIDACION_TEMPORAL" 
+                : "ESTADO_INVALIDO";
+            log.warn("⚠️ [{}] {}", tipo, mensaje);
+            return ResponseEntity.status(400).body(Map.of(
+                "error", mensaje,
+                "solicitudId", id.toString(),
+                "tipo", tipo
+            ));
         }
     }
 
@@ -343,6 +351,14 @@ public class GestionPacienteController {
                 response.put("interconsultasOmitidas", omitidas);
             }
             return ResponseEntity.ok(response);
+        } catch (IllegalStateException e) {
+            // ✅ v1.85.0: Validación temporal - restricción 24 horas
+            log.warn("⚠️ [v1.85.0] Validación temporal rechazada para paciente {}: {}", id, e.getMessage());
+            return ResponseEntity.status(400).body(Map.of(
+                "error", e.getMessage(),
+                "solicitudId", id.toString(),
+                "tipo", "VALIDACION_TEMPORAL"
+        ));
         } catch (Exception e) {
             log.error("❌ [v1.103.5] Error atendiendo paciente {}: {}", id, e.getMessage(), e);
             return ResponseEntity.status(500).body(Map.of(
@@ -418,12 +434,21 @@ public class GestionPacienteController {
             ? request.getInterconsultaEspecialidad()
             : "General";
 
-        atenderPacienteService.atenderPaciente(idImagen, especialidad, request);
-
-        return ResponseEntity.ok(Map.of(
-            "mensaje", "ECG atendido correctamente",
-            "imagenId", idImagen.toString()
-        ));
+        try {
+            atenderPacienteService.atenderPaciente(idImagen, especialidad, request);
+            return ResponseEntity.ok(Map.of(
+                "mensaje", "ECG atendido correctamente",
+                "imagenId", idImagen.toString()
+            ));
+        } catch (IllegalStateException e) {
+            // ✅ v1.85.0: Validación temporal - restricción 24 horas
+            log.warn("⚠️ [v1.85.0] Validación temporal rechazada para ECG {}: {}", idImagen, e.getMessage());
+            return ResponseEntity.status(400).body(Map.of(
+                "error", e.getMessage(),
+                "imagenId", idImagen.toString(),
+                "tipo", "VALIDACION_TEMPORAL"
+            ));
+        }
     }
 
     /**
