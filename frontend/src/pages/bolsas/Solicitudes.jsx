@@ -2270,10 +2270,11 @@ export default function Solicitudes({ categoriaInicial } = {}) {
                         </p>
                       </div>
 
-                      {/* M3. EN CONTACTO — con gestora asignada, aún no citados */}
+                      {/* M3. EN CONTACTO — con gestora asignada, aún no finalizados (sin CITADO ni ATENDIDO) */}
                       {(() => {
+                        const citasLogradas = (estadisticas.citados ?? 0) + (estadisticas.atendidos ?? 0);
                         const enContacto = (estadisticas.asignados !== null && estadisticas.citados !== null)
-                          ? Math.max(0, estadisticas.asignados - estadisticas.citados) : null;
+                          ? Math.max(0, estadisticas.asignados - citasLogradas) : null;
                         return (
                           <div className="bg-white rounded-xl border border-gray-100 border-t-4 shadow-sm px-5 py-4 relative"
                             style={{ borderTopColor: '#f97316' }}>
@@ -2289,18 +2290,24 @@ export default function Solicitudes({ categoriaInicial } = {}) {
                         );
                       })()}
 
-                      {/* M4. CITAS LOGRADAS */}
-                      <div className="bg-white rounded-xl border border-gray-100 border-t-4 shadow-sm px-5 py-4 relative"
-                        style={{ borderTopColor: '#22c55e' }}>
-                        <CalendarCheck className="absolute top-3 right-3 w-3.5 h-3.5 text-green-400" style={{ opacity: 0.3 }} strokeWidth={2} />
-                        <p className="text-[10px] font-bold uppercase tracking-widest mb-2" style={{ color: '#22c55e' }}>④ Citas Logradas</p>
-                        <p className="text-4xl font-black text-gray-900 leading-none tabular-nums">
-                          {estadisticas.citados === null ? <span className="text-xl text-gray-300 animate-pulse">—</span> : estadisticas.citados.toLocaleString('es-PE')}
-                        </p>
-                        <p className="text-xs text-gray-400 mt-1.5">
-                          {estadisticas.citados !== null ? `${pct(estadisticas.citados)}% del total` : '—'}
-                        </p>
-                      </div>
+                      {/* M4. CITAS LOGRADAS = CITADO + ATENDIDO (estados ÉXITO del modal) */}
+                      {(() => {
+                        const citasLogradas = (estadisticas.citados !== null)
+                          ? (estadisticas.citados ?? 0) + (estadisticas.atendidos ?? 0) : null;
+                        return (
+                          <div className="bg-white rounded-xl border border-gray-100 border-t-4 shadow-sm px-5 py-4 relative"
+                            style={{ borderTopColor: '#22c55e' }}>
+                            <CalendarCheck className="absolute top-3 right-3 w-3.5 h-3.5 text-green-400" style={{ opacity: 0.3 }} strokeWidth={2} />
+                            <p className="text-[10px] font-bold uppercase tracking-widest mb-2" style={{ color: '#22c55e' }}>④ Citas Logradas</p>
+                            <p className="text-4xl font-black text-gray-900 leading-none tabular-nums">
+                              {citasLogradas === null ? <span className="text-xl text-gray-300 animate-pulse">—</span> : citasLogradas.toLocaleString('es-PE')}
+                            </p>
+                            <p className="text-xs text-gray-400 mt-1.5">
+                              {citasLogradas !== null ? `${pct(citasLogradas)}% del total` : '—'}
+                            </p>
+                          </div>
+                        );
+                      })()}
 
                     </div>
 
