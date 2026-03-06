@@ -125,6 +125,7 @@ export default function Solicitudes({ categoriaInicial } = {}) {
   // v1.85.0: Filtro por estrategia (opcional, no se pre-fija para Maratón — usa categoriaEspecialidad=maraton → id_bolsa=17)
   const [filtroEstrategia, setFiltroEstrategia] = useState('todos');
   // Modal desglose Maratón (card OBSERVADOS)
+  const [progresoDesglosado, setProgresoDesglosado] = useState(false);
   const [desglosAbierto, setDesglosAbierto] = useState(false);
   const [desgloseData, setDesgloseData] = useState(null);
   const [desgloseLoading, setDesgloseLoading] = useState(false);
@@ -2753,9 +2754,17 @@ export default function Solicitudes({ categoriaInicial } = {}) {
             {/* Header */}
             <div className="flex items-center justify-between mb-4">
               <span className="text-sm font-semibold text-gray-700">Progreso de la campaña</span>
-              <span className="text-xs text-gray-400">
-                Universo: <strong className="text-gray-600">{(maratonUniversoTotal ?? estadisticas.total)?.toLocaleString('es-PE')}</strong> pacientes
-              </span>
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => setProgresoDesglosado(v => !v)}
+                  className="flex items-center gap-1.5 text-xs text-slate-500 hover:text-slate-700 border border-slate-200 hover:border-slate-300 rounded-md px-2.5 py-1 transition-colors"
+                >
+                  {progresoDesglosado ? '▲ Ocultar desglose' : '▼ Ver desglose'}
+                </button>
+                <span className="text-xs text-gray-400">
+                  Universo: <strong className="text-gray-600">{(maratonUniversoTotal ?? estadisticas.total)?.toLocaleString('es-PE')}</strong> pacientes
+                </span>
+              </div>
             </div>
 
             {(() => {
@@ -2844,53 +2853,56 @@ export default function Solicitudes({ categoriaInicial } = {}) {
                     </div>
                   </div>
 
-                  {/* ── Tabla de desglose ── */}
-                  <div className="overflow-hidden rounded-lg border border-slate-100">
-                    <table className="w-full text-xs">
-                      <thead>
-                        <tr className="bg-slate-50 border-b border-slate-100">
-                          <th className="text-left px-3 py-2 text-slate-500 font-medium">Estado</th>
-                          <th className="text-right px-3 py-2 text-slate-500 font-medium">Pacientes</th>
-                          <th className="text-right px-3 py-2 text-slate-500 font-medium w-16">%</th>
-                          <th className="px-3 py-2 w-28" />
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-50">
-                        {filas.map(f => (
-                          <tr key={f.label} className="hover:bg-slate-50/60">
-                            <td className="px-3 py-1.5 flex items-center gap-2">
-                              <span className={`w-2 h-2 rounded-full flex-shrink-0 ${f.color}`} />
-                              <span className="text-slate-600">{f.label}</span>
-                            </td>
-                            <td className="px-3 py-1.5 text-right font-semibold text-slate-700">
-                              {f.valor.toLocaleString('es-PE')}
-                            </td>
-                            <td className="px-3 py-1.5 text-right text-slate-500">
-                              {f.pct.toFixed(1)}%
-                            </td>
-                            <td className="px-3 py-1.5">
-                              <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
-                                <div className={`${f.color} h-full rounded-full`} style={{ width: `${Math.min(f.pct, 100)}%` }} />
-                              </div>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
+                  {/* ── Tabla de desglose + Leyenda (colapsable) ── */}
+                  {progresoDesglosado && (
+                    <>
+                      <div className="overflow-hidden rounded-lg border border-slate-100">
+                        <table className="w-full text-xs">
+                          <thead>
+                            <tr className="bg-slate-50 border-b border-slate-100">
+                              <th className="text-left px-3 py-2 text-slate-500 font-medium">Estado</th>
+                              <th className="text-right px-3 py-2 text-slate-500 font-medium">Pacientes</th>
+                              <th className="text-right px-3 py-2 text-slate-500 font-medium w-16">%</th>
+                              <th className="px-3 py-2 w-28" />
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-slate-50">
+                            {filas.map(f => (
+                              <tr key={f.label} className="hover:bg-slate-50/60">
+                                <td className="px-3 py-1.5 flex items-center gap-2">
+                                  <span className={`w-2 h-2 rounded-full flex-shrink-0 ${f.color}`} />
+                                  <span className="text-slate-600">{f.label}</span>
+                                </td>
+                                <td className="px-3 py-1.5 text-right font-semibold text-slate-700">
+                                  {f.valor.toLocaleString('es-PE')}
+                                </td>
+                                <td className="px-3 py-1.5 text-right text-slate-500">
+                                  {f.pct.toFixed(1)}%
+                                </td>
+                                <td className="px-3 py-1.5">
+                                  <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
+                                    <div className={`${f.color} h-full rounded-full`} style={{ width: `${Math.min(f.pct, 100)}%` }} />
+                                  </div>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
 
-                  {/* ── Leyenda de cálculo ── */}
-                  <div className="text-xs text-slate-600 bg-slate-50 rounded-lg px-4 py-3 leading-relaxed border border-slate-200">
-                    <span className="font-bold text-slate-700">¿Cómo se calcula?</span>
-                    <span className="mx-2 text-slate-400">·</span>
-                    <span className="text-violet-700 font-semibold">Gestión</span>
-                    <span className="text-slate-500"> = En contacto + Citados + Atendidos + Observados</span>
-                    <span className="mx-2 text-slate-400">·</span>
-                    <span className="text-emerald-700 font-semibold">Citación</span>
-                    <span className="text-slate-500"> = Citados + Atendidos</span>
-                    <span className="mx-2 text-slate-400">·</span>
-                    <span className="text-slate-500">Denominador: universo total de <strong className="text-slate-700">{total.toLocaleString('es-PE')}</strong> pacientes</span>
-                  </div>
+                      <div className="text-xs text-slate-600 bg-slate-50 rounded-lg px-4 py-3 leading-relaxed border border-slate-200">
+                        <span className="font-bold text-slate-700">¿Cómo se calcula?</span>
+                        <span className="mx-2 text-slate-400">·</span>
+                        <span className="text-violet-700 font-semibold">Gestión</span>
+                        <span className="text-slate-500"> = En contacto + Citados + Atendidos + Observados</span>
+                        <span className="mx-2 text-slate-400">·</span>
+                        <span className="text-emerald-700 font-semibold">Citación</span>
+                        <span className="text-slate-500"> = Citados + Atendidos</span>
+                        <span className="mx-2 text-slate-400">·</span>
+                        <span className="text-slate-500">Denominador: universo total de <strong className="text-slate-700">{total.toLocaleString('es-PE')}</strong> pacientes</span>
+                      </div>
+                    </>
+                  )}
                 </div>
               );
             })()}
