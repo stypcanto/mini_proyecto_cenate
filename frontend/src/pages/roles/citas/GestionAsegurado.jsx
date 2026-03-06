@@ -535,6 +535,7 @@ export default function GestionAsegurado() {
   const fetchPacientesAsignados = async () => {
     try {
       const token = getToken();
+      console.log("**************************** 📥 INICIO RESPUESTA API MI-BANDEJA ****************************");
       console.log("📥 Fetching assigned patients from /api/bolsas/solicitudes/mi-bandeja");
       console.log("🔐 Token disponible:", token ? "✅ Sí" : "❌ No");
       console.log("🔐 Token value:", token ? `${token.substring(0, 20)}...` : "null");
@@ -568,11 +569,13 @@ export default function GestionAsegurado() {
         }
       );
 
+      console.log("**************************** 📊 RESPUESTA DEL SERVIDOR ****************************");
       console.log(`📊 Response Status: ${response.status} ${response.statusText}`);
       console.log("📋 Response Headers:", {
         "content-type": response.headers.get("content-type"),
         "content-length": response.headers.get("content-length"),
       });
+      console.log("************************************************************************************");
 
       if (!response.ok) {
         console.warn(`❌ Error fetching mi-bandeja: Status ${response.status}`);
@@ -590,8 +593,10 @@ export default function GestionAsegurado() {
       }
 
       const data = await response.json();
+      console.log("**************************** 📦 DATOS JSON PARSEADOS ****************************");
       console.log("📦 Response structure:", data);
       console.log("📦 Response keys:", Object.keys(data));
+      console.log("************************************************************************************");
 
       // The endpoint returns { total, solicitudes, mensaje }
       const solicitudes = data?.solicitudes || data?.data?.content || data?.content || [];
@@ -611,11 +616,7 @@ export default function GestionAsegurado() {
         // Mapear código de estado a descripción
         let codigoEstado = solicitud.cod_estado_cita || solicitud.codEstadoCita || "PENDIENTE_CITA";
 
-        // ✅ v1.109.0: Para RECITA e INTERCONSULTA, asegurar que el estado es PENDIENTE_CITA
         const tipoCita = solicitud.tipo_cita || solicitud.tipoCita || "-";
-        if ((tipoCita === "RECITA" || tipoCita === "INTERCONSULTA") && codigoEstado !== "PENDIENTE_CITA") {
-          codigoEstado = "PENDIENTE_CITA"; // Forzar estado correcto para bolsas generadas por médicos
-        }
 
         const estadoObj = estadosDisponibles.find(e => e.codigo === codigoEstado);
         const descEstadoFinal = estadoObj ? estadoObj.descripcion : codigoEstado;
@@ -713,6 +714,7 @@ export default function GestionAsegurado() {
 
       console.log("📊 Métricas calculadas:", { total: pacientes.length, citados, atendidos, pendientes, otros });
       console.log("📊 Estados encontrados:", [...new Set(pacientes.map(p => p.codigoEstado))]);
+      console.log("**************************** ✅ FIN RESPUESTA API MI-BANDEJA ****************************");
 
       setMetrics({
         totalPacientes: pacientes.length,
@@ -722,7 +724,9 @@ export default function GestionAsegurado() {
         otros: otros
       });
     } catch (err) {
+      console.log("**************************** ❌ ERROR EN RESPUESTA API MI-BANDEJA ****************************");
       console.error("Error fetching assigned patients:", err);
+      console.log("************************************************************************************");
       setPacientesAsignados([]);
     }
   };
@@ -2565,6 +2569,9 @@ CENATE de Essalud`;
                         Tipo Cita
                       </th>
                       <th className="px-2 py-2 text-left text-[10px] font-bold uppercase">
+                        Estado de Bolsa
+                      </th>
+                      <th className="px-2 py-2 text-left text-[10px] font-bold uppercase">
                         Estado de Gestora
                       </th>
                       <th className="px-2 py-2 text-center text-[10px] font-bold uppercase">
@@ -2938,6 +2945,9 @@ CENATE de Essalud`;
                         </td>
                         <td className="px-2 py-1.5 text-slate-600">
                           {paciente.tipoCita}
+                        </td>
+                        <td className="px-2 py-1.5 text-slate-600">
+                          {paciente.estado || "-"}
                         </td>
                         <td className="px-2 py-1.5">
                           {pacienteEditandoEstado === paciente.id ? (
