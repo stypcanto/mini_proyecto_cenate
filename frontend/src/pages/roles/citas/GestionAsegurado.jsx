@@ -319,6 +319,7 @@ export default function GestionAsegurado() {
         (Array.isArray(data) ? data : [])
           .map(e => e.descripcion?.toUpperCase()?.trim())
           .filter(Boolean)
+          .filter(e => e !== 'ENFERMERIA' && e !== 'MEDICINA GENERAL')
           .sort()
       ))
       .catch(() => {});
