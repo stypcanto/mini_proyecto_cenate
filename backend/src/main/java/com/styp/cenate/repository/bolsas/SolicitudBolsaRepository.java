@@ -2089,6 +2089,67 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
         """, nativeQuery = true)
     Map<String, Object> kpisTrazabilidad();
 
+    /** KPIs filtrados según parámetros de búsqueda y filtros (similares a obtenerTrazabilidadRecitasInterconsultas). */
+    @Query(value = """
+        SELECT
+            COUNT(*)                                                                      AS total,
+            COUNT(*) FILTER (WHERE UPPER(recita.tipo_cita) = 'RECITA')                   AS recitas,
+            COUNT(*) FILTER (WHERE UPPER(recita.tipo_cita) = 'INTERCONSULTA')             AS interconsultas,
+            COUNT(*) FILTER (
+                WHERE COALESCE(recita.id_personal, orig_d.id_personal, orig_t.id_personal, ac_fk.id_personal_creador, orig_ac.id_personal) IS NULL
+            )                                                                             AS sin_creador
+        FROM dim_solicitud_bolsa recita
+        LEFT JOIN dim_solicitud_bolsa orig_d ON orig_d.id_solicitud = recita.idsolicitudgeneracion
+        LEFT JOIN LATERAL (
+            SELECT h.id_personal, h.especialidad
+            FROM   dim_solicitud_bolsa h
+            WHERE  h.paciente_dni = recita.paciente_dni
+              AND  h.id_personal IS NOT NULL
+              AND  UPPER(h.tipo_cita) NOT IN ('RECITA','INTERCONSULTA')
+              AND  h.fecha_atencion_medica IS NOT NULL
+              AND  ABS(EXTRACT(EPOCH FROM (h.fecha_atencion_medica - recita.fecha_solicitud))) < 120
+            ORDER BY ABS(EXTRACT(EPOCH FROM (h.fecha_atencion_medica - recita.fecha_solicitud)))
+            LIMIT 1
+        ) orig_t ON recita.idsolicitudgeneracion IS NULL
+        LEFT JOIN LATERAL (
+            SELECT ac.id_personal_creador AS id_personal
+            FROM   atencion_clinica ac
+            WHERE  ac.pk_asegurado = recita.paciente_id
+              AND  ac.fecha_atencion >= recita.fecha_solicitud - INTERVAL '2 minutes'
+              AND  ac.fecha_atencion <= recita.fecha_solicitud + INTERVAL '30 minutes'
+            ORDER BY ABS(EXTRACT(EPOCH FROM (ac.fecha_atencion - recita.fecha_solicitud)))
+            LIMIT 1
+        ) orig_ac ON COALESCE(recita.id_personal, orig_d.id_personal, orig_t.id_personal) IS NULL
+        LEFT JOIN atencion_clinica ac_fk ON ac_fk.id_atencion = recita.id_atencion_clinica
+        LEFT JOIN dim_personal_cnt pc   ON pc.id_pers = COALESCE(recita.id_personal, orig_d.id_personal, orig_t.id_personal, ac_fk.id_personal_creador, orig_ac.id_personal)
+        WHERE UPPER(recita.tipo_cita) IN ('RECITA','INTERCONSULTA')
+          AND recita.activo = true
+          AND (:idTipoBolsa IS NULL OR recita.id_bolsa = CAST(:idTipoBolsa AS bigint))
+          AND UPPER(COALESCE(orig_d.especialidad, orig_t.especialidad, '')) = 'ENFERMERIA'
+          AND (:busqueda    IS NULL OR recita.paciente_dni    ILIKE '%' || :busqueda || '%'
+                                   OR recita.paciente_nombre  ILIKE '%' || :busqueda || '%')
+          AND (:fechaInicio IS NULL OR recita.fecha_preferida_no_atendida >= CAST(:fechaInicio AS date))
+          AND (:fechaFin    IS NULL OR recita.fecha_preferida_no_atendida <= CAST(:fechaFin    AS date))
+          AND (:tipoCita    IS NULL OR UPPER(recita.tipo_cita) = UPPER(:tipoCita))
+          AND (:idPersonal  IS NULL OR COALESCE(recita.id_personal, orig_d.id_personal, orig_t.id_personal, ac_fk.id_personal_creador, orig_ac.id_personal) = CAST(:idPersonal AS bigint))
+          AND (:especialidad IS NULL OR recita.especialidad ILIKE '%' || :especialidad || '%')
+          AND (:motivo IS NULL OR (UPPER(recita.tipo_cita) = 'INTERCONSULTA' AND SUBSTRING(recita.especialidad FROM '\\(([^)]+)\\)') ILIKE '%' || :motivo || '%'))
+          AND (:estadoBolsa IS NULL OR recita.estado ILIKE :estadoBolsa)
+          AND (:creadoPor IS NULL OR (pc.ape_pater_pers || ' ' || pc.ape_mater_pers || ', ' || pc.nom_pers) ILIKE '%' || :creadoPor || '%')
+        """, nativeQuery = true)
+    Map<String, Object> kpisTrazabilidadFiltrados(
+        @org.springframework.data.repository.query.Param("busqueda")      String busqueda,
+        @org.springframework.data.repository.query.Param("fechaInicio")   String fechaInicio,
+        @org.springframework.data.repository.query.Param("fechaFin")      String fechaFin,
+        @org.springframework.data.repository.query.Param("tipoCita")      String tipoCita,
+        @org.springframework.data.repository.query.Param("idPersonal")    Long idPersonal,
+        @org.springframework.data.repository.query.Param("especialidad")  String especialidad,
+        @org.springframework.data.repository.query.Param("motivo")        String motivoInterconsulta,
+        @org.springframework.data.repository.query.Param("estadoBolsa")   String estadoBolsa,
+        @org.springframework.data.repository.query.Param("creadoPor")     String creadoPor,
+        @org.springframework.data.repository.query.Param("idTipoBolsa")   Long idTipoBolsa
+    );
+
     /** Fechas preferidas únicas con conteo de recitas/interconsultas (para marcar el calendario). */
     @Query(value = """
         SELECT recita.fecha_preferida_no_atendida AS fecha,

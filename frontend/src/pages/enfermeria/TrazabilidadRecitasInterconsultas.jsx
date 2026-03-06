@@ -624,6 +624,36 @@ export default function TrazabilidadRecitasInterconsultas() {
       if (!isMountedRef.current) return;
       setFilas(data.solicitudes || []);
       setTotal(data.total ?? 0);
+      
+      // Cargar KPIs filtrados desde el backend
+      const pKpis = new URLSearchParams();
+      if (searchTerm.trim())            pKpis.set('busqueda',             searchTerm.trim());
+      if (filtroFechaInicio)            pKpis.set('fechaInicio',          filtroFechaInicio);
+      if (filtroFechaFin)               pKpis.set('fechaFin',             filtroFechaFin);
+      if (filtroTipo)                   pKpis.set('tipoCita',             filtroTipo);
+      if (filtroEnfermera)              pKpis.set('idPersonal',           filtroEnfermera);
+      if (filtroEspecialidad.trim())    pKpis.set('especialidad',         filtroEspecialidad.trim());
+      if (filtroMotivoInterconsulta.trim()) pKpis.set('motivoInterconsulta', filtroMotivoInterconsulta.trim());
+      if (filtroEstadoBolsa.trim())     pKpis.set('estadoBolsa',          filtroEstadoBolsa.trim());
+      if (filtroTipoBolsa)              pKpis.set('idTipoBolsa',          filtroTipoBolsa);
+      if (filtroCreadoPor.trim())       pKpis.set('creadoPor',            filtroCreadoPor.trim());
+      
+      try {
+        const resKpis = await fetch(`${API_BASE}/bolsas/solicitudes/trazabilidad-recitas/kpis-filtrados?${pKpis}`, {
+          headers: { Authorization: `Bearer ${getToken()}` },
+        });
+        if (resKpis.ok) {
+          const kpisData = await resKpis.json();
+          setKpis({
+            total:          Number(kpisData.total          ?? 0),
+            recitas:        Number(kpisData.recitas        ?? 0),
+            interconsultas: Number(kpisData.interconsultas ?? 0),
+            sinCreador:     Number(kpisData.sinCreador     ?? 0),
+          });
+        }
+      } catch (e) {
+        console.error('❌ Error cargando KPIs filtrados:', e);
+      }
     } catch (e) {
       console.error('❌ Error trazabilidad:', e);
       if (isMountedRef.current) setErrorMessage('Error al cargar los datos. Intenta nuevamente.');

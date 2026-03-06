@@ -350,6 +350,9 @@ public interface SolicitudBolsaService {
     /** KPIs globales de trazabilidad (total tabla, no solo página actual). */
     Map<String, Object> obtenerKpisTrazabilidad();
 
+    /** KPIs filtrados según parámetros de búsqueda y filtros (recitas, interconsultas sin creador). */
+    Map<String, Object> obtenerKpisTrazabilidadFiltrados(String busqueda, String fechaInicio, String fechaFin, String tipoCita, Long idPersonal, String especialidad, String motivoInterconsulta, String estadoBolsa, String creadoPor, Long idTipoBolsa);
+
     /** Facetas para filtros desplegables: especialidades, motivos, estados y creadores con conteo. */
     Map<String, Object> listarFacetasRecitasInterconsultas();
 

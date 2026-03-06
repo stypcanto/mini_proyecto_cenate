@@ -1836,6 +1836,32 @@ public class SolicitudBolsaController {
         }
     }
 
+    @GetMapping("/trazabilidad-recitas/kpis-filtrados")
+    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'COORD. ENFERMERIA', 'SOPORTE_TELEUE', 'ENFERMERIA')")
+    public ResponseEntity<?> obtenerKpisTrazabilidadFiltrados(
+            @RequestParam(required = false) String busqueda,
+            @RequestParam(required = false) String fechaInicio,
+            @RequestParam(required = false) String fechaFin,
+            @RequestParam(required = false) String tipoCita,
+            @RequestParam(required = false) Long idPersonal,
+            @RequestParam(required = false) String especialidad,
+            @RequestParam(required = false) String motivoInterconsulta,
+            @RequestParam(required = false) String estadoBolsa,
+            @RequestParam(required = false) String creadoPor,
+            @RequestParam(required = false) Long idTipoBolsa) {
+        try {
+            log.info("🎯 GET /api/bolsas/solicitudes/trazabilidad-recitas/kpis-filtrados - busqueda={} tipoCita={} especialidad={}", busqueda, tipoCita, especialidad);
+            var kpis = solicitudBolsaService.obtenerKpisTrazabilidadFiltrados(
+                busqueda, fechaInicio, fechaFin, tipoCita, idPersonal, 
+                especialidad, motivoInterconsulta, estadoBolsa, creadoPor, idTipoBolsa);
+            log.info("✅ KPIs filtrados calculados: {}", kpis);
+            return ResponseEntity.ok(kpis);
+        } catch (Exception e) {
+            log.error("❌ Error KPIs filtrados trazabilidad: ", e);
+            return ResponseEntity.status(500).body(Map.of("error", e.getMessage()));
+        }
+    }
+
     /**
      * Carga masiva de pacientes desde JSON (datos leídos del Excel en el frontend)
      * POST /api/bolsas/solicitudes/carga-masiva-pacientes
