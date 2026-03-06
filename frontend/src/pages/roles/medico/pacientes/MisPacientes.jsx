@@ -2267,6 +2267,14 @@ export default function MisPacientes() {
           glucosa: glucosa || null,
           observaciones: observacionesEnfermeria || null,
           videosApoyo: videosSeleccionados.length > 0 ? videosSeleccionados.join(', ') : null, // ✅ v1.85.2: Guardar videos
+        }),
+        // ✅ v1.86.0: Si recita es SI, agregar campos para crear solicitud_cita
+        ...(tieneRecita && recitaAsignacionDetalle?.respuesta === 'SI' && {
+          fecha_atencion: recitaAsignacionDetalle.fechaAtencion,
+          hora_atencion: recitaAsignacionDetalle.horaAtencion,
+          id_personal: authUser?.idPers,
+          condicion_medica: 'Pendiente',
+          estado_gestion_citas_id: 1
         })
       };
 

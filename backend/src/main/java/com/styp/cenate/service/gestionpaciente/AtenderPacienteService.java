@@ -24,6 +24,7 @@ import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.List;
@@ -288,11 +289,22 @@ public class AtenderPacienteService {
                     recita.setFechaPreferidaNoAtendida(nuevaFecha.toLocalDate());
                     if (idAtencionClinica != null) recita.setIdAtencionClinica(idAtencionClinica);
                     recita.setPacienteId(pkAseguradoFinal); // ✅ v1.82.8: pk_asegurado correcto
+                    // ✅ v1.86.0: Si ENFERMERIA proporcionó fecha/hora/personal (SI path), asignar en la RECITA
+                    if (request.getFecha_atencion() != null && request.getHora_atencion() != null) {
+                        recita.setFechaAtencion(LocalDate.parse(request.getFecha_atencion()));
+                        recita.setHoraAtencion(LocalTime.parse(request.getHora_atencion()));
+                        recita.setFechaPreferidaNoAtendida(LocalDate.parse(request.getFecha_atencion()));
+                        if (request.getId_personal() != null) recita.setIdPersonal(request.getId_personal());
+                        if (request.getCondicion_medica() != null) recita.setCondicionMedica(request.getCondicion_medica());
+                        if (request.getEstado_gestion_citas_id() != null) recita.setEstadoGestionCitasId(request.getEstado_gestion_citas_id().longValue());
+                        log.info("✅ [v1.86.0] RECITA actualizada con datos ENFERMERIA — fecha: {}, hora: {}, idPersonal: {}",
+                                request.getFecha_atencion(), request.getHora_atencion(), request.getId_personal());
+                    }
                     solicitudBolsaRepository.saveAndFlush(recita);
                     log.info("✅ [RECITA v1.84.4] Bolsa RECITA ACTUALIZADA (id={}) — nueva fecha: {}", recita.getIdSolicitud(), nuevaFecha.toLocalDate());
                 } else {
                     log.info("⚠️ [RECITA v1.84.4] NO encontrada recita PENDIENTE, creando nueva...");
-                    crearBolsaRecitaConTransaccion(solicitudOriginal, especialidadParaBusqueda, request.getRecitaDias(), idAtencionClinica, pkAseguradoFinal);
+                    crearBolsaRecitaConTransaccion(solicitudOriginal, especialidadParaBusqueda, request.getRecitaDias(), idAtencionClinica, pkAseguradoFinal, request);
                     log.info("✅ [RECITA v1.84.4] Nueva bolsa RECITA creada");
                 }
             } else {
@@ -360,8 +372,8 @@ public class AtenderPacienteService {
     }
 
     // ✅ v1.84.6: Removido @Transactional innecesario
-    private void crearBolsaRecitaConTransaccion(SolicitudBolsa solicitudOriginal, String especialidad, Integer dias, Long idAtencionClinica, String pkAsegurado) {
-        crearBolsaRecita(solicitudOriginal, especialidad, dias, idAtencionClinica, pkAsegurado);
+    private void crearBolsaRecitaConTransaccion(SolicitudBolsa solicitudOriginal, String especialidad, Integer dias, Long idAtencionClinica, String pkAsegurado, AtenderPacienteRequest request) {
+        crearBolsaRecita(solicitudOriginal, especialidad, dias, idAtencionClinica, pkAsegurado, request);
     }
 
     // ✅ v1.84.6: Removido @Transactional innecesario
@@ -395,7 +407,7 @@ public class AtenderPacienteService {
     }
 
 
-    public void crearBolsaRecita(SolicitudBolsa solicitudOriginal, String especialidad, Integer dias, Long idAtencionClinica, String pkAsegurado) {
+    public void crearBolsaRecita(SolicitudBolsa solicitudOriginal, String especialidad, Integer dias, Long idAtencionClinica, String pkAsegurado, AtenderPacienteRequest request) {
         log.info("📋 [v1.47.2] Creando bolsa RECITA para días: {}", dias);
 
         // ✅ v1.47.2: Recita usa especialidad del médico (solicitud original), NO la de Interconsulta
@@ -445,11 +457,26 @@ public class AtenderPacienteService {
                 .fechaPreferidaNoAtendida(fechaPreferida.toLocalDate()) // ✅ Fecha preferida calculada (hoy + días)
                 .idsolicitudgeneracion(solicitudOriginal.getIdSolicitud()) // ✅ FK trazabilidad
                 .idSolicitudPadre(solicitudOriginal.getIdSolicitud())      // ✅ v1.84.0: FK solicitud padre (consistente con INTERCONSULTA)
-                // id_personal = NULL: el coordinador asignará al profesional desde /bolsas/solicitudespendientes
+                // id_personal: si ENFERMERIA asignó profesional (SI path), se asigna aquí; si no, NULL para asignación posterior
                 // La trazabilidad del creador se obtiene via id_atencion_clinica.id_personal_creador
                 .idAtencionClinica(idAtencionClinica) // ✅ v6.0.0: FK directa → atencion_clinica
+                // ✅ v1.86.0: Si ENFERMERIA proporcionó fecha/hora/personal (SI path), asignar en la nueva RECITA
+                .fechaAtencion(request != null && request.getFecha_atencion() != null ? LocalDate.parse(request.getFecha_atencion()) : null)
+                .horaAtencion(request != null && request.getHora_atencion() != null ? LocalTime.parse(request.getHora_atencion()) : null)
+                .idPersonal(request != null && request.getId_personal() != null ? request.getId_personal() : null)
+                .condicionMedica(request != null && request.getCondicion_medica() != null ? request.getCondicion_medica() : null)
                 .activo(true)
                 .build();
+
+        // ✅ v1.86.0: Si ENFERMERIA proporcionó fecha_atencion, usarla como fechaPreferidaNoAtendida (en lugar de calculada por días)
+        if (request != null && request.getFecha_atencion() != null) {
+            bolsaRecita.setFechaPreferidaNoAtendida(LocalDate.parse(request.getFecha_atencion()));
+            if (request.getEstado_gestion_citas_id() != null) {
+                bolsaRecita.setEstadoGestionCitasId(request.getEstado_gestion_citas_id().longValue());
+            }
+            log.info("✅ [v1.86.0] RECITA con datos ENFERMERIA — fecha: {}, hora: {}, idPersonal: {}",
+                    request.getFecha_atencion(), request.getHora_atencion(), request.getId_personal());
+        }
 
         try {
             solicitudBolsaRepository.saveAndFlush(bolsaRecita); // ✅ v1.84.1: flush inmediato para evitar race conditions
@@ -765,4 +792,5 @@ public class AtenderPacienteService {
             return null;
         }
     }
+
 }

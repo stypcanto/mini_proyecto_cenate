@@ -9,6 +9,7 @@ import java.util.List;
  * ✅ v1.76.0: Campos Ficha de Enfermería
  * ✅ v1.77.0: Presión Arterial y Glucosa; retirado otraPatologia y tratamiento
  * ✅ v1.84.0: interconsultaItems con idMotivo para FK id_motivo_interconsulta
+ * ✅ v1.86.0: Campos para crear solicitud_cita cuando recita es SI
  */
 @Data
 @NoArgsConstructor
@@ -20,6 +21,13 @@ public class AtenderPacienteRequest {
     // Recita (Opcional)
     private Boolean tieneRecita;
     private Integer recitaDias; // 3, 7, 15, 30, 60, 90
+
+    // ✅ v1.86.0: Campos para crear solicitud_cita si recita es SI
+    private String fecha_atencion;        // YYYY-MM-DD
+    private String hora_atencion;         // HH:mm
+    private Long id_personal;             // idPers del médico/personal
+    private String condicion_medica;      // "Pendiente"
+    private Integer estado_gestion_citas_id; // 1 (Citado)
 
     // Interconsulta (Opcional)
     private Boolean tieneInterconsulta;
