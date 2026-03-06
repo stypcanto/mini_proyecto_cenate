@@ -2752,20 +2752,35 @@ export default function Solicitudes({ categoriaInicial } = {}) {
           <div className="mb-6 bg-white rounded-xl border border-gray-200 shadow-sm px-5 py-4">
 
             {/* Header */}
-            <div className="flex items-center justify-between mb-4">
-              <span className="text-sm font-semibold text-gray-700">Progreso de la campaña</span>
-              <div className="flex items-center gap-3">
-                <button
-                  onClick={() => setProgresoDesglosado(v => !v)}
-                  className="flex items-center gap-1.5 text-xs text-slate-500 hover:text-slate-700 border border-slate-200 hover:border-slate-300 rounded-md px-2.5 py-1 transition-colors"
-                >
-                  {progresoDesglosado ? '▲ Ocultar desglose' : '▼ Ver desglose'}
-                </button>
-                <span className="text-xs text-gray-400">
-                  Universo: <strong className="text-gray-600">{(maratonUniversoTotal ?? estadisticas.total)?.toLocaleString('es-PE')}</strong> pacientes
-                </span>
-              </div>
-            </div>
+            {(() => {
+              const INICIO_CAMPANA = new Date('2026-03-04T00:00:00');
+              const hoy = new Date();
+              hoy.setHours(0, 0, 0, 0);
+              const diasTranscurridos = Math.floor((hoy - INICIO_CAMPANA) / (1000 * 60 * 60 * 24));
+              return (
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-3">
+                    <span className="text-sm font-semibold text-gray-700">Progreso de la campaña</span>
+                    <span className="flex items-center gap-1.5 text-xs bg-blue-50 border border-blue-100 text-blue-700 rounded-full px-3 py-0.5">
+                      📅 Inicio: 4 mar 2026
+                      <span className="mx-1 text-blue-300">·</span>
+                      <strong>{diasTranscurridos}</strong>&nbsp;{diasTranscurridos === 1 ? 'día' : 'días'} en curso
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <button
+                      onClick={() => setProgresoDesglosado(v => !v)}
+                      className="flex items-center gap-1.5 text-xs text-slate-500 hover:text-slate-700 border border-slate-200 hover:border-slate-300 rounded-md px-2.5 py-1 transition-colors"
+                    >
+                      {progresoDesglosado ? '▲ Ocultar desglose' : '▼ Ver desglose'}
+                    </button>
+                    <span className="text-xs text-gray-400">
+                      Universo: <strong className="text-gray-600">{(maratonUniversoTotal ?? estadisticas.total)?.toLocaleString('es-PE')}</strong> pacientes
+                    </span>
+                  </div>
+                </div>
+              );
+            })()}
 
             {(() => {
               const universo      = maratonUniversoTotal ?? estadisticas.total ?? 1;
