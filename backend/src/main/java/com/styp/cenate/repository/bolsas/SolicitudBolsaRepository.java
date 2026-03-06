@@ -1907,7 +1907,12 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
             recita.id_bolsa                                                  AS id_bolsa,
             COALESCE(tb.desc_tipo_bolsa, 'Bolsa de recita/interconsulta')    AS origen_bolsa,
             recita.condicion_medica                                          AS condicion_medica,
-            COALESCE(di_ads.desc_ipress, di_ads_orig.desc_ipress, '')        AS centro_adscripcion
+            COALESCE(
+                CASE WHEN di_ads.desc_ipress IS NOT NULL THEN di_ads.desc_ipress || '(' || di_ads.id_ipress || ')'
+                     WHEN di_ads_orig.desc_ipress IS NOT NULL THEN di_ads_orig.desc_ipress || '(' || di_ads_orig.id_ipress || ')'
+                     ELSE ''
+                END, ''
+            ) AS centro_adscripcion
         FROM dim_solicitud_bolsa recita
         LEFT JOIN dim_tipos_bolsas tb   ON tb.id_tipo_bolsa = recita.id_bolsa
         LEFT JOIN dim_ipress di_ads     ON di_ads.id_ipress = recita.id_ipress

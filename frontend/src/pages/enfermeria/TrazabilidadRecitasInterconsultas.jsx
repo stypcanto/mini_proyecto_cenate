@@ -406,6 +406,7 @@ function BuscadorEnfermera({ value, onChange }) {
 const COLUMNAS = [
   { label: 'F. Generación',              field: 'fechaSolicitud',  sortable: true  },
   { label: 'Tipo',                       field: 'tipoCita',        sortable: true  },
+  { label: 'Centro Adscripción',        field: 'centroAdscripcion', sortable: true  },
   { label: 'Paciente',                   field: 'pacienteNombre',  sortable: true  },
   { label: 'DNI',                        field: 'pacienteDni',     sortable: true  },
   { label: 'Especialidad',               field: 'especialidad',    sortable: true  },
@@ -416,7 +417,6 @@ const COLUMNAS = [
   { label: 'Creado por',                 field: 'medicoCreador',   sortable: true  },
   { label: 'Estado',                     field: null,              sortable: false },
   { label: 'Estado de Personal Asist.', field: 'condicionMedica',    sortable: true  },
-  { label: 'Centro Adscripción',        field: 'centroAdscripcion', sortable: true  },
 ];
 
 // ─── Componente principal ─────────────────────────────────────────────────────
@@ -986,6 +986,13 @@ export default function TrazabilidadRecitasInterconsultas() {
                       <BadgeTipo tipo={f.tipoCita} />
                     </td>
 
+                    {/* Centro de Adscripción — IPRESS origen del paciente */}
+                    <td className="px-3 py-2.5 text-xs text-gray-700 max-w-[200px]">
+                      <span title={f.centroAdscripcion} className="block truncate">
+                        {f.centroAdscripcion || <span className="text-gray-400 italic">—</span>}
+                      </span>
+                    </td>
+
                     {/* Paciente */}
                     <td className="px-3 py-2.5 font-medium text-gray-800 text-xs max-w-[180px]">
                       <span title={f.pacienteNombre} className="block truncate">{f.pacienteNombre || '—'}</span>
@@ -1072,12 +1079,6 @@ export default function TrazabilidadRecitasInterconsultas() {
                       )}
                     </td>
 
-                    {/* Centro de Adscripción — IPRESS origen del paciente */}
-                    <td className="px-3 py-2.5 text-xs text-gray-700 max-w-[200px]">
-                      <span title={f.centroAdscripcion} className="block truncate">
-                        {f.centroAdscripcion || <span className="text-gray-400 italic">—</span>}
-                      </span>
-                    </td>
                   </tr>
                 ))}
 
