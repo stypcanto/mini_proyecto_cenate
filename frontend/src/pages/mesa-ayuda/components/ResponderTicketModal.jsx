@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, AlertCircle, CheckCircle, AlertTriangle, Send } from 'lucide-react';
+import { X, AlertCircle, CheckCircle, AlertTriangle, Send, XCircle } from 'lucide-react';
 
 /**
  * Modal para responder un ticket de Mesa de Ayuda
@@ -35,6 +35,12 @@ function ResponderTicketModal({ isOpen, onClose, ticket, usuario, onSuccess }) {
   const [errorBolsa, setErrorBolsa] = useState(null);
   const [showEssiAlert, setShowEssiAlert] = useState(false);
   const [ticketRespondidoData, setTicketRespondidoData] = useState(null);
+
+  // Estado para anular cita
+  const [showAnularModal, setShowAnularModal] = useState(false);
+  const [motivoAnulacion, setMotivoAnulacion] = useState('');
+  const [anulando, setAnulando] = useState(false);
+  const [errorAnular, setErrorAnular] = useState(null);
 
   // Cargar respuestas predefinidas al abrir el modal
   useEffect(() => {
@@ -167,6 +173,10 @@ function ResponderTicketModal({ isOpen, onClose, ticket, usuario, onSuccess }) {
       setErrorBolsa(null);
       setShowEssiAlert(false);
       setTicketRespondidoData(null);
+      setShowAnularModal(false);
+      setMotivoAnulacion('');
+      setAnulando(false);
+      setErrorAnular(null);
       onClose();
     }
   };
@@ -176,6 +186,30 @@ function ResponderTicketModal({ isOpen, onClose, ticket, usuario, onSuccess }) {
     setShowEssiAlert(false);
     onSuccess?.(ticketRespondidoData);
     onClose();
+  };
+
+  // Handler: Confirmar anulación de cita
+  const handleAnularCita = async () => {
+    if (!motivoAnulacion.trim()) {
+      setErrorAnular('Debe ingresar el motivo de anulación');
+      return;
+    }
+    setAnulando(true);
+    setErrorAnular(null);
+    try {
+      const { mesaAyudaService } = await import('../../../services/mesaAyudaService');
+      await mesaAyudaService.anularCita(ticket.id, motivoAnulacion.trim());
+      setShowAnularModal(false);
+      onSuccess?.({ anulada: true });
+      onClose();
+    } catch (err) {
+      setErrorAnular(
+        err.response?.data?.error ||
+        err.message ||
+        'Error al anular la cita. Intente nuevamente.'
+      );
+      setAnulando(false);
+    }
   };
 
   const getEstadoBadgeColor = (est) => ({
@@ -348,8 +382,19 @@ function ResponderTicketModal({ isOpen, onClose, ticket, usuario, onSuccess }) {
                 {/* Botones de acción */}
                 <div className="flex flex-wrap items-center justify-between gap-3 pt-4 border-t border-gray-200">
 
-                  {/* Botón Bolsa Reprogramación (visible para cualquier ticket con DNI) */}
-                  <div className="flex flex-col gap-1">
+                  {/* Botones izquierda: Bolsa Reprogramación + Anular Cita */}
+                  <div className="flex flex-col gap-2">
+                    {tienePaciente && (
+                      <button
+                        type="button"
+                        onClick={() => { setShowAnularModal(true); setErrorAnular(null); setMotivoAnulacion(''); }}
+                        disabled={loading}
+                        className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold bg-red-50 text-red-700 border border-red-300 hover:bg-red-100 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                      >
+                        <XCircle size={15} />
+                        Anular Cita
+                      </button>
+                    )}
                     {mostrarBotonBolsa && (
                       <>
                         <button
@@ -395,7 +440,6 @@ function ResponderTicketModal({ isOpen, onClose, ticket, usuario, onSuccess }) {
                       </>
                     )}
                   </div>
-
                   {/* Cancelar + Responder */}
                   <div className="flex gap-3 ml-auto">
                     <button
@@ -469,6 +513,139 @@ function ResponderTicketModal({ isOpen, onClose, ticket, usuario, onSuccess }) {
               >
                 Entendido, procederé en el ESSI
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Anular Cita */}
+      {showAnularModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-[60] p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden">
+
+            {/* Header rojo */}
+            <div className="bg-red-600 px-6 py-4 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <XCircle className="text-white" size={24} />
+                <div>
+                  <h3 className="text-white font-bold text-base leading-tight">
+                    Cancelar Cita
+                  </h3>
+                  <p className="text-red-200 text-xs mt-0.5">
+                    Esta acción no se puede deshacer
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowAnularModal(false)}
+                disabled={anulando}
+                className="text-red-200 hover:text-white disabled:opacity-50"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            {/* Body */}
+            <div className="px-6 py-5 space-y-4">
+
+              {/* Tarjeta info paciente */}
+              <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 space-y-1.5 text-sm">
+                {ticket.nombrePaciente && (
+                  <div className="flex justify-between">
+                    <span className="text-gray-500 font-medium">Paciente</span>
+                    <span className="text-gray-900 font-semibold text-right max-w-[55%]">
+                      {ticket.nombrePaciente.toLowerCase().replace(/\b\w/g, c => c.toUpperCase())}
+                    </span>
+                  </div>
+                )}
+                {ticket.dniPaciente && (
+                  <div className="flex justify-between">
+                    <span className="text-gray-500 font-medium">DNI</span>
+                    <span className="text-gray-900">{ticket.dniPaciente}</span>
+                  </div>
+                )}
+                {ticket.especialidad && (
+                  <div className="flex justify-between">
+                    <span className="text-gray-500 font-medium">Especialidad</span>
+                    <span className="text-gray-900 text-right max-w-[55%]">{ticket.especialidad}</span>
+                  </div>
+                )}
+                {ticket.nombreMedico && (
+                  <div className="flex justify-between">
+                    <span className="text-gray-500 font-medium">Profesional</span>
+                    <span className="text-gray-900 text-right max-w-[55%]">{ticket.nombreMedico}</span>
+                  </div>
+                )}
+                {ticket.fechaAtencion && (
+                  <div className="flex justify-between">
+                    <span className="text-gray-500 font-medium">Fecha/Hora</span>
+                    <span className="text-gray-900">{ticket.fechaAtencion}</span>
+                  </div>
+                )}
+                {ticket.ipress && (
+                  <div className="flex justify-between">
+                    <span className="text-gray-500 font-medium">IPRESS</span>
+                    <span className="text-gray-900 text-right max-w-[55%]">{ticket.ipress}</span>
+                  </div>
+                )}
+              </div>
+
+              {/* Motivo anulación */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                  Motivo de anulación <span className="text-red-500">*</span>
+                </label>
+                <textarea
+                  value={motivoAnulacion}
+                  onChange={(e) => { setMotivoAnulacion(e.target.value); setErrorAnular(null); }}
+                  placeholder="Ingrese el motivo por el que se cancela la cita..."
+                  rows={3}
+                  disabled={anulando}
+                  autoFocus
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-red-400 focus:border-transparent disabled:bg-gray-100 resize-none"
+                />
+              </div>
+
+              {errorAnular && (
+                <div className="flex items-start gap-2 p-3 bg-red-50 border border-red-200 rounded-lg">
+                  <AlertCircle size={15} className="text-red-600 flex-shrink-0 mt-0.5" />
+                  <p className="text-sm text-red-800">{errorAnular}</p>
+                </div>
+              )}
+
+              <p className="text-xs text-gray-500 leading-relaxed">
+                El paciente pasará al estado <span className="font-semibold">Anulado</span> en el sistema de bolsas y podrá ser reagendado posteriormente.
+              </p>
+
+              {/* Botones */}
+              <div className="flex gap-3 pt-1">
+                <button
+                  type="button"
+                  onClick={() => setShowAnularModal(false)}
+                  disabled={anulando}
+                  className="flex-1 py-2.5 border border-gray-300 rounded-xl text-sm text-gray-700 font-medium hover:bg-gray-50 disabled:opacity-50 transition-colors"
+                >
+                  Volver
+                </button>
+                <button
+                  type="button"
+                  onClick={handleAnularCita}
+                  disabled={anulando || !motivoAnulacion.trim()}
+                  className="flex-1 py-2.5 bg-red-600 text-white rounded-xl text-sm font-semibold hover:bg-red-700 disabled:bg-red-300 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
+                >
+                  {anulando ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      Anulando...
+                    </>
+                  ) : (
+                    <>
+                      <XCircle size={15} />
+                      Sí, anular cita
+                    </>
+                  )}
+                </button>
+              </div>
             </div>
           </div>
         </div>

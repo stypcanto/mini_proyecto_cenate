@@ -305,6 +305,18 @@ export const mesaAyudaService = {
   },
 
   /**
+   * Anular cita asociada a un ticket de mesa de ayuda
+   * @param {number} id ID del ticket
+   * @param {string} motivoAnulacion Motivo de la anulación
+   * @returns {Promise} Resultado de la operación
+   */
+  anularCita: async (id, motivoAnulacion) => {
+    console.log('Anulando cita - Ticket ID:', id, 'Motivo:', motivoAnulacion);
+    const response = await apiClient.put(`${ENDPOINT}/tickets/${id}/anular-cita`, { motivoAnulacion }, true);
+    return response;
+  },
+
+  /**
    * Obtener estadísticas completas de Mesa de Ayuda (v1.68.0)
    * @returns {Promise} Objeto con resumen, porEstado, porPrioridad, porMotivo, porPersonal, porDia, tiempoPromedio
    */

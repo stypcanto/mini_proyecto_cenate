@@ -1071,6 +1071,44 @@ public class TicketMesaAyudaService {
         return result;
     }
 
+    // ========== ANULAR CITA ==========
+
+    /**
+     * Anula la cita (solicitud bolsa) asociada al ticket.
+     * Establece activo=false y registra el motivo_anulacion en dim_solicitud_bolsa.
+     *
+     * @param ticketId        ID del ticket
+     * @param motivoAnulacion Motivo de anulación ingresado por el coordinador
+     * @return Map con mensaje de resultado
+     */
+    @Transactional
+    public Map<String, Object> anularCita(Long ticketId, String motivoAnulacion) {
+        log.info("Anulando cita — Ticket ID: {}", ticketId);
+
+        TicketMesaAyuda ticket = ticketRepository.findByIdAndDeletedAtIsNull(ticketId)
+            .orElseThrow(() -> new IllegalArgumentException("Ticket no encontrado con ID: " + ticketId));
+
+        Long idSolicitudBolsa = ticket.getIdSolicitudBolsa();
+        if (idSolicitudBolsa == null) {
+            throw new IllegalArgumentException("El ticket no tiene solicitud de bolsa asociada para anular");
+        }
+
+        SolicitudBolsa solicitud = solicitudBolsaRepository.findById(idSolicitudBolsa)
+            .orElseThrow(() -> new IllegalArgumentException("Solicitud de bolsa no encontrada: " + idSolicitudBolsa));
+
+        solicitud.setActivo(false);
+        solicitud.setMotivoAnulacion(motivoAnulacion != null ? motivoAnulacion.trim() : "Anulado desde Mesa de Ayuda");
+        solicitudBolsaRepository.save(solicitud);
+
+        log.info("Cita anulada — Solicitud ID: {}, Motivo: {}", idSolicitudBolsa, motivoAnulacion);
+
+        Map<String, Object> result = new java.util.LinkedHashMap<>();
+        result.put("mensaje", "Cita anulada correctamente");
+        result.put("idSolicitudBolsa", idSolicitudBolsa);
+        result.put("motivoAnulacion", solicitud.getMotivoAnulacion());
+        return result;
+    }
+
     // ========== BOLSA DE REPROGRAMACIÓN ==========
 
     /**

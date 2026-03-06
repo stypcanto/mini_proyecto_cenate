@@ -628,6 +628,34 @@ public class TicketMesaAyudaController {
         }
     }
 
+    /**
+     * Anular cita asociada a un ticket de mesa de ayuda
+     *
+     * @param id ID del ticket
+     * @param body Objeto con motivoAnulacion (String)
+     * @return Mensaje de éxito o error
+     */
+    @PutMapping("/tickets/{id}/anular-cita")
+    public ResponseEntity<?> anularCita(
+        @PathVariable @NotNull Long id,
+        @RequestBody Map<String, String> body
+    ) {
+        String motivo = body != null ? body.get("motivoAnulacion") : null;
+        log.info("PUT /api/mesa-ayuda/tickets/{}/anular-cita - motivo: {}", id, motivo);
+
+        try {
+            Map<String, Object> resultado = ticketService.anularCita(id, motivo);
+            return ResponseEntity.ok(resultado);
+        } catch (IllegalArgumentException e) {
+            log.warn("Error al anular cita: {}", e.getMessage());
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        } catch (Exception e) {
+            log.error("Error al anular cita: ", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(Map.of("error", "Error al procesar la solicitud: " + e.getMessage()));
+        }
+    }
+
     // ========== KPIs ==========
 
     /**
