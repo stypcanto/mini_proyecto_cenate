@@ -58,9 +58,31 @@ CROSS JOIN (
   WHERE UPPER(desc_rol) LIKE '%SUPERADMIN%'
      OR UPPER(desc_rol) LIKE '%SUBDIRECCION%'
      OR UPPER(desc_rol) LIKE '%COORD%'
+     OR UPPER(desc_rol) LIKE '%GESTOR DE CITAS%'
 ) r
 WHERE p.ruta_pagina IN (
   '/maraton2026/avances-citacion',
   '/maraton2026/resumen-atencion'
 )
 ON CONFLICT (id_rol, id_pagina) DO NOTHING;
+
+-- 4. Permisos de MÓDULO en segu_permisos_rol_modulo (requerido por fn_seguridad_obtener_menu_usuario_vf)
+--    Sin esta tabla el módulo no aparece en el sidebar aunque las páginas tengan permisos
+INSERT INTO segu_permisos_rol_modulo
+  (id_rol, id_modulo, puede_acceder, puede_ver, puede_crear, puede_editar, puede_eliminar, puede_exportar, puede_importar, puede_aprobar, activo, autorizado_por)
+SELECT
+  r.id_rol,
+  m.id_modulo,
+  true, true, false, false, false, true, false, false,
+  true,
+  'V6_32_0 - Módulo Maratón 2026'
+FROM dim_modulos_sistema m
+CROSS JOIN (
+  SELECT id_rol FROM dim_roles
+  WHERE UPPER(desc_rol) LIKE '%SUPERADMIN%'
+     OR UPPER(desc_rol) LIKE '%SUBDIRECCION%'
+     OR UPPER(desc_rol) LIKE '%COORD%'
+     OR UPPER(desc_rol) LIKE '%GESTOR DE CITAS%'
+) r
+WHERE m.nombre_modulo = 'Maratón 2026'
+ON CONFLICT (id_rol, id_modulo) DO NOTHING;

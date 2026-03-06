@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { Plus, Search, Phone, ChevronDown, ChevronUp, Circle, Eye, Users, UserPlus, Download, FileText, FolderOpen, ListChecks, Upload, AlertCircle, Edit, X, AlertTriangle, Clock, UserCheck, Database, Loader, CalendarCheck, BarChart2, RefreshCw } from 'lucide-react';
+import { Plus, Search, Phone, ChevronDown, ChevronUp, Circle, Eye, Users, UserPlus, Download, FileText, FolderOpen, ListChecks, Upload, AlertCircle, Edit, X, AlertTriangle, Clock, UserCheck, Database, Loader, CalendarCheck, BarChart2, RefreshCw, Info } from 'lucide-react';
 import PageHeader from '../../components/PageHeader';
 import StatCard from '../../components/StatCard';
 import ListHeader from '../../components/ListHeader';
@@ -856,7 +856,10 @@ export default function Solicitudes({ categoriaInicial } = {}) {
           filtrosActuales.categoriaEspecialidad,
           filtroEstrategia === 'todos' ? null : filtroEstrategia
         ),
-        bolsasService.obtenerKpiConFiltros(filtrosActuales).catch(() => null),
+        // v1.85.9: MARATÓN usa endpoint dedicado con DISTINCT ON (pacientes únicos)
+        categoriaInicial === 'maraton'
+          ? bolsasService.obtenerKpiMaraton().catch(() => null)
+          : bolsasService.obtenerKpiConFiltros(filtrosActuales).catch(() => null),
       ]);
 
       // v1.78.3: Actualizar KPI cards con los datos filtrados
@@ -2250,12 +2253,12 @@ export default function Solicitudes({ categoriaInicial } = {}) {
           {categoriaInicial === 'maraton' ? (
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold text-gray-900">Embudo de Campaña Maratón</h3>
-              <span className="text-xs text-gray-400 font-medium tracking-wide uppercase">Total Base → Por Asignar → En Contacto → Citas Logradas</span>
+              <span className="text-xs text-gray-400 font-medium tracking-wide uppercase">Total Base → Por Asignar → En Contacto → Citas Logradas · Observados</span>
             </div>
           ) : (
             <h3 className="text-lg font-semibold text-gray-900 mb-4">Estadísticas de Solicitudes</h3>
           )}
-          <div className={`grid grid-cols-1 md:grid-cols-2 gap-5 animate-fade-in ${categoriaInicial === 'maraton' ? 'lg:grid-cols-4' : 'lg:grid-cols-4'}`}>
+          <div className={`grid grid-cols-1 md:grid-cols-2 gap-5 animate-fade-in ${categoriaInicial === 'maraton' ? 'lg:grid-cols-5' : 'lg:grid-cols-4'}`}>
 
             {/* ═══ CARDS MARATÓN — Fuente única: maratonUniversoTotal ═══ */}
             {categoriaInicial === 'maraton' ? (<>
@@ -2283,25 +2286,58 @@ export default function Solicitudes({ categoriaInicial } = {}) {
                   : null;
                 return (
                   <>
-                    <div className="col-span-full grid grid-cols-4 gap-3">
+                    <div className="col-span-full space-y-0">
 
-                      {/* M1. UNIVERSO — fuente maratonUniversoTotal */}
-                      <div className="bg-white rounded-xl border border-gray-100 border-t-4 shadow-sm px-5 py-4 relative"
-                        style={{ borderTopColor: '#3b82f6' }}>
-                        <Database className="absolute top-3 right-3 w-3.5 h-3.5 text-blue-400" style={{ opacity: 0.3 }} strokeWidth={2} />
-                        <p className="text-[10px] font-bold uppercase tracking-widest mb-2" style={{ color: '#3b82f6' }}>① Universo</p>
-                        <p className="text-4xl font-black text-gray-900 leading-none tabular-nums">
-                          {universoBase === 1 && maratonUniversoTotal == null
-                            ? <span className="text-xl text-gray-300 animate-pulse">—</span>
-                            : (maratonUniversoTotal ?? estadisticas.total ?? 0).toLocaleString('es-PE')}
-                        </p>
-                        <p className="text-xs text-gray-400 mt-1.5">100% · Total base</p>
+                      {/* UNIVERSO — centrado arriba */}
+                      <div className="flex justify-center">
+                        <div className="group bg-white rounded-xl border border-gray-100 border-t-4 shadow-sm px-8 py-4 relative cursor-default w-64"
+                          style={{ borderTopColor: '#3b82f6' }}>
+                          <Database className="absolute top-3 right-3 w-3.5 h-3.5 text-blue-400" style={{ opacity: 0.3 }} strokeWidth={2} />
+                          <div className="absolute top-full left-1/2 -translate-x-1/2 mt-1 w-64 bg-gray-900 text-white text-xs rounded-xl px-3 py-2.5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50 shadow-xl leading-relaxed">
+                            <p className="font-bold mb-1 text-blue-300">① Universo total</p>
+                            Pacientes MARATÓN inscritos en la estrategia nacional. Incluye CENACRON (6,020) y Especialidades (7,380). No filtra por vigencia de seguro.
+                          </div>
+                          <p className="text-[10px] font-bold uppercase tracking-widest mb-1 text-center" style={{ color: '#3b82f6' }}>① Universo</p>
+                          <p className="text-4xl font-black text-gray-900 leading-none tabular-nums text-center">
+                            {universoBase === 1 && maratonUniversoTotal == null
+                              ? <span className="text-xl text-gray-300 animate-pulse">—</span>
+                              : (maratonUniversoTotal ?? estadisticas.total ?? 0).toLocaleString('es-PE')}
+                          </p>
+                          <p className="text-xs text-gray-400 mt-1 text-center">100% · Total base</p>
+                        </div>
                       </div>
 
-                      {/* M2. POR ASIGNAR — animate-pulse dot */}
-                      <div className="bg-white rounded-xl border border-gray-100 border-t-4 shadow-sm px-5 py-4 relative"
+                      {/* Conector SVG: línea de UNIVERSO hacia los 4 cards */}
+                      <div className="relative w-full" style={{ height: 36 }}>
+                        <svg className="absolute inset-0 w-full h-full" viewBox="0 0 1000 36" preserveAspectRatio="none">
+                          {/* Línea vertical desde UNIVERSO */}
+                          <line x1="500" y1="0" x2="500" y2="18" stroke="#e5e7eb" strokeWidth="1.5"/>
+                          {/* Línea horizontal */}
+                          <line x1="125" y1="18" x2="875" y2="18" stroke="#e5e7eb" strokeWidth="1.5"/>
+                          {/* 4 líneas verticales hacia cada card */}
+                          <line x1="125" y1="18" x2="125" y2="36" stroke="#e5e7eb" strokeWidth="1.5"/>
+                          <line x1="375" y1="18" x2="375" y2="36" stroke="#e5e7eb" strokeWidth="1.5"/>
+                          <line x1="625" y1="18" x2="625" y2="36" stroke="#e5e7eb" strokeWidth="1.5"/>
+                          <line x1="875" y1="18" x2="875" y2="36" stroke="#e5e7eb" strokeWidth="1.5"/>
+                          {/* Flechas (triángulos) */}
+                          <polygon points="121,32 125,36 129,32" fill="#d1d5db"/>
+                          <polygon points="371,32 375,36 379,32" fill="#d1d5db"/>
+                          <polygon points="621,32 625,36 629,32" fill="#d1d5db"/>
+                          <polygon points="871,32 875,36 879,32" fill="#d1d5db"/>
+                        </svg>
+                      </div>
+
+                      {/* 4 cards inferiores */}
+                      <div className="grid grid-cols-4 gap-3">
+
+                      {/* M2. POR ASIGNAR */}
+                      <div className="group bg-white rounded-xl border border-gray-100 border-t-4 shadow-sm px-5 py-4 relative cursor-default"
                         style={{ borderTopColor: '#ef4444' }}>
                         <AlertTriangle className="absolute top-3 right-3 w-3.5 h-3.5 text-red-400" style={{ opacity: 0.3 }} strokeWidth={2} />
+                        <div className="absolute top-full left-0 mt-1 w-64 bg-gray-900 text-white text-xs rounded-xl px-3 py-2.5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50 shadow-xl leading-relaxed">
+                          <p className="font-bold mb-1 text-red-300">② Por Asignar</p>
+                          Pacientes en la bolsa MARATÓN que aún no tienen gestora asignada. El registro existe en la bolsa pero ninguna gestora ha iniciado la gestión. Requieren asignación prioritaria.
+                        </div>
                         <p className="text-[10px] font-bold uppercase tracking-widest mb-2 flex items-center gap-1.5" style={{ color: '#ef4444' }}>
                           ② Por Asignar
                           <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse flex-shrink-0" />
@@ -2314,15 +2350,19 @@ export default function Solicitudes({ categoriaInicial } = {}) {
                         </p>
                       </div>
 
-                      {/* M3. EN CONTACTO — con gestora asignada, aún no finalizados (sin CITADO ni ATENDIDO) */}
+                      {/* M3. EN CONTACTO */}
                       {(() => {
                         const citasLogradas = (estadisticas.citados ?? 0) + (estadisticas.atendidos ?? 0);
                         const enContacto = (estadisticas.asignados !== null && estadisticas.citados !== null)
-                          ? Math.max(0, estadisticas.asignados - citasLogradas) : null;
+                          ? Math.max(0, estadisticas.asignados - citasLogradas - (observados ?? 0)) : null;
                         return (
-                          <div className="bg-white rounded-xl border border-gray-100 border-t-4 shadow-sm px-5 py-4 relative"
+                          <div className="group bg-white rounded-xl border border-gray-100 border-t-4 shadow-sm px-5 py-4 relative cursor-default"
                             style={{ borderTopColor: '#f97316' }}>
                             <Clock className="absolute top-3 right-3 w-3.5 h-3.5 text-orange-400" style={{ opacity: 0.3 }} strokeWidth={2} />
+                            <div className="absolute top-full left-0 mt-1 w-64 bg-gray-900 text-white text-xs rounded-xl px-3 py-2.5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50 shadow-xl leading-relaxed">
+                              <p className="font-bold mb-1 text-orange-300">③ En Contacto</p>
+                              Pacientes con gestora asignada, sin cita confirmada y sin resultado negativo. La gestora aún puede lograr una cita con ellos. Fórmula: Con gestora asignada − Citas logradas − Observados.
+                            </div>
                             <p className="text-[10px] font-bold uppercase tracking-widest mb-2" style={{ color: '#f97316' }}>③ En Contacto</p>
                             <p className="text-4xl font-black text-gray-900 leading-none tabular-nums">
                               {enContacto === null ? <span className="text-xl text-gray-300 animate-pulse">—</span> : enContacto.toLocaleString('es-PE')}
@@ -2334,14 +2374,18 @@ export default function Solicitudes({ categoriaInicial } = {}) {
                         );
                       })()}
 
-                      {/* M4. CITAS LOGRADAS = CITADO + ATENDIDO (estados ÉXITO del modal) */}
+                      {/* M4. CITAS LOGRADAS */}
                       {(() => {
                         const citasLogradas = (estadisticas.citados !== null)
                           ? (estadisticas.citados ?? 0) + (estadisticas.atendidos ?? 0) : null;
                         return (
-                          <div className="bg-white rounded-xl border border-gray-100 border-t-4 shadow-sm px-5 py-4 relative"
+                          <div className="group bg-white rounded-xl border border-gray-100 border-t-4 shadow-sm px-5 py-4 relative cursor-default"
                             style={{ borderTopColor: '#22c55e' }}>
                             <CalendarCheck className="absolute top-3 right-3 w-3.5 h-3.5 text-green-400" style={{ opacity: 0.3 }} strokeWidth={2} />
+                            <div className="absolute top-full left-0 mt-1 w-64 bg-gray-900 text-white text-xs rounded-xl px-3 py-2.5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50 shadow-xl leading-relaxed">
+                              <p className="font-bold mb-1 text-green-300">④ Citas Logradas</p>
+                              Pacientes con cita confirmada por CENATE (estado CITADO) o ya atendidos por CENATE (estado ATENDIDO). Estos son los logros reales de la campaña, medidos en los termómetros de meta por segmento.
+                            </div>
                             <p className="text-[10px] font-bold uppercase tracking-widest mb-2" style={{ color: '#22c55e' }}>④ Citas Logradas</p>
                             <p className="text-4xl font-black text-gray-900 leading-none tabular-nums">
                               {citasLogradas === null ? <span className="text-xl text-gray-300 animate-pulse">—</span> : citasLogradas.toLocaleString('es-PE')}
@@ -2353,17 +2397,27 @@ export default function Solicitudes({ categoriaInicial } = {}) {
                         );
                       })()}
 
-                    </div>
+                      {/* M5. OBSERVADOS — card separado, clickeable para abrir desglose */}
+                      <button onClick={cargarDesglose}
+                        className="group bg-white rounded-xl border-2 border-dashed border-amber-200 shadow-sm px-5 py-4 relative text-left hover:border-amber-400 hover:shadow-md transition-all cursor-pointer"
+                        style={{ minHeight: '100%' }}>
+                        <AlertCircle className="absolute top-3 right-3 w-3.5 h-3.5 text-amber-400" style={{ opacity: 0.5 }} strokeWidth={2} />
+                        <div className="absolute top-full left-0 mt-1 w-64 bg-gray-900 text-white text-xs rounded-xl px-3 py-2.5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50 shadow-xl leading-relaxed">
+                          <p className="font-bold mb-1 text-amber-300">⑤ Observados</p>
+                          Pacientes que la gestora contactó pero no pudieron ser citados: rechazaron la cita, número no existe, sin vigencia, IPRESS no cubre CENATE, reprogramación fallida, entre otros. Haz clic para ver el detalle.
+                        </div>
+                        <p className="text-[10px] font-bold uppercase tracking-widest mb-2 text-amber-500">⑤ Observados</p>
+                        <p className="text-4xl font-black text-gray-900 leading-none tabular-nums">
+                          {observados === null ? <span className="text-xl text-gray-300 animate-pulse">—</span> : observados.toLocaleString('es-PE')}
+                        </p>
+                        <p className="text-xs text-amber-400 mt-1.5 font-medium">
+                          {observados !== null && universoBase > 0 ? `${pct(observados)}% del total` : '—'}
+                        </p>
+                        <p className="text-[10px] text-gray-400 mt-2">Ver desglose →</p>
+                      </button>
 
-                    {/* OBSERVADOS — chip compacto, solo si hay datos */}
-                    {observados !== null && observados > 0 && (
-                      <div className="col-span-full mt-1">
-                        <button onClick={cargarDesglose}
-                          className="bg-gray-100 hover:bg-gray-200 rounded-lg px-4 py-2 text-sm font-medium text-gray-600 transition-colors">
-                          Ver estados observados · {observados.toLocaleString('es-PE')} pacientes
-                        </button>
-                      </div>
-                    )}
+                      </div>{/* fin grid 4 cols */}
+                    </div>{/* fin col-span-full space-y-0 */}
 
                     {/* ══ NIVEL 2: METAS ESTRATÉGICAS — CENACRON vs ESPECIALIDADES ══ */}
                     {estadisticas.citados !== null && (() => {
@@ -2404,7 +2458,7 @@ export default function Solicitudes({ categoriaInicial } = {}) {
 
                       return (
                         <div className="col-span-full mt-3">
-                          <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-2">Termómetros de Meta</p>
+                          <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-2">Termómetros de Meta de Citados</p>
                           <div className="grid grid-cols-2 gap-3">
                             <MetaCard
                               label="Maratón CENACRON"

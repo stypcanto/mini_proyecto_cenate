@@ -399,6 +399,153 @@ public class SolicitudBolsaEstadisticasController {
         ));
     }
 
+    /**
+     * v1.85.9: KPI MARATÓN con pacientes únicos (DISTINCT ON paciente_dni).
+     * Garantiza que los conteos sumen exactamente el universo total (13,400).
+     * Usa prioridad de estado: CITADO > ATENDIDO > observados > PENDIENTE_CITA.
+     * GET /api/bolsas/estadisticas/maraton-kpi
+     */
+    @GetMapping("/maraton-kpi")
+    public ResponseEntity<List<Map<String, Object>>> obtenerKpiMaraton() {
+        log.info("GET /api/bolsas/estadisticas/maraton-kpi — KPI por paciente único con DISTINCT ON");
+        String sql = """
+            WITH paciente_estado AS (
+                SELECT DISTINCT ON (sb.paciente_dni)
+                    sb.paciente_dni,
+                    COALESCE(eg.cod_estado_cita, 'PENDIENTE_CITA') AS estado,
+                    sb.responsable_gestora_id
+                FROM dim_solicitud_bolsa sb
+                LEFT JOIN dim_estados_gestion_citas eg ON eg.id_estado_cita = sb.estado_gestion_citas_id
+                WHERE sb.id_bolsa = 17 AND sb.activo = true
+                ORDER BY sb.paciente_dni,
+                    CASE COALESCE(eg.cod_estado_cita, 'PENDIENTE_CITA')
+                        WHEN 'CITADO'           THEN 1
+                        WHEN 'ATENDIDO'         THEN 2
+                        WHEN 'ATENDIDO_IPRESS'  THEN 3
+                        WHEN 'NO_CONTESTA'      THEN 4
+                        WHEN 'NO_CONTESTO'      THEN 5
+                        WHEN 'APAGADO'          THEN 6
+                        WHEN 'TEL_SIN_SERVICIO' THEN 7
+                        WHEN 'NO_DESEA'         THEN 8
+                        WHEN 'RECHAZADO'        THEN 9
+                        WHEN 'REPROG_FALLIDA'   THEN 10
+                        WHEN 'NO_IPRESS_CENATE' THEN 11
+                        WHEN 'NUM_NO_EXISTE'    THEN 12
+                        WHEN 'SIN_VIGENCIA'     THEN 13
+                        WHEN 'PARTICULAR'       THEN 14
+                        WHEN 'FALLECIDO'        THEN 15
+                        WHEN 'YA_NO_REQUIERE'   THEN 16
+                        WHEN 'NO_GRUPO_ETARIO'  THEN 17
+                        ELSE 18
+                    END
+            )
+            SELECT estado, COUNT(*) AS cantidad FROM paciente_estado GROUP BY estado
+            UNION ALL
+            SELECT 'ASIGNADOS', COUNT(*) FROM paciente_estado WHERE responsable_gestora_id IS NOT NULL
+            ORDER BY cantidad DESC
+            """;
+        List<Map<String, Object>> rows = jdbcTemplate.queryForList(sql);
+        return ResponseEntity.ok(rows);
+    }
+
+    /**
+     * v1.85.9: Lista paginada de pacientes MARATÓN por categoría del embudo.
+     * GET /api/bolsas/estadisticas/maraton-pacientes?categoria=POR_ASIGNAR&busqueda=&page=0&size=50
+     * Categorías: POR_ASIGNAR | EN_CONTACTO | CITAS_LOGRADAS | OBSERVADOS
+     */
+    @GetMapping("/maraton-pacientes")
+    public ResponseEntity<Map<String, Object>> obtenerPacientesMaratonPorCategoria(
+            @RequestParam String categoria,
+            @RequestParam(required = false, defaultValue = "") String busqueda,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "50") int size) {
+
+        log.info("GET /api/bolsas/estadisticas/maraton-pacientes — categoria={} busqueda={} page={}", categoria, busqueda, page);
+
+        final String OBSERVADOS_IN = "'ATENDIDO_IPRESS','NO_CONTESTA','NO_CONTESTO','APAGADO','TEL_SIN_SERVICIO'," +
+                "'NO_DESEA','RECHAZADO','NUM_NO_EXISTE','NO_IPRESS_CENATE','SIN_VIGENCIA'," +
+                "'YA_NO_REQUIERE','PARTICULAR','REPROG_FALLIDA','FALLECIDO','NO_GRUPO_ETARIO'";
+
+        String categoriaFilter = switch (categoria.toUpperCase()) {
+            case "POR_ASIGNAR"    -> "pe.responsable_gestora_id IS NULL";
+            case "CITAS_LOGRADAS" -> "pe.estado IN ('CITADO','ATENDIDO')";
+            case "OBSERVADOS"     -> "pe.estado IN (" + OBSERVADOS_IN + ")";
+            case "EN_CONTACTO"    -> "pe.responsable_gestora_id IS NOT NULL AND pe.estado NOT IN ('CITADO','ATENDIDO'," + OBSERVADOS_IN + ")";
+            default -> "1=0";
+        };
+
+        String cte = """
+            WITH paciente_estado AS (
+                SELECT DISTINCT ON (sb.paciente_dni)
+                    sb.paciente_dni,
+                    COALESCE(eg.cod_estado_cita, 'PENDIENTE_CITA') AS estado,
+                    sb.responsable_gestora_id
+                FROM dim_solicitud_bolsa sb
+                LEFT JOIN dim_estados_gestion_citas eg ON eg.id_estado_cita = sb.estado_gestion_citas_id
+                WHERE sb.id_bolsa = 17 AND sb.activo = true
+                ORDER BY sb.paciente_dni,
+                    CASE COALESCE(eg.cod_estado_cita, 'PENDIENTE_CITA')
+                        WHEN 'CITADO' THEN 1 WHEN 'ATENDIDO' THEN 2 WHEN 'ATENDIDO_IPRESS' THEN 3
+                        WHEN 'NO_CONTESTA' THEN 4 WHEN 'NO_CONTESTO' THEN 5 WHEN 'APAGADO' THEN 6
+                        WHEN 'TEL_SIN_SERVICIO' THEN 7 WHEN 'NO_DESEA' THEN 8 WHEN 'RECHAZADO' THEN 9
+                        WHEN 'REPROG_FALLIDA' THEN 10 WHEN 'NO_IPRESS_CENATE' THEN 11
+                        WHEN 'NUM_NO_EXISTE' THEN 12 WHEN 'SIN_VIGENCIA' THEN 13
+                        WHEN 'PARTICULAR' THEN 14 WHEN 'FALLECIDO' THEN 15
+                        WHEN 'YA_NO_REQUIERE' THEN 16 WHEN 'NO_GRUPO_ETARIO' THEN 17 ELSE 18
+                    END
+            )
+            """;
+
+        String busquedaFilter = busqueda.isBlank() ? ""
+                : " AND (a.doc_paciente LIKE ? OR LOWER(a.paciente) LIKE LOWER(?))";
+
+        String sqlCount = cte + "SELECT COUNT(*) FROM paciente_estado pe " +
+                "JOIN asegurados a ON a.doc_paciente = pe.paciente_dni " +
+                "WHERE " + categoriaFilter + busquedaFilter;
+
+        String sqlData = cte + """
+                SELECT
+                    CASE a.id_tip_doc WHEN 1 THEN 'DNI' WHEN 2 THEN 'C.E./PAS' ELSE 'DNI' END AS tipo_doc,
+                    a.doc_paciente AS num_doc,
+                    a.paciente AS nombre_completo,
+                    a.sexo AS sexo,
+                    CAST(DATE_PART('year', AGE(CAST(a.fecnacimpaciente AS DATE))) AS INTEGER) AS edad,
+                    COALESCE(di.desc_ipress, 'N/A') AS ipress,
+                    COALESCE(dr.desc_red, 'N/A') AS red,
+                    COALESCE(dm.desc_macro, 'N/A') AS macrorred
+                FROM paciente_estado pe
+                JOIN asegurados a ON a.doc_paciente = pe.paciente_dni
+                LEFT JOIN dim_ipress di ON a.cas_adscripcion = di.cod_ipress
+                LEFT JOIN dim_red dr ON di.id_red = dr.id_red
+                LEFT JOIN dim_macroregion dm ON dr.id_macro = dm.id_macro
+                WHERE """ + categoriaFilter + busquedaFilter + """
+                ORDER BY a.paciente
+                LIMIT ? OFFSET ?
+                """;
+
+        Object[] countParams;
+        Object[] dataParams;
+        if (busqueda.isBlank()) {
+            countParams = new Object[]{};
+            dataParams  = new Object[]{ size, page * size };
+        } else {
+            String like = "%" + busqueda + "%";
+            countParams = new Object[]{ like, like };
+            dataParams  = new Object[]{ like, like, size, page * size };
+        }
+
+        long total = jdbcTemplate.queryForObject(sqlCount, Long.class, countParams);
+        List<Map<String, Object>> content = jdbcTemplate.queryForList(sqlData, dataParams);
+
+        return ResponseEntity.ok(Map.of(
+            "content", content,
+            "totalElements", total,
+            "page", page,
+            "size", size,
+            "totalPages", (int) Math.ceil((double) total / size)
+        ));
+    }
+
     /** Desglose completo de estados por segmento MARATÓN (diagnóstico) */
     @GetMapping("/maraton-desglose")
     public ResponseEntity<List<Map<String, Object>>> obtenerDesgloseMaraton() {

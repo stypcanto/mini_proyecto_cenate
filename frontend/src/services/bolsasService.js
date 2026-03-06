@@ -468,6 +468,16 @@ export const obtenerEstadisticasMaratonSegmentos = async () => {
   }
 };
 
+/** v1.85.9: KPI MARATÓN con pacientes únicos (DISTINCT ON) — suma exacta al universo */
+export const obtenerKpiMaraton = async () => {
+  try {
+    return await apiClient.get(`${API_BASE_URL}/estadisticas/maraton-kpi`, true);
+  } catch (error) {
+    console.error('Error al obtener KPI MARATÓN:', error);
+    throw error;
+  }
+};
+
 /** v1.85.9: Desglose completo de estados por segmento MARATÓN (CENACRON / ESPECIALIDADES) */
 export const obtenerDesgloseMaratonSegmentos = async () => {
   try {
@@ -1313,6 +1323,7 @@ export default {
   obtenerEstadisticas,
   obtenerEstadisticasDelDia,
   obtenerEstadisticasPorEstado,
+  obtenerKpiMaraton,
   obtenerEstadisticasMaratonSegmentos,
   obtenerDesgloseMaratonSegmentos,
   obtenerKpiConFiltros,
