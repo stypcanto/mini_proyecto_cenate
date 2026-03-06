@@ -474,7 +474,7 @@ public class SolicitudBolsaEstadisticasController {
         };
         String cte = """
             WITH paciente_estado AS (
-                SELECT DISTINCT ON (sb.paciente_dni) sb.paciente_dni, COALESCE(eg.cod_estado_cita,'PENDIENTE_CITA') AS estado, sb.responsable_gestora_id
+                SELECT DISTINCT ON (sb.paciente_dni) sb.paciente_dni, COALESCE(eg.cod_estado_cita,'PENDIENTE_CITA') AS estado, sb.responsable_gestora_id, sb.id_ipress
                 FROM dim_solicitud_bolsa sb
                 LEFT JOIN dim_estados_gestion_citas eg ON eg.id_estado_cita = sb.estado_gestion_citas_id
                 WHERE sb.id_bolsa = 17 AND sb.activo = true
@@ -488,7 +488,7 @@ public class SolicitudBolsaEstadisticasController {
                     WHEN 'YA_NO_REQUIERE' THEN 16 WHEN 'NO_GRUPO_ETARIO' THEN 17 ELSE 18 END
             ) """;
         String joins = "LEFT JOIN asegurados a ON a.doc_paciente = pe.paciente_dni " +
-                "LEFT JOIN dim_ipress di ON a.cas_adscripcion = di.cod_ipress " +
+                "LEFT JOIN dim_ipress di ON di.id_ipress = pe.id_ipress " +
                 "LEFT JOIN dim_red dr ON di.id_red = dr.id_red " +
                 "LEFT JOIN dim_macroregion dm ON dr.id_macro = dm.id_macro ";
         String where = "WHERE " + catFilter;
@@ -551,7 +551,8 @@ public class SolicitudBolsaEstadisticasController {
                     COALESCE(eg.cod_estado_cita, 'PENDIENTE_CITA') AS estado,
                     sb.responsable_gestora_id,
                     sb.especialidad,
-                    sb.paciente_edad
+                    sb.paciente_edad,
+                    sb.id_ipress
                 FROM dim_solicitud_bolsa sb
                 LEFT JOIN dim_estados_gestion_citas eg ON eg.id_estado_cita = sb.estado_gestion_citas_id
                 WHERE sb.id_bolsa = 17 AND sb.activo = true
@@ -607,7 +608,7 @@ public class SolicitudBolsaEstadisticasController {
 
         String sqlCount = cte + "SELECT COUNT(*) FROM paciente_estado pe " +
                 "LEFT JOIN asegurados a ON a.doc_paciente = pe.paciente_dni " +
-                "LEFT JOIN dim_ipress di ON a.cas_adscripcion = di.cod_ipress " +
+                "LEFT JOIN dim_ipress di ON di.id_ipress = pe.id_ipress " +
                 "LEFT JOIN dim_red dr ON di.id_red = dr.id_red " +
                 "LEFT JOIN dim_macroregion dm ON dr.id_macro = dm.id_macro " +
                 "WHERE " + categoriaFilter + extraFilters;
@@ -629,7 +630,7 @@ public class SolicitudBolsaEstadisticasController {
                     COALESCE(pe.especialidad, '') AS especialidad
                 FROM paciente_estado pe
                 LEFT JOIN asegurados a ON a.doc_paciente = pe.paciente_dni
-                LEFT JOIN dim_ipress di ON a.cas_adscripcion = di.cod_ipress
+                LEFT JOIN dim_ipress di ON di.id_ipress = pe.id_ipress
                 LEFT JOIN dim_red dr ON di.id_red = dr.id_red
                 LEFT JOIN dim_macroregion dm ON dr.id_macro = dm.id_macro
                 """;
