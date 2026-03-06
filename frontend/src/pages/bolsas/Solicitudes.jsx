@@ -2405,9 +2405,9 @@ export default function Solicitudes({ categoriaInicial } = {}) {
                     setDesgloseSegmentos(segs);
                   } catch { setDesgloseData(null); } finally { setDesgloseLoading(false); }
                 };
-                // Observados = estados excepcionales (excluye PENDIENTE_CITA, CITADO, ATENDIDO y sintéticos)
-                // Misma fórmula que la barra de progreso → números siempre coherentes
-                const ESTADOS_NO_OBS = new Set(['PENDIENTE_CITA', 'CITADO', 'ATENDIDO', 'ATENDIDO_IPRESS', 'SIN_GESTORA', 'CON_GESTORA', 'ASIGNADOS']);
+                // Observados = estados excepcionales (excluye PENDIENTE_CITA, CITADO, ATENDIDO puro y sintéticos)
+                // ATENDIDO_IPRESS = atendido en IPRESS local, NO por CENATE → se clasifica como observado
+                const ESTADOS_NO_OBS = new Set(['PENDIENTE_CITA', 'CITADO', 'ATENDIDO', 'SIN_GESTORA', 'CON_GESTORA', 'ASIGNADOS']);
                 const observados = Array.isArray(estadisticasGlobales)
                   ? estadisticasGlobales.filter(s => !ESTADOS_NO_OBS.has(s.estado?.toUpperCase())).reduce((s, r) => s + (r.cantidad || 0), 0)
                   : null;
