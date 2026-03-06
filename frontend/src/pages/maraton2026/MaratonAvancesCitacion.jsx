@@ -177,7 +177,7 @@ function PacientesModal({ categoria, onClose }) {
     setExporting(true);
     try {
       const res = await obtenerPacientesMaratonCategoria(categoria, busqueda, 0, 99999, filtros);
-      const headers = ['#', 'Tipo Doc', 'N° Documento', 'Nombres y Apellidos', 'Sexo', 'Edad', 'IPRESS', 'Red', 'Macrorred', 'Motivo'];
+      const headers = ['#', 'Tipo Doc', 'N° Documento', 'Nombres y Apellidos', 'Sexo', 'Edad', 'IPRESS', 'Red', 'Macrorred', 'Especialidad', 'Motivo'];
       const dataRows = (res?.content ?? []).map((r, i) => [
         i + 1,
         r.tipo_doc        ?? '',
@@ -188,6 +188,7 @@ function PacientesModal({ categoria, onClose }) {
         r.ipress          ?? '',
         r.red             ?? '',
         r.macrorred       ?? '',
+        r.especialidad    ?? '',
         MOTIVO_BADGE[r.estado_gestion]?.label ?? r.estado_gestion ?? '',
       ]);
       const ws = XLSX.utils.aoa_to_sheet([headers, ...dataRows]);
@@ -384,7 +385,7 @@ function PacientesModal({ categoria, onClose }) {
           <table className="w-full text-sm border-collapse">
             <thead className="sticky top-0 bg-slate-50 z-10">
               <tr>
-                {['Tipo Doc','N° Documento','Nombres y Apellidos','Sexo','Edad','IPRESS','Red','Macrorred','Motivo'].map(h => (
+                {['Tipo Doc','N° Documento','Nombres y Apellidos','Sexo','Edad','IPRESS','Red','Macrorred','Especialidad','Motivo'].map(h => (
                   <th key={h} className="text-left px-3 py-2.5 text-xs font-bold text-slate-500 uppercase tracking-wider border-b border-slate-200 whitespace-nowrap">
                     {h}
                   </th>
@@ -393,9 +394,9 @@ function PacientesModal({ categoria, onClose }) {
             </thead>
             <tbody>
               {loadingList ? (
-                <tr><td colSpan={9} className="text-center py-12 text-slate-400">Cargando...</td></tr>
+                <tr><td colSpan={10} className="text-center py-12 text-slate-400">Cargando...</td></tr>
               ) : rows.length === 0 ? (
-                <tr><td colSpan={9} className="text-center py-12 text-slate-400">Sin resultados</td></tr>
+                <tr><td colSpan={10} className="text-center py-12 text-slate-400">Sin resultados</td></tr>
               ) : rows.map((r, i) => (
                 <tr key={i} className="border-b border-slate-50 hover:bg-slate-50/60 transition-colors">
                   <td className="px-3 py-2.5 text-xs text-slate-500">{r.tipo_doc ?? 'DNI'}</td>
@@ -419,6 +420,7 @@ function PacientesModal({ categoria, onClose }) {
                   <td className="px-3 py-2.5 text-xs text-slate-600 max-w-[140px] truncate" title={r.ipress}>{r.ipress ?? 'N/A'}</td>
                   <td className="px-3 py-2.5 text-xs text-slate-500 max-w-[110px] truncate" title={r.red}>{r.red ?? 'N/A'}</td>
                   <td className="px-3 py-2.5 text-xs text-slate-500">{r.macrorred ?? 'N/A'}</td>
+                  <td className="px-3 py-2.5 text-xs text-slate-600 max-w-[140px] truncate" title={r.especialidad}>{r.especialidad || '—'}</td>
                   <td className="px-3 py-2.5"><MotivoBadge estado={r.estado_gestion} /></td>
                 </tr>
               ))}
