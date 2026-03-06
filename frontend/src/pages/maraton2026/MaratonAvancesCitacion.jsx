@@ -595,7 +595,7 @@ export default function MaratonAvancesCitacion() {
         r.red             ?? '',
         r.macrorred       ?? '',
         r.especialidad    ?? '',
-        r.estado_gestion  ?? '',
+        MOTIVO_BADGE[r.estado_gestion]?.label ?? r.estado_gestion ?? '',
       ]);
       const ws = XLSX.utils.aoa_to_sheet([headers, ...dataRows]);
       const range = XLSX.utils.decode_range(ws['!ref'] ?? 'A1');
