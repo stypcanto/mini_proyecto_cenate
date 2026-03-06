@@ -77,7 +77,7 @@ public class EstadisticasDiagnosticoController {
                     COUNT(DISTINCT CASE WHEN f.id_formulario IS NULL THEN i.id_ipress END) as falta_enviar
                 FROM dim_red r
                 LEFT JOIN dim_macroregion m ON m.id_macro = r.id_macro
-                LEFT JOIN dim_ipress i ON i.id_red = r.id_red
+                LEFT JOIN dim_ipress i ON i.id_red = r.id_red AND i.stat_ipress = 'A'
                 LEFT JOIN form_diag_formulario f ON f.id_ipress = i.id_ipress
                 """ + whereClause.toString() + """
                 GROUP BY r.id_red, r.desc_red, m.id_macro, m.desc_macro
@@ -176,6 +176,7 @@ public class EstadisticasDiagnosticoController {
                 FROM dim_ipress i
                 LEFT JOIN form_diag_formulario f ON f.id_ipress = i.id_ipress
                 WHERE i.id_red = ?
+                AND i.stat_ipress = 'A'
                 ORDER BY i.desc_ipress
             """;
 

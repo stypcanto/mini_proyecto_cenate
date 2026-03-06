@@ -530,8 +530,29 @@ export default function DashboardPorRedes() {
             </div>
           </div>
 
-          <div className="space-y-3">
-            {estadisticas.map((red) => (
+          {/* Agrupar por macroregión */}
+          {(() => {
+            const grupos = estadisticas.reduce((acc, red) => {
+              const key = red.desc_macro || 'Sin Macroregión';
+              if (!acc[key]) acc[key] = [];
+              acc[key].push(red);
+              return acc;
+            }, {});
+            return Object.entries(grupos).map(([macro, redes]) => (
+              <div key={macro} className="mb-6">
+                {/* Encabezado de macroregión */}
+                <div className="flex items-center gap-3 mb-3 px-1">
+                  <div className="p-1.5 bg-blue-600 rounded-lg">
+                    <Network className="w-4 h-4 text-white" />
+                  </div>
+                  <h3 className="text-base font-bold text-blue-800 uppercase tracking-wide">{macro}</h3>
+                  <div className="flex-1 h-px bg-blue-200" />
+                  <span className="text-xs font-semibold text-blue-500 bg-blue-50 border border-blue-200 rounded-full px-2 py-0.5">
+                    {redes.length} red{redes.length !== 1 ? 'es' : ''}
+                  </span>
+                </div>
+                <div className="space-y-2 pl-2">
+            {redes.map((red) => (
               <div
                 key={red.id_red}
                 className="bg-white rounded-xl shadow border border-gray-200 overflow-hidden"
@@ -549,7 +570,7 @@ export default function DashboardPorRedes() {
                       <div className="flex-1">
                         <h3 className="font-semibold text-gray-800">{red.desc_red}</h3>
                         <p className="text-sm text-gray-500 mt-0.5">
-                          {red.desc_macro} • Total: {red.total_ipress} IPRESS
+                          Total: {red.total_ipress} IPRESS
                         </p>
                       </div>
                     </div>
@@ -655,7 +676,10 @@ export default function DashboardPorRedes() {
                 )}
               </div>
             ))}
-          </div>
+                </div>
+              </div>
+            ));
+          })()}
 
           {/* Sin datos */}
           {estadisticas.length === 0 && (
