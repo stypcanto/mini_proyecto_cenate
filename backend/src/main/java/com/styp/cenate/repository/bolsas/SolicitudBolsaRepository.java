@@ -2288,10 +2288,49 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
      * @return Lista de SolicitudBolsa con TODOS los campos inicializados
      */
     @Query("""
-        SELECT s FROM SolicitudBolsa s 
+        SELECT s FROM SolicitudBolsa s
         WHERE s.idPersonal = :idPersonal
     """)
     List<SolicitudBolsa> findByIdPersonalWithAllFields(@org.springframework.data.repository.query.Param("idPersonal") Long idPersonal);
+
+    // =========================================================================
+    // 📅 REPROGRAMACIÓN MASIVA (v1.85.0)
+    // =========================================================================
+
+    /**
+     * Reprograma la fecha de atención de múltiples solicitudes SIN cambiar la gestora.
+     *
+     * Solo actualiza solicitudes activas (activo = true).
+     *
+     * @param ids        lista de IDs de solicitudes a actualizar
+     * @param fechaCita  nueva fecha de atención
+     * @return cantidad de registros actualizados
+     */
+    @Modifying
+    @Query("UPDATE SolicitudBolsa s SET s.fechaAtencion = :fechaCita WHERE s.idSolicitud IN :ids AND s.activo = true")
+    int reprogramarMasivoSinGestora(
+        @org.springframework.data.repository.query.Param("ids") List<Long> ids,
+        @org.springframework.data.repository.query.Param("fechaCita") java.time.LocalDate fechaCita
+    );
+
+    /**
+     * Reprograma la fecha de atención Y reasigna la gestora responsable en una
+     * sola operación masiva.
+     *
+     * Solo actualiza solicitudes activas (activo = true).
+     *
+     * @param ids        lista de IDs de solicitudes a actualizar
+     * @param fechaCita  nueva fecha de atención
+     * @param gestoraId  ID del usuario gestora a asignar
+     * @return cantidad de registros actualizados
+     */
+    @Modifying
+    @Query("UPDATE SolicitudBolsa s SET s.fechaAtencion = :fechaCita, s.responsableGestoraId = :gestoraId WHERE s.idSolicitud IN :ids AND s.activo = true")
+    int reprogramarMasivoConGestora(
+        @org.springframework.data.repository.query.Param("ids") List<Long> ids,
+        @org.springframework.data.repository.query.Param("fechaCita") java.time.LocalDate fechaCita,
+        @org.springframework.data.repository.query.Param("gestoraId") Long gestoraId
+    );
 
 }
 

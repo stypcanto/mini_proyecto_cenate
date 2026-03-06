@@ -24,6 +24,7 @@ import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 /**
@@ -55,18 +56,27 @@ public class PacienteEstrategiaServiceImpl implements PacienteEstrategiaService 
 
         log.info("Asignando estrategia {} al paciente {}", request.getIdEstrategia(), request.getPkAsegurado());
 
-        // Validar que no exista una asignación activa previa
-        boolean existeActiva = pacienteEstrategiaRepository.existsAsignacionActiva(
+        // Verificar si ya existe una asignación activa previa
+        Optional<PacienteEstrategia> asignacionExistente = pacienteEstrategiaRepository.findAsignacionActiva(
                 request.getPkAsegurado(),
                 request.getIdEstrategia()
         );
 
-        if (existeActiva) {
-            log.warn("El paciente {} ya tiene una asignación activa a la estrategia {}",
-                    request.getPkAsegurado(), request.getIdEstrategia());
-            throw new IllegalArgumentException(
-                    "El paciente ya tiene una asignación activa a esta estrategia"
-            );
+        if (asignacionExistente.isPresent()) {
+            // Asignación ACTIVA ya existe pero el flag paciente_cronico puede estar desincronizado.
+            // Reparar la sincronización y retornar la asignación existente (idempotente).
+            log.warn("El paciente {} ya tiene asignación activa (id={}). Reparando sync paciente_cronico.",
+                    request.getPkAsegurado(), asignacionExistente.get().getIdAsignacion());
+            EstrategiaInstitucional estrategiaExistente = asignacionExistente.get().getEstrategia();
+            if ("CENACRON".equalsIgnoreCase(estrategiaExistente.getSigla())) {
+                try {
+                    int filas = aseguradoRepository.actualizarPacienteCronico(request.getPkAsegurado(), true);
+                    log.info("✅ Sync reparado: paciente_cronico=true para DNI {} ({} fila/s)", request.getPkAsegurado(), filas);
+                } catch (Exception ex) {
+                    log.warn("⚠️ No se pudo reparar paciente_cronico (DNI {}): {}", request.getPkAsegurado(), ex.getMessage());
+                }
+            }
+            return mapToResponse(asignacionExistente.get());
         }
 
         // Obtener la estrategia

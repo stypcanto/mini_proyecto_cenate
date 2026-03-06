@@ -1797,8 +1797,9 @@ export default function MisPacientes() {
     }
     setProcesandoAsignacion(true);
     try {
-      await gestionPacientesService.inscribirCenacron(pacienteAsignarCenacron.pkAsegurado);
-      toast.success('Paciente inscrito en el programa CENACRON');
+      const res = await gestionPacientesService.inscribirCenacron(pacienteAsignarCenacron.pkAsegurado);
+      const nombre = pacienteAsignarCenacron.apellidosNombres || 'Paciente';
+      toast.success(`${nombre} inscrito en CENACRON`, { duration: 3500 });
       setShowAsignarCenacronModal(false);
       setPacienteAsignarCenacron(null);
       cargarPacientes();
@@ -3233,14 +3234,17 @@ export default function MisPacientes() {
                       {/* Columna Programa CENACRON */}
                       <td className="px-2 py-1 text-center">
                         {paciente.esCenacron ? (
-                          <span className="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full text-[9px] font-bold bg-gray-200 text-gray-600 border border-gray-300 whitespace-nowrap">
+                          <span
+                            title="Paciente inscrito en el programa CENACRON de pacientes crónicos"
+                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-purple-100 text-purple-700 border border-purple-400 ring-1 ring-purple-300 whitespace-nowrap shadow-sm"
+                          >
                             ♾ CENACRON
                           </span>
                         ) : (
                           <button
                             onClick={(e) => { e.stopPropagation(); abrirAsignarCenacron(paciente); }}
-                            title="Inscribir al programa CENACRON"
-                            className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-[10px] font-medium text-gray-400 border border-dashed border-gray-300 hover:border-purple-400 hover:text-purple-600 hover:bg-purple-50 transition-all duration-150"
+                            title="Clic para inscribir al programa CENACRON"
+                            className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-[10px] font-medium text-purple-400 border border-dashed border-purple-300 hover:border-purple-500 hover:text-purple-700 hover:bg-purple-50 transition-all duration-150"
                           >
                             <UserPlus className="w-2.5 h-2.5" strokeWidth={2} />
                             Inscribir

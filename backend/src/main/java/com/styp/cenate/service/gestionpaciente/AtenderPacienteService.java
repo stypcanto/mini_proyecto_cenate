@@ -64,10 +64,13 @@ public class AtenderPacienteService {
             return;
         }
 
-        // Ya fue atendido —  validar que sea el MISMO DÍA
-        // ✅ getFechaAtencionMedica() retorna OffsetDateTime que ya tiene zona horaria
+        // Ya fue atendido — validar que sea el MISMO DÍA (en hora Lima)
+        // ⚠️ CRÍTICO: Convertir a Lima ANTES de extraer la fecha.
+        //    .toLocalDate() sin conversión usa la zona del OffsetDateTime (puede ser UTC),
+        //    lo que hace que atenciones después de las 19:00 Lima aparezcan como "mañana".
         LocalDate fechaAtencionLocal = solicitud.getFechaAtencionMedica()
-            .toLocalDate();  // OffsetDateTime ya tiene zona horaria, solo extraer la fecha
+            .atZoneSameInstant(ZoneId.of("America/Lima"))
+            .toLocalDate();
         LocalDate hoy = LocalDate.now(ZoneId.of("America/Lima"));
 
         if (!fechaAtencionLocal.equals(hoy)) {

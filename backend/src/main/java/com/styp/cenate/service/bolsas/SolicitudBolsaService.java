@@ -374,4 +374,15 @@ public interface SolicitudBolsaService {
      * @return mapa con: total, insertados, duplicados, errores, detalleErrores
      */
     Map<String, Object> cargaMasivaPacientes(CargaMasivaRequest request);
+
+    /**
+     * Reprograma la fecha de atención de múltiples solicitudes en una sola operación (v1.85.0).
+     *
+     * Si {@code request.getGestoraId()} está presente, también actualiza el responsable_gestora_id.
+     * Solo aplica a solicitudes con activo = true.
+     *
+     * @param request datos de reprogramación: lista de IDs, nueva fecha y gestora opcional
+     * @return mapa con status, cantidad de registros actualizados y fecha aplicada
+     */
+    Map<String, Object> reprogramarMasivo(com.styp.cenate.dto.bolsas.ReprogramarMasivoRequest request);
 }

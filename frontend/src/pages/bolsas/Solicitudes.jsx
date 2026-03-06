@@ -163,6 +163,12 @@ export default function Solicitudes({ categoriaInicial } = {}) {
   const [isProcessing, setIsProcessing] = useState(false);
   const [importStatus, setImportStatus] = useState(null);
 
+  // v1.85.0: Estados para reprogramación masiva
+  const [modalReprogramar, setModalReprogramar] = useState(false);
+  const [reprogramarFecha, setReprogramarFecha] = useState('');
+  const [reprogramarGestoraId, setReprogramarGestoraId] = useState('');
+  const [reprogramarLoading, setReprogramarLoading] = useState(false);
+
   // Estado para sincronización de teléfonos
   const [isSyncingPhones, setIsSyncingPhones] = useState(false);
 
@@ -1768,6 +1774,41 @@ export default function Solicitudes({ categoriaInicial } = {}) {
     }
   };
 
+  // v1.85.0: Reprogramar masivamente las solicitudes seleccionadas
+  const reprogramarSeleccionados = async () => {
+    if (!reprogramarFecha) return;
+    setReprogramarLoading(true);
+    try {
+      const body = {
+        ids: Array.from(selectedRows),
+        fechaCita: reprogramarFecha,
+        gestoraId: reprogramarGestoraId ? Number(reprogramarGestoraId) : null,
+      };
+      const res = await fetch(`/api/bolsas/solicitudes/reprogramar-masivo`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('auth.token')}`,
+        },
+        body: JSON.stringify(body),
+      });
+      if (!res.ok) throw new Error('Error al reprogramar');
+      const data = await res.json();
+      const { default: toast } = await import('react-hot-toast');
+      toast.success(`${data.actualizados} pacientes reprogramados para ${reprogramarFecha}`);
+      setModalReprogramar(false);
+      setReprogramarFecha('');
+      setReprogramarGestoraId('');
+      setSelectedRows(new Set());
+      cargarSolicitudes();
+    } catch (err) {
+      const { default: toast } = await import('react-hot-toast');
+      toast.error('Error al reprogramar: ' + err.message);
+    } finally {
+      setReprogramarLoading(false);
+    }
+  };
+
   // ========================================================================
   // 📋 HANDLERS DE ACCIONES
   // ========================================================================
@@ -3141,6 +3182,17 @@ export default function Solicitudes({ categoriaInicial } = {}) {
                       >
                         <X size={22} className="font-bold" />
                         Limpiar Selección
+                      </button>
+                    )}
+
+                    {/* v1.85.0: Reprogramar masivo — visible para todos los roles */}
+                    {selectedRows.size > 0 && !seleccionarTodas && (
+                      <button
+                        onClick={() => setModalReprogramar(true)}
+                        className="flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition-colors shadow-lg hover:shadow-xl"
+                        title="Reprogramar fecha de cita para las solicitudes seleccionadas"
+                      >
+                        📅 Reprogramar ({selectedRows.size})
                       </button>
                     )}
 
@@ -4620,6 +4672,66 @@ export default function Solicitudes({ categoriaInicial } = {}) {
           } : null}
           idSolicitud={solicitudHistorial?.id}
         />
+
+        {/* v1.85.0: MODAL: Reprogramación masiva de solicitudes seleccionadas */}
+        {modalReprogramar && (
+          <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center">
+            <div className="bg-white rounded-xl shadow-2xl p-6 w-full max-w-md">
+              <h3 className="text-lg font-bold text-gray-900 mb-4">
+                📅 Reprogramar {selectedRows.size} paciente{selectedRows.size !== 1 ? 's' : ''}
+              </h3>
+
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Nueva fecha de cita <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="date"
+                    value={reprogramarFecha}
+                    onChange={e => setReprogramarFecha(e.target.value)}
+                    min={new Date().toISOString().split('T')[0]}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Asignar gestora (opcional)
+                  </label>
+                  <input
+                    type="number"
+                    value={reprogramarGestoraId}
+                    onChange={e => setReprogramarGestoraId(e.target.value)}
+                    placeholder="ID de gestora (dejar vacío para no cambiar)"
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">Si se deja vacío, se mantiene la gestora actual.</p>
+                </div>
+              </div>
+
+              <div className="flex gap-3 mt-6">
+                <button
+                  onClick={() => {
+                    setModalReprogramar(false);
+                    setReprogramarFecha('');
+                    setReprogramarGestoraId('');
+                  }}
+                  className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-sm text-gray-700 hover:bg-gray-50"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={reprogramarSeleccionados}
+                  disabled={!reprogramarFecha || reprogramarLoading}
+                  className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {reprogramarLoading ? 'Reprogramando...' : 'Confirmar reprogramación'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

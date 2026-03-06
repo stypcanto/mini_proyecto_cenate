@@ -1994,8 +1994,53 @@ public class SolicitudBolsaController {
             atencion.put("pacienteDni", sol.getPacienteDni());
             return atencion;
         }).collect(java.util.stream.Collectors.toList());
-        
+
         return ResponseEntity.ok(response);
+    }
+
+    // =========================================================================
+    // 📅 REPROGRAMACIÓN MASIVA (v1.85.0)
+    // =========================================================================
+
+    /**
+     * Reprograma la fecha de atención de múltiples solicitudes en una sola operación.
+     *
+     * PUT /api/bolsas/solicitudes/reprogramar-masivo
+     *
+     * Body:
+     * {
+     *   "ids": [1, 2, 3],
+     *   "fechaCita": "2026-03-06",
+     *   "gestoraId": 190         // opcional
+     * }
+     *
+     * Response 200:
+     * { "status": "ok", "actualizados": 3, "fechaCita": "2026-03-06" }
+     *
+     * @param request datos de reprogramación con lista de IDs, nueva fecha y gestora opcional
+     * @return cantidad de solicitudes actualizadas y fecha aplicada
+     */
+    @PutMapping("/reprogramar-masivo")
+    public ResponseEntity<?> reprogramarMasivo(
+            @org.springframework.web.bind.annotation.RequestBody
+            @jakarta.validation.Valid
+            com.styp.cenate.dto.bolsas.ReprogramarMasivoRequest request) {
+        try {
+            log.info("📅 [PUT /reprogramar-masivo] ids={} fechaCita={} gestoraId={}",
+                request.getIds(), request.getFechaCita(), request.getGestoraId());
+
+            Map<String, Object> resultado = solicitudBolsaService.reprogramarMasivo(request);
+
+            return ResponseEntity.ok(resultado);
+
+        } catch (IllegalArgumentException e) {
+            log.warn("⚠️ [reprogramar-masivo] Validación fallida: {}", e.getMessage());
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        } catch (Exception e) {
+            log.error("❌ [reprogramar-masivo] Error inesperado: {}", e.getMessage(), e);
+            return ResponseEntity.status(org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(Map.of("error", "Error interno al reprogramar solicitudes: " + e.getMessage()));
+        }
     }
 
 }

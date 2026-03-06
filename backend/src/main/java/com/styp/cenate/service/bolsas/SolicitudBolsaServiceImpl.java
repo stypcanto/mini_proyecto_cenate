@@ -4631,4 +4631,42 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
         resultado.put("detalleErrores", detalleErrores);
         return resultado;
     }
+
+    // =========================================================================
+    // 📅 REPROGRAMACIÓN MASIVA (v1.85.0)
+    // =========================================================================
+
+    @Override
+    @Transactional
+    public Map<String, Object> reprogramarMasivo(com.styp.cenate.dto.bolsas.ReprogramarMasivoRequest request) {
+        List<Long> ids = request.getIds();
+        java.time.LocalDate fechaCita = request.getFechaCita();
+        Long gestoraId = request.getGestoraId();
+
+        if (ids == null || ids.isEmpty()) {
+            throw new IllegalArgumentException("La lista de IDs no puede estar vacía");
+        }
+        if (fechaCita == null) {
+            throw new IllegalArgumentException("La fecha de la cita es obligatoria");
+        }
+
+        log.info("📅 [REPROGRAMAR MASIVO] {} solicitudes → fechaCita={} gestoraId={}",
+            ids.size(), fechaCita, gestoraId);
+
+        int actualizados;
+        if (gestoraId != null) {
+            actualizados = solicitudRepository.reprogramarMasivoConGestora(ids, fechaCita, gestoraId);
+            log.info("✅ [REPROGRAMAR MASIVO] {} registros actualizados (fecha + gestora {})",
+                actualizados, gestoraId);
+        } else {
+            actualizados = solicitudRepository.reprogramarMasivoSinGestora(ids, fechaCita);
+            log.info("✅ [REPROGRAMAR MASIVO] {} registros actualizados (solo fecha)", actualizados);
+        }
+
+        Map<String, Object> respuesta = new HashMap<>();
+        respuesta.put("status", "ok");
+        respuesta.put("actualizados", actualizados);
+        respuesta.put("fechaCita", fechaCita.toString());
+        return respuesta;
+    }
 }
