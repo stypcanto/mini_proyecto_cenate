@@ -2777,10 +2777,11 @@ export default function Solicitudes({ categoriaInicial } = {}) {
               // Solo cuenta como "atendido" el ATENDIDO puro (por CENATE)
               const atendidosTotal = atendidos; // solo ATENDIDO puro
 
-              // En contacto = CON_GESTORA (asignada pero aún sin cita ni observado)
-              const enContacto = Array.isArray(estadisticasGlobales)
-                ? (estadisticasGlobales.find(s => s.estado?.toUpperCase() === 'CON_GESTORA')?.cantidad || 0)
-                : 0;
+              // En contacto = ASIGNADOS - citados - atendidos - observados
+              // (misma fórmula que el card ③ En Contacto — usa el sintético ASIGNADOS del KPI)
+              const asignados = Array.isArray(estadisticasGlobales)
+                ? (estadisticasGlobales.find(s => s.estado?.toUpperCase() === 'ASIGNADOS')?.cantidad || 0)
+                : (estadisticas.asignados || 0);
 
               // Observados = todo lo que no es PENDIENTE/CITADO/ATENDIDO puro ni sintético
               // ATENDIDO_IPRESS incluido aquí (fuera del alcance de telemedicina)
@@ -2792,6 +2793,9 @@ export default function Solicitudes({ categoriaInicial } = {}) {
                 : (estadisticas.noContesto || 0) + (estadisticas.rechazados || 0);
 
               const total = Math.max(universo, 1);
+
+              // En contacto = con gestora asignada pero sin cita ni resultado aún
+              const enContacto = Math.max(0, asignados - citados - atendidosTotal - totalObservados);
 
               // ── Avance de Gestión = todos los pacientes trabajados
               const gestionados  = enContacto + citados + atendidosTotal + totalObservados;
@@ -2806,7 +2810,8 @@ export default function Solicitudes({ categoriaInicial } = {}) {
 
               // Filas de desglose
               const filas = [
-                { label: 'Pendiente citar (sin asignar + en contacto)', valor: pendientesReales, color: 'bg-slate-300', pct: (pendientesReales / total) * 100 },
+                { label: 'Sin asignar (pendiente contactar)', valor: pendientesReales, color: 'bg-slate-300', pct: (pendientesReales / total) * 100 },
+                { label: 'En contacto (con gestora, sin cita aún)',      valor: enContacto,       color: 'bg-violet-400', pct: (enContacto      / total) * 100 },
                 { label: 'Citados',                           valor: citados,          color: 'bg-blue-500',   pct: (citados         / total) * 100 },
                 { label: 'Atendidos',                         valor: atendidosTotal,   color: 'bg-emerald-500',pct: (atendidosTotal  / total) * 100 },
                 { label: 'Observados',                        valor: totalObservados,  color: 'bg-amber-400',  pct: (totalObservados / total) * 100 },
@@ -2862,8 +2867,7 @@ export default function Solicitudes({ categoriaInicial } = {}) {
                       )}
                       <span className="flex items-center gap-1.5 text-xs text-slate-500">
                         <span className="w-2 h-2 rounded-full bg-slate-300 flex-shrink-0" />
-                        Pendiente citar <strong className="text-slate-700 ml-0.5">{pendientesReales.toLocaleString('es-PE')}</strong>
-                        <span className="text-slate-400 text-[10px] ml-1">(sin asignar + en contacto)</span>
+                        Sin asignar <strong className="text-slate-700 ml-0.5">{pendientesReales.toLocaleString('es-PE')}</strong>
                       </span>
                     </div>
                   </div>
