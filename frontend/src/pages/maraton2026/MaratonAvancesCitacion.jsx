@@ -177,7 +177,7 @@ function PacientesModal({ categoria, onClose }) {
     setExporting(true);
     try {
       const res = await obtenerPacientesMaratonCategoria(categoria, busqueda, 0, 99999, filtros);
-      const headers = ['#', 'Tipo Doc', 'N° Documento', 'Nombres y Apellidos', 'Sexo', 'Edad', 'IPRESS', 'Red', 'Macrorred', 'Motivo'];
+      const headers = ['#', 'Tipo Doc', 'N° Documento', 'Nombres y Apellidos', 'Sexo', 'Edad', 'IPRESS', 'Red', 'Macrorred', 'Especialidad', 'Motivo'];
       const dataRows = (res?.content ?? []).map((r, i) => [
         i + 1,
         r.tipo_doc        ?? '',
@@ -188,6 +188,7 @@ function PacientesModal({ categoria, onClose }) {
         r.ipress          ?? '',
         r.red             ?? '',
         r.macrorred       ?? '',
+        r.especialidad    ?? '',
         MOTIVO_BADGE[r.estado_gestion]?.label ?? r.estado_gestion ?? '',
       ]);
       const ws = XLSX.utils.aoa_to_sheet([headers, ...dataRows]);
