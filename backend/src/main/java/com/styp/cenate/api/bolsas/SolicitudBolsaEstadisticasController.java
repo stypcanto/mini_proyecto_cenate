@@ -385,10 +385,9 @@ public class SolicitudBolsaEstadisticasController {
         log.info("GET /api/bolsas/estadisticas/maraton-segmentos — citados por segmento CENACRON vs ESPECIALIDADES");
         String sql = """
             SELECT
-                SUM(CASE WHEN a.paciente_cronico = true  AND eg.cod_estado_cita = 'CITADO' THEN 1 ELSE 0 END) AS cenacron_citados,
-                SUM(CASE WHEN (a.paciente_cronico = false OR a.paciente_cronico IS NULL) AND eg.cod_estado_cita = 'CITADO' THEN 1 ELSE 0 END) AS especialidades_citados
+                SUM(CASE WHEN sb.id_servicio = 84 AND eg.cod_estado_cita = 'CITADO' THEN 1 ELSE 0 END) AS cenacron_citados,
+                SUM(CASE WHEN (sb.id_servicio != 84 OR sb.id_servicio IS NULL) AND eg.cod_estado_cita = 'CITADO' THEN 1 ELSE 0 END) AS especialidades_citados
             FROM dim_solicitud_bolsa sb
-            LEFT JOIN asegurados a ON a.doc_paciente = sb.paciente_dni
             LEFT JOIN dim_estados_gestion_citas eg ON eg.id_estado_cita = sb.estado_gestion_citas_id
             WHERE sb.id_bolsa = 17 AND sb.activo = true
             """;
@@ -699,10 +698,9 @@ public class SolicitudBolsaEstadisticasController {
             WITH paciente_unico AS (
                 SELECT DISTINCT ON (sb.paciente_dni)
                     sb.paciente_dni,
-                    CASE WHEN a.paciente_cronico = true THEN 'CENACRON' ELSE 'ESPECIALIDADES' END AS segmento,
+                    CASE WHEN sb.id_servicio = 84 THEN 'CRONICOS' ELSE 'ESPECIALIDADES' END AS segmento,
                     COALESCE(eg.cod_estado_cita, 'SIN_ESTADO') AS estado
                 FROM dim_solicitud_bolsa sb
-                LEFT JOIN asegurados a ON a.doc_paciente = sb.paciente_dni
                 LEFT JOIN dim_estados_gestion_citas eg ON eg.id_estado_cita = sb.estado_gestion_citas_id
                 WHERE sb.id_bolsa = 17 AND sb.activo = true
                 ORDER BY sb.paciente_dni,

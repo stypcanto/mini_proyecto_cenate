@@ -1014,7 +1014,7 @@ export default function MaratonAvancesCitacion() {
         const cen = { total: 0, citados: 0, observados: 0, pendientes: 0 };
         const esp = { total: 0, citados: 0, observados: 0, pendientes: 0 };
         desgloseRes.forEach(({ segmento, estado, cantidad }) => {
-          const seg = segmento === 'CENACRON' ? cen : esp;
+          const seg = segmento === 'CRONICOS' ? cen : esp;
           const n   = Number(cantidad) || 0;
           seg.total += n;
           if (estado === 'CITADO') seg.citados += n;
