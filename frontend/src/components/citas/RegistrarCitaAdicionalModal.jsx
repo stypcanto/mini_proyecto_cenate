@@ -14,15 +14,6 @@ const DRUM_HOURS = Array.from({ length: 17 }, (_, i) => i + 7); // 07..23
 const DRUM_MINUTES = [0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55];
 const DRUM_ITEM_H = 40;
 
-const ESPECIALIDADES_MEDICAS = [
-  "CARDIOLOGIA","DERMATOLOGIA","HEMATOLOGIA","MEDICINA GENERAL",
-  "NEUROLOGIA","OFTALMOLOGIA","PEDIATRIA","PSIQUIATRIA",
-];
-const OTROS_SERVICIOS = [
-  "ENFERMERIA","NUTRICION","PSICOLOGIA","TERAPIA FISICA","TERAPIA DE LENGUAJE","S/E",
-];
-const TODAS_ESPECIALIDADES = [...ESPECIALIDADES_MEDICAS, ...OTROS_SERVICIOS];
-
 function getApiBase() {
   if (process.env.REACT_APP_API_URL) return process.env.REACT_APP_API_URL;
   const { protocol, hostname, port } = window.location;
@@ -70,6 +61,33 @@ function obtenerApellidoPaterno(medico) {
  */
 export default function RegistrarCitaAdicionalModal({ open, onClose, onSuccess, user }) {
   const API_BASE = getApiBase();
+
+  // Especialidades dinámicas desde API
+  const [especialidadesAPI, setEspecialidadesAPI] = useState([]);
+  const [cargandoEsps, setCargandoEsps] = useState(false);
+
+  useEffect(() => {
+    if (!open) return;
+    const load = async () => {
+      setCargandoEsps(true);
+      try {
+        const res = await fetch(`${API_BASE}/especialidades/activas`, {
+          headers: { Authorization: `Bearer ${getToken()}` },
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setEspecialidadesAPI(
+            (Array.isArray(data) ? data : [])
+              .map(e => e.descripcion?.toUpperCase()?.trim())
+              .filter(Boolean)
+              .sort()
+          );
+        }
+      } catch { /* ignore, fallback a lista vacía */ }
+      finally { setCargandoEsps(false); }
+    };
+    load();
+  }, [open]); // eslint-disable-line
 
   // Paso 1: buscar paciente
   const [dni, setDni] = useState("");
@@ -479,7 +497,9 @@ export default function RegistrarCitaAdicionalModal({ open, onClose, onSuccess, 
                   </label>
                   {(() => {
                     const termino = busquedaEspecialidad.toLowerCase().trim();
-                    const filtradas = termino ? TODAS_ESPECIALIDADES.filter(e => e.toLowerCase().includes(termino)) : TODAS_ESPECIALIDADES;
+                    const filtradas = termino
+                      ? especialidadesAPI.filter(e => e.toLowerCase().includes(termino))
+                      : especialidadesAPI;
                     return (
                       <div className="relative">
                         <input
@@ -492,37 +512,24 @@ export default function RegistrarCitaAdicionalModal({ open, onClose, onSuccess, 
                           }}
                           onFocus={() => setMostrarDropdownEsp(true)}
                           onBlur={() => setTimeout(() => setMostrarDropdownEsp(false), 150)}
-                          placeholder="Buscar especialidad..."
+                          placeholder={cargandoEsps ? "Cargando especialidades..." : "Buscar especialidad..."}
+                          disabled={cargandoEsps}
                           className={`w-full px-3 py-2 border-2 rounded-lg focus:ring-2 focus:ring-green-600 focus:border-green-600 text-sm font-medium transition-all ${
                             especialidadSeleccionada ? "bg-white border-green-500 text-green-900" : "bg-green-50 border-green-300 text-gray-500"
                           }`}
                         />
-                        {mostrarDropdownEsp && (
+                        {mostrarDropdownEsp && !cargandoEsps && (
                           <ul className="absolute z-50 w-full bg-white border border-gray-300 rounded-lg shadow-lg mt-1 max-h-48 overflow-y-auto text-sm">
                             {filtradas.length === 0 ? (
                               <li className="px-3 py-2 text-gray-400 italic">Sin resultados</li>
                             ) : (
                               <>
-                                {filtradas.filter(e => ESPECIALIDADES_MEDICAS.includes(e)).length > 0 && (
-                                  <>
-                                    <li className="px-3 py-1 text-xs font-bold text-gray-400 uppercase tracking-wide bg-gray-50 border-b">Especialidades Medicas</li>
-                                    {filtradas.filter(e => ESPECIALIDADES_MEDICAS.includes(e)).map(esp => (
-                                      <li key={esp} onMouseDown={() => { setEspecialidadSeleccionada(esp); setBusquedaEspecialidad(esp); setMostrarDropdownEsp(false); setMedicoSeleccionado(""); setBusquedaProfesional(""); }}
-                                        className={`px-3 py-2 cursor-pointer hover:bg-green-50 ${especialidadSeleccionada === esp ? "bg-green-100 font-semibold text-green-900" : "text-gray-800"}`}
-                                      >{esp}</li>
-                                    ))}
-                                  </>
-                                )}
-                                {filtradas.filter(e => OTROS_SERVICIOS.includes(e)).length > 0 && (
-                                  <>
-                                    <li className="px-3 py-1 text-xs font-bold text-gray-400 uppercase tracking-wide bg-gray-50 border-b border-t mt-1">Otros Servicios</li>
-                                    {filtradas.filter(e => OTROS_SERVICIOS.includes(e)).map(esp => (
-                                      <li key={esp} onMouseDown={() => { setEspecialidadSeleccionada(esp); setBusquedaEspecialidad(esp); setMostrarDropdownEsp(false); setMedicoSeleccionado(""); setBusquedaProfesional(""); }}
-                                        className={`px-3 py-2 cursor-pointer hover:bg-green-50 ${especialidadSeleccionada === esp ? "bg-green-100 font-semibold text-green-900" : "text-gray-800"}`}
-                                      >{esp}</li>
-                                    ))}
-                                  </>
-                                )}
+                                <li className="px-3 py-1 text-xs font-bold text-gray-400 uppercase tracking-wide bg-gray-50 border-b">Especialidades / Servicios</li>
+                                {filtradas.map(esp => (
+                                  <li key={esp} onMouseDown={() => { setEspecialidadSeleccionada(esp); setBusquedaEspecialidad(esp); setMostrarDropdownEsp(false); setMedicoSeleccionado(""); setBusquedaProfesional(""); }}
+                                    className={`px-3 py-2 cursor-pointer hover:bg-green-50 ${especialidadSeleccionada === esp ? "bg-green-100 font-semibold text-green-900" : "text-gray-800"}`}
+                                  >{esp}</li>
+                                ))}
                               </>
                             )}
                           </ul>

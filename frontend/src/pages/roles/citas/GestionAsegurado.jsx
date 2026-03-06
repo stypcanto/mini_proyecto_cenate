@@ -203,6 +203,7 @@ export default function GestionAsegurado() {
   const [mostrarDropdownProfes, setMostrarDropdownProfes] = useState(false);
   const [busquedaEspecialidad, setBusquedaEspecialidad] = useState(""); // autocomplete especialidad
   const [mostrarDropdownEsp, setMostrarDropdownEsp] = useState(false);
+  const [especialidadesAPI, setEspecialidadesAPI] = useState([]); // cargadas desde BD
   const [horasOcupadas, setHorasOcupadas] = useState([]); // v1.67.0: Horas ya reservadas del profesional
 
   // v1.67.1: Drum/wheel picker refs
@@ -308,6 +309,19 @@ export default function GestionAsegurado() {
   };
   
   const API_BASE = getApiBase();
+
+  // Cargar especialidades desde BD al montar el componente
+  useEffect(() => {
+    fetch(`${API_BASE}/especialidades/activas`, { headers: { Authorization: `Bearer ${getToken()}` } })
+      .then(r => r.ok ? r.json() : [])
+      .then(data => setEspecialidadesAPI(
+        (Array.isArray(data) ? data : [])
+          .map(e => e.descripcion?.toUpperCase()?.trim())
+          .filter(Boolean)
+          .sort()
+      ))
+      .catch(() => {});
+  }, []); // eslint-disable-line
 
   // ============================================================================
   // 🔐 FUNCIÓN AUXILIAR: OBTENER HEADERS CON TOKEN
@@ -2033,25 +2047,8 @@ CENATE de Essalud`;
       .sort((a, b) => a.descripcion.localeCompare(b.descripcion, 'es'));
   }, [pacientesAsignados]);
 
-  // 🏥 Especialidades disponibles para importación (v1.46.5 + v1.71.1)
-  const especialidadesDisponibles = [
-    // ── Especialidades Médicas ──
-    "CARDIOLOGIA",
-    "DERMATOLOGIA",
-    "HEMATOLOGIA",
-    "MEDICINA GENERAL",
-    "NEUROLOGIA",
-    "OFTALMOLOGIA",
-    "PEDIATRIA",
-    "PSIQUIATRIA",
-    // ── Otros Servicios ──
-    "ENFERMERIA",
-    "NUTRICION",
-    "PSICOLOGIA",
-    "TERAPIA FISICA",
-    "TERAPIA DE LENGUAJE",
-    "S/E"
-  ];
+  // 🏥 Especialidades disponibles desde BD (dinámico)
+  const especialidadesDisponibles = especialidadesAPI;
 
   const especialidadesUnicas = [
     ...new Set(
@@ -3631,9 +3628,7 @@ CENATE de Essalud`;
                                 📋 Especialidad / Servicio <span className="text-red-600 text-lg">*</span>
                               </label>
                               {(() => {
-                                const ESPECIALIDADES_MEDICAS = ["CARDIOLOGIA","DERMATOLOGIA","HEMATOLOGIA","MEDICINA GENERAL","NEUROLOGIA","OFTALMOLOGIA","PEDIATRIA","PSIQUIATRIA"];
-                                const OTROS_SERVICIOS = ["ENFERMERIA","NUTRICION","PSICOLOGIA","TERAPIA FISICA","TERAPIA DE LENGUAJE","S/E"];
-                                const TODAS = [...ESPECIALIDADES_MEDICAS, ...OTROS_SERVICIOS];
+                                const TODAS = especialidadesAPI;
                                 const terminoEsp = busquedaEspecialidad.toLowerCase().trim();
                                 const filtradas = terminoEsp ? TODAS.filter(e => e.toLowerCase().includes(terminoEsp)) : TODAS;
                                 return (
@@ -3665,46 +3660,21 @@ CENATE de Essalud`;
                                           <li className="px-3 py-2 text-gray-400 italic">Sin resultados para "{busquedaEspecialidad}"</li>
                                         ) : (
                                           <>
-                                            {filtradas.filter(e => ["CARDIOLOGIA","DERMATOLOGIA","HEMATOLOGIA","MEDICINA GENERAL","NEUROLOGIA","OFTALMOLOGIA","PEDIATRIA","PSIQUIATRIA"].includes(e)).length > 0 && (
-                                              <>
-                                                <li className="px-3 py-1 text-xs font-bold text-gray-400 uppercase tracking-wide bg-gray-50 border-b">── Especialidades Médicas ──</li>
-                                                {filtradas.filter(e => ["CARDIOLOGIA","DERMATOLOGIA","HEMATOLOGIA","MEDICINA GENERAL","NEUROLOGIA","OFTALMOLOGIA","PEDIATRIA","PSIQUIATRIA"].includes(e)).map(esp => (
-                                                  <li
-                                                    key={esp}
-                                                    onMouseDown={() => {
-                                                      setEspecialidadSeleccionada(esp);
-                                                      setBusquedaEspecialidad(esp);
-                                                      setMostrarDropdownEsp(false);
-                                                      setMedicoSeleccionado("");
-                                                      setBusquedaProfesional("");
-                                                    }}
-                                                    className={`px-3 py-2 cursor-pointer hover:bg-green-50 ${especialidadSeleccionada === esp ? "bg-green-100 font-semibold text-green-900" : "text-gray-800"}`}
-                                                  >
-                                                    ✓ {esp}
-                                                  </li>
-                                                ))}
-                                              </>
-                                            )}
-                                            {filtradas.filter(e => ["ENFERMERIA","NUTRICION","PSICOLOGIA","TERAPIA FISICA","TERAPIA DE LENGUAJE","S/E"].includes(e)).length > 0 && (
-                                              <>
-                                                <li className="px-3 py-1 text-xs font-bold text-gray-400 uppercase tracking-wide bg-gray-50 border-b border-t mt-1">── Otros Servicios ──</li>
-                                                {filtradas.filter(e => ["ENFERMERIA","NUTRICION","PSICOLOGIA","TERAPIA FISICA","TERAPIA DE LENGUAJE","S/E"].includes(e)).map(esp => (
-                                                  <li
-                                                    key={esp}
-                                                    onMouseDown={() => {
-                                                      setEspecialidadSeleccionada(esp);
-                                                      setBusquedaEspecialidad(esp);
-                                                      setMostrarDropdownEsp(false);
-                                                      setMedicoSeleccionado("");
-                                                      setBusquedaProfesional("");
-                                                    }}
-                                                    className={`px-3 py-2 cursor-pointer hover:bg-green-50 ${especialidadSeleccionada === esp ? "bg-green-100 font-semibold text-green-900" : "text-gray-800"}`}
-                                                  >
-                                                    ✓ {esp}
-                                                  </li>
-                                                ))}
-                                              </>
-                                            )}
+                                            {filtradas.map(esp => (
+                                              <li
+                                                key={esp}
+                                                onMouseDown={() => {
+                                                  setEspecialidadSeleccionada(esp);
+                                                  setBusquedaEspecialidad(esp);
+                                                  setMostrarDropdownEsp(false);
+                                                  setMedicoSeleccionado("");
+                                                  setBusquedaProfesional("");
+                                                }}
+                                                className={`px-3 py-2 cursor-pointer hover:bg-green-50 ${especialidadSeleccionada === esp ? "bg-green-100 font-semibold text-green-900" : "text-gray-800"}`}
+                                              >
+                                                ✓ {esp}
+                                              </li>
+                                            ))}
                                           </>
                                         )}
                                       </ul>
@@ -4192,9 +4162,7 @@ CENATE de Essalud`;
                         Especialidad / Servicio <span className="text-red-600 text-lg">*</span>
                       </label>
                       {(() => {
-                        const ESPECIALIDADES_MEDICAS = ["CARDIOLOGIA","DERMATOLOGIA","HEMATOLOGIA","MEDICINA GENERAL","NEUROLOGIA","OFTALMOLOGIA","PEDIATRIA","PSIQUIATRIA"];
-                        const OTROS_SERVICIOS = ["ENFERMERIA","NUTRICION","PSICOLOGIA","TERAPIA FISICA","TERAPIA DE LENGUAJE","S/E"];
-                        const TODAS = [...ESPECIALIDADES_MEDICAS, ...OTROS_SERVICIOS];
+                        const TODAS = especialidadesAPI;
                         const terminoEsp = busquedaEspecialidad.toLowerCase().trim();
                         const filtradas = terminoEsp ? TODAS.filter(e => e.toLowerCase().includes(terminoEsp)) : TODAS;
                         return (
@@ -4224,26 +4192,11 @@ CENATE de Essalud`;
                                   <li className="px-3 py-2 text-gray-400 italic">Sin resultados</li>
                                 ) : (
                                   <>
-                                    {filtradas.filter(e => ESPECIALIDADES_MEDICAS.includes(e)).length > 0 && (
-                                      <>
-                                        <li className="px-3 py-1 text-xs font-bold text-gray-400 uppercase tracking-wide bg-gray-50 border-b">Especialidades Medicas</li>
-                                        {filtradas.filter(e => ESPECIALIDADES_MEDICAS.includes(e)).map(esp => (
-                                          <li key={esp} onMouseDown={() => { setEspecialidadSeleccionada(esp); setBusquedaEspecialidad(esp); setMostrarDropdownEsp(false); setMedicoSeleccionado(""); setBusquedaProfesional(""); }}
-                                            className={`px-3 py-2 cursor-pointer hover:bg-green-50 ${especialidadSeleccionada === esp ? "bg-green-100 font-semibold text-green-900" : "text-gray-800"}`}
-                                          >{esp}</li>
-                                        ))}
-                                      </>
-                                    )}
-                                    {filtradas.filter(e => OTROS_SERVICIOS.includes(e)).length > 0 && (
-                                      <>
-                                        <li className="px-3 py-1 text-xs font-bold text-gray-400 uppercase tracking-wide bg-gray-50 border-b border-t mt-1">Otros Servicios</li>
-                                        {filtradas.filter(e => OTROS_SERVICIOS.includes(e)).map(esp => (
-                                          <li key={esp} onMouseDown={() => { setEspecialidadSeleccionada(esp); setBusquedaEspecialidad(esp); setMostrarDropdownEsp(false); setMedicoSeleccionado(""); setBusquedaProfesional(""); }}
-                                            className={`px-3 py-2 cursor-pointer hover:bg-green-50 ${especialidadSeleccionada === esp ? "bg-green-100 font-semibold text-green-900" : "text-gray-800"}`}
-                                          >{esp}</li>
-                                        ))}
-                                      </>
-                                    )}
+                                    {filtradas.map(esp => (
+                                      <li key={esp} onMouseDown={() => { setEspecialidadSeleccionada(esp); setBusquedaEspecialidad(esp); setMostrarDropdownEsp(false); setMedicoSeleccionado(""); setBusquedaProfesional(""); }}
+                                        className={`px-3 py-2 cursor-pointer hover:bg-green-50 ${especialidadSeleccionada === esp ? "bg-green-100 font-semibold text-green-900" : "text-gray-800"}`}
+                                      >{esp}</li>
+                                    ))}
                                   </>
                                 )}
                               </ul>
