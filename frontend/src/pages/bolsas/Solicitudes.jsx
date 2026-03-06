@@ -1938,17 +1938,18 @@ export default function Solicitudes({ categoriaInicial } = {}) {
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, 'Pacientes MARATÓN');
 
-      // Descarga via Blob (más confiable en browser que XLSX.writeFile)
+      // Descarga via Blob — revocar después de 2s para que el browser procese el nombre
       const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
       const blob = new Blob([wbout], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+      const filename = `Maraton_${modalPacientesMaraton.categoria}_${new Date().toISOString().slice(0, 10)}.xlsx`;
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
-      a.href = url;
-      a.download = `Maraton_${modalPacientesMaraton.categoria}_${new Date().toISOString().slice(0, 10)}.xlsx`;
+      a.setAttribute('href', url);
+      a.setAttribute('download', filename);
+      a.style.display = 'none';
       document.body.appendChild(a);
       a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
+      setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 2000);
     } catch (e) {
       console.error('Error exportando MARATÓN Excel:', e);
     } finally {
@@ -2823,7 +2824,7 @@ export default function Solicitudes({ categoriaInicial } = {}) {
                       </span>
                     )}
                     <span className="ml-auto text-xs font-semibold text-emerald-700">
-                      Completados: {atePct.toFixed(1)}%
+                      Gestionado: {avancePct.toFixed(1)}%
                     </span>
                   </div>
                 </>
