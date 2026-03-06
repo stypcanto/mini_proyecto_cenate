@@ -488,6 +488,35 @@ export const obtenerDesgloseMaratonSegmentos = async () => {
   }
 };
 
+/** v1.85.9: Lista paginada de pacientes MARATÓN por categoría del embudo */
+export const obtenerPacientesMaratonCategoria = async (categoria, busqueda = '', page = 0, size = 50, filtros = {}) => {
+  try {
+    const params = new URLSearchParams({ categoria, page, size });
+    if (busqueda) params.append('busqueda', busqueda);
+    if (filtros.sexo)           params.append('sexo', filtros.sexo);
+    if (filtros.estadoGestion)  params.append('estadoGestion', filtros.estadoGestion);
+    if (filtros.edadMin != null && filtros.edadMin !== '') params.append('edadMin', filtros.edadMin);
+    if (filtros.edadMax != null && filtros.edadMax !== '') params.append('edadMax', filtros.edadMax);
+    if (filtros.ipressFiltro)   params.append('ipressFiltro', filtros.ipressFiltro);
+    if (filtros.redFiltro)      params.append('redFiltro', filtros.redFiltro);
+    if (filtros.macrorredFiltro) params.append('macrorredFiltro', filtros.macrorredFiltro);
+    return await apiClient.get(`${API_BASE_URL}/estadisticas/maraton-pacientes?${params.toString()}`, true);
+  } catch (error) {
+    console.error('Error al obtener pacientes MARATÓN:', error);
+    throw error;
+  }
+};
+
+/** v1.85.9: Opciones únicas de filtros para el modal de pacientes MARATÓN */
+export const obtenerOpcionesFiltrosMaraton = async (categoria) => {
+  try {
+    return await apiClient.get(`${API_BASE_URL}/estadisticas/maraton-filtros-opciones?categoria=${categoria}`, true);
+  } catch (error) {
+    console.error('Error al obtener opciones filtros MARATÓN:', error);
+    return { macrorredes: [], redes: [], ipress: [] };
+  }
+};
+
 /** v1.78.3: KPI filtrados — mismos parámetros que el listado de solicitudes */
 export const obtenerKpiConFiltros = async (filtros = {}) => {
   try {

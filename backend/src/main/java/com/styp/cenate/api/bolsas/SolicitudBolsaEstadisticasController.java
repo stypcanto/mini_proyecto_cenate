@@ -448,17 +448,77 @@ public class SolicitudBolsaEstadisticasController {
         return ResponseEntity.ok(rows);
     }
 
+    /** v1.85.9: Opciones únicas de filtros para el modal de pacientes MARATÓN */
+    @GetMapping("/maraton-filtros-opciones")
+    public ResponseEntity<Map<String, Object>> obtenerFiltrosOpciones(@RequestParam String categoria) {
+        log.info("GET /api/bolsas/estadisticas/maraton-filtros-opciones — categoria={}", categoria);
+        final String OBS_IN = "'ATENDIDO_IPRESS','NO_CONTESTA','NO_CONTESTO','APAGADO','TEL_SIN_SERVICIO'," +
+                "'NO_DESEA','RECHAZADO','NUM_NO_EXISTE','NO_IPRESS_CENATE','SIN_VIGENCIA'," +
+                "'YA_NO_REQUIERE','PARTICULAR','REPROG_FALLIDA','FALLECIDO','NO_GRUPO_ETARIO'";
+        String catFilter = switch (categoria.toUpperCase()) {
+            case "UNIVERSO"                   -> "1=1";
+            case "CRONICOS"                   -> "a.paciente_cronico = true";
+            case "ESPECIALIDADES"             -> "(a.paciente_cronico = false OR a.paciente_cronico IS NULL)";
+            case "POR_ASIGNAR"                -> "pe.responsable_gestora_id IS NULL";
+            case "CITAS_LOGRADAS"             -> "pe.estado IN ('CITADO','ATENDIDO')";
+            case "OBSERVADOS"                 -> "pe.estado IN (" + OBS_IN + ")";
+            case "PENDIENTES"                 -> "pe.estado = 'PENDIENTE_CITA'";
+            case "EN_CONTACTO"                -> "pe.responsable_gestora_id IS NOT NULL AND pe.estado NOT IN ('CITADO','ATENDIDO'," + OBS_IN + ")";
+            case "CITADOS_CENACRON"           -> "pe.estado IN ('CITADO','ATENDIDO') AND a.paciente_cronico = true";
+            case "CITADOS_ESPECIALIDADES"     -> "pe.estado IN ('CITADO','ATENDIDO') AND (a.paciente_cronico = false OR a.paciente_cronico IS NULL)";
+            case "OBSERVADOS_CENACRON"        -> "pe.estado IN (" + OBS_IN + ") AND a.paciente_cronico = true";
+            case "OBSERVADOS_ESPECIALIDADES"  -> "pe.estado IN (" + OBS_IN + ") AND (a.paciente_cronico = false OR a.paciente_cronico IS NULL)";
+            case "PENDIENTES_CENACRON"        -> "pe.estado = 'PENDIENTE_CITA' AND a.paciente_cronico = true";
+            case "PENDIENTES_ESPECIALIDADES"  -> "pe.estado = 'PENDIENTE_CITA' AND (a.paciente_cronico = false OR a.paciente_cronico IS NULL)";
+            default -> "1=0";
+        };
+        String cte = """
+            WITH paciente_estado AS (
+                SELECT DISTINCT ON (sb.paciente_dni) sb.paciente_dni, COALESCE(eg.cod_estado_cita,'PENDIENTE_CITA') AS estado, sb.responsable_gestora_id
+                FROM dim_solicitud_bolsa sb
+                LEFT JOIN dim_estados_gestion_citas eg ON eg.id_estado_cita = sb.estado_gestion_citas_id
+                WHERE sb.id_bolsa = 17 AND sb.activo = true
+                ORDER BY sb.paciente_dni, CASE COALESCE(eg.cod_estado_cita,'PENDIENTE_CITA')
+                    WHEN 'CITADO' THEN 1 WHEN 'ATENDIDO' THEN 2 WHEN 'ATENDIDO_IPRESS' THEN 3
+                    WHEN 'NO_CONTESTA' THEN 4 WHEN 'NO_CONTESTO' THEN 5 WHEN 'APAGADO' THEN 6
+                    WHEN 'TEL_SIN_SERVICIO' THEN 7 WHEN 'NO_DESEA' THEN 8 WHEN 'RECHAZADO' THEN 9
+                    WHEN 'REPROG_FALLIDA' THEN 10 WHEN 'NO_IPRESS_CENATE' THEN 11
+                    WHEN 'NUM_NO_EXISTE' THEN 12 WHEN 'SIN_VIGENCIA' THEN 13
+                    WHEN 'PARTICULAR' THEN 14 WHEN 'FALLECIDO' THEN 15
+                    WHEN 'YA_NO_REQUIERE' THEN 16 WHEN 'NO_GRUPO_ETARIO' THEN 17 ELSE 18 END
+            ) """;
+        String joins = "JOIN asegurados a ON a.doc_paciente = pe.paciente_dni " +
+                "LEFT JOIN dim_ipress di ON a.cas_adscripcion = di.cod_ipress " +
+                "LEFT JOIN dim_red dr ON di.id_red = dr.id_red " +
+                "LEFT JOIN dim_macroregion dm ON dr.id_macro = dm.id_macro ";
+        String where = "WHERE " + catFilter;
+        List<String> macrorredes = jdbcTemplate.queryForList(
+                cte + "SELECT DISTINCT COALESCE(dm.desc_macro,'N/A') v FROM paciente_estado pe " + joins + where + " AND dm.desc_macro IS NOT NULL ORDER BY 1", String.class);
+        List<String> redes = jdbcTemplate.queryForList(
+                cte + "SELECT DISTINCT COALESCE(dr.desc_red,'N/A') v FROM paciente_estado pe " + joins + where + " AND dr.desc_red IS NOT NULL ORDER BY 1", String.class);
+        List<String> ipressList = jdbcTemplate.queryForList(
+                cte + "SELECT COALESCE(di.desc_ipress,'N/A') v FROM paciente_estado pe " + joins + where + " AND di.desc_ipress IS NOT NULL GROUP BY 1 ORDER BY COUNT(*) DESC LIMIT 150", String.class);
+        return ResponseEntity.ok(Map.of("macrorredes", macrorredes, "redes", redes, "ipress", ipressList));
+    }
+
     /**
      * v1.85.9: Lista paginada de pacientes MARATÓN por categoría del embudo.
      * GET /api/bolsas/estadisticas/maraton-pacientes?categoria=POR_ASIGNAR&busqueda=&page=0&size=50
-     * Categorías: POR_ASIGNAR | EN_CONTACTO | CITAS_LOGRADAS | OBSERVADOS
+     * Categorías: POR_ASIGNAR | EN_CONTACTO | CITAS_LOGRADAS | OBSERVADOS | CITADOS_CENACRON | CITADOS_ESPECIALIDADES
      */
     @GetMapping("/maraton-pacientes")
     public ResponseEntity<Map<String, Object>> obtenerPacientesMaratonPorCategoria(
             @RequestParam String categoria,
             @RequestParam(required = false, defaultValue = "") String busqueda,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "50") int size) {
+            @RequestParam(defaultValue = "50") int size,
+            @RequestParam(required = false, defaultValue = "") String sexo,
+            @RequestParam(required = false, defaultValue = "") String estadoGestion,
+            @RequestParam(required = false) Integer edadMin,
+            @RequestParam(required = false) Integer edadMax,
+            @RequestParam(required = false, defaultValue = "") String ipressFiltro,
+            @RequestParam(required = false, defaultValue = "") String redFiltro,
+            @RequestParam(required = false, defaultValue = "") String macrorredFiltro) {
 
         log.info("GET /api/bolsas/estadisticas/maraton-pacientes — categoria={} busqueda={} page={}", categoria, busqueda, page);
 
@@ -467,10 +527,20 @@ public class SolicitudBolsaEstadisticasController {
                 "'YA_NO_REQUIERE','PARTICULAR','REPROG_FALLIDA','FALLECIDO','NO_GRUPO_ETARIO'";
 
         String categoriaFilter = switch (categoria.toUpperCase()) {
-            case "POR_ASIGNAR"    -> "pe.responsable_gestora_id IS NULL";
-            case "CITAS_LOGRADAS" -> "pe.estado IN ('CITADO','ATENDIDO')";
-            case "OBSERVADOS"     -> "pe.estado IN (" + OBSERVADOS_IN + ")";
-            case "EN_CONTACTO"    -> "pe.responsable_gestora_id IS NOT NULL AND pe.estado NOT IN ('CITADO','ATENDIDO'," + OBSERVADOS_IN + ")";
+            case "UNIVERSO"                  -> "1=1";
+            case "CRONICOS"                  -> "a.paciente_cronico = true";
+            case "ESPECIALIDADES"            -> "(a.paciente_cronico = false OR a.paciente_cronico IS NULL)";
+            case "POR_ASIGNAR"               -> "pe.responsable_gestora_id IS NULL";
+            case "CITAS_LOGRADAS"            -> "pe.estado IN ('CITADO','ATENDIDO')";
+            case "OBSERVADOS"                -> "pe.estado IN (" + OBSERVADOS_IN + ")";
+            case "PENDIENTES"                -> "pe.estado = 'PENDIENTE_CITA'";
+            case "EN_CONTACTO"               -> "pe.responsable_gestora_id IS NOT NULL AND pe.estado NOT IN ('CITADO','ATENDIDO'," + OBSERVADOS_IN + ")";
+            case "CITADOS_CENACRON"          -> "pe.estado IN ('CITADO','ATENDIDO') AND a.paciente_cronico = true";
+            case "CITADOS_ESPECIALIDADES"    -> "pe.estado IN ('CITADO','ATENDIDO') AND (a.paciente_cronico = false OR a.paciente_cronico IS NULL)";
+            case "OBSERVADOS_CENACRON"       -> "pe.estado IN (" + OBSERVADOS_IN + ") AND a.paciente_cronico = true";
+            case "OBSERVADOS_ESPECIALIDADES" -> "pe.estado IN (" + OBSERVADOS_IN + ") AND (a.paciente_cronico = false OR a.paciente_cronico IS NULL)";
+            case "PENDIENTES_CENACRON"       -> "pe.estado = 'PENDIENTE_CITA' AND a.paciente_cronico = true";
+            case "PENDIENTES_ESPECIALIDADES" -> "pe.estado = 'PENDIENTE_CITA' AND (a.paciente_cronico = false OR a.paciente_cronico IS NULL)";
             default -> "1=0";
         };
 
@@ -496,14 +566,51 @@ public class SolicitudBolsaEstadisticasController {
             )
             """;
 
-        String busquedaFilter = busqueda.isBlank() ? ""
-                : " AND (a.doc_paciente LIKE ? OR LOWER(a.paciente) LIKE LOWER(?))";
+        // Build dynamic extra filters + params list
+        StringBuilder extraFilters = new StringBuilder();
+        java.util.List<Object> extraParams = new java.util.ArrayList<>();
+
+        if (!busqueda.isBlank()) {
+            String like = "%" + busqueda + "%";
+            extraFilters.append(" AND (a.doc_paciente LIKE ? OR LOWER(a.paciente) LIKE LOWER(?))");
+            extraParams.add(like); extraParams.add(like);
+        }
+        if (sexo.equals("M") || sexo.equals("F")) {
+            extraFilters.append(" AND a.sexo = '").append(sexo).append("'");
+        }
+        if (!estadoGestion.isBlank()) {
+            extraFilters.append(" AND pe.estado = ?");
+            extraParams.add(estadoGestion);
+        }
+        if (edadMin != null) {
+            extraFilters.append(" AND DATE_PART('year', AGE(CAST(a.fecnacimpaciente AS DATE))) >= ?");
+            extraParams.add(edadMin.doubleValue());
+        }
+        if (edadMax != null) {
+            extraFilters.append(" AND DATE_PART('year', AGE(CAST(a.fecnacimpaciente AS DATE))) <= ?");
+            extraParams.add(edadMax.doubleValue());
+        }
+        if (!ipressFiltro.isBlank()) {
+            extraFilters.append(" AND LOWER(COALESCE(di.desc_ipress,'')) LIKE LOWER(?)");
+            extraParams.add("%" + ipressFiltro + "%");
+        }
+        if (!redFiltro.isBlank()) {
+            extraFilters.append(" AND LOWER(COALESCE(dr.desc_red,'')) LIKE LOWER(?)");
+            extraParams.add("%" + redFiltro + "%");
+        }
+        if (!macrorredFiltro.isBlank()) {
+            extraFilters.append(" AND LOWER(COALESCE(dm.desc_macro,'')) LIKE LOWER(?)");
+            extraParams.add("%" + macrorredFiltro + "%");
+        }
 
         String sqlCount = cte + "SELECT COUNT(*) FROM paciente_estado pe " +
                 "JOIN asegurados a ON a.doc_paciente = pe.paciente_dni " +
-                "WHERE " + categoriaFilter + busquedaFilter;
+                "LEFT JOIN dim_ipress di ON a.cas_adscripcion = di.cod_ipress " +
+                "LEFT JOIN dim_red dr ON di.id_red = dr.id_red " +
+                "LEFT JOIN dim_macroregion dm ON dr.id_macro = dm.id_macro " +
+                "WHERE " + categoriaFilter + extraFilters;
 
-        String sqlData = cte + """
+        String sqlDataBase = """
                 SELECT
                     CASE a.id_tip_doc WHEN 1 THEN 'DNI' WHEN 2 THEN 'C.E./PAS' ELSE 'DNI' END AS tipo_doc,
                     a.doc_paciente AS num_doc,
@@ -512,27 +619,22 @@ public class SolicitudBolsaEstadisticasController {
                     CAST(DATE_PART('year', AGE(CAST(a.fecnacimpaciente AS DATE))) AS INTEGER) AS edad,
                     COALESCE(di.desc_ipress, 'N/A') AS ipress,
                     COALESCE(dr.desc_red, 'N/A') AS red,
-                    COALESCE(dm.desc_macro, 'N/A') AS macrorred
+                    COALESCE(dm.desc_macro, 'N/A') AS macrorred,
+                    pe.estado AS estado_gestion
                 FROM paciente_estado pe
                 JOIN asegurados a ON a.doc_paciente = pe.paciente_dni
                 LEFT JOIN dim_ipress di ON a.cas_adscripcion = di.cod_ipress
                 LEFT JOIN dim_red dr ON di.id_red = dr.id_red
                 LEFT JOIN dim_macroregion dm ON dr.id_macro = dm.id_macro
-                WHERE """ + categoriaFilter + busquedaFilter + """
-                ORDER BY a.paciente
-                LIMIT ? OFFSET ?
                 """;
+        String sqlData = cte + sqlDataBase + "WHERE " + categoriaFilter + extraFilters +
+                " ORDER BY a.paciente LIMIT ? OFFSET ?";
 
-        Object[] countParams;
-        Object[] dataParams;
-        if (busqueda.isBlank()) {
-            countParams = new Object[]{};
-            dataParams  = new Object[]{ size, page * size };
-        } else {
-            String like = "%" + busqueda + "%";
-            countParams = new Object[]{ like, like };
-            dataParams  = new Object[]{ like, like, size, page * size };
-        }
+        Object[] countParams = extraParams.toArray();
+        java.util.List<Object> dataParamsList = new java.util.ArrayList<>(extraParams);
+        dataParamsList.add(size);
+        dataParamsList.add(page * size);
+        Object[] dataParams = dataParamsList.toArray();
 
         long total = jdbcTemplate.queryForObject(sqlCount, Long.class, countParams);
         List<Map<String, Object>> content = jdbcTemplate.queryForList(sqlData, dataParams);
