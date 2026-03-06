@@ -2764,7 +2764,7 @@ export default function Solicitudes({ categoriaInicial } = {}) {
                     <span className="flex items-center gap-1.5 text-xs bg-blue-50 border border-blue-100 text-blue-700 rounded-full px-3 py-0.5">
                       📅 Inicio: 4 mar 2026
                       <span className="mx-1 text-blue-300">·</span>
-                      <strong>{diasTranscurridos}</strong>&nbsp;{diasTranscurridos === 1 ? 'día' : 'días'} en curso
+                      <strong>{diasTranscurridos}</strong>&nbsp;{diasTranscurridos === 1 ? 'día' : 'días'} en curso captando
                     </span>
                   </div>
                   <div className="flex items-center gap-3">
