@@ -1,7 +1,7 @@
 # Estrategia MARATÓN (EST-008) — Documentación Técnica
 
-> **Estado:** ✅ Cargado masivamente + Filtros operativos en Lista Asegurados (3 sub-filtros)
-> **Versión:** v1.85.8 (2026-03-06)
+> **Estado:** ✅ Módulo propio en Sidebar + Embudo de citación operativo (v1.86.0)
+> **Versión:** v1.86.0 (2026-03-06)
 > **Responsable carga:** Jesús Morales Carlos (DBA) — id_user = 53, login: 70076049
 
 ---
@@ -179,6 +179,72 @@ EXISTS (SELECT 1 FROM paciente_estrategia pe
 
 ---
 
+## Módulo Maratón 2026 en Sidebar (v1.86.0)
+
+**Migración:** `V6_32_0__modulo_maraton_2026.sql`
+
+Nuevo módulo de primer nivel en el sidebar, accesible a:
+- Todos los roles `COORDINADOR*`
+- `SUPERADMIN`
+- `SUBDIRECCION_DE_TELESALUD`
+- `GESTOR DE CITAS`
+
+### Páginas
+
+| Ruta | Componente | Descripción |
+|------|-----------|-------------|
+| `/maraton2026/avances-citacion` | `MaratonAvancesCitacion.jsx` | Embudo de citación por segmento |
+| `/maraton2026/resumen-atencion` | `MaratonResumenAtencion.jsx` | Resumen de atenciones (placeholder) |
+
+### Embudo de Citación — `MaratonAvancesCitacion.jsx`
+
+Visualización tipo funnel/sankey con datos en tiempo real:
+
+```
+TOTAL PACIENTES (13,400)
+├── MARATÓN - CRÓNICOS (6,086)  ──→  CITADOS     698  (11.5%)
+│                                ──→  OBSERVADOS  794  (13.1%)
+│                                ──→  PENDIENTES 4,594 (75.5%)
+│
+└── MARATÓN - ESPECIALIDADES (7,476) ──→  CITADOS     21  (0.3%)
+                                     ──→  OBSERVADOS   51  (0.7%)
+                                     ──→  PENDIENTES 7,404 (99.0%)
+```
+
+**Endpoints consumidos:**
+```
+GET /api/asegurados?maraton=true&page=0&size=1         → universoTotal (totalElements)
+GET /api/bolsas/estadisticas/maraton-desglose          → [{segmento, estado, cantidad}]
+```
+
+**Clasificación de estados:**
+| Categoría UI | Estados BD |
+|---|---|
+| CITADOS | `CITADO` |
+| PENDIENTES | `PENDIENTE_CITA`, `SIN_ESTADO` |
+| OBSERVADOS | Todo lo demás (NO_CONTESTA, APAGADO, NO_DESEA, RECHAZADO, etc.) |
+
+**Conector SVG:** líneas bezier entre los 2 segmentos izquierdos y las 6 filas derechas, con `preserveAspectRatio="none"` para adaptarse dinámicamente al alto del contenedor.
+
+### Endpoints backend disponibles
+
+| Endpoint | Descripción |
+|----------|-------------|
+| `GET /api/bolsas/estadisticas/maraton-segmentos` | `{cenacronCitados, especialidadesCitados}` |
+| `GET /api/bolsas/estadisticas/maraton-kpi` | KPI por paciente único con DISTINCT ON |
+| `GET /api/bolsas/estadisticas/maraton-desglose` | `[{segmento, estado, cantidad}]` completo |
+
+### Permisos registrados
+
+Tablas actualizadas por `V6_32_0`:
+- `dim_modulos_sistema` → id_modulo = 52 (orden = 50)
+- `dim_paginas_modulo` → id_pagina 171 (Avances) y 172 (Resumen)
+- `segu_permisos_rol_pagina` → 9 roles con `puede_ver = true, puede_exportar = true`
+- `segu_permisos_rol_modulo` → idem (requerido por `fn_seguridad_obtener_menu_usuario_vf`)
+- `permisos_modulares` → inserción manual por usuario según necesidad
+
+---
+
 ## Archivos modificados
 
 | Archivo | Cambio | Versión |
@@ -188,6 +254,11 @@ EXISTS (SELECT 1 FROM paciente_estrategia pe
 | `BuscarAsegurado.jsx` | Estado `soloMaraton`, botón UI, params API | v1.84.14 |
 | `BuscarAsegurado.jsx` | Estado `maratonSubfiltro`, sub-botones CENACRON / ESPECIALIDADES | v1.85.7 |
 | `V6_29_0__inscribir_maraton_mongrut_en_paciente_estrategia.sql` | 1ra carga masiva 6,020 pacientes | v1.84.14 |
+| `V6_32_0__modulo_maraton_2026.sql` | Módulo sidebar + páginas + permisos rol | v1.86.0 |
+| `MaratonAvancesCitacion.jsx` | Embudo visual SVG por segmento con datos reales | v1.86.0 |
+| `MaratonResumenAtencion.jsx` | Placeholder KPI cards listo para endpoint | v1.86.0 |
+| `SolicitudBolsaEstadisticasController.java` | maraton-kpi, maraton-desglose endpoints | v1.86.0 |
+| `bolsasService.js` | obtenerKpiMaraton, obtenerDesgloseMaratonSegmentos | v1.86.0 |
 
 ---
 
@@ -207,4 +278,4 @@ Diagnóstico y fix ejecutado directamente en BD:
 
 ---
 
-*Última actualización: 2026-03-06 | Autor: Styp Canto Rondón / Claude Code*
+*Última actualización: 2026-03-06 v1.86.0 | Autor: Styp Canto Rondón / Claude Code*
