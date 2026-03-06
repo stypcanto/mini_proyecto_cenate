@@ -1,15 +1,16 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { Plus, Search, Phone, ChevronDown, ChevronUp, Circle, Eye, Users, UserPlus, Download, FileText, FolderOpen, ListChecks, Upload, AlertCircle, Edit, X, AlertTriangle, Clock, UserCheck, Database, Loader, CalendarCheck, BarChart2, RefreshCw } from 'lucide-react';
+import { Plus, Search, Phone, ChevronDown, ChevronUp, Circle, Eye, Users, UserPlus, Download, FileText, FolderOpen, ListChecks, Upload, AlertCircle, Edit, X, AlertTriangle, Clock, UserCheck, Database, Loader, CalendarCheck, BarChart2, RefreshCw, Info } from 'lucide-react';
 import PageHeader from '../../components/PageHeader';
 import StatCard from '../../components/StatCard';
 import ListHeader from '../../components/ListHeader';
-import bolsasService, { actualizarIpressAtencion, actualizarFechaPreferida, asignarGestoraMasivo, agruparPorIpressAtencion as agruparPorIpressAtencionAPI } from '../../services/bolsasService';
+import bolsasService, { actualizarIpressAtencion, actualizarFechaPreferida, asignarGestoraMasivo, agruparPorIpressAtencion as agruparPorIpressAtencionAPI, obtenerPacientesMaratonCategoria, obtenerOpcionesFiltrosMaraton } from '../../services/bolsasService';
 import { apiClient } from '../../lib/apiClient';
 import ipressService from '../../services/ipressService';
 import { usePermisos } from '../../context/PermisosContext';
 import ModalResultadosImportacion from '../../components/modals/ModalResultadosImportacion'; // ✅ NUEVO v1.19.0
 import FilaSolicitud from './FilaSolicitud'; // 🚀 v2.6.0: Componente memorizado para filas
 import DetallesPacienteModal from '../../components/modals/DetallesPacienteModal'; // v1.75.0: Historial trazabilidad
+import * as XLSX from 'xlsx';
 
 /**
  * 📋 Solicitudes - Recepción de Bolsa
@@ -124,13 +125,26 @@ export default function Solicitudes({ categoriaInicial } = {}) {
   // v1.85.0: Filtro por estrategia (opcional, no se pre-fija para Maratón — usa categoriaEspecialidad=maraton → id_bolsa=17)
   const [filtroEstrategia, setFiltroEstrategia] = useState('todos');
   // Modal desglose Maratón (card OBSERVADOS)
+  const [progresoDesglosado, setProgresoDesglosado] = useState(false);
   const [desglosAbierto, setDesglosAbierto] = useState(false);
   const [desgloseData, setDesgloseData] = useState(null);
   const [desgloseLoading, setDesgloseLoading] = useState(false);
+  const [desgloseTab, setDesgloseTab] = useState('todos');
+  const [desgloseSegmentos, setDesgloseSegmentos] = useState(null);
   const [cenacronCount, setCenacronCount] = useState(null);           // Conteo CENACRON en contexto actual
   const [maratonCount, setMaratonCount] = useState(null);             // Conteo MARATON en contexto actual
   const [maratonUniversoTotal, setMaratonUniversoTotal] = useState(null); // Total MARATÓN desde paciente_estrategia (13,402)
+  const [maratonSegmentos, setMaratonSegmentos] = useState(null); // {cenacronCitados, especialidadesCitados}
   const [kpiCenacron, setKpiCenacron] = useState(null); // {citados, universo} para segmento CENACRON dentro de Maratón
+  // v1.85.9: Modal pacientes MARATÓN por categoría
+  const [modalPacientesMaraton, setModalPacientesMaraton] = useState(null); // { categoria, titulo, color } | null
+  const [pacientesMaratonData, setPacientesMaratonData] = useState(null);   // { content, totalElements, totalPages }
+  const [pacientesMaratonLoading, setPacientesMaratonLoading] = useState(false);
+  const [pacientesMaratonBusqueda, setPacientesMaratonBusqueda] = useState('');
+  const [pacientesMaratonPage, setPacientesMaratonPage] = useState(0);
+  const [filtrosMaraton, setFiltrosMaraton] = useState({ sexo: '', estadoGestion: '', edadMin: '', edadMax: '', ipressFiltro: '', redFiltro: '', macrorredFiltro: '' });
+  const [opcionesFiltrosMaraton, setOpcionesFiltrosMaraton] = useState({ macrorredes: [], redes: [], ipress: [] });
+  const [pacientesMaratonExporting, setPacientesMaratonExporting] = useState(false);
   const [filtroFechaInicio, setFiltroFechaInicio] = useState('');     // ✅ v1.66.0: Filtro rango de fechas - inicio
   const [filtroFechaFin, setFiltroFechaFin] = useState('');           // ✅ v1.66.0: Filtro rango de fechas - fin
   const [cardSeleccionado, setCardSeleccionado] = useState(null);     // ✅ v1.42.0: Rastrear card activo
@@ -410,10 +424,12 @@ export default function Solicitudes({ categoriaInicial } = {}) {
                 categoriaInicial === 'maraton'
                   ? apiClient.get('/asegurados?maraton=true&page=0&size=1', true).catch(() => null)
                   : Promise.resolve(null),
-                // Nota: termómetros de meta usan estadisticasGlobales directamente (misma fuente que cards)
-                // → eliminada la llamada separada kpiCenacronData para evitar desincronización
+                // Para Maratón: citados segmentados (CENACRON vs ESPECIALIDADES) para termómetros de meta
+                categoriaInicial === 'maraton'
+                  ? bolsasService.obtenerEstadisticasMaratonSegmentos().catch(() => null)
+                  : Promise.resolve(null),
               ];
-              const [naAdsc, naAten, cnCenacron, cnMaraton, maratonUniverse] = await Promise.all(promises);
+              const [naAdsc, naAten, cnCenacron, cnMaraton, maratonUniverse, segmentos] = await Promise.all(promises);
               if (mounted) {
                 setIpressNaCount(naAdsc?.totalElements ?? null);
                 setIpressAtencionNaCount(naAten?.totalElements ?? null);
@@ -421,6 +437,9 @@ export default function Solicitudes({ categoriaInicial } = {}) {
                 setMaratonCount(cnMaraton?.totalElements ?? null);
                 if (maratonUniverse?.totalElements != null) {
                   setMaratonUniversoTotal(maratonUniverse.totalElements);
+                }
+                if (segmentos != null) {
+                  setMaratonSegmentos(segmentos);
                 }
               }
             } catch (_) {}
@@ -848,7 +867,10 @@ export default function Solicitudes({ categoriaInicial } = {}) {
           filtrosActuales.categoriaEspecialidad,
           filtroEstrategia === 'todos' ? null : filtroEstrategia
         ),
-        bolsasService.obtenerKpiConFiltros(filtrosActuales).catch(() => null),
+        // v1.85.9: MARATÓN usa endpoint dedicado con DISTINCT ON (pacientes únicos)
+        categoriaInicial === 'maraton'
+          ? bolsasService.obtenerKpiMaraton().catch(() => null)
+          : bolsasService.obtenerKpiConFiltros(filtrosActuales).catch(() => null),
       ]);
 
       // v1.78.3: Actualizar KPI cards con los datos filtrados
@@ -1820,6 +1842,122 @@ export default function Solicitudes({ categoriaInicial } = {}) {
     setModalHistorial(true);
   }, []);
 
+  // v1.85.9: Abrir modal de pacientes MARATÓN por categoría del embudo
+  const abrirModalPacientesMaraton = async (categoria, titulo, color, page = 0, busqueda = '', filtros = {}) => {
+    const filtrosActivos = Object.keys(filtros).length ? filtros : filtrosMaraton;
+    setModalPacientesMaraton({ categoria, titulo, color });
+    setPacientesMaratonLoading(true);
+    setPacientesMaratonData(null);
+    setPacientesMaratonBusqueda(busqueda);
+    setPacientesMaratonPage(page);
+    // Reset filtros y cargar opciones si es apertura nueva (page=0, sin busqueda previa)
+    if (page === 0 && !busqueda && !Object.keys(filtros).length) {
+      setFiltrosMaraton({ sexo: '', estadoGestion: '', edadMin: '', edadMax: '', ipressFiltro: '', redFiltro: '', macrorredFiltro: '' });
+      obtenerOpcionesFiltrosMaraton(categoria).then(opts => setOpcionesFiltrosMaraton(opts || { macrorredes: [], redes: [], ipress: [] }));
+    }
+    try {
+      const data = await obtenerPacientesMaratonCategoria(categoria, busqueda, page, 50, filtrosActivos);
+      setPacientesMaratonData(data);
+    } catch (e) {
+      console.error('Error cargando pacientes MARATÓN:', e);
+    } finally {
+      setPacientesMaratonLoading(false);
+    }
+  };
+
+  const cargarPaginaModalPacientesMaraton = async (page) => {
+    if (!modalPacientesMaraton) return;
+    setPacientesMaratonLoading(true);
+    setPacientesMaratonPage(page);
+    try {
+      const data = await obtenerPacientesMaratonCategoria(modalPacientesMaraton.categoria, pacientesMaratonBusqueda, page, 50, filtrosMaraton);
+      setPacientesMaratonData(data);
+    } catch (e) {
+      console.error('Error cargando página MARATÓN:', e);
+    } finally {
+      setPacientesMaratonLoading(false);
+    }
+  };
+
+  const aplicarFiltroMaraton = async (nuevosFiltros) => {
+    if (!modalPacientesMaraton) return;
+    setFiltrosMaraton(nuevosFiltros);
+    setPacientesMaratonLoading(true);
+    setPacientesMaratonPage(0);
+    try {
+      const data = await obtenerPacientesMaratonCategoria(modalPacientesMaraton.categoria, pacientesMaratonBusqueda, 0, 50, nuevosFiltros);
+      setPacientesMaratonData(data);
+    } catch (e) {
+      console.error('Error aplicando filtros MARATÓN:', e);
+    } finally {
+      setPacientesMaratonLoading(false);
+    }
+  };
+
+  const descargarExcelMaraton = async () => {
+    if (!modalPacientesMaraton || pacientesMaratonExporting) return;
+    setPacientesMaratonExporting(true);
+    try {
+      const res = await obtenerPacientesMaratonCategoria(
+        modalPacientesMaraton.categoria,
+        pacientesMaratonBusqueda,
+        0,
+        99999,
+        filtrosMaraton
+      );
+      const esObs = modalPacientesMaraton.categoria === 'OBSERVADOS';
+
+      // Construir encabezados y filas como array de arrays (más control que json_to_sheet)
+      const headers = ['#', 'Tipo Doc', 'N° Documento', 'Nombres y Apellidos', 'Sexo', 'Edad', 'IPRESS', 'Red', 'Macrorred'];
+      if (esObs) headers.push('Motivo');
+
+      const dataRows = (res?.content ?? []).map((r, i) => {
+        const row = [
+          i + 1,
+          r.tipo_doc        ?? '',
+          String(r.num_doc  ?? ''), // texto para preservar ceros iniciales
+          r.nombre_completo ?? '',
+          r.sexo            ?? '',
+          r.edad            ?? '',
+          r.ipress          ?? '',
+          r.red             ?? '',
+          r.macrorred       ?? '',
+        ];
+        if (esObs) row.push(r.estado_gestion ?? '');
+        return row;
+      });
+
+      const ws = XLSX.utils.aoa_to_sheet([headers, ...dataRows]);
+
+      // Forzar columna N° Documento (índice 2) como texto para no perder ceros
+      const range = XLSX.utils.decode_range(ws['!ref'] ?? 'A1');
+      for (let row = 1; row <= range.e.r; row++) {
+        const cellRef = XLSX.utils.encode_cell({ r: row, c: 2 });
+        if (ws[cellRef]) { ws[cellRef].t = 's'; ws[cellRef].z = '@'; }
+      }
+
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'Pacientes MARATÓN');
+
+      // Descarga via Blob — revocar después de 2s para que el browser procese el nombre
+      const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+      const blob = new Blob([wbout], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+      const filename = `Maraton_${modalPacientesMaraton.categoria}_${new Date().toISOString().slice(0, 10)}.xlsx`;
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.setAttribute('href', url);
+      a.setAttribute('download', filename);
+      a.style.display = 'none';
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 2000);
+    } catch (e) {
+      console.error('Error exportando MARATÓN Excel:', e);
+    } finally {
+      setPacientesMaratonExporting(false);
+    }
+  };
+
   const handleAbrirCambiarTelefono = (solicitud) => {
     setSolicitudSeleccionada(solicitud);
     setNuevoTelefono(solicitud.telefono || '');
@@ -2242,12 +2380,12 @@ export default function Solicitudes({ categoriaInicial } = {}) {
           {categoriaInicial === 'maraton' ? (
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold text-gray-900">Embudo de Campaña Maratón</h3>
-              <span className="text-xs text-gray-400 font-medium tracking-wide uppercase">Total Base → Por Asignar → En Contacto → Citas Logradas</span>
+              <span className="text-xs text-gray-400 font-medium tracking-wide uppercase">Total Base → Por Asignar → En Contacto → Citas Logradas · Observados</span>
             </div>
           ) : (
             <h3 className="text-lg font-semibold text-gray-900 mb-4">Estadísticas de Solicitudes</h3>
           )}
-          <div className={`grid grid-cols-1 md:grid-cols-2 gap-5 animate-fade-in ${categoriaInicial === 'maraton' ? 'lg:grid-cols-4' : 'lg:grid-cols-4'}`}>
+          <div className={`grid grid-cols-1 md:grid-cols-2 gap-5 animate-fade-in ${categoriaInicial === 'maraton' ? 'lg:grid-cols-5' : 'lg:grid-cols-4'}`}>
 
             {/* ═══ CARDS MARATÓN — Fuente única: maratonUniversoTotal ═══ */}
             {categoriaInicial === 'maraton' ? (<>
@@ -2257,37 +2395,79 @@ export default function Solicitudes({ categoriaInicial } = {}) {
                 const universoBase = maratonUniversoTotal ?? estadisticas.total ?? 1;
                 const pct = (n) => universoBase > 0 ? ((n / universoBase) * 100).toFixed(1) : '0.0';
                 const cargarDesglose = async () => {
-                  setDesglosAbierto(true); setDesgloseLoading(true);
-                  try { const kpi = await bolsasService.obtenerKpiConFiltros({ categoriaEspecialidad: 'maraton' }); setDesgloseData(kpi); }
-                  catch { setDesgloseData(null); } finally { setDesgloseLoading(false); }
+                  setDesglosAbierto(true); setDesgloseLoading(true); setDesgloseTab('todos');
+                  try {
+                    const [kpi, segs] = await Promise.all([
+                      bolsasService.obtenerKpiConFiltros({ categoriaEspecialidad: 'maraton' }),
+                      bolsasService.obtenerDesgloseMaratonSegmentos().catch(() => null),
+                    ]);
+                    setDesgloseData(kpi);
+                    setDesgloseSegmentos(segs);
+                  } catch { setDesgloseData(null); } finally { setDesgloseLoading(false); }
                 };
-                // Observados = estados excepcionales (excluye PENDIENTE_CITA, CITADO, ATENDIDO y sintéticos)
-                // Misma fórmula que la barra de progreso → números siempre coherentes
-                const ESTADOS_NO_OBS = new Set(['PENDIENTE_CITA', 'CITADO', 'ATENDIDO', 'ATENDIDO_IPRESS', 'SIN_GESTORA', 'CON_GESTORA', 'ASIGNADOS']);
+                // Observados = estados excepcionales (excluye PENDIENTE_CITA, CITADO, ATENDIDO puro y sintéticos)
+                // ATENDIDO_IPRESS = atendido en IPRESS local, NO por CENATE → se clasifica como observado
+                const ESTADOS_NO_OBS = new Set(['PENDIENTE_CITA', 'CITADO', 'ATENDIDO', 'SIN_GESTORA', 'CON_GESTORA', 'ASIGNADOS']);
                 const observados = Array.isArray(estadisticasGlobales)
                   ? estadisticasGlobales.filter(s => !ESTADOS_NO_OBS.has(s.estado?.toUpperCase())).reduce((s, r) => s + (r.cantidad || 0), 0)
                   : null;
                 return (
                   <>
-                    <div className="col-span-full grid grid-cols-4 gap-3">
+                    <div className="col-span-full space-y-0">
 
-                      {/* M1. UNIVERSO — fuente maratonUniversoTotal */}
-                      <div className="bg-white rounded-xl border border-gray-100 border-t-4 shadow-sm px-5 py-4 relative"
-                        style={{ borderTopColor: '#3b82f6' }}>
-                        <Database className="absolute top-3 right-3 w-3.5 h-3.5 text-blue-400" style={{ opacity: 0.3 }} strokeWidth={2} />
-                        <p className="text-[10px] font-bold uppercase tracking-widest mb-2" style={{ color: '#3b82f6' }}>① Universo</p>
-                        <p className="text-4xl font-black text-gray-900 leading-none tabular-nums">
-                          {universoBase === 1 && maratonUniversoTotal == null
-                            ? <span className="text-xl text-gray-300 animate-pulse">—</span>
-                            : (maratonUniversoTotal ?? estadisticas.total ?? 0).toLocaleString('es-PE')}
-                        </p>
-                        <p className="text-xs text-gray-400 mt-1.5">100% · Total base</p>
+                      {/* UNIVERSO — centrado arriba */}
+                      <div className="flex justify-center">
+                        <button onClick={() => abrirModalPacientesMaraton('UNIVERSO', '① Universo Total', '#3b82f6')}
+                          className="group bg-white rounded-xl border border-gray-100 border-t-4 shadow-sm px-8 py-4 relative cursor-pointer w-64 text-center hover:shadow-md hover:border-blue-200 transition-all"
+                          style={{ borderTopColor: '#3b82f6' }}>
+                          <Database className="absolute top-3 right-3 w-3.5 h-3.5 text-blue-400" style={{ opacity: 0.3 }} strokeWidth={2} />
+                          <div className="absolute top-full left-1/2 -translate-x-1/2 mt-1 w-64 bg-gray-900 text-white text-xs rounded-xl px-3 py-2.5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50 shadow-xl leading-relaxed">
+                            <p className="font-bold mb-1 text-blue-300">① Universo total</p>
+                            Pacientes MARATÓN inscritos en la estrategia nacional. Incluye CENACRON y Especialidades. Haz clic para ver el listado completo.
+                          </div>
+                          <p className="text-[10px] font-bold uppercase tracking-widest mb-1 text-center" style={{ color: '#3b82f6' }}>① Universo</p>
+                          <p className="text-4xl font-black text-gray-900 leading-none tabular-nums text-center">
+                            {universoBase === 1 && maratonUniversoTotal == null
+                              ? <span className="text-xl text-gray-300 animate-pulse">—</span>
+                              : (maratonUniversoTotal ?? estadisticas.total ?? 0).toLocaleString('es-PE')}
+                          </p>
+                          <p className="text-xs text-gray-400 mt-1 text-center">100% · Total base</p>
+                          <p className="text-[10px] text-blue-500 mt-2">Ver pacientes →</p>
+                        </button>
                       </div>
 
-                      {/* M2. POR ASIGNAR — animate-pulse dot */}
-                      <div className="bg-white rounded-xl border border-gray-100 border-t-4 shadow-sm px-5 py-4 relative"
+                      {/* Conector SVG: línea de UNIVERSO hacia los 4 cards */}
+                      <div className="relative w-full" style={{ height: 36 }}>
+                        <svg className="absolute inset-0 w-full h-full" viewBox="0 0 1000 36" preserveAspectRatio="none">
+                          {/* Línea vertical desde UNIVERSO */}
+                          <line x1="500" y1="0" x2="500" y2="18" stroke="#e5e7eb" strokeWidth="1.5"/>
+                          {/* Línea horizontal */}
+                          <line x1="125" y1="18" x2="875" y2="18" stroke="#e5e7eb" strokeWidth="1.5"/>
+                          {/* 4 líneas verticales hacia cada card */}
+                          <line x1="125" y1="18" x2="125" y2="36" stroke="#e5e7eb" strokeWidth="1.5"/>
+                          <line x1="375" y1="18" x2="375" y2="36" stroke="#e5e7eb" strokeWidth="1.5"/>
+                          <line x1="625" y1="18" x2="625" y2="36" stroke="#e5e7eb" strokeWidth="1.5"/>
+                          <line x1="875" y1="18" x2="875" y2="36" stroke="#e5e7eb" strokeWidth="1.5"/>
+                          {/* Flechas (triángulos) */}
+                          <polygon points="121,32 125,36 129,32" fill="#d1d5db"/>
+                          <polygon points="371,32 375,36 379,32" fill="#d1d5db"/>
+                          <polygon points="621,32 625,36 629,32" fill="#d1d5db"/>
+                          <polygon points="871,32 875,36 879,32" fill="#d1d5db"/>
+                        </svg>
+                      </div>
+
+                      {/* 4 cards inferiores */}
+                      <div className="grid grid-cols-4 gap-3">
+
+                      {/* M2. POR ASIGNAR */}
+                      <button onClick={() => abrirModalPacientesMaraton('POR_ASIGNAR', '② Por Asignar', '#ef4444')}
+                        className="group bg-white rounded-xl border border-gray-100 border-t-4 shadow-sm px-5 py-4 relative text-left hover:shadow-md hover:border-red-200 transition-all cursor-pointer w-full"
                         style={{ borderTopColor: '#ef4444' }}>
                         <AlertTriangle className="absolute top-3 right-3 w-3.5 h-3.5 text-red-400" style={{ opacity: 0.3 }} strokeWidth={2} />
+                        <div className="absolute top-full left-0 mt-1 w-64 bg-gray-900 text-white text-xs rounded-xl px-3 py-2.5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50 shadow-xl leading-relaxed">
+                          <p className="font-bold mb-1 text-red-300">② Por Asignar</p>
+                          Pacientes en la bolsa MARATÓN que aún no tienen gestora asignada. El registro existe en la bolsa pero ninguna gestora ha iniciado la gestión. Requieren asignación prioritaria. Haz clic para ver el listado.
+                        </div>
                         <p className="text-[10px] font-bold uppercase tracking-widest mb-2 flex items-center gap-1.5" style={{ color: '#ef4444' }}>
                           ② Por Asignar
                           <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse flex-shrink-0" />
@@ -2298,17 +2478,23 @@ export default function Solicitudes({ categoriaInicial } = {}) {
                         <p className="text-xs text-gray-400 mt-1.5">
                           {estadisticas.sinAsignar !== null ? `${pct(estadisticas.sinAsignar)}% del total` : '—'}
                         </p>
-                      </div>
+                        <p className="text-[10px] text-red-400 mt-2">Ver pacientes →</p>
+                      </button>
 
-                      {/* M3. EN CONTACTO — con gestora asignada, aún no finalizados (sin CITADO ni ATENDIDO) */}
+                      {/* M3. EN CONTACTO */}
                       {(() => {
                         const citasLogradas = (estadisticas.citados ?? 0) + (estadisticas.atendidos ?? 0);
                         const enContacto = (estadisticas.asignados !== null && estadisticas.citados !== null)
-                          ? Math.max(0, estadisticas.asignados - citasLogradas) : null;
+                          ? Math.max(0, estadisticas.asignados - citasLogradas - (observados ?? 0)) : null;
                         return (
-                          <div className="bg-white rounded-xl border border-gray-100 border-t-4 shadow-sm px-5 py-4 relative"
+                          <button onClick={() => abrirModalPacientesMaraton('EN_CONTACTO', '③ En Contacto', '#f97316')}
+                            className="group bg-white rounded-xl border border-gray-100 border-t-4 shadow-sm px-5 py-4 relative text-left hover:shadow-md hover:border-orange-200 transition-all cursor-pointer w-full"
                             style={{ borderTopColor: '#f97316' }}>
                             <Clock className="absolute top-3 right-3 w-3.5 h-3.5 text-orange-400" style={{ opacity: 0.3 }} strokeWidth={2} />
+                            <div className="absolute top-full left-0 mt-1 w-64 bg-gray-900 text-white text-xs rounded-xl px-3 py-2.5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50 shadow-xl leading-relaxed">
+                              <p className="font-bold mb-1 text-orange-300">③ En Contacto</p>
+                              Pacientes con gestora asignada, sin cita confirmada y sin resultado negativo. La gestora aún puede lograr una cita con ellos. Haz clic para ver el listado.
+                            </div>
                             <p className="text-[10px] font-bold uppercase tracking-widest mb-2" style={{ color: '#f97316' }}>③ En Contacto</p>
                             <p className="text-4xl font-black text-gray-900 leading-none tabular-nums">
                               {enContacto === null ? <span className="text-xl text-gray-300 animate-pulse">—</span> : enContacto.toLocaleString('es-PE')}
@@ -2316,18 +2502,24 @@ export default function Solicitudes({ categoriaInicial } = {}) {
                             <p className="text-xs text-gray-400 mt-1.5">
                               {enContacto !== null ? `${pct(enContacto)}% del total` : '—'}
                             </p>
-                          </div>
+                            <p className="text-[10px] text-orange-400 mt-2">Ver pacientes →</p>
+                          </button>
                         );
                       })()}
 
-                      {/* M4. CITAS LOGRADAS = CITADO + ATENDIDO (estados ÉXITO del modal) */}
+                      {/* M4. CITAS LOGRADAS */}
                       {(() => {
                         const citasLogradas = (estadisticas.citados !== null)
                           ? (estadisticas.citados ?? 0) + (estadisticas.atendidos ?? 0) : null;
                         return (
-                          <div className="bg-white rounded-xl border border-gray-100 border-t-4 shadow-sm px-5 py-4 relative"
+                          <button onClick={() => abrirModalPacientesMaraton('CITAS_LOGRADAS', '④ Citas Logradas', '#22c55e')}
+                            className="group bg-white rounded-xl border border-gray-100 border-t-4 shadow-sm px-5 py-4 relative text-left hover:shadow-md hover:border-green-200 transition-all cursor-pointer w-full"
                             style={{ borderTopColor: '#22c55e' }}>
                             <CalendarCheck className="absolute top-3 right-3 w-3.5 h-3.5 text-green-400" style={{ opacity: 0.3 }} strokeWidth={2} />
+                            <div className="absolute top-full left-0 mt-1 w-64 bg-gray-900 text-white text-xs rounded-xl px-3 py-2.5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50 shadow-xl leading-relaxed">
+                              <p className="font-bold mb-1 text-green-300">④ Citas Logradas</p>
+                              Pacientes con cita confirmada por CENATE (CITADO) o ya atendidos (ATENDIDO). Son los logros reales de la campaña. Haz clic para ver el listado.
+                            </div>
                             <p className="text-[10px] font-bold uppercase tracking-widest mb-2" style={{ color: '#22c55e' }}>④ Citas Logradas</p>
                             <p className="text-4xl font-black text-gray-900 leading-none tabular-nums">
                               {citasLogradas === null ? <span className="text-xl text-gray-300 animate-pulse">—</span> : citasLogradas.toLocaleString('es-PE')}
@@ -2335,20 +2527,50 @@ export default function Solicitudes({ categoriaInicial } = {}) {
                             <p className="text-xs text-gray-400 mt-1.5">
                               {citasLogradas !== null ? `${pct(citasLogradas)}% del total` : '—'}
                             </p>
-                          </div>
+                            <p className="text-[10px] text-green-500 mt-2">Ver pacientes →</p>
+                          </button>
                         );
                       })()}
 
-                    </div>
+                      {/* M5. OBSERVADOS — card separado, clickeable para abrir desglose y listado */}
+                      <button onClick={() => abrirModalPacientesMaraton('OBSERVADOS', '⑤ Observados', '#f59e0b')}
+                        className="group bg-white rounded-xl border-2 border-dashed border-amber-200 shadow-sm px-5 py-4 relative text-left hover:border-amber-400 hover:shadow-md transition-all cursor-pointer"
+                        style={{ minHeight: '100%' }}>
+                        <AlertCircle className="absolute top-3 right-3 w-3.5 h-3.5 text-amber-400" style={{ opacity: 0.5 }} strokeWidth={2} />
+                        <div className="absolute top-full left-0 mt-1 w-64 bg-gray-900 text-white text-xs rounded-xl px-3 py-2.5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50 shadow-xl leading-relaxed">
+                          <p className="font-bold mb-1 text-amber-300">⑤ Observados</p>
+                          Pacientes que la gestora contactó pero no pudieron ser citados: rechazaron la cita, número no existe, sin vigencia, IPRESS no cubre CENATE, reprogramación fallida, entre otros. Haz clic para ver el detalle.
+                        </div>
+                        <p className="text-[10px] font-bold uppercase tracking-widest mb-2 text-amber-500">⑤ Observados</p>
+                        <p className="text-4xl font-black text-gray-900 leading-none tabular-nums">
+                          {observados === null ? <span className="text-xl text-gray-300 animate-pulse">—</span> : observados.toLocaleString('es-PE')}
+                        </p>
+                        <p className="text-xs text-amber-400 mt-1.5 font-medium">
+                          {observados !== null && universoBase > 0 ? `${pct(observados)}% del total` : '—'}
+                        </p>
+                        <p className="text-[10px] text-gray-400 mt-2">Ver desglose →</p>
+                      </button>
 
-                    {/* OBSERVADOS — chip compacto, solo si hay datos */}
-                    {observados !== null && observados > 0 && (
-                      <div className="col-span-full mt-1">
-                        <button onClick={cargarDesglose}
-                          className="bg-gray-100 hover:bg-gray-200 rounded-lg px-4 py-2 text-sm font-medium text-gray-600 transition-colors">
-                          Ver estados observados · {observados.toLocaleString('es-PE')} pacientes
-                        </button>
-                      </div>
+                      </div>{/* fin grid 4 cols */}
+                    </div>{/* fin col-span-full space-y-0 */}
+
+                    {/* ── Conector visual: CITAS LOGRADAS (3er card de 4 = 625/1000) → 2 termómetros ── */}
+                    {estadisticas.citados !== null && (
+                    <div className="col-span-full relative w-full" style={{ height: 36 }}>
+                      <svg className="absolute inset-0 w-full h-full" viewBox="0 0 1000 36" preserveAspectRatio="none">
+                        {/* línea vertical desde CITAS LOGRADAS */}
+                        <line x1="625" y1="0" x2="625" y2="18" stroke="#e5e7eb" strokeWidth="1.5"/>
+                        {/* línea horizontal entre ambos termómetros */}
+                        <line x1="250" y1="18" x2="750" y2="18" stroke="#e5e7eb" strokeWidth="1.5"/>
+                        {/* bajada al termómetro izquierdo (CENACRON, centro col 1 de 2 = 250) */}
+                        <line x1="250" y1="18" x2="250" y2="36" stroke="#e5e7eb" strokeWidth="1.5"/>
+                        {/* bajada al termómetro derecho (ESPECIALIDADES, centro col 2 de 2 = 750) */}
+                        <line x1="750" y1="18" x2="750" y2="36" stroke="#e5e7eb" strokeWidth="1.5"/>
+                        {/* flechas */}
+                        <polygon points="246,32 250,36 254,32" fill="#d1d5db"/>
+                        <polygon points="746,32 750,36 754,32" fill="#d1d5db"/>
+                      </svg>
+                    </div>
                     )}
 
                     {/* ══ NIVEL 2: METAS ESTRATÉGICAS — CENACRON vs ESPECIALIDADES ══ */}
@@ -2356,13 +2578,15 @@ export default function Solicitudes({ categoriaInicial } = {}) {
                       const META_CENACRON = 3600;
                       const META_ESPECIALIDADES = 360;
                       // Fuente única: estadisticasGlobales (misma que cards) → números siempre consistentes
-                      const cenacronCitados = (estadisticas.citados ?? 0) + (estadisticas.atendidos ?? 0);
-                      const espCitados = 0; // Especialidades aún no iniciadas en esta bolsa
+                      const cenacronCitados = maratonSegmentos?.cenacronCitados ?? 0;
+                      const espCitados = maratonSegmentos?.especialidadesCitados ?? 0;
                       const cenacronPct = Math.min(100, (cenacronCitados / META_CENACRON) * 100);
                       const espPct = Math.min(100, (espCitados / META_ESPECIALIDADES) * 100);
 
-                      const MetaCard = ({ label, emoji, actual, meta, pct, colorBar }) => (
-                        <div className="bg-white rounded-xl border border-gray-100 shadow-sm px-5 py-4">
+                      const MetaCard = ({ label, emoji, actual, meta, pct, colorBar, onCardClick }) => (
+                        <button onClick={onCardClick}
+                          className="bg-white rounded-xl border border-gray-100 shadow-sm px-5 py-4 text-left w-full hover:shadow-md transition-all cursor-pointer"
+                          style={{ borderBottom: `3px solid ${colorBar}` }}>
                           <div className="flex items-center justify-between mb-3">
                             <div>
                               <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400">{emoji} {label}</p>
@@ -2385,12 +2609,13 @@ export default function Solicitudes({ categoriaInicial } = {}) {
                             <span className="text-[10px] font-semibold text-gray-600">Faltan {(meta - actual).toLocaleString('es-PE')}</span>
                             <span className="text-[10px] text-gray-500">Meta: {meta.toLocaleString('es-PE')}</span>
                           </div>
-                        </div>
+                          <p className="text-[10px] mt-2" style={{ color: colorBar }}>Ver citados →</p>
+                        </button>
                       );
 
                       return (
                         <div className="col-span-full mt-3">
-                          <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-2">Termómetros de Meta</p>
+                          <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-2">Termómetros de Meta de Citados</p>
                           <div className="grid grid-cols-2 gap-3">
                             <MetaCard
                               label="Maratón CENACRON"
@@ -2399,14 +2624,16 @@ export default function Solicitudes({ categoriaInicial } = {}) {
                               meta={META_CENACRON}
                               pct={cenacronPct}
                               colorBar="#7c3aed"
+                              onCardClick={() => abrirModalPacientesMaraton('CITADOS_CENACRON', 'Citados — Maratón CENACRON', '#7c3aed')}
                             />
                             <MetaCard
-                              label="Especialidades"
+                              label="Maratón Especialidades"
                               emoji="🏥"
                               actual={espCitados}
                               meta={META_ESPECIALIDADES}
                               pct={espPct}
                               colorBar="#0ea5e9"
+                              onCardClick={() => abrirModalPacientesMaraton('CITADOS_ESPECIALIDADES', 'Citados — Maratón Especialidades', '#0ea5e9')}
                             />
                           </div>
                         </div>
@@ -2523,79 +2750,175 @@ export default function Solicitudes({ categoriaInicial } = {}) {
         {/* ═══ BARRA DE PROGRESO DE CAMPAÑA — Solo Maratón ═══ */}
         {categoriaInicial === 'maraton' && estadisticas.total !== null && (
           <div className="mb-6 bg-white rounded-xl border border-gray-200 shadow-sm px-5 py-4">
-            <div className="flex items-center justify-between mb-3">
+
+            {/* Header */}
+            <div className="flex items-center justify-between mb-4">
               <span className="text-sm font-semibold text-gray-700">Progreso de la campaña</span>
-              <span className="text-xs text-gray-400">
-                {(maratonUniversoTotal ?? estadisticas.total)?.toLocaleString('es-PE')} pacientes universo
-              </span>
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => setProgresoDesglosado(v => !v)}
+                  className="flex items-center gap-1.5 text-xs text-slate-500 hover:text-slate-700 border border-slate-200 hover:border-slate-300 rounded-md px-2.5 py-1 transition-colors"
+                >
+                  {progresoDesglosado ? '▲ Ocultar desglose' : '▼ Ver desglose'}
+                </button>
+                <span className="text-xs text-gray-400">
+                  Universo: <strong className="text-gray-600">{(maratonUniversoTotal ?? estadisticas.total)?.toLocaleString('es-PE')}</strong> pacientes
+                </span>
+              </div>
             </div>
 
-            {/* Barra de progreso de campaña */}
             {(() => {
-              const total    = estadisticas.total || 1;
-              const atendidos  = estadisticas.atendidos  || 0;
-              const citados    = estadisticas.citados    || 0;
-              const pendientes = estadisticas.pendientes || 0;
-              // Todos los estados "observados" = todo lo que no es PENDIENTE, CITADO, ATENDIDO, ni sintéticos
-              const ESTADOS_BASE = new Set(['PENDIENTE_CITA', 'CITADO', 'ATENDIDO', 'ATENDIDO_IPRESS', 'SIN_GESTORA', 'CON_GESTORA', 'ASIGNADOS']);
+              const universo      = maratonUniversoTotal ?? estadisticas.total ?? 1;
+              const atendidos     = estadisticas.atendidos || 0;
+              const citados       = estadisticas.citados   || 0;
+              const pendientes    = estadisticas.pendientes || 0;
+
+              // ATENDIDO_IPRESS = atendido en IPRESS local, NO por telemedicina → es observado
+              // Solo cuenta como "atendido" el ATENDIDO puro (por CENATE)
+              const atendidosTotal = atendidos; // solo ATENDIDO puro
+
+              // En contacto = CON_GESTORA (asignada pero aún sin cita ni observado)
+              const enContacto = Array.isArray(estadisticasGlobales)
+                ? (estadisticasGlobales.find(s => s.estado?.toUpperCase() === 'CON_GESTORA')?.cantidad || 0)
+                : 0;
+
+              // Observados = todo lo que no es PENDIENTE/CITADO/ATENDIDO puro ni sintético
+              // ATENDIDO_IPRESS incluido aquí (fuera del alcance de telemedicina)
+              const ESTADOS_BASE = new Set(['PENDIENTE_CITA', 'CITADO', 'ATENDIDO', 'SIN_GESTORA', 'CON_GESTORA', 'ASIGNADOS']);
               const totalObservados = Array.isArray(estadisticasGlobales)
                 ? estadisticasGlobales
                     .filter(s => !ESTADOS_BASE.has(s.estado?.toUpperCase()))
                     .reduce((sum, s) => sum + (s.cantidad || 0), 0)
                 : (estadisticas.noContesto || 0) + (estadisticas.rechazados || 0);
-              // Porcentajes sobre el total en bolsa
-              const atePct  = (atendidos        / total) * 100;
-              const citPct  = (citados          / total) * 100;
-              const obsPct  = (totalObservados  / total) * 100;
-              // El avance total (todos los que ya tuvieron alguna acción)
-              const avancePct = atePct + citPct + obsPct;
+
+              const total = Math.max(universo, 1);
+
+              // ── Avance de Gestión = todos los pacientes trabajados
+              const gestionados  = enContacto + citados + atendidosTotal + totalObservados;
+              const gestionPct   = (gestionados / total) * 100;
+
+              // ── Citas logradas = CITADO + ATENDIDO por CENATE
+              const conCita      = citados + atendidosTotal;
+              const citacionPct  = (conCita / total) * 100;
+
+              // Pendiente real = sin ninguna gestión
+              const pendientesReales = total - gestionados;
+
+              // Filas de desglose
+              const filas = [
+                { label: 'Sin gestión (pendiente contactar)', valor: pendientesReales, color: 'bg-slate-300', pct: (pendientesReales / total) * 100 },
+                { label: 'En contacto',                       valor: enContacto,       color: 'bg-violet-400', pct: (enContacto      / total) * 100 },
+                { label: 'Citados',                           valor: citados,          color: 'bg-blue-500',   pct: (citados         / total) * 100 },
+                { label: 'Atendidos',                         valor: atendidosTotal,   color: 'bg-emerald-500',pct: (atendidosTotal  / total) * 100 },
+                { label: 'Observados',                        valor: totalObservados,  color: 'bg-amber-400',  pct: (totalObservados / total) * 100 },
+              ].filter(f => f.valor > 0);
 
               return (
-                <>
-                  {/* Barra de progreso: fondo gris = pendientes, colores = avance */}
-                  <div className="relative h-6 rounded-full overflow-hidden mb-3" style={{ background: '#cbd5e1' }}>
-                    {/* Franja de avance (apilada de izquierda a derecha) */}
-                    <div className="absolute inset-y-0 left-0 flex rounded-full overflow-hidden" style={{ width: `${avancePct}%`, transition: 'width 0.6s ease' }}>
-                      {atePct > 0 && <div className="bg-emerald-500 h-full" style={{ flex: atePct }} title="Atendidos" />}
-                      {citPct > 0 && <div className="bg-blue-500   h-full" style={{ flex: citPct }} title="Citados" />}
-                      {obsPct > 0 && <div className="bg-amber-400  h-full" style={{ flex: obsPct }} title="Observados (no contesta, rechazado, apagado, etc.)" />}
+                <div className="space-y-4">
+                  {/* ── Barra única de avance ── */}
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-xs text-slate-500">
+                        <span className="font-semibold text-slate-700">{gestionados.toLocaleString('es-PE')}</span> pacientes gestionados de {total.toLocaleString('es-PE')}
+                      </span>
+                      <span className="text-sm font-bold text-slate-800">{gestionPct.toFixed(1)}%</span>
                     </div>
-                    {/* Etiqueta % dentro de la barra */}
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <span className="text-xs font-bold text-white drop-shadow" style={{ textShadow: '0 1px 2px rgba(0,0,0,0.5)' }}>
-                        {avancePct < 0.1 ? 'Sin avance aún — pendiente iniciar citaciones' : `${avancePct.toFixed(1)}% gestionado`}
+                    {/* Barra segmentada: En contacto | Citados | Atendidos | Observados */}
+                    <div className="relative w-full bg-slate-200 rounded-full h-5 overflow-hidden">
+                      <div className="absolute inset-y-0 left-0 flex h-full" style={{ width: `${Math.min(gestionPct, 100)}%`, transition: 'width 0.7s ease' }}>
+                        {enContacto > 0  && <div className="bg-violet-400 h-full" style={{ flex: enContacto      }} title={`En contacto: ${enContacto}`} />}
+                        {citados > 0     && <div className="bg-blue-500  h-full" style={{ flex: citados          }} title={`Citados: ${citados}`} />}
+                        {atendidosTotal > 0 && <div className="bg-emerald-500 h-full" style={{ flex: atendidosTotal }} title={`Atendidos: ${atendidosTotal}`} />}
+                        {totalObservados > 0 && <div className="bg-amber-400 h-full" style={{ flex: totalObservados }} title={`Observados: ${totalObservados}`} />}
+                      </div>
+                      <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                        <span className="text-[11px] font-semibold text-white drop-shadow" style={{ textShadow: '0 1px 3px rgba(0,0,0,0.5)' }}>
+                          {gestionPct < 1 ? 'Sin avance aún' : `${gestionPct.toFixed(1)}% gestionado`}
+                        </span>
+                      </div>
+                    </div>
+                    {/* Leyenda de colores */}
+                    <div className="flex flex-wrap gap-x-4 gap-y-1 mt-2">
+                      {enContacto > 0 && (
+                        <span className="flex items-center gap-1.5 text-xs text-slate-500">
+                          <span className="w-2 h-2 rounded-full bg-violet-400 flex-shrink-0" />
+                          En contacto <strong className="text-slate-700 ml-0.5">{enContacto.toLocaleString('es-PE')}</strong>
+                        </span>
+                      )}
+                      <span className="flex items-center gap-1.5 text-xs text-slate-500">
+                        <span className="w-2 h-2 rounded-full bg-blue-500 flex-shrink-0" />
+                        Citados <strong className="text-slate-700 ml-0.5">{citados.toLocaleString('es-PE')}</strong>
+                      </span>
+                      {atendidosTotal > 0 && (
+                        <span className="flex items-center gap-1.5 text-xs text-slate-500">
+                          <span className="w-2 h-2 rounded-full bg-emerald-500 flex-shrink-0" />
+                          Atendidos <strong className="text-slate-700 ml-0.5">{atendidosTotal.toLocaleString('es-PE')}</strong>
+                        </span>
+                      )}
+                      {totalObservados > 0 && (
+                        <span className="flex items-center gap-1.5 text-xs text-slate-500">
+                          <span className="w-2 h-2 rounded-full bg-amber-400 flex-shrink-0" />
+                          Observados <strong className="text-slate-700 ml-0.5">{totalObservados.toLocaleString('es-PE')}</strong>
+                        </span>
+                      )}
+                      <span className="flex items-center gap-1.5 text-xs text-slate-500">
+                        <span className="w-2 h-2 rounded-full bg-slate-300 flex-shrink-0" />
+                        Sin gestión <strong className="text-slate-700 ml-0.5">{pendientesReales.toLocaleString('es-PE')}</strong>
                       </span>
                     </div>
                   </div>
 
-                  {/* Leyenda */}
-                  <div className="flex flex-wrap gap-x-5 gap-y-1.5">
-                    <span className="flex items-center gap-1.5 text-xs text-gray-500">
-                      <span className="w-2.5 h-2.5 rounded-full bg-slate-400 inline-block flex-shrink-0" />
-                      Pendiente citar <strong className="text-gray-700 ml-1">{pendientes.toLocaleString('es-PE')}</strong>
-                    </span>
-                    <span className="flex items-center gap-1.5 text-xs text-gray-500">
-                      <span className="w-2.5 h-2.5 rounded-full bg-blue-500 inline-block flex-shrink-0" />
-                      Citados <strong className="text-gray-700 ml-1">{citados.toLocaleString('es-PE')}</strong>
-                    </span>
-                    {atendidos > 0 && (
-                      <span className="flex items-center gap-1.5 text-xs text-gray-500">
-                        <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block flex-shrink-0" />
-                        Atendidos <strong className="text-gray-700 ml-1">{atendidos.toLocaleString('es-PE')}</strong>
-                      </span>
-                    )}
-                    {totalObservados > 0 && (
-                      <span className="flex items-center gap-1.5 text-xs text-gray-500">
-                        <span className="w-2.5 h-2.5 rounded-full bg-amber-400 inline-block flex-shrink-0" />
-                        Observados <strong className="text-gray-700 ml-1">{totalObservados.toLocaleString('es-PE')}</strong>
-                        <span className="text-gray-400">(no contesta, apagado, rechazado…)</span>
-                      </span>
-                    )}
-                    <span className="ml-auto text-xs font-semibold text-emerald-700">
-                      Completados: {atePct.toFixed(1)}%
-                    </span>
-                  </div>
-                </>
+                  {/* ── Tabla de desglose + Leyenda (colapsable) ── */}
+                  {progresoDesglosado && (
+                    <>
+                      <div className="overflow-hidden rounded-lg border border-slate-100">
+                        <table className="w-full text-xs">
+                          <thead>
+                            <tr className="bg-slate-50 border-b border-slate-100">
+                              <th className="text-left px-3 py-2 text-slate-500 font-medium">Estado</th>
+                              <th className="text-right px-3 py-2 text-slate-500 font-medium">Pacientes</th>
+                              <th className="text-right px-3 py-2 text-slate-500 font-medium w-16">%</th>
+                              <th className="px-3 py-2 w-28" />
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-slate-50">
+                            {filas.map(f => (
+                              <tr key={f.label} className="hover:bg-slate-50/60">
+                                <td className="px-3 py-1.5 flex items-center gap-2">
+                                  <span className={`w-2 h-2 rounded-full flex-shrink-0 ${f.color}`} />
+                                  <span className="text-slate-600">{f.label}</span>
+                                </td>
+                                <td className="px-3 py-1.5 text-right font-semibold text-slate-700">
+                                  {f.valor.toLocaleString('es-PE')}
+                                </td>
+                                <td className="px-3 py-1.5 text-right text-slate-500">
+                                  {f.pct.toFixed(1)}%
+                                </td>
+                                <td className="px-3 py-1.5">
+                                  <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
+                                    <div className={`${f.color} h-full rounded-full`} style={{ width: `${Math.min(f.pct, 100)}%` }} />
+                                  </div>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+
+                      <div className="text-xs text-slate-600 bg-slate-50 rounded-lg px-4 py-3 leading-relaxed border border-slate-200">
+                        <span className="font-bold text-slate-700">¿Cómo se calcula?</span>
+                        <span className="mx-2 text-slate-400">·</span>
+                        <span className="text-violet-700 font-semibold">Gestión</span>
+                        <span className="text-slate-500"> = En contacto + Citados + Atendidos + Observados</span>
+                        <span className="mx-2 text-slate-400">·</span>
+                        <span className="text-emerald-700 font-semibold">Citación</span>
+                        <span className="text-slate-500"> = Citados + Atendidos</span>
+                        <span className="mx-2 text-slate-400">·</span>
+                        <span className="text-slate-500">Denominador: universo total de <strong className="text-slate-700">{total.toLocaleString('es-PE')}</strong> pacientes</span>
+                      </div>
+                    </>
+                  )}
+                </div>
               );
             })()}
           </div>
@@ -2617,7 +2940,7 @@ export default function Solicitudes({ categoriaInicial } = {}) {
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
-                  <button onClick={async () => { setDesgloseLoading(true); try { const kpi = await bolsasService.obtenerKpiConFiltros({ categoriaEspecialidad: 'maraton' }); setDesgloseData(kpi); } catch {} finally { setDesgloseLoading(false); } }}
+                  <button onClick={async () => { setDesgloseLoading(true); try { const [kpi, segs] = await Promise.all([bolsasService.obtenerKpiConFiltros({ categoriaEspecialidad: 'maraton' }), bolsasService.obtenerDesgloseMaratonSegmentos().catch(()=>null)]); setDesgloseData(kpi); setDesgloseSegmentos(segs); } catch {} finally { setDesgloseLoading(false); } }}
                     className="p-2 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors">
                     <RefreshCw className={`w-4 h-4 ${desgloseLoading ? 'animate-spin' : ''}`} />
                   </button>
@@ -2626,25 +2949,62 @@ export default function Solicitudes({ categoriaInicial } = {}) {
                   </button>
                 </div>
               </div>
+              {/* Tabs TODOS / CENACRON / ESPECIALIDADES */}
+              <div className="flex items-center gap-1 px-6 py-2 border-b border-gray-100 bg-gray-50">
+                {[
+                  { key: 'todos', label: 'Todos' },
+                  { key: 'cenacron', label: '🟣 CENACRON' },
+                  { key: 'especialidades', label: '🟠 Especialidades' },
+                ].map(tab => (
+                  <button key={tab.key} onClick={() => setDesgloseTab(tab.key)}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
+                      desgloseTab === tab.key
+                        ? 'bg-white text-gray-900 shadow-sm border border-gray-200'
+                        : 'text-gray-500 hover:text-gray-700 hover:bg-white/60'
+                    }`}>
+                    {tab.label}
+                  </button>
+                ))}
+              </div>
               {/* Body */}
               <div className="overflow-y-auto flex-1 px-6 py-4">
                 {desgloseLoading ? (
                   <div className="flex items-center justify-center py-12 text-gray-400 gap-2">
                     <Loader className="w-5 h-5 animate-spin" /> Cargando datos...
                   </div>
-                ) : Array.isArray(desgloseData) && desgloseData.length > 0 ? (() => {
+                ) : (() => {
                   const ESTADOS_LABEL = {
                     PENDIENTE_CITA: 'Pendiente de citar', CITADO: 'Cita confirmada',
-                    ATENDIDO: 'Atendido', ATENDIDO_IPRESS: 'Ya fue atendido en IPRESS',
+                    ATENDIDO: 'Atendido', ATENDIDO_IPRESS: 'Atendido en IPRESS (no por CENATE)',
                     NO_CONTESTA: 'No responde llamadas', NO_CONTESTO: 'No contestó',
                     APAGADO: 'Teléfono apagado', TEL_SIN_SERVICIO: 'Teléfono sin servicio',
                     NO_DESEA: 'Rechazó la cita', RECHAZADO: 'Rechazado por gestora',
                     NUM_NO_EXISTE: 'Número no existe', NO_IPRESS_CENATE: 'IPRESS no cubre CENATE',
                     SIN_VIGENCIA: 'Sin seguro vigente', YA_NO_REQUIERE: 'Ya no requiere atención',
                     PARTICULAR: 'Atención particular', REPROG_FALLIDA: 'Reprogramación fallida',
+                    SIN_ESTADO: 'Sin gestión asignada', FALLECIDO: 'Fallecido',
+                    NO_GRUPO_ETARIO: 'Fuera de grupo etario',
                   };
-                  const EXCLUIR = ['PENDIENTE_CITA', 'CITADO', 'SIN_GESTORA', 'CON_GESTORA'];
-                  const filas = desgloseData
+
+                  // Fuente de datos según tab activo
+                  const esTodos = desgloseTab === 'todos';
+                  const rawData = esTodos
+                    ? desgloseData
+                    : Array.isArray(desgloseSegmentos)
+                      ? desgloseSegmentos
+                          .filter(r => r.segmento === (desgloseTab === 'cenacron' ? 'CENACRON' : 'ESPECIALIDADES'))
+                          .map(r => ({ estado: r.estado, cantidad: Number(r.cantidad) }))
+                      : null;
+
+                  if (!Array.isArray(rawData) || rawData.length === 0) {
+                    return <div className="text-center py-12 text-gray-400">No se pudieron cargar los datos</div>;
+                  }
+
+                  const EXCLUIR_TODOS = ['PENDIENTE_CITA', 'CITADO', 'SIN_GESTORA', 'CON_GESTORA'];
+                  const EXCLUIR_SEG  = ['SIN_GESTORA', 'CON_GESTORA'];
+                  const EXCLUIR = esTodos ? EXCLUIR_TODOS : EXCLUIR_SEG;
+
+                  const filas = rawData
                     .filter(r => !EXCLUIR.includes(r.estado))
                     .sort((a, b) => b.cantidad - a.cantidad);
                   const totalObservados = filas.reduce((s, r) => s + r.cantidad, 0);
@@ -2656,7 +3016,7 @@ export default function Solicitudes({ categoriaInicial } = {}) {
                       color: '#16a34a',
                       bg: 'bg-green-50',
                       badgeBg: 'bg-green-100 text-green-800',
-                      estados: ['CITADO', 'ATENDIDO', 'ATENDIDO_IPRESS'],
+                      estados: ['CITADO', 'ATENDIDO'],
                     },
                     {
                       key: 'proceso',
@@ -2728,9 +3088,7 @@ export default function Solicitudes({ categoriaInicial } = {}) {
                       </div>
                     </div>
                   );
-                })() : (
-                  <div className="text-center py-12 text-gray-400">No se pudieron cargar los datos</div>
-                )}
+                })()}
               </div>
             </div>
           </div>
@@ -3486,7 +3844,6 @@ export default function Solicitudes({ categoriaInicial } = {}) {
                       { label: 'F. Atención Méd.', key: 'fechaAtencionMedica' },
                       { label: 'Fecha Asignación', key: 'fechaAsignacion' },
                       { label: 'Gestora Asignada', key: 'gestoraAsignada' },
-                      { label: 'Usuario Cambio Estado', key: 'usuarioCambioEstado' },
                     ].map(({ label, key, tooltip }) => {
                       const isActive = sortConfig.key === key;
                       return (
@@ -4732,6 +5089,264 @@ export default function Solicitudes({ categoriaInicial } = {}) {
             </div>
           </div>
         )}
+
+        {/* ====== MODAL: PACIENTES MARATÓN POR CATEGORÍA (v1.85.9) ====== */}
+        {modalPacientesMaraton && (() => {
+          const c = modalPacientesMaraton.color;
+          const esObservados = modalPacientesMaraton.categoria === 'OBSERVADOS';
+          const getInitials = (nombre) => {
+            if (!nombre) return '?';
+            const w = nombre.trim().split(/\s+/);
+            return ((w[0]?.[0] || '') + (w[1]?.[0] || '')).toUpperCase();
+          };
+          const ESTADO_LABEL = {
+            NO_CONTESTA:      { label: 'No contesta',          bg: '#fef3c7', color: '#92400e' },
+            NO_CONTESTO:      { label: 'No contestó',          bg: '#fef3c7', color: '#92400e' },
+            APAGADO:          { label: 'Tel. apagado',         bg: '#fee2e2', color: '#991b1b' },
+            TEL_SIN_SERVICIO: { label: 'Sin servicio',         bg: '#fee2e2', color: '#991b1b' },
+            NUM_NO_EXISTE:    { label: 'Nº no existe',         bg: '#fee2e2', color: '#991b1b' },
+            NO_DESEA:         { label: 'No desea',             bg: '#fce7f3', color: '#9d174d' },
+            RECHAZADO:        { label: 'Rechazado',            bg: '#fce7f3', color: '#9d174d' },
+            NO_IPRESS_CENATE: { label: 'IPRESS no CENATE',    bg: '#ede9fe', color: '#5b21b6' },
+            SIN_VIGENCIA:     { label: 'Sin vigencia',         bg: '#e0e7ff', color: '#3730a3' },
+            PARTICULAR:       { label: 'Particular',           bg: '#e0e7ff', color: '#3730a3' },
+            REPROG_FALLIDA:   { label: 'Reprog. fallida',      bg: '#fef3c7', color: '#92400e' },
+            FALLECIDO:        { label: 'Fallecido',            bg: '#f3f4f6', color: '#374151' },
+            YA_NO_REQUIERE:   { label: 'Ya no requiere',       bg: '#f0fdf4', color: '#166534' },
+            NO_GRUPO_ETARIO:  { label: 'Fuera grupo etario',   bg: '#f0fdf4', color: '#166534' },
+            ATENDIDO_IPRESS:  { label: 'Atendido en IPRESS',   bg: '#dbeafe', color: '#1e40af' },
+          };
+          const selectCls = "text-xs border border-gray-200 rounded-lg bg-white px-2.5 py-1.5 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-300 cursor-pointer";
+          const hayFiltros = Object.values(filtrosMaraton).some(v => v !== '' && v != null);
+          return (
+            <div className="fixed inset-0 z-[60] flex items-center justify-center p-3"
+              style={{ background: 'rgba(0,0,0,0.55)' }}
+              onMouseDown={() => setModalPacientesMaraton(null)}>
+              <div className="bg-white rounded-2xl shadow-2xl w-full flex flex-col relative"
+                style={{ maxWidth: '98vw', maxHeight: '93vh' }}
+                onMouseDown={e => e.stopPropagation()}>
+
+                {/* Botón X — posición absoluta fuera del flujo del header */}
+                <button
+                  type="button"
+                  onMouseDown={e => { e.stopPropagation(); setModalPacientesMaraton(null); }}
+                  className="absolute top-3 right-3 z-10 w-9 h-9 flex items-center justify-center rounded-full text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-all"
+                  title="Cerrar">
+                  <X className="w-5 h-5" />
+                </button>
+
+                {/* Header con banda de color */}
+                <div className="flex items-center justify-between gap-3 px-6 py-4 border-b border-gray-100 flex-shrink-0 rounded-t-2xl pr-14"
+                  style={{ background: `${c}0d` }}>
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="w-1 h-10 rounded-full flex-shrink-0" style={{ background: c }} />
+                    <div>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <h2 className="text-base font-bold text-gray-900">Pacientes MARATÓN</h2>
+                        <span className="text-xs font-semibold px-2.5 py-1 rounded-full whitespace-nowrap"
+                          style={{ background: `${c}1f`, color: c }}>
+                          {modalPacientesMaraton.titulo}
+                        </span>
+                        {hayFiltros && (
+                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-100 text-blue-700">Filtros activos</span>
+                        )}
+                      </div>
+                      {pacientesMaratonData && (
+                        <p className="text-xs text-gray-400 mt-0.5">
+                          <span className="font-semibold text-gray-600">{pacientesMaratonData.totalElements?.toLocaleString('es-PE')}</span> pacientes encontrados
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                  {/* Botón descarga Excel */}
+                  <button
+                    type="button"
+                    onClick={descargarExcelMaraton}
+                    disabled={pacientesMaratonExporting || pacientesMaratonLoading}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 hover:bg-emerald-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex-shrink-0 mr-10"
+                    title="Descargar Excel con filtros aplicados">
+                    {pacientesMaratonExporting
+                      ? <Loader className="w-3.5 h-3.5 animate-spin" />
+                      : <Download className="w-3.5 h-3.5" />}
+                    {pacientesMaratonExporting ? 'Exportando...' : 'Excel'}
+                  </button>
+                </div>
+
+                {/* Buscador + Filtros */}
+                <div className="px-5 py-3 border-b border-gray-100 flex-shrink-0 space-y-2.5">
+                  {/* Buscador */}
+                  <div className="relative">
+                    <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+                    <input
+                      type="text"
+                      placeholder="Buscar por nombre o DNI..."
+                      value={pacientesMaratonBusqueda}
+                      onChange={e => {
+                        const v = e.target.value;
+                        setPacientesMaratonBusqueda(v);
+                        setPacientesMaratonPage(0);
+                        obtenerPacientesMaratonCategoria(modalPacientesMaraton.categoria, v, 0, 50, filtrosMaraton)
+                          .then(d => { setPacientesMaratonData(d); setPacientesMaratonLoading(false); })
+                          .catch(() => {});
+                        setPacientesMaratonLoading(true);
+                      }}
+                      className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm bg-gray-50 transition-all
+                        focus:outline-none focus:bg-white focus:border-blue-300 focus:ring-2 focus:ring-blue-100"
+                    />
+                  </div>
+                  {/* Fila de filtros */}
+                  <div className="flex flex-wrap items-center gap-2">
+                    {/* Sexo */}
+                    <select value={filtrosMaraton.sexo} className={selectCls}
+                      onChange={e => aplicarFiltroMaraton({ ...filtrosMaraton, sexo: e.target.value })}>
+                      <option value="">Sexo: Todos</option>
+                      <option value="M">♂ Masculino</option>
+                      <option value="F">♀ Femenino</option>
+                    </select>
+                    {/* Edad min-max */}
+                    <div className="flex items-center gap-1">
+                      <input type="number" placeholder="Edad min" min={0} max={120} value={filtrosMaraton.edadMin}
+                        className={`${selectCls} w-24`}
+                        onChange={e => aplicarFiltroMaraton({ ...filtrosMaraton, edadMin: e.target.value })} />
+                      <span className="text-gray-300 text-xs">–</span>
+                      <input type="number" placeholder="Edad max" min={0} max={120} value={filtrosMaraton.edadMax}
+                        className={`${selectCls} w-24`}
+                        onChange={e => aplicarFiltroMaraton({ ...filtrosMaraton, edadMax: e.target.value })} />
+                    </div>
+                    {/* Motivo (solo OBSERVADOS) */}
+                    {esObservados && (
+                      <select value={filtrosMaraton.estadoGestion} className={selectCls}
+                        onChange={e => aplicarFiltroMaraton({ ...filtrosMaraton, estadoGestion: e.target.value })}>
+                        <option value="">Motivo: Todos</option>
+                        {Object.entries(ESTADO_LABEL).map(([k, v]) => (
+                          <option key={k} value={k}>{v.label}</option>
+                        ))}
+                      </select>
+                    )}
+                    {/* Macrorred */}
+                    <select value={filtrosMaraton.macrorredFiltro} className={`${selectCls} max-w-[200px]`}
+                      onChange={e => aplicarFiltroMaraton({ ...filtrosMaraton, macrorredFiltro: e.target.value })}>
+                      <option value="">Macrorred: Todas</option>
+                      {opcionesFiltrosMaraton.macrorredes.map(m => <option key={m} value={m}>{m}</option>)}
+                    </select>
+                    {/* Red */}
+                    <select value={filtrosMaraton.redFiltro} className={`${selectCls} max-w-[240px]`}
+                      onChange={e => aplicarFiltroMaraton({ ...filtrosMaraton, redFiltro: e.target.value })}>
+                      <option value="">Red: Todas</option>
+                      {opcionesFiltrosMaraton.redes.map(r => <option key={r} value={r}>{r}</option>)}
+                    </select>
+                    {/* IPRESS */}
+                    <select value={filtrosMaraton.ipressFiltro} className={`${selectCls} max-w-[280px]`}
+                      onChange={e => aplicarFiltroMaraton({ ...filtrosMaraton, ipressFiltro: e.target.value })}>
+                      <option value="">IPRESS: Todas</option>
+                      {opcionesFiltrosMaraton.ipress.map(ip => <option key={ip} value={ip}>{ip}</option>)}
+                    </select>
+                    {/* Limpiar filtros */}
+                    {hayFiltros && (
+                      <button onClick={() => aplicarFiltroMaraton({ sexo: '', estadoGestion: '', edadMin: '', edadMax: '', ipressFiltro: '', redFiltro: '', macrorredFiltro: '' })}
+                        className="text-xs text-red-500 hover:text-red-700 font-medium px-2.5 py-1.5 rounded-lg hover:bg-red-50 transition-colors border border-red-200">
+                        ✕ Limpiar
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {/* Tabla */}
+                <div className="flex-1 overflow-auto">
+                  {pacientesMaratonLoading ? (
+                    <div className="flex flex-col items-center justify-center py-20 gap-3">
+                      <Loader className="w-7 h-7 text-blue-400 animate-spin" />
+                      <span className="text-sm text-gray-400">Cargando pacientes...</span>
+                    </div>
+                  ) : !pacientesMaratonData || pacientesMaratonData.content?.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center py-20 gap-2">
+                      <Search className="w-8 h-8 text-gray-200" />
+                      <p className="text-sm text-gray-400">Sin resultados para esta búsqueda</p>
+                    </div>
+                  ) : (
+                    <table className="w-full text-sm border-collapse">
+                      <thead className="sticky top-0 z-10">
+                        <tr style={{ background: 'linear-gradient(to bottom, #eef2f7, #f4f7fb)' }}>
+                          {['Tipo Doc', 'Num. Documento', 'Nombres y Apellidos', 'Sexo', 'Edad', 'IPRESS', 'Red', 'Macrorred', ...(esObservados ? ['Motivo'] : [])].map(col => (
+                            <th key={col} className="px-4 py-3 text-left text-[10px] font-bold text-gray-500 uppercase tracking-wider whitespace-nowrap border-b border-gray-200">{col}</th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {pacientesMaratonData.content.map((p, i) => (
+                          <tr key={i} className="transition-colors hover:bg-blue-50/50"
+                            style={{ background: i % 2 === 0 ? '#ffffff' : '#f8fafc' }}>
+                            <td className="px-4 py-3 whitespace-nowrap">
+                              <span className="text-[11px] font-medium px-2 py-0.5 rounded-md bg-gray-100 text-gray-500">{p.tipo_doc || 'DNI'}</span>
+                            </td>
+                            <td className="px-4 py-3 whitespace-nowrap">
+                              <span className="font-mono text-sm font-semibold text-blue-700">{p.num_doc}</span>
+                            </td>
+                            <td className="px-4 py-3">
+                              <div className="flex items-center gap-2.5">
+                                <div className="w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold text-white flex-shrink-0"
+                                  style={{ background: `linear-gradient(135deg, ${c}, ${c}99)` }}>
+                                  {getInitials(p.nombre_completo)}
+                                </div>
+                                <span className="font-medium text-gray-800 text-sm leading-tight">{p.nombre_completo}</span>
+                              </div>
+                            </td>
+                            <td className="px-4 py-3 whitespace-nowrap">
+                              <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${p.sexo === 'F' ? 'bg-pink-50 text-pink-600' : p.sexo === 'M' ? 'bg-sky-50 text-sky-600' : 'bg-gray-100 text-gray-500'}`}>
+                                {p.sexo === 'F' ? '♀ F' : p.sexo === 'M' ? '♂ M' : p.sexo || '—'}
+                              </span>
+                            </td>
+                            <td className="px-4 py-3 text-center font-semibold text-gray-700">{p.edad ?? '—'}</td>
+                            <td className="px-4 py-3 text-gray-600 max-w-[180px] truncate text-xs" title={p.ipress}>{p.ipress}</td>
+                            <td className="px-4 py-3 text-gray-500 max-w-[140px] truncate text-xs" title={p.red}>{p.red}</td>
+                            <td className="px-4 py-3 text-gray-500 whitespace-nowrap text-xs">{p.macrorred}</td>
+                            {esObservados && (() => {
+                              const est = p.estado_gestion;
+                              const info = ESTADO_LABEL[est];
+                              return (
+                                <td className="px-4 py-3 whitespace-nowrap">
+                                  {info ? (
+                                    <span className="text-[11px] font-semibold px-2.5 py-1 rounded-full"
+                                      style={{ background: info.bg, color: info.color }}>
+                                      {info.label}
+                                    </span>
+                                  ) : (
+                                    <span className="text-[11px] text-gray-400">{est || '—'}</span>
+                                  )}
+                                </td>
+                              );
+                            })()}
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  )}
+                </div>
+
+                {/* Footer / Paginación */}
+                {pacientesMaratonData && pacientesMaratonData.totalPages > 1 && (
+                  <div className="flex items-center justify-between px-6 py-3.5 border-t border-gray-100 bg-gray-50/70 flex-shrink-0 rounded-b-2xl">
+                    <span className="text-xs text-gray-400">
+                      Página <span className="font-semibold text-gray-700">{pacientesMaratonPage + 1}</span> de {pacientesMaratonData.totalPages}
+                      <span className="mx-1.5 text-gray-300">·</span>
+                      <span className="font-semibold text-gray-700">{pacientesMaratonData.totalElements?.toLocaleString('es-PE')}</span> registros
+                    </span>
+                    <div className="flex gap-2">
+                      <button disabled={pacientesMaratonPage === 0} onClick={() => cargarPaginaModalPacientesMaraton(pacientesMaratonPage - 1)}
+                        className="px-3.5 py-1.5 text-xs font-medium rounded-lg border border-gray-200 bg-white hover:bg-gray-50 hover:border-gray-300 disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-sm">
+                        ← Anterior
+                      </button>
+                      <button disabled={pacientesMaratonPage >= pacientesMaratonData.totalPages - 1} onClick={() => cargarPaginaModalPacientesMaraton(pacientesMaratonPage + 1)}
+                        className="px-3.5 py-1.5 text-xs font-medium rounded-lg border border-gray-200 bg-white hover:bg-gray-50 hover:border-gray-300 disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-sm">
+                        Siguiente →
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          );
+        })()}
       </div>
     </div>
   );

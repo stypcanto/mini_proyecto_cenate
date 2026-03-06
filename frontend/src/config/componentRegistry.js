@@ -748,6 +748,19 @@ export const componentRegistry = {
     component: lazy(() => import('../pages/estadisticas/EstadisticasMensual')),
     requiredAction: 'ver',
   },
+
+  // ========================================================================
+  // 🏃 MÓDULO MARATÓN 2026
+  // ========================================================================
+  '/maraton2026/avances-citacion': {
+    component: lazy(() => import('../pages/maraton2026/MaratonAvancesCitacion')),
+    requiredAction: 'ver',
+  },
+
+  '/maraton2026/resumen-atencion': {
+    component: lazy(() => import('../pages/maraton2026/MaratonResumenAtencion')),
+    requiredAction: 'ver',
+  },
 };
 
 // ========================================================================
