@@ -597,13 +597,14 @@ export const obtenerEstadisticasPorIpress = async () => {
 
 /**
  * Obtiene estadísticas por IPRESS de Atención
- * @param {Object} params - Filtros opcionales: bolsaNombre, categoriaEspecialidad
+ * @param {Object} params - Filtros opcionales: bolsaNombre, categoriaEspecialidad, estadoCodigo
  */
 export const obtenerEstadisticasPorIpressAtencion = async (params = {}) => {
   try {
     const query = new URLSearchParams();
     if (params.bolsaNombre) query.set('bolsaNombre', params.bolsaNombre);
     if (params.categoriaEspecialidad) query.set('categoriaEspecialidad', params.categoriaEspecialidad);
+    if (params.estadoCodigo) query.set('estadoCodigo', params.estadoCodigo);
     const qs = query.toString();
     const url = `${API_BASE_URL}/estadisticas/por-ipress-atencion${qs ? '?' + qs : ''}`;
     const response = await apiClient.get(url, true);

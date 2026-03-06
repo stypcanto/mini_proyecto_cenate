@@ -71,7 +71,7 @@ public interface SolicitudBolsaEstadisticasService {
      */
     List<EstadisticasPorIpressDTO> obtenerEstadisticasPorIpressAtencion();
 
-    List<EstadisticasPorIpressDTO> obtenerEstadisticasPorIpressAtencionFiltrado(String bolsaNombre, String categoriaEspecialidad);
+    List<EstadisticasPorIpressDTO> obtenerEstadisticasPorIpressAtencionFiltrado(String bolsaNombre, String categoriaEspecialidad, String estadoCodigo);
 
     /**
      * Obtiene estadísticas agrupadas por tipo de cita

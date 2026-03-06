@@ -296,10 +296,10 @@ public class SolicitudBolsaEstadisticasServiceImpl implements SolicitudBolsaEsta
     }
 
     @Override
-    public List<EstadisticasPorIpressDTO> obtenerEstadisticasPorIpressAtencionFiltrado(String bolsaNombre, String categoriaEspecialidad) {
-        log.info("📊 Obteniendo estadísticas por IPRESS Atención filtrado — bolsa={}, categoria={}", bolsaNombre, categoriaEspecialidad);
+    public List<EstadisticasPorIpressDTO> obtenerEstadisticasPorIpressAtencionFiltrado(String bolsaNombre, String categoriaEspecialidad, String estadoCodigo) {
+        log.info("📊 Obteniendo estadísticas por IPRESS Atención filtrado — bolsa={}, categoria={}, estado={}", bolsaNombre, categoriaEspecialidad, estadoCodigo);
 
-        List<Map<String, Object>> resultados = solicitudRepository.estadisticasPorIpressAtencionFiltrado(bolsaNombre, categoriaEspecialidad);
+        List<Map<String, Object>> resultados = solicitudRepository.estadisticasPorIpressAtencionFiltrado(bolsaNombre, categoriaEspecialidad, estadoCodigo);
 
         return resultados.stream()
                 .map(row -> EstadisticasPorIpressDTO.builder()

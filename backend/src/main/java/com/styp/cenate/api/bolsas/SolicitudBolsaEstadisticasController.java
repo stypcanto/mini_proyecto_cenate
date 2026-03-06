@@ -231,10 +231,11 @@ public class SolicitudBolsaEstadisticasController {
     @GetMapping("/por-ipress-atencion")
     public ResponseEntity<List<EstadisticasPorIpressDTO>> obtenerEstadisticasPorIpressAtencion(
             @RequestParam(required = false) String bolsaNombre,
-            @RequestParam(required = false) String categoriaEspecialidad) {
-        log.info("GET /api/bolsas/estadisticas/por-ipress-atencion — bolsa={}, categoria={}", bolsaNombre, categoriaEspecialidad);
-        if (bolsaNombre != null || categoriaEspecialidad != null) {
-            return ResponseEntity.ok(estadisticasService.obtenerEstadisticasPorIpressAtencionFiltrado(bolsaNombre, categoriaEspecialidad));
+            @RequestParam(required = false) String categoriaEspecialidad,
+            @RequestParam(required = false) String estadoCodigo) {
+        log.info("GET /api/bolsas/estadisticas/por-ipress-atencion — bolsa={}, categoria={}, estado={}", bolsaNombre, categoriaEspecialidad, estadoCodigo);
+        if (bolsaNombre != null || categoriaEspecialidad != null || estadoCodigo != null) {
+            return ResponseEntity.ok(estadisticasService.obtenerEstadisticasPorIpressAtencionFiltrado(bolsaNombre, categoriaEspecialidad, estadoCodigo));
         }
         return ResponseEntity.ok(estadisticasService.obtenerEstadisticasPorIpressAtencion());
     }

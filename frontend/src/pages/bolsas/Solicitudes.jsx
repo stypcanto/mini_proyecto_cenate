@@ -397,7 +397,7 @@ export default function Solicitudes({ categoriaInicial } = {}) {
       try {
         const [ipress, ipressAtencion, especialidad] = await Promise.all([
           bolsasService.obtenerEstadisticasPorIpress().catch(() => []),
-          bolsasService.obtenerEstadisticasPorIpressAtencion(categoriaEspecialidad ? { categoriaEspecialidad } : {}).catch(() => []),
+          bolsasService.obtenerEstadisticasPorIpressAtencion(categoriaEspecialidad ? { categoriaEspecialidad, estadoCodigo: filtroEstado !== 'todos' ? filtroEstado : undefined } : {}).catch(() => []),
           bolsasService.obtenerEstadisticasPorEspecialidad().catch(() => []),
         ]);
         if (mounted) {
@@ -455,8 +455,8 @@ export default function Solicitudes({ categoriaInicial } = {}) {
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ============================================================================
-  // 📦 EFFECT 2.6c: Recargar IPRESS Atención cuando cambia el filtro de bolsa
-  // Muestra counts contextuales: si hay bolsa activa, solo cuenta esa bolsa
+  // 📦 EFFECT 2.6c: Recargar IPRESS Atención cuando cambia bolsa o estado
+  // Muestra counts exactos: mismos filtros que la lista principal
   // ============================================================================
   useEffect(() => {
     let mounted = true;
@@ -465,11 +465,12 @@ export default function Solicitudes({ categoriaInicial } = {}) {
       const params = {};
       if (bolsaNombre) params.bolsaNombre = bolsaNombre;
       if (categoriaEspecialidad) params.categoriaEspecialidad = categoriaEspecialidad;
+      if (filtroEstado && filtroEstado !== 'todos') params.estadoCodigo = filtroEstado;
       const data = await bolsasService.obtenerEstadisticasPorIpressAtencion(params).catch(() => []);
       if (mounted) setEstadisticasIpressAtencion(data || []);
     })();
     return () => { mounted = false; };
-  }, [filtroBolsa]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [filtroBolsa, filtroEstado]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ============================================================================
   // 📦 EFFECT 3: Filtrado AUTOMÁTICO cuando cambian los filtros (v2.6.0 - UX: instant filtering)

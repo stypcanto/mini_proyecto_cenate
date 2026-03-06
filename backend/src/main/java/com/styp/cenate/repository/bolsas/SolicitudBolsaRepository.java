@@ -709,8 +709,8 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
     List<Map<String, Object>> estadisticasPorIpressAtencion();
 
     /**
-     * Estadísticas por IPRESS de Atención con filtros opcionales de bolsa y categoría
-     * Permite mostrar counts contextuales cuando hay filtros activos
+     * Estadísticas por IPRESS de Atención con filtros opcionales de bolsa, categoría y estado
+     * Permite mostrar counts contextuales que coinciden exactamente con la lista filtrada
      */
     @Query(value = """
         SELECT
@@ -719,6 +719,7 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
         FROM dim_solicitud_bolsa sb
         LEFT JOIN dim_ipress di ON sb.id_ipress_atencion = di.id_ipress
         LEFT JOIN dim_tipos_bolsas tb ON sb.id_bolsa = tb.id_tipo_bolsa
+        LEFT JOIN dim_estados_gestion_citas deg ON sb.estado_gestion_citas_id = deg.id_estado_cita
         WHERE sb.activo = true
           AND (CAST(:bolsaNombre AS VARCHAR) IS NULL OR POSITION(',' || LOWER(COALESCE(tb.desc_tipo_bolsa, '')) || ',' IN ',' || LOWER(CAST(:bolsaNombre AS VARCHAR)) || ',') > 0)
           AND (CAST(:categoriaEspecialidad AS VARCHAR) IS NULL
@@ -727,12 +728,14 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
                OR (CAST(:categoriaEspecialidad AS VARCHAR) = 'recita'         AND sb.id_bolsa = 15)
                OR (CAST(:categoriaEspecialidad AS VARCHAR) = 'interconsulta'  AND sb.id_bolsa = 16)
                OR (CAST(:categoriaEspecialidad AS VARCHAR) = 'maraton'        AND sb.id_bolsa = 17))
+          AND (CAST(:estadoCodigo AS VARCHAR) IS NULL OR POSITION(',' || UPPER(COALESCE(deg.cod_estado_cita, 'PENDIENTE_CITA')) || ',' IN ',' || UPPER(CAST(:estadoCodigo AS VARCHAR)) || ',') > 0)
         GROUP BY COALESCE(di.desc_ipress, 'N/A')
         ORDER BY total DESC
         """, nativeQuery = true)
     List<Map<String, Object>> estadisticasPorIpressAtencionFiltrado(
             @org.springframework.data.repository.query.Param("bolsaNombre") String bolsaNombre,
-            @org.springframework.data.repository.query.Param("categoriaEspecialidad") String categoriaEspecialidad);
+            @org.springframework.data.repository.query.Param("categoriaEspecialidad") String categoriaEspecialidad,
+            @org.springframework.data.repository.query.Param("estadoCodigo") String estadoCodigo);
 
     /**
      * 4️⃣ Estadísticas por tipo de cita
