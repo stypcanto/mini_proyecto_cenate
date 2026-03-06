@@ -2606,7 +2606,7 @@ export default function Solicitudes({ categoriaInicial } = {}) {
                               style={{ width: `${pct}%`, background: colorBar }} />
                           </div>
                           <div className="flex justify-between mt-1.5">
-                            <span className="text-[10px] font-semibold text-gray-600">Faltan {(meta - actual).toLocaleString('es-PE')}</span>
+                            <span className="text-[10px] font-semibold text-gray-600">Faltan como mínimo {(meta - actual).toLocaleString('es-PE')}</span>
                             <span className="text-[10px] text-gray-500">Meta: {meta.toLocaleString('es-PE')}</span>
                           </div>
                           <p className="text-[10px] mt-2" style={{ color: colorBar }}>Ver citados →</p>
@@ -2777,10 +2777,11 @@ export default function Solicitudes({ categoriaInicial } = {}) {
               // Solo cuenta como "atendido" el ATENDIDO puro (por CENATE)
               const atendidosTotal = atendidos; // solo ATENDIDO puro
 
-              // En contacto = CON_GESTORA (asignada pero aún sin cita ni observado)
-              const enContacto = Array.isArray(estadisticasGlobales)
-                ? (estadisticasGlobales.find(s => s.estado?.toUpperCase() === 'CON_GESTORA')?.cantidad || 0)
-                : 0;
+              // En contacto = ASIGNADOS - citados - atendidos - observados
+              // (misma fórmula que el card ③ En Contacto — usa el sintético ASIGNADOS del KPI)
+              const asignados = Array.isArray(estadisticasGlobales)
+                ? (estadisticasGlobales.find(s => s.estado?.toUpperCase() === 'ASIGNADOS')?.cantidad || 0)
+                : (estadisticas.asignados || 0);
 
               // Observados = todo lo que no es PENDIENTE/CITADO/ATENDIDO puro ni sintético
               // ATENDIDO_IPRESS incluido aquí (fuera del alcance de telemedicina)
@@ -2792,6 +2793,9 @@ export default function Solicitudes({ categoriaInicial } = {}) {
                 : (estadisticas.noContesto || 0) + (estadisticas.rechazados || 0);
 
               const total = Math.max(universo, 1);
+
+              // En contacto = con gestora asignada pero sin cita ni resultado aún
+              const enContacto = Math.max(0, asignados - citados - atendidosTotal - totalObservados);
 
               // ── Avance de Gestión = todos los pacientes trabajados
               const gestionados  = enContacto + citados + atendidosTotal + totalObservados;
@@ -2806,8 +2810,8 @@ export default function Solicitudes({ categoriaInicial } = {}) {
 
               // Filas de desglose
               const filas = [
-                { label: 'Sin gestión (pendiente contactar)', valor: pendientesReales, color: 'bg-slate-300', pct: (pendientesReales / total) * 100 },
-                { label: 'En contacto',                       valor: enContacto,       color: 'bg-violet-400', pct: (enContacto      / total) * 100 },
+                { label: 'Sin asignar (pendiente contactar)', valor: pendientesReales, color: 'bg-slate-300', pct: (pendientesReales / total) * 100 },
+                { label: 'En contacto (con gestora, sin cita aún)',      valor: enContacto,       color: 'bg-violet-400', pct: (enContacto      / total) * 100 },
                 { label: 'Citados',                           valor: citados,          color: 'bg-blue-500',   pct: (citados         / total) * 100 },
                 { label: 'Atendidos',                         valor: atendidosTotal,   color: 'bg-emerald-500',pct: (atendidosTotal  / total) * 100 },
                 { label: 'Observados',                        valor: totalObservados,  color: 'bg-amber-400',  pct: (totalObservados / total) * 100 },
@@ -2863,7 +2867,7 @@ export default function Solicitudes({ categoriaInicial } = {}) {
                       )}
                       <span className="flex items-center gap-1.5 text-xs text-slate-500">
                         <span className="w-2 h-2 rounded-full bg-slate-300 flex-shrink-0" />
-                        Sin gestión <strong className="text-slate-700 ml-0.5">{pendientesReales.toLocaleString('es-PE')}</strong>
+                        Sin asignar <strong className="text-slate-700 ml-0.5">{pendientesReales.toLocaleString('es-PE')}</strong>
                       </span>
                     </div>
                   </div>
@@ -2906,15 +2910,20 @@ export default function Solicitudes({ categoriaInicial } = {}) {
                       </div>
 
                       <div className="text-xs text-slate-600 bg-slate-50 rounded-lg px-4 py-3 leading-relaxed border border-slate-200">
-                        <span className="font-bold text-slate-700">¿Cómo se calcula?</span>
-                        <span className="mx-2 text-slate-400">·</span>
-                        <span className="text-violet-700 font-semibold">Gestión</span>
-                        <span className="text-slate-500"> = En contacto + Citados + Atendidos + Observados</span>
-                        <span className="mx-2 text-slate-400">·</span>
-                        <span className="text-emerald-700 font-semibold">Citación</span>
-                        <span className="text-slate-500"> = Citados + Atendidos</span>
-                        <span className="mx-2 text-slate-400">·</span>
-                        <span className="text-slate-500">Denominador: universo total de <strong className="text-slate-700">{total.toLocaleString('es-PE')}</strong> pacientes</span>
+                        <span className="font-bold text-slate-700">¿Cómo se llega al {gestionPct.toFixed(1)}%?</span>
+                        <span className="mx-2 text-slate-400">→</span>
+                        <span className="text-slate-500">
+                          (<strong className="text-violet-700">{enContacto.toLocaleString('es-PE')}</strong> en contacto
+                          {' + '}
+                          <strong className="text-blue-600">{citados.toLocaleString('es-PE')}</strong> citados
+                          {atendidosTotal > 0 && <> {' + '}<strong className="text-emerald-600">{atendidosTotal.toLocaleString('es-PE')}</strong> atendidos</>}
+                          {' + '}
+                          <strong className="text-amber-600">{totalObservados.toLocaleString('es-PE')}</strong> observados)
+                          {' ÷ '}
+                          <strong className="text-slate-700">{total.toLocaleString('es-PE')}</strong> universo
+                          {' = '}
+                          <strong className="text-violet-700">{gestionPct.toFixed(1)}%</strong>
+                        </span>
                       </div>
                     </>
                   )}
