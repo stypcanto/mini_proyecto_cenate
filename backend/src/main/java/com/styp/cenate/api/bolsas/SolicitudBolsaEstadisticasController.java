@@ -226,12 +226,17 @@ public class SolicitudBolsaEstadisticasController {
     /**
      * Estadísticas por IPRESS de Atención
      * GET /api/bolsas/estadisticas/por-ipress-atencion
+     * Acepta filtros opcionales: bolsaNombre, categoriaEspecialidad
      */
     @GetMapping("/por-ipress-atencion")
-    public ResponseEntity<List<EstadisticasPorIpressDTO>> obtenerEstadisticasPorIpressAtencion() {
-        log.info("GET /api/bolsas/estadisticas/por-ipress-atencion");
-        List<EstadisticasPorIpressDTO> datos = estadisticasService.obtenerEstadisticasPorIpressAtencion();
-        return ResponseEntity.ok(datos);
+    public ResponseEntity<List<EstadisticasPorIpressDTO>> obtenerEstadisticasPorIpressAtencion(
+            @RequestParam(required = false) String bolsaNombre,
+            @RequestParam(required = false) String categoriaEspecialidad) {
+        log.info("GET /api/bolsas/estadisticas/por-ipress-atencion — bolsa={}, categoria={}", bolsaNombre, categoriaEspecialidad);
+        if (bolsaNombre != null || categoriaEspecialidad != null) {
+            return ResponseEntity.ok(estadisticasService.obtenerEstadisticasPorIpressAtencionFiltrado(bolsaNombre, categoriaEspecialidad));
+        }
+        return ResponseEntity.ok(estadisticasService.obtenerEstadisticasPorIpressAtencion());
     }
 
     // ========================================================================
@@ -469,6 +474,8 @@ public class SolicitudBolsaEstadisticasController {
             case "OBSERVADOS_ESPECIALIDADES"  -> "pe.estado IN (" + OBS_IN + ") AND (a.paciente_cronico = false OR a.paciente_cronico IS NULL)";
             case "PENDIENTES_CENACRON"        -> "pe.estado = 'PENDIENTE_CITA' AND a.paciente_cronico = true";
             case "PENDIENTES_ESPECIALIDADES"  -> "pe.estado = 'PENDIENTE_CITA' AND (a.paciente_cronico = false OR a.paciente_cronico IS NULL)";
+            case "ATENDIDOS_CENACRON"         -> "pe.estado = 'ATENDIDO' AND a.paciente_cronico = true";
+            case "ATENDIDOS_ESPECIALIDADES"   -> "pe.estado = 'ATENDIDO' AND (a.paciente_cronico = false OR a.paciente_cronico IS NULL)";
             default -> "1=0";
         };
         String cte = """
@@ -540,6 +547,8 @@ public class SolicitudBolsaEstadisticasController {
             case "OBSERVADOS_ESPECIALIDADES" -> "pe.estado IN (" + OBSERVADOS_IN + ") AND (a.paciente_cronico = false OR a.paciente_cronico IS NULL)";
             case "PENDIENTES_CENACRON"       -> "pe.estado = 'PENDIENTE_CITA' AND a.paciente_cronico = true";
             case "PENDIENTES_ESPECIALIDADES" -> "pe.estado = 'PENDIENTE_CITA' AND (a.paciente_cronico = false OR a.paciente_cronico IS NULL)";
+            case "ATENDIDOS_CENACRON"        -> "pe.estado = 'ATENDIDO' AND a.paciente_cronico = true";
+            case "ATENDIDOS_ESPECIALIDADES"  -> "pe.estado = 'ATENDIDO' AND (a.paciente_cronico = false OR a.paciente_cronico IS NULL)";
             default -> "1=0";
         };
 
@@ -726,6 +735,35 @@ public class SolicitudBolsaEstadisticasController {
                     END
             )
             SELECT segmento, estado, COUNT(*) AS cantidad
+            FROM paciente_unico
+            GROUP BY 1, 2
+            ORDER BY 1, 3 DESC
+            """;
+        List<Map<String, Object>> rows = jdbcTemplate.queryForList(sql);
+        return ResponseEntity.ok(rows);
+    }
+
+    /**
+     * v1.85.35: Atendidos por segmento y condicion_medica — Maratón 2026.
+     * GET /api/bolsas/estadisticas/maraton-atendidos
+     * Retorna pacientes únicos con estado ATENDIDO, agrupados por segmento + condicion_medica.
+     */
+    @GetMapping("/maraton-atendidos")
+    public ResponseEntity<List<Map<String, Object>>> obtenerAtendidosMaraton() {
+        log.info("GET /api/bolsas/estadisticas/maraton-atendidos — atendidos por segmento y condición médica");
+        String sql = """
+            WITH paciente_unico AS (
+                SELECT DISTINCT ON (sb.paciente_dni)
+                    sb.paciente_dni,
+                    CASE WHEN sb.id_servicio = 84 THEN 'CRONICOS' ELSE 'ESPECIALIDADES' END AS segmento,
+                    COALESCE(NULLIF(TRIM(sb.condicion_medica), ''), 'Sin especificar') AS condicion_medica
+                FROM dim_solicitud_bolsa sb
+                LEFT JOIN dim_estados_gestion_citas eg ON eg.id_estado_cita = sb.estado_gestion_citas_id
+                WHERE sb.id_bolsa = 17 AND sb.activo = true
+                  AND eg.cod_estado_cita = 'ATENDIDO'
+                ORDER BY sb.paciente_dni
+            )
+            SELECT segmento, condicion_medica, COUNT(*) AS cantidad
             FROM paciente_unico
             GROUP BY 1, 2
             ORDER BY 1, 3 DESC

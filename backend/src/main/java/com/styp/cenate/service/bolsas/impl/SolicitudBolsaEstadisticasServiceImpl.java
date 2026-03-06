@@ -295,6 +295,20 @@ public class SolicitudBolsaEstadisticasServiceImpl implements SolicitudBolsaEsta
                 .collect(Collectors.toList());
     }
 
+    @Override
+    public List<EstadisticasPorIpressDTO> obtenerEstadisticasPorIpressAtencionFiltrado(String bolsaNombre, String categoriaEspecialidad) {
+        log.info("📊 Obteniendo estadísticas por IPRESS Atención filtrado — bolsa={}, categoria={}", bolsaNombre, categoriaEspecialidad);
+
+        List<Map<String, Object>> resultados = solicitudRepository.estadisticasPorIpressAtencionFiltrado(bolsaNombre, categoriaEspecialidad);
+
+        return resultados.stream()
+                .map(row -> EstadisticasPorIpressDTO.builder()
+                        .nombreIpress((String) row.get("nombre_ipress"))
+                        .total(((Number) row.getOrDefault("total", 0L)).longValue())
+                        .build())
+                .collect(Collectors.toList());
+    }
+
     private EstadisticasPorIpressDTO mapearAIpressDTO(Map<String, Object> row) {
         Long ranking = ((Number) row.getOrDefault("ranking", 0L)).longValue();
         BigDecimal tasaCompletacion = (BigDecimal) row.get("tasa_completacion");

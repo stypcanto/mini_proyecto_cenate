@@ -397,7 +397,7 @@ export default function Solicitudes({ categoriaInicial } = {}) {
       try {
         const [ipress, ipressAtencion, especialidad] = await Promise.all([
           bolsasService.obtenerEstadisticasPorIpress().catch(() => []),
-          bolsasService.obtenerEstadisticasPorIpressAtencion().catch(() => []),
+          bolsasService.obtenerEstadisticasPorIpressAtencion(categoriaEspecialidad ? { categoriaEspecialidad } : {}).catch(() => []),
           bolsasService.obtenerEstadisticasPorEspecialidad().catch(() => []),
         ]);
         if (mounted) {
@@ -453,6 +453,23 @@ export default function Solicitudes({ categoriaInicial } = {}) {
     })();
     return () => { mounted = false; };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ============================================================================
+  // 📦 EFFECT 2.6c: Recargar IPRESS Atención cuando cambia el filtro de bolsa
+  // Muestra counts contextuales: si hay bolsa activa, solo cuenta esa bolsa
+  // ============================================================================
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      const bolsaNombre = filtroBolsa.length > 0 ? filtroBolsa.join(',') : null;
+      const params = {};
+      if (bolsaNombre) params.bolsaNombre = bolsaNombre;
+      if (categoriaEspecialidad) params.categoriaEspecialidad = categoriaEspecialidad;
+      const data = await bolsasService.obtenerEstadisticasPorIpressAtencion(params).catch(() => []);
+      if (mounted) setEstadisticasIpressAtencion(data || []);
+    })();
+    return () => { mounted = false; };
+  }, [filtroBolsa]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ============================================================================
   // 📦 EFFECT 3: Filtrado AUTOMÁTICO cuando cambian los filtros (v2.6.0 - UX: instant filtering)
