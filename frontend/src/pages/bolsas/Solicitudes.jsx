@@ -2878,14 +2878,16 @@ export default function Solicitudes({ categoriaInicial } = {}) {
                   </div>
 
                   {/* ── Leyenda de cálculo ── */}
-                  <div className="text-[10px] text-slate-400 bg-slate-50 rounded-lg px-3 py-2 leading-relaxed border border-slate-100">
-                    <span className="font-semibold text-slate-500">¿Cómo se calcula?</span>
-                    {' · '}
-                    <span className="text-violet-600 font-medium">Gestión</span> = En contacto + Citados + Atendidos + Observados
-                    {' · '}
-                    <span className="text-emerald-600 font-medium">Citación</span> = Citados + Atendidos
-                    {' · '}
-                    Denominador: universo total de {total.toLocaleString('es-PE')} pacientes
+                  <div className="text-xs text-slate-600 bg-slate-50 rounded-lg px-4 py-3 leading-relaxed border border-slate-200">
+                    <span className="font-bold text-slate-700">¿Cómo se calcula?</span>
+                    <span className="mx-2 text-slate-400">·</span>
+                    <span className="text-violet-700 font-semibold">Gestión</span>
+                    <span className="text-slate-500"> = En contacto + Citados + Atendidos + Observados</span>
+                    <span className="mx-2 text-slate-400">·</span>
+                    <span className="text-emerald-700 font-semibold">Citación</span>
+                    <span className="text-slate-500"> = Citados + Atendidos</span>
+                    <span className="mx-2 text-slate-400">·</span>
+                    <span className="text-slate-500">Denominador: universo total de <strong className="text-slate-700">{total.toLocaleString('es-PE')}</strong> pacientes</span>
                   </div>
                 </div>
               );
