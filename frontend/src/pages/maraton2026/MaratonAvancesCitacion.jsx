@@ -583,7 +583,7 @@ export default function MaratonAvancesCitacion() {
     setExporting(true);
     try {
       const res = await obtenerPacientesMaratonCategoria('UNIVERSO', '', 0, 99999);
-      const headers = ['#', 'Tipo Doc', 'N° Documento', 'Nombres y Apellidos', 'Sexo', 'Edad', 'IPRESS', 'Red', 'Macrorred', 'Estado Gestión'];
+      const headers = ['#', 'Tipo Doc', 'N° Documento', 'Nombres y Apellidos', 'Sexo', 'Edad', 'IPRESS', 'Red', 'Macrorred', 'Especialidad', 'Estado Gestión'];
       const dataRows = (res?.content ?? []).map((r, i) => [
         i + 1,
         r.tipo_doc        ?? '',
@@ -594,6 +594,7 @@ export default function MaratonAvancesCitacion() {
         r.ipress          ?? '',
         r.red             ?? '',
         r.macrorred       ?? '',
+        r.especialidad    ?? '',
         r.estado_gestion  ?? '',
       ]);
       const ws = XLSX.utils.aoa_to_sheet([headers, ...dataRows]);
