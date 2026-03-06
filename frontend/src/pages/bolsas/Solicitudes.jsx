@@ -2773,19 +2773,18 @@ export default function Solicitudes({ categoriaInicial } = {}) {
               const citados       = estadisticas.citados   || 0;
               const pendientes    = estadisticas.pendientes || 0;
 
-              // ATENDIDO_IPRESS cuenta igual que ATENDIDO
-              const atendidosIpress = Array.isArray(estadisticasGlobales)
-                ? (estadisticasGlobales.find(s => s.estado?.toUpperCase() === 'ATENDIDO_IPRESS')?.cantidad || 0)
-                : 0;
-              const atendidosTotal = atendidos + atendidosIpress;
+              // ATENDIDO_IPRESS = atendido en IPRESS local, NO por telemedicina → es observado
+              // Solo cuenta como "atendido" el ATENDIDO puro (por CENATE)
+              const atendidosTotal = atendidos; // solo ATENDIDO puro
 
               // En contacto = CON_GESTORA (asignada pero aún sin cita ni observado)
               const enContacto = Array.isArray(estadisticasGlobales)
                 ? (estadisticasGlobales.find(s => s.estado?.toUpperCase() === 'CON_GESTORA')?.cantidad || 0)
                 : 0;
 
-              // Observados = todo lo que no es estado "base" ni sintético
-              const ESTADOS_BASE = new Set(['PENDIENTE_CITA', 'CITADO', 'ATENDIDO', 'ATENDIDO_IPRESS', 'SIN_GESTORA', 'CON_GESTORA', 'ASIGNADOS']);
+              // Observados = todo lo que no es PENDIENTE/CITADO/ATENDIDO puro ni sintético
+              // ATENDIDO_IPRESS incluido aquí (fuera del alcance de telemedicina)
+              const ESTADOS_BASE = new Set(['PENDIENTE_CITA', 'CITADO', 'ATENDIDO', 'SIN_GESTORA', 'CON_GESTORA', 'ASIGNADOS']);
               const totalObservados = Array.isArray(estadisticasGlobales)
                 ? estadisticasGlobales
                     .filter(s => !ESTADOS_BASE.has(s.estado?.toUpperCase()))
@@ -2794,13 +2793,11 @@ export default function Solicitudes({ categoriaInicial } = {}) {
 
               const total = Math.max(universo, 1);
 
-              // ── Métrica 1: Avance de Gestión (todos los que fueron trabajados)
-              // = En contacto + Citados + Atendidos + Observados
+              // ── Avance de Gestión = todos los pacientes trabajados
               const gestionados  = enContacto + citados + atendidosTotal + totalObservados;
               const gestionPct   = (gestionados / total) * 100;
 
-              // ── Métrica 2: Avance de Citación (resultado concreto)
-              // = Citados + Atendidos
+              // ── Citas logradas = CITADO + ATENDIDO por CENATE
               const conCita      = citados + atendidosTotal;
               const citacionPct  = (conCita / total) * 100;
 
@@ -3847,7 +3844,6 @@ export default function Solicitudes({ categoriaInicial } = {}) {
                       { label: 'F. Atención Méd.', key: 'fechaAtencionMedica' },
                       { label: 'Fecha Asignación', key: 'fechaAsignacion' },
                       { label: 'Gestora Asignada', key: 'gestoraAsignada' },
-                      { label: 'Usuario Cambio Estado', key: 'usuarioCambioEstado' },
                     ].map(({ label, key, tooltip }) => {
                       const isActive = sortConfig.key === key;
                       return (
