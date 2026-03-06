@@ -1906,7 +1906,7 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
         LEFT JOIN dim_usuarios umed     ON umed.id_user = pc.id_usuario
         WHERE UPPER(recita.tipo_cita) IN ('RECITA','INTERCONSULTA')
           AND recita.activo = true
-          AND recita.id_bolsa = 11
+          AND recita.id_bolsa IN (11, 15, 16)
           AND UPPER(COALESCE(orig_d.especialidad, orig_t.especialidad, '')) = 'ENFERMERIA'
           AND (:busqueda    IS NULL OR recita.paciente_dni    ILIKE '%' || :busqueda || '%'
                                    OR recita.paciente_nombre  ILIKE '%' || :busqueda || '%')
@@ -1979,7 +1979,7 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
         ) orig_ac ON COALESCE(recita.id_personal, orig_d.id_personal, orig_t.id_personal) IS NULL
         LEFT JOIN atencion_clinica ac_fk ON ac_fk.id_atencion = recita.id_atencion_clinica
         WHERE UPPER(recita.tipo_cita) IN ('RECITA','INTERCONSULTA')
-          AND recita.activo = true AND recita.id_bolsa = 11
+          AND recita.activo = true AND recita.id_bolsa IN (11, 15, 16)
           AND UPPER(COALESCE(orig_d.especialidad, orig_t.especialidad, '')) = 'ENFERMERIA'
           AND (:busqueda    IS NULL OR recita.paciente_dni    ILIKE '%' || :busqueda    || '%'
                                    OR recita.paciente_nombre  ILIKE '%' || :busqueda    || '%')
@@ -2041,7 +2041,7 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
         LEFT JOIN dim_personal_cnt pc ON pc.id_pers = COALESCE(recita.id_personal, orig_d.id_personal, orig_t.id_personal, orig_ac.id_personal)
         WHERE UPPER(recita.tipo_cita) IN ('RECITA','INTERCONSULTA')
           AND recita.activo = true
-          AND recita.id_bolsa = 11
+          AND recita.id_bolsa IN (11, 15, 16)
           AND UPPER(COALESCE(orig_d.especialidad, orig_t.especialidad, '')) = 'ENFERMERIA'
           AND COALESCE(recita.id_personal, orig_d.id_personal, orig_t.id_personal, orig_ac.id_personal) IS NOT NULL
         GROUP BY COALESCE(recita.id_personal, orig_d.id_personal, orig_t.id_personal, orig_ac.id_personal),
@@ -2097,7 +2097,7 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
                ON orig_d.id_solicitud = recita.idsolicitudgeneracion
         WHERE UPPER(recita.tipo_cita) IN ('RECITA','INTERCONSULTA')
           AND recita.activo = true
-          AND recita.id_bolsa = 11
+          AND recita.id_bolsa IN (11, 15, 16)
           AND UPPER(COALESCE(orig_d.especialidad, '')) = 'ENFERMERIA'
           AND recita.fecha_preferida_no_atendida IS NOT NULL
         GROUP BY recita.fecha_preferida_no_atendida
@@ -2113,7 +2113,7 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
         FROM   dim_solicitud_bolsa recita
         WHERE  UPPER(recita.tipo_cita) = 'RECITA'
           AND  recita.activo = true
-          AND  recita.id_bolsa = 11
+          AND  recita.id_bolsa IN (11, 15, 16)
           AND  recita.especialidad IS NOT NULL
         GROUP BY recita.especialidad
         ORDER BY total DESC, valor ASC
@@ -2127,7 +2127,7 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
         FROM   dim_solicitud_bolsa recita
         WHERE  UPPER(recita.tipo_cita) = 'INTERCONSULTA'
           AND  recita.activo = true
-          AND  recita.id_bolsa = 11
+          AND  recita.id_bolsa IN (11, 15, 16)
           AND  recita.especialidad IS NOT NULL
           AND  SUBSTRING(recita.especialidad FROM '\\(([^)]+)\\)') IS NOT NULL
         GROUP BY valor
@@ -2141,7 +2141,7 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
         FROM   dim_solicitud_bolsa recita
         WHERE  UPPER(recita.tipo_cita) IN ('RECITA','INTERCONSULTA')
           AND  recita.activo = true
-          AND  recita.id_bolsa = 11
+          AND  recita.id_bolsa IN (11, 15, 16)
           AND  recita.estado IS NOT NULL
         GROUP BY recita.estado
         ORDER BY total DESC, valor ASC
@@ -2177,7 +2177,7 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
         LEFT JOIN dim_personal_cnt pc ON pc.id_pers = COALESCE(recita.id_personal, orig_d.id_personal, orig_t.id_personal, orig_ac.id_personal)
         WHERE  UPPER(recita.tipo_cita) IN ('RECITA','INTERCONSULTA')
           AND  recita.activo = true
-          AND  recita.id_bolsa = 11
+          AND  recita.id_bolsa IN (11, 15, 16)
           AND  COALESCE(recita.id_personal, orig_d.id_personal, orig_t.id_personal, orig_ac.id_personal) IS NOT NULL
         GROUP BY pc.ape_pater_pers, pc.ape_mater_pers, pc.nom_pers
         ORDER BY total DESC, valor ASC
