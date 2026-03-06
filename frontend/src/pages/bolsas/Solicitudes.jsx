@@ -2749,85 +2749,145 @@ export default function Solicitudes({ categoriaInicial } = {}) {
         {/* ═══ BARRA DE PROGRESO DE CAMPAÑA — Solo Maratón ═══ */}
         {categoriaInicial === 'maraton' && estadisticas.total !== null && (
           <div className="mb-6 bg-white rounded-xl border border-gray-200 shadow-sm px-5 py-4">
-            <div className="flex items-center justify-between mb-3">
+
+            {/* Header */}
+            <div className="flex items-center justify-between mb-4">
               <span className="text-sm font-semibold text-gray-700">Progreso de la campaña</span>
               <span className="text-xs text-gray-400">
-                {(maratonUniversoTotal ?? estadisticas.total)?.toLocaleString('es-PE')} pacientes universo
+                Universo: <strong className="text-gray-600">{(maratonUniversoTotal ?? estadisticas.total)?.toLocaleString('es-PE')}</strong> pacientes
               </span>
             </div>
 
-            {/* Barra de progreso de campaña */}
             {(() => {
-              const atendidos  = estadisticas.atendidos  || 0;
-              const citados    = estadisticas.citados    || 0;
-              const pendientes = estadisticas.pendientes || 0;
-              // ATENDIDO_IPRESS cuenta como "completado" igual que ATENDIDO
+              const universo      = maratonUniversoTotal ?? estadisticas.total ?? 1;
+              const atendidos     = estadisticas.atendidos || 0;
+              const citados       = estadisticas.citados   || 0;
+              const pendientes    = estadisticas.pendientes || 0;
+
+              // ATENDIDO_IPRESS cuenta igual que ATENDIDO
               const atendidosIpress = Array.isArray(estadisticasGlobales)
                 ? (estadisticasGlobales.find(s => s.estado?.toUpperCase() === 'ATENDIDO_IPRESS')?.cantidad || 0)
                 : 0;
               const atendidosTotal = atendidos + atendidosIpress;
-              // Todos los estados "observados" = todo lo que no es PENDIENTE, CITADO, ATENDIDO*, ni sintéticos
+
+              // En contacto = CON_GESTORA (asignada pero aún sin cita ni observado)
+              const enContacto = Array.isArray(estadisticasGlobales)
+                ? (estadisticasGlobales.find(s => s.estado?.toUpperCase() === 'CON_GESTORA')?.cantidad || 0)
+                : 0;
+
+              // Observados = todo lo que no es estado "base" ni sintético
               const ESTADOS_BASE = new Set(['PENDIENTE_CITA', 'CITADO', 'ATENDIDO', 'ATENDIDO_IPRESS', 'SIN_GESTORA', 'CON_GESTORA', 'ASIGNADOS']);
               const totalObservados = Array.isArray(estadisticasGlobales)
                 ? estadisticasGlobales
                     .filter(s => !ESTADOS_BASE.has(s.estado?.toUpperCase()))
                     .reduce((sum, s) => sum + (s.cantidad || 0), 0)
                 : (estadisticas.noContesto || 0) + (estadisticas.rechazados || 0);
-              // Denominador = suma de todos los estados conocidos (evita distorsión por estados no mapeados)
-              const total = Math.max(pendientes + atendidosTotal + citados + totalObservados, 1);
-              // Porcentajes sobre el total conocido
-              const atePct  = (atendidosTotal   / total) * 100;
-              const citPct  = (citados          / total) * 100;
-              const obsPct  = (totalObservados  / total) * 100;
-              // El avance total (todos los que ya tuvieron alguna acción)
-              const avancePct = atePct + citPct + obsPct;
+
+              const total = Math.max(universo, 1);
+
+              // ── Métrica 1: Avance de Gestión (todos los que fueron trabajados)
+              // = En contacto + Citados + Atendidos + Observados
+              const gestionados  = enContacto + citados + atendidosTotal + totalObservados;
+              const gestionPct   = (gestionados / total) * 100;
+
+              // ── Métrica 2: Avance de Citación (resultado concreto)
+              // = Citados + Atendidos
+              const conCita      = citados + atendidosTotal;
+              const citacionPct  = (conCita / total) * 100;
+
+              // Pendiente real = sin ninguna gestión
+              const pendientesReales = total - gestionados;
+
+              // Filas de desglose
+              const filas = [
+                { label: 'Sin gestión (pendiente contactar)', valor: pendientesReales, color: 'bg-slate-300', pct: (pendientesReales / total) * 100 },
+                { label: 'En contacto',                       valor: enContacto,       color: 'bg-violet-400', pct: (enContacto      / total) * 100 },
+                { label: 'Citados',                           valor: citados,          color: 'bg-blue-500',   pct: (citados         / total) * 100 },
+                { label: 'Atendidos',                         valor: atendidosTotal,   color: 'bg-emerald-500',pct: (atendidosTotal  / total) * 100 },
+                { label: 'Observados',                        valor: totalObservados,  color: 'bg-amber-400',  pct: (totalObservados / total) * 100 },
+              ].filter(f => f.valor > 0);
+
+              const BarraSencilla = ({ pct, colorClass, label }) => (
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-xs font-medium text-gray-600">{label}</span>
+                    <span className="text-xs font-bold text-gray-800">{pct.toFixed(1)}%</span>
+                  </div>
+                  <div className="w-full bg-slate-100 rounded-full h-4 overflow-hidden">
+                    <div
+                      className={`${colorClass} h-full rounded-full transition-all duration-700`}
+                      style={{ width: `${Math.min(pct, 100)}%` }}
+                    />
+                  </div>
+                </div>
+              );
 
               return (
-                <>
-                  {/* Barra de progreso: fondo gris = pendientes, colores = avance */}
-                  <div className="relative h-6 rounded-full overflow-hidden mb-3" style={{ background: '#cbd5e1' }}>
-                    {/* Franja de avance (apilada de izquierda a derecha) */}
-                    <div className="absolute inset-y-0 left-0 flex rounded-full overflow-hidden" style={{ width: `${avancePct}%`, transition: 'width 0.6s ease' }}>
-                      {atePct > 0 && <div className="bg-emerald-500 h-full" style={{ flex: atePct }} title="Atendidos" />}
-                      {citPct > 0 && <div className="bg-blue-500   h-full" style={{ flex: citPct }} title="Citados" />}
-                      {obsPct > 0 && <div className="bg-amber-400  h-full" style={{ flex: obsPct }} title="Observados (no contesta, rechazado, apagado, etc.)" />}
+                <div className="space-y-4">
+                  {/* ── Dos barras principales ── */}
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                    <div className="bg-slate-50 rounded-lg px-4 py-3 border border-slate-100">
+                      <BarraSencilla pct={gestionPct} colorClass="bg-violet-500" label="Avance de gestión" />
+                      <p className="mt-1.5 text-[10px] text-slate-400 leading-tight">
+                        En contacto + Citados + Atendidos + Observados<br/>
+                        <span className="font-medium text-slate-500">{gestionados.toLocaleString('es-PE')} de {total.toLocaleString('es-PE')}</span>
+                      </p>
                     </div>
-                    {/* Etiqueta % dentro de la barra */}
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <span className="text-xs font-bold text-white drop-shadow" style={{ textShadow: '0 1px 2px rgba(0,0,0,0.5)' }}>
-                        {avancePct < 0.1 ? 'Sin avance aún — pendiente iniciar citaciones' : `${avancePct.toFixed(1)}% gestionado`}
-                      </span>
+                    <div className="bg-slate-50 rounded-lg px-4 py-3 border border-slate-100">
+                      <BarraSencilla pct={citacionPct} colorClass="bg-emerald-500" label="Avance de citación" />
+                      <p className="mt-1.5 text-[10px] text-slate-400 leading-tight">
+                        Citados + Atendidos (cita concretada)<br/>
+                        <span className="font-medium text-slate-500">{conCita.toLocaleString('es-PE')} de {total.toLocaleString('es-PE')}</span>
+                      </p>
                     </div>
                   </div>
 
-                  {/* Leyenda */}
-                  <div className="flex flex-wrap gap-x-5 gap-y-1.5">
-                    <span className="flex items-center gap-1.5 text-xs text-gray-500">
-                      <span className="w-2.5 h-2.5 rounded-full bg-slate-400 inline-block flex-shrink-0" />
-                      Pendiente citar <strong className="text-gray-700 ml-1">{pendientes.toLocaleString('es-PE')}</strong>
-                    </span>
-                    <span className="flex items-center gap-1.5 text-xs text-gray-500">
-                      <span className="w-2.5 h-2.5 rounded-full bg-blue-500 inline-block flex-shrink-0" />
-                      Citados <strong className="text-gray-700 ml-1">{citados.toLocaleString('es-PE')}</strong>
-                    </span>
-                    {atendidosTotal > 0 && (
-                      <span className="flex items-center gap-1.5 text-xs text-gray-500">
-                        <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block flex-shrink-0" />
-                        Atendidos <strong className="text-gray-700 ml-1">{atendidosTotal.toLocaleString('es-PE')}</strong>
-                      </span>
-                    )}
-                    {totalObservados > 0 && (
-                      <span className="flex items-center gap-1.5 text-xs text-gray-500">
-                        <span className="w-2.5 h-2.5 rounded-full bg-amber-400 inline-block flex-shrink-0" />
-                        Observados <strong className="text-gray-700 ml-1">{totalObservados.toLocaleString('es-PE')}</strong>
-                        <span className="text-gray-400">(no contesta, apagado, rechazado…)</span>
-                      </span>
-                    )}
-                    <span className="ml-auto text-xs font-semibold text-emerald-700">
-                      Gestionado: {avancePct.toFixed(1)}%
-                    </span>
+                  {/* ── Tabla de desglose ── */}
+                  <div className="overflow-hidden rounded-lg border border-slate-100">
+                    <table className="w-full text-xs">
+                      <thead>
+                        <tr className="bg-slate-50 border-b border-slate-100">
+                          <th className="text-left px-3 py-2 text-slate-500 font-medium">Estado</th>
+                          <th className="text-right px-3 py-2 text-slate-500 font-medium">Pacientes</th>
+                          <th className="text-right px-3 py-2 text-slate-500 font-medium w-16">%</th>
+                          <th className="px-3 py-2 w-28" />
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-50">
+                        {filas.map(f => (
+                          <tr key={f.label} className="hover:bg-slate-50/60">
+                            <td className="px-3 py-1.5 flex items-center gap-2">
+                              <span className={`w-2 h-2 rounded-full flex-shrink-0 ${f.color}`} />
+                              <span className="text-slate-600">{f.label}</span>
+                            </td>
+                            <td className="px-3 py-1.5 text-right font-semibold text-slate-700">
+                              {f.valor.toLocaleString('es-PE')}
+                            </td>
+                            <td className="px-3 py-1.5 text-right text-slate-500">
+                              {f.pct.toFixed(1)}%
+                            </td>
+                            <td className="px-3 py-1.5">
+                              <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
+                                <div className={`${f.color} h-full rounded-full`} style={{ width: `${Math.min(f.pct, 100)}%` }} />
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
                   </div>
-                </>
+
+                  {/* ── Leyenda de cálculo ── */}
+                  <div className="text-[10px] text-slate-400 bg-slate-50 rounded-lg px-3 py-2 leading-relaxed border border-slate-100">
+                    <span className="font-semibold text-slate-500">¿Cómo se calcula?</span>
+                    {' · '}
+                    <span className="text-violet-600 font-medium">Gestión</span> = En contacto + Citados + Atendidos + Observados
+                    {' · '}
+                    <span className="text-emerald-600 font-medium">Citación</span> = Citados + Atendidos
+                    {' · '}
+                    Denominador: universo total de {total.toLocaleString('es-PE')} pacientes
+                  </div>
+                </div>
               );
             })()}
           </div>
