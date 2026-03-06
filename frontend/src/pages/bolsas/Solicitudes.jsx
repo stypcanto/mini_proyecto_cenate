@@ -127,9 +127,12 @@ export default function Solicitudes({ categoriaInicial } = {}) {
   const [desglosAbierto, setDesglosAbierto] = useState(false);
   const [desgloseData, setDesgloseData] = useState(null);
   const [desgloseLoading, setDesgloseLoading] = useState(false);
+  const [desgloseTab, setDesgloseTab] = useState('todos');
+  const [desgloseSegmentos, setDesgloseSegmentos] = useState(null);
   const [cenacronCount, setCenacronCount] = useState(null);           // Conteo CENACRON en contexto actual
   const [maratonCount, setMaratonCount] = useState(null);             // Conteo MARATON en contexto actual
   const [maratonUniversoTotal, setMaratonUniversoTotal] = useState(null); // Total MARATÓN desde paciente_estrategia (13,402)
+  const [maratonSegmentos, setMaratonSegmentos] = useState(null); // {cenacronCitados, especialidadesCitados}
   const [kpiCenacron, setKpiCenacron] = useState(null); // {citados, universo} para segmento CENACRON dentro de Maratón
   const [filtroFechaInicio, setFiltroFechaInicio] = useState('');     // ✅ v1.66.0: Filtro rango de fechas - inicio
   const [filtroFechaFin, setFiltroFechaFin] = useState('');           // ✅ v1.66.0: Filtro rango de fechas - fin
@@ -410,10 +413,12 @@ export default function Solicitudes({ categoriaInicial } = {}) {
                 categoriaInicial === 'maraton'
                   ? apiClient.get('/asegurados?maraton=true&page=0&size=1', true).catch(() => null)
                   : Promise.resolve(null),
-                // Nota: termómetros de meta usan estadisticasGlobales directamente (misma fuente que cards)
-                // → eliminada la llamada separada kpiCenacronData para evitar desincronización
+                // Para Maratón: citados segmentados (CENACRON vs ESPECIALIDADES) para termómetros de meta
+                categoriaInicial === 'maraton'
+                  ? bolsasService.obtenerEstadisticasMaratonSegmentos().catch(() => null)
+                  : Promise.resolve(null),
               ];
-              const [naAdsc, naAten, cnCenacron, cnMaraton, maratonUniverse] = await Promise.all(promises);
+              const [naAdsc, naAten, cnCenacron, cnMaraton, maratonUniverse, segmentos] = await Promise.all(promises);
               if (mounted) {
                 setIpressNaCount(naAdsc?.totalElements ?? null);
                 setIpressAtencionNaCount(naAten?.totalElements ?? null);
@@ -421,6 +426,9 @@ export default function Solicitudes({ categoriaInicial } = {}) {
                 setMaratonCount(cnMaraton?.totalElements ?? null);
                 if (maratonUniverse?.totalElements != null) {
                   setMaratonUniversoTotal(maratonUniverse.totalElements);
+                }
+                if (segmentos != null) {
+                  setMaratonSegmentos(segmentos);
                 }
               }
             } catch (_) {}
@@ -2257,9 +2265,15 @@ export default function Solicitudes({ categoriaInicial } = {}) {
                 const universoBase = maratonUniversoTotal ?? estadisticas.total ?? 1;
                 const pct = (n) => universoBase > 0 ? ((n / universoBase) * 100).toFixed(1) : '0.0';
                 const cargarDesglose = async () => {
-                  setDesglosAbierto(true); setDesgloseLoading(true);
-                  try { const kpi = await bolsasService.obtenerKpiConFiltros({ categoriaEspecialidad: 'maraton' }); setDesgloseData(kpi); }
-                  catch { setDesgloseData(null); } finally { setDesgloseLoading(false); }
+                  setDesglosAbierto(true); setDesgloseLoading(true); setDesgloseTab('todos');
+                  try {
+                    const [kpi, segs] = await Promise.all([
+                      bolsasService.obtenerKpiConFiltros({ categoriaEspecialidad: 'maraton' }),
+                      bolsasService.obtenerDesgloseMaratonSegmentos().catch(() => null),
+                    ]);
+                    setDesgloseData(kpi);
+                    setDesgloseSegmentos(segs);
+                  } catch { setDesgloseData(null); } finally { setDesgloseLoading(false); }
                 };
                 // Observados = estados excepcionales (excluye PENDIENTE_CITA, CITADO, ATENDIDO y sintéticos)
                 // Misma fórmula que la barra de progreso → números siempre coherentes
@@ -2356,8 +2370,8 @@ export default function Solicitudes({ categoriaInicial } = {}) {
                       const META_CENACRON = 3600;
                       const META_ESPECIALIDADES = 360;
                       // Fuente única: estadisticasGlobales (misma que cards) → números siempre consistentes
-                      const cenacronCitados = (estadisticas.citados ?? 0) + (estadisticas.atendidos ?? 0);
-                      const espCitados = 0; // Especialidades aún no iniciadas en esta bolsa
+                      const cenacronCitados = maratonSegmentos?.cenacronCitados ?? 0;
+                      const espCitados = maratonSegmentos?.especialidadesCitados ?? 0;
                       const cenacronPct = Math.min(100, (cenacronCitados / META_CENACRON) * 100);
                       const espPct = Math.min(100, (espCitados / META_ESPECIALIDADES) * 100);
 
@@ -2617,7 +2631,7 @@ export default function Solicitudes({ categoriaInicial } = {}) {
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
-                  <button onClick={async () => { setDesgloseLoading(true); try { const kpi = await bolsasService.obtenerKpiConFiltros({ categoriaEspecialidad: 'maraton' }); setDesgloseData(kpi); } catch {} finally { setDesgloseLoading(false); } }}
+                  <button onClick={async () => { setDesgloseLoading(true); try { const [kpi, segs] = await Promise.all([bolsasService.obtenerKpiConFiltros({ categoriaEspecialidad: 'maraton' }), bolsasService.obtenerDesgloseMaratonSegmentos().catch(()=>null)]); setDesgloseData(kpi); setDesgloseSegmentos(segs); } catch {} finally { setDesgloseLoading(false); } }}
                     className="p-2 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors">
                     <RefreshCw className={`w-4 h-4 ${desgloseLoading ? 'animate-spin' : ''}`} />
                   </button>
@@ -2626,25 +2640,62 @@ export default function Solicitudes({ categoriaInicial } = {}) {
                   </button>
                 </div>
               </div>
+              {/* Tabs TODOS / CENACRON / ESPECIALIDADES */}
+              <div className="flex items-center gap-1 px-6 py-2 border-b border-gray-100 bg-gray-50">
+                {[
+                  { key: 'todos', label: 'Todos' },
+                  { key: 'cenacron', label: '🟣 CENACRON' },
+                  { key: 'especialidades', label: '🟠 Especialidades' },
+                ].map(tab => (
+                  <button key={tab.key} onClick={() => setDesgloseTab(tab.key)}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
+                      desgloseTab === tab.key
+                        ? 'bg-white text-gray-900 shadow-sm border border-gray-200'
+                        : 'text-gray-500 hover:text-gray-700 hover:bg-white/60'
+                    }`}>
+                    {tab.label}
+                  </button>
+                ))}
+              </div>
               {/* Body */}
               <div className="overflow-y-auto flex-1 px-6 py-4">
                 {desgloseLoading ? (
                   <div className="flex items-center justify-center py-12 text-gray-400 gap-2">
                     <Loader className="w-5 h-5 animate-spin" /> Cargando datos...
                   </div>
-                ) : Array.isArray(desgloseData) && desgloseData.length > 0 ? (() => {
+                ) : (() => {
                   const ESTADOS_LABEL = {
                     PENDIENTE_CITA: 'Pendiente de citar', CITADO: 'Cita confirmada',
-                    ATENDIDO: 'Atendido', ATENDIDO_IPRESS: 'Ya fue atendido en IPRESS',
+                    ATENDIDO: 'Atendido', ATENDIDO_IPRESS: 'Atendido en IPRESS (no por CENATE)',
                     NO_CONTESTA: 'No responde llamadas', NO_CONTESTO: 'No contestó',
                     APAGADO: 'Teléfono apagado', TEL_SIN_SERVICIO: 'Teléfono sin servicio',
                     NO_DESEA: 'Rechazó la cita', RECHAZADO: 'Rechazado por gestora',
                     NUM_NO_EXISTE: 'Número no existe', NO_IPRESS_CENATE: 'IPRESS no cubre CENATE',
                     SIN_VIGENCIA: 'Sin seguro vigente', YA_NO_REQUIERE: 'Ya no requiere atención',
                     PARTICULAR: 'Atención particular', REPROG_FALLIDA: 'Reprogramación fallida',
+                    SIN_ESTADO: 'Sin gestión asignada', FALLECIDO: 'Fallecido',
+                    NO_GRUPO_ETARIO: 'Fuera de grupo etario',
                   };
-                  const EXCLUIR = ['PENDIENTE_CITA', 'CITADO', 'SIN_GESTORA', 'CON_GESTORA'];
-                  const filas = desgloseData
+
+                  // Fuente de datos según tab activo
+                  const esTodos = desgloseTab === 'todos';
+                  const rawData = esTodos
+                    ? desgloseData
+                    : Array.isArray(desgloseSegmentos)
+                      ? desgloseSegmentos
+                          .filter(r => r.segmento === (desgloseTab === 'cenacron' ? 'CENACRON' : 'ESPECIALIDADES'))
+                          .map(r => ({ estado: r.estado, cantidad: Number(r.cantidad) }))
+                      : null;
+
+                  if (!Array.isArray(rawData) || rawData.length === 0) {
+                    return <div className="text-center py-12 text-gray-400">No se pudieron cargar los datos</div>;
+                  }
+
+                  const EXCLUIR_TODOS = ['PENDIENTE_CITA', 'CITADO', 'SIN_GESTORA', 'CON_GESTORA'];
+                  const EXCLUIR_SEG  = ['SIN_GESTORA', 'CON_GESTORA'];
+                  const EXCLUIR = esTodos ? EXCLUIR_TODOS : EXCLUIR_SEG;
+
+                  const filas = rawData
                     .filter(r => !EXCLUIR.includes(r.estado))
                     .sort((a, b) => b.cantidad - a.cantidad);
                   const totalObservados = filas.reduce((s, r) => s + r.cantidad, 0);
@@ -2656,7 +2707,7 @@ export default function Solicitudes({ categoriaInicial } = {}) {
                       color: '#16a34a',
                       bg: 'bg-green-50',
                       badgeBg: 'bg-green-100 text-green-800',
-                      estados: ['CITADO', 'ATENDIDO', 'ATENDIDO_IPRESS'],
+                      estados: ['CITADO', 'ATENDIDO'],
                     },
                     {
                       key: 'proceso',
@@ -2728,9 +2779,7 @@ export default function Solicitudes({ categoriaInicial } = {}) {
                       </div>
                     </div>
                   );
-                })() : (
-                  <div className="text-center py-12 text-gray-400">No se pudieron cargar los datos</div>
-                )}
+                })()}
               </div>
             </div>
           </div>

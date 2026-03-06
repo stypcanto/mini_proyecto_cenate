@@ -76,6 +76,8 @@ export default function BuscarAsegurado() {
   const [selectedIpress, setSelectedIpress] = useState("");
   const [soloCenacron, setSoloCenacron] = useState(false);
   const [soloMaraton, setSoloMaraton] = useState(false);
+  const [maratonSubfiltro, setMaratonSubfiltro] = useState(null); // null | 'cenacron' | 'especialidades'
+  const [maratonDropdownOpen, setMaratonDropdownOpen] = useState(false);
   const [soloDniValido, setSoloDniValido] = useState(false);
   const [soloExtranjero, setSoloExtranjero] = useState(false);
   const [sinIpress, setSinIpress] = useState(false);
@@ -175,7 +177,7 @@ export default function BuscarAsegurado() {
     if (selectedRed || selectedIpress || selectedIpressAtencion || soloCenacron || soloMaraton || soloDniValido || soloExtranjero || sinIpress) {
       setCurrentPage(0);
     }
-  }, [selectedRed, selectedIpress, selectedIpressAtencion, soloCenacron, soloMaraton, soloDniValido, soloExtranjero, sinIpress]);
+  }, [selectedRed, selectedIpress, selectedIpressAtencion, soloCenacron, soloMaraton, maratonSubfiltro, soloDniValido, soloExtranjero, sinIpress]);
 
   // ✅ Debounce para la búsqueda
   useEffect(() => {
@@ -192,7 +194,7 @@ export default function BuscarAsegurado() {
   // Cargar asegurados con paginación
   useEffect(() => {
     cargarAsegurados();
-  }, [currentPage, debouncedSearchValue, selectedRed, selectedIpress, selectedIpressAtencion, soloCenacron, soloMaraton, soloDniValido, soloExtranjero, sinIpress]);
+  }, [currentPage, debouncedSearchValue, selectedRed, selectedIpress, selectedIpressAtencion, soloCenacron, soloMaraton, maratonSubfiltro, soloDniValido, soloExtranjero, sinIpress]);
 
   // 🔍 Validar DNI en tiempo real cuando tiene 8 dígitos (solo cuando está creando)
   useEffect(() => {
@@ -273,6 +275,8 @@ export default function BuscarAsegurado() {
         if (selectedIpress) params += `&codIpress=${encodeURIComponent(selectedIpress)}`;
         if (soloCenacron) params += `&cenacron=true`;
         if (soloMaraton) params += `&maraton=true`;
+        if (soloMaraton && maratonSubfiltro === 'cenacron') params += `&cenacron=true`;
+        if (soloMaraton && maratonSubfiltro === 'especialidades') params += `&maratonEspecialidades=true`;
         if (soloDniValido) params += `&soloDniValido=true`;
         if (soloExtranjero) params += `&soloExtranjero=true`;
         if (sinIpress) params += `&sinIpress=true`;
@@ -285,6 +289,8 @@ export default function BuscarAsegurado() {
         if (selectedIpress) params += `&codIpress=${encodeURIComponent(selectedIpress)}`;
         if (soloCenacron) params += `&cenacron=true`;
         if (soloMaraton) params += `&maraton=true`;
+        if (soloMaraton && maratonSubfiltro === 'cenacron') params += `&cenacron=true`;
+        if (soloMaraton && maratonSubfiltro === 'especialidades') params += `&maratonEspecialidades=true`;
         if (soloDniValido) params += `&soloDniValido=true`;
         if (soloExtranjero) params += `&soloExtranjero=true`;
         if (sinIpress) params += `&sinIpress=true`;
@@ -838,14 +844,14 @@ export default function BuscarAsegurado() {
                   ) }
                 </div>
 
-                <div className="flex-shrink-0 pb-0.5 flex gap-2">
+                <div className="flex-shrink-0 pb-0.5 flex gap-2 items-center flex-wrap">
                   <button
                     type="button"
                     onClick={ () => { setSoloCenacron(v => !v); setCurrentPage(0); } }
                     className={ `inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-semibold border-2 transition-all whitespace-nowrap
                       ${soloCenacron
-                        ? 'bg-purple-600 border-purple-600 text-white'
-                        : 'bg-white border-slate-200 text-slate-600 hover:border-purple-400 hover:text-purple-600'
+                        ? 'bg-violet-600 border-violet-600 text-white shadow-sm'
+                        : 'bg-white border-slate-200 text-slate-600 hover:border-violet-400 hover:text-violet-600'
                       }` }
                   >
                     <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -853,20 +859,123 @@ export default function BuscarAsegurado() {
                     </svg>
                     Solo CENACRON
                   </button>
-                  <button
-                    type="button"
-                    onClick={ () => { setSoloMaraton(v => !v); setCurrentPage(0); } }
-                    className={ `inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-semibold border-2 transition-all whitespace-nowrap
-                      ${soloMaraton
-                        ? 'bg-orange-600 border-orange-600 text-white'
-                        : 'bg-white border-slate-200 text-slate-600 hover:border-orange-400 hover:text-orange-600'
-                      }` }
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
-                    </svg>
-                    Solo MARATÓN
-                  </button>
+
+                  {/* Dropdown MARATÓN */}
+                  <div className="relative">
+                    <button
+                      type="button"
+                      onClick={ () => setMaratonDropdownOpen(v => !v) }
+                      onBlur={ () => setTimeout(() => setMaratonDropdownOpen(false), 150) }
+                      className={ `inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-semibold border-2 transition-all whitespace-nowrap
+                        ${soloMaraton
+                          ? 'bg-blue-700 border-blue-700 text-white shadow-sm'
+                          : 'bg-white border-slate-200 text-slate-600 hover:border-blue-500 hover:text-blue-700'
+                        }` }
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+                      </svg>
+                      { soloMaraton && maratonSubfiltro === 'cenacron'
+                          ? 'MARATÓN - CENACRON'
+                          : soloMaraton && maratonSubfiltro === 'especialidades'
+                          ? 'MARATÓN - ESPECIALIDADES'
+                          : soloMaraton
+                          ? 'Solo MARATÓN'
+                          : 'Solo MARATÓN' }
+                      <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
+                        style={{ transform: maratonDropdownOpen ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.15s' }}>
+                        <polyline points="6 9 12 15 18 9"/>
+                      </svg>
+                    </button>
+                    { maratonDropdownOpen && (
+                      <div className="absolute left-0 top-full mt-1 z-[300] w-52 bg-white border border-slate-200 rounded-lg shadow-lg overflow-hidden">
+                        {/* Opción: Solo MARATÓN (todos) */}
+                        <button
+                          type="button"
+                          onMouseDown={ () => {
+                            setSoloMaraton(soloMaraton && maratonSubfiltro === null ? false : true);
+                            setMaratonSubfiltro(null);
+                            setMaratonDropdownOpen(false);
+                            setCurrentPage(0);
+                          } }
+                          className={ `w-full text-left px-4 py-2.5 text-sm font-medium transition-colors flex items-center justify-between
+                            ${soloMaraton && maratonSubfiltro === null
+                              ? 'bg-blue-700 text-white'
+                              : 'text-slate-700 hover:bg-slate-100'
+                            }` }
+                        >
+                          <span>Solo MARATÓN</span>
+                          { soloMaraton && maratonSubfiltro === null && (
+                            <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                              <polyline points="20 6 9 17 4 12"/>
+                            </svg>
+                          ) }
+                        </button>
+                        <div className="h-px bg-slate-100" />
+                        {/* Opción: MARATÓN - CENACRON */}
+                        <button
+                          type="button"
+                          onMouseDown={ () => {
+                            setSoloMaraton(true);
+                            setMaratonSubfiltro(maratonSubfiltro === 'cenacron' ? null : 'cenacron');
+                            setMaratonDropdownOpen(false);
+                            setCurrentPage(0);
+                          } }
+                          className={ `w-full text-left px-4 py-2.5 text-sm font-medium transition-colors flex items-center justify-between
+                            ${maratonSubfiltro === 'cenacron'
+                              ? 'bg-blue-500 text-white'
+                              : 'text-slate-700 hover:bg-slate-100'
+                            }` }
+                        >
+                          <span>MARATÓN - CENACRON</span>
+                          { maratonSubfiltro === 'cenacron' && (
+                            <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                              <polyline points="20 6 9 17 4 12"/>
+                            </svg>
+                          ) }
+                        </button>
+                        {/* Opción: MARATÓN - ESPECIALIDADES */}
+                        <button
+                          type="button"
+                          onMouseDown={ () => {
+                            setSoloMaraton(true);
+                            setMaratonSubfiltro(maratonSubfiltro === 'especialidades' ? null : 'especialidades');
+                            setMaratonDropdownOpen(false);
+                            setCurrentPage(0);
+                          } }
+                          className={ `w-full text-left px-4 py-2.5 text-sm font-medium transition-colors flex items-center justify-between
+                            ${maratonSubfiltro === 'especialidades'
+                              ? 'bg-sky-500 text-white'
+                              : 'text-slate-700 hover:bg-slate-100'
+                            }` }
+                        >
+                          <span>MARATÓN - ESPECIALIDADES</span>
+                          { maratonSubfiltro === 'especialidades' && (
+                            <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                              <polyline points="20 6 9 17 4 12"/>
+                            </svg>
+                          ) }
+                        </button>
+                        <div className="h-px bg-slate-100" />
+                        {/* Opción: Quitar filtro */}
+                        { soloMaraton && (
+                          <button
+                            type="button"
+                            onMouseDown={ () => {
+                              setSoloMaraton(false);
+                              setMaratonSubfiltro(null);
+                              setMaratonDropdownOpen(false);
+                              setCurrentPage(0);
+                            } }
+                            className="w-full text-left px-4 py-2 text-xs text-slate-400 hover:bg-slate-50 transition-colors"
+                          >
+                            Quitar filtro MARATÓN
+                          </button>
+                        ) }
+                      </div>
+                    ) }
+                  </div>
+
                   <button
                     type="button"
                     onClick={ () => { setSoloDniValido(v => !v); setCurrentPage(0); } }

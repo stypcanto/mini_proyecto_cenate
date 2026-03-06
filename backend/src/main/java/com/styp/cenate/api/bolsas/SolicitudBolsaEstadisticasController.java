@@ -10,6 +10,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -32,11 +33,14 @@ public class SolicitudBolsaEstadisticasController {
 
     private final SolicitudBolsaEstadisticasService estadisticasService;
     private final SolicitudBolsaRepository solicitudRepository;
+    private final JdbcTemplate jdbcTemplate;
 
     public SolicitudBolsaEstadisticasController(SolicitudBolsaEstadisticasService estadisticasService,
-                                                SolicitudBolsaRepository solicitudRepository) {
+                                                SolicitudBolsaRepository solicitudRepository,
+                                                JdbcTemplate jdbcTemplate) {
         this.estadisticasService = estadisticasService;
         this.solicitudRepository = solicitudRepository;
+        this.jdbcTemplate = jdbcTemplate;
     }
 
     // ========================================================================
@@ -365,6 +369,54 @@ public class SolicitudBolsaEstadisticasController {
         log.info("GET /api/bolsas/estadisticas/filtros - Optimización: consolidar 7 llamadas en 1");
         Map<String, Object> datos = estadisticasService.obtenerEstadisticasFiltros();
         return ResponseEntity.ok(datos);
+    }
+
+    // ========================================================================
+    // 🏃 MARATÓN — Segmentos CENACRON vs ESPECIALIDADES
+    // ========================================================================
+
+    /**
+     * v1.85.8: Citados por segmento MARATÓN.
+     * GET /api/bolsas/estadisticas/maraton-segmentos
+     * Retorna: { cenacronCitados: N, especialidadesCitados: N }
+     */
+    @GetMapping("/maraton-segmentos")
+    public ResponseEntity<Map<String, Object>> obtenerEstadisticasMaratonSegmentos() {
+        log.info("GET /api/bolsas/estadisticas/maraton-segmentos — citados por segmento CENACRON vs ESPECIALIDADES");
+        String sql = """
+            SELECT
+                SUM(CASE WHEN a.paciente_cronico = true  AND eg.cod_estado_cita = 'CITADO' THEN 1 ELSE 0 END) AS cenacron_citados,
+                SUM(CASE WHEN (a.paciente_cronico = false OR a.paciente_cronico IS NULL) AND eg.cod_estado_cita = 'CITADO' THEN 1 ELSE 0 END) AS especialidades_citados
+            FROM dim_solicitud_bolsa sb
+            JOIN asegurados a ON a.doc_paciente = sb.paciente_dni
+            LEFT JOIN dim_estados_gestion_citas eg ON eg.id_estado_cita = sb.estado_gestion_citas_id
+            WHERE sb.id_bolsa = 17 AND sb.activo = true
+            """;
+        Map<String, Object> row = jdbcTemplate.queryForMap(sql);
+        return ResponseEntity.ok(Map.of(
+            "cenacronCitados",      ((Number) row.getOrDefault("cenacron_citados", 0L)).longValue(),
+            "especialidadesCitados", ((Number) row.getOrDefault("especialidades_citados", 0L)).longValue()
+        ));
+    }
+
+    /** Desglose completo de estados por segmento MARATÓN (diagnóstico) */
+    @GetMapping("/maraton-desglose")
+    public ResponseEntity<List<Map<String, Object>>> obtenerDesgloseMaraton() {
+        log.info("GET /api/bolsas/estadisticas/maraton-desglose");
+        String sql = """
+            SELECT
+                CASE WHEN a.paciente_cronico = true THEN 'CENACRON' ELSE 'ESPECIALIDADES' END AS segmento,
+                COALESCE(eg.cod_estado_cita, 'SIN_ESTADO') AS estado,
+                COUNT(*) AS cantidad
+            FROM dim_solicitud_bolsa sb
+            JOIN asegurados a ON a.doc_paciente = sb.paciente_dni
+            LEFT JOIN dim_estados_gestion_citas eg ON eg.id_estado_cita = sb.estado_gestion_citas_id
+            WHERE sb.id_bolsa = 17 AND sb.activo = true
+            GROUP BY 1, 2
+            ORDER BY 1, 3 DESC
+            """;
+        List<Map<String, Object>> rows = jdbcTemplate.queryForList(sql);
+        return ResponseEntity.ok(rows);
     }
 
     // ========================================================================

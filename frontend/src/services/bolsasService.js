@@ -458,6 +458,26 @@ export const obtenerEstadisticasPorEstado = async (ipressAtencion = null) => {
   }
 };
 
+/** v1.85.8: Citados por segmento MARATÓN (CENACRON vs ESPECIALIDADES) */
+export const obtenerEstadisticasMaratonSegmentos = async () => {
+  try {
+    return await apiClient.get(`${API_BASE_URL}/estadisticas/maraton-segmentos`, true);
+  } catch (error) {
+    console.error('Error al obtener estadísticas MARATÓN segmentos:', error);
+    throw error;
+  }
+};
+
+/** v1.85.9: Desglose completo de estados por segmento MARATÓN (CENACRON / ESPECIALIDADES) */
+export const obtenerDesgloseMaratonSegmentos = async () => {
+  try {
+    return await apiClient.get(`${API_BASE_URL}/estadisticas/maraton-desglose`, true);
+  } catch (error) {
+    console.error('Error al obtener desglose MARATÓN por segmento:', error);
+    throw error;
+  }
+};
+
 /** v1.78.3: KPI filtrados — mismos parámetros que el listado de solicitudes */
 export const obtenerKpiConFiltros = async (filtros = {}) => {
   try {
@@ -1293,6 +1313,8 @@ export default {
   obtenerEstadisticas,
   obtenerEstadisticasDelDia,
   obtenerEstadisticasPorEstado,
+  obtenerEstadisticasMaratonSegmentos,
+  obtenerDesgloseMaratonSegmentos,
   obtenerKpiConFiltros,
   obtenerEstadisticasPorEspecialidad,
   obtenerEstadisticasPorIpress,

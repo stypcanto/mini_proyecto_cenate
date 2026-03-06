@@ -75,6 +75,7 @@ public class AseguradoController {
             @RequestParam(name="size", defaultValue = "25") int size,
             @RequestParam(required = false) Boolean cenacron,
             @RequestParam(required = false) Boolean maraton,
+            @RequestParam(required = false) Boolean maratonEspecialidades,
             @RequestParam(required = false) Boolean soloDniValido,
             @RequestParam(required = false) Boolean soloExtranjero,
             @RequestParam(required = false) Boolean sinIpress,
@@ -83,7 +84,7 @@ public class AseguradoController {
             @RequestParam(required = false) String codIpressAtencion) {
 
         try {
-            log.info("📊 Listando asegurados - Página: {}, Tamaño: {}, CENACRON: {}, MARATON: {}", page, size, cenacron, maraton);
+            log.info("📊 Listando asegurados - Página: {}, Tamaño: {}, CENACRON: {}, MARATON: {}, MARATON_ESP: {}", page, size, cenacron, maraton, maratonEspecialidades);
 
             // MARATÓN muestra el universo completo cargado (ignora vigencia)
             StringBuilder whereClause = Boolean.TRUE.equals(maraton)
@@ -92,6 +93,10 @@ public class AseguradoController {
             List<Object> params = new ArrayList<>();
             if (Boolean.TRUE.equals(cenacron)) {
                 whereClause.append(" AND a.paciente_cronico = true");
+            }
+            // MARATÓN Especialidades: MARATÓN sin badge CENACRON (paciente_cronico = false)
+            if (Boolean.TRUE.equals(maratonEspecialidades)) {
+                whereClause.append(" AND (a.paciente_cronico = false OR a.paciente_cronico IS NULL)");
             }
             if (Boolean.TRUE.equals(soloDniValido)) {
                 whereClause.append(" AND a.doc_paciente ~ '^\\d{8}$'");
@@ -335,6 +340,7 @@ public class AseguradoController {
             @RequestParam(required = false) String codIpress,
             @RequestParam(required = false) Boolean cenacron,
             @RequestParam(required = false) Boolean maraton,
+            @RequestParam(required = false) Boolean maratonEspecialidades,
             @RequestParam(required = false) Boolean soloDniValido,
             @RequestParam(required = false) Boolean soloExtranjero,
             @RequestParam(required = false) Boolean sinIpress,
@@ -343,7 +349,7 @@ public class AseguradoController {
             @RequestParam(defaultValue = "25") int size) {
 
         try {
-            log.info("🔍 Buscando asegurado: '{}', CENACRON: {}, MARATON: {}", q, cenacron, maraton);
+            log.info("🔍 Buscando asegurado: '{}', CENACRON: {}, MARATON: {}, MARATON_ESP: {}", q, cenacron, maraton, maratonEspecialidades);
 
             // MARATÓN muestra el universo completo cargado (ignora vigencia)
             StringBuilder whereClause = Boolean.TRUE.equals(maraton)
@@ -368,6 +374,10 @@ public class AseguradoController {
             // Filtro CENACRON
             if (Boolean.TRUE.equals(cenacron)) {
                 whereClause.append(" AND a.paciente_cronico = true");
+            }
+            // MARATÓN Especialidades: MARATÓN sin badge CENACRON
+            if (Boolean.TRUE.equals(maratonEspecialidades)) {
+                whereClause.append(" AND (a.paciente_cronico = false OR a.paciente_cronico IS NULL)");
             }
 
             // Filtro Solo DNI válido (exactamente 8 dígitos numéricos)
