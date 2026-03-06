@@ -715,6 +715,19 @@ export default function MisPacientes() {
   const [showDetalleTicketModal, setShowDetalleTicketModal] = useState(false);
   const [numeroTicketDetalle, setNumeroTicketDetalle] = useState(null);
 
+  // ✅ v1.110.0: ENFERMERIA — Modal de Asignación de RECITA para futura atención
+  const [showAsignarRecitaModal, setShowAsignarRecitaModal] = useState(false);
+  const [recitaAsignacionRespuesta, setRecitaAsignacionRespuesta] = useState(null); // 'SI' | 'NO' | null
+  const [recitaAsignacionFecha, setRecitaAsignacionFecha] = useState('');
+  const [recitaAsignacionHora, setRecitaAsignacionHora] = useState('');
+  const [recitaMeses, setRecitaMeses] = useState(''); // '1', '2', '3', ... '12' (solo para NO)
+  const [recitaAsignacionDetalle, setRecitaAsignacionDetalle] = useState(null); // Mostrar después de guardar
+  // ✅ v1.110.0: Valores guardados para poder editarlos después
+  const [recitaGuardada_Respuesta, setRecitaGuardada_Respuesta] = useState(null);
+  const [recitaGuardada_Fecha, setRecitaGuardada_Fecha] = useState('');
+  const [recitaGuardada_Hora, setRecitaGuardada_Hora] = useState('');
+  const [recitaGuardada_Meses, setRecitaGuardada_Meses] = useState('');
+
   // ✅ v1.85.2: Auto-guardar borrador del formulario "Atendido" en localStorage
   const draftKey = pacienteSeleccionado
     ? `cenate_atencion_draft_${pacienteSeleccionado.idSolicitudBolsa || pacienteSeleccionado.idGestion}`
@@ -1891,6 +1904,88 @@ export default function MisPacientes() {
         } catch (_) { /* ignorar borrador corrupto */ }
       }
     }
+  };
+
+  // ✅ v1.110.0: ENFERMERIA — Guardar asignación de RECITA para futura atención
+  const guardarAsignacionRecita = () => {
+    // Validar respuesta seleccionada
+    if (!recitaAsignacionRespuesta) {
+      toast.error('Debe seleccionar Sí o No');
+      return;
+    }
+
+    // Si seleccionó SI: debe haber fecha y hora
+    if (recitaAsignacionRespuesta === 'SI') {
+      if (!recitaAsignacionFecha || !recitaAsignacionHora) {
+        toast.error('Debe seleccionar fecha y hora para la asignación');
+        return;
+      }
+    }
+
+    // Si seleccionó NO: debe haber meses seleccionados
+    if (recitaAsignacionRespuesta === 'NO') {
+      if (!recitaMeses) {
+        toast.error('Debe seleccionar el plazo en meses');
+        return;
+      }
+    }
+
+    // Calcular fecha de atención según la respuesta
+    let fechaAtencion = '';
+    let horaAtencion = '';
+    
+    if (recitaAsignacionRespuesta === 'SI') {
+      fechaAtencion = recitaAsignacionFecha;
+      horaAtencion = recitaAsignacionHora;
+    } else {
+      // Calcular fecha: hoy + (meses * 30 días)
+      const hoy = new Date();
+      const futura = new Date(hoy.getTime() + parseInt(recitaMeses) * 30 * 24 * 60 * 60 * 1000);
+      fechaAtencion = futura.toISOString().split('T')[0];
+    }
+
+    // Generar detalle para mostrar
+    const detalle = {
+      respuesta: recitaAsignacionRespuesta,
+      fechaAtencion: fechaAtencion,
+      horaAtencion: horaAtencion,
+      mensaje: recitaAsignacionRespuesta === 'SI'
+        ? `Asignado para ${recitaAsignacionFecha} a las ${recitaAsignacionHora}`
+        : `Asignado para atención en ${recitaMeses} ${parseInt(recitaMeses) === 1 ? 'mes' : 'meses'}`
+    };
+
+    setRecitaAsignacionDetalle(detalle);
+
+    // ✅ Guardar estado interno pero NO confirmar aún
+    setTieneRecita(true);
+    setExpandRecita(true);
+    
+    // Si es SI, establecer días basado en fecha
+    // Si es NO, establecer días basado en meses
+    if (recitaAsignacionRespuesta === 'SI') {
+      setRecitaDias(30); // Default para SI
+      // Guardar valores para poder editar después
+      setRecitaGuardada_Respuesta('SI');
+      setRecitaGuardada_Fecha(recitaAsignacionFecha);
+      setRecitaGuardada_Hora(recitaAsignacionHora);
+    } else {
+      setRecitaDias(parseInt(recitaMeses) * 30);
+      // Guardar valores para poder editar después
+      setRecitaGuardada_Respuesta('NO');
+      setRecitaGuardada_Meses(recitaMeses);
+    }
+
+    toast.success('✅ ' + detalle.mensaje);
+
+    // Cerrar el modal inmediatamente (el detalle se mostrará abajo)
+    setTimeout(() => {
+      setShowAsignarRecitaModal(false);
+      // NO limpiar recitaAsignacionDetalle para que se muestre el detalle guardado
+      setRecitaAsignacionRespuesta(null);
+      setRecitaAsignacionFecha('');
+      setRecitaAsignacionHora('');
+      setRecitaMeses('');
+    }, 500);
   };
 
   // ✅ v1.50.0: Abrir modal de detalles del paciente
@@ -3584,19 +3679,32 @@ export default function MisPacientes() {
                   
                   {/* Grid chips: 3 cols normal, 2 cols cuando ENFERMERIA (4 chips) */}
                   <div className={`grid gap-3 ${esEnfermeria ? 'grid-cols-2' : 'grid-cols-3'}`}>
-                    {/* Chip 1: Recita — ✅ v1.85.0: Deshabilitado si restricción temporal */}
+                    {/* Chip 1: Recita — ✅ v1.85.0: Deshabilitado si restricción temporal | ✅ v1.110.0: ENFERMERIA abre modal de asignación */}
                     <button
                       onClick={() => {
                         if (pacienteSeleccionado?.fechaAtencionMedica && !puedeEditar(pacienteSeleccionado)) return;
+                        
+                        // ✅ v1.110.0: Si es ENFERMERIA, abrir modal de asignación primero
+                        if (esEnfermeria) {
+                          setShowAsignarRecitaModal(true);
+                          setRecitaAsignacionRespuesta(null);
+                          setRecitaAsignacionFecha('');
+                          setRecitaAsignacionHora('');
+                          setRecitaMeses('');
+                          setRecitaAsignacionDetalle(null);
+                          return;
+                        }
+                        
+                        // Otros roles: comportamiento normal
                         const nuevoValor = !tieneRecita;
                         setTieneRecita(nuevoValor);
                         setExpandRecita(nuevoValor);
                         if (nuevoValor && esEnfermeria) setRecitaDias(30);
                       }}
-                      disabled={pacienteSeleccionado?.fechaAtencionMedica && !puedeEditar(pacienteSeleccionado)}
+                      disabled={(pacienteSeleccionado?.fechaAtencionMedica && !puedeEditar(pacienteSeleccionado)) || (recitaAsignacionDetalle !== null && esEnfermeria)}
                       className={`p-4 rounded-xl transition-all text-center font-semibold border-2
                         focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-green-400 ${
-                        pacienteSeleccionado?.fechaAtencionMedica && !puedeEditar(pacienteSeleccionado)
+                        (pacienteSeleccionado?.fechaAtencionMedica && !puedeEditar(pacienteSeleccionado)) || (recitaAsignacionDetalle !== null && esEnfermeria)
                           ? 'bg-gray-100 text-gray-400 border-gray-300 cursor-not-allowed opacity-60'
                           : `cursor-pointer ${
                             tieneRecita
@@ -3704,37 +3812,7 @@ export default function MisPacientes() {
 
                   {/* Detalles Expandibles */}
                   <div className="space-y-2">
-                    {/* Detalle 1: RECITA */}
-                    {expandRecita && tieneRecita && (
-                      <div className="bg-green-50 border-2 border-green-300 rounded-xl p-3 animate-in slide-in-from-top-2">
-                        <div className="flex items-center justify-between mb-2">
-                          <label className="text-xs font-bold text-green-900 tracking-wide">Plazo de Recita</label>
-                          <span className="text-xs font-medium text-green-600 bg-green-100 px-2 py-0.5 rounded-full">Obligatorio</span>
-                        </div>
-                        <select
-                          value={recitaDias}
-                          onChange={(e) => {
-                            if (pacienteSeleccionado?.fechaAtencionMedica && !puedeEditar(pacienteSeleccionado)) return;
-                            setRecitaDias(parseInt(e.target.value));
-                          }}
-                          disabled={pacienteSeleccionado?.fechaAtencionMedica && !puedeEditar(pacienteSeleccionado)}
-                          className={`w-full px-3 py-2 border-2 rounded-lg text-sm font-semibold appearance-none cursor-pointer ${
-                            pacienteSeleccionado?.fechaAtencionMedica && !puedeEditar(pacienteSeleccionado)
-                              ? 'border-gray-300 bg-gray-100 text-gray-500 cursor-not-allowed opacity-60'
-                              : 'border-green-400 focus:ring-2 focus:ring-green-500 focus:border-green-500 text-green-900 bg-white'
-                          }`}
-                        >
-                          {!esEnfermeria && <option value={7}>7 días</option>}
-                          {!esEnfermeria && <option value={15}>15 días</option>}
-                          <option value={30}>1 mes</option>
-                          <option value={60}>2 meses</option>
-                          <option value={90}>3 meses</option>
-                          <option value={180}>6 meses</option>
-                        </select>
-                      </div>
-                    )}
-
-                    {/* Detalle 2: INTERCONSULTA — selección múltiple v1.75.0 */}
+                    {/* Detalle 1: INTERCONSULTA — selección múltiple v1.75.0 */}
                     {expandInterconsulta && tieneInterconsulta && (
                       <div className="bg-blue-50 border-2 border-blue-300 rounded-xl p-3 animate-in slide-in-from-top-2">
                         <label className="text-xs font-bold text-blue-900 block mb-1">
@@ -3898,7 +3976,76 @@ export default function MisPacientes() {
                       </div>
                     )}
 
-                    {/* Detalle 3: CRÓNICO */}
+                    {/* Detalle 3: RECITA — Asignación para futura atención (ENFERMERIA) v1.110.0 */}
+                    {recitaAsignacionDetalle && esEnfermeria && (
+                      <div className="bg-green-50 border-2 border-green-300 rounded-xl p-3 animate-in slide-in-from-top-2">
+                        <div className="flex items-center justify-between mb-3">
+                          <label className="text-xs font-bold text-green-900 tracking-wide">♾ Recita Asignada</label>
+                          <div className="flex gap-2">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (pacienteSeleccionado?.fechaAtencionMedica && !puedeEditar(pacienteSeleccionado)) return;
+                                // Abrir modal y repoblar con datos guardados
+                                setShowAsignarRecitaModal(true);
+                                setRecitaAsignacionRespuesta(recitaGuardada_Respuesta);
+                                if (recitaGuardada_Respuesta === 'SI') {
+                                  setRecitaAsignacionFecha(recitaGuardada_Fecha);
+                                  setRecitaAsignacionHora(recitaGuardada_Hora);
+                                } else {
+                                  setRecitaMeses(recitaGuardada_Meses);
+                                }
+                              }}
+                              disabled={pacienteSeleccionado?.fechaAtencionMedica && !puedeEditar(pacienteSeleccionado)}
+                              className={`text-xs font-semibold px-2.5 py-1 rounded-full transition-all ${
+                                pacienteSeleccionado?.fechaAtencionMedica && !puedeEditar(pacienteSeleccionado)
+                                  ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                                  : 'bg-green-600 text-white hover:bg-green-700 cursor-pointer'
+                              }`}
+                            >
+                              ✏️ Editar
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (pacienteSeleccionado?.fechaAtencionMedica && !puedeEditar(pacienteSeleccionado)) return;
+                                // Eliminar la asignación de recita
+                                setRecitaAsignacionDetalle(null);
+                                setRecitaGuardada_Respuesta(null);
+                                setRecitaGuardada_Fecha('');
+                                setRecitaGuardada_Hora('');
+                                setRecitaGuardada_Meses('');
+                                setTieneRecita(false);
+                              }}
+                              disabled={pacienteSeleccionado?.fechaAtencionMedica && !puedeEditar(pacienteSeleccionado)}
+                              className={`text-xs font-semibold px-2.5 py-1 rounded-full transition-all ${
+                                pacienteSeleccionado?.fechaAtencionMedica && !puedeEditar(pacienteSeleccionado)
+                                  ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                                  : 'bg-red-600 text-white hover:bg-red-700 cursor-pointer'
+                              }`}
+                            >
+                              🗑️ Eliminar
+                            </button>
+                          </div>
+                        </div>
+                        <div className="bg-white p-2.5 rounded-lg border border-green-200 space-y-1.5">
+                          {recitaAsignacionDetalle.respuesta === 'SI' && (
+                            <p className="text-xs font-bold text-green-700">✅ Se asignó a sí mismo</p>
+                          )}
+                          {recitaAsignacionDetalle.respuesta === 'NO' && (
+                            <p className="text-xs font-bold text-amber-700">ℹ️ Indicaste No</p>
+                          )}
+                          <p className="text-xs font-semibold text-green-700 mb-2">📅 Fecha de Atención:</p>
+                          {recitaAsignacionDetalle.respuesta === 'SI' ? (
+                            <p className="text-xs text-gray-700"><strong>{recitaAsignacionDetalle.fechaAtencion}</strong> a las <strong>{recitaAsignacionDetalle.horaAtencion}</strong></p>
+                          ) : (
+                            <p className="text-xs text-gray-700"><strong>{recitaAsignacionDetalle.fechaAtencion}</strong></p>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Detalle 4: CRÓNICO */}
                     {expandCronico && esCronico && (
                       <div className="bg-purple-50 border-2 border-purple-300 rounded-xl p-3 animate-in slide-in-from-top-2">
                         <p className="text-xs font-bold text-purple-900 mb-2">Enfermedades crónicas</p>
@@ -6391,6 +6538,178 @@ export default function MisPacientes() {
           </div>
         );
       })()}
+
+      {/* ===== MODAL ASIGNACIÓN RECITA (ENFERMERIA) v1.110.0 ===== */}
+      {showAsignarRecitaModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md">
+            {/* Header */}
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center">
+                  <Calendar className="w-4 h-4 text-green-600" strokeWidth={2} />
+                </div>
+                <h2 className="text-lg font-bold text-green-700">Asignar Recita</h2>
+              </div>
+              <button onClick={() => setShowAsignarRecitaModal(false)} className="text-gray-400 hover:text-gray-600 transition-colors">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Body */}
+            <div className="px-6 py-5 space-y-4">
+              {/* Pregunta principal */}
+              <div className="p-4 rounded-xl bg-green-50 border border-green-200">
+                <p className="text-sm font-semibold text-green-800">
+                  🤔 ¿Deseas asignarte el paciente para una futura atención?
+                </p>
+              </div>
+
+              {/* Botones SI/NO */}
+              {recitaAsignacionRespuesta === null ? (
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    onClick={() => setRecitaAsignacionRespuesta('SI')}
+                    className="px-4 py-3 rounded-xl bg-green-100 text-green-800 font-semibold text-sm border-2 border-green-300 hover:bg-green-200 transition-colors"
+                  >
+                    ✓ Sí
+                  </button>
+                  <button
+                    onClick={() => setRecitaAsignacionRespuesta('NO')}
+                    className="px-4 py-3 rounded-xl bg-gray-100 text-gray-800 font-semibold text-sm border-2 border-gray-300 hover:bg-gray-200 transition-colors"
+                  >
+                    ✗ No
+                  </button>
+                </div>
+              ) : null}
+
+              {/* Si seleccionó SÍ: Mostrar selectores de fecha y hora */}
+              {recitaAsignacionRespuesta === 'SI' && (
+                <div className="space-y-3 p-3 rounded-xl bg-green-50 border border-green-200">
+                  <label className="block text-sm font-semibold text-gray-700">
+                    📅 Selecciona Fecha (mínimo: 30 días)
+                  </label>
+                  <input
+                    type="date"
+                    value={recitaAsignacionFecha}
+                    onChange={(e) => setRecitaAsignacionFecha(e.target.value)}
+                    min={(() => {
+                      const hoy = new Date();
+                      hoy.setDate(hoy.getDate() + 30);
+                      return hoy.toISOString().split('T')[0];
+                    })()}
+                    className="w-full px-3 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Las fechas anteriores a 30 días están bloqueadas
+                  </p>
+
+                  <label className="block text-sm font-semibold text-gray-700 mt-3">
+                    🕐 Selecciona Hora
+                  </label>
+                  <input
+                    type="time"
+                    value={recitaAsignacionHora}
+                    onChange={(e) => setRecitaAsignacionHora(e.target.value)}
+                    className="w-full px-3 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  />
+
+                  {recitaAsignacionFecha && recitaAsignacionHora && (
+                    <div className="mt-3 p-2 rounded-lg bg-white border border-green-300">
+                      <p className="text-xs text-gray-600">
+                        <strong>Resumen:</strong> {recitaAsignacionFecha} a las {recitaAsignacionHora}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Si seleccionó NO: Mostrar selector de meses */}
+              {recitaAsignacionRespuesta === 'NO' && (
+                <div className="space-y-3 p-3 rounded-xl bg-amber-50 border border-amber-200">
+                  <div className="p-2 rounded-lg bg-amber-100 border border-amber-300">
+                    <p className="text-xs font-bold text-amber-700">ℹ️ Indicaste No</p>
+                  </div>
+                  
+                  <div className="flex items-center justify-between">
+                    <label className="block text-sm font-semibold text-gray-700">
+                      ⏰ Plazo de Recita
+                    </label>
+                    <span className="text-xs text-gray-500 font-medium">Obligatorio</span>
+                  </div>
+                  
+                  <select
+                    value={recitaMeses}
+                    onChange={(e) => setRecitaMeses(e.target.value)}
+                    className="w-full px-3 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-amber-500 focus:border-transparent bg-white text-gray-800 font-semibold"
+                  >
+                    <option value="">-- Selecciona plazo --</option>
+                    <option value="1">1 mes</option>
+                    <option value="2">2 meses</option>
+                    <option value="3">3 meses</option>
+                    <option value="6">6 meses</option>
+                  </select>
+
+                  {recitaMeses && (
+                    <div className="p-2 rounded-lg bg-white border border-amber-300">
+                      <p className="text-xs text-gray-600">
+                        <strong>✅ Plazo seleccionado:</strong> {recitaMeses} {parseInt(recitaMeses) === 1 ? 'mes' : 'meses'}
+                      </p>
+                      {(() => {
+                        const hoy = new Date();
+                        const futura = new Date(hoy.getTime() + parseInt(recitaMeses) * 30 * 24 * 60 * 60 * 1000);
+                        const fechaCalculada = futura.toISOString().split('T')[0];
+                        return (
+                          <p className="text-xs text-gray-500 mt-1">
+                            📅 Fecha estimada: <strong>{fechaCalculada}</strong>
+                          </p>
+                        );
+                      })()}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Detalle después de guardar */}
+              {recitaAsignacionDetalle && (
+                <div className="p-3 rounded-xl bg-blue-50 border border-blue-300">
+                  <p className="text-sm text-blue-800 font-semibold">
+                    ✅ {recitaAsignacionDetalle.mensaje}
+                  </p>
+                </div>
+              )}
+            </div>
+
+            {/* Footer */}
+            {recitaAsignacionRespuesta !== null && (
+              <div className="px-6 py-4 border-t border-gray-100 flex gap-3">
+                <button
+                  onClick={() => {
+                    setShowAsignarRecitaModal(false);
+                    setRecitaAsignacionRespuesta(null);
+                    setRecitaAsignacionFecha('');
+                    setRecitaAsignacionHora('');
+                    setRecitaMeses('');
+                  }}
+                  className="flex-1 px-4 py-2.5 rounded-xl border border-gray-300 text-gray-700 font-medium text-sm hover:bg-gray-50 transition-colors"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={guardarAsignacionRecita}
+                  disabled={
+                    (recitaAsignacionRespuesta === 'SI' && (!recitaAsignacionFecha || !recitaAsignacionHora)) ||
+                    (recitaAsignacionRespuesta === 'NO' && !recitaMeses)
+                  }
+                  className="flex-1 px-4 py-2.5 rounded-xl bg-green-600 text-white font-semibold text-sm hover:bg-green-700 disabled:opacity-60 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
+                >
+                  💾 Guardar
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* ===== MODAL ASIGNAR A CENACRON ===== */}
       {showAsignarCenacronModal && pacienteAsignarCenacron && (
