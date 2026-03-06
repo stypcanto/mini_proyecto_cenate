@@ -527,6 +527,16 @@ export const obtenerOpcionesFiltrosMaraton = async (categoria) => {
   }
 };
 
+/** v1.85.30: Dashboard territorial Maratón — avances por macrorregión, red e IPRESS */
+export const obtenerDashboardTerritorialMaraton = async () => {
+  try {
+    return await apiClient.get(`${API_BASE_URL}/estadisticas/maraton-territorial`, true);
+  } catch (error) {
+    console.error('Error al obtener dashboard territorial MARATÓN:', error);
+    return { porMacrorregion: [], porRed: [], porIpress: [] };
+  }
+};
+
 /** v1.78.3: KPI filtrados — mismos parámetros que el listado de solicitudes */
 export const obtenerKpiConFiltros = async (filtros = {}) => {
   try {

@@ -552,7 +552,8 @@ public class SolicitudBolsaEstadisticasController {
                     sb.responsable_gestora_id,
                     sb.especialidad,
                     sb.paciente_edad,
-                    sb.id_ipress
+                    sb.id_ipress,
+                    sb.tipo_documento
                 FROM dim_solicitud_bolsa sb
                 LEFT JOIN dim_estados_gestion_citas eg ON eg.id_estado_cita = sb.estado_gestion_citas_id
                 WHERE sb.id_bolsa = 17 AND sb.activo = true
@@ -615,7 +616,11 @@ public class SolicitudBolsaEstadisticasController {
 
         String sqlDataBase = """
                 SELECT
-                    CASE a.id_tip_doc WHEN 1 THEN 'DNI' WHEN 2 THEN 'C.E./PAS' ELSE 'DNI' END AS tipo_doc,
+                    CASE
+                        WHEN UPPER(TRIM(pe.tipo_documento)) IN ('CE','C.E.','C.E./PAS','PASAPORTE','PAS','CE/PAS') THEN 'C.E./PAS'
+                        WHEN a.id_tip_doc = 2 THEN 'C.E./PAS'
+                        ELSE 'DNI'
+                    END AS tipo_doc,
                     a.doc_paciente AS num_doc,
                     a.paciente AS nombre_completo,
                     a.sexo AS sexo,
@@ -729,6 +734,84 @@ public class SolicitudBolsaEstadisticasController {
             """;
         List<Map<String, Object>> rows = jdbcTemplate.queryForList(sql);
         return ResponseEntity.ok(rows);
+    }
+
+    // ========================================================================
+    // 🗺️ MARATÓN — DASHBOARD TERRITORIAL (v1.85.30)
+    // ========================================================================
+
+    /**
+     * GET /api/bolsas/estadisticas/maraton-territorial
+     * Avances de citación Maratón 2026 agrupados por Macrorregión, Red e IPRESS.
+     * Usado por el Dashboard Territorial (pestaña 2) para gerencia.
+     */
+    @GetMapping("/maraton-territorial")
+    public ResponseEntity<Map<String, Object>> maratonTerritorial() {
+        log.info("GET /api/bolsas/estadisticas/maraton-territorial");
+
+        final String OBS = "'ATENDIDO_IPRESS','NO_CONTESTA','NO_CONTESTO','APAGADO','TEL_SIN_SERVICIO'," +
+                "'NO_DESEA','RECHAZADO','NUM_NO_EXISTE','NO_IPRESS_CENATE','SIN_VIGENCIA'," +
+                "'YA_NO_REQUIERE','PARTICULAR','REPROG_FALLIDA','FALLECIDO','NO_GRUPO_ETARIO'";
+
+        final String cte = """
+                WITH pe AS (
+                    SELECT DISTINCT ON (sb.paciente_dni)
+                        sb.paciente_dni,
+                        COALESCE(eg.cod_estado_cita, 'PENDIENTE_CITA') AS estado,
+                        sb.id_ipress
+                    FROM dim_solicitud_bolsa sb
+                    LEFT JOIN dim_estados_gestion_citas eg ON eg.id_estado_cita = sb.estado_gestion_citas_id
+                    WHERE sb.id_bolsa = 17 AND sb.activo = true
+                    ORDER BY sb.paciente_dni,
+                        CASE COALESCE(eg.cod_estado_cita,'PENDIENTE_CITA')
+                            WHEN 'CITADO' THEN 1 WHEN 'ATENDIDO' THEN 2 ELSE 3 END
+                )
+                """;
+
+        final String stats = """
+                COUNT(*)                                                         AS total,
+                SUM(CASE WHEN estado IN ('CITADO','ATENDIDO') THEN 1 ELSE 0 END) AS citados,
+                SUM(CASE WHEN estado IN (%s) THEN 1 ELSE 0 END)                  AS observados,
+                SUM(CASE WHEN estado = 'PENDIENTE_CITA'       THEN 1 ELSE 0 END) AS pendientes
+                """.formatted(OBS);
+
+        String sqlMacro = cte + """
+                SELECT COALESCE(dm.desc_macro, 'Sin macrorregión') AS nombre,
+                """ + stats + """
+                FROM pe
+                LEFT JOIN dim_ipress di ON di.id_ipress = pe.id_ipress
+                LEFT JOIN dim_red     dr ON dr.id_red    = di.id_red
+                LEFT JOIN dim_macroregion dm ON dm.id_macro = dr.id_macro
+                GROUP BY dm.desc_macro
+                ORDER BY total DESC
+                """;
+
+        String sqlRed = cte + """
+                SELECT COALESCE(dr.desc_red, 'Sin red') AS nombre,
+                """ + stats + """
+                FROM pe
+                LEFT JOIN dim_ipress di ON di.id_ipress = pe.id_ipress
+                LEFT JOIN dim_red    dr ON dr.id_red    = di.id_red
+                GROUP BY dr.desc_red
+                ORDER BY total DESC
+                LIMIT 40
+                """;
+
+        String sqlIpress = cte + """
+                SELECT COALESCE(di.desc_ipress, 'Sin IPRESS') AS nombre,
+                """ + stats + """
+                FROM pe
+                LEFT JOIN dim_ipress di ON di.id_ipress = pe.id_ipress
+                GROUP BY di.desc_ipress
+                ORDER BY total DESC
+                LIMIT 60
+                """;
+
+        return ResponseEntity.ok(Map.of(
+                "porMacrorregion", jdbcTemplate.queryForList(sqlMacro),
+                "porRed",          jdbcTemplate.queryForList(sqlRed),
+                "porIpress",       jdbcTemplate.queryForList(sqlIpress)
+        ));
     }
 
     // ========================================================================

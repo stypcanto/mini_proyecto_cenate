@@ -2,7 +2,8 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { CalendarCheck, RefreshCw, Download, X, Search, ChevronLeft, ChevronRight } from 'lucide-react';
 import * as XLSX from 'xlsx';
-import { obtenerDesgloseMaratonSegmentos, obtenerPacientesMaratonCategoria, obtenerOpcionesFiltrosMaraton, obtenerTotalesBrutosMaraton } from '../../services/bolsasService';
+import { obtenerDesgloseMaratonSegmentos, obtenerPacientesMaratonCategoria, obtenerOpcionesFiltrosMaraton, obtenerTotalesBrutosMaraton, obtenerDashboardTerritorialMaraton } from '../../services/bolsasService';
+import { MapPin, BarChart3 } from 'lucide-react';
 import { apiClient } from '../../lib/apiClient';
 
 // ─── Hook: animación de contador suave (easeOutExpo) ─────────────────────────
@@ -520,6 +521,138 @@ function FunnelConnector() {
   );
 }
 
+// ─── Fila territorial ─────────────────────────────────────────────────────────
+function TerritorialRow({ row, rank }) {
+  const total      = Number(row.total)      || 0;
+  const citados    = Number(row.citados)    || 0;
+  const observados = Number(row.observados) || 0;
+  const pendientes = Number(row.pendientes) || 0;
+  const pctCit = total > 0 ? ((citados    / total) * 100).toFixed(1) : '0.0';
+  const pctObs = total > 0 ? ((observados / total) * 100).toFixed(1) : '0.0';
+  return (
+    <tr className="border-b border-slate-100 hover:bg-slate-50 transition-colors">
+      <td className="px-3 py-2.5 text-xs text-slate-400 font-mono text-center">{rank}</td>
+      <td className="px-3 py-2.5 text-sm font-medium text-slate-800 max-w-[220px]">
+        <span className="truncate block" title={row.nombre}>{row.nombre}</span>
+      </td>
+      <td className="px-3 py-2.5 text-sm font-bold text-slate-700 text-right tabular-nums">{total.toLocaleString('es-PE')}</td>
+      <td className="px-3 py-2.5 text-right">
+        <span className="inline-flex items-center justify-end gap-1 text-sm font-bold text-emerald-700 tabular-nums">
+          {citados.toLocaleString('es-PE')}
+        </span>
+      </td>
+      <td className="px-3 py-2.5 text-right">
+        <span className="text-sm font-semibold text-amber-600 tabular-nums">{observados.toLocaleString('es-PE')}</span>
+      </td>
+      <td className="px-3 py-2.5 text-right">
+        <span className="text-sm font-semibold text-rose-600 tabular-nums">{pendientes.toLocaleString('es-PE')}</span>
+      </td>
+      <td className="px-3 py-2.5 w-44">
+        <div className="space-y-1">
+          <div className="flex items-center gap-1.5">
+            <div className="flex-1 bg-slate-200 rounded-full h-2 overflow-hidden">
+              <div className="h-2 rounded-full bg-emerald-500 transition-all duration-700" style={{ width: `${pctCit}%` }} />
+            </div>
+            <span className="text-xs font-bold text-emerald-700 w-10 text-right tabular-nums">{pctCit}%</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <div className="flex-1 bg-slate-200 rounded-full h-1 overflow-hidden">
+              <div className="h-1 rounded-full bg-amber-400 transition-all duration-700" style={{ width: `${pctObs}%` }} />
+            </div>
+            <span className="text-[10px] text-amber-600 w-10 text-right tabular-nums">{pctObs}%</span>
+          </div>
+        </div>
+      </td>
+    </tr>
+  );
+}
+
+function TerritorialTable({ title, icon, data, loading: isLoading, searchable }) {
+  const [q, setQ] = useState('');
+  const filtered = searchable && q
+    ? data.filter(r => r.nombre?.toLowerCase().includes(q.toLowerCase()))
+    : data;
+  const tot = filtered.reduce(
+    (acc, r) => ({
+      total:      acc.total      + (Number(r.total)      || 0),
+      citados:    acc.citados    + (Number(r.citados)    || 0),
+      observados: acc.observados + (Number(r.observados) || 0),
+      pendientes: acc.pendientes + (Number(r.pendientes) || 0),
+    }),
+    { total: 0, citados: 0, observados: 0, pendientes: 0 }
+  );
+  const pctTot = tot.total > 0 ? ((tot.citados / tot.total) * 100).toFixed(1) : '0.0';
+
+  return (
+    <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+      {/* Cabecera tabla */}
+      <div className="flex items-center justify-between px-5 py-3.5 border-b border-slate-100 bg-slate-50">
+        <div className="flex items-center gap-2">
+          <span className="text-lg">{icon}</span>
+          <span className="text-sm font-bold text-slate-800">{title}</span>
+          <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-slate-200 text-slate-600">
+            {filtered.length} registros
+          </span>
+        </div>
+        {searchable && (
+          <div className="relative">
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
+            <input
+              type="text" value={q} onChange={e => setQ(e.target.value)}
+              placeholder="Buscar IPRESS..."
+              className="pl-8 pr-3 py-1.5 text-xs border border-slate-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-400 w-52"
+            />
+          </div>
+        )}
+      </div>
+
+      <div className="overflow-x-auto">
+        <table className="w-full text-left">
+          <thead>
+            <tr className="bg-slate-800">
+              <th className="px-3 py-2.5 text-[10px] font-bold uppercase tracking-wider text-slate-400 w-8">#</th>
+              <th className="px-3 py-2.5 text-[10px] font-bold uppercase tracking-wider text-slate-300">Nombre</th>
+              <th className="px-3 py-2.5 text-[10px] font-bold uppercase tracking-wider text-slate-300 text-right">Total</th>
+              <th className="px-3 py-2.5 text-[10px] font-bold uppercase tracking-wider text-emerald-400 text-right">Citados</th>
+              <th className="px-3 py-2.5 text-[10px] font-bold uppercase tracking-wider text-amber-400 text-right">Observados</th>
+              <th className="px-3 py-2.5 text-[10px] font-bold uppercase tracking-wider text-rose-400 text-right">Pendientes</th>
+              <th className="px-3 py-2.5 text-[10px] font-bold uppercase tracking-wider text-slate-300 w-44">% Citados / Observados</th>
+            </tr>
+          </thead>
+          <tbody>
+            {isLoading ? (
+              <tr><td colSpan={7} className="px-5 py-10 text-center text-sm text-slate-400">Cargando datos...</td></tr>
+            ) : filtered.length === 0 ? (
+              <tr><td colSpan={7} className="px-5 py-10 text-center text-sm text-slate-400">Sin datos</td></tr>
+            ) : (
+              filtered.map((row, i) => <TerritorialRow key={i} row={row} rank={i + 1} />)
+            )}
+          </tbody>
+          {!isLoading && filtered.length > 0 && (
+            <tfoot>
+              <tr className="bg-slate-100 border-t-2 border-slate-300">
+                <td colSpan={2} className="px-3 py-2.5 text-xs font-bold text-slate-700 uppercase tracking-wide">TOTAL</td>
+                <td className="px-3 py-2.5 text-sm font-black text-slate-800 text-right tabular-nums">{tot.total.toLocaleString('es-PE')}</td>
+                <td className="px-3 py-2.5 text-sm font-black text-emerald-700 text-right tabular-nums">{tot.citados.toLocaleString('es-PE')}</td>
+                <td className="px-3 py-2.5 text-sm font-black text-amber-600 text-right tabular-nums">{tot.observados.toLocaleString('es-PE')}</td>
+                <td className="px-3 py-2.5 text-sm font-black text-rose-600 text-right tabular-nums">{tot.pendientes.toLocaleString('es-PE')}</td>
+                <td className="px-3 py-2.5">
+                  <div className="flex items-center gap-1.5">
+                    <div className="flex-1 bg-slate-300 rounded-full h-2 overflow-hidden">
+                      <div className="h-2 rounded-full bg-emerald-500" style={{ width: `${pctTot}%` }} />
+                    </div>
+                    <span className="text-xs font-black text-emerald-700 w-10 text-right tabular-nums">{pctTot}%</span>
+                  </div>
+                </td>
+              </tr>
+            </tfoot>
+          )}
+        </table>
+      </div>
+    </div>
+  );
+}
+
 // ─── Componente principal ─────────────────────────────────────────────────────
 export default function MaratonAvancesCitacion() {
   const [loading,            setLoading]            = useState(false);
@@ -528,6 +661,9 @@ export default function MaratonAvancesCitacion() {
   const [especialidades,     setEspecialidades]     = useState({ total: 0, citados: 0, observados: 0, pendientes: 0 });
   const [modalCategoria,     setModalCategoria]     = useState(null);
   const [totalesBrutos,      setTotalesBrutos]      = useState({ totalRegistros: 0, pacientesUnicos: 0, registrosExtra: 0, pacientesMultiplesCitas: 0 });
+  const [tab,                setTab]                = useState('embudo');
+  const [territorial,        setTerritorial]        = useState({ porMacrorregion: [], porRed: [], porIpress: [] });
+  const [loadingTerritorial, setLoadingTerritorial] = useState(false);
 
   const cargarDatos = useCallback(async () => {
     setLoading(true);
@@ -561,6 +697,21 @@ export default function MaratonAvancesCitacion() {
   }, []);
 
   useEffect(() => { cargarDatos(); }, [cargarDatos]);
+
+  const cargarTerritorial = useCallback(async () => {
+    if (territorial.porMacrorregion.length > 0) return; // ya cargado
+    setLoadingTerritorial(true);
+    try {
+      const data = await obtenerDashboardTerritorialMaraton();
+      setTerritorial(data ?? { porMacrorregion: [], porRed: [], porIpress: [] });
+    } catch (e) {
+      console.error('Error cargando dashboard territorial:', e);
+    } finally {
+      setLoadingTerritorial(false);
+    }
+  }, [territorial.porMacrorregion.length]);
+
+  useEffect(() => { if (tab === 'territorial') cargarTerritorial(); }, [tab, cargarTerritorial]);
 
   const totalCitados    = cenacron.citados    + especialidades.citados;
   const totalObservados = cenacron.observados + especialidades.observados;
@@ -659,6 +810,77 @@ export default function MaratonAvancesCitacion() {
           </button>
         </div>
       </div>
+
+      {/* ── Pestañas ── */}
+      <div className="flex items-center gap-1 border-b border-slate-200 pb-0 -mb-1">
+        <button
+          onClick={() => setTab('embudo')}
+          className={`inline-flex items-center gap-1.5 px-4 py-2.5 text-sm font-semibold rounded-t-lg border-b-2 transition-colors ${
+            tab === 'embudo'
+              ? 'border-blue-600 text-blue-700 bg-blue-50'
+              : 'border-transparent text-slate-500 hover:text-slate-700 hover:bg-slate-50'
+          }`}
+        >
+          <BarChart3 className="w-4 h-4" />
+          Embudo de Citación
+        </button>
+        <button
+          onClick={() => setTab('territorial')}
+          className={`inline-flex items-center gap-1.5 px-4 py-2.5 text-sm font-semibold rounded-t-lg border-b-2 transition-colors ${
+            tab === 'territorial'
+              ? 'border-emerald-600 text-emerald-700 bg-emerald-50'
+              : 'border-transparent text-slate-500 hover:text-slate-700 hover:bg-slate-50'
+          }`}
+        >
+          <MapPin className="w-4 h-4" />
+          Dashboard Territorial
+        </button>
+      </div>
+
+      {/* ── Contenido pestaña Territorial ── */}
+      {tab === 'territorial' && (
+        <div className="space-y-5">
+          {/* KPIs resumen */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            {[
+              { label: 'Total Universo',  value: territorial.porMacrorregion.reduce((a, r) => a + (Number(r.total) || 0), 0),      color: 'bg-slate-800',   text: 'text-white' },
+              { label: 'Citados',         value: territorial.porMacrorregion.reduce((a, r) => a + (Number(r.citados) || 0), 0),    color: 'bg-emerald-600', text: 'text-white' },
+              { label: 'Observados',      value: territorial.porMacrorregion.reduce((a, r) => a + (Number(r.observados) || 0), 0), color: 'bg-amber-500',   text: 'text-white' },
+              { label: 'Pendientes',      value: territorial.porMacrorregion.reduce((a, r) => a + (Number(r.pendientes) || 0), 0), color: 'bg-rose-600',    text: 'text-white' },
+            ].map(({ label, value, color, text }) => (
+              <div key={label} className={`${color} rounded-xl px-5 py-4`}>
+                <p className={`text-xs font-semibold uppercase tracking-wider opacity-80 ${text}`}>{label}</p>
+                <p className={`text-2xl font-black tabular-nums mt-1 ${text}`}>{value.toLocaleString('es-PE')}</p>
+              </div>
+            ))}
+          </div>
+
+          <TerritorialTable
+            title="Por Macrorregión"
+            icon="🗺️"
+            data={territorial.porMacrorregion}
+            loading={loadingTerritorial}
+            searchable={false}
+          />
+          <TerritorialTable
+            title="Por Red de Salud"
+            icon="🏥"
+            data={territorial.porRed}
+            loading={loadingTerritorial}
+            searchable={false}
+          />
+          <TerritorialTable
+            title="Por IPRESS"
+            icon="🏢"
+            data={territorial.porIpress}
+            loading={loadingTerritorial}
+            searchable={true}
+          />
+        </div>
+      )}
+
+      {/* ── Contenido pestaña Embudo ── */}
+      {tab !== 'territorial' && <>
 
       {/* ── Barra de avance global ── */}
       <div className="bg-blue-50 border border-blue-200 rounded-xl px-5 py-3 flex items-center gap-4 flex-wrap">
@@ -800,6 +1022,8 @@ export default function MaratonAvancesCitacion() {
           </div>
         </div>
       )}
+
+      </> }
 
       {/* ── Modal de pacientes ── */}
       {modalCategoria && (
