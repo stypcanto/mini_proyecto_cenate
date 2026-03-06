@@ -550,7 +550,8 @@ public class SolicitudBolsaEstadisticasController {
                     sb.paciente_dni,
                     COALESCE(eg.cod_estado_cita, 'PENDIENTE_CITA') AS estado,
                     sb.responsable_gestora_id,
-                    sb.especialidad
+                    sb.especialidad,
+                    sb.paciente_edad
                 FROM dim_solicitud_bolsa sb
                 LEFT JOIN dim_estados_gestion_citas eg ON eg.id_estado_cita = sb.estado_gestion_citas_id
                 WHERE sb.id_bolsa = 17 AND sb.activo = true
@@ -617,7 +618,10 @@ public class SolicitudBolsaEstadisticasController {
                     a.doc_paciente AS num_doc,
                     a.paciente AS nombre_completo,
                     a.sexo AS sexo,
-                    CAST(DATE_PART('year', AGE(CAST(a.fecnacimpaciente AS DATE))) AS INTEGER) AS edad,
+                    COALESCE(
+                        CAST(DATE_PART('year', AGE(CAST(a.fecnacimpaciente AS DATE))) AS INTEGER),
+                        pe.paciente_edad
+                    ) AS edad,
                     COALESCE(di.desc_ipress, 'N/A') AS ipress,
                     COALESCE(dr.desc_red, 'N/A') AS red,
                     COALESCE(dm.desc_macro, 'N/A') AS macrorred,
