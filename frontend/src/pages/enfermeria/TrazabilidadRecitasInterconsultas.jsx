@@ -440,7 +440,8 @@ export default function TrazabilidadRecitasInterconsultas() {
   const [filtroEstadoBolsa,        setFiltroEstadoBolsa]        = useState('');
   const [filtroTipoBolsa,          setFiltroTipoBolsa]          = useState('');
   const [filtroCreadoPor,          setFiltroCreadoPor]          = useState('');
-  const [facetas, setFacetas] = useState({ tiposBolsa: [], especialidades: [], motivos: [], estadosBolsa: [], creadosPor: [], enfermeros: [] });
+  const [filtroCentroAdscripcion,  setFiltroCentroAdscripcion]  = useState('');
+  const [facetas, setFacetas] = useState({ tiposBolsa: [], especialidades: [], motivos: [], estadosBolsa: [], creadosPor: [], ipress: [], enfermeros: [] });
 
   const [currentPage, setCurrentPage] = useState(1);
   const [sortDir,   setSortDir]   = useState('desc');           // 'desc' | 'asc'
@@ -471,21 +472,33 @@ export default function TrazabilidadRecitasInterconsultas() {
       .catch(() => {});
 
     fetch(`${API_BASE}/bolsas/solicitudes/trazabilidad-recitas/facetas`, { headers })
-      .then(r => r.json())
+      .then(r => {
+        console.log('📡 [FACETAS] HTTP:', r.status);
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        return r.json();
+      })
       .then(data => {
+        console.log('═══════════════════════════════════════════════════════');
+        console.log('🏥 RESPUESTA COMPLETA DEL API - FACETAS');
+        console.log('═══════════════════════════════════════════════════════');
+        console.log(JSON.stringify(data, null, 2));
+        console.log('═══════════════════════════════════════════════════════');
+        
         if (data && !data.error) {
-          // ⚠️ IMPORTANTE: NO sobrescribimos motivos, vienen del endpoint /motivos-interconsulta
           setFacetas(prev => ({
             ...prev,
             tiposBolsa:     Array.isArray(data.tiposBolsa)     ? data.tiposBolsa     : (prev.tiposBolsa ?? []),
             especialidades: Array.isArray(data.especialidades) ? data.especialidades : (prev.especialidades ?? []),
-            // motivos: NO sobrescribemos aquí, mantenemos los que cargamos desde /motivos-interconsulta
             estadosBolsa:   Array.isArray(data.estadosBolsa)   ? data.estadosBolsa   : (prev.estadosBolsa ?? []),
             creadosPor:     Array.isArray(data.creadosPor)     ? data.creadosPor     : (prev.creadosPor ?? []),
+            ipress:         Array.isArray(data.ipress)         ? data.ipress         : (prev.ipress ?? []),
           }));
         }
       })
-      .catch(() => {});
+      .catch(e => {
+        console.error('❌ Error FACETAS:', e);
+        console.log(e);
+      });
 
     // Cargar TODOS los motivos de interconsulta (no solo los de la trazabilidad actual)
     console.log('🔥🔥🔥 INICIANDO FETCH A /motivos-interconsulta 🔥🔥🔥');
@@ -577,7 +590,7 @@ export default function TrazabilidadRecitasInterconsultas() {
     if (isFirstLoad.current) { isFirstLoad.current = false; return; }
     setCurrentPage(1);
     cargar(1);
-  }, [filtroFechaInicio, filtroFechaFin, filtroTipo, searchTerm, filtroEnfermera, sortDir, sortField, filtroEspecialidad, filtroMotivoInterconsulta, filtroEstadoBolsa, filtroTipoBolsa, filtroCreadoPor]); // eslint-disable-line
+  }, [filtroFechaInicio, filtroFechaFin, filtroTipo, searchTerm, filtroEnfermera, sortDir, sortField, filtroEspecialidad, filtroMotivoInterconsulta, filtroEstadoBolsa, filtroTipoBolsa, filtroCreadoPor, filtroCentroAdscripcion]); // eslint-disable-line
 
   useEffect(() => {
     if (currentPage > 1) cargar(currentPage);
@@ -600,6 +613,7 @@ export default function TrazabilidadRecitasInterconsultas() {
       if (filtroEstadoBolsa.trim())     p.set('estadoBolsa',          filtroEstadoBolsa.trim());
       if (filtroTipoBolsa)              p.set('idTipoBolsa',          filtroTipoBolsa);
       if (filtroCreadoPor.trim())       p.set('creadoPor',            filtroCreadoPor.trim());
+      if (filtroCentroAdscripcion)      p.set('idIpress',             filtroCentroAdscripcion);
       p.set('sortDir',   sortDir);
       p.set('sortField', sortField);
 
@@ -637,6 +651,7 @@ export default function TrazabilidadRecitasInterconsultas() {
       if (filtroEstadoBolsa.trim())     pKpis.set('estadoBolsa',          filtroEstadoBolsa.trim());
       if (filtroTipoBolsa)              pKpis.set('idTipoBolsa',          filtroTipoBolsa);
       if (filtroCreadoPor.trim())       pKpis.set('creadoPor',            filtroCreadoPor.trim());
+      if (filtroCentroAdscripcion)      pKpis.set('idIpress',             filtroCentroAdscripcion);
       
       try {
         const resKpis = await fetch(`${API_BASE}/bolsas/solicitudes/trazabilidad-recitas/kpis-filtrados?${pKpis}`, {
@@ -660,7 +675,7 @@ export default function TrazabilidadRecitasInterconsultas() {
     } finally {
       if (isMountedRef.current) setIsLoading(false);
     }
-  }, [searchTerm, filtroFechaInicio, filtroFechaFin, filtroTipo, filtroEnfermera, sortDir, sortField, filtroEspecialidad, filtroMotivoInterconsulta, filtroEstadoBolsa, filtroTipoBolsa, filtroCreadoPor]); // eslint-disable-line
+  }, [searchTerm, filtroFechaInicio, filtroFechaFin, filtroTipo, filtroEnfermera, sortDir, sortField, filtroEspecialidad, filtroMotivoInterconsulta, filtroEstadoBolsa, filtroTipoBolsa, filtroCreadoPor, filtroCentroAdscripcion]); // eslint-disable-line
 
   const limpiarFiltros = () => {
     setSearchTerm('');
@@ -673,6 +688,7 @@ export default function TrazabilidadRecitasInterconsultas() {
     setFiltroEstadoBolsa('');
     setFiltroTipoBolsa('');
     setFiltroCreadoPor('');
+    setFiltroCentroAdscripcion('');
   };
 
   function handleSort(field) {
@@ -883,6 +899,21 @@ export default function TrazabilidadRecitasInterconsultas() {
               <option value="">Todos</option>
               {facetas.creadosPor.map(f => (
                 <option key={f.valor} value={f.valor}>{f.valor} ({f.total})</option>
+              ))}
+            </select>
+          </div>
+
+          {/* Centro de Adscripción - Nuevo */}
+          <div className="flex-1 min-w-[160px]">
+            <label className="block text-xs font-semibold text-gray-600 mb-0.5">Centro Adscripción</label>
+            <select
+              value={filtroCentroAdscripcion}
+              onChange={e => setFiltroCentroAdscripcion(e.target.value)}
+              className="w-full py-1.5 px-2 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-[#0a5ba9] bg-white"
+            >
+              <option value="">Todos</option>
+              {facetas.ipress && facetas.ipress.map(i => (
+                <option key={i.id} value={i.id}>{i.descripcion}</option>
               ))}
             </select>
           </div>

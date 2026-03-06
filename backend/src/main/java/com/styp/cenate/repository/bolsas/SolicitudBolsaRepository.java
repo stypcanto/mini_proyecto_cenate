@@ -1958,6 +1958,7 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
           AND (:motivo IS NULL OR (UPPER(recita.tipo_cita) = 'INTERCONSULTA' AND SUBSTRING(recita.especialidad FROM '\\(([^)]+)\\)') ILIKE '%' || :motivo || '%'))
           AND (:estadoBolsa IS NULL OR recita.estado ILIKE :estadoBolsa)
           AND (:creadoPor IS NULL OR (pc.ape_pater_pers || ' ' || pc.ape_mater_pers || ', ' || pc.nom_pers) ILIKE '%' || :creadoPor || '%')
+          AND (:idIpress IS NULL OR recita.id_ipress = CAST(:idIpress AS bigint))
         ORDER BY
           -- Texto: tipo_cita
           CASE WHEN :sortField = 'tipoCita'       AND :sortDir = 'asc'  THEN recita.tipo_cita           END ASC  NULLS LAST,
@@ -2029,6 +2030,7 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
           AND (:especialidad IS NULL OR recita.especialidad ILIKE '%' || :especialidad || '%')
           AND (:motivo IS NULL OR (UPPER(recita.tipo_cita) = 'INTERCONSULTA' AND SUBSTRING(recita.especialidad FROM '\\(([^)]+)\\)') ILIKE '%' || :motivo || '%'))
           AND (:estadoBolsa IS NULL OR recita.estado ILIKE :estadoBolsa)
+          AND (:idIpress IS NULL OR recita.id_ipress = CAST(:idIpress AS bigint))
         """,
         nativeQuery = true)
     Page<Object[]> obtenerTrazabilidadRecitasInterconsultas(
@@ -2044,6 +2046,7 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
         @org.springframework.data.repository.query.Param("estadoBolsa")   String estadoBolsa,
         @org.springframework.data.repository.query.Param("creadoPor")     String creadoPor,
         @org.springframework.data.repository.query.Param("idTipoBolsa")   Long idTipoBolsa,
+        @org.springframework.data.repository.query.Param("idIpress")      Long idIpress,
         Pageable pageable
     );
 
@@ -2175,6 +2178,7 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
           AND (:motivo IS NULL OR (UPPER(recita.tipo_cita) = 'INTERCONSULTA' AND SUBSTRING(recita.especialidad FROM '\\(([^)]+)\\)') ILIKE '%' || :motivo || '%'))
           AND (:estadoBolsa IS NULL OR recita.estado ILIKE :estadoBolsa)
           AND (:creadoPor IS NULL OR (pc.ape_pater_pers || ' ' || pc.ape_mater_pers || ', ' || pc.nom_pers) ILIKE '%' || :creadoPor || '%')
+          AND (:idIpress IS NULL OR recita.id_ipress = CAST(:idIpress AS bigint))
         """, nativeQuery = true)
     Map<String, Object> kpisTrazabilidadFiltrados(
         @org.springframework.data.repository.query.Param("busqueda")      String busqueda,
@@ -2186,7 +2190,8 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
         @org.springframework.data.repository.query.Param("motivo")        String motivoInterconsulta,
         @org.springframework.data.repository.query.Param("estadoBolsa")   String estadoBolsa,
         @org.springframework.data.repository.query.Param("creadoPor")     String creadoPor,
-        @org.springframework.data.repository.query.Param("idTipoBolsa")   Long idTipoBolsa
+        @org.springframework.data.repository.query.Param("idTipoBolsa")   Long idTipoBolsa,
+        @org.springframework.data.repository.query.Param("idIpress")      Long idIpress
     );
 
     /** Fechas preferidas únicas con conteo de recitas/interconsultas (para marcar el calendario). */
@@ -2301,6 +2306,17 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
         ORDER BY total DESC, valor ASC
         """, nativeQuery = true)
     List<Object[]> facetaTiposBolsa();
+
+    /** IPRESS disponibles para el filtro Centro de Adscripción */
+    @Query(value = """
+        SELECT di.id_ipress AS id, di.desc_ipress AS descripcion
+        FROM   dim_ipress di
+        WHERE  di.id_ipress IS NOT NULL
+          AND  di.desc_ipress IS NOT NULL
+        GROUP BY di.id_ipress, di.desc_ipress
+        ORDER BY di.desc_ipress ASC
+        """, nativeQuery = true)
+    List<Object[]> facetaIpress();
 
     /** Listado completo de motivos de interconsulta */
     @Query(value = """

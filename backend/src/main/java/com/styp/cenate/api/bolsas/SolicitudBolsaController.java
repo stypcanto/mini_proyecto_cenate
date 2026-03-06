@@ -1794,14 +1794,15 @@ public class SolicitudBolsaController {
             @RequestParam(required = false) String estadoBolsa,
             @RequestParam(required = false) String creadoPor,
             @RequestParam(required = false) Long idTipoBolsa,
+            @RequestParam(required = false) Long idIpress,
             @RequestParam(defaultValue = "0")  int page,
             @RequestParam(defaultValue = "25") int size) {
         try {
-            log.info("🔎 GET /api/bolsas/solicitudes/trazabilidad-recitas busqueda={} tipoCita={} idPersonal={} especialidad={} motivo={} estadoBolsa={} creadoPor={} idTipoBolsa={} sortField={} sortDir={}", busqueda, tipoCita, idPersonal, especialidad, motivoInterconsulta, estadoBolsa, creadoPor, idTipoBolsa, sortField, sortDir);
+            log.info("🔎 GET /api/bolsas/solicitudes/trazabilidad-recitas busqueda={} tipoCita={} idPersonal={} especialidad={} motivo={} estadoBolsa={} creadoPor={} idTipoBolsa={} idIpress={} sortField={} sortDir={}", busqueda, tipoCita, idPersonal, especialidad, motivoInterconsulta, estadoBolsa, creadoPor, idTipoBolsa, idIpress, sortField, sortDir);
             var pageable = org.springframework.data.domain.PageRequest.of(page, size);
             var resultado = solicitudBolsaService.obtenerTrazabilidadRecitas(
                 busqueda, fechaInicio, fechaFin, tipoCita, idPersonal, sortDir, sortField,
-                especialidad, motivoInterconsulta, estadoBolsa, creadoPor, idTipoBolsa, pageable);
+                especialidad, motivoInterconsulta, estadoBolsa, creadoPor, idTipoBolsa, idIpress, pageable);
             return ResponseEntity.ok(Map.of(
                 "solicitudes",  resultado.getContent(),
                 "total",        resultado.getTotalElements(),
@@ -1848,12 +1849,13 @@ public class SolicitudBolsaController {
             @RequestParam(required = false) String motivoInterconsulta,
             @RequestParam(required = false) String estadoBolsa,
             @RequestParam(required = false) String creadoPor,
-            @RequestParam(required = false) Long idTipoBolsa) {
+            @RequestParam(required = false) Long idTipoBolsa,
+            @RequestParam(required = false) Long idIpress) {
         try {
-            log.info("🎯 GET /api/bolsas/solicitudes/trazabilidad-recitas/kpis-filtrados - busqueda={} tipoCita={} especialidad={}", busqueda, tipoCita, especialidad);
+            log.info("🎯 GET /api/bolsas/solicitudes/trazabilidad-recitas/kpis-filtrados - busqueda={} tipoCita={} especialidad={} idIpress={}", busqueda, tipoCita, especialidad, idIpress);
             var kpis = solicitudBolsaService.obtenerKpisTrazabilidadFiltrados(
                 busqueda, fechaInicio, fechaFin, tipoCita, idPersonal, 
-                especialidad, motivoInterconsulta, estadoBolsa, creadoPor, idTipoBolsa);
+                especialidad, motivoInterconsulta, estadoBolsa, creadoPor, idTipoBolsa, idIpress);
             log.info("✅ KPIs filtrados calculados: {}", kpis);
             return ResponseEntity.ok(kpis);
         } catch (Exception e) {

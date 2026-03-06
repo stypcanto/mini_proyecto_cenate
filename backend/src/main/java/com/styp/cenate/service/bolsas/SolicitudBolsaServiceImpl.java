@@ -4356,7 +4356,7 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
             String busqueda, String fechaInicio, String fechaFin,
             String tipoCita, Long idPersonal, String sortDir, String sortField,
             String especialidad, String motivoInterconsulta, String estadoBolsa, String creadoPor,
-            Long idTipoBolsa,
+            Long idTipoBolsa, Long idIpress,
             org.springframework.data.domain.Pageable pageable) {
 
         String dir = (sortDir != null && sortDir.equalsIgnoreCase("asc")) ? "asc" : "desc";
@@ -4364,7 +4364,7 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
         org.springframework.data.domain.Page<Object[]> rows =
             solicitudRepository.obtenerTrazabilidadRecitasInterconsultas(
                 busqueda, fechaInicio, fechaFin, tipoCita, idPersonal, dir, field,
-                especialidad, motivoInterconsulta, estadoBolsa, creadoPor, idTipoBolsa, pageable);
+                especialidad, motivoInterconsulta, estadoBolsa, creadoPor, idTipoBolsa, idIpress, pageable);
 
         return rows.map(row -> {
             java.util.Map<String, Object> m = new java.util.LinkedHashMap<>();
@@ -4422,10 +4422,10 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
     public java.util.Map<String, Object> obtenerKpisTrazabilidadFiltrados(
             String busqueda, String fechaInicio, String fechaFin, String tipoCita, Long idPersonal,
             String especialidad, String motivoInterconsulta, String estadoBolsa, String creadoPor,
-            Long idTipoBolsa) {
+            Long idTipoBolsa, Long idIpress) {
         java.util.Map<String, Object> row = solicitudRepository.kpisTrazabilidadFiltrados(
             busqueda, fechaInicio, fechaFin, tipoCita, idPersonal,
-            especialidad, motivoInterconsulta, estadoBolsa, creadoPor, idTipoBolsa);
+            especialidad, motivoInterconsulta, estadoBolsa, creadoPor, idTipoBolsa, idIpress);
         java.util.Map<String, Object> m = new java.util.LinkedHashMap<>();
         m.put("total",          row.get("total"));
         m.put("recitas",        row.get("recitas"));
@@ -4460,12 +4460,22 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
             m.put("total", row[2]);
             return m;
         };
+        java.util.function.Function<Object[], java.util.Map<String, Object>> toMapIpress = row -> {
+            java.util.Map<String, Object> m = new java.util.LinkedHashMap<>();
+            m.put("id", row[0] != null ? Long.valueOf(row[0].toString()) : null);
+            m.put("descripcion", row[1] != null ? row[1].toString() : "");
+            return m;
+        };
         java.util.Map<String, Object> facetas = new java.util.LinkedHashMap<>();
         facetas.put("tiposBolsa",      solicitudRepository.facetaTiposBolsa().stream().map(toMapBolsa).toList());
         facetas.put("especialidades",  solicitudRepository.facetaEspecialidadesRecita().stream().map(toMap).toList());
         facetas.put("motivos",         solicitudRepository.facetaMotivosInterconsulta().stream().map(toMap).toList());
         facetas.put("estadosBolsa",    solicitudRepository.facetaEstadosBolsa().stream().map(toMap).toList());
         facetas.put("creadosPor",      solicitudRepository.facetaCreadosPor().stream().map(toMap).toList());
+        
+        var listIpress = solicitudRepository.facetaIpress().stream().map(toMapIpress).toList();
+        facetas.put("ipress", listIpress);
+        
         return facetas;
     }
 
