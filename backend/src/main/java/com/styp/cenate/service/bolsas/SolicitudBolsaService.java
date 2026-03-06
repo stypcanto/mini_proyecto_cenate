@@ -337,6 +337,7 @@ public interface SolicitudBolsaService {
         String motivoInterconsulta,
         String estadoBolsa,
         String creadoPor,
+        Long idTipoBolsa,
         org.springframework.data.domain.Pageable pageable
     );
 
@@ -351,6 +352,12 @@ public interface SolicitudBolsaService {
 
     /** Facetas para filtros desplegables: especialidades, motivos, estados y creadores con conteo. */
     Map<String, Object> listarFacetasRecitasInterconsultas();
+
+    /** Listado completo de motivos de interconsulta */
+    java.util.List<java.util.Map<String, Object>> listarMotivosInterconsulta();
+
+    /** Listado de enfermeros únicos activos (personas con especialidad ENFERMERIA) */
+    java.util.List<java.util.Map<String, Object>> listarEnfermeros();
 
     /**
      * Sincroniza teléfonos desde la tabla asegurados hacia dim_solicitud_bolsa.

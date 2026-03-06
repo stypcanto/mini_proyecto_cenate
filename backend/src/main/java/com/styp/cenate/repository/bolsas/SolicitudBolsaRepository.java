@@ -1870,6 +1870,7 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
             COALESCE(orig_d.fecha_atencion_medica, orig_t.fecha_atencion_medica) AS fecha_atencion_origen,
             COALESCE(orig_d.especialidad, orig_t.especialidad)               AS especialidad_origen,
             recita.fecha_preferida_no_atendida                               AS fecha_preferida,
+            recita.id_bolsa                                                  AS id_bolsa,
             COALESCE(tb.desc_tipo_bolsa, 'Bolsa de recita/interconsulta')    AS origen_bolsa,
             recita.condicion_medica                                          AS condicion_medica,
             COALESCE(di_ads.desc_ipress, di_ads_orig.desc_ipress, '')        AS centro_adscripcion
@@ -1906,7 +1907,7 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
         LEFT JOIN dim_usuarios umed     ON umed.id_user = pc.id_usuario
         WHERE UPPER(recita.tipo_cita) IN ('RECITA','INTERCONSULTA')
           AND recita.activo = true
-          AND recita.id_bolsa IN (11, 15, 16)
+          AND (:idTipoBolsa IS NULL OR recita.id_bolsa = CAST(:idTipoBolsa AS bigint))
           AND UPPER(COALESCE(orig_d.especialidad, orig_t.especialidad, '')) = 'ENFERMERIA'
           AND (:busqueda    IS NULL OR recita.paciente_dni    ILIKE '%' || :busqueda || '%'
                                    OR recita.paciente_nombre  ILIKE '%' || :busqueda || '%')
@@ -1979,10 +1980,9 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
         ) orig_ac ON COALESCE(recita.id_personal, orig_d.id_personal, orig_t.id_personal) IS NULL
         LEFT JOIN atencion_clinica ac_fk ON ac_fk.id_atencion = recita.id_atencion_clinica
         WHERE UPPER(recita.tipo_cita) IN ('RECITA','INTERCONSULTA')
-          AND recita.activo = true AND recita.id_bolsa IN (11, 15, 16)
+          AND recita.activo = true AND (:idTipoBolsa IS NULL OR recita.id_bolsa = CAST(:idTipoBolsa AS bigint))
           AND UPPER(COALESCE(orig_d.especialidad, orig_t.especialidad, '')) = 'ENFERMERIA'
-          AND (:busqueda    IS NULL OR recita.paciente_dni    ILIKE '%' || :busqueda    || '%'
-                                   OR recita.paciente_nombre  ILIKE '%' || :busqueda    || '%')
+          AND (:busqueda    IS NULL OR recita.paciente_dni ILIKE '%' || :busqueda || '%')
           AND (:fechaInicio IS NULL OR recita.fecha_preferida_no_atendida >= CAST(:fechaInicio AS date))
           AND (:fechaFin    IS NULL OR recita.fecha_preferida_no_atendida <= CAST(:fechaFin    AS date))
           AND (:tipoCita    IS NULL OR UPPER(recita.tipo_cita) = UPPER(:tipoCita))
@@ -1993,17 +1993,18 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
         """,
         nativeQuery = true)
     Page<Object[]> obtenerTrazabilidadRecitasInterconsultas(
-        @org.springframework.data.repository.query.Param("busqueda")    String busqueda,
-        @org.springframework.data.repository.query.Param("fechaInicio") String fechaInicio,
-        @org.springframework.data.repository.query.Param("fechaFin")    String fechaFin,
-        @org.springframework.data.repository.query.Param("tipoCita")    String tipoCita,
-        @org.springframework.data.repository.query.Param("idPersonal")  Long idPersonal,
-        @org.springframework.data.repository.query.Param("sortDir")     String sortDir,
-        @org.springframework.data.repository.query.Param("sortField")   String sortField,
-        @org.springframework.data.repository.query.Param("especialidad") String especialidad,
-        @org.springframework.data.repository.query.Param("motivo")       String motivoInterconsulta,
-        @org.springframework.data.repository.query.Param("estadoBolsa")  String estadoBolsa,
-        @org.springframework.data.repository.query.Param("creadoPor")    String creadoPor,
+        @org.springframework.data.repository.query.Param("busqueda")      String busqueda,
+        @org.springframework.data.repository.query.Param("fechaInicio")   String fechaInicio,
+        @org.springframework.data.repository.query.Param("fechaFin")      String fechaFin,
+        @org.springframework.data.repository.query.Param("tipoCita")      String tipoCita,
+        @org.springframework.data.repository.query.Param("idPersonal")    Long idPersonal,
+        @org.springframework.data.repository.query.Param("sortDir")       String sortDir,
+        @org.springframework.data.repository.query.Param("sortField")     String sortField,
+        @org.springframework.data.repository.query.Param("especialidad")  String especialidad,
+        @org.springframework.data.repository.query.Param("motivo")        String motivoInterconsulta,
+        @org.springframework.data.repository.query.Param("estadoBolsa")   String estadoBolsa,
+        @org.springframework.data.repository.query.Param("creadoPor")     String creadoPor,
+        @org.springframework.data.repository.query.Param("idTipoBolsa")   Long idTipoBolsa,
         Pageable pageable
     );
 
@@ -2183,6 +2184,41 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
         ORDER BY total DESC, valor ASC
         """, nativeQuery = true)
     List<Object[]> facetaCreadosPor();
+
+    /** Tipos de bolsas disponibles en trazabilidad de recitas/interconsultas con conteo. */
+    @Query(value = """
+        SELECT tb.id_tipo_bolsa AS id, tb.desc_tipo_bolsa AS valor, COUNT(*) AS total
+        FROM   dim_solicitud_bolsa recita
+        LEFT JOIN dim_tipos_bolsas tb ON tb.id_tipo_bolsa = recita.id_bolsa
+        WHERE  UPPER(recita.tipo_cita) IN ('RECITA','INTERCONSULTA')
+          AND  recita.activo = true
+          AND  UPPER(COALESCE((SELECT COALESCE(orig_d.especialidad, orig_t.especialidad)
+                              FROM dim_solicitud_bolsa orig_d
+                              LEFT JOIN dim_solicitud_bolsa orig_t ON orig_t.id_solicitud = orig_d.idsolicitudgeneracion
+                              WHERE orig_d.id_solicitud = recita.idsolicitudgeneracion
+                              LIMIT 1), '')) = 'ENFERMERIA'
+        GROUP BY tb.id_tipo_bolsa, tb.desc_tipo_bolsa
+        ORDER BY total DESC, valor ASC
+        """, nativeQuery = true)
+    List<Object[]> facetaTiposBolsa();
+
+    /** Listado completo de motivos de interconsulta */
+    @Query(value = """
+        SELECT dm.id_motivo AS id, dm.descripcion AS descripcion
+        FROM   dim_motivo_interconsulta dm
+        ORDER BY dm.descripcion ASC
+        """, nativeQuery = true)
+    List<Object[]> listarMotivosInterconsulta();
+
+    /** Listado de enfermeros únicos activos (personas con especialidad ENFERMERIA) */
+    @Query(value = """
+        SELECT DISTINCT sb.id_personal AS id, dp.per_paterno || ' ' || dp.per_materno || ', ' || dp.per_nombre AS nombre
+        FROM   dim_solicitud_bolsa sb
+        INNER JOIN dim_personal_cnt dp ON sb.id_personal = dp.id_personal
+        WHERE  sb.activo = true AND UPPER(sb.especialidad) = 'ENFERMERIA' AND sb.id_personal IS NOT NULL
+        ORDER BY nombre ASC
+        """, nativeQuery = true)
+    List<Object[]> listarEnfermeros();
 
     /**
      * Buscar bolsa RECITA activa más reciente de un paciente

@@ -1793,14 +1793,15 @@ public class SolicitudBolsaController {
             @RequestParam(required = false) String motivoInterconsulta,
             @RequestParam(required = false) String estadoBolsa,
             @RequestParam(required = false) String creadoPor,
+            @RequestParam(required = false) Long idTipoBolsa,
             @RequestParam(defaultValue = "0")  int page,
             @RequestParam(defaultValue = "25") int size) {
         try {
-            log.info("🔎 GET /api/bolsas/solicitudes/trazabilidad-recitas busqueda={} tipoCita={} idPersonal={} especialidad={} motivo={} estadoBolsa={} creadoPor={} sortField={} sortDir={}", busqueda, tipoCita, idPersonal, especialidad, motivoInterconsulta, estadoBolsa, creadoPor, sortField, sortDir);
+            log.info("🔎 GET /api/bolsas/solicitudes/trazabilidad-recitas busqueda={} tipoCita={} idPersonal={} especialidad={} motivo={} estadoBolsa={} creadoPor={} idTipoBolsa={} sortField={} sortDir={}", busqueda, tipoCita, idPersonal, especialidad, motivoInterconsulta, estadoBolsa, creadoPor, idTipoBolsa, sortField, sortDir);
             var pageable = org.springframework.data.domain.PageRequest.of(page, size);
             var resultado = solicitudBolsaService.obtenerTrazabilidadRecitas(
                 busqueda, fechaInicio, fechaFin, tipoCita, idPersonal, sortDir, sortField,
-                especialidad, motivoInterconsulta, estadoBolsa, creadoPor, pageable);
+                especialidad, motivoInterconsulta, estadoBolsa, creadoPor, idTipoBolsa, pageable);
             return ResponseEntity.ok(Map.of(
                 "solicitudes",  resultado.getContent(),
                 "total",        resultado.getTotalElements(),
@@ -1878,6 +1879,34 @@ public class SolicitudBolsaController {
             return ResponseEntity.ok(solicitudBolsaService.listarFacetasRecitasInterconsultas());
         } catch (Exception e) {
             log.error("❌ Error obteniendo facetas recitas: ", e);
+            return ResponseEntity.status(500).body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    @GetMapping("/motivos-interconsulta")
+    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'COORD. ENFERMERIA', 'SOPORTE_TELEUE', 'ENFERMERIA', 'MEDICO')")
+    public ResponseEntity<?> listarMotivosInterconsulta() {
+        try {
+            log.info("📋 GET /api/bolsas/solicitudes/motivos-interconsulta");
+            List<Map<String, Object>> motivos = solicitudBolsaService.listarMotivosInterconsulta();
+            log.info("✅ Motivos encontrados: {}", motivos.size());
+            return ResponseEntity.ok(motivos);
+        } catch (Exception e) {
+            log.error("❌ Error obteniendo motivos de interconsulta: ", e);
+            return ResponseEntity.status(500).body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    @GetMapping("/enfermeros")
+    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'COORD. ENFERMERIA', 'SOPORTE_TELEUE', 'ENFERMERIA')")
+    public ResponseEntity<?> listarEnfermeros() {
+        try {
+            log.info("👩‍⚕️ GET /api/bolsas/solicitudes/enfermeros");
+            List<Map<String, Object>> enfermeros = solicitudBolsaService.listarEnfermeros();
+            log.info("✅ Enfermeros encontrados: {}", enfermeros.size());
+            return ResponseEntity.ok(enfermeros);
+        } catch (Exception e) {
+            log.error("❌ Error obteniendo enfermeros: ", e);
             return ResponseEntity.status(500).body(Map.of("error", e.getMessage()));
         }
     }

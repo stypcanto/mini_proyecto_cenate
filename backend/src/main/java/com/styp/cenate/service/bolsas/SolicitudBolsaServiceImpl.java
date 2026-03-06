@@ -4356,6 +4356,7 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
             String busqueda, String fechaInicio, String fechaFin,
             String tipoCita, Long idPersonal, String sortDir, String sortField,
             String especialidad, String motivoInterconsulta, String estadoBolsa, String creadoPor,
+            Long idTipoBolsa,
             org.springframework.data.domain.Pageable pageable) {
 
         String dir = (sortDir != null && sortDir.equalsIgnoreCase("asc")) ? "asc" : "desc";
@@ -4363,7 +4364,7 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
         org.springframework.data.domain.Page<Object[]> rows =
             solicitudRepository.obtenerTrazabilidadRecitasInterconsultas(
                 busqueda, fechaInicio, fechaFin, tipoCita, idPersonal, dir, field,
-                especialidad, motivoInterconsulta, estadoBolsa, creadoPor, pageable);
+                especialidad, motivoInterconsulta, estadoBolsa, creadoPor, idTipoBolsa, pageable);
 
         return rows.map(row -> {
             java.util.Map<String, Object> m = new java.util.LinkedHashMap<>();
@@ -4384,9 +4385,10 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
             m.put("fechaAtencionOrigen", row[14]);
             m.put("especialidadOrigen",  row[15]);
             m.put("fechaPreferida",      row[16]);
-            m.put("origenBolsa",         row[17]);
-            m.put("condicionMedica",     row[18]);
-            m.put("centroAdscripcion",   row[19]);
+            m.put("idBolsa",             row[17]);
+            m.put("origenBolsa",         row[18]);
+            m.put("condicionMedica",     row[19]);
+            m.put("centroAdscripcion",   row[20]);
             return m;
         });
     }
@@ -4434,12 +4436,42 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
             m.put("total", row[1]);
             return m;
         };
+        java.util.function.Function<Object[], java.util.Map<String, Object>> toMapBolsa = row -> {
+            java.util.Map<String, Object> m = new java.util.LinkedHashMap<>();
+            m.put("id", row[0] != null ? Long.valueOf(row[0].toString()) : null);
+            m.put("valor", row[1] != null ? row[1].toString() : "");
+            m.put("total", row[2]);
+            return m;
+        };
         java.util.Map<String, Object> facetas = new java.util.LinkedHashMap<>();
+        facetas.put("tiposBolsa",      solicitudRepository.facetaTiposBolsa().stream().map(toMapBolsa).toList());
         facetas.put("especialidades",  solicitudRepository.facetaEspecialidadesRecita().stream().map(toMap).toList());
         facetas.put("motivos",         solicitudRepository.facetaMotivosInterconsulta().stream().map(toMap).toList());
         facetas.put("estadosBolsa",    solicitudRepository.facetaEstadosBolsa().stream().map(toMap).toList());
         facetas.put("creadosPor",      solicitudRepository.facetaCreadosPor().stream().map(toMap).toList());
         return facetas;
+    }
+
+    @Override
+    @org.springframework.transaction.annotation.Transactional(readOnly = true)
+    public java.util.List<java.util.Map<String, Object>> listarMotivosInterconsulta() {
+        return solicitudRepository.listarMotivosInterconsulta().stream().map(row -> {
+            java.util.Map<String, Object> m = new java.util.LinkedHashMap<>();
+            m.put("id", row[0] != null ? Long.valueOf(row[0].toString()) : null);
+            m.put("descripcion", row[1] != null ? row[1].toString() : "");
+            return m;
+        }).toList();
+    }
+
+    @Override
+    @org.springframework.transaction.annotation.Transactional(readOnly = true)
+    public java.util.List<java.util.Map<String, Object>> listarEnfermeros() {
+        return solicitudRepository.listarEnfermeros().stream().map(row -> {
+            java.util.Map<String, Object> m = new java.util.LinkedHashMap<>();
+            m.put("idPersonal", row[0] != null ? Long.valueOf(row[0].toString()) : null);
+            m.put("nombre", row[1] != null ? row[1].toString() : "");
+            return m;
+        }).toList();
     }
 
     // ============================================================================

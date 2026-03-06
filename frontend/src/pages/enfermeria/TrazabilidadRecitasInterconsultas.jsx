@@ -2,7 +2,8 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   Search, GitBranch, RefreshCw, ChevronLeft, ChevronRight,
   Calendar, Filter, FileText, ClipboardList, Stethoscope,
-  Pencil, Check, X, AlertCircle, ChevronUp, ChevronDown, ArrowUpDown
+  Pencil, Check, X, AlertCircle, ChevronUp, ChevronDown, ArrowUpDown,
+  Box, CheckCircle, User
 } from 'lucide-react';
 
 /**
@@ -437,8 +438,9 @@ export default function TrazabilidadRecitasInterconsultas() {
   const [filtroEspecialidad,       setFiltroEspecialidad]       = useState('');
   const [filtroMotivoInterconsulta, setFiltroMotivoInterconsulta] = useState('');
   const [filtroEstadoBolsa,        setFiltroEstadoBolsa]        = useState('');
+  const [filtroTipoBolsa,          setFiltroTipoBolsa]          = useState('');
   const [filtroCreadoPor,          setFiltroCreadoPor]          = useState('');
-  const [facetas, setFacetas] = useState({ especialidades: [], motivos: [], estadosBolsa: [], creadosPor: [] });
+  const [facetas, setFacetas] = useState({ tiposBolsa: [], especialidades: [], motivos: [], estadosBolsa: [], creadosPor: [], enfermeros: [] });
 
   const [currentPage, setCurrentPage] = useState(1);
   const [sortDir,   setSortDir]   = useState('desc');           // 'desc' | 'asc'
@@ -472,15 +474,97 @@ export default function TrazabilidadRecitasInterconsultas() {
       .then(r => r.json())
       .then(data => {
         if (data && !data.error) {
-          setFacetas({
-            especialidades: Array.isArray(data.especialidades) ? data.especialidades : [],
-            motivos:        Array.isArray(data.motivos)        ? data.motivos        : [],
-            estadosBolsa:   Array.isArray(data.estadosBolsa)   ? data.estadosBolsa   : [],
-            creadosPor:     Array.isArray(data.creadosPor)     ? data.creadosPor     : [],
-          });
+          // ⚠️ IMPORTANTE: NO sobrescribimos motivos, vienen del endpoint /motivos-interconsulta
+          setFacetas(prev => ({
+            ...prev,
+            tiposBolsa:     Array.isArray(data.tiposBolsa)     ? data.tiposBolsa     : (prev.tiposBolsa ?? []),
+            especialidades: Array.isArray(data.especialidades) ? data.especialidades : (prev.especialidades ?? []),
+            // motivos: NO sobrescribemos aquí, mantenemos los que cargamos desde /motivos-interconsulta
+            estadosBolsa:   Array.isArray(data.estadosBolsa)   ? data.estadosBolsa   : (prev.estadosBolsa ?? []),
+            creadosPor:     Array.isArray(data.creadosPor)     ? data.creadosPor     : (prev.creadosPor ?? []),
+          }));
         }
       })
       .catch(() => {});
+
+    // Cargar TODOS los motivos de interconsulta (no solo los de la trazabilidad actual)
+    console.log('🔥🔥🔥 INICIANDO FETCH A /motivos-interconsulta 🔥🔥🔥');
+    const motivosUrl = `${API_BASE}/bolsas/solicitudes/motivos-interconsulta`;
+    console.log('📡 URL:', motivosUrl);
+    console.log('🔑 Headers:', headers);
+    
+    fetch(motivosUrl, { headers })
+      .then(r => {
+        console.log('📊 HTTP Status:', r.status, r.statusText);
+        if (!r.ok) throw new Error(`HTTP ${r.status} ${r.statusText}`);
+        return r.json();
+      })
+      .then(data => {
+        console.log('🎉🎉🎉 ✅ MOTIVOS CARGADOS EXITOSAMENTE 🎉🎉🎉');
+        console.log('📦 Datos recibidos:', data);
+        console.log('📊 Total motivos:', Array.isArray(data) ? data.length : 'NO ES ARRAY');
+        
+        if (Array.isArray(data) && data.length > 0) {
+          const motivosMapeados = data.map(m => ({ 
+            valor: m.descripcion, 
+            total: 0, 
+            id: m.id 
+          }));
+          console.log('✏️  Motivos mapeados para dropdown:', motivosMapeados);
+          
+          setFacetas(prev => ({
+            ...prev,
+            motivos: motivosMapeados
+          }));
+          console.log('✅ Estado actualizado con motivos');
+        } else {
+          console.warn('⚠️ Los datos no son un array o está vacío:', data);
+        }
+      })
+      .catch(e => {
+        console.error('🚨🚨🚨 ERROR CARGANDO MOTIVOS 🚨🚨🚨');
+        console.error('💥 Mensaje de error:', e.message);
+        console.error('📋 Stack:', e.stack);
+      });
+
+    // Cargar TODOS los enfermeros disponibles
+    console.log('🔥🔥🔥 INICIANDO FETCH A /enfermeros 🔥🔥🔥');
+    const enfermerosUrl = `${API_BASE}/bolsas/solicitudes/enfermeros`;
+    console.log('📡 URL:', enfermerosUrl);
+    
+    fetch(enfermerosUrl, { headers })
+      .then(r => {
+        console.log('📊 HTTP Status:', r.status, r.statusText);
+        if (!r.ok) throw new Error(`HTTP ${r.status} ${r.statusText}`);
+        return r.json();
+      })
+      .then(data => {
+        console.log('🎉🎉🎉 ✅ ENFERMEROS CARGADOS EXITOSAMENTE 🎉🎉🎉');
+        console.log('📦 Datos recibidos:', data);
+        console.log('📊 Total enfermeros:', Array.isArray(data) ? data.length : 'NO ES ARRAY');
+        
+        if (Array.isArray(data) && data.length > 0) {
+          const enfermerosMapeados = data.map(e => ({ 
+            valor: e.nombre, 
+            total: 0, 
+            id: e.idPersonal 
+          }));
+          console.log('✏️  Enfermeros mapeados para dropdown:', enfermerosMapeados);
+          
+          setFacetas(prev => ({
+            ...prev,
+            enfermeros: enfermerosMapeados
+          }));
+          console.log('✅ Estado actualizado con enfermeros');
+        } else {
+          console.warn('⚠️ Los datos no son un array o está vacío:', data);
+        }
+      })
+      .catch(e => {
+        console.error('🚨🚨🚨 ERROR CARGANDO ENFERMEROS 🚨🚨🚨');
+        console.error('💥 Mensaje de error:', e.message);
+        console.error('📋 Stack:', e.stack);
+      });
   }, []);
 
   useEffect(() => {
@@ -493,7 +577,7 @@ export default function TrazabilidadRecitasInterconsultas() {
     if (isFirstLoad.current) { isFirstLoad.current = false; return; }
     setCurrentPage(1);
     cargar(1);
-  }, [filtroFechaInicio, filtroFechaFin, filtroTipo, searchTerm, filtroEnfermera, sortDir, sortField, filtroEspecialidad, filtroMotivoInterconsulta, filtroEstadoBolsa, filtroCreadoPor]); // eslint-disable-line
+  }, [filtroFechaInicio, filtroFechaFin, filtroTipo, searchTerm, filtroEnfermera, sortDir, sortField, filtroEspecialidad, filtroMotivoInterconsulta, filtroEstadoBolsa, filtroTipoBolsa, filtroCreadoPor]); // eslint-disable-line
 
   useEffect(() => {
     if (currentPage > 1) cargar(currentPage);
@@ -514,6 +598,7 @@ export default function TrazabilidadRecitasInterconsultas() {
       if (filtroEspecialidad.trim())    p.set('especialidad',         filtroEspecialidad.trim());
       if (filtroMotivoInterconsulta.trim()) p.set('motivoInterconsulta', filtroMotivoInterconsulta.trim());
       if (filtroEstadoBolsa.trim())     p.set('estadoBolsa',          filtroEstadoBolsa.trim());
+      if (filtroTipoBolsa)              p.set('idTipoBolsa',          filtroTipoBolsa);
       if (filtroCreadoPor.trim())       p.set('creadoPor',            filtroCreadoPor.trim());
       p.set('sortDir',   sortDir);
       p.set('sortField', sortField);
@@ -545,7 +630,7 @@ export default function TrazabilidadRecitasInterconsultas() {
     } finally {
       if (isMountedRef.current) setIsLoading(false);
     }
-  }, [searchTerm, filtroFechaInicio, filtroFechaFin, filtroTipo, filtroEnfermera, sortDir, sortField, filtroEspecialidad, filtroMotivoInterconsulta, filtroEstadoBolsa, filtroCreadoPor]); // eslint-disable-line
+  }, [searchTerm, filtroFechaInicio, filtroFechaFin, filtroTipo, filtroEnfermera, sortDir, sortField, filtroEspecialidad, filtroMotivoInterconsulta, filtroEstadoBolsa, filtroTipoBolsa, filtroCreadoPor]); // eslint-disable-line
 
   const limpiarFiltros = () => {
     setSearchTerm('');
@@ -556,6 +641,7 @@ export default function TrazabilidadRecitasInterconsultas() {
     setFiltroEspecialidad('');
     setFiltroMotivoInterconsulta('');
     setFiltroEstadoBolsa('');
+    setFiltroTipoBolsa('');
     setFiltroCreadoPor('');
   };
 
@@ -641,131 +727,137 @@ export default function TrazabilidadRecitasInterconsultas() {
 
       {/* ── Filtros ────────────────────────────────────────────────────────── */}
       <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-4 mb-5">
-        <div className="flex flex-wrap gap-3 items-end">
-
-          {/* Búsqueda */}
-          <div className="flex-1 min-w-[200px]">
-            <label className="block text-xs font-semibold text-gray-600 mb-1">Buscar por DNI o nombre</label>
-            <div className="relative">
-              <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-              <input
-                type="text"
-                value={searchTerm}
-                onChange={e => setSearchTerm(e.target.value)}
-                onKeyDown={e => e.key === 'Enter' && (setCurrentPage(1), cargar(1))}
-                placeholder="DNI o nombre del paciente..."
-                className="w-full pl-9 pr-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0a5ba9]"
-              />
-            </div>
+        
+        {/* FILA 1: Búsqueda Principal - Expandida */}
+        <div className="flex gap-3 items-end mb-3">
+          
+          {/* DNI - Legible */}
+          <div className="w-[120px]">
+            <label className="block text-xs font-semibold text-gray-600 mb-0.5">DNI</label>
+            <input
+              type="text"
+              value={searchTerm}
+              onChange={e => setSearchTerm(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && (setCurrentPage(1), cargar(1))}
+              placeholder="Nº..."
+              maxLength="8"
+              className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-[#0a5ba9] font-mono"
+            />
           </div>
 
-          {/* Tipo */}
-          <div className="min-w-[160px]">
-            <label className="block text-xs font-semibold text-gray-600 mb-1">
-              <Filter size={11} className="inline mr-1" />Tipo
-            </label>
+          {/* Tipo Cita - Expandido */}
+          <div className="flex-1 min-w-[160px] hidden">
+            <label className="block text-xs font-semibold text-gray-600 mb-0.5">Tipo</label>
             <select
               value={filtroTipo}
               onChange={e => setFiltroTipo(e.target.value)}
-              className="w-full py-2 px-3 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0a5ba9]"
+              className="w-full py-1.5 px-2 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-[#0a5ba9]"
             >
-              <option value="">Todos los tipos</option>
-              <option value="RECITA">RECITA</option>
-              <option value="INTERCONSULTA">INTERCONSULTA</option>
+              <option value="">Ambos</option>
+              <option value="RECITA">Recita</option>
+              <option value="INTERCONSULTA">Interconsulta</option>
             </select>
           </div>
 
-          {/* Enfermera / profesional */}
-          <BuscadorEnfermera
-            value={filtroEnfermera}
-            onChange={setFiltroEnfermera}
-          />
+          {/* Origen - Expandido */}
+          <div className="flex-1 min-w-[160px]">
+            <label className="block text-xs font-semibold text-gray-600 mb-0.5">Origen</label>
+            <select
+              value={filtroTipoBolsa}
+              onChange={e => setFiltroTipoBolsa(e.target.value)}
+              className="w-full py-1.5 px-2 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-[#0a5ba9] bg-white"
+            >
+              <option value="">Todas</option>
+              {facetas.tiposBolsa && facetas.tiposBolsa.map(f => (
+                <option key={f.id} value={f.id}>{f.valor} ({f.total})</option>
+              ))}
+            </select>
+          </div>
+        </div>
 
-          {/* Especialidad */}
-          <div className="min-w-[180px]">
-            <label className="block text-xs font-semibold text-gray-600 mb-1">
-              <Stethoscope size={11} className="inline mr-1" />
-              Especialidad
-              {facetas.especialidades.length > 0 && (
-                <span className="ml-1 text-[10px] text-blue-500">({facetas.especialidades.length})</span>
-              )}
-            </label>
+        {/* FILA 2: Filtros Médicos - Expandida */}
+        <div className="flex gap-3 items-end mb-3">
+          
+          {/* Especialidad - Expandido */}
+          <div className="flex-1 min-w-[160px]">
+            <label className="block text-xs font-semibold text-gray-600 mb-0.5">Especialidad</label>
             <select
               value={filtroEspecialidad}
               onChange={e => setFiltroEspecialidad(e.target.value)}
-              className="w-full py-2 px-3 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0a5ba9] bg-white"
+              className="w-full py-1.5 px-2 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-[#0a5ba9] bg-white"
             >
-              <option value="">Todas las especialidades</option>
+              <option value="">Todas</option>
               {facetas.especialidades.map(f => (
                 <option key={f.valor} value={f.valor}>{f.valor} ({f.total})</option>
               ))}
             </select>
           </div>
 
-          {/* Motivo interconsulta */}
-          <div className="min-w-[190px]">
-            <label className="block text-xs font-semibold text-gray-600 mb-1">
-              <FileText size={11} className="inline mr-1" />
-              Motivo interconsulta
-              {facetas.motivos.length > 0 && (
-                <span className="ml-1 text-[10px] text-blue-500">({facetas.motivos.length})</span>
-              )}
-            </label>
+          {/* Motivo - Expandido */}
+          <div className="flex-1 min-w-[180px]">
+            <label className="block text-xs font-semibold text-gray-600 mb-0.5">Motivo</label>
             <select
               value={filtroMotivoInterconsulta}
               onChange={e => setFiltroMotivoInterconsulta(e.target.value)}
-              className="w-full py-2 px-3 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0a5ba9] bg-white"
+              className="w-full py-1.5 px-2 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-[#0a5ba9] bg-white"
             >
-              <option value="">Todos los motivos</option>
+              <option value="">Todos</option>
               {facetas.motivos.map(f => (
-                <option key={f.valor} value={f.valor}>{f.valor} ({f.total})</option>
+                <option key={f.valor} value={f.valor}>{f.valor}</option>
               ))}
             </select>
           </div>
 
-          {/* Estado de Bolsa */}
-          <div className="min-w-[160px]">
-            <label className="block text-xs font-semibold text-gray-600 mb-1">
-              <Filter size={11} className="inline mr-1" />
-              Estado de Bolsa
-              {facetas.estadosBolsa.length > 0 && (
-                <span className="ml-1 text-[10px] text-blue-500">({facetas.estadosBolsa.length})</span>
-              )}
-            </label>
+          {/* Estado - Expandido */}
+          <div className="flex-1 min-w-[160px]">
+            <label className="block text-xs font-semibold text-gray-600 mb-0.5">Estado</label>
             <select
               value={filtroEstadoBolsa}
               onChange={e => setFiltroEstadoBolsa(e.target.value)}
-              className="w-full py-2 px-3 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0a5ba9] bg-white"
+              className="w-full py-1.5 px-2 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-[#0a5ba9] bg-white"
             >
-              <option value="">Todos los estados</option>
+              <option value="">Todos</option>
               {facetas.estadosBolsa.map(f => (
                 <option key={f.valor} value={f.valor}>{f.valor} ({f.total})</option>
               ))}
             </select>
           </div>
+        </div>
 
-          {/* Creado por */}
-          <div className="min-w-[200px]">
-            <label className="block text-xs font-semibold text-gray-600 mb-1">
-              <Search size={11} className="inline mr-1" />
-              Creado por
-              {facetas.creadosPor.length > 0 && (
-                <span className="ml-1 text-[10px] text-blue-500">({facetas.creadosPor.length})</span>
-              )}
-            </label>
+        {/* FILA 3: Profesionales y Acciones - Expandida */}
+        <div className="flex gap-3 items-end">
+          
+          {/* Enfermera - Expandido */}
+          <div className="flex-1 min-w-[160px] hidden">
+            <label className="block text-xs font-semibold text-gray-600 mb-0.5">Enfermera</label>
+            <select
+              value={filtroEnfermera}
+              onChange={e => setFiltroEnfermera(e.target.value)}
+              className="w-full py-1.5 px-2 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-[#0a5ba9] bg-white"
+            >
+              <option value="">Todas</option>
+              {facetas.enfermeros && facetas.enfermeros.map(e => (
+                <option key={e.id} value={e.id}>{e.valor}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* Creado por - Expandido */}
+          <div className="flex-1 min-w-[160px]">
+            <label className="block text-xs font-semibold text-gray-600 mb-0.5">Creado</label>
             <select
               value={filtroCreadoPor}
               onChange={e => setFiltroCreadoPor(e.target.value)}
-              className="w-full py-2 px-3 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0a5ba9] bg-white"
+              className="w-full py-1.5 px-2 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-[#0a5ba9] bg-white"
             >
-              <option value="">Todos los profesionales</option>
+              <option value="">Todos</option>
               {facetas.creadosPor.map(f => (
                 <option key={f.valor} value={f.valor}>{f.valor} ({f.total})</option>
               ))}
             </select>
           </div>
 
-          {/* Rango de fechas — calendario */}
+          {/* F. Preferida */}
           <RangoFechas
             inicio={filtroFechaInicio}
             fin={filtroFechaFin}
@@ -773,21 +865,23 @@ export default function TrazabilidadRecitasInterconsultas() {
             fechasConDatos={fechasConDatos}
           />
 
-          {/* Limpiar */}
+          {/* Espaciador flexible */}
+          <div className="flex-1"></div>
+
+          {/* Botones (derecha) */}
           <button
             onClick={limpiarFiltros}
-            className="py-2 px-4 text-sm border border-gray-300 rounded-lg bg-white text-gray-600 hover:bg-gray-50 transition"
+            className="py-1.5 px-3 text-xs border border-gray-300 rounded bg-white text-gray-600 hover:bg-gray-50 transition whitespace-nowrap"
           >
             Limpiar
           </button>
 
-          {/* Actualizar */}
           <button
             onClick={() => { setCurrentPage(1); cargar(1); }}
             disabled={isLoading}
-            className="py-2 px-4 text-sm bg-[#0a5ba9] hover:bg-[#0d4e90] text-white rounded-lg flex items-center gap-2 transition disabled:opacity-50"
+            className="py-1.5 px-3 text-xs bg-[#0a5ba9] hover:bg-[#0d4e90] text-white rounded flex items-center gap-1 transition disabled:opacity-50 whitespace-nowrap"
           >
-            <RefreshCw size={14} className={isLoading ? 'animate-spin' : ''} />
+            <RefreshCw size={12} className={isLoading ? 'animate-spin' : ''} />
             Actualizar
           </button>
         </div>
@@ -902,7 +996,7 @@ export default function TrazabilidadRecitasInterconsultas() {
 
                     {/* Origen bolsa */}
                     <td className="px-3 py-2.5 text-xs text-gray-500">
-                      {f.origenBolsa || '—'}
+                      {f.origenBolsa ? `${f.origenBolsa} (${f.idBolsa})` : '—'}
                     </td>
 
                     {/* Estado de Bolsa */}
