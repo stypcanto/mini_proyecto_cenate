@@ -556,15 +556,6 @@ function FilaSolicitud({
         )}
       </td>
 
-      {/* USUARIO CAMBIO ESTADO */}
-      <td className="px-3 py-3 text-sm text-gray-600">
-        {solicitud.usuarioCambioEstado ? (
-          <span className="text-gray-900 font-medium">{solicitud.usuarioCambioEstado}</span>
-        ) : (
-          <span className="text-gray-400 italic">—</span>
-        )}
-      </td>
-
       {/* ACCIONES */}
       <td className="px-3 py-3 text-center">
         <div className="flex items-center justify-center gap-1">
