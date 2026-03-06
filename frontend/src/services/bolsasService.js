@@ -507,6 +507,16 @@ export const obtenerPacientesMaratonCategoria = async (categoria, busqueda = '',
   }
 };
 
+/** v1.85.26: Totales brutos MARATÓN — para nota de doble conteo */
+export const obtenerTotalesBrutosMaraton = async () => {
+  try {
+    return await apiClient.get(`${API_BASE_URL}/estadisticas/maraton-totales-brutos`, true);
+  } catch (error) {
+    console.error('Error al obtener totales brutos MARATÓN:', error);
+    return { totalRegistros: 0, pacientesUnicos: 0, registrosExtra: 0, pacientesMultiplesCitas: 0 };
+  }
+};
+
 /** v1.85.9: Opciones únicas de filtros para el modal de pacientes MARATÓN */
 export const obtenerOpcionesFiltrosMaraton = async (categoria) => {
   try {

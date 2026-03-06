@@ -388,7 +388,7 @@ public class SolicitudBolsaEstadisticasController {
                 SUM(CASE WHEN a.paciente_cronico = true  AND eg.cod_estado_cita = 'CITADO' THEN 1 ELSE 0 END) AS cenacron_citados,
                 SUM(CASE WHEN (a.paciente_cronico = false OR a.paciente_cronico IS NULL) AND eg.cod_estado_cita = 'CITADO' THEN 1 ELSE 0 END) AS especialidades_citados
             FROM dim_solicitud_bolsa sb
-            JOIN asegurados a ON a.doc_paciente = sb.paciente_dni
+            LEFT JOIN asegurados a ON a.doc_paciente = sb.paciente_dni
             LEFT JOIN dim_estados_gestion_citas eg ON eg.id_estado_cita = sb.estado_gestion_citas_id
             WHERE sb.id_bolsa = 17 AND sb.activo = true
             """;
@@ -487,7 +487,7 @@ public class SolicitudBolsaEstadisticasController {
                     WHEN 'PARTICULAR' THEN 14 WHEN 'FALLECIDO' THEN 15
                     WHEN 'YA_NO_REQUIERE' THEN 16 WHEN 'NO_GRUPO_ETARIO' THEN 17 ELSE 18 END
             ) """;
-        String joins = "JOIN asegurados a ON a.doc_paciente = pe.paciente_dni " +
+        String joins = "LEFT JOIN asegurados a ON a.doc_paciente = pe.paciente_dni " +
                 "LEFT JOIN dim_ipress di ON a.cas_adscripcion = di.cod_ipress " +
                 "LEFT JOIN dim_red dr ON di.id_red = dr.id_red " +
                 "LEFT JOIN dim_macroregion dm ON dr.id_macro = dm.id_macro ";
@@ -549,7 +549,8 @@ public class SolicitudBolsaEstadisticasController {
                 SELECT DISTINCT ON (sb.paciente_dni)
                     sb.paciente_dni,
                     COALESCE(eg.cod_estado_cita, 'PENDIENTE_CITA') AS estado,
-                    sb.responsable_gestora_id
+                    sb.responsable_gestora_id,
+                    sb.especialidad
                 FROM dim_solicitud_bolsa sb
                 LEFT JOIN dim_estados_gestion_citas eg ON eg.id_estado_cita = sb.estado_gestion_citas_id
                 WHERE sb.id_bolsa = 17 AND sb.activo = true
@@ -604,7 +605,7 @@ public class SolicitudBolsaEstadisticasController {
         }
 
         String sqlCount = cte + "SELECT COUNT(*) FROM paciente_estado pe " +
-                "JOIN asegurados a ON a.doc_paciente = pe.paciente_dni " +
+                "LEFT JOIN asegurados a ON a.doc_paciente = pe.paciente_dni " +
                 "LEFT JOIN dim_ipress di ON a.cas_adscripcion = di.cod_ipress " +
                 "LEFT JOIN dim_red dr ON di.id_red = dr.id_red " +
                 "LEFT JOIN dim_macroregion dm ON dr.id_macro = dm.id_macro " +
@@ -620,9 +621,10 @@ public class SolicitudBolsaEstadisticasController {
                     COALESCE(di.desc_ipress, 'N/A') AS ipress,
                     COALESCE(dr.desc_red, 'N/A') AS red,
                     COALESCE(dm.desc_macro, 'N/A') AS macrorred,
-                    pe.estado AS estado_gestion
+                    pe.estado AS estado_gestion,
+                    COALESCE(pe.especialidad, '') AS especialidad
                 FROM paciente_estado pe
-                JOIN asegurados a ON a.doc_paciente = pe.paciente_dni
+                LEFT JOIN asegurados a ON a.doc_paciente = pe.paciente_dni
                 LEFT JOIN dim_ipress di ON a.cas_adscripcion = di.cod_ipress
                 LEFT JOIN dim_red dr ON di.id_red = dr.id_red
                 LEFT JOIN dim_macroregion dm ON dr.id_macro = dm.id_macro
@@ -648,19 +650,75 @@ public class SolicitudBolsaEstadisticasController {
         ));
     }
 
-    /** Desglose completo de estados por segmento MARATÓN (diagnóstico) */
+    /**
+     * v1.85.26: Totales brutos de la bolsa MARATÓN — para la nota de doble conteo.
+     * GET /api/bolsas/estadisticas/maraton-totales-brutos
+     * Retorna: { totalRegistros, pacientesUnicos, registrosExtra, pacientesMultiplesCitas }
+     */
+    @GetMapping("/maraton-totales-brutos")
+    public ResponseEntity<Map<String, Object>> obtenerTotalesBrutosMaraton() {
+        log.info("GET /api/bolsas/estadisticas/maraton-totales-brutos");
+        String sql = """
+            WITH conteo AS (
+                SELECT paciente_dni, COUNT(*) AS cnt
+                FROM dim_solicitud_bolsa
+                WHERE id_bolsa = 17 AND activo = true
+                GROUP BY paciente_dni
+            )
+            SELECT
+                SUM(cnt)                                    AS total_registros,
+                COUNT(*)                                    AS pacientes_unicos,
+                SUM(cnt) - COUNT(*)                         AS registros_extra,
+                COUNT(CASE WHEN cnt > 1 THEN 1 END)         AS pacientes_multiples_citas
+            FROM conteo
+            """;
+        Map<String, Object> row = jdbcTemplate.queryForMap(sql);
+        return ResponseEntity.ok(Map.of(
+            "totalRegistros",         ((Number) row.getOrDefault("total_registros",          0L)).longValue(),
+            "pacientesUnicos",        ((Number) row.getOrDefault("pacientes_unicos",          0L)).longValue(),
+            "registrosExtra",         ((Number) row.getOrDefault("registros_extra",           0L)).longValue(),
+            "pacientesMultiplesCitas",((Number) row.getOrDefault("pacientes_multiples_citas", 0L)).longValue()
+        ));
+    }
+
+    /** Desglose completo de estados por segmento MARATÓN (pacientes únicos por DNI) */
     @GetMapping("/maraton-desglose")
     public ResponseEntity<List<Map<String, Object>>> obtenerDesgloseMaraton() {
         log.info("GET /api/bolsas/estadisticas/maraton-desglose");
         String sql = """
-            SELECT
-                CASE WHEN a.paciente_cronico = true THEN 'CENACRON' ELSE 'ESPECIALIDADES' END AS segmento,
-                COALESCE(eg.cod_estado_cita, 'SIN_ESTADO') AS estado,
-                COUNT(*) AS cantidad
-            FROM dim_solicitud_bolsa sb
-            JOIN asegurados a ON a.doc_paciente = sb.paciente_dni
-            LEFT JOIN dim_estados_gestion_citas eg ON eg.id_estado_cita = sb.estado_gestion_citas_id
-            WHERE sb.id_bolsa = 17 AND sb.activo = true
+            WITH paciente_unico AS (
+                SELECT DISTINCT ON (sb.paciente_dni)
+                    sb.paciente_dni,
+                    CASE WHEN a.paciente_cronico = true THEN 'CENACRON' ELSE 'ESPECIALIDADES' END AS segmento,
+                    COALESCE(eg.cod_estado_cita, 'SIN_ESTADO') AS estado
+                FROM dim_solicitud_bolsa sb
+                LEFT JOIN asegurados a ON a.doc_paciente = sb.paciente_dni
+                LEFT JOIN dim_estados_gestion_citas eg ON eg.id_estado_cita = sb.estado_gestion_citas_id
+                WHERE sb.id_bolsa = 17 AND sb.activo = true
+                ORDER BY sb.paciente_dni,
+                    CASE COALESCE(eg.cod_estado_cita, 'SIN_ESTADO')
+                        WHEN 'CITADO'           THEN 1
+                        WHEN 'ATENDIDO'         THEN 2
+                        WHEN 'ATENDIDO_IPRESS'  THEN 3
+                        WHEN 'NO_CONTESTA'      THEN 4
+                        WHEN 'NO_CONTESTO'      THEN 5
+                        WHEN 'APAGADO'          THEN 6
+                        WHEN 'TEL_SIN_SERVICIO' THEN 7
+                        WHEN 'NO_DESEA'         THEN 8
+                        WHEN 'RECHAZADO'        THEN 9
+                        WHEN 'REPROG_FALLIDA'   THEN 10
+                        WHEN 'NO_IPRESS_CENATE' THEN 11
+                        WHEN 'NUM_NO_EXISTE'    THEN 12
+                        WHEN 'SIN_VIGENCIA'     THEN 13
+                        WHEN 'PARTICULAR'       THEN 14
+                        WHEN 'FALLECIDO'        THEN 15
+                        WHEN 'YA_NO_REQUIERE'   THEN 16
+                        WHEN 'NO_GRUPO_ETARIO'  THEN 17
+                        ELSE 18
+                    END
+            )
+            SELECT segmento, estado, COUNT(*) AS cantidad
+            FROM paciente_unico
             GROUP BY 1, 2
             ORDER BY 1, 3 DESC
             """;
