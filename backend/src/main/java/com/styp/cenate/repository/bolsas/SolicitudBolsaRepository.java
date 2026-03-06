@@ -1379,8 +1379,8 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
           AND sb.id_personal IN (:idsMedicos)
           AND (:fecha IS NULL OR DATE(sb.fecha_atencion) = CAST(:fecha AS DATE))
           AND (:turno IS NULL
-               OR (:turno = 'MANANA' AND EXTRACT(HOUR FROM sb.fecha_atencion) BETWEEN 7 AND 13)
-               OR (:turno = 'TARDE'  AND EXTRACT(HOUR FROM sb.fecha_atencion) BETWEEN 14 AND 20))
+               OR (:turno = 'MANANA' AND CAST(COALESCE(sb.hora_atencion, '00:00') AS TIME) BETWEEN '07:00:00' AND '13:59:59')
+               OR (:turno = 'TARDE'  AND CAST(COALESCE(sb.hora_atencion, '00:00') AS TIME) BETWEEN '14:00:00' AND '20:59:59'))
         GROUP BY p.id_pers, p.nom_pers, p.ape_pater_pers, p.ape_mater_pers
         ORDER BY total DESC
         """, nativeQuery = true)
@@ -1395,24 +1395,15 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
     @Query(value = """
         SELECT sb.id_solicitud, sb.paciente_nombre, sb.paciente_dni,
                sb.condicion_medica, sb.fecha_atencion, sb.id_personal,
-               COALESCE(
-                 TO_CHAR(sb.hora_atencion, 'HH24:MI'),
-                 TO_CHAR(sc.hora_cita, 'HH24:MI')
-               ) AS hora_cita
+               TO_CHAR(sb.hora_atencion, 'HH24:MI') AS hora_cita
         FROM dim_solicitud_bolsa sb
-        LEFT JOIN (
-            SELECT DISTINCT ON (doc_paciente) doc_paciente, hora_cita, fecha_cita
-            FROM solicitud_cita
-            WHERE hora_cita IS NOT NULL
-            ORDER BY doc_paciente, fecha_cita DESC
-        ) sc ON sc.doc_paciente = sb.paciente_dni
         WHERE sb.activo = true
           AND sb.id_personal = :idMedico
           AND (:fecha IS NULL OR DATE(sb.fecha_atencion) = CAST(:fecha AS DATE))
           AND (:turno IS NULL
-               OR (:turno = 'MANANA' AND EXTRACT(HOUR FROM sb.fecha_atencion) BETWEEN 7 AND 13)
-               OR (:turno = 'TARDE'  AND EXTRACT(HOUR FROM sb.fecha_atencion) BETWEEN 14 AND 20))
-        ORDER BY COALESCE(sb.hora_atencion, sc.hora_cita) ASC NULLS LAST, sb.paciente_nombre ASC
+               OR (:turno = 'MANANA' AND CAST(COALESCE(sb.hora_atencion, '00:00') AS TIME) BETWEEN '07:00:00' AND '13:59:59')
+               OR (:turno = 'TARDE'  AND CAST(COALESCE(sb.hora_atencion, '00:00') AS TIME) BETWEEN '14:00:00' AND '20:59:59'))
+        ORDER BY sb.hora_atencion ASC NULLS LAST, sb.paciente_nombre ASC
         """, nativeQuery = true)
     List<Object[]> pacientesPorMedicoTeleurgencias(
         @org.springframework.data.repository.query.Param("idMedico") Long idMedico,
@@ -1425,25 +1416,17 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
     @Query(value = """
         SELECT sb.id_solicitud, sb.paciente_nombre, sb.paciente_dni,
                sb.condicion_medica, sb.fecha_atencion, sb.id_personal,
-               COALESCE(
-                 TO_CHAR(sb.hora_atencion, 'HH24:MI'),
-                 TO_CHAR(sc.hora_cita,    'HH24:MI')
-               ) AS hora_cita,
+               TO_CHAR(sb.hora_atencion, 'HH24:MI') AS hora_cita,
                TRIM(COALESCE(p.ape_pater_pers,'') || ' ' || COALESCE(p.ape_mater_pers,'') || ' ' || COALESCE(p.nom_pers,'')) AS nombre_medico
         FROM dim_solicitud_bolsa sb
         JOIN dim_personal_cnt p ON sb.id_personal = p.id_pers
-        LEFT JOIN (
-            SELECT DISTINCT ON (doc_paciente) doc_paciente, hora_cita, fecha_cita
-            FROM solicitud_cita WHERE hora_cita IS NOT NULL
-            ORDER BY doc_paciente, fecha_cita DESC
-        ) sc ON sc.doc_paciente = sb.paciente_dni
         WHERE sb.activo = true
           AND sb.id_personal IN (:idsMedicos)
           AND (LOWER(sb.paciente_nombre) LIKE LOWER(:qLike) OR sb.paciente_dni LIKE :qLike)
           AND (CAST(:fecha AS VARCHAR) IS NULL OR DATE(sb.fecha_atencion) = CAST(:fecha AS DATE))
           AND (CAST(:turno AS VARCHAR) IS NULL
-               OR (:turno = 'MANANA' AND EXTRACT(HOUR FROM sb.fecha_atencion) BETWEEN 7 AND 13)
-               OR (:turno = 'TARDE'  AND EXTRACT(HOUR FROM sb.fecha_atencion) BETWEEN 14 AND 20))
+               OR (:turno = 'MANANA' AND CAST(COALESCE(sb.hora_atencion, '00:00') AS TIME) BETWEEN '07:00:00' AND '13:59:59')
+               OR (:turno = 'TARDE'  AND CAST(COALESCE(sb.hora_atencion, '00:00') AS TIME) BETWEEN '14:00:00' AND '20:59:59'))
         ORDER BY sb.paciente_nombre ASC
         LIMIT 200
         """, nativeQuery = true)

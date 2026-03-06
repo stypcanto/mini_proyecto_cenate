@@ -366,8 +366,26 @@ function DrawerMedico({ medico, fecha, turno, onClose, onReasignacionExitosa }) 
     cargar();
   }, [medico.id_medico]);
 
+  // Función para verificar si una hora coincide con el turno seleccionado
+  const matchTurno = (hora, turno) => {
+    if (!turno || !hora) return true;
+    const [h, m] = hora.split(':').map(Number);
+    const horaMinutos = h * 60 + m;
+    
+    if (turno === 'MANANA') {
+      const inicio = 7 * 60;      // 07:00
+      const fin = 13 * 60 + 59;   // 13:59
+      return horaMinutos >= inicio && horaMinutos <= fin;
+    } else if (turno === 'TARDE') {
+      const inicio = 14 * 60;     // 14:00
+      const fin = 20 * 60 + 59;   // 20:59
+      return horaMinutos >= inicio && horaMinutos <= fin;
+    }
+    return true;
+  };
+
   const pacientesFiltrados = useMemo(() => {
-    return pacientes.filter(p => {
+    const resultado = pacientes.filter(p => {
       const condicion = p.condicionMedica || p.condicion_medica || '';
       const matchEstado = !filtroEstado ||
         (filtroEstado === 'Sin estado' ? !condicion : condicion === filtroEstado);
@@ -377,9 +395,13 @@ function DrawerMedico({ medico, fecha, turno, onClose, onReasignacionExitosa }) 
         nombre.toLowerCase().includes(busqueda.toLowerCase()) ||
         dni.includes(busqueda)
       );
-      return matchEstado && matchBusq;
+      const hora = p.horaCita || p.hora_cita || '';
+      const matchHoraTurno = matchTurno(hora, turnoLocal);
+      return matchEstado && matchBusq && matchHoraTurno;
     });
-  }, [pacientes, filtroEstado, busqueda]);
+    console.log('🔍 DEBUG pacientesFiltrados:', { turnoLocal, totalPacientes: pacientes.length, filtrados: resultado.length, primerPaciente: pacientes[0] });
+    return resultado;
+  }, [pacientes, filtroEstado, busqueda, turnoLocal]);
 
   const getId = (p) => p.idSolicitud ?? p.id_solicitud;
 
@@ -620,6 +642,19 @@ function DrawerMedico({ medico, fecha, turno, onClose, onReasignacionExitosa }) 
                 </button>
               ))}
             </div>
+            
+            {/* Leyenda de horarios */}
+            <div style={{ display: 'flex', gap: '12px', fontSize: '10px', color: '#64748b', padding: '6px 0', borderTop: '1px solid #f1f5f9', width: '100%', flexWrap: 'wrap' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                <span>☀️ Mañana:</span>
+                <strong style={{ color: '#1e293b' }}>07:00 - 13:59</strong>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                <span>🌆 Tarde:</span>
+                <strong style={{ color: '#1e293b' }}>14:00 - 20:59</strong>
+              </div>
+            </div>
+            
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flex: 1, minWidth: '130px' }}>
               <Filter size={13} color="#64748b" style={{ flexShrink: 0 }} />
               <select

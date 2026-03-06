@@ -8,31 +8,76 @@ const buildQs = (params) => {
   return '?' + entries.map(([k, v]) => `${k}=${encodeURIComponent(v)}`).join('&');
 };
 
+// ─── Función de logging detallado ─────────────────────────────────
+const logAPI = (metodo, url, params, respuesta) => {
+  console.log('═════════════════════════════════════════════════════════════');
+  console.log(`📡 API CALL - ${metodo}`);
+  console.log('═════════════════════════════════════════════════════════════');
+  console.log(`🔗 URL: ${url}`);
+  if (params && Object.keys(params).length > 0) {
+    console.log(`📤 PARÁMETROS ENVIADOS:`, params);
+  }
+  console.log(`📥 RESPUESTA RECIBIDA:`, respuesta);
+  console.log('═════════════════════════════════════════════════════════════');
+};
+
 /**
  * Servicio frontend para el módulo "Total Pacientes Teleurgencias"
  * Patrón idéntico al de enfermería — v1.79.0
  */
 const teleurgenciasService = {
-  estadisticasPorMedico: (fecha, turno) =>
-    apiClient.get(`${BASE}/estadisticas/por-medico${buildQs({ fecha, turno })}`, true),
+  estadisticasPorMedico: async (fecha, turno) => {
+    const params = { fecha, turno };
+    const url = `${BASE}/estadisticas/por-medico${buildQs(params)}`;
+    const res = await apiClient.get(url, true);
+    logAPI('estadisticasPorMedico', url, params, res);
+    return res;
+  },
 
-  pacientesPorMedico: (idMedico, fecha, turno) =>
-    apiClient.get(`${BASE}/pacientes/por-medico${buildQs({ idMedico, fecha, turno })}`, true),
+  pacientesPorMedico: async (idMedico, fecha, turno) => {
+    const params = { idMedico, fecha, turno };
+    const url = `${BASE}/pacientes/por-medico${buildQs(params)}`;
+    const res = await apiClient.get(url, true);
+    logAPI('pacientesPorMedico', url, params, res);
+    return res;
+  },
 
-  medicos: () =>
-    apiClient.get(`${BASE}/medicos`, true),
+  medicos: async () => {
+    const url = `${BASE}/medicos`;
+    const res = await apiClient.get(url, true);
+    logAPI('medicos', url, {}, res);
+    return res;
+  },
 
-  fechasDisponibles: () =>
-    apiClient.get(`${BASE}/estadisticas/fechas-disponibles`, true),
+  fechasDisponibles: async () => {
+    const url = `${BASE}/estadisticas/fechas-disponibles`;
+    const res = await apiClient.get(url, true);
+    logAPI('fechasDisponibles', url, {}, res);
+    return res;
+  },
 
-  fechasPorMedico: (idMedico) =>
-    apiClient.get(`${BASE}/estadisticas/fechas-por-medico?idMedico=${idMedico}`, true),
+  fechasPorMedico: async (idMedico) => {
+    const params = { idMedico };
+    const url = `${BASE}/estadisticas/fechas-por-medico?idMedico=${idMedico}`;
+    const res = await apiClient.get(url, true);
+    logAPI('fechasPorMedico', url, params, res);
+    return res;
+  },
 
-  buscarPacientes: (q, fecha, turno) =>
-    apiClient.get(`${BASE}/pacientes/buscar${buildQs({ q, fecha, turno })}`, true),
+  buscarPacientes: async (q, fecha, turno) => {
+    const params = { q, fecha, turno };
+    const url = `${BASE}/pacientes/buscar${buildQs(params)}`;
+    const res = await apiClient.get(url, true);
+    logAPI('buscarPacientes', url, params, res);
+    return res;
+  },
 
-  reasignarMasivo: (body) =>
-    apiClient.put(`${BASE}/reasignar-masivo`, body, true),
+  reasignarMasivo: async (body) => {
+    const url = `${BASE}/reasignar-masivo`;
+    const res = await apiClient.put(url, body, true);
+    logAPI('reasignarMasivo (PUT)', url, body, res);
+    return res;
+  },
 };
 
 export default teleurgenciasService;
