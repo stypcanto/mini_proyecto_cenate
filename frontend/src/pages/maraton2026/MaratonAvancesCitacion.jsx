@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { CalendarCheck, RefreshCw, Download, X, Search, ChevronLeft, ChevronRight } from 'lucide-react';
 import * as XLSX from 'xlsx';
-import { obtenerDesgloseMaratonSegmentos, obtenerPacientesMaratonCategoria, obtenerOpcionesFiltrosMaraton } from '../../services/bolsasService';
+import { obtenerDesgloseMaratonSegmentos, obtenerPacientesMaratonCategoria, obtenerOpcionesFiltrosMaraton, obtenerTotalesBrutosMaraton } from '../../services/bolsasService';
 import { apiClient } from '../../lib/apiClient';
 
 // ─── Hook: animación de contador suave (easeOutExpo) ─────────────────────────
@@ -522,20 +522,23 @@ function FunnelConnector() {
 
 // ─── Componente principal ─────────────────────────────────────────────────────
 export default function MaratonAvancesCitacion() {
-  const [loading,        setLoading]        = useState(false);
-  const [universoTotal,  setUniversoTotal]  = useState(0);
-  const [cenacron,       setCenacron]       = useState({ total: 0, citados: 0, observados: 0, pendientes: 0 });
-  const [especialidades, setEspecialidades] = useState({ total: 0, citados: 0, observados: 0, pendientes: 0 });
-  const [modalCategoria, setModalCategoria] = useState(null); // null = cerrado
+  const [loading,            setLoading]            = useState(false);
+  const [universoTotal,      setUniversoTotal]      = useState(0);
+  const [cenacron,           setCenacron]           = useState({ total: 0, citados: 0, observados: 0, pendientes: 0 });
+  const [especialidades,     setEspecialidades]     = useState({ total: 0, citados: 0, observados: 0, pendientes: 0 });
+  const [modalCategoria,     setModalCategoria]     = useState(null);
+  const [totalesBrutos,      setTotalesBrutos]      = useState({ totalRegistros: 0, pacientesUnicos: 0, registrosExtra: 0, pacientesMultiplesCitas: 0 });
 
   const cargarDatos = useCallback(async () => {
     setLoading(true);
     try {
-      const [universoRes, desgloseRes] = await Promise.all([
+      const [universoRes, desgloseRes, brutosRes] = await Promise.all([
         apiClient.get('/asegurados?maraton=true&page=0&size=1', true).catch(() => null),
         obtenerDesgloseMaratonSegmentos().catch(() => null),
+        obtenerTotalesBrutosMaraton().catch(() => null),
       ]);
       setUniversoTotal(universoRes?.totalElements ?? 0);
+      if (brutosRes) setTotalesBrutos(brutosRes);
       if (Array.isArray(desgloseRes)) {
         const cen = { total: 0, citados: 0, observados: 0, pendientes: 0 };
         const esp = { total: 0, citados: 0, observados: 0, pendientes: 0 };
@@ -776,6 +779,26 @@ export default function MaratonAvancesCitacion() {
           </button>
         ))}
       </div>
+
+      {/* ── Nota: pacientes con más de una cita (doble conteo) ── */}
+      {totalesBrutos.pacientesMultiplesCitas > 0 && (
+        <div className="flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 text-xs text-amber-800">
+          <span className="text-base leading-none mt-0.5">⚠️</span>
+          <div className="space-y-0.5">
+            <p className="font-semibold text-amber-900">
+              {totalesBrutos.pacientesMultiplesCitas.toLocaleString('es-PE')} pacientes tienen más de una cita registrada en esta Maratón y se contabilizan más de una vez.
+            </p>
+            <p className="text-amber-700">
+              Total registros en bolsa:&nbsp;<strong>{totalesBrutos.totalRegistros.toLocaleString('es-PE')}</strong>
+              &nbsp;·&nbsp;
+              Pacientes únicos:&nbsp;<strong>{totalesBrutos.pacientesUnicos.toLocaleString('es-PE')}</strong>
+              &nbsp;·&nbsp;
+              Registros duplicados:&nbsp;<strong className="text-amber-900">+{totalesBrutos.registrosExtra.toLocaleString('es-PE')}</strong>.
+              Los contadores del embudo trabajan con <strong>paciente único por DNI</strong> (se toma la cita de mayor prioridad).
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* ── Modal de pacientes ── */}
       {modalCategoria && (
