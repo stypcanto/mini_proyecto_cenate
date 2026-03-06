@@ -1,7 +1,7 @@
 # Estrategia MARATÓN (EST-008) — Documentación Técnica
 
-> **Estado:** ✅ Módulo propio en Sidebar + Embudo de citación operativo (v1.86.0)
-> **Versión:** v1.86.0 (2026-03-06)
+> **Estado:** ✅ Módulo propio en Sidebar + Embudo de citación + Modal pacientes por categoría + Fix barra progreso campaña (v1.85.10)
+> **Versión:** v1.85.10 (2026-03-06)
 > **Responsable carga:** Jesús Morales Carlos (DBA) — id_user = 53, login: 70076049
 
 ---
@@ -231,8 +231,47 @@ GET /api/bolsas/estadisticas/maraton-desglose          → [{segmento, estado, c
 | Endpoint | Descripción |
 |----------|-------------|
 | `GET /api/bolsas/estadisticas/maraton-segmentos` | `{cenacronCitados, especialidadesCitados}` |
-| `GET /api/bolsas/estadisticas/maraton-kpi` | KPI por paciente único con DISTINCT ON |
+| `GET /api/bolsas/estadisticas/maraton-kpi` | KPI por paciente único con DISTINCT ON — suma exacta 13,400 |
 | `GET /api/bolsas/estadisticas/maraton-desglose` | `[{segmento, estado, cantidad}]` completo |
+| `GET /api/bolsas/estadisticas/maraton-pacientes` | Lista paginada de pacientes por categoría del embudo |
+
+#### `/maraton-pacientes` — Parámetros
+
+| Parámetro | Tipo | Descripción |
+|-----------|------|-------------|
+| `categoria` | String | Ver tabla de categorías abajo |
+| `busqueda` | String (opcional) | Filtra por nombre o DNI (LIKE) |
+| `page` | int (default 0) | Página actual (0-indexed) |
+| `size` | int (default 50) | Registros por página |
+
+#### Categorías disponibles
+
+| Categoría | Filtro SQL | Pacientes (~) |
+|-----------|-----------|---------------|
+| `POR_ASIGNAR` | `responsable_gestora_id IS NULL` | 10,213 |
+| `EN_CONTACTO` | Con gestora, sin cita ni observado | 1,624 |
+| `CITAS_LOGRADAS` | estado IN ('CITADO','ATENDIDO') | 719 |
+| `OBSERVADOS` | estado IN (NO_CONTESTA, APAGADO, NO_DESEA, …) | 844 |
+| `CITADOS_CENACRON` | CITAS_LOGRADAS + `paciente_cronico = true` | 698 |
+| `CITADOS_ESPECIALIDADES` | CITAS_LOGRADAS + `paciente_cronico = false` | 21 |
+
+> Usa DISTINCT ON para garantizar un único registro por paciente (prioridad CITADO > ATENDIDO > OBSERVADO > … > PENDIENTE).
+
+#### Respuesta
+
+```json
+{
+  "content": [
+    { "tipo_doc": "DNI", "num_doc": "12345678", "nombre_completo": "APELLIDOS NOMBRES",
+      "sexo": "M", "edad": 65, "ipress": "H.I OCTAVIO MONGRUT MUÑOZ",
+      "red": "RED ASISTENCIAL SABOGAL", "macrorred": "LIMA ORIENTE" }
+  ],
+  "totalElements": 10213,
+  "page": 0,
+  "size": 50,
+  "totalPages": 205
+}
+```
 
 ### Permisos registrados
 
@@ -257,8 +296,10 @@ Tablas actualizadas por `V6_32_0`:
 | `V6_32_0__modulo_maraton_2026.sql` | Módulo sidebar + páginas + permisos rol | v1.86.0 |
 | `MaratonAvancesCitacion.jsx` | Embudo visual SVG por segmento con datos reales | v1.86.0 |
 | `MaratonResumenAtencion.jsx` | Placeholder KPI cards listo para endpoint | v1.86.0 |
-| `SolicitudBolsaEstadisticasController.java` | maraton-kpi, maraton-desglose endpoints | v1.86.0 |
-| `bolsasService.js` | obtenerKpiMaraton, obtenerDesgloseMaratonSegmentos | v1.86.0 |
+| `SolicitudBolsaEstadisticasController.java` | maraton-kpi, maraton-desglose, maraton-pacientes endpoints | v1.85.9 |
+| `bolsasService.js` | obtenerKpiMaraton, obtenerDesgloseMaratonSegmentos, obtenerPacientesMaratonCategoria | v1.85.9 |
+| `Solicitudes.jsx` | Cards M2–M5 clickeables + MetaCard clickeables + modal pacientes con buscador y paginación | v1.85.9 |
+| `Solicitudes.jsx` | Fix barra de progreso campaña: denominador correcto + incluir ATENDIDO_IPRESS en completados | v1.85.10 |
 
 ---
 
@@ -278,4 +319,65 @@ Diagnóstico y fix ejecutado directamente en BD:
 
 ---
 
-*Última actualización: 2026-03-06 v1.86.0 | Autor: Styp Canto Rondón / Claude Code*
+## Modal de Pacientes por Categoría (v1.85.9)
+
+Al hacer clic en cualquier card del embudo o en los termómetros de meta se abre un modal con:
+
+- **Header:** título de la categoría con su color
+- **Buscador:** filtra en tiempo real por nombre o DNI
+- **Tabla 8 columnas:** Tipo Doc · N° Documento · Nombres y Apellidos · Sexo · Edad · IPRESS · Red · Macrorred
+- **Paginación:** 50 registros por página, navegación Anterior / Siguiente
+
+### Cards clickeables
+
+| Card | Categoría API | Color |
+|------|--------------|-------|
+| ② Por Asignar | `POR_ASIGNAR` | Rojo |
+| ③ En Contacto | `EN_CONTACTO` | Naranja |
+| ④ Citas Logradas | `CITAS_LOGRADAS` | Verde |
+| ⑤ Observados | `OBSERVADOS` | Ámbar |
+| Termómetro MARATÓN CENACRON | `CITADOS_CENACRON` | Violeta |
+| Termómetro MARATÓN Especialidades | `CITADOS_ESPECIALIDADES` | Azul |
+
+---
+
+---
+
+## Barra de Progreso de Campaña (v1.85.10)
+
+Sección "Progreso de la campaña" en `/bolsas/solicitudespendientes/maraton`.
+
+### Bug corregido
+
+**Síntoma:** Mostraba "91.8% gestionado" cuando el progreso real era ~10%.
+
+**Causa raíz en `Solicitudes.jsx`:**
+1. Denominador = `estadisticas.total` (suma de TODOS los estados del KPI, incluyendo `SIN_GESTORA`, `CON_GESTORA`, y otros estados no mapeados que distorsionaban el total).
+2. `ATENDIDO_IPRESS` estaba excluido del numerador (no sumaba en `atendidos` ni en `totalObservados`) pero SÍ estaba en el denominador → numerador < denominador de forma incorrecta.
+
+**Fix aplicado:**
+```javascript
+// ANTES (bug):
+const total = estadisticas.total || 1;  // incluye estados no mapeados
+const atendidos = estadisticas.atendidos || 0;  // solo ATENDIDO puro
+
+// DESPUÉS (correcto):
+const atendidosIpress = estadisticasGlobales.find(s => s.estado?.toUpperCase() === 'ATENDIDO_IPRESS')?.cantidad || 0;
+const atendidosTotal = atendidos + atendidosIpress;
+const total = Math.max(pendientes + atendidosTotal + citados + totalObservados, 1);
+```
+
+**Resultado:** Con Pendientes=11,837 · Citados=719 · Observados=598 → avancePct ≈ 10.0% ✅
+
+### Lógica de colores en la barra
+
+| Color | Estado | Significado |
+|-------|--------|-------------|
+| 🟢 Esmeralda | `ATENDIDO` + `ATENDIDO_IPRESS` | Completados |
+| 🔵 Azul | `CITADO` | Cita agendada |
+| 🟡 Ámbar | Todo lo demás (NO_CONTESTA, APAGADO, NO_DESEA…) | Observados |
+| ⬜ Gris | `PENDIENTE_CITA` | Sin gestión |
+
+---
+
+*Última actualización: 2026-03-06 v1.85.10 | Autor: Styp Canto Rondón / Claude Code*
