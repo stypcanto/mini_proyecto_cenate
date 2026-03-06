@@ -2828,16 +2828,18 @@ export default function Solicitudes({ categoriaInicial } = {}) {
                   <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                     <div className="bg-slate-50 rounded-lg px-4 py-3 border border-slate-100">
                       <BarraSencilla pct={gestionPct} colorClass="bg-violet-500" label="Avance de gestión" />
-                      <p className="mt-1.5 text-[10px] text-slate-400 leading-tight">
+                      <p className="mt-2 text-xs text-slate-500 leading-snug">
                         En contacto + Citados + Atendidos + Observados<br/>
-                        <span className="font-medium text-slate-500">{gestionados.toLocaleString('es-PE')} de {total.toLocaleString('es-PE')}</span>
+                        <span className="font-semibold text-slate-700">{gestionados.toLocaleString('es-PE')}</span>
+                        <span className="text-slate-400"> de {total.toLocaleString('es-PE')}</span>
                       </p>
                     </div>
                     <div className="bg-slate-50 rounded-lg px-4 py-3 border border-slate-100">
                       <BarraSencilla pct={citacionPct} colorClass="bg-emerald-500" label="Avance de citación" />
-                      <p className="mt-1.5 text-[10px] text-slate-400 leading-tight">
+                      <p className="mt-2 text-xs text-slate-500 leading-snug">
                         Citados + Atendidos (cita concretada)<br/>
-                        <span className="font-medium text-slate-500">{conCita.toLocaleString('es-PE')} de {total.toLocaleString('es-PE')}</span>
+                        <span className="font-semibold text-slate-700">{conCita.toLocaleString('es-PE')}</span>
+                        <span className="text-slate-400"> de {total.toLocaleString('es-PE')}</span>
                       </p>
                     </div>
                   </div>
