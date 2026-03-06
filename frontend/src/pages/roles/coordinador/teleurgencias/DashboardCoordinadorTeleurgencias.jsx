@@ -968,10 +968,15 @@ export default function DashboardCoordinadorTeleurgencias() {
   const [fecha,         setFecha]         = useState(null);
   const [diasConDatos,  setDiasConDatos]  = useState({});
   const [turno,         setTurno]         = useState(null);
-  const [busqueda,      setBusqueda]      = useState('');
-  const [sortCol,       setSortCol]       = useState('total');
-  const [sortDir,       setSortDir]       = useState('desc');
-  const [medicoDrawer,  setMedicoDrawer]  = useState(null);
+  const [busqueda,          setBusqueda]          = useState('');
+  const [sortCol,           setSortCol]           = useState('total');
+  const [sortDir,           setSortDir]           = useState('desc');
+  const [medicoDrawer,      setMedicoDrawer]      = useState(null);
+  const [modoBusqueda,      setModoBusqueda]      = useState('medico'); // 'medico' | 'paciente'
+  const [busquedaPaciente,  setBusquedaPaciente]  = useState('');
+  const [pacientesResult,   setPacientesResult]   = useState([]);
+  const [loadingPacientes,  setLoadingPacientes]  = useState(false);
+  const searchPacRef = useRef(null);
 
   const handleSort = (col) => {
     if (sortCol === col) {
@@ -1013,6 +1018,24 @@ export default function DashboardCoordinadorTeleurgencias() {
     setTurno(nuevo);
     cargar(fecha, nuevo);
   };
+
+  const handleBusquedaPaciente = useCallback((valor) => {
+    setBusquedaPaciente(valor);
+    clearTimeout(searchPacRef.current);
+    if (!valor.trim() || valor.trim().length < 2) { setPacientesResult([]); return; }
+    searchPacRef.current = setTimeout(async () => {
+      setLoadingPacientes(true);
+      try {
+        const data = await teleurgenciasService.buscarPacientes(valor.trim(), fecha, turno);
+        setPacientesResult(Array.isArray(data) ? data : []);
+      } catch (e) {
+        console.error('Error buscando paciente teleurgencias:', e);
+        setPacientesResult([]);
+      } finally {
+        setLoadingPacientes(false);
+      }
+    }, 400);
+  }, [fecha, turno]);
 
   // Totales generales
   const totales = useMemo(() => {
@@ -1187,33 +1210,126 @@ export default function DashboardCoordinadorTeleurgencias() {
         </div>
       </div>
 
-      {/* Buscador de médico */}
-      <div style={{ position: 'relative', width: '280px' }}>
-        <Search size={15} color="#94a3b8" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
-        <input
-          type="text"
-          placeholder="Buscar médico..."
-          value={busqueda}
-          onChange={e => setBusqueda(e.target.value)}
-          style={{
-            width: '100%', boxSizing: 'border-box',
-            padding: '8px 12px 8px 36px',
-            border: '1.5px solid #e2e8f0', borderRadius: '8px',
-            fontSize: '13px', color: '#1e293b', outline: 'none', background: '#fff',
-          }}
-        />
-        {busqueda && (
-          <button
-            onClick={() => setBusqueda('')}
-            style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', display: 'flex', padding: 0 }}
-          >
-            <XCircle size={15} />
-          </button>
+      {/* Toggle modo búsqueda + input */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+        {/* Toggle */}
+        <div style={{ display: 'flex', background: '#f1f5f9', borderRadius: '8px', padding: '3px', gap: '2px' }}>
+          {[{ key: 'medico', label: 'Por médico' }, { key: 'paciente', label: 'Por paciente' }].map(({ key, label }) => (
+            <button
+              key={key}
+              onClick={() => { setModoBusqueda(key); setBusqueda(''); setBusquedaPaciente(''); setPacientesResult([]); }}
+              style={{
+                padding: '5px 14px', fontSize: '12px', fontWeight: '600', borderRadius: '6px', border: 'none', cursor: 'pointer',
+                background: modoBusqueda === key ? '#1d4ed8' : 'transparent',
+                color: modoBusqueda === key ? '#fff' : '#64748b',
+                transition: 'all 0.15s',
+              }}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+
+        {/* Input según modo */}
+        <div style={{ position: 'relative', width: '280px' }}>
+          <Search size={15} color="#94a3b8" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
+          {modoBusqueda === 'medico' ? (
+            <input
+              type="text"
+              placeholder="Buscar médico..."
+              value={busqueda}
+              onChange={e => setBusqueda(e.target.value)}
+              style={{ width: '100%', boxSizing: 'border-box', padding: '8px 12px 8px 36px', border: '1.5px solid #e2e8f0', borderRadius: '8px', fontSize: '13px', color: '#1e293b', outline: 'none', background: '#fff' }}
+            />
+          ) : (
+            <input
+              type="text"
+              placeholder="Buscar por nombre o DNI..."
+              value={busquedaPaciente}
+              onChange={e => handleBusquedaPaciente(e.target.value)}
+              style={{ width: '100%', boxSizing: 'border-box', padding: '8px 12px 8px 36px', border: '1.5px solid #3b82f6', borderRadius: '8px', fontSize: '13px', color: '#1e293b', outline: 'none', background: '#fff' }}
+            />
+          )}
+          {(modoBusqueda === 'medico' ? busqueda : busquedaPaciente) && (
+            <button
+              onClick={() => modoBusqueda === 'medico' ? setBusqueda('') : (setBusquedaPaciente(''), setPacientesResult([]))}
+              style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', display: 'flex', padding: 0 }}
+            >
+              <XCircle size={15} />
+            </button>
+          )}
+        </div>
+        {modoBusqueda === 'paciente' && loadingPacientes && (
+          <Loader2 size={16} color="#3b82f6" style={{ animation: 'spin 1s linear infinite' }} />
+        )}
+        {modoBusqueda === 'paciente' && pacientesResult.length > 0 && !loadingPacientes && (
+          <span style={{ fontSize: '12px', color: '#64748b' }}>{pacientesResult.length} resultado{pacientesResult.length !== 1 ? 's' : ''}</span>
         )}
       </div>
 
-      {/* Tabla */}
-      {medicosFiltrados.length === 0 ? (
+      {/* Tabla resultados búsqueda por paciente */}
+      {modoBusqueda === 'paciente' && (
+        <div style={{ background: '#fff', borderRadius: '12px', border: '1px solid #e2e8f0', overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
+          {!busquedaPaciente.trim() || busquedaPaciente.trim().length < 2 ? (
+            <div style={{ padding: '40px', textAlign: 'center', color: '#94a3b8' }}>
+              <Search size={36} style={{ opacity: 0.2, marginBottom: '10px' }} />
+              <p style={{ margin: 0, fontSize: '14px' }}>Escribe al menos 2 caracteres para buscar</p>
+            </div>
+          ) : loadingPacientes ? (
+            <div style={{ padding: '40px', textAlign: 'center', color: '#94a3b8', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' }}>
+              <Loader2 size={18} style={{ animation: 'spin 1s linear infinite' }} />
+              <span style={{ fontSize: '13px' }}>Buscando...</span>
+            </div>
+          ) : pacientesResult.length === 0 ? (
+            <div style={{ padding: '40px', textAlign: 'center', color: '#94a3b8' }}>
+              <Users size={36} style={{ opacity: 0.2, marginBottom: '10px' }} />
+              <p style={{ margin: 0, fontSize: '14px' }}>No se encontraron pacientes</p>
+            </div>
+          ) : (
+            <div style={{ overflowX: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+                <thead>
+                  <tr style={{ background: '#1d4ed8' }}>
+                    {['#', 'DNI', 'Nombre del Paciente', 'Médico Asignado', 'Condición', 'Hora'].map(h => (
+                      <th key={h} style={{ ...TH, textAlign: h === 'Nombre del Paciente' || h === 'Médico Asignado' ? 'left' : 'center', minWidth: h === 'Nombre del Paciente' || h === 'Médico Asignado' ? '180px' : undefined }}>{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {pacientesResult.map((p, idx) => {
+                    const rowBg = idx % 2 === 0 ? '#fff' : '#fafafa';
+                    const condicion = p.condicionMedica || p.condicion_medica || '';
+                    const condColor = condicion === 'Atendido' ? '#10b981' : condicion === 'Deserción' ? '#ef4444' : '#f59e0b';
+                    const condBg   = condicion === 'Atendido' ? '#f0fdf4' : condicion === 'Deserción' ? '#fef2f2' : '#fffbeb';
+                    return (
+                      <tr
+                        key={p.idSolicitud || idx}
+                        onClick={() => { const medico = medicos.find(m => m.id_medico === (p.idPersonal || p.id_personal)); if (medico) setMedicoDrawer(medico); }}
+                        title="Clic para ver al médico asignado"
+                        style={{ borderBottom: '1px solid #f1f5f9', background: rowBg, cursor: 'pointer', transition: 'background 0.12s' }}
+                        onMouseEnter={ev => { ev.currentTarget.style.background = '#eff6ff'; ev.currentTarget.style.boxShadow = 'inset 3px 0 0 #1d4ed8'; }}
+                        onMouseLeave={ev => { ev.currentTarget.style.background = rowBg; ev.currentTarget.style.boxShadow = 'none'; }}
+                      >
+                        <td style={{ padding: '10px 14px', textAlign: 'center', color: '#94a3b8', fontWeight: '600', fontSize: '12px' }}>{idx + 1}</td>
+                        <td style={{ padding: '10px 14px', textAlign: 'center', fontFamily: 'monospace', fontWeight: '600', color: '#1d4ed8', fontSize: '12px' }}>{p.pacienteDni || p.paciente_dni || '—'}</td>
+                        <td style={{ padding: '10px 14px', fontWeight: '500', color: '#1e293b' }}>{p.pacienteNombre || p.paciente_nombre || '—'}</td>
+                        <td style={{ padding: '10px 14px', color: '#475569', fontSize: '12px' }}>{p.nombreEnfermera || '—'}</td>
+                        <td style={{ padding: '10px 14px', textAlign: 'center' }}>
+                          <span style={{ padding: '3px 10px', borderRadius: '20px', fontSize: '11px', fontWeight: '700', background: condBg, color: condColor }}>{condicion || '—'}</span>
+                        </td>
+                        <td style={{ padding: '10px 14px', textAlign: 'center', color: '#64748b', fontSize: '12px', fontFamily: 'monospace' }}>{p.horaCita || p.hora_cita || '—'}</td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Tabla médicos (solo visible en modo médico) */}
+      {modoBusqueda === 'medico' && (medicosFiltrados.length === 0 ? (
         <div style={{ background: '#f8fafc', border: '1px dashed #cbd5e1', borderRadius: '12px', padding: '48px', textAlign: 'center', color: '#94a3b8' }}>
           <Users size={40} style={{ opacity: 0.2, marginBottom: '12px' }} />
           <p style={{ margin: 0, fontSize: '15px' }}>No hay datos para la fecha seleccionada</p>
@@ -1330,7 +1446,7 @@ export default function DashboardCoordinadorTeleurgencias() {
             </table>
           </div>
         </div>
-      )}
+      ))}
 
       {/* Leyenda */}
       <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '12px 16px' }}>

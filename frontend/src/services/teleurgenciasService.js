@@ -28,6 +28,9 @@ const teleurgenciasService = {
   fechasPorMedico: (idMedico) =>
     apiClient.get(`${BASE}/estadisticas/fechas-por-medico?idMedico=${idMedico}`, true),
 
+  buscarPacientes: (q, fecha, turno) =>
+    apiClient.get(`${BASE}/pacientes/buscar${buildQs({ q, fecha, turno })}`, true),
+
   reasignarMasivo: (body) =>
     apiClient.put(`${BASE}/reasignar-masivo`, body, true),
 };

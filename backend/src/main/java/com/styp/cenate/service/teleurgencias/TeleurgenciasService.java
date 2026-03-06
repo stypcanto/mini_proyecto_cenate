@@ -82,6 +82,26 @@ public class TeleurgenciasService {
     }
 
     /**
+     * Búsqueda de pacientes por nombre o DNI a través de todos los médicos de Teleurgencias.
+     */
+    public List<RescatarPacienteDto> buscarPacientes(String q, String fecha, String turno) {
+        log.info("🔍 Teleurgencias: buscar pacientes - q: {}, fecha: {}, turno: {}", q, fecha, turno);
+        String qLike = "%" + (q != null ? q.trim() : "") + "%";
+        List<Object[]> rows = solicitudBolsaRepository.buscarPacientesTeleurgencias(
+                IDS_TELEURGENCIAS, qLike, fecha, turno);
+        return rows.stream().map(r -> RescatarPacienteDto.builder()
+                .idSolicitud(r[0] != null ? ((Number) r[0]).longValue() : null)
+                .pacienteNombre(r[1] != null ? r[1].toString() : "")
+                .pacienteDni(r[2] != null ? r[2].toString() : "")
+                .condicionMedica(r[3] != null ? r[3].toString() : "")
+                .idPersonal(r[5] != null ? ((Number) r[5]).longValue() : null)
+                .horaCita(r[6] != null ? r[6].toString() : null)
+                .nombreEnfermera(r[7] != null ? r[7].toString() : "")
+                .build())
+                .collect(Collectors.toList());
+    }
+
+    /**
      * Lista de médicos de Teleurgencias (para selector de reasignación).
      */
     public List<EnfermeraSimpleDto> listarMedicos() {

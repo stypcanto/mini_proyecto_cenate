@@ -1420,6 +1420,40 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
         @org.springframework.data.repository.query.Param("turno") String turno);
 
     /**
+     * Buscar pacientes de Teleurgencias por nombre o DNI (cross-médico).
+     */
+    @Query(value = """
+        SELECT sb.id_solicitud, sb.paciente_nombre, sb.paciente_dni,
+               sb.condicion_medica, sb.fecha_atencion, sb.id_personal,
+               COALESCE(
+                 TO_CHAR(sb.hora_atencion, 'HH24:MI'),
+                 TO_CHAR(sc.hora_cita,    'HH24:MI')
+               ) AS hora_cita,
+               TRIM(COALESCE(p.ape_pater_pers,'') || ' ' || COALESCE(p.ape_mater_pers,'') || ' ' || COALESCE(p.nom_pers,'')) AS nombre_medico
+        FROM dim_solicitud_bolsa sb
+        JOIN dim_personal_cnt p ON sb.id_personal = p.id_pers
+        LEFT JOIN (
+            SELECT DISTINCT ON (doc_paciente) doc_paciente, hora_cita, fecha_cita
+            FROM solicitud_cita WHERE hora_cita IS NOT NULL
+            ORDER BY doc_paciente, fecha_cita DESC
+        ) sc ON sc.doc_paciente = sb.paciente_dni
+        WHERE sb.activo = true
+          AND sb.id_personal IN (:idsMedicos)
+          AND (LOWER(sb.paciente_nombre) LIKE LOWER(:qLike) OR sb.paciente_dni LIKE :qLike)
+          AND (CAST(:fecha AS VARCHAR) IS NULL OR DATE(sb.fecha_atencion) = CAST(:fecha AS DATE))
+          AND (CAST(:turno AS VARCHAR) IS NULL
+               OR (:turno = 'MANANA' AND EXTRACT(HOUR FROM sb.fecha_atencion) BETWEEN 7 AND 13)
+               OR (:turno = 'TARDE'  AND EXTRACT(HOUR FROM sb.fecha_atencion) BETWEEN 14 AND 20))
+        ORDER BY sb.paciente_nombre ASC
+        LIMIT 200
+        """, nativeQuery = true)
+    List<Object[]> buscarPacientesTeleurgencias(
+        @org.springframework.data.repository.query.Param("idsMedicos") List<Long> idsMedicos,
+        @org.springframework.data.repository.query.Param("qLike")      String qLike,
+        @org.springframework.data.repository.query.Param("fecha")      String fecha,
+        @org.springframework.data.repository.query.Param("turno")      String turno);
+
+    /**
      * Fechas disponibles con total de pacientes de Teleurgencias (todos los médicos).
      */
     @Query(value = """

@@ -54,6 +54,19 @@ public class TeleurgenciasController {
     }
 
     /**
+     * GET /pacientes/buscar?q=...&fecha=YYYY-MM-DD&turno=MANANA|TARDE
+     * Busca pacientes por nombre o DNI a través de todos los médicos de Teleurgencias.
+     */
+    @GetMapping("/pacientes/buscar")
+    public ResponseEntity<List<RescatarPacienteDto>> buscarPacientes(
+            @RequestParam String q,
+            @RequestParam(required = false) String fecha,
+            @RequestParam(required = false) String turno) {
+        log.info("🔍 GET /coordinador/teleurgencias/pacientes/buscar - q: {}, fecha: {}, turno: {}", q, fecha, turno);
+        return ResponseEntity.ok(teleurgenciasService.buscarPacientes(q, fecha, turno));
+    }
+
+    /**
      * GET /medicos
      * Lista de médicos de Teleurgencias (para selector de reasignación).
      */
