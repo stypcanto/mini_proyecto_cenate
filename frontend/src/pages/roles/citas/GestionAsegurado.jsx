@@ -310,8 +310,9 @@ export default function GestionAsegurado() {
   
   const API_BASE = getApiBase();
 
-  // Cargar especialidades desde BD al montar el componente
+  // Cargar especialidades desde BD — recarga cada vez que se abre el dropdown
   useEffect(() => {
+    if (!mostrarDropdownEsp) return;
     fetch(`${API_BASE}/especialidades/activas`, { headers: { Authorization: `Bearer ${getToken()}` } })
       .then(r => r.ok ? r.json() : [])
       .then(data => setEspecialidadesAPI(
@@ -321,7 +322,7 @@ export default function GestionAsegurado() {
           .sort()
       ))
       .catch(() => {});
-  }, []); // eslint-disable-line
+  }, [mostrarDropdownEsp]); // eslint-disable-line
 
   // ============================================================================
   // 🔐 FUNCIÓN AUXILIAR: OBTENER HEADERS CON TOKEN
