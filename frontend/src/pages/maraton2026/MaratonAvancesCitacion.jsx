@@ -1,10 +1,14 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, memo } from 'react';
 import { createPortal } from 'react-dom';
 import { CalendarCheck, RefreshCw, Download, X, Search, ChevronLeft, ChevronRight } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { obtenerDesgloseMaratonSegmentos, obtenerPacientesMaratonCategoria, obtenerOpcionesFiltrosMaraton, obtenerTotalesBrutosMaraton, obtenerDashboardTerritorialMaraton } from '../../services/bolsasService';
 import { MapPin, BarChart3 } from 'lucide-react';
 import { apiClient } from '../../lib/apiClient';
+import {
+  ResponsiveContainer, PieChart, Pie, Cell, Tooltip, Legend,
+  BarChart, Bar, XAxis, YAxis, CartesianGrid,
+} from 'recharts';
 
 // ─── Hook: animación de contador suave (easeOutExpo) ─────────────────────────
 function useCountUp(target, duration = 1200) {
@@ -653,9 +657,325 @@ function TerritorialTable({ title, icon, data, loading: isLoading, searchable })
   );
 }
 
+// ─── Paleta de colores Power BI ───────────────────────────────────────────────
+const C_CITADOS    = '#10b981'; // emerald-500
+const C_OBSERVADOS = '#f59e0b'; // amber-500
+const C_PENDIENTES = '#f43f5e'; // rose-500
+const C_TOTAL      = '#334155'; // slate-700
+
+// Tooltip personalizado para barras
+function CustomBarTooltip({ active, payload, label }) {
+  if (!active || !payload?.length) return null;
+  return (
+    <div className="bg-white border border-slate-200 rounded-xl shadow-xl px-4 py-3 text-xs">
+      <p className="font-bold text-slate-800 mb-2 max-w-[200px] leading-tight">{label}</p>
+      {payload.map((p) => (
+        <div key={p.dataKey} className="flex items-center gap-2 mb-1">
+          <span className="w-2.5 h-2.5 rounded-sm flex-shrink-0" style={{ background: p.fill }} />
+          <span className="text-slate-600">{p.name}:</span>
+          <span className="font-bold text-slate-800">{Number(p.value).toLocaleString('es-PE')}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// Tooltip personalizado para pie
+function CustomPieTooltip({ active, payload }) {
+  if (!active || !payload?.length) return null;
+  const p = payload[0];
+  const pct = p.payload?.pct ?? 0;
+  return (
+    <div className="bg-white border border-slate-200 rounded-xl shadow-xl px-4 py-3 text-xs">
+      <div className="flex items-center gap-2 mb-1">
+        <span className="w-2.5 h-2.5 rounded-sm" style={{ background: p.payload.fill }} />
+        <span className="font-bold text-slate-800">{p.name}</span>
+      </div>
+      <p className="text-slate-600">Pacientes: <span className="font-bold text-slate-800">{Number(p.value).toLocaleString('es-PE')}</span></p>
+      <p className="text-slate-600">Porcentaje: <span className="font-bold text-slate-800">{pct}%</span></p>
+    </div>
+  );
+}
+
+// Dashboard Territorial con gráficos estilo Power BI
+// memo evita re-render por el tick de 1s del padre — solo re-renderiza cuando data cambia (cada 10s)
+const DashboardTerritorialCharts = memo(function DashboardTerritorialCharts({ data, loading }) {
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64 text-slate-400 text-sm">
+        <RefreshCw className="w-5 h-5 animate-spin mr-2" />
+        Cargando dashboard territorial...
+      </div>
+    );
+  }
+
+  const enrich = (arr) => arr.map(r => {
+    const total      = Number(r.total)      || 0;
+    const citados    = Number(r.citados)    || 0;
+    const observados = Number(r.observados) || 0;
+    const pendientes = Number(r.pendientes) || 0;
+    const pctCit = total > 0 ? +((citados    / total) * 100).toFixed(1) : 0;
+    const pctObs = total > 0 ? +((observados / total) * 100).toFixed(1) : 0;
+    const pctPend= total > 0 ? +((pendientes / total) * 100).toFixed(1) : 0;
+    return { nombre: r.nombre ?? '', total, citados, observados, pendientes, pctCit, pctObs, pctPend };
+  });
+
+  const macro  = enrich(data.porMacrorregion ?? []).sort((a, b) => b.pctCit - a.pctCit);
+  const red    = enrich(data.porRed  ?? []).slice(0, 20).sort((a, b) => b.pctCit - a.pctCit);
+  const ipress = enrich(data.porIpress ?? []).slice(0, 25).sort((a, b) => b.pctCit - a.pctCit);
+
+  // Totales para KPIs + donut
+  const totCitados    = macro.reduce((a, r) => a + r.citados,    0);
+  const totObservados = macro.reduce((a, r) => a + r.observados, 0);
+  const totPendientes = macro.reduce((a, r) => a + r.pendientes, 0);
+  const totTotal      = macro.reduce((a, r) => a + r.total,      0);
+
+  const pieData = [
+    { name: 'Citados',    value: totCitados,    fill: C_CITADOS,    pct: totTotal > 0 ? ((totCitados    / totTotal) * 100).toFixed(1) : '0.0' },
+    { name: 'Observados', value: totObservados,  fill: C_OBSERVADOS, pct: totTotal > 0 ? ((totObservados / totTotal) * 100).toFixed(1) : '0.0' },
+    { name: 'Pendientes', value: totPendientes,  fill: C_PENDIENTES, pct: totTotal > 0 ? ((totPendientes / totTotal) * 100).toFixed(1) : '0.0' },
+  ];
+
+  // Tooltip para gráficos 100% (stackOffset="expand") — muestra % Y absolutos
+  const NormalizedTooltip = ({ active, payload, label }) => {
+    if (!active || !payload?.length) return null;
+    const row = [...macro, ...red, ...ipress].find(r => r.nombre === label) ?? {};
+    return (
+      <div className="bg-white border border-slate-200 rounded-xl shadow-xl px-4 py-3 text-xs min-w-[180px]">
+        <p className="font-bold text-slate-800 mb-2 leading-tight max-w-[200px]">{label}</p>
+        <p className="text-slate-400 mb-1.5">Total: <span className="font-bold text-slate-700">{(row.total ?? 0).toLocaleString('es-PE')}</span></p>
+        {[
+          { key: 'citados',    label: 'Citados',    color: C_CITADOS,    abs: row.citados,    pct: row.pctCit },
+          { key: 'observados', label: 'Observados', color: C_OBSERVADOS, abs: row.observados, pct: row.pctObs },
+          { key: 'pendientes', label: 'Pendientes', color: C_PENDIENTES, abs: row.pendientes, pct: row.pctPend },
+        ].map(({ key, label: lbl, color, abs, pct }) => (
+          <div key={key} className="flex items-center gap-2 mb-1">
+            <span className="w-2.5 h-2.5 rounded-sm flex-shrink-0" style={{ background: color }} />
+            <span className="text-slate-500">{lbl}:</span>
+            <span className="font-bold text-slate-800 ml-auto">{(abs ?? 0).toLocaleString('es-PE')} ({pct ?? 0}%)</span>
+          </div>
+        ))}
+      </div>
+    );
+  };
+
+  // Tooltip para gráfico de % citados (barra simple)
+  const PctTooltip = ({ active, payload, label }) => {
+    if (!active || !payload?.length) return null;
+    const row = [...macro, ...red, ...ipress].find(r => r.nombre === label) ?? {};
+    return (
+      <div className="bg-white border border-slate-200 rounded-xl shadow-xl px-4 py-3 text-xs">
+        <p className="font-bold text-slate-800 mb-2 max-w-[200px] leading-tight">{label}</p>
+        <p className="text-emerald-600 font-bold text-base">{payload[0].value}% citados</p>
+        <p className="text-slate-400 mt-1">Total: {(row.total ?? 0).toLocaleString('es-PE')} pacientes</p>
+        <p className="text-emerald-500 mt-0.5">{(row.citados ?? 0).toLocaleString('es-PE')} citados</p>
+      </div>
+    );
+  };
+
+  // Colores dinámicos para barras de % citados según umbral
+  const pctColor = (pct) => pct >= 50 ? C_CITADOS : pct >= 25 ? C_OBSERVADOS : C_PENDIENTES;
+
+  const macroChartH = Math.max(240, macro.length * 52);
+  const redChartH   = Math.max(300, red.length * 38);
+  const ipressH     = Math.max(380, ipress.length * 30);
+
+  return (
+    <div className="space-y-6">
+
+      {/* ── Fila 1: KPIs + Donut ── */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-2 gap-3 lg:col-span-1">
+          {[
+            { label: 'Total universo', value: totTotal,      bg: 'bg-slate-800',   ring: 'ring-slate-700' },
+            { label: 'Citados',        value: totCitados,    bg: 'bg-emerald-600', ring: 'ring-emerald-500' },
+            { label: 'Observados',     value: totObservados, bg: 'bg-amber-500',   ring: 'ring-amber-400' },
+            { label: 'Pendientes',     value: totPendientes, bg: 'bg-rose-600',    ring: 'ring-rose-500' },
+          ].map(({ label, value, bg, ring }) => (
+            <div key={label} className={`${bg} ring-1 ${ring} rounded-2xl px-4 py-5 flex flex-col justify-between`}>
+              <p className="text-[10px] font-bold uppercase tracking-widest text-white/70">{label}</p>
+              <p className="text-3xl font-black text-white tabular-nums mt-2">{value.toLocaleString('es-PE')}</p>
+              {totTotal > 0 && value !== totTotal && (
+                <p className="text-xs text-white/60 mt-1">{((value / totTotal) * 100).toFixed(1)}% del total</p>
+              )}
+            </div>
+          ))}
+        </div>
+
+        <div className="lg:col-span-2 bg-white rounded-2xl border border-slate-200 shadow-sm px-5 py-4">
+          <p className="text-sm font-bold text-slate-800 mb-1">Distribución Global de Estados</p>
+          <p className="text-xs text-slate-500 mb-3">Composición del universo Maratón 2026</p>
+          <div style={{ height: 220 }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie data={pieData} cx="50%" cy="50%" innerRadius={60} outerRadius={90} paddingAngle={3} dataKey="value" label={false}>
+                  {pieData.map((entry, i) => <Cell key={i} fill={entry.fill} stroke="white" strokeWidth={2} />)}
+                </Pie>
+                <Tooltip content={<CustomPieTooltip />} />
+                <Legend formatter={(value, entry) => (
+                  <span style={{ fontSize: 12, color: '#475569', fontWeight: 600 }}>
+                    {value}: {Number(entry.payload.value).toLocaleString('es-PE')} ({entry.payload.pct}%)
+                  </span>
+                )} />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      </div>
+
+      {/* ── Fila 2: Macrorregión — 100% composición + ranking % citados ── */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm px-5 py-4">
+          <p className="text-sm font-bold text-slate-800 mb-0.5">Composición por Macrorregión</p>
+          <p className="text-xs text-slate-500 mb-2">Cada barra representa el 100% de pacientes de esa macrorregión, dividido en tres estados de gestión.</p>
+          <div className="flex items-center gap-4 mb-4 flex-wrap">
+            {[['bg-emerald-500','Citados — paciente con cita asignada'],['bg-amber-500','Observados — contacto fallido o sin IPRESS CENATE'],['bg-rose-500','Pendientes — aún sin gestión de cita']].map(([cls,lbl])=>(
+              <span key={lbl} className="flex items-center gap-1.5 text-[11px] text-slate-600"><span className={`w-3 h-3 rounded-sm flex-shrink-0 ${cls}`}/>{lbl}</span>
+            ))}
+          </div>
+          <div style={{ height: macroChartH }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={macro} layout="vertical" stackOffset="expand" margin={{ top: 0, right: 50, left: 10, bottom: 0 }} barSize={22}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" horizontal={false} />
+                <XAxis type="number" tickFormatter={v => `${(v * 100).toFixed(0)}%`} tick={{ fontSize: 10, fill: '#94a3b8' }} domain={[0, 1]} />
+                <YAxis type="category" dataKey="nombre" width={130} tick={{ fontSize: 11, fill: '#475569', fontWeight: 600 }} />
+                <Tooltip content={<NormalizedTooltip />} cursor={{ fill: '#f1f5f9' }} />
+                <Bar dataKey="citados"    name="Citados"    fill={C_CITADOS}    stackId="a" />
+                <Bar dataKey="observados" name="Observados" fill={C_OBSERVADOS}  stackId="a" />
+                <Bar dataKey="pendientes" name="Pendientes" fill={C_PENDIENTES}  stackId="a" radius={[0,4,4,0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm px-5 py-4">
+          <p className="text-sm font-bold text-slate-800 mb-0.5">Ranking % Citados por Macrorregión</p>
+          <p className="text-xs text-slate-500 mb-2">Porcentaje de pacientes citados sobre el total de cada macrorregión. Semáforo de cumplimiento de meta.</p>
+          <div className="flex items-center gap-4 mb-4 flex-wrap">
+            {[['bg-emerald-500','≥ 50% — Buen avance'],['bg-amber-500','25–49% — En proceso'],['bg-rose-500','< 25% — Requiere atención']].map(([cls,lbl])=>(
+              <span key={lbl} className="flex items-center gap-1.5 text-[11px] text-slate-600"><span className={`w-3 h-3 rounded-sm flex-shrink-0 ${cls}`}/>{lbl}</span>
+            ))}
+          </div>
+          <div style={{ height: macroChartH }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={macro} layout="vertical" margin={{ top: 0, right: 60, left: 10, bottom: 0 }} barSize={22}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" horizontal={false} />
+                <XAxis type="number" domain={[0, 100]} tickFormatter={v => `${v}%`} tick={{ fontSize: 10, fill: '#94a3b8' }} />
+                <YAxis type="category" dataKey="nombre" width={130} tick={{ fontSize: 11, fill: '#475569', fontWeight: 600 }} />
+                <Tooltip content={<PctTooltip />} cursor={{ fill: '#f1f5f9' }} />
+                <Bar dataKey="pctCit" name="% Citados" radius={[0, 6, 6, 0]} label={{ position: 'right', formatter: v => `${v}%`, fontSize: 11, fontWeight: 700, fill: '#374151' }}>
+                  {macro.map((entry, i) => <Cell key={i} fill={pctColor(entry.pctCit)} />)}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      </div>
+
+      {/* ── Fila 3: Red de Salud — 100% composición + ranking ── */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm px-5 py-4">
+          <div className="flex items-center justify-between mb-0.5">
+            <p className="text-sm font-bold text-slate-800">Composición por Red de Salud</p>
+            <span className="text-[10px] bg-slate-100 text-slate-500 rounded-full px-2 py-0.5 font-semibold">Top {red.length}</span>
+          </div>
+          <p className="text-xs text-slate-500 mb-2">Distribución proporcional de estados por red de salud. Cada barra suma 100%.</p>
+          <div className="flex items-center gap-4 mb-4 flex-wrap">
+            {[['bg-emerald-500','Citados'],['bg-amber-500','Observados'],['bg-rose-500','Pendientes']].map(([cls,lbl])=>(
+              <span key={lbl} className="flex items-center gap-1.5 text-[11px] text-slate-600"><span className={`w-3 h-3 rounded-sm flex-shrink-0 ${cls}`}/>{lbl}</span>
+            ))}
+          </div>
+          <div style={{ height: redChartH }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={red} layout="vertical" stackOffset="expand" margin={{ top: 0, right: 50, left: 10, bottom: 0 }} barSize={14}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" horizontal={false} />
+                <XAxis type="number" tickFormatter={v => `${(v * 100).toFixed(0)}%`} tick={{ fontSize: 10, fill: '#94a3b8' }} domain={[0, 1]} />
+                <YAxis type="category" dataKey="nombre" width={190} tick={{ fontSize: 9, fill: '#475569' }} />
+                <Tooltip content={<NormalizedTooltip />} cursor={{ fill: '#f1f5f9' }} />
+                <Bar dataKey="citados"    fill={C_CITADOS}    stackId="a" />
+                <Bar dataKey="observados" fill={C_OBSERVADOS}  stackId="a" />
+                <Bar dataKey="pendientes" fill={C_PENDIENTES}  stackId="a" radius={[0,4,4,0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm px-5 py-4">
+          <div className="flex items-center justify-between mb-0.5">
+            <p className="text-sm font-bold text-slate-800">Ranking % Citados por Red</p>
+            <span className="text-[10px] bg-slate-100 text-slate-500 rounded-full px-2 py-0.5 font-semibold">Top {red.length}</span>
+          </div>
+          <p className="text-xs text-slate-500 mb-2">% de pacientes con cita confirmada por red asistencial. Semáforo de cumplimiento.</p>
+          <div className="flex items-center gap-4 mb-4 flex-wrap">
+            {[['bg-emerald-500','≥ 50% — Buen avance'],['bg-amber-500','25–49% — En proceso'],['bg-rose-500','< 25% — Requiere atención']].map(([cls,lbl])=>(
+              <span key={lbl} className="flex items-center gap-1.5 text-[11px] text-slate-600"><span className={`w-3 h-3 rounded-sm flex-shrink-0 ${cls}`}/>{lbl}</span>
+            ))}
+          </div>
+          <div style={{ height: redChartH }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={red} layout="vertical" margin={{ top: 0, right: 60, left: 10, bottom: 0 }} barSize={14}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" horizontal={false} />
+                <XAxis type="number" domain={[0, 100]} tickFormatter={v => `${v}%`} tick={{ fontSize: 10, fill: '#94a3b8' }} />
+                <YAxis type="category" dataKey="nombre" width={190} tick={{ fontSize: 9, fill: '#475569' }} />
+                <Tooltip content={<PctTooltip />} cursor={{ fill: '#f1f5f9' }} />
+                <Bar dataKey="pctCit" name="% Citados" radius={[0, 5, 5, 0]} label={{ position: 'right', formatter: v => `${v}%`, fontSize: 10, fontWeight: 700, fill: '#374151' }}>
+                  {red.map((entry, i) => <Cell key={i} fill={pctColor(entry.pctCit)} />)}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      </div>
+
+      {/* ── Fila 4: IPRESS — ranking % citados ── */}
+      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm px-5 py-4">
+        <div className="flex items-center justify-between mb-0.5">
+          <p className="text-sm font-bold text-slate-800">Ranking % Citados por IPRESS</p>
+          <span className="text-[10px] bg-slate-100 text-slate-500 rounded-full px-2 py-0.5 font-semibold">Top {ipress.length}</span>
+        </div>
+        <p className="text-xs text-slate-500 mb-2">Porcentaje de pacientes citados por IPRESS. Ordenado de mayor a menor. El color indica el nivel de avance respecto a la meta de citación.</p>
+        <div className="flex items-center gap-4 mb-4 flex-wrap">
+          {[['bg-emerald-500','≥ 50% — Buen avance'],['bg-amber-500','25–49% — En proceso'],['bg-rose-500','< 25% — Requiere atención']].map(([cls,lbl])=>(
+            <span key={lbl} className="flex items-center gap-1.5 text-[11px] text-slate-600"><span className={`w-3 h-3 rounded-sm flex-shrink-0 ${cls}`}/>{lbl}</span>
+          ))}
+        </div>
+        <div style={{ height: ipressH }}>
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={ipress} layout="vertical" margin={{ top: 0, right: 70, left: 10, bottom: 0 }} barSize={12}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" horizontal={false} />
+              <XAxis type="number" domain={[0, 100]} tickFormatter={v => `${v}%`} tick={{ fontSize: 10, fill: '#94a3b8' }} />
+              <YAxis type="category" dataKey="nombre" width={240} tick={{ fontSize: 9, fill: '#475569' }} />
+              <Tooltip content={<PctTooltip />} cursor={{ fill: '#f1f5f9' }} />
+              <Bar dataKey="pctCit" name="% Citados" radius={[0, 5, 5, 0]} label={{ position: 'right', formatter: v => `${v}%`, fontSize: 9, fontWeight: 700, fill: '#374151' }}>
+                {ipress.map((entry, i) => <Cell key={i} fill={pctColor(entry.pctCit)} />)}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+
+      {/* ── Tablas detalle ── */}
+      <TerritorialTable title="Por Macrorregión" icon="🗺️" data={data.porMacrorregion ?? []} loading={false} searchable={false} />
+      <TerritorialTable title="Por Red de Salud" icon="🏥" data={data.porRed ?? []} loading={false} searchable={false} />
+      <TerritorialTable title="Por IPRESS" icon="🏢" data={data.porIpress ?? []} loading={false} searchable={true} />
+    </div>
+  );
+});
+
+// Tiempo relativo: "hace X segundos / minutos"
+function formatRelTime(date) {
+  const secs = Math.floor((Date.now() - date.getTime()) / 1000);
+  if (secs < 5)  return 'hace unos segundos';
+  if (secs < 60) return `hace ${secs} segundos`;
+  const mins = Math.floor(secs / 60);
+  return `hace ${mins} minuto${mins > 1 ? 's' : ''}`;
+}
+
 // ─── Componente principal ─────────────────────────────────────────────────────
 export default function MaratonAvancesCitacion() {
   const [loading,            setLoading]            = useState(false);
+  const [refreshing,         setRefreshing]         = useState(false);
+  const [lastUpdated,        setLastUpdated]        = useState(null);
   const [universoTotal,      setUniversoTotal]      = useState(0);
   const [cenacron,           setCenacron]           = useState({ total: 0, citados: 0, observados: 0, pendientes: 0 });
   const [especialidades,     setEspecialidades]     = useState({ total: 0, citados: 0, observados: 0, pendientes: 0 });
@@ -664,9 +984,12 @@ export default function MaratonAvancesCitacion() {
   const [tab,                setTab]                = useState('embudo');
   const [territorial,        setTerritorial]        = useState({ porMacrorregion: [], porRed: [], porIpress: [] });
   const [loadingTerritorial, setLoadingTerritorial] = useState(false);
+  const tabRef = useRef(tab);
+  useEffect(() => { tabRef.current = tab; }, [tab]);
 
-  const cargarDatos = useCallback(async () => {
-    setLoading(true);
+  const cargarDatos = useCallback(async (silent = false) => {
+    if (!silent) setLoading(true);
+    else setRefreshing(true);
     try {
       const [universoRes, desgloseRes, brutosRes] = await Promise.all([
         apiClient.get('/asegurados?maraton=true&page=0&size=1', true).catch(() => null),
@@ -689,29 +1012,50 @@ export default function MaratonAvancesCitacion() {
         setCenacron(cen);
         setEspecialidades(esp);
       }
+      setLastUpdated(new Date());
     } catch (err) {
       console.error('Error cargando avances Maratón 2026:', err);
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   }, []);
 
   useEffect(() => { cargarDatos(); }, [cargarDatos]);
 
-  const cargarTerritorial = useCallback(async () => {
-    if (territorial.porMacrorregion.length > 0) return; // ya cargado
-    setLoadingTerritorial(true);
+  const cargarTerritorial = useCallback(async (silent = false) => {
+    if (!silent) setLoadingTerritorial(true);
     try {
       const data = await obtenerDashboardTerritorialMaraton();
       setTerritorial(data ?? { porMacrorregion: [], porRed: [], porIpress: [] });
+      setLastUpdated(new Date());
     } catch (e) {
       console.error('Error cargando dashboard territorial:', e);
     } finally {
       setLoadingTerritorial(false);
     }
-  }, [territorial.porMacrorregion.length]);
+  }, []);
 
-  useEffect(() => { if (tab === 'territorial') cargarTerritorial(); }, [tab, cargarTerritorial]);
+  // Primera carga al cambiar a la pestaña territorial
+  useEffect(() => {
+    if (tab === 'territorial') cargarTerritorial();
+  }, [tab, cargarTerritorial]);
+
+  // Auto-refresh silencioso cada 10 segundos
+  useEffect(() => {
+    const id = setInterval(() => {
+      cargarDatos(true);
+      if (tabRef.current === 'territorial') cargarTerritorial(true);
+    }, 10_000);
+    return () => clearInterval(id);
+  }, [cargarDatos, cargarTerritorial]);
+
+  // Tick cada segundo para actualizar el texto "hace X segundos"
+  const [, setTick] = useState(0);
+  useEffect(() => {
+    const id = setInterval(() => setTick(t => t + 1), 1_000);
+    return () => clearInterval(id);
+  }, []);
 
   const totalCitados    = cenacron.citados    + especialidades.citados;
   const totalObservados = cenacron.observados + especialidades.observados;
@@ -790,6 +1134,14 @@ export default function MaratonAvancesCitacion() {
           <p className="text-sm text-slate-500 mt-0.5">
             Embudo de citación por segmento — Maratón de Salud 2026
           </p>
+          {lastUpdated && (
+            <div className="flex items-center gap-1.5 mt-1">
+              <span className={`w-2 h-2 rounded-full flex-shrink-0 ${refreshing ? 'bg-amber-400 animate-pulse' : 'bg-emerald-400 animate-pulse'}`} />
+              <span className="text-[11px] text-slate-400">
+                {refreshing ? 'Actualizando…' : `Actualizado ${formatRelTime(lastUpdated)}`}
+              </span>
+            </div>
+          )}
         </div>
         <div className="flex gap-2">
           <button
@@ -839,44 +1191,7 @@ export default function MaratonAvancesCitacion() {
 
       {/* ── Contenido pestaña Territorial ── */}
       {tab === 'territorial' && (
-        <div className="space-y-5">
-          {/* KPIs resumen */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            {[
-              { label: 'Total Universo',  value: territorial.porMacrorregion.reduce((a, r) => a + (Number(r.total) || 0), 0),      color: 'bg-slate-800',   text: 'text-white' },
-              { label: 'Citados',         value: territorial.porMacrorregion.reduce((a, r) => a + (Number(r.citados) || 0), 0),    color: 'bg-emerald-600', text: 'text-white' },
-              { label: 'Observados',      value: territorial.porMacrorregion.reduce((a, r) => a + (Number(r.observados) || 0), 0), color: 'bg-amber-500',   text: 'text-white' },
-              { label: 'Pendientes',      value: territorial.porMacrorregion.reduce((a, r) => a + (Number(r.pendientes) || 0), 0), color: 'bg-rose-600',    text: 'text-white' },
-            ].map(({ label, value, color, text }) => (
-              <div key={label} className={`${color} rounded-xl px-5 py-4`}>
-                <p className={`text-xs font-semibold uppercase tracking-wider opacity-80 ${text}`}>{label}</p>
-                <p className={`text-2xl font-black tabular-nums mt-1 ${text}`}>{value.toLocaleString('es-PE')}</p>
-              </div>
-            ))}
-          </div>
-
-          <TerritorialTable
-            title="Por Macrorregión"
-            icon="🗺️"
-            data={territorial.porMacrorregion}
-            loading={loadingTerritorial}
-            searchable={false}
-          />
-          <TerritorialTable
-            title="Por Red de Salud"
-            icon="🏥"
-            data={territorial.porRed}
-            loading={loadingTerritorial}
-            searchable={false}
-          />
-          <TerritorialTable
-            title="Por IPRESS"
-            icon="🏢"
-            data={territorial.porIpress}
-            loading={loadingTerritorial}
-            searchable={true}
-          />
-        </div>
+        <DashboardTerritorialCharts data={territorial} loading={loadingTerritorial} />
       )}
 
       {/* ── Contenido pestaña Embudo ── */}
