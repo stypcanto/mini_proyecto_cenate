@@ -475,8 +475,8 @@ public class SolicitudBolsaEstadisticasController {
             case "OBSERVADOS_ESPECIALIDADES"  -> "pe.estado IN (" + OBS_IN + ") AND (a.paciente_cronico = false OR a.paciente_cronico IS NULL)";
             case "PENDIENTES_CENACRON"        -> "pe.estado = 'PENDIENTE_CITA' AND a.paciente_cronico = true";
             case "PENDIENTES_ESPECIALIDADES"  -> "pe.estado = 'PENDIENTE_CITA' AND (a.paciente_cronico = false OR a.paciente_cronico IS NULL)";
-            case "ATENDIDOS_CENACRON"         -> "pe.estado = 'ATENDIDO' AND a.paciente_cronico = true";
-            case "ATENDIDOS_ESPECIALIDADES"   -> "pe.estado = 'ATENDIDO' AND (a.paciente_cronico = false OR a.paciente_cronico IS NULL)";
+            case "ATENDIDOS_CENACRON"         -> "pe.estado IN ('ATENDIDO_IPRESS','ATENDIDO') AND a.paciente_cronico = true";
+            case "ATENDIDOS_ESPECIALIDADES"   -> "pe.estado IN ('ATENDIDO_IPRESS','ATENDIDO') AND (a.paciente_cronico = false OR a.paciente_cronico IS NULL)";
             default -> "1=0";
         };
         String cte = """
@@ -548,8 +548,8 @@ public class SolicitudBolsaEstadisticasController {
             case "OBSERVADOS_ESPECIALIDADES" -> "pe.estado IN (" + OBSERVADOS_IN + ") AND (a.paciente_cronico = false OR a.paciente_cronico IS NULL)";
             case "PENDIENTES_CENACRON"       -> "pe.estado = 'PENDIENTE_CITA' AND a.paciente_cronico = true";
             case "PENDIENTES_ESPECIALIDADES" -> "pe.estado = 'PENDIENTE_CITA' AND (a.paciente_cronico = false OR a.paciente_cronico IS NULL)";
-            case "ATENDIDOS_CENACRON"        -> "pe.estado = 'ATENDIDO' AND a.paciente_cronico = true";
-            case "ATENDIDOS_ESPECIALIDADES"  -> "pe.estado = 'ATENDIDO' AND (a.paciente_cronico = false OR a.paciente_cronico IS NULL)";
+            case "ATENDIDOS_CENACRON"        -> "pe.estado IN ('ATENDIDO_IPRESS','ATENDIDO') AND a.paciente_cronico = true";
+            case "ATENDIDOS_ESPECIALIDADES"  -> "pe.estado IN ('ATENDIDO_IPRESS','ATENDIDO') AND (a.paciente_cronico = false OR a.paciente_cronico IS NULL)";
             default -> "1=0";
         };
 
@@ -761,7 +761,7 @@ public class SolicitudBolsaEstadisticasController {
                 FROM dim_solicitud_bolsa sb
                 LEFT JOIN dim_estados_gestion_citas eg ON eg.id_estado_cita = sb.estado_gestion_citas_id
                 WHERE sb.id_bolsa = 17 AND sb.activo = true
-                  AND eg.cod_estado_cita = 'ATENDIDO'
+                  AND eg.cod_estado_cita IN ('ATENDIDO_IPRESS', 'ATENDIDO')
                 ORDER BY sb.paciente_dni
             )
             SELECT segmento, condicion_medica, COUNT(*) AS cantidad
