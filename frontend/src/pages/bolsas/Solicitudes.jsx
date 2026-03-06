@@ -2816,40 +2816,58 @@ export default function Solicitudes({ categoriaInicial } = {}) {
                 { label: 'Observados',                        valor: totalObservados,  color: 'bg-amber-400',  pct: (totalObservados / total) * 100 },
               ].filter(f => f.valor > 0);
 
-              const BarraSencilla = ({ pct, colorClass, label }) => (
-                <div>
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="text-xs font-medium text-gray-600">{label}</span>
-                    <span className="text-xs font-bold text-gray-800">{pct.toFixed(1)}%</span>
-                  </div>
-                  <div className="w-full bg-slate-100 rounded-full h-4 overflow-hidden">
-                    <div
-                      className={`${colorClass} h-full rounded-full transition-all duration-700`}
-                      style={{ width: `${Math.min(pct, 100)}%` }}
-                    />
-                  </div>
-                </div>
-              );
-
               return (
                 <div className="space-y-4">
-                  {/* ── Dos barras principales ── */}
-                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                    <div className="bg-slate-50 rounded-lg px-4 py-3 border border-slate-100">
-                      <BarraSencilla pct={gestionPct} colorClass="bg-violet-500" label="Avance de gestión" />
-                      <p className="mt-2 text-xs text-slate-500 leading-snug">
-                        En contacto + Citados + Atendidos + Observados<br/>
-                        <span className="font-semibold text-slate-700">{gestionados.toLocaleString('es-PE')}</span>
-                        <span className="text-slate-400"> de {total.toLocaleString('es-PE')}</span>
-                      </p>
+                  {/* ── Barra única de avance ── */}
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-xs text-slate-500">
+                        <span className="font-semibold text-slate-700">{gestionados.toLocaleString('es-PE')}</span> pacientes gestionados de {total.toLocaleString('es-PE')}
+                      </span>
+                      <span className="text-sm font-bold text-slate-800">{gestionPct.toFixed(1)}%</span>
                     </div>
-                    <div className="bg-slate-50 rounded-lg px-4 py-3 border border-slate-100">
-                      <BarraSencilla pct={citacionPct} colorClass="bg-emerald-500" label="Avance de citación" />
-                      <p className="mt-2 text-xs text-slate-500 leading-snug">
-                        Citados + Atendidos (cita concretada)<br/>
-                        <span className="font-semibold text-slate-700">{conCita.toLocaleString('es-PE')}</span>
-                        <span className="text-slate-400"> de {total.toLocaleString('es-PE')}</span>
-                      </p>
+                    {/* Barra segmentada: En contacto | Citados | Atendidos | Observados */}
+                    <div className="relative w-full bg-slate-200 rounded-full h-5 overflow-hidden">
+                      <div className="absolute inset-y-0 left-0 flex h-full" style={{ width: `${Math.min(gestionPct, 100)}%`, transition: 'width 0.7s ease' }}>
+                        {enContacto > 0  && <div className="bg-violet-400 h-full" style={{ flex: enContacto      }} title={`En contacto: ${enContacto}`} />}
+                        {citados > 0     && <div className="bg-blue-500  h-full" style={{ flex: citados          }} title={`Citados: ${citados}`} />}
+                        {atendidosTotal > 0 && <div className="bg-emerald-500 h-full" style={{ flex: atendidosTotal }} title={`Atendidos: ${atendidosTotal}`} />}
+                        {totalObservados > 0 && <div className="bg-amber-400 h-full" style={{ flex: totalObservados }} title={`Observados: ${totalObservados}`} />}
+                      </div>
+                      <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                        <span className="text-[11px] font-semibold text-white drop-shadow" style={{ textShadow: '0 1px 3px rgba(0,0,0,0.5)' }}>
+                          {gestionPct < 1 ? 'Sin avance aún' : `${gestionPct.toFixed(1)}% gestionado`}
+                        </span>
+                      </div>
+                    </div>
+                    {/* Leyenda de colores */}
+                    <div className="flex flex-wrap gap-x-4 gap-y-1 mt-2">
+                      {enContacto > 0 && (
+                        <span className="flex items-center gap-1.5 text-xs text-slate-500">
+                          <span className="w-2 h-2 rounded-full bg-violet-400 flex-shrink-0" />
+                          En contacto <strong className="text-slate-700 ml-0.5">{enContacto.toLocaleString('es-PE')}</strong>
+                        </span>
+                      )}
+                      <span className="flex items-center gap-1.5 text-xs text-slate-500">
+                        <span className="w-2 h-2 rounded-full bg-blue-500 flex-shrink-0" />
+                        Citados <strong className="text-slate-700 ml-0.5">{citados.toLocaleString('es-PE')}</strong>
+                      </span>
+                      {atendidosTotal > 0 && (
+                        <span className="flex items-center gap-1.5 text-xs text-slate-500">
+                          <span className="w-2 h-2 rounded-full bg-emerald-500 flex-shrink-0" />
+                          Atendidos <strong className="text-slate-700 ml-0.5">{atendidosTotal.toLocaleString('es-PE')}</strong>
+                        </span>
+                      )}
+                      {totalObservados > 0 && (
+                        <span className="flex items-center gap-1.5 text-xs text-slate-500">
+                          <span className="w-2 h-2 rounded-full bg-amber-400 flex-shrink-0" />
+                          Observados <strong className="text-slate-700 ml-0.5">{totalObservados.toLocaleString('es-PE')}</strong>
+                        </span>
+                      )}
+                      <span className="flex items-center gap-1.5 text-xs text-slate-500">
+                        <span className="w-2 h-2 rounded-full bg-slate-300 flex-shrink-0" />
+                        Sin gestión <strong className="text-slate-700 ml-0.5">{pendientesReales.toLocaleString('es-PE')}</strong>
+                      </span>
                     </div>
                   </div>
 
