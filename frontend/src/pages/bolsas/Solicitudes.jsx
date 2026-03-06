@@ -2606,7 +2606,7 @@ export default function Solicitudes({ categoriaInicial } = {}) {
                               style={{ width: `${pct}%`, background: colorBar }} />
                           </div>
                           <div className="flex justify-between mt-1.5">
-                            <span className="text-[10px] font-semibold text-gray-600">Faltan {(meta - actual).toLocaleString('es-PE')}</span>
+                            <span className="text-[10px] font-semibold text-gray-600">Faltan como mínimo {(meta - actual).toLocaleString('es-PE')}</span>
                             <span className="text-[10px] text-gray-500">Meta: {meta.toLocaleString('es-PE')}</span>
                           </div>
                           <p className="text-[10px] mt-2" style={{ color: colorBar }}>Ver citados →</p>
