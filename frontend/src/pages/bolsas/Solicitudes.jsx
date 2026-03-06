@@ -2806,8 +2806,7 @@ export default function Solicitudes({ categoriaInicial } = {}) {
 
               // Filas de desglose
               const filas = [
-                { label: 'Sin gestión (pendiente contactar)', valor: pendientesReales, color: 'bg-slate-300', pct: (pendientesReales / total) * 100 },
-                { label: 'En contacto',                       valor: enContacto,       color: 'bg-violet-400', pct: (enContacto      / total) * 100 },
+                { label: 'Pendiente citar (sin asignar + en contacto)', valor: pendientesReales, color: 'bg-slate-300', pct: (pendientesReales / total) * 100 },
                 { label: 'Citados',                           valor: citados,          color: 'bg-blue-500',   pct: (citados         / total) * 100 },
                 { label: 'Atendidos',                         valor: atendidosTotal,   color: 'bg-emerald-500',pct: (atendidosTotal  / total) * 100 },
                 { label: 'Observados',                        valor: totalObservados,  color: 'bg-amber-400',  pct: (totalObservados / total) * 100 },
@@ -2863,7 +2862,8 @@ export default function Solicitudes({ categoriaInicial } = {}) {
                       )}
                       <span className="flex items-center gap-1.5 text-xs text-slate-500">
                         <span className="w-2 h-2 rounded-full bg-slate-300 flex-shrink-0" />
-                        Sin gestión <strong className="text-slate-700 ml-0.5">{pendientesReales.toLocaleString('es-PE')}</strong>
+                        Pendiente citar <strong className="text-slate-700 ml-0.5">{pendientesReales.toLocaleString('es-PE')}</strong>
+                        <span className="text-slate-400 text-[10px] ml-1">(sin asignar + en contacto)</span>
                       </span>
                     </div>
                   </div>
@@ -2906,15 +2906,20 @@ export default function Solicitudes({ categoriaInicial } = {}) {
                       </div>
 
                       <div className="text-xs text-slate-600 bg-slate-50 rounded-lg px-4 py-3 leading-relaxed border border-slate-200">
-                        <span className="font-bold text-slate-700">¿Cómo se calcula?</span>
-                        <span className="mx-2 text-slate-400">·</span>
-                        <span className="text-violet-700 font-semibold">Gestión</span>
-                        <span className="text-slate-500"> = En contacto + Citados + Atendidos + Observados</span>
-                        <span className="mx-2 text-slate-400">·</span>
-                        <span className="text-emerald-700 font-semibold">Citación</span>
-                        <span className="text-slate-500"> = Citados + Atendidos</span>
-                        <span className="mx-2 text-slate-400">·</span>
-                        <span className="text-slate-500">Denominador: universo total de <strong className="text-slate-700">{total.toLocaleString('es-PE')}</strong> pacientes</span>
+                        <span className="font-bold text-slate-700">¿Cómo se llega al {gestionPct.toFixed(1)}%?</span>
+                        <span className="mx-2 text-slate-400">→</span>
+                        <span className="text-slate-500">
+                          (<strong className="text-violet-700">{enContacto.toLocaleString('es-PE')}</strong> en contacto
+                          {' + '}
+                          <strong className="text-blue-600">{citados.toLocaleString('es-PE')}</strong> citados
+                          {atendidosTotal > 0 && <> {' + '}<strong className="text-emerald-600">{atendidosTotal.toLocaleString('es-PE')}</strong> atendidos</>}
+                          {' + '}
+                          <strong className="text-amber-600">{totalObservados.toLocaleString('es-PE')}</strong> observados)
+                          {' ÷ '}
+                          <strong className="text-slate-700">{total.toLocaleString('es-PE')}</strong> universo
+                          {' = '}
+                          <strong className="text-violet-700">{gestionPct.toFixed(1)}%</strong>
+                        </span>
                       </div>
                     </>
                   )}
