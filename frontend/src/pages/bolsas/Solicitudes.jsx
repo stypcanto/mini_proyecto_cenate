@@ -357,7 +357,7 @@ export default function Solicitudes({ categoriaInicial } = {}) {
           // En sub-páginas NO cargar stats globales: cargarSolicitudesConFiltros ya las carga
           // con los filtros correctos. Si cargáramos aquí podríamos sobreescribir los KPIs filtrados.
           categoriaInicial ? Promise.resolve([]) : bolsasService.obtenerEstadisticasPorEstado().catch(() => []),
-          bolsasService.obtenerEstadisticasPorTipoBolsa().catch(() => []),
+          bolsasService.obtenerEstadisticasPorTipoBolsa(categoriaEspecialidad ? { categoriaEspecialidad } : {}).catch(() => []),
           bolsasService.obtenerEstadosGestion().catch(() => []),
           bolsasService.obtenerGestorasDisponibles().catch(() => []),
         ]);

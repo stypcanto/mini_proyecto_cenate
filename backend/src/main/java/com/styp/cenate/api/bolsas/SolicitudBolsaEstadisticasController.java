@@ -284,10 +284,13 @@ public class SolicitudBolsaEstadisticasController {
         description = "OK - Lista de tipos de bolsa con métricas",
         content = @Content(schema = @Schema(implementation = EstadisticasPorTipoBolsaDTO.class))
     )
-    public ResponseEntity<List<EstadisticasPorTipoBolsaDTO>> obtenerEstadisticasPorTipoBolsa() {
-        log.info("GET /api/bolsas/estadisticas/por-tipo-bolsa");
-        List<EstadisticasPorTipoBolsaDTO> datos = estadisticasService.obtenerEstadisticasPorTipoBolsa();
-        return ResponseEntity.ok(datos);
+    public ResponseEntity<List<EstadisticasPorTipoBolsaDTO>> obtenerEstadisticasPorTipoBolsa(
+            @RequestParam(required = false) String categoriaEspecialidad) {
+        log.info("GET /api/bolsas/estadisticas/por-tipo-bolsa — categoria={}", categoriaEspecialidad);
+        if (categoriaEspecialidad != null) {
+            return ResponseEntity.ok(estadisticasService.obtenerEstadisticasPorTipoBolsaFiltrado(categoriaEspecialidad));
+        }
+        return ResponseEntity.ok(estadisticasService.obtenerEstadisticasPorTipoBolsa());
     }
 
     // ========================================================================

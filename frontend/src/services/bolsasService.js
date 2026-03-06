@@ -630,10 +630,15 @@ export const obtenerEstadisticasPorTipoCita = async () => {
 
 /**
  * Obtiene estadísticas por tipo de bolsa
+ * @param {Object} params - Filtros opcionales: categoriaEspecialidad
  */
-export const obtenerEstadisticasPorTipoBolsa = async () => {
+export const obtenerEstadisticasPorTipoBolsa = async (params = {}) => {
   try {
-    const response = await apiClient.get(`${API_BASE_URL}/estadisticas/por-tipo-bolsa`, true);
+    const query = new URLSearchParams();
+    if (params.categoriaEspecialidad) query.set('categoriaEspecialidad', params.categoriaEspecialidad);
+    const qs = query.toString();
+    const url = `${API_BASE_URL}/estadisticas/por-tipo-bolsa${qs ? '?' + qs : ''}`;
+    const response = await apiClient.get(url, true);
     return response;
   } catch (error) {
     console.error('Error al obtener estadísticas por tipo de bolsa:', error);

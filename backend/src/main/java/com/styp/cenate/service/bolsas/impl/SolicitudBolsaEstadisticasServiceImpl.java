@@ -402,6 +402,18 @@ public class SolicitudBolsaEstadisticasServiceImpl implements SolicitudBolsaEsta
                 .collect(Collectors.toList());
     }
 
+    @Override
+    public List<EstadisticasPorTipoBolsaDTO> obtenerEstadisticasPorTipoBolsaFiltrado(String categoriaEspecialidad) {
+        log.info("📊 Obteniendo estadísticas por tipo de bolsa filtrado — categoria={}", categoriaEspecialidad);
+
+        List<Map<String, Object>> resultados = solicitudRepository.estadisticasPorTipoBolsaFiltrado(categoriaEspecialidad);
+
+        return resultados.stream()
+                .map(this::mapearATipoBolsaDTO)
+                .sorted(Comparator.comparingLong(EstadisticasPorTipoBolsaDTO::getTotal).reversed())
+                .collect(Collectors.toList());
+    }
+
     private EstadisticasPorTipoBolsaDTO mapearATipoBolsaDTO(Map<String, Object> row) {
         String tipoBolsa = (String) row.get("tipo_bolsa");
         return EstadisticasPorTipoBolsaDTO.builder()

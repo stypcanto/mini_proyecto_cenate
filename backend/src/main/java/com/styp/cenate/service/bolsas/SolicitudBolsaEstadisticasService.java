@@ -89,6 +89,8 @@ public interface SolicitudBolsaEstadisticasService {
      */
     List<EstadisticasPorTipoBolsaDTO> obtenerEstadisticasPorTipoBolsa();
 
+    List<EstadisticasPorTipoBolsaDTO> obtenerEstadisticasPorTipoBolsaFiltrado(String categoriaEspecialidad);
+
     /**
      * Obtiene evolución temporal de solicitudes
      * Últimos 30 días con nuevas, completadas, pendientes y acumulativo

@@ -810,6 +810,37 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
     List<Map<String, Object>> estadisticasPorTipoBolsa();
 
     /**
+     * Estadísticas por tipo de bolsa filtradas por categoriaEspecialidad
+     * Muestra counts contextuales según el tipo de página activa
+     */
+    @Query(value = """
+        SELECT
+            tb.desc_tipo_bolsa as tipo_bolsa,
+            COUNT(sb.id_solicitud) as total,
+            COUNT(CASE WHEN dgc.desc_estado_cita = 'ATENDIDO' THEN 1 END) as atendidos,
+            COUNT(CASE WHEN dgc.desc_estado_cita = 'PENDIENTE' THEN 1 END) as pendientes,
+            COUNT(CASE WHEN dgc.desc_estado_cita = 'CANCELADO' THEN 1 END) as cancelados,
+            0 as porcentaje,
+            0 as tasa_completacion,
+            0 as tasa_cancelacion,
+            0 as horas_promedio
+        FROM dim_tipos_bolsas tb
+        LEFT JOIN dim_solicitud_bolsa sb ON tb.id_tipo_bolsa = sb.id_bolsa AND sb.activo = true
+            AND (CAST(:categoriaEspecialidad AS VARCHAR) IS NULL
+                 OR (CAST(:categoriaEspecialidad AS VARCHAR) = 'especialidades' AND LOWER(COALESCE(sb.especialidad,'')) NOT IN ('medicina general', 'enfermeria') AND sb.id_bolsa != 1)
+                 OR (CAST(:categoriaEspecialidad AS VARCHAR) = 'bolsa107'       AND sb.id_bolsa = 1)
+                 OR (CAST(:categoriaEspecialidad AS VARCHAR) = 'recita'         AND sb.id_bolsa = 15)
+                 OR (CAST(:categoriaEspecialidad AS VARCHAR) = 'interconsulta'  AND sb.id_bolsa = 16)
+                 OR (CAST(:categoriaEspecialidad AS VARCHAR) = 'maraton'        AND sb.id_bolsa = 17))
+        LEFT JOIN dim_estados_gestion_citas dgc ON sb.estado_gestion_citas_id = dgc.id_estado_cita
+        WHERE tb.stat_tipo_bolsa = 'A'
+        GROUP BY tb.desc_tipo_bolsa, tb.id_tipo_bolsa
+        ORDER BY total DESC
+        """, nativeQuery = true)
+    List<Map<String, Object>> estadisticasPorTipoBolsaFiltrado(
+            @org.springframework.data.repository.query.Param("categoriaEspecialidad") String categoriaEspecialidad);
+
+    /**
      * 5️⃣ Evolución temporal (últimos 30 días)
      * Para gráficos de línea
      */
