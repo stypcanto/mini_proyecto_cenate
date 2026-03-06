@@ -7,7 +7,7 @@ import { MapPin, BarChart3 } from 'lucide-react';
 import { apiClient } from '../../lib/apiClient';
 import {
   ResponsiveContainer, PieChart, Pie, Cell, Tooltip, Legend,
-  BarChart, Bar, XAxis, YAxis, CartesianGrid,
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, LabelList,
 } from 'recharts';
 
 // ─── Hook: animación de contador suave (easeOutExpo) ─────────────────────────
@@ -840,9 +840,15 @@ const DashboardTerritorialCharts = memo(function DashboardTerritorialCharts({ da
                 <XAxis type="number" tickFormatter={v => `${(v * 100).toFixed(0)}%`} tick={{ fontSize: 10, fill: '#94a3b8' }} domain={[0, 1]} />
                 <YAxis type="category" dataKey="nombre" width={130} tick={{ fontSize: 11, fill: '#475569', fontWeight: 600 }} />
                 <Tooltip content={<NormalizedTooltip />} cursor={{ fill: '#f1f5f9' }} />
-                <Bar dataKey="citados"    name="Citados"    fill={C_CITADOS}    stackId="a" />
-                <Bar dataKey="observados" name="Observados" fill={C_OBSERVADOS}  stackId="a" />
-                <Bar dataKey="pendientes" name="Pendientes" fill={C_PENDIENTES}  stackId="a" radius={[0,4,4,0]} />
+                <Bar dataKey="citados"    name="Citados"    fill={C_CITADOS}    stackId="a">
+                  <LabelList dataKey="citados"    content={({ x, y, width, height, value }) => width > 28 ? <text x={x+width/2} y={y+height/2} textAnchor="middle" dominantBaseline="middle" fill="white" fontSize={10} fontWeight={700}>{Number(value).toLocaleString('es-PE')}</text> : null} />
+                </Bar>
+                <Bar dataKey="observados" name="Observados" fill={C_OBSERVADOS} stackId="a">
+                  <LabelList dataKey="observados" content={({ x, y, width, height, value }) => width > 28 ? <text x={x+width/2} y={y+height/2} textAnchor="middle" dominantBaseline="middle" fill="white" fontSize={10} fontWeight={700}>{Number(value).toLocaleString('es-PE')}</text> : null} />
+                </Bar>
+                <Bar dataKey="pendientes" name="Pendientes" fill={C_PENDIENTES} stackId="a" radius={[0,4,4,0]}>
+                  <LabelList dataKey="pendientes" content={({ x, y, width, height, value }) => width > 28 ? <text x={x+width/2} y={y+height/2} textAnchor="middle" dominantBaseline="middle" fill="white" fontSize={10} fontWeight={700}>{Number(value).toLocaleString('es-PE')}</text> : null} />
+                </Bar>
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -892,9 +898,15 @@ const DashboardTerritorialCharts = memo(function DashboardTerritorialCharts({ da
                 <XAxis type="number" tickFormatter={v => `${(v * 100).toFixed(0)}%`} tick={{ fontSize: 10, fill: '#94a3b8' }} domain={[0, 1]} />
                 <YAxis type="category" dataKey="nombre" width={190} tick={{ fontSize: 9, fill: '#475569' }} />
                 <Tooltip content={<NormalizedTooltip />} cursor={{ fill: '#f1f5f9' }} />
-                <Bar dataKey="citados"    fill={C_CITADOS}    stackId="a" />
-                <Bar dataKey="observados" fill={C_OBSERVADOS}  stackId="a" />
-                <Bar dataKey="pendientes" fill={C_PENDIENTES}  stackId="a" radius={[0,4,4,0]} />
+                <Bar dataKey="citados"    fill={C_CITADOS}    stackId="a">
+                  <LabelList dataKey="citados"    content={({ x, y, width, height, value }) => width > 22 ? <text x={x+width/2} y={y+height/2} textAnchor="middle" dominantBaseline="middle" fill="white" fontSize={9} fontWeight={700}>{Number(value).toLocaleString('es-PE')}</text> : null} />
+                </Bar>
+                <Bar dataKey="observados" fill={C_OBSERVADOS} stackId="a">
+                  <LabelList dataKey="observados" content={({ x, y, width, height, value }) => width > 22 ? <text x={x+width/2} y={y+height/2} textAnchor="middle" dominantBaseline="middle" fill="white" fontSize={9} fontWeight={700}>{Number(value).toLocaleString('es-PE')}</text> : null} />
+                </Bar>
+                <Bar dataKey="pendientes" fill={C_PENDIENTES} stackId="a" radius={[0,4,4,0]}>
+                  <LabelList dataKey="pendientes" content={({ x, y, width, height, value }) => width > 22 ? <text x={x+width/2} y={y+height/2} textAnchor="middle" dominantBaseline="middle" fill="white" fontSize={9} fontWeight={700}>{Number(value).toLocaleString('es-PE')}</text> : null} />
+                </Bar>
               </BarChart>
             </ResponsiveContainer>
           </div>
