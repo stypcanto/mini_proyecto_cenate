@@ -1237,14 +1237,13 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
     List<SolicitudBolsa> findByIdPersonalInAndActivoTrue(List<Long> idPersonalList);
 
     /**
-     * 🔧 v1.78.1: Obtener TODOS los pacientes asignados a un médico (sin filtro activo)
-     * Las RECITA/INTERCONSULTA generadas quedan con id_personal=NULL hasta que el coordinador
-     * las asigne, por lo que no aparecen en este listado.
+     * 🔧 v1.78.1: Obtener pacientes asignados a un médico (excluye anulados, activo=false)
+     * v1.85.28: Agrega filtro activo=true para ocultar citas anuladas desde Mesa de Ayuda.
      *
      * @param idPersonal ID del personal médico (doctor)
-     * @return lista de TODAS las solicitudes asignadas al médico
+     * @return lista de solicitudes activas asignadas al médico
      */
-    @Query("SELECT s FROM SolicitudBolsa s WHERE s.idPersonal = :idPersonal")
+    @Query("SELECT s FROM SolicitudBolsa s WHERE s.idPersonal = :idPersonal AND s.activo = true")
     List<SolicitudBolsa> findByIdPersonal(@org.springframework.data.repository.query.Param("idPersonal") Long idPersonal);
 
     /**
@@ -2484,7 +2483,7 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
      */
     @Query("""
         SELECT s FROM SolicitudBolsa s
-        WHERE s.idPersonal = :idPersonal
+        WHERE s.idPersonal = :idPersonal AND s.activo = true
     """)
     List<SolicitudBolsa> findByIdPersonalWithAllFields(@org.springframework.data.repository.query.Param("idPersonal") Long idPersonal);
 

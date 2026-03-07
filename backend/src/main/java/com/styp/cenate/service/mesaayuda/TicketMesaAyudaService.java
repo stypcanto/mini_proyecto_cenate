@@ -13,6 +13,8 @@ import com.styp.cenate.repository.mesaayuda.MotivoMesaAyudaRepository;
 import com.styp.cenate.repository.mesaayuda.SecuenciaTicketsRepository;
 import com.styp.cenate.repository.mesaayuda.RespuestasPredefinidasRepository;
 import com.styp.cenate.repository.bolsas.SolicitudBolsaRepository;
+import com.styp.cenate.repository.bolsas.HistorialCambioSolicitudRepository;
+import com.styp.cenate.model.bolsas.HistorialCambioSolicitud;
 import com.styp.cenate.repository.AseguradoRepository;
 import com.styp.cenate.repository.IpressRepository;
 import com.styp.cenate.repository.UsuarioRepository;
@@ -65,6 +67,7 @@ public class TicketMesaAyudaService {
     private final MotivoMesaAyudaRepository motivoRepository;
     private final SecuenciaTicketsRepository secuenciaRepository;
     private final SolicitudBolsaRepository solicitudBolsaRepository;
+    private final HistorialCambioSolicitudRepository historialCambioRepository;
     private final RespuestasPredefinidasRepository respuestasPredefinidasRepository;
     private final AseguradoRepository aseguradoRepository;
     private final IpressRepository ipressRepository;
@@ -1096,16 +1099,60 @@ public class TicketMesaAyudaService {
         SolicitudBolsa solicitud = solicitudBolsaRepository.findById(idSolicitudBolsa)
             .orElseThrow(() -> new IllegalArgumentException("Solicitud de bolsa no encontrada: " + idSolicitudBolsa));
 
+        // Resolver usuario que ejecuta la acción
+        Long usuarioActualId = null;
+        String usuarioActualNombre = null;
+        try {
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            if (auth != null && auth.getName() != null) {
+                usuarioRepository.findByNameUser(auth.getName()).ifPresent(u -> {
+                    // no-op: solo para obtener id
+                });
+                var usuario = usuarioRepository.findByNameUser(auth.getName()).orElse(null);
+                if (usuario != null) {
+                    usuarioActualId = usuario.getIdUser();
+                    usuarioActualNombre = auth.getName();
+                }
+            }
+        } catch (Exception ex) {
+            log.warn("No se pudo resolver el usuario actual para trazabilidad: {}", ex.getMessage());
+        }
+
+        // Capturar estado anterior antes de anular
+        String estadoAnteriorDesc = null;
+        if (solicitud.getEstadoGestionCitas() != null) {
+            estadoAnteriorDesc = solicitud.getEstadoGestionCitas().getDescripcionEstado();
+        }
+
+        String motivoFinal = motivoAnulacion != null ? motivoAnulacion.trim() : "Anulado desde Mesa de Ayuda";
+
         solicitud.setActivo(false);
-        solicitud.setMotivoAnulacion(motivoAnulacion != null ? motivoAnulacion.trim() : "Anulado desde Mesa de Ayuda");
+        solicitud.setMotivoAnulacion(motivoFinal);
         solicitudBolsaRepository.save(solicitud);
 
-        log.info("Cita anulada — Solicitud ID: {}, Motivo: {}", idSolicitudBolsa, motivoAnulacion);
+        // Guardar trazabilidad
+        HistorialCambioSolicitud historial = HistorialCambioSolicitud.builder()
+            .idSolicitud(idSolicitudBolsa)
+            .tipoCambio("ANULACION")
+            .motivo(motivoFinal)
+            .estadoAnteriorId(solicitud.getEstadoGestionCitasId())
+            .estadoAnteriorDesc(estadoAnteriorDesc)
+            .medicoAnteriorId(solicitud.getIdPersonal())
+            .fechaCitaAnterior(solicitud.getFechaAtencion())
+            .horaCitaAnterior(solicitud.getHoraAtencion())
+            .usuarioId(usuarioActualId)
+            .usuarioNombre(usuarioActualNombre)
+            .fechaCambio(java.time.OffsetDateTime.now())
+            .build();
+        historialCambioRepository.save(historial);
+
+        log.info("Cita anulada y trazabilidad guardada — Solicitud ID: {}, Motivo: {}", idSolicitudBolsa, motivoFinal);
 
         Map<String, Object> result = new java.util.LinkedHashMap<>();
         result.put("mensaje", "Cita anulada correctamente");
         result.put("idSolicitudBolsa", idSolicitudBolsa);
-        result.put("motivoAnulacion", solicitud.getMotivoAnulacion());
+        result.put("motivoAnulacion", motivoFinal);
+        result.put("fechaAnulacion", historial.getFechaCambio().toString());
         return result;
     }
 
