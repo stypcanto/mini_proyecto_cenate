@@ -531,6 +531,7 @@ export default function CitasAgendadas() {
   const [modalCancelar, setModalCancelar]       = useState({ visible: false, paciente: null });
   const [cancelando, setCancelando]             = useState(false);
   const [motivoAnulacion, setMotivoAnulacion]   = useState('');
+  const [motivosAnulacionList, setMotivosAnulacionList] = useState([]);
   // ── Editar teléfonos inline ──
   const [editandoTel, setEditandoTel]           = useState(null); // id del paciente editando
   const [telEdit, setTelEdit]                   = useState({ tel1: '', tel2: '' });
@@ -1838,7 +1839,19 @@ CENATE de Essalud`;
                               {esCitado && (
                                 <Tooltip text="Cancelar esta cita">
                                   <button
-                                    onClick={() => setModalCancelar({ visible: true, paciente: p })}
+                                    onClick={async () => {
+                                      setModalCancelar({ visible: true, paciente: p });
+                                      setMotivoAnulacion('');
+                                      if (motivosAnulacionList.length === 0) {
+                                        try {
+                                          const { default: motivosAnulacionService } = await import('../../../services/motivosAnulacionService');
+                                          const data = await motivosAnulacionService.obtenerActivos();
+                                          setMotivosAnulacionList(Array.isArray(data) ? data : []);
+                                        } catch (err) {
+                                          console.error('Error cargando motivos anulación:', err);
+                                        }
+                                      }
+                                    }}
                                     style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '32px', height: '32px', borderRadius: '8px', background: '#fee2e2', border: '1px solid #fca5a5', cursor: 'pointer', color: '#dc2626', transition: 'all 0.15s' }}
                                     onMouseEnter={e => { e.currentTarget.style.background = '#dc2626'; e.currentTarget.style.color = '#fff'; e.currentTarget.style.borderColor = '#dc2626'; }}
                                     onMouseLeave={e => { e.currentTarget.style.background = '#fee2e2'; e.currentTarget.style.color = '#dc2626'; e.currentTarget.style.borderColor = '#fca5a5'; }}
@@ -2425,14 +2438,28 @@ CENATE de Essalud`;
                 <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', color: '#374151', marginBottom: '6px' }}>
                   Motivo de anulación <span style={{ color: '#dc2626' }}>*</span>
                 </label>
-                <textarea
-                  value={motivoAnulacion}
-                  onChange={e => setMotivoAnulacion(e.target.value)}
-                  placeholder="Ej: Paciente solicita cambio de fecha, no puede asistir..."
-                  rows={3}
-                  disabled={cancelando}
-                  style={{ width: '100%', padding: '8px 10px', border: `1px solid ${motivoAnulacion.trim() ? '#d1d5db' : '#fca5a5'}`, borderRadius: '8px', fontSize: '12px', color: '#0f172a', resize: 'vertical', outline: 'none', boxSizing: 'border-box', background: cancelando ? '#f8fafc' : '#fff', fontFamily: 'inherit' }}
-                />
+                {motivosAnulacionList.length > 0 ? (
+                  <select
+                    value={motivoAnulacion}
+                    onChange={e => setMotivoAnulacion(e.target.value)}
+                    disabled={cancelando}
+                    style={{ width: '100%', padding: '8px 10px', border: `1px solid ${motivoAnulacion.trim() ? '#d1d5db' : '#fca5a5'}`, borderRadius: '8px', fontSize: '12px', color: '#0f172a', outline: 'none', boxSizing: 'border-box', background: cancelando ? '#f8fafc' : '#fff', fontFamily: 'inherit' }}
+                  >
+                    <option value="">-- Seleccione un motivo --</option>
+                    {motivosAnulacionList.map((m) => (
+                      <option key={m.id} value={m.descripcion}>{m.descripcion}</option>
+                    ))}
+                  </select>
+                ) : (
+                  <textarea
+                    value={motivoAnulacion}
+                    onChange={e => setMotivoAnulacion(e.target.value)}
+                    placeholder="Ej: Paciente solicita cambio de fecha, no puede asistir..."
+                    rows={3}
+                    disabled={cancelando}
+                    style={{ width: '100%', padding: '8px 10px', border: `1px solid ${motivoAnulacion.trim() ? '#d1d5db' : '#fca5a5'}`, borderRadius: '8px', fontSize: '12px', color: '#0f172a', resize: 'vertical', outline: 'none', boxSizing: 'border-box', background: cancelando ? '#f8fafc' : '#fff', fontFamily: 'inherit' }}
+                  />
+                )}
                 {!motivoAnulacion.trim() && (
                   <p style={{ margin: '4px 0 0', fontSize: '11px', color: '#dc2626' }}>Este campo es obligatorio</p>
                 )}
