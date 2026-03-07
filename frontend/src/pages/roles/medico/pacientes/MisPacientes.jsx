@@ -1829,12 +1829,12 @@ export default function MisPacientes() {
     if (!paciente?.fechaAtencionMedica) return true; // Nunca fue atendido, puede editar
     
     try {
-      // Extraer fecha del string ISO (ej: "2026-03-03T15:40:52.567-05:00")
-      const match = String(paciente.fechaAtencionMedica).match(/(\d{4})-(\d{2})-(\d{2})/);
-      if (!match) return true; // Si no puede parsear, permite continuar
+      // ✅ Fix timezone: parsear el ISO completo para respetar offset (ej: "2026-03-06T19:13:41-05:00")
+      // new Date() convierte a hora local del navegador, evitando que 19:00 Lima aparezca como día siguiente
+      const fechaObj = new Date(paciente.fechaAtencionMedica);
+      if (isNaN(fechaObj.getTime())) return true;
       
-      const [, año, mes, día] = match;
-      const fechaAtencion = new Date(Number(año), Number(mes) - 1, Number(día));
+      const fechaAtencion = new Date(fechaObj.getFullYear(), fechaObj.getMonth(), fechaObj.getDate());
       const hoy = new Date();
       hoy.setHours(0, 0, 0, 0);
       
@@ -3649,9 +3649,13 @@ export default function MisPacientes() {
                     <p className="text-sm text-gray-400 font-normal mt-1">
                       {(() => {
                         try {
-                          const match = String(pacienteSeleccionado.fechaAtencionMedica).match(/(\d{4})-(\d{2})-(\d{2})/);
-                          if (match) {
-                            return `Esta atención fue el ${match[3]}/${match[2]}/${match[1]}. Solo se puede editar el mismo día.`;
+                          // ✅ Fix timezone: usar Date parsing para mostrar fecha local correcta
+                          const fechaObj = new Date(pacienteSeleccionado.fechaAtencionMedica);
+                          if (!isNaN(fechaObj.getTime())) {
+                            const dd = String(fechaObj.getDate()).padStart(2, '0');
+                            const mm = String(fechaObj.getMonth() + 1).padStart(2, '0');
+                            const yyyy = fechaObj.getFullYear();
+                            return `Esta atención fue el ${dd}/${mm}/${yyyy}. Solo se puede editar el mismo día.`;
                           }
                           return 'Solo se puede editar el mismo día de la atención.';
                         } catch {
