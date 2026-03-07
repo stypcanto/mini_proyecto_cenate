@@ -52,60 +52,46 @@ function obtenerApellidoPaterno(m) {
 function NuevaCitaModal({ row, onClose, onSuccess }) {
   const API_BASE = getApiBase();
 
-  // Especialidad
   const [especialidadesAPI, setEspecialidadesAPI] = useState([]);
   const [cargandoEsps, setCargandoEsps] = useState(false);
   const [especialidadSeleccionada, setEspecialidadSeleccionada] = useState(row.especialidad || '');
   const [busquedaEsp, setBusquedaEsp] = useState(row.especialidad || '');
   const [mostrarDropEsp, setMostrarDropEsp] = useState(false);
 
-  // Profesional
   const [medicosDisponibles, setMedicosDisponibles] = useState([]);
   const [medicoSeleccionado, setMedicoSeleccionado] = useState('');
   const [busquedaProf, setBusquedaProf] = useState('');
   const [mostrarDropProf, setMostrarDropProf] = useState(false);
 
-  // Fecha / hora
   const [fechaHora, setFechaHora] = useState('');
   const [horasOcupadas, setHorasOcupadas] = useState([]);
-
-  // Motivo
   const [motivo, setMotivo] = useState('');
 
-  // Estado envío
   const [creando, setCreando] = useState(false);
   const [resultado, setResultado] = useState(null);
   const [errorMsg, setErrorMsg] = useState(null);
 
-  // Drum refs
   const hourRef = useRef(null);
   const minuteRef = useRef(null);
 
-  // Cargar especialidades al montar
   useEffect(() => {
     setCargandoEsps(true);
     fetch(`${API_BASE}/especialidades/activas`, { headers: { Authorization: `Bearer ${getToken()}` } })
       .then(r => r.ok ? r.json() : [])
       .then(data => setEspecialidadesAPI(
-        (Array.isArray(data) ? data : [])
-          .map(e => e.descripcion?.toUpperCase()?.trim()).filter(Boolean).sort()
+        (Array.isArray(data) ? data : []).map(e => e.descripcion?.toUpperCase()?.trim()).filter(Boolean).sort()
       ))
       .catch(() => {})
       .finally(() => setCargandoEsps(false));
   }, []); // eslint-disable-line
 
-  // Cargar médicos al cambiar especialidad
   useEffect(() => {
-    if (!especialidadSeleccionada) {
-      setMedicosDisponibles([]); setMedicoSeleccionado(''); setBusquedaProf(''); return;
-    }
-    fetch(
-      `${API_BASE}/bolsas/solicitudes/fetch-doctors-by-specialty?especialidad=${encodeURIComponent(especialidadSeleccionada)}`,
-      { method: 'POST', headers: getHeaders() }
-    )
+    if (!especialidadSeleccionada) { setMedicosDisponibles([]); setMedicoSeleccionado(''); setBusquedaProf(''); return; }
+    fetch(`${API_BASE}/bolsas/solicitudes/fetch-doctors-by-specialty?especialidad=${encodeURIComponent(especialidadSeleccionada)}`,
+      { method: 'POST', headers: getHeaders() })
       .then(r => r.ok ? r.json() : { data: [] })
-      .then(result => {
-        const ordenados = [...(result.data || [])].sort((a, b) => {
+      .then(res => {
+        const ordenados = [...(res.data || [])].sort((a, b) => {
           const c = obtenerApellidoPaterno(a).localeCompare(obtenerApellidoPaterno(b), 'es', { sensitivity: 'base' });
           return c !== 0 ? c : formatearNombreEspecialista(a).localeCompare(formatearNombreEspecialista(b), 'es', { sensitivity: 'base' });
         });
@@ -115,26 +101,21 @@ function NuevaCitaModal({ row, onClose, onSuccess }) {
     setMedicoSeleccionado(''); setBusquedaProf('');
   }, [especialidadSeleccionada]); // eslint-disable-line
 
-  // Cargar horas ocupadas al cambiar médico o fecha
   useEffect(() => {
     const fecha = fechaHora?.split('T')[0];
     if (!medicoSeleccionado || !fecha) return;
-    fetch(
-      `${API_BASE}/bolsas/solicitudes/horas-ocupadas?idPersonal=${medicoSeleccionado}&fecha=${fecha}`,
-      { headers: { Authorization: `Bearer ${getToken()}` } }
-    )
+    fetch(`${API_BASE}/bolsas/solicitudes/horas-ocupadas?idPersonal=${medicoSeleccionado}&fecha=${fecha}`,
+      { headers: { Authorization: `Bearer ${getToken()}` } })
       .then(r => r.ok ? r.json() : {})
       .then(d => setHorasOcupadas(d.horasOcupadas || []))
       .catch(() => {});
   }, [medicoSeleccionado, fechaHora?.split('T')[0]]); // eslint-disable-line
 
-  // Sync drum scroll cuando cambia fechaHora
   useEffect(() => {
     const time = fechaHora?.split('T')[1];
     if (!time) return;
     const [h, m] = time.split(':').map(Number);
-    const hIdx = DRUM_HOURS.indexOf(h);
-    const mIdx = DRUM_MINUTES.indexOf(m);
+    const hIdx = DRUM_HOURS.indexOf(h); const mIdx = DRUM_MINUTES.indexOf(m);
     if (hourRef.current && hIdx >= 0) hourRef.current.scrollTop = hIdx * DRUM_ITEM_H;
     if (minuteRef.current && mIdx >= 0) minuteRef.current.scrollTop = mIdx * DRUM_ITEM_H;
   }, [fechaHora]);
@@ -148,13 +129,11 @@ function NuevaCitaModal({ row, onClose, onSuccess }) {
       const arr = tipo === 'hour' ? DRUM_HOURS : DRUM_MINUTES;
       const clamped = Math.max(0, Math.min(idx, arr.length - 1));
       ref.current.scrollTop = clamped * DRUM_ITEM_H;
-      const fechaActual = fechaHora?.split('T')[0] || '';
-      if (!fechaActual) return;
-      const time = fechaHora?.split('T')[1] || '07:00';
-      const [currH, currM] = time.split(':').map(Number);
+      const fa = fechaHora?.split('T')[0] || ''; if (!fa) return;
+      const [currH, currM] = (fechaHora?.split('T')[1] || '07:00').split(':').map(Number);
       const newH = tipo === 'hour' ? arr[clamped] : currH;
       const newM = tipo === 'minute' ? arr[clamped] : currM;
-      setFechaHora(`${fechaActual}T${String(newH).padStart(2, '0')}:${String(newM).padStart(2, '0')}`);
+      setFechaHora(`${fa}T${String(newH).padStart(2, '0')}:${String(newM).padStart(2, '0')}`);
     }, 120);
   }, [fechaHora]);
 
@@ -170,146 +149,183 @@ function NuevaCitaModal({ row, onClose, onSuccess }) {
       if (medicoSeleccionado) body.idPersonal = medicoSeleccionado;
       if (fechaHora?.split('T')[0]) body.fechaAtencion = fechaHora.split('T')[0];
       if (fechaHora?.split('T')[1]) body.horaAtencion = fechaHora.split('T')[1] + ':00';
-
-      const res = await apiClient.post(
-        `/bolsas/solicitudes/${row.idSolicitud}/nueva-cita-desde-anulacion`,
-        body
-      );
+      const res = await apiClient.post(`/bolsas/solicitudes/${row.idSolicitud}/nueva-cita-desde-anulacion`, body);
       setResultado(res.data || res);
       if (onSuccess) onSuccess();
     } catch (err) {
       setErrorMsg(err.response?.data?.error || 'Error al crear la nueva cita. Intente nuevamente.');
-    } finally {
-      setCreando(false);
-    }
+    } finally { setCreando(false); }
   };
 
-  const hoy = (() => {
-    const d = new Date();
-    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-  })();
+  const hoy = (() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; })();
 
   return (
-    <div className="fixed inset-0 bg-black/40 backdrop-blur-[2px] flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl shadow-2xl ring-1 ring-black/8 w-full max-w-2xl overflow-hidden max-h-[90vh] flex flex-col">
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-xl shadow-2xl w-full max-w-4xl overflow-hidden">
 
-        {/* Header */}
-        <div className="border-t-4 border-blue-600 flex-shrink-0">
-          <div className="flex items-start justify-between px-6 pt-5 pb-4 bg-gradient-to-b from-slate-50/80 to-white border-b border-gray-100">
-            <div>
-              <p className="text-[11px] font-semibold uppercase tracking-widest text-blue-600 mb-1">Solicitud de nueva atención</p>
-              <h2 className="text-[15px] font-bold text-gray-900">Nueva Cita desde Anulación</h2>
+        {/* Header — mismo estilo que RegistrarCitaAdicionalModal */}
+        <div className="bg-gradient-to-r from-blue-600 to-teal-600 px-6 py-4 flex items-center justify-between rounded-t-xl">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center">
+              {resultado ? <CheckCircle className="w-5 h-5 text-white" /> : <PlusCircle className="w-5 h-5 text-white" />}
             </div>
-            <button onClick={onClose} className="p-2 rounded-full text-gray-400 hover:bg-gray-100 transition-colors">
-              <X className="w-4 h-4" />
-            </button>
+            <div>
+              <h2 className="text-lg font-bold text-white">Nueva Cita desde Anulación</h2>
+              <p className="text-blue-100 text-xs">
+                {resultado ? 'Cita creada correctamente' : 'Revisa los datos del paciente y completa la nueva cita'}
+              </p>
+            </div>
           </div>
+          <button onClick={onClose} className="text-white/80 hover:text-white transition-colors">
+            <X className="w-6 h-6" />
+          </button>
         </div>
 
-        {/* Body */}
-        <div className="overflow-y-auto flex-1 px-6 py-5 space-y-4">
-          {resultado ? (
-            /* Éxito */
-            <div className="text-center space-y-4 py-2">
-              <div className="w-14 h-14 bg-emerald-100 rounded-full flex items-center justify-center mx-auto">
-                <CheckCircle className="w-8 h-8 text-emerald-600" />
-              </div>
-              <div>
-                <p className="font-bold text-gray-900 text-base">Cita creada correctamente</p>
-                <p className="text-sm text-gray-500 mt-1">
-                  El paciente fue ingresado a la bolsa en estado{' '}
-                  <span className="font-semibold text-blue-600">
-                    {medicoSeleccionado && fechaHora ? 'Citado' : 'Pendiente de Citar'}
-                  </span>
-                </p>
-              </div>
-              <div className="bg-blue-50 rounded-xl px-4 py-3 text-left ring-1 ring-blue-100">
-                <p className="text-[10px] font-bold uppercase tracking-widest text-blue-400 mb-1">N° Solicitud</p>
-                <p className="font-mono font-bold text-blue-900 text-lg">{resultado.numeroSolicitud}</p>
-                <p className="text-xs text-blue-600 mt-0.5">Origen: #{resultado.idSolicitudOrigen}</p>
-              </div>
-              <button onClick={onClose} className="w-full py-2.5 bg-blue-600 text-white rounded-xl text-sm font-semibold hover:bg-blue-700 transition-colors">
+        {/* Éxito */}
+        {resultado ? (
+          <div className="p-10 text-center space-y-4">
+            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto">
+              <CheckCircle className="w-10 h-10 text-green-600" />
+            </div>
+            <h3 className="text-xl font-bold text-gray-800">Cita creada correctamente</h3>
+            <p className="text-gray-600">
+              Se ha generado una nueva solicitud para{' '}
+              <span className="font-semibold">{row.pacienteNombre}</span>{' '}
+              en estado{' '}
+              <span className="font-semibold text-blue-600">
+                {medicoSeleccionado && fechaHora ? 'Citado' : 'Pendiente de Citar'}
+              </span>
+            </p>
+            <div className="bg-blue-50 border border-blue-200 rounded-lg px-4 py-3 inline-block text-left">
+              <p className="text-xs text-blue-500 font-semibold uppercase tracking-wide mb-1">N° Solicitud</p>
+              <p className="font-mono font-bold text-blue-900 text-xl">{resultado.numeroSolicitud}</p>
+              <p className="text-xs text-blue-500 mt-0.5">Origen: solicitud #{resultado.idSolicitudOrigen}</p>
+            </div>
+            <div className="flex gap-3 justify-center pt-2">
+              <button onClick={onClose}
+                className="px-6 py-2.5 border border-gray-300 text-gray-700 hover:bg-gray-50 rounded-lg font-medium transition-colors">
                 Cerrar
               </button>
             </div>
-          ) : (
-            <>
-              {/* Info paciente anulado */}
-              <div className="bg-white ring-1 ring-gray-100 shadow-sm rounded-xl overflow-hidden text-sm">
-                <div className="grid grid-cols-2 divide-x divide-gray-100">
-                  <div className="px-4 py-3">
-                    <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-1">Paciente</p>
-                    <p className="font-semibold text-gray-900 text-[13px]">{row.pacienteNombre || '—'}</p>
-                    <p className="font-mono text-xs text-gray-500 mt-0.5">DNI {row.pacienteDni}</p>
+          </div>
+        ) : (
+          <>
+            {/* Cuerpo: 2 columnas */}
+            <div className="grid grid-cols-2 divide-x divide-gray-200">
+
+              {/* COLUMNA IZQUIERDA — Datos del paciente anulado */}
+              <div className="p-5 space-y-4">
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="inline-flex items-center justify-center w-6 h-6 rounded-full text-xs font-bold bg-blue-600 text-white">1</span>
+                  <span className="text-sm font-semibold text-gray-700">Datos del paciente</span>
+                  <CheckCircle className="w-4 h-4 text-green-600" />
+                </div>
+
+                {/* Card paciente */}
+                <div className="border border-green-200 bg-green-50 rounded-xl p-4 space-y-3">
+                  <div className="flex items-center gap-2 mb-1">
+                    <CheckCircle className="w-4 h-4 text-green-600" />
+                    <span className="font-semibold text-sm text-green-700">Paciente identificado</span>
                   </div>
-                  <div className="px-4 py-3 bg-red-50/40">
-                    <p className="text-[10px] font-bold uppercase tracking-widest text-red-400 mb-1">Motivo anulación original</p>
-                    <p className="text-[12px] text-red-800 leading-snug">{row.motivoAnulacion || '—'}</p>
+                  <div className="bg-white rounded-lg p-3 border border-green-100 space-y-2">
+                    <div className="grid grid-cols-2 gap-x-3 gap-y-1.5">
+                      <div>
+                        <p className="text-xs text-gray-400">DNI</p>
+                        <p className="text-sm font-semibold text-gray-800">{row.pacienteDni || '—'}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-400">Especialidad origen</p>
+                        <p className="text-sm font-semibold text-gray-800">{row.especialidad || '—'}</p>
+                      </div>
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-400">Nombre completo</p>
+                      <p className="text-sm font-bold text-gray-800">{row.pacienteNombre || '—'}</p>
+                    </div>
+                    {row.ipress && (
+                      <div>
+                        <p className="text-xs text-gray-400">IPRESS</p>
+                        <p className="text-sm font-semibold text-gray-800">{row.ipress}</p>
+                      </div>
+                    )}
                   </div>
+                </div>
+
+                {/* Motivo anulación */}
+                {row.motivoAnulacion && (
+                  <div className="border border-red-200 bg-red-50 rounded-xl p-3">
+                    <p className="text-xs text-red-500 font-semibold uppercase tracking-wide mb-1">Motivo de anulación original</p>
+                    <p className="text-sm text-red-800">{row.motivoAnulacion}</p>
+                  </div>
+                )}
+
+                {/* Aviso */}
+                <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 flex gap-2 items-start">
+                  <AlertTriangle className="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5" />
+                  <p className="text-xs text-amber-700 leading-relaxed">
+                    El registro anulado <span className="font-semibold">no se modifica</span>. Se creará una nueva solicitud independiente.
+                    Si asignas médico y fecha, el paciente quedará <span className="font-semibold">Citado</span> directamente.
+                  </p>
+                </div>
+
+                {/* Motivo nueva cita */}
+                <div>
+                  <label className="block text-xs text-gray-500 mb-1.5">
+                    Motivo de la nueva cita <span className="text-red-500 font-bold">*</span>
+                  </label>
+                  <textarea
+                    value={motivo}
+                    onChange={e => setMotivo(e.target.value)}
+                    placeholder="Ej: Paciente solicita reagendamiento, condición médica persiste..."
+                    rows={3}
+                    autoFocus
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
+                  />
                 </div>
               </div>
 
-              {/* Aviso auditoría */}
-              <div className="flex items-start gap-2.5 bg-amber-50 ring-1 ring-amber-100 rounded-xl px-4 py-3">
-                <AlertTriangle className="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5" />
-                <p className="text-[12px] text-amber-800 leading-snug">
-                  El registro anulado <span className="font-semibold">no se modifica</span>. Se creará una <span className="font-semibold">nueva solicitud independiente</span>.
-                  Si asignas médico y fecha aquí, el paciente quedará en estado <span className="font-semibold">Citado</span> directamente.
-                </p>
-              </div>
-
-              {/* Motivo (obligatorio) */}
-              <div>
-                <label className="block text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-1.5">
-                  Motivo de la nueva cita <span className="text-red-400">*</span>
-                </label>
-                <textarea
-                  value={motivo}
-                  onChange={e => setMotivo(e.target.value)}
-                  placeholder="Ej: Paciente solicita reagendamiento, condición médica persiste..."
-                  rows={2}
-                  autoFocus
-                  className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-[13px] text-gray-900 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-colors resize-none"
-                />
-              </div>
-
-              <div className="border-t border-gray-100 pt-3">
-                <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-3">Datos de la cita (opcionales)</p>
+              {/* COLUMNA DERECHA — Datos de la cita */}
+              <div className="p-5 space-y-4">
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="inline-flex items-center justify-center w-6 h-6 rounded-full text-xs font-bold bg-blue-600 text-white">2</span>
+                  <span className="text-sm font-semibold text-gray-700">Datos de la cita</span>
+                  <span className="text-xs text-gray-400">(opcionales)</span>
+                </div>
 
                 {/* Especialidad */}
-                <div className="bg-gradient-to-r from-green-50 to-emerald-50 p-3 rounded-xl border-2 border-green-300 mb-3">
+                <div className="bg-gradient-to-r from-green-50 to-emerald-50 p-3 rounded-lg border-2 border-green-300">
                   <label className="block text-sm font-semibold text-gray-800 mb-2">
                     Especialidad / Servicio
                   </label>
                   {(() => {
                     const termino = busquedaEsp.toLowerCase().trim();
-                    const filtradas = termino
-                      ? especialidadesAPI.filter(e => e.toLowerCase().includes(termino))
-                      : especialidadesAPI;
+                    const filtradas = termino ? especialidadesAPI.filter(e => e.toLowerCase().includes(termino)) : especialidadesAPI;
                     return (
                       <div className="relative">
-                        <input
-                          type="text"
-                          value={busquedaEsp}
+                        <input type="text" value={busquedaEsp}
                           onChange={e => { setBusquedaEsp(e.target.value); setMostrarDropEsp(true); if (!e.target.value) { setEspecialidadSeleccionada(''); setMedicoSeleccionado(''); setBusquedaProf(''); } }}
                           onFocus={() => setMostrarDropEsp(true)}
                           onBlur={() => setTimeout(() => setMostrarDropEsp(false), 150)}
-                          placeholder={cargandoEsps ? 'Cargando...' : 'Buscar especialidad...'}
+                          placeholder={cargandoEsps ? 'Cargando especialidades...' : 'Buscar especialidad...'}
                           disabled={cargandoEsps}
-                          className={`w-full px-3 py-2 border-2 rounded-lg text-sm font-medium transition-all focus:outline-none focus:ring-2 focus:ring-green-500/30 ${
-                            especialidadSeleccionada ? 'bg-white border-green-500 text-green-900' : 'bg-green-50 border-green-300 text-gray-600'
+                          className={`w-full px-3 py-2 border-2 rounded-lg focus:ring-2 focus:ring-green-600 focus:border-green-600 text-sm font-medium transition-all ${
+                            especialidadSeleccionada ? 'bg-white border-green-500 text-green-900' : 'bg-green-50 border-green-300 text-gray-500'
                           }`}
                         />
                         {mostrarDropEsp && !cargandoEsps && (
-                          <ul className="absolute z-50 w-full bg-white border border-gray-300 rounded-lg shadow-lg mt-1 max-h-40 overflow-y-auto text-sm">
-                            {filtradas.length === 0 ? (
-                              <li className="px-3 py-2 text-gray-400 italic">Sin resultados</li>
-                            ) : filtradas.map(esp => (
-                              <li key={esp}
-                                onMouseDown={() => { setEspecialidadSeleccionada(esp); setBusquedaEsp(esp); setMostrarDropEsp(false); setMedicoSeleccionado(''); setBusquedaProf(''); }}
-                                className={`px-3 py-2 cursor-pointer hover:bg-green-50 ${especialidadSeleccionada === esp ? 'bg-green-100 font-semibold text-green-900' : 'text-gray-800'}`}
-                              >{esp}</li>
-                            ))}
+                          <ul className="absolute z-50 w-full bg-white border border-gray-300 rounded-lg shadow-lg mt-1 max-h-48 overflow-y-auto text-sm">
+                            {filtradas.length === 0
+                              ? <li className="px-3 py-2 text-gray-400 italic">Sin resultados</li>
+                              : <>
+                                  <li className="px-3 py-1 text-xs font-bold text-gray-400 uppercase tracking-wide bg-gray-50 border-b">Especialidades / Servicios</li>
+                                  {filtradas.map(esp => (
+                                    <li key={esp}
+                                      onMouseDown={() => { setEspecialidadSeleccionada(esp); setBusquedaEsp(esp); setMostrarDropEsp(false); setMedicoSeleccionado(''); setBusquedaProf(''); }}
+                                      className={`px-3 py-2 cursor-pointer hover:bg-green-50 ${especialidadSeleccionada === esp ? 'bg-green-100 font-semibold text-green-900' : 'text-gray-800'}`}
+                                    >{esp}</li>
+                                  ))}
+                                </>
+                            }
                           </ul>
                         )}
                       </div>
@@ -318,180 +334,156 @@ function NuevaCitaModal({ row, onClose, onSuccess }) {
                 </div>
 
                 {/* Profesional */}
-                <div className={`p-3 rounded-xl border-2 transition-all mb-3 ${!especialidadSeleccionada ? 'bg-gray-50 border-gray-200 opacity-50 pointer-events-none' : 'bg-blue-50 border-blue-300'}`}>
+                <div className={`p-3 rounded-lg border-2 transition-all ${!especialidadSeleccionada ? 'bg-gray-50 border-gray-200 opacity-50 pointer-events-none' : 'bg-blue-50 border-blue-300'}`}>
                   <label className="block text-sm font-semibold text-gray-800 mb-2">Profesional de Salud</label>
-                  {!especialidadSeleccionada ? (
-                    <div className="px-3 py-2 border-2 border-gray-300 rounded-lg bg-gray-100 text-gray-400 text-sm">Primero selecciona una especialidad</div>
-                  ) : (
-                    <div className="relative">
-                      <input
-                        type="text"
-                        value={busquedaProf}
-                        onChange={e => { setBusquedaProf(e.target.value); setMostrarDropProf(true); if (!e.target.value) setMedicoSeleccionado(''); }}
-                        onFocus={() => setMostrarDropProf(true)}
-                        onBlur={() => setTimeout(() => setMostrarDropProf(false), 150)}
-                        placeholder={medicosDisponibles.length === 0 ? 'Sin profesionales disponibles' : 'Buscar por nombre o DNI...'}
-                        disabled={medicosDisponibles.length === 0}
-                        className={`w-full px-3 py-2 border-2 rounded-lg text-sm font-medium transition-all focus:outline-none focus:ring-2 focus:ring-blue-500/30 ${
-                          medicoSeleccionado ? 'bg-white border-blue-500 text-blue-900' : 'bg-white border-blue-300 text-gray-700'
-                        }`}
-                      />
-                      {mostrarDropProf && medicosDisponibles.length > 0 && (() => {
-                        const termino = busquedaProf.toLowerCase().trim();
-                        const filtrados = termino ? medicosDisponibles.filter(m => formatearLabelEspecialista(m).toLowerCase().includes(termino)) : medicosDisponibles;
-                        return filtrados.length > 0 ? (
-                          <ul className="absolute z-50 w-full bg-white border border-gray-300 rounded-lg shadow-lg mt-1 max-h-40 overflow-y-auto text-sm">
-                            <li className="px-3 py-2 text-gray-400 italic cursor-pointer hover:bg-gray-50"
-                              onMouseDown={() => { setMedicoSeleccionado(''); setBusquedaProf(''); setMostrarDropProf(false); }}>
-                              Sin asignar (opcional)
-                            </li>
-                            {filtrados.map(m => (
-                              <li key={m.idPers}
-                                onMouseDown={() => { setMedicoSeleccionado(String(m.idPers)); setBusquedaProf(formatearLabelEspecialista(m)); setMostrarDropProf(false); }}
-                                className={`px-3 py-2 cursor-pointer hover:bg-blue-50 ${String(medicoSeleccionado) === String(m.idPers) ? 'bg-blue-100 font-semibold text-blue-900' : 'text-gray-800'}`}
-                              >{formatearLabelEspecialista(m)}</li>
-                            ))}
-                          </ul>
-                        ) : (
-                          <ul className="absolute z-50 w-full bg-white border border-gray-300 rounded-lg shadow-lg mt-1 text-sm">
-                            <li className="px-3 py-2 text-gray-400 italic">Sin resultados</li>
-                          </ul>
-                        );
-                      })()}
-                    </div>
-                  )}
+                  {!especialidadSeleccionada
+                    ? <div className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg bg-gray-100 text-gray-400 text-sm">Primero selecciona una especialidad</div>
+                    : (
+                      <div className="relative">
+                        <input type="text" value={busquedaProf}
+                          onChange={e => { setBusquedaProf(e.target.value); setMostrarDropProf(true); if (!e.target.value) setMedicoSeleccionado(''); }}
+                          onFocus={() => setMostrarDropProf(true)}
+                          onBlur={() => setTimeout(() => setMostrarDropProf(false), 150)}
+                          placeholder={medicosDisponibles.length === 0 ? 'Sin profesionales disponibles' : 'Buscar por nombre o DNI...'}
+                          disabled={medicosDisponibles.length === 0}
+                          className={`w-full px-3 py-2 border-2 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-blue-600 text-sm font-medium transition-all ${
+                            medicoSeleccionado ? 'bg-white border-blue-500 text-blue-900' : 'bg-white border-blue-300 text-gray-700'
+                          }`}
+                        />
+                        {mostrarDropProf && medicosDisponibles.length > 0 && (() => {
+                          const termino = busquedaProf.toLowerCase().trim();
+                          const filtrados = termino ? medicosDisponibles.filter(m => formatearLabelEspecialista(m).toLowerCase().includes(termino)) : medicosDisponibles;
+                          return filtrados.length > 0 ? (
+                            <ul className="absolute z-50 w-full bg-white border border-gray-300 rounded-lg shadow-lg mt-1 max-h-48 overflow-y-auto text-sm">
+                              <li className="px-3 py-2 text-gray-400 italic cursor-pointer hover:bg-gray-50"
+                                onMouseDown={() => { setMedicoSeleccionado(''); setBusquedaProf(''); setMostrarDropProf(false); }}>
+                                Sin asignar (opcional)
+                              </li>
+                              {filtrados.map(m => (
+                                <li key={m.idPers}
+                                  onMouseDown={() => { setMedicoSeleccionado(String(m.idPers)); setBusquedaProf(formatearLabelEspecialista(m)); setMostrarDropProf(false); }}
+                                  className={`px-3 py-2 cursor-pointer hover:bg-blue-50 ${String(medicoSeleccionado) === String(m.idPers) ? 'bg-blue-100 font-semibold text-blue-900' : 'text-gray-800'}`}
+                                >{formatearLabelEspecialista(m)}</li>
+                              ))}
+                            </ul>
+                          ) : (
+                            <ul className="absolute z-50 w-full bg-white border border-gray-300 rounded-lg shadow-lg mt-1 text-sm">
+                              <li className="px-3 py-2 text-gray-400 italic">Sin resultados para "{busquedaProf}"</li>
+                            </ul>
+                          );
+                        })()}
+                      </div>
+                    )
+                  }
                 </div>
 
-                {/* Fecha y Hora */}
-                <div className={`p-3 rounded-xl border-2 transition-all ${!medicoSeleccionado ? 'bg-gray-50 border-gray-200 opacity-50 pointer-events-none' : 'bg-purple-50 border-purple-300'}`}>
+                {/* Fecha y hora */}
+                <div className={`p-3 rounded-lg border-2 transition-all ${!medicoSeleccionado ? 'bg-gray-50 border-gray-200 opacity-50 pointer-events-none' : 'bg-purple-50 border-purple-300'}`}>
                   <label className="block text-sm font-semibold text-gray-800 mb-2">Fecha y Hora de Cita</label>
-                  {!medicoSeleccionado ? (
-                    <div className="px-3 py-2 border-2 border-gray-300 rounded-lg bg-gray-100 text-gray-400 text-sm">Primero selecciona un profesional</div>
-                  ) : (
-                    <div className="space-y-2">
-                      <input
-                        type="date"
-                        value={fechaHora?.split('T')[0] || ''}
-                        onChange={e => setFechaHora(e.target.value)}
-                        min={hoy}
-                        className="w-full px-3 py-2 border-2 border-purple-300 rounded-lg focus:ring-2 focus:ring-purple-500/30 focus:border-purple-500 focus:outline-none text-sm"
-                      />
-                      {/* Drum */}
-                      <div>
-                        <label className="text-xs text-gray-600 font-medium mb-1 block">Horario</label>
-                        <div className="flex gap-2">
-                          {/* Horas */}
-                          <div className="flex-1">
-                            <p className="text-center text-xs text-gray-400 mb-1">Hora</p>
-                            <div className="relative rounded-xl overflow-hidden border-2 border-purple-200 bg-white shadow-inner" style={{ height: DRUM_ITEM_H * 5 }}>
-                              <div className="absolute inset-x-0 pointer-events-none z-10" style={{ top: DRUM_ITEM_H * 2, height: DRUM_ITEM_H, background: 'rgba(124,58,237,0.12)', borderTop: '2px solid #7c3aed', borderBottom: '2px solid #7c3aed' }} />
-                              <div className="absolute inset-x-0 top-0 pointer-events-none z-10" style={{ height: DRUM_ITEM_H * 2, background: 'linear-gradient(to bottom, rgba(255,255,255,0.95), rgba(255,255,255,0))' }} />
-                              <div className="absolute inset-x-0 bottom-0 pointer-events-none z-10" style={{ height: DRUM_ITEM_H * 2, background: 'linear-gradient(to top, rgba(255,255,255,0.95), rgba(255,255,255,0))' }} />
-                              <div ref={hourRef} onScroll={() => handleDrumScroll('hour')} className="absolute inset-0 overflow-y-scroll" style={{ scrollSnapType: 'y mandatory', scrollbarWidth: 'none' }}>
-                                <div style={{ paddingTop: DRUM_ITEM_H * 2, paddingBottom: DRUM_ITEM_H * 2 }}>
-                                  {DRUM_HOURS.map(h => {
-                                    const p = h < 12 ? 'a.m.' : 'p.m.';
-                                    const h12 = h === 12 ? 12 : h > 12 ? h - 12 : h;
-                                    return (
-                                      <div key={h} style={{ height: DRUM_ITEM_H, scrollSnapAlign: 'center' }}
-                                        className={`flex items-center justify-center cursor-pointer select-none font-semibold text-sm transition-all ${selH === h ? 'text-purple-700' : 'text-gray-500'}`}
-                                        onClick={() => {
-                                          const fa = fechaHora?.split('T')[0] || '';
-                                          if (!fa) return;
-                                          setFechaHora(`${fa}T${String(h).padStart(2, '0')}:${String(selM).padStart(2, '0')}`);
-                                          if (hourRef.current) hourRef.current.scrollTop = DRUM_HOURS.indexOf(h) * DRUM_ITEM_H;
-                                        }}
-                                      >{String(h12).padStart(2, '0')} {p}</div>
-                                    );
-                                  })}
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                          <div className="flex items-center justify-center text-2xl font-bold text-purple-400 pb-1">:</div>
-                          {/* Minutos */}
-                          <div className="flex-1">
-                            <p className="text-center text-xs text-gray-400 mb-1">Minutos</p>
-                            <div className="relative rounded-xl overflow-hidden border-2 border-purple-200 bg-white shadow-inner" style={{ height: DRUM_ITEM_H * 5 }}>
-                              <div className="absolute inset-x-0 pointer-events-none z-10" style={{ top: DRUM_ITEM_H * 2, height: DRUM_ITEM_H, background: 'rgba(124,58,237,0.12)', borderTop: '2px solid #7c3aed', borderBottom: '2px solid #7c3aed' }} />
-                              <div className="absolute inset-x-0 top-0 pointer-events-none z-10" style={{ height: DRUM_ITEM_H * 2, background: 'linear-gradient(to bottom, rgba(255,255,255,0.95), rgba(255,255,255,0))' }} />
-                              <div className="absolute inset-x-0 bottom-0 pointer-events-none z-10" style={{ height: DRUM_ITEM_H * 2, background: 'linear-gradient(to top, rgba(255,255,255,0.95), rgba(255,255,255,0))' }} />
-                              <div ref={minuteRef} onScroll={() => handleDrumScroll('minute')} className="absolute inset-0 overflow-y-scroll" style={{ scrollSnapType: 'y mandatory', scrollbarWidth: 'none' }}>
-                                <div style={{ paddingTop: DRUM_ITEM_H * 2, paddingBottom: DRUM_ITEM_H * 2 }}>
-                                  {DRUM_MINUTES.map(m => {
-                                    const mm = String(m).padStart(2, '0');
-                                    const slot = `${String(selH).padStart(2, '0')}:${mm}`;
-                                    const ocupado = horasOcupadas.includes(slot);
-                                    return (
-                                      <div key={m} style={{ height: DRUM_ITEM_H, scrollSnapAlign: 'center' }}
-                                        className={`flex items-center justify-center gap-1 cursor-pointer select-none font-semibold text-sm transition-all
-                                          ${ocupado ? 'text-red-400 cursor-not-allowed' : ''}
-                                          ${selM === m && !ocupado ? 'text-purple-700' : ''}
-                                          ${!ocupado && selM !== m ? 'text-gray-500' : ''}`}
-                                        onClick={() => {
-                                          if (ocupado) return;
-                                          const fa = fechaHora?.split('T')[0] || '';
-                                          if (!fa) return;
-                                          setFechaHora(`${fa}T${String(selH).padStart(2, '0')}:${mm}`);
-                                          if (minuteRef.current) minuteRef.current.scrollTop = DRUM_MINUTES.indexOf(m) * DRUM_ITEM_H;
-                                        }}
-                                      >
-                                        <span>{mm}</span>
-                                        {ocupado && <span className="text-xs text-red-400">✕</span>}
-                                      </div>
-                                    );
-                                  })}
-                                </div>
-                              </div>
-                            </div>
-                          </div>
+                  {!medicoSeleccionado
+                    ? <div className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg bg-gray-100 text-gray-400 text-sm">Primero selecciona un profesional</div>
+                    : (
+                      <div className="space-y-2">
+                        <div>
+                          <label className="text-xs text-gray-700 font-medium">Fecha</label>
+                          <input type="date"
+                            value={fechaHora?.split('T')[0] || ''}
+                            onChange={e => setFechaHora(e.target.value)}
+                            min={hoy}
+                            className="w-full mt-1 px-3 py-2 border-2 border-purple-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-purple-600 text-sm"
+                          />
                         </div>
-                        <div className="mt-2 flex items-center justify-between">
-                          {fechaHora?.includes('T') ? (() => {
-                            const [, t] = fechaHora.split('T');
-                            const [hh, mm] = t.split(':').map(Number);
-                            const p = hh < 12 ? 'a. m.' : 'p. m.';
-                            const h12 = hh === 12 ? 12 : hh > 12 ? hh - 12 : hh;
-                            const ocupado = horasOcupadas.includes(t);
-                            return (
-                              <p className={`text-xs font-semibold ${ocupado ? 'text-red-600' : 'text-purple-700'}`}>
-                                {ocupado ? '⚠ Horario ocupado' : `Seleccionado: ${String(h12).padStart(2, '0')}:${String(mm).padStart(2, '0')} ${p}`}
-                              </p>
-                            );
-                          })() : <span className="text-xs text-gray-400">Desplaza para seleccionar hora</span>}
-                          {horasOcupadas.length > 0 && <span className="text-xs text-amber-600 font-medium">{horasOcupadas.length} ocupados</span>}
+                        <div>
+                          <label className="text-xs text-gray-700 font-medium mb-2 block">Horario</label>
+                          <div className="flex gap-2">
+                            {/* Horas drum */}
+                            <div className="flex-1">
+                              <p className="text-center text-xs text-gray-400 mb-1">Hora</p>
+                              <div className="relative rounded-xl overflow-hidden border-2 border-purple-200 bg-white shadow-inner" style={{ height: DRUM_ITEM_H * 5 }}>
+                                <div className="absolute inset-x-0 pointer-events-none z-10" style={{ top: DRUM_ITEM_H * 2, height: DRUM_ITEM_H, background: 'rgba(124,58,237,0.12)', borderTop: '2px solid #7c3aed', borderBottom: '2px solid #7c3aed' }} />
+                                <div className="absolute inset-x-0 top-0 pointer-events-none z-10" style={{ height: DRUM_ITEM_H * 2, background: 'linear-gradient(to bottom,rgba(255,255,255,0.95),rgba(255,255,255,0))' }} />
+                                <div className="absolute inset-x-0 bottom-0 pointer-events-none z-10" style={{ height: DRUM_ITEM_H * 2, background: 'linear-gradient(to top,rgba(255,255,255,0.95),rgba(255,255,255,0))' }} />
+                                <div ref={hourRef} onScroll={() => handleDrumScroll('hour')} className="absolute inset-0 overflow-y-scroll" style={{ scrollSnapType: 'y mandatory', scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+                                  <div style={{ paddingTop: DRUM_ITEM_H * 2, paddingBottom: DRUM_ITEM_H * 2 }}>
+                                    {DRUM_HOURS.map(h => {
+                                      const p = h < 12 ? 'a.m.' : 'p.m.'; const h12 = h === 12 ? 12 : h > 12 ? h - 12 : h;
+                                      return (
+                                        <div key={h} style={{ height: DRUM_ITEM_H, scrollSnapAlign: 'center' }}
+                                          className={`flex items-center justify-center cursor-pointer select-none font-semibold text-sm transition-all ${selH === h ? 'text-purple-700' : 'text-gray-500'}`}
+                                          onClick={() => { const fa = fechaHora?.split('T')[0] || ''; if (!fa) return; setFechaHora(`${fa}T${String(h).padStart(2,'0')}:${String(selM).padStart(2,'0')}`); if (hourRef.current) hourRef.current.scrollTop = DRUM_HOURS.indexOf(h) * DRUM_ITEM_H; }}
+                                        >{String(h12).padStart(2,'0')} {p}</div>
+                                      );
+                                    })}
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                            <div className="flex items-center justify-center text-2xl font-bold text-purple-400 pb-1">:</div>
+                            {/* Minutos drum */}
+                            <div className="flex-1">
+                              <p className="text-center text-xs text-gray-400 mb-1">Minutos</p>
+                              <div className="relative rounded-xl overflow-hidden border-2 border-purple-200 bg-white shadow-inner" style={{ height: DRUM_ITEM_H * 5 }}>
+                                <div className="absolute inset-x-0 pointer-events-none z-10" style={{ top: DRUM_ITEM_H * 2, height: DRUM_ITEM_H, background: 'rgba(124,58,237,0.12)', borderTop: '2px solid #7c3aed', borderBottom: '2px solid #7c3aed' }} />
+                                <div className="absolute inset-x-0 top-0 pointer-events-none z-10" style={{ height: DRUM_ITEM_H * 2, background: 'linear-gradient(to bottom,rgba(255,255,255,0.95),rgba(255,255,255,0))' }} />
+                                <div className="absolute inset-x-0 bottom-0 pointer-events-none z-10" style={{ height: DRUM_ITEM_H * 2, background: 'linear-gradient(to top,rgba(255,255,255,0.95),rgba(255,255,255,0))' }} />
+                                <div ref={minuteRef} onScroll={() => handleDrumScroll('minute')} className="absolute inset-0 overflow-y-scroll" style={{ scrollSnapType: 'y mandatory', scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+                                  <div style={{ paddingTop: DRUM_ITEM_H * 2, paddingBottom: DRUM_ITEM_H * 2 }}>
+                                    {DRUM_MINUTES.map(m => {
+                                      const mm = String(m).padStart(2,'0'); const slot = `${String(selH).padStart(2,'0')}:${mm}`; const ocupado = horasOcupadas.includes(slot);
+                                      return (
+                                        <div key={m} style={{ height: DRUM_ITEM_H, scrollSnapAlign: 'center' }}
+                                          className={`flex items-center justify-center gap-1 cursor-pointer select-none font-semibold text-sm transition-all ${ocupado ? 'text-red-400 cursor-not-allowed' : ''} ${selM === m && !ocupado ? 'text-purple-700' : ''} ${!ocupado && selM !== m ? 'text-gray-500' : ''}`}
+                                          onClick={() => { if (ocupado) return; const fa = fechaHora?.split('T')[0] || ''; if (!fa) return; setFechaHora(`${fa}T${String(selH).padStart(2,'0')}:${mm}`); if (minuteRef.current) minuteRef.current.scrollTop = DRUM_MINUTES.indexOf(m) * DRUM_ITEM_H; }}
+                                        >
+                                          <span>{mm}</span>{ocupado && <span className="text-xs text-red-400">✕</span>}
+                                        </div>
+                                      );
+                                    })}
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                          <div className="mt-2 flex items-center justify-between">
+                            {fechaHora?.includes('T') ? (() => {
+                              const [, t] = fechaHora.split('T'); const [hh, mm] = t.split(':').map(Number);
+                              const p = hh < 12 ? 'a. m.' : 'p. m.'; const h12 = hh === 12 ? 12 : hh > 12 ? hh - 12 : hh;
+                              const ocupado = horasOcupadas.includes(t);
+                              return <p className={`text-xs font-semibold ${ocupado ? 'text-red-600' : 'text-purple-700'}`}>{ocupado ? '⚠ Horario ocupado' : `Seleccionado: ${String(h12).padStart(2,'0')}:${String(mm).padStart(2,'0')} ${p}`}</p>;
+                            })() : <span className="text-xs text-gray-400">Desplaza para seleccionar hora</span>}
+                            {horasOcupadas.length > 0 && <span className="text-xs text-amber-600 font-medium">{horasOcupadas.length} ocupados</span>}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  )}
+                    )
+                  }
                 </div>
-              </div>
 
-              {errorMsg && (
-                <div className="flex items-start gap-2 p-3 bg-red-50 ring-1 ring-red-100 rounded-xl">
-                  <AlertTriangle className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" />
-                  <p className="text-[12px] text-red-800">{errorMsg}</p>
-                </div>
-              )}
+                {errorMsg && (
+                  <div className="flex items-start gap-2 p-3 bg-red-50 border border-red-200 rounded-lg">
+                    <AlertTriangle className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" />
+                    <p className="text-xs text-red-800">{errorMsg}</p>
+                  </div>
+                )}
 
-              {/* Botones */}
-              <div className="flex items-center gap-2 pt-1">
-                <button type="button" onClick={onClose} disabled={creando}
-                  className="px-4 py-2 rounded-xl text-[13px] text-gray-500 font-medium hover:bg-gray-100 disabled:opacity-50 transition-colors">
-                  Cancelar
-                </button>
-                <div className="flex-1" />
-                <button type="button" onClick={handleCrear}
+                {/* Botón crear */}
+                <button onClick={handleCrear}
                   disabled={creando || !motivo.trim()}
-                  className="flex items-center gap-1.5 px-5 py-2 bg-blue-600 text-white rounded-xl text-[13px] font-semibold hover:bg-blue-700 disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed transition-colors">
-                  {creando
-                    ? <><Loader2 className="w-3.5 h-3.5 animate-spin" />Creando...</>
-                    : <><PlusCircle className="w-4 h-4" />Crear Nueva Cita</>}
+                  className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg font-bold transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm">
+                  {creando ? <Loader2 className="w-4 h-4 animate-spin" /> : <PlusCircle className="w-4 h-4" />}
+                  {creando ? 'Creando cita...' : 'Crear Nueva Cita'}
                 </button>
               </div>
-            </>
-          )}
-        </div>
+            </div>
+
+            {/* Footer */}
+            <div className="px-6 py-3 border-t border-gray-100 bg-gray-50 rounded-b-xl">
+              <button onClick={onClose} className="w-full px-4 py-2 text-gray-600 hover:text-gray-800 text-sm font-medium transition-colors">
+                Cerrar
+              </button>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );
