@@ -31,13 +31,14 @@ public class TeleurgenciasService {
     private final SolicitudBolsaRepository solicitudBolsaRepository;
     private final PersonalCntRepository personalCntRepository;
 
-    /** Lista de los 47 IDs de médicos de Teleurgencias */
+    /** Lista de IDs de médicos de Teleurgencias */
     public static final List<Long> IDS_TELEURGENCIAS = List.of(
         390L, 327L, 301L, 335L, 302L, 567L, 566L, 574L, 727L, 300L, 352L,
         410L, 560L, 361L, 553L, 548L, 554L, 571L, 303L, 378L, 570L, 552L,
         379L, 555L, 573L, 415L, 549L, 299L, 557L, 305L, 308L, 561L, 341L,
         687L, 304L, 568L, 572L, 563L, 545L, 307L, 547L, 550L, 562L, 564L,
-        306L, 565L, 546L
+        306L, 565L, 546L,
+        836L  // Suazo Flores Helmouth Keller - SGDT Teleurgencias y Teletriaje
     );
 
     /**

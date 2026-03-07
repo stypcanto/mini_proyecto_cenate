@@ -20,19 +20,19 @@ VALUES (
 )
 ON CONFLICT (id_modulo, ruta_pagina) DO NOTHING;
 
--- 2. Permisos para SUPERADMIN (id_rol = 1)
-INSERT INTO dim_permisos_pagina_rol (id_rol, id_pagina, puede_ver, puede_crear, puede_editar, puede_eliminar, puede_exportar, activo, created_at)
+-- 2. Permisos para SUPERADMIN (id_rol = 1) — tabla operativa que usa el backend
+INSERT INTO segu_permisos_rol_pagina (id_rol, id_pagina, puede_ver, puede_crear, puede_editar, puede_eliminar, puede_exportar, activo, created_at)
 SELECT 1, id_pagina, true, false, true, false, true, true, NOW()
 FROM dim_paginas_modulo
 WHERE ruta_pagina = '/roles/coordinador/total-pacientes-telece'
-ON CONFLICT (id_rol, id_pagina) DO NOTHING;
+ON CONFLICT (id_rol, id_pagina) DO UPDATE SET puede_ver = true, activo = true;
 
 -- 3. Permisos para COORD. ESPECIALIDADES (id_rol = 15)
-INSERT INTO dim_permisos_pagina_rol (id_rol, id_pagina, puede_ver, puede_crear, puede_editar, puede_eliminar, puede_exportar, activo, created_at)
+INSERT INTO segu_permisos_rol_pagina (id_rol, id_pagina, puede_ver, puede_crear, puede_editar, puede_eliminar, puede_exportar, activo, created_at)
 SELECT 15, id_pagina, true, false, true, false, true, true, NOW()
 FROM dim_paginas_modulo
 WHERE ruta_pagina = '/roles/coordinador/total-pacientes-telece'
-ON CONFLICT (id_rol, id_pagina) DO NOTHING;
+ON CONFLICT (id_rol, id_pagina) DO UPDATE SET puede_ver = true, activo = true;
 
 -- Verificación
 SELECT
@@ -41,7 +41,7 @@ SELECT
     pp.puede_ver          AS ver,
     pp.puede_editar       AS editar,
     pp.activo             AS activo
-FROM dim_permisos_pagina_rol pp
+FROM segu_permisos_rol_pagina pp
 JOIN dim_roles r           ON pp.id_rol    = r.id_rol
 JOIN dim_paginas_modulo p  ON pp.id_pagina = p.id_pagina
 WHERE p.ruta_pagina = '/roles/coordinador/total-pacientes-telece'
