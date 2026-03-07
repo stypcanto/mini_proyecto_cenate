@@ -19,7 +19,7 @@ import { X, AlertCircle, CheckCircle, AlertTriangle, Send, XCircle } from 'lucid
  *
  * @version v1.68.0 (2026-02-20)
  */
-function ResponderTicketModal({ isOpen, onClose, ticket, usuario, onSuccess }) {
+function ResponderTicketModal({ isOpen, onClose, ticket, usuario, onSuccess, puedeAnular = false }) {
   const [respuestaSeleccionada, setRespuestaSeleccionada] = useState(null);
   const [textoOtros, setTextoOtros] = useState('');
   const [estado, setEstado] = useState('RESUELTO');
@@ -436,8 +436,8 @@ function ResponderTicketModal({ isOpen, onClose, ticket, usuario, onSuccess }) {
 
                 <div className="flex-1" />
 
-                {/* Anular Cita */}
-                {tienePaciente && (
+                {/* Anular Cita — solo roles con permiso */}
+                {tienePaciente && puedeAnular && (
                   <button
                     type="button"
                     onClick={abrirModalAnular}

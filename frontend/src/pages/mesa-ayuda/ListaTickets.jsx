@@ -1834,6 +1834,7 @@ function ListaTickets() {
           onClose={() => setShowModalResponder(false)}
           ticket={ticketSeleccionado}
           usuario={usuario}
+          puedeAnular={hasRole('SUPERADMIN') || hasRole('ADMIN') || hasRole('COORDINADOR') || hasRole('COORD. GESTION CITAS') || hasRole('SOPORTE_TELEUE')}
           onSuccess={handleResponderSuccess}
         />
       )}

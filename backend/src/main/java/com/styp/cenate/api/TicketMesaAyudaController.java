@@ -636,6 +636,7 @@ public class TicketMesaAyudaController {
      * @return Mensaje de éxito o error
      */
     @PutMapping("/tickets/{id}/anular-cita")
+    @PreAuthorize("hasAnyRole('SUPERADMIN','ADMIN','COORDINADOR','COORD. GESTION CITAS','SOPORTE_TELEUE')")
     public ResponseEntity<?> anularCita(
         @PathVariable @NotNull Long id,
         @RequestBody Map<String, String> body
