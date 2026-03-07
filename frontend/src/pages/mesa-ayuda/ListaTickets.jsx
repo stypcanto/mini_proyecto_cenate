@@ -133,6 +133,9 @@ function ListaTickets() {
     nombre: user?.nombreCompleto || user?.username || 'Personal Mesa de Ayuda',
   };
 
+  // Puede reasignar tickets a cualquier persona del equipo (no solo a sí mismo)
+  const canReasignar = hasRole('SUPERADMIN') || user?.username === '45466651';
+
   // Reset page y filtro al cambiar de ruta
   useEffect(() => {
     setCurrentPage(0);
@@ -170,7 +173,15 @@ function ListaTickets() {
       try {
         const { mesaAyudaService } = await import('../../services/mesaAyudaService');
         const data = await mesaAyudaService.obtenerMedicosConTickets();
-        setMedicosConTickets(Array.isArray(data) ? data : []);
+        // Deduplicar por idMedico (mismo médico puede aparecer con nombres ligeramente distintos)
+        const deduped = Array.isArray(data)
+          ? Object.values(data.reduce((acc, m) => {
+              if (!acc[m.idMedico]) acc[m.idMedico] = m;
+              else acc[m.idMedico].count = (acc[m.idMedico].count || 0) + (m.count || 0);
+              return acc;
+            }, {}))
+          : [];
+        setMedicosConTickets(deduped);
       } catch (err) {
         console.error('Error cargando médicos con tickets:', err);
       }
@@ -566,6 +577,20 @@ function ListaTickets() {
           </div>
         )}
       </div>
+
+      {/* Banner de reasignación — solo para coordinadora con privilegio especial */}
+      {canReasignar && !hasRole('SUPERADMIN') && esPendientes && (
+        <div className="mb-4 flex items-center gap-3 bg-indigo-50 border border-indigo-200 rounded-lg px-4 py-3">
+          <Users size={18} className="text-indigo-600 flex-shrink-0" />
+          <div className="flex-1">
+            <p className="text-sm font-semibold text-indigo-800">Modo Coordinadora — Reasignación habilitada</p>
+            <p className="text-xs text-indigo-600">
+              Haz clic en el nombre asignado de cualquier ticket para reasignarlo a otro personal.
+              Para asignación masiva, selecciona tickets con el checkbox y usa <strong>Asignar personal</strong>.
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Error Message */}
       {error && (
@@ -1058,11 +1083,11 @@ function ListaTickets() {
                     <td className="px-3 py-2.5">
                       {ticket.nombrePersonalAsignado ? (
                         <div
-                          className={`flex items-center gap-1.5 ${ticket.estado !== 'RESUELTO' && hasRole('SUPERADMIN') ? 'cursor-pointer group' : 'cursor-default'}`}
-                          title={ticket.nombrePersonalAsignado}
+                          className={`flex items-center gap-1.5 ${ticket.estado !== 'RESUELTO' && canReasignar ? 'cursor-pointer group' : 'cursor-default'}`}
+                          title={canReasignar && ticket.estado !== 'RESUELTO' ? `${ticket.nombrePersonalAsignado} — Clic para reasignar` : ticket.nombrePersonalAsignado}
                           onClick={(e) => {
                             if (ticket.estado === 'RESUELTO') return;
-                            if (!hasRole('SUPERADMIN')) return;
+                            if (!canReasignar) return;
                             if (dropdownTicketId === ticket.id) {
                               setDropdownTicketId(null);
                             } else {
@@ -1078,7 +1103,7 @@ function ListaTickets() {
                           <span className="text-xs text-gray-800 truncate max-w-[100px]">
                             {ticket.nombrePersonalAsignado}
                           </span>
-                          {ticket.estado !== 'RESUELTO' && hasRole('SUPERADMIN') && (
+                          {ticket.estado !== 'RESUELTO' && canReasignar && (
                             <ChevronDown size={12} className="text-gray-400 group-hover:text-gray-600 flex-shrink-0" />
                           )}
                         </div>
@@ -1087,7 +1112,7 @@ function ListaTickets() {
                           <UserCircle size={16} className="text-gray-300 flex-shrink-0" />
                           <span className="text-xs text-gray-400 italic">Sin asignar</span>
                         </div>
-                      ) : hasRole('SUPERADMIN') ? (
+                      ) : canReasignar ? (
                         <button
                           className="flex items-center gap-1.5 px-2 py-1 rounded-lg border border-dashed border-blue-300 bg-blue-50 hover:bg-blue-100 hover:border-blue-400 transition-all cursor-pointer group"
                           onClick={(e) => {
@@ -1277,7 +1302,7 @@ function ListaTickets() {
             </span>
           </div>
           <div className="w-px h-8 bg-white/30" />
-          {hasRole('SUPERADMIN') ? (
+          {canReasignar ? (
             <div className="relative" ref={bulkDropdownRef}>
               <button
                 onClick={() => setShowBulkDropdown(!showBulkDropdown)}
@@ -1329,8 +1354,6 @@ function ListaTickets() {
 
       {/* Dropdown Fixed - Asignar Personal */}
       {dropdownTicketId && (
-        <>
-          <div className="fixed inset-0 z-40" onClick={() => setDropdownTicketId(null)} />
           <div
             ref={dropdownRef}
             className="fixed bg-white border border-gray-200 rounded-xl shadow-2xl z-50 min-w-[280px] max-h-[240px] overflow-y-auto"
@@ -1378,7 +1401,6 @@ function ListaTickets() {
               ) : null;
             })()}
           </div>
-        </>
       )}
 
       {/* Toast de confirmación */}

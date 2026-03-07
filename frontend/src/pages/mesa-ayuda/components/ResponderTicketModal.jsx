@@ -43,6 +43,7 @@ function ResponderTicketModal({ isOpen, onClose, ticket, usuario, onSuccess, pue
   const [motivosAnulacionList, setMotivosAnulacionList] = useState([]);
   const [anulando, setAnulando] = useState(false);
   const [errorAnular, setErrorAnular] = useState(null);
+  const [citaAnulada, setCitaAnulada] = useState(false);
 
   // Cargar respuestas predefinidas al abrir el modal
   useEffect(() => {
@@ -180,6 +181,7 @@ function ResponderTicketModal({ isOpen, onClose, ticket, usuario, onSuccess, pue
       setMotivosAnulacionList([]);
       setAnulando(false);
       setErrorAnular(null);
+      setCitaAnulada(false);
       onClose();
     }
   };
@@ -218,9 +220,10 @@ function ResponderTicketModal({ isOpen, onClose, ticket, usuario, onSuccess, pue
     try {
       const { mesaAyudaService } = await import('../../../services/mesaAyudaService');
       await mesaAyudaService.anularCita(ticket.id, motivoAnulacion.trim());
+      // Cerrar sub-modal, marcar cita como anulada y dejar el modal principal abierto
       setShowAnularModal(false);
-      onSuccess?.({ anulada: true });
-      onClose();
+      setCitaAnulada(true);
+      setAnulando(false);
     } catch (err) {
       setErrorAnular(
         err.response?.data?.error ||
@@ -333,6 +336,12 @@ function ResponderTicketModal({ isOpen, onClose, ticket, usuario, onSuccess, pue
                   <p className="text-[13px] text-red-800">{error}</p>
                 </div>
               )}
+              {citaAnulada && (
+                <div className="flex items-start gap-2.5 p-3.5 bg-emerald-50 ring-1 ring-emerald-100 rounded-xl">
+                  <CheckCircle size={15} className="text-emerald-500 flex-shrink-0 mt-0.5" />
+                  <p className="text-[13px] text-emerald-800">Cita anulada correctamente. Ahora selecciona una respuesta y cierra el ticket.</p>
+                </div>
+              )}
               {success && (
                 <div className="flex items-start gap-2.5 p-3.5 bg-emerald-50 ring-1 ring-emerald-100 rounded-xl">
                   <CheckCircle size={15} className="text-emerald-500 flex-shrink-0 mt-0.5" />
@@ -439,11 +448,11 @@ function ResponderTicketModal({ isOpen, onClose, ticket, usuario, onSuccess, pue
                   <button
                     type="button"
                     onClick={abrirModalAnular}
-                    disabled={loading}
+                    disabled={loading || citaAnulada}
                     className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-[13px] font-medium text-white bg-red-500 hover:bg-red-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                   >
                     <XCircle size={13} />
-                    Anular cita
+                    {citaAnulada ? 'Cita anulada' : 'Anular cita'}
                   </button>
                 )}
 

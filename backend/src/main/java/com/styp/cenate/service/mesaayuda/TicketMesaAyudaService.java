@@ -1111,7 +1111,10 @@ public class TicketMesaAyudaService {
                 var usuario = usuarioRepository.findByNameUser(auth.getName()).orElse(null);
                 if (usuario != null) {
                     usuarioActualId = usuario.getIdUser();
-                    usuarioActualNombre = auth.getName();
+                    String nombreCompleto = usuario.getNombreCompleto();
+                    usuarioActualNombre = (nombreCompleto != null && !nombreCompleto.isBlank())
+                        ? nombreCompleto
+                        : auth.getName();
                 }
             }
         } catch (Exception ex) {
@@ -1176,10 +1179,15 @@ public class TicketMesaAyudaService {
             FROM dim_solicitud_bolsa sb
             LEFT JOIN dim_ipress di ON di.id_ipress = sb.id_ipress
             LEFT JOIN dim_personal_cnt p ON p.id_pers = sb.id_personal
-            LEFT JOIN dim_historial_cambios_solicitud h
-                ON h.id_solicitud = sb.id_solicitud AND h.tipo_cambio = 'ANULACION'
+            LEFT JOIN (
+                SELECT DISTINCT ON (id_solicitud) *
+                FROM dim_historial_cambios_solicitud
+                WHERE tipo_cambio = 'ANULACION'
+                ORDER BY id_solicitud, fecha_cambio DESC NULLS LAST
+            ) h ON h.id_solicitud = sb.id_solicitud
             LEFT JOIN dim_usuarios u ON u.id_user = sb.usuario_cambio_estado_id
             LEFT JOIN dim_personal_cnt pc2 ON pc2.id_usuario = u.id_user
+            LEFT JOIN dim_personal_externo pe ON pe.id_user = u.id_user
             WHERE (sb.activo = false OR sb.condicion_medica = 'Anulado')
             """;
 
@@ -1234,6 +1242,7 @@ public class TicketMesaAyudaService {
                 COALESCE(
                     h.usuario_nombre,
                     NULLIF(TRIM(COALESCE(pc2.nom_pers,'') || ' ' || COALESCE(pc2.ape_pater_pers,'') || ' ' || COALESCE(pc2.ape_mater_pers,'')), ''),
+                    NULLIF(TRIM(COALESCE(pe.nom_ext,'') || ' ' || COALESCE(pe.ape_pater_ext,'') || ' ' || COALESCE(pe.ape_mater_ext,'')), ''),
                     u.name_user
                 ) AS anulado_por,
                 COALESCE(h.fecha_cambio::timestamp, sb.fecha_cambio_estado::timestamp) AS fecha_anulacion""")

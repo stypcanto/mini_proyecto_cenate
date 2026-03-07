@@ -747,7 +747,7 @@ const PacientesAnulados = () => {
               </thead>
               <tbody className="divide-y divide-gray-100">
                 {data.map((row, idx) => (
-                  <tr key={row.idSolicitud ?? idx} className="hover:bg-red-50/30 transition-colors">
+                  <tr key={`${row.idSolicitud ?? 'x'}-${idx}`} className="hover:bg-red-50/30 transition-colors">
                     <td className="px-4 py-3 text-gray-400 text-xs">{page * PAGE_SIZE + idx + 1}</td>
                     <td className="px-4 py-3"><span className="font-medium text-gray-900">{row.pacienteNombre || '—'}</span></td>
                     <td className="px-4 py-3"><span className="font-mono text-xs bg-gray-100 px-2 py-0.5 rounded">{row.pacienteDni || '—'}</span></td>
