@@ -3705,32 +3705,23 @@ export default function MisPacientes() {
                   
                   {/* Grid chips: 3 cols normal, 2 cols cuando ENFERMERIA (4 chips) */}
                   <div className={`grid gap-3 ${esEnfermeria ? 'grid-cols-2' : 'grid-cols-3'}`}>
-                    {/* Chip 1: Recita — ✅ v1.85.0: Deshabilitado si restricción temporal | ✅ v1.110.0: ENFERMERIA abre modal de asignación */}
+                    {/* Chip 1: Recita — ✅ v1.85.0: Deshabilitado si restricción temporal | ✅ v1.111.0: Todos los roles abren modal de asignación */}
                     <button
                       onClick={() => {
                         if (pacienteSeleccionado?.fechaAtencionMedica && !puedeEditar(pacienteSeleccionado)) return;
                         
-                        // ✅ v1.110.0: Si es ENFERMERIA, abrir modal de asignación primero
-                        if (esEnfermeria) {
-                          setShowAsignarRecitaModal(true);
-                          setRecitaAsignacionRespuesta(null);
-                          setRecitaAsignacionFecha('');
-                          setRecitaAsignacionHora('');
-                          setRecitaMeses('');
-                          setRecitaAsignacionDetalle(null);
-                          return;
-                        }
-                        
-                        // Otros roles: comportamiento normal
-                        const nuevoValor = !tieneRecita;
-                        setTieneRecita(nuevoValor);
-                        setExpandRecita(nuevoValor);
-                        if (nuevoValor && esEnfermeria) setRecitaDias(30);
+                        // ✅ v1.111.0: Todos los roles abren modal de asignación RECITA (SI/NO)
+                        setShowAsignarRecitaModal(true);
+                        setRecitaAsignacionRespuesta(null);
+                        setRecitaAsignacionFecha('');
+                        setRecitaAsignacionHora('');
+                        setRecitaMeses('');
+                        setRecitaAsignacionDetalle(null);
                       }}
-                      disabled={(pacienteSeleccionado?.fechaAtencionMedica && !puedeEditar(pacienteSeleccionado)) || (recitaAsignacionDetalle !== null && esEnfermeria)}
+                      disabled={(pacienteSeleccionado?.fechaAtencionMedica && !puedeEditar(pacienteSeleccionado)) || recitaAsignacionDetalle !== null}
                       className={`p-4 rounded-xl transition-all text-center font-semibold border-2
                         focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-green-400 ${
-                        (pacienteSeleccionado?.fechaAtencionMedica && !puedeEditar(pacienteSeleccionado)) || (recitaAsignacionDetalle !== null && esEnfermeria)
+                        (pacienteSeleccionado?.fechaAtencionMedica && !puedeEditar(pacienteSeleccionado)) || recitaAsignacionDetalle !== null
                           ? 'bg-gray-100 text-gray-400 border-gray-300 cursor-not-allowed opacity-60'
                           : `cursor-pointer ${
                             tieneRecita
@@ -4002,8 +3993,8 @@ export default function MisPacientes() {
                       </div>
                     )}
 
-                    {/* Detalle 3: RECITA — Asignación para futura atención (ENFERMERIA) v1.110.0 */}
-                    {recitaAsignacionDetalle && esEnfermeria && (
+                    {/* Detalle 3: RECITA — Asignación para futura atención (todos los roles) v1.111.0 */}
+                    {recitaAsignacionDetalle && (
                       <div className="bg-green-50 border-2 border-green-300 rounded-xl p-3 animate-in slide-in-from-top-2">
                         <div className="flex items-center justify-between mb-3">
                           <label className="text-xs font-bold text-green-900 tracking-wide">♾ Recita Asignada</label>
@@ -6565,7 +6556,7 @@ export default function MisPacientes() {
         );
       })()}
 
-      {/* ===== MODAL ASIGNACIÓN RECITA (ENFERMERIA) v1.110.0 ===== */}
+      {/* ===== MODAL ASIGNACIÓN RECITA (todos los roles) v1.111.0 ===== */}
       {showAsignarRecitaModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md">
