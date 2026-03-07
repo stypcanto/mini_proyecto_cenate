@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useRef, memo } from 'react';
 import { createPortal } from 'react-dom';
 import { CalendarCheck, RefreshCw, Download, X, Search, ChevronLeft, ChevronRight } from 'lucide-react';
 import * as XLSX from 'xlsx';
-import { obtenerDesgloseMaratonSegmentos, obtenerPacientesMaratonCategoria, obtenerOpcionesFiltrosMaraton, obtenerTotalesBrutosMaraton, obtenerDashboardTerritorialMaraton } from '../../services/bolsasService';
+import { obtenerDesgloseMaratonSegmentos, obtenerPacientesMaratonCategoria, obtenerOpcionesFiltrosMaraton, obtenerTotalesBrutosMaraton, obtenerDashboardTerritorialMaraton, obtenerAtendidosMaraton } from '../../services/bolsasService';
 import { MapPin, BarChart3 } from 'lucide-react';
 import { apiClient } from '../../lib/apiClient';
 import {
@@ -44,6 +44,7 @@ const CFG = {
   CITADOS:    { bar: 'bg-emerald-500', text: 'text-emerald-700', bg: 'bg-emerald-50',  dot: 'bg-emerald-500', border: 'border-emerald-200' },
   OBSERVADOS: { bar: 'bg-amber-500',   text: 'text-amber-700',   bg: 'bg-amber-50',    dot: 'bg-amber-500',   border: 'border-amber-200'   },
   PENDIENTES: { bar: 'bg-rose-500',    text: 'text-rose-700',    bg: 'bg-rose-50',     dot: 'bg-rose-500',    border: 'border-rose-200'    },
+  ATENDIDOS:  { bar: 'bg-blue-500',    text: 'text-blue-700',    bg: 'bg-blue-50',     dot: 'bg-blue-500',    border: 'border-blue-200'    },
 };
 
 // Mapa de categorías → título + color del badge
@@ -60,6 +61,8 @@ const MODAL_META = {
   CITADOS_ESPECIALIDADES:  { titulo: 'Citados — Especialidades',         badge: 'bg-emerald-100 text-emerald-700' },
   OBSERVADOS_ESPECIALIDADES:{ titulo: 'Observados — Especialidades',     badge: 'bg-amber-100 text-amber-700'  },
   PENDIENTES_ESPECIALIDADES:{ titulo: 'Pendientes — Especialidades',     badge: 'bg-rose-100 text-rose-700'    },
+  ATENDIDOS_CENACRON:      { titulo: 'Atendidos — Crónicos',             badge: 'bg-blue-100 text-blue-700'    },
+  ATENDIDOS_ESPECIALIDADES:{ titulo: 'Atendidos — Especialidades',       badge: 'bg-blue-100 text-blue-700'    },
 };
 
 // ─── Configuración de badges para Motivo (estado_gestion) ────────────────────
@@ -466,9 +469,10 @@ const LABEL_COLORS = {
   CITADOS:    'text-emerald-300',
   OBSERVADOS: 'text-amber-300',
   PENDIENTES: 'text-rose-300',
+  ATENDIDOS:  'text-blue-300',
 };
 
-function StateRow({ label, value, total, accentBorder, onClick, tooltip }) {
+function StateRow({ label, value, total, accentBorder, onClick, tooltip, detalle }) {
   const cfg = CFG[label] ?? CFG.PENDIENTES;
   const pct = total > 0 ? ((value / total) * 100).toFixed(1) : '0.0';
   const animValue = useCountUp(value, 3500);
@@ -497,6 +501,20 @@ function StateRow({ label, value, total, accentBorder, onClick, tooltip }) {
         <div className={`${cfg.bar} h-2 rounded-full transition-all duration-700`} style={{ width: `${pct}%` }} />
       </div>
       <p className="text-xs font-medium text-slate-500 mt-1.5">{pct}% del segmento · <span className="text-slate-400">clic para ver listado</span></p>
+      {detalle && detalle.length > 0 && (
+        <div className="flex flex-wrap gap-1 mt-2">
+          {detalle.slice(0, 6).map(({ condicion, cantidad }) => (
+            <span key={condicion} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-teal-100 text-teal-800">
+              {condicion}: {cantidad}
+            </span>
+          ))}
+          {detalle.length > 6 && (
+            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-slate-100 text-slate-500">
+              +{detalle.length - 6} más
+            </span>
+          )}
+        </div>
+      )}
     </button>
   );
 }
@@ -505,21 +523,28 @@ function StateRow({ label, value, total, accentBorder, onClick, tooltip }) {
 function FunnelConnector() {
   const violet = '#7c3aed';
   const sky    = '#0284c7';
+  const blue   = '#2563eb';
   return (
     <svg viewBox="0 0 56 400" className="absolute inset-0 w-full h-full" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
-      <path d="M6,100 C28,100 28,33  50,33"  stroke={violet} strokeWidth="1.8" fill="none" strokeOpacity="0.45" strokeLinecap="round" />
-      <path d="M6,100 C28,100 28,100 50,100" stroke={violet} strokeWidth="1.8" fill="none" strokeOpacity="0.45" strokeLinecap="round" />
-      <path d="M6,100 C28,100 28,167 50,167" stroke={violet} strokeWidth="1.8" fill="none" strokeOpacity="0.45" strokeLinecap="round" />
-      <polygon points="47,30 54,33 47,36"   fill={violet} opacity="0.45" />
-      <polygon points="47,97 54,100 47,103" fill={violet} opacity="0.45" />
-      <polygon points="47,164 54,167 47,170" fill={violet} opacity="0.45" />
+      {/* Crónicos: 4 filas en la mitad superior (25, 75, 125, 175), origen y=100 */}
+      <path d="M6,100 C28,100 28,25  50,25"  stroke={violet} strokeWidth="1.8" fill="none" strokeOpacity="0.45" strokeLinecap="round" />
+      <path d="M6,100 C28,100 28,75  50,75"  stroke={violet} strokeWidth="1.8" fill="none" strokeOpacity="0.45" strokeLinecap="round" />
+      <path d="M6,100 C28,100 28,125 50,125" stroke={violet} strokeWidth="1.8" fill="none" strokeOpacity="0.45" strokeLinecap="round" />
+      <path d="M6,100 C28,100 28,175 50,175" stroke={blue}   strokeWidth="1.8" fill="none" strokeOpacity="0.45" strokeLinecap="round" />
+      <polygon points="47,22 54,25 47,28"   fill={violet} opacity="0.45" />
+      <polygon points="47,72 54,75 47,78"   fill={violet} opacity="0.45" />
+      <polygon points="47,122 54,125 47,128" fill={violet} opacity="0.45" />
+      <polygon points="47,172 54,175 47,178" fill={blue}   opacity="0.45" />
       <circle cx="6" cy="100" r="3.5" fill={violet} opacity="0.5" />
-      <path d="M6,300 C28,300 28,233 50,233" stroke={sky} strokeWidth="1.8" fill="none" strokeOpacity="0.45" strokeLinecap="round" />
-      <path d="M6,300 C28,300 28,300 50,300" stroke={sky} strokeWidth="1.8" fill="none" strokeOpacity="0.45" strokeLinecap="round" />
-      <path d="M6,300 C28,300 28,367 50,367" stroke={sky} strokeWidth="1.8" fill="none" strokeOpacity="0.45" strokeLinecap="round" />
-      <polygon points="47,230 54,233 47,236" fill={sky} opacity="0.45" />
-      <polygon points="47,297 54,300 47,303" fill={sky} opacity="0.45" />
-      <polygon points="47,364 54,367 47,370" fill={sky} opacity="0.45" />
+      {/* Especialidades: 4 filas en la mitad inferior (225, 275, 325, 375), origen y=300 */}
+      <path d="M6,300 C28,300 28,225 50,225" stroke={sky}  strokeWidth="1.8" fill="none" strokeOpacity="0.45" strokeLinecap="round" />
+      <path d="M6,300 C28,300 28,275 50,275" stroke={sky}  strokeWidth="1.8" fill="none" strokeOpacity="0.45" strokeLinecap="round" />
+      <path d="M6,300 C28,300 28,325 50,325" stroke={sky}  strokeWidth="1.8" fill="none" strokeOpacity="0.45" strokeLinecap="round" />
+      <path d="M6,300 C28,300 28,375 50,375" stroke={blue} strokeWidth="1.8" fill="none" strokeOpacity="0.45" strokeLinecap="round" />
+      <polygon points="47,222 54,225 47,228" fill={sky}  opacity="0.45" />
+      <polygon points="47,272 54,275 47,278" fill={sky}  opacity="0.45" />
+      <polygon points="47,322 54,325 47,328" fill={sky}  opacity="0.45" />
+      <polygon points="47,372 54,375 47,378" fill={blue} opacity="0.45" />
       <circle cx="6" cy="300" r="3.5" fill={sky} opacity="0.5" />
     </svg>
   );
@@ -814,7 +839,7 @@ const DashboardTerritorialCharts = memo(function DashboardTerritorialCharts({ da
                 <Tooltip content={<CustomPieTooltip />} />
                 <Legend formatter={(value, entry) => (
                   <span style={{ fontSize: 12, color: '#475569', fontWeight: 600 }}>
-                    {value}: {Number(entry.payload.value).toLocaleString('es-PE')} ({entry.payload.pct}%)
+                    {value}: {Number(entry.payload.value).toLocaleString('es-PE')} pacientes ({entry.payload.pct}%)
                   </span>
                 )} />
               </PieChart>
@@ -991,6 +1016,7 @@ export default function MaratonAvancesCitacion() {
   const [universoTotal,      setUniversoTotal]      = useState(0);
   const [cenacron,           setCenacron]           = useState({ total: 0, citados: 0, observados: 0, pendientes: 0 });
   const [especialidades,     setEspecialidades]     = useState({ total: 0, citados: 0, observados: 0, pendientes: 0 });
+  const [atendidos,          setAtendidos]          = useState({ cronicos: { total: 0, detalle: [] }, especialidades: { total: 0, detalle: [] } });
   const [modalCategoria,     setModalCategoria]     = useState(null);
   const [totalesBrutos,      setTotalesBrutos]      = useState({ totalRegistros: 0, pacientesUnicos: 0, registrosExtra: 0, pacientesMultiplesCitas: 0 });
   const [tab,                setTab]                = useState('embudo');
@@ -1003,18 +1029,29 @@ export default function MaratonAvancesCitacion() {
     if (!silent) setLoading(true);
     else setRefreshing(true);
     try {
-      const [universoRes, desgloseRes, brutosRes] = await Promise.all([
+      const [universoRes, desgloseRes, brutosRes, atendidosRes] = await Promise.all([
         apiClient.get('/asegurados?maraton=true&page=0&size=1', true).catch(() => null),
         obtenerDesgloseMaratonSegmentos().catch(() => null),
         obtenerTotalesBrutosMaraton().catch(() => null),
+        obtenerAtendidosMaraton().catch(() => []),
       ]);
       setUniversoTotal(universoRes?.totalElements ?? 0);
       if (brutosRes) setTotalesBrutos(brutosRes);
+      if (Array.isArray(atendidosRes)) {
+        const atn = { cronicos: { total: 0, detalle: [] }, especialidades: { total: 0, detalle: [] } };
+        atendidosRes.forEach(({ segmento, condicion_medica, cantidad }) => {
+          const seg = segmento === 'CRONICOS' ? atn.cronicos : atn.especialidades;
+          const n = Number(cantidad) || 0;
+          seg.total += n;
+          seg.detalle.push({ condicion: condicion_medica, cantidad: n });
+        });
+        setAtendidos(atn);
+      }
       if (Array.isArray(desgloseRes)) {
         const cen = { total: 0, citados: 0, observados: 0, pendientes: 0 };
         const esp = { total: 0, citados: 0, observados: 0, pendientes: 0 };
         desgloseRes.forEach(({ segmento, estado, cantidad }) => {
-          const seg = segmento === 'CENACRON' ? cen : esp;
+          const seg = segmento === 'CRONICOS' ? cen : esp;
           const n   = Number(cantidad) || 0;
           seg.total += n;
           if (estado === 'CITADO') seg.citados += n;
@@ -1250,7 +1287,9 @@ export default function MaratonAvancesCitacion() {
                 <span className="w-3 h-3 rounded-full bg-violet-500 inline-block flex-shrink-0" />
                 <span className="text-xs font-extrabold text-violet-700 uppercase tracking-widest">Maratón — Crónicos</span>
               </div>
-              <p className="text-5xl font-black text-violet-800 tabular-nums leading-none">{cntCronicos.toLocaleString('es-PE')}</p>
+              <p className="text-5xl font-black text-violet-800 tabular-nums leading-none">
+                {cntCronicos.toLocaleString('es-PE')} <span className="text-xl font-bold text-violet-800">pacientes</span>
+              </p>
               <div className="mt-4">
                 <div className="w-40 bg-violet-100 rounded-full h-2">
                   <div className="bg-violet-500 h-2 rounded-full transition-all duration-700" style={{ width: `${pct(cenacron.total, universoTotal)}%` }} />
@@ -1271,7 +1310,9 @@ export default function MaratonAvancesCitacion() {
                 <span className="w-3 h-3 rounded-full bg-sky-500 inline-block flex-shrink-0" />
                 <span className="text-xs font-extrabold text-sky-700 uppercase tracking-widest">Maratón — Especialidades</span>
               </div>
-              <p className="text-5xl font-black text-sky-800 tabular-nums leading-none">{cntEspecialidades.toLocaleString('es-PE')}</p>
+              <p className="text-5xl font-black text-sky-800 tabular-nums leading-none">
+                {cntEspecialidades.toLocaleString('es-PE')} <span className="text-xl font-bold text-sky-800">pacientes</span>
+              </p>
               <div className="mt-4">
                 <div className="w-40 bg-sky-100 rounded-full h-2">
                   <div className="bg-sky-500 h-2 rounded-full transition-all duration-700" style={{ width: `${pct(especialidades.total, universoTotal)}%` }} />
@@ -1294,12 +1335,18 @@ export default function MaratonAvancesCitacion() {
               tooltip="Pacientes CENACRON que fueron contactados por la gestora pero no pudieron ser citados: rechazaron la cita, número no existe, sin vigencia de seguro, fallecido, ya no requiere, IPRESS no cubre CENATE, sin grupo etario, particular, entre otros motivos." />
             <StateRow label="PENDIENTES" value={cenacron.pendientes}       total={cenacron.total}       accentBorder="border-l-violet-300" onClick={() => abrirModal('PENDIENTES_CENACRON')}
               tooltip="Pacientes CENACRON que aún no han sido citados ni gestionados. Están en espera de ser contactados por la gestora asignada o aún no tienen gestora asignada. Requieren acción prioritaria." />
+            <StateRow label="ATENDIDOS"  value={atendidos.cronicos.total}  total={cenacron.total}       accentBorder="border-l-teal-300"   onClick={() => abrirModal('ATENDIDOS_CENACRON')}
+              tooltip="Pacientes CENACRON que ya fueron atendidos por el médico (estado ATENDIDO en dim_solicitud_bolsa). Desglose por condición médica disponible al hacer clic."
+              detalle={atendidos.cronicos.detalle} accentBorder="border-l-blue-300" />
             <StateRow label="CITADOS"    value={especialidades.citados}    total={especialidades.total} accentBorder="border-l-sky-300"    onClick={() => abrirModal('CITADOS_ESPECIALIDADES')}
               tooltip="Pacientes del segmento Especialidades con cita confirmada por CENATE (CITADO) o que ya fueron atendidos en consulta especializada (ATENDIDO). Son los logros reales de la campaña para este segmento. Meta: 360 pacientes." />
             <StateRow label="OBSERVADOS" value={especialidades.observados} total={especialidades.total} accentBorder="border-l-sky-300"    onClick={() => abrirModal('OBSERVADOS_ESPECIALIDADES')}
               tooltip="Pacientes del segmento Especialidades contactados por la gestora pero que no pudieron ser citados: número no contesta, apagado, sin vigencia de seguro, rechazó la cita, IPRESS no cubre CENATE, reprogramación fallida, entre otros motivos." />
             <StateRow label="PENDIENTES" value={especialidades.pendientes} total={especialidades.total} accentBorder="border-l-sky-300"    onClick={() => abrirModal('PENDIENTES_ESPECIALIDADES')}
               tooltip="Pacientes del segmento Especialidades que aún no han sido citados ni gestionados. Están en espera de contacto por parte de la gestora. Incluye pacientes sin gestora asignada y aquellos con estado pendiente de cita." />
+            <StateRow label="ATENDIDOS"  value={atendidos.especialidades.total} total={especialidades.total} accentBorder="border-l-teal-300" onClick={() => abrirModal('ATENDIDOS_ESPECIALIDADES')}
+              tooltip="Pacientes del segmento Especialidades que ya fueron atendidos por el médico (estado ATENDIDO en dim_solicitud_bolsa). Desglose por especialidad disponible al hacer clic."
+              detalle={atendidos.especialidades.detalle} accentBorder="border-l-blue-300" />
           </div>
         </div>
       </div>

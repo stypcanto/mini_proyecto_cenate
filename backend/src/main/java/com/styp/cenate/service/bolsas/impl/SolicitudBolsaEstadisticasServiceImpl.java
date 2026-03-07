@@ -295,6 +295,20 @@ public class SolicitudBolsaEstadisticasServiceImpl implements SolicitudBolsaEsta
                 .collect(Collectors.toList());
     }
 
+    @Override
+    public List<EstadisticasPorIpressDTO> obtenerEstadisticasPorIpressAtencionFiltrado(String bolsaNombre, String categoriaEspecialidad, String estadoCodigo) {
+        log.info("📊 Obteniendo estadísticas por IPRESS Atención filtrado — bolsa={}, categoria={}, estado={}", bolsaNombre, categoriaEspecialidad, estadoCodigo);
+
+        List<Map<String, Object>> resultados = solicitudRepository.estadisticasPorIpressAtencionFiltrado(bolsaNombre, categoriaEspecialidad, estadoCodigo);
+
+        return resultados.stream()
+                .map(row -> EstadisticasPorIpressDTO.builder()
+                        .nombreIpress((String) row.get("nombre_ipress"))
+                        .total(((Number) row.getOrDefault("total", 0L)).longValue())
+                        .build())
+                .collect(Collectors.toList());
+    }
+
     private EstadisticasPorIpressDTO mapearAIpressDTO(Map<String, Object> row) {
         Long ranking = ((Number) row.getOrDefault("ranking", 0L)).longValue();
         BigDecimal tasaCompletacion = (BigDecimal) row.get("tasa_completacion");
@@ -381,6 +395,18 @@ public class SolicitudBolsaEstadisticasServiceImpl implements SolicitudBolsaEsta
         log.info("📊 Obteniendo estadísticas por tipo de bolsa...");
 
         List<Map<String, Object>> resultados = solicitudRepository.estadisticasPorTipoBolsa();
+
+        return resultados.stream()
+                .map(this::mapearATipoBolsaDTO)
+                .sorted(Comparator.comparingLong(EstadisticasPorTipoBolsaDTO::getTotal).reversed())
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<EstadisticasPorTipoBolsaDTO> obtenerEstadisticasPorTipoBolsaFiltrado(String categoriaEspecialidad) {
+        log.info("📊 Obteniendo estadísticas por tipo de bolsa filtrado — categoria={}", categoriaEspecialidad);
+
+        List<Map<String, Object>> resultados = solicitudRepository.estadisticasPorTipoBolsaFiltrado(categoriaEspecialidad);
 
         return resultados.stream()
                 .map(this::mapearATipoBolsaDTO)

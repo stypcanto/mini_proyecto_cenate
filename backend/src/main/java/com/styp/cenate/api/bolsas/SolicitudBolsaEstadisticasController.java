@@ -226,12 +226,18 @@ public class SolicitudBolsaEstadisticasController {
     /**
      * Estadísticas por IPRESS de Atención
      * GET /api/bolsas/estadisticas/por-ipress-atencion
+     * Acepta filtros opcionales: bolsaNombre, categoriaEspecialidad
      */
     @GetMapping("/por-ipress-atencion")
-    public ResponseEntity<List<EstadisticasPorIpressDTO>> obtenerEstadisticasPorIpressAtencion() {
-        log.info("GET /api/bolsas/estadisticas/por-ipress-atencion");
-        List<EstadisticasPorIpressDTO> datos = estadisticasService.obtenerEstadisticasPorIpressAtencion();
-        return ResponseEntity.ok(datos);
+    public ResponseEntity<List<EstadisticasPorIpressDTO>> obtenerEstadisticasPorIpressAtencion(
+            @RequestParam(required = false) String bolsaNombre,
+            @RequestParam(required = false) String categoriaEspecialidad,
+            @RequestParam(required = false) String estadoCodigo) {
+        log.info("GET /api/bolsas/estadisticas/por-ipress-atencion — bolsa={}, categoria={}, estado={}", bolsaNombre, categoriaEspecialidad, estadoCodigo);
+        if (bolsaNombre != null || categoriaEspecialidad != null || estadoCodigo != null) {
+            return ResponseEntity.ok(estadisticasService.obtenerEstadisticasPorIpressAtencionFiltrado(bolsaNombre, categoriaEspecialidad, estadoCodigo));
+        }
+        return ResponseEntity.ok(estadisticasService.obtenerEstadisticasPorIpressAtencion());
     }
 
     // ========================================================================
@@ -278,10 +284,13 @@ public class SolicitudBolsaEstadisticasController {
         description = "OK - Lista de tipos de bolsa con métricas",
         content = @Content(schema = @Schema(implementation = EstadisticasPorTipoBolsaDTO.class))
     )
-    public ResponseEntity<List<EstadisticasPorTipoBolsaDTO>> obtenerEstadisticasPorTipoBolsa() {
-        log.info("GET /api/bolsas/estadisticas/por-tipo-bolsa");
-        List<EstadisticasPorTipoBolsaDTO> datos = estadisticasService.obtenerEstadisticasPorTipoBolsa();
-        return ResponseEntity.ok(datos);
+    public ResponseEntity<List<EstadisticasPorTipoBolsaDTO>> obtenerEstadisticasPorTipoBolsa(
+            @RequestParam(required = false) String categoriaEspecialidad) {
+        log.info("GET /api/bolsas/estadisticas/por-tipo-bolsa — categoria={}", categoriaEspecialidad);
+        if (categoriaEspecialidad != null) {
+            return ResponseEntity.ok(estadisticasService.obtenerEstadisticasPorTipoBolsaFiltrado(categoriaEspecialidad));
+        }
+        return ResponseEntity.ok(estadisticasService.obtenerEstadisticasPorTipoBolsa());
     }
 
     // ========================================================================
@@ -385,10 +394,9 @@ public class SolicitudBolsaEstadisticasController {
         log.info("GET /api/bolsas/estadisticas/maraton-segmentos — citados por segmento CENACRON vs ESPECIALIDADES");
         String sql = """
             SELECT
-                SUM(CASE WHEN a.paciente_cronico = true  AND eg.cod_estado_cita = 'CITADO' THEN 1 ELSE 0 END) AS cenacron_citados,
-                SUM(CASE WHEN (a.paciente_cronico = false OR a.paciente_cronico IS NULL) AND eg.cod_estado_cita = 'CITADO' THEN 1 ELSE 0 END) AS especialidades_citados
+                SUM(CASE WHEN sb.id_servicio = 84 AND eg.cod_estado_cita = 'CITADO' THEN 1 ELSE 0 END) AS cenacron_citados,
+                SUM(CASE WHEN (sb.id_servicio != 84 OR sb.id_servicio IS NULL) AND eg.cod_estado_cita = 'CITADO' THEN 1 ELSE 0 END) AS especialidades_citados
             FROM dim_solicitud_bolsa sb
-            LEFT JOIN asegurados a ON a.doc_paciente = sb.paciente_dni
             LEFT JOIN dim_estados_gestion_citas eg ON eg.id_estado_cita = sb.estado_gestion_citas_id
             WHERE sb.id_bolsa = 17 AND sb.activo = true
             """;
@@ -470,6 +478,8 @@ public class SolicitudBolsaEstadisticasController {
             case "OBSERVADOS_ESPECIALIDADES"  -> "pe.estado IN (" + OBS_IN + ") AND (a.paciente_cronico = false OR a.paciente_cronico IS NULL)";
             case "PENDIENTES_CENACRON"        -> "pe.estado = 'PENDIENTE_CITA' AND a.paciente_cronico = true";
             case "PENDIENTES_ESPECIALIDADES"  -> "pe.estado = 'PENDIENTE_CITA' AND (a.paciente_cronico = false OR a.paciente_cronico IS NULL)";
+            case "ATENDIDOS_CENACRON"         -> "pe.estado IN ('ATENDIDO_IPRESS','ATENDIDO') AND a.paciente_cronico = true";
+            case "ATENDIDOS_ESPECIALIDADES"   -> "pe.estado IN ('ATENDIDO_IPRESS','ATENDIDO') AND (a.paciente_cronico = false OR a.paciente_cronico IS NULL)";
             default -> "1=0";
         };
         String cte = """
@@ -541,6 +551,8 @@ public class SolicitudBolsaEstadisticasController {
             case "OBSERVADOS_ESPECIALIDADES" -> "pe.estado IN (" + OBSERVADOS_IN + ") AND (a.paciente_cronico = false OR a.paciente_cronico IS NULL)";
             case "PENDIENTES_CENACRON"       -> "pe.estado = 'PENDIENTE_CITA' AND a.paciente_cronico = true";
             case "PENDIENTES_ESPECIALIDADES" -> "pe.estado = 'PENDIENTE_CITA' AND (a.paciente_cronico = false OR a.paciente_cronico IS NULL)";
+            case "ATENDIDOS_CENACRON"        -> "pe.estado IN ('ATENDIDO_IPRESS','ATENDIDO') AND a.paciente_cronico = true";
+            case "ATENDIDOS_ESPECIALIDADES"  -> "pe.estado IN ('ATENDIDO_IPRESS','ATENDIDO') AND (a.paciente_cronico = false OR a.paciente_cronico IS NULL)";
             default -> "1=0";
         };
 
@@ -699,10 +711,9 @@ public class SolicitudBolsaEstadisticasController {
             WITH paciente_unico AS (
                 SELECT DISTINCT ON (sb.paciente_dni)
                     sb.paciente_dni,
-                    CASE WHEN a.paciente_cronico = true THEN 'CENACRON' ELSE 'ESPECIALIDADES' END AS segmento,
+                    CASE WHEN sb.id_servicio = 84 THEN 'CRONICOS' ELSE 'ESPECIALIDADES' END AS segmento,
                     COALESCE(eg.cod_estado_cita, 'SIN_ESTADO') AS estado
                 FROM dim_solicitud_bolsa sb
-                LEFT JOIN asegurados a ON a.doc_paciente = sb.paciente_dni
                 LEFT JOIN dim_estados_gestion_citas eg ON eg.id_estado_cita = sb.estado_gestion_citas_id
                 WHERE sb.id_bolsa = 17 AND sb.activo = true
                 ORDER BY sb.paciente_dni,
@@ -728,6 +739,35 @@ public class SolicitudBolsaEstadisticasController {
                     END
             )
             SELECT segmento, estado, COUNT(*) AS cantidad
+            FROM paciente_unico
+            GROUP BY 1, 2
+            ORDER BY 1, 3 DESC
+            """;
+        List<Map<String, Object>> rows = jdbcTemplate.queryForList(sql);
+        return ResponseEntity.ok(rows);
+    }
+
+    /**
+     * v1.85.35: Atendidos por segmento y condicion_medica — Maratón 2026.
+     * GET /api/bolsas/estadisticas/maraton-atendidos
+     * Retorna pacientes únicos con estado ATENDIDO, agrupados por segmento + condicion_medica.
+     */
+    @GetMapping("/maraton-atendidos")
+    public ResponseEntity<List<Map<String, Object>>> obtenerAtendidosMaraton() {
+        log.info("GET /api/bolsas/estadisticas/maraton-atendidos — atendidos por segmento y condición médica");
+        String sql = """
+            WITH paciente_unico AS (
+                SELECT DISTINCT ON (sb.paciente_dni)
+                    sb.paciente_dni,
+                    CASE WHEN sb.id_servicio = 84 THEN 'CRONICOS' ELSE 'ESPECIALIDADES' END AS segmento,
+                    COALESCE(NULLIF(TRIM(sb.condicion_medica), ''), 'Sin especificar') AS condicion_medica
+                FROM dim_solicitud_bolsa sb
+                LEFT JOIN dim_estados_gestion_citas eg ON eg.id_estado_cita = sb.estado_gestion_citas_id
+                WHERE sb.id_bolsa = 17 AND sb.activo = true
+                  AND eg.cod_estado_cita IN ('ATENDIDO_IPRESS', 'ATENDIDO')
+                ORDER BY sb.paciente_dni
+            )
+            SELECT segmento, condicion_medica, COUNT(*) AS cantidad
             FROM paciente_unico
             GROUP BY 1, 2
             ORDER BY 1, 3 DESC

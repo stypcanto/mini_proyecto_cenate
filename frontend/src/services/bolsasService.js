@@ -517,6 +517,16 @@ export const obtenerTotalesBrutosMaraton = async () => {
   }
 };
 
+/** v1.85.35: Atendidos por segmento y condicion_medica — Maratón 2026 */
+export const obtenerAtendidosMaraton = async () => {
+  try {
+    return await apiClient.get(`${API_BASE_URL}/estadisticas/maraton-atendidos`, true);
+  } catch (error) {
+    console.error('Error al obtener atendidos MARATÓN:', error);
+    return [];
+  }
+};
+
 /** v1.85.9: Opciones únicas de filtros para el modal de pacientes MARATÓN */
 export const obtenerOpcionesFiltrosMaraton = async (categoria) => {
   try {
@@ -587,10 +597,17 @@ export const obtenerEstadisticasPorIpress = async () => {
 
 /**
  * Obtiene estadísticas por IPRESS de Atención
+ * @param {Object} params - Filtros opcionales: bolsaNombre, categoriaEspecialidad, estadoCodigo
  */
-export const obtenerEstadisticasPorIpressAtencion = async () => {
+export const obtenerEstadisticasPorIpressAtencion = async (params = {}) => {
   try {
-    const response = await apiClient.get(`${API_BASE_URL}/estadisticas/por-ipress-atencion`, true);
+    const query = new URLSearchParams();
+    if (params.bolsaNombre) query.set('bolsaNombre', params.bolsaNombre);
+    if (params.categoriaEspecialidad) query.set('categoriaEspecialidad', params.categoriaEspecialidad);
+    if (params.estadoCodigo) query.set('estadoCodigo', params.estadoCodigo);
+    const qs = query.toString();
+    const url = `${API_BASE_URL}/estadisticas/por-ipress-atencion${qs ? '?' + qs : ''}`;
+    const response = await apiClient.get(url, true);
     return response;
   } catch (error) {
     console.error('Error al obtener estadísticas por IPRESS Atención:', error);
@@ -613,10 +630,15 @@ export const obtenerEstadisticasPorTipoCita = async () => {
 
 /**
  * Obtiene estadísticas por tipo de bolsa
+ * @param {Object} params - Filtros opcionales: categoriaEspecialidad
  */
-export const obtenerEstadisticasPorTipoBolsa = async () => {
+export const obtenerEstadisticasPorTipoBolsa = async (params = {}) => {
   try {
-    const response = await apiClient.get(`${API_BASE_URL}/estadisticas/por-tipo-bolsa`, true);
+    const query = new URLSearchParams();
+    if (params.categoriaEspecialidad) query.set('categoriaEspecialidad', params.categoriaEspecialidad);
+    const qs = query.toString();
+    const url = `${API_BASE_URL}/estadisticas/por-tipo-bolsa${qs ? '?' + qs : ''}`;
+    const response = await apiClient.get(url, true);
     return response;
   } catch (error) {
     console.error('Error al obtener estadísticas por tipo de bolsa:', error);

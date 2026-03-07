@@ -71,6 +71,8 @@ public interface SolicitudBolsaEstadisticasService {
      */
     List<EstadisticasPorIpressDTO> obtenerEstadisticasPorIpressAtencion();
 
+    List<EstadisticasPorIpressDTO> obtenerEstadisticasPorIpressAtencionFiltrado(String bolsaNombre, String categoriaEspecialidad, String estadoCodigo);
+
     /**
      * Obtiene estadísticas agrupadas por tipo de cita
      * Tipos: PRESENCIAL, TELECONSULTA, VIDEOCONFERENCIA
@@ -86,6 +88,8 @@ public interface SolicitudBolsaEstadisticasService {
      * @return Lista de EstadisticasPorTipoBolsaDTO ordenada por cantidad
      */
     List<EstadisticasPorTipoBolsaDTO> obtenerEstadisticasPorTipoBolsa();
+
+    List<EstadisticasPorTipoBolsaDTO> obtenerEstadisticasPorTipoBolsaFiltrado(String categoriaEspecialidad);
 
     /**
      * Obtiene evolución temporal de solicitudes
