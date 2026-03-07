@@ -265,10 +265,11 @@ public class GestionPacienteServiceImpl implements IGestionPacienteService {
         log.info("Actualizando condición para ID: {} a {}", id, condicion);
 
         // ✅ v1.85.0: Validar restricción temporal - Solo editar el mismo día de atención
-        var solicitudOptTempo = solicitudBolsaRepository.findById(id);
-        if (solicitudOptTempo.isPresent()) {
-            validarFinantraEdicionporFechaAtencion(solicitudOptTempo.get(), "actualizar estado del paciente");
-        }
+        // ⚠️ COMENTADO temporalmente — se permite editar atenciones de días anteriores
+        // var solicitudOptTempo = solicitudBolsaRepository.findById(id);
+        // if (solicitudOptTempo.isPresent()) {
+        //     validarFinantraEdicionporFechaAtencion(solicitudOptTempo.get(), "actualizar estado del paciente");
+        // }
 
         // ✅ v1.103.13: Validar que no se pueda cambiar de ATENDIDO a Pendiente/Deserción
         String condicionNormalizada = condicion != null ? condicion.toUpperCase().trim() : "";

@@ -7,6 +7,7 @@ import com.styp.cenate.dto.bolsas.CrearSolicitudAdicionalRequest;
 import com.styp.cenate.dto.bolsas.CargaMasivaRequest;
 import com.styp.cenate.model.bolsas.HistorialCargaBolsas;
 import com.styp.cenate.repository.bolsas.HistorialCargaBolsasRepository;
+import com.styp.cenate.repository.PersonalCntRepository;
 import com.styp.cenate.service.bolsas.SolicitudBolsaService;
 import com.styp.cenate.security.mbac.CheckMBACPermission;
 import lombok.RequiredArgsConstructor;
@@ -76,6 +77,7 @@ public class SolicitudBolsaController {
     private final UsuarioRepository usuarioRepository; // ✅ v1.47.0: Para sincronizar gestora
     private final SolicitudCitaRepository solicitudCitaRepository; // v1.67.0: Para horas ocupadas
     private final TrazabilidadBolsaService trazabilidadBolsaService; // v1.75.0: Timeline de solicitud
+    private final PersonalCntRepository personalCntRepository; // ✅ v1.86.0: Resolver nombre profesional en atenciones-generadas
 
     /**
      * Importa solicitudes desde archivo Excel
@@ -2045,10 +2047,27 @@ public class SolicitudBolsaController {
             atencion.put("especialidad", sol.getEspecialidad());
             atencion.put("estado", sol.getEstado());
             atencion.put("fechaSolicitud", sol.getFechaSolicitud());
-            atencion.put("fechaAtencion", sol.getFechaAtencion());
             atencion.put("fechaPreferida", sol.getFechaPreferidaNoAtendida());
             atencion.put("pacienteNombre", sol.getPacienteNombre());
             atencion.put("pacienteDni", sol.getPacienteDni());
+            // ✅ v1.86.0: Incluir fecha/hora cita y profesional asignado
+            atencion.put("fechaAtencion", sol.getFechaAtencion());
+            atencion.put("horaAtencion", sol.getHoraAtencion());
+            atencion.put("idPersonal", sol.getIdPersonal());
+            if (sol.getIdPersonal() != null) {
+                String nombreProf = personalCntRepository.findById(sol.getIdPersonal())
+                        .map(p -> p.getNombreCompleto())
+                        .orElse(null);
+                atencion.put("nombreProfesional", nombreProf);
+            }
+            // ✅ v1.86.1: Resolver estado desde dim_estados_gestion_citas (FK estado_gestion_citas_id)
+            atencion.put("estadoGestionCitasId", sol.getEstadoGestionCitasId());
+            if (sol.getEstadoGestionCitasId() != null) {
+                String codEstado = estadosRepository.findById(sol.getEstadoGestionCitasId())
+                        .map(e -> e.getCodigoEstado())
+                        .orElse(null);
+                atencion.put("codEstadoCita", codEstado);
+            }
             return atencion;
         }).collect(java.util.stream.Collectors.toList());
 

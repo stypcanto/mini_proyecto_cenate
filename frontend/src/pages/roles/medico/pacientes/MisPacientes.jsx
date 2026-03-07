@@ -3558,11 +3558,12 @@ export default function MisPacientes() {
                             </span>
                           </div>
                           <span className={`text-xs font-semibold px-2 py-1 rounded-full ${
-                            atencion.estado === 'ATENDIDO' ? 'bg-green-100 text-green-700' :
-                            atencion.estado === 'PENDIENTE' ? 'bg-amber-100 text-amber-700' :
+                            (atencion.codEstadoCita || atencion.estado) === 'CITADO' ? 'bg-blue-100 text-blue-700' :
+                            (atencion.codEstadoCita || atencion.estado) === 'ATENDIDO_IPRESS' ? 'bg-green-100 text-green-700' :
+                            (atencion.codEstadoCita || atencion.estado) === 'PENDIENTE_CITA' ? 'bg-amber-100 text-amber-700' :
                             'bg-gray-100 text-gray-600'
                           }`}>
-                            {atencion.estado}
+                            {(atencion.codEstadoCita || atencion.estado || '—').replace(/_/g, ' ')}
                           </span>
                         </div>
                         <div className="mt-2 flex items-center gap-4 text-xs text-gray-600">
@@ -3581,9 +3582,22 @@ export default function MisPacientes() {
                               })()}
                             </span>
                           )}
+                          {/* ✅ v1.86.0: Fecha y hora de cita (cuando enfermería asignó) */}
                           {atencion.fechaAtencion && (
-                            <span className="text-green-600 font-semibold">
-                              <strong>Atendido:</strong> {new Date(atencion.fechaAtencion).toLocaleDateString('es-PE')}
+                            <span className="bg-blue-100 text-blue-800 px-2 py-0.5 rounded font-semibold">
+                              <strong>Cita:</strong> {(() => {
+                                const parts = String(atencion.fechaAtencion).split('T')[0].split('-');
+                                if (parts.length === 3) {
+                                  const [y, m, d] = parts;
+                                  return `${d.padStart(2,'0')}/${m.padStart(2,'0')}/${y}`;
+                                }
+                                return atencion.fechaAtencion;
+                              })()}{atencion.horaAtencion ? ` ${String(atencion.horaAtencion).substring(0, 5)}` : ''}
+                            </span>
+                          )}
+                          {atencion.nombreProfesional && (
+                            <span className="text-indigo-700 font-semibold">
+                              <strong>Profesional:</strong> {atencion.nombreProfesional}
                             </span>
                           )}
                         </div>

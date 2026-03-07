@@ -284,24 +284,32 @@ public class AtenderPacienteService {
                 if (recitaExistente.isPresent()) {
                     SolicitudBolsa recita = recitaExistente.get();
                     log.info("✅ [RECITA v1.84.5] ACTUALIZANDO recita existente id={}", recita.getIdSolicitud());
-                    ZonedDateTime nuevaFecha = Instant.now().atZone(ZoneId.of("America/Lima"))
-                            .plusDays(request.getRecitaDias() != null ? request.getRecitaDias() : 7);
-                    recita.setFechaPreferidaNoAtendida(nuevaFecha.toLocalDate());
                     if (idAtencionClinica != null) recita.setIdAtencionClinica(idAtencionClinica);
                     recita.setPacienteId(pkAseguradoFinal); // ✅ v1.82.8: pk_asegurado correcto
                     // ✅ v1.86.0: Si ENFERMERIA proporcionó fecha/hora/personal (SI path), asignar en la RECITA
                     if (request.getFecha_atencion() != null && request.getHora_atencion() != null) {
                         recita.setFechaAtencion(LocalDate.parse(request.getFecha_atencion()));
                         recita.setHoraAtencion(LocalTime.parse(request.getHora_atencion()));
-                        recita.setFechaPreferidaNoAtendida(LocalDate.parse(request.getFecha_atencion()));
+                        recita.setFechaPreferidaNoAtendida(null); // SI path: no aplica fecha_preferida
                         if (request.getId_personal() != null) recita.setIdPersonal(request.getId_personal());
                         if (request.getCondicion_medica() != null) recita.setCondicionMedica(request.getCondicion_medica());
                         if (request.getEstado_gestion_citas_id() != null) recita.setEstadoGestionCitasId(request.getEstado_gestion_citas_id().longValue());
                         log.info("✅ [v1.86.0] RECITA actualizada con datos ENFERMERIA — fecha: {}, hora: {}, idPersonal: {}",
                                 request.getFecha_atencion(), request.getHora_atencion(), request.getId_personal());
+                    } else {
+                        // NO path: limpiar campos de cita y asignar fecha_preferida_no_atendida
+                        ZonedDateTime nuevaFecha = Instant.now().atZone(ZoneId.of("America/Lima"))
+                                .plusDays(request.getRecitaDias() != null ? request.getRecitaDias() : 7);
+                        recita.setFechaPreferidaNoAtendida(nuevaFecha.toLocalDate());
+                        recita.setFechaAtencion(null);
+                        recita.setHoraAtencion(null);
+                        recita.setIdPersonal(null);
+                        recita.setCondicionMedica(null);
+                        recita.setEstadoGestionCitasId(11L); // PENDIENTE_CITA
                     }
                     solicitudBolsaRepository.saveAndFlush(recita);
-                    log.info("✅ [RECITA v1.84.4] Bolsa RECITA ACTUALIZADA (id={}) — nueva fecha: {}", recita.getIdSolicitud(), nuevaFecha.toLocalDate());
+                    log.info("✅ [RECITA v1.84.4] Bolsa RECITA ACTUALIZADA (id={}) — fechaPreferida: {}, fechaAtencion: {}",
+                            recita.getIdSolicitud(), recita.getFechaPreferidaNoAtendida(), recita.getFechaAtencion());
                 } else {
                     log.info("⚠️ [RECITA v1.84.4] NO encontrada recita PENDIENTE, creando nueva...");
                     crearBolsaRecitaConTransaccion(solicitudOriginal, especialidadParaBusqueda, request.getRecitaDias(), idAtencionClinica, pkAseguradoFinal, request);
@@ -468,9 +476,9 @@ public class AtenderPacienteService {
                 .activo(true)
                 .build();
 
-        // ✅ v1.86.0: Si ENFERMERIA proporcionó fecha_atencion, usarla como fechaPreferidaNoAtendida (en lugar de calculada por días)
+        // ✅ v1.86.0: SI path — fecha_preferida_no_atendida NO aplica; asignar estado si viene
         if (request != null && request.getFecha_atencion() != null) {
-            bolsaRecita.setFechaPreferidaNoAtendida(LocalDate.parse(request.getFecha_atencion()));
+            bolsaRecita.setFechaPreferidaNoAtendida(null); // SI path: no usa fecha preferida
             if (request.getEstado_gestion_citas_id() != null) {
                 bolsaRecita.setEstadoGestionCitasId(request.getEstado_gestion_citas_id().longValue());
             }
