@@ -1845,6 +1845,27 @@ export default function MisPacientes() {
   };
 
   const abrirAccion = (paciente) => {
+    // Evita arrastrar estado de RECITA/INTERCONSULTA al cambiar de solicitud.
+    setDraftRestaurado(false);
+    setShowAsignarRecitaModal(false);
+    setTieneRecita(false);
+    setRecitaDias(15);
+    setExpandRecita(false);
+    setRecitaAsignacionRespuesta(null);
+    setRecitaAsignacionFecha('');
+    setRecitaAsignacionHora('');
+    setRecitaMeses('');
+    setRecitaAsignacionDetalle(null);
+    setRecitaGuardada_Respuesta(null);
+    setRecitaGuardada_Fecha('');
+    setRecitaGuardada_Hora('');
+    setRecitaGuardada_Meses('');
+    setTieneInterconsulta(false);
+    setExpandInterconsulta(false);
+    setInterconsultasLista([]);
+    setInterconsultaSelector('');
+    setInterconsultaMotivoSelector('');
+
     setPacienteSeleccionado(paciente);
     setModalAccion('cambiarEstado');
     setEstadoSeleccionado(paciente?.condicion || 'Pendiente'); // Preseleccionar estado actual
