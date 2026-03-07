@@ -743,7 +743,6 @@ const PacientesAnulados = () => {
                   <th className="text-left px-4 py-3 font-semibold text-gray-600 whitespace-nowrap">
                     <div className="flex items-center gap-1.5"><Calendar className="w-3.5 h-3.5" />Fecha anulación</div>
                   </th>
-                  <th className="px-4 py-3 font-semibold text-gray-600 whitespace-nowrap text-center">Acción</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
@@ -762,14 +761,6 @@ const PacientesAnulados = () => {
                     </td>
                     <td className="px-4 py-3 text-gray-600 text-xs">{row.anuladoPor || '—'}</td>
                     <td className="px-4 py-3 text-gray-500 text-xs whitespace-nowrap">{formatFecha(row.fechaAnulacion)}</td>
-                    <td className="px-4 py-3 text-center">
-                      <button
-                        onClick={() => setModalRow(row)}
-                        className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 text-white text-xs font-medium rounded-lg hover:bg-blue-700 transition-colors whitespace-nowrap mx-auto"
-                      >
-                        <PlusCircle className="w-3.5 h-3.5" />Nueva Cita
-                      </button>
-                    </td>
                   </tr>
                 ))}
               </tbody>
