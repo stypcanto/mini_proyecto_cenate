@@ -1237,13 +1237,14 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
     List<SolicitudBolsa> findByIdPersonalInAndActivoTrue(List<Long> idPersonalList);
 
     /**
-     * 🔧 v1.78.1: Obtener pacientes asignados a un médico (excluye anulados, activo=false)
-     * v1.85.28: Agrega filtro activo=true para ocultar citas anuladas desde Mesa de Ayuda.
+     * 🔧 v1.78.1: Obtener pacientes asignados a un médico (excluye anulados)
+     * v1.85.28: Filtra activo=true para citas anuladas desde Mesa de Ayuda.
+     * v1.85.29: También excluye condicion_medica='Anulado' (anulación directa en UI).
      *
      * @param idPersonal ID del personal médico (doctor)
-     * @return lista de solicitudes activas asignadas al médico
+     * @return lista de solicitudes NO anuladas asignadas al médico
      */
-    @Query("SELECT s FROM SolicitudBolsa s WHERE s.idPersonal = :idPersonal AND s.activo = true")
+    @Query("SELECT s FROM SolicitudBolsa s WHERE s.idPersonal = :idPersonal AND s.activo = true AND (s.condicionMedica IS NULL OR s.condicionMedica <> 'Anulado')")
     List<SolicitudBolsa> findByIdPersonal(@org.springframework.data.repository.query.Param("idPersonal") Long idPersonal);
 
     /**
@@ -2483,7 +2484,9 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
      */
     @Query("""
         SELECT s FROM SolicitudBolsa s
-        WHERE s.idPersonal = :idPersonal AND s.activo = true
+        WHERE s.idPersonal = :idPersonal
+          AND s.activo = true
+          AND (s.condicionMedica IS NULL OR s.condicionMedica <> 'Anulado')
     """)
     List<SolicitudBolsa> findByIdPersonalWithAllFields(@org.springframework.data.repository.query.Param("idPersonal") Long idPersonal);
 
