@@ -219,6 +219,11 @@ export const componentRegistry = {
     requiredAction: 'ver',
   },
 
+  '/roles/coordinador/total-pacientes-telece': {
+    component: lazy(() => import('../pages/roles/coordinador/TotalPacientesTeleCe')),
+    requiredAction: 'ver',
+  },
+
   '/roles/coordinador/dashboard-medico': {
     component: lazy(() => import('../pages/roles/coordinador/dashboard-medico/DashboardCoordinadorMedico')),
     requiredAction: 'ver',

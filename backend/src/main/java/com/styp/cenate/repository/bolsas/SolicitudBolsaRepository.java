@@ -2529,5 +2529,128 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
         @org.springframework.data.repository.query.Param("gestoraId") Long gestoraId
     );
 
+    // =========================================================================
+    // 🏥 SGDT — MEDICINA ESPECIALIZADA — Estadísticas por médico (patrón enfermería)
+    // Filtra por especialidades que NO son 'medicina general' ni 'enfermeria'
+    // =========================================================================
+
+    /**
+     * Estadísticas de pacientes de Medicina Especializada agrupadas por médico.
+     * Filtra especialidades distintas de MEDICINA GENERAL y ENFERMERIA.
+     */
+    @Query(value = """
+        SELECT p.id_pers as id_medico,
+          TRIM(COALESCE(p.ape_pater_pers,'') || ' ' || COALESCE(p.ape_mater_pers,'') || ' ' || COALESCE(p.nom_pers,'')) as nombre_medico,
+          COUNT(*) as total,
+          SUM(CASE WHEN sb.condicion_medica = 'Pendiente' THEN 1 ELSE 0 END) as pendientes,
+          SUM(CASE WHEN sb.condicion_medica = 'Atendido'  THEN 1 ELSE 0 END) as atendidos,
+          SUM(CASE WHEN sb.condicion_medica = 'Deserción' THEN 1 ELSE 0 END) as desercion
+        FROM dim_solicitud_bolsa sb
+        JOIN dim_personal_cnt p ON sb.id_personal = p.id_pers
+        LEFT JOIN (
+            SELECT DISTINCT ON (doc_paciente) doc_paciente, hora_cita
+            FROM solicitud_cita
+            WHERE hora_cita IS NOT NULL
+            ORDER BY doc_paciente, fecha_cita DESC
+        ) sc ON sc.doc_paciente = sb.paciente_dni
+        WHERE sb.activo = true
+          AND sb.especialidad IS NOT NULL AND TRIM(sb.especialidad) != ''
+          AND LOWER(TRIM(sb.especialidad)) NOT IN ('medicina general', 'enfermeria')
+          AND sb.id_personal IS NOT NULL
+          AND (:fecha IS NULL OR DATE(sb.fecha_atencion) = CAST(:fecha AS DATE))
+          AND (:turno IS NULL
+               OR (:turno = 'MANANA' AND EXTRACT(HOUR FROM COALESCE(sb.hora_atencion, sc.hora_cita)) BETWEEN 7 AND 13)
+               OR (:turno = 'TARDE'  AND EXTRACT(HOUR FROM COALESCE(sb.hora_atencion, sc.hora_cita)) BETWEEN 14 AND 20))
+        GROUP BY p.id_pers, p.nom_pers, p.ape_pater_pers, p.ape_mater_pers
+        ORDER BY total DESC
+        """, nativeQuery = true)
+    List<Object[]> estadisticasPorMedicoSgdt(
+        @org.springframework.data.repository.query.Param("fecha") String fecha,
+        @org.springframework.data.repository.query.Param("turno") String turno);
+
+    /**
+     * Pacientes de Medicina Especializada asignados a un médico específico.
+     */
+    @Query(value = """
+        SELECT sb.id_solicitud, sb.paciente_nombre, sb.paciente_dni,
+               sb.condicion_medica, sb.fecha_atencion, sb.id_personal,
+               COALESCE(
+                 TO_CHAR(sb.hora_atencion, 'HH24:MI'),
+                 TO_CHAR(sc.hora_cita, 'HH24:MI')
+               ) AS hora_cita
+        FROM dim_solicitud_bolsa sb
+        LEFT JOIN (
+            SELECT DISTINCT ON (doc_paciente) doc_paciente, hora_cita, fecha_cita
+            FROM solicitud_cita
+            WHERE hora_cita IS NOT NULL
+            ORDER BY doc_paciente, fecha_cita DESC
+        ) sc ON sc.doc_paciente = sb.paciente_dni
+        WHERE sb.activo = true
+          AND sb.especialidad IS NOT NULL AND TRIM(sb.especialidad) != ''
+          AND LOWER(TRIM(sb.especialidad)) NOT IN ('medicina general', 'enfermeria')
+          AND sb.id_personal = :idPersonal
+          AND (:fecha IS NULL OR DATE(sb.fecha_atencion) = CAST(:fecha AS DATE))
+          AND (:turno IS NULL
+               OR (:turno = 'MANANA' AND EXTRACT(HOUR FROM COALESCE(sb.hora_atencion, sc.hora_cita)) BETWEEN 7 AND 13)
+               OR (:turno = 'TARDE'  AND EXTRACT(HOUR FROM COALESCE(sb.hora_atencion, sc.hora_cita)) BETWEEN 14 AND 20))
+        ORDER BY COALESCE(sb.hora_atencion, sc.hora_cita) ASC NULLS LAST, sb.paciente_nombre ASC
+        """, nativeQuery = true)
+    List<Object[]> pacientesPorMedicoSgdt(
+        @org.springframework.data.repository.query.Param("idPersonal") Long idPersonal,
+        @org.springframework.data.repository.query.Param("fecha") String fecha,
+        @org.springframework.data.repository.query.Param("turno") String turno
+    );
+
+    /**
+     * Búsqueda global de pacientes de Medicina Especializada por nombre o DNI.
+     */
+    @Query(value = """
+        SELECT sb.id_solicitud, sb.paciente_nombre, sb.paciente_dni,
+               sb.condicion_medica, sb.fecha_atencion, sb.id_personal,
+               TRIM(COALESCE(p.ape_pater_pers,'') || ' ' || COALESCE(p.ape_mater_pers,'') || ' ' || COALESCE(p.nom_pers,'')) AS nombre_medico
+        FROM dim_solicitud_bolsa sb
+        JOIN dim_personal_cnt p ON sb.id_personal = p.id_pers
+        WHERE sb.activo = true
+          AND sb.especialidad IS NOT NULL AND TRIM(sb.especialidad) != ''
+          AND LOWER(TRIM(sb.especialidad)) NOT IN ('medicina general', 'enfermeria')
+          AND sb.id_personal IS NOT NULL
+          AND (sb.paciente_dni LIKE :q OR UPPER(sb.paciente_nombre) LIKE UPPER(:q))
+        ORDER BY sb.paciente_nombre
+        LIMIT 25
+        """, nativeQuery = true)
+    List<Object[]> buscarPacienteGlobalSgdt(@org.springframework.data.repository.query.Param("q") String q);
+
+    /**
+     * Fechas disponibles con total de pacientes de Medicina Especializada.
+     */
+    @Query(value = """
+        SELECT TO_CHAR(DATE(sb.fecha_atencion), 'YYYY-MM-DD') as fecha, COUNT(*) as total
+        FROM dim_solicitud_bolsa sb
+        WHERE sb.activo = true
+          AND sb.especialidad IS NOT NULL AND TRIM(sb.especialidad) != ''
+          AND LOWER(TRIM(sb.especialidad)) NOT IN ('medicina general', 'enfermeria')
+          AND sb.id_personal IS NOT NULL AND sb.fecha_atencion IS NOT NULL
+        GROUP BY DATE(sb.fecha_atencion)
+        ORDER BY fecha DESC
+        LIMIT 90
+        """, nativeQuery = true)
+    List<Object[]> fechasConPacientesSgdt();
+
+    /**
+     * Fechas disponibles para un médico de Medicina Especializada específico.
+     */
+    @Query(value = """
+        SELECT TO_CHAR(DATE(sb.fecha_atencion), 'YYYY-MM-DD') as fecha, COUNT(*) as total
+        FROM dim_solicitud_bolsa sb
+        WHERE sb.activo = true
+          AND sb.especialidad IS NOT NULL AND TRIM(sb.especialidad) != ''
+          AND LOWER(TRIM(sb.especialidad)) NOT IN ('medicina general', 'enfermeria')
+          AND sb.id_personal = :idPersonal AND sb.fecha_atencion IS NOT NULL
+        GROUP BY DATE(sb.fecha_atencion)
+        ORDER BY fecha DESC
+        LIMIT 90
+        """, nativeQuery = true)
+    List<Object[]> fechasConPacientesPorMedicoSgdt(@org.springframework.data.repository.query.Param("idPersonal") Long idPersonal);
+
 }
 
