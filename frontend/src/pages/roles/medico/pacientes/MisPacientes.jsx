@@ -3739,10 +3739,10 @@ export default function MisPacientes() {
                         setRecitaMeses('');
                         setRecitaAsignacionDetalle(null);
                       }}
-                      disabled={(pacienteSeleccionado?.fechaAtencionMedica && !puedeEditar(pacienteSeleccionado)) || recitaAsignacionDetalle !== null}
+                      disabled={pacienteSeleccionado?.fechaAtencionMedica && !puedeEditar(pacienteSeleccionado)}
                       className={`p-4 rounded-xl transition-all text-center font-semibold border-2
                         focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-green-400 ${
-                        (pacienteSeleccionado?.fechaAtencionMedica && !puedeEditar(pacienteSeleccionado)) || recitaAsignacionDetalle !== null
+                        pacienteSeleccionado?.fechaAtencionMedica && !puedeEditar(pacienteSeleccionado)
                           ? 'bg-gray-100 text-gray-400 border-gray-300 cursor-not-allowed opacity-60'
                           : `cursor-pointer ${
                             tieneRecita
