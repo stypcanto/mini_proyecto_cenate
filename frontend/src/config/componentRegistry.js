@@ -719,6 +719,11 @@ export const componentRegistry = {
     requiredAction: 'ver',
   },
 
+  '/mesa-ayuda/pacientes-anulados': {
+    component: lazy(() => import('../pages/mesa-ayuda/PacientesAnulados')),
+    requiredAction: 'ver',
+  },
+
   // ========================================================================
   // 👩‍⚕️ ENFERMERÍA
   // ========================================================================

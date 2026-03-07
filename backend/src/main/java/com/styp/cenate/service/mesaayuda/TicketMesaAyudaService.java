@@ -1156,6 +1156,91 @@ public class TicketMesaAyudaService {
         return result;
     }
 
+    // ========== PACIENTES ANULADOS ==========
+
+    /**
+     * Obtener lista de todos los pacientes anulados en el sistema (paginado).
+     * Incluye ambos casos: activo=false y condicion_medica='Anulado'.
+     */
+    @SuppressWarnings("unchecked")
+    public Map<String, Object> obtenerPacientesAnulados(String busqueda, int page, int size) {
+        String sqlCount = """
+            SELECT COUNT(*) FROM dim_solicitud_bolsa sb
+            WHERE sb.activo = false OR sb.condicion_medica = 'Anulado'
+            """;
+
+        String sqlData = """
+            SELECT
+                sb.id_solicitud,
+                sb.paciente_nombre,
+                sb.paciente_dni,
+                sb.especialidad,
+                sb.id_bolsa,
+                COALESCE(h.motivo, sb.motivo_anulacion, 'Sin motivo registrado') AS motivo_anulacion,
+                di.desc_ipress,
+                TRIM(COALESCE(p.nom_pers,'') || ' ' || COALESCE(p.ape_pater_pers,'') || ' ' || COALESCE(p.ape_mater_pers,'')) AS medico_nombre,
+                h.usuario_nombre AS anulado_por,
+                COALESCE(h.fecha_cambio::timestamp, sb.fecha_cambio_estado::timestamp) AS fecha_anulacion
+            FROM dim_solicitud_bolsa sb
+            LEFT JOIN dim_ipress di ON di.id_ipress = sb.id_ipress
+            LEFT JOIN dim_personal_cnt p ON p.id_pers = sb.id_personal
+            LEFT JOIN dim_historial_cambios_solicitud h
+                ON h.id_solicitud = sb.id_solicitud AND h.tipo_cambio = 'ANULACION'
+            WHERE sb.activo = false OR sb.condicion_medica = 'Anulado'
+            ORDER BY COALESCE(h.fecha_cambio, sb.fecha_cambio_estado) DESC NULLS LAST
+            LIMIT :size OFFSET :offset
+            """;
+
+        boolean hayBusqueda = busqueda != null && !busqueda.isBlank();
+        String filtro = hayBusqueda ? " AND (LOWER(sb.paciente_nombre) LIKE :busqueda OR sb.paciente_dni LIKE :busqueda OR LOWER(sb.especialidad) LIKE :busqueda)" : "";
+
+        String sqlCountFinal = sqlCount.replace(
+            "WHERE sb.activo = false OR sb.condicion_medica = 'Anulado'",
+            "WHERE (sb.activo = false OR sb.condicion_medica = 'Anulado')" + filtro
+        );
+        String sqlDataFinal = sqlData.replace(
+            "WHERE sb.activo = false OR sb.condicion_medica = 'Anulado'",
+            "WHERE (sb.activo = false OR sb.condicion_medica = 'Anulado')" + filtro
+        );
+
+        jakarta.persistence.Query countQuery = entityManager.createNativeQuery(sqlCountFinal);
+        jakarta.persistence.Query dataQuery = entityManager.createNativeQuery(sqlDataFinal);
+
+        if (hayBusqueda) {
+            String like = "%" + busqueda.toLowerCase().trim() + "%";
+            countQuery.setParameter("busqueda", like);
+            dataQuery.setParameter("busqueda", like);
+        }
+        dataQuery.setParameter("size", size);
+        dataQuery.setParameter("offset", (long) page * size);
+
+        long total = ((Number) countQuery.getSingleResult()).longValue();
+        java.util.List<Object[]> rows = dataQuery.getResultList();
+
+        java.util.List<Map<String, Object>> items = rows.stream().map(r -> {
+            Map<String, Object> m = new java.util.LinkedHashMap<>();
+            m.put("idSolicitud",    r[0]);
+            m.put("pacienteNombre", r[1]);
+            m.put("pacienteDni",    r[2]);
+            m.put("especialidad",   r[3]);
+            m.put("idBolsa",        r[4]);
+            m.put("motivoAnulacion",r[5]);
+            m.put("ipress",         r[6]);
+            m.put("medicoNombre",   r[7]);
+            m.put("anuladoPor",     r[8]);
+            m.put("fechaAnulacion", r[9] != null ? r[9].toString() : null);
+            return m;
+        }).toList();
+
+        Map<String, Object> result = new java.util.LinkedHashMap<>();
+        result.put("total", total);
+        result.put("page", page);
+        result.put("size", size);
+        result.put("totalPages", (int) Math.ceil((double) total / size));
+        result.put("data", items);
+        return result;
+    }
+
     // ========== BOLSA DE REPROGRAMACIÓN ==========
 
     /**

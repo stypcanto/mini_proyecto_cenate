@@ -656,6 +656,23 @@ public class TicketMesaAyudaController {
         }
     }
 
+    // ========== PACIENTES ANULADOS ==========
+
+    /**
+     * Listar todos los pacientes anulados en el sistema.
+     * GET /api/mesa-ayuda/pacientes-anulados
+     */
+    @GetMapping("/pacientes-anulados")
+    public ResponseEntity<Map<String, Object>> obtenerPacientesAnulados(
+        @RequestParam(required = false) String busqueda,
+        @RequestParam(defaultValue = "0") int page,
+        @RequestParam(defaultValue = "50") int size
+    ) {
+        log.info("GET /api/mesa-ayuda/pacientes-anulados - busqueda={}, page={}, size={}", busqueda, page, size);
+        Map<String, Object> result = ticketService.obtenerPacientesAnulados(busqueda, page, size);
+        return ResponseEntity.ok(result);
+    }
+
     // ========== KPIs ==========
 
     /**
