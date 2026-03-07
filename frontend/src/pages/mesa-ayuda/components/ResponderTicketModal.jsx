@@ -80,10 +80,10 @@ function ResponderTicketModal({ isOpen, onClose, ticket, usuario, onSuccess, pue
   const bolsaObligatoria = esCitaReprogramada;
   const mostrarBotonBolsa = tienePaciente;
 
-  // Texto final a enviar
+  // Texto final a enviar (si la cita fue anulada y no hay respuesta seleccionada, usar texto por defecto)
   const textoFinal = respuestaSeleccionada?.esOtros
     ? textoOtros.trim()
-    : respuestaSeleccionada?.descripcion || '';
+    : respuestaSeleccionada?.descripcion || (citaAnulada ? 'Cita anulada' : '');
 
   // Handler: Enviar paciente a Bolsa de Reprogramación
   const handleEnviarABolsa = async () => {
