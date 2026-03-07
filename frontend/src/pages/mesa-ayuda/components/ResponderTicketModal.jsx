@@ -249,28 +249,26 @@ function ResponderTicketModal({ isOpen, onClose, ticket, usuario, onSuccess, pue
       <div className="fixed inset-0 bg-black/40 backdrop-blur-[2px] flex items-center justify-center z-50 p-4">
         <div className="bg-white rounded-2xl shadow-2xl ring-1 ring-black/8 max-w-2xl w-full max-h-[92vh] flex flex-col overflow-hidden">
 
-          {/* Acento azul superior + Header */}
-          <div className="border-t-4 border-blue-600 rounded-t-2xl">
-            <div className="flex items-start justify-between px-6 pt-5 pb-4 bg-gradient-to-b from-slate-50/80 to-white border-b border-gray-100">
-              <div className="flex-1 pr-4">
-                <p className="text-[11px] font-semibold uppercase tracking-widest text-blue-600 mb-1">Ticket de Soporte</p>
-                <h2 className="text-[15px] font-bold text-gray-900 leading-snug">{ticket.titulo}</h2>
-                <div className="flex gap-2 mt-2.5">
-                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold tracking-wide ${getEstadoBadgeColor(ticket.estado)}`}>
-                    {ticket.estado}
-                  </span>
-                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold border ${getPrioridadBadgeColor(ticket.prioridad)}`}>
-                    {ticket.prioridad}
-                  </span>
-                </div>
+          {/* Header azul sólido */}
+          <div className="relative px-6 py-5 bg-[#0A5BA9] rounded-t-2xl">
+            <button
+              onClick={handleClose}
+              disabled={loading}
+              className="absolute top-4 right-4 w-9 h-9 rounded-full bg-white/15 hover:bg-white/25 flex items-center justify-center transition-colors disabled:opacity-50"
+            >
+              <X size={18} className="text-white" />
+            </button>
+            <div className="pr-12">
+              <p className="text-[11px] font-semibold uppercase tracking-widest text-white/60 mb-1">Ticket de Soporte</p>
+              <h2 className="text-[15px] font-bold text-white leading-snug">{ticket.titulo}</h2>
+              <div className="flex gap-2 mt-2.5">
+                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-white/20 text-white">
+                  {ticket.estado}
+                </span>
+                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-white/20 text-white">
+                  {ticket.prioridad}
+                </span>
               </div>
-              <button
-                onClick={handleClose}
-                disabled={loading}
-                className="p-2 rounded-full text-gray-400 hover:text-gray-700 hover:bg-gray-100 disabled:opacity-50 transition-colors flex-shrink-0 -mt-1 -mr-1"
-              >
-                <X size={16} />
-              </button>
             </div>
           </div>
 
