@@ -1,8 +1,8 @@
 # CLAUDE.md - Proyecto CENATE
 
 > **Sistema de Telemedicina - EsSalud Perú**
-> **Versión:** v1.83.5 (2026-03-03) 🚀
-> **Última Feature:** v1.83.5 - Fix constraint unique bolsas: incluir especialidad en clave única (V6_25_0) ✅ (2026-03-03)
+> **Versión:** v1.85.32 (2026-03-07) 🚀
+> **Última Feature:** v1.85.32 - Mesa de Ayuda: flujo anulación UX, Anulado por nombre completo, acceso MESA_DE_AYUDA a Pacientes Anulados, fix duplicate keys React ✅ (2026-03-07)
 > **Última Feature Base:** v1.82.x - Refactor arquitectura IPRESS: id_ipress + id_ipress_atencion como única fuente de verdad ✅ (2026-03-03)
 > **Status:** ✅ Production Ready
 
@@ -340,7 +340,8 @@ Módulo para gestionar los períodos durante los cuales los médicos registran s
 **👉 Ver historial completo:** [`CHANGELOG-VERSIONES.md`](CHANGELOG-VERSIONES.md)
 
 Versiones recientes:
-- **v1.83.5** - Fix constraint `ux_solicitud_paciente_servicio_otras_bolsas`: incluir `especialidad` en clave única — Flyway V6_25_0 ✅ (2026-03-03) 🆕
+- **v1.85.32** - Mesa de Ayuda: flujo anulación UX mejorado (banner verde + modal principal abierto), "Anulado por" muestra nombre completo, acceso MESA_DE_AYUDA a Pacientes Anulados (V6_35_0), fix duplicate keys React ✅ (2026-03-07) 🆕
+- **v1.83.5** - Fix constraint `ux_solicitud_paciente_servicio_otras_bolsas`: incluir `especialidad` en clave única — Flyway V6_25_0 ✅ (2026-03-03)
 - **v1.82.x** - Refactor arquitectura IPRESS: id_ipress + id_ipress_atencion como única fuente de verdad — V6_22_0/23_0/24_0 + 13 queries + 4 service methods ✅ (2026-03-03)
 - **v1.82.6** - Trazabilidad completa (quién ejecuta cada acción) + badge CENACRON en citas + fix auditoría anulación ✅ (2026-03-02)
 - **v1.82.5** - IPRESS muestra nombre en lugar de código numérico ✅ (2026-03-02)
