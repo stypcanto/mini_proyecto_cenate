@@ -5,7 +5,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   UserX, Search, RefreshCw, Calendar, User, Building2, Stethoscope,
-  FileText, AlertTriangle, PlusCircle, X, CheckCircle, Loader2
+  FileText, AlertTriangle, PlusCircle, X, CheckCircle, Loader2, Filter, ChevronDown, ChevronUp
 } from 'lucide-react';
 import apiClient from '../../lib/apiClient';
 import { getToken } from '../../constants/auth';
@@ -495,11 +495,14 @@ const PacientesAnulados = () => {
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [busqueda, setBusqueda] = useState('');
-  const [busquedaInput, setBusquedaInput] = useState('');
   const [page, setPage] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
   const PAGE_SIZE = 50;
+
+  // Filtros
+  const [mostrarFiltros, setMostrarFiltros] = useState(false);
+  const [filtros, setFiltros] = useState({ busqueda: '', especialidad: '', ipress: '', medico: '', motivoAnulacion: '', anuladoPor: '', fechaDesde: '', fechaHasta: '' });
+  const [filtrosInput, setFiltrosInput] = useState({ busqueda: '', especialidad: '', ipress: '', medico: '', motivoAnulacion: '', anuladoPor: '', fechaDesde: '', fechaHasta: '' });
 
   const [modalRow, setModalRow] = useState(null);
 
@@ -508,7 +511,14 @@ const PacientesAnulados = () => {
     setError(null);
     try {
       const params = new URLSearchParams({ page, size: PAGE_SIZE });
-      if (busqueda) params.set('busqueda', busqueda);
+      if (filtros.busqueda)        params.set('busqueda', filtros.busqueda);
+      if (filtros.especialidad)    params.set('especialidad', filtros.especialidad);
+      if (filtros.ipress)          params.set('ipress', filtros.ipress);
+      if (filtros.medico)          params.set('medico', filtros.medico);
+      if (filtros.motivoAnulacion) params.set('motivoAnulacion', filtros.motivoAnulacion);
+      if (filtros.anuladoPor)      params.set('anuladoPor', filtros.anuladoPor);
+      if (filtros.fechaDesde)      params.set('fechaDesde', filtros.fechaDesde);
+      if (filtros.fechaHasta)      params.set('fechaHasta', filtros.fechaHasta);
       const res = await apiClient.get(`/mesa-ayuda/pacientes-anulados?${params}`, true);
       setData(res.data || []);
       setTotal(res.total || 0);
@@ -518,12 +528,26 @@ const PacientesAnulados = () => {
     } finally {
       setLoading(false);
     }
-  }, [busqueda, page]);
+  }, [filtros, page]);
 
   useEffect(() => { cargarDatos(); }, [cargarDatos]);
 
-  const handleBuscar = (e) => { e.preventDefault(); setPage(0); setBusqueda(busquedaInput.trim()); };
-  const handleLimpiar = () => { setBusquedaInput(''); setBusqueda(''); setPage(0); };
+  const setInput = (campo, valor) => setFiltrosInput(prev => ({ ...prev, [campo]: valor }));
+
+  const handleBuscar = (e) => {
+    e.preventDefault();
+    setPage(0);
+    setFiltros({ ...filtrosInput });
+  };
+
+  const handleLimpiar = () => {
+    const empty = { busqueda: '', especialidad: '', ipress: '', medico: '', motivoAnulacion: '', anuladoPor: '', fechaDesde: '', fechaHasta: '' };
+    setFiltrosInput(empty);
+    setFiltros(empty);
+    setPage(0);
+  };
+
+  const hayFiltrosActivos = Object.values(filtros).some(v => v !== '');
 
   const formatFecha = (fecha) => {
     if (!fecha) return '—';
@@ -591,28 +615,94 @@ const PacientesAnulados = () => {
 
       {/* Filtros */}
       <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-4 mb-4">
-        <form onSubmit={handleBuscar} className="flex gap-3 flex-wrap items-end">
-          <div className="flex-1 min-w-[200px]">
-            <label className="block text-xs font-semibold text-gray-600 mb-1">Buscar (DNI, nombre, especialidad)</label>
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-              <input
-                type="text" value={busquedaInput}
-                onChange={e => setBusquedaInput(e.target.value)}
-                placeholder="Ej: 12345678 o Juan Pérez..."
-                className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-red-400"
-              />
+        <form onSubmit={handleBuscar}>
+          {/* Fila principal */}
+          <div className="flex gap-3 flex-wrap items-end">
+            <div className="flex-1 min-w-[220px]">
+              <label className="block text-xs font-semibold text-gray-600 mb-1">Buscar (DNI o nombre)</label>
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <input type="text" value={filtrosInput.busqueda}
+                  onChange={e => setInput('busqueda', e.target.value)}
+                  placeholder="Ej: 12345678 o Juan Pérez..."
+                  className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-red-400"
+                />
+              </div>
             </div>
+            <button type="button" onClick={() => setMostrarFiltros(v => !v)}
+              className={`px-4 py-2 text-sm font-semibold rounded-lg transition-colors flex items-center gap-2 ${mostrarFiltros ? 'bg-blue-50 text-blue-700 border border-blue-200' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}>
+              <Filter className="w-4 h-4" />
+              Filtros avanzados
+              {mostrarFiltros ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+              {hayFiltrosActivos && <span className="ml-1 w-2 h-2 bg-red-500 rounded-full" />}
+            </button>
+            <button type="submit" className="px-4 py-2 bg-red-600 text-white text-sm font-semibold rounded-lg hover:bg-red-700 transition-colors flex items-center gap-2">
+              <Search className="w-4 h-4" />Buscar
+            </button>
+            <button type="button" onClick={handleLimpiar} className="px-4 py-2 bg-gray-100 text-gray-700 text-sm font-semibold rounded-lg hover:bg-gray-200 transition-colors flex items-center gap-2">
+              <RefreshCw className="w-4 h-4" />Limpiar
+            </button>
           </div>
-          <button type="submit" className="px-4 py-2 bg-red-600 text-white text-sm font-semibold rounded-lg hover:bg-red-700 transition-colors flex items-center gap-2">
-            <Search className="w-4 h-4" />Buscar
-          </button>
-          <button type="button" onClick={handleLimpiar} className="px-4 py-2 bg-gray-100 text-gray-700 text-sm font-semibold rounded-lg hover:bg-gray-200 transition-colors flex items-center gap-2">
-            <RefreshCw className="w-4 h-4" />Limpiar
-          </button>
-          <button type="button" onClick={cargarDatos} className="px-4 py-2 bg-gray-100 text-gray-700 text-sm font-semibold rounded-lg hover:bg-gray-200 transition-colors flex items-center gap-2">
-            <RefreshCw className="w-4 h-4" />Recargar
-          </button>
+
+          {/* Filtros avanzados */}
+          {mostrarFiltros && (
+            <div className="mt-4 pt-4 border-t border-gray-100 grid grid-cols-2 sm:grid-cols-3 gap-3">
+              <div>
+                <label className="block text-xs font-semibold text-gray-500 mb-1">Especialidad</label>
+                <input type="text" value={filtrosInput.especialidad}
+                  onChange={e => setInput('especialidad', e.target.value)}
+                  placeholder="Ej: Cardiología"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-gray-500 mb-1">IPRESS</label>
+                <input type="text" value={filtrosInput.ipress}
+                  onChange={e => setInput('ipress', e.target.value)}
+                  placeholder="Nombre de la IPRESS"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-gray-500 mb-1">Médico asignado</label>
+                <input type="text" value={filtrosInput.medico}
+                  onChange={e => setInput('medico', e.target.value)}
+                  placeholder="Nombre del médico"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-gray-500 mb-1">Motivo anulación</label>
+                <input type="text" value={filtrosInput.motivoAnulacion}
+                  onChange={e => setInput('motivoAnulacion', e.target.value)}
+                  placeholder="Texto del motivo"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-gray-500 mb-1">Anulado por</label>
+                <input type="text" value={filtrosInput.anuladoPor}
+                  onChange={e => setInput('anuladoPor', e.target.value)}
+                  placeholder="Usuario que anuló"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-gray-500 mb-1">Fecha anulación — Desde</label>
+                <input type="date" value={filtrosInput.fechaDesde}
+                  onChange={e => setInput('fechaDesde', e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-gray-500 mb-1">Fecha anulación — Hasta</label>
+                <input type="date" value={filtrosInput.fechaHasta}
+                  onChange={e => setInput('fechaHasta', e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+                />
+              </div>
+            </div>
+          )}
         </form>
       </div>
 

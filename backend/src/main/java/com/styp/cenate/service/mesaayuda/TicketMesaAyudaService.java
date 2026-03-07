@@ -1166,14 +1166,63 @@ public class TicketMesaAyudaService {
      * Incluye ambos casos: activo=false y condicion_medica='Anulado'.
      */
     @SuppressWarnings("unchecked")
-    public Map<String, Object> obtenerPacientesAnulados(String busqueda, int page, int size) {
-        String sqlCount = """
-            SELECT COUNT(*) FROM dim_solicitud_bolsa sb
-            WHERE sb.activo = false OR sb.condicion_medica = 'Anulado'
+    public Map<String, Object> obtenerPacientesAnulados(
+            String busqueda, String especialidad, String ipress, String medico,
+            String motivoAnulacion, String anuladoPor, String fechaDesde, String fechaHasta,
+            int page, int size) {
+
+        String sqlBase = """
+            SELECT {COLS}
+            FROM dim_solicitud_bolsa sb
+            LEFT JOIN dim_ipress di ON di.id_ipress = sb.id_ipress
+            LEFT JOIN dim_personal_cnt p ON p.id_pers = sb.id_personal
+            LEFT JOIN dim_historial_cambios_solicitud h
+                ON h.id_solicitud = sb.id_solicitud AND h.tipo_cambio = 'ANULACION'
+            LEFT JOIN dim_usuarios u ON u.id_user = sb.usuario_cambio_estado_id
+            LEFT JOIN dim_personal_cnt pc2 ON pc2.id_usuario = u.id_user
+            WHERE (sb.activo = false OR sb.condicion_medica = 'Anulado')
             """;
 
-        String sqlData = """
-            SELECT
+        StringBuilder filtros = new StringBuilder();
+        java.util.Map<String, Object> params = new java.util.LinkedHashMap<>();
+
+        if (busqueda != null && !busqueda.isBlank()) {
+            filtros.append(" AND (LOWER(sb.paciente_nombre) LIKE :busqueda OR sb.paciente_dni LIKE :busqueda OR LOWER(sb.especialidad) LIKE :busqueda)");
+            params.put("busqueda", "%" + busqueda.toLowerCase().trim() + "%");
+        }
+        if (especialidad != null && !especialidad.isBlank()) {
+            filtros.append(" AND LOWER(sb.especialidad) LIKE :especialidad");
+            params.put("especialidad", "%" + especialidad.toLowerCase().trim() + "%");
+        }
+        if (ipress != null && !ipress.isBlank()) {
+            filtros.append(" AND LOWER(COALESCE(di.desc_ipress,'')) LIKE :ipress");
+            params.put("ipress", "%" + ipress.toLowerCase().trim() + "%");
+        }
+        if (medico != null && !medico.isBlank()) {
+            String mLike = "%" + medico.toLowerCase().trim() + "%";
+            filtros.append(" AND LOWER(TRIM(COALESCE(p.nom_pers,'') || ' ' || COALESCE(p.ape_pater_pers,'') || ' ' || COALESCE(p.ape_mater_pers,''))) LIKE :medico");
+            params.put("medico", mLike);
+        }
+        if (motivoAnulacion != null && !motivoAnulacion.isBlank()) {
+            filtros.append(" AND LOWER(COALESCE(h.motivo, sb.motivo_anulacion,'')) LIKE :motivoAnulacion");
+            params.put("motivoAnulacion", "%" + motivoAnulacion.toLowerCase().trim() + "%");
+        }
+        if (anuladoPor != null && !anuladoPor.isBlank()) {
+            filtros.append(" AND LOWER(COALESCE(h.usuario_nombre, u.name_user,'')) LIKE :anuladoPor");
+            params.put("anuladoPor", "%" + anuladoPor.toLowerCase().trim() + "%");
+        }
+        if (fechaDesde != null && !fechaDesde.isBlank()) {
+            filtros.append(" AND COALESCE(h.fecha_cambio, sb.fecha_cambio_estado) >= :fechaDesde");
+            params.put("fechaDesde", java.time.LocalDate.parse(fechaDesde).atStartOfDay().atOffset(java.time.ZoneOffset.UTC));
+        }
+        if (fechaHasta != null && !fechaHasta.isBlank()) {
+            filtros.append(" AND COALESCE(h.fecha_cambio, sb.fecha_cambio_estado) < :fechaHasta");
+            params.put("fechaHasta", java.time.LocalDate.parse(fechaHasta).plusDays(1).atStartOfDay().atOffset(java.time.ZoneOffset.UTC));
+        }
+
+        String where = filtros.toString();
+        String sqlCount = sqlBase.replace("{COLS}", "COUNT(*)") + where;
+        String sqlData = sqlBase.replace("{COLS}", """
                 sb.id_solicitud,
                 sb.paciente_nombre,
                 sb.paciente_dni,
@@ -1187,39 +1236,13 @@ public class TicketMesaAyudaService {
                     NULLIF(TRIM(COALESCE(pc2.nom_pers,'') || ' ' || COALESCE(pc2.ape_pater_pers,'') || ' ' || COALESCE(pc2.ape_mater_pers,'')), ''),
                     u.name_user
                 ) AS anulado_por,
-                COALESCE(h.fecha_cambio::timestamp, sb.fecha_cambio_estado::timestamp) AS fecha_anulacion
-            FROM dim_solicitud_bolsa sb
-            LEFT JOIN dim_ipress di ON di.id_ipress = sb.id_ipress
-            LEFT JOIN dim_personal_cnt p ON p.id_pers = sb.id_personal
-            LEFT JOIN dim_historial_cambios_solicitud h
-                ON h.id_solicitud = sb.id_solicitud AND h.tipo_cambio = 'ANULACION'
-            LEFT JOIN dim_usuarios u ON u.id_user = sb.usuario_cambio_estado_id
-            LEFT JOIN dim_personal_cnt pc2 ON pc2.id_usuario = u.id_user
-            WHERE sb.activo = false OR sb.condicion_medica = 'Anulado'
-            ORDER BY COALESCE(h.fecha_cambio, sb.fecha_cambio_estado) DESC NULLS LAST
-            LIMIT :size OFFSET :offset
-            """;
+                COALESCE(h.fecha_cambio::timestamp, sb.fecha_cambio_estado::timestamp) AS fecha_anulacion""")
+            + where + "\n ORDER BY COALESCE(h.fecha_cambio, sb.fecha_cambio_estado) DESC NULLS LAST LIMIT :size OFFSET :offset";
 
-        boolean hayBusqueda = busqueda != null && !busqueda.isBlank();
-        String filtro = hayBusqueda ? " AND (LOWER(sb.paciente_nombre) LIKE :busqueda OR sb.paciente_dni LIKE :busqueda OR LOWER(sb.especialidad) LIKE :busqueda)" : "";
+        jakarta.persistence.Query countQuery = entityManager.createNativeQuery(sqlCount);
+        jakarta.persistence.Query dataQuery = entityManager.createNativeQuery(sqlData);
 
-        String sqlCountFinal = sqlCount.replace(
-            "WHERE sb.activo = false OR sb.condicion_medica = 'Anulado'",
-            "WHERE (sb.activo = false OR sb.condicion_medica = 'Anulado')" + filtro
-        );
-        String sqlDataFinal = sqlData.replace(
-            "WHERE sb.activo = false OR sb.condicion_medica = 'Anulado'",
-            "WHERE (sb.activo = false OR sb.condicion_medica = 'Anulado')" + filtro
-        );
-
-        jakarta.persistence.Query countQuery = entityManager.createNativeQuery(sqlCountFinal);
-        jakarta.persistence.Query dataQuery = entityManager.createNativeQuery(sqlDataFinal);
-
-        if (hayBusqueda) {
-            String like = "%" + busqueda.toLowerCase().trim() + "%";
-            countQuery.setParameter("busqueda", like);
-            dataQuery.setParameter("busqueda", like);
-        }
+        params.forEach((k, v) -> { countQuery.setParameter(k, v); dataQuery.setParameter(k, v); });
         dataQuery.setParameter("size", size);
         dataQuery.setParameter("offset", (long) page * size);
 

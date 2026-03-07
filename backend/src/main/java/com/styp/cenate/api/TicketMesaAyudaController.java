@@ -665,11 +665,19 @@ public class TicketMesaAyudaController {
     @GetMapping("/pacientes-anulados")
     public ResponseEntity<Map<String, Object>> obtenerPacientesAnulados(
         @RequestParam(required = false) String busqueda,
+        @RequestParam(required = false) String especialidad,
+        @RequestParam(required = false) String ipress,
+        @RequestParam(required = false) String medico,
+        @RequestParam(required = false) String motivoAnulacion,
+        @RequestParam(required = false) String anuladoPor,
+        @RequestParam(required = false) String fechaDesde,
+        @RequestParam(required = false) String fechaHasta,
         @RequestParam(defaultValue = "0") int page,
         @RequestParam(defaultValue = "50") int size
     ) {
-        log.info("GET /api/mesa-ayuda/pacientes-anulados - busqueda={}, page={}, size={}", busqueda, page, size);
-        Map<String, Object> result = ticketService.obtenerPacientesAnulados(busqueda, page, size);
+        log.info("GET /api/mesa-ayuda/pacientes-anulados - busqueda={}, especialidad={}, page={}", busqueda, especialidad, page);
+        Map<String, Object> result = ticketService.obtenerPacientesAnulados(
+            busqueda, especialidad, ipress, medico, motivoAnulacion, anuladoPor, fechaDesde, fechaHasta, page, size);
         return ResponseEntity.ok(result);
     }
 
