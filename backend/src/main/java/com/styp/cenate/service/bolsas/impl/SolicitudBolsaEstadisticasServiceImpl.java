@@ -422,13 +422,29 @@ public class SolicitudBolsaEstadisticasServiceImpl implements SolicitudBolsaEsta
                 .atendidos(((Number) row.getOrDefault("atendidos", 0L)).longValue())
                 .pendientes(((Number) row.getOrDefault("pendientes", 0L)).longValue())
                 .cancelados(((Number) row.getOrDefault("cancelados", 0L)).longValue())
-                .porcentaje((BigDecimal) row.get("porcentaje"))
-                .tasaCompletacion((BigDecimal) row.get("tasa_completacion"))
-                .tasaCancelacion((BigDecimal) row.get("tasa_cancelacion"))
+                .porcentaje(toBigDecimal(row.getOrDefault("porcentaje", BigDecimal.ZERO)))
+                .tasaCompletacion(toBigDecimal(row.getOrDefault("tasa_completacion", BigDecimal.ZERO)))
+                .tasaCancelacion(toBigDecimal(row.getOrDefault("tasa_cancelacion", BigDecimal.ZERO)))
                 .horasPromedio(((Number) row.getOrDefault("horas_promedio", 0)).intValue())
                 .icono(getIconoPorTipoBolsa(tipoBolsa))
                 .color(getColorPorTipoBolsa(tipoBolsa))
                 .build();
+    }
+
+    private BigDecimal toBigDecimal(Object value) {
+        if (value == null) {
+            return BigDecimal.ZERO;
+        }
+        if (value instanceof BigDecimal decimal) {
+            return decimal;
+        }
+        if (value instanceof Number number) {
+            return new BigDecimal(number.toString());
+        }
+        if (value instanceof String text && !text.trim().isEmpty()) {
+            return new BigDecimal(text.trim());
+        }
+        throw new IllegalArgumentException("No se puede convertir a BigDecimal: " + value + " (" + value.getClass().getName() + ")");
     }
 
     private String getIconoPorTipoBolsa(String tipoBolsa) {
