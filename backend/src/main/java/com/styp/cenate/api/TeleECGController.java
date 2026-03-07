@@ -1098,7 +1098,8 @@ public class TeleECGController {
                     request.getEspecialidad(),
                     request.getDias() != null ? request.getDias() : 90,
                     null,  // TeleECG no pasa por atencion_clinica de enfermería
-                    pkAseguradoTele
+                    pkAseguradoTele,
+                    null   // TeleECG no usa AtenderPacienteRequest
                 );
                 log.info("✅ Bolsa RECITA creada para especialidad: {}", request.getEspecialidad());
             } else if ("INTERCONSULTA".equals(request.getTipo())) {
