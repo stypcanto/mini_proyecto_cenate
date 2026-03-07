@@ -396,4 +396,16 @@ public interface SolicitudBolsaService {
      * @return mapa con status, cantidad de registros actualizados y fecha aplicada
      */
     Map<String, Object> reprogramarMasivo(com.styp.cenate.dto.bolsas.ReprogramarMasivoRequest request);
+
+    /**
+     * Crea una nueva cita a partir de un registro anulado (activo=false).
+     * El registro original permanece intacto (inmutable, para auditoría).
+     * El nuevo registro queda en PENDIENTE_CITA con idsolicitudgeneracion apuntando al origen.
+     *
+     * @param idSolicitudAnulada ID del registro anulado origen
+     * @param motivo             Motivo por el que se solicita la nueva cita
+     * @param usuarioNombre      Usuario que solicita la nueva cita
+     * @return Map con idNuevaSolicitud, numeroSolicitud, mensaje
+     */
+    Map<String, Object> nuevaCitaDesdeAnulacion(Long idSolicitudAnulada, String motivo, String usuarioNombre);
 }

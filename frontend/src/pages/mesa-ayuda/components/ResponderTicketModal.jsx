@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { X, AlertCircle, CheckCircle, AlertTriangle, Send, XCircle, ChevronDown } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { X, AlertCircle, CheckCircle, AlertTriangle, Send, XCircle } from 'lucide-react';
 
 /**
  * Modal para responder un ticket de Mesa de Ayuda
@@ -36,33 +36,6 @@ function ResponderTicketModal({ isOpen, onClose, ticket, usuario, onSuccess }) {
   const [showEssiAlert, setShowEssiAlert] = useState(false);
   const [ticketRespondidoData, setTicketRespondidoData] = useState(null);
 
-  // Estado autocomplete respuesta
-  const [respuestaInputText, setRespuestaInputText] = useState('');
-  const [showRespuestaDropdown, setShowRespuestaDropdown] = useState(false);
-  const respuestaRef = useRef(null);
-
-  // Cerrar dropdown al hacer click fuera
-  useEffect(() => {
-    const handleClickOutside = (e) => {
-      if (respuestaRef.current && !respuestaRef.current.contains(e.target)) {
-        setShowRespuestaDropdown(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
-
-  const respuestasFiltradas = respuestasPredefinidas.filter(r =>
-    r.descripcion?.toLowerCase().includes(respuestaInputText.toLowerCase())
-  );
-
-  const handleSeleccionarRespuesta = (resp) => {
-    setRespuestaSeleccionada(resp);
-    setRespuestaInputText(resp.descripcion);
-    setShowRespuestaDropdown(false);
-    setTextoOtros('');
-    setError(null);
-  };
 
   // Estado para anular cita
   const [showAnularModal, setShowAnularModal] = useState(false);
@@ -193,8 +166,6 @@ function ResponderTicketModal({ isOpen, onClose, ticket, usuario, onSuccess }) {
   const handleClose = () => {
     if (!loading) {
       setRespuestaSeleccionada(null);
-      setRespuestaInputText('');
-      setShowRespuestaDropdown(false);
       setTextoOtros('');
       setEstado('RESUELTO');
       setError(null);
@@ -399,46 +370,22 @@ function ResponderTicketModal({ isOpen, onClose, ticket, usuario, onSuccess }) {
                       {loadingRespuestas ? (
                         <div className="text-[13px] text-gray-400 py-2.5">Cargando...</div>
                       ) : (
-                        <div ref={respuestaRef} className="relative">
-                          <input
-                            type="text"
-                            value={respuestaInputText}
-                            onChange={(e) => {
-                              setRespuestaInputText(e.target.value);
-                              setRespuestaSeleccionada(null);
-                              setShowRespuestaDropdown(true);
-                            }}
-                            onFocus={() => setShowRespuestaDropdown(true)}
-                            disabled={loading}
-                            placeholder="Buscar respuesta..."
-                            className="w-full px-3 py-2.5 pr-8 border border-gray-200 rounded-xl text-[13px] text-gray-900 bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 disabled:bg-gray-50 transition-colors"
-                          />
-                          <ChevronDown
-                            size={14}
-                            className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
-                          />
-                          {showRespuestaDropdown && respuestasFiltradas.length > 0 && (
-                            <div className="absolute z-50 left-0 right-0 top-full mt-1 bg-white border border-gray-200 rounded-xl shadow-xl max-h-52 overflow-y-auto">
-                              {respuestasFiltradas.map((resp) => (
-                                <button
-                                  key={resp.id}
-                                  type="button"
-                                  onMouseDown={(e) => { e.preventDefault(); handleSeleccionarRespuesta(resp); }}
-                                  className={`w-full text-left px-3.5 py-2.5 text-[12px] leading-snug transition-colors hover:bg-blue-50 hover:text-blue-800 ${
-                                    respuestaSeleccionada?.id === resp.id ? 'bg-blue-50 text-blue-700 font-semibold' : 'text-gray-800'
-                                  }`}
-                                >
-                                  {resp.descripcion}
-                                </button>
-                              ))}
-                            </div>
-                          )}
-                          {showRespuestaDropdown && respuestaInputText && respuestasFiltradas.length === 0 && (
-                            <div className="absolute z-50 left-0 right-0 top-full mt-1 bg-white border border-gray-200 rounded-xl shadow-xl px-4 py-3 text-[12px] text-gray-400">
-                              Sin resultados para "{respuestaInputText}"
-                            </div>
-                          )}
-                        </div>
+                        <select
+                          value={respuestaSeleccionada?.id ?? ''}
+                          onChange={(e) => {
+                            const selected = respuestasPredefinidas.find(r => r.id === Number(e.target.value));
+                            setRespuestaSeleccionada(selected || null);
+                            setTextoOtros('');
+                            setError(null);
+                          }}
+                          disabled={loading}
+                          className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-[13px] text-gray-900 bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 disabled:bg-gray-50 transition-colors"
+                        >
+                          <option value="">— Seleccionar respuesta —</option>
+                          {respuestasPredefinidas.map((resp) => (
+                            <option key={resp.id} value={resp.id}>{resp.descripcion}</option>
+                          ))}
+                        </select>
                       )}
                     </div>
                   </div>
@@ -495,7 +442,7 @@ function ResponderTicketModal({ isOpen, onClose, ticket, usuario, onSuccess }) {
                     type="button"
                     onClick={abrirModalAnular}
                     disabled={loading}
-                    className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-[13px] font-medium text-red-600 border border-red-200 hover:bg-red-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-[13px] font-medium text-white bg-red-500 hover:bg-red-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                   >
                     <XCircle size={13} />
                     Anular cita
@@ -510,8 +457,8 @@ function ResponderTicketModal({ isOpen, onClose, ticket, usuario, onSuccess }) {
                     disabled={yaEnviadoABolsa || enviandoBolsa || loading}
                     className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-[13px] font-medium transition-colors ${
                       yaEnviadoABolsa
-                        ? 'bg-emerald-50 text-emerald-700 border border-emerald-200 cursor-default'
-                        : 'text-blue-700 border border-blue-200 hover:bg-blue-50 disabled:opacity-60 disabled:cursor-not-allowed'
+                        ? 'bg-emerald-500 text-white cursor-default'
+                        : 'bg-[#0a5ba9] text-white hover:bg-[#084a8a] disabled:opacity-60 disabled:cursor-not-allowed'
                     }`}
                   >
                     {enviandoBolsa ? (

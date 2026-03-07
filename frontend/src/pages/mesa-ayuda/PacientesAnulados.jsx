@@ -3,8 +3,8 @@
 // ========================================================================
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { UserX, Search, RefreshCw, Download, Calendar, User, Building2, Stethoscope, FileText, AlertTriangle } from 'lucide-react';
-import apiClient from '../../services/apiClient';
+import { UserX, Search, RefreshCw, Calendar, User, Building2, Stethoscope, FileText, AlertTriangle, PlusCircle, X, CheckCircle } from 'lucide-react';
+import apiClient from '../../lib/apiClient';
 
 const PacientesAnulados = () => {
   const [data, setData] = useState([]);
@@ -16,6 +16,13 @@ const PacientesAnulados = () => {
   const [page, setPage] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
   const PAGE_SIZE = 50;
+
+  // Estado modal nueva cita
+  const [modalNuevaCita, setModalNuevaCita] = useState(null); // row seleccionada
+  const [motivoNuevaCita, setMotivoNuevaCita] = useState('');
+  const [creando, setCreando] = useState(false);
+  const [resultadoNuevaCita, setResultadoNuevaCita] = useState(null); // {numeroSolicitud}
+  const [errorNuevaCita, setErrorNuevaCita] = useState(null);
 
   const cargarDatos = useCallback(async () => {
     setLoading(true);
@@ -50,6 +57,32 @@ const PacientesAnulados = () => {
     setPage(0);
   };
 
+  const handleNuevaCita = async () => {
+    if (!motivoNuevaCita.trim()) return;
+    setCreando(true);
+    setErrorNuevaCita(null);
+    try {
+      const res = await apiClient.post(
+        `/bolsas/solicitudes/${modalNuevaCita.idSolicitud}/nueva-cita-desde-anulacion`,
+        { motivo: motivoNuevaCita.trim() }
+      );
+      setResultadoNuevaCita(res.data);
+    } catch (err) {
+      setErrorNuevaCita(
+        err.response?.data?.error || 'Error al crear la nueva cita. Intente nuevamente.'
+      );
+    } finally {
+      setCreando(false);
+    }
+  };
+
+  const cerrarModal = () => {
+    setModalNuevaCita(null);
+    setMotivoNuevaCita('');
+    setErrorNuevaCita(null);
+    setResultadoNuevaCita(null);
+  };
+
   const formatFecha = (fecha) => {
     if (!fecha) return '—';
     try {
@@ -63,6 +96,7 @@ const PacientesAnulados = () => {
   };
 
   return (
+    <>
     <div className="min-h-screen bg-gray-50 p-4 sm:p-6">
       {/* Header */}
       <div className="mb-6">
@@ -189,6 +223,7 @@ const PacientesAnulados = () => {
                   <th className="text-left px-4 py-3 font-semibold text-gray-600 whitespace-nowrap">
                     <div className="flex items-center gap-1.5"><Calendar className="w-3.5 h-3.5" />Fecha anulación</div>
                   </th>
+                  <th className="px-4 py-3 font-semibold text-gray-600 whitespace-nowrap text-center">Acción</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
@@ -211,6 +246,16 @@ const PacientesAnulados = () => {
                     </td>
                     <td className="px-4 py-3 text-gray-600 text-xs">{row.anuladoPor || '—'}</td>
                     <td className="px-4 py-3 text-gray-500 text-xs whitespace-nowrap">{formatFecha(row.fechaAnulacion)}</td>
+                    <td className="px-4 py-3 text-center">
+                      <button
+                        onClick={() => { setModalNuevaCita(row); setMotivoNuevaCita(''); setResultadoNuevaCita(null); setErrorNuevaCita(null); }}
+                        className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 text-white text-xs font-medium rounded-lg hover:bg-blue-700 transition-colors whitespace-nowrap mx-auto"
+                        title="Crear nueva cita para este paciente"
+                      >
+                        <PlusCircle className="w-3.5 h-3.5" />
+                        Nueva Cita
+                      </button>
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -244,6 +289,131 @@ const PacientesAnulados = () => {
         )}
       </div>
     </div>
+
+    {/* Modal: Nueva Cita desde Anulación */}
+    {modalNuevaCita && (
+      <div className="fixed inset-0 bg-black/40 backdrop-blur-[2px] flex items-center justify-center z-50 p-4">
+        <div className="bg-white rounded-2xl shadow-2xl ring-1 ring-black/8 max-w-md w-full overflow-hidden">
+
+          {/* Acento + Header */}
+          <div className="border-t-4 border-blue-600">
+            <div className="flex items-start justify-between px-6 pt-5 pb-4 bg-gradient-to-b from-slate-50/80 to-white border-b border-gray-100">
+              <div className="flex-1 pr-4">
+                <p className="text-[11px] font-semibold uppercase tracking-widest text-blue-600 mb-1">Solicitud de nueva atención</p>
+                <h2 className="text-[15px] font-bold text-gray-900">Nueva Cita desde Anulación</h2>
+              </div>
+              <button onClick={cerrarModal} className="p-2 rounded-full text-gray-400 hover:bg-gray-100 transition-colors">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+
+          <div className="px-6 py-5 space-y-4">
+            {resultadoNuevaCita ? (
+              /* Estado éxito */
+              <div className="text-center space-y-4 py-2">
+                <div className="w-14 h-14 bg-emerald-100 rounded-full flex items-center justify-center mx-auto">
+                  <CheckCircle className="w-8 h-8 text-emerald-600" />
+                </div>
+                <div>
+                  <p className="font-bold text-gray-900 text-base">Cita creada correctamente</p>
+                  <p className="text-sm text-gray-500 mt-1">El paciente fue ingresado a la bolsa en estado <span className="font-semibold text-blue-600">Pendiente de Citar</span></p>
+                </div>
+                <div className="bg-blue-50 rounded-xl px-4 py-3 text-left ring-1 ring-blue-100">
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-blue-400 mb-1">N° Solicitud</p>
+                  <p className="font-mono font-bold text-blue-900 text-lg">{resultadoNuevaCita.numeroSolicitud}</p>
+                  <p className="text-xs text-blue-600 mt-0.5">Origen: #{resultadoNuevaCita.idSolicitudOrigen}</p>
+                </div>
+                <button
+                  onClick={cerrarModal}
+                  className="w-full py-2.5 bg-blue-600 text-white rounded-xl text-sm font-semibold hover:bg-blue-700 transition-colors"
+                >
+                  Cerrar
+                </button>
+              </div>
+            ) : (
+              /* Formulario */
+              <>
+                {/* Info del paciente anulado */}
+                <div className="bg-white ring-1 ring-gray-100 shadow-sm rounded-xl overflow-hidden text-sm">
+                  <div className="grid grid-cols-2 divide-x divide-gray-100">
+                    <div className="px-4 py-3">
+                      <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-1">Paciente</p>
+                      <p className="font-semibold text-gray-900 text-[13px] leading-snug">{modalNuevaCita.pacienteNombre || '—'}</p>
+                      <p className="font-mono text-xs text-gray-500 mt-0.5">DNI {modalNuevaCita.pacienteDni}</p>
+                    </div>
+                    <div className="px-4 py-3">
+                      <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-1">Especialidad</p>
+                      <p className="font-semibold text-gray-900 text-[13px] leading-snug">{modalNuevaCita.especialidad || '—'}</p>
+                    </div>
+                  </div>
+                  <div className="px-4 py-3 border-t border-gray-100 bg-red-50/40">
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-red-400 mb-1">Motivo de anulación original</p>
+                    <p className="text-[12px] text-red-800">{modalNuevaCita.motivoAnulacion || '—'}</p>
+                  </div>
+                </div>
+
+                {/* Aviso auditoria */}
+                <div className="flex items-start gap-2.5 bg-amber-50 ring-1 ring-amber-100 rounded-xl px-4 py-3">
+                  <AlertTriangle className="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5" />
+                  <p className="text-[12px] text-amber-800 leading-snug">
+                    El registro anulado <span className="font-semibold">no se modifica</span>. Se creará una <span className="font-semibold">nueva solicitud independiente</span> con trazabilidad hacia el origen.
+                  </p>
+                </div>
+
+                {/* Motivo nueva cita */}
+                <div>
+                  <label className="block text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-1.5">
+                    Motivo de la nueva cita <span className="text-red-400">*</span>
+                  </label>
+                  <textarea
+                    value={motivoNuevaCita}
+                    onChange={e => setMotivoNuevaCita(e.target.value)}
+                    placeholder="Ej: Paciente solicita reagendamiento, error administrativo, condición médica persiste..."
+                    rows={3}
+                    autoFocus
+                    className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-[13px] text-gray-900 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-colors resize-none"
+                  />
+                </div>
+
+                {errorNuevaCita && (
+                  <div className="flex items-start gap-2 p-3 bg-red-50 ring-1 ring-red-100 rounded-xl">
+                    <AlertTriangle className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" />
+                    <p className="text-[12px] text-red-800">{errorNuevaCita}</p>
+                  </div>
+                )}
+
+                {/* Botones */}
+                <div className="flex items-center gap-2 pt-1">
+                  <button
+                    type="button"
+                    onClick={cerrarModal}
+                    disabled={creando}
+                    className="px-4 py-2 rounded-xl text-[13px] text-gray-500 font-medium hover:bg-gray-100 disabled:opacity-50 transition-colors"
+                  >
+                    Cancelar
+                  </button>
+                  <div className="flex-1" />
+                  <button
+                    type="button"
+                    onClick={handleNuevaCita}
+                    disabled={creando || !motivoNuevaCita.trim()}
+                    className="flex items-center gap-1.5 px-5 py-2 bg-blue-600 text-white rounded-xl text-[13px] font-semibold hover:bg-blue-700 disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed transition-colors"
+                  >
+                    {creando ? (
+                      <><div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />Creando...</>
+                    ) : (
+                      <><PlusCircle className="w-4 h-4" />Crear Nueva Cita</>
+                    )}
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      </div>
+    )}
+    </>
   );
 };
 

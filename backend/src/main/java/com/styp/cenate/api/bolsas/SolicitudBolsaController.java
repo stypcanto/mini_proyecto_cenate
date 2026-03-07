@@ -2119,6 +2119,41 @@ public class SolicitudBolsaController {
         }
     }
 
+    // ============================================================================
+    // 🔁 NUEVA CITA DESDE ANULACIÓN (v1.85.40)
+    // POST /api/bolsas/solicitudes/{id}/nueva-cita-desde-anulacion
+    // ============================================================================
+
+    /**
+     * Crea una nueva solicitud de bolsa a partir de un registro anulado.
+     * El registro anulado permanece intacto (inmutable para auditoría).
+     * La nueva solicitud queda en PENDIENTE_CITA vinculada al origen via idsolicitudgeneracion.
+     */
+    @PostMapping("/{id}/nueva-cita-desde-anulacion")
+    @PreAuthorize("hasAnyRole('SUPERADMIN','ADMIN','COORDINADOR','COORD. GESTION CITAS','GESTOR DE CITAS','SOPORTE_TELEUE')")
+    public ResponseEntity<?> nuevaCitaDesdeAnulacion(
+            @PathVariable Long id,
+            @RequestBody(required = false) java.util.Map<String, String> body,
+            @AuthenticationPrincipal org.springframework.security.core.userdetails.UserDetails userDetails) {
+        try {
+            String motivo = body != null ? body.getOrDefault("motivo", "") : "";
+            String usuario = userDetails != null ? userDetails.getUsername() : "Sistema";
+            log.info("🔁 POST /{}/nueva-cita-desde-anulacion — usuario: {}", id, usuario);
+            java.util.Map<String, Object> result = solicitudBolsaService.nuevaCitaDesdeAnulacion(id, motivo, usuario);
+            return ResponseEntity.status(org.springframework.http.HttpStatus.CREATED).body(result);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(org.springframework.http.HttpStatus.NOT_FOUND)
+                .body(java.util.Map.of("error", e.getMessage()));
+        } catch (IllegalStateException e) {
+            return ResponseEntity.status(org.springframework.http.HttpStatus.CONFLICT)
+                .body(java.util.Map.of("error", e.getMessage()));
+        } catch (Exception e) {
+            log.error("❌ Error al crear nueva cita desde anulación {}: {}", id, e.getMessage());
+            return ResponseEntity.status(org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(java.util.Map.of("error", "Error interno al crear la nueva cita"));
+        }
+    }
+
 }
 
 

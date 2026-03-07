@@ -4277,6 +4277,92 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
     /**
      * Genera número de solicitud único con formato: IMP-YYYYMMDD-NNNN
      */
+    // ============================================================================
+    // 🔁 NUEVA CITA DESDE ANULACIÓN (v1.85.40)
+    // ============================================================================
+
+    @Override
+    @Transactional
+    public Map<String, Object> nuevaCitaDesdeAnulacion(Long idSolicitudAnulada, String motivo, String usuarioNombre) {
+        log.info("🔁 Nueva cita desde anulación — origen: {}, solicitante: {}", idSolicitudAnulada, usuarioNombre);
+
+        SolicitudBolsa origen = solicitudRepository.findById(idSolicitudAnulada)
+            .orElseThrow(() -> new IllegalArgumentException("Solicitud no encontrada: " + idSolicitudAnulada));
+
+        if (Boolean.TRUE.equals(origen.getActivo())) {
+            throw new IllegalStateException("La solicitud #" + idSolicitudAnulada + " no está anulada (activo=true)");
+        }
+
+        String motivoFinal = (motivo != null && !motivo.isBlank())
+            ? motivo.trim()
+            : "Nueva cita solicitada desde registro anulado";
+
+        String nuevoNumero = encontrarNumeroSolicitudDisponible(5);
+
+        SolicitudBolsa nueva = SolicitudBolsa.builder()
+            // Datos del paciente — copia exacta del origen
+            .pacienteId(origen.getPacienteId())
+            .pacienteNombre(origen.getPacienteNombre())
+            .pacienteDni(origen.getPacienteDni())
+            .tipoDocumento(origen.getTipoDocumento())
+            .fechaNacimiento(origen.getFechaNacimiento())
+            .pacienteSexo(origen.getPacienteSexo())
+            .pacienteTelefono(origen.getPacienteTelefono())
+            .pacienteTelefonoAlterno(origen.getPacienteTelefonoAlterno())
+            .pacienteEmail(origen.getPacienteEmail())
+            // Bolsa y especialidad
+            .idBolsa(origen.getIdBolsa())
+            .idServicio(origen.getIdServicio())
+            .especialidad(origen.getEspecialidad())
+            .tipoCita(origen.getTipoCita())
+            .condicionMedica(origen.getCondicionMedica())
+            // IPRESS
+            .idIpress(origen.getIdIpress())
+            .idIpressAtencion(origen.getIdIpressAtencion())
+            .codigoAdscripcion(origen.getCodigoAdscripcion())
+            .codigoIpressAdscripcion(origen.getCodigoIpressAdscripcion())
+            // Estado inicial
+            .estado("PENDIENTE")
+            .estadoGestionCitasId(com.styp.cenate.constants.EstadosCitaConstants.BOLSA_PENDIENTE_CITA)
+            .activo(true)
+            // Trazabilidad origen
+            .idsolicitudgeneracion(idSolicitudAnulada)
+            // Número y timestamps
+            .numeroSolicitud(nuevoNumero)
+            .fechaSolicitud(java.time.OffsetDateTime.now())
+            .fechaActualizacion(java.time.OffsetDateTime.now())
+            .fechaCambioEstado(java.time.OffsetDateTime.now())
+            // Campos que NO se copian (se inician limpios)
+            .motivoAnulacion(null)
+            .idPersonal(null)
+            .responsableGestoraId(null)
+            .fechaAsignacion(null)
+            .fechaAtencion(null)
+            .horaAtencion(null)
+            .build();
+
+        nueva = solicitudRepository.save(nueva);
+        log.info("✅ Nueva solicitud creada: {} (origen anulado: {})", nueva.getIdSolicitud(), idSolicitudAnulada);
+
+        // Guardar historial en la NUEVA solicitud
+        historialCambioRepository.save(
+            com.styp.cenate.model.bolsas.HistorialCambioSolicitud.builder()
+                .idSolicitud(nueva.getIdSolicitud())
+                .tipoCambio("CREADO_DESDE_ANULACION")
+                .motivo(motivoFinal + " (origen: solicitud #" + idSolicitudAnulada + ")")
+                .usuarioNombre(usuarioNombre)
+                .fechaCambio(java.time.OffsetDateTime.now())
+                .build()
+        );
+
+        Map<String, Object> result = new java.util.LinkedHashMap<>();
+        result.put("idNuevaSolicitud", nueva.getIdSolicitud());
+        result.put("numeroSolicitud", nuevoNumero);
+        result.put("idSolicitudOrigen", idSolicitudAnulada);
+        result.put("mensaje", "Nueva cita creada correctamente en estado Pendiente de Citar");
+        return result;
+    }
+
     private String generarNumeroSolicitud() {
         String fecha = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
 
