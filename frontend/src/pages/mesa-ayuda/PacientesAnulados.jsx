@@ -30,7 +30,7 @@ const PacientesAnulados = () => {
     try {
       const params = new URLSearchParams({ page, size: PAGE_SIZE });
       if (busqueda) params.set('busqueda', busqueda);
-      const res = await apiClient.get(`/mesa-ayuda/pacientes-anulados?${params}`);
+      const res = await apiClient.get(`/mesa-ayuda/pacientes-anulados?${params}`, true);
       setData(res.data.data || []);
       setTotal(res.data.total || 0);
       setTotalPages(res.data.totalPages || 0);
