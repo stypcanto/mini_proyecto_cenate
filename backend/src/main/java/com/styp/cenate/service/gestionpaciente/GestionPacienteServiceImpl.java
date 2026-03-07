@@ -84,9 +84,10 @@ public class GestionPacienteServiceImpl implements IGestionPacienteService {
         }
 
         // Obtener la fecha de atención en zona horaria Lima
-        // ✅ getFechaAtencionMedica() retorna OffsetDateTime que ya tiene zona horaria
+        // ✅ Convertir a Lima ANTES de extraer la fecha, para evitar desfase UTC+5
         LocalDate fechaAtencionLocal = solicitudBolsa.getFechaAtencionMedica()
-            .toLocalDate();  // OffsetDateTime ya tiene zona horaria, solo extraer la fecha
+            .atZoneSameInstant(ZoneId.of("America/Lima"))
+            .toLocalDate();
         
         // Fecha actual en zona horaria Lima
         LocalDate hoy = LocalDate.now(ZoneId.of("America/Lima"));
