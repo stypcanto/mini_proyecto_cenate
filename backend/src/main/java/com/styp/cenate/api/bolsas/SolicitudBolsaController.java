@@ -2137,9 +2137,22 @@ public class SolicitudBolsaController {
             @AuthenticationPrincipal org.springframework.security.core.userdetails.UserDetails userDetails) {
         try {
             String motivo = body != null ? body.getOrDefault("motivo", "") : "";
+            String especialidad = body != null ? body.get("especialidad") : null;
+            String idPersonalStr = body != null ? body.get("idPersonal") : null;
+            String fechaStr = body != null ? body.get("fechaAtencion") : null;
+            String horaStr = body != null ? body.get("horaAtencion") : null;
+
+            Long idPersonal = idPersonalStr != null && !idPersonalStr.isBlank()
+                ? Long.parseLong(idPersonalStr) : null;
+            java.time.LocalDate fechaAtencion = fechaStr != null && !fechaStr.isBlank()
+                ? java.time.LocalDate.parse(fechaStr) : null;
+            java.time.LocalTime horaAtencion = horaStr != null && !horaStr.isBlank()
+                ? java.time.LocalTime.parse(horaStr) : null;
+
             String usuario = userDetails != null ? userDetails.getUsername() : "Sistema";
-            log.info("🔁 POST /{}/nueva-cita-desde-anulacion — usuario: {}", id, usuario);
-            java.util.Map<String, Object> result = solicitudBolsaService.nuevaCitaDesdeAnulacion(id, motivo, usuario);
+            log.info("🔁 POST /{}/nueva-cita-desde-anulacion — usuario: {}, medico: {}, fecha: {}", id, usuario, idPersonal, fechaAtencion);
+            java.util.Map<String, Object> result = solicitudBolsaService.nuevaCitaDesdeAnulacion(
+                id, motivo, usuario, especialidad, idPersonal, fechaAtencion, horaAtencion);
             return ResponseEntity.status(org.springframework.http.HttpStatus.CREATED).body(result);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(org.springframework.http.HttpStatus.NOT_FOUND)

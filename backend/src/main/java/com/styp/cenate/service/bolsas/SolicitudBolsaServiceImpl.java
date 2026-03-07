@@ -4283,7 +4283,9 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
 
     @Override
     @Transactional
-    public Map<String, Object> nuevaCitaDesdeAnulacion(Long idSolicitudAnulada, String motivo, String usuarioNombre) {
+    public Map<String, Object> nuevaCitaDesdeAnulacion(Long idSolicitudAnulada, String motivo, String usuarioNombre,
+            String especialidadOverride, Long idPersonalOverride,
+            java.time.LocalDate fechaAtencionOverride, java.time.LocalTime horaAtencionOverride) {
         log.info("🔁 Nueva cita desde anulación — origen: {}, solicitante: {}", idSolicitudAnulada, usuarioNombre);
 
         SolicitudBolsa origen = solicitudRepository.findById(idSolicitudAnulada)
@@ -4296,6 +4298,15 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
         String motivoFinal = (motivo != null && !motivo.isBlank())
             ? motivo.trim()
             : "Nueva cita solicitada desde registro anulado";
+
+        String especialidadFinal = (especialidadOverride != null && !especialidadOverride.isBlank())
+            ? especialidadOverride.trim()
+            : origen.getEspecialidad();
+
+        boolean tieneCita = idPersonalOverride != null && fechaAtencionOverride != null;
+        Long estadoFinal = tieneCita
+            ? com.styp.cenate.constants.EstadosCitaConstants.BOLSA_CITADO
+            : com.styp.cenate.constants.EstadosCitaConstants.BOLSA_PENDIENTE_CITA;
 
         String nuevoNumero = encontrarNumeroSolicitudDisponible(5);
 
@@ -4313,17 +4324,17 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
             // Bolsa y especialidad
             .idBolsa(origen.getIdBolsa())
             .idServicio(origen.getIdServicio())
-            .especialidad(origen.getEspecialidad())
+            .especialidad(especialidadFinal)
             .tipoCita(origen.getTipoCita())
-            .condicionMedica(origen.getCondicionMedica())
+            .condicionMedica("Pendiente")
             // IPRESS
             .idIpress(origen.getIdIpress())
             .idIpressAtencion(origen.getIdIpressAtencion())
             .codigoAdscripcion(origen.getCodigoAdscripcion())
             .codigoIpressAdscripcion(origen.getCodigoIpressAdscripcion())
-            // Estado inicial
+            // Estado
             .estado("PENDIENTE")
-            .estadoGestionCitasId(com.styp.cenate.constants.EstadosCitaConstants.BOLSA_PENDIENTE_CITA)
+            .estadoGestionCitasId(estadoFinal)
             .activo(true)
             // Trazabilidad origen
             .idsolicitudgeneracion(idSolicitudAnulada)
@@ -4332,13 +4343,14 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
             .fechaSolicitud(java.time.OffsetDateTime.now())
             .fechaActualizacion(java.time.OffsetDateTime.now())
             .fechaCambioEstado(java.time.OffsetDateTime.now())
-            // Campos que NO se copian (se inician limpios)
+            // Asignación (opcionales — se aplican si el coordinador los seleccionó)
+            .idPersonal(idPersonalOverride)
+            .fechaAtencion(fechaAtencionOverride)
+            .horaAtencion(horaAtencionOverride)
+            .fechaAsignacion(idPersonalOverride != null ? java.time.OffsetDateTime.now() : null)
+            // Campos que siempre van limpios
             .motivoAnulacion(null)
-            .idPersonal(null)
             .responsableGestoraId(null)
-            .fechaAsignacion(null)
-            .fechaAtencion(null)
-            .horaAtencion(null)
             .build();
 
         nueva = solicitudRepository.save(nueva);

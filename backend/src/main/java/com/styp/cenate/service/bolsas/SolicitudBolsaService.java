@@ -407,5 +407,7 @@ public interface SolicitudBolsaService {
      * @param usuarioNombre      Usuario que solicita la nueva cita
      * @return Map con idNuevaSolicitud, numeroSolicitud, mensaje
      */
-    Map<String, Object> nuevaCitaDesdeAnulacion(Long idSolicitudAnulada, String motivo, String usuarioNombre);
+    Map<String, Object> nuevaCitaDesdeAnulacion(Long idSolicitudAnulada, String motivo, String usuarioNombre,
+        String especialidadOverride, Long idPersonalOverride,
+        java.time.LocalDate fechaAtencionOverride, java.time.LocalTime horaAtencionOverride);
 }
