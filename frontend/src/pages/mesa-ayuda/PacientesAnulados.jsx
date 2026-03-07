@@ -31,9 +31,9 @@ const PacientesAnulados = () => {
       const params = new URLSearchParams({ page, size: PAGE_SIZE });
       if (busqueda) params.set('busqueda', busqueda);
       const res = await apiClient.get(`/mesa-ayuda/pacientes-anulados?${params}`, true);
-      setData(res.data.data || []);
-      setTotal(res.data.total || 0);
-      setTotalPages(res.data.totalPages || 0);
+      setData(res.data || []);
+      setTotal(res.total || 0);
+      setTotalPages(res.totalPages || 0);
     } catch (err) {
       setError('No se pudo cargar la lista de pacientes anulados.');
     } finally {
@@ -108,6 +108,20 @@ const PacientesAnulados = () => {
             <h1 className="text-xl font-bold text-gray-900">Pacientes Anulados</h1>
             <p className="text-sm text-gray-500">Historial de atenciones anuladas en el sistema</p>
           </div>
+        </div>
+      </div>
+
+      {/* Leyenda informativa */}
+      <div className="mb-6 bg-amber-50 border border-amber-200 rounded-xl px-5 py-4 flex items-start gap-3">
+        <AlertTriangle className="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" />
+        <div className="text-sm text-amber-800 leading-relaxed">
+          <p className="font-semibold mb-1">¿Por qué aparece este paciente aquí?</p>
+          <p>
+            Al anular una cita, el paciente es <span className="font-semibold">retirado de la bandeja del profesional de salud</span> — el profesional verá que ya no tiene este paciente asignado.
+            Sin embargo, el registro <span className="font-semibold">no se elimina del sistema</span>: queda preservado en este módulo con el motivo de anulación, quién la ejecutó y la fecha exacta,
+            para efectos de <span className="font-semibold">trazabilidad y auditoría</span>.
+            Si el paciente requiere una nueva atención, usa el botón <span className="font-semibold">Nueva Cita</span> para crear un registro independiente.
+          </p>
         </div>
       </div>
 

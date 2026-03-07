@@ -1128,6 +1128,9 @@ public class TicketMesaAyudaService {
 
         solicitud.setActivo(false);
         solicitud.setMotivoAnulacion(motivoFinal);
+        if (usuarioActualId != null) {
+            solicitud.setUsuarioCambioEstadoId(usuarioActualId);
+        }
         solicitudBolsaRepository.save(solicitud);
 
         // Guardar trazabilidad
@@ -1179,13 +1182,19 @@ public class TicketMesaAyudaService {
                 COALESCE(h.motivo, sb.motivo_anulacion, 'Sin motivo registrado') AS motivo_anulacion,
                 di.desc_ipress,
                 TRIM(COALESCE(p.nom_pers,'') || ' ' || COALESCE(p.ape_pater_pers,'') || ' ' || COALESCE(p.ape_mater_pers,'')) AS medico_nombre,
-                h.usuario_nombre AS anulado_por,
+                COALESCE(
+                    h.usuario_nombre,
+                    NULLIF(TRIM(COALESCE(pc2.nom_pers,'') || ' ' || COALESCE(pc2.ape_pater_pers,'') || ' ' || COALESCE(pc2.ape_mater_pers,'')), ''),
+                    u.name_user
+                ) AS anulado_por,
                 COALESCE(h.fecha_cambio::timestamp, sb.fecha_cambio_estado::timestamp) AS fecha_anulacion
             FROM dim_solicitud_bolsa sb
             LEFT JOIN dim_ipress di ON di.id_ipress = sb.id_ipress
             LEFT JOIN dim_personal_cnt p ON p.id_pers = sb.id_personal
             LEFT JOIN dim_historial_cambios_solicitud h
                 ON h.id_solicitud = sb.id_solicitud AND h.tipo_cambio = 'ANULACION'
+            LEFT JOIN dim_usuarios u ON u.id_user = sb.usuario_cambio_estado_id
+            LEFT JOIN dim_personal_cnt pc2 ON pc2.id_usuario = u.id_user
             WHERE sb.activo = false OR sb.condicion_medica = 'Anulado'
             ORDER BY COALESCE(h.fecha_cambio, sb.fecha_cambio_estado) DESC NULLS LAST
             LIMIT :size OFFSET :offset
