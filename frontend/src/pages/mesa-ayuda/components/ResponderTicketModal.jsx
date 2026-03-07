@@ -39,6 +39,7 @@ function ResponderTicketModal({ isOpen, onClose, ticket, usuario, onSuccess }) {
   // Estado para anular cita
   const [showAnularModal, setShowAnularModal] = useState(false);
   const [motivoAnulacion, setMotivoAnulacion] = useState('');
+  const [motivosAnulacionList, setMotivosAnulacionList] = useState([]);
   const [anulando, setAnulando] = useState(false);
   const [errorAnular, setErrorAnular] = useState(null);
 
@@ -175,6 +176,7 @@ function ResponderTicketModal({ isOpen, onClose, ticket, usuario, onSuccess }) {
       setTicketRespondidoData(null);
       setShowAnularModal(false);
       setMotivoAnulacion('');
+      setMotivosAnulacionList([]);
       setAnulando(false);
       setErrorAnular(null);
       onClose();
@@ -186,6 +188,22 @@ function ResponderTicketModal({ isOpen, onClose, ticket, usuario, onSuccess }) {
     setShowEssiAlert(false);
     onSuccess?.(ticketRespondidoData);
     onClose();
+  };
+
+  // Cargar motivos de anulación
+  const abrirModalAnular = async () => {
+    setShowAnularModal(true);
+    setErrorAnular(null);
+    setMotivoAnulacion('');
+    if (motivosAnulacionList.length === 0) {
+      try {
+        const { default: motivosAnulacionService } = await import('../../../services/motivosAnulacionService');
+        const data = await motivosAnulacionService.obtenerActivos();
+        setMotivosAnulacionList(Array.isArray(data) ? data : []);
+      } catch (err) {
+        console.error('Error cargando motivos anulación:', err);
+      }
+    }
   };
 
   // Handler: Confirmar anulación de cita
@@ -387,7 +405,7 @@ function ResponderTicketModal({ isOpen, onClose, ticket, usuario, onSuccess }) {
                     {tienePaciente && (
                       <button
                         type="button"
-                        onClick={() => { setShowAnularModal(true); setErrorAnular(null); setMotivoAnulacion(''); }}
+                        onClick={abrirModalAnular}
                         disabled={loading}
                         className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold bg-red-50 text-red-700 border border-red-300 hover:bg-red-100 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
                       >
@@ -595,15 +613,29 @@ function ResponderTicketModal({ isOpen, onClose, ticket, usuario, onSuccess }) {
                 <label className="block text-sm font-semibold text-gray-700 mb-1.5">
                   Motivo de anulación <span className="text-red-500">*</span>
                 </label>
-                <textarea
-                  value={motivoAnulacion}
-                  onChange={(e) => { setMotivoAnulacion(e.target.value); setErrorAnular(null); }}
-                  placeholder="Ingrese el motivo por el que se cancela la cita..."
-                  rows={3}
-                  disabled={anulando}
-                  autoFocus
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-red-400 focus:border-transparent disabled:bg-gray-100 resize-none"
-                />
+                {motivosAnulacionList.length > 0 ? (
+                  <select
+                    value={motivoAnulacion}
+                    onChange={(e) => { setMotivoAnulacion(e.target.value); setErrorAnular(null); }}
+                    disabled={anulando}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-red-400 focus:border-transparent disabled:bg-gray-100"
+                  >
+                    <option value="">-- Seleccione un motivo --</option>
+                    {motivosAnulacionList.map((m) => (
+                      <option key={m.id} value={m.descripcion}>{m.descripcion}</option>
+                    ))}
+                  </select>
+                ) : (
+                  <textarea
+                    value={motivoAnulacion}
+                    onChange={(e) => { setMotivoAnulacion(e.target.value); setErrorAnular(null); }}
+                    placeholder="Ingrese el motivo por el que se cancela la cita..."
+                    rows={3}
+                    disabled={anulando}
+                    autoFocus
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-red-400 focus:border-transparent disabled:bg-gray-100 resize-none"
+                  />
+                )}
               </div>
 
               {errorAnular && (

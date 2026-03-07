@@ -1,6 +1,6 @@
 // src/pages/admin/users/components/TabsNavigation.jsx
 import React, { useRef, useState, useEffect, useMemo, useCallback } from 'react';
-import { Users, Building, Briefcase, GraduationCap, Stethoscope, Shield, UserCog, Target, Video, FileText, ChevronDown, MoreHorizontal, Package, FileCheck2, MessageSquare, MessageCircle, ClipboardList, HeartPulse, UserX } from 'lucide-react';
+import { Users, Building, Briefcase, GraduationCap, Stethoscope, Shield, UserCog, Target, Video, FileText, ChevronDown, MoreHorizontal, Package, FileCheck2, MessageSquare, MessageCircle, ClipboardList, HeartPulse, UserX, XCircle } from 'lucide-react';
 import TabButton from './modals/TabButton';
 import { useAuth } from '../../../context/AuthContext';
 
@@ -37,6 +37,7 @@ const TabsNavigation = ({ activeTab, setActiveTab }) => {
     { id: 'motivosinterconsulta', icon: ClipboardList, label: 'Motivos Interconsulta', visible: esSuperAdmin },
     { id: 'motivosbajacenacron', icon: HeartPulse, label: 'Motivos Baja CENACRON', visible: esSuperAdmin },
     { id: 'motivosdesercion',    icon: UserX,      label: 'Motivos Deserción',      visible: esSuperAdmin },
+    { id: 'motivosanulacion',    icon: XCircle,    label: 'Motivos Anulación',      visible: esSuperAdmin },
   ], [esSuperAdmin]);
 
   // Filtrar pestañas visibles

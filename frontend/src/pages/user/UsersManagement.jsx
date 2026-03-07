@@ -30,6 +30,7 @@ import RespuestasMesaAyuda from '../admin/catalogs/RespuestasMesaAyuda';
 import MotivosInterconsulta from '../admin/catalogs/MotivosInterconsulta';
 import MotivosBajaCenacron from '../admin/catalogs/MotivosBajaCenacron';
 import MotivosDesercion    from '../admin/catalogs/MotivosDesercion';
+import MotivosAnulacion    from '../admin/catalogs/MotivosAnulacion';
 import { areaService } from '../../services/areaService';
 import { regimenService } from '../../services/regimenService';
 
@@ -1519,8 +1520,15 @@ const UsersManagement = () => {
           </div>
         ) }
 
+        {/* Tab de Motivos de Anulación */ }
+        { activeTab === 'motivosanulacion' && (
+          <div className="w-full px-4 sm:px-6 lg:px-8 py-6">
+            <MotivosAnulacion />
+          </div>
+        ) }
+
         {/* Placeholder para otras tabs futuras */ }
-        { activeTab !== 'usuarios' && activeTab !== 'areas' && activeTab !== 'regimenes' && activeTab !== 'profesion' && activeTab !== 'especialidad' && activeTab !== 'roles' && activeTab !== 'tipoprofesional' && activeTab !== 'estrategias' && activeTab !== 'tiposatencion' && activeTab !== 'procedimientos' && activeTab !== 'cie10' && activeTab !== 'medicamentos' && activeTab !== 'tiposbolsas' && activeTab !== 'estadosgestioncitas' && activeTab !== 'motivosmesaayuda' && activeTab !== 'respuestasmesaayuda' && activeTab !== 'motivosinterconsulta' && activeTab !== 'motivosbajacenacron' && activeTab !== 'motivosdesercion' && (
+        { activeTab !== 'usuarios' && activeTab !== 'areas' && activeTab !== 'regimenes' && activeTab !== 'profesion' && activeTab !== 'especialidad' && activeTab !== 'roles' && activeTab !== 'tipoprofesional' && activeTab !== 'estrategias' && activeTab !== 'tiposatencion' && activeTab !== 'procedimientos' && activeTab !== 'cie10' && activeTab !== 'medicamentos' && activeTab !== 'tiposbolsas' && activeTab !== 'estadosgestioncitas' && activeTab !== 'motivosmesaayuda' && activeTab !== 'respuestasmesaayuda' && activeTab !== 'motivosinterconsulta' && activeTab !== 'motivosbajacenacron' && activeTab !== 'motivosdesercion' && activeTab !== 'motivosanulacion' && (
           <div className="w-full px-4 sm:px-6 lg:px-8 py-12">
             <div className="text-center py-20 bg-white rounded-2xl shadow-sm border border-gray-200">
               <div className="w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
