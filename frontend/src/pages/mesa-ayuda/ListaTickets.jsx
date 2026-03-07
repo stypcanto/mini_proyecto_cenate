@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useRef, useMemo, useCallback } from 'react';
 import { useLocation } from 'react-router-dom';
 import { Zap, AlertCircle, RotateCw, ChevronDown, UserCircle, PlayCircle, Clock, CheckCircle2, Eye, Users, Archive, Pencil, Check, X, Timer, User, Stethoscope, Phone, Search, SlidersHorizontal, Calendar, Filter, Hash, FileText, ShieldAlert, Plus } from 'lucide-react';
+import toast from 'react-hot-toast';
 import { useAuth } from '../../context/AuthContext';
 import ResponderTicketModal from './components/ResponderTicketModal';
 import RegistrarCitaAdicionalModal from '../../components/citas/RegistrarCitaAdicionalModal';
@@ -26,6 +27,9 @@ function ListaTickets() {
   // Detectar modo según la ruta actual
   const esPendientes = location.pathname.includes('tickets-pendientes');
   const esAtendidos = location.pathname.includes('tickets-atendidos');
+
+  // Puede reasignar tickets a cualquier persona del equipo (no solo a sí mismo)
+  const canReasignar = hasRole('SUPERADMIN') || user?.username === '45466651';
 
   // Configuración según modo
   const modoConfig = useMemo(() => {
@@ -132,9 +136,6 @@ function ListaTickets() {
     id: user?.id_personal || user?.idPersonal || user?.id,
     nombre: user?.nombreCompleto || user?.username || 'Personal Mesa de Ayuda',
   };
-
-  // Puede reasignar tickets a cualquier persona del equipo (no solo a sí mismo)
-  const canReasignar = hasRole('SUPERADMIN') || user?.username === '45466651';
 
   // Reset page y filtro al cambiar de ruta
   useEffect(() => {
@@ -312,16 +313,20 @@ function ListaTickets() {
   };
 
   const handleAsignar = async (ticketId, idPersonal, nombrePersonal) => {
+    setDropdownTicketId(null);
+    const toastId = toast.loading(`Asignando a ${nombrePersonal}...`);
     try {
       const { mesaAyudaService } = await import('../../services/mesaAyudaService');
       await mesaAyudaService.asignarTicket(ticketId, {
         idPersonalAsignado: idPersonal,
         nombrePersonalAsignado: nombrePersonal,
       });
-      setDropdownTicketId(null);
+      toast.success(`Ticket asignado a ${nombrePersonal}`, { id: toastId, duration: 3000 });
       fetchTickets();
     } catch (err) {
       console.error('Error asignando ticket:', err);
+      const msg = err?.response?.data?.message || err?.message || 'No se pudo asignar el ticket';
+      toast.error(msg, { id: toastId, duration: 4000 });
     }
   };
 
@@ -1082,29 +1087,32 @@ function ListaTickets() {
                     {/* Columna Personal Asignado */}
                     <td className="px-3 py-2.5">
                       {ticket.nombrePersonalAsignado ? (
-                        <div
-                          className={`flex items-center gap-1.5 ${ticket.estado !== 'RESUELTO' && canReasignar ? 'cursor-pointer group' : 'cursor-default'}`}
-                          title={canReasignar && ticket.estado !== 'RESUELTO' ? `${ticket.nombrePersonalAsignado} — Clic para reasignar` : ticket.nombrePersonalAsignado}
-                          onClick={(e) => {
-                            if (ticket.estado === 'RESUELTO') return;
-                            if (!canReasignar) return;
-                            if (dropdownTicketId === ticket.id) {
-                              setDropdownTicketId(null);
-                            } else {
-                              const rect = e.currentTarget.getBoundingClientRect();
-                              setDropdownPos({ top: rect.top, left: rect.left });
-                              setDropdownTicketId(ticket.id);
-                            }
-                          }}
-                        >
-                          <div className={`w-6 h-6 rounded-full ${getAvatarColor(ticket.nombrePersonalAsignado)} flex items-center justify-center text-white text-xs font-bold flex-shrink-0`}>
-                            {ticket.nombrePersonalAsignado.charAt(0).toUpperCase()}
+                        <div className="flex flex-col gap-1">
+                          <div className="flex items-center gap-1.5">
+                            <div className={`w-6 h-6 rounded-full ${getAvatarColor(ticket.nombrePersonalAsignado)} flex items-center justify-center text-white text-xs font-bold flex-shrink-0`}>
+                              {ticket.nombrePersonalAsignado.charAt(0).toUpperCase()}
+                            </div>
+                            <span className="text-xs text-gray-800 truncate max-w-[90px]">
+                              {ticket.nombrePersonalAsignado}
+                            </span>
                           </div>
-                          <span className="text-xs text-gray-800 truncate max-w-[100px]">
-                            {ticket.nombrePersonalAsignado}
-                          </span>
                           {ticket.estado !== 'RESUELTO' && canReasignar && (
-                            <ChevronDown size={12} className="text-gray-400 group-hover:text-gray-600 flex-shrink-0" />
+                            <button
+                              className="flex items-center gap-1 px-2 py-0.5 rounded-md border border-orange-300 bg-orange-50 hover:bg-orange-100 text-orange-700 text-[11px] font-medium transition-all w-fit"
+                              onMouseDown={(e) => {
+                                e.stopPropagation();
+                                if (dropdownTicketId === ticket.id) {
+                                  setDropdownTicketId(null);
+                                } else {
+                                  const rect = e.currentTarget.getBoundingClientRect();
+                                  setDropdownPos({ top: rect.top, left: rect.left });
+                                  setDropdownTicketId(ticket.id);
+                                }
+                              }}
+                            >
+                              <Users size={11} />
+                              Reasignar
+                            </button>
                           )}
                         </div>
                       ) : ticket.estado === 'RESUELTO' ? (
@@ -1115,7 +1123,8 @@ function ListaTickets() {
                       ) : canReasignar ? (
                         <button
                           className="flex items-center gap-1.5 px-2 py-1 rounded-lg border border-dashed border-blue-300 bg-blue-50 hover:bg-blue-100 hover:border-blue-400 transition-all cursor-pointer group"
-                          onClick={(e) => {
+                          onMouseDown={(e) => {
+                            e.stopPropagation();
                             if (dropdownTicketId === ticket.id) {
                               setDropdownTicketId(null);
                             } else {
@@ -1369,7 +1378,11 @@ function ListaTickets() {
                 return (
                   <button
                     key={persona.idPersonal}
-                    onClick={() => handleAsignar(dropdownTicketId, persona.idPersonal, persona.nombreCompleto)}
+                    onMouseDown={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      handleAsignar(dropdownTicketId, persona.idPersonal, persona.nombreCompleto);
+                    }}
                     className={`w-full px-4 py-2.5 text-left text-sm flex items-center gap-2.5 hover:bg-blue-50 hover:text-blue-700 transition-colors ${
                       isSelected ? 'bg-blue-50 text-blue-700 font-medium' : 'text-gray-700'
                     }`}
@@ -1392,7 +1405,7 @@ function ListaTickets() {
               const ticketActual = ticketsFiltrados.find(t => t.id === dropdownTicketId);
               return ticketActual?.nombrePersonalAsignado && hasRole('SUPERADMIN') ? (
                 <button
-                  onClick={() => handleDesasignar(dropdownTicketId)}
+                  onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); handleDesasignar(dropdownTicketId); }}
                   className="w-full px-4 py-2.5 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-2.5 border-t border-gray-200 transition-colors"
                 >
                   <UserCircle size={16} className="text-red-400" />

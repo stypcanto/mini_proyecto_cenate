@@ -694,9 +694,16 @@ public class TicketMesaAyudaService {
             throw new IllegalArgumentException("No se puede reasignar un ticket ya resuelto");
         }
 
-        // Ticket ya asignado no puede cambiar de personal
+        // Solo coordinadora (45466651) o SUPERADMIN pueden reasignar tickets ya asignados
         if (ticket.getIdPersonalAsignado() != null) {
-            throw new IllegalArgumentException("Este ticket ya está asignado a " + ticket.getNombrePersonalAsignado() + ". La asignación es permanente.");
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            boolean esCoordinadoraOAdmin = auth != null && (
+                auth.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_SUPERADMIN")) ||
+                "45466651".equals(auth.getName())
+            );
+            if (!esCoordinadoraOAdmin) {
+                throw new IllegalArgumentException("Este ticket ya está asignado a " + ticket.getNombrePersonalAsignado() + ". Solo la coordinadora puede reasignarlo.");
+            }
         }
 
         ticket.setIdPersonalAsignado(idPersonal);
