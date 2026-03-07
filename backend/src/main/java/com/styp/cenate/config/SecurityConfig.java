@@ -102,7 +102,8 @@ public class SecurityConfig {
                                                                 "/api/admin/motivos-mesa-ayuda/**", // ✅ v1.65.0: CRUD motivos mesa de ayuda
                                                                 "/api/admin/respuestas-mesa-ayuda/**", // ✅ v1.65.10: CRUD respuestas predefinidas mesa de ayuda
                                                                 "/api/admin/motivos-desercion/activos", // ✅ v1.83.0: Motivos deserción para modal profesional salud
-                                                                "/api/admin/motivos-baja-cenacron/todos") // ✅ v1.84.2: Catálogo baja CENACRON para modal médico
+                                                                "/api/admin/motivos-baja-cenacron/todos", // ✅ v1.84.2: Catálogo baja CENACRON para modal médico
+                                                                "/api/admin/motivos-anulacion/activos") // ✅ v1.85.27: Catálogo motivos anulación para modal mesa de ayuda
                                                 .permitAll()
 
                                                 // SEC-006: Otros endpoints de actuator requieren SUPERADMIN
