@@ -1086,7 +1086,7 @@ export default function DashboardCoordinadorTeleurgencias() {
 
   const medicosFiltrados = useMemo(() => {
     return [...medicos]
-      .filter(m => !busqueda || (m.nombre_medico || '').toLowerCase().includes(busqueda.toLowerCase()))
+      .filter(m => !busqueda || (m.nombre_medico || '').toLowerCase().includes(busqueda.toLowerCase()) || (m.num_doc || '').includes(busqueda.trim()))
       .sort((a, b) => {
         const dir = sortDir === 'asc' ? 1 : -1;
         if (sortCol === 'nombre_medico') return dir * (a.nombre_medico || '').localeCompare(b.nombre_medico || '', 'es', { sensitivity: 'base' });

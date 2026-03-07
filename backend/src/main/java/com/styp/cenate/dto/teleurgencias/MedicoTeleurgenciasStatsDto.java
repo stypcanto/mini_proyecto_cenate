@@ -29,4 +29,7 @@ public class MedicoTeleurgenciasStatsDto {
 
     @JsonProperty("desercion")
     private Long desercion;
+
+    @JsonProperty("num_doc")
+    private String numDoc;
 }

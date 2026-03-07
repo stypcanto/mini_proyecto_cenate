@@ -54,6 +54,7 @@ public class TeleurgenciasService {
                 .pendientes(r[3] != null ? ((Number) r[3]).longValue() : 0L)
                 .atendidos(r[4] != null ? ((Number) r[4]).longValue() : 0L)
                 .desercion(r[5] != null ? ((Number) r[5]).longValue() : 0L)
+                .numDoc(r[6] != null ? r[6].toString() : null)
                 .build())
                 .collect(Collectors.toList());
     }

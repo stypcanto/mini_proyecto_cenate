@@ -1432,7 +1432,8 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
           COUNT(*) as total,
           SUM(CASE WHEN sb.condicion_medica = 'Pendiente'  THEN 1 ELSE 0 END) as pendientes,
           SUM(CASE WHEN sb.condicion_medica = 'Atendido'   THEN 1 ELSE 0 END) as atendidos,
-          SUM(CASE WHEN sb.condicion_medica = 'Deserción'  THEN 1 ELSE 0 END) as desercion
+          SUM(CASE WHEN sb.condicion_medica = 'Deserción'  THEN 1 ELSE 0 END) as desercion,
+          p.num_doc_pers as num_doc
         FROM dim_solicitud_bolsa sb
         JOIN dim_personal_cnt p ON sb.id_personal = p.id_pers
         WHERE sb.activo = true
@@ -1441,7 +1442,7 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
           AND (:turno IS NULL
                OR (:turno = 'MANANA' AND CAST(COALESCE(sb.hora_atencion, '00:00') AS TIME) BETWEEN '07:00:00' AND '13:59:59')
                OR (:turno = 'TARDE'  AND CAST(COALESCE(sb.hora_atencion, '00:00') AS TIME) BETWEEN '14:00:00' AND '20:59:59'))
-        GROUP BY p.id_pers, p.nom_pers, p.ape_pater_pers, p.ape_mater_pers
+        GROUP BY p.id_pers, p.nom_pers, p.ape_pater_pers, p.ape_mater_pers, p.num_doc_pers
         ORDER BY total DESC
         """, nativeQuery = true)
     List<Object[]> estadisticasPorMedicoTeleurgencias(
